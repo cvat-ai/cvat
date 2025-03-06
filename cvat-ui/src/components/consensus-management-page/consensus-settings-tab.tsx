@@ -23,9 +23,10 @@ function ConsensusSettingsTab(props: Readonly<Props>): JSX.Element | null {
     } = props;
 
     const [form] = Form.useForm();
-    const onSave = useCallback(async () => {
-        const values = await form.validateFields();
-        setSettings(values);
+    const onSave = useCallback(() => {
+        form.validateFields().then((values) => {
+            setSettings(values);
+        }).catch(() => { /* do nothing */ });
     }, [form, setSettings]);
 
     if (fetching) {

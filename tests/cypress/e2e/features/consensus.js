@@ -83,13 +83,14 @@ context('Basic manipulations with consensus job replicas', () => {
         it('Check new merge buttons exist and are visible', () => {
             cy.contains('button', 'Actions').click();
             cy.contains('Merge consensus jobs').should('be.visible');
-            cy.get('.ant-card-body').first().within(() => {
+            cy.get('.cvat-job-item').first().within(() => {
                 cy.get('.anticon-more').first().click();
             });
             cy.get('.ant-dropdown-menu')
                 .should('be.visible')
                 .contains('li', 'Merge consensus job').should('be.visible');
         });
+
         it('Check consensus management page', () => {
             const defaultQuorum = 50;
             const defaultIoU = 40;
@@ -110,19 +111,20 @@ context('Basic manipulations with consensus job replicas', () => {
                 cy.wrap($el).clear();
             });
             cy.get('.ant-form-item-explain-error').should('be.visible');
-            // cy.contains('button', 'Save').click();
+            cy.contains('button', 'Save').click();
             cy.get('#iouThreshold').then(([$el]) => {
                 cy.wrap($el).invoke('val').should('eq', `${defaultIoU}`);
                 cy.wrap($el).clear();
             });
             cy.get('.ant-form-item-explain-error').should('be.visible');
-            // cy.contains('button', 'Save').click();
-            /* FIXME: saving throws uncaught exception, waiting for fix
-            ** saving should probably do nothing in this case ()
-            */
+            cy.contains('button', 'Save').click();
             cy.then(() => {
                 expect(requestCount).to.equal(1);
             });
+        });
+
+        it('', () => {
+        // Write your test case here
         });
     });
 });
