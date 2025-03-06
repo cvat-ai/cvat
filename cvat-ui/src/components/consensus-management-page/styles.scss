@@ -5,11 +5,19 @@
 @import 'base';
 
 .cvat-consensus-management-inner {
-    background: $background-color-1;
-    padding: $grid-unit-size * 4;
-    padding-bottom: $grid-unit-size;
-    padding-top: 0;
-    border-radius: $border-radius-base;
+    @extend .cvat-control-inner;
+}
+
+.cvat-consensus-management-inner-wrapper {
+    @extend .cvat-control-inner-wrapper;
+}
+
+.cvat-consensus-management-header {
+    @extend .cvat-control-header;
+}
+
+.cvat-consensus-management-page, .cvat-consensus-management-wrapper {
+    height: 100%;
 }
 
 .cvat-consensus-settings-title {
@@ -33,14 +41,9 @@
     }
 }
 
-
 .cvat-consensus-management-loading, .cvat-consensus-management-page-error {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-}
-
-.cvat-consensus-management-overview-tab {
-    min-height: 50vh;
 }
