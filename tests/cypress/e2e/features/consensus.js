@@ -5,13 +5,14 @@
 /// <reference types="cypress" />
 
 context('Basic manipulations with consensus job replicas', () => {
-    describe('Consensus job creation', () => {
+    describe('Consensus task creation', () => {
         // const jobType = 'consensus_replica';
         const maxReplicas = 10;
         const taskName = 'Test consensus';
         const labelName = 'test';
         const serverFiles = ['archive.zip'];
         const replicas = 3;
+
         before(() => {
             cy.visit('auth/login');
             cy.login();
@@ -44,6 +45,7 @@ context('Basic manipulations with consensus job replicas', () => {
             cy.closeNotification('.ant-notification-notice-error');
             cy.get('#consensusReplicas').clear();
         });
+
         it('Check new consensus task has correct tags and drop-down with replicas', () => {
             // Create task with consensus, check tags
             cy.get('#consensusReplicas').type(replicas);
