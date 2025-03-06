@@ -58,17 +58,23 @@ context('Basic manipulations with consensus job replicas', () => {
                     cy.wrap($el).should('have.text', 'Consensus');
                 });
             });
-            cy.get('.ant-collapse-header').should('be.visible')
+            cy.get('.cvat-consensus-job-collapse').should('be.visible')
                 .within(($el) => {
                     expect($el.text()).to.equal(`${replicas} Replicas`);
                     cy.wrap($el).click();
                 });
 
-            // Check desc order of jobs
-            cy.get('.ant-card-body a').then((jobLinks) => {
-                const sourceId = +(jobLinks[0].text.split('#')[1]);
+            // Check asc order of jobs
+            function parseJobId(jobItem) {
+                const jobItemText = jobItem.innerText;
+                const [start, stop] = [0, jobItemText.indexOf('\n')];
+                return +(jobItemText.substring(start, stop).split('#')[1]);
+            }
+            cy.get('.cvat-job-item').then((jobItems) => {
+                const sourceJobId = parseJobId(jobItems[0]);
                 for (let i = 1; i <= replicas; i++) {
-                    expect(+(jobLinks[i].text.split('#')[1])).equals(sourceId + i);
+                    const jobId = parseJobId(jobItems[i]);
+                    expect(jobId).equals(sourceJobId + i);
                 }
             });
         });
