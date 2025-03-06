@@ -6,7 +6,6 @@
 
 context('Basic manipulations with consensus job replicas', () => {
     describe('Consensus task creation', () => {
-        // const jobType = 'consensus_replica';
         const maxReplicas = 10;
         const taskName = 'Test consensus';
         const labelName = 'test';
@@ -47,10 +46,12 @@ context('Basic manipulations with consensus job replicas', () => {
         });
 
         it('Check new consensus task has correct tags and drop-down with replicas', () => {
-            // Create task with consensus, check tags
+            // Create task with consensus
             cy.get('#consensusReplicas').type(replicas);
             cy.contains('button', 'Submit & Open').click();
+            cy.get('.cvat-task-details-wrapper').should('be.visible');
             cy.get('.ant-notification-notice-error').should('not.exist');
+            // Check tags
             cy.get('.cvat-tag-consensus').then((tags) => {
                 expect(tags.length).to.equal(2);
                 cy.wrap(tags).each(($el) => {
