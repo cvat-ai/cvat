@@ -3036,7 +3036,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 content = manifest.emulate_hierarchical_structure(
                     page_size, manifest_prefix=manifest_prefix, prefix=prefix, default_prefix=storage.prefix, start_index=start_index)
             else:
-                content = storage.list_files_on_one_page(prefix, next_token, page_size, _use_sort=True)
+                content = storage.list_files_on_one_page(prefix, next_token=next_token, page_size=page_size, _use_sort=True)
             for i in content['content']:
                 mime_type = get_mime(i['name']) if i['type'] != 'DIR' else 'DIR' # identical to share point
                 if mime_type == 'zip':
