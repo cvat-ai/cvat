@@ -9,6 +9,7 @@ from typing import Any, Callable, TypeVar, overload
 
 import attrs
 from attr import field
+from datumaro.util import parse_json
 
 T = TypeVar("T", bound=int | float | str)
 
@@ -180,17 +181,36 @@ class LazyList(list[T], metaclass=LazyListMeta):
         if self._parsed:
             return
 
-        if index < 0:
-            index += self._compute_max_length(self._string)
+        if (
+            self._string
+            and (self._converter == int or self._converter == float)
+            and self._separator == ","
+        ):
+            # Optimized version for number lists
+            # TODO: maybe add type info and length into the serialized representation
+            s = self._string
+            if s[0] != "[":
+                s = "[" + s + "]"
+            items = parse_json(s)
+            items = map(self._converter, items)
 
-        start = list.__len__(self)
-        if start > index:
-            return
-        end = index - start + 1
-        for _ in islice(self._iter_unparsed(), end + 1):
-            pass
+            list.extend(self, items)
 
-        if index == self._compute_max_length(self._string) - 1:
+            self._mark_parsed()
+        elif self._string:
+            if index < 0:
+                index += self._compute_max_length(self._string)
+
+            start = list.__len__(self)
+            if start > index:
+                return
+            end = index - start + 1
+            for _ in islice(self._iter_unparsed(), end + 1):
+                pass
+
+            if index == self._compute_max_length(self._string) - 1:
+                self._mark_parsed()
+        else:
             self._mark_parsed()
 
     def _mark_parsed(self):
