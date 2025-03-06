@@ -10,7 +10,7 @@ import Layout, { SiderProps } from 'antd/lib/layout';
 import Text from 'antd/lib/typography/Text';
 
 import { filterApplicableLabels } from 'utils/filter-applicable-labels';
-import { Label } from 'cvat-core-wrapper';
+import { Label, ObjectType } from 'cvat-core-wrapper';
 import {
     activateObject as activateObjectAction,
     changeFrameAsync,
@@ -21,7 +21,7 @@ import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { ThunkDispatch } from 'utils/redux';
 import AppearanceBlock from 'components/annotation-page/appearance-block';
 import ObjectButtonsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-buttons';
-import { CombinedState, ObjectType } from 'reducers';
+import { CombinedState } from 'reducers';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { ShortcutScope } from 'utils/enums';
 import { subKeyMap } from 'utils/component-subkeymap';
