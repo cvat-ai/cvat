@@ -12,7 +12,7 @@ from collections.abc import Hashable, Sequence
 from contextlib import suppress
 from copy import deepcopy
 from functools import cached_property, lru_cache, partial
-from typing import Any, Callable, ClassVar, Hashable, Sequence, TypeVar, Union, cast
+from typing import Any, Callable, ClassVar, TypeVar, Union, cast
 
 import datumaro as dm
 import datumaro.components.annotations.matcher
