@@ -37,7 +37,7 @@ def _export_common(
 ):
     with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
         dataset = Dataset.from_extractors(extractor, env=dm_env)
-        dataset.export(temp_dir, format_name, save_images=save_images, **kwargs)
+        dataset.export(temp_dir, format_name, save_media=save_images, **kwargs)
 
     make_zip_archive(temp_dir, dst_file)
 
@@ -111,7 +111,7 @@ def _export_yolo_ultralytics_segmentation(dst_file, temp_dir, instance_data, *, 
     with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
         dataset = Dataset.from_extractors(extractor, env=dm_env)
         dataset = dataset.transform("masks_to_polygons")
-        dataset.export(temp_dir, "yolo_ultralytics_segmentation", save_images=save_images)
+        dataset.export(temp_dir, "yolo_ultralytics_segmentation", save_media=save_images)
 
     make_zip_archive(temp_dir, dst_file)
 

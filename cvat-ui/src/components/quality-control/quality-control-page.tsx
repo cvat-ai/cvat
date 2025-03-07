@@ -517,19 +517,17 @@ function QualityControlPage(): JSX.Element {
     }
 
     return (
-        <div className='cvat-quality-control-page'>
-            <Row className='cvat-quality-control-wrapper'>
-                <Col span={24}>
-                    {backNavigation}
-                    <Row justify='center'>
-                        <Col span={22} xl={18} xxl={14} className='cvat-quality-control-inner'>
-                            {title}
-                            {tabs}
-                        </Col>
-                    </Row>
-                </Col>
-            </Row>
-        </div>
+        <Row className='cvat-quality-control-page'>
+            <Col className='cvat-quality-control-wrapper' span={24}>
+                {backNavigation}
+                <Row justify='center' className='cvat-quality-control-inner-wrapper'>
+                    <Col span={22} xl={18} xxl={14} className='cvat-quality-control-inner'>
+                        {title}
+                        {tabs}
+                    </Col>
+                </Row>
+            </Col>
+        </Row>
     );
 }
 

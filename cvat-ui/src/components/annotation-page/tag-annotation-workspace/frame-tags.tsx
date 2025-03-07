@@ -12,8 +12,8 @@ import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import {
     removeObject as removeObjectAction,
 } from 'actions/annotation-actions';
-import { CombinedState, ObjectType } from 'reducers';
-import { ObjectState, AnnotationConflict } from 'cvat-core-wrapper';
+import { CombinedState } from 'reducers';
+import { AnnotationConflict, ObjectState, ObjectType } from 'cvat-core-wrapper';
 import { filterAnnotations } from 'utils/filter-annotations';
 
 function FrameTags(): JSX.Element {

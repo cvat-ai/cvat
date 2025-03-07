@@ -160,7 +160,7 @@ Then suppose `detect` returns a shape with `label_id` equal to 1.
 The driver will see that it refers to the `rat` label, and replace it with 102,
 since that's the ID this label has in the dataset.
 
-The same logic is used for sub-label IDs.
+The same logic is used for sublabel and attribute IDs.
 
 ### Helper factory functions
 
@@ -172,11 +172,27 @@ and sometimes setting some attributes to fixed values.
 
 The following helpers are available for building specifications:
 
-| Name                  | Model type            | Fixed attributes  |
-|-----------------------|-----------------------|-------------------|
-| `label_spec`          | `PatchedLabelRequest` | -                 |
-| `skeleton_label_spec` | `PatchedLabelRequest` | `type="skeleton"` |
-| `keypoint_spec`       | `SublabelRequest`     | -                 |
+| Name                      | Model type            | Fixed attributes                                      |
+|---------------------------|-----------------------|-------------------------------------------------------|
+| `label_spec`              | `PatchedLabelRequest` | -                                                     |
+| `skeleton_label_spec`     | `PatchedLabelRequest` | `type="skeleton"`                                     |
+| `keypoint_spec`           | `SublabelRequest`     | `type="points"`                                       |
+| `attribute_spec`          | `AttributeRequest`    | `mutable=False`                                       |
+| `checkbox_attribute_spec` | `AttributeRequest`    | `mutable=False`, `input_type="checkbox"`, `values=[]` |
+| `number_attribute_spec`   | `AttributeRequest`    | `mutable=False`, `input_type="number"`                |
+| `radio_attribute_spec`    | `AttributeRequest`    | `mutable=False`, `input_type="radio"`                 |
+| `select_attribute_spec`   | `AttributeRequest`    | `mutable=False`, `input_type="select"`                |
+| `text_attribute_spec`     | `AttributeRequest`    | `mutable=False`, `input_type="number"`, `values=[]`   |
+
+For `number_attribute_spec`,
+it's recommended to use the `cvat_sdk.attributes.number_attribute_values` function
+to create the `values` argument, since this function will enforce the constraints expected
+for attribute specs of this type.
+For example:
+
+```python
+cvataa.number_attribute_spec("size", 1, number_attribute_values(0, 10))
+```
 
 The following helpers are available for use in `detect`:
 
@@ -200,6 +216,17 @@ cvataa.mask(my_label, encode_mask(
 ))
 ```
 
+To create shapes with attributes,
+it's recommended to use the `cvat_sdk.attributes.attribute_vals_from_dict` function,
+which returns a list of objects that can be passed to an `attributes` argument:
+
+```python
+cvataa.rectangle(
+    my_label, [x1, y2, x2, y2],
+    attributes=attribute_vals_from_dict({my_attr1: val1, my_attr2: val2})
+)
+```
+
 ## Auto-annotation driver
 
 The `annotate_task` function uses an AA function to annotate a CVAT task.
@@ -218,7 +245,7 @@ If a detection function declares a label that has no matching label in the task,
 then by default, `BadFunctionError` is raised, and auto-annotation is aborted.
 If you use `allow_unmatched_label=True`, then such labels will be ignored,
 and any shapes referring to them will be dropped.
-Same logic applies to sub-label IDs.
+Same logic applies to sublabels and attributes.
 
 It's possible to pass a custom confidence threshold to the function via the
 `conf_threshold` parameter.

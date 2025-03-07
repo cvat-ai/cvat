@@ -38,7 +38,7 @@ def _export_images(dst_file, temp_dir, task_data, save_images=False):
     ) as extractor:
         dataset = Dataset.from_extractors(extractor, env=dm_env)
         dataset.transform(RemoveTrackingInformation)
-        dataset.export(temp_dir, "kitti_raw", save_images=save_images, reindex=True)
+        dataset.export(temp_dir, "kitti_raw", save_media=save_images, reindex=True)
 
     make_zip_archive(temp_dir, dst_file)
 

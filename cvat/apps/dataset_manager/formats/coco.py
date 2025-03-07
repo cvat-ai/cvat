@@ -24,7 +24,7 @@ from .registry import dm_env, exporter, importer
 def _export(dst_file, temp_dir, instance_data, save_images=False):
     with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
         dataset = Dataset.from_extractors(extractor, env=dm_env)
-        dataset.export(temp_dir, "coco_instances", save_images=save_images, merge_images=False)
+        dataset.export(temp_dir, "coco_instances", save_media=save_images, merge_images=False)
 
     make_zip_archive(temp_dir, dst_file)
 
@@ -52,7 +52,7 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
     with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
         dataset = Dataset.from_extractors(extractor, env=dm_env)
         dataset.export(
-            temp_dir, "coco_person_keypoints", save_images=save_images, merge_images=False
+            temp_dir, "coco_person_keypoints", save_media=save_images, merge_images=False
         )
 
     make_zip_archive(temp_dir, dst_file)
