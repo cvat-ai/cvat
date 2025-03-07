@@ -1,9 +1,10 @@
 ### Deprecated
 
 - Utilizing `GET /api/projects/id/dataset?action=import_status` API endpoint
-  to check the status of the import process (<https://github.com/cvat-ai/cvat/pull/9075>)
+  to check the status of the import process. Instead, the `GET /api/requests/rq_id`
+  requests API should be used (<https://github.com/cvat-ai/cvat/pull/9075>)
 
-### Changed
+### Removed
 
 - `GET /api/projects/id/dataset` API endpoint no longer handles dataset export process
   (<https://github.com/cvat-ai/cvat/pull/9075>)
@@ -20,10 +21,4 @@
 - `GET /api/jobs/id/dataset` API endpoint no longer handles dataset export process
   (<https://github.com/cvat-ai/cvat/pull/9075>)
 - `GET /api/jobs/id/annotations?format=` API endpoint no longer handles annotations export process
-  (<https://github.com/cvat-ai/cvat/pull/9075>)
-
-### Added
-
-- New API endpoints for downloading files prepared by an export process:
-  `GET /api/projects|tasks|jobs/dataset|backup/download?rq_id=rq_id`
   (<https://github.com/cvat-ai/cvat/pull/9075>)
