@@ -7,7 +7,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from copy import deepcopy
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any
 
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
@@ -98,7 +98,7 @@ class QualityReport(models.Model):
     # job reports should all have a single parent report
     # task reports may have none, or be shared between several project reports
     parents = models.ManyToManyField("self", symmetrical=False, blank=True, related_name="children")
-    children: Sequence[QualityReport]
+    children: models.manager.ManyToManyRelatedManager[QualityReport]
 
     created_date = models.DateTimeField(auto_now_add=True)
     target_last_updated = models.DateTimeField()
@@ -111,10 +111,10 @@ class QualityReport(models.Model):
 
     data = models.JSONField()
 
-    conflicts: Sequence[AnnotationConflict]
+    conflicts: models.manager.RelatedManager[AnnotationConflict]
 
     @property
-    def parent(self) -> Optional[QualityReport]:
+    def parent(self) -> QualityReport | None:
         try:
             return self.parents.first()
         except self.DoesNotExist:
@@ -141,7 +141,7 @@ class QualityReport(models.Model):
         report = self._parse_report()
         return report.comparison_summary
 
-    def get_task(self) -> Optional[Task]:
+    def get_task(self) -> Task | None:
         if self.task:
             return self.task
         elif self.job:
@@ -149,7 +149,7 @@ class QualityReport(models.Model):
         else:
             return None
 
-    def get_project(self) -> Optional[Project]:
+    def get_project(self) -> Project | None:
         if self.project:
             return self.project
         elif task := self.get_task():
@@ -165,11 +165,11 @@ class QualityReport(models.Model):
             raise ValidationError("One of the 'job' and 'task' fields must be set")
 
     @property
-    def organization_id(self):
+    def organization_id(self) -> int | None:
         if task := self.get_task():
-            return getattr(task.organization, "id", None)
+            return task.organization_id
         elif project := self.project:
-            return getattr(project.organization, "id", None)
+            return project.organization_id
         return None
 
 
@@ -259,7 +259,8 @@ class QualitySettingsQuerySet(models.QuerySet):
 
         return super().update_or_create(*args, **kwargs)
 
-    def _validate_constraints(self, obj: Dict[str, Any]):
+    @transaction.atomic(savepoint=False)
+    def _validate_constraints(self, obj: dict[str, Any]):
         # Constraints can't be set on the related model fields
         # This method requires the save operation to be called as a transaction
         if obj.get("task_id") and obj.get("project_id"):
