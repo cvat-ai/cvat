@@ -282,19 +282,19 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
                             )
                         )
                 elif scope == cls.Scopes.LIST:
-                    if project_id := request.query_params.get("project_id", None):
-                        permissions.append(
-                            ProjectPermission.create_scope_view(
-                                request,
-                                int(project_id),
-                                iam_context=iam_context,
-                            )
-                        )
-                    elif task_id := request.query_params.get("task_id", None):
+                    if task_id := request.query_params.get("task_id", None):
                         permissions.append(
                             TaskPermission.create_scope_view(
                                 request,
                                 int(task_id),
+                                iam_context=iam_context,
+                            )
+                        )
+                    elif project_id := request.query_params.get("project_id", None):
+                        permissions.append(
+                            ProjectPermission.create_scope_view(
+                                request,
+                                int(project_id),
                                 iam_context=iam_context,
                             )
                         )

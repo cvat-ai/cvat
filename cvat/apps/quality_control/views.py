@@ -43,6 +43,7 @@ from cvat.apps.quality_control.serializers import (
     AnnotationConflictSerializer,
     QualityReportCreateSerializer,
     QualityReportSerializer,
+    QualitySettingsParentType,
     QualitySettingsSerializer,
 )
 
@@ -124,6 +125,9 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
         return queryset
 
 
+REPORT_TARGET_PARAM_NAME = "target"
+
+
 @extend_schema(tags=["quality"])
 @extend_schema_view(
     retrieve=extend_schema(
@@ -140,7 +144,7 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
             Please note that children reports are included by default
             if the "task_id", "project_id" filters are used.
             If you want to restrict the list of results to a specific report type,
-            use the "target" parameter.
+            use the "{}" parameter.
 
             The "parent_id" filter includes all the nested reports recursively.
             For instance, if the "parent_id" is a project report,
@@ -151,7 +155,7 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
             The "parent_id" filter still returns all the relevant nested reports,
             even though the response "parent_id" values may be different from the requested one.
         """
-        ),
+        ).format(REPORT_TARGET_PARAM_NAME),
         parameters=[
             # These filters are implemented differently from others
             OpenApiParameter(
@@ -168,7 +172,10 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
                 description="A simple equality filter for parent id",
             ),
             OpenApiParameter(
-                "target", type=OpenApiTypes.STR, description="A simple equality filter for target"
+                REPORT_TARGET_PARAM_NAME,
+                type=OpenApiTypes.STR,
+                description="A simple equality filter for target",
+                enum=[v[0] for v in QualityReportTarget.choices()],
             ),
         ],
         responses={
@@ -213,10 +220,7 @@ class QualityReportViewSet(
         "gt_last_updated",
         "target_last_updated",
     ]
-    simple_filters = list(
-        set(filter_fields)
-        - {"id", "created_date", "gt_last_updated", "target_last_updated", "task_id", "project_id"}
-    )
+    simple_filters = ["job_id"]
     ordering_fields = list(filter_fields)
     ordering = "-id"
 
@@ -263,7 +267,7 @@ class QualityReportViewSet(
             perm = QualityReportPermission.create_scope_list(self.request, iam_context=iam_context)
             queryset = perm.filter(queryset)
 
-            if target := self.request.query_params.get("target", None):
+            if target := self.request.query_params.get(REPORT_TARGET_PARAM_NAME, None):
                 if target == QualityReportTarget.JOB:
                     queryset = queryset.filter(job__isnull=False)
                 elif target == QualityReportTarget.TASK:
@@ -272,8 +276,10 @@ class QualityReportViewSet(
                     queryset = queryset.filter(project__isnull=False)
                 else:
                     raise ValidationError(
-                        "Unexpected 'target' filter value '{}'. Valid values are: {}".format(
-                            target, ", ".join(m[0] for m in QualityReportTarget.choices())
+                        "Unexpected '{}' filter value '{}'. Valid values are: {}".format(
+                            REPORT_TARGET_PARAM_NAME,
+                            target,
+                            ", ".join(m[0] for m in QualityReportTarget.choices()),
                         )
                     )
 
@@ -405,10 +411,37 @@ class QualityReportViewSet(
         return HttpResponse(json_report.encode(), content_type="application/json")
 
 
+SETTINGS_PARENT_TYPE_PARAM_NAME = "parent_type"
+
+
 @extend_schema(tags=["quality"])
 @extend_schema_view(
     list=extend_schema(
         summary="List quality settings instances",
+        description=textwrap.dedent(
+            """\
+            Please note that child task settings are included by default
+            if the "project_id" filter is used.
+            If you want to restrict results only to a specific parent type, use the "{}" parameter.
+        """
+        ).format(SETTINGS_PARENT_TYPE_PARAM_NAME),
+        parameters=[
+            # These filters are implemented differently from others
+            OpenApiParameter(
+                "task_id", type=OpenApiTypes.INT, description="A simple equality filter for task id"
+            ),
+            OpenApiParameter(
+                "project_id",
+                type=OpenApiTypes.INT,
+                description="A simple equality filter for project id",
+            ),
+            OpenApiParameter(
+                SETTINGS_PARENT_TYPE_PARAM_NAME,
+                type=OpenApiTypes.STR,
+                description="A simple equality filter for parent instance type",
+                enum=[v[0] for v in QualitySettingsParentType.choices()],
+            ),
+        ],
         responses={
             "200": QualitySettingsSerializer(many=True),
         },
@@ -463,9 +496,9 @@ class QualitySettingsViewSet(
     iam_organization_field = "task__organization"
 
     search_fields = []
-    filter_fields = ["id", "task_id", "project_id"]
-    simple_filters = ["task_id", "project_id"]
-    ordering_fields = ["id"]
+    filter_fields = ["id", "task_id", "project_id", "inherit", "created_date", "updated_date"]
+    simple_filters = ["inherit"]
+    ordering_fields = list(filter_fields)
     ordering = "id"
 
     serializer_class = QualitySettingsSerializer
@@ -477,16 +510,34 @@ class QualitySettingsViewSet(
             iam_context = None
 
             if task_id := self.request.query_params.get("task_id", None):
-                # NOTE: This filter requires extra checks
+                # This filter requires extra checks
                 task = get_or_404(Task, task_id)
                 self.check_object_permissions(self.request, task)
                 iam_context = get_iam_context(self.request, task)
-
-            if project_id := self.request.query_params.get("project_id", None):
-                # NOTE: This filter requires extra checks
+            elif project_id := self.request.query_params.get("project_id", None):
+                # This filter requires extra checks
                 project = get_or_404(Project, project_id)
                 self.check_object_permissions(self.request, project)
                 iam_context = get_iam_context(self.request, project)
+
+                # Include nested settings
+                queryset = queryset.filter(
+                    Q(task__project__id=project_id) | Q(project__id=project_id)
+                ).distinct()
+
+            if parent_type := self.request.query_params.get(SETTINGS_PARENT_TYPE_PARAM_NAME, None):
+                if parent_type == QualitySettingsParentType.TASK:
+                    queryset = queryset.filter(task__isnull=False)
+                elif parent_type == QualitySettingsParentType.PROJECT:
+                    queryset = queryset.filter(project__isnull=False)
+                else:
+                    raise ValidationError(
+                        "Unexpected '{}' filter value '{}'. Valid values are: {}".format(
+                            SETTINGS_PARENT_TYPE_PARAM_NAME,
+                            parent_type,
+                            ", ".join(m[0] for m in QualitySettingsParentType.choices()),
+                        )
+                    )
 
             permissions = QualitySettingPermission.create_scope_list(
                 self.request, iam_context=iam_context

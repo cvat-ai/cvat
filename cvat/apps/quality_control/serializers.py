@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import textwrap
+from enum import Enum
 
 from rest_framework import serializers
 
@@ -90,6 +91,18 @@ class QualityReportCreateSerializer(serializers.Serializer):
     def validate(self, attrs):
         field_validation.require_one_of_fields(attrs, ["task_id", "project_id"])
         return attrs
+
+
+class QualitySettingsParentType(str, Enum):
+    TASK = "task"
+    PROJECT = "project"
+
+    def __str__(self) -> str:
+        return self.value
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
 
 
 class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
