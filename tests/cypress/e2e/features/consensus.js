@@ -5,19 +5,19 @@
 /// <reference types="cypress" />
 
 context('Basic manipulations with consensus job replicas', () => {
-    before(() => {
-        cy.visit('auth/login');
-        cy.login();
-        cy.get('.cvat-create-task-dropdown').click();
-        cy.get('.cvat-create-task-button').should('be.visible').click();
-    });
-    describe('Consensus job creation', () => {
-        // const jobType = 'consensus_replica';
+    describe('Consensus task creation', () => {
         const maxReplicas = 10;
         const taskName = 'Test consensus';
         const labelName = 'test';
         const serverFiles = ['archive.zip'];
         const replicas = 3;
+
+        before(() => {
+            cy.visit('auth/login');
+            cy.login();
+            cy.get('.cvat-create-task-dropdown').click();
+            cy.get('.cvat-create-task-button').should('be.visible').click();
+        });
         it('Check allowed number of replicas', () => {
             // Fill the fields to create the task
             cy.get('#name').type(taskName);
