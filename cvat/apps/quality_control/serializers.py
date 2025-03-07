@@ -210,3 +210,16 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
             if field_name.endswith("_threshold") or field_name in ["oks_sigma", "line_thickness"]:
                 extra_kwargs.setdefault(field_name, {}).setdefault("min_value", 0)
                 extra_kwargs.setdefault(field_name, {}).setdefault("max_value", 1)
+
+    def get_extra_kwargs(self):
+        defaults = models.QualitySettings.get_defaults()
+
+        extra_kwargs = super().get_extra_kwargs()
+
+        for param_name in defaults.keys() | extra_kwargs.keys():
+            param_kwargs: dict = extra_kwargs.setdefault(param_name, {})
+
+            if param_name in defaults:
+                param_kwargs.setdefault("default", defaults[param_name])
+
+        return extra_kwargs
