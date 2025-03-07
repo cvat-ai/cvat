@@ -29,14 +29,38 @@ class AnnotationConflictSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class QualityReportTasksSummarySerializer(serializers.Serializer):
+    total = serializers.IntegerField(
+        help_text="Total task count. Included count = total - custom - non_configured - excluded"
+    )
+    custom = serializers.IntegerField(help_text="Tasks with individual settings")
+    not_configured = serializers.IntegerField(help_text="Tasks with validation not configured")
+    excluded = serializers.IntegerField(help_text="Tasks excluded by filters")
+
+
+class QualityReportJobsSummarySerializer(serializers.Serializer):
+    total = serializers.IntegerField(
+        help_text="Non-GT jobs in included tasks. Included count = total - excluded"
+    )
+    excluded = serializers.IntegerField(help_text="Jobs excluded by filters")
+    not_checkable = serializers.IntegerField(help_text="Included jobs without validation frames")
+
+
 class QualityReportSummarySerializer(serializers.Serializer):
-    frame_count = serializers.IntegerField()
-    frame_share = serializers.FloatField()
+    total_frames = serializers.IntegerField()
+    frame_count = serializers.IntegerField(
+        required=False, help_text="Deprecated. Use 'validation_frames' instead"
+    )
+    validation_frames = serializers.IntegerField(source="frame_count")
+    frame_share = serializers.FloatField(
+        required=False, help_text="Deprecated. Use 'validation_frame_share' instead"
+    )
+    validation_frame_share = serializers.FloatField(source="frame_share")
+
     conflict_count = serializers.IntegerField()
     warning_count = serializers.IntegerField()
     error_count = serializers.IntegerField()
     conflicts_by_type = serializers.DictField(child=serializers.IntegerField())
-    total_frames = serializers.IntegerField()
 
     valid_count = serializers.IntegerField(source="annotations.valid_count")
     ds_count = serializers.IntegerField(source="annotations.ds_count")
@@ -46,6 +70,13 @@ class QualityReportSummarySerializer(serializers.Serializer):
     accuracy = serializers.FloatField(source="annotations.accuracy")
     precision = serializers.FloatField(source="annotations.precision")
     recall = serializers.FloatField(source="annotations.recall")
+
+    tasks = QualityReportTasksSummarySerializer(
+        required=False, help_text="Included only in project reports"
+    )
+    jobs = QualityReportJobsSummarySerializer(
+        required=False, help_text="Included only in task and project reports"
+    )
 
 
 class QualityReportTargetSerializer(serializers.ChoiceField):
