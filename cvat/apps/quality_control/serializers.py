@@ -115,6 +115,7 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
             "id",
             "task_id",
             "project_id",
+            "job_filter",
             "inherit",
             "target_metric",
             "target_metric_threshold",
@@ -224,6 +225,18 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 extra_kwargs.setdefault(field_name, {}).setdefault("min_value", 0)
                 extra_kwargs.setdefault(field_name, {}).setdefault("max_value", 1)
 
+    job_filter = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        help_text=textwrap.dedent(
+            """\
+        JSON expression filter for included jobs. Available filter terms: {}
+        """.format(
+                Meta.model.get_job_filter_terms()
+            )
+        ),
+    )
+
     def get_extra_kwargs(self):
         defaults = models.QualitySettings.get_defaults()
 
@@ -236,3 +249,6 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 param_kwargs.setdefault("default", defaults[param_name])
 
         return extra_kwargs
+
+    def validate_job_filter(self, value):
+        return value or []

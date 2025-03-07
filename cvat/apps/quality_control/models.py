@@ -284,6 +284,8 @@ class QualitySettings(TimestampedModel):
 
     inherit = models.BooleanField(default=True)
 
+    job_filter = models.JSONField(default=list)
+
     iou_threshold = models.FloatField()
     oks_sigma = models.FloatField()
     line_thickness = models.FloatField()
@@ -347,3 +349,7 @@ class QualitySettings(TimestampedModel):
             return self.project.organization_id
 
         assert False
+
+    @classmethod
+    def get_job_filter_terms(cls) -> list[str]:
+        return []

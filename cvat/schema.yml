@@ -10078,6 +10078,10 @@ components:
     PatchedQualitySettingsRequest:
       type: object
       properties:
+        job_filter:
+          type: string
+          description: |
+            JSON expression filter for included jobs. Available filter terms: []
         inherit:
           type: boolean
           description: |
@@ -10635,6 +10639,10 @@ components:
         project_id:
           type: integer
           nullable: true
+        job_filter:
+          type: string
+          description: |
+            JSON expression filter for included jobs. Available filter terms: []
         inherit:
           type: boolean
           description: |
@@ -10788,6 +10796,10 @@ components:
         project_id:
           type: integer
           nullable: true
+        job_filter:
+          type: string
+          description: |
+            JSON expression filter for included jobs. Available filter terms: []
         inherit:
           type: boolean
           description: |
