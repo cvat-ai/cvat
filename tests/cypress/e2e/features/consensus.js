@@ -7,20 +7,13 @@
 
 
 context('Basic manipulations with consensus job replicas', () => {
-    const maxReplicas = 10;
-    const taskName = 'Test consensus';
-    const labelName = 'test';
-    const serverFiles = ['archive.zip'];
-    const replicas = 3;
     const jobIDs = [];
-    describe('Consensus task creation', () => {
-        before(() => {
-            cy.visit('auth/login');
-            cy.login();
-            cy.get('.cvat-create-task-dropdown').click();
-            cy.get('.cvat-create-task-button').should('be.visible').click();
-        });
-
+    const labelName = 'test4r';
+    const replicas = 4;
+    describe('Consensus job creation', () => {
+        const maxReplicas = 10;
+        const taskName = 'Test consensus';
+        const serverFiles = ['archive.zip'];
         it('Check allowed number of replicas', () => {
             // Fill the fields to create the task
             cy.get('#name').type(taskName);
@@ -82,6 +75,7 @@ context('Basic manipulations with consensus job replicas', () => {
             });
         });
     });
+
     describe('Cosensus jobs merging', () => {
         const shape = {
             objectType: 'shape',
