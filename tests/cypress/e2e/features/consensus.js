@@ -1,12 +1,18 @@
-/* eslint-disable  */
 // Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
+import { translatePoints } from '../../support/utils';
 
 context('Basic manipulations with consensus job replicas', () => {
+    before(() => {
+        cy.visit('auth/login');
+        cy.login();
+        cy.get('.cvat-create-task-dropdown').click();
+        cy.get('.cvat-create-task-button').should('be.visible').click();
+    });
     const jobIDs = [];
     const labelName = 'test4r';
     const replicas = 4;
@@ -68,8 +74,10 @@ context('Basic manipulations with consensus job replicas', () => {
             }
             cy.get('.cvat-job-item').then((jobItems) => {
                 const sourceJobId = parseJobId(jobItems[0]);
+                jobIDs.push(sourceJobId);
                 for (let i = 1; i <= replicas; i++) {
                     const jobId = parseJobId(jobItems[i]);
+                    jobIDs.push(jobId);
                     expect(jobId).equals(sourceJobId + i);
                 }
             });
