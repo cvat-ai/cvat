@@ -20,7 +20,6 @@ context('Basic manipulations with consensus job replicas', () => {
         const maxReplicas = 10;
         const taskName = 'Test consensus';
         const serverFiles = ['archive.zip'];
-
         it('Check allowed number of replicas', () => {
             // Fill the fields to create the task
             cy.get('#name').type(taskName);
@@ -84,6 +83,7 @@ context('Basic manipulations with consensus job replicas', () => {
             });
         });
     });
+
     describe('Cosensus jobs merging', () => {
         const shape = {
             objectType: 'shape',
