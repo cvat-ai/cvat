@@ -124,6 +124,11 @@ context('Basic manipulations with consensus job replicas', () => {
             }).as('settingsMeta');
             cy.contains('button', 'Save').click();
             cy.wait('@settingsMeta');
+            cy.get('.ant-notification-notice-message')
+                .should('be.visible')
+                .invoke('text')
+                .should('eq', 'Settings have been updated');
+            cy.closeNotification('.ant-notification-notice-closable');
 
             // Forms and invalid saving
             cy.get('#quorum').then(([$el]) => {
@@ -141,7 +146,9 @@ context('Basic manipulations with consensus job replicas', () => {
             cy.then(() => {
                 expect(requestCount).to.equal(1);
             });
-            // FIXME: this command is illegible, refactor this
+            cy.get('.ant-notification-notice').should('not.exist');
+
+            // Go back to task page
             cy.get('.ant-btn-default').should('be.visible').click();
         });
 
