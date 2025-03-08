@@ -164,14 +164,14 @@ context('Basic manipulations with consensus job replicas', () => {
             ) {
                 shapes.push(s);
                 cy.headlessCreateObjects([s], jobID); // only 'in progress' jobs can be merged
-                // cy.headlessUpdateJob(jobID, { state: 'in progress' });
+                cy.headlessUpdateJob(jobID, { state: 'in progress' });
                 const points = translatePoints(s.points, delta, 'x');
                 s = { ...s, points };
             }
-            // Should trigger merging
+            // Merging of consensus job should go without errors
             cy.mergeConsensusJob();
-            cy.get('.cvat-notification-notice-consensus-merge-task-failed').should('not.exist');
-            cy.get('.ant-notification-notice-info')
+            cy.get('.cvat-notification-notice-consensus-merge-job-failed').should('not.exist');
+            cy.get('.ant-notification-notice-message')
                 .should('be.visible')
                 .invoke('text')
                 .should('eq', `Consensus job #${consensusJobID} has been merged`);

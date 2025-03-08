@@ -450,6 +450,14 @@ Cypress.Commands.add('headlessCreateJob', (jobSpec) => {
     });
 });
 
+Cypress.Commands.add('headlessUpdateJob', (jobID, updateJobParameters) => {
+    cy.window().then(async ($win) => {
+        const job = (await $win.cvat.jobs.get({ jobID }))[0];
+        const result = await job.save(updateJobParameters);
+        return cy.wrap(result);
+    });
+});
+
 Cypress.Commands.add('openTask', (taskName, projectSubsetFieldValue) => {
     cy.contains('strong', new RegExp(`^${taskName}$`))
         .parents('.cvat-tasks-list-item')
