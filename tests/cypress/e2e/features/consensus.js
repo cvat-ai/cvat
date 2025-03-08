@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
-/// <reference types="../../support" />
 
 import { translatePoints } from '../../support/utils';
 
@@ -154,7 +153,6 @@ context('Basic manipulations with consensus job replicas', () => {
 
         it('Create annotations and check that job replicas merge correctly', () => {
             // Create annotations for job replicas
-            const shapes = [shape];
             const delta = 50;
             const [consensusJobID, ...replicaJobIDs] = jobIDs;
             for (let i = 0, s = shape; i < replicas; i++) {
@@ -162,7 +160,6 @@ context('Basic manipulations with consensus job replicas', () => {
                 cy.headlessUpdateJob(replicaJobIDs[i], { state: 'in progress' });
                 const points = translatePoints(s.points, delta, 'x');
                 s = { ...s, points };
-                shapes.push(s);
             }
             // Merging of consensus job should go without errors in network and UI
             cy.mergeConsensusJob();
@@ -175,7 +172,6 @@ context('Basic manipulations with consensus job replicas', () => {
 
             // Shapes in consensus job and a job replica in the middle should be equal
             const middle = Math.floor(jobIDs.length / 2);
-            const middleReplicaIdx = middle;
             const consensusRect = {};
             cy.openJob(0, false).then(() => {
                 cy.get('.cvat_canvas_shape').trigger('mousemove');
@@ -189,15 +185,15 @@ context('Basic manipulations with consensus job replicas', () => {
                     .invoke('text')
                     .should('include', `${labelName}`)
                     .and('include', 'consensus');
-                cy.go('back');
             });
-            // After returning to task page, job should be 'completed'
+            cy.go('back'); // go to previous page
+            // After returning to task page, consensus job should be 'completed'
             cy.get('.cvat-job-item').first()
                 .find('.cvat-job-item-state').first()
                 .invoke('text')
                 .should('eq', 'completed');
             cy.contains('.cvat-job-item', `Job #${jobIDs[middle]}`).scrollIntoView();
-            cy.openJob(middleReplicaIdx, false).then(() => {
+            cy.openJob(middle, false).then(() => {
                 cy.get('.cvat_canvas_shape').then(($el) => {
                     expect($el.attr('x')).to.equal(consensusRect.x);
                     expect($el.attr('y')).to.equal(consensusRect.y);
