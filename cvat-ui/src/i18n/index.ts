@@ -8,8 +8,13 @@ import {
     fallbackLng,
     defaultNS,
     namespaceList,
+    localeOptions,
 } from './config';
 
+export {
+    namespaceList,
+    localeOptions,
+};
 // make sure only init one time
 let firstRun = true;
 

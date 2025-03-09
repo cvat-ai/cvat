@@ -65,10 +65,11 @@
     justify-content: flex-end;
     align-items: center;
 
-    > a.ant-btn {
+    > a.ant-btn,
+    .cvat-switch-i18n-locale-button {
         span[role='img'] {
-            font-size: 24px;
-            line-height: 24px;
+            font-size: 20px;
+            line-height: 20px;
         }
     }
 }
