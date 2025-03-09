@@ -369,29 +369,27 @@ Here is an example of the payload for the `delete:task` event:
 }
 {{< /scroll-code >}}
 
-## Webhook secret
+## Webhook Secret
 
-To validate that the webhook requests originate from CVAT, include a `secret` during the webhook creation process.
+To validate that webhook requests originate from CVAT, include a `secret` during the webhook creation process. This helps ensure the authenticity of incoming webhook requests.
 
-When a `secret` is provided for the webhook, CVAT includes an `X-Signature-256` in the request header of the webhook.
+When a `secret` is provided, CVAT includes an `X-Signature-256` header in the webhook request. This header contains a SHA256 hash of the request body, signed using the secret key.
 
-CVAT uses the SHA256 hash function to encode the request
-body for the webhook and places the resulting hash into the header.
+### How It Works
+1. CVAT computes the SHA256 HMAC of the request body using the `secret`.
+2. The computed hash is included in the `X-Signature-256` header.
+3. The webhook receiver verifies the request by recalculating the hash using the same `secret` and comparing it with the received signature.
 
-The webhook recipient can verify the source of the request
-by comparing the received `X-Signature-256` value with the expected value.
-
-Here's an example of a header value for a request with an empty body and `secret = mykey`:
+Here’s an example of the `X-Signature-256` header for a request with an empty body and `secret = mykey`:
 
 ```
 X-Signature-256: e1b24265bf2e0b20c81837993b4f1415f7b68c503114d100a40601eca6a2745f
 ```
 
-Here is an example of how you can verify a webhook signature in your webhook receiver service:
+### Verifying Webhook Signature
+You can verify the webhook signature in your webhook receiver service using Python:
 
 ```python
-# webhook_receiver.py
-
 import hmac
 from hashlib import sha256
 from flask import Flask, request
@@ -400,48 +398,52 @@ app = Flask(__name__)
 
 @app.route("/webhook", methods=["POST"])
 def webhook():
-    signature = (
-        "sha256="
-        + hmac.new("mykey".encode("utf-8"), request.data, digestmod=sha256).hexdigest()
-    )
+    secret = "mykey".encode("utf-8")
+    received_signature = request.headers.get("X-Signature-256", "")
+    
+    expected_signature = "sha256=" + hmac.new(secret, request.data, digestmod=sha256).hexdigest()
+    
+    if hmac.compare_digest(received_signature, expected_signature):
+        return "Valid Signature", 200
+    return "Invalid Signature", 403
 
-    if hmac.compare_digest(request.headers["X-Signature-256"], signature):
-        return app.response_class(status=200)
-
-    raise app.response_class(status=500, response="Signatures didn't match!")
+if __name__ == "__main__":
+    app.run(port=5000)
 ```
+
+#### Alternative Verification Tools
+You can test webhook signature verification using tools like:
+- **Beeceptor** ([beeceptor.com](https://beeceptor.com/)) – Quickly inspect and debug webhook requests.
+- **Typed Webhook** ([typedwebhook.tools](https://typedwebhook.tools/)) – Provides a structured way to test webhooks.
 
 ## Ping Webhook
 
-To confirm the proper configuration of your webhook and ensure that CVAT can establish
-a connection with the target URL, use the **Ping** webhook feature.
+The **Ping** webhook feature helps confirm that CVAT can successfully send webhook events to the configured target URL.
 
-![Ping Webhook ](/images/ping_webhook.jpg)
+![Ping Webhook](/images/ping_webhook.jpg)
 
-1. Click the **Ping** button in the user interface (or send a `POST /webhooks/{id}/ping` request through API).
-2. CVAT will send a webhook alert to the specified target URL with basic information about the webhook.
+### How to Use
+1. Click the **Ping** button in the CVAT UI.
+2. Alternatively, send a `POST /webhooks/{id}/ping` request via the API.
+3. CVAT will send a webhook event to the target URL with basic details.
 
-Ping webhook payload:
+### Ping Webhook Payload
 
-<!--lint disable maximum-line-length-->
+| Key       | Type     | Description                                                                 |
+|-----------|---------|-----------------------------------------------------------------------------|
+| `event`   | `string` | Always set to `ping`.                                                      |
+| `webhook` | `object` | Contains webhook details (refer to Swagger docs for a complete structure). |
+| `sender`  | `object` | Includes information about the user who triggered the ping.                |
 
-| Key       | Type     | Description                                                                                        |
-| --------- | -------- | -------------------------------------------------------------------------------------------------- |
-| `event`   | `string` | The value is always `ping`.                                                                        |
-| `webhook` | `object` | Complete information about the webhook. See the Swagger docs for a detailed description of fields. |
-| `sender`  | `object` | Information about the user who initiated the `ping` on the webhook.                                |
+Example `ping` event payload:
 
-<!--lint enable maximum-line-length-->
-
-Here is an example of a payload for the `ping` event:
-
-{{< scroll-code lang="json" >}}
+```json
 {
    "event": "ping",
     "webhook": {
         "id": 7,
-        "url": "<http://localhost:8080/api/webhooks/7>",
-        "target_url": "<https://example.com>",
+        "url": "http://localhost:8080/api/webhooks/7",
+        "target_url": "https://example.com",
         "description": "",
         "type": "project",
         "content_type": "application/json",
@@ -450,7 +452,7 @@ Here is an example of a payload for the `ping` event:
         "created_date": "2022-10-04T08:05:23.007381Z",
         "updated_date": "2022-10-04T08:05:23.007395Z",
         "owner": {
-            "url": "<http://localhost:8080/api/users/1>",
+            "url": "http://localhost:8080/api/users/1",
             "id": 1,
             "username": "admin1",
             "first_name": "Admin",
@@ -458,7 +460,7 @@ Here is an example of a payload for the `ping` event:
         },
         "project": 7,
         "organization": null,
-        "events": \[
+        "events": [
             "create:comment",
             "create:issue",
             "create:task",
@@ -470,34 +472,29 @@ Here is an example of a payload for the `ping` event:
             "update:job",
             "update:project",
             "update:task"
-        \],
+        ],
         "last_status": 200,
         "last_delivery_date": "2022-10-04T11:04:52.538638Z"
     },
     "sender": {
-        "url": "<http://localhost:8080/api/users/1>",
+        "url": "http://localhost:8080/api/users/1",
         "id": 1,
         "username": "admin1",
         "first_name": "Admin",
         "last_name": "First"
     }
 }
-{{< /scroll-code >}}
+```
 
-## Webhooks with API calls
+## Webhooks with API Calls
 
-To create webhook via an API call,
-see [Swagger documentation](https://app.cvat.ai/api/docs).
+You can create and manage webhooks via API calls. Refer to the [Swagger API documentation](https://app.cvat.ai/api/docs) for details.
 
-For examples,
-see [REST API tests](https://github.com/cvat-ai/cvat/blob/develop/tests/python/rest_api/test_webhooks.py).
+For implementation examples, check the [REST API tests](https://github.com/cvat-ai/cvat/blob/develop/tests/python/rest_api/test_webhooks.py).
 
-## Example of setup and use
+## Example: Setting Up Email Alerts via Webhooks
 
-
-This video demonstrates setting up email alerts for a project using Zapier and Gmail.
-
-<!--lint disable maximum-line-length-->
+This video demonstrates configuring email alerts for a project using Zapier and Gmail:
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/x87CsGsd-3I" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 
