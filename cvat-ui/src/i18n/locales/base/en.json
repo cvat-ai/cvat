@@ -16,6 +16,7 @@
     "Change password": "Change password",
     "repository": "repository",
     "guide": "guide",
+    "Switch locale": "Switch locale",
     "validationPatterns": {
         "validatePasswordLength": "Password must have at least 8 characters",
         "passwordContainsNumericCharacters": "Password must have at least 1 numeric characters",

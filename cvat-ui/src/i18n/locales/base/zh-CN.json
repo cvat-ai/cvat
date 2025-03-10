@@ -39,6 +39,7 @@
     "Change password": "修改密码",
     "repository": "代码仓库",
     "guide": "指南",
+    "Switch locale": "切换语言",
     "validationPatterns": {
         "validatePasswordLength": "密码至少需要 8 个字符",
         "passwordContainsNumericCharacters": "密码必须包含至少 1 个数字",
