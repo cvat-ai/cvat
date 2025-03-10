@@ -2,11 +2,15 @@
 //
 // SPDX-License-Identifier: MIT
 
-// eslint-disable-next-line no-use-before-define
+/* eslint-disable
+    import/no-extraneous-dependencies,
+    security/detect-non-literal-fs-filename,
+    no-use-before-define
+*/
+
 exports.createZipArchive = createZipArchive;
 
 const archiver = require('archiver');
-// eslint-disable-next-line import/no-extraneous-dependencies
 const fs = require('fs-extra');
 
 function createZipArchive(args) {
