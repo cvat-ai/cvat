@@ -294,8 +294,7 @@ class DatasetUploader(Uploader):
         params = {"format": format_name, "filename": filename.name}
 
         if conv_mask_to_poly is not None:
-            value = "true" if conv_mask_to_poly else "false"
-            params["conv_mask_to_poly"] = value
+            params["conv_mask_to_poly"] = "true" if conv_mask_to_poly else "false"
 
         response = self.upload_file(
             url, filename, pbar=pbar, query_params=params, meta={"filename": params["filename"]}
