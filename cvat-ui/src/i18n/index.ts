@@ -112,13 +112,14 @@ export function onLanguageChanged(callback: (lng: string, i18n: I18next) => void
  *     c: {x: 'xc', y: 2},
  * }
  * @params {Object} target targetObject
+ * @params {string| string[]} path
  * @params {string} key
  * @params {string} ns
  * @return {OffFunction} OffFunction
  */
 export function patchPathForLocaleOn(
     target: Record<any, any>,
-    path: string,
+    path: string | string[],
     key: string,
     ns = defaultNS,
 ): OffFunction {
@@ -127,11 +128,14 @@ export function patchPathForLocaleOn(
         if (!info) {
             return;
         }
+        const pathList = Array.isArray(path) ? path : [path];
         Object.entries(info).forEach(([infoKey, value]) => {
             if (infoKey in target) {
-                if (has(target[infoKey], path)) {
-                    set(target[infoKey], path, value);
-                }
+                pathList.forEach((p) => {
+                    if (has(target[infoKey], p)) {
+                        set(target[infoKey], p, value);
+                    }
+                });
             }
         });
     });
