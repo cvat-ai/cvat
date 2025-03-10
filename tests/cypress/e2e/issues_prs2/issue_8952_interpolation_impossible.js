@@ -4,6 +4,8 @@
 
 /// <reference types="cypress" />
 
+import { translatePoints } from '../../support/utils';
+
 const taskName = '5frames';
 const labelName = 'label';
 const attrName = 'attr1';
@@ -26,26 +28,6 @@ const rect = [
     30 + 34,
     30 + 23,
 ];
-
-function translatePoints(points, delta, axis) {
-    if (axis === 'x') {
-        return [
-            points[0] + delta,
-            points[1],
-            points[2] + delta,
-            points[3],
-        ];
-    }
-    if (axis === 'y') {
-        return [
-            points[0],
-            points[1] + delta,
-            points[2],
-            points[3] + delta,
-        ];
-    }
-    return points;
-}
 
 context('Create any track, check if track works correctly after deleting some frames', () => {
     function readShapeCoords() {
