@@ -6,5 +6,15 @@
         "Sign in": "Sign in",
         "Email or username": "Email or username",
         "Please specify a password": "Please specify a password"
+    },
+    "registerForm": {
+        "Please specify a first name": "Please specify a first name",
+        "Please specify a last name": "Please specify a last name",
+        "The input is not valid E-mail!": "The input is not valid E-mail!",
+        "Please specify an email address": "Please specify an email address",
+        "Please specify a username": "Please specify a username",
+        "Please input your password!": "Please input your password!",
+        "You must accept to continue!": "You must accept to continue!",
+        "Create account": "Create account"
     }
 }

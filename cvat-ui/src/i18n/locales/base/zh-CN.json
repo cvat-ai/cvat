@@ -24,5 +24,9 @@
     "logout": "登出",
     "invitation_other": "邀请",
     "Connecting": "连接中",
-    "Password": "密码"
+    "Password": "密码",
+    "First name": "名",
+    "Last name": "姓",
+    "Email": "邮箱",
+    "Username": "用户名"
 }

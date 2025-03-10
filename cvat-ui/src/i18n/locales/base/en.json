@@ -2,5 +2,9 @@
     "Cancel": "Cancel",
     "Connecting": "Connecting",
     "OK": "OK",
-    "Password": "Password"
+    "Password": "Password",
+    "First name": "First Name",
+    "Last name": "Last name",
+    "Email": "Email",
+    "Username": "Username"
 }
