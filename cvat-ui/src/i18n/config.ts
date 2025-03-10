@@ -20,6 +20,7 @@ export const defaultNS = 'base';
 export const namespaceList = [
     'base',
     'auth',
+    'header',
 ];
 
 export const fallbackLng = {

@@ -1,6 +1,9 @@
 {
+    "Project": "Project",
+    "Projects": "Projects",
     "Cancel": "Cancel",
     "Connecting": "Connecting",
+    "About": "About",
     "OK": "OK",
     "Password": "Password",
     "First name": "First Name",
@@ -8,6 +11,11 @@
     "Email": "Email",
     "Username": "Username",
     "Send": "Send",
+    "Organization": "Organization",
+    "Settings": "Settings",
+    "Change password": "Change password",
+    "repository": "repository",
+    "guide": "guide",
     "validationPatterns": {
         "validatePasswordLength": "Password must have at least 8 characters",
         "passwordContainsNumericCharacters": "Password must have at least 1 numeric characters",

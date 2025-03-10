@@ -1,0 +1,14 @@
+{
+    "Could not receive a list of organizations": "无法获取组织列表",
+    "about": {
+        "What's new": "新内容",
+        "MIT License": "MIT 协议",
+        "Find us on Discord": "去 Discord 上找我们",
+        "Server version": "服务器版本:",
+        "UI version": "UI 版本"
+    },
+    "Admin page": "管理页",
+    "Switch organization": "切换组织",
+    "Personal workspace": "个人空间",
+    "Click to open": "点击打开"
+}
