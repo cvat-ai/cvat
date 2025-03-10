@@ -60,7 +60,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
         objectVisibilityThreshold: settings.objectVisibilityThreshold * 100,
         panopticComparison: settings.panopticComparison,
 
-        jobSelectionFilter: settings.jobSelectionFilter,
+        jobFilter: settings.jobFilter,
     };
 
     const targetMetricDescription = `${settings.descriptions.targetMetric
@@ -217,7 +217,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
             <Row>
                 <Col span={12}>
                     <Form.Item
-                        name='jobsSelectionFilter'
+                        name='jobFilter'
                         label='Job selection filter'
                         trigger='onApplyFilter'
                     >

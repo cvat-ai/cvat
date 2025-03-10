@@ -39,7 +39,7 @@ export default class QualitySettings {
     #panopticComparison: boolean;
     #compareAttributes: boolean;
     #emptyIsAnnotated: boolean;
-    #jobSelectionFilter: string;
+    #jobFilter: string;
     #inherit: boolean;
     #descriptions: Record<string, string>;
 
@@ -63,7 +63,7 @@ export default class QualitySettings {
         this.#panopticComparison = initialData.panoptic_comparison;
         this.#compareAttributes = initialData.compare_attributes;
         this.#emptyIsAnnotated = initialData.empty_is_annotated;
-        this.#jobSelectionFilter = initialData.job_selection_filter || '';
+        this.#jobFilter = initialData.job_filter || '';
         this.#inherit = initialData.inherit;
         this.#descriptions = initialData.descriptions;
     }
@@ -212,12 +212,12 @@ export default class QualitySettings {
         this.#emptyIsAnnotated = newVal;
     }
 
-    get jobSelectionFilter(): string {
-        return this.#jobSelectionFilter;
+    get jobFilter(): string {
+        return this.#jobFilter;
     }
 
-    set jobSelectionFilter(newVal: string) {
-        this.#jobSelectionFilter = newVal;
+    set jobFilter(newVal: string) {
+        this.#jobFilter = newVal;
     }
 
     get inherit(): boolean {
@@ -257,7 +257,7 @@ export default class QualitySettings {
             target_metric_threshold: this.#targetMetricThreshold,
             max_validations_per_job: this.#maxValidationsPerJob,
             empty_is_annotated: this.#emptyIsAnnotated,
-            job_selection_filter: this.#jobSelectionFilter,
+            job_filter: this.#jobFilter,
             inherit: this.#inherit,
         };
 

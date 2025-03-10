@@ -275,7 +275,7 @@ export interface SerializedQualitySettingsData {
     empty_is_annotated?: boolean;
     descriptions?: Record<string, string>;
     inherit?: boolean;
-    job_selection_filter?: string;
+    job_filter?: string;
 }
 
 export interface APIQualityConflictsFilter extends APICommonFilterParams {

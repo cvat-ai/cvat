@@ -64,6 +64,8 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
 
         newSettings.panopticComparison = values.panopticComparison;
 
+        newSettings.jobFilter = values.jobFilter;
+
         newSettings.inherit = values.inherit;
     }, [form]);
 
