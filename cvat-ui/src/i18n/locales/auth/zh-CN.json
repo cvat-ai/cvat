@@ -1,4 +1,10 @@
 {
-    "New user?": "新用户？",
-    "Create an account": "创建帐号"
+    "loginForm": {
+        "New user?": "新用户？",
+        "Create an account": "创建帐号",
+        "Forgot password?": "忘记密码？",
+        "Sign in": "登录",
+        "Email or username": "邮箱或用户名",
+        "Please specify a password": "请输入密码"
+    }
 }

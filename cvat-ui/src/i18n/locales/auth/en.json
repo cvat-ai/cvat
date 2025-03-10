@@ -1,4 +1,10 @@
 {
-    "New user?": "New User?",
-    "Create an account": "Create an account"
+    "loginForm": {
+        "New user?": "New User?",
+        "Create an account": "Create an account",
+        "Forgot password?": "Forgot password?",
+        "Sign in": "Sign in",
+        "Email or username": "Email or username",
+        "Please specify a password": "Please specify a password"
+    }
 }
