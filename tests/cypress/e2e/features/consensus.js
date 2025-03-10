@@ -7,15 +7,15 @@
 import { translatePoints } from '../../support/utils';
 
 context('Basic manipulations with consensus job replicas', () => {
+    const jobIDs = [];
+    const labelName = 'Consensus job merging';
+    const replicas = 4;
     before(() => {
         cy.visit('auth/login');
         cy.login();
         cy.get('.cvat-create-task-dropdown').click();
         cy.get('.cvat-create-task-button').should('be.visible').click();
     });
-    const jobIDs = [];
-    const labelName = 'test4r';
-    const replicas = 4;
     describe('Consensus job creation', () => {
         const maxReplicas = 10;
         const taskName = 'Test consensus';
