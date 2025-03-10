@@ -169,3 +169,11 @@ Cypress.Commands.add('removeMemberFromOrganization', (username) => {
         .contains('button', 'Yes, remove')
         .click();
 });
+
+Cypress.Commands.add('headlessCreateOrganization', (data = {}) => {
+    cy.window().then(async ($win) => {
+        const organization = new $win.cvat.classes.Organization({ ...data });
+        const result = await organization.save();
+        return cy.wrap(result);
+    });
+});
