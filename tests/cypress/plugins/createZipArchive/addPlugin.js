@@ -10,9 +10,9 @@ const archiver = require('archiver');
 const fs = require('fs-extra');
 
 function createZipArchive(args) {
-    const { directoryToArchive } = args;
+    const { directoryToArchive, archivePath } = args;
     const { level } = args;
-    const output = fs.createWriteStream(args.arhivePath);
+    const output = fs.createWriteStream(archivePath);
     const archive = archiver('zip', {
         gzip: true,
         zlib: { level },
@@ -27,5 +27,5 @@ function createZipArchive(args) {
     archive.directory(`${directoryToArchive}/`, false);
     archive.finalize();
 
-    return fs.pathExists(archive);
+    return fs.pathExists(archivePath);
 }
