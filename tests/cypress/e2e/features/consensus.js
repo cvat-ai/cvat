@@ -1,17 +1,19 @@
+/* eslint-disable  */
 // Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
-context('Basic manipulations with consensus job replicas', () => {
-    describe('Consensus task creation', () => {
-        const maxReplicas = 10;
-        const taskName = 'Test consensus';
-        const labelName = 'test';
-        const serverFiles = ['archive.zip'];
-        const replicas = 3;
 
+context('Basic manipulations with consensus job replicas', () => {
+    const maxReplicas = 10;
+    const taskName = 'Test consensus';
+    const labelName = 'test';
+    const serverFiles = ['archive.zip'];
+    const replicas = 3;
+    const jobIDs = [];
+    describe('Consensus task creation', () => {
         before(() => {
             cy.visit('auth/login');
             cy.login();
@@ -78,6 +80,101 @@ context('Basic manipulations with consensus job replicas', () => {
                     expect(jobId).equals(sourceJobId + i);
                 }
             });
+        });
+    });
+    describe('Cosensus jobs merging', () => {
+        const shape = {
+            objectType: 'shape',
+            labelName,
+            frame: 0,
+            type: 'rectangle',
+            points: [250, 64, 491, 228],
+            occluded: false,
+        };
+        it("Check new merge buttons exist and are visible. Trying to merge 'new' jobs should trigger errors", () => {
+            // Merge all consensus jobs in task
+            cy.mergeConsensusTask(400);
+            cy.get('.cvat-notification-notice-consensus-merge-task-failed')
+                .should('be.visible')
+                .invoke('text')
+                .should('include', 'Could not merge the task');
+            cy.closeNotification('.cvat-notification-notice-consensus-merge-task-failed');
+
+            // Merge one consensus job
+            cy.mergeConsensusJob(400);
+            cy.get('.cvat-notification-notice-consensus-merge-task-failed')
+                .should('be.visible')
+                .invoke('text').should('include', 'Could not merge the job');
+            cy.closeNotification('.cvat-notification-notice-consensus-merge-task-failed');
+        });
+
+        it('Check consensus management page', () => {
+            const defaultQuorum = 50;
+            const defaultIoU = 40;
+            cy.contains('button', 'Actions').click();
+            cy.contains('Consensus management').should('be.visible').click();
+            cy.get('.cvat-consensus-management-inner').should('be.visible');
+            // Save settings, confirm request is sent
+            let requestCount = 0;
+            cy.intercept('PATCH', 'api/consensus/settings/**', () => {
+                requestCount++;
+            }).as('settingsMeta');
+            cy.contains('button', 'Save').click();
+            cy.wait('@settingsMeta');
+            cy.get('.ant-notification-notice-message')
+                .should('be.visible')
+                .invoke('text')
+                .should('eq', 'Settings have been updated');
+            cy.closeNotification('.ant-notification-notice-closable');
+
+            // Forms and invalid saving
+            cy.get('#quorum').then(([$el]) => {
+                cy.wrap($el).invoke('val').should('eq', `${defaultQuorum}`);
+                cy.wrap($el).clear();
+            });
+            cy.get('.ant-form-item-explain-error').should('be.visible');
+            cy.contains('button', 'Save').click();
+            cy.get('#iouThreshold').then(([$el]) => {
+                cy.wrap($el).invoke('val').should('eq', `${defaultIoU}`);
+                cy.wrap($el).clear();
+            });
+            cy.get('.ant-form-item-explain-error').should('be.visible');
+            cy.contains('button', 'Save').click();
+            cy.then(() => {
+                expect(requestCount).to.equal(1);
+            });
+            cy.get('.ant-notification-notice').should('not.exist');
+
+            // Go back to task page
+            cy.get('.ant-btn-default').should('be.visible').click();
+        });
+
+        it('Create annotations and check that job replicas merge correctly', () => {
+            // Create annotations for job replicas
+            const shapes = [];
+            const delta = 50;
+            const consensusJobID = jobIDs[0];
+            for (
+                let i = 1, jobID = jobIDs[i], s = shape;
+                i <= replicas;
+                i++, jobID = jobIDs[i]
+            ) {
+                shapes.push(s);
+                cy.headlessCreateObjects([s], jobID); // only 'in progress' jobs can be merged
+                // cy.headlessUpdateJob(jobID, { state: 'in progress' });
+                const points = translatePoints(s.points, delta, 'x');
+                s = { ...s, points };
+            }
+            // Should trigger merging
+            cy.mergeConsensusJob();
+            cy.get('.cvat-notification-notice-consensus-merge-task-failed').should('not.exist');
+            cy.get('.ant-notification-notice-info')
+                .should('be.visible')
+                .invoke('text')
+                .should('eq', `Consensus job #${consensusJobID} has been merged`);
+
+            // const middle = Math.floor(shapes.length / 2);
+            // TODO: check consensus job annotation matches middle job annotation
         });
     });
 });
