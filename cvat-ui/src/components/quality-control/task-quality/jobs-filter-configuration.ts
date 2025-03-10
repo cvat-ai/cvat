@@ -6,13 +6,6 @@ import { Config } from '@react-awesome-query-builder/antd';
 
 export const config: Partial<Config> = {
     fields: {
-        id: {
-            label: 'ID',
-            type: 'number',
-            operators: ['equal', 'between', 'greater', 'greater_or_equal', 'less', 'less_or_equal'],
-            fieldSettings: { min: 0 },
-            valueSources: ['value'],
-        },
         state: {
             label: 'State',
             type: 'select',
@@ -37,6 +30,45 @@ export const config: Partial<Config> = {
                     { value: 'annotation', title: 'annotation' },
                     { value: 'validation', title: 'validation' },
                     { value: 'acceptance', title: 'acceptance' },
+                ],
+            },
+        },
+        id: {
+            label: 'ID',
+            type: 'number',
+            operators: ['equal', 'between', 'greater', 'greater_or_equal', 'less', 'less_or_equal'],
+            fieldSettings: { min: 0 },
+            valueSources: ['value'],
+        },
+        task_id: {
+            label: 'Task ID',
+            type: 'number',
+            operators: ['equal', 'between', 'greater', 'greater_or_equal', 'less', 'less_or_equal'],
+            fieldSettings: { min: 0 },
+            valueSources: ['value'],
+        },
+        task_name: {
+            label: 'Task name',
+            type: 'text',
+            valueSources: ['value'],
+            operators: ['like'],
+        },
+        project_name: {
+            label: 'Project name',
+            type: 'text',
+            valueSources: ['value'],
+            operators: ['like'],
+        },
+        type: {
+            label: 'Job Type',
+            type: 'select',
+            operators: ['select_equals'],
+            valueSources: ['value'],
+            fieldSettings: {
+                listValues: [
+                    { value: 'annotation', title: 'Annotation' },
+                    { value: 'ground_truth', title: 'Ground truth' },
+                    { value: 'consensus_replica', title: 'Consensus replica' },
                 ],
             },
         },
