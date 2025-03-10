@@ -30,7 +30,7 @@ function TopBarComponent(props: Props): JSX.Element {
         query, onApplyFilter, onApplySorting, onApplySearch,
     } = props;
     const [visibility, setVisibility] = useState(defaultVisibility);
-    const { i18n } = useTranslation();
+    const { t, i18n } = useTranslation();
 
     return (
         <Row className='cvat-jobs-page-top-bar' justify='center' align='middle'>
@@ -43,7 +43,7 @@ function TopBarComponent(props: Props): JSX.Element {
                         }}
                         defaultValue={query.search || ''}
                         className='cvat-jobs-page-search-bar'
-                        placeholder='Search ...'
+                        placeholder={t('search.Search...')}
                     />
                     <div>
                         <SortingComponent

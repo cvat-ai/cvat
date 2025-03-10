@@ -98,5 +98,19 @@
             "Azure storages": "Azure storages",
             "Google cloud storages": "Google cloud storages"
         }
+    },
+    "search": {
+        "Search...": "Search...",
+        "empty": "No results matched your search...",
+        "no_created": "No {{items}} created yet...",
+        "create": "create a new one",
+        "create_new": "create a new {{item}}",
+        "create_new_more": "create multi {{items}}",
+        "description": "To get started with your annotation project",
+        "no_attached": "No cloud storages attached yet...",
+        "description_cloud_storage": "To get started with your cloud storage",
+        "attach_new": "attach a new one",
+        "or try to": " or try to ",
+        "create_from_backup": "Create from backup"
     }
 }

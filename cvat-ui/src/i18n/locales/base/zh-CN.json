@@ -120,5 +120,19 @@
             "Azure storages": "Azure 存储",
             "Google cloud storages": "Google 云存储"
         }
+    },
+    "search": {
+        "Search...": "搜索...",
+        "empty": "没有符合你的搜索的结果...",
+        "no_created": "还没有创建{{items}}...",
+        "create": "新建一个",
+        "create_new": "新建{{item}}",
+        "create_new_more": "新建{{items}}",
+        "description": "为了开始标注项目",
+        "no_attached": "还没挂载云存储...",
+        "description_cloud_storage": "为了使用云存储",
+        "attach_new": "挂载新存储",
+        "or try to": " 或者尝试 ",
+        "create_from_backup": "从备份创建"
     }
 }
