@@ -24,7 +24,7 @@ export default class QualitySettings {
     #targetMetric: TargetMetric;
     #targetMetricThreshold: number;
     #maxValidationsPerJob: number;
-    #task: number;
+    #taskID: number;
     #iouThreshold: number;
     #oksSigma: number;
     #pointSizeBase: PointSizeBase;
@@ -45,7 +45,7 @@ export default class QualitySettings {
 
     constructor(initialData: SerializedQualitySettingsData) {
         this.#id = initialData.id;
-        this.#task = initialData.task;
+        this.#taskID = initialData.task_id;
         this.#targetMetric = initialData.target_metric as TargetMetric;
         this.#targetMetricThreshold = initialData.target_metric_threshold;
         this.#maxValidationsPerJob = initialData.max_validations_per_job;
@@ -72,8 +72,8 @@ export default class QualitySettings {
         return this.#id;
     }
 
-    get task(): number {
-        return this.#task;
+    get taskID(): number {
+        return this.#taskID;
     }
 
     get iouThreshold(): number {

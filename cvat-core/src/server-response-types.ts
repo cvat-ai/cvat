@@ -242,6 +242,7 @@ export interface SerializedOrganization {
 export interface APIQualitySettingsFilter extends APICommonFilterParams {
     task_id?: number;
     project_id?: number;
+    parent_type?: string;
 }
 
 export type QualitySettingsFilter = Camelized<APIQualitySettingsFilter>;
@@ -254,7 +255,7 @@ export type ConsensusSettingsFilter = Camelized<APIConsensusSettingsFilter>;
 
 export interface SerializedQualitySettingsData {
     id?: number;
-    task?: number;
+    task_id?: number;
     target_metric?: string;
     target_metric_threshold?: number;
     max_validations_per_job?: number;

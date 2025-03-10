@@ -47,6 +47,7 @@ interface State {
     error: Error | null;
     qualitySettings: {
         settings: QualitySettings | null;
+        childrenSettings: QualitySettings[] | null;
         fetching: boolean;
     };
 }
@@ -76,8 +77,8 @@ export const reducerActions = {
     setJobsReports: (qualityReports: QualityReport[]) => (
         createAction(ReducerActionType.SET_JOBS_REPORTS, { qualityReports })
     ),
-    setQualitySettings: (qualitySettings: QualitySettings) => (
-        createAction(ReducerActionType.SET_QUALITY_SETTINGS, { qualitySettings })
+    setQualitySettings: (qualitySettings: QualitySettings, childrenSettings: QualitySettings[] | null = null) => (
+        createAction(ReducerActionType.SET_QUALITY_SETTINGS, { qualitySettings, childrenSettings })
     ),
     setQualitySettingsFetching: (fetching: boolean) => (
         createAction(ReducerActionType.SET_QUALITY_SETTINGS_FETCHING, { fetching })
@@ -119,6 +120,7 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
             qualitySettings: {
                 ...state.qualitySettings,
                 settings: action.payload.qualitySettings,
+                childrenSettings: action.payload.childrenSettings,
             },
         };
     }
@@ -213,6 +215,7 @@ function QualityControlPage(): JSX.Element {
         error: null,
         qualitySettings: {
             settings: null,
+            childrenSettings: null,
             fetching: false,
         },
     });
@@ -270,18 +273,23 @@ function QualityControlPage(): JSX.Element {
         try {
             dispatch(reducerActions.setQualitySettingsFetching(true));
             let settings: QualitySettings | null = null;
+            let childrenSettings: QualitySettings[] | null = null;
             switch (type) {
-                case 'project':
-                    settings = await core.analytics.quality.settings.get({ projectID: id });
+                case 'project': {
+                    [settings] = await core.analytics.quality.settings.get({ projectID: id, parentType: 'project' });
+                    childrenSettings = await core.analytics.quality.settings.get({ projectID: id, parentType: 'task' });
                     break;
-                case 'task':
-                    settings = await core.analytics.quality.settings.get({ taskID: id });
+                }
+                case 'task': {
+                    [settings] = await core.analytics.quality.settings.get({ taskID: id });
                     break;
+                }
+
                 default:
                     return;
             }
 
-            dispatch(reducerActions.setQualitySettings(settings));
+            dispatch(reducerActions.setQualitySettings(settings, childrenSettings));
         } catch (error: unknown) {
             notification.error({
                 message: 'Could not receive quality settings',
@@ -303,55 +311,32 @@ function QualityControlPage(): JSX.Element {
         }
     };
 
-    const onSaveQualitySettings = useCallback(async (values) => {
+    const onSaveQualitySettings = useCallback(async (settingsList: QualitySettings[]) => {
+        const { settings, childrenSettings } = state.qualitySettings;
+
+        if (!settings) {
+            return;
+        }
+
         try {
-            const { settings } = state.qualitySettings;
-            if (settings) {
-                settings.targetMetric = values.targetMetric;
-                settings.targetMetricThreshold = values.targetMetricThreshold / 100;
+            dispatch(reducerActions.setQualitySettingsFetching(true));
+            const updatedSettings = await Promise.all(settingsList.map((setting) => setting.save()));
+            const updatedInstanceSettings = updatedSettings.find((setting) => setting.id === settings.id) || settings;
+            const updatedChildrenSettings = childrenSettings?.map((childSetting) => {
+                const updatedSetting = updatedSettings.find((setting) => setting.id === childSetting.id);
+                return updatedSetting || childSetting;
+            }) || null;
 
-                settings.maxValidationsPerJob = values.maxValidationsPerJob;
-
-                settings.lowOverlapThreshold = values.lowOverlapThreshold / 100;
-                settings.iouThreshold = values.iouThreshold / 100;
-                settings.compareAttributes = values.compareAttributes;
-                settings.emptyIsAnnotated = values.emptyIsAnnotated;
-
-                settings.oksSigma = values.oksSigma / 100;
-                settings.pointSizeBase = values.pointSizeBase;
-
-                settings.lineThickness = values.lineThickness / 100;
-                settings.lineOrientationThreshold = values.lineOrientationThreshold / 100;
-                settings.orientedLines = values.orientedLines;
-
-                settings.compareGroups = values.compareGroups;
-                settings.groupMatchThreshold = values.groupMatchThreshold / 100;
-
-                settings.checkCoveredAnnotations = values.checkCoveredAnnotations;
-                settings.objectVisibilityThreshold = values.objectVisibilityThreshold / 100;
-
-                settings.panopticComparison = values.panopticComparison;
-
-                settings.inherit = values.inherit;
-
-                try {
-                    dispatch(reducerActions.setQualitySettingsFetching(true));
-                    const responseSettings = await settings.save();
-                    dispatch(reducerActions.setQualitySettings(responseSettings));
-                    notification.info({ message: 'Settings have been updated' });
-                } catch (error: unknown) {
-                    notification.error({
-                        message: 'Could not save quality settings',
-                        description: typeof Error === 'object' ? (error as object).toString() : '',
-                    });
-                    throw error;
-                } finally {
-                    dispatch(reducerActions.setQualitySettingsFetching(false));
-                }
-            }
-            return settings;
-        } catch (e) {
-            return false;
+            dispatch(reducerActions.setQualitySettings(updatedInstanceSettings, updatedChildrenSettings));
+            notification.info({ message: 'Settings have been updated' });
+        } catch (error: unknown) {
+            notification.error({
+                message: 'Could not save quality settings',
+                description: typeof Error === 'object' ? (error as object).toString() : '',
+            });
+            throw error;
+        } finally {
+            dispatch(reducerActions.setQualitySettingsFetching(false));
         }
     }, [state.qualitySettings.settings]);
 
@@ -425,6 +410,7 @@ function QualityControlPage(): JSX.Element {
         qualitySettings: {
             settings: qualitySettings,
             fetching: qualitySettingsFetching,
+            childrenSettings: childrenQualitySettings,
         },
     } = state;
 
@@ -497,7 +483,7 @@ function QualityControlPage(): JSX.Element {
                     <QualitySettingsTab
                         instance={instance}
                         fetching={qualitySettingsFetching}
-                        qualitySettings={qualitySettings}
+                        qualitySettings={{ settings: qualitySettings, childrenSettings: childrenQualitySettings }}
                         setQualitySettings={onSaveQualitySettings}
                     />
                 ),

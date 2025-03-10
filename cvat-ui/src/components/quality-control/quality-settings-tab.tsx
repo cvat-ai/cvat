@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Text from 'antd/lib/typography/Text';
 import Form from 'antd/lib/form';
 import Switch from 'antd/lib/switch';
@@ -19,29 +19,76 @@ import QualitySettingsForm from './task-quality/quality-settings-form';
 interface Props {
     instance: Task | Project;
     fetching: boolean;
-    qualitySettings: QualitySettings | null;
-    setQualitySettings: (settings: QualitySettings) => void;
+    qualitySettings: {
+        settings: QualitySettings | null;
+        childrenSettings: QualitySettings[] | null;
+    };
+    setQualitySettings: (settingsList: QualitySettings[]) => void;
 }
 
 function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
     const {
         instance,
         fetching,
-        qualitySettings: settings,
+        qualitySettings: { settings, childrenSettings },
         setQualitySettings,
     } = props;
 
     const [form] = Form.useForm();
-    const onSave = useCallback(async () => {
+
+    const setupSettingsFromForm = useCallback(async (newSettings: QualitySettings) => {
         const values = await form.validateFields();
-        setQualitySettings(values);
-    }, [form, setQualitySettings]);
+
+        newSettings.targetMetric = values.targetMetric;
+        newSettings.targetMetricThreshold = values.targetMetricThreshold / 100;
+
+        newSettings.maxValidationsPerJob = values.maxValidationsPerJob;
+
+        newSettings.lowOverlapThreshold = values.lowOverlapThreshold / 100;
+        newSettings.iouThreshold = values.iouThreshold / 100;
+        newSettings.compareAttributes = values.compareAttributes;
+        newSettings.emptyIsAnnotated = values.emptyIsAnnotated;
+
+        newSettings.oksSigma = values.oksSigma / 100;
+        newSettings.pointSizeBase = values.pointSizeBase;
+
+        newSettings.lineThickness = values.lineThickness / 100;
+        newSettings.lineOrientationThreshold = values.lineOrientationThreshold / 100;
+        newSettings.orientedLines = values.orientedLines;
+
+        newSettings.compareGroups = values.compareGroups;
+        newSettings.groupMatchThreshold = values.groupMatchThreshold / 100;
+
+        newSettings.checkCoveredAnnotations = values.checkCoveredAnnotations;
+        newSettings.objectVisibilityThreshold = values.objectVisibilityThreshold / 100;
+
+        newSettings.panopticComparison = values.panopticComparison;
+
+        newSettings.inherit = values.inherit;
+    }, [form]);
+
+    const onSave = useCallback(async () => {
+        if (settings) {
+            await setupSettingsFromForm(settings);
+            setQualitySettings([settings]);
+        }
+    }, [form, settings, setQualitySettings]);
 
     const onInheritChange = useCallback(async (value: boolean) => {
-        const values = await form.validateFields();
-        values.inherit = value;
-        setQualitySettings(values);
-    }, [form, setQualitySettings]);
+        if (settings) {
+            await setupSettingsFromForm(settings);
+            settings.inherit = value;
+            setQualitySettings([settings]);
+        }
+    }, [form, settings, setQualitySettings]);
+
+    const [nonInheritedChildSettings, setNonInheritedChildSettings] = useState<QualitySettings[]>([]);
+    useEffect(() => {
+        if (childrenSettings) {
+            const filteredSettings = childrenSettings.filter((child) => !child.inherit);
+            setNonInheritedChildSettings(filteredSettings);
+        }
+    }, [childrenSettings]);
 
     if (fetching) {
         return (
@@ -62,7 +109,7 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
                 <Link to={`/projects/${instance.projectId}/quality-control#settings`}>&nbsp;project settings</Link>
             </div>
         );
-    } else if (instance instanceof Project) {
+    } else if (instance instanceof Project && nonInheritedChildSettings.length !== 0) {
         header = (
             <div className='cvat-quality-control-settings-header'>
                 <Alert
@@ -70,7 +117,7 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
                     message={(
                         <div>
                             <ExclamationCircleFilled className='ant-alert-icon' />
-                            <Text>Custom settings are used in 4 tasks</Text>
+                            <Text>{`Custom settings are used in ${nonInheritedChildSettings.length} tasks`}</Text>
                         </div>
                     )}
                     action={(
@@ -84,7 +131,13 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
                                     content: 'This action will override custom settings in all tasks.',
                                     okText: 'Yes',
                                     cancelText: 'No',
-                                    onOk: async () => {},
+                                    onOk: async () => {
+                                        const updatedSettings = nonInheritedChildSettings.map((child) => {
+                                            child.inherit = true;
+                                            return child;
+                                        });
+                                        setQualitySettings(updatedSettings);
+                                    },
                                 });
                             }}
                         >

@@ -533,16 +533,18 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         checkFilter(filter, {
             taskID: isInteger,
             projectID: isInteger,
+            parentType: isString,
         });
 
         const params = fieldsToSnakeCase(filter);
 
-        const settings = await serverProxy.analytics.quality.settings.get(params);
-        if (settings) {
+        const settingsList = await serverProxy.analytics.quality.settings.get(params);
+        if (settingsList) {
             const schema = await getServerAPISchema();
             const descriptions = convertDescriptions(schema.components.schemas.QualitySettings.properties);
 
-            return new QualitySettings({ ...settings, descriptions });
+            const settings = settingsList.map((setting) => new QualitySettings({ ...setting, descriptions }));
+            return settings;
         }
         return null;
     });

@@ -152,7 +152,7 @@ export default interface CVATCore {
             reports: (filter: QualityReportsFilter) => Promise<PaginatedResource<QualityReport>>;
             conflicts: (filter: QualityConflictsFilter) => Promise<QualityConflict[]>;
             settings: {
-                get: (filter: QualitySettingsFilter) => Promise<QualitySettings>;
+                get: (filter: QualitySettingsFilter) => Promise<QualitySettings[]>;
             };
         };
         performance: {

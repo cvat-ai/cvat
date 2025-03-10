@@ -2179,7 +2179,7 @@ async function createAsset(file: File, guideId: number): Promise<SerializedAsset
 
 async function getQualitySettings(
     filter: APIQualitySettingsFilter,
-): Promise<SerializedQualitySettingsData> {
+): Promise<SerializedQualitySettingsData[]> {
     const { backendAPI } = config;
 
     try {
@@ -2189,7 +2189,7 @@ async function getQualitySettings(
             },
         });
 
-        return response.data.results[0];
+        return response.data.results;
     } catch (errorData) {
         throw generateError(errorData);
     }
