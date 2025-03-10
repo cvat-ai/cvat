@@ -269,8 +269,7 @@ class AnnotationUploader(Uploader):
         )
 
         if conv_mask_to_poly is not None:
-            value = "true" if conv_mask_to_poly else "false"
-            params["conv_mask_to_poly"] = value
+            params["conv_mask_to_poly"] = "true" if conv_mask_to_poly else "false"
 
         rq_id = json.loads(response.data).get("rq_id")
         assert rq_id, "The rq_id was not found in the response"
