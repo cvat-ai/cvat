@@ -112,6 +112,7 @@ services:
       cvat:
         aliases:
           - cvat-server
+    platform: ${PLATFORM:-}
 
   cvat_utils:
     container_name: cvat_utils
@@ -129,6 +130,7 @@ services:
       - cvat_logs:/home/django/logs
     networks:
       - cvat
+    platform: ${PLATFORM:-}
 
   cvat_worker_import:
     container_name: cvat_worker_import
@@ -145,6 +147,7 @@ services:
       - cvat_logs:/home/django/logs
     networks:
       - cvat
+    platform: ${PLATFORM:-}
 
   cvat_worker_export:
     container_name: cvat_worker_export
@@ -161,6 +164,7 @@ services:
       - cvat_logs:/home/django/logs
     networks:
       - cvat
+    platform: ${PLATFORM:-}
 
   cvat_worker_annotation:
     container_name: cvat_worker_annotation
@@ -177,6 +181,7 @@ services:
       - cvat_logs:/home/django/logs
     networks:
       - cvat
+    platform: ${PLATFORM:-}
 
   cvat_worker_webhooks:
     container_name: cvat_worker_webhooks
@@ -193,6 +198,7 @@ services:
       - cvat_logs:/home/django/logs
     networks:
       - cvat
+    platform: ${PLATFORM:-}
 
   cvat_worker_quality_reports:
     container_name: cvat_worker_quality_reports
@@ -209,6 +215,7 @@ services:
       - cvat_logs:/home/django/logs
     networks:
       - cvat
+    platform: ${PLATFORM:-}
 
   cvat_worker_analytics_reports:
     container_name: cvat_worker_analytics_reports
@@ -225,6 +232,7 @@ services:
       - cvat_logs:/home/django/logs
     networks:
       - cvat
+    platform: ${PLATFORM:-}
 
   cvat_worker_chunks:
     container_name: cvat_worker_chunks
@@ -241,6 +249,7 @@ services:
       - cvat_logs:/home/django/logs
     networks:
       - cvat
+    platform: ${PLATFORM:-}
 
   cvat_worker_consensus:
     container_name: cvat_worker_consensus
@@ -257,6 +266,7 @@ services:
       - cvat_logs:/home/django/logs
     networks:
       - cvat
+    platform: ${PLATFORM:-}
 
   cvat_ui:
     container_name: cvat_ui
@@ -271,6 +281,7 @@ services:
       - traefik.http.routers.cvat-ui.entrypoints=web
     networks:
       - cvat
+    platform: ${PLATFORM:-}
 
   traefik:
     image: traefik:v2.10
@@ -331,6 +342,7 @@ services:
       - --set=bundles.cvat.resource=/api/auth/rules
       - --set=bundles.cvat.polling.min_delay_seconds=5
       - --set=bundles.cvat.polling.max_delay_seconds=15
+    platform: ${PLATFORM:-}
 
   cvat_clickhouse:
     container_name: cvat_clickhouse
