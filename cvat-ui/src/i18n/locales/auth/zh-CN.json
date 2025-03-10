@@ -16,5 +16,12 @@
         "Please input your password!": "请输入你的密码！",
         "You must accept to continue!": "你必须接受才能继续！",
         "Create account": "创建帐号"
+    },
+    "passwordReset": {
+        "Forgot password?": "忘记密码？",
+        "Let's create a new one": "让我们创建一个新的",
+        "The input is not valid E-mail!": "输入不是合法的邮箱",
+        "Please specify an email address": "请提供电邮地址",
+        "We will send link to your email": "我们发送链接到你的邮箱"
     }
 }

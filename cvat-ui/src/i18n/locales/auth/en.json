@@ -16,5 +16,12 @@
         "Please input your password!": "Please input your password!",
         "You must accept to continue!": "You must accept to continue!",
         "Create account": "Create account"
+    },
+    "passwordReset": {
+        "Forgot password?": "Forgot password?",
+        "Let's create a new one": "Let's create a new one",
+        "The input is not valid E-mail!": "The input is not valid E-mail!",
+        "Please specify an email address": "Please specify an email address",
+        "We will send link to your email": "We will send link to your email"
     }
 }
