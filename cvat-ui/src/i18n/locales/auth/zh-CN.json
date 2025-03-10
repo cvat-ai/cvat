@@ -15,7 +15,10 @@
         "Please specify a username": "请提供用户名",
         "Please input your password!": "请输入你的密码！",
         "You must accept to continue!": "你必须接受才能继续！",
-        "Create account": "创建帐号"
+        "Create account": "创建帐号",
+        "Two passwords that you enter is inconsistent!": "输入的两次密码不相同！",
+        "You must accept agreement to continue!": "你需要接受 {{agreement.urlDisplayText}} 才能继续！"
+
     },
     "passwordReset": {
         "Forgot password?": "忘记密码？",
@@ -23,5 +26,12 @@
         "The input is not valid E-mail!": "输入不是合法的邮箱",
         "Please specify an email address": "请提供电邮地址",
         "We will send link to your email": "我们发送链接到你的邮箱"
+    },
+    "passwordResetConfirm": {
+        "Change password": "修改密码",
+        "New password": "新密码",
+        "Please input new password!": "请输入新密码!",
+        "Please confirm your new password!": "请确认你的新密码!",
+        "Confirm new password": "确认新密码"
     }
 }
