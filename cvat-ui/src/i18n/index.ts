@@ -2,6 +2,7 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import languageDetector from 'i18next-browser-languagedetector';
 import resourcesToBackend from 'i18next-resources-to-backend';
+import { has, set } from 'lodash';
 
 import {
     supportedLanguages,
@@ -15,6 +16,10 @@ export {
     namespaceList,
     localeOptions,
 };
+
+type I18next = typeof i18n;
+type OffFunction = () => void;
+
 // make sure only init one time
 let firstRun = true;
 
@@ -71,5 +76,65 @@ async function init(): Promise<void> {
 }
 
 init();
+
+/**
+ * when language changed trigger other part
+ *   which not in react component or function call
+ *
+ * 1. const defined string not in function call utils/validation-patterns.ts
+ * 2. other lib
+ * @param callback
+ * @return {OffFunction} stopListenFunction
+ */
+export function onLanguageChanged(callback: (lng: string, i18n: I18next) => void): OffFunction {
+    i18n.on('languageChanged', (lng) => callback(lng, i18n));
+    return () => i18n.off('languageChanged', callback);
+}
+
+/**
+ * When locale Changed
+ *
+ * load {ns}:{key} as a map K => V
+ *
+ * update each target[K]'s {path} to V
+ *
+ * @example
+ * 1. origin `target` = {
+ *     a: {x: 'xa', y: 1},
+ *     b: {x: 'xb', y: 2},
+ *     c: {x: 'xc', y: 2},
+ * }
+ * 2. calling `patchPathForLocaleOn(target, 'x', 'KEY', 'NS')`
+ * 3. new locale has a resource ns=NS key=KEY contains {a: 'A', b: 'B'}
+ * 4. target will set to {
+ *     a: {x: 'A', y: 1},
+ *     b: {x: 'B', y: 2},
+ *     c: {x: 'xc', y: 2},
+ * }
+ * @params {Object} target targetObject
+ * @params {string} key
+ * @params {string} ns
+ * @return {OffFunction} OffFunction
+ */
+export function patchPathForLocaleOn(
+    target: Record<any, any>,
+    path: string,
+    key: string,
+    ns = defaultNS,
+): OffFunction {
+    return onLanguageChanged((lng, { getResource }) => {
+        const info: Record<string, string> = getResource(lng, ns, key);
+        if (!info) {
+            return;
+        }
+        Object.entries(info).forEach(([infoKey, value]) => {
+            if (infoKey in target) {
+                if (has(target[infoKey], path)) {
+                    set(target[infoKey], path, value);
+                }
+            }
+        });
+    });
+}
 
 export default i18n;

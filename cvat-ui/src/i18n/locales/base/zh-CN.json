@@ -29,5 +29,20 @@
     "Last name": "姓",
     "Email": "邮箱",
     "Username": "用户名",
-    "Send": "发送"
+    "Send": "发送",
+    "validationPatterns": {
+        "validatePasswordLength": "密码至少需要 8 个字符",
+        "passwordContainsNumericCharacters": "密码必须包含至少 1 个数字",
+        "passwordContainsUpperCaseCharacter": "密码必须包含至少 1 个大写字母",
+        "passwordContainsLowerCaseCharacter": "密码必须包含至少 1 个小写字母",
+        "validateUsernameLength": "用户名至少包含 5 个字符",
+        "validateUsernameCharacters": "只可以使用 (a-z), (A-Z), (0-9), -, _, 这些字符",
+        "validateName": "不合法的名字",
+        "validateAttributeName": "不合法的名字",
+        "validateLabelName": "不合法的名字",
+        "validateAttributeValue": "不合法的属性名",
+        "validateURL": "URL 不合法",
+        "validateOrganizationSlug": "只允许拉丁字母和数字",
+        "validatePhoneNumber": "输入的手机号不正确"
+    }
 }
