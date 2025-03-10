@@ -428,9 +428,6 @@ SETTINGS_PARENT_TYPE_PARAM_NAME = "parent_type"
         parameters=[
             # These filters are implemented differently from others
             OpenApiParameter(
-                "task_id", type=OpenApiTypes.INT, description="A simple equality filter for task id"
-            ),
-            OpenApiParameter(
                 "project_id",
                 type=OpenApiTypes.INT,
                 description="A simple equality filter for project id",
@@ -497,7 +494,7 @@ class QualitySettingsViewSet(
 
     search_fields = []
     filter_fields = ["id", "task_id", "project_id", "inherit", "created_date", "updated_date"]
-    simple_filters = ["inherit"]
+    simple_filters = ["task_id", "inherit"]
     ordering_fields = list(filter_fields)
     ordering = "id"
 
