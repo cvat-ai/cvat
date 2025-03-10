@@ -32,6 +32,61 @@
         "validateOrganizationSlug": "Only Latin characters and numbers are allowed",
         "validatePhoneNumber": "Input phone number is not correct"
     },
+    "sort": {
+        "Sort by": "Sort By",
+        "Descending sort": "Descending sort",
+        "Ascending sort": "Ascending sort"
+    },
+    "project": {
+        "fields": {
+            "ID": "ID",
+            "Assignee": "Assignee",
+            "Owner": "Owner",
+            "Status": "Status",
+            "Name": "Name",
+            "Updated date": "Updated date"
+        }
+    },
+    "task": {
+        "fields": {
+            "ID": "ID",
+            "Owner": "Owner",
+            "Status": "Status",
+            "Assignee": "Assignee",
+            "Updated date": "Updated date",
+            "Subset": "Subset",
+            "Mode": "Mode",
+            "Dimension": "Dimension",
+            "Project ID": "Project ID",
+            "Name": "Name",
+            "Project name": "Project name"
+        }
+    },
+    "job": {
+        "fields": {
+            "ID": "ID",
+            "Assignee": "Assignee",
+            "Updated date": "Updated date",
+            "Stage": "Stage",
+            "State": "State",
+            "Task ID": "Task ID",
+            "Project ID": "Project ID",
+            "Task name": "Task name",
+            "Project name": "Project name"
+        }
+    },
+    "cloudStorage": {
+        "fields": {
+            "ID": "ID",
+            "Provider type": "Provider type",
+            "Updated date": "Updated date",
+            "Display name": "Display name",
+            "Resource": "Resource",
+            "Credentials type": "Credentials type",
+            "Owner": "Owner",
+            "Description": "Description"
+        }
+    },
     "filter": {
         "Clear filters": "Clear filters",
         "Quick filters": "Quick filter",

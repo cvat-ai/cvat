@@ -55,6 +55,60 @@
         "validateOrganizationSlug": "只允许拉丁字母和数字",
         "validatePhoneNumber": "输入的手机号不正确"
     },
+    "sort": {
+        "Sort by": "排序",
+        "Descending sort": "降序",
+        "Ascending sort": "增序"
+    },
+    "project": {
+        "fields": {
+            "Assignee": "接收者",
+            "Owner": "拥有者",
+            "Status": "状态",
+            "Name": "名称",
+            "Updated date": "更新时间"
+        }
+    },
+    "task": {
+        "fields": {
+            "ID": "ID",
+            "Owner": "拥有者",
+            "Status": "状态",
+            "Assignee": "接收者",
+            "Updated date": "更新时间",
+            "Subset": "子集",
+            "Mode": "模式",
+            "Dimension": "维度",
+            "Project ID": "项目 ID",
+            "Name": "名称",
+            "Project name": "项目名"
+        }
+    },
+    "job": {
+        "fields": {
+            "ID": "ID",
+            "Assignee": "接收者",
+            "Updated date": "更新日期",
+            "Stage": "阶段",
+            "State": "状态",
+            "Task ID": "任务 ID",
+            "Project ID": "项目 ID",
+            "Task name": "任务 name",
+            "Project name": "项目 name"
+        }
+    },
+    "cloudStorage": {
+        "fields": {
+            "ID": "ID",
+            "Provider type": "供方类型",
+            "Updated date": "更新时间",
+            "Display name": "显示名称",
+            "Resource": "资源",
+            "Credentials type": "凭证类型",
+            "Owner": "拥有者",
+            "Description": "描述"
+        }
+    },
     "filter": {
         "Clear filters": "清除过滤",
         "Quick filters": "快速过滤",

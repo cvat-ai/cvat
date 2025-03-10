@@ -15,6 +15,7 @@ import { importActions } from 'actions/import-actions';
 import { usePrevious } from 'utils/hooks';
 import { ProjectsQuery } from 'reducers';
 import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
+import { useTranslation } from 'react-i18next';
 
 import dimensions from 'utils/dimensions';
 import {
@@ -40,6 +41,7 @@ function TopBarComponent(props: Props): JSX.Element {
     } = props;
     const [visibility, setVisibility] = useState(defaultVisibility);
     const prevImporting = usePrevious(importing);
+    const { i18n } = useTranslation();
 
     useEffect(() => {
         if (prevImporting && !importing) {
@@ -69,6 +71,7 @@ function TopBarComponent(props: Props): JSX.Element {
                             )}
                             defaultFields={query.sort?.split(',') || ['-ID']}
                             sortingFields={['ID', 'Assignee', 'Owner', 'Status', 'Name', 'Updated date']}
+                            sortingLabelMap={i18n.getResource(i18n.language, 'base', 'project.fields')}
                             onApplySorting={onApplySorting}
                         />
                         <FilteringComponent
