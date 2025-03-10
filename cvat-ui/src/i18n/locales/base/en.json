@@ -31,5 +31,17 @@
         "validateURL": "URL is not valid",
         "validateOrganizationSlug": "Only Latin characters and numbers are allowed",
         "validatePhoneNumber": "Input phone number is not correct"
+    },
+    "filter": {
+        "Clear filters": "Clear filters",
+        "Quick filters": "Quick filter",
+        "quick-filters-keys": {
+            "Assigned to me": "Assigned to me",
+            "Owned by me": "Owned by me",
+            "Not completed": "Not completed",
+            "AWS storages": "AWS storages",
+            "Azure storages": "Azure storages",
+            "Google cloud storages": "Google cloud storages"
+        }
     }
 }

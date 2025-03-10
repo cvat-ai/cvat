@@ -54,5 +54,17 @@
         "validateURL": "URL 不合法",
         "validateOrganizationSlug": "只允许拉丁字母和数字",
         "validatePhoneNumber": "输入的手机号不正确"
+    },
+    "filter": {
+        "Clear filters": "清除过滤",
+        "Quick filters": "快速过滤",
+        "quick-filters-keys": {
+            "Assigned to me": "分配给我的",
+            "Owned by me": "我拥有的",
+            "Not completed": "未完成",
+            "AWS storages": "AWS 存储",
+            "Azure storages": "Azure 存储",
+            "Google cloud storages": "Google 云存储"
+        }
     }
 }
