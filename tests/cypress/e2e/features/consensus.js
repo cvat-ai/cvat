@@ -7,9 +7,10 @@
 import { translatePoints } from '../../support/utils';
 
 context('Basic manipulations with consensus job replicas', () => {
-    const jobIDs = [];
-    const labelName = 'Consensus job merging';
+    const labelName = 'Consensus';
     const replicas = 4;
+    const taskName = 'Test consensus';
+    const serverFiles = ['archive.zip'];
     before(() => {
         cy.visit('auth/login');
         cy.login();
@@ -18,8 +19,6 @@ context('Basic manipulations with consensus job replicas', () => {
     });
     describe('Consensus job creation', () => {
         const maxReplicas = 10;
-        const taskName = 'Test consensus';
-        const serverFiles = ['archive.zip'];
         it('Check allowed number of replicas', () => {
             // Fill the fields to create the task
             cy.get('#name').type(taskName);
@@ -65,22 +64,6 @@ context('Basic manipulations with consensus job replicas', () => {
                     expect($el.text()).to.equal(`${replicas} Replicas`);
                     cy.wrap($el).click();
                 });
-
-            // Check asc order of jobs
-            function parseJobId(jobItem) {
-                const jobItemText = jobItem.innerText;
-                const [start, stop] = [0, jobItemText.indexOf('\n')];
-                return +(jobItemText.substring(start, stop).split('#')[1]);
-            }
-            cy.get('.cvat-job-item').then((jobItems) => {
-                const sourceJobId = parseJobId(jobItems[0]);
-                jobIDs.push(sourceJobId);
-                for (let i = 1; i <= replicas; i++) {
-                    const jobId = parseJobId(jobItems[i]);
-                    jobIDs.push(jobId);
-                    expect(jobId).equals(sourceJobId + i);
-                }
-            });
         });
     });
 
@@ -93,6 +76,24 @@ context('Basic manipulations with consensus job replicas', () => {
             points: [250, 64, 491, 228],
             occluded: false,
         };
+        const jobIDs = [];
+
+        before(() => {
+            const attrName = labelName;
+            const advancedConfigurationParams = { consensusReplicas: replicas };
+            const defaultArgs1 = ['Some default value for type Text', '', null];
+            const deafultArgs2 = [false, false, '', 'success', 'Test', null];
+            cy.goToTaskList();
+            cy.createAnnotationTask(
+                taskName, labelName, attrName,
+                ...defaultArgs1,
+                advancedConfigurationParams,
+                ...deafultArgs2,
+                serverFiles,
+            );
+            cy.openTask(taskName);
+            cy.get('.cvat-consensus-job-collapse').click();
+        });
         it("Check new merge buttons exist and are visible. Trying to merge 'new' jobs should trigger errors", () => {
             // Merge all consensus jobs in task
             cy.mergeConsensusTask(400);
@@ -108,6 +109,22 @@ context('Basic manipulations with consensus job replicas', () => {
                 .should('be.visible')
                 .invoke('text').should('include', 'Could not merge the job');
             cy.closeNotification('.cvat-notification-notice-consensus-merge-task-failed');
+
+            // Check asc order of jobs and save job ids
+            function parseJobId(jobItem) {
+                const jobItemText = jobItem.innerText;
+                const [start, stop] = [0, jobItemText.indexOf('\n')];
+                return +(jobItemText.substring(start, stop).split('#')[1]);
+            }
+            cy.get('.cvat-job-item').then((jobItems) => {
+                const sourceJobId = parseJobId(jobItems[0]);
+                jobIDs.push(sourceJobId);
+                for (let i = 1; i <= replicas; i++) {
+                    const jobId = parseJobId(jobItems[i]);
+                    jobIDs.push(jobId);
+                    expect(jobId).equals(sourceJobId + i);
+                }
+            });
         });
 
         it('Check consensus management page', () => {
