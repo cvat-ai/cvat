@@ -11,6 +11,7 @@ context('Basic manipulations with consensus job replicas', () => {
     const replicas = 4;
     const taskName = 'Test consensus';
     const serverFiles = ['archive.zip'];
+
     before(() => {
         cy.visit('auth/login');
         cy.login();
@@ -77,12 +78,13 @@ context('Basic manipulations with consensus job replicas', () => {
             occluded: false,
         };
         const jobIDs = [];
+        const attrName = labelName;
+        const advancedConfigurationParams = { consensusReplicas: replicas };
+
+        const defaultArgs1 = ['Some default value for type Text', '', null];
+        const deafultArgs2 = [false, false, '', 'success', 'Test', null];
 
         before(() => {
-            const attrName = labelName;
-            const advancedConfigurationParams = { consensusReplicas: replicas };
-            const defaultArgs1 = ['Some default value for type Text', '', null];
-            const deafultArgs2 = [false, false, '', 'success', 'Test', null];
             cy.goToTaskList();
             cy.createAnnotationTask(
                 taskName, labelName, attrName,
@@ -90,7 +92,7 @@ context('Basic manipulations with consensus job replicas', () => {
                 advancedConfigurationParams,
                 ...deafultArgs2,
                 serverFiles,
-            );
+            ); // TODO: rewrite to headless call once the task consensus endpoint is finished
             cy.openTask(taskName);
             cy.get('.cvat-consensus-job-collapse').click();
         });
