@@ -224,7 +224,7 @@ CVATAppState
                                 >
                                     Upgrade Guide
                                 </a>
-                                .
+.
                             </Trans>
                         </Text>,
                     okText: t('button.OK', 'OK'),
