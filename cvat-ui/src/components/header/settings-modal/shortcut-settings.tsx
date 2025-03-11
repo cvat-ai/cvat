@@ -23,6 +23,7 @@ import { KeyMap } from 'utils/mousetrap-react';
 import { shortcutsActions } from 'actions/shortcuts-actions';
 import { useDispatch, useSelector } from 'react-redux';
 import { CombinedState } from 'reducers';
+import { useTranslation } from 'react-i18next';
 import MultipleShortcutsDisplay from './multiple-shortcuts-display';
 
 interface Props {
@@ -36,6 +37,8 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
     const shortcuts = useSelector((state: CombinedState) => state.shortcuts);
     const [activeKeys, setActiveKeys] = useState<string[]>([]);
     const dispatch = useDispatch();
+    const { t: tSettingsShortcuts } = useTranslation('header', { keyPrefix: 'settings.Shortcuts' });
+    const { t } = useTranslation('base', { keyPrefix: 'button' });
 
     const onSearchChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
         setSearchValue(event.target.value.toLowerCase());
@@ -43,10 +46,10 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
 
     const onRestoreDefaults = useCallback(() => {
         Modal.confirm({
-            title: 'Are you sure you want to restore defaults?',
-            okText: 'Yes',
+            title: tSettingsShortcuts('restore-modal-title', 'Are you sure you want to restore defaults?'),
+            okText: t('Yes'),
             className: 'cvat-shortcuts-settings-restore-modal',
-            cancelText: 'No',
+            cancelText: t('No'),
             onOk: () => {
                 const currentSettings = localStorage.getItem('clientSettings');
                 dispatch(shortcutsActions.registerShortcuts({ ...shortcuts.defaultState }));
@@ -136,7 +139,7 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
                     <Flex gap={4}>
                         <Search
                             size='large'
-                            placeholder='Search for a shortcut here...'
+                            placeholder={tSettingsShortcuts('search-placeholder', 'Search for a shortcut here...')}
                             allowClear
                             onChange={onSearchChange}
                             className='cvat-shortcuts-settings-search'
@@ -147,7 +150,13 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
             </Row>
             <Row className='cvat-shortcuts-setting'>
                 <Col span={24}>
-                    <Alert message='Shortcut may consist of any combination of modifiers (alt, ctrl, or shift) and one non-modifier at the end. Some key combinations may be reserved by the browser and cannot be overridden in CVAT.' type='warning' showIcon />
+                    <Alert
+                        message={
+                            tSettingsShortcuts('warning')
+                        }
+                        type='warning'
+                        showIcon
+                    />
                     {items ? (
                         <Collapse
                             items={items}

@@ -10,8 +10,8 @@ import GlobalHotKeys from 'utils/mousetrap-react';
 import { CombinedState } from 'reducers';
 import './styles.scss';
 import { ShortcutScope } from 'utils/enums';
-import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
+import { registerComponentShortcutsWithAutoLocalePatch } from '../../i18n';
 
 const componentShortcuts = {
     TOGGLE_ANNOTATION_PAGE: {
@@ -22,7 +22,7 @@ const componentShortcuts = {
     },
 };
 
-registerComponentShortcuts(componentShortcuts);
+registerComponentShortcutsWithAutoLocalePatch(componentShortcuts);
 
 const LayoutGrid = (): React.ReactPortal => {
     const [showGrid, setShowGrid] = useState(false);
