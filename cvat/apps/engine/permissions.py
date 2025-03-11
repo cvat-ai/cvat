@@ -59,7 +59,8 @@ class DownloadExportedExtension:
         if rq_id := request.query_params.get("rq_id"):
             try:
                 params["rq_job_id"] = RQId.parse(rq_id)
-            except Exception as ex:
+                return
+            except Exception:
                 raise ValidationError("Unexpected request id format")
 
         raise ValidationError("Missing request id in the query parameters")
