@@ -44,7 +44,6 @@ spec:
           env:
           {{- toYaml . | nindent 10 }}
           {{- end }}
-          {{- with .Values.cvat.frontend.additionalVolumeMounts }}
           {{- if .Values.cvat.frontend.readinessProbe.enabled }}
           readinessProbe:
             tcpSocket:
@@ -57,13 +56,14 @@ spec:
               port: 80
             {{- toYaml (omit .Values.cvat.frontend.livenessProbe "enabled") | nindent 12 }}
           {{- end }}
+          {{- with .Values.cvat.frontend.additionalVolumeMounts }}
           volumeMounts:
           {{- toYaml . | nindent 10 }}
           {{- end }}
-        {{- with .Values.cvat.frontend.additionalVolumes }}
+      {{- with .Values.cvat.frontend.additionalVolumes }}
       volumes:
-        {{- toYaml . | nindent 8 }}
-        {{- end }}
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- with .Values.cvat.frontend.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
