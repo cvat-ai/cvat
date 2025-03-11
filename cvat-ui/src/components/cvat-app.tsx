@@ -14,7 +14,7 @@ import Spin from 'antd/lib/spin';
 import { DisconnectOutlined } from '@ant-design/icons';
 import Space from 'antd/lib/space';
 import Text from 'antd/lib/typography/Text';
-import { withTranslation, WithTranslation } from 'react-i18next';
+import { withTranslation, WithTranslation, Trans } from 'react-i18next';
 
 import LogoutComponent from 'components/logout-component';
 import LoginPageContainer from 'containers/login-page/login-page';
@@ -146,10 +146,10 @@ CVATAppState
 
     public componentDidMount(): void {
         const core = getCore();
-        const { history, onChangeLocation } = this.props;
+        const { history, onChangeLocation, t } = this.props;
         const {
             HEALTH_CHECK_RETRIES, HEALTH_CHECK_PERIOD, HEALTH_CHECK_REQUEST_TIMEOUT,
-            SERVER_UNAVAILABLE_COMPONENT, RESET_NOTIFICATIONS_PATHS,
+            RESET_NOTIFICATIONS_PATHS, UPGRADE_GUIDE_URL,
         } = appConfig;
 
         // Logger configuration
@@ -207,13 +207,27 @@ CVATAppState
                 });
 
                 Modal.error({
-                    title: 'Cannot connect to the server',
+                    title: t('modal.cannot-connect-server.title'),
                     className: 'cvat-modal-cannot-connect-server',
                     closable: false,
                     content:
-    <Text>
-        {SERVER_UNAVAILABLE_COMPONENT}
-    </Text>,
+                        <Text>
+                            <Trans i18nKey='modal.cannot-connect-server.content'>
+                                Make sure the CVAT backend and all necessary services
+                                (Database, Redis and Open Policy Agent) are running and available.
+                                If you upgraded from version 2.2.0 or earlier, manual actions may be needed,
+                                see the&nbsp;
+                                <a
+                                    target='_blank'
+                                    rel='noopener noreferrer'
+                                    href={UPGRADE_GUIDE_URL}
+                                >
+                                    Upgrade Guide
+                                </a>
+                                .
+                            </Trans>
+                        </Text>,
+                    okText: t('button.OK', 'OK'),
                 });
             });
 
@@ -224,39 +238,53 @@ CVATAppState
         if (showPlatformNotification()) {
             stopNotifications(false);
             Modal.warning({
-                title: 'Unsupported platform detected',
+                title: t('modal.unsupported-platform.title', 'Unsupported platform detected'),
                 className: 'cvat-modal-unsupported-platform-warning',
                 content: (
                     <>
                         <Row>
                             <Col>
                                 <Text>
-                                    {`The browser you are using is ${name} ${version} based on ${engine}.` +
+                                    <Trans
+                                        i18nKey='modal.unsupported-platform.content.0'
+                                        values={{ name, version, engine }}
+                                    >
+                                        {`The browser you are using is ${name} ${version} based on ${engine}.` +
                                         ' CVAT was tested in the latest versions of Chrome and Firefox.' +
                                         ' We recommend to use Chrome (or another Chromium based browser)'}
+                                    </Trans>
                                 </Text>
                             </Col>
                         </Row>
                         <Row>
                             <Col>
-                                <Text type='secondary'>{`The operating system is ${os}`}</Text>
+                                <Text type='secondary'>
+                                    {t('modal.unsupported-platform.content.1', `The operating system is ${os}`, { os })}
+                                </Text>
                             </Col>
                         </Row>
                     </>
                 ),
+                okText: t('OK'),
                 onOk: () => stopNotifications(true),
             });
         } else if (showUnsupportedNotification()) {
             stopNotifications(false);
             Modal.warning({
-                title: 'Unsupported features detected',
+                title: t('modal.unsupported-features.title', 'Unsupported features detected'),
                 className: 'cvat-modal-unsupported-features-warning',
                 content: (
                     <Text>
-                        {`${name} v${version} does not support API, which is used by CVAT. `}
-                        It is strongly recommended to update your browser.
+                        <Trans
+                            i18nKey='modal.unsupported-features.content'
+                            values={{ name, version }}
+                        >
+                            {`${name} v${version} does not support API, which is used by CVAT. `}
+                            It is strongly recommended to update your browser.
+                        </Trans>
                     </Text>
                 ),
+                okText: t('OK'),
                 onOk: () => stopNotifications(true),
             });
         }
@@ -396,7 +424,9 @@ CVATAppState
     }
 
     private showErrors(): void {
-        const { notifications, resetErrors, history } = this.props;
+        const {
+            notifications, resetErrors, history, t,
+        } = this.props;
 
         function showError(title: string, _error: Error, shouldLog?: boolean, className?: string): void {
             const error = _error?.message || _error.toString();
@@ -415,7 +445,8 @@ CVATAppState
                 ),
                 duration: null,
                 description: errorLength > appConfig.MAXIMUM_NOTIFICATION_MESSAGE_LENGTH ?
-                    'Open the Browser Console to get details' : <CVATMarkdown history={history}>{error}</CVATMarkdown>,
+                    t('open-browser-console', 'Open the Browser Console to get details') :
+                    <CVATMarkdown history={history}>{error}</CVATMarkdown>,
             });
 
             if (shouldLog) {
@@ -616,13 +647,13 @@ CVATAppState
             return (
                 <Space align='center' direction='vertical' className='cvat-spinner'>
                     <DisconnectOutlined className='cvat-disconnected' />
-                    Cannot connect to the server.
+                    {t('cannot-connect-server-title', 'Cannot connect to the server.')}
                 </Space>
             );
         }
 
         return (
-            <Spin size='large' fullscreen className='cvat-spinner' tip={`${t('Connecting', 'Connecting')}...`} />
+            <Spin size='large' fullscreen className='cvat-spinner' tip={`${t('Connecting')}...`} />
         );
     }
 }
