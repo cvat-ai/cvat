@@ -2594,31 +2594,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/DataMetaRead'
           description: ''
-  /api/jobs/{id}/dataset:
-    get:
-      operationId: jobs_retrieve_dataset
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this job.
-        required: true
-      tags:
-      - jobs
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                $ref: '#/components/schemas/JobRead'
-          description: ''
   /api/jobs/{id}/dataset/export:
     post:
       operationId: jobs_create_dataset_export
@@ -3736,56 +3711,6 @@ paths:
       responses:
         '204':
           description: The project has been deleted
-  /api/projects/{id}/annotations:
-    get:
-      operationId: projects_retrieve_annotations
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this project.
-        required: true
-      tags:
-      - projects
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                $ref: '#/components/schemas/ProjectRead'
-          description: ''
-  /api/projects/{id}/backup:
-    get:
-      operationId: projects_retrieve_backup
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this project.
-        required: true
-      tags:
-      - projects
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                $ref: '#/components/schemas/ProjectRead'
-          description: ''
   /api/projects/{id}/backup/export:
     post:
       operationId: projects_create_backup_export
@@ -3920,8 +3845,6 @@ paths:
       - basicAuth: []
       deprecated: true
       responses:
-        '301':
-          description: Redirects to the new API to check status of import process
         '410':
           description: API endpoint no longer supports exporting datasets
     post:
@@ -5540,31 +5463,6 @@ paths:
       responses:
         '204':
           description: The annotation has been deleted
-  /api/tasks/{id}/backup:
-    get:
-      operationId: tasks_retrieve_backup
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this task.
-        required: true
-      tags:
-      - tasks
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                $ref: '#/components/schemas/TaskRead'
-          description: ''
   /api/tasks/{id}/backup/export:
     post:
       operationId: tasks_create_backup_export
@@ -5830,31 +5728,6 @@ paths:
             application/vnd.cvat+json:
               schema:
                 $ref: '#/components/schemas/DataMetaRead'
-          description: ''
-  /api/tasks/{id}/dataset:
-    get:
-      operationId: tasks_retrieve_dataset
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this task.
-        required: true
-      tags:
-      - tasks
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                $ref: '#/components/schemas/TaskRead'
           description: ''
   /api/tasks/{id}/dataset/export:
     post:

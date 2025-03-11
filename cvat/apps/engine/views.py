@@ -438,7 +438,6 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         ],
         deprecated=True,
         responses={
-            '301': OpenApiResponse(description='Redirects to the new API to check status of import process'),
             '410': OpenApiResponse(description='API endpoint no longer supports exporting datasets'),
         })
     @extend_schema(methods=['POST'],
@@ -592,10 +591,12 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return Response(data='Unknown upload was finished',
                         status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=True, methods=['GET'], serializer_class=LabeledDataSerializer)
+    @extend_schema(exclude=True)
+    @action(detail=True, methods=['GET'])
     def annotations(self, request: ExtendedRequest, pk: int):
         return get_410_response_for_export_api("/api/projects/<id>/dataset/export?save_images=False")
 
+    @extend_schema(exclude=True)
     @action(methods=['GET'], detail=True, url_path='backup')
     def export_backup(self, request: ExtendedRequest, pk: int):
         return get_410_response_for_export_api("/api/projects/<id>/backup/export")
@@ -1004,6 +1005,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def append_backup_chunk(self, request: ExtendedRequest, file_id: str):
         return self.append_tus_chunk(request, file_id)
 
+    @extend_schema(exclude=True)
     @action(methods=['GET'], detail=True, url_path='backup')
     def export_backup(self, request: ExtendedRequest, pk: int):
         return get_410_response_for_export_api("/api/tasks/<id>/backup/export")
@@ -1668,6 +1670,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         serializer = DataMetaReadSerializer(db_data)
         return Response(serializer.data)
 
+    @extend_schema(exclude=True)
     @action(detail=True, methods=['GET'], serializer_class=None, url_path='dataset')
     def dataset_export(self, request: ExtendedRequest, pk: int):
         return get_410_response_for_export_api("/api/tasks/<id>/dataset/export?save_images=True")
@@ -2095,6 +2098,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
 
+    @extend_schema(exclude=True)
     @action(detail=True, methods=['GET'], serializer_class=None, url_path='dataset')
     def dataset_export(self, request: ExtendedRequest, pk: int):
         return get_410_response_for_export_api("/api/jobs/<id>/dataset/export?save_images=True")
