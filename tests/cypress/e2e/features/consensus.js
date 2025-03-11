@@ -92,7 +92,7 @@ context('Basic manipulations with consensus job replicas', () => {
                 advancedConfigurationParams,
                 ...deafultArgs2,
                 serverFiles,
-            ); // TODO: rewrite to headless call once the task consensus endpoint is finished
+            ); // TODO: rewrite to headless call to task
             cy.openTask(taskName);
             cy.get('.cvat-consensus-job-collapse').click();
         });
@@ -158,7 +158,7 @@ context('Basic manipulations with consensus job replicas', () => {
             cy.get('.ant-notification-notice').should('not.exist');
 
             // Go back to task page
-            cy.get('.ant-btn-default').should('be.visible').click();
+            cy.get('.cvat-back-btn').should('be.visible').click();
         });
 
         it('Create annotations and check that job replicas merge correctly', () => {
