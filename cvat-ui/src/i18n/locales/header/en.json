@@ -53,7 +53,7 @@
                 "ID": "ID",
                 "Label": "Label",
                 "Attributes": "Attributes",
-                "Sources": "Sources",
+                "Source": "Source",
                 "Descriptions": "Descriptions",
                 "Dimensions": "Dimensions"
             },

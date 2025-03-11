@@ -53,7 +53,7 @@
                 "ID": "ID",
                 "Label": "标记",
                 "Attributes": "属性",
-                "Sources": "源代码",
+                "Source": "源代码",
                 "Descriptions": "描述",
                 "Dimensions": "维度"
             },
