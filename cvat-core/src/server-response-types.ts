@@ -321,8 +321,9 @@ export interface SerializedQualityReportData {
     gt_last_updated?: string;
     assignee?: SerializedUser | null;
     summary?: {
-        frame_count: number;
-        frame_share: number;
+        total_frames: number;
+        validation_frames: number;
+        validation_frame_share: number;
         conflict_count: number;
         valid_count: number;
         ds_count: number;
@@ -341,6 +342,17 @@ export interface SerializedQualityReportData {
             covered_annotation: number;
         }
     };
+    tasks?: {
+        total: number;
+        custom: number;
+        not_configured: number;
+        excluded: number;
+    };
+    jobs: {
+        total: number;
+        excluded: number;
+        not_checkable: number;
+    }
 }
 
 export interface SerializedConsensusSettingsData {

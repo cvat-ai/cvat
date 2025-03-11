@@ -6,8 +6,9 @@ import { SerializedQualityReportData } from './server-response-types';
 import User from './user';
 
 export interface QualitySummary {
-    frameCount: number;
-    frameSharePercent: number;
+    totalFrames: number;
+    validationFrames: number;
+    validationFrameSharePercent: number;
     conflictCount: number;
     validCount: number;
     dsCount: number;
@@ -29,6 +30,21 @@ export interface QualitySummary {
     }
 }
 
+export interface TasksQualityData {
+    total: number;
+    custom: number;
+    notConfigured: number;
+    excluded: number;
+    included: number;
+}
+
+export interface JobsQualityData {
+    total: number;
+    notCheckable: number;
+    excluded: number;
+    included: number;
+}
+
 export default class QualityReport {
     #id: number;
     #parentID: number;
@@ -39,6 +55,8 @@ export default class QualityReport {
     #gtLastUpdated: string;
     #assignee: User | null;
     #summary: Partial<SerializedQualityReportData['summary']>;
+    #tasks: Partial<SerializedQualityReportData['tasks']>;
+    #jobs: Partial<SerializedQualityReportData['jobs']>;
 
     constructor(initialData: SerializedQualityReportData) {
         this.#id = initialData.id;
@@ -49,6 +67,8 @@ export default class QualityReport {
         this.#gtLastUpdated = initialData.gt_last_updated;
         this.#createdDate = initialData.created_date;
         this.#summary = initialData.summary;
+        this.#tasks = initialData.tasks;
+        this.#jobs = initialData.jobs;
 
         if (initialData.assignee) {
             this.#assignee = new User(initialData.assignee);
@@ -91,8 +111,9 @@ export default class QualityReport {
 
     get summary(): QualitySummary {
         return {
-            frameCount: this.#summary.frame_count,
-            frameSharePercent: this.#summary.frame_share * 100,
+            totalFrames: this.#summary.total_frames,
+            validationFrames: this.#summary.validation_frames,
+            validationFrameSharePercent: this.#summary.validation_frame_share * 100,
             conflictCount: this.#summary.conflict_count,
             validCount: this.#summary.valid_count,
             dsCount: this.#summary.ds_count,
@@ -112,6 +133,25 @@ export default class QualityReport {
             },
             errorCount: this.#summary.error_count,
             warningCount: this.#summary.warning_count,
+        };
+    }
+
+    get tasks(): TasksQualityData {
+        return this.#tasks && {
+            total: this.#tasks.total,
+            custom: this.#tasks.custom,
+            notConfigured: this.#tasks.not_configured,
+            excluded: this.#tasks.excluded,
+            included: this.#tasks.total - this.#tasks.excluded - this.#tasks.not_configured - this.#tasks.custom,
+        };
+    }
+
+    get jobs(): JobsQualityData {
+        return this.#jobs && {
+            total: this.#jobs.total,
+            notCheckable: this.#jobs.not_checkable,
+            excluded: this.#jobs.excluded,
+            included: this.#jobs.total - this.#jobs.excluded,
         };
     }
 }
