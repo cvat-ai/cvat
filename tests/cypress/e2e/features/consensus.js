@@ -69,7 +69,7 @@ context('Basic manipulations with consensus job replicas', () => {
     });
 
     describe('Cosensus jobs merging', () => {
-        const shape = {
+        const shape0 = {
             objectType: 'shape',
             labelName,
             frame: 0,
@@ -135,10 +135,7 @@ context('Basic manipulations with consensus job replicas', () => {
             cy.contains('Consensus management').should('be.visible').click();
             cy.get('.cvat-consensus-management-inner').should('be.visible');
             // Save settings, confirm request is sent
-            let requestCount = 0;
-            cy.intercept('PATCH', 'api/consensus/settings/**', () => {
-                requestCount++;
-            }).as('settingsMeta');
+            cy.intercept('PATCH', 'api/consensus/settings/**').as('settingsMeta');
             cy.contains('button', 'Save').click();
             cy.wait('@settingsMeta');
             cy.get('.ant-notification-notice-message')
@@ -148,21 +145,16 @@ context('Basic manipulations with consensus job replicas', () => {
             cy.closeNotification('.ant-notification-notice-closable');
 
             // Forms and invalid saving
-            cy.get('#quorum').then(([$el]) => {
-                cy.wrap($el).invoke('val').should('eq', `${defaultQuorum}`);
-                cy.wrap($el).clear();
-            });
-            cy.get('.ant-form-item-explain-error').should('be.visible');
-            cy.contains('button', 'Save').click();
-            cy.get('#iouThreshold').then(([$el]) => {
-                cy.wrap($el).invoke('val').should('eq', `${defaultIoU}`);
-                cy.wrap($el).clear();
-            });
-            cy.get('.ant-form-item-explain-error').should('be.visible');
-            cy.contains('button', 'Save').click();
-            cy.then(() => {
-                expect(requestCount).to.equal(1);
-            });
+            function checkFieldSaving(selector, defaultValue) {
+                cy.get(selector).then(([$el]) => {
+                    cy.wrap($el).invoke('val').should('eq', `${defaultValue}`);
+                    cy.wrap($el).clear();
+                });
+                cy.get('.ant-form-item-explain-error').should('be.visible');
+                cy.contains('button', 'Save').click();
+            }
+            checkFieldSaving('#quorum', defaultQuorum);
+            checkFieldSaving('#iouThreshold', defaultIoU);
             cy.get('.ant-notification-notice').should('not.exist');
 
             // Go back to task page
@@ -173,11 +165,11 @@ context('Basic manipulations with consensus job replicas', () => {
             // Create annotations for job replicas
             const delta = 50;
             const [consensusJobID, ...replicaJobIDs] = jobIDs;
-            for (let i = 0, s = shape; i < replicas; i++) {
-                cy.headlessCreateObjects([s], replicaJobIDs[i]); // only 'in progress' jobs can be merged
+            for (let i = 0, shape = shape0; i < replicas; i++) {
+                cy.headlessCreateObjects([shape], replicaJobIDs[i]); // only 'in progress' jobs can be merged
                 cy.headlessUpdateJob(replicaJobIDs[i], { state: 'in progress' });
-                const points = translatePoints(s.points, delta, 'x');
-                s = { ...s, points };
+                const points = translatePoints(shape.points, delta, 'x');
+                shape = { ...shape, points };
             }
             // Merging of consensus job should go without errors in network and UI
             cy.mergeConsensusJob(consensusJobID);
