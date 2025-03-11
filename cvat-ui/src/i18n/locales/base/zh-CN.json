@@ -62,6 +62,7 @@
     },
     "project": {
         "fields": {
+            "ID": "ID",
             "Assignee": "接收者",
             "Owner": "拥有者",
             "Status": "状态",
