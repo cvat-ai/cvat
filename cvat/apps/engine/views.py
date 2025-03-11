@@ -195,7 +195,7 @@ def get_410_response_for_export_api(path: str) -> HttpResponseGone:
     return HttpResponseGone(textwrap.dedent(f"""\
         This endpoint is no longer supported.
         To initiate the export process, use POST {path}.
-        To check the process status, use GET /api/requests/<rq_id>,
+        To check the process status, use GET /api/requests/rq_id,
         where rq_id is obtained from the response of the previous request.
         To download the prepared file, use the result_url obtained from the response of the previous request.
     """))
@@ -395,7 +395,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         # Required for the extra summary information added in the queryset
         serializer.instance = self.get_queryset().get(pk=serializer.instance.pk)
 
-    @extend_schema(methods=['GET'], summary='Export a project as a dataset / Check dataset import status',
+    @extend_schema(methods=['GET'], summary='Check dataset import status',
         description=textwrap.dedent("""
             Utilizing this endpoint to check the status of the process
             of importing a project dataset from a file is deprecated.
@@ -1430,7 +1430,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         responses={
             '200': OpenApiResponse(LabeledDataSerializer),
             '400': OpenApiResponse(description="Exporting without data is not allowed"),
-            '410': OpenApiResponse(description="API endpoint is no longer handles exporting process"),
+            '410': OpenApiResponse(description="API endpoint no longer handles exporting process"),
         })
     @extend_schema(methods=['PUT'], summary='Replace task annotations / Get annotation import status',
         description=textwrap.dedent("""

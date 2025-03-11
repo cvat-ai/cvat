@@ -3781,7 +3781,7 @@ paths:
         Where:
         - `rq_id` can be found in the response on initializing request
         - `result_url` can be found in the response on checking status request
-      summary: Export a project as a dataset / Check dataset import status
+      summary: Check dataset import status
       parameters:
       - in: query
         name: action
@@ -5269,7 +5269,7 @@ paths:
         '400':
           description: Exporting without data is not allowed
         '410':
-          description: API endpoint is no longer handles exporting process
+          description: API endpoint no longer handles exporting process
     post:
       operationId: tasks_create_annotations
       description: |2
