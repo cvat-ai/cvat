@@ -60,7 +60,7 @@ const SortableItem = SortableElement(
         return (
             <div className='cvat-sorting-field'>
                 <Radio.Button disabled={valueIndex > anchorIndex}>
-                    <span className='cvat-sorting-field-label'>{label && label}</span>
+                    <span className='cvat-sorting-field-label'>{label || ''}</span>
                     <span className='cvat-sorting-field-prop'>{value}</span>
                 </Radio.Button>
                 <div>

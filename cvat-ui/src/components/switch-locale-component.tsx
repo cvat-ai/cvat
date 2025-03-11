@@ -19,24 +19,6 @@ export default function SwitchLocaleWithToolTip(): JSX.Element {
     const [locale, setLocale] = React.useState<string>(i18n.language);
     const [show, setShow] = React.useState(false);
 
-    // function showModal() {
-    //     Modal.info({
-    //         title: t('switch-locale', 'Switch Locale'),
-    //         content: (
-    //             <>
-    //                 {locale}
-    //                 <Select
-    //                     value={locale}
-    //                     options={options}
-    //                     onChange={(value) => {
-    //                         console.log('change', value);
-    //                         setLocale(value);
-    //                     }}
-    //                 />
-    //             </>
-    //         ),
-    //     });
-    // }
     return (
         <CVATTooltip overlay={t('Switch locale')}>
             <Button
