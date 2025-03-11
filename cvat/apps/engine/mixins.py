@@ -454,8 +454,6 @@ class DatasetMixin:
         self._object = self.get_object() # force call of check_object_permissions()
 
         export_manager = DatasetExportManager(self._object, request)
-        export_manager.initialize_export_args()
-
         return export_manager.export()
 
     @extend_schema(summary='Download a prepared dataset file',
@@ -553,7 +551,6 @@ class BackupMixin:
     def initiate_backup_export(self, request: ExtendedRequest, pk: int):
         db_object = self.get_object() # force to call check_object_permissions
         export_manager = BackupExportManager(db_object, request)
-        export_manager.initialize_export_args()
         return export_manager.export()
 
 

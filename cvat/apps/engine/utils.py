@@ -311,8 +311,8 @@ def build_annotations_file_name(
     identifier: str | int,
     timestamp: str,
     format_name: str,
+    extension: str,
     is_annotation_file: bool = True,
-    extension: str = "zip",
 ) -> str:
     # "<project|task|job>_<name|id>_<annotations|dataset>_<timestamp>_<format>.<ext>"
     return "{}_{}_{}_{}_{}.{}".format(

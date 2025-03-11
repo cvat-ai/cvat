@@ -2239,7 +2239,8 @@ paths:
       description: |
         Deprecation warning:
 
-        Utilizing this endpoint to export job dataset in a specific format is deprecated.
+        Utilizing this endpoint to export job dataset in a specific format
+        is no longer possible.
 
         Consider using new API:
         - `POST /api/jobs/<job_id>/dataset/export?save_images=True` to initiate export process
@@ -2596,66 +2597,13 @@ paths:
   /api/jobs/{id}/dataset:
     get:
       operationId: jobs_retrieve_dataset
-      description: |
-        Utilizing this endpoint to export job dataset in
-        a specific format is deprecated.
-
-        Consider using new API:
-        - `POST /api/jobs/<job_id>/dataset/export?save_images=True` to initiate export process
-        - `GET /api/requests/<rq_id>` to check process status,
-            where `rq_id` is request id returned on initializing request
-        - `GET result_url` to download a prepared file,
-            where `result_url` can be found in the response on checking status request
-      summary: Export job as a dataset in a specific format
       parameters:
-      - in: query
-        name: action
-        schema:
-          type: string
-          enum:
-          - download
-        description: Used to start downloading process locally after annotation file
-          has been created
-      - in: query
-        name: cloud_storage_id
-        schema:
-          type: integer
-        description: Storage id
-      - in: query
-        name: filename
-        schema:
-          type: string
-        description: Desired output file name
-      - in: query
-        name: format
-        schema:
-          type: string
-        description: |-
-          Desired output format name
-          You can get the list of supported formats at:
-          /server/annotation/formats
-        required: true
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this job.
         required: true
-      - in: query
-        name: location
-        schema:
-          type: string
-          enum:
-          - cloud_storage
-          - local
-        description: Where need to save downloaded dataset
-      - in: query
-        name: use_default_location
-        schema:
-          type: boolean
-          default: true
-        description: Use the location that was configured in the task to export dataset
-        deprecated: true
       tags:
       - jobs
       security:
@@ -2664,10 +2612,13 @@ paths:
         tokenAuth: []
       - signatureAuth: []
       - basicAuth: []
-      deprecated: true
       responses:
-        '410':
-          description: API endpoint no longer handles dataset exporting process
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/JobRead'
+          description: ''
   /api/jobs/{id}/dataset/export:
     post:
       operationId: jobs_create_dataset_export
@@ -3788,14 +3739,6 @@ paths:
   /api/projects/{id}/annotations:
     get:
       operationId: projects_retrieve_annotations
-      description: |
-        Using this endpoint to initiate export of annotations as a dataset or to check export status is deprecated.
-        Consider using new API:
-        - `POST /api/projects/<project_id>/dataset/export?save_images=False` to initiate exporting process
-        - `GET /api/requests/<rq_id>` to check export status,
-            where `rq_id` is request id returned on initializing request
-        - `GET result_url` to download a prepared file with annotations,
-            where `result_url` can be found in the response on checking status request
       parameters:
       - in: path
         name: id
@@ -3811,21 +3754,16 @@ paths:
         tokenAuth: []
       - signatureAuth: []
       - basicAuth: []
-      deprecated: true
       responses:
-        '410':
-          description: API endpoint is no longer handles exporting process
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/ProjectRead'
+          description: ''
   /api/projects/{id}/backup:
     get:
       operationId: projects_retrieve_backup
-      description: |
-        Consider using new API:
-        - `POST /api/projects/<project_id>/backup/export` to initiate backup process
-        - `GET /api/requests/<rq_id>` to check process status,
-            where `rq_id` can be found in the response on initializing request
-        - `GET result_url` to download a prepared file,
-            where `result_url` can be found in the response on checking status request
-      summary: Back up a project
       parameters:
       - in: path
         name: id
@@ -3841,10 +3779,13 @@ paths:
         tokenAuth: []
       - signatureAuth: []
       - basicAuth: []
-      deprecated: true
       responses:
-        '410':
-          description: Deprecated API endpoint
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/ProjectRead'
+          description: ''
   /api/projects/{id}/backup/export:
     post:
       operationId: projects_create_backup_export
@@ -3903,10 +3844,9 @@ paths:
       operationId: projects_retrieve_dataset
       description: |2
 
-        Utilizing this endpoint:
-        - to export project dataset in a specific format
-        - to check the status of the process of importing a project dataset from a file
-        is deprecated.
+        Utilizing this endpoint to check the status of the process
+        of importing a project dataset from a file is deprecated.
+        In addition, this endpoint no longer handles the project dataset export process.
 
         Consider using new API:
         - `POST /api/projects/<project_id>/dataset/export/?save_images=True` to initiate export process
@@ -5333,7 +5273,7 @@ paths:
         Deprecation warning:
 
         Utilizing this endpoint to export annotations as a dataset in
-        a specific format is deprecated.
+        a specific format is no longer possible.
 
         Consider using new API:
         - `POST /api/tasks/<task_id>/dataset/export?save_images=False` to initiate export process
@@ -5603,14 +5543,6 @@ paths:
   /api/tasks/{id}/backup:
     get:
       operationId: tasks_retrieve_backup
-      description: |
-        Consider using new API:
-        - `POST /api/tasks/<task_id>/backup/export` to initiate backup process
-        - `GET /api/requests/<rq_id>` to check process status,
-            where rq_id can be found in the response on initializing request
-        - `GET result_url` to download a prepared file,
-            where `result_url` can be found in the response on checking status request
-      summary: Back up a task
       parameters:
       - in: path
         name: id
@@ -5626,10 +5558,13 @@ paths:
         tokenAuth: []
       - signatureAuth: []
       - basicAuth: []
-      deprecated: true
       responses:
-        '410':
-          description: Deprecated API endpoint
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/TaskRead'
+          description: ''
   /api/tasks/{id}/backup/export:
     post:
       operationId: tasks_create_backup_export
@@ -5899,17 +5834,6 @@ paths:
   /api/tasks/{id}/dataset:
     get:
       operationId: tasks_retrieve_dataset
-      description: |
-        Utilizing this endpoint to export task dataset in
-        a specific format is deprecated.
-
-        Consider using new API:
-        - `POST /api/tasks/<task_id>/dataset/export?save_images=True` to initiate export process
-        - `GET /api/requests/<rq_id>` to check process status,
-            where `rq_id` is request id returned on initializing request
-        - `GET result_url` to download a prepared file,
-            where `result_url` can be found in the response on checking status request
-      summary: Export task as a dataset in a specific format
       parameters:
       - in: path
         name: id
@@ -5926,8 +5850,12 @@ paths:
       - signatureAuth: []
       - basicAuth: []
       responses:
-        '410':
-          description: Deprecated API endpoint
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/TaskRead'
+          description: ''
   /api/tasks/{id}/dataset/export:
     post:
       operationId: tasks_create_dataset_export

@@ -47,6 +47,30 @@ def _get_key(d: dict[str, Any], key_path: Union[str, Sequence[str]]) -> Optional
 
     return d
 
+class DownloadExportedExtension:
+    rq_job_id: RQId | None
+    scope: str
+
+    class Scopes(StrEnum):
+        DOWNLOAD_EXPORTED_FILE = 'download:exported_file'
+
+    @staticmethod
+    def extend_params_with_rq_job_details(*, request: ExtendedRequest, params: dict[str, Any]) -> None:
+        if rq_id := request.query_params.get("rq_id"):
+            try:
+                params["rq_job_id"] = RQId.parse(rq_id)
+            except Exception as ex:
+                raise ValidationError("Unexpected request id format")
+
+        raise ValidationError("Missing request id in the query parameters")
+
+    def extend_resource_with_rq_job_details(self, data: dict[str, Any]) -> None:
+        data["rq_job"] = {
+            "owner": {
+                "id": self.rq_job_id.user_id if self.rq_job_id else None
+            }
+        }
+
 class ServerPermission(OpenPolicyAgentPermission):
     class Scopes(StrEnum):
         VIEW = 'view'
@@ -213,9 +237,8 @@ class CloudStoragePermission(OpenPolicyAgentPermission):
 
         return data
 
-class ProjectPermission(OpenPolicyAgentPermission):
+class ProjectPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
     obj: Optional[Project]
-    rq_job_id: RQId | None
 
     class Scopes(StrEnum):
         LIST = 'list'
@@ -233,7 +256,6 @@ class ProjectPermission(OpenPolicyAgentPermission):
         EXPORT_DATASET = 'export:dataset'
         EXPORT_BACKUP = 'export:backup'
         IMPORT_BACKUP = 'import:backup'
-        DOWNLOAD_EXPORTED_FILE = 'retrieve:exported_file'
 
     @classmethod
     def create(cls, request: ExtendedRequest, view: ViewSet, obj: Project | None, iam_context: dict[str, Any]) -> list[OpenPolicyAgentPermission]:
@@ -243,11 +265,9 @@ class ProjectPermission(OpenPolicyAgentPermission):
 
             for scope in cls.get_scopes(request, view, obj):
                 scope_params = {}
-                if cls.Scopes.DOWNLOAD_EXPORTED_FILE == scope:
-                    rq_id = request.query_params.get("rq_id")
-                    if not rq_id:
-                        raise ValidationError("Missing request id in query parameters")
-                    scope_params["rq_job_id"] = RQId.parse(rq_id)
+
+                if DownloadExportedExtension.Scopes.DOWNLOAD_EXPORTED_FILE == scope:
+                    cls.extend_params_with_rq_job_details(request=request, params=scope_params)
 
                 self = cls.create_base_perm(request, view, scope, iam_context, obj,
                     assignee_id=assignee_id, **scope_params)
@@ -304,8 +324,8 @@ class ProjectPermission(OpenPolicyAgentPermission):
             ('append_backup_chunk', 'PATCH'): Scopes.IMPORT_BACKUP,
             ('append_backup_chunk', 'HEAD'): Scopes.IMPORT_BACKUP,
             ('preview', 'GET'): Scopes.VIEW,
-            ('download_dataset', 'GET'): Scopes.DOWNLOAD_EXPORTED_FILE,
-            ('download_backup', 'GET'): Scopes.DOWNLOAD_EXPORTED_FILE,
+            ('download_dataset', 'GET'): DownloadExportedExtension.Scopes.DOWNLOAD_EXPORTED_FILE,
+            ('download_backup', 'GET'): DownloadExportedExtension.Scopes.DOWNLOAD_EXPORTED_FILE,
             # FUTURE-TODO: delete this after dropping support for deprecated API
             ('annotations', 'GET'): Scopes.EXPORT_ANNOTATIONS,
             ('dataset', 'GET'): Scopes.IMPORT_DATASET if request.query_params.get('action') == 'import_status' else Scopes.EXPORT_DATASET,
@@ -374,13 +394,10 @@ class ProjectPermission(OpenPolicyAgentPermission):
                 "assignee": { "id": self.obj.assignee_id },
                 'organization': { "id": self.obj.organization_id },
             }
-            if __class__.Scopes.DOWNLOAD_EXPORTED_FILE == self.scope:
-                # extend data with rq job owner
-                data["rq_job"] = {
-                    "owner": {
-                        "id": self.rq_job_id.user_id if self.rq_job_id else None
-                    }
-                }
+
+            if DownloadExportedExtension.Scopes.DOWNLOAD_EXPORTED_FILE == self.scope:
+                self.extend_resource_with_rq_job_details(data)
+
         elif self.scope in [__class__.Scopes.CREATE, __class__.Scopes.IMPORT_BACKUP]:
             data = {
                 "id": None,
@@ -395,9 +412,8 @@ class ProjectPermission(OpenPolicyAgentPermission):
 
         return data
 
-class TaskPermission(OpenPolicyAgentPermission):
+class TaskPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
     obj: Optional[Task]
-    rq_job_id: RQId | None
 
     class Scopes(StrEnum):
         LIST = 'list'
@@ -426,7 +442,6 @@ class TaskPermission(OpenPolicyAgentPermission):
         EXPORT_BACKUP = 'export:backup'
         VIEW_VALIDATION_LAYOUT = 'view:validation_layout'
         UPDATE_VALIDATION_LAYOUT = 'update:validation_layout'
-        DOWNLOAD_EXPORTED_FILE = 'retrieve:exported_file'
 
     @classmethod
     def create(cls, request: ExtendedRequest, view: ViewSet, obj: Task | None, iam_context: dict[str, Any]) -> list[OpenPolicyAgentPermission]:
@@ -449,11 +464,8 @@ class TaskPermission(OpenPolicyAgentPermission):
                 elif scope == __class__.Scopes.UPDATE_OWNER:
                     params['owner_id'] = owner
 
-                elif scope == cls.Scopes.DOWNLOAD_EXPORTED_FILE:
-                    rq_id = request.query_params.get("rq_id")
-                    if not rq_id:
-                        raise ValidationError("Missing request id in query parameters")
-                    params["rq_job_id"] = RQId.parse(rq_id)
+                if DownloadExportedExtension.Scopes.DOWNLOAD_EXPORTED_FILE == scope:
+                    cls.extend_params_with_rq_job_details(request=request, params=params)
 
                 self = cls.create_base_perm(request, view, scope, iam_context, obj, **params)
                 permissions.append(self)
@@ -542,8 +554,8 @@ class TaskPermission(OpenPolicyAgentPermission):
             ('preview', 'GET'): Scopes.VIEW,
             ('validation_layout', 'GET'): Scopes.VIEW_VALIDATION_LAYOUT,
             ('validation_layout', 'PATCH'): Scopes.UPDATE_VALIDATION_LAYOUT,
-            ('download_dataset', 'GET'): Scopes.DOWNLOAD_EXPORTED_FILE,
-            ('download_backup', 'GET'): Scopes.DOWNLOAD_EXPORTED_FILE,
+            ('download_dataset', 'GET'): DownloadExportedExtension.Scopes.DOWNLOAD_EXPORTED_FILE,
+            ('download_backup', 'GET'): DownloadExportedExtension.Scopes.DOWNLOAD_EXPORTED_FILE,
             # FUTURE-TODO: deprecated API
             ('dataset_export', 'GET'): Scopes.EXPORT_DATASET,
             ('export_backup', 'GET'): Scopes.EXPORT_BACKUP,
@@ -610,13 +622,10 @@ class TaskPermission(OpenPolicyAgentPermission):
                     'organization': { "id": self.obj.project.organization_id },
                 } if self.obj.project else None
             }
-            if __class__.Scopes.DOWNLOAD_EXPORTED_FILE == self.scope:
-                # extend data with rq job owner
-                data["rq_job"] = {
-                    "owner": {
-                        "id": self.rq_job_id.user_id if self.rq_job_id else None
-                    }
-                }
+
+            if DownloadExportedExtension.Scopes.DOWNLOAD_EXPORTED_FILE == self.scope:
+                self.extend_resource_with_rq_job_details(data)
+
         elif self.scope in [
             __class__.Scopes.CREATE,
             __class__.Scopes.CREATE_IN_PROJECT,
@@ -649,10 +658,9 @@ class TaskPermission(OpenPolicyAgentPermission):
 
         return data
 
-class JobPermission(OpenPolicyAgentPermission):
+class JobPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
     task_id: Optional[int]
     obj: Optional[Job]
-    rq_job_id: RQId | None
 
     class Scopes(StrEnum):
         CREATE = 'create'
@@ -674,7 +682,6 @@ class JobPermission(OpenPolicyAgentPermission):
         UPDATE_METADATA = 'update:metadata'
         VIEW_VALIDATION_LAYOUT = 'view:validation_layout'
         UPDATE_VALIDATION_LAYOUT = 'update:validation_layout'
-        DOWNLOAD_EXPORTED_FILE = 'retrieve:exported_file'
 
     @classmethod
     def create(cls, request: ExtendedRequest, view: ViewSet, obj: Job | None, iam_context: dict[str, Any]) -> list[OpenPolicyAgentPermission]:
@@ -698,11 +705,8 @@ class JobPermission(OpenPolicyAgentPermission):
                             request, task, iam_context=iam_context
                         ))
 
-                elif scope == cls.Scopes.DOWNLOAD_EXPORTED_FILE:
-                    rq_id = request.query_params.get("rq_id")
-                    if not rq_id:
-                        raise ValidationError("Missing request id in query parameters")
-                    scope_params["rq_job_id"] = RQId.parse(rq_id)
+                if DownloadExportedExtension.Scopes.DOWNLOAD_EXPORTED_FILE == scope:
+                    cls.extend_params_with_rq_job_details(request=request, params=scope_params)
 
                 self = cls.create_base_perm(request, view, scope, iam_context, obj, **scope_params)
                 permissions.append(self)
@@ -777,7 +781,7 @@ class JobPermission(OpenPolicyAgentPermission):
             ('preview', 'GET'): Scopes.VIEW,
             ('validation_layout', 'GET'): Scopes.VIEW_VALIDATION_LAYOUT,
             ('validation_layout', 'PATCH'): Scopes.UPDATE_VALIDATION_LAYOUT,
-            ('download_dataset', 'GET'): Scopes.DOWNLOAD_EXPORTED_FILE,
+            ('download_dataset', 'GET'): DownloadExportedExtension.Scopes.DOWNLOAD_EXPORTED_FILE,
             # deprecated API
             ('dataset_export', 'GET'): Scopes.EXPORT_DATASET,
         }[(view.action, request.method)]
@@ -825,13 +829,10 @@ class JobPermission(OpenPolicyAgentPermission):
                     "assignee": { "id": self.obj.segment.task.project.assignee_id }
                 } if self.obj.segment.task.project else None
             }
-            if __class__.Scopes.DOWNLOAD_EXPORTED_FILE == self.scope:
-                # extend data with rq job owner
-                data["rq_job"] = {
-                    "owner": {
-                        "id": self.rq_job_id.user_id if self.rq_job_id else None
-                    }
-                }
+
+            if DownloadExportedExtension.Scopes.DOWNLOAD_EXPORTED_FILE == self.scope:
+                self.extend_resource_with_rq_job_details(data)
+
         elif self.scope == __class__.Scopes.CREATE:
             if self.task_id is None:
                 raise ValidationError("task_id is not specified")

@@ -191,6 +191,15 @@ _DATA_CHECKSUM_HEADER_NAME = 'X-Checksum'
 _DATA_UPDATED_DATE_HEADER_NAME = 'X-Updated-Date'
 _RETRY_AFTER_TIMEOUT = 10
 
+def get_410_response_for_export_api(path: str) -> HttpResponseGone:
+    return HttpResponseGone(textwrap.dedent(f"""\
+        This endpoint is no longer supported.
+        To initiate the export process, use POST {path}.
+        To check the process status, use GET /api/requests/<rq_id>,
+        where rq_id is obtained from the response of the previous request.
+        To download the prepared file, use the result_url obtained from the response of the previous request.
+    """))
+
 @extend_schema(tags=['server'])
 class ServerViewSet(viewsets.ViewSet):
     serializer_class = None
@@ -388,10 +397,9 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     @extend_schema(methods=['GET'], summary='Export a project as a dataset / Check dataset import status',
         description=textwrap.dedent("""
-            Utilizing this endpoint:
-            - to export project dataset in a specific format
-            - to check the status of the process of importing a project dataset from a file
-            is deprecated.
+            Utilizing this endpoint to check the status of the process
+            of importing a project dataset from a file is deprecated.
+            In addition, this endpoint no longer handles the project dataset export process.
 
             Consider using new API:
             - `POST /api/projects/<project_id>/dataset/export/?save_images=True` to initiate export process
@@ -525,7 +533,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
             # we cannot redirect to the new API here since this endpoint used not only to check the status
             # of exporting process|download a result file, but also to initiate export process
-            return HttpResponseGone("API endpoint is no longer handles exporting process")
+            return get_410_response_for_export_api("/api/projects/<id>/dataset/export?save_images=True")
 
         return self.import_annotations(
             request=request,
@@ -584,44 +592,13 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return Response(data='Unknown upload was finished',
                         status=status.HTTP_400_BAD_REQUEST)
 
-    @extend_schema(
-        description=textwrap.dedent("""\
-            Using this endpoint to initiate export of annotations as a dataset or to check export status is deprecated.
-            Consider using new API:
-            - `POST /api/projects/<project_id>/dataset/export?save_images=False` to initiate exporting process
-            - `GET /api/requests/<rq_id>` to check export status,
-                where `rq_id` is request id returned on initializing request
-            - `GET result_url` to download a prepared file with annotations,
-                where `result_url` can be found in the response on checking status request
-        """),
-        responses={
-            '410': OpenApiResponse(description="API endpoint is no longer handles exporting process"),
-        },
-        deprecated=True,
-    )
     @action(detail=True, methods=['GET'], serializer_class=LabeledDataSerializer)
     def annotations(self, request: ExtendedRequest, pk: int):
-        return HttpResponseGone("API endpoint is no longer handles exporting process")
+        return get_410_response_for_export_api("/api/projects/<id>/dataset/export?save_images=False")
 
-    # --- Deprecated API endpoint, should be deleted in the next release ---
-    @extend_schema(summary='Back up a project',
-        description=textwrap.dedent("""\
-            Consider using new API:
-            - `POST /api/projects/<project_id>/backup/export` to initiate backup process
-            - `GET /api/requests/<rq_id>` to check process status,
-                where `rq_id` can be found in the response on initializing request
-            - `GET result_url` to download a prepared file,
-                where `result_url` can be found in the response on checking status request
-            """
-        ),
-        responses={
-            '410': OpenApiResponse(description='Deprecated API endpoint'),
-        },
-        deprecated=True,
-    )
     @action(methods=['GET'], detail=True, url_path='backup')
     def export_backup(self, request: ExtendedRequest, pk: int):
-        return HttpResponseGone("API endpoint is no longer handles the project backup process")
+        return get_410_response_for_export_api("/api/projects/<id>/backup/export")
 
     @extend_schema(methods=['POST'], summary='Recreate a project from a backup',
         description=textwrap.dedent("""
@@ -1027,24 +1004,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def append_backup_chunk(self, request: ExtendedRequest, file_id: str):
         return self.append_tus_chunk(request, file_id)
 
-    @extend_schema(summary='Back up a task',
-        description=textwrap.dedent("""\
-            Consider using new API:
-            - `POST /api/tasks/<task_id>/backup/export` to initiate backup process
-            - `GET /api/requests/<rq_id>` to check process status,
-                where rq_id can be found in the response on initializing request
-            - `GET result_url` to download a prepared file,
-                where `result_url` can be found in the response on checking status request
-            """
-        ),
-        responses={
-            '410': OpenApiResponse(description='Deprecated API endpoint'),
-        },
-        deprecated=True,
-    )
     @action(methods=['GET'], detail=True, url_path='backup')
     def export_backup(self, request: ExtendedRequest, pk: int):
-        return HttpResponseGone("API endpoint is no longer handles the task backup process")
+        return get_410_response_for_export_api("/api/tasks/<id>/backup/export")
 
     @transaction.atomic
     def perform_update(self, serializer):
@@ -1428,7 +1390,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             Deprecation warning:
 
             Utilizing this endpoint to export annotations as a dataset in
-            a specific format is deprecated.
+            a specific format is no longer possible.
 
             Consider using new API:
             - `POST /api/tasks/<task_id>/dataset/export?save_images=False` to initiate export process
@@ -1555,7 +1517,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 {"format", "filename", "action", "location", "cloud_storage_id"}
                 & request.query_params.keys()
             ):
-                return HttpResponseGone("API endpoint no longer handles exporting process")
+                return get_410_response_for_export_api("/api/tasks/<id>/dataset/export?save_images=False")
 
             data = dm.task.get_task_data(self._object.pk)
             return Response(data)
@@ -1706,25 +1668,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         serializer = DataMetaReadSerializer(db_data)
         return Response(serializer.data)
 
-    @extend_schema(summary='Export task as a dataset in a specific format',
-        description=textwrap.dedent("""\
-            Utilizing this endpoint to export task dataset in
-            a specific format is deprecated.
-
-            Consider using new API:
-            - `POST /api/tasks/<task_id>/dataset/export?save_images=True` to initiate export process
-            - `GET /api/requests/<rq_id>` to check process status,
-                where `rq_id` is request id returned on initializing request
-            - `GET result_url` to download a prepared file,
-                where `result_url` can be found in the response on checking status request
-        """),
-        responses={
-            '410': OpenApiResponse(description='Deprecated API endpoint'),
-        },
-    )
     @action(detail=True, methods=['GET'], serializer_class=None, url_path='dataset')
     def dataset_export(self, request: ExtendedRequest, pk: int):
-        return HttpResponseGone("Deprecated API endpoint")
+        return get_410_response_for_export_api("/api/tasks/<id>/dataset/export?save_images=True")
 
     @extend_schema(summary='Get a preview image for a task',
         responses={
@@ -1981,7 +1927,8 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         description=textwrap.dedent("""\
             Deprecation warning:
 
-            Utilizing this endpoint to export job dataset in a specific format is deprecated.
+            Utilizing this endpoint to export job dataset in a specific format
+            is no longer possible.
 
             Consider using new API:
             - `POST /api/jobs/<job_id>/dataset/export?save_images=True` to initiate export process
@@ -2086,7 +2033,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
                 {"format", "filename", "location", "action", "cloud_storage_id"}
                 & request.query_params.keys()
             ):
-                return HttpResponseGone("API endpoint no longer handles dataset exporting process")
+                return get_410_response_for_export_api("/api/jobs/<id>/dataset/export?save_images=False")
 
             annotations = dm.task.get_job_data(self._object.pk)
             return Response(annotations)
@@ -2148,44 +2095,9 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
 
-    @extend_schema(summary='Export job as a dataset in a specific format',
-        description=textwrap.dedent("""\
-            Utilizing this endpoint to export job dataset in
-            a specific format is deprecated.
-
-            Consider using new API:
-            - `POST /api/jobs/<job_id>/dataset/export?save_images=True` to initiate export process
-            - `GET /api/requests/<rq_id>` to check process status,
-                where `rq_id` is request id returned on initializing request
-            - `GET result_url` to download a prepared file,
-                where `result_url` can be found in the response on checking status request
-        """),
-        parameters=[
-            OpenApiParameter('format', location=OpenApiParameter.QUERY,
-                description='Desired output format name\nYou can get the list of supported formats at:\n/server/annotation/formats',
-                type=OpenApiTypes.STR, required=True),
-            OpenApiParameter('filename', description='Desired output file name',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
-            OpenApiParameter('action', location=OpenApiParameter.QUERY,
-                description='Used to start downloading process locally after annotation file has been created',
-                type=OpenApiTypes.STR, required=False, enum=['download']),
-            OpenApiParameter('use_default_location', description='Use the location that was configured in the task to export dataset',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False,
-                default=True, deprecated=True),
-            OpenApiParameter('location', description='Where need to save downloaded dataset',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
-                enum=Location.list()),
-            OpenApiParameter('cloud_storage_id', description='Storage id',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
-        ],
-        responses={
-            '410': OpenApiResponse(description="API endpoint no longer handles dataset exporting process"),
-        },
-        deprecated=True,
-    )
     @action(detail=True, methods=['GET'], serializer_class=None, url_path='dataset')
     def dataset_export(self, request: ExtendedRequest, pk: int):
-        return HttpResponseGone("API endpoint no longer handles dataset exporting process")
+        return get_410_response_for_export_api("/api/jobs/<id>/dataset/export?save_images=True")
 
     @extend_schema(summary='Get data of a job',
         parameters=[

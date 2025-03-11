@@ -7,6 +7,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, ClassVar, Optional, Union
+from urllib.parse import quote
 
 import django_rq
 from django.conf import settings
@@ -82,7 +83,9 @@ class ResourceExportManager(ABC):
     @abstractmethod
     def build_rq_id(self) -> str: ...
 
-    def handle_rq_job(self, rq_job: Optional[RQJob], queue: DjangoRQ) -> Optional[Response]:
+    def handle_existing_rq_job(
+        self, rq_job: Optional[RQJob], queue: DjangoRQ
+    ) -> Optional[Response]:
         if not rq_job:
             return None
 
@@ -113,7 +116,7 @@ class ResourceExportManager(ABC):
         view_name = self.get_download_api_endpoint_view_name()
         result_url = reverse(view_name, args=[self.db_instance.pk], request=self.request)
 
-        return result_url + f"?rq_id={rq_id}"
+        return result_url + f"?rq_id={quote(rq_id)}"
 
     def get_updated_date_timestamp(self) -> str:
         # use only updated_date for the related resource, don't check children objects
@@ -130,8 +133,7 @@ class ResourceExportManager(ABC):
     def setup_background_job(self, queue: DjangoRQ, rq_id: str) -> None: ...
 
     def export(self) -> Response:
-        assert hasattr(self, "export_callback")
-        assert hasattr(self, "export_args")
+        self.initialize_export_args()
 
         if invalid_response := self.validate_export_args():
             return invalid_response
@@ -142,35 +144,39 @@ class ResourceExportManager(ABC):
         # ensure that there is no race condition when processing parallel requests
         with get_rq_lock_for_job(queue, rq_id):
             rq_job = queue.fetch_job(rq_id)
-            if response := self.handle_rq_job(rq_job, queue):
+            if response := self.handle_existing_rq_job(rq_job, queue):
                 return response
             self.setup_background_job(queue, rq_id)
 
         self.send_events()
 
-        serializer = RqIdSerializer(data={"rq_id": rq_id})
-        serializer.is_valid(raise_exception=True)
-
+        serializer = RqIdSerializer({"rq_id": rq_id})
         return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
-    ### Logic related with prepared file downloading ###
+    ### Logic related to prepared file downloading ###
 
-    def validate_rq_id(self, *, rq_id: str | None) -> HttpResponseBadRequest | None:
-        if not rq_id:
-            return HttpResponseBadRequest("Missing request id in query parameters")
-
+    def validate_rq_id(self, rq_id: str) -> None:
         parsed_rq_id = RQId.parse(rq_id)
-        assert parsed_rq_id.action == RequestAction.EXPORT
-        assert parsed_rq_id.target == RequestTarget(self.resource)
-        assert parsed_rq_id.identifier == self.db_instance.pk
-        assert parsed_rq_id.subresource in self.SUPPORTED_SUBRESOURCES
+
+        if (
+            parsed_rq_id.action != RequestAction.EXPORT
+            or parsed_rq_id.target != RequestTarget(self.resource)
+            or parsed_rq_id.identifier != self.db_instance.pk
+            or parsed_rq_id.subresource not in self.SUPPORTED_SUBRESOURCES
+        ):
+            raise ValueError("The provided request id does not match exported target or resource")
 
     def download_file(self) -> Response:
         queue: DjangoRQ = django_rq.get_queue(self.QUEUE_NAME)
         rq_id = self.request.query_params.get("rq_id")
 
-        if invalid_response := self.validate_rq_id(rq_id=rq_id):
-            return invalid_response
+        if not rq_id:
+            return HttpResponseBadRequest("Missing request id in the query parameters")
+
+        try:
+            self.validate_rq_id(rq_id)
+        except ValueError:
+            return HttpResponseBadRequest("Invalid export request id")
 
         # ensure that there is no race condition when processing parallel requests
         with get_rq_lock_for_job(queue, rq_id):
@@ -183,9 +189,8 @@ class ResourceExportManager(ABC):
             # FUTURE-TODO: get_status will raise InvalidJobOperation exception instead of returning None in one of the next releases
             rq_job_status = rq_job.get_status(refresh=False)
 
-            # handle cases where the status is None for some reason
             if rq_job_status != RQJobStatus.FINISHED:
-                return Response(status=status.HTTP_204_NO_CONTENT)
+                return HttpResponseBadRequest("The export process is not finished")
 
             rq_job_meta = ExportRQMeta.for_job(rq_job)
             file_path = rq_job.return_value()
@@ -196,8 +201,10 @@ class ResourceExportManager(ABC):
                         "A result for exporting job was not found for finished RQ job",
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     )
-                    if rq_job_meta.result_url
-                    else Response(status=status.HTTP_204_NO_CONTENT)
+                    if rq_job_meta.result_url  # user tries to download a final file locally while the export is made to cloud storage
+                    else HttpResponseBadRequest(
+                        "The export process has no result file to be downloaded locally"
+                    )
                 )
 
             with get_export_cache_lock(
@@ -435,6 +442,7 @@ class BackupExportManager(ResourceExportManager):
             user_id=self.request.user.id,
         ).render()
 
+    # FUTURE-TODO: move into ResourceExportManager
     def setup_background_job(
         self,
         queue: DjangoRQ,
@@ -443,7 +451,6 @@ class BackupExportManager(ResourceExportManager):
         cache_ttl = get_export_cache_ttl(self.db_instance)
         user_id = self.request.user.id
 
-        # move into a separate method
         if isinstance(self.db_instance, Task):
             logger = slogger.task[self.db_instance.pk]
             Exporter = TaskExporter
