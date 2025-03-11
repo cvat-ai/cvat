@@ -5,7 +5,7 @@
 @import 'base';
 
 .cvat-quality-control-inner {
-    @extend .cvat-control-inner;
+    @include cvat-management-page-inner;
 }
 
 .cvat-quality-settings-title {
@@ -90,7 +90,7 @@ $excluded-background: #d9d9d973;
 
 .cvat-quality-control-wrapper  {
     .cvat-quality-control-inner-wrapper {
-        @extend .cvat-control-inner-wrapper;
+        @include cvat-management-page-inner-wrapper;
     }
 }
 
@@ -148,7 +148,7 @@ $excluded-background: #d9d9d973;
 }
 
 .cvat-task-control-tabs {
-    @extend .cvat-control-tabs;
+    @include cvat-management-page-tabs;
 }
 
 .cvat-quality-control-management-tab-summary {
@@ -167,7 +167,7 @@ $excluded-background: #d9d9d973;
 }
 
 .cvat-quality-page-header {
-    @extend .cvat-control-header;
+    @include cvat-management-page-header;
 }
 
 .cvat-quality-table-search-wrapper {

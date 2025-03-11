@@ -84,7 +84,7 @@ $scroll-breakpoint: 1300px;
     }
 }
 
-.cvat-control-header {
+@mixin cvat-management-page-header {
     position: absolute;
     height: $grid-unit-size * 3;
     padding: 0 $grid-unit-size * 4;
@@ -95,7 +95,7 @@ $scroll-breakpoint: 1300px;
     }
 }
 
-.cvat-control-inner {
+@mixin cvat-management-page-inner {
     min-height: inherit;
     display: flex;
     flex-direction: column;
@@ -108,7 +108,7 @@ $scroll-breakpoint: 1300px;
     }
 }
 
-.cvat-control-inner-wrapper {
+@mixin cvat-management-page-inner-wrapper {
     min-height: 90%;
 
     @media screen and (min-width: $scroll-breakpoint) {
@@ -117,7 +117,7 @@ $scroll-breakpoint: 1300px;
     }
 }
 
-.cvat-control-tabs {
+@mixin cvat-management-page-tabs {
     overflow: hidden;
     flex-grow: 1;
     padding: 0 $grid-unit-size * 5 $grid-unit-size * 2 $grid-unit-size * 5;

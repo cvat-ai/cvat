@@ -6,11 +6,6 @@ import { RuleObject } from 'antd/lib/form';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { ValidateErrorEntity } from 'rc-field-form/lib/interface';
 
-export const requiredRule = {
-    required: true,
-    message: 'This field is required',
-};
-
 export const isInteger = ({ min, max, filter }: {
     min?: number;
     max?: number;

@@ -5,15 +5,15 @@
 @import 'base';
 
 .cvat-consensus-management-inner {
-    @extend .cvat-control-inner;
+    @include cvat-management-page-inner;
 }
 
 .cvat-consensus-management-inner-wrapper {
-    @extend .cvat-control-inner-wrapper;
+    @include cvat-management-page-inner-wrapper;
 }
 
 .cvat-consensus-management-header {
-    @extend .cvat-control-header;
+    @include cvat-management-page-header;
 }
 
 .cvat-consensus-management-page, .cvat-consensus-management-wrapper {
