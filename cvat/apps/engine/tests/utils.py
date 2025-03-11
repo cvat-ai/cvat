@@ -12,6 +12,7 @@ from io import BytesIO
 from pathlib import Path
 from time import sleep
 from typing import Any, Callable, TypeVar
+from urllib.parse import quote
 
 import av
 import django_rq
@@ -173,7 +174,7 @@ class ApiTestBase(APITestCase):
         return response
 
     def _query_params_to_str(self, **params: dict[str, Any]) -> str:
-        return "?" + "&".join([f"{k}={v}"for k, v in params.items()])
+        return "?" + "&".join([f"{k}={quote(v)}"for k, v in params.items()])
 
 
 class ExportApiTestBase(ApiTestBase):
@@ -182,10 +183,14 @@ class ExportApiTestBase(ApiTestBase):
         user: str,
         api_path: str,
         *,
+        query_params: dict[str, Any] | None = None,
         download_locally: bool = True,
         file_path: str | None = None,
         expected_4xx_status_code: int | None = None,
     ):
+        if query_params:
+            api_path += self._query_params_to_str(**query_params)
+
         response = self._post_request(api_path, user)
         self.assertEqual(response.status_code, expected_4xx_status_code or status.HTTP_202_ACCEPTED)
 
@@ -214,60 +219,10 @@ class ExportApiTestBase(ApiTestBase):
         self.assertEqual(response.status_code, expected_4xx_status_code or status.HTTP_200_OK)
 
         if not expected_4xx_status_code and file_path:
-            content = BytesIO(b"".join(response.streaming_content))
             with open(file_path, "wb") as f:
-                f.write(content.getvalue())
+                f.write(response.content)
 
         return response
-
-    def _get_api_path_to_export_task_backup(self, task_id: int, *, query_params: dict[str, Any] | None = None) -> str:
-        api_path = f"/api/tasks/{task_id}/backup/export"
-        if query_params:
-            api_path += self._query_params_to_str(**query_params)
-        return api_path
-
-    def _get_api_path_to_export_project_backup(self, project_id: int, *, query_params: dict[str, Any] | None = None) -> str:
-        api_path = f"/api/projects/{project_id}/backup/export"
-        if query_params:
-            api_path += self._query_params_to_str(**query_params)
-        return api_path
-
-    def _get_api_path_to_export_project_dataset(self, project_id: int, *, query_params: dict[str, Any] | None = None) -> str:
-        api_path = f"/api/projects/{project_id}/dataset/export"
-        if query_params:
-            api_path += self._query_params_to_str(**query_params, save_images=True)
-        return api_path
-
-    def _get_api_path_to_export_project_annotations(self, project_id: int, *, query_params: dict[str, Any] | None = None) -> str:
-        api_path = f"/api/projects/{project_id}/dataset/export"
-        if query_params:
-            api_path += self._query_params_to_str(**query_params, save_images=False)
-        return api_path
-
-    def _get_api_path_to_export_task_dataset(self, task_id: int, *, query_params: dict[str, Any] | None = None) -> str:
-        api_path = f"/api/tasks/{task_id}/dataset/export"
-        if query_params:
-            api_path += self._query_params_to_str(**query_params, save_images=True)
-        return api_path
-
-    def _get_api_path_to_export_task_annotations(self, task_id: int, *, query_params: dict[str, Any] | None = None) -> str:
-        api_path = f"/api/tasks/{task_id}/dataset/export"
-        if query_params:
-            api_path += self._query_params_to_str(**query_params, save_images=False)
-        return api_path
-
-    def _get_api_path_to_export_job_dataset(self, job_id: int, *, query_params: dict[str, Any] | None = None) -> str:
-        api_path = f"/api/jobs/{job_id}/dataset/export"
-        if query_params:
-            api_path += self._query_params_to_str(**query_params, save_images=True)
-        return api_path
-
-    def _get_api_path_to_export_job_annotations(self, job_id: int, *, query_params: dict[str, Any] | None = None) -> str:
-        api_path = f"/api/jobs/{job_id}/dataset/export"
-        if query_params:
-            api_path += self._query_params_to_str(**query_params, save_images=False)
-        return api_path
-
 
     def _export_task_backup(
         self,
@@ -279,8 +234,12 @@ class ExportApiTestBase(ApiTestBase):
         file_path: str | None = None,
         expected_4xx_status_code: int | None = None,
     ):
-        api_path = self._get_api_path_to_export_task_backup(task_id, query_params=query_params)
-        return self._export(user, api_path, download_locally=download_locally, file_path=file_path, expected_4xx_status_code=expected_4xx_status_code)
+        return self._export(
+            user, f"/api/tasks/{task_id}/backup/export",
+            query_params=query_params,
+            download_locally=download_locally, file_path=file_path,
+            expected_4xx_status_code=expected_4xx_status_code
+        )
 
     def _export_project_backup(
         self,
@@ -292,88 +251,133 @@ class ExportApiTestBase(ApiTestBase):
         file_path: str | None = None,
         expected_4xx_status_code: int | None = None,
     ):
-        api_path = self._get_api_path_to_export_project_backup(project_id, query_params=query_params)
-        return self._export(user, api_path, download_locally=download_locally, file_path=file_path, expected_4xx_status_code=expected_4xx_status_code)
+        return self._export(
+            user, f"/api/projects/{project_id}/backup/export",
+            query_params=query_params,
+            download_locally=download_locally,
+            file_path=file_path,
+            expected_4xx_status_code=expected_4xx_status_code
+        )
 
     def _export_project_dataset(
         self,
         user: str,
         project_id: int,
         *,
-        query_params: dict | None = None,
+        query_params: dict,
         download_locally: bool = True,
         file_path: str | None = None,
         expected_4xx_status_code: int | None = None,
     ):
-        api_path = self._get_api_path_to_export_project_dataset(project_id, query_params=query_params)
-        return self._export(user, api_path, download_locally=download_locally, file_path=file_path, expected_4xx_status_code=expected_4xx_status_code)
+        query_params["save_images"] = True
+
+        return self._export(
+            user, f"/api/projects/{project_id}/dataset/export",
+            query_params=query_params,
+            download_locally=download_locally,
+            file_path=file_path,
+            expected_4xx_status_code=expected_4xx_status_code
+        )
 
     def _export_project_annotations(
         self,
         user: str,
         project_id: int,
         *,
-        query_params: dict | None = None,
+        query_params: dict,
         download_locally: bool = True,
         file_path: str | None = None,
         expected_4xx_status_code: int | None = None,
     ):
-        api_path = self._get_api_path_to_export_project_annotations(project_id, query_params=query_params)
-        return self._export(user, api_path, download_locally=download_locally, file_path=file_path, expected_4xx_status_code=expected_4xx_status_code)
+        query_params["save_images"] = False
+
+        return self._export(
+            user, f"/api/projects/{project_id}/dataset/export",
+            query_params=query_params,
+            download_locally=download_locally,
+            file_path=file_path,
+            expected_4xx_status_code=expected_4xx_status_code
+        )
 
     def _export_task_dataset(
         self,
         user: str,
         task_id: int,
         *,
-        query_params: dict | None = None,
+        query_params: dict,
         download_locally: bool = True,
         file_path: str | None = None,
         expected_4xx_status_code: int | None = None,
     ):
-        api_path = self._get_api_path_to_export_task_dataset(task_id, query_params=query_params)
-        return self._export(user, api_path, download_locally=download_locally, file_path=file_path, expected_4xx_status_code=expected_4xx_status_code)
+        query_params["save_images"] = True
+
+        return self._export(
+            user, f"/api/tasks/{task_id}/dataset/export",
+            query_params=query_params,
+            download_locally=download_locally,
+            file_path=file_path,
+            expected_4xx_status_code=expected_4xx_status_code
+        )
 
     def _export_task_annotations(
         self,
         user: str,
         task_id: int,
         *,
-        query_params: dict | None = None,
+        query_params: dict,
         download_locally: bool = True,
         file_path: str | None = None,
         expected_4xx_status_code: int | None = None,
     ):
-        api_path = self._get_api_path_to_export_task_annotations(task_id, query_params=query_params)
-        return self._export(user, api_path, download_locally=download_locally, file_path=file_path, expected_4xx_status_code=expected_4xx_status_code)
+        query_params["save_images"] = False
+
+        return self._export(
+            user, f"/api/tasks/{task_id}/dataset/export",
+            query_params=query_params,
+            download_locally=download_locally,
+            file_path=file_path,
+            expected_4xx_status_code=expected_4xx_status_code
+        )
 
     def _export_job_dataset(
         self,
         user: str,
         job_id: int,
         *,
-        query_params: dict | None = None,
+        query_params: dict,
         download_locally: bool = True,
         file_path: str | None = None,
         expected_4xx_status_code: int | None = None,
     ):
-        api_path = self._get_api_path_to_export_job_dataset(job_id, query_params=query_params)
-        return self._export(user, api_path, download_locally=download_locally, file_path=file_path, expected_4xx_status_code=expected_4xx_status_code)
+        query_params["save_images"] = True
+
+        return self._export(
+            user, f"/api/jobs/{job_id}/dataset/export",
+            query_params=query_params,
+            download_locally=download_locally,
+            file_path=file_path,
+            expected_4xx_status_code=expected_4xx_status_code
+        )
 
     def _export_job_annotations(
         self,
         user: str,
         job_id: int,
         *,
-        query_params: dict | None = None,
+        query_params: dict,
         download_locally: bool = True,
         file_path: str | None = None,
         expected_4xx_status_code: int | None = None,
     ):
-        api_path = self._get_api_path_to_export_job_annotations(job_id, query_params=query_params)
-        return self._export(user, api_path, download_locally=download_locally, file_path=file_path, expected_4xx_status_code=expected_4xx_status_code)
+        query_params["save_images"] = False
 
-
+        return self._export(
+            user, f"/api/jobs/{job_id}/dataset/export",
+            query_params=query_params,
+            download_locally=download_locally,
+            file_path=file_path,
+            expected_4xx_status_code=expected_4xx_status_code
+        )
 
 def generate_image_file(filename, size=(100, 100)):
     assert os.path.splitext(filename)[-1].lower() in ['', '.jpg', '.jpeg'], \
