@@ -99,11 +99,12 @@ services:
       ONE_RUNNING_JOB_IN_QUEUE_PER_USER:
     command: init run server
     labels:
-      - traefik.enable=true
-      - traefik.http.services.cvat.loadbalancer.server.port=8080
-      - traefik.http.routers.cvat.rule=Host(`${CVAT_HOST:-localhost}`) &&
+      traefik.enable: "true"
+      traefik.http.services.cvat.loadbalancer.server.port: "8080"
+      traefik.http.routers.cvat.rule:
+        Host(`${CVAT_HOST:-localhost}`) &&
         PathPrefix(`/api/`, `/static/`, `/admin`, `/documentation/`, `/django-rq`)
-      - traefik.http.routers.cvat.entrypoints=web
+      traefik.http.routers.cvat.entrypoints: web
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -265,10 +266,10 @@ services:
     depends_on:
       - cvat_server
     labels:
-      - traefik.enable=true
-      - traefik.http.services.cvat-ui.loadbalancer.server.port=80
-      - traefik.http.routers.cvat-ui.rule=Host(`${CVAT_HOST:-localhost}`)
-      - traefik.http.routers.cvat-ui.entrypoints=web
+      traefik.enable: "true"
+      traefik.http.services.cvat-ui.loadbalancer.server.port: "80"
+      traefik.http.routers.cvat-ui.rule: Host(`${CVAT_HOST:-localhost}`)
+      traefik.http.routers.cvat-ui.entrypoints: web
     networks:
       - cvat
 
@@ -299,10 +300,10 @@ services:
     #   TRAEFIK_API_DASHBOARD: "true"
     #   TRAEFIK_ENTRYPOINTS_dashboard_ADDRESS: :8090
     # labels:
-    #   - traefik.enable=true
-    #   - traefik.http.routers.dashboard.entrypoints=dashboard
-    #   - traefik.http.routers.dashboard.service=api@internal
-    #   - traefik.http.routers.dashboard.rule=Host(`${CVAT_HOST:-localhost}`)
+    #   traefik.enable: "true"
+    #   traefik.http.routers.dashboard.entrypoints: dashboard
+    #   traefik.http.routers.dashboard.service: api@internal
+    #   traefik.http.routers.dashboard.rule: Host(`${CVAT_HOST:-localhost}`)
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./components/analytics/grafana_conf.yml:/etc/traefik/rules/grafana_conf.yml:ro

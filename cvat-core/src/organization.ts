@@ -4,9 +4,12 @@
 // SPDX-License-Identifier: MIT
 
 import {
+    OrganizationMembersFilter,
     SerializedInvitationData, SerializedOrganization, SerializedOrganizationContact, SerializedUser,
 } from './server-response-types';
-import { checkObjectType, isEnum } from './common';
+import {
+    checkFilter, checkObjectType, fieldsToSnakeCase, isEnum, isInteger, isString,
+} from './common';
 import config from './config';
 import { MembershipRole } from './enums';
 import { ArgumentError, DataError } from './exceptions';
@@ -143,13 +146,14 @@ export default class Organization {
     }
 
     // Method returns paginatable list of organization members
-    public async members(page = 1, page_size = 10): Promise<Membership[]> {
+    public async members(filter: OrganizationMembersFilter = { page: 1, pageSize: 10 }): Promise<Membership[]> {
         const result = await PluginRegistry.apiWrapper.call(
             this,
             Organization.prototype.members,
-            this.slug,
-            page,
-            page_size,
+            {
+                ...filter,
+                org: this.slug,
+            },
         );
         return result;
     }
@@ -318,12 +322,21 @@ Object.defineProperties(Organization.prototype.members, {
     implementation: {
         writable: false,
         enumerable: false,
-        value: async function implementation(orgSlug: string, page: number, pageSize: number) {
-            checkObjectType('orgSlug', orgSlug, 'string');
-            checkObjectType('page', page, 'number');
-            checkObjectType('pageSize', pageSize, 'number');
+        value: async function implementation(
+            filter: Parameters<typeof Organization.prototype.members>[0],
+        ) {
+            checkFilter(filter, {
+                org: isString,
+                page: isInteger,
+                pageSize: isInteger,
+                search: isString,
+                filter: isString,
+                sort: isString,
+            });
 
-            const result = await serverProxy.organizations.members(orgSlug, page, pageSize);
+            const params = fieldsToSnakeCase(filter);
+            const result = await serverProxy.organizations.members(params);
+
             const memberships = await Promise.all(result.results.map(async (rawMembership) => {
                 const { invitation } = rawMembership;
                 let rawInvitation = null;
@@ -415,7 +428,10 @@ Object.defineProperties(Organization.prototype.leave, {
         value: async function implementation(user: User) {
             checkObjectType('user', user, null, User);
             if (typeof this.id === 'number') {
-                const result = await serverProxy.organizations.members(this.slug, 1, 10, {
+                const result = await serverProxy.organizations.members({
+                    page: 1,
+                    pageSize: 10,
+                    org: this.slug,
                     filter: JSON.stringify({
                         and: [{
                             '==': [{ var: 'user' }, user.username],

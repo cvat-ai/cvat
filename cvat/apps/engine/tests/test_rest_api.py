@@ -23,6 +23,7 @@ from glob import glob
 from io import BytesIO, IOBase
 from itertools import product
 from time import sleep
+from typing import BinaryIO
 from unittest import mock
 
 import av
@@ -1749,13 +1750,13 @@ class ProjectCloudBackupAPINoStaticChunksTestCase(ProjectBackupAPITestCase):
             def create_file(cls, key, _bytes):
                 cls._files[key] = _bytes
 
-            def get_file_status(self, key):
+            def get_file_status(self, key: str, /):
                 return Status.AVAILABLE if key in self._files else Status.NOT_FOUND
 
-            def _download_range_of_bytes(self, key, stop_byte, start_byte):
+            def _download_range_of_bytes(self, key: str, /, *, stop_byte: int, start_byte: int):
                 return self._files[key][start_byte:stop_byte]
 
-            def _download_fileobj_to_stream(self, key, stream):
+            def _download_fileobj_to_stream(self, key: str, stream: BinaryIO, /):
                 stream.write(self._files[key])
 
         cls.mock_aws = MockAWS
