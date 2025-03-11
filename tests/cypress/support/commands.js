@@ -1848,7 +1848,7 @@ Cypress.Commands.add('applyActionToSliders', (wrapper, slidersClassNames, action
 });
 
 Cypress.Commands.add('mergeConsensusTask', (status = 202) => {
-    cy.intercept('POST', '/api/consensus/merges**').as('mergeJobs');
+    cy.intercept('POST', '/api/consensus/merges**').as('mergeTask');
 
     cy.get('.cvat-task-details-wrapper').should('be.visible');
     cy.contains('button', 'Actions').click();
@@ -1857,15 +1857,16 @@ Cypress.Commands.add('mergeConsensusTask', (status = 202) => {
         .contains('button', 'Merge')
         .click();
 
-    cy.wait('@mergeJobs').its('response.statusCode').should('eq', status);
+    cy.wait('@mergeTask').its('response.statusCode').should('eq', status);
 });
 
-Cypress.Commands.add('mergeConsensusJob', (status = 202) => {
+Cypress.Commands.add('mergeConsensusJob', (jobID, status = 202) => {
     cy.intercept('POST', '/api/consensus/merges**').as('mergeJob');
+    cy.get('.cvat-job-item')
+        .filter(':has(.cvat-tag-consensus)')
+        .filter(`:contains("Job #${jobID}")`)
+        .find('.anticon-more').first().click();
 
-    cy.get('.cvat-job-item').first().within(() => {
-        cy.get('.anticon-more').first().click();
-    });
     cy.get('.ant-dropdown-menu').contains('li', 'Merge consensus job').click();
     cy.get('.cvat-modal-confirm-consensus-merge-job')
         .contains('button', 'Merge')

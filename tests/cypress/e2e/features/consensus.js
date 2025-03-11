@@ -96,7 +96,29 @@ context('Basic manipulations with consensus job replicas', () => {
             cy.openTask(taskName);
             cy.get('.cvat-consensus-job-collapse').click();
         });
+
         it("Check new merge buttons exist and are visible. Trying to merge 'new' jobs should trigger errors", () => {
+            // Check asc order of jobs in drop-down
+            function parseJobId(jobItem) {
+                const jobItemText = jobItem.innerText;
+                const [start, stop] = [0, jobItemText.indexOf('\n')];
+                return +(jobItemText.substring(start, stop).split('#')[1]);
+            }
+            cy.get('.cvat-job-item').each(([$el], i) => {
+                const jobID = parseJobId($el);
+                jobIDs.push(jobID);
+                expect(jobID).equals(jobIDs[0] + i);
+            });
+
+            // Merge one consensus job
+            cy.then(() => {
+                cy.mergeConsensusJob(jobIDs[0], 400);
+            });
+            cy.get('.cvat-notification-notice-consensus-merge-task-failed')
+                .should('be.visible')
+                .invoke('text').should('include', 'Could not merge the job');
+            cy.closeNotification('.cvat-notification-notice-consensus-merge-task-failed');
+
             // Merge all consensus jobs in task
             cy.mergeConsensusTask(400);
             cy.get('.cvat-notification-notice-consensus-merge-task-failed')
@@ -104,29 +126,6 @@ context('Basic manipulations with consensus job replicas', () => {
                 .invoke('text')
                 .should('include', 'Could not merge the task');
             cy.closeNotification('.cvat-notification-notice-consensus-merge-task-failed');
-
-            // Merge one consensus job
-            cy.mergeConsensusJob(400);
-            cy.get('.cvat-notification-notice-consensus-merge-task-failed')
-                .should('be.visible')
-                .invoke('text').should('include', 'Could not merge the job');
-            cy.closeNotification('.cvat-notification-notice-consensus-merge-task-failed');
-
-            // Check asc order of jobs and save job ids
-            function parseJobId(jobItem) {
-                const jobItemText = jobItem.innerText;
-                const [start, stop] = [0, jobItemText.indexOf('\n')];
-                return +(jobItemText.substring(start, stop).split('#')[1]);
-            }
-            cy.get('.cvat-job-item').then((jobItems) => {
-                const sourceJobId = parseJobId(jobItems[0]);
-                jobIDs.push(sourceJobId);
-                for (let i = 1; i <= replicas; i++) {
-                    const jobId = parseJobId(jobItems[i]);
-                    jobIDs.push(jobId);
-                    expect(jobId).equals(sourceJobId + i);
-                }
-            });
         });
 
         it('Check consensus management page', () => {
@@ -181,7 +180,7 @@ context('Basic manipulations with consensus job replicas', () => {
                 s = { ...s, points };
             }
             // Merging of consensus job should go without errors in network and UI
-            cy.mergeConsensusJob();
+            cy.mergeConsensusJob(consensusJobID);
             cy.get('.cvat-notification-notice-consensus-merge-job-failed').should('not.exist');
             cy.get('.ant-notification-notice-message')
                 .should('be.visible')
