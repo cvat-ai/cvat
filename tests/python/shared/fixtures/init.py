@@ -42,7 +42,7 @@ class Container(str, Enum):
     WORKER_EXPORT = "cvat_worker_export"
     WORKER_QUALITY_REPORTS = "cvat_worker_quality_reports"
     WORKER_WEBHOOKS = "cvat_worker_webhooks"
-    UTILS = "cvat_utils"
+    UTILS = "cvat_worker_utils"
 
     def __str__(self):
         return self.value
