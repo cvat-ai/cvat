@@ -93,7 +93,7 @@ class Migration(BaseMigration):
 
             # check whether a filename was provided by a user
             if filename := parse_qs(parsed_result_url.query).get("filename"):
-                update_meta(result_filename=filename, result_url=actual_result_url)
+                update_meta(result_filename=filename[0], result_url=actual_result_url)
                 return
 
             # filename was not specified by a user
