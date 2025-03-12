@@ -78,13 +78,13 @@ def fxt_camvid_dataset(tmp_path: Path):
 
     label_colors_path = tmp_path / "label_colors.txt"
     with open(label_colors_path, "w") as f:
-        f.write(f"{r} {g} {b} ROI\n")
+        f.write(f"{r} {g} {b} car\n")
 
     dataset_img_path = "default/img.png"
     dataset_annot_path = "default/annot.png"
     default_txt_path = tmp_path / "default.txt"
     with open(default_txt_path, "w") as f:
-        f.write(f"{dataset_img_path} {dataset_annot_path}")
+        f.write(f"/{dataset_img_path} {dataset_annot_path}")
 
     dataset_path = tmp_path / "camvid_dataset.zip"
     with ZipFile(dataset_path, "x") as f:

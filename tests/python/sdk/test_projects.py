@@ -168,7 +168,6 @@ class TestProjectUsecases(TestDatasetExport):
     ):
         pbar_out = io.StringIO()
         pbar = make_pbar(file=pbar_out)
-
         project = self.client.projects.create_from_dataset(
             spec=models.ProjectWriteRequest(name="project with data"),
             dataset_path=fxt_camvid_dataset,

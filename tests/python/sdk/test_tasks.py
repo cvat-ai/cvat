@@ -405,7 +405,7 @@ class TestTaskUsecases(TestDatasetExport):
         pbar = make_pbar(file=pbar_out)
 
         fxt_new_task.import_annotations(
-            format_name="COCO 1.0",
+            format_name="CamVid 1.0",
             filename=fxt_camvid_dataset,
             conv_mask_to_poly=convert,
             pbar=pbar,
