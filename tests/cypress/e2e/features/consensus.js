@@ -28,11 +28,13 @@ context('Basic manipulations with consensus job replicas', () => {
     before(() => {
         cy.visit('auth/login');
         cy.login();
-        cy.headlessCreateTask(taskSpec, dataSpec, extras);
-        cy.get('.cvat-create-task-dropdown').click();
-        cy.get('.cvat-create-task-button').should('be.visible').click();
     });
+
     describe('Consensus job creation', () => {
+        before(() => {
+            cy.get('.cvat-create-task-dropdown').click();
+            cy.get('.cvat-create-task-button').should('be.visible').click();
+        });
         const maxReplicas = 10;
         it('Check allowed number of replicas', () => {
             cy.contains('Advanced configuration').click();
@@ -75,7 +77,7 @@ context('Basic manipulations with consensus job replicas', () => {
         });
     });
 
-    describe('Cosensus jobs merging', () => {
+    describe.only('Cosensus jobs merging', () => {
         const baseShape = {
             objectType: 'shape',
             labelName,
@@ -87,10 +89,10 @@ context('Basic manipulations with consensus job replicas', () => {
         const jobIDs = [];
 
         before(() => {
-            cy.headlessCreateTask(taskSpec, dataSpec, extras);
             cy.goToTaskList();
             cy.openTask(taskName);
             cy.get('.cvat-consensus-job-collapse').click();
+            cy.headlessCreateTask(taskSpec, dataSpec, extras);
         });
 
         it("Check new merge buttons exist and are visible. Trying to merge 'new' jobs should trigger errors", () => {
@@ -124,7 +126,7 @@ context('Basic manipulations with consensus job replicas', () => {
             cy.closeNotification('.cvat-notification-notice-consensus-merge-task-failed');
         });
 
-        it('Check consensus management page', () => {
+        it.only('Check consensus management page', () => {
             const defaultQuorum = 50;
             const defaultIoU = 40;
             cy.contains('button', 'Actions').click();
@@ -141,16 +143,25 @@ context('Basic manipulations with consensus job replicas', () => {
             cy.closeNotification('.ant-notification-notice-closable');
 
             // Forms and invalid saving
-            function checkFieldSaving(selector, defaultValue) {
-                cy.get(selector).then(([$el]) => {
-                    cy.wrap($el).invoke('val').should('eq', `${defaultValue}`);
-                    cy.wrap($el).clear();
+            function checkFieldValue(selector, value) {
+                return cy.get(selector).then(([$el]) => {
+                    cy.wrap($el).invoke('val').should('eq', `${value}`);
+                    return cy.wrap($el);
                 });
-                cy.get('.ant-form-item-explain-error').should('be.visible');
-                cy.contains('button', 'Save').click();
             }
-            checkFieldSaving('#quorum', defaultQuorum);
-            checkFieldSaving('#iouThreshold', defaultIoU);
+            function attemptInvalidSaving(errorsCount) {
+                cy.get('.ant-form-item-explain-error').should('be.visible')
+                    .should('have.length', errorsCount)
+                    .each(($el) => {
+                        cy.wrap($el).should('have.text', 'This field is required');
+                    });
+                cy.contains('button', 'Save').click();
+                cy.closeNotification('.cvat-notification-save-consensus-settings-failed');
+            }
+            checkFieldValue('#quorum', defaultQuorum).clear();
+            attemptInvalidSaving(1);
+            checkFieldValue('#iouThreshold', defaultIoU).clear();
+            attemptInvalidSaving(2);
             cy.get('.ant-notification-notice').should('not.exist');
 
             // Go back to task page
