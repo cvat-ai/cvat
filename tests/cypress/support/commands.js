@@ -179,7 +179,6 @@ Cypress.Commands.add(
         expectedResult = 'success',
         projectSubsetFieldValue = 'Test',
         qualityConfigurationParams = null,
-        serverFiles = [],
     ) => {
         cy.url().then(() => {
             cy.get('.cvat-create-task-dropdown').click();
@@ -213,11 +212,7 @@ Cypress.Commands.add(
                 cy.get('.cvat-project-subset-field').type(`${projectSubsetFieldValue}{Enter}`);
                 cy.get('.cvat-constructor-viewer-new-item').should('not.exist');
             }
-            if (serverFiles.length > 0) {
-                cy.selectFilesFromShare(serverFiles);
-            } else {
-                cy.get('input[type="file"]').attachFile(image, { subjectType: 'drag-n-drop' });
-            }
+            cy.get('input[type="file"]').attachFile(image, { subjectType: 'drag-n-drop' });
             if (advancedConfigurationParams) {
                 cy.advancedConfiguration(advancedConfigurationParams);
             }
