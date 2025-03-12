@@ -236,7 +236,7 @@ function ConsensusManagementPage(): JSX.Element {
 
     if (instance) {
         title = (
-            <Col>
+            <Col className='cvat-consensus-management-header'>
                 <Title level={4} className='cvat-text-color'>
                     Consensus management for
                     <Link to={`/tasks/${instance.id}`}>{` Task #${instance.id}`}</Link>
@@ -277,7 +277,7 @@ function ConsensusManagementPage(): JSX.Element {
             <Row className='cvat-consensus-management-wrapper'>
                 <Col span={24}>
                     {backNavigation}
-                    <Row justify='center'>
+                    <Row justify='center' className='cvat-consensus-management-inner-wrapper'>
                         <Col span={22} xl={18} xxl={14} className='cvat-consensus-management-inner'>
                             {title}
                             {tabs}
