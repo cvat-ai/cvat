@@ -49,7 +49,6 @@ def _get_key(d: dict[str, Any], key_path: Union[str, Sequence[str]]) -> Optional
 
 class DownloadExportedExtension:
     rq_job_id: RQId | None
-    scope: str
 
     class Scopes(StrEnum):
         DOWNLOAD_EXPORTED_FILE = 'download:exported_file'

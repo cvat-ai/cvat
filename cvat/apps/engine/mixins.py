@@ -463,7 +463,6 @@ class DatasetMixin:
         ],
         responses={
             '200': OpenApiResponse(description='Download of file started'),
-            '204': OpenApiResponse(description='No prepared dataset file related with provider request ID'),
         },
         exclude=True, # private API endpoint that should be used only as result_url
     )
@@ -561,7 +560,6 @@ class BackupMixin:
         ],
         responses={
             '200': OpenApiResponse(description='Download of file started'),
-            '204': OpenApiResponse(description='No prepared backup file related with provider request ID'),
         },
         exclude=True, # private API endpoint that should be used only as result_url
     )
