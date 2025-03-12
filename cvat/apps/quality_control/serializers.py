@@ -129,6 +129,11 @@ class QualityReportSerializer(serializers.ModelSerializer):
         )
         read_only_fields = fields
 
+    def to_representation(self, instance):
+        result = super().to_representation(instance)
+        result["parent_id"] = getattr(next(iter(instance.parents.all()), None), "id", None)
+        return result
+
 
 class QualityReportCreateSerializer(serializers.Serializer):
     task_id = serializers.IntegerField(write_only=True, required=False)
@@ -271,9 +276,9 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 extra_kwargs.setdefault(field_name, {}).setdefault("min_value", 0)
                 extra_kwargs.setdefault(field_name, {}).setdefault("max_value", 1)
 
-    job_filter = serializers.CharField(
+    # TODO: check sdk interaction, add more validation
+    job_filter = serializers.JSONField(
         required=False,
-        allow_blank=True,
         help_text=textwrap.dedent(
             """\
         JSON expression filter for included jobs. Available filter terms: {}
@@ -296,5 +301,10 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
         return extra_kwargs
 
-    def validate_job_filter(self, value):
-        return value or []
+    def update(self, instance, validated_data):
+        if instance.task_id:
+            instance.task.touch()
+        elif instance.project_id:
+            instance.project.touch()
+
+        return super().update(instance, validated_data)

@@ -10079,9 +10079,9 @@ components:
       type: object
       properties:
         job_filter:
-          type: string
+          type: object
           description: |
-            JSON expression filter for included jobs. Available filter terms: []
+            JSON expression filter for included jobs. Available filter terms: ['assignee', 'id', 'stage', 'status', 'task_id', 'task_name', 'type']
         inherit:
           type: boolean
           description: |
@@ -10699,9 +10699,9 @@ components:
           type: integer
           nullable: true
         job_filter:
-          type: string
+          type: object
           description: |
-            JSON expression filter for included jobs. Available filter terms: []
+            JSON expression filter for included jobs. Available filter terms: ['assignee', 'id', 'stage', 'status', 'task_id', 'task_name', 'type']
         inherit:
           type: boolean
           description: |
@@ -10856,9 +10856,9 @@ components:
           type: integer
           nullable: true
         job_filter:
-          type: string
+          type: object
           description: |
-            JSON expression filter for included jobs. Available filter terms: []
+            JSON expression filter for included jobs. Available filter terms: ['assignee', 'id', 'stage', 'status', 'task_id', 'task_name', 'type']
         inherit:
           type: boolean
           description: |

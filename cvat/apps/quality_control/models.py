@@ -13,7 +13,7 @@ from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.forms.models import model_to_dict
 
-from cvat.apps.engine.models import Job, Project, ShapeType, Task, TimestampedModel, User
+from cvat.apps.engine.models import Job, JobType, Project, ShapeType, Task, TimestampedModel, User
 
 
 class AnnotationConflictType(str, Enum):
@@ -302,7 +302,11 @@ class QualitySettings(TimestampedModel):
 
     inherit = models.BooleanField(default=True)
 
-    job_filter = models.JSONField(default=list)
+    job_filter = models.TextField(
+        default='{"==": [{"var": "type"}, "%s"]}' % JobType.ANNOTATION,
+        max_length=1024,
+        blank=True,
+    )
 
     iou_threshold = models.FloatField()
     oks_sigma = models.FloatField()
@@ -370,4 +374,6 @@ class QualitySettings(TimestampedModel):
 
     @classmethod
     def get_job_filter_terms(cls) -> list[str]:
-        return []
+        from .quality_reports import TaskQualityCalculator
+
+        return sorted(TaskQualityCalculator.JOB_FILTER_LOOKUPS.keys())
