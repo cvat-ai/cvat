@@ -137,16 +137,16 @@ cvat:
         additionalEnv: []
         additionalVolumes: []
         additionalVolumeMounts: []
-    utils:
-      replicas: 1
-      labels: {}
-      annotations: {}
-      resources: {}
-      affinity: {}
-      tolerations: []
-      additionalEnv: []
-      additionalVolumes: []
-      additionalVolumeMounts: []
+      utils:
+        replicas: 1
+        labels: {}
+        annotations: {}
+        resources: {}
+        affinity: {}
+        tolerations: []
+        additionalEnv: []
+        additionalVolumes: []
+        additionalVolumeMounts: []
     replicas: 1
     image: cvat/server
     tag: dev

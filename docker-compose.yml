@@ -97,7 +97,7 @@ services:
       CVAT_ANALYTICS: 1
       CVAT_BASE_URL:
       ONE_RUNNING_JOB_IN_QUEUE_PER_USER:
-    command: init run server
+    command: init run server include=clamav include=smokescreen
     labels:
       - traefik.enable=true
       - traefik.http.services.cvat.loadbalancer.server.port=8080
@@ -113,8 +113,8 @@ services:
         aliases:
           - cvat-server
 
-  cvat_utils:
-    container_name: cvat_utils
+  cvat_worker_utils:
+    container_name: cvat_worker_utils
     image: cvat/server:${CVAT_VERSION:-dev}
     restart: always
     depends_on: *backend-deps
@@ -122,7 +122,7 @@ services:
       <<: *backend-env
       CVAT_REDIS_INMEM_PASSWORD: ''
       NUMPROCS: 1
-    command: run utils
+    command: run worker notifications cleaning include=rqscheduler
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -138,7 +138,7 @@ services:
     environment:
       <<: *backend-env
       NUMPROCS: 2
-    command: run worker.import
+    command: run worker import include=smokescreen include=clamav
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -154,7 +154,7 @@ services:
     environment:
       <<: [*backend-env, *clickhouse-env]
       NUMPROCS: 2
-    command: run worker.export
+    command: run worker export include=smokescreen
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -170,7 +170,7 @@ services:
     environment:
       <<: *backend-env
       NUMPROCS: 1
-    command: run worker.annotation
+    command: run worker annotation include=smokescreen
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -186,7 +186,7 @@ services:
     environment:
       <<: *backend-env
       NUMPROCS: 1
-    command: run worker.webhooks
+    command: run worker webhooks include=smokescreen
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -202,7 +202,7 @@ services:
     environment:
       <<: *backend-env
       NUMPROCS: 1
-    command: run worker.quality_reports
+    command: run worker quality_reports
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -218,7 +218,7 @@ services:
     environment:
       <<: [*backend-env, *clickhouse-env]
       NUMPROCS: 2
-    command: run worker.analytics_reports
+    command: run worker analytics_reports
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -234,7 +234,7 @@ services:
     environment:
       <<: *backend-env
       NUMPROCS: 2
-    command: run worker.chunks
+    command: run worker chunks include=smokescreen
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -250,7 +250,7 @@ services:
     environment:
       <<: *backend-env
       NUMPROCS: 1
-    command: run worker.consensus
+    command: run worker consensus
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys

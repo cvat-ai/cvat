@@ -3,12 +3,12 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}-backend-utils
+  name: {{ .Release.Name }}-backend-worker-utils
   namespace: {{ .Release.Namespace }}
   labels:
     app: cvat-app
     tier: backend
-    component: utils
+    component: worker-utils
     {{- include "cvat.labels" . | nindent 4 }}
     {{- with merge $localValues.labels .Values.cvat.backend.labels }}
     {{- toYaml . | nindent 4 }}
@@ -29,13 +29,13 @@ spec:
       {{- end }}
       app: cvat-app
       tier: backend
-      component: utils
+      component: worker-utils
   template:
     metadata:
       labels:
         app: cvat-app
         tier: backend
-        component: utils
+        component: worker-utils
         {{- include "cvat.labels" . | nindent 8 }}
         {{- with merge $localValues.labels .Values.cvat.backend.labels }}
         {{- toYaml . | nindent 8 }}
@@ -54,7 +54,7 @@ spec:
           resources:
           {{- toYaml . | nindent 12 }}
           {{- end }}
-          args: ["run", "utils"]
+          args: ["run", "worker", "notifications", "cleaning", "include=rqscheduler"]
           env:
           {{ include "cvat.sharedBackendEnv" . | indent 10 }}
           {{- with concat .Values.cvat.backend.additionalEnv $localValues.additionalEnv }}

@@ -28,12 +28,42 @@ cmd_init() {
     ~/manage.py syncperiodicjobs
 }
 
+_get_supervisord_includes() {
+    extra_configs=""
+    for arg in "$@"; do
+        if [[ "$arg" = include=* ]]; then
+            extra_configs+=" ${arg#include=}_reusable.conf"
+        fi
+    done
+    echo $extra_configs
+}
+
+_get_worker_list() {
+    workers=""
+    for arg in "$@"; do
+        if [[ "$arg" != include=* ]]; then
+            workers+=" $arg"
+        fi
+    done
+    echo $workers
+}
+
+_get_app_label() {
+    label=$1
+    for arg in "${@:2}"; do
+        label+="+${arg}"
+    done
+    echo $label
+}
+
 cmd_run() {
-    if [ "$#" -ne 1 ]; then
-        fail "run: expected 1 argument"
+    if [ "$#" -eq 0 ]; then
+        fail "run: at least 1 argument is expected"
     fi
 
-    if [ "$1" = "server" ]; then
+    component="$1"
+
+    if [ "$component" = "server" ]; then
         ~/manage.py collectstatic --no-input
     fi
 
@@ -50,7 +80,24 @@ cmd_run() {
         sleep 10
     done
 
-    exec supervisord -c "supervisord/$1.conf"
+    supervisord_includes=$(_get_supervisord_includes "${@:2}")
+    postgres_app_name="cvat:$component"
+
+    if [ "$component" = "worker"  ]; then
+        if [ "$#" = 1 ]; then
+            fail "run worker: expected at least 1 worker name"
+        fi
+
+        worker_list=$(_get_worker_list "${@:2}")
+        echo "Workers to run: $worker_list"
+        export CVAT_WORKERS=$worker_list
+        postgres_app_name+=":$(_get_app_label $worker_list)"
+    fi
+
+    export CVAT_POSTGRES_APPLICATION_NAME=$postgres_app_name
+    export CVAT_SUPERVISORD_INCLUDES=$supervisord_includes
+
+    exec supervisord -c "supervisord/$component.conf"
 }
 
 if [ $# -eq 0 ]; then
@@ -59,7 +106,8 @@ if [ $# -eq 0 ]; then
     echo >&2 "available subcommands:"
     echo >&2 "    bash <bash args...>"
     echo >&2 "    init"
-    echo >&2 "    run <config name>"
+    echo >&2 "    run server <list of optional services in the format include=config, e.g. include=smokescreen>"
+    echo >&2 "    run worker <list of workers> <list of optional services in the format include=config, e.g. include=smokescreen>"
     exit 1
 fi
 
