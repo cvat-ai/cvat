@@ -161,7 +161,7 @@ context('Basic manipulations with consensus job replicas', () => {
             // Create annotations for job replicas
             const delta = 50;
             const [consensusJobID, ...replicaJobIDs] = jobIDs;
-            for (let i = 0, shape = shape0; i < replicas; i++) {
+            for (let i = 0, shape = baseShape; i < replicas; i++) {
                 cy.headlessCreateObjects([shape], replicaJobIDs[i]); // only 'in progress' jobs can be merged
                 cy.headlessUpdateJob(replicaJobIDs[i], { state: 'in progress' });
                 const points = translatePoints(shape.points, delta, 'x');
