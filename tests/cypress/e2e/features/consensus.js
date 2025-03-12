@@ -8,25 +8,33 @@ import { translatePoints } from '../../support/utils';
 
 context('Basic manipulations with consensus job replicas', () => {
     const labelName = 'Consensus';
-    const replicas = 4;
     const taskName = 'Test consensus';
     const serverFiles = ['archive.zip'];
+    const replicas = 4;
+    const taskSpec = {
+        name: taskName,
+        labels: [{
+            name: labelName,
+            attributes: [],
+            type: 'any',
+        }],
+    };
+    const dataSpec = {
+        server_files: serverFiles,
+        image_quality: 70,
+    };
+    const extras = { consensus_replicas: replicas };
 
     before(() => {
         cy.visit('auth/login');
         cy.login();
+        cy.headlessCreateTask(taskSpec, dataSpec, extras);
         cy.get('.cvat-create-task-dropdown').click();
         cy.get('.cvat-create-task-button').should('be.visible').click();
     });
     describe('Consensus job creation', () => {
         const maxReplicas = 10;
         it('Check allowed number of replicas', () => {
-            // Fill the fields to create the task
-            cy.get('#name').type(taskName);
-            cy.addNewLabel({ name: labelName });
-            cy.selectFilesFromShare(serverFiles);
-            cy.contains('[role="tab"]', 'My computer').click();
-
             cy.contains('Advanced configuration').click();
             // 'Consensus Replicas' field cannot equal to 1
             cy.get('#consensusReplicas').type(`{backspace}${1}`);
@@ -49,8 +57,8 @@ context('Basic manipulations with consensus job replicas', () => {
 
         it('Check new consensus task has correct tags and drop-down with replicas', () => {
             // Create task with consensus
-            cy.get('#consensusReplicas').type(replicas);
-            cy.contains('button', 'Submit & Open').click();
+            cy.goToTaskList();
+            cy.openTask(taskName);
             cy.get('.cvat-task-details-wrapper').should('be.visible');
             cy.get('.ant-notification-notice-error').should('not.exist');
             // Check tags
@@ -78,21 +86,10 @@ context('Basic manipulations with consensus job replicas', () => {
             occluded: false,
         };
         const jobIDs = [];
-        const attrName = labelName;
-        const advancedConfigurationParams = { consensusReplicas: replicas };
-
-        const defaultArgs1 = ['Some default value for type Text', '', null];
-        const deafultArgs2 = [false, false, '', 'success', 'Test', null];
 
         before(() => {
+            cy.headlessCreateTask(taskSpec, dataSpec, extras);
             cy.goToTaskList();
-            cy.createAnnotationTask(
-                taskName, labelName, attrName,
-                ...defaultArgs1,
-                advancedConfigurationParams,
-                ...deafultArgs2,
-                serverFiles,
-            ); // TODO: rewrite to headless call to task
             cy.openTask(taskName);
             cy.get('.cvat-consensus-job-collapse').click();
         });
