@@ -30,20 +30,35 @@ class AnnotationConflictSerializer(serializers.ModelSerializer):
 
 
 class QualityReportTasksSummarySerializer(serializers.Serializer):
-    total = serializers.IntegerField(
-        help_text="Total task count. Included count = total - custom - non_configured - excluded"
+    total = serializers.IntegerField(source="total_count", help_text="Total task count")
+    custom = serializers.IntegerField(
+        source="custom_count", help_text="Tasks with individual settings"
     )
-    custom = serializers.IntegerField(help_text="Tasks with individual settings")
-    not_configured = serializers.IntegerField(help_text="Tasks with validation not configured")
-    excluded = serializers.IntegerField(help_text="Tasks excluded by filters")
+    not_configured = serializers.IntegerField(
+        source="not_configured_count", help_text="Tasks with validation not configured"
+    )
+    excluded = serializers.IntegerField(
+        source="excluded_count", help_text="Tasks excluded by filters"
+    )
+    included = serializers.IntegerField(
+        source="included_count",
+        help_text="Included task count = total - custom - non_configured - excluded",
+    )
 
 
 class QualityReportJobsSummarySerializer(serializers.Serializer):
     total = serializers.IntegerField(
-        help_text="Non-GT jobs in included tasks. Included count = total - excluded"
+        source="total_count", help_text="Non-GT jobs in included tasks"
     )
-    excluded = serializers.IntegerField(help_text="Jobs excluded by filters")
-    not_checkable = serializers.IntegerField(help_text="Included jobs without validation frames")
+    excluded = serializers.IntegerField(
+        source="excluded_count", help_text="Jobs excluded by filters"
+    )
+    not_checkable = serializers.IntegerField(
+        source="not_checkable_count", help_text="Included jobs without validation frames"
+    )
+    included = serializers.IntegerField(
+        source="included_count", help_text="Included job count = total - excluded"
+    )
 
 
 class QualityReportSummarySerializer(serializers.Serializer):

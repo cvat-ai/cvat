@@ -4791,11 +4791,11 @@ paths:
           [''id'', ''task_id'', ''project_id'', ''inherit'', ''created_date'', ''updated_date'']'
         schema:
           type: string
-      - in: query
-        name: task_id
+      - name: task_id
+        in: query
+        description: A simple equality filter for the task_id field
         schema:
           type: integer
-        description: A simple equality filter for task id
       tags:
       - quality
       security:
@@ -10565,12 +10565,41 @@ components:
         project_id:
           type: integer
           writeOnly: true
+    QualityReportJobsSummary:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Non-GT jobs in included tasks
+        excluded:
+          type: integer
+          description: Jobs excluded by filters
+        not_checkable:
+          type: integer
+          description: Included jobs without validation frames
+        included:
+          type: integer
+          description: Included job count = total - excluded
+      required:
+      - excluded
+      - included
+      - not_checkable
+      - total
     QualityReportSummary:
       type: object
       properties:
+        total_frames:
+          type: integer
         frame_count:
           type: integer
+          description: Deprecated. Use 'validation_frames' instead
+        validation_frames:
+          type: integer
         frame_share:
+          type: number
+          format: double
+          description: Deprecated. Use 'validation_frame_share' instead
+        validation_frame_share:
           type: number
           format: double
         conflict_count:
@@ -10583,8 +10612,6 @@ components:
           type: object
           additionalProperties:
             type: integer
-        total_frames:
-          type: integer
         valid_count:
           type: integer
         ds_count:
@@ -10602,20 +10629,28 @@ components:
         recall:
           type: number
           format: double
+        tasks:
+          allOf:
+          - $ref: '#/components/schemas/QualityReportTasksSummary'
+          description: Included only in project reports
+        jobs:
+          allOf:
+          - $ref: '#/components/schemas/QualityReportJobsSummary'
+          description: Included only in task and project reports
       required:
       - accuracy
       - conflict_count
       - conflicts_by_type
       - ds_count
       - error_count
-      - frame_count
-      - frame_share
       - gt_count
       - precision
       - recall
       - total_count
       - total_frames
       - valid_count
+      - validation_frame_share
+      - validation_frames
       - warning_count
     QualityReportTarget:
       enum:
@@ -10627,6 +10662,30 @@ components:
         * `job` - JOB
         * `task` - TASK
         * `project` - PROJECT
+    QualityReportTasksSummary:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total task count
+        custom:
+          type: integer
+          description: Tasks with individual settings
+        not_configured:
+          type: integer
+          description: Tasks with validation not configured
+        excluded:
+          type: integer
+          description: Tasks excluded by filters
+        included:
+          type: integer
+          description: Included task count = total - custom - non_configured - excluded
+      required:
+      - custom
+      - excluded
+      - included
+      - not_configured
+      - total
     QualitySettings:
       type: object
       properties:
