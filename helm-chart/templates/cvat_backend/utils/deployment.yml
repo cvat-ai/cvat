@@ -1,4 +1,4 @@
-{{- $localValues := .Values.cvat.backend.utils -}}
+{{- $localValues := .Values.cvat.backend.worker.utils -}}
 
 apiVersion: apps/v1
 kind: Deployment
