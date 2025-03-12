@@ -107,15 +107,13 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
                 if report.target == QualityReportTarget.JOB:
                     queryset = queryset.filter(report=report)
                 elif report.target == QualityReportTarget.TASK:
-                    queryset = queryset.filter(
-                        Q(report=report) | Q(report__parents__in=[report])
-                    ).distinct()
+                    queryset = queryset.filter(Q(report=report) | Q(report__parents__in=[report]))
                 elif report.target == QualityReportTarget.PROJECT:
                     queryset = queryset.filter(
                         Q(report=report)
-                        | Q(report__parents__in=[report])
-                        | Q(report__parents__parents__in=[report])
-                    ).distinct()
+                        | Q(report__parents=report)
+                        | Q(report__parents__parents=report)
+                    )
                 else:
                     assert False
             else:
@@ -193,6 +191,7 @@ class QualityReportViewSet(
     def _add_prefetch_params(queryset: QuerySet[QualityReport]) -> QuerySet[QualityReport]:
         return queryset.prefetch_related(
             "assignee",
+            "parents",
             "job",
             "job__segment",
             "job__segment__task",
@@ -235,12 +234,14 @@ class QualityReportViewSet(
             iam_context = None
 
             # NOTE: parent id filter requires a different queryset,
-            # since there is no 'contains' lookup for an m2m relation in Django
             if parent_id := self.request.query_params.get("parent_id", None):
                 parent_report = get_or_404(QualityReport, parent_id)
                 iam_context = get_iam_context(self.request, parent_report)
 
-                queryset = self._add_prefetch_params(parent_report.children)
+                # For m2m relations this is actually "in"
+                queryset = queryset.filter(
+                    Q(parents=parent_report) | Q(parents__parents=parent_report)
+                )
 
             if task_id := self.request.query_params.get("task_id", None):
                 # NOTE: This filter is too complex to be implemented by other means
@@ -248,9 +249,7 @@ class QualityReportViewSet(
                 self.check_object_permissions(self.request, task)
                 iam_context = get_iam_context(self.request, task)
 
-                queryset = queryset.filter(
-                    Q(job__segment__task__id=task_id) | Q(task__id=task_id)
-                ).distinct()
+                queryset = queryset.filter(Q(job__segment__task__id=task_id) | Q(task__id=task_id))
 
             if project_id := self.request.query_params.get("project_id", None):
                 # NOTE: This filter is too complex to be implemented by other means
@@ -262,7 +261,7 @@ class QualityReportViewSet(
                     Q(job__segment__task__project__id=project_id)
                     | Q(task__project__id=project_id)
                     | Q(project__id=project_id)
-                ).distinct()
+                )
 
             perm = QualityReportPermission.create_scope_list(self.request, iam_context=iam_context)
             queryset = perm.filter(queryset)
@@ -520,7 +519,7 @@ class QualitySettingsViewSet(
                 # Include nested settings
                 queryset = queryset.filter(
                     Q(task__project__id=project_id) | Q(project__id=project_id)
-                ).distinct()
+                )
 
             if parent_type := self.request.query_params.get(SETTINGS_PARENT_TYPE_PARAM_NAME, None):
                 if parent_type == QualitySettingsParentType.TASK:

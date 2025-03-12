@@ -12,6 +12,7 @@ from collections.abc import Hashable, Sequence
 from contextlib import suppress
 from copy import deepcopy
 from functools import cached_property, lru_cache, partial
+from io import StringIO
 from typing import Any, Callable, ClassVar, TypeVar, Union, cast
 
 import datumaro as dm
@@ -20,6 +21,7 @@ import datumaro.components.comparator
 import datumaro.util.annotation_util
 import datumaro.util.mask_tools
 import django_rq
+import json_stream
 import numpy as np
 import rq
 from attrs import asdict, define, fields_dict, frozen
@@ -625,6 +627,13 @@ class ComparisonReport(ReportNode):
     @classmethod
     def from_json(cls, data: str) -> ComparisonReport:
         return cls.from_dict(parse_json(data))
+
+    @classmethod
+    def summary_from_json(cls, data: str) -> ComparisonReportSummary:
+        # parse only what's needed
+        return ComparisonReportSummary.from_dict(
+            json_stream.load(StringIO(data), persistent=True)["comparison_summary"]
+        )
 
 
 class JobDataProvider:
