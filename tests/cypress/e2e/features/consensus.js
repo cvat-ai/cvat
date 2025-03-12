@@ -76,7 +76,7 @@ context('Basic manipulations with consensus job replicas', () => {
     });
 
     describe('Cosensus jobs merging', () => {
-        const shape0 = {
+        const baseShape = {
             objectType: 'shape',
             labelName,
             frame: 0,
