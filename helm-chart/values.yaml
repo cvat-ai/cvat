@@ -51,6 +51,11 @@ cvat:
         periodSeconds: 15
         failureThreshold: 5
         initialDelaySeconds: 60
+      args:
+      - "run"
+      - "server"
+      - "include=clamav"
+      - "include=smokescreen"
     worker:
       livenessProbe:
         enabled: true
@@ -67,6 +72,11 @@ cvat:
         additionalEnv: []
         additionalVolumes: []
         additionalVolumeMounts: []
+        args:
+        - "run"
+        - "worker"
+        - "export"
+        - "include=smokescreen"
       import:
         replicas: 2
         labels: {}
@@ -77,6 +87,12 @@ cvat:
         additionalEnv: []
         additionalVolumes: []
         additionalVolumeMounts: []
+        args:
+        - "run"
+        - "worker"
+        - "import"
+        - "include=smokescreen"
+        - "include=clamav"
       annotation:
         replicas: 1
         labels: {}
@@ -87,6 +103,10 @@ cvat:
         additionalEnv: []
         additionalVolumes: []
         additionalVolumeMounts: []
+        args:
+        - "run"
+        - "worker"
+        - "annotation"
       webhooks:
         replicas: 1
         labels: {}
@@ -97,6 +117,11 @@ cvat:
         additionalEnv: []
         additionalVolumes: []
         additionalVolumeMounts: []
+        args:
+        - "run"
+        - "worker"
+        - "webhooks"
+        - "include=smokescreen"
       qualityreports:
         replicas: 1
         labels: {}
@@ -107,6 +132,10 @@ cvat:
         additionalEnv: []
         additionalVolumes: []
         additionalVolumeMounts: []
+        args:
+        - "run"
+        - "worker"
+        - "quality_reports"
       analyticsreports:
         replicas: 1
         labels: {}
@@ -117,6 +146,10 @@ cvat:
         additionalEnv: []
         additionalVolumes: []
         additionalVolumeMounts: []
+        args:
+        - "run"
+        - "worker"
+        - "analytics_reports"
       chunks:
         replicas: 2
         labels: {}
@@ -127,6 +160,11 @@ cvat:
         additionalEnv: []
         additionalVolumes: []
         additionalVolumeMounts: []
+        args:
+        - "run"
+        - "worker"
+        - "chunks"
+        - "include=smokescreen"
       consensus:
         replicas: 1
         labels: {}
@@ -137,6 +175,10 @@ cvat:
         additionalEnv: []
         additionalVolumes: []
         additionalVolumeMounts: []
+        args:
+        - "run"
+        - "worker"
+        - "consensus"
       utils:
         replicas: 1
         labels: {}
@@ -147,6 +189,12 @@ cvat:
         additionalEnv: []
         additionalVolumes: []
         additionalVolumeMounts: []
+        args:
+        - "run"
+        - "worker"
+        - "notifications"
+        - "cleaning"
+        - "include=rqscheduler"
     replicas: 1
     image: cvat/server
     tag: dev

@@ -42,7 +42,7 @@ class Container(str, Enum):
     WORKER_EXPORT = "cvat_worker_export"
     WORKER_QUALITY_REPORTS = "cvat_worker_quality_reports"
     WORKER_WEBHOOKS = "cvat_worker_webhooks"
-    UTILS = "cvat_worker_utils"
+    WORKER_UTILS = "cvat_worker_utils"
 
     def __str__(self):
         return self.value
@@ -326,7 +326,7 @@ def create_compose_files(container_name_files):
 
             for service_name, service_config in dc_config["services"].items():
                 service_config.pop("container_name", None)
-                if service_name in (Container.SERVER, Container.UTILS):
+                if service_name in (Container.SERVER, Container.WORKER_UTILS):
                     service_env = service_config["environment"]
                     service_env["DJANGO_SETTINGS_MODULE"] = "cvat.settings.testing_rest"
 
