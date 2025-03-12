@@ -174,7 +174,7 @@ class ApiTestBase(APITestCase):
         return response
 
     def _query_params_to_str(self, **params: dict[str, Any]) -> str:
-        return "?" + "&".join([f"{k}={quote(v)}"for k, v in params.items()])
+        return "?" + "&".join([f"{k}={quote(str(v))}"for k, v in params.items()])
 
 
 class ExportApiTestBase(ApiTestBase):
@@ -220,7 +220,7 @@ class ExportApiTestBase(ApiTestBase):
 
         if not expected_4xx_status_code and file_path:
             with open(file_path, "wb") as f:
-                f.write(response.content)
+                f.write(response.getvalue())
 
         return response
 
