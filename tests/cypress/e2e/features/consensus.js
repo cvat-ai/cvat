@@ -56,7 +56,6 @@ context('Basic manipulations with consensus job replicas', () => {
         });
 
         it('Check new consensus task has correct tags and drop-down with replicas', () => {
-            // Create task with consensus
             cy.goToTaskList();
             cy.openTask(taskName);
             cy.get('.cvat-task-details-wrapper').should('be.visible');
