@@ -3438,7 +3438,6 @@ def _import_project_dataset(
 )
 class RequestViewSet(viewsets.GenericViewSet):
     # FUTURE-TODO: support re-enqueue action
-    # FUTURE-TODO: implement endpoint to download result file
     SUPPORTED_QUEUES = (
         settings.CVAT_QUEUES.IMPORT_DATA.value,
         settings.CVAT_QUEUES.EXPORT_DATA.value,
