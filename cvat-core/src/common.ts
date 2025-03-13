@@ -133,10 +133,6 @@ export function clamp(value: number, min: number, max: number): number {
     return Math.min(Math.max(value, min), max);
 }
 
-export function camelToSnakeCase(str: string): string {
-    return str.replace(/[A-Z]/g, (letter: string) => `_${letter.toLowerCase()}`);
-}
-
 export function filterFieldsToSnakeCase(filter: Record<string, string>, keysToSnake: string[]): Record<string, string> {
     const searchParams:Record<string, string> = {};
     for (const key of Object.keys(filter)) {
@@ -147,7 +143,7 @@ export function filterFieldsToSnakeCase(filter: Record<string, string>, keysToSn
     const filtersGroup = [];
     for (const key of keysToSnake) {
         if (filter[key]) {
-            filtersGroup.push({ '==': [{ var: camelToSnakeCase(key) }, filter[key]] });
+            filtersGroup.push({ '==': [{ var: snakeCase(key) }, filter[key]] });
         }
     }
 
