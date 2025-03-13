@@ -5,11 +5,7 @@
 @import 'base';
 
 .cvat-quality-control-inner {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    background: $background-color-1;
-    border-radius: $border-radius-base;
+    @include cvat-management-page-inner;
 }
 
 .cvat-quality-settings-title {
@@ -129,9 +125,7 @@ $excluded-background: #d9d9d973;
 
 .cvat-quality-control-wrapper  {
     .cvat-quality-control-inner-wrapper {
-        @media screen and (min-width: $scroll-breakpoint) {
-            height: 90%;
-        }
+        @include cvat-management-page-inner-wrapper;
     }
 }
 
@@ -189,24 +183,7 @@ $excluded-background: #d9d9d973;
 }
 
 .cvat-task-control-tabs {
-    overflow: hidden;
-    flex-grow: 1;
-    padding: 0 $grid-unit-size * 5 $grid-unit-size * 2 $grid-unit-size * 5;
-    margin-left: -$grid-unit-size;
-    margin-right: -$grid-unit-size;
-    margin-top: $grid-unit-size * 7;
-
-    .ant-table-pagination.ant-pagination {
-        margin-bottom: 0;
-    }
-
-    .ant-tag {
-        margin-inline-end: 0;
-    }
-
-    .ant-tabs-content-holder, .ant-tabs-content, .ant-tabs-tabpane {
-        height: 100%;
-    }
+    @include cvat-management-page-tabs;
 }
 
 .cvat-quality-control-management-tab-summary {
@@ -225,14 +202,7 @@ $excluded-background: #d9d9d973;
 }
 
 .cvat-quality-page-header {
-    position: absolute;
-    height: $grid-unit-size * 3;
-    padding: 0 $grid-unit-size * 4;
-    margin: $grid-unit-size * 2 0;
-
-    h4 {
-        margin: 0;
-    }
+    @include cvat-management-page-header;
 }
 
 .cvat-quality-table-search-wrapper {

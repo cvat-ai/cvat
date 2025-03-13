@@ -17,7 +17,7 @@ import Text from 'antd/lib/typography/Text';
 import { Store } from 'antd/lib/form/interface';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import patterns from 'utils/validation-patterns';
-import { isInteger } from 'utils/validate-integer';
+import { isInteger } from 'utils/validation';
 import SourceStorageField from 'components/storage/source-storage-field';
 import TargetStorageField from 'components/storage/target-storage-field';
 
