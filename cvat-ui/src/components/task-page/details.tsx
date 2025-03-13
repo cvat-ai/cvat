@@ -43,7 +43,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps & Ow
     return {
         ...own,
         activeInference: state.models.inferences[own.task.id] || null,
-        project: state.projects.current.find((project) => project.id === own.task.projectId),
+        project: state.projects.current.find((project) => project.id === own.task.projectID),
     };
 }
 
@@ -182,7 +182,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                 <Col span={24}>
                     <ProjectSubsetField
                         value={subset}
-                        projectId={taskInstance.projectId as number}
+                        projectID={taskInstance.projectID as number}
                         projectSubsets={project?.subsets ?? null}
                         onChange={(value) => {
                             this.setState({ subset: value });
@@ -226,7 +226,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                     </Col>
                     <Col md={16} lg={17} xl={17} xxl={18}>
                         {this.renderDescription()}
-                        { taskInstance.projectId === null && <MdGuideControl instanceType='task' id={taskInstance.id} /> }
+                        { taskInstance.projectID === null && <MdGuideControl instanceType='task' id={taskInstance.id} /> }
                         <Row justify='space-between' align='middle'>
                             <Col span={12}>
                                 <BugTrackerEditor
@@ -244,8 +244,8 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                                 />
                             </Col>
                         </Row>
-                        {!taskInstance.projectId && this.renderLabelsEditor()}
-                        {taskInstance.projectId && this.renderSubsetField()}
+                        {!taskInstance.projectID && this.renderLabelsEditor()}
+                        {taskInstance.projectID && this.renderSubsetField()}
                     </Col>
                 </Row>
             </div>

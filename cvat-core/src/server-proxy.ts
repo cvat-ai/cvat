@@ -1160,7 +1160,7 @@ async function createTask(
         message: 'CVAT is uploading task data to the server',
     });
 
-    async function bulkUpload(taskId, files) {
+    async function bulkUpload(taskID, files) {
         const fileBulks = files.reduce((fileGroups, file) => {
             const lastBulk = fileGroups[fileGroups.length - 1];
             if (chunkSize - lastBulk.size >= file.size) {
@@ -1183,7 +1183,7 @@ async function createTask(
                 progress: percentage,
                 message: 'CVAT is uploading task data to the server',
             });
-            await Axios.post(`${backendAPI}/tasks/${taskId}/data`, taskData, {
+            await Axios.post(`${backendAPI}/tasks/${taskID}/data`, taskData, {
                 ...params,
                 headers: { 'Upload-Multiple': true },
             });
@@ -2159,11 +2159,11 @@ async function updateGuide(id: number, data: Partial<SerializedGuide>): Promise<
     }
 }
 
-async function createAsset(file: File, guideId: number): Promise<SerializedAsset> {
+async function createAsset(file: File, guideID: number): Promise<SerializedAsset> {
     const { backendAPI } = config;
     const form = new FormData();
     form.append('file', file);
-    form.append('guide_id', guideId);
+    form.append('guide_id', guideID);
 
     try {
         const response = await Axios.post(`${backendAPI}/assets`, form, {

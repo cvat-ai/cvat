@@ -62,8 +62,8 @@ function AnnotationMenuComponent(): JSX.Element {
     }, []);
 
     const openTask = useCallback(() => {
-        history.push(`/tasks/${jobInstance.taskId}`);
-    }, [jobInstance.taskId]);
+        history.push(`/tasks/${jobInstance.taskID}`);
+    }, [jobInstance.taskID]);
 
     const uploadAnnotations = useCallback(() => {
         dispatch(importActions.openImportDatasetModal(jobInstance));

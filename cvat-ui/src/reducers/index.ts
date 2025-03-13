@@ -55,7 +55,7 @@ export interface ProjectsState {
             error: string;
         };
         deletes: {
-            [projectId: number]: boolean; // deleted (deleting if in dictionary)
+            [projectID: number]: boolean; // deleted (deleting if in dictionary)
         };
     };
 }
@@ -66,7 +66,7 @@ export interface TasksQuery {
     search: string | null;
     filter: string | null;
     sort: string | null;
-    projectId: number | null;
+    projectID: number | null;
 }
 
 export interface JobsQuery {
@@ -98,7 +98,7 @@ export interface TasksState {
     fetching: boolean;
     moveTask: {
         modalVisible: boolean;
-        taskId: number | null;
+        taskID: number | null;
     };
     gettingQuery: TasksQuery;
     count: number;
@@ -958,7 +958,7 @@ export interface WebhooksQuery {
     search: string | null;
     filter: string | null;
     sort: string | null;
-    projectId: number | null;
+    projectID: number | null;
 }
 
 export interface WebhooksState {

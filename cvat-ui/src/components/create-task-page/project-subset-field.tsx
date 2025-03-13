@@ -11,7 +11,7 @@ import { getCore } from 'cvat-core-wrapper';
 const core = getCore();
 
 interface Props {
-    projectId: number;
+    projectID: number;
     projectSubsets: string[] | null;
     value: string;
     onChange: (value: string) => void;
@@ -24,15 +24,15 @@ interface ProjectPartialWithSubsets {
 
 export default function ProjectSubsetField(props: Props): JSX.Element {
     const {
-        projectId, projectSubsets, value, onChange,
+        projectID, projectSubsets, value, onChange,
     } = props;
 
     const [internalValue, setInternalValue] = useState('');
     const [internalSubsets, setInternalSubsets] = useState<Set<string>>(new Set());
 
     useEffect(() => {
-        if (!projectSubsets && projectId) {
-            core.projects.get({ id: projectId }).then((response: ProjectPartialWithSubsets[]) => {
+        if (!projectSubsets && projectID) {
+            core.projects.get({ id: projectID }).then((response: ProjectPartialWithSubsets[]) => {
                 if (response.length) {
                     const [project] = response;
                     setInternalSubsets(
@@ -53,7 +53,7 @@ export default function ProjectSubsetField(props: Props): JSX.Element {
                 ]),
             );
         }
-    }, [projectId, projectSubsets]);
+    }, [projectID, projectSubsets]);
 
     useEffect(() => {
         setInternalValue(value);

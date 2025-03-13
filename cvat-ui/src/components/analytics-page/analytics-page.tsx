@@ -239,7 +239,7 @@ function AnalyticsPage(): JSX.Element {
         if (instanceType === 'task') {
             analyticsFor = <Link to={`/tasks/${instance.id}`}>{`Task #${instance.id}`}</Link>;
         } else if (instanceType === 'job') {
-            analyticsFor = <Link to={`/tasks/${instance.taskId}/jobs/${instance.id}`}>{`Job #${instance.id}`}</Link>;
+            analyticsFor = <Link to={`/tasks/${instance.taskID}/jobs/${instance.id}`}>{`Job #${instance.id}`}</Link>;
         }
         title = (
             <Col>

@@ -31,7 +31,7 @@ const defaultState: ProjectsState = {
         search: null,
         filter: null,
         sort: null,
-        projectId: null,
+        projectID: null,
         ordering: 'subset',
     },
     activities: {
@@ -112,14 +112,14 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
                 activities: {
                     ...state.activities,
                     creates: {
-                        id: action.payload.projectId,
+                        id: action.payload.projectID,
                         error: '',
                     },
                 },
             };
         }
         case ProjectsActionTypes.DELETE_PROJECT: {
-            const { projectId } = action.payload;
+            const { projectID } = action.payload;
 
             return {
                 ...state,
@@ -127,13 +127,13 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
                     ...state.activities,
                     deletes: {
                         ...state.activities.deletes,
-                        [projectId]: false,
+                        [projectID]: false,
                     },
                 },
             };
         }
         case ProjectsActionTypes.DELETE_PROJECT_SUCCESS: {
-            const { projectId } = action.payload;
+            const { projectID } = action.payload;
 
             return {
                 ...state,
@@ -141,19 +141,19 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
                     ...state.activities,
                     deletes: {
                         ...state.activities.deletes,
-                        [projectId]: true,
+                        [projectID]: true,
                     },
                 },
             };
         }
         case ProjectsActionTypes.DELETE_PROJECT_FAILED: {
-            const { projectId } = action.payload;
+            const { projectID } = action.payload;
 
             return {
                 ...state,
                 activities: {
                     ...state.activities,
-                    deletes: omit(state.activities.deletes, projectId),
+                    deletes: omit(state.activities.deletes, projectID),
                 },
             };
         }

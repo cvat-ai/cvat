@@ -100,7 +100,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
                 ...(this.stage ? { stage: this.stage } : {}),
                 ...(this.state ? { stage: this.state } : {}),
                 type: this.type,
-                task_id: this.taskId,
+                task_id: this.taskID,
             };
 
             const job = await serverProxy.jobs.create({ ...jobSpec, ...fields });
@@ -158,11 +158,11 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
         value: async function guideImplementation(
             this: JobClass,
         ): ReturnType<typeof JobClass.prototype.guide> {
-            if (this.guideId === null) {
+            if (this.guideID === null) {
                 return null;
             }
 
-            const result = await serverProxy.guides.get(this.guideId);
+            const result = await serverProxy.guides.get(this.guideID);
             return new AnnotationGuide(result);
         },
     });
@@ -272,7 +272,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
         value: function previewImplementation(
             this: JobClass,
         ): ReturnType<typeof JobClass.prototype.frames.preview> {
-            if (this.id === null || this.taskId === null) {
+            if (this.id === null || this.taskID === null) {
                 return Promise.resolve('');
             }
 
@@ -607,8 +607,8 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
                 scope,
                 {
                     ...payload,
-                    project_id: this.projectId,
-                    task_id: this.taskId,
+                    project_id: this.projectID,
+                    task_id: this.taskID,
                     job_id: this.id,
                 },
                 wait,
@@ -645,11 +645,11 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
         value: async function guideImplementation(
             this: TaskClass,
         ): ReturnType<typeof TaskClass.prototype.guide> {
-            if (this.guideId === null) {
+            if (this.guideID === null) {
                 return null;
             }
 
-            const result = await serverProxy.guides.get(this.guideId);
+            const result = await serverProxy.guides.get(this.guideID);
             return new AnnotationGuide(result);
         },
     });
@@ -678,7 +678,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 const taskData = {
                     ...this._updateTrigger.getUpdated(this, {
                         bugTracker: 'bug_tracker',
-                        projectId: 'project_id',
+                        projectID: 'project_id',
                         assignee: 'assignee_id',
                     }),
                 };
@@ -735,8 +735,8 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             if (typeof this.overlap !== 'undefined') {
                 taskSpec.overlap = this.overlap;
             }
-            if (typeof this.projectId !== 'undefined') {
-                taskSpec.project_id = this.projectId;
+            if (typeof this.projectID !== 'undefined') {
+                taskSpec.project_id = this.projectID;
             }
             if (typeof this.subset !== 'undefined') {
                 taskSpec.subset = this.subset;
@@ -1309,7 +1309,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 scope,
                 {
                     ...payload,
-                    project_id: this.projectId,
+                    project_id: this.projectID,
                     task_id: this.id,
                 },
                 wait,

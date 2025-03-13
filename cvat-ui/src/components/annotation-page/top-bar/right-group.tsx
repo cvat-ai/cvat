@@ -72,7 +72,7 @@ function RightGroup(props: Props): JSX.Element {
     }, [jobInstance]);
 
     useEffect(() => {
-        if (Number.isInteger(jobInstance?.guideId)) {
+        if (Number.isInteger(jobInstance?.guideID)) {
             if (initialOpenGuide) {
                 openGuide();
             } else if (
@@ -89,12 +89,12 @@ function RightGroup(props: Props): JSX.Element {
                     seenGuides = [];
                 }
 
-                if (!seenGuides.includes(jobInstance.guideId)) {
+                if (!seenGuides.includes(jobInstance.guideID)) {
                     // open guide if the user have not seen it yet
                     openGuide();
                     const updatedSeenGuides = Array
                         .from(new Set([
-                            jobInstance.guideId,
+                            jobInstance.guideID,
                             ...seenGuides.slice(0, config.LOCAL_STORAGE_SEEN_GUIDES_MEMORY_LIMIT - 1),
                         ]));
                     localStorage.setItem('seenGuides', JSON.stringify(updatedSeenGuides));
@@ -121,7 +121,7 @@ function RightGroup(props: Props): JSX.Element {
                 <Icon component={FullscreenIcon} />
                 Fullscreen
             </Button>
-            { jobInstance.guideId !== null && (
+            { jobInstance.guideID !== null && (
                 <Button
                     type='link'
                     className='cvat-annotation-header-guide-button cvat-annotation-header-button'

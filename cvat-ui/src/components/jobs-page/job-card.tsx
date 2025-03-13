@@ -38,7 +38,7 @@ function JobCardComponent(props: Props): JSX.Element {
     const history = useHistory();
     const height = useCardHeight();
     const onClick = (event: React.MouseEvent): void => {
-        const url = `/tasks/${job.taskId}/jobs/${job.id}`;
+        const url = `/tasks/${job.taskID}/jobs/${job.id}`;
         if (event.ctrlKey) {
             window.open(url, '_blank', 'noopener noreferrer');
         } else {

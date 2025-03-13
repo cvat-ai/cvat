@@ -17,7 +17,7 @@ const defaultState: TasksState = {
     fetching: false,
     moveTask: {
         modalVisible: false,
-        taskId: null,
+        taskID: null,
     },
     count: 0,
     current: [],
@@ -28,7 +28,7 @@ const defaultState: TasksState = {
         search: null,
         filter: null,
         sort: null,
-        projectId: null,
+        projectID: null,
     },
     activities: {
         deletes: {},
@@ -81,10 +81,10 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 fetching: false,
             };
         case ProjectsActionTypes.DELETE_PROJECT_SUCCESS: {
-            const { projectId } = action.payload;
+            const { projectID } = action.payload;
             return {
                 ...state,
-                current: state.current.filter((_task) => _task.projectId !== projectId),
+                current: state.current.filter((_task) => _task.projectID !== projectID),
             };
         }
         case TasksActionTypes.DELETE_TASK: {
@@ -141,7 +141,7 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 moveTask: {
                     ...state.moveTask,
                     modalVisible: action.payload.visible,
-                    taskId: action.payload.taskId,
+                    taskID: action.payload.taskID,
                 },
             };
         }

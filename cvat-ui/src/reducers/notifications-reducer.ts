@@ -648,7 +648,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
             const { instance, resource } = action.payload;
             const message = resource === 'annotation' ?
                 'Could not upload annotation for the ' +
-                `[task ${instance?.taskId || instance.id}](/tasks/${instance?.taskId || instance.id})` :
+                `[task ${instance?.taskID || instance.id}](/tasks/${instance?.taskID || instance.id})` :
                 `Could not import dataset to the [project ${instance.id}](/projects/${instance.id})`;
             return {
                 ...state,
@@ -744,7 +744,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
             const instanceType = getInstanceType(instance);
             if (instanceType === 'job') {
                 message =
-                    `Consensus [job #${instance.id}](/tasks/${instance.taskId}/jobs/${instance.id}) has been merged`;
+                    `Consensus [job #${instance.id}](/tasks/${instance.taskID}/jobs/${instance.id}) has been merged`;
             } else if (instanceType === 'task') {
                 message = `Consensus jobs in the [task #${instance.id}](/tasks/${instance.id}) have been merged`;
             }
@@ -767,7 +767,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
             const instanceType = getInstanceType(instance);
             if (instanceType === 'job') {
                 message =
-                    `Could not merge the [job #${instance.id}](/tasks/${instance.taskId}/jobs/${instance.id})`;
+                    `Could not merge the [job #${instance.id}](/tasks/${instance.taskID}/jobs/${instance.id})`;
             } else if (instanceType === 'task') {
                 message = `Could not merge the [task ${instance.id}](/tasks/${instance.id})`;
             }
@@ -838,7 +838,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
             };
         }
         case ProjectsActionTypes.DELETE_PROJECT_FAILED: {
-            const { projectId } = action.payload;
+            const { projectID } = action.payload;
             return {
                 ...state,
                 errors: {
@@ -846,7 +846,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     projects: {
                         ...state.errors.projects,
                         updating: {
-                            message: `Could not delete [project ${projectId}](/project/${projectId})`,
+                            message: `Could not delete [project ${projectID}](/project/${projectID})`,
                             reason: action.payload.error,
                             shouldLog: shouldLog(action.payload.error),
                             className: 'cvat-notification-notice-delete-project-failed',
@@ -1229,7 +1229,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
 
             const {
                 id: jobID,
-                taskId: taskID,
+                taskID,
             } = job;
 
             return {

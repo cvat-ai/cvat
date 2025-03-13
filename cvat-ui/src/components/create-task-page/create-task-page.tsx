@@ -20,10 +20,10 @@ export default function CreateTaskPage(props: Props): JSX.Element {
 
     const location = useLocation();
 
-    let projectId = null;
+    let projectID = null;
     const params = new URLSearchParams(location.search);
-    if (params.get('projectId')?.match(/^[1-9]+[0-9]*$/)) {
-        projectId = +(params.get('projectId') as string);
+    if (params.get('projectID')?.match(/^[1-9]+[0-9]*$/)) {
+        projectID = +(params.get('projectID') as string);
     }
     const many = params.get('many') === 'true';
     const handleCreate: typeof onCreate = (...onCreateParams) => onCreate(...onCreateParams);
@@ -32,7 +32,7 @@ export default function CreateTaskPage(props: Props): JSX.Element {
         <Row justify='center' align='top' className='cvat-create-work-form-wrapper'>
             <Col md={20} lg={16} xl={14} xxl={9}>
                 <Text className='cvat-title'>Create a new task</Text>
-                <CreateTaskContent projectId={projectId} onCreate={handleCreate} many={many} />
+                <CreateTaskContent projectID={projectID} onCreate={handleCreate} many={many} />
             </Col>
         </Row>
     );

@@ -77,8 +77,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         openRunModelWindow: (taskInstance: any): void => {
             dispatch(modelsActions.showRunModelDialog(taskInstance));
         },
-        openMoveTaskToProjectWindow: (taskId: number): void => {
-            dispatch(switchMoveTaskModalVisible(true, taskId));
+        openMoveTaskToProjectWindow: (taskID: number): void => {
+            dispatch(switchMoveTaskModalVisible(true, taskID));
         },
         mergeConsensusJobs: (taskInstance: Task): void => {
             dispatch(mergeConsensusJobsAsync(taskInstance));
@@ -131,7 +131,7 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
     return (
         <ActionsMenuComponent
             taskID={taskInstance.id}
-            projectID={taskInstance.projectId}
+            projectID={taskInstance.projectID}
             taskMode={taskInstance.mode}
             bugTracker={taskInstance.bugTracker}
             loaders={loaders}

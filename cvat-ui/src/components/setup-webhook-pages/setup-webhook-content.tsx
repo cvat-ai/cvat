@@ -75,7 +75,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
 
     const organization = useSelector((state: CombinedState) => state.organizations.current);
 
-    const [projectId, setProjectId] = useState<number | null>(defaultProjectId);
+    const [projectID, setProjectId] = useState<number | null>(defaultProjectId);
 
     useEffect(() => {
         const core = getCore();
@@ -84,12 +84,12 @@ function SetupWebhookContent(props: Props): JSX.Element {
                 setWebhookEvents(events);
             });
         } else {
-            core.classes.Webhook.availableEvents(projectId ?
+            core.classes.Webhook.availableEvents(projectID ?
                 WebhookSourceType.PROJECT : WebhookSourceType.ORGANIZATION).then((events: string[]) => {
                 setWebhookEvents(events);
             });
         }
-    }, [projectId]);
+    }, [projectID]);
 
     useEffect(() => {
         if (webhook) {
@@ -142,9 +142,9 @@ function SetupWebhookContent(props: Props): JSX.Element {
                     enable_ssl: values.enableSSL,
                     is_active: values.isActive,
                     events: collectEvents(values.eventsMethod, values, webhookEvents),
-                    organization_id: projectId ? undefined : organization.id,
-                    project_id: projectId,
-                    type: projectId ? WebhookSourceType.PROJECT : WebhookSourceType.ORGANIZATION,
+                    organization_id: projectID ? undefined : organization.id,
+                    project_id: projectID,
+                    type: projectID ? WebhookSourceType.PROJECT : WebhookSourceType.ORGANIZATION,
                 };
                 notificationConfig = {
                     message: 'Webhook has been successfully added',
@@ -212,7 +212,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
                                 <Col span={24}>
                                     <ProjectSearchField
                                         onSelect={(_projectId: number | null) => setProjectId(_projectId)}
-                                        value={projectId}
+                                        value={projectID}
                                     />
                                 </Col>
                             </Row>

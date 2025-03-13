@@ -246,7 +246,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         const self = this;
         this.unblock = history.block((location: any) => {
             const { forceExit, frameNumber } = self.props;
-            const { id: jobID, taskId: taskID } = jobInstance;
+            const { id: jobID, taskID } = jobInstance;
             writeLatestFrame(jobInstance.id, frameNumber);
 
             if (

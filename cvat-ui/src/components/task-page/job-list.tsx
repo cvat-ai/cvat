@@ -71,7 +71,7 @@ function JobListComponent(props: Props): JSX.Element {
     const [visibility, setVisibility] = useState(defaultVisibility);
 
     const history = useHistory();
-    const { id: taskId } = taskInstance;
+    const { id: taskID } = taskInstance;
     const { jobs } = taskInstance;
 
     const queryParams = new URLSearchParams(history.location.search);
@@ -145,7 +145,7 @@ function JobListComponent(props: Props): JSX.Element {
     }, [query]);
 
     const onCreateJob = useCallback(() => {
-        history.push(`/tasks/${taskId}/jobs/create`);
+        history.push(`/tasks/${taskID}/jobs/create`);
     }, []);
 
     return (

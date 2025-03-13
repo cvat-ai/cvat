@@ -198,17 +198,17 @@ export function getInferenceStatusAsync(): ThunkAction {
     };
 }
 
-export function startInferenceAsync(taskId: number, model: MLModel, body: object): ThunkAction {
+export function startInferenceAsync(taskID: number, model: MLModel, body: object): ThunkAction {
     return async (dispatch): Promise<void> => {
         try {
-            const requestID: string = await core.lambda.run(taskId, model, body);
+            const requestID: string = await core.lambda.run(taskID, model, body);
             const dispatchCallback = (action: ModelsActions): void => {
                 dispatch(action);
             };
 
             listen(
                 {
-                    taskID: taskId,
+                    taskID,
                     functionID: model.id,
                     requestID,
                 },
@@ -216,7 +216,7 @@ export function startInferenceAsync(taskId: number, model: MLModel, body: object
             );
             dispatch(modelsActions.getInferencesSuccess({ [requestID]: true }));
         } catch (error) {
-            dispatch(modelsActions.startInferenceFailed(taskId, error));
+            dispatch(modelsActions.startInferenceFailed(taskID, error));
         }
     };
 }

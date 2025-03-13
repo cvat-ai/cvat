@@ -105,7 +105,7 @@ export default interface CVATCore {
     tasks: {
         get: (filter: {
             page?: number;
-            projectId?: number;
+            projectID?: number;
             id?: number;
             sort?: string;
             search?: string;

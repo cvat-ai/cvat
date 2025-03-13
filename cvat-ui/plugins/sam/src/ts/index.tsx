@@ -199,7 +199,7 @@ const samPlugin: SAMPlugin = {
                         }
 
                         const job = Object.values(plugin.data.jobs).find((_job) => (
-                            _job.taskId === taskID && frame >= _job.startFrame && frame <= _job.stopFrame
+                            _job.taskID === taskID && frame >= _job.startFrame && frame <= _job.stopFrame
                         )) as Job;
 
                         if (!job) {

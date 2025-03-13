@@ -9,16 +9,16 @@ import serverProxy from './server-proxy';
 
 class AnnotationGuide {
     #id: AnnotationGuide['id'];
-    #taskId: AnnotationGuide['taskId'];
-    #projectId: AnnotationGuide['projectId'];
+    #taskID: AnnotationGuide['taskID'];
+    #projectID: AnnotationGuide['projectID'];
     #createdDate?: AnnotationGuide['createdDate'];
     #updatedDate?: AnnotationGuide['updatedDate'];
     #markdown: AnnotationGuide['markdown'];
 
     constructor(initialData: Partial<SerializedGuide>) {
         this.#id = initialData.id;
-        this.#taskId = initialData.task_id || null;
-        this.#projectId = initialData.project_id || null;
+        this.#taskID = initialData.task_id || null;
+        this.#projectID = initialData.project_id || null;
         this.#createdDate = initialData.created_date;
         this.#updatedDate = initialData.updated_date;
         this.#markdown = initialData.markdown || '';
@@ -28,12 +28,12 @@ class AnnotationGuide {
         return this.#id;
     }
 
-    public get taskId(): number | null {
-        return this.#taskId;
+    public get taskID(): number | null {
+        return this.#taskID;
     }
 
-    public get projectId(): number | null {
-        return this.#projectId;
+    public get projectID(): number | null {
+        return this.#projectID;
     }
 
     public get createdDate(): string | undefined {
@@ -71,17 +71,17 @@ Object.defineProperties(AnnotationGuide.prototype.save, {
                 return new AnnotationGuide(result);
             }
 
-            if (this.projectId === null && this.taskId === null) {
-                throw new DataError('One of projectId or taskId must be specified for a guide');
+            if (this.projectID === null && this.taskID === null) {
+                throw new DataError('One of projectID or taskID must be specified for a guide');
             }
 
-            if (this.projectId !== null && this.taskId !== null) {
-                throw new DataError('Both projectId and taskId must not be presented for a guide');
+            if (this.projectID !== null && this.taskID !== null) {
+                throw new DataError('Both projectID and taskID must not be presented for a guide');
             }
 
             const result = await serverProxy.guides.create({
-                task_id: this.taskId,
-                project_id: this.projectId,
+                task_id: this.taskID,
+                project_id: this.projectID,
                 markdown: this.markdown,
             });
             return new AnnotationGuide(result);

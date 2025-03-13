@@ -154,8 +154,8 @@ function build(): CVATCore {
             },
         },
         assets: {
-            async create(file: File, guideId: number) {
-                const result = await PluginRegistry.apiWrapper(cvat.assets.create, file, guideId);
+            async create(file: File, guideID: number) {
+                const result = await PluginRegistry.apiWrapper(cvat.assets.create, file, guideID);
                 return result;
             },
         },

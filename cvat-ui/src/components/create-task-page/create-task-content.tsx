@@ -33,7 +33,7 @@ type TabName = 'local' | 'share' | 'remote' | 'cloudStorage';
 const core = getCore();
 
 export interface CreateTaskData {
-    projectId: number | null;
+    projectID: number | null;
     basic: BaseConfiguration;
     subset: string;
     advanced: AdvancedConfiguration;
@@ -52,7 +52,7 @@ enum SupportedShareTypes {
 
 interface Props {
     onCreate: (data: CreateTaskData, onProgress?: (status: string, progress?: number) => void) => Promise<any>;
-    projectId: number | null;
+    projectID: number | null;
     many: boolean;
 }
 
@@ -66,7 +66,7 @@ type State = CreateTaskData & {
 };
 
 const defaultState: State = {
-    projectId: null,
+    projectID: null,
     basic: {
         name: '',
     },
@@ -174,10 +174,10 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     }
 
     public componentDidMount(): void {
-        const { projectId } = this.props;
+        const { projectID } = this.props;
 
-        if (projectId) {
-            this.handleProjectIdChange(projectId);
+        if (projectID) {
+            this.handleProjectIdChange(projectID);
         }
 
         this.focusToForm();
@@ -202,13 +202,13 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
 
         this.setState((state) => ({
             ...defaultState,
-            projectId: state.projectId,
+            projectID: state.projectID,
         }));
     };
 
     private validateLabelsOrProject = (): boolean => {
-        const { projectId, labels } = this.state;
-        return !!labels.length || !!projectId;
+        const { projectID, labels } = this.state;
+        return !!labels.length || !!projectID;
     };
 
     private validateFiles = (): boolean => {
@@ -243,11 +243,11 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     };
 
     private handleProjectIdChange = (value: null | number): void => {
-        const { projectId, subset } = this.state;
+        const { projectID, subset } = this.state;
 
         this.setState((state) => ({
-            projectId: value,
-            subset: value && value === projectId ? subset : '',
+            projectID: value,
+            subset: value && value === projectID ? subset : '',
             labels: value ? [] : state.labels,
         }));
     };
@@ -441,7 +441,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     };
 
     private validateBlocks = (): Promise<any> => new Promise((resolve, reject) => {
-        const { projectId } = this.state;
+        const { projectID } = this.state;
         if (!this.validateLabelsOrProject()) {
             notification.error({
                 message: 'Could not create a task',
@@ -508,8 +508,8 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
 
                 return formIsValid;
             }).then(() => {
-                if (projectId) {
-                    return core.projects.get({ id: projectId }).then((response) => {
+                if (projectID) {
+                    return core.projects.get({ id: projectID }).then((response) => {
                         const [project] = response;
                         const { advanced } = this.state;
                         return this.handleSubmitAdvancedConfiguration({
@@ -522,7 +522,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                             ) : advanced.targetStorage,
                         });
                     }).catch((error: Error): void => {
-                        throw new Error(`Couldn't fetch the project ${projectId} ${error.toString()}`);
+                        throw new Error(`Couldn't fetch the project ${projectID} ${error.toString()}`);
                     });
                 }
 
@@ -629,7 +629,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
 
     private addMultiTasks = async (): Promise<void> => new Promise((resolve) => {
         const {
-            projectId,
+            projectID,
             subset,
             advanced,
             quality,
@@ -643,7 +643,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
 
         this.setState({
             multiTasks: files.map((file, index) => ({
-                projectId,
+                projectID,
                 basic: {
                     name: this.getTaskName(index, activeFileManagerTab),
                 },
@@ -709,9 +709,9 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     };
 
     private handleOkMultiTasks = (): void => {
-        const { history, projectId } = this.props;
-        if (projectId) {
-            history.push(`/projects/${projectId}`);
+        const { history, projectID } = this.props;
+        if (projectID) {
+            history.push(`/projects/${projectID}`);
         } else {
             history.push('/tasks/');
         }
@@ -803,7 +803,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     }
 
     private renderProjectBlock(): JSX.Element {
-        const { projectId } = this.state;
+        const { projectID } = this.state;
 
         return (
             <>
@@ -811,16 +811,16 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                     <Text className='cvat-text-color'>Project</Text>
                 </Col>
                 <Col span={24}>
-                    <ProjectSearchField onSelect={this.handleProjectIdChange} value={projectId} />
+                    <ProjectSearchField onSelect={this.handleProjectIdChange} value={projectID} />
                 </Col>
             </>
         );
     }
 
     private renderSubsetBlock(): JSX.Element | null {
-        const { projectId, subset } = this.state;
+        const { projectID, subset } = this.state;
 
-        if (projectId !== null) {
+        if (projectID !== null) {
             return (
                 <>
                     <Col span={24}>
@@ -831,7 +831,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                             value={subset}
                             projectSubsets={null}
                             onChange={this.handleTaskSubsetChange}
-                            projectId={projectId}
+                            projectID={projectID}
                         />
                     </Col>
                 </>
@@ -842,9 +842,9 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     }
 
     private renderLabelsBlock(): JSX.Element {
-        const { projectId, labels } = this.state;
+        const { projectID, labels } = this.state;
 
-        if (projectId) {
+        if (projectID) {
             return (
                 <>
                     <Col span={24}>
@@ -909,7 +909,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     }
 
     private renderAdvancedBlock(): JSX.Element {
-        const { activeFileManagerTab, projectId } = this.state;
+        const { activeFileManagerTab, projectID } = this.state;
 
         const {
             advanced: {
@@ -935,7 +935,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                                 activeFileManagerTab={activeFileManagerTab}
                                 ref={this.advancedConfigurationComponent}
                                 onSubmit={this.handleSubmitAdvancedConfiguration}
-                                projectId={projectId}
+                                projectID={projectID}
                                 useProjectSourceStorage={useProjectSourceStorage}
                                 useProjectTargetStorage={useProjectTargetStorage}
                                 sourceStorageLocation={sourceStorageLocation}

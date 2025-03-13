@@ -36,10 +36,10 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
     return (
         <Row className='cvat-task-top-bar' justify='space-between' align='middle'>
             <Col>
-                {taskInstance.projectId ? (
+                {taskInstance.projectID ? (
                     <Button
                         className='cvat-back-to-project-button'
-                        onClick={() => history.push(`/projects/${taskInstance.projectId}`)}
+                        onClick={() => history.push(`/projects/${taskInstance.projectID}`)}
                         type='link'
                         size='large'
                     >

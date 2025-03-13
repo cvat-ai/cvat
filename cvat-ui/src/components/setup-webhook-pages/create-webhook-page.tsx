@@ -15,8 +15,8 @@ function CreateWebhookPage(): JSX.Element {
     const location = useLocation();
     const params = new URLSearchParams(location.search);
     let defaultProjectId : number | null = null;
-    if (params.get('projectId')?.match(/^[1-9]+[0-9]*$/)) {
-        defaultProjectId = +(params.get('projectId') as string);
+    if (params.get('projectID')?.match(/^[1-9]+[0-9]*$/)) {
+        defaultProjectId = +(params.get('projectID') as string);
     }
 
     return (

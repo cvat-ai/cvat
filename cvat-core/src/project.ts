@@ -20,7 +20,7 @@ export default class Project {
     public assignee: User;
     public bugTracker: string;
     public readonly status: ProjectStatus;
-    public readonly guideId: number | null;
+    public readonly guideID: number | null;
     public readonly organization: string | null;
     public readonly owner: User;
     public readonly createdDate: string;
@@ -126,7 +126,7 @@ export default class Project {
                 owner: {
                     get: () => data.owner,
                 },
-                guideId: {
+                guideID: {
                     get: () => data.guide_id,
                 },
                 organization: {

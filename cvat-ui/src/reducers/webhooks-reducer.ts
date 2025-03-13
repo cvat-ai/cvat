@@ -12,7 +12,7 @@ const defaultState: WebhooksState = {
     query: {
         page: 1,
         id: null,
-        projectId: null,
+        projectID: null,
         search: null,
         filter: null,
         sort: null,

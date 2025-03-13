@@ -161,11 +161,11 @@ export default function implementProject(Project: typeof ProjectClass): typeof P
         value: async function guideImplementation(
             this: ProjectClass,
         ): ReturnType<typeof ProjectClass.prototype.guide> {
-            if (this.guideId === null) {
+            if (this.guideID === null) {
                 return null;
             }
 
-            const result = await serverProxy.guides.get(this.guideId);
+            const result = await serverProxy.guides.get(this.guideID);
             return new AnnotationGuide(result);
         },
     });

@@ -162,7 +162,7 @@ function JobItem(props: Props): JSX.Element {
                     <Col span={6}>
                         <Row>
                             <Col>
-                                <Link to={`/tasks/${job.taskId}/jobs/${job.id}`}>{jobName}</Link>
+                                <Link to={`/tasks/${job.taskID}/jobs/${job.id}`}>{jobName}</Link>
                             </Col>
                             {tag}
                             {job.type !== JobType.GROUND_TRUTH && (

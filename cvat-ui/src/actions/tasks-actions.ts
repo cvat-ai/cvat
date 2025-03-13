@@ -226,8 +226,8 @@ ThunkAction {
             target_storage: new Storage(data.advanced.targetStorage ?? { location: StorageLocation.LOCAL }).toJSON(),
         };
 
-        if (data.projectId) {
-            description.project_id = data.projectId;
+        if (data.projectID) {
+            description.project_id = data.projectID;
         }
         if (data.advanced.bugTracker) {
             description.bug_tracker = data.advanced.bugTracker;
@@ -318,11 +318,11 @@ ThunkAction {
     };
 }
 
-export function switchMoveTaskModalVisible(visible: boolean, taskId: number | null = null): AnyAction {
+export function switchMoveTaskModalVisible(visible: boolean, taskID: number | null = null): AnyAction {
     const action = {
         type: TasksActionTypes.SWITCH_MOVE_TASK_MODAL_VISIBLE,
         payload: {
-            taskId,
+            taskID,
             visible,
         },
     };

@@ -80,7 +80,7 @@ export default function ProjectPageComponent(): JSX.Element {
             core.projects.get({ id })
                 .then(([project]: Project[]) => {
                     if (project && mounted.current) {
-                        dispatch(getProjectTasksAsync({ ...updatedQuery, projectId: id }));
+                        dispatch(getProjectTasksAsync({ ...updatedQuery, projectID: id }));
                         setProjectInstance(project);
                     }
                 }).catch((error: Error) => {
@@ -138,7 +138,7 @@ export default function ProjectPageComponent(): JSX.Element {
                 <React.Fragment key={subset}>
                     {subset && <Title level={4}>{subset}</Title>}
                     {tasks
-                        .filter((task) => task.projectId === projectInstance.id && task.subset === subset)
+                        .filter((task) => task.projectID === projectInstance.id && task.subset === subset)
                         .map((task: Task) => (
                             <TaskItem
                                 key={task.id}
@@ -155,7 +155,7 @@ export default function ProjectPageComponent(): JSX.Element {
                         onChange={(page: number) => {
                             dispatch(getProjectTasksAsync({
                                 ...tasksQuery,
-                                projectId: id,
+                                projectID: id,
                                 page,
                             }));
                         }}
@@ -191,7 +191,7 @@ export default function ProjectPageComponent(): JSX.Element {
                         setUpdatingProject(true);
                         project.save().then((updatedProject: Project) => {
                             if (mounted.current) {
-                                dispatch(getProjectTasksAsync({ ...updatedQuery, projectId: id }));
+                                dispatch(getProjectTasksAsync({ ...updatedQuery, projectID: id }));
                                 setProjectInstance(updatedProject);
                             }
                         }).catch((error: Error) => {
@@ -218,7 +218,7 @@ export default function ProjectPageComponent(): JSX.Element {
                                     dispatch(getProjectTasksAsync({
                                         ...tasksQuery,
                                         page: 1,
-                                        projectId: id,
+                                        projectID: id,
                                         search: _search,
                                     }));
                                 }}
@@ -238,7 +238,7 @@ export default function ProjectPageComponent(): JSX.Element {
                                         dispatch(getProjectTasksAsync({
                                             ...tasksQuery,
                                             page: 1,
-                                            projectId: id,
+                                            projectID: id,
                                             sort: sorting,
                                         }));
                                     }}
@@ -265,7 +265,7 @@ export default function ProjectPageComponent(): JSX.Element {
                                         dispatch(getProjectTasksAsync({
                                             ...tasksQuery,
                                             page: 1,
-                                            projectId: id,
+                                            projectID: id,
                                             filter,
                                         }));
                                     }}
@@ -282,7 +282,7 @@ export default function ProjectPageComponent(): JSX.Element {
                                         type='primary'
                                         icon={<PlusOutlined />}
                                         className='cvat-create-task-button'
-                                        onClick={() => history.push(`/tasks/create?projectId=${id}`)}
+                                        onClick={() => history.push(`/tasks/create?projectID=${id}`)}
                                     >
                                         Create a new task
                                     </Button>
@@ -290,7 +290,7 @@ export default function ProjectPageComponent(): JSX.Element {
                                         type='primary'
                                         icon={<span className='anticon'><MultiPlusIcon /></span>}
                                         className='cvat-create-multi-tasks-button'
-                                        onClick={() => history.push(`/tasks/create?projectId=${id}&many=true`)}
+                                        onClick={() => history.push(`/tasks/create?projectID=${id}&many=true`)}
                                     >
                                         Create multi tasks
                                     </Button>

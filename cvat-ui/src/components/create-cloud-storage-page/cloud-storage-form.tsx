@@ -123,7 +123,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             const parsedOptions = new URLSearchParams(cloudStorage.specificAttributes);
             const location = parsedOptions.get('region') || parsedOptions.get('location');
             const prefix = parsedOptions.get('prefix');
-            const projectId = parsedOptions.get('project_id');
+            const projectID = parsedOptions.get('project_id');
             const endpointUrl = parsedOptions.get('endpoint_url');
 
             if (location) {
@@ -132,8 +132,8 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             if (prefix) {
                 fieldsValue.prefix = prefix;
             }
-            if (projectId) {
-                fieldsValue.project_id = projectId;
+            if (projectID) {
+                fieldsValue.project_id = projectID;
             }
             if (endpointUrl) {
                 fieldsValue.endpoint_url = endpointUrl;

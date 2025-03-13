@@ -81,7 +81,7 @@ interface Props {
     onChangeSourceStorageLocation: (value: StorageLocation) => void;
     onChangeTargetStorageLocation: (value: StorageLocation) => void;
     onChangeSortingMethod(value: SortingMethod): void;
-    projectId: number | null;
+    projectID: number | null;
     useProjectSourceStorage: boolean;
     useProjectTargetStorage: boolean;
     activeFileManagerTab: string;
@@ -136,12 +136,12 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
     }
 
     public submit(): Promise<void> {
-        const { onSubmit, projectId } = this.props;
+        const { onSubmit, projectID } = this.props;
 
         if (this.formRef.current) {
-            if (projectId) {
+            if (projectID) {
                 return Promise.all([
-                    core.projects.get({ id: projectId }),
+                    core.projects.get({ id: projectID }),
                     this.formRef.current.validateFields(),
                 ]).then(([getProjectResponse, values]) => {
                     const [project] = getProjectResponse;
@@ -413,7 +413,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
     private renderSourceStorage(): JSX.Element {
         const {
-            projectId,
+            projectID,
             useProjectSourceStorage,
             sourceStorageLocation,
             onChangeUseProjectSourceStorage,
@@ -421,7 +421,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         } = this.props;
         return (
             <SourceStorageField
-                instanceId={projectId}
+                instanceId={projectID}
                 locationValue={sourceStorageLocation}
                 switchDescription='Use project source storage'
                 storageDescription='Specify source storage for import resources like annotation, backups'
@@ -434,7 +434,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
     private renderTargetStorage(): JSX.Element {
         const {
-            projectId,
+            projectID,
             useProjectTargetStorage,
             targetStorageLocation,
             onChangeUseProjectTargetStorage,
@@ -442,7 +442,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         } = this.props;
         return (
             <TargetStorageField
-                instanceId={projectId}
+                instanceId={projectID}
                 locationValue={targetStorageLocation}
                 switchDescription='Use project target storage'
                 storageDescription='Specify target storage for export resources like annotation, backups                '

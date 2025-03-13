@@ -639,15 +639,15 @@ export class Job extends Session {
         return this.#data.frame_count;
     }
 
-    public get projectId(): number | null {
+    public get projectID(): number | null {
         return this.#data.project_id;
     }
 
-    public get guideId(): number | null {
+    public get guideID(): number | null {
         return this.#data.guide_id;
     }
 
-    public get taskId(): number {
+    public get taskID(): number {
         return this.#data.task_id;
     }
 
@@ -746,12 +746,12 @@ export class Job extends Session {
 
 export class Task extends Session {
     public name: string;
-    public projectId: number | null;
+    public projectID: number | null;
     public assignee: User | null;
     public bugTracker: string;
     public subset: string;
     public labels: Label[];
-    public readonly guideId: number | null;
+    public readonly guideID: number | null;
     public readonly id: number;
     public readonly status: TaskStatus;
     public readonly size: number;
@@ -931,18 +931,18 @@ export class Task extends Session {
                         data.name = value;
                     },
                 },
-                projectId: {
+                projectID: {
                     get: () => data.project_id,
-                    set: (projectId) => {
-                        if (!Number.isInteger(projectId) || projectId <= 0) {
+                    set: (projectID) => {
+                        if (!Number.isInteger(projectID) || projectID <= 0) {
                             throw new ArgumentError('Value must be a positive integer');
                         }
 
-                        updateTrigger.update('projectId');
-                        data.project_id = projectId;
+                        updateTrigger.update('projectID');
+                        data.project_id = projectID;
                     },
                 },
-                guideId: {
+                guideID: {
                     get: () => data.guide_id,
                 },
                 status: {

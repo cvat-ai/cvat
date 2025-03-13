@@ -41,9 +41,9 @@ function JobActionsMenu(props: Props): JSX.Element {
     const onClickMenu = useCallback(
         (action: MenuInfo) => {
             if (action.key === Actions.TASK) {
-                history.push(`/tasks/${job.taskId}`);
+                history.push(`/tasks/${job.taskID}`);
             } else if (action.key === Actions.PROJECT) {
-                history.push(`/projects/${job.projectId}`);
+                history.push(`/projects/${job.projectID}`);
             } else if (action.key === Actions.BUG_TRACKER) {
                 if (job.bugTracker) {
                     window.open(job.bugTracker, '_blank', 'noopener noreferrer');
@@ -53,7 +53,7 @@ function JobActionsMenu(props: Props): JSX.Element {
             } else if (action.key === Actions.EXPORT_JOB) {
                 dispatch(exportActions.openExportDatasetModal(job));
             } else if (action.key === Actions.VIEW_ANALYTICS) {
-                history.push(`/tasks/${job.taskId}/jobs/${job.id}/analytics`);
+                history.push(`/tasks/${job.taskID}/jobs/${job.id}/analytics`);
             } else if (action.key === Actions.MERGE_SPECIFIC_CONSENSUS_JOBS) {
                 Modal.confirm({
                     title: 'The consensus job will be merged',
@@ -95,8 +95,8 @@ function JobActionsMenu(props: Props): JSX.Element {
             className='cvat-job-item-menu'
             onClick={onClickMenu}
         >
-            <Menu.Item key={Actions.TASK} disabled={job.taskId === null}>Go to the task</Menu.Item>
-            <Menu.Item key={Actions.PROJECT} disabled={job.projectId === null}>Go to the project</Menu.Item>
+            <Menu.Item key={Actions.TASK} disabled={job.taskID === null}>Go to the task</Menu.Item>
+            <Menu.Item key={Actions.PROJECT} disabled={job.projectID === null}>Go to the project</Menu.Item>
             <Menu.Item key={Actions.BUG_TRACKER} disabled={!job.bugTracker}>Go to the bug tracker</Menu.Item>
             <Menu.Item key={Actions.IMPORT_JOB}>Import annotations</Menu.Item>
             <Menu.Item key={Actions.EXPORT_JOB}>Export annotations</Menu.Item>

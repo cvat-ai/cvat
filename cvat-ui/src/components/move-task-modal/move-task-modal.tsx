@@ -31,13 +31,13 @@ function MoveTaskModal({
 }): JSX.Element {
     const dispatch = useDispatch();
     const visible = useSelector((state: CombinedState) => state.tasks.moveTask.modalVisible);
-    const taskId = useSelector((state: CombinedState) => state.tasks.moveTask.taskId);
+    const taskID = useSelector((state: CombinedState) => state.tasks.moveTask.taskID);
     const mounted = useRef(false);
 
     const [taskFetching, setTaskFetching] = useState(false);
     const [taskInstance, setTaskInstance] = useState<Task | null>(null);
     const [isUpdating, setIsUpdating] = useState(false);
-    const [projectId, setProjectId] = useState<number | null>(null);
+    const [projectID, setProjectId] = useState<number | null>(null);
     const [project, setProject] = useState<any>(null);
     const [labelMap, setLabelMap] = useState<{ [key: string]: LabelMapperItemValue }>({});
 
@@ -64,7 +64,7 @@ function MoveTaskModal({
     }, [initValues]);
 
     const projectsFilter = useCallback((_project: { id: number }) => (
-        _project.id !== taskInstance?.projectId
+        _project.id !== taskInstance?.projectID
     ), [taskInstance]);
 
     const submitMove = async (): Promise<void> => {
@@ -72,7 +72,7 @@ function MoveTaskModal({
             throw new Error('Task to move is not specified');
         }
 
-        if (!projectId) {
+        if (!projectID) {
             notification.error({ message: 'Please, select a project' });
             return;
         }
@@ -84,7 +84,7 @@ function MoveTaskModal({
             return;
         }
 
-        taskInstance.projectId = projectId;
+        taskInstance.projectID = projectID;
         taskInstance.labels = Object.values(labelMap).map((mapper) => ({
             id: mapper.labelId,
             name: mapper.newLabelName,
@@ -117,9 +117,9 @@ function MoveTaskModal({
     };
 
     useEffect(() => {
-        if (visible && Number.isInteger(taskId)) {
+        if (visible && Number.isInteger(taskID)) {
             setTaskFetching(true);
-            core.tasks.get({ id: taskId })
+            core.tasks.get({ id: taskID })
                 .then(([task]: Task[]) => {
                     if (mounted.current) {
                         setLabelMap({});
@@ -135,11 +135,11 @@ function MoveTaskModal({
                     }
                 });
         }
-    }, [visible, taskId]);
+    }, [visible, taskID]);
 
     useEffect(() => {
-        if (projectId && taskInstance) {
-            core.projects.get({ id: projectId }).then(([_project]: any) => {
+        if (projectID && taskInstance) {
+            core.projects.get({ id: projectID }).then(([_project]: any) => {
                 if (_project) {
                     setProject(_project);
                     const { labels } = _project;
@@ -159,7 +159,7 @@ function MoveTaskModal({
         } else {
             setProject(null);
         }
-    }, [projectId, taskInstance]);
+    }, [projectID, taskInstance]);
 
     useEffect(() => {
         initValues();
@@ -194,7 +194,7 @@ function MoveTaskModal({
                 <Col>Project:</Col>
                 <Col>
                     <ProjectSearch
-                        value={projectId}
+                        value={projectID}
                         onSelect={setProjectId}
                         filter={projectsFilter}
                     />

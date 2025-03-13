@@ -42,16 +42,16 @@ const projectActions = {
         createAction(ProjectsActionTypes.UPDATE_PROJECTS_GETTING_QUERY, { query, tasksQuery })
     ),
     createProject: () => createAction(ProjectsActionTypes.CREATE_PROJECT),
-    createProjectSuccess: (projectId: number) => (
-        createAction(ProjectsActionTypes.CREATE_PROJECT_SUCCESS, { projectId })
+    createProjectSuccess: (projectID: number) => (
+        createAction(ProjectsActionTypes.CREATE_PROJECT_SUCCESS, { projectID })
     ),
     createProjectFailed: (error: any) => createAction(ProjectsActionTypes.CREATE_PROJECT_FAILED, { error }),
-    deleteProject: (projectId: number) => createAction(ProjectsActionTypes.DELETE_PROJECT, { projectId }),
-    deleteProjectSuccess: (projectId: number) => (
-        createAction(ProjectsActionTypes.DELETE_PROJECT_SUCCESS, { projectId })
+    deleteProject: (projectID: number) => createAction(ProjectsActionTypes.DELETE_PROJECT, { projectID }),
+    deleteProjectSuccess: (projectID: number) => (
+        createAction(ProjectsActionTypes.DELETE_PROJECT_SUCCESS, { projectID })
     ),
-    deleteProjectFailed: (projectId: number, error: any) => (
-        createAction(ProjectsActionTypes.DELETE_PROJECT_FAILED, { projectId, error })
+    deleteProjectFailed: (projectID: number, error: any) => (
+        createAction(ProjectsActionTypes.DELETE_PROJECT_FAILED, { projectID, error })
     ),
     getProjectPreview: (projectID: number) => (
         createAction(ProjectsActionTypes.GET_PROJECT_PREVIEW, { projectID })
@@ -118,7 +118,7 @@ export function getProjectsAsync(
             if (Object.keys(filteredQuery).includes('id') && typeof filteredQuery.id === 'number') {
                 dispatch(getProjectTasksAsync({
                     ...tasksQuery,
-                    projectId: filteredQuery.id,
+                    projectID: filteredQuery.id,
                 }));
             }
         }

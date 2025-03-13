@@ -394,7 +394,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 this.setState({ fetching: true });
 
                 const response = await core.lambda.call(
-                    jobInstance.taskId,
+                    jobInstance.taskID,
                     interactor,
                     { ...data, job: jobInstance.id },
                 ) as InteractorResults;
@@ -777,7 +777,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             className: 'cvat-tracking-notice',
                         });
 
-                        const response = await core.lambda.call(jobInstance.taskId, tracker, {
+                        const response = await core.lambda.call(jobInstance.taskID, tracker, {
                             frame: frame - 1,
                             shapes: trackableObjects.shapes,
                             job: jobInstance.id,
@@ -825,7 +825,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             className: 'cvat-tracking-notice',
                         });
                         // eslint-disable-next-line no-await-in-loop
-                        const response = await core.lambda.call(jobInstance.taskId, tracker, {
+                        const response = await core.lambda.call(jobInstance.taskID, tracker, {
                             frame,
                             shapes: trackableObjects.shapes,
                             states: trackableObjects.states,
@@ -1257,7 +1257,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         // The function call endpoint doesn't support the cleanup and conv_mask_to_poly parameters.
                         const { cleanup, conv_mask_to_poly: convMaskToPoly, ...restOfBody } = body;
 
-                        const result = await core.lambda.call(jobInstance.taskId, model, {
+                        const result = await core.lambda.call(jobInstance.taskID, model, {
                             ...restOfBody, frame, job: jobInstance.id,
                         }) as DetectedShapes;
 

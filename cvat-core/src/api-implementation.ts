@@ -153,12 +153,12 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         return result;
     });
 
-    implementationMixin(cvat.assets.create, async (file: File, guideId: number): Promise<SerializedAsset> => {
+    implementationMixin(cvat.assets.create, async (file: File, guideID: number): Promise<SerializedAsset> => {
         if (!(file instanceof File)) {
             throw new ArgumentError('Assets expect a file');
         }
 
-        const result = await serverProxy.assets.create(file, guideId);
+        const result = await serverProxy.assets.create(file, guideID);
         return result;
     });
 
@@ -246,7 +246,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
     ): ReturnType<CVATCore['tasks']['get']> => {
         checkFilter(filter, {
             page: isInteger,
-            projectId: isInteger,
+            projectID: isInteger,
             id: isInteger,
             sort: isString,
             search: isString,
@@ -262,12 +262,12 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
             }
         }
 
-        if ('projectId' in filter) {
+        if ('projectID' in filter) {
             if (searchParams.filter) {
                 const parsed = JSON.parse(searchParams.filter);
-                searchParams.filter = JSON.stringify({ and: [parsed, { '==': [{ var: 'project_id' }, filter.projectId] }] });
+                searchParams.filter = JSON.stringify({ and: [parsed, { '==': [{ var: 'project_id' }, filter.projectID] }] });
             } else {
-                searchParams.filter = JSON.stringify({ and: [{ '==': [{ var: 'project_id' }, filter.projectId] }] });
+                searchParams.filter = JSON.stringify({ and: [{ '==': [{ var: 'project_id' }, filter.projectID] }] });
             }
         }
 
@@ -400,15 +400,15 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         checkFilter(filter, {
             page: isInteger,
             id: isInteger,
-            projectId: isInteger,
+            projectID: isInteger,
             filter: isString,
             search: isString,
             sort: isString,
         });
 
-        checkExclusiveFields(filter, ['id', 'projectId'], ['page']);
+        checkExclusiveFields(filter, ['id', 'projectID'], ['page']);
 
-        const searchParams = filterFieldsToSnakeCase(filter, ['projectId']);
+        const searchParams = filterFieldsToSnakeCase(filter, ['projectID']);
 
         const webhooksData = await serverProxy.webhooks.get(searchParams);
         const webhooks = webhooksData.map((webhookData) => new Webhook(webhookData));
