@@ -532,7 +532,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
             # we cannot redirect to the new API here since this endpoint used not only to check the status
             # of exporting process|download a result file, but also to initiate export process
-            return get_410_response_for_export_api("/api/projects/<id>/dataset/export?save_images=True")
+            return get_410_response_for_export_api("/api/projects/id/dataset/export?save_images=True")
 
         return self.import_annotations(
             request=request,
@@ -594,12 +594,12 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @extend_schema(exclude=True)
     @action(detail=True, methods=['GET'])
     def annotations(self, request: ExtendedRequest, pk: int):
-        return get_410_response_for_export_api("/api/projects/<id>/dataset/export?save_images=False")
+        return get_410_response_for_export_api("/api/projects/id/dataset/export?save_images=False")
 
     @extend_schema(exclude=True)
     @action(methods=['GET'], detail=True, url_path='backup')
     def export_backup(self, request: ExtendedRequest, pk: int):
-        return get_410_response_for_export_api("/api/projects/<id>/backup/export")
+        return get_410_response_for_export_api("/api/projects/id/backup/export")
 
     @extend_schema(methods=['POST'], summary='Recreate a project from a backup',
         description=textwrap.dedent("""
@@ -1008,7 +1008,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @extend_schema(exclude=True)
     @action(methods=['GET'], detail=True, url_path='backup')
     def export_backup(self, request: ExtendedRequest, pk: int):
-        return get_410_response_for_export_api("/api/tasks/<id>/backup/export")
+        return get_410_response_for_export_api("/api/tasks/id/backup/export")
 
     @transaction.atomic
     def perform_update(self, serializer):
@@ -1519,7 +1519,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 {"format", "filename", "action", "location", "cloud_storage_id"}
                 & request.query_params.keys()
             ):
-                return get_410_response_for_export_api("/api/tasks/<id>/dataset/export?save_images=False")
+                return get_410_response_for_export_api("/api/tasks/id/dataset/export?save_images=False")
 
             data = dm.task.get_task_data(self._object.pk)
             return Response(data)
@@ -1673,7 +1673,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @extend_schema(exclude=True)
     @action(detail=True, methods=['GET'], serializer_class=None, url_path='dataset')
     def dataset_export(self, request: ExtendedRequest, pk: int):
-        return get_410_response_for_export_api("/api/tasks/<id>/dataset/export?save_images=True")
+        return get_410_response_for_export_api("/api/tasks/id/dataset/export?save_images=True")
 
     @extend_schema(summary='Get a preview image for a task',
         responses={
@@ -2036,7 +2036,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
                 {"format", "filename", "location", "action", "cloud_storage_id"}
                 & request.query_params.keys()
             ):
-                return get_410_response_for_export_api("/api/jobs/<id>/dataset/export?save_images=False")
+                return get_410_response_for_export_api("/api/jobs/id/dataset/export?save_images=False")
 
             annotations = dm.task.get_job_data(self._object.pk)
             return Response(annotations)
@@ -2101,7 +2101,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     @extend_schema(exclude=True)
     @action(detail=True, methods=['GET'], serializer_class=None, url_path='dataset')
     def dataset_export(self, request: ExtendedRequest, pk: int):
-        return get_410_response_for_export_api("/api/jobs/<id>/dataset/export?save_images=True")
+        return get_410_response_for_export_api("/api/jobs/id/dataset/export?save_images=True")
 
     @extend_schema(summary='Get data of a job',
         parameters=[
