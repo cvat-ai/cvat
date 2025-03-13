@@ -489,6 +489,11 @@ LOGGING = {
     "formatters": {
         "vector": {"format": "%(message)s"},
         "standard": {"format": "[%(asctime)s] %(levelname)s %(name)s: %(message)s"},
+        "verbose_uvicorn_access": {
+            "()": "uvicorn.logging.AccessFormatter",
+            "format": '[{asctime}] {levelprefix} {client_addr} - "{request_line}" {status_code}',
+            "style": "{",
+        },
     },
     "handlers": {
         "console": {
@@ -525,6 +530,11 @@ LOGGING = {
             "message_type": "django",
             "database_path": EVENTS_LOCAL_DB_FILE,
         },
+        "verbose_uvicorn_access": {
+            "formatter": "verbose_uvicorn_access",
+            "class": "logging.StreamHandler",
+            "stream": "ext://sys.stdout",
+        },
     },
     "root": {
         "handlers": ["console", "server_file"],
@@ -543,6 +553,11 @@ LOGGING = {
             "handlers": [],
             "level": "INFO",
             # set True for debug
+            "propagate": False,
+        },
+        "uvicorn.access": {
+            "handlers": ["verbose_uvicorn_access"],
+            "level": "INFO",
             "propagate": False,
         },
     },
