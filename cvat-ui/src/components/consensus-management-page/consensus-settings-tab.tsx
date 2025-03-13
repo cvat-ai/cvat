@@ -5,7 +5,9 @@
 import React, { useCallback } from 'react';
 import Text from 'antd/lib/typography/Text';
 import Form from 'antd/lib/form';
+import notification from 'antd/lib/notification';
 import { ConsensusSettings } from 'cvat-core-wrapper';
+import { formFieldsError } from 'utils/validation';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import ConsensusSettingsForm from './task-consensus/consensus-settings-form';
 
@@ -24,8 +26,16 @@ function ConsensusSettingsTab(props: Readonly<Props>): JSX.Element | null {
 
     const [form] = Form.useForm();
     const onSave = useCallback(async () => {
-        const values = await form.validateFields();
-        setSettings(values);
+        try {
+            const values = await form.validateFields();
+            setSettings(values);
+        } catch (error) {
+            notification.error({
+                message: 'Could not save consensus settings',
+                description: formFieldsError(error).map((text: string): JSX.Element => <div>{text}</div>),
+                className: 'cvat-notification-save-consensus-settings-failed',
+            });
+        }
     }, [form, setSettings]);
 
     if (fetching) {

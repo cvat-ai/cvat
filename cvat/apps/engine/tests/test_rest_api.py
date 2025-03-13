@@ -64,6 +64,7 @@ from cvat.apps.engine.models import (
 )
 from cvat.apps.engine.tests.utils import (
     ApiTestBase,
+    ExportApiTestBase,
     ForceLogin,
     generate_image_file,
     generate_video_file,
@@ -1321,7 +1322,7 @@ class ProjectListOfTasksAPITestCase(ApiTestBase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-class ProjectBackupAPITestCase(ApiTestBase):
+class ProjectBackupAPITestCase(ExportApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -1619,12 +1620,6 @@ class ProjectBackupAPITestCase(ApiTestBase):
         cls._create_tasks(db_project)
         cls.projects.append(db_project)
 
-    def _run_api_v2_projects_id_export(self, pid, user, query_params=""):
-        with ForceLogin(user, self.client):
-            response = self.client.get('/api/projects/{}/backup?{}'.format(pid, query_params), format="json")
-
-        return response
-
     def _run_api_v2_projects_import(self, user, data):
         with ForceLogin(user, self.client):
             response = self.client.post('/api/projects/backup', data=data, format="multipart")
@@ -1645,29 +1640,15 @@ class ProjectBackupAPITestCase(ApiTestBase):
 
     def _run_api_v2_projects_id_export_import(self, user):
         for project in self.projects:
-            if user:
-                if user in [project.assignee, project.owner, self.admin]:
-                    HTTP_200_OK = status.HTTP_200_OK
-                    HTTP_202_ACCEPTED = status.HTTP_202_ACCEPTED
-                    HTTP_201_CREATED = status.HTTP_201_CREATED
-                else:
-                    HTTP_200_OK = status.HTTP_403_FORBIDDEN
-                    HTTP_202_ACCEPTED = status.HTTP_403_FORBIDDEN
-                    HTTP_201_CREATED = status.HTTP_403_FORBIDDEN
-            else:
-                HTTP_200_OK = status.HTTP_401_UNAUTHORIZED
-                HTTP_202_ACCEPTED = status.HTTP_401_UNAUTHORIZED
-                HTTP_201_CREATED = status.HTTP_401_UNAUTHORIZED
+            expected_4xx_status_code = None
+
+            if not user:
+                expected_4xx_status_code = status.HTTP_401_UNAUTHORIZED
+            elif user not in {project.assignee, project.owner, self.admin}:
+                expected_4xx_status_code = status.HTTP_403_FORBIDDEN
 
             pid = project.id
-            response = self._run_api_v2_projects_id_export(pid, user)
-            self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
-
-            response = self._run_api_v2_projects_id_export(pid, user)
-            self.assertEqual(response.status_code, HTTP_201_CREATED)
-
-            response = self._run_api_v2_projects_id_export(pid, user, "action=download")
-            self.assertEqual(response.status_code, HTTP_200_OK)
+            response = self._export_project_backup(user, pid, expected_4xx_status_code=expected_4xx_status_code)
 
             if response.status_code == status.HTTP_200_OK:
                 self.assertTrue(response.streaming)
@@ -1678,11 +1659,11 @@ class ProjectBackupAPITestCase(ApiTestBase):
                     "project_file": content,
                 }
                 response = self._run_api_v2_projects_import(user, uploaded_data)
-                self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
+                self.assertEqual(response.status_code, expected_4xx_status_code or status.HTTP_202_ACCEPTED)
                 if response.status_code == status.HTTP_202_ACCEPTED:
                     rq_id = response.data["rq_id"]
                     response = self._run_api_v2_projects_import(user, {"rq_id": rq_id})
-                    self.assertEqual(response.status_code, HTTP_201_CREATED)
+                    self.assertEqual(response.status_code, expected_4xx_status_code or status.HTTP_201_CREATED)
                     original_project = self._run_api_v2_projects_id(pid, user)
                     imported_project = self._run_api_v2_projects_id(response.data["id"], user)
                     compare_objects(
@@ -1844,7 +1825,7 @@ class ProjectCloudBackupAPIStaticChunksTestCase(ProjectCloudBackupAPINoStaticChu
     pass
 
 
-class ProjectExportAPITestCase(ApiTestBase):
+class ProjectExportAPITestCase(ExportApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -1860,13 +1841,6 @@ class ProjectExportAPITestCase(ApiTestBase):
         create_dummy_db_tasks(cls, db_project)
         cls.project = db_project
 
-    def _run_api_v2_project_id_export(self, pid, user, annotation_format=""):
-        with ForceLogin(user, self.client):
-            response = self.client.get(
-                '/api/projects/{}/annotations?format={}'.format(pid, annotation_format),
-                format="json")
-        return response
-
     def _run_api_v2_tasks_id_delete(self, tid, user):
         with ForceLogin(user, self.client):
             response = self.client.delete('/api/tasks/{}'.format(tid), format="json")
@@ -1877,17 +1851,10 @@ class ProjectExportAPITestCase(ApiTestBase):
         self.assertEqual(len(tasks_id), expected_result)
 
     def _check_xml(self, pid, user, expected_result):
-        annotation_format = "CVAT for images 1.1"
-        response = self._run_api_v2_project_id_export(pid, user, annotation_format)
-        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-
-        response = self._run_api_v2_project_id_export(pid, user, annotation_format)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-        annotation_format = "CVAT for images 1.1&action=download"
-        response = self._run_api_v2_project_id_export(pid, user, annotation_format)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
+        export_params = {
+            "format": "CVAT for images 1.1"
+        }
+        response = self._export_project_annotations(user, pid, query_params=export_params)
         content = io.BytesIO(b"".join(response.streaming_content))
         content.seek(0)
 
@@ -1915,7 +1882,7 @@ class ProjectExportAPITestCase(ApiTestBase):
         self._check_xml(pid, user, 3)
 
 
-class ProjectImportExportAPITestCase(ApiTestBase):
+class ProjectImportExportAPITestCase(ExportApiTestBase):
     def setUp(self) -> None:
         super().setUp()
         self.tasks = []
@@ -2032,11 +1999,6 @@ class ProjectImportExportAPITestCase(ApiTestBase):
             for data in project_data:
                 _create_project(data)
 
-    def _run_api_v2_projects_id_dataset_export(self, pid, user, query_params=""):
-        with ForceLogin(user, self.client):
-            response = self.client.get("/api/projects/{}/dataset?{}".format(pid, query_params), format="json")
-        return response
-
     def _run_api_v2_projects_id_dataset_import(self, pid, user, data, f):
         with ForceLogin(user, self.client):
             response = self.client.post("/api/projects/{}/dataset?format={}".format(pid, f),  data=data, format="multipart")
@@ -2048,18 +2010,15 @@ class ProjectImportExportAPITestCase(ApiTestBase):
         return response
 
     def test_api_v2_projects_id_export_import(self):
-
         self._create_projects()
         self._create_tasks()
         pid_export, pid_import = self.projects[0]["id"], self.projects[1]["id"]
-        response = self._run_api_v2_projects_id_dataset_export(pid_export, self.owner, "format=CVAT for images 1.1")
-        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
 
-        response = self._run_api_v2_projects_id_dataset_export(pid_export, self.owner, "format=CVAT for images 1.1")
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        export_params = {
+            "format": "CVAT for images 1.1"
+        }
 
-        response = self._run_api_v2_projects_id_dataset_export(pid_export, self.owner, "format=CVAT for images 1.1&action=download")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response = self._export_project_dataset(self.owner, pid_export, query_params=export_params)
 
         self.assertTrue(response.streaming)
         tmp_file = tempfile.NamedTemporaryFile(suffix=".zip")
@@ -2838,7 +2797,7 @@ class TaskCreateAPITestCase(ApiTestBase):
         }
         self._check_api_v2_tasks(None, data)
 
-class TaskImportExportAPITestCase(ApiTestBase):
+class TaskImportExportAPITestCase(ExportApiTestBase):
     def setUp(self):
         super().setUp()
         self.tasks = []
@@ -3151,12 +3110,6 @@ class TaskImportExportAPITestCase(ApiTestBase):
                 for media in self.media_data:
                     _create_task(data, media)
 
-    def _run_api_v2_tasks_id_export(self, tid, user, query_params=""):
-        with ForceLogin(user, self.client):
-            response = self.client.get('/api/tasks/{}/backup?{}'.format(tid, query_params), format="json")
-
-        return response
-
     def _run_api_v2_tasks_id_import(self, user, data):
         with ForceLogin(user, self.client):
             response = self.client.post('/api/tasks/backup', data=data, format="multipart")
@@ -3171,30 +3124,17 @@ class TaskImportExportAPITestCase(ApiTestBase):
 
     def _run_api_v2_tasks_id_export_import(self, user):
         if user:
-            if user == self.owner or user.is_superuser:
-                HTTP_200_OK = status.HTTP_200_OK
-                HTTP_202_ACCEPTED = status.HTTP_202_ACCEPTED
-                HTTP_201_CREATED = status.HTTP_201_CREATED
-            else:
-                HTTP_200_OK = status.HTTP_403_FORBIDDEN
-                HTTP_202_ACCEPTED = status.HTTP_403_FORBIDDEN
-                HTTP_201_CREATED = status.HTTP_403_FORBIDDEN
+            expected_4xx_status_code = None if (user == self.owner or user.is_superuser) else status.HTTP_403_FORBIDDEN
         else:
-            HTTP_200_OK = status.HTTP_401_UNAUTHORIZED
-            HTTP_202_ACCEPTED = status.HTTP_401_UNAUTHORIZED
-            HTTP_201_CREATED = status.HTTP_401_UNAUTHORIZED
+            expected_4xx_status_code = status.HTTP_401_UNAUTHORIZED
 
         self._create_tasks()
         for task in self.tasks:
             tid = task["id"]
-            response = self._run_api_v2_tasks_id_export(tid, user)
-            self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
-
-            response = self._run_api_v2_tasks_id_export(tid, user)
-            self.assertEqual(response.status_code, HTTP_201_CREATED)
-
-            response = self._run_api_v2_tasks_id_export(tid, user, "action=download")
-            self.assertEqual(response.status_code, HTTP_200_OK)
+            response = self._export_task_backup(
+                user, tid,
+                expected_4xx_status_code=expected_4xx_status_code
+            )
 
             if user and user is not self.somebody and user is not self.user and user is not self.annotator:
                 self.assertTrue(response.streaming)
@@ -3205,11 +3145,11 @@ class TaskImportExportAPITestCase(ApiTestBase):
                     "task_file": content,
                 }
                 response = self._run_api_v2_tasks_id_import(user, uploaded_data)
-                self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
+                self.assertEqual(response.status_code, expected_4xx_status_code or status.HTTP_202_ACCEPTED)
                 if user is not self.somebody and user is not self.user and user is not self.annotator:
                     rq_id = response.data["rq_id"]
                     response = self._run_api_v2_tasks_id_import(user, {"rq_id": rq_id})
-                    self.assertEqual(response.status_code, HTTP_201_CREATED)
+                    self.assertEqual(response.status_code, expected_4xx_status_code or status.HTTP_201_CREATED)
                     original_task = self._run_api_v2_tasks_id(tid, user)
                     imported_task = self._run_api_v2_tasks_id(response.data["id"], user)
                     compare_objects(
@@ -3268,11 +3208,7 @@ class TaskImportExportAPITestCase(ApiTestBase):
             cleanup_export_cache_directory()
             mock_clear_export_cache.assert_not_called()
 
-            response = self._run_api_v2_tasks_id_export(task_id, user)
-            self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-
-            response = self._run_api_v2_tasks_id_export(task_id, user)
-            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            self._export_task_backup(user, task_id, download_locally=False)
 
             queue: RQQueue = django_rq.get_queue(settings.CVAT_QUEUES.EXPORT_DATA.value)
             rq_job_ids = queue.finished_job_registry.get_job_ids()
@@ -5559,7 +5495,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
     def test_api_v2_jobs_id_annotations_no_auth(self):
         self._run_api_v2_jobs_id_annotations(self.user, self.user, None)
 
-class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
+class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
     def _put_api_v2_tasks_id_annotations(self, pk, user, data):
         with ForceLogin(user, self.client):
             response = self.client.put("/api/tasks/{}/annotations".format(pk),
@@ -5577,13 +5513,6 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
         with ForceLogin(user, self.client):
             response = self.client.delete("/api/tasks/{}/annotations".format(pk),
             format="json")
-
-        return response
-
-    def _dump_api_v2_tasks_id_annotations(self, pk, user, query_params=""):
-        with ForceLogin(user, self.client):
-            response = self.client.get(
-                "/api/tasks/{0}/annotations{1}".format(pk, query_params))
 
         return response
 
@@ -6583,22 +6512,17 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 self._check_response(response, data)
 
                 # 3. download annotation
-                response = self._dump_api_v2_tasks_id_annotations(task["id"], owner,
-                    "?format={}".format(export_format))
                 if not export_formats[export_format]['enabled']:
-                    self.assertEqual(response.status_code,
-                        status.HTTP_405_METHOD_NOT_ALLOWED)
+                    self._export_task_annotations(
+                        owner, task["id"], query_params={"format": export_format},
+                        download_locally=False,
+                        expected_4xx_status_code=status.HTTP_405_METHOD_NOT_ALLOWED
+                    )
                     continue
-                else:
-                    self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
 
-                response = self._dump_api_v2_tasks_id_annotations(task["id"], owner,
-                    "?format={}".format(export_format))
-                self.assertEqual(response.status_code, HTTP_201_CREATED)
-
-                response = self._dump_api_v2_tasks_id_annotations(task["id"], owner,
-                    "?format={}&action=download".format(export_format))
-                self.assertEqual(response.status_code, HTTP_200_OK)
+                response = self._export_task_annotations(
+                    owner, task["id"], query_params={"format": export_format},
+                )
 
                 # 4. check downloaded data
                 self.assertTrue(response.streaming)
@@ -6906,11 +6830,6 @@ class ServerShareDifferentTypesAPITestCase(ApiTestBase):
                 os.makedirs(os.path.dirname(img_path))
             image.save(img_path)
 
-    def _get_request(self, path):
-        with ForceLogin(self.user, self.client):
-            response = self.client.get(path)
-        return response
-
     def _run_api_v2_server_share(self, directory):
         with ForceLogin(self.user, self.client):
             response = self.client.get(
@@ -6969,7 +6888,7 @@ class ServerShareDifferentTypesAPITestCase(ApiTestBase):
         image_data.update(remote_files)
         # create task with server
         task = self._create_task(task, image_data)
-        response = self._get_request("/api/tasks/%s/data/meta" % task["id"])
+        response = self._get_request("/api/tasks/%s/data/meta" % task["id"], self.user)
         self.assertEqual(len(response.data["frames"]), images_count)
 
 
@@ -6989,16 +6908,6 @@ class TaskAnnotation2DContext(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
-
-    def _get_request_with_data(self, path, data, user):
-        with ForceLogin(user, self.client):
-            response = self.client.get(path, data)
-        return response
-
-    def _get_request(self, path, user):
-        with ForceLogin(user, self.client):
-            response = self.client.get(path)
-        return response
 
     def _create_task(self, data, image_data):
         with ForceLogin(self.user, self.client):
@@ -7064,5 +6973,5 @@ class TaskAnnotation2DContext(ApiTestBase):
                 "type": "context_image",
                 "number": 0
             }
-            response = self._get_request_with_data("/api/tasks/%s/data" % task_id, data, self.admin)
+            response = self._get_request("/api/tasks/%s/data" % task_id, self.admin, data=data)
             self.assertEqual(response.status_code, status.HTTP_200_OK)
