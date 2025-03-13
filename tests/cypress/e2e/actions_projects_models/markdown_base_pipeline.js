@@ -106,7 +106,7 @@ context('Basic markdown pipeline', () => {
                     cy.intercept('GET', '/api/projects/**').as('getProjects');
                     cy.window().then(async ($win) => {
                         $win.cvat.projects.get({ id: projectID }).then(([project]) => {
-                            guideID = project.guideId;
+                            guideID = project.guideID;
                         });
                     });
                     cy.wait('@getProjects').its('response.statusCode').should('equal', 200);

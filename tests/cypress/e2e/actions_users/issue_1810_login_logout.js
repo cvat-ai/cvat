@@ -9,7 +9,7 @@ import { taskName } from '../../support/const';
 
 context('When clicking on the Logout button, get the user session closed.', () => {
     const issueId = '1810';
-    let taskId;
+    let taskID;
 
     function login(credential, password) {
         cy.get('#credential').clear();
@@ -39,7 +39,7 @@ context('When clicking on the Logout button, get the user session closed.', () =
             // get id task
             cy.url().then((url) => {
                 const [link] = url.split('?');
-                taskId = Number(link.split('/').slice(-1)[0]);
+                taskID = Number(link.split('/').slice(-1)[0]);
             });
         });
 
@@ -51,10 +51,10 @@ context('When clicking on the Logout button, get the user session closed.', () =
                     .click();
             });
             cy.get('span[aria-label="logout"]').click();
-            cy.url().should('include', `/auth/login?next=/tasks/${taskId}`);
+            cy.url().should('include', `/auth/login?next=/tasks/${taskID}`);
             // login to task
             login(Cypress.env('user'), Cypress.env('password'));
-            cy.url().should('include', `/tasks/${taskId}`).and('not.include', '/auth/login');
+            cy.url().should('include', `/tasks/${taskID}`).and('not.include', '/auth/login');
             cy.contains('.cvat-task-details-task-name', `${taskName}`).should('be.visible');
         });
 

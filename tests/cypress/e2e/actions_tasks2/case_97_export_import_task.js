@@ -23,7 +23,7 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
     const imagesFolder = `cypress/fixtures/${imageFileName}`;
     const directoryToArchive = imagesFolder;
     const newLabelName = 'person';
-    let taskId;
+    let taskID;
     let taskBackupArchiveFullName;
     let ctmBeforeExport;
 
@@ -46,7 +46,7 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
         cy.openTask(taskName);
         cy.url().then((url) => {
             const [link] = url.split('?');
-            taskId = Number(link.split('/').slice(-1)[0]);
+            taskID = Number(link.split('/').slice(-1)[0]);
         });
         cy.addNewLabel({ name: newLabelName });
         cy.openJob();
@@ -119,7 +119,7 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
             cy.openTask(taskName);
             cy.url().then((url) => {
                 const [link] = url.split('?');
-                expect(Number(link.split('/').slice(-1)[0])).to.be.equal(taskId + 1);
+                expect(Number(link.split('/').slice(-1)[0])).to.be.equal(taskID + 1);
             });
             cy.get('.cvat-constructor-viewer-item').then((labels) => {
                 expect(labels.length).to.be.equal(2);

@@ -889,15 +889,15 @@ Cypress.Commands.add('clickInTaskMenu', (item, fromTaskPage, taskName = '') => {
 });
 
 Cypress.Commands.add('deleteTask', (taskName) => {
-    let taskId = '';
+    let taskID = '';
     cy.contains('.cvat-item-task-name', new RegExp(`^${taskName}$`))
         .parents('.cvat-task-item-description')
         .find('.cvat-item-task-id')
-        .then(($taskId) => {
-            taskId = $taskId.text().replace(/[^\d]/g, '');
+        .then(($taskID) => {
+            taskID = $taskID.text().replace(/[^\d]/g, '');
             cy.clickInTaskMenu('Delete', false, taskName);
             cy.get('.cvat-modal-confirm-delete-task')
-                .should('contain', `The task ${taskId} will be deleted`)
+                .should('contain', `The task ${taskID} will be deleted`)
                 .within(() => {
                     cy.contains('button', 'Delete').click();
                 });
