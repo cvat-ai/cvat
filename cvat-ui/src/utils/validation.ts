@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import { RuleObject } from 'antd/lib/form';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { ValidateErrorEntity } from 'rc-field-form/lib/interface';
 
 export const isInteger = ({ min, max, filter }: {
     min?: number;
@@ -35,3 +37,10 @@ export const isInteger = ({ min, max, filter }: {
 
     return Promise.resolve();
 };
+
+export function formFieldsError(error: any): string[] {
+    return (error as ValidateErrorEntity).errorFields ?
+        (error as ValidateErrorEntity).errorFields
+            .map((field) => `${field.name} : ${field.errors.join(';')}`) :
+        [error.toString()];
+}

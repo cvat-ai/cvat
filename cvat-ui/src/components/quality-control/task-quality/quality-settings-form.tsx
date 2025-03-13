@@ -156,7 +156,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                     <Form.Item
                         name='targetMetric'
                         label='Target metric'
-                        rules={[{ required: true }]}
+                        rules={[{ required: true, message: 'This field is required' }]}
                     >
                         <Select
                             style={{ width: '70%' }}
@@ -178,7 +178,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                     <Form.Item
                         name='targetMetricThreshold'
                         label='Target metric threshold'
-                        rules={[{ required: true }]}
+                        rules={[{ required: true, message: 'This field is required' }]}
                     >
                         <InputNumber min={0} max={100} precision={0} />
                     </Form.Item>
@@ -189,7 +189,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                     <Form.Item
                         name='compareAttributes'
                         valuePropName='checked'
-                        rules={[{ required: true }]}
+                        rules={[{ required: true, message: 'This field is required' }]}
                     >
                         <Checkbox>
                             <Text className='cvat-text-color'>Compare attributes</Text>
@@ -200,7 +200,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                     <Form.Item
                         name='emptyIsAnnotated'
                         valuePropName='checked'
-                        rules={[{ required: true }]}
+                        rules={[{ required: true, message: 'This field is required' }]}
                     >
                         <Checkbox>
                             <Text className='cvat-text-color'>Empty frames are annotated</Text>
@@ -224,7 +224,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                     <Form.Item
                         name='maxValidationsPerJob'
                         label='Max validations per job'
-                        rules={[{ required: true }]}
+                        rules={[{ required: true, message: 'This field is required' }]}
                     >
                         <InputNumber
                             min={0}
@@ -250,7 +250,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                     <Form.Item
                         name='iouThreshold'
                         label='Min overlap threshold (%)'
-                        rules={[{ required: true }]}
+                        rules={[{ required: true, message: 'This field is required' }]}
                     >
                         <InputNumber min={0} max={100} precision={0} />
                     </Form.Item>
@@ -259,7 +259,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                     <Form.Item
                         name='lowOverlapThreshold'
                         label='Low overlap threshold (%)'
-                        rules={[{ required: true }]}
+                        rules={[{ required: true, message: 'This field is required' }]}
                     >
                         <InputNumber min={0} max={100} precision={0} />
                     </Form.Item>
@@ -281,7 +281,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                     <Form.Item
                         name='oksSigma'
                         label='OKS sigma (bbox side %)'
-                        rules={[{ required: true }]}
+                        rules={[{ required: true, message: 'This field is required' }]}
                     >
                         <InputNumber min={0} max={100} precision={0} />
                     </Form.Item>
@@ -303,7 +303,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                     <Form.Item
                         name='pointSizeBase'
                         label='Point size base'
-                        rules={[{ required: true }]}
+                        rules={[{ required: true, message: 'This field is required' }]}
                     >
                         <Select
                             style={{ width: '70%' }}
@@ -335,7 +335,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                     <Form.Item
                         name='lineThickness'
                         label='Relative thickness (frame side %)'
-                        rules={[{ required: true }]}
+                        rules={[{ required: true, message: 'This field is required' }]}
                     >
                         <InputNumber min={0} max={1000} precision={0} />
                     </Form.Item>
@@ -345,7 +345,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                 <Col span={12}>
                     <Form.Item
                         name='orientedLines'
-                        rules={[{ required: true }]}
+                        rules={[{ required: true, message: 'This field is required' }]}
                         valuePropName='checked'
                     >
                         <Checkbox>
@@ -357,7 +357,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                     <Form.Item
                         name='lineOrientationThreshold'
                         label='Min similarity gain (%)'
-                        rules={[{ required: true }]}
+                        rules={[{ required: true, message: 'This field is required' }]}
                     >
                         <InputNumber min={0} max={100} precision={0} />
                     </Form.Item>
@@ -379,7 +379,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                     <Form.Item
                         name='compareGroups'
                         valuePropName='checked'
-                        rules={[{ required: true }]}
+                        rules={[{ required: true, message: 'This field is required' }]}
                     >
                         <Checkbox>
                             <Text className='cvat-text-color'>Compare groups</Text>
@@ -390,7 +390,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                     <Form.Item
                         name='groupMatchThreshold'
                         label='Min group match threshold (%)'
-                        rules={[{ required: true }]}
+                        rules={[{ required: true, message: 'This field is required' }]}
                     >
                         <InputNumber min={0} max={100} precision={0} />
                     </Form.Item>
@@ -412,7 +412,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                     <Form.Item
                         name='checkCoveredAnnotations'
                         valuePropName='checked'
-                        rules={[{ required: true }]}
+                        rules={[{ required: true, message: 'This field is required' }]}
                     >
                         <Checkbox>
                             <Text className='cvat-text-color'>Check object visibility</Text>
@@ -423,7 +423,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                     <Form.Item
                         name='objectVisibilityThreshold'
                         label='Min visibility threshold (area %)'
-                        rules={[{ required: true }]}
+                        rules={[{ required: true, message: 'This field is required' }]}
                     >
                         <InputNumber min={0} max={100} precision={0} />
                     </Form.Item>
@@ -434,7 +434,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                     <Form.Item
                         name='panopticComparison'
                         valuePropName='checked'
-                        rules={[{ required: true }]}
+                        rules={[{ required: true, message: 'This field is required' }]}
                     >
                         <Checkbox>
                             <Text className='cvat-text-color'>Match only visible parts</Text>
