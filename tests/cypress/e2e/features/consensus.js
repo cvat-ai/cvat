@@ -40,17 +40,20 @@ context('Basic manipulations with consensus job replicas', () => {
             cy.contains('Advanced configuration').click();
             // 'Consensus Replicas' field cannot equal to 1
             cy.get('#consensusReplicas').type(`{backspace}${1}`);
-            cy.get('.ant-form-item-explain-error')
+            cy.get('.ant-form-item-has-error')
                 .should('be.visible')
-                .invoke('text').should('eq', 'Value can not be equal to 1');
+                .should('include.text', 'Value can not be equal to 1');
             cy.contains('button', 'Submit & Continue').click();
             cy.get('.ant-notification-notice-error').should('exist').and('be.visible');
             cy.closeNotification('.ant-notification-notice-error');
 
             // 'Consensus Replicas' field cannot be > 10
+            cy.get('#consensusReplicas').clear();
+            cy.get('.ant-form-item-has-error').should('not.exist');
             cy.get('#consensusReplicas').type(`{backspace}${maxReplicas + 1}`);
-            cy.get('.ant-form-item-explain-error').should('be.visible')
-                .invoke('text').should('eq', `Value must be less than ${maxReplicas}`);
+            cy.get('.ant-form-item-has-error')
+                .should('be.visible')
+                .should('include.text', `Value must be less than ${maxReplicas}`);
             cy.contains('button', 'Submit & Continue').click();
             cy.get('.ant-notification-notice-error').should('exist').and('be.visible');
             cy.closeNotification('.ant-notification-notice-error');
