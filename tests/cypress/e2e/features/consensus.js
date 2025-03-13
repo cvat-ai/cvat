@@ -31,11 +31,15 @@ context('Basic manipulations with consensus job replicas', () => {
     });
 
     describe('Consensus job creation', () => {
+        const maxReplicas = 10;
+        let consensusTaskID = null;
         before(() => {
+            cy.headlessCreateTask(taskSpec, dataSpec, extras).then(({ taskID }) => {
+                consensusTaskID = taskID;
+            });
             cy.get('.cvat-create-task-dropdown').click();
             cy.get('.cvat-create-task-button').should('be.visible').click();
         });
-        const maxReplicas = 10;
         it('Check allowed number of replicas', () => {
             cy.contains('Advanced configuration').click();
             // 'Consensus Replicas' field cannot equal to 1
@@ -78,9 +82,13 @@ context('Basic manipulations with consensus job replicas', () => {
                     cy.wrap($el).click();
                 });
         });
+        after(() => {
+            cy.headlessDeleteTask(consensusTaskID);
+        });
     });
 
-    describe.only('Cosensus jobs merging', () => {
+    describe('Cosensus jobs merging', () => {
+        let consensusTaskID = null;
         const baseShape = {
             objectType: 'shape',
             labelName,
@@ -92,10 +100,12 @@ context('Basic manipulations with consensus job replicas', () => {
         const jobIDs = [];
 
         before(() => {
+            cy.headlessCreateTask(taskSpec, dataSpec, extras).then(({ taskID }) => {
+                consensusTaskID = taskID;
+            });
             cy.goToTaskList();
             cy.openTask(taskName);
             cy.get('.cvat-consensus-job-collapse').click();
-            cy.headlessCreateTask(taskSpec, dataSpec, extras);
         });
 
         it("Check new merge buttons exist and are visible. Trying to merge 'new' jobs should trigger errors", () => {
@@ -129,7 +139,7 @@ context('Basic manipulations with consensus job replicas', () => {
             cy.closeNotification('.cvat-notification-notice-consensus-merge-task-failed');
         });
 
-        it.only('Check consensus management page', () => {
+        it('Check consensus management page', () => {
             const defaultQuorum = 50;
             const defaultIoU = 40;
             cy.contains('button', 'Actions').click();
@@ -176,7 +186,7 @@ context('Basic manipulations with consensus job replicas', () => {
             const delta = 50;
             const [consensusJobID, ...replicaJobIDs] = jobIDs;
             for (let i = 0, shape = baseShape; i < replicas; i++) {
-                cy.headlessCreateObjects([shape], replicaJobIDs[i]); // only 'in progress' jobs can be merged
+                cy.headlessCreateObjects([shape], jobIDs[i]); // only 'in progress' jobs can be merged
                 cy.headlessUpdateJob(replicaJobIDs[i], { state: 'in progress' });
                 const points = translatePoints(shape.points, delta, 'x');
                 shape = { ...shape, points };
@@ -221,6 +231,9 @@ context('Basic manipulations with consensus job replicas', () => {
                     expect($el.attr('height')).to.equal(consensusRect.height);
                 });
             });
+        });
+        after(() => {
+            cy.headlessDeleteTask(consensusTaskID);
         });
     });
 });
