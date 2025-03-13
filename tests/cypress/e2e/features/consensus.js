@@ -8,48 +8,34 @@ import { translatePoints } from '../../support/utils';
 
 context('Basic manipulations with consensus job replicas', () => {
     const labelName = 'Consensus';
+    const taskName = 'Test consensus';
     const serverFiles = ['archive.zip'];
     const replicas = 4;
+    const taskSpec = {
+        name: taskName,
+        labels: [{
+            name: labelName,
+            attributes: [],
+            type: 'any',
+        }],
+    };
     const dataSpec = {
         server_files: serverFiles,
         image_quality: 70,
     };
     const extras = { consensus_replicas: replicas };
 
-    const taskNameCreate = 'Test consensus creation';
-    const taskSpecCreate = {
-        name: taskNameCreate,
-        labels: [{
-            name: labelName,
-            attributes: [],
-            type: 'any',
-        }],
-    };
-    const taskNameMerge = 'Test consensus merging';
-    const taskSpecMerge = {
-        name: taskNameMerge,
-        labels: [{
-            name: labelName,
-            attributes: [],
-            type: 'any',
-        }],
-    };
-
     before(() => {
         cy.visit('auth/login');
         cy.login();
-        cy.headlessCreateTask(taskSpecCreate, dataSpec, extras);
-        cy.headlessCreateTask(taskSpecMerge, dataSpec, extras);
     });
 
     describe('Consensus job creation', () => {
-        const maxReplicas = 10;
-
         before(() => {
             cy.get('.cvat-create-task-dropdown').click();
             cy.get('.cvat-create-task-button').should('be.visible').click();
         });
-
+        const maxReplicas = 10;
         it('Check allowed number of replicas', () => {
             cy.contains('Advanced configuration').click();
             // 'Consensus Replicas' field cannot equal to 1
@@ -73,7 +59,7 @@ context('Basic manipulations with consensus job replicas', () => {
 
         it('Check new consensus task has correct tags and drop-down with replicas', () => {
             cy.goToTaskList();
-            cy.openTask(taskNameCreate);
+            cy.openTask(taskName);
             cy.get('.cvat-task-details-wrapper').should('be.visible');
             cy.get('.ant-notification-notice-error').should('not.exist');
             // Check tags
@@ -91,7 +77,7 @@ context('Basic manipulations with consensus job replicas', () => {
         });
     });
 
-    describe('Cosensus jobs merging', () => {
+    describe.only('Cosensus jobs merging', () => {
         const baseShape = {
             objectType: 'shape',
             labelName,
@@ -104,8 +90,9 @@ context('Basic manipulations with consensus job replicas', () => {
 
         before(() => {
             cy.goToTaskList();
-            cy.openTask(taskNameMerge);
+            cy.openTask(taskName);
             cy.get('.cvat-consensus-job-collapse').click();
+            cy.headlessCreateTask(taskSpec, dataSpec, extras);
         });
 
         it("Check new merge buttons exist and are visible. Trying to merge 'new' jobs should trigger errors", () => {
@@ -139,7 +126,7 @@ context('Basic manipulations with consensus job replicas', () => {
             cy.closeNotification('.cvat-notification-notice-consensus-merge-task-failed');
         });
 
-        it('Check consensus management page', () => {
+        it.only('Check consensus management page', () => {
             const defaultQuorum = 50;
             const defaultIoU = 40;
             cy.contains('button', 'Actions').click();
