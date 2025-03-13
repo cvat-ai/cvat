@@ -10,7 +10,6 @@ from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from io import BytesIO
 from pathlib import Path
-from time import sleep
 from typing import Any, Callable, TypeVar
 from urllib.parse import quote
 
@@ -149,27 +148,19 @@ class ApiTestBase(APITestCase):
             response = self.client.put(url, data=data)
         return response
 
-    def _wait_request_to_be_finished(
+    def _check_request_status(
         self,
         user: str,
         rq_id: str,
         *,
-        attempts_count: int = 300,
-        sleep_interval: float = 0.1,
         expected_4xx_status_code: int | None = None,
     ):
-        request_status = None
+        response = self._get_request(f"/api/requests/{rq_id}", user)
+        self.assertEqual(response.status_code, expected_4xx_status_code or status.HTTP_200_OK)
+        if expected_4xx_status_code is not None:
+            return
 
-        for _ in range(attempts_count):
-            response = self._get_request(f"/api/requests/{rq_id}", user)
-            self.assertEqual(response.status_code, expected_4xx_status_code or status.HTTP_200_OK)
-            if expected_4xx_status_code is not None:
-                return
-            request_status = response.json()["status"]
-            if request_status in ("finished", "failed"):
-                break
-
-            sleep(sleep_interval)
+        request_status = response.json()["status"]
         assert request_status == "finished", f"The last request status was {request_status}"
         return response
 
@@ -203,14 +194,14 @@ class ExportApiTestBase(ApiTestBase):
 
         assert rq_id, "The rq_id param was not found in the server response"
 
-        response = self._wait_request_to_be_finished(user, rq_id, expected_4xx_status_code=expected_4xx_status_code)
+        response = self._check_request_status(user, rq_id, expected_4xx_status_code=expected_4xx_status_code)
 
         if not download_locally:
             return response
 
         # get actual result URL to check that server returns 401/403 when a user tries to download prepared file
         if expected_4xx_status_code:
-            response = self._wait_request_to_be_finished(self.admin, rq_id)
+            response = self._check_request_status(self.admin, rq_id)
 
         result_url = response.json().get("result_url")
         assert result_url, "The result_url param was not found in the server response"
