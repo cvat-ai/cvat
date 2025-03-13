@@ -411,29 +411,28 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             - `result_url` can be found in the response on checking status request
         """),
         parameters=[
-            OpenApiParameter('format', description='Desired output format name\n'
-                'You can get the list of supported formats at:\n/server/annotation/formats',
+            OpenApiParameter('format', description='This parameter is no longer supported',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 deprecated=True
             ),
-            OpenApiParameter('filename', description='Desired output file name',
+            OpenApiParameter('filename', description='This parameter is no longer supported',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 deprecated=True
             ),
-            OpenApiParameter('action', description='Used to start downloading process locally after annotation file has been created',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False, enum=['download', 'import_status'],
+            OpenApiParameter('action', description='Used to check the import status',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False, enum=['import_status'],
                 deprecated=True
             ),
-            OpenApiParameter('location', description='Where need to save downloaded dataset',
+            OpenApiParameter('location', description='This parameter is no longer supported',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 enum=Location.list(),
                 deprecated=True
             ),
-            OpenApiParameter('cloud_storage_id', description='Storage id',
+            OpenApiParameter('cloud_storage_id', description='This parameter is no longer supported',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False,
                 deprecated=True
             ),
-            OpenApiParameter('rq_id', description='Request ID',
+            OpenApiParameter('rq_id', description='This parameter is no longer supported',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=True),
         ],
         deprecated=True,
@@ -1402,30 +1401,29 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 where `result_url` can be found in the response on checking status request
         """),
         parameters=[
-            # --- Deprecated params section ---
+            # FUTURE-TODO: the following parameters should be removed after a few releases
             OpenApiParameter('format', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
-                description="Desired output format name\nYou can get the list of supported formats at:\n/server/annotation/formats",
+                description="This parameter is no longer supported",
                 deprecated=True
             ),
-            OpenApiParameter('filename', description='Desired output file name',
+            OpenApiParameter('filename', description='This parameter is no longer supported',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 deprecated=True
             ),
             OpenApiParameter('action', location=OpenApiParameter.QUERY,
-                description='Used to start downloading process locally after annotation file has been created',
+                description='This parameter is no longer supported',
                 type=OpenApiTypes.STR, required=False, enum=['download'],
                 deprecated=True
             ),
-            OpenApiParameter('location', description='Where need to save downloaded dataset',
+            OpenApiParameter('location', description='This parameter is no longer supported',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 enum=Location.list(),
                 deprecated=True
             ),
-            OpenApiParameter('cloud_storage_id', description='Storage id',
+            OpenApiParameter('cloud_storage_id', description='This parameter is no longer supported',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False,
                 deprecated=True
             ),
-            # --- Deprecated params section ---
         ],
         responses={
             '200': OpenApiResponse(LabeledDataSerializer),
@@ -1940,6 +1938,31 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             - `GET result_url` to download a prepared file,
                 where `result_url` can be found in the response on checking status request
         """),
+        parameters=[
+            OpenApiParameter('format', location=OpenApiParameter.QUERY,
+                description='This parameter is no longer supported',
+                type=OpenApiTypes.STR, required=False,
+                deprecated=True,
+            ),
+            OpenApiParameter('filename', description='This parameter is no longer supported',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
+                deprecated=True,
+            ),
+            OpenApiParameter('action', location=OpenApiParameter.QUERY,
+                description='This parameter is no longer supported',
+                type=OpenApiTypes.STR, required=False,
+                deprecated=True,
+            ),
+            OpenApiParameter('location', description='This parameter is no longer supported',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
+                enum=Location.list(),
+                deprecated=True,
+            ),
+            OpenApiParameter('cloud_storage_id', description='This parameter is no longer supported',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False,
+                deprecated=True,
+            ),
+        ],
         responses={
             '200': OpenApiResponse(LabeledDataSerializer),
             '410': OpenApiResponse(description="API endpoint no longer handles dataset exporting process"),

@@ -2250,12 +2250,45 @@ paths:
             where `result_url` can be found in the response on checking status request
       summary: Get job annotations
       parameters:
+      - in: query
+        name: action
+        schema:
+          type: string
+        description: This parameter is no longer supported
+        deprecated: true
+      - in: query
+        name: cloud_storage_id
+        schema:
+          type: integer
+        description: This parameter is no longer supported
+        deprecated: true
+      - in: query
+        name: filename
+        schema:
+          type: string
+        description: This parameter is no longer supported
+        deprecated: true
+      - in: query
+        name: format
+        schema:
+          type: string
+        description: This parameter is no longer supported
+        deprecated: true
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this job.
         required: true
+      - in: query
+        name: location
+        schema:
+          type: string
+          enum:
+          - cloud_storage
+          - local
+        description: This parameter is no longer supported
+        deprecated: true
       tags:
       - jobs
       security:
@@ -3788,31 +3821,26 @@ paths:
         schema:
           type: string
           enum:
-          - download
           - import_status
-        description: Used to start downloading process locally after annotation file
-          has been created
+        description: Used to check the import status
         deprecated: true
       - in: query
         name: cloud_storage_id
         schema:
           type: integer
-        description: Storage id
+        description: This parameter is no longer supported
         deprecated: true
       - in: query
         name: filename
         schema:
           type: string
-        description: Desired output file name
+        description: This parameter is no longer supported
         deprecated: true
       - in: query
         name: format
         schema:
           type: string
-        description: |-
-          Desired output format name
-          You can get the list of supported formats at:
-          /server/annotation/formats
+        description: This parameter is no longer supported
         deprecated: true
       - in: path
         name: id
@@ -3827,13 +3855,13 @@ paths:
           enum:
           - cloud_storage
           - local
-        description: Where need to save downloaded dataset
+        description: This parameter is no longer supported
         deprecated: true
       - in: query
         name: rq_id
         schema:
           type: string
-        description: Request ID
+        description: This parameter is no longer supported
         required: true
       tags:
       - projects
@@ -5212,29 +5240,25 @@ paths:
           type: string
           enum:
           - download
-        description: Used to start downloading process locally after annotation file
-          has been created
+        description: This parameter is no longer supported
         deprecated: true
       - in: query
         name: cloud_storage_id
         schema:
           type: integer
-        description: Storage id
+        description: This parameter is no longer supported
         deprecated: true
       - in: query
         name: filename
         schema:
           type: string
-        description: Desired output file name
+        description: This parameter is no longer supported
         deprecated: true
       - in: query
         name: format
         schema:
           type: string
-        description: |-
-          Desired output format name
-          You can get the list of supported formats at:
-          /server/annotation/formats
+        description: This parameter is no longer supported
         deprecated: true
       - in: path
         name: id
@@ -5249,7 +5273,7 @@ paths:
           enum:
           - cloud_storage
           - local
-        description: Where need to save downloaded dataset
+        description: This parameter is no longer supported
         deprecated: true
       tags:
       - tasks
