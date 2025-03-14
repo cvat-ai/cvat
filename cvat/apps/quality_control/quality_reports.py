@@ -2672,6 +2672,9 @@ class QualityReportManager:
         return ProjectQualityCalculator().compute_report(project=project_id).id
 
 
+_DEFAULT_FETCH_CHUNK_SIZE = 1000
+
+
 class TaskQualityCalculator:
     # JSON filter lookups
     JOB_FILTER_LOOKUPS = {
@@ -2727,7 +2730,7 @@ class TaskQualityCalculator:
                 )
                 filtered_job_ids: set[int] = set(
                     job_id
-                    for ids_chunk in take_by(all_job_ids, chunk_size=1000)
+                    for ids_chunk in take_by(all_job_ids, chunk_size=_DEFAULT_FETCH_CHUNK_SIZE)
                     for job_id in job_queryset.filter(id__in=ids_chunk).values_list("id", flat=True)
                 )
             else:
@@ -2762,7 +2765,7 @@ class TaskQualityCalculator:
                     for abs_frame, abs_real_frame in (
                         Image.objects.filter(data=task.data, is_placeholder=True)
                         .values_list("frame", "real_frame")
-                        .iterator(chunk_size=10000)
+                        .iterator(chunk_size=_DEFAULT_FETCH_CHUNK_SIZE)
                     )
                     if task_frame_provider.get_rel_frame_number(abs_real_frame)
                     in active_validation_frames
@@ -3008,9 +3011,8 @@ class ProjectQualityCalculator:
             # Ideally, we would lock the task to fetch all the data and produce
             # consistent report. However, data fetching can also take long time.
             # For this reason, we don't guarantee absolute consistency.
-
             if isinstance(project, int):
-                project = Project.objects.prefetch_related("quality_settings").get(id=project)
+                project = Project.objects.get(id=project)
 
             project_quality_params = self._get_quality_params(project)
 
@@ -3022,30 +3024,21 @@ class ProjectQualityCalculator:
 
             configured_task_ids: set[int] = set(
                 task_id
-                for ids_chunk in take_by(
-                    all_task_ids, chunk_size=1000
-                )  # TODO: optimize further, test
-                for task_id in Task.objects.filter(id__in=ids_chunk)
-                .annotate(
-                    gt_jobs_count=Count(
-                        "segment__job",
-                        filter=Q(
-                            segment__job__type=JobType.GROUND_TRUTH,
-                            segment__job__stage=StageChoice.ACCEPTANCE,
-                            segment__job__state=StateChoice.COMPLETED,
-                        ),
-                        distinct=True,
-                    )
-                )
-                .filter(gt_jobs_count__gt=0)
-                .values_list("id", flat=True)
+                for ids_chunk in take_by(all_task_ids, chunk_size=_DEFAULT_FETCH_CHUNK_SIZE)
+                for task_id in Job.objects.filter(
+                    type=JobType.GROUND_TRUTH,
+                    stage=StageChoice.ACCEPTANCE,
+                    state=StateChoice.COMPLETED,
+                    segment__task__in=ids_chunk,
+                ).values_list("segment__task__id", flat=True)
             )
 
-            prefetch_related_objects(
-                [project],
-                Prefetch(
-                    "tasks",
-                    queryset=Task.objects.filter(id__in=configured_task_ids).annotate(
+            # Prefetch in batches
+            configured_tasks = {}
+            for ids_batch in take_by(configured_task_ids, chunk_size=_DEFAULT_FETCH_CHUNK_SIZE):
+                tasks_batch = (
+                    project.tasks.filter(id__in=ids_batch)
+                    .annotate(
                         latest_quality_report_id=Subquery(
                             models.QualityReport.objects.filter(
                                 created_date__isnull=False,
@@ -3054,23 +3047,23 @@ class ProjectQualityCalculator:
                             .order_by("-created_date")
                             .values("id")[:1]
                         )
-                    ),
-                ),
-                # don't use .filter(id__in=filtered_job_ids) to avoid too big queries
-                "tasks__segment_set__job_set",
-                "tasks__quality_settings",
-                "tasks__data",
-                "tasks__data__validation_layout",
+                    )
+                    .all()
+                )
+                configured_tasks.update((t.id, t) for t in tasks_batch)
+
+                prefetch_related_objects(tasks_batch, "quality_settings")
+
+        latest_quality_report_ids = set(
+            t.latest_quality_report_id for t in configured_tasks.values()
+        )
+        latest_quality_reports = {
+            r.id: r
+            for ids_chunk in take_by(
+                latest_quality_report_ids, chunk_size=_DEFAULT_FETCH_CHUNK_SIZE
             )
-
-            configured_tasks = project.tasks.all()
-
-            latest_quality_report_ids = set(t.latest_quality_report_id for t in configured_tasks)
-            latest_quality_reports = {
-                r.id: r
-                for ids_chunk in take_by(latest_quality_report_ids, chunk_size=1000)
-                for r in models.QualityReport.objects.filter(id__in=ids_chunk)
-            }
+            for r in models.QualityReport.objects.filter(id__in=ids_chunk)
+        }
 
         task_quality_reports: dict[int, models.QualityReport] = {}
         for task in configured_tasks:
@@ -3087,18 +3080,28 @@ class ProjectQualityCalculator:
 
         # Compute required task reports
         # This loop can take long time, maybe use RQ dependencies for each task instead
-        for task in configured_tasks:
-            if task.id in task_quality_reports:
-                continue
+        tasks_without_reports = configured_tasks.keys() - task_quality_reports.keys()
+        for ids_batch in take_by(tasks_without_reports, chunk_size=_DEFAULT_FETCH_CHUNK_SIZE):
+            tasks_batch = [configured_tasks[task_id] for task_id in ids_batch]
 
-            # Tasks could have been deleted during report computations, ignore them.
-            # Tasks could be moved between projects. It can't be
-            # reliably checked and it is quite rare, so we ignore it.
-            with suppress(Task.DoesNotExist):
-                task_report_calculator = TaskQualityCalculator()
-                task_report = task_report_calculator.compute_report(task)
-                if task_report:
-                    task_quality_reports[task.id] = task_report
+            prefetch_related_objects(
+                tasks_batch,
+                "data",
+                "data__validation_layout",
+            )
+
+            for task in tasks_batch:
+                if task.id in task_quality_reports:
+                    continue
+
+                # Tasks could have been deleted during report computations, ignore them.
+                # Tasks could be moved between projects. It can't be
+                # reliably checked and it is quite rare, so we ignore it.
+                with suppress(Task.DoesNotExist):
+                    task_report_calculator = TaskQualityCalculator()
+                    task_report = task_report_calculator.compute_report(task)
+                    if task_report:
+                        task_quality_reports[task.id] = task_report
 
         task_comparison_reports: dict[int, ComparisonReport] = {
             task_id: ComparisonReport.from_json(r.get_json_report())
