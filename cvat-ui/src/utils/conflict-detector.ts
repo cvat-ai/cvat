@@ -103,7 +103,8 @@ function updatedFlatKeyMap(scope: string, flatKeyMap: FlatKeyMap): FlatKeyMapIte
 
 export function conflictDetector(
     shortcuts: Record<string, KeyMapItem>,
-    keyMap: KeyMap): Record<string, KeyMapItem> | null {
+    keyMap: KeyMap,
+): Record<string, KeyMapItem> | null {
     const flatKeyMap: FlatKeyMap = initializeFlatKeyMap(keyMap);
     const conflictingItems: Record<string, KeyMapItem> = {};
 

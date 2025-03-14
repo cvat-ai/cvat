@@ -2,11 +2,16 @@
 #
 # SPDX-License-Identifier: MIT
 
-from tools.test import *
 import os
 from copy import copy
+
 import jsonpickle
 import numpy as np
+import torch
+
+from tools.test import siamese_init, siamese_track
+from utils.config_helper import load_config
+from utils.load_helper import load_pretrain
 
 class ModelHandler:
     def __init__(self):
@@ -37,7 +42,9 @@ class ModelHandler:
 
     def decode_state(self, state):
         for k,v in state.items():
-            state[k] = jsonpickle.decode(v)
+            # The server ensures that `state` is one of the values that the function itself
+            # has previously output. Therefore it should be safe to use jsonpickle.
+            state[k] = jsonpickle.decode(v)  # nosec: B301
 
         state['net'] = copy(self.siammask)
         state['net'].zf = state['net.zf']

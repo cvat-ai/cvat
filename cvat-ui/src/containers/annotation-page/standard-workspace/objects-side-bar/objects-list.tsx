@@ -26,10 +26,10 @@ import {
 } from 'actions/settings-actions';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import {
-    CombinedState, StatesOrdering, ObjectType, ColorBy, Workspace,
+    CombinedState, StatesOrdering, ColorBy, Workspace,
     ActiveControl,
 } from 'reducers';
-import { ObjectState, ShapeType } from 'cvat-core-wrapper';
+import { ObjectState, ObjectType, ShapeType } from 'cvat-core-wrapper';
 import { filterAnnotations } from 'utils/filter-annotations';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { ShortcutScope } from 'utils/enums';

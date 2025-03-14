@@ -356,94 +356,144 @@ context('Ground truth jobs', () => {
             cy.contains('.cvat-allocation-summary-excluded', '0').should('exist');
             cy.contains('.cvat-allocation-summary-active', '3').should('exist');
         });
+
+        it('Check search feature', () => {
+            cy.get('.cvat-quality-table-search-bar input').clear();
+            serverFiles.forEach((file, index) => {
+                cy.get('.cvat-quality-table-search-bar input').type(`image_${index + 1}`);
+                cy.get('.cvat-quality-table-search-bar .ant-input-search-button').click();
+                cy.get('.cvat-allocation-frame-row').should('have.length', 1);
+                cy.get('.cvat-allocation-frame-row').within(() => {
+                    cy.contains(file).should('exist');
+                });
+                cy.get('.cvat-quality-table-search-bar input').clear();
+            });
+
+            cy.get('.cvat-quality-table-search-bar .ant-input-search-button').click();
+            cy.get('.cvat-allocation-frame-row').should('have.length', 3);
+        });
+
+        it('Check management table .csv representation is available for download', () => {
+            cy.get('.cvat-quality-control-management-tab .cvat-quality-table-dowload-button').click();
+
+            const expectedFileName = `allocation-table-task_${taskID}.csv`;
+            cy.verifyDownload(expectedFileName);
+            cy.checkCsvFileContent(expectedFileName, 'frame,name,active', 4, (row, index) => {
+                expect(row).to.include(`images/image_${index + 1}.jpg`);
+                expect(row).to.include('true');
+            });
+        });
     });
 
-    describe('Regression tests', () => {
-        const serverFiles = ['bigArchive.zip'];
+    context('Regression tests', () => {
+        describe('GT jobs from images', () => {
+            const serverFiles = ['bigArchive.zip'];
 
-        beforeEach(() => {
-            createAndOpenTask(serverFiles);
-        });
+            beforeEach(() => {
+                createAndOpenTask(serverFiles);
+            });
 
-        afterEach(() => {
-            cy.headlessDeleteTask(taskID);
-        });
+            afterEach(() => {
+                cy.headlessDeleteTask(taskID);
+            });
 
-        it('Check GT button should be disabled while waiting for GT job creation', () => {
-            cy.visit('/tasks');
-            cy.openTask(taskName);
+            it('Check GT button should be disabled while waiting for GT job creation', () => {
+                cy.visit('/tasks');
+                cy.openTask(taskName);
 
-            cy.get('.cvat-create-job').click({ force: true });
-            cy.url().should('include', '/jobs/create');
-            cy.get('.cvat-select-job-type').click();
-            cy.get('.ant-select-dropdown')
-                .not('.ant-select-dropdown-hidden')
-                .first()
-                .within(() => {
-                    cy.get('.ant-select-item-option[title="Ground truth"]').click();
+                cy.get('.cvat-create-job').click({ force: true });
+                cy.url().should('include', '/jobs/create');
+                cy.get('.cvat-select-job-type').click();
+                cy.get('.ant-select-dropdown')
+                    .not('.ant-select-dropdown-hidden')
+                    .first()
+                    .within(() => {
+                        cy.get('.ant-select-item-option[title="Ground truth"]').click();
+                    });
+                cy.get('.cvat-input-frame-count').clear();
+                cy.get('.cvat-input-frame-count').type(1);
+
+                cy.intercept('POST', '/api/jobs**', (req) => {
+                    req.continue((res) => {
+                        res.setDelay(1000);
+                    });
+                }).as('delayedRequest');
+
+                cy.contains('button', 'Submit').click({ force: true });
+                cy.contains('button', 'Submit').should('be.disabled');
+                cy.wait('@delayedRequest');
+
+                cy.get('.cvat-canvas-container').should('exist').and('be.visible');
+                cy.url().then((url) => {
+                    jobID = Number(url.split('/').slice(-1)[0].split('?')[0]);
+                }).should('match', /\/tasks\/\d+\/jobs\/\d+/);
+            });
+
+            it('Check GT annotations can not be shown in standard annotation view', () => {
+                cy.headlessCreateJob({
+                    task_id: taskID,
+                    frame_count: 4,
+                    type: 'ground_truth',
+                    frame_selection_method: 'random_uniform',
+                    seed: 1,
+                }).then((jobResponse) => {
+                    groundTruthJobID = jobResponse.jobID;
+                    return cy.headlessCreateObjects(groundTruthFrames.map((frame, index) => {
+                        const gtRect = groundTruthRectangles[index];
+                        return {
+                            objectType: 'shape',
+                            labelName,
+                            type: 'rectangle',
+                            occluded: false,
+                            frame,
+                            points: [gtRect.firstX, gtRect.firstY, gtRect.secondX, gtRect.secondY],
+                        };
+                    }), groundTruthJobID);
+                }).then(() => {
+                    cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+                    cy.get('.cvat-canvas-container').should('exist');
+
+                    cy.changeWorkspace('Review');
+                    cy.get('.cvat-objects-sidebar-show-ground-truth').click();
+                    cy.get('.cvat-objects-sidebar-show-ground-truth').should(
+                        'have.class', 'cvat-objects-sidebar-show-ground-truth-active',
+                    );
+                    groundTruthFrames.forEach((frame, index) => {
+                        cy.goCheckFrameNumber(frame);
+                        checkRectangleAndObjectMenu(groundTruthRectangles[index]);
+                    });
+
+                    cy.interactMenu('Open the task');
+                    cy.get('.cvat-task-job-list').within(() => {
+                        cy.contains('a', `Job #${jobID}`).click();
+                    });
+                    groundTruthFrames.forEach((frame) => {
+                        cy.goCheckFrameNumber(frame);
+                        cy.get('.cvat_canvas_shape').should('not.exist');
+                        cy.get('.cvat-objects-sidebar-state-item').should('not.exist');
+                    });
                 });
-            cy.get('.cvat-input-frame-count').clear();
-            cy.get('.cvat-input-frame-count').type(1);
-
-            cy.intercept('POST', '/api/jobs**', (req) => {
-                req.continue((res) => {
-                    res.setDelay(1000);
-                });
-            }).as('delayedRequest');
-
-            cy.contains('button', 'Submit').click({ force: true });
-            cy.contains('button', 'Submit').should('be.disabled');
-            cy.wait('@delayedRequest');
-
-            cy.get('.cvat-canvas-container').should('exist').and('be.visible');
-            cy.url().then((url) => {
-                jobID = Number(url.split('/').slice(-1)[0].split('?')[0]);
-            }).should('match', /\/tasks\/\d+\/jobs\/\d+/);
+            });
         });
-
-        it('Check GT annotations can not be shown in standard annotation view', () => {
-            cy.headlessCreateJob({
-                task_id: taskID,
-                frame_count: 4,
-                type: 'ground_truth',
-                frame_selection_method: 'random_uniform',
-                seed: 1,
-            }).then((jobResponse) => {
-                groundTruthJobID = jobResponse.jobID;
-                return cy.headlessCreateObjects(groundTruthFrames.map((frame, index) => {
-                    const gtRect = groundTruthRectangles[index];
-                    return {
-                        labelName,
-                        objectType: 'shape',
-                        shapeType: 'rectangle',
-                        occluded: false,
-                        frame,
-                        points: [gtRect.firstX, gtRect.firstY, gtRect.secondX, gtRect.secondY],
-                    };
-                }), groundTruthJobID);
-            }).then(() => {
-                cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
-                cy.get('.cvat-canvas-container').should('exist');
-
-                cy.changeWorkspace('Review');
-                cy.get('.cvat-objects-sidebar-show-ground-truth').click();
-                cy.get('.cvat-objects-sidebar-show-ground-truth').should(
-                    'have.class', 'cvat-objects-sidebar-show-ground-truth-active',
+        describe('GT jobs from videos', () => {
+            const serverFilesVideo = ['videos/video_1.mp4'];
+            before(() => {
+                createAndOpenTask(
+                    serverFilesVideo,
+                    { ...defaultValidationParams, randomSeed: 634, frameCount: 1 },
+                    // this seed yields frame index 2 > frameCount for this job
+                    // which is the condition for reproducing the bug
                 );
-                groundTruthFrames.forEach((frame, index) => {
-                    cy.goCheckFrameNumber(frame);
-                    checkRectangleAndObjectMenu(groundTruthRectangles[index]);
-                });
-
-                cy.interactMenu('Open the task');
                 cy.get('.cvat-task-job-list').within(() => {
-                    cy.contains('a', `Job #${jobID}`).click();
+                    cy.contains('a', `Job #${groundTruthJobID}`).click();
                 });
-                groundTruthFrames.forEach((frame) => {
-                    cy.goCheckFrameNumber(frame);
-                    cy.get('.cvat_canvas_shape').should('not.exist');
-                    cy.get('.cvat-objects-sidebar-state-item').should('not.exist');
-                });
+            });
+            it('Check crashing while navigating through GT job frames (#9095) ', () => {
+                cy.get('.cvat-canvas-container').should('exist').and('be.visible');
+                cy.get('.ant-notification-notice-error').should('not.exist');
+            });
+            after(() => {
+                cy.headlessDeleteTask(taskID);
             });
         });
     });

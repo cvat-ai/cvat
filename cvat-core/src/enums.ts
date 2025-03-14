@@ -37,6 +37,7 @@ export enum JobState {
 export enum JobType {
     ANNOTATION = 'annotation',
     GROUND_TRUTH = 'ground_truth',
+    CONSENSUS_REPLICA = 'consensus_replica',
 }
 
 export enum DimensionType {
@@ -160,13 +161,6 @@ export enum ModelKind {
 
 export enum ModelProviders {
     CVAT = 'cvat',
-}
-
-export enum ModelReturnType {
-    RECTANGLE = 'rectangle',
-    TAG = 'tag',
-    POLYGON = 'polygon',
-    MASK = 'mask',
 }
 
 export const colors = [

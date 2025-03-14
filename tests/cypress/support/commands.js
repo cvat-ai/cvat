@@ -287,26 +287,76 @@ Cypress.Commands.add('headlessLogin', ({
 });
 
 Cypress.Commands.add('headlessCreateObjects', (objects, jobID) => {
+    const convertShape = ($win, job) => (shape) => ({
+        frame: shape.frame,
+        type: shape.type,
+        points: $win.Array.from(shape.points),
+        label_id: job.labels.find((label) => label.name === shape.labelName).id,
+        occluded: shape.occluded || false,
+        outside: shape.outside || false,
+        source: shape.source || 'manual',
+        attributes: $win.Array.from(shape.attributes || []),
+        elements: $win.Array.from(shape.elements ? shape.elements.map(convertShape) : []),
+        rotation: shape.rotation || 0,
+        group: shape.group || 0,
+        z_order: shape.zOrder || 0,
+    });
+
+    const convertTag = ($win, job) => (tag) => ({
+        frame: tag.frame,
+        label_id: job.labels.find((label) => label.name === tag.labelName).id,
+        source: tag.source || 'manual',
+        attributes: $win.Array.from(tag.attributes || []),
+        group: tag.group || 0,
+    });
+
+    const convertTrack = ($win, job) => (track) => ({
+        frame: track.frame,
+        label_id: job.labels.find((label) => label.name === track.labelName).id,
+        group: track.group || 0,
+        source: track.source || 'manual',
+        attributes: $win.Array.from(track.attributes || []),
+        elements: $win.Array.from(track.elements ? track.elements.map(convertTrack) : []),
+        shapes: track.shapes.map((shape) => ({
+            attributes: $win.Array.from(shape.attributes || []),
+            points: $win.Array.from(shape.points),
+            frame: shape.frame,
+            occluded: shape.occluded || false,
+            outside: shape.outside || false,
+            rotation: shape.rotation || 0,
+            type: shape.type,
+            z_order: shape.zOrder || 0,
+        })),
+    });
+
     cy.window().then(async ($win) => {
         const job = (await $win.cvat.jobs.get({ jobID }))[0];
         await job.annotations.clear({ reload: true });
 
-        const objectStates = objects
-            .map((object) => new $win.cvat.classes
-                .ObjectState({
-                    frame: object.frame,
-                    objectType: object.objectType,
-                    shapeType: object.shapeType,
-                    points: $win.Array.from(object.points),
-                    occluded: object.occluded,
-                    label: job.labels.find((label) => label.name === object.labelName),
-                    zOrder: 0,
-                }));
+        const shapes = objects.filter((object) => object.objectType === 'shape').map(convertShape($win, job));
+        const tracks = objects.filter((object) => object.objectType === 'track').map(convertTrack($win, job));
+        const tags = objects.filter((object) => object.objectType === 'tag').map(convertTag($win, job));
 
-        await job.annotations.put($win.Array.from(objectStates));
+        await job.annotations.import({
+            shapes: $win.Array.from(shapes),
+            tracks: $win.Array.from(tracks),
+            tags: $win.Array.from(tags),
+        });
+
         await job.annotations.save();
         return cy.wrap();
     });
+});
+
+Cypress.Commands.add('headlessRestoreAllFrames', (jobID) => {
+    cy.intercept('PATCH', `/api/jobs/${jobID}/data/meta**`).as('patchMeta');
+    cy.window().then(async ($win) => {
+        await $win.cvat.server.request(`/api/jobs/${jobID}/data/meta`, {
+            method: 'PATCH',
+            data: { deleted_frames: [] },
+        });
+    });
+    cy.wait('@patchMeta');
 });
 
 Cypress.Commands.add('headlessCreateTask', (taskSpec, dataSpec, extras) => {
@@ -413,8 +463,7 @@ Cypress.Commands.add('openTask', (taskName, projectSubsetFieldValue) => {
 
 Cypress.Commands.add('saveJob', (method = 'PATCH', status = 200, as = 'saveJob') => {
     cy.intercept(method, '/api/jobs/**').as(as);
-    cy.get('button').contains('Save').click({ force: true });
-    cy.get('button').contains('Save').trigger('mouseout');
+    cy.clickSaveAnnotationView();
     cy.wait(`@${as}`).its('response.statusCode').should('equal', status);
 });
 
@@ -679,12 +728,6 @@ Cypress.Commands.add('closeSettings', () => {
     cy.get('.cvat-settings-modal').should('not.be.visible');
 });
 
-Cypress.Commands.add('saveSettings', () => {
-    cy.get('.cvat-settings-modal').within(() => {
-        cy.contains('button', 'Save').click();
-    });
-});
-
 Cypress.Commands.add('changeWorkspace', (mode) => {
     cy.get('.cvat-workspace-selector').click();
     cy.get('.cvat-workspace-selector-dropdown').within(() => {
@@ -878,7 +921,9 @@ Cypress.Commands.add('advancedConfiguration', (advancedConfigurationParams) => {
     if (advancedConfigurationParams.chunkSize) {
         cy.get('#dataChunkSize').type(advancedConfigurationParams.chunkSize);
     }
-
+    if (advancedConfigurationParams.consensusReplicas) {
+        cy.get('#consensusReplicas').type(advancedConfigurationParams.consensusReplicas);
+    }
     if (advancedConfigurationParams.overlapSize) {
         cy.get('#overlapSize').type(advancedConfigurationParams.overlapSize);
     }
@@ -1371,7 +1416,7 @@ Cypress.Commands.add('downloadExport', ({ expectNotification = true } = {}) => {
     cy.get('.cvat-requests-card').first().within(() => {
         cy.get('.cvat-requests-page-actions-button').click();
     });
-    cy.intercept('GET', '**=download').as('download');
+    cy.intercept('GET', '**/download?rq_id=*').as('download');
     cy.get('.ant-dropdown')
         .not('.ant-dropdown-hidden')
         .within(() => {
@@ -1434,10 +1479,7 @@ Cypress.Commands.add('deleteFrame', (action = 'delete') => {
     if (action === 'restore') {
         cy.get('.cvat-player-restore-frame').click();
     } else if (action === 'delete') {
-        cy.get('.cvat-player-delete-frame').click();
-        cy.get('.cvat-modal-delete-frame').within(() => {
-            cy.contains('button', 'Delete').click();
-        });
+        cy.clickDeleteFrameAnnotationView();
     }
     cy.saveJob('PATCH', 200);
     cy.wait('@patchMeta').its('response.statusCode').should('equal', 200);
@@ -1709,6 +1751,19 @@ Cypress.Commands.add('checkDeletedFrameVisibility', () => {
     cy.closeSettings();
 });
 
+Cypress.Commands.add('checkCsvFileContent', (expectedFileName, header, rowsCount, checkRow = null) => {
+    const downloadsFolder = Cypress.config('downloadsFolder');
+    const filePath = `${downloadsFolder}/${expectedFileName}`;
+    cy.readFile(filePath).then((csv) => {
+        const rows = csv.split('\n');
+        expect(rows.length).to.equal(rowsCount);
+        expect(rows[0]).to.include(header);
+        if (checkRow) {
+            rows.slice(1).forEach(checkRow);
+        }
+    });
+});
+
 Cypress.Commands.overwrite('visit', (orig, url, options) => {
     orig(url, options);
     cy.closeModalUnsupportedPlatform();
@@ -1717,4 +1772,64 @@ Cypress.Commands.overwrite('visit', (orig, url, options) => {
 Cypress.Commands.overwrite('reload', (orig, options) => {
     orig(options);
     cy.closeModalUnsupportedPlatform();
+});
+
+Cypress.Commands.add('clickDeleteFrameAnnotationView', () => {
+    cy.get('.cvat-player-delete-frame').click();
+    cy.get('.cvat-modal-delete-frame').within(() => {
+        cy.contains('button', 'Delete').click();
+    });
+});
+
+Cypress.Commands.add('clickSaveAnnotationView', () => {
+    cy.get('button').contains('Save').click();
+    cy.get('button').contains('Save').trigger('mouseout');
+});
+
+Cypress.Commands.add('makeCustomImage', (directory, fileName,
+    width, height, fontSize, backColor, textColor, posX, posY,
+    message, extension = 'png', maxWidth = undefined) => {
+    cy.window().then(async ($win) => {
+        const ofc = new $win.OffscreenCanvas(width, height);
+        const ctx = ofc.getContext('2d');
+
+        ctx.fillStyle = backColor;
+        ctx.fillRect(0, 0, width, height);
+
+        ctx.font = `${fontSize}px Impact`;
+
+        ctx.fillStyle = textColor;
+        ctx.textBaseline = 'top'; // so that text aligns with tracking coords
+        ctx.fillText(message, posX, posY, maxWidth);
+
+        cy.bufferToImage(directory, fileName, extension,
+            await (await ofc.convertToBlob()).arrayBuffer(),
+        );
+    });
+});
+
+Cypress.Commands.add('checkSlidersValues', (wrapper, slidersClassNames, expectedResults) => {
+    cy.get(wrapper).within(() => {
+        cy.wrap(slidersClassNames).each(($el, index) => {
+            cy.wrap($el)
+                .get($el)
+                .within(() => {
+                    cy.get('[role=slider]')
+                        .should('have.attr', 'aria-valuenow', expectedResults[index]);
+                });
+        });
+    });
+});
+
+Cypress.Commands.add('applyActionToSliders', (wrapper, slidersClassNames, action) => {
+    cy.get(wrapper).within(() => {
+        cy.wrap(slidersClassNames).each(($el) => {
+            cy.wrap($el)
+                .get($el)
+                .within(() => {
+                    cy.get('[role=slider]').type(action);
+                });
+        });
+    });
+    cy.get('.ant-tooltip').invoke('hide');
 });

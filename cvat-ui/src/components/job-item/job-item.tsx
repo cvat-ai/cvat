@@ -4,13 +4,14 @@
 
 import './styles.scss';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
+import PropTypes from 'prop-types';
 import moment from 'moment';
 import { Col, Row } from 'antd/lib/grid';
 import Card from 'antd/lib/card';
 import Text from 'antd/lib/typography/Text';
-import Tag from 'antd/lib/tag';
 import Select from 'antd/lib/select';
 import Dropdown from 'antd/lib/dropdown';
 import Icon from '@ant-design/icons';
@@ -25,8 +26,9 @@ import {
 import { useIsMounted } from 'utils/hooks';
 import UserSelector from 'components/task-page/user-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { useSelector } from 'react-redux';
 import { CombinedState } from 'reducers';
+import Collapse from 'antd/lib/collapse';
+import CVATTag, { TagType } from 'components/common/cvat-tag';
 import JobActionsMenu from './job-actions-menu';
 
 function formatDate(value: moment.Moment): string {
@@ -37,6 +39,9 @@ interface Props {
     job: Job;
     task: Task;
     onJobUpdate: (job: Job, fields: Parameters<Job['save']>[0]) => void;
+    childJobs?: Job[];
+    defaultCollapsed?: boolean;
+    onCollapseChange?: (jobID: number, collapsed: boolean) => void;
 }
 
 function ReviewSummaryComponent({ jobInstance }: { jobInstance: any }): JSX.Element {
@@ -103,7 +108,9 @@ function ReviewSummaryComponent({ jobInstance }: { jobInstance: any }): JSX.Elem
 }
 
 function JobItem(props: Props): JSX.Element {
-    const { job, task, onJobUpdate } = props;
+    const {
+        job, task, onJobUpdate, childJobs, defaultCollapsed, onCollapseChange,
+    } = props;
 
     const deletes = useSelector((state: CombinedState) => state.jobs.activities.deletes);
     const deleted = job.id in deletes ? deletes[job.id] === true : false;
@@ -120,28 +127,51 @@ function JobItem(props: Props): JSX.Element {
     }
     const frameCountPercent = ((job.frameCount / (task.size || 1)) * 100).toFixed(0);
     const frameCountPercentRepresentation = frameCountPercent === '0' ? '<1' : frameCountPercent;
+    const jobName = `Job #${job.id}`;
+
+    const childJobViews: React.JSX.Element[] = childJobs ? childJobs.sort((a, b) => a.id - b.id)
+        .map((eachJob: Job) => (
+            <JobItem key={eachJob.id} job={eachJob} task={task} onJobUpdate={onJobUpdate} />
+        )) : [];
+
+    let tag = null;
+    if (job.type === JobType.GROUND_TRUTH) {
+        tag = (
+            <Col offset={1}>
+                <CVATTag type={TagType.GROUND_TRUTH} />
+            </Col>
+        );
+    } else if (job.consensusReplicas) {
+        tag = (
+            <Col offset={1}>
+                <CVATTag type={TagType.CONSENSUS} />
+            </Col>
+        );
+    }
+
+    const onCollapse = useCallback((keys: string | string[]) => {
+        if (onCollapseChange) {
+            onCollapseChange(job.id, Array.isArray(keys) ? keys.length === 0 : keys === '');
+        }
+    }, [onCollapseChange]);
+
     return (
         <Col span={24}>
             <Card className='cvat-job-item' style={{ ...style }} data-row-id={job.id}>
                 <Row align='middle'>
-                    <Col span={7}>
+                    <Col span={6}>
                         <Row>
                             <Col>
-                                <Link to={`/tasks/${job.taskId}/jobs/${job.id}`}>{`Job #${job.id}`}</Link>
+                                <Link to={`/tasks/${job.taskId}/jobs/${job.id}`}>{jobName}</Link>
                             </Col>
-                            {
-                                job.type === JobType.GROUND_TRUTH ? (
-                                    <Col offset={1}>
-                                        <Tag color='#ED9C00'>Ground truth</Tag>
-                                    </Col>
-                                ) : (
-                                    <Col className='cvat-job-item-issues-summary-icon'>
-                                        <CVATTooltip title={<ReviewSummaryComponent jobInstance={job} />}>
-                                            <QuestionCircleOutlined />
-                                        </CVATTooltip>
-                                    </Col>
-                                )
-                            }
+                            {tag}
+                            {job.type !== JobType.GROUND_TRUTH && (
+                                <Col className='cvat-job-item-issues-summary-icon'>
+                                    <CVATTooltip title={<ReviewSummaryComponent jobInstance={job} />}>
+                                        <QuestionCircleOutlined />
+                                    </CVATTooltip>
+                                </Col>
+                            )}
                         </Row>
                         <Row className='cvat-job-item-dates-info'>
                             <Col>
@@ -156,7 +186,7 @@ function JobItem(props: Props): JSX.Element {
                             </Col>
                         </Row>
                     </Col>
-                    <Col span={11}>
+                    <Col span={12}>
                         <Row className='cvat-job-item-selects' justify='space-between'>
                             <Col>
                                 <Row>
@@ -212,15 +242,11 @@ function JobItem(props: Props): JSX.Element {
                                                 onJobUpdate(job, { state: newValue });
                                             }}
                                         >
-                                            <Select.Option value={JobState.NEW}>
-                                                {JobState.NEW}
-                                            </Select.Option>
+                                            <Select.Option value={JobState.NEW}>{JobState.NEW}</Select.Option>
                                             <Select.Option value={JobState.IN_PROGRESS}>
                                                 {JobState.IN_PROGRESS}
                                             </Select.Option>
-                                            <Select.Option value={JobState.REJECTED}>
-                                                {JobState.REJECTED}
-                                            </Select.Option>
+                                            <Select.Option value={JobState.REJECTED}>{JobState.REJECTED}</Select.Option>
                                             <Select.Option value={JobState.COMPLETED}>
                                                 {JobState.COMPLETED}
                                             </Select.Option>
@@ -253,19 +279,17 @@ function JobItem(props: Props): JSX.Element {
                                         </Text>
                                     </Col>
                                 </Row>
-                                {
-                                    job.type !== JobType.GROUND_TRUTH && (
-                                        <Row>
-                                            <Col>
-                                                <Icon component={FramesIcon} />
-                                                <Text>Frame range: </Text>
-                                                <Text type='secondary' className='cvat-job-item-frame-range'>
-                                                    {`${job.startFrame}-${job.stopFrame}`}
-                                                </Text>
-                                            </Col>
-                                        </Row>
-                                    )
-                                }
+                                {job.type !== JobType.GROUND_TRUTH && (
+                                    <Row>
+                                        <Col>
+                                            <Icon component={FramesIcon} />
+                                            <Text>Frame range: </Text>
+                                            <Text type='secondary' className='cvat-job-item-frame-range'>
+                                                {`${job.startFrame}-${job.stopFrame}`}
+                                            </Text>
+                                        </Col>
+                                    </Row>
+                                )}
                             </Col>
                         </Row>
                     </Col>
@@ -273,13 +297,41 @@ function JobItem(props: Props): JSX.Element {
                 <Dropdown
                     trigger={['click']}
                     destroyPopupOnHide
-                    overlay={<JobActionsMenu job={job} />}
+                    className='job-actions-menu'
+                    overlay={(
+                        <JobActionsMenu
+                            job={job}
+                            consensusJobsPresent={childJobs.length > 0}
+                        />
+                    )}
                 >
                     <MoreOutlined className='cvat-job-item-more-button' />
                 </Dropdown>
+                {childJobViews.length > 0 && (
+                    <Collapse
+                        className='cvat-consensus-job-collapse'
+                        defaultActiveKey={defaultCollapsed ? [] : ['1']}
+                        onChange={onCollapse}
+                        items={[
+                            {
+                                key: '1',
+                                label: <Text>{`${childJobViews.length} Replicas`}</Text>,
+                                children: childJobViews,
+                            },
+                        ]}
+                    />
+                )}
             </Card>
         </Col>
     );
 }
+
+JobItem.defaultProps = {
+    childJobs: [],
+};
+
+JobItem.propTypes = {
+    childJobs: PropTypes.arrayOf(PropTypes.instanceOf(Job)),
+};
 
 export default React.memo(JobItem);

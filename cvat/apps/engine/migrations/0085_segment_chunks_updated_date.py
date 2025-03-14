@@ -7,11 +7,14 @@ from django.db import migrations, models
 
 def _get_0083_move_to_segment_chunks_migration_date(apps, schema_editor) -> datetime:
     with schema_editor.connection.cursor() as cursor:
-        cursor.execute("""\
+        cursor.execute(
+            """\
             SELECT applied
             FROM django_migrations
             WHERE app = %s AND name = %s
-        """, ['engine', '0083_move_to_segment_chunks'])
+            """,
+            ["engine", "0083_move_to_segment_chunks"],
+        )
         return cursor.fetchone()[0]
 
 
@@ -21,15 +24,15 @@ def init_chunks_updated_date(apps, schema_editor):
 
     Segment = apps.get_model("engine", "Segment")
     task_created_date_subquery = models.Subquery(
-        Segment.objects
-        .select_related("task")
+        Segment.objects.select_related("task")
         .filter(pk=models.OuterRef("pk"))
-        .values('task__created_date')[:1]
+        .values("task__created_date")[:1]
     )
 
     Segment.objects.update(
         chunks_updated_date=models.functions.Greatest(
-            task_created_date_subquery, migration_0083_date,
+            task_created_date_subquery,
+            migration_0083_date,
         )
     )
 

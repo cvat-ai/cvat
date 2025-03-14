@@ -12,6 +12,7 @@ import cvat_sdk.auto_annotation as cvataa
 import PIL.Image
 import pytest
 from cvat_sdk import Client, models
+from cvat_sdk.attributes import attribute_vals_from_dict, number_attribute_values
 from cvat_sdk.core.proxies.tasks import ResourceType
 
 from shared.utils.helpers import generate_image_file
@@ -42,6 +43,113 @@ def _common_setup(
         api_client.configuration.logger[k] = logger
 
 
+class TestDetectionFunctionSpec:
+    def _test_bad_spec(self, exc_match: str, **kwargs) -> None:
+        with pytest.raises(cvataa.BadFunctionError, match=exc_match):
+            cvataa.DetectionFunctionSpec(**kwargs)
+
+    def _test_bad_attributes(self, exc_match: str, *attrs: models.AttributeRequest) -> None:
+        self._test_bad_spec(
+            exc_match, labels=[cvataa.label_spec("car", 123, attributes=list(attrs))]
+        )
+
+        self._test_bad_spec(
+            exc_match,
+            labels=[
+                cvataa.skeleton_label_spec(
+                    "car", 123, [cvataa.keypoint_spec("engine", 1234, attributes=list(attrs))]
+                ),
+            ],
+        )
+
+    def test_attribute_without_id(self):
+        self._test_bad_attributes(
+            "attribute .+ has no ID",
+            models.AttributeRequest("brand", mutable=False, input_type="text", values=[]),
+        )
+
+    def test_duplicate_attribute_id(self):
+        self._test_bad_attributes(
+            "same ID as another attribute",
+            cvataa.text_attribute_spec("brand", 1),
+            cvataa.text_attribute_spec("color", 1),
+        )
+
+    def test_invalid_attribute_values(self):
+        self._test_bad_attributes(
+            "has invalid values",
+            cvataa.number_attribute_spec("year", 1, []),
+        )
+
+    def test_label_without_id(self):
+        self._test_bad_spec(
+            "label .+ has no ID",
+            labels=[
+                models.PatchedLabelRequest(
+                    name="car",
+                ),
+            ],
+        )
+
+    def test_duplicate_label_id(self):
+        self._test_bad_spec(
+            "same ID as another label",
+            labels=[
+                cvataa.label_spec("car", 123),
+                cvataa.label_spec("bicycle", 123),
+            ],
+        )
+
+    def test_non_skeleton_sublabels(self):
+        self._test_bad_spec(
+            "should be 'skeleton'",
+            labels=[
+                cvataa.label_spec(
+                    "car",
+                    123,
+                    sublabels=[models.SublabelRequest("wheel", id=1)],
+                ),
+            ],
+        )
+
+    def test_sublabel_without_id(self):
+        self._test_bad_spec(
+            "sublabel .+ of label .+ has no ID",
+            labels=[
+                cvataa.skeleton_label_spec(
+                    "car",
+                    123,
+                    [models.SublabelRequest("wheel")],
+                ),
+            ],
+        )
+
+    def test_duplicate_sublabel_id(self):
+        self._test_bad_spec(
+            "same ID as another sublabel",
+            labels=[
+                cvataa.skeleton_label_spec(
+                    "cat",
+                    123,
+                    [
+                        cvataa.keypoint_spec("head", 1),
+                        cvataa.keypoint_spec("tail", 1),
+                    ],
+                ),
+            ],
+        )
+
+    def test_sublabel_wrong_type(self):
+        self._test_bad_spec(
+            "should be 'points'",
+            labels=[
+                cvataa.skeleton_label_spec(
+                    "cat", 123, [models.SublabelRequest(name="head", id=1, type="any")]
+                )
+            ],
+        )
+
+
 class TestTaskAutoAnnotation:
     @pytest.fixture(autouse=True)
     def setup(
@@ -69,12 +177,32 @@ class TestTaskAutoAnnotation:
                 "Auto-annotation test task",
                 labels=[
                     models.PatchedLabelRequest(name="person"),
-                    models.PatchedLabelRequest(name="car"),
+                    models.PatchedLabelRequest(name="person-rect", type="rectangle"),
+                    models.PatchedLabelRequest(name="person-mask", type="mask"),
+                    models.PatchedLabelRequest(name="person-poly", type="polygon"),
                     models.PatchedLabelRequest(
                         name="cat",
                         type="skeleton",
+                        attributes=[
+                            models.AttributeRequest(
+                                name="color",
+                                mutable=False,
+                                input_type="select",
+                                values=["gray", "calico"],
+                            ),
+                        ],
                         sublabels=[
-                            models.SublabelRequest(name="head"),
+                            models.SublabelRequest(
+                                name="head",
+                                attributes=[
+                                    models.AttributeRequest(
+                                        name="size",
+                                        mutable=False,
+                                        input_type="number",
+                                        values=["1", "10", "1"],
+                                    ),
+                                ],
+                            ),
                             models.SublabelRequest(name="tail"),
                         ],
                     ),
@@ -89,6 +217,16 @@ class TestTaskAutoAnnotation:
         self.cat_sublabels_by_id = {
             sl.id: sl
             for sl in next(label for label in task_labels if label.name == "cat").sublabels
+        }
+        self.cat_attributes_by_id = {
+            attr.id: attr
+            for attr in next(label for label in task_labels if label.name == "cat").attributes
+        }
+        self.cat_head_attributes_by_id = {
+            attr.id: attr
+            for attr in next(
+                sl for sl in self.cat_sublabels_by_id.values() if sl.name == "head"
+            ).attributes
         }
 
         # The initial annotation is just to check that it gets erased after auto-annotation
@@ -108,7 +246,7 @@ class TestTaskAutoAnnotation:
     def test_detection_rectangle(self):
         spec = cvataa.DetectionFunctionSpec(
             labels=[
-                cvataa.label_spec("car", 123),
+                cvataa.label_spec("person", 123),
                 cvataa.label_spec("bicycle (should be ignored)", 456),
             ],
         )
@@ -120,7 +258,7 @@ class TestTaskAutoAnnotation:
             assert image.width == image.height == 333
             return [
                 cvataa.rectangle(
-                    123,  # car
+                    123,  # person
                     # produce different coordinates for different images
                     [*image.getpixel((0, 0)), 300 + int(context.frame_name[0])],
                 ),
@@ -148,7 +286,7 @@ class TestTaskAutoAnnotation:
         for i, shape in enumerate(shapes):
             assert shape.frame == i
             assert shape.type.value == "rectangle"
-            assert self.task_labels_by_id[shape.label_id].name == "car"
+            assert self.task_labels_by_id[shape.label_id].name == "person"
             assert shape.points[3] in {301, 302}
 
         assert shapes[0].points[0] != shapes[1].points[0]
@@ -218,6 +356,82 @@ class TestTaskAutoAnnotation:
             assert self.cat_sublabels_by_id[elements[1].label_id].name == "tail"
             assert elements[1].points == [30, 30]
 
+    def test_detection_attributes(self):
+        spec = cvataa.DetectionFunctionSpec(
+            labels=[
+                cvataa.skeleton_label_spec(
+                    "cat",
+                    123,
+                    [
+                        cvataa.keypoint_spec(
+                            "head",
+                            10,
+                            attributes=[
+                                cvataa.number_attribute_spec(
+                                    "size", 1, number_attribute_values(1, 10, 1)
+                                ),
+                                cvataa.text_attribute_spec("orientation (should be ignored)", 2),
+                            ],
+                        ),
+                        cvataa.keypoint_spec("tail", 30),
+                    ],
+                    attributes=[
+                        cvataa.select_attribute_spec("color", 1, ["calico", "gray"]),
+                        cvataa.text_attribute_spec("name (should be ignored)", 2),
+                    ],
+                ),
+            ],
+        )
+
+        def detect(context, image: PIL.Image.Image) -> list[models.LabeledShapeRequest]:
+            return [
+                cvataa.skeleton(
+                    123,  # cat
+                    [
+                        # head
+                        cvataa.keypoint(
+                            10,
+                            [10, 10],
+                            attributes=attribute_vals_from_dict({1: 5, 2: "forward"}),
+                        ),
+                        # tail
+                        cvataa.keypoint(30, [30, 30]),
+                    ],
+                    attributes=attribute_vals_from_dict({1: "calico", 2: "McFluffy"}),
+                ),
+            ]
+
+        cvataa.annotate_task(
+            self.client,
+            self.task.id,
+            namespace(spec=spec, detect=detect),
+            clear_existing=True,
+            allow_unmatched_labels=True,
+        )
+
+        annotations = self.task.get_annotations()
+
+        shapes = sorted(annotations.shapes, key=lambda shape: shape.frame)
+
+        assert len(shapes) == 2
+
+        for shape in shapes:
+            assert self.task_labels_by_id[shape.label_id].name == "cat"
+
+            assert len(shape.attributes) == 1
+            assert self.cat_attributes_by_id[shape.attributes[0].spec_id].name == "color"
+            assert shape.attributes[0].value == "calico"
+
+            elements = sorted(
+                shape.elements, key=lambda s: self.cat_sublabels_by_id[s.label_id].name
+            )
+
+            assert self.cat_sublabels_by_id[elements[0].label_id].name == "head"
+
+            assert len(elements[0].attributes) == 1
+            assert self.cat_head_attributes_by_id[elements[0].attributes[0].spec_id].name == "size"
+            assert elements[0].attributes[0].value == "5"
+
     def test_progress_reporting(self):
         spec = cvataa.DetectionFunctionSpec(labels=[])
 
@@ -238,14 +452,14 @@ class TestTaskAutoAnnotation:
     def test_detection_without_clearing(self):
         spec = cvataa.DetectionFunctionSpec(
             labels=[
-                cvataa.label_spec("car", 123),
+                cvataa.label_spec("person", 123),
             ],
         )
 
         def detect(context, image: PIL.Image.Image) -> list[models.LabeledShapeRequest]:
             return [
                 cvataa.rectangle(
-                    123,  # car
+                    123,  # person
                     [5, 6, 7, 8],
                     rotation=10,
                 ),
@@ -312,7 +526,7 @@ class TestTaskAutoAnnotation:
     def test_conv_mask_to_poly(self):
         spec = cvataa.DetectionFunctionSpec(
             labels=[
-                cvataa.label_spec("car", 123),
+                cvataa.label_spec("person", 123),
             ],
         )
 
@@ -342,132 +556,233 @@ class TestTaskAutoAnnotation:
 
         assert received_cmtp is True
 
-    def _test_bad_function_spec(self, spec: cvataa.DetectionFunctionSpec, exc_match: str) -> None:
+    @pytest.mark.parametrize(
+        ["label_name", "label_type"],
+        [
+            ("person", "any"),
+            ("person-rect", "any"),
+            ("person", "rectangle"),
+            ("person-rect", "rectangle"),
+        ],
+    )
+    def test_type_compatibility(self, label_name: str, label_type: str) -> None:
+        spec = cvataa.DetectionFunctionSpec(
+            labels=[
+                cvataa.label_spec(label_name, 123, type=label_type),
+            ]
+        )
+
+        def detect(context, image: PIL.Image.Image) -> list[models.LabeledShapeRequest]:
+            return [cvataa.rectangle(123, [1, 2, 3, 4])]
+
+        cvataa.annotate_task(self.client, self.task.id, namespace(spec=spec, detect=detect))
+
+    @pytest.mark.parametrize(
+        ["label_name", "conv_mask_to_poly"],
+        [
+            ("person-mask", False),
+            ("person-poly", True),
+        ],
+    )
+    def test_type_compatibility_cmtp(self, label_name: str, conv_mask_to_poly: bool) -> None:
+        spec = cvataa.DetectionFunctionSpec(
+            labels=[
+                cvataa.label_spec(label_name, 123, type="mask"),
+            ]
+        )
+
+        def detect(
+            context: cvataa.DetectionFunctionContext, image: PIL.Image.Image
+        ) -> list[models.LabeledShapeRequest]:
+            if context.conv_mask_to_poly:
+                return [cvataa.polygon(123, [1, 2, 3, 4, 5, 6])]
+            else:
+                return [cvataa.mask(123, [1, 0, 0, 0, 0])]
+
+        cvataa.annotate_task(
+            self.client,
+            self.task.id,
+            namespace(spec=spec, detect=detect),
+            conv_mask_to_poly=conv_mask_to_poly,
+        )
+
+    def _test_spec_dataset_mismatch(
+        self, exc_match: str, spec: cvataa.DetectionFunctionSpec, *, conv_mask_to_poly: bool = False
+    ) -> None:
         def detect(context, image):
             assert False
 
         with pytest.raises(cvataa.BadFunctionError, match=exc_match):
-            cvataa.annotate_task(self.client, self.task.id, namespace(spec=spec, detect=detect))
-
-    def test_attributes(self):
-        self._test_bad_function_spec(
-            cvataa.DetectionFunctionSpec(
-                labels=[
-                    cvataa.label_spec(
-                        "car",
-                        123,
-                        attributes=[
-                            models.AttributeRequest(
-                                "age",
-                                mutable=False,
-                                input_type="number",
-                                values=["0", "100", "1"],
-                                default_value="0",
-                            )
-                        ],
-                    ),
-                ],
-            ),
-            "currently not supported",
-        )
+            cvataa.annotate_task(
+                self.client,
+                self.task.id,
+                namespace(spec=spec, detect=detect),
+                conv_mask_to_poly=conv_mask_to_poly,
+            )
 
     def test_label_not_in_dataset(self):
-        self._test_bad_function_spec(
-            cvataa.DetectionFunctionSpec(
-                labels=[cvataa.label_spec("dog", 123)],
-            ),
+        self._test_spec_dataset_mismatch(
             "not in dataset",
+            cvataa.DetectionFunctionSpec(labels=[cvataa.label_spec("dog", 123)]),
         )
 
-    def test_label_without_id(self):
-        self._test_bad_function_spec(
+    def test_sublabel_not_in_dataset(self):
+        self._test_spec_dataset_mismatch(
+            "sublabel .+ not in dataset",
             cvataa.DetectionFunctionSpec(
                 labels=[
-                    models.PatchedLabelRequest(
-                        name="car",
-                    ),
+                    cvataa.skeleton_label_spec("cat", 123, [cvataa.keypoint_spec("nose", 1)]),
                 ],
             ),
-            "label .+ has no ID",
         )
 
-    def test_duplicate_label_id(self):
-        self._test_bad_function_spec(
+    def test_incompatible_label_type(self):
+        self._test_spec_dataset_mismatch(
+            "has type 'ellipse' in the function, but 'rectangle' in the dataset",
             cvataa.DetectionFunctionSpec(
                 labels=[
-                    cvataa.label_spec("car", 123),
-                    cvataa.label_spec("bicycle", 123),
+                    cvataa.label_spec("person-rect", 123, type="ellipse"),
                 ],
             ),
-            "same ID as another label",
         )
 
-    def test_non_skeleton_sublabels(self):
-        self._test_bad_function_spec(
+        self._test_spec_dataset_mismatch(
+            "has type 'polygon' in the function, but 'mask' in the dataset",
             cvataa.DetectionFunctionSpec(
                 labels=[
-                    cvataa.label_spec(
-                        "car",
-                        123,
-                        sublabels=[models.SublabelRequest("wheel", id=1)],
-                    ),
+                    cvataa.label_spec("person-mask", 123, type="mask"),
                 ],
             ),
-            "should be 'skeleton'",
+            conv_mask_to_poly=True,
         )
 
-    def test_sublabel_without_id(self):
-        self._test_bad_function_spec(
+    def test_attribute_not_in_dataset(self):
+        self._test_spec_dataset_mismatch(
+            "attribute .+ not in dataset",
             cvataa.DetectionFunctionSpec(
                 labels=[
                     cvataa.skeleton_label_spec(
-                        "car",
+                        "cat",
                         123,
-                        [models.SublabelRequest("wheel")],
+                        [],
+                        attributes=[cvataa.text_attribute_spec("breed", 1)],
                     ),
-                ],
+                ]
             ),
-            "sublabel .+ of label .+ has no ID",
         )
 
-    def test_duplicate_sublabel_id(self):
-        self._test_bad_function_spec(
+        self._test_spec_dataset_mismatch(
+            "attribute .+ not in dataset",
             cvataa.DetectionFunctionSpec(
                 labels=[
                     cvataa.skeleton_label_spec(
                         "cat",
                         123,
                         [
-                            cvataa.keypoint_spec("head", 1),
-                            cvataa.keypoint_spec("tail", 1),
+                            cvataa.keypoint_spec(
+                                "head",
+                                12,
+                                attributes=[cvataa.text_attribute_spec("orientation", 1)],
+                            ),
                         ],
                     ),
-                ],
+                ]
             ),
-            "same ID as another sublabel",
         )
 
-    def test_sublabel_not_in_dataset(self):
-        self._test_bad_function_spec(
+    def test_mismatched_attribute_input_type(self):
+        self._test_spec_dataset_mismatch(
+            "has input type .+ in the function, but .+ in the dataset",
             cvataa.DetectionFunctionSpec(
                 labels=[
-                    cvataa.skeleton_label_spec("cat", 123, [cvataa.keypoint_spec("nose", 1)]),
-                ],
+                    cvataa.skeleton_label_spec(
+                        "cat",
+                        123,
+                        [],
+                        attributes=[cvataa.text_attribute_spec("color", 1)],
+                    ),
+                ]
             ),
-            "not in dataset",
+        )
+
+        self._test_spec_dataset_mismatch(
+            "has input type .+ in the function, but .+ in the dataset",
+            cvataa.DetectionFunctionSpec(
+                labels=[
+                    cvataa.skeleton_label_spec(
+                        "cat",
+                        123,
+                        [
+                            cvataa.keypoint_spec(
+                                "head",
+                                12,
+                                attributes=[cvataa.text_attribute_spec("size", 1)],
+                            )
+                        ],
+                    ),
+                ]
+            ),
+        )
+
+    def test_mismatched_attribute_values(self):
+        self._test_spec_dataset_mismatch(
+            "has values .+ in the function, but .+ in the dataset",
+            cvataa.DetectionFunctionSpec(
+                labels=[
+                    cvataa.skeleton_label_spec(
+                        "cat",
+                        123,
+                        [],
+                        attributes=[cvataa.select_attribute_spec("color", 1, ["red", "green"])],
+                    ),
+                ]
+            ),
+        )
+
+        self._test_spec_dataset_mismatch(
+            "has values .+ in the function, but .+ in the dataset",
+            cvataa.DetectionFunctionSpec(
+                labels=[
+                    cvataa.skeleton_label_spec(
+                        "cat",
+                        123,
+                        [
+                            cvataa.keypoint_spec(
+                                "head",
+                                12,
+                                attributes=[
+                                    cvataa.number_attribute_spec("size", 1, ["-10", "0", "1"])
+                                ],
+                            ),
+                        ],
+                    ),
+                ]
+            ),
         )
 
     def _test_bad_function_detect(self, detect, exc_match: str) -> None:
         spec = cvataa.DetectionFunctionSpec(
             labels=[
-                cvataa.label_spec("car", 123),
+                cvataa.label_spec("person", 123),
+                cvataa.label_spec("person", 124, type="rectangle"),
+                cvataa.label_spec("person-rect", 125),
+                cvataa.label_spec("person-rect", 126, type="rectangle"),
                 cvataa.skeleton_label_spec(
                     "cat",
                     456,
                     [
-                        cvataa.keypoint_spec("head", 12),
+                        cvataa.keypoint_spec(
+                            "head",
+                            12,
+                            attributes=[
+                                cvataa.number_attribute_spec(
+                                    "size", 1, number_attribute_values(1, 10, 1)
+                                ),
+                            ],
+                        ),
                         cvataa.keypoint_spec("tail", 34),
                     ],
+                    attributes=[cvataa.select_attribute_spec("color", 1, ["gray", "calico"])],
                 ),
             ],
         )
@@ -514,20 +829,6 @@ class TestTaskAutoAnnotation:
                 cvataa.rectangle(111, [1, 2, 3, 4]),
             ],
             "unknown label ID",
-        )
-
-    def test_shape_with_attributes(self):
-        self._test_bad_function_detect(
-            lambda context, image: [
-                cvataa.rectangle(
-                    123,
-                    [1, 2, 3, 4],
-                    attributes=[
-                        models.AttributeValRequest(spec_id=1, value="asdf"),
-                    ],
-                ),
-            ],
-            "shape with attributes",
         )
 
     def test_preset_element_id(self):
@@ -624,12 +925,110 @@ class TestTaskAutoAnnotation:
         self._test_bad_function_detect(
             lambda context, image: [
                 cvataa.shape(
-                    456,
+                    123,
                     type="rectangle",
                     elements=[cvataa.keypoint(12, [1, 2])],
                 ),
             ],
             "non-skeleton shape with elements",
+        )
+
+    @pytest.mark.parametrize("label_id", [124, 125, 126])
+    def test_incompatible_shape_type(self, label_id: int):
+        self._test_bad_function_detect(
+            lambda context, image: [
+                cvataa.shape(label_id, type="ellipse"),
+            ],
+            r"shape of type 'ellipse' \(expected 'rectangle'\)",
+        )
+
+    def test_attribute_val_with_unknown_id(self):
+        self._test_bad_function_detect(
+            lambda context, image: [
+                cvataa.skeleton(
+                    456,
+                    [cvataa.keypoint(12, [1, 2]), cvataa.keypoint(34, [3, 4])],
+                    attributes=attribute_vals_from_dict({2: "gray"}),
+                ),
+            ],
+            "attribute with unknown ID",
+        )
+
+        self._test_bad_function_detect(
+            lambda context, image: [
+                cvataa.skeleton(
+                    456,
+                    [
+                        cvataa.keypoint(12, [1, 2], attributes=attribute_vals_from_dict({2: 5})),
+                        cvataa.keypoint(34, [3, 4]),
+                    ],
+                ),
+            ],
+            "attribute with unknown ID",
+        )
+
+    def test_multiple_attribute_vals_with_same_id(self):
+        self._test_bad_function_detect(
+            lambda context, image: [
+                cvataa.skeleton(
+                    456,
+                    [cvataa.keypoint(12, [1, 2]), cvataa.keypoint(34, [3, 4])],
+                    attributes=[
+                        models.AttributeValRequest(spec_id=1, value="gray"),
+                        models.AttributeValRequest(spec_id=1, value="gray"),
+                    ],
+                ),
+            ],
+            "multiple attributes with same ID",
+        )
+
+        self._test_bad_function_detect(
+            lambda context, image: [
+                cvataa.skeleton(
+                    456,
+                    [
+                        cvataa.keypoint(
+                            12,
+                            [1, 2],
+                            attributes=[
+                                models.AttributeValRequest(spec_id=1, value="5"),
+                                models.AttributeValRequest(spec_id=1, value="5"),
+                            ],
+                        ),
+                        cvataa.keypoint(34, [3, 4]),
+                    ],
+                ),
+            ],
+            "multiple attributes with same ID",
+        )
+
+    def test_attribute_val_unsuitable_for_spec(self):
+        self._test_bad_function_detect(
+            lambda context, image: [
+                cvataa.skeleton(
+                    456,
+                    [cvataa.keypoint(12, [1, 2]), cvataa.keypoint(34, [3, 4])],
+                    attributes=attribute_vals_from_dict({1: "purple"}),
+                ),
+            ],
+            "unsuitable for its attribute",
+        )
+
+        self._test_bad_function_detect(
+            lambda context, image: [
+                cvataa.skeleton(
+                    456,
+                    [
+                        cvataa.keypoint(
+                            12,
+                            [1, 2],
+                            attributes=attribute_vals_from_dict({1: -1}),
+                        ),
+                        cvataa.keypoint(34, [3, 4]),
+                    ],
+                ),
+            ],
+            "unsuitable for its attribute",
         )
 
 
@@ -760,39 +1159,26 @@ class TestAutoAnnotationFunctions:
         fxt_login: tuple[Client, str],
     ):
         self.client = fxt_login[0]
+
+        self.image_dir = tmp_path / "images"
+        self.image_dir.mkdir()
+
+    def _create_task(self, labels):
         self.image = generate_image_file("1.png", size=(100, 100))
-
-        image_dir = tmp_path / "images"
-        image_dir.mkdir()
-
-        image_path = image_dir / self.image.name
+        image_path = self.image_dir / self.image.name
         image_path.write_bytes(self.image.getbuffer())
 
         self.task = self.client.tasks.create_from_data(
-            models.TaskWriteRequest(
-                "Auto-annotation test task",
-                labels=[
-                    models.PatchedLabelRequest(
-                        name="person",
-                        type="skeleton",
-                        sublabels=[
-                            models.SublabelRequest(name="left_eye"),
-                            models.SublabelRequest(name="right_eye"),
-                        ],
-                    ),
-                    models.PatchedLabelRequest(name="car"),
-                ],
-            ),
+            models.TaskWriteRequest("Auto-annotation test task", labels=labels),
             resources=[image_path],
         )
 
         task_labels = self.task.get_labels()
         self.task_labels_by_id = {label.id: label for label in task_labels}
 
-        person_label = next(label for label in task_labels if label.name == "person")
-        self.person_sublabels_by_id = {sl.id: sl for sl in person_label.sublabels}
-
     def test_torchvision_detection(self, monkeypatch: pytest.MonkeyPatch):
+        self._create_task([models.PatchedLabelRequest(name="car", type="rectangle")])
+
         monkeypatch.setattr(torchvision_models, "get_model", fake_get_detection_model)
 
         import cvat_sdk.auto_annotation.functions.torchvision_detection as td
@@ -813,6 +1199,8 @@ class TestAutoAnnotationFunctions:
         assert annotations.shapes[0].points == [1, 2, 3, 4]
 
     def test_torchvision_instance_segmentation(self, monkeypatch: pytest.MonkeyPatch):
+        self._create_task([models.PatchedLabelRequest(name="car")])
+
         monkeypatch.setattr(torchvision_models, "get_model", fake_get_instance_segmentation_model)
 
         import cvat_sdk.auto_annotation.functions.torchvision_instance_segmentation as tis
@@ -861,6 +1249,23 @@ class TestAutoAnnotationFunctions:
             assert expected_bitmap[round(y), round(x)]
 
     def test_torchvision_keypoint_detection(self, monkeypatch: pytest.MonkeyPatch):
+        self._create_task(
+            [
+                models.PatchedLabelRequest(
+                    name="person",
+                    type="skeleton",
+                    sublabels=[
+                        models.SublabelRequest(name="left_eye"),
+                        models.SublabelRequest(name="right_eye"),
+                    ],
+                ),
+            ]
+        )
+        person_label = next(
+            label for label in self.task_labels_by_id.values() if label.name == "person"
+        )
+        person_sublabels_by_id = {sl.id: sl for sl in person_label.sublabels}
+
         monkeypatch.setattr(torchvision_models, "get_model", fake_get_keypoint_detection_model)
 
         import cvat_sdk.auto_annotation.functions.torchvision_keypoint_detection as tkd
@@ -882,13 +1287,13 @@ class TestAutoAnnotationFunctions:
 
         elements = sorted(
             annotations.shapes[0].elements,
-            key=lambda e: self.person_sublabels_by_id[e.label_id].name,
+            key=lambda e: person_sublabels_by_id[e.label_id].name,
         )
 
-        assert self.person_sublabels_by_id[elements[0].label_id].name == "left_eye"
+        assert person_sublabels_by_id[elements[0].label_id].name == "left_eye"
         assert elements[0].points[0] == hash("left_eye") % 100
         assert elements[0].occluded
 
-        assert self.person_sublabels_by_id[elements[1].label_id].name == "right_eye"
+        assert person_sublabels_by_id[elements[1].label_id].name == "right_eye"
         assert elements[1].points[0] == hash("right_eye") % 100
         assert not elements[1].occluded

@@ -17,11 +17,13 @@ import Text from 'antd/lib/typography/Text';
 import { Store } from 'antd/lib/form/interface';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import patterns from 'utils/validation-patterns';
-import { StorageLocation } from 'reducers';
+import { isInteger } from 'utils/validation';
 import SourceStorageField from 'components/storage/source-storage-field';
 import TargetStorageField from 'components/storage/target-storage-field';
 
-import { getCore, Storage, StorageData } from 'cvat-core-wrapper';
+import {
+    getCore, Storage, StorageData, StorageLocation,
+} from 'cvat-core-wrapper';
 
 const core = getCore();
 
@@ -47,6 +49,7 @@ export interface AdvancedConfiguration {
     sortingMethod: SortingMethod;
     useProjectSourceStorage: boolean;
     useProjectTargetStorage: boolean;
+    consensusReplicas: number;
     sourceStorage: StorageData;
     targetStorage: StorageData;
 }
@@ -59,6 +62,7 @@ const initialValues: AdvancedConfiguration = {
     sortingMethod: SortingMethod.LEXICOGRAPHICAL,
     useProjectSourceStorage: true,
     useProjectTargetStorage: true,
+    consensusReplicas: 0,
 
     sourceStorage: {
         location: StorageLocation.LOCAL,
@@ -92,30 +96,6 @@ function validateURL(_: RuleObject, value: string): Promise<void> {
 
     return Promise.resolve();
 }
-
-const isInteger = ({ min, max }: { min?: number; max?: number }) => (
-    _: RuleObject,
-    value?: number | string,
-): Promise<void> => {
-    if (typeof value === 'undefined' || value === '') {
-        return Promise.resolve();
-    }
-
-    const intValue = +value;
-    if (Number.isNaN(intValue) || !Number.isInteger(intValue)) {
-        return Promise.reject(new Error('Value must be a positive integer'));
-    }
-
-    if (typeof min !== 'undefined' && intValue < min) {
-        return Promise.reject(new Error(`Value must be more than ${min}`));
-    }
-
-    if (typeof max !== 'undefined' && intValue > max) {
-        return Promise.reject(new Error(`Value must be less than ${max}`));
-    }
-
-    return Promise.resolve();
-};
 
 const validateOverlapSize: RuleRender = ({ getFieldValue }): RuleObject => ({
     validator(_: RuleObject, value?: string | number): Promise<void> {
@@ -405,6 +385,32 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         );
     }
 
+    private renderConsensusReplicas(): JSX.Element {
+        return (
+            <Form.Item
+                label='Consensus Replicas'
+                name='consensusReplicas'
+                rules={[
+                    {
+                        validator: isInteger({
+                            min: 0,
+                            max: 10,
+                            filter: (intValue: number): boolean => intValue !== 1,
+                        }),
+                    },
+                ]}
+            >
+                <Input
+                    size='large'
+                    type='number'
+                    min={0}
+                    max={10}
+                    step={1}
+                />
+            </Form.Item>
+        );
+    }
+
     private renderSourceStorage(): JSX.Element {
         const {
             projectId,
@@ -485,6 +491,11 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
                 <Row justify='start'>
                     <Col span={7}>{this.renderChunkSize()}</Col>
+                </Row>
+                <Row justify='start'>
+                    <Col span={7}>
+                        {this.renderConsensusReplicas()}
+                    </Col>
                 </Row>
 
                 <Row>

@@ -8,7 +8,7 @@ import React, {
 } from 'react';
 
 import { Row, Col } from 'antd/lib/grid';
-import Icon, { LinkOutlined, DeleteOutlined } from '@ant-design/icons';
+import Icon, { LinkOutlined, DeleteOutlined, CopyOutlined } from '@ant-design/icons';
 import Slider from 'antd/lib/slider';
 import InputNumber from 'antd/lib/input-number';
 import Text from 'antd/lib/typography/Text';
@@ -39,6 +39,7 @@ interface Props {
     onSliderChange(value: number): void;
     onInputChange(value: number): void;
     onURLIconClick(): void;
+    onCopyFilenameIconClick(): void;
     onDeleteFrame(): void;
     onRestoreFrame(): void;
     switchNavigationBlocked(blocked: boolean): void;
@@ -79,6 +80,7 @@ function PlayerNavigation(props: Props): JSX.Element {
         onSliderChange,
         onInputChange,
         onURLIconClick,
+        onCopyFilenameIconClick,
         onDeleteFrame,
         onRestoreFrame,
         switchNavigationBlocked,
@@ -186,7 +188,10 @@ function PlayerNavigation(props: Props): JSX.Element {
                             <Text type='secondary'>{frameFilename}</Text>
                         </CVATTooltip>
                     </Col>
-                    <Col offset={1}>
+                    <Col className='cvat-player-frame-actions' offset={1}>
+                        <CVATTooltip title='Copy frame filename'>
+                            <CopyOutlined className='cvat-player-copy-frame-name-icon' onClick={onCopyFilenameIconClick} />
+                        </CVATTooltip>
                         <CVATTooltip title='Create frame URL'>
                             <LinkOutlined className='cvat-player-frame-url-icon' onClick={onURLIconClick} />
                         </CVATTooltip>
@@ -202,6 +207,8 @@ function PlayerNavigation(props: Props): JSX.Element {
                         type='number'
                         disabled={workspace === Workspace.SINGLE_SHAPE}
                         value={frameInputValue}
+                        min={startFrame}
+                        max={stopFrame}
                         onChange={(value: number | undefined | string | null) => {
                             if (typeof value !== 'undefined' && value !== null) {
                                 setFrameInputValue(Math.floor(clamp(+value, startFrame, stopFrame)));

@@ -6,18 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('engine', '0043_auto_20211027_0718'),
+        ("engine", "0043_auto_20211027_0718"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='labeledshape',
-            name='rotation',
+            model_name="labeledshape",
+            name="rotation",
             field=models.FloatField(default=0),
         ),
         migrations.AddField(
-            model_name='trackedshape',
-            name='rotation',
+            model_name="trackedshape",
+            name="rotation",
             field=models.FloatField(default=0),
         ),
     ]

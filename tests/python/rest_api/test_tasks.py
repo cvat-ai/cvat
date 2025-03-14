@@ -70,9 +70,9 @@ from .utils import (
     compare_annotations,
     create_task,
     export_dataset,
-    export_task_backup,
     export_task_dataset,
     parse_frame_step,
+    unique,
     wait_until_task_is_created,
 )
 
@@ -742,11 +742,10 @@ class TestGetTaskDataset:
         username: str,
         task_id: int,
         *,
-        api_version: Union[int, tuple[int]],
         local_download: bool = True,
         **kwargs,
     ) -> Optional[bytes]:
-        dataset = export_task_dataset(username, api_version, save_images=True, id=task_id, **kwargs)
+        dataset = export_task_dataset(username, save_images=True, id=task_id, **kwargs)
         if local_download:
             assert zipfile.is_zipfile(io.BytesIO(dataset))
         else:
@@ -754,50 +753,28 @@ class TestGetTaskDataset:
 
         return dataset
 
-    @pytest.mark.usefixtures("restore_db_per_function")
-    @pytest.mark.parametrize("api_version", product((1, 2), repeat=2))
-    @pytest.mark.parametrize(
-        "local_download", (True, pytest.param(False, marks=pytest.mark.with_external_services))
-    )
-    def test_can_export_task_dataset_locally_and_to_cloud_with_both_api_versions(
-        self,
-        admin_user,
-        tasks_with_shapes,
-        filter_tasks,
-        api_version: tuple[int],
-        local_download: bool,
-    ):
-        filter_ = "target_storage__location"
-        if local_download:
-            filter_ = "exclude_" + filter_
-        filtered_ids = {t["id"] for t in filter_tasks(**{filter_: "cloud_storage"})}
-
-        task_id = next(iter(filtered_ids & {t["id"] for t in tasks_with_shapes}))
-        self._test_can_export_dataset(
-            admin_user,
-            task_id,
-            api_version=api_version,
-            local_download=local_download,
-        )
-
-    @pytest.mark.parametrize("api_version", (1, 2))
     @pytest.mark.parametrize("tid", [21])
     @pytest.mark.parametrize(
         "format_name", ["CVAT for images 1.1", "CVAT for video 1.1", "COCO Keypoints 1.0"]
     )
     def test_can_export_task_with_several_jobs(
-        self, admin_user, tid, format_name, api_version: int
+        self,
+        admin_user,
+        tid,
+        format_name,
     ):
         self._test_can_export_dataset(
             admin_user,
             tid,
             format=format_name,
-            api_version=api_version,
         )
 
-    @pytest.mark.parametrize("api_version", (1, 2))
     @pytest.mark.parametrize("tid", [8])
-    def test_can_export_task_to_coco_format(self, admin_user: str, tid: int, api_version: int):
+    def test_can_export_task_to_coco_format(
+        self,
+        admin_user: str,
+        tid: int,
+    ):
         # these annotations contains incorrect frame numbers
         # in order to check that server handle such cases
         annotations = {
@@ -886,7 +863,6 @@ class TestGetTaskDataset:
             admin_user,
             tid,
             format="COCO Keypoints 1.0",
-            api_version=api_version,
         )
 
         # check that server saved track annotations correctly
@@ -898,10 +874,12 @@ class TestGetTaskDataset:
         assert annotations["tracks"][0]["shapes"][0]["frame"] == 0
         assert annotations["tracks"][0]["elements"][0]["shapes"][0]["frame"] == 0
 
-    @pytest.mark.parametrize("api_version", (1, 2))
     @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
-    def test_can_download_task_with_special_chars_in_name(self, admin_user: str, api_version: int):
+    def test_can_download_task_with_special_chars_in_name(
+        self,
+        admin_user: str,
+    ):
         # Control characters in filenames may conflict with the Content-Disposition header
         # value restrictions, as it needs to include the downloaded file name.
 
@@ -917,13 +895,14 @@ class TestGetTaskDataset:
 
         task_id, _ = create_task(admin_user, task_spec, task_data)
 
-        dataset = self._test_can_export_dataset(admin_user, task_id, api_version=api_version)
+        dataset = self._test_can_export_dataset(admin_user, task_id)
         assert zipfile.is_zipfile(io.BytesIO(dataset))
 
     @pytest.mark.usefixtures("restore_db_per_function")
-    @pytest.mark.parametrize("api_version", (1, 2))
     def test_export_dataset_after_deleting_related_cloud_storage(
-        self, admin_user: str, tasks, api_version: int
+        self,
+        admin_user: str,
+        tasks,
     ):
         related_field = "target_storage"
 
@@ -940,7 +919,7 @@ class TestGetTaskDataset:
             result, response = api_client.tasks_api.retrieve(task_id)
             assert not result[related_field]
 
-            self._test_can_export_dataset(admin_user, task["id"], api_version=api_version)
+            self._test_can_export_dataset(admin_user, task["id"])
 
     @pytest.mark.parametrize(
         "export_format, default_subset_name, subset_path_template",
@@ -950,7 +929,6 @@ class TestGetTaskDataset:
             ("Ultralytics YOLO Detection 1.0", "train", "images/{subset}"),
         ],
     )
-    @pytest.mark.parametrize("api_version", (1, 2))
     def test_uses_subset_name(
         self,
         admin_user,
@@ -958,7 +936,6 @@ class TestGetTaskDataset:
         export_format,
         default_subset_name,
         subset_path_template,
-        api_version: int,
     ):
         tasks = filter_tasks(exclude_target_storage__location="cloud_storage")
         group_key_func = itemgetter("subset")
@@ -973,7 +950,6 @@ class TestGetTaskDataset:
             dataset = self._test_can_export_dataset(
                 admin_user,
                 task["id"],
-                api_version=api_version,
                 format=export_format,
             )
             with zipfile.ZipFile(io.BytesIO(dataset)) as zip_file:
@@ -996,7 +972,6 @@ class TestGetTaskDataset:
             dataset_file = io.BytesIO(
                 export_dataset(
                     api_client.tasks_api,
-                    api_version=2,
                     id=task["id"],
                     format=DATUMARO_FORMAT_FOR_DIMENSION[dimension],
                     save_images=False,
@@ -2680,6 +2655,65 @@ class TestPostTaskData:
                     for img, img_meta in zip(chunk_images.values(), job_meta.frames):
                         assert (img.shape[0], img.shape[1]) == (img_meta.height, img_meta.width)
 
+    def test_can_create_task_with_consensus(self, request: pytest.FixtureRequest):
+        segment_size = 2
+        regular_job_count = 2
+        replication = 2
+        images = generate_image_files(segment_size * regular_job_count)
+        resulting_task_size = len(images)
+
+        task_params = {
+            "name": request.node.name,
+            "labels": [{"name": "a"}],
+            "segment_size": segment_size,
+            "consensus_replicas": replication,
+        }
+
+        data_params = {
+            "image_quality": 70,
+            "client_files": images,
+        }
+
+        task_id, _ = create_task(self._USERNAME, spec=task_params, data=data_params)
+
+        with make_api_client(self._USERNAME) as api_client:
+            (task, _) = api_client.tasks_api.retrieve(task_id)
+            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+            jobs = get_paginated_collection(api_client.jobs_api.list_endpoint, task_id=task_id)
+
+            annotation_job_metas = {
+                job.id: json.loads(api_client.jobs_api.retrieve_data_meta(job.id)[1].data)
+                for job in jobs
+                if job.type == "annotation"
+            }
+            consensus_job_metas = {
+                job.id: json.loads(api_client.jobs_api.retrieve_data_meta(job.id)[1].data)
+                for job in jobs
+                if job.type == "consensus_replica"
+            }
+
+        assert task.segment_size == segment_size
+        assert task.size == resulting_task_size
+        assert task_meta.size == resulting_task_size
+
+        assert len(jobs) == regular_job_count * (1 + replication)
+        assert len(annotation_job_metas) == regular_job_count
+        assert len(consensus_job_metas) == regular_job_count * replication
+
+        for annotation_job in (j for j in jobs if j.type == "annotation"):
+            assert annotation_job_metas[annotation_job.id]["size"] == segment_size
+
+            job_replicas = [j for j in jobs if j.parent_job_id == annotation_job.id]
+            assert len(job_replicas) == replication
+
+            for replica in job_replicas:
+                assert (
+                    DeepDiff(
+                        consensus_job_metas[replica.id], annotation_job_metas[annotation_job.id]
+                    )
+                    == {}
+                )
+
 
 class _SourceDataType(Enum):
     images = "images"
@@ -2747,7 +2781,7 @@ class _VideoTaskSpec(_TaskSpecBase):
 class _TestTasksBase:
     _USERNAME = "admin1"
 
-    def _uploaded_images_task_fxt_base(
+    def _image_task_fxt_base(
         self,
         request: pytest.FixtureRequest,
         *,
@@ -2757,22 +2791,28 @@ class _TestTasksBase:
         stop_frame: Optional[int] = None,
         step: Optional[int] = None,
         segment_size: Optional[int] = None,
+        server_files: Optional[Sequence[str]] = None,
+        cloud_storage_id: Optional[int] = None,
+        job_replication: Optional[int] = None,
         **data_kwargs,
     ) -> Generator[tuple[_ImagesTaskSpec, int], None, None]:
         task_params = {
             "name": f"{request.node.name}[{request.fixturename}]",
             "labels": [{"name": "a"}],
+            **({"segment_size": segment_size} if segment_size else {}),
+            **({"consensus_replicas": job_replication} if job_replication else {}),
         }
-        if segment_size:
-            task_params["segment_size"] = segment_size
 
-        assert bool(image_files) ^ bool(
-            frame_count
-        ), "Expected only one of 'image_files' and 'frame_count'"
-        if not image_files:
-            image_files = generate_image_files(frame_count)
-        elif not frame_count:
-            frame_count = len(image_files)
+        if server_files is not None:
+            assert (
+                image_files is not None
+            ), "'server_files' must be used together with 'image_files'"
+        else:
+            assert bool(image_files) ^ bool(
+                frame_count
+            ), "Expected only one of 'image_files' and 'frame_count'"
+            if not image_files:
+                image_files = generate_image_files(frame_count)
 
         images_data = [f.getvalue() for f in image_files]
 
@@ -2782,9 +2822,16 @@ class _TestTasksBase:
 
         data_params = {
             "image_quality": 70,
-            "client_files": image_files,
             "sorting_method": "natural",
             "chunk_size": max(1, (segment_size or resulting_task_size) // 2),
+            **(
+                {
+                    "server_files": server_files,
+                    "cloud_storage_id": cloud_storage_id,
+                }
+                if server_files
+                else {"client_files": image_files}
+            ),
         }
         data_params.update(data_kwargs)
 
@@ -2812,13 +2859,13 @@ class _TestTasksBase:
     def fxt_uploaded_images_task(
         self, request: pytest.FixtureRequest
     ) -> Generator[tuple[_TaskSpec, int], None, None]:
-        yield from self._uploaded_images_task_fxt_base(request=request)
+        yield from self._image_task_fxt_base(request=request)
 
     @pytest.fixture(scope="class")
     def fxt_uploaded_images_task_with_segments(
         self, request: pytest.FixtureRequest
     ) -> Generator[tuple[_TaskSpec, int], None, None]:
-        yield from self._uploaded_images_task_fxt_base(request=request, segment_size=4)
+        yield from self._image_task_fxt_base(request=request, segment_size=4)
 
     @fixture(scope="class")
     @parametrize("step", [2, 5])
@@ -2827,7 +2874,7 @@ class _TestTasksBase:
     def fxt_uploaded_images_task_with_segments_start_stop_step(
         self, request: pytest.FixtureRequest, start_frame: int, stop_frame: Optional[int], step: int
     ) -> Generator[tuple[_TaskSpec, int], None, None]:
-        yield from self._uploaded_images_task_fxt_base(
+        yield from self._image_task_fxt_base(
             request=request,
             frame_count=30,
             segment_size=4,
@@ -2836,13 +2883,23 @@ class _TestTasksBase:
             step=step,
         )
 
-    def _uploaded_images_task_with_honeypots_and_segments_base(
+    @pytest.fixture(scope="class")
+    def fxt_uploaded_images_task_with_segments_and_consensus(
+        self, request: pytest.FixtureRequest
+    ) -> Generator[tuple[_TaskSpec, int], None, None]:
+        yield from self._image_task_fxt_base(request=request, segment_size=4, job_replication=2)
+
+    def _image_task_with_honeypots_and_segments_base(
         self,
         request: pytest.FixtureRequest,
         *,
         start_frame: Optional[int] = None,
         step: Optional[int] = None,
         random_seed: int = 42,
+        image_files: Optional[Sequence[io.BytesIO]] = None,
+        server_files: Optional[Sequence[str]] = None,
+        cloud_storage_id: Optional[int] = None,
+        **kwargs,
     ) -> Generator[tuple[_TaskSpec, int], None, None]:
         validation_params = models.DataRequestValidationParams._from_openapi_data(
             mode="gt_pool",
@@ -2864,10 +2921,16 @@ class _TestTasksBase:
             + validation_params.frame_count
         )
 
-        image_files = generate_image_files(total_frame_count)
+        if image_files:
+            if len(image_files) != total_frame_count:
+                raise ValueError(
+                    f"If provided, image_files must contain {total_frame_count} images"
+                )
+        else:
+            image_files = generate_image_files(total_frame_count)
 
         with closing(
-            self._uploaded_images_task_fxt_base(
+            self._image_task_fxt_base(
                 request=request,
                 frame_count=None,
                 image_files=image_files,
@@ -2876,6 +2939,9 @@ class _TestTasksBase:
                 start_frame=start_frame,
                 step=step,
                 validation_params=validation_params,
+                server_files=server_files,
+                cloud_storage_id=cloud_storage_id,
+                **kwargs,
             )
         ) as task_gen:
             for task_spec, task_id in task_gen:
@@ -2906,25 +2972,23 @@ class _TestTasksBase:
     def fxt_uploaded_images_task_with_honeypots_and_segments(
         self, request: pytest.FixtureRequest
     ) -> Generator[tuple[_TaskSpec, int], None, None]:
-        yield from self._uploaded_images_task_with_honeypots_and_segments_base(request)
+        yield from self._image_task_with_honeypots_and_segments_base(request)
 
     @fixture(scope="class")
     @parametrize("start_frame, step", [(2, 3)])
     def fxt_uploaded_images_task_with_honeypots_and_segments_start_step(
         self, request: pytest.FixtureRequest, start_frame: Optional[int], step: Optional[int]
     ) -> Generator[tuple[_TaskSpec, int], None, None]:
-        yield from self._uploaded_images_task_with_honeypots_and_segments_base(
+        yield from self._image_task_with_honeypots_and_segments_base(
             request, start_frame=start_frame, step=step
         )
 
-    @fixture(scope="class")
-    @parametrize("random_seed", [1, 2, 5])
-    def fxt_uploaded_images_task_with_honeypots_and_changed_real_frames(
-        self, request: pytest.FixtureRequest, random_seed: int
-    ) -> Generator[tuple[_TaskSpec, int], None, None]:
+    def _images_task_with_honeypots_and_changed_real_frames_base(
+        self, request: pytest.FixtureRequest, **kwargs
+    ):
         with closing(
-            self._uploaded_images_task_with_honeypots_and_segments_base(
-                request, start_frame=2, step=3, random_seed=random_seed
+            self._image_task_with_honeypots_and_segments_base(
+                request, start_frame=2, step=3, **kwargs
             )
         ) as gen_iter:
             task_spec, task_id = next(gen_iter)
@@ -2955,6 +3019,51 @@ class _TestTasksBase:
 
             yield task_spec, task_id
 
+    @fixture(scope="class")
+    @parametrize("random_seed", [1, 2, 5])
+    def fxt_uploaded_images_task_with_honeypots_and_changed_real_frames(
+        self, request: pytest.FixtureRequest, random_seed: int
+    ) -> Generator[tuple[_TaskSpec, int], None, None]:
+        yield from self._images_task_with_honeypots_and_changed_real_frames_base(
+            request, random_seed=random_seed
+        )
+
+    @fixture(scope="class")
+    @parametrize(
+        "cloud_storage_id",
+        [pytest.param(2, marks=[pytest.mark.with_external_services, pytest.mark.timeout(60)])],
+    )
+    def fxt_cloud_images_task_with_honeypots_and_changed_real_frames(
+        self, request: pytest.FixtureRequest, cloud_storages, cloud_storage_id: int
+    ) -> Generator[tuple[_TaskSpec, int], None, None]:
+        cloud_storage = cloud_storages[cloud_storage_id]
+        s3_client = s3.make_client(bucket=cloud_storage["resource"])
+
+        image_files = generate_image_files(47)
+
+        for image in image_files:
+            image.name = f"test/{image.name}"
+            image.seek(0)
+
+            s3_client.create_file(data=image, filename=image.name)
+            request.addfinalizer(partial(s3_client.remove_file, filename=image.name))
+
+        server_files = [f.name for f in image_files]
+
+        for image in image_files:
+            image.seek(0)
+
+        yield from self._images_task_with_honeypots_and_changed_real_frames_base(
+            request,
+            image_files=image_files,
+            server_files=server_files,
+            cloud_storage_id=cloud_storage_id,
+            # FIXME: random sorting with frame filter and cloud images (and, optionally, honeypots)
+            # doesn't work with static cache
+            # https://github.com/cvat-ai/cvat/issues/9021
+            use_cache=True,
+        )
+
     def _uploaded_images_task_with_gt_and_segments_base(
         self,
         request: pytest.FixtureRequest,
@@ -2962,6 +3071,7 @@ class _TestTasksBase:
         start_frame: Optional[int] = None,
         step: Optional[int] = None,
         frame_selection_method: str = "random_uniform",
+        job_replication: Optional[int] = None,
     ) -> Generator[tuple[_TaskSpec, int], None, None]:
         used_frames_count = 16
         total_frame_count = (start_frame or 0) + used_frames_count * (step or 1)
@@ -3002,7 +3112,7 @@ class _TestTasksBase:
             **validation_params_kwargs,
         )
 
-        yield from self._uploaded_images_task_fxt_base(
+        yield from self._image_task_fxt_base(
             request=request,
             frame_count=None,
             image_files=image_files,
@@ -3011,6 +3121,15 @@ class _TestTasksBase:
             start_frame=start_frame,
             step=step,
             validation_params=validation_params,
+            job_replication=job_replication,
+        )
+
+    @pytest.fixture(scope="class")
+    def fxt_uploaded_images_task_with_gt_and_segments_and_consensus(
+        self, request: pytest.FixtureRequest
+    ) -> Generator[tuple[_TaskSpec, int], None, None]:
+        yield from self._uploaded_images_task_with_gt_and_segments_base(
+            request=request, job_replication=2
         )
 
     @fixture(scope="class")
@@ -3174,20 +3293,23 @@ class _TestTasksBase:
         fixture_ref("fxt_uploaded_images_task_with_honeypots_and_segments"),
         fixture_ref("fxt_uploaded_images_task_with_honeypots_and_segments_start_step"),
         fixture_ref("fxt_uploaded_images_task_with_honeypots_and_changed_real_frames"),
+        fixture_ref("fxt_cloud_images_task_with_honeypots_and_changed_real_frames"),
     ]
 
     _tasks_with_simple_gt_job_cases = [
-        fixture_ref("fxt_uploaded_images_task_with_gt_and_segments_start_step")
+        fixture_ref("fxt_uploaded_images_task_with_gt_and_segments_start_step"),
+        fixture_ref("fxt_uploaded_images_task_with_gt_and_segments_and_consensus"),
     ]
 
-    _tasks_with_simple_gt_job_cases = [
-        fixture_ref("fxt_uploaded_images_task_with_gt_and_segments_start_step")
+    _tasks_with_consensus_cases = [
+        fixture_ref("fxt_uploaded_images_task_with_segments_and_consensus"),
+        fixture_ref("fxt_uploaded_images_task_with_gt_and_segments_and_consensus"),
     ]
 
     # Keep in mind that these fixtures are generated eagerly
     # (before each depending test or group of tests),
     # e.g. a failing task creation in one the fixtures will fail all the depending tests cases.
-    _all_task_cases = (
+    _all_task_cases = unique(
         [
             fixture_ref("fxt_uploaded_images_task"),
             fixture_ref("fxt_uploaded_images_task_with_segments"),
@@ -3198,6 +3320,8 @@ class _TestTasksBase:
         ]
         + _tasks_with_honeypots_cases
         + _tasks_with_simple_gt_job_cases
+        + _tasks_with_consensus_cases,
+        key=lambda fxt_ref: fxt_ref.fixture,
     )
 
 
@@ -3230,6 +3354,10 @@ class TestTaskData(_TestTasksBase):
             else:
                 assert len(task_meta.frames) == task_meta.size
 
+    @pytest.mark.timeout(
+        # This test has to check all the task frames availability, it can make many requests
+        timeout=300
+    )
     @parametrize("task_spec, task_id", _TestTasksBase._all_task_cases)
     def test_can_get_task_frames(self, task_spec: _TaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
@@ -3270,6 +3398,10 @@ class TestTaskData(_TestTasksBase):
                     ),
                 )
 
+    @pytest.mark.timeout(
+        # This test has to check all the task chunks availability, it can make many requests
+        timeout=300
+    )
     @parametrize("task_spec, task_id", _TestTasksBase._all_task_cases)
     def test_can_get_task_chunks(self, task_spec: _TaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
@@ -3334,6 +3466,10 @@ class TestTaskData(_TestTasksBase):
                         ),
                     )
 
+    @pytest.mark.timeout(
+        # This test has to check all the task meta availability, it can make many requests
+        timeout=300
+    )
     @parametrize("task_spec, task_id", _TestTasksBase._all_task_cases)
     def test_can_get_annotation_job_meta(self, task_spec: _TaskSpec, task_id: int):
         segment_params = self._compute_annotation_segment_params(task_spec)
@@ -3463,6 +3599,45 @@ class TestTaskData(_TestTasksBase):
             else:
                 assert len(job_meta.frames) == job_meta.size
 
+    @pytest.mark.timeout(
+        # This test has to check the job meta for all jobs, it can make many requests
+        timeout=300
+    )
+    @parametrize("task_spec, task_id", _TestTasksBase._tasks_with_consensus_cases)
+    def test_can_get_consensus_replica_job_meta(self, task_spec: _TaskSpec, task_id: int):
+        with make_api_client(self._USERNAME) as api_client:
+            jobs = sorted(
+                get_paginated_collection(api_client.jobs_api.list_endpoint, task_id=task_id),
+                key=lambda j: j.start_frame,
+            )
+
+            # Only annotation jobs can have replicas
+            annotation_jobs = [j for j in jobs if j.type == "annotation"]
+            assert (
+                len([j for j in jobs if j.type == "consensus_replica"])
+                == len(annotation_jobs) * task_spec.consensus_replicas
+            )
+
+            for job in annotation_jobs:
+                annotation_job_meta = json.loads(
+                    api_client.jobs_api.retrieve_data_meta(job.id)[1].data
+                )
+
+                replicas = [
+                    j for j in jobs if j.type == "consensus_replica" if j.parent_job_id == job.id
+                ]
+                assert len(replicas) == task_spec.consensus_replicas
+
+                for replica_job in replicas:
+                    replica_job_meta = json.loads(
+                        api_client.jobs_api.retrieve_data_meta(replica_job.id)[1].data
+                    )
+                    assert DeepDiff(annotation_job_meta, replica_job_meta) == {}
+
+    @pytest.mark.timeout(
+        # This test has to check all the job frames availability, it can make many requests
+        timeout=300
+    )
     @parametrize("task_spec, task_id", _TestTasksBase._all_task_cases)
     def test_can_get_job_frames(self, task_spec: _TaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
@@ -3509,6 +3684,10 @@ class TestTaskData(_TestTasksBase):
                         ),
                     )
 
+    @pytest.mark.timeout(
+        # This test has to check all the job chunks availability, it can make many requests
+        timeout=300
+    )
     @parametrize("task_spec, task_id", _TestTasksBase._all_task_cases)
     @parametrize("indexing", ["absolute", "relative"])
     def test_can_get_job_chunks(self, task_spec: _TaskSpec, task_id: int, indexing: str):
@@ -3909,55 +4088,64 @@ class TestTaskBackups:
         with make_sdk_client(self.user) as client:
             self.client = client
 
-    @pytest.mark.parametrize("api_version", product((1, 2), repeat=2))
-    @pytest.mark.parametrize(
-        "local_download", (True, pytest.param(False, marks=pytest.mark.with_external_services))
-    )
-    def test_can_export_backup_with_both_api_versions(
-        self, filter_tasks, api_version: tuple[int], local_download: bool
-    ):
-        task = filter_tasks(
-            **{("exclude_" if local_download else "") + "target_storage__location": "cloud_storage"}
-        )[0]
-        backup = export_task_backup(self.user, api_version, id=task["id"])
+    def _test_can_export_backup(self, task_id: int):
+        task = self.client.tasks.retrieve(task_id)
 
-        if local_download:
-            assert zipfile.is_zipfile(io.BytesIO(backup))
-        else:
-            assert backup is None
+        filename = self.tmp_dir / f"task_{task.id}_backup.zip"
+        task.download_backup(filename)
+
+        assert filename.is_file()
+        assert filename.stat().st_size > 0
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_export_backup(self, tasks, mode):
         task_id = next(t for t in tasks if t["mode"] == mode and not t["validation_mode"])["id"]
-        task = self.client.tasks.retrieve(task_id)
+        self._test_can_export_backup(task_id)
 
-        filename = self.tmp_dir / f"task_{task.id}_backup.zip"
-        task.download_backup(filename)
-
-        assert filename.is_file()
-        assert filename.stat().st_size > 0
+    def test_can_export_backup_for_consensus_task(self, tasks):
+        task_id = next(t for t in tasks if t["consensus_enabled"])["id"]
+        self._test_can_export_backup(task_id)
 
     def test_can_export_backup_for_honeypot_task(self, tasks):
         task_id = next(t for t in tasks if t["validation_mode"] == "gt_pool")["id"]
+        self._test_can_export_backup(task_id)
+
+    def test_cannot_export_backup_for_task_without_data(self, tasks):
+        task_id = next(t for t in tasks if t["jobs"]["count"] == 0)["id"]
+
+        with pytest.raises(ApiException) as exc:
+            self._test_can_export_backup(task_id)
+
+            assert exc.status == HTTPStatus.BAD_REQUEST
+            assert "Backup of a task without data is not allowed" == exc.body.encode()
+
+    @pytest.mark.with_external_services
+    def test_can_export_and_import_backup_task_with_cloud_storage(self, tasks):
+        cloud_storage_content = ["image_case_65_1.png", "image_case_65_2.png"]
+        task_spec = {
+            "name": "Task with files from cloud storage",
+            "labels": [
+                {
+                    "name": "car",
+                }
+            ],
+        }
+        data_spec = {
+            "image_quality": 75,
+            "use_cache": False,
+            "cloud_storage_id": 1,
+            "server_files": cloud_storage_content,
+        }
+        task_id, _ = create_task(self.user, task_spec, data_spec)
+
         task = self.client.tasks.retrieve(task_id)
 
-        filename = self.tmp_dir / f"task_{task.id}_backup.zip"
+        filename = self.tmp_dir / f"cloud_task_{task.id}_backup.zip"
         task.download_backup(filename)
 
         assert filename.is_file()
         assert filename.stat().st_size > 0
-
-    def test_cannot_export_backup_for_task_without_data(self, tasks):
-        task_id = next(t for t in tasks if t["jobs"]["count"] == 0)["id"]
-        task = self.client.tasks.retrieve(task_id)
-
-        filename = self.tmp_dir / f"task_{task.id}_backup.zip"
-
-        with pytest.raises(ApiException) as exc:
-            task.download_backup(filename)
-
-            assert exc.status == HTTPStatus.BAD_REQUEST
-            assert "Backup of a task without data is not allowed" == exc.body.encode()
+        self._test_can_restore_task_from_backup(task_id)
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_import_backup(self, tasks, mode):
@@ -3966,6 +4154,10 @@ class TestTaskBackups:
 
     def test_can_import_backup_with_honeypot_task(self, tasks):
         task_id = next(t for t in tasks if t["validation_mode"] == "gt_pool")["id"]
+        self._test_can_restore_task_from_backup(task_id)
+
+    def test_can_import_backup_with_consensus_task(self, tasks):
+        task_id = next(t for t in tasks if t["consensus_enabled"])["id"]
         self._test_can_restore_task_from_backup(task_id)
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
@@ -4224,6 +4416,7 @@ class TestWorkWithHoneypotTasks:
             j
             for j in jobs
             if j["type"] == "ground_truth"
+            if j["frame_count"] >= 4
             if job_has_annotations(j["id"])
             if tasks[j["task_id"]]["validation_mode"] == "gt_pool"
             if tasks[j["task_id"]]["size"]
@@ -4767,6 +4960,44 @@ class TestWorkWithHoneypotTasks:
 
                 new_job_meta, _ = api_client.jobs_api.retrieve_data_meta(annotation_job["id"])
                 assert new_job_meta.chunks_updated_date > old_job_meta.chunks_updated_date
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestWorkWithConsensusTasks:
+    @pytest.mark.parametrize("task_id", [30])
+    def test_replica_annotations_are_not_present_in_task_annotations(
+        self, admin_user, jobs, annotations, task_id: int
+    ):
+        task_jobs = [j for j in jobs if j["task_id"] == task_id]
+        consensus_jobs = [j for j in task_jobs if j["type"] == "consensus_replica"]
+
+        # Ensure there are annotations in replicas
+        assert any(
+            len(annotations["job"][str(j["id"])]["tags"])
+            + len(annotations["job"][str(j["id"])]["shapes"])
+            + len(annotations["job"][str(j["id"])]["tracks"])
+            for j in consensus_jobs
+        )
+
+        with make_api_client(admin_user) as api_client:
+            for annotation_job in task_jobs:
+                if annotation_job["type"] != "consensus_replica":
+                    api_client.jobs_api.destroy_annotations(annotation_job["id"])
+
+            updated_task_annotations, _ = api_client.tasks_api.retrieve_annotations(task_id)
+            assert not updated_task_annotations.tags
+            assert not updated_task_annotations.shapes
+            assert not updated_task_annotations.tracks
+
+            for consensus_job in consensus_jobs:
+                job_annotations = annotations["job"][str(consensus_job["id"])]
+                updated_job_annotations, _ = api_client.jobs_api.retrieve_annotations(
+                    consensus_job["id"]
+                )
+
+                assert len(job_annotations["tags"]) == len(updated_job_annotations.tags)
+                assert len(job_annotations["shapes"]) == len(updated_job_annotations.shapes)
+                assert len(job_annotations["tracks"]) == len(updated_job_annotations.tracks)
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -5374,7 +5605,6 @@ class TestImportTaskAnnotations:
             dataset_archive = io.BytesIO(
                 export_dataset(
                     api_client.tasks_api,
-                    api_version=2,
                     id=task["id"],
                     format=DATUMARO_FORMAT_FOR_DIMENSION[dimension],
                     save_images=False,
@@ -6484,7 +6714,7 @@ class TestPatchExportFrames(_TestTasksBase):
         args = dict(request=request, frame_count=frame_count, step=step, start_frame=start_frame)
 
         if media_type == _SourceDataType.images:
-            (spec, task_id) = next(self._uploaded_images_task_fxt_base(**args))
+            (spec, task_id) = next(self._image_task_fxt_base(**args))
         else:
             (spec, task_id) = next(self._uploaded_video_task_fxt_base(**args))
 
