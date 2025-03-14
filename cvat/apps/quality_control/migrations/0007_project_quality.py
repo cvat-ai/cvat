@@ -11,7 +11,7 @@ def add_timestamps_to_settings(apps, schema_editor):
     QualitySettings = apps.get_model("quality_control", "QualitySettings")
     Task = apps.get_model("engine", "Task")
 
-    # Make settings timestamps synchronized with task timestamps for data consistency
+    # Synchronize settings and task timestamps for consistency
     (
         QualitySettings.objects.filter(task__isnull=False)
         .annotate(
@@ -20,15 +20,10 @@ def add_timestamps_to_settings(apps, schema_editor):
                     "created_date", flat=True
                 )[:1]
             ),
-            task_updated_date=models.Subquery(
-                Task.objects.filter(id=models.OuterRef("task_id")).values_list(
-                    "updated_date", flat=True
-                )[:1]
-            ),
         )
         .update(
             created_date=models.F("task_created_date"),
-            updated_date=models.F("task_updated_date"),
+            updated_date=datetime.now(timezone.utc),
         )
     )
 

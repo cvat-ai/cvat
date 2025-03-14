@@ -2998,14 +2998,9 @@ class ProjectQualityCalculator:
         if quality_settings.inherit:
             quality_settings = task.project.quality_settings
 
-        return (
-            (quality_report.target_last_updated >= task.updated_date)
-            and (quality_report.target_last_updated >= quality_settings.updated_date)
-            and (
-                ComparisonReport.from_json(quality_report.data).parameters.inherited
-                == quality_settings.inherit
-            )
-        )  # TODO: dev only, should not happen in practice
+        return (quality_report.target_last_updated >= task.updated_date) and (
+            quality_report.target_last_updated >= quality_settings.updated_date
+        )
 
     def compute_report(self, project: Project | int) -> models.QualityReport:
         with transaction.atomic():
