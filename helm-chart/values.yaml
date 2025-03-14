@@ -15,6 +15,11 @@ cvat:
     affinity: {}
     tolerations: []
     additionalEnv: []
+
+    # This should only be used by supercharts;
+    # to set custom environment for a Helm release, use additionalEnv.
+    extensionEnv: {}
+
     additionalVolumes: []
     additionalVolumeMounts: []
     # -- The service account the backend pods will use to interact with the Kubernetes API
