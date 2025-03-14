@@ -2,21 +2,29 @@
 import { taskName, labelName } from '../../support/const';
 
 describe('Z-order button actions', () => {
-  // Helper function to perform z-order action and verify result
   const performZOrderAction = (actionSelector, expectedZOrder) => {
-    cy.wait(500); // Wait for UI to stabilize
+    cy.wait(500);
+
     cy.get('#cvat-objects-sidebar-state-item-1', { timeout: 3000 })
       .find('.cvat-object-item-menu-button')
       .click();
 
     cy.get(actionSelector, { timeout: 3000 }).click();
 
+    cy.get('.cvat-canvas-z-axis-wrapper .ant-slider')
+      .then(($slider) => {
+        const maxValue = parseInt($slider.attr('aria-valuemax'));
+
+        cy.get('.cvat-canvas-z-axis-wrapper .ant-slider')
+          .click('bottom', { force: true });
+      });
+
     cy.get('#cvat_canvas_shape_1', { timeout: 3000 })
+      .should('be.visible')
       .should('have.attr', 'data-z-order', expectedZOrder);
   };
 
   before(() => {
-    // Open task and create the polygon shape
     cy.openTaskJob(taskName);
     cy.createPolygon({
       type: 'Shape',
@@ -29,7 +37,6 @@ describe('Z-order button actions', () => {
       complete: true,
     });
 
-    // Verify the shape exists with zOrder = 0
     cy.get('#cvat_canvas_shape_1', { timeout: 3000 })
       .should('have.attr', 'data-z-order', '0');
   });
