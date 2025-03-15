@@ -129,9 +129,10 @@ function JobItem(props: Props): JSX.Element {
     const frameCountPercentRepresentation = frameCountPercent === '0' ? '<1' : frameCountPercent;
     const jobName = `Job #${job.id}`;
 
-    const childJobViews: React.JSX.Element[] = childJobs ? childJobs.map((eachJob: Job) => (
-        <JobItem key={eachJob.id} job={eachJob} task={task} onJobUpdate={onJobUpdate} />
-    )) : [];
+    const childJobViews: React.JSX.Element[] = childJobs ? childJobs.sort((a, b) => a.id - b.id)
+        .map((eachJob: Job) => (
+            <JobItem key={eachJob.id} job={eachJob} task={task} onJobUpdate={onJobUpdate} />
+        )) : [];
 
     let tag = null;
     if (job.type === JobType.GROUND_TRUTH) {

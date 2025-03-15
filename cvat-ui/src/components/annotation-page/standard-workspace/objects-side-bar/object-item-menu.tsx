@@ -15,8 +15,10 @@ import {
     BackgroundIcon, ForegroundIcon, ResetPerspectiveIcon, ColorizeIcon, SliceIcon,
 } from 'icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { ObjectType, ShapeType, ColorBy } from 'reducers';
-import { DimensionType, Job } from 'cvat-core-wrapper';
+import { ColorBy } from 'reducers';
+import {
+    DimensionType, Job, ObjectType, ShapeType,
+} from 'cvat-core-wrapper';
 
 interface Props {
     readonly: boolean;

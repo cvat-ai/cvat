@@ -35,26 +35,29 @@ class RQJobMetaField:
         UUID = "uuid"
         TIMESTAMP = "timestamp"
 
-    # common fields
+    # failure info fields
     FORMATTED_EXCEPTION = "formatted_exception"
+    EXCEPTION_TYPE = "exc_type"
+    EXCEPTION_ARGS = "exc_args"
+    # common fields
     REQUEST = "request"
     USER = "user"
+    ORG_ID = "org_id"
+    ORG_SLUG = "org_slug"
     PROJECT_ID = "project_id"
     TASK_ID = "task_id"
     JOB_ID = "job_id"
-    LAMBDA = "lambda"
-    ORG_ID = "org_id"
-    ORG_SLUG = "org_slug"
     STATUS = "status"
     PROGRESS = "progress"
-    TASK_PROGRESS = "task_progress"
-    # export specific fields
-    RESULT_URL = "result_url"
-    RESULT = "result"
-    FUNCTION_ID = "function_id"
-    EXCEPTION_TYPE = "exc_type"
-    EXCEPTION_ARGS = "exc_args"
+    # import fields
     TMP_FILE = "tmp_file"
+    TASK_PROGRESS = "task_progress"
+    # export fields
+    RESULT_URL = "result_url"
+    RESULT_FILENAME = "result_filename"
+    # lambda fields
+    LAMBDA = "lambda"
+    FUNCTION_ID = "function_id"
 
 
 class WithMeta(Protocol):
@@ -260,25 +263,32 @@ class BaseRQMeta(RQMetaWithFailureInfo):
 
 class ExportRQMeta(BaseRQMeta):
     result_url: str | None = ImmutableRQMetaAttribute(
-        RQJobMetaField.RESULT_URL, optional=True
-    )  # will be changed to ExportResultInfo in the next PR
+        RQJobMetaField.RESULT_URL,
+        optional=True,
+    )
+    result_filename: str = ImmutableRQMetaAttribute(RQJobMetaField.RESULT_FILENAME)
 
     @staticmethod
     def _get_resettable_fields() -> list[str]:
         base_fields = BaseRQMeta._get_resettable_fields()
-        return base_fields + [RQJobMetaField.RESULT]
+        return base_fields + [RQJobMetaField.RESULT_URL, RQJobMetaField.RESULT_FILENAME]
 
     @classmethod
     def build_for(
         cls,
         *,
         request: ExtendedRequest,
-        db_obj: Model | None,
+        db_obj: Model,
         result_url: str | None,
+        result_filename: str,
     ):
         base_meta = BaseRQMeta.build(request=request, db_obj=db_obj)
 
-        return {**base_meta, RQJobMetaField.RESULT_URL: result_url}
+        return {
+            **base_meta,
+            RQJobMetaField.RESULT_URL: result_url,
+            RQJobMetaField.RESULT_FILENAME: result_filename,
+        }
 
 
 class ImportRQMeta(BaseRQMeta):
