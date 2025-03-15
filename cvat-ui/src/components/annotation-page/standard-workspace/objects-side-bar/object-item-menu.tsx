@@ -210,7 +210,7 @@ function ToForegroundItem(props: ItemProps): JSX.Element {
     );
 }
 
-function MoveToPreviousLayerItem(props: ItemProps): JSX.Element {
+function MoveToPreviousLayerItem(props: Readonly<ItemProps>): JSX.Element {
     const { toolProps } = props;
     const { moveToPreviousLayerShortcut, moveToPreviousLayer } = toolProps;
     return (
@@ -227,7 +227,7 @@ function MoveToPreviousLayerItem(props: ItemProps): JSX.Element {
     );
 }
 
-function MoveToNextLayerItem(props: ItemProps): JSX.Element {
+function MoveToNextLayerItem(props: Readonly<ItemProps>): JSX.Element {
     const { toolProps } = props;
     const { moveToNextLayerShortcut, moveToNextLayer } = toolProps;
     return (

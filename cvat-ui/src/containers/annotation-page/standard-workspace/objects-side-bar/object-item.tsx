@@ -288,7 +288,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         }
     };
 
-    private moveToPreviousLayer = (): void => {
+    private readonly moveToPreviousLayer = (): void => {
         const { objectState, readonly, minZLayer } = this.props;
 
         if (!readonly) {
@@ -300,7 +300,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         }
     };
 
-    private moveToNextLayer = (): void => {
+    private readonly moveToNextLayer = (): void => {
         const { objectState, readonly, maxZLayer } = this.props;
 
         if (!readonly) {
