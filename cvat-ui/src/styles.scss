@@ -64,6 +64,12 @@ html, body {
     padding-top: 5px;
 }
 
+.cvat-menu-icon {
+    font-size: 16px;
+    margin-left: $grid-unit-size;
+    align-self: center;
+}
+
 .ant-slider {
     > .ant-slider-track {
         background-color: $slider-color;
@@ -188,5 +194,20 @@ html, body {
             }
             /* stylelint-enable selector-class-pattern */
         }
+    }
+}
+
+.cvat-settings-tooltip {
+    margin-left: $grid-unit-size;
+}
+
+.cvat-settings-tooltip-inner {
+    span {
+        display: block;
+        color: white;
+    }
+
+    div:not(:last-child) {
+        margin-bottom: $grid-unit-size * 2;
     }
 }
