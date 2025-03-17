@@ -68,8 +68,8 @@ context('New organization pipeline.', () => {
     const archivePath = `cypress/fixtures/${archiveName}`;
     const imagesFolder = `cypress/fixtures/${imageFileName}`;
     const directoryToArchive = imagesFolder;
-    let taskID;
-    let jobID;
+    let taskId = null;
+    let jobId = null;
 
     const createCuboidShape2Points = {
         points: 'From rectangle',
@@ -147,7 +147,7 @@ context('New organization pipeline.', () => {
             cy.checkOrganizationMembers(3, [firstUserName, secondUserName, thirdUserName]);
         });
 
-        it('Search within organizations. All members shoould be queryable', () => {
+        it('Search within organizations: All members shoould be queryable', () => {
             const searchBar = 'searchBar';
             const searchBarRef = `@${searchBar}`;
             function search(string = '') {
@@ -158,28 +158,32 @@ context('New organization pipeline.', () => {
                 .find('input')
                 .as(searchBar);
 
-            // Search for 1 member
             search(firstUserName);
             cy.checkOrganizationMembers(1, [firstUserName]);
 
-            // Empty search bar outputs all members
-            search();
-            cy.checkOrganizationMembers(3, [firstUserName, secondUserName, thirdUserName]);
-
-            // Common substring outputs all members
             const commonSubstring = 'user';
             search(commonSubstring);
             cy.checkOrganizationMembers(3, [firstUserName, secondUserName, thirdUserName]);
 
-            // Bad search term yields no results
             const badSearch = 'abc';
             search(badSearch, true);
             cy.get('.cvat-empty-members-list').should('exist');
 
-            cy.get(searchBarRef).clear();
+            // Empty search bar outputs all members
+            search();
+            cy.checkOrganizationMembers(3, [firstUserName, secondUserName, thirdUserName]);
         });
 
-        it('Search within organizations. Filters work correctly', () => {
+        it('Search within organizations: Filters work correctly', () => {
+            cy.get('.cvat-quick-filters-button').click();
+            cy.get('.cvat-resource-page-predefined-filters-list')
+                .should('be.visible')
+                .within(() => {
+                    cy.contains('Workers').click();
+                });
+            cy.get('.cvat-quick-filters-button').click();
+            cy.get('.cvat-resource-page-predefined-filters-list').should('not.exist');
+            cy.checkOrganizationMembers(2, [secondUserName, thirdUserName]);
         });
 
         it('Create a project, create a task. Deactivate organization.', () => {
@@ -254,13 +258,13 @@ context('New organization pipeline.', () => {
             cy.goToTaskList();
             cy.openTask(taskName);
             cy.getJobIDFromIdx(0).then((_jobID) => {
-                jobID = _jobID;
+                jobId = _jobID;
                 cy.assignJobToUser(_jobID, thirdUserName);
             });
             cy.renameTask(taskName, newTaskName);
             cy.url().then((url) => {
                 const [link] = url.split('?');
-                taskID = Number(link.split('/').slice(-1)[0]);
+                taskId = Number(link.split('/').slice(-1)[0]);
             });
         });
 
@@ -273,7 +277,7 @@ context('New organization pipeline.', () => {
         });
 
         it('User can open the job using direct link. Organization is set automatically. Create an object, save annotations.', () => {
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
             cy.get('.cvat-canvas-container').should('exist');
             cy.get('.cvat-header-menu-user-dropdown-organization').should('have.text', organizationParams.shortName);
             cy.createCuboid(createCuboidShape2Points);
@@ -311,7 +315,7 @@ context('New organization pipeline.', () => {
             cy.visit('/organization');
             cy.checkOrganizationParams(organizationParams);
             cy.checkOrganizationMembers(1, [thirdUserName]);
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
             cy.get('.cvat-canvas-container').should('exist');
             cy.get('.cvat_canvas_shape_cuboid').should('be.visible');
         });
