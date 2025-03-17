@@ -43,6 +43,10 @@ function ProjectActionsComponent(props: Props): JSX.Element {
         history.push({ pathname: `/projects/${projectInstance.id}/webhooks` });
     }, [projectInstance.id]);
 
+    const onOpenQualityControl = useCallback(() => {
+        history.push(`/projects/${projectInstance.id}/quality-control`);
+    }, [projectInstance.id]);
+
     const onDeleteProject = useCallback((): void => {
         Modal.confirm({
             title: `The project ${projectInstance.id} will be deleted`,
@@ -73,6 +77,7 @@ function ProjectActionsComponent(props: Props): JSX.Element {
                     onBackupProject,
                     onSetupWebhooks,
                     onDeleteProject,
+                    onOpenQualityControl,
                 }, { ...props, history }),
             }}
         >

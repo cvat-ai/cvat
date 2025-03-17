@@ -341,18 +341,20 @@ export interface SerializedQualityReportData {
             mismatching_groups: number;
             covered_annotation: number;
         }
+        tasks?: {
+            total: number;
+            custom: number;
+            not_configured: number;
+            excluded: number;
+            included: number;
+        }
+        jobs?: {
+            total: number;
+            excluded: number;
+            not_checkable: number;
+            included: number;
+        }
     };
-    tasks?: {
-        total: number;
-        custom: number;
-        not_configured: number;
-        excluded: number;
-    };
-    jobs: {
-        total: number;
-        excluded: number;
-        not_checkable: number;
-    }
 }
 
 export interface SerializedConsensusSettingsData {

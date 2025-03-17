@@ -286,7 +286,10 @@ export interface PluginsState {
             task: {
                 overviewTab: ((props: {
                     instance: Task;
-                    qualitySettings: QualitySettings;
+                    qualitySettings: {
+                        settings: QualitySettings | null;
+                        childrenSettings: QualitySettings[] | null;
+                    };
                 }) => JSX.Element)[];
 
                 allocationTable: ((
@@ -303,7 +306,10 @@ export interface PluginsState {
             project : {
                 overviewTab: ((props: {
                     instance: Project;
-                    qualitySettings: QualitySettings;
+                    qualitySettings: {
+                        settings: QualitySettings | null;
+                        childrenSettings: QualitySettings[] | null;
+                    };
                 }) => JSX.Element)[];
             }
         };

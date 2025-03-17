@@ -6,6 +6,7 @@
 import _ from 'lodash';
 import {
     useRef, useEffect, useState, useCallback,
+    useLayoutEffect,
 } from 'react';
 import { useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
@@ -148,4 +149,26 @@ export function useResetShortcutsOnUnmount(componentShortcuts: Record<string, Ke
         }, {});
         registerComponentShortcuts(revertedShortcuts);
     }, []);
+}
+
+export function usePageSizeData(ref: any): any {
+    const [pageSizeData, setPageSizeData] = useState({ width: 0, height: 0 });
+
+    useLayoutEffect(() => {
+        const resize = (): void => {
+            if (ref?.current) {
+                const { clientWidth, clientHeight } = ref.current;
+                setPageSizeData({ width: clientWidth, height: clientHeight });
+            }
+        };
+
+        resize();
+        window.addEventListener('resize', resize);
+
+        return () => {
+            window.removeEventListener('resize', resize);
+        };
+    }, []);
+
+    return pageSizeData;
 }

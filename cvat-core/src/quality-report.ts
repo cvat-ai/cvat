@@ -28,21 +28,19 @@ export interface QualitySummary {
         mismatchingGroups: number;
         coveredAnnotation: number;
     }
-}
-
-export interface TasksQualityData {
-    total: number;
-    custom: number;
-    notConfigured: number;
-    excluded: number;
-    included: number;
-}
-
-export interface JobsQualityData {
-    total: number;
-    notCheckable: number;
-    excluded: number;
-    included: number;
+    tasks: {
+        total: number;
+        custom: number;
+        notConfigured: number;
+        excluded: number;
+        included: number;
+    } | null;
+    jobs: {
+        total: number;
+        notCheckable: number;
+        excluded: number;
+        included: number;
+    } | null;
 }
 
 export default class QualityReport {
@@ -55,8 +53,6 @@ export default class QualityReport {
     #gtLastUpdated: string;
     #assignee: User | null;
     #summary: Partial<SerializedQualityReportData['summary']>;
-    #tasks: Partial<SerializedQualityReportData['tasks']>;
-    #jobs: Partial<SerializedQualityReportData['jobs']>;
 
     constructor(initialData: SerializedQualityReportData) {
         this.#id = initialData.id;
@@ -67,8 +63,6 @@ export default class QualityReport {
         this.#gtLastUpdated = initialData.gt_last_updated;
         this.#createdDate = initialData.created_date;
         this.#summary = initialData.summary;
-        this.#tasks = initialData.tasks;
-        this.#jobs = initialData.jobs;
 
         if (initialData.assignee) {
             this.#assignee = new User(initialData.assignee);
@@ -133,25 +127,19 @@ export default class QualityReport {
             },
             errorCount: this.#summary.error_count,
             warningCount: this.#summary.warning_count,
-        };
-    }
-
-    get tasks(): TasksQualityData {
-        return this.#tasks && {
-            total: this.#tasks.total,
-            custom: this.#tasks.custom,
-            notConfigured: this.#tasks.not_configured,
-            excluded: this.#tasks.excluded,
-            included: this.#tasks.total - this.#tasks.excluded - this.#tasks.not_configured - this.#tasks.custom,
-        };
-    }
-
-    get jobs(): JobsQualityData {
-        return this.#jobs && {
-            total: this.#jobs.total,
-            notCheckable: this.#jobs.not_checkable,
-            excluded: this.#jobs.excluded,
-            included: this.#jobs.total - this.#jobs.excluded,
+            tasks: this.#summary.tasks ? {
+                total: this.#summary.tasks.total,
+                custom: this.#summary.tasks.custom,
+                notConfigured: this.#summary.tasks.not_configured,
+                excluded: this.#summary.tasks.excluded,
+                included: this.#summary.tasks.included,
+            } : null,
+            jobs: this.#summary.jobs ? {
+                total: this.#summary.jobs.total,
+                notCheckable: this.#summary.jobs.not_checkable,
+                excluded: this.#summary.jobs.excluded,
+                included: this.#summary.jobs.included,
+            } : null,
         };
     }
 }

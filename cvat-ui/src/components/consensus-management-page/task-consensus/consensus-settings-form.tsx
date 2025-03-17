@@ -75,7 +75,7 @@ export default function ConsensusSettingsForm(props: Readonly<Props>): JSX.Eleme
                 <Text strong>General</Text>
                 <CVATTooltip
                     title={generalTooltip}
-                    className='cvat-settings-tooltip'
+                    className='cvat-management-page-toolip'
                     overlayStyle={{ maxWidth: '500px' }}
                 >
                     <QuestionCircleOutlined style={{ opacity: 0.5 }} />
@@ -97,7 +97,7 @@ export default function ConsensusSettingsForm(props: Readonly<Props>): JSX.Eleme
                 <Text strong>Shape comparison</Text>
                 <CVATTooltip
                     title={shapeComparisonTooltip}
-                    className='cvat-settings-tooltip'
+                    className='cvat-management-page-toolip'
                     overlayStyle={{ maxWidth: '500px' }}
                 >
                     <QuestionCircleOutlined style={{ opacity: 0.5 }} />

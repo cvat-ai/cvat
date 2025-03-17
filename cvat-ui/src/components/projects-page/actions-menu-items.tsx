@@ -12,6 +12,7 @@ interface MenuItemsData {
     onBackupProject: () => void;
     onSetupWebhooks: () => void;
     onDeleteProject: () => void;
+    onOpenQualityControl: () => void;
 }
 
 export default function ProjectActionsItems(
@@ -25,6 +26,7 @@ export default function ProjectActionsItems(
         onBackupProject,
         onSetupWebhooks,
         onDeleteProject,
+        onOpenQualityControl,
     } = menuItemsData;
 
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
@@ -48,20 +50,26 @@ export default function ProjectActionsItems(
     }, 20]);
 
     menuItems.push([{
-        key: 'set-webhooks',
-        onClick: onSetupWebhooks,
-        label: 'Setup webhooks',
+        key: 'quality-control',
+        onClick: onOpenQualityControl,
+        label: 'Quality control',
     }, 30]);
 
     menuItems.push([{
+        key: 'set-webhooks',
+        onClick: onSetupWebhooks,
+        label: 'Setup webhooks',
+    }, 40]);
+
+    menuItems.push([{
         type: 'divider',
-    }, 39]);
+    }, 49]);
 
     menuItems.push([{
         key: 'delete',
         onClick: onDeleteProject,
         label: 'Delete',
-    }, 40]);
+    }, 50]);
 
     menuItems.push(
         ...pluginActions.map(({ component: Component, weight }, index) => {
