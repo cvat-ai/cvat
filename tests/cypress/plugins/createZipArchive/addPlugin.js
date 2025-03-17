@@ -2,17 +2,21 @@
 //
 // SPDX-License-Identifier: MIT
 
-// eslint-disable-next-line no-use-before-define
+/* eslint-disable
+    import/no-extraneous-dependencies,
+    security/detect-non-literal-fs-filename,
+    no-use-before-define
+*/
+
 exports.createZipArchive = createZipArchive;
 
 const archiver = require('archiver');
-// eslint-disable-next-line import/no-extraneous-dependencies
 const fs = require('fs-extra');
 
 function createZipArchive(args) {
-    const { directoryToArchive } = args;
+    const { directoryToArchive, archivePath } = args;
     const { level } = args;
-    const output = fs.createWriteStream(args.arhivePath);
+    const output = fs.createWriteStream(archivePath);
     const archive = archiver('zip', {
         gzip: true,
         zlib: { level },
@@ -27,5 +31,5 @@ function createZipArchive(args) {
     archive.directory(`${directoryToArchive}/`, false);
     archive.finalize();
 
-    return fs.pathExists(archive);
+    return fs.pathExists(archivePath);
 }

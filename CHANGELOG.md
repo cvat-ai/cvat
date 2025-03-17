@@ -16,6 +16,159 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.31.0'></a>
+## \[2.31.0\] - 2025-03-03
+
+### Added
+
+- \[SDK\] Auto-annotation detection functions can now output shape/keypoint attributes
+  (<https://github.com/cvat-ai/cvat/pull/9090>)
+
+- \[SDK\] Added a utility module for working with label attributes,
+  `cvat_sdk.attributes`
+  (<https://github.com/cvat-ai/cvat/pull/9090>)
+
+- Simple merging for consensus-enabled tasks
+  (<https://github.com/cvat-ai/cvat/pull/8953>)
+
+- A setting to display rectangles and ellipses dimensions and rotation
+  (<https://github.com/cvat-ai/cvat/pull/9142>)
+
+### Changed
+
+- Hidden points in skeletons now also contribute to the skeleton similarity
+  in quality computations and in consensus merging
+  (<https://github.com/cvat-ai/cvat/pull/8953>)
+
+- SDK `task.upload_data()` can accept resources of the `Path` type
+  when `resource_type` is `REMOTE` or `SHARE`
+  (<https://github.com/cvat-ai/cvat/pull/9114>)
+
+### Deprecated
+
+- Utilizing `PUT /api/tasks|jobs/id/annotations?rq_id=rq_id` API endpoint
+  to check the status of the import process
+  (<https://github.com/cvat-ai/cvat/pull/9102>)
+
+### Fixed
+
+- 500 status code returned by API endpoints that support TUS OPTIONS requests
+  (<https://github.com/cvat-ai/cvat/pull/9077>)
+
+- Possible race condition that could occur when importing annotations
+  (<https://github.com/cvat-ai/cvat/pull/9102>)
+
+- Issue label scaling on image filter application
+  (<https://github.com/cvat-ai/cvat/pull/9126>)
+
+- Invalid display of images in simple GT jobs
+  (<https://github.com/cvat-ai/cvat/pull/9155>)
+
+- Related images in a simple GT jobs are displayed incorrectly
+  (<https://github.com/cvat-ai/cvat/pull/9162>)
+
+<a id='changelog-2.30.0'></a>
+## \[2.30.0\] - 2025-02-14
+
+### Added
+
+- Gamma filter settings are now automatically saved and restored upon reload
+  (<https://github.com/cvat-ai/cvat/pull/9032>)
+
+- Ability to customize `api/sever/about` endpoint via settings including logo and sign-in page subtitle
+  (<https://github.com/cvat-ai/cvat/pull/9052>)
+
+### Changed
+
+- Client settings are now saved automatically
+  (<https://github.com/cvat-ai/cvat/pull/9032>)
+
+### Fixed
+
+- \[SDK\] `skeleton_label_spec` now correctly forwards `kwargs` to
+  `PatchedLabelRequest`
+  (<https://github.com/cvat-ai/cvat/pull/9087>)
+
+- Error: Cannot read properties of undefined (reading 'width') that occurs when changing frames in a video-based GT job
+  (<https://github.com/cvat-ai/cvat/pull/9095>)
+
+<a id='changelog-2.29.0'></a>
+## \[2.29.0\] - 2025-02-10
+
+### Added
+
+- Tasks created from cloud storage can be backed up now
+  (<https://github.com/cvat-ai/cvat/pull/8972>)
+
+- \[CLI\] `function create-native` now sends the function's declared label types
+  to the server
+  (<https://github.com/cvat-ai/cvat/pull/9035>)
+
+### Changed
+
+- When invoking Nuclio functions, labels of type `any` can now be mapped to
+  labels of all types except `skeleton`
+  (<https://github.com/cvat-ai/cvat/pull/9050>)
+
+### Fixed
+
+- Fixed invalid server-side track interpolation in tasks with deleted frames
+  (<https://github.com/cvat-ai/cvat/pull/9059>)
+
+<a id='changelog-2.28.0'></a>
+## \[2.28.0\] - 2025-02-06
+
+### Added
+
+- Support for managing Redis migrations
+  (<https://github.com/cvat-ai/cvat/pull/8898>)
+
+### Changed
+
+- Updated limitation for minimal object size from 9px area to 1px in dimensions
+  (<https://github.com/cvat-ai/cvat/pull/9055>)
+
+### Fixed
+
+- Invalid chunks and backups after honeypot updates in tasks with cloud storage data
+  (<https://github.com/cvat-ai/cvat/pull/9010>)
+
+- In some cases effect of drag/resize may be reset implicitly for a user
+  (<https://github.com/cvat-ai/cvat/pull/9053>)
+
+<a id='changelog-2.27.0'></a>
+## \[2.27.0\] - 2025-02-04
+
+### Added
+
+- Saving drawn shape on submit in `single shape` mode
+  (<https://github.com/cvat-ai/cvat/pull/8807>)
+
+- An option to create tasks with consensus jobs
+  (<https://github.com/cvat-ai/cvat/pull/8939>)
+
+- \[SDK\] The shapes output by auto-annotation functions are now checked
+  for compatibility with the function's and the task's label specs
+  (<https://github.com/cvat-ai/cvat/pull/9005>)
+
+- A `threshold` parameter to UI detector runner
+  (<https://github.com/cvat-ai/cvat/pull/9011>)
+
+### Changed
+
+- `DetectorFunctionSpec` will now raise `BadFunctionError` if it detects
+  any violations of the documented constraints on the labels
+  (<https://github.com/cvat-ai/cvat/pull/9020>)
+
+### Fixed
+
+- Improved performance and memory utilization for quality reports in tasks with ellipses and masks
+  (<https://github.com/cvat-ai/cvat/pull/8990>)
+
+- \[Compose\] An outdated version of Traefik is no longer used in
+  deployments with HTTPS enabled
+  (<https://github.com/cvat-ai/cvat/pull/9028>)
+
 <a id='changelog-2.26.1'></a>
 ## \[2.26.1\] - 2025-01-29
 

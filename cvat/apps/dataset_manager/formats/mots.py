@@ -111,7 +111,7 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
         dataset.transform("boxes_to_masks")
         dataset.transform("merge_instance_segments")
 
-        dataset.export(temp_dir, "mots_png", save_images=save_images)
+        dataset.export(temp_dir, "mots_png", save_media=save_images)
 
     make_zip_archive(temp_dir, dst_file)
 

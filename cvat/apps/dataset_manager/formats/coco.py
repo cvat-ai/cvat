@@ -6,12 +6,13 @@
 import zipfile
 
 from datumaro.components.annotation import AnnotationType
-from datumaro.components.dataset import Dataset
+from datumaro.components.dataset import Dataset, StreamDataset
 from datumaro.plugins.data_formats.coco.importer import CocoImporter
 
 from cvat.apps.dataset_manager.bindings import (
     GetCVATDataExtractor,
     NoMediaInAnnotationFileError,
+    ProjectData,
     detect_dataset,
     import_dm_annotations,
 )
@@ -23,8 +24,9 @@ from .registry import dm_env, exporter, importer
 @exporter(name="COCO", ext="ZIP", version="1.0")
 def _export(dst_file, temp_dir, instance_data, save_images=False):
     with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
-        dataset = Dataset.from_extractors(extractor, env=dm_env)
-        dataset.export(temp_dir, "coco_instances", save_images=save_images, merge_images=False)
+        dataset_cls = Dataset if isinstance(instance_data, ProjectData) else StreamDataset
+        dataset = dataset_cls.from_extractors(extractor, env=dm_env)
+        dataset.export(temp_dir, "coco_instances", save_media=save_images, merge_images=False)
 
     make_zip_archive(temp_dir, dst_file)
 
@@ -50,9 +52,10 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
 @exporter(name="COCO Keypoints", ext="ZIP", version="1.0")
 def _export(dst_file, temp_dir, instance_data, save_images=False):
     with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
-        dataset = Dataset.from_extractors(extractor, env=dm_env)
+        dataset_cls = Dataset if isinstance(instance_data, ProjectData) else StreamDataset
+        dataset = dataset_cls.from_extractors(extractor, env=dm_env)
         dataset.export(
-            temp_dir, "coco_person_keypoints", save_images=save_images, merge_images=False
+            temp_dir, "coco_person_keypoints", save_media=save_images, merge_images=False
         )
 
     make_zip_archive(temp_dir, dst_file)

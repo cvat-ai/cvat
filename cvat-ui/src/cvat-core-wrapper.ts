@@ -15,6 +15,7 @@ import {
 } from 'cvat-core/src/labels';
 import {
     SerializedAttribute, SerializedLabel, SerializedAPISchema,
+    OrganizationMembersFilter,
 } from 'cvat-core/src/server-response-types';
 import { UpdateStatusData } from 'cvat-core/src/core-types';
 import { Job, Task } from 'cvat-core/src/session';
@@ -22,11 +23,12 @@ import Project from 'cvat-core/src/project';
 import QualityReport, { QualitySummary } from 'cvat-core/src/quality-report';
 import QualityConflict, { AnnotationConflict, ConflictSeverity } from 'cvat-core/src/quality-conflict';
 import QualitySettings, { TargetMetric } from 'cvat-core/src/quality-settings';
+import ConsensusSettings from 'cvat-core/src/consensus-settings';
 import { FramesMetaData, FrameData } from 'cvat-core/src/frames';
 import { ServerError, RequestError } from 'cvat-core/src/exceptions';
 import {
     ShapeType, ObjectType, LabelType, ModelKind, ModelProviders,
-    ModelReturnType, DimensionType, JobType, Source,
+    DimensionType, JobType, Source,
     JobStage, JobState, RQStatus, StorageLocation,
 } from 'cvat-core/src/enums';
 import { Storage, StorageData } from 'cvat-core/src/storage';
@@ -44,6 +46,7 @@ import { BaseShapesAction } from 'cvat-core/src/annotations-actions/base-shapes-
 import { BaseCollectionAction } from 'cvat-core/src/annotations-actions/base-collection-action';
 import { ActionParameterType, BaseAction } from 'cvat-core/src/annotations-actions/base-action';
 import { Request, RequestOperation } from 'cvat-core/src/request';
+import AboutData from 'cvat-core/src/about';
 
 const cvat: CVATCore = _cvat;
 
@@ -85,7 +88,6 @@ export {
     MLModel,
     ModelKind,
     ModelProviders,
-    ModelReturnType,
     DimensionType,
     Dumper,
     JobType,
@@ -98,6 +100,7 @@ export {
     QualityReport,
     QualityConflict,
     QualitySettings,
+    ConsensusSettings,
     TargetMetric,
     AnnotationConflict,
     ConflictSeverity,
@@ -114,6 +117,7 @@ export {
     JobValidationLayout,
     TaskValidationLayout,
     StorageLocation,
+    AboutData,
 };
 
 export type {
@@ -127,4 +131,5 @@ export type {
     ProjectOrTaskOrJob,
     RequestOperation,
     UpdateStatusData,
+    OrganizationMembersFilter,
 };

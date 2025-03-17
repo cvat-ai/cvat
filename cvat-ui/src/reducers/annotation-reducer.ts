@@ -11,7 +11,7 @@ import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
-    DimensionType, JobStage, Label, LabelType,
+    DimensionType, JobStage, Label, LabelType, ObjectType, ShapeType,
 } from 'cvat-core-wrapper';
 import { clamp } from 'utils/math';
 
@@ -20,8 +20,6 @@ import {
     AnnotationState,
     ContextMenuType,
     NavigationType,
-    ObjectType,
-    ShapeType,
     Workspace,
 } from '.';
 
@@ -31,13 +29,18 @@ function updateActivatedStateID(newStates: any[], prevActivatedStateID: number |
         null;
 }
 
-export function labelShapeType(label?: Label): ShapeType | null {
-    if (label && Object.values(ShapeType).includes(label.type as any)) {
-        return label.type as unknown as ShapeType;
+export function labelShapeType(labelData?: Label | Partial<LabelType>): ShapeType | null {
+    const labelType = labelData instanceof Label ? labelData.type : labelData;
+    if (labelType) {
+        if (Object.values(ShapeType).includes(labelType as any)) {
+            return labelType as unknown as ShapeType;
+        }
+
+        if (labelType === LabelType.TAG) {
+            return null;
+        }
     }
-    if (label?.type === LabelType.TAG) {
-        return null;
-    }
+
     return ShapeType.RECTANGLE;
 }
 

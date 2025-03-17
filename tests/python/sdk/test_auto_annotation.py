@@ -12,6 +12,7 @@ import cvat_sdk.auto_annotation as cvataa
 import PIL.Image
 import pytest
 from cvat_sdk import Client, models
+from cvat_sdk.attributes import attribute_vals_from_dict, number_attribute_values
 from cvat_sdk.core.proxies.tasks import ResourceType
 
 from shared.utils.helpers import generate_image_file
@@ -47,24 +48,37 @@ class TestDetectionFunctionSpec:
         with pytest.raises(cvataa.BadFunctionError, match=exc_match):
             cvataa.DetectionFunctionSpec(**kwargs)
 
-    def test_attributes(self):
+    def _test_bad_attributes(self, exc_match: str, *attrs: models.AttributeRequest) -> None:
         self._test_bad_spec(
-            "currently not supported",
+            exc_match, labels=[cvataa.label_spec("car", 123, attributes=list(attrs))]
+        )
+
+        self._test_bad_spec(
+            exc_match,
             labels=[
-                cvataa.label_spec(
-                    "car",
-                    123,
-                    attributes=[
-                        models.AttributeRequest(
-                            "age",
-                            mutable=False,
-                            input_type="number",
-                            values=["0", "100", "1"],
-                            default_value="0",
-                        )
-                    ],
+                cvataa.skeleton_label_spec(
+                    "car", 123, [cvataa.keypoint_spec("engine", 1234, attributes=list(attrs))]
                 ),
             ],
+        )
+
+    def test_attribute_without_id(self):
+        self._test_bad_attributes(
+            "attribute .+ has no ID",
+            models.AttributeRequest("brand", mutable=False, input_type="text", values=[]),
+        )
+
+    def test_duplicate_attribute_id(self):
+        self._test_bad_attributes(
+            "same ID as another attribute",
+            cvataa.text_attribute_spec("brand", 1),
+            cvataa.text_attribute_spec("color", 1),
+        )
+
+    def test_invalid_attribute_values(self):
+        self._test_bad_attributes(
+            "has invalid values",
+            cvataa.number_attribute_spec("year", 1, []),
         )
 
     def test_label_without_id(self):
@@ -125,6 +139,16 @@ class TestDetectionFunctionSpec:
             ],
         )
 
+    def test_sublabel_wrong_type(self):
+        self._test_bad_spec(
+            "should be 'points'",
+            labels=[
+                cvataa.skeleton_label_spec(
+                    "cat", 123, [models.SublabelRequest(name="head", id=1, type="any")]
+                )
+            ],
+        )
+
 
 class TestTaskAutoAnnotation:
     @pytest.fixture(autouse=True)
@@ -159,8 +183,26 @@ class TestTaskAutoAnnotation:
                     models.PatchedLabelRequest(
                         name="cat",
                         type="skeleton",
+                        attributes=[
+                            models.AttributeRequest(
+                                name="color",
+                                mutable=False,
+                                input_type="select",
+                                values=["gray", "calico"],
+                            ),
+                        ],
                         sublabels=[
-                            models.SublabelRequest(name="head"),
+                            models.SublabelRequest(
+                                name="head",
+                                attributes=[
+                                    models.AttributeRequest(
+                                        name="size",
+                                        mutable=False,
+                                        input_type="number",
+                                        values=["1", "10", "1"],
+                                    ),
+                                ],
+                            ),
                             models.SublabelRequest(name="tail"),
                         ],
                     ),
@@ -175,6 +217,16 @@ class TestTaskAutoAnnotation:
         self.cat_sublabels_by_id = {
             sl.id: sl
             for sl in next(label for label in task_labels if label.name == "cat").sublabels
+        }
+        self.cat_attributes_by_id = {
+            attr.id: attr
+            for attr in next(label for label in task_labels if label.name == "cat").attributes
+        }
+        self.cat_head_attributes_by_id = {
+            attr.id: attr
+            for attr in next(
+                sl for sl in self.cat_sublabels_by_id.values() if sl.name == "head"
+            ).attributes
         }
 
         # The initial annotation is just to check that it gets erased after auto-annotation
@@ -303,6 +355,82 @@ class TestTaskAutoAnnotation:
             assert elements[0].points == [10, 10]
             assert self.cat_sublabels_by_id[elements[1].label_id].name == "tail"
             assert elements[1].points == [30, 30]
+
+    def test_detection_attributes(self):
+        spec = cvataa.DetectionFunctionSpec(
+            labels=[
+                cvataa.skeleton_label_spec(
+                    "cat",
+                    123,
+                    [
+                        cvataa.keypoint_spec(
+                            "head",
+                            10,
+                            attributes=[
+                                cvataa.number_attribute_spec(
+                                    "size", 1, number_attribute_values(1, 10, 1)
+                                ),
+                                cvataa.text_attribute_spec("orientation (should be ignored)", 2),
+                            ],
+                        ),
+                        cvataa.keypoint_spec("tail", 30),
+                    ],
+                    attributes=[
+                        cvataa.select_attribute_spec("color", 1, ["calico", "gray"]),
+                        cvataa.text_attribute_spec("name (should be ignored)", 2),
+                    ],
+                ),
+            ],
+        )
+
+        def detect(context, image: PIL.Image.Image) -> list[models.LabeledShapeRequest]:
+            return [
+                cvataa.skeleton(
+                    123,  # cat
+                    [
+                        # head
+                        cvataa.keypoint(
+                            10,
+                            [10, 10],
+                            attributes=attribute_vals_from_dict({1: 5, 2: "forward"}),
+                        ),
+                        # tail
+                        cvataa.keypoint(30, [30, 30]),
+                    ],
+                    attributes=attribute_vals_from_dict({1: "calico", 2: "McFluffy"}),
+                ),
+            ]
+
+        cvataa.annotate_task(
+            self.client,
+            self.task.id,
+            namespace(spec=spec, detect=detect),
+            clear_existing=True,
+            allow_unmatched_labels=True,
+        )
+
+        annotations = self.task.get_annotations()
+
+        shapes = sorted(annotations.shapes, key=lambda shape: shape.frame)
+
+        assert len(shapes) == 2
+
+        for shape in shapes:
+            assert self.task_labels_by_id[shape.label_id].name == "cat"
+
+            assert len(shape.attributes) == 1
+            assert self.cat_attributes_by_id[shape.attributes[0].spec_id].name == "color"
+            assert shape.attributes[0].value == "calico"
+
+            elements = sorted(
+                shape.elements, key=lambda s: self.cat_sublabels_by_id[s.label_id].name
+            )
+
+            assert self.cat_sublabels_by_id[elements[0].label_id].name == "head"
+
+            assert len(elements[0].attributes) == 1
+            assert self.cat_head_attributes_by_id[elements[0].attributes[0].spec_id].name == "size"
+            assert elements[0].attributes[0].value == "5"
 
     def test_progress_reporting(self):
         spec = cvataa.DetectionFunctionSpec(labels=[])
@@ -500,7 +628,7 @@ class TestTaskAutoAnnotation:
 
     def test_sublabel_not_in_dataset(self):
         self._test_spec_dataset_mismatch(
-            "not in dataset",
+            "sublabel .+ not in dataset",
             cvataa.DetectionFunctionSpec(
                 labels=[
                     cvataa.skeleton_label_spec("cat", 123, [cvataa.keypoint_spec("nose", 1)]),
@@ -528,6 +656,110 @@ class TestTaskAutoAnnotation:
             conv_mask_to_poly=True,
         )
 
+    def test_attribute_not_in_dataset(self):
+        self._test_spec_dataset_mismatch(
+            "attribute .+ not in dataset",
+            cvataa.DetectionFunctionSpec(
+                labels=[
+                    cvataa.skeleton_label_spec(
+                        "cat",
+                        123,
+                        [],
+                        attributes=[cvataa.text_attribute_spec("breed", 1)],
+                    ),
+                ]
+            ),
+        )
+
+        self._test_spec_dataset_mismatch(
+            "attribute .+ not in dataset",
+            cvataa.DetectionFunctionSpec(
+                labels=[
+                    cvataa.skeleton_label_spec(
+                        "cat",
+                        123,
+                        [
+                            cvataa.keypoint_spec(
+                                "head",
+                                12,
+                                attributes=[cvataa.text_attribute_spec("orientation", 1)],
+                            ),
+                        ],
+                    ),
+                ]
+            ),
+        )
+
+    def test_mismatched_attribute_input_type(self):
+        self._test_spec_dataset_mismatch(
+            "has input type .+ in the function, but .+ in the dataset",
+            cvataa.DetectionFunctionSpec(
+                labels=[
+                    cvataa.skeleton_label_spec(
+                        "cat",
+                        123,
+                        [],
+                        attributes=[cvataa.text_attribute_spec("color", 1)],
+                    ),
+                ]
+            ),
+        )
+
+        self._test_spec_dataset_mismatch(
+            "has input type .+ in the function, but .+ in the dataset",
+            cvataa.DetectionFunctionSpec(
+                labels=[
+                    cvataa.skeleton_label_spec(
+                        "cat",
+                        123,
+                        [
+                            cvataa.keypoint_spec(
+                                "head",
+                                12,
+                                attributes=[cvataa.text_attribute_spec("size", 1)],
+                            )
+                        ],
+                    ),
+                ]
+            ),
+        )
+
+    def test_mismatched_attribute_values(self):
+        self._test_spec_dataset_mismatch(
+            "has values .+ in the function, but .+ in the dataset",
+            cvataa.DetectionFunctionSpec(
+                labels=[
+                    cvataa.skeleton_label_spec(
+                        "cat",
+                        123,
+                        [],
+                        attributes=[cvataa.select_attribute_spec("color", 1, ["red", "green"])],
+                    ),
+                ]
+            ),
+        )
+
+        self._test_spec_dataset_mismatch(
+            "has values .+ in the function, but .+ in the dataset",
+            cvataa.DetectionFunctionSpec(
+                labels=[
+                    cvataa.skeleton_label_spec(
+                        "cat",
+                        123,
+                        [
+                            cvataa.keypoint_spec(
+                                "head",
+                                12,
+                                attributes=[
+                                    cvataa.number_attribute_spec("size", 1, ["-10", "0", "1"])
+                                ],
+                            ),
+                        ],
+                    ),
+                ]
+            ),
+        )
+
     def _test_bad_function_detect(self, detect, exc_match: str) -> None:
         spec = cvataa.DetectionFunctionSpec(
             labels=[
@@ -539,9 +771,18 @@ class TestTaskAutoAnnotation:
                     "cat",
                     456,
                     [
-                        cvataa.keypoint_spec("head", 12),
+                        cvataa.keypoint_spec(
+                            "head",
+                            12,
+                            attributes=[
+                                cvataa.number_attribute_spec(
+                                    "size", 1, number_attribute_values(1, 10, 1)
+                                ),
+                            ],
+                        ),
                         cvataa.keypoint_spec("tail", 34),
                     ],
+                    attributes=[cvataa.select_attribute_spec("color", 1, ["gray", "calico"])],
                 ),
             ],
         )
@@ -588,20 +829,6 @@ class TestTaskAutoAnnotation:
                 cvataa.rectangle(111, [1, 2, 3, 4]),
             ],
             "unknown label ID",
-        )
-
-    def test_shape_with_attributes(self):
-        self._test_bad_function_detect(
-            lambda context, image: [
-                cvataa.rectangle(
-                    123,
-                    [1, 2, 3, 4],
-                    attributes=[
-                        models.AttributeValRequest(spec_id=1, value="asdf"),
-                    ],
-                ),
-            ],
-            "shape with attributes",
         )
 
     def test_preset_element_id(self):
@@ -713,6 +940,95 @@ class TestTaskAutoAnnotation:
                 cvataa.shape(label_id, type="ellipse"),
             ],
             r"shape of type 'ellipse' \(expected 'rectangle'\)",
+        )
+
+    def test_attribute_val_with_unknown_id(self):
+        self._test_bad_function_detect(
+            lambda context, image: [
+                cvataa.skeleton(
+                    456,
+                    [cvataa.keypoint(12, [1, 2]), cvataa.keypoint(34, [3, 4])],
+                    attributes=attribute_vals_from_dict({2: "gray"}),
+                ),
+            ],
+            "attribute with unknown ID",
+        )
+
+        self._test_bad_function_detect(
+            lambda context, image: [
+                cvataa.skeleton(
+                    456,
+                    [
+                        cvataa.keypoint(12, [1, 2], attributes=attribute_vals_from_dict({2: 5})),
+                        cvataa.keypoint(34, [3, 4]),
+                    ],
+                ),
+            ],
+            "attribute with unknown ID",
+        )
+
+    def test_multiple_attribute_vals_with_same_id(self):
+        self._test_bad_function_detect(
+            lambda context, image: [
+                cvataa.skeleton(
+                    456,
+                    [cvataa.keypoint(12, [1, 2]), cvataa.keypoint(34, [3, 4])],
+                    attributes=[
+                        models.AttributeValRequest(spec_id=1, value="gray"),
+                        models.AttributeValRequest(spec_id=1, value="gray"),
+                    ],
+                ),
+            ],
+            "multiple attributes with same ID",
+        )
+
+        self._test_bad_function_detect(
+            lambda context, image: [
+                cvataa.skeleton(
+                    456,
+                    [
+                        cvataa.keypoint(
+                            12,
+                            [1, 2],
+                            attributes=[
+                                models.AttributeValRequest(spec_id=1, value="5"),
+                                models.AttributeValRequest(spec_id=1, value="5"),
+                            ],
+                        ),
+                        cvataa.keypoint(34, [3, 4]),
+                    ],
+                ),
+            ],
+            "multiple attributes with same ID",
+        )
+
+    def test_attribute_val_unsuitable_for_spec(self):
+        self._test_bad_function_detect(
+            lambda context, image: [
+                cvataa.skeleton(
+                    456,
+                    [cvataa.keypoint(12, [1, 2]), cvataa.keypoint(34, [3, 4])],
+                    attributes=attribute_vals_from_dict({1: "purple"}),
+                ),
+            ],
+            "unsuitable for its attribute",
+        )
+
+        self._test_bad_function_detect(
+            lambda context, image: [
+                cvataa.skeleton(
+                    456,
+                    [
+                        cvataa.keypoint(
+                            12,
+                            [1, 2],
+                            attributes=attribute_vals_from_dict({1: -1}),
+                        ),
+                        cvataa.keypoint(34, [3, 4]),
+                    ],
+                ),
+            ],
+            "unsuitable for its attribute",
         )
 
 

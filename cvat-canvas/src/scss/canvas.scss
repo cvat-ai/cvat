@@ -48,10 +48,13 @@ polyline.cvat_shape_drawing_opacity {
     font-weight: bold;
     fill: white;
     cursor: default;
-    font-family: Calibri, Candara, Segoe, 'Segoe UI', Optima, Arial, sans-serif;
-    text-shadow: 0 0 4px black;
+    filter: drop-shadow(1px 1px 1px black) drop-shadow(-1px -1px 1px black);
     user-select: none;
     pointer-events: none;
+}
+
+.cvat_canvas_text_dimensions {
+    fill: lightskyblue;
 }
 
 .cvat_canvas_text_description {

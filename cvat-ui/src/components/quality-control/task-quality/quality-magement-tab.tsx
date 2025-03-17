@@ -3,13 +3,13 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useLayoutEffect, useRef, useState } from 'react';
-import { Row, Col } from 'antd/es/grid';
+import { Row } from 'antd/es/grid';
 import Text from 'antd/lib/typography/Text';
 
 import {
     FramesMetaData, QualitySettings, Task, TaskValidationLayout,
 } from 'cvat-core-wrapper';
-import AnalyticsCard from 'components/analytics-page/views/analytics-card';
+import Card from 'components/common/cvat-card';
 import AllocationTable from './allocation-table';
 
 interface Props {
@@ -61,19 +61,19 @@ function QualityManagementTab(props: Readonly<Props>): JSX.Element {
     return (
         <div className='cvat-quality-control-management-tab' ref={tableRef}>
             <Row className='cvat-quality-control-management-tab-summary'>
-                <AnalyticsCard
+                <Card
                     title='Total validation frames'
                     className='cvat-allocation-summary-total'
                     value={totalCount}
                     size={{ cardSize: 8 }}
                 />
-                <AnalyticsCard
+                <Card
                     title='Excluded validation frames'
                     className='cvat-allocation-summary-excluded'
                     value={excludedCount}
                     size={{ cardSize: 8 }}
                 />
-                <AnalyticsCard
+                <Card
                     title='Active validation frames'
                     className='cvat-allocation-summary-active'
                     value={activeCount}
@@ -88,20 +88,16 @@ function QualityManagementTab(props: Readonly<Props>): JSX.Element {
                     <Text type='secondary' strong>{validationModeText}</Text>
                 </Row>
             ) : null}
-            <Row>
-                <Col span={24}>
-                    <AllocationTable
-                        task={task}
-                        gtJobId={gtJobId}
-                        gtJobMeta={gtJobMeta}
-                        validationLayout={validationLayout}
-                        qualitySettings={qualitySettings}
-                        onDeleteFrames={onDeleteFrames}
-                        onRestoreFrames={onRestoreFrames}
-                        pageSizeData={pageSizeData}
-                    />
-                </Col>
-            </Row>
+            <AllocationTable
+                task={task}
+                gtJobId={gtJobId}
+                gtJobMeta={gtJobMeta}
+                validationLayout={validationLayout}
+                qualitySettings={qualitySettings}
+                onDeleteFrames={onDeleteFrames}
+                onRestoreFrames={onRestoreFrames}
+                pageSizeData={pageSizeData}
+            />
         </div>
     );
 }
