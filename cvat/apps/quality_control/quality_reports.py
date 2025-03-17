@@ -2506,21 +2506,15 @@ class DatasetComparator:
             self._generate_dataset_annotations_summary(self._frame_results)
         )
 
+        conflicts_by_severity = Counter(c.severity for c in conflicts)
         return ComparisonReport(
             parameters=self.settings,
             comparison_summary=ComparisonReportSummary(
-                frame_share=(
-                    len(intersection_frames) / (len(self._ds_data_provider.job_data.rel_range) or 1)
-                ),
                 frames=intersection_frames,
                 total_frames=self._get_total_frames(),
                 conflict_count=len(conflicts),
-                warning_count=len(
-                    [c for c in conflicts if c.severity == AnnotationConflictSeverity.WARNING]
-                ),
-                error_count=len(
-                    [c for c in conflicts if c.severity == AnnotationConflictSeverity.ERROR]
-                ),
+                warning_count=conflicts_by_severity.get(AnnotationConflictSeverity.WARNING, 0),
+                error_count=conflicts_by_severity.get(AnnotationConflictSeverity.ERROR, 0),
                 conflicts_by_type=Counter(c.type for c in conflicts),
                 annotations=annotation_summary,
                 annotation_components=annotations_component_summary,
@@ -2750,9 +2744,9 @@ class TaskQualityCalculator:
             # Perform manual "join", since django can't do this.
             gt_job = JobDataProvider.add_prefetch_info(job_queryset).get(id=gt_job_id)
 
-            jobs: list[Job] = [j for j in job_queryset if j.id in filtered_job_ids]
+            jobs: dict[int, Job] = [j for j in job_queryset if j.id in filtered_job_ids]
             for job in job_queryset:
-                job.segment.task = gt_job.segment.task
+                job.segment.task = gt_job.segment.task # put the prefetched object
 
             gt_job_data_provider = JobDataProvider(gt_job.id, queryset=job_queryset)
             active_validation_frames = gt_job_data_provider.job_data.get_included_frames()
@@ -2846,7 +2840,7 @@ class TaskQualityCalculator:
         job_stats.all.update(all_job_ids)
         job_stats.excluded.update(all_job_ids - job_reports.keys())
         job_stats.not_checkable.update(
-            jid for jid, r in job_reports.items() if not r.comparison_summary.frames
+            jid for jid, r in job_reports.items() if not r.comparison_summary.frame_count
         )
 
         # The task dataset can be different from any jobs' dataset because of frame overlaps
@@ -2856,8 +2850,8 @@ class TaskQualityCalculator:
         # It's possible that overlapped frames cheched more than once, ignore extra checks
         # in this statistics and results.
         task_validated_frames = set()
-        task_validation_frames_count = 0  # in included jobs
-        task_total_frames = 0  # in included jobs
+        task_validation_frames_count = 0  # in included and non-checkable jobs
+        task_total_frames = 0  # in included and non-checkable jobs
         task_conflicts: list[AnnotationConflict] = []
         task_annotations_summary = ComparisonReportAnnotationsSummary.create_empty()
         task_ann_components_summary = ComparisonReportAnnotationComponentsSummary.create_empty()
@@ -2906,8 +2900,8 @@ class TaskQualityCalculator:
                 total_frames=task_total_frames,
                 frames=sorted(task_validated_frames),
                 conflict_count=len(task_conflicts),
-                warning_count=conflicts_by_severity.get(AnnotationConflictSeverity.WARNING),
-                error_count=conflicts_by_severity.get(AnnotationConflictSeverity.ERROR),
+                warning_count=conflicts_by_severity.get(AnnotationConflictSeverity.WARNING, 0),
+                error_count=conflicts_by_severity.get(AnnotationConflictSeverity.ERROR, 0),
                 conflicts_by_type=Counter(c.type for c in task_conflicts),
                 annotations=task_annotations_summary,
                 annotation_components=task_ann_components_summary,
