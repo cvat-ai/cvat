@@ -103,7 +103,8 @@ services:
       traefik.http.services.cvat.loadbalancer.server.port: "8080"
       traefik.http.routers.cvat.rule:
         Host(`${CVAT_HOST:-localhost}`) &&
-        PathPrefix(`/api/`, `/static/`, `/admin`, `/documentation/`, `/django-rq`)
+        (PathPrefix(`/api/`) || PathPrefix(`/static/`) || PathPrefix(`/admin`)
+          || PathPrefix(`/django-rq`))
       traefik.http.routers.cvat.entrypoints: web
     volumes:
       - cvat_data:/home/django/data
@@ -258,7 +259,7 @@ services:
       - cvat
 
   traefik:
-    image: traefik:v2.10
+    image: traefik:v3.3
     container_name: traefik
     restart: always
     ports:
@@ -270,11 +271,19 @@ services:
       DJANGO_LOG_VIEWER_PORT: 3000
 
       TRAEFIK_ACCESSLOG_FORMAT: json
-      # We ought to restrict which fields get logged, so as to avoid redundant information,
-      # but it doesn't work when configuring with environment variables:
-      # <https://github.com/traefik/traefik/issues/9755>.
-      # And we want to use environment variables to allow individual settings to be
-      # overridden by other Compose files.
+      TRAEFIK_ACCESSLOG_FIELDS_DEFAULTMODE: drop
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_ClientHost: keep
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_DownstreamContentSize: keep
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_DownstreamStatus: keep
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_Duration: keep
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_RequestHost: keep
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_RequestMethod: keep
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_RequestPath: keep
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_RequestPort: keep
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_RequestProtocol: keep
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_RouterName: keep
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_StartUTC: keep
+
       TRAEFIK_LOG_FORMAT: json
       TRAEFIK_ENTRYPOINTS_web_ADDRESS: :8080
       TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT: "false"
