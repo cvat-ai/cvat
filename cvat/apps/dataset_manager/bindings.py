@@ -14,7 +14,7 @@ from functools import reduce
 from operator import add
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any, Callable, Generator, Literal, NamedTuple, Optional, Union
+from typing import Any, Callable, Dict, Literal, NamedTuple, Optional, Union
 
 import attr
 import datumaro as dm
@@ -23,6 +23,7 @@ import defusedxml.ElementTree as ET
 import rq
 from attr import attrib, attrs
 from attrs.converters import to_bool
+from datumaro.components.dataset_base import IDataset, StreamingDatasetBase
 from datumaro.components.format_detection import RejectionReason
 from django.conf import settings
 from django.db.models import Prefetch, QuerySet
@@ -1642,7 +1643,7 @@ class CVATDataExtractorMixin:
         return self.convert_annotations(cvat_frame_anno, label_attrs, map_label)
 
 
-class CvatDataExtractorBase(dm.SubsetBase, CVATDataExtractorMixin):
+class CvatDataExtractorBase(CVATDataExtractorMixin):
     def __init__(
         self,
         instance_data: CommonData,
@@ -1653,19 +1654,13 @@ class CvatDataExtractorBase(dm.SubsetBase, CVATDataExtractorMixin):
         **kwargs
     ):
         instance_meta = instance_data.meta[instance_data.META_FIELD]
-        dm.SubsetBase.__init__(
-            self,
-            media_type=dm.Image if dimension == DimensionType.DIM_2D else dm.PointCloud,
-            subset=instance_meta['subset'] if "subset" in instance_meta else None,
-        )
         CVATDataExtractorMixin.__init__(self, **kwargs)
 
-        self._categories = self._load_categories(instance_meta['labels'])
         self._user = self._load_user_info(instance_meta) if dimension == DimensionType.DIM_3D else {}
         self._dimension = dimension
         self._format_type = format_type
         self._include_images = include_images
-        self._grouped_by_frame = list(instance_data.group_by_frame(include_empty=True))
+        self._instance_data = instance_data
         self._instance_meta = instance_meta
 
         if isinstance(instance_data, TaskData):
@@ -1691,80 +1686,78 @@ class CvatDataExtractorBase(dm.SubsetBase, CVATDataExtractorMixin):
             for is_video in [task.mode == 'interpolation']
         }
 
-    def __iter__(self):
-        for frame_data in self._iterate_frame_data():
-            dm_media_args = {
-                'path': frame_data.name + self._ext_per_task[frame_data.task_id],
-                'ext': self._ext_per_task[frame_data.task_id] or frame_data.name.rsplit(osp.extsep, maxsplit=1)[1],
-            }
-            if self._dimension == DimensionType.DIM_3D:
-                dm_media: dm.PointCloud = self._media_provider.get_media_for_frame(
-                    frame_data.task_id, frame_data.id, **dm_media_args
-                )
+    def _process_one_frame_data(self, frame_data: CommonData.Frame | ProjectData.Frame) -> dm.DatasetItem:
+        dm_media_args = {
+            'path': frame_data.name + self._ext_per_task[frame_data.task_id],
+            'ext': self._ext_per_task[frame_data.task_id] or frame_data.name.rsplit(osp.extsep, maxsplit=1)[1],
+        }
+        if self._dimension == DimensionType.DIM_3D:
+            dm_media: dm.PointCloud = self._media_provider.get_media_for_frame(
+                frame_data.task_id, frame_data.id, **dm_media_args
+            )
 
-                if not self._include_images:
-                    dm_media_args["extra_images"] = [
-                        dm.Image.from_file(path=osp.basename(image.path))
-                        for image in dm_media.extra_images
-                    ]
-                    dm_media = dm.PointCloud.from_file(**dm_media_args)
+            if not self._include_images:
+                dm_media_args["extra_images"] = [
+                    dm.Image.from_file(path=osp.basename(image.path))
+                    for image in dm_media.extra_images
+                ]
+                dm_media = dm.PointCloud.from_file(**dm_media_args)
+        else:
+            dm_media_args['size'] = (frame_data.height, frame_data.width)
+            if self._include_images:
+                dm_media: dm.Image = self._media_provider.get_media_for_frame(
+                    frame_data.task_id, frame_data.idx, **dm_media_args
+                )
             else:
-                dm_media_args['size'] = (frame_data.height, frame_data.width)
-                if self._include_images:
-                    dm_media: dm.Image = self._media_provider.get_media_for_frame(
-                        frame_data.task_id, frame_data.idx, **dm_media_args
-                    )
-                else:
-                    dm_media = dm.Image.from_file(**dm_media_args)
+                dm_media = dm.Image.from_file(**dm_media_args)
 
-            dm_anno = self._read_cvat_anno(frame_data, self._instance_meta['labels'])
+        dm_anno = self._read_cvat_anno(frame_data, self._instance_meta['labels'])
 
-            dm_attributes = {'frame': frame_data.frame}
+        dm_attributes = {'frame': frame_data.frame}
 
-            if self._dimension == DimensionType.DIM_2D:
-                dm_item = dm.DatasetItem(
-                    id=osp.splitext(frame_data.name)[0],
-                    subset=frame_data.subset,
-                    annotations=dm_anno,
-                    media=dm_media,
-                    attributes=dm_attributes,
-                )
-            elif self._dimension == DimensionType.DIM_3D:
-                if self._format_type == "sly_pointcloud":
-                    dm_attributes["name"] = self._user["name"]
-                    dm_attributes["createdAt"] = self._user["createdAt"]
-                    dm_attributes["updatedAt"] = self._user["updatedAt"]
-                    dm_attributes["labels"] = []
-                    for (idx, (_, label)) in enumerate(self._instance_meta['labels']):
-                        dm_attributes["labels"].append({"label_id": idx, "name": label["name"], "color": label["color"], "type": label["type"]})
-                        dm_attributes["track_id"] = -1
+        if self._dimension == DimensionType.DIM_2D:
+            dm_item = dm.DatasetItem(
+                id=osp.splitext(frame_data.name)[0],
+                subset=frame_data.subset,
+                annotations=dm_anno,
+                media=dm_media,
+                attributes=dm_attributes,
+            )
+        elif self._dimension == DimensionType.DIM_3D:
+            if self._format_type == "sly_pointcloud":
+                dm_attributes["name"] = self._user["name"]
+                dm_attributes["createdAt"] = self._user["createdAt"]
+                dm_attributes["updatedAt"] = self._user["updatedAt"]
+                dm_attributes["labels"] = []
+                for (idx, (_, label)) in enumerate(self._instance_meta['labels']):
+                    dm_attributes["labels"].append({"label_id": idx, "name": label["name"], "color": label["color"], "type": label["type"]})
+                    dm_attributes["track_id"] = -1
 
-                dm_item = dm.DatasetItem(
-                    id=osp.splitext(osp.split(frame_data.name)[-1])[0],
-                    subset=frame_data.subset,
-                    annotations=dm_anno,
-                    media=dm_media,
-                    attributes=dm_attributes,
-                )
+            dm_item = dm.DatasetItem(
+                id=osp.splitext(osp.split(frame_data.name)[-1])[0],
+                subset=frame_data.subset,
+                annotations=dm_anno,
+                media=dm_media,
+                attributes=dm_attributes,
+            )
 
-            yield dm_item
-
-    def __len__(self):
-        return len(self._grouped_by_frame)
-
-    @property
-    def is_stream(self) -> bool:
-        return True
-
-    def _iterate_frame_data(self) -> Generator[CommonData.Frame | ProjectData.Frame, None, None]:
-        raise NotImplementedError()
+        return dm_item
 
 
-class CvatTaskOrJobDataExtractor(CvatDataExtractorBase):
-    def _iterate_frame_data(self):
-        for frame_data in self._grouped_by_frame:
+class CvatTaskOrJobDataExtractor(dm.SubsetBase, CvatDataExtractorBase):
+    def __init__(self, *args, **kwargs):
+        CvatDataExtractorBase.__init__(self, *args, **kwargs)
+        dm.SubsetBase.__init__(
+            self,
+            media_type=dm.Image if self._dimension == DimensionType.DIM_2D else dm.PointCloud,
+            subset=self._instance_meta['subset'],
+        )
+        self._categories = self._load_categories(self._instance_meta['labels'])
+
+    def __iter__(self):
+        for frame_data in self._instance_data.group_by_frame(include_empty=True):
             # do not keep parsed lazy list data after this iteration
-            yield frame_data._replace(
+            frame_data = frame_data._replace(
                 labeled_shapes=[
                     (
                         shape._replace(points=shape.points.lazy_copy())
@@ -1774,6 +1767,7 @@ class CvatTaskOrJobDataExtractor(CvatDataExtractorBase):
                     for shape in frame_data.labeled_shapes
                 ]
             )
+            yield self._process_one_frame_data(frame_data)
 
     def _read_cvat_anno(self, cvat_frame_anno: CommonData.Frame, labels: list):
         categories = self.categories()
@@ -1787,22 +1781,69 @@ class CvatTaskOrJobDataExtractor(CvatDataExtractorBase):
         return self.convert_annotations(cvat_frame_anno,
             label_attrs, map_label, self._format_type, self._dimension)
 
+    def __len__(self):
+        return len(self._instance_data)
 
-class CVATProjectDataExtractor(CvatDataExtractorBase):
-    def _iterate_frame_data(self):
-        for frame_data in self._grouped_by_frame:
-            # do not keep parsed lazy list data after this iteration
-            yield attr.evolve(
-                frame_data,
-                labeled_shapes=[
-                    (
-                        attr.evolve(shape, points=shape.points.lazy_copy())
-                        if isinstance(shape.points, LazyList) and not shape.points.is_parsed
-                        else shape
+    def categories(self):
+        return self._categories
+
+    @property
+    def is_stream(self) -> bool:
+        return True
+
+
+class CVATProjectDataExtractor(StreamingDatasetBase, CvatDataExtractorBase):
+    def __init__(self, *args, **kwargs):
+        CvatDataExtractorBase.__init__(self, *args, **kwargs)
+
+        self._frame_data_by_subset: Dict[str, list[ProjectData.Frame]] = {}
+        for frame_data in self._instance_data.group_by_frame(include_empty=True):
+            if frame_data.subset not in self._frame_data_by_subset:
+                self._frame_data_by_subset[frame_data.subset] = []
+            self._frame_data_by_subset[frame_data.subset].append(frame_data)
+
+        StreamingDatasetBase.__init__(
+            self,
+            length=sum(len(v) for v in self._frame_data_by_subset.values()),
+            subsets=list(self._frame_data_by_subset.keys()),
+            media_type=dm.Image if self._dimension == DimensionType.DIM_2D else dm.PointCloud,
+        )
+        self._categories = self._load_categories(self._instance_meta['labels'])
+
+    def get_subset(self, name) -> IDataset:
+        extractor = self
+
+        class Subset(dm.SubsetBase):
+            def __iter__(self):
+                for frame_data in extractor._frame_data_by_subset[name]:
+                    # do not keep parsed lazy list data after this iteration
+                    frame_data = attr.evolve(
+                        frame_data,
+                        labeled_shapes=[
+                            (
+                                attr.evolve(shape, points=shape.points.lazy_copy())
+                                if isinstance(shape.points, LazyList) and not shape.points.is_parsed
+                                else shape
+                            )
+                            for shape in frame_data.labeled_shapes
+                        ],
                     )
-                    for shape in frame_data.labeled_shapes
-                ],
-            )
+                    yield extractor._process_one_frame_data(frame_data)
+
+            def __len__(self):
+                return len(extractor._frame_data_by_subset[name])
+
+            def categories(self):
+                return extractor.categories()
+
+            @property
+            def is_stream(self) -> bool:
+                return True
+
+        return Subset(
+            subset=name,
+            media_type=dm.Image if self._dimension == DimensionType.DIM_2D else dm.PointCloud,
+        )
 
     def categories(self):
         return self._categories
