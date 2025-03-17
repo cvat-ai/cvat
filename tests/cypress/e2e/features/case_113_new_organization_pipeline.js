@@ -13,24 +13,24 @@ context('New organization pipeline.', () => {
     const thirdUserName = 'Thirduser';
     const users = {
         thirdUser: {
-            name: thirdUserName,
+            username: thirdUserName,
             firstName: `${thirdUserName} fitstname`,
             lastName: `${thirdUserName} lastname`,
-            emailAddr: `${thirdUserName.toLowerCase()}@local.local`,
+            email: `${thirdUserName.toLowerCase()}@local.local`,
             password: 'Fv5Df3#f55g',
         },
         secondUser: {
-            name: secondUserName,
+            username: secondUserName,
             firstName: `${secondUserName} fitstname`,
             lastName: `${secondUserName} lastname`,
-            emailAddr: `${secondUserName.toLowerCase()}@local.local`,
+            email: `${secondUserName.toLowerCase()}@local.local`,
             password: 'UfdU21!dds',
         },
         firstUser: {
-            name: firstUserName,
+            username: firstUserName,
             firstName: `${firstUserName} fitstname`,
             lastName: `${firstUserName} lastname`,
-            emailAddr: `${firstUserName.toLowerCase()}@local.local`,
+            email: `${firstUserName.toLowerCase()}@local.local`,
             password: 'UfdU21!dds',
         },
     };
@@ -84,10 +84,19 @@ context('New organization pipeline.', () => {
     function capitalizeEmail(email) {
         return email.split('@').map((part) => `${part.toUpperCase()[0]}${part.slice(1)}`).join('@');
     }
+    function tearDown() {
+        cy.getAuthKey().then((authKey) => {
+            cy.deleteUsers(authKey, [firstUserName, secondUserName, thirdUserName]);
+            cy.deleteTasks(authKey, [newTaskName]);
+            cy.deleteProjects(authKey, [project.name]);
+            cy.deleteOrganizations(authKey, [organizationParams.shortName]);
+        });
+    }
 
     before(() => {
+        tearDown();
+        cy.headlessLogout();
         cy.visit('/auth/login');
-        cy.login();
         cy.imageGenerator(
             imagesFolder,
             imageFileName,
@@ -100,19 +109,10 @@ context('New organization pipeline.', () => {
             imagesCount,
         );
         cy.createZipArchive(directoryToArchive, archivePath);
-        cy.logout();
-
         for (const user of Object.values(users)) {
-            cy.goToRegisterPage();
-            cy.userRegistration(
-                user.firstName,
-                user.lastName,
-                user.name,
-                user.emailAddr,
-                user.password,
-            );
-            if (user.name !== firstUserName) cy.logout(user.name);
+            cy.headlessCreateUser(user);
         }
+        cy.login(firstUser.username, firstUser.password);
     });
 
     beforeEach(() => {
@@ -120,13 +120,8 @@ context('New organization pipeline.', () => {
     });
 
     after(() => {
-        cy.logout();
-        cy.getAuthKey().then((authKey) => {
-            cy.deleteUsers(authKey, [thirdUserName]);
-            cy.deleteTasks(authKey, [newTaskName]);
-            cy.deleteProjects(authKey, [project.name]);
-            cy.deleteOrganizations(authKey, [organizationParams.shortName]);
-        });
+        cy.headlessLogout();
+        tearDown();
     });
 
     describe(`Testing case "${caseId}"`, () => {
@@ -140,11 +135,11 @@ context('New organization pipeline.', () => {
             cy.checkOrganizationMembers(1, [firstUserName]);
             const membersToInvite = [
                 {
-                    email: capitalizeEmail(secondUser.emailAddr),
+                    email: capitalizeEmail(secondUser.email),
                     role: 'Worker',
                 },
                 {
-                    email: thirdUser.emailAddr,
+                    email: thirdUser.email,
                     role: 'Worker',
                 },
             ];
@@ -152,18 +147,16 @@ context('New organization pipeline.', () => {
             cy.checkOrganizationMembers(3, [firstUserName, secondUserName, thirdUserName]);
         });
 
-        it.only('Search within organizations. All members shoould be queryable', () => {
+        it('Search within organizations. All members shoould be queryable', () => {
             const searchBar = 'searchBar';
             const searchBarRef = `@${searchBar}`;
-
+            function search(string = '') {
+                cy.get(searchBarRef).clear();
+                cy.get(searchBarRef).type(`${string}{enter}`);
+            }
             cy.get('.cvat-organization-page-search-bar').should('be.visible')
                 .find('input')
                 .as(searchBar);
-
-            function search(string = '') {
-                cy.get(searchBarRef).debug().clear();
-                cy.get(searchBarRef).debug().type(`${string}{enter}`);
-            }
 
             // Search for 1 member
             search(firstUserName);
@@ -181,7 +174,6 @@ context('New organization pipeline.', () => {
             // Bad search term yields no results
             const badSearch = 'abc';
             search(badSearch, true);
-            cy.pause();
             cy.get('.cvat-empty-members-list').should('exist');
 
             cy.get(searchBarRef).clear();
