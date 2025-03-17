@@ -21,6 +21,7 @@ import { RemoteFile } from 'components/file-manager/remote-browser';
 import { getFileContentType, getContentTypeRemoteFile, getFileNameFromPath } from 'utils/files';
 
 import { FrameSelectionMethod } from 'components/create-job-page/job-form';
+import { formFieldsError } from 'utils/validation';
 import BasicConfigurationForm, { BaseConfiguration } from './basic-configuration-form';
 import ProjectSearchField from './project-search-field';
 import ProjectSubsetField from './project-subset-field';
@@ -530,11 +531,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             .catch((error: Error | ValidateErrorEntity): void => {
                 notification.error({
                     message: 'Could not create a task',
-                    description: (error as ValidateErrorEntity).errorFields ?
-                        (error as ValidateErrorEntity).errorFields
-                            .map((field) => `${field.name} : ${field.errors.join(';')}`)
-                            .map((text: string): JSX.Element => <div>{text}</div>) :
-                        error.toString(),
+                    description: formFieldsError(error).map((text: string): JSX.Element => <div>{text}</div>),
                     className: 'cvat-notification-create-task-fail',
                 });
                 reject(error);

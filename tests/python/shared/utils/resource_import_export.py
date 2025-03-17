@@ -38,6 +38,8 @@ def _make_export_resource_params(
     params = func(resource, **kwargs)
     if resource != "backup":
         params["format"] = EXPORT_FORMAT
+        params["save_images"] = resource == "dataset"
+
     return params
 
 
@@ -97,7 +99,12 @@ class _CloudStorageResourceTest(ABC):
         number_of_checks = 100
 
         # initialize the export process
-        response = get_method(user, f"{obj}/{obj_id}/{resource}", **kwargs)
+        response = post_method(
+            user,
+            f"{obj}/{obj_id}/{resource if resource != 'annotations' else 'dataset'}/export",
+            data=None,
+            **kwargs,
+        )
         assert response.status_code == _expect_status
 
         if _expect_status == HTTPStatus.FORBIDDEN:

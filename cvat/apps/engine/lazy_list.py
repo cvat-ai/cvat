@@ -272,7 +272,7 @@ class LazyList(list[T], metaclass=LazyListMeta):
     def lazy_copy(self) -> list[T]:
         """
         Makes a copy without parsing elements.
-        Only works if elements has not been not parsed yet.
+        Only works if elements have not been parsed yet.
         """
         assert not self._parsed
         return LazyList(

@@ -3,6 +3,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
 import functools
 import json
 import math
@@ -29,9 +31,11 @@ from google.cloud.exceptions import Forbidden as GoogleCloudForbidden
 from google.cloud.exceptions import NotFound as GoogleCloudNotFound
 from PIL import Image, ImageFile
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
+from rq import get_current_job
 
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import CloudProviderChoice, CredentialsTypeChoice
+from cvat.apps.engine.rq import ExportRQMeta
 from cvat.apps.engine.utils import get_cpu_number, take_by
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS
 
@@ -114,13 +118,12 @@ def validate_bucket_status(func):
 
 def validate_file_status(func):
     @functools.wraps(func)
-    def wrapper(self, *args, **kwargs):
+    def wrapper(self, key: str, /, *args, **kwargs):
         try:
-            res = func(self, *args, **kwargs)
+            res = func(self, key, *args, **kwargs)
         except Exception as ex:
             storage_status = self.get_status() if self is not None else None
             if storage_status == Status.AVAILABLE:
-                key = args[0]
                 file_status = self.get_file_status(key)
                 if file_status == Status.NOT_FOUND:
                     raise NotFound("The file '{}' not found on the cloud storage '{}'".format(key, self.name))
@@ -133,7 +136,6 @@ def validate_file_status(func):
     return wrapper
 
 class _CloudStorage(ABC):
-
     def __init__(self, prefix: Optional[str] = None):
         self.prefix = prefix
 
@@ -147,7 +149,7 @@ class _CloudStorage(ABC):
         pass
 
     @abstractmethod
-    def _head_file(self, key):
+    def _head_file(self, key: str, /):
         pass
 
     @abstractmethod
@@ -159,34 +161,40 @@ class _CloudStorage(ABC):
         pass
 
     @abstractmethod
-    def get_file_status(self, key):
+    def get_file_status(self, key: str, /):
         pass
 
     @abstractmethod
-    def get_file_last_modified(self, key):
+    def get_file_last_modified(self, key: str, /):
         pass
 
     @abstractmethod
-    def _download_fileobj_to_stream(self, key: str, stream: BinaryIO) -> None:
+    def _download_fileobj_to_stream(self, key: str, stream: BinaryIO, /) -> None:
         pass
 
-    def download_fileobj(self, key: str) -> NamedBytesIO:
+    @validate_file_status
+    @validate_bucket_status
+    def download_fileobj(self, key: str, /) -> NamedBytesIO:
         buf = NamedBytesIO()
-        self._download_fileobj_to_stream(key=key, stream=buf)
+        self._download_fileobj_to_stream(key, buf)
         buf.seek(0)
         buf.filename = key
         return buf
 
-    def download_file(self, key: str, path: str) -> None:
+    @validate_file_status
+    @validate_bucket_status
+    def download_file(self, key: str, path: str, /) -> None:
         os.makedirs(os.path.dirname(path), exist_ok=True)
         try:
             with open(path, 'wb') as f:
-                self._download_fileobj_to_stream(key, stream=f)
+                self._download_fileobj_to_stream(key, f)
         except Exception:
             Path(path).unlink()
             raise
 
-    def download_range_of_bytes(self, key: str, stop_byte: int, start_byte: int = 0) -> bytes:
+    @validate_file_status
+    @validate_bucket_status
+    def download_range_of_bytes(self, key: str, /, *, stop_byte: int, start_byte: int = 0) -> bytes:
         """Method downloads the required bytes range of the file.
 
         Args:
@@ -203,13 +211,13 @@ class _CloudStorage(ABC):
 
         if start_byte > stop_byte:
             raise ValidationError(f'Incorrect bytes range was received: {start_byte}-{stop_byte}')
-        return self._download_range_of_bytes(key, stop_byte, start_byte)
+        return self._download_range_of_bytes(key, stop_byte=stop_byte, start_byte=start_byte)
 
     @abstractmethod
-    def _download_range_of_bytes(self, key: str, stop_byte: int, start_byte: int):
+    def _download_range_of_bytes(self, key: str, /, *, stop_byte: int, start_byte: int):
         pass
 
-    def optimally_image_download(self, key: str, chunk_size: int = 65536) -> NamedBytesIO:
+    def optimally_image_download(self, key: str, /, *, chunk_size: int = 65536) -> NamedBytesIO:
         """
         Method downloads image by the following approach:
         Firstly we try to download the first N bytes of image which will be enough for determining image properties.
@@ -224,7 +232,7 @@ class _CloudStorage(ABC):
         """
         image_parser = ImageFile.Parser()
 
-        chunk = self.download_range_of_bytes(key, chunk_size - 1)
+        chunk = self.download_range_of_bytes(key, stop_byte=chunk_size - 1)
         image_parser.feed(chunk)
 
         if image_parser.image:
@@ -271,17 +279,18 @@ class _CloudStorage(ABC):
                     raise ex
 
     @abstractmethod
-    def upload_fileobj(self, file_obj, file_name):
+    def upload_fileobj(self, file_obj: BinaryIO, key: str, /):
         pass
 
     @abstractmethod
-    def upload_file(self, file_path, file_name=None):
+    def upload_file(self, file_path: str, key: str | None = None, /):
         pass
 
     @abstractmethod
     def _list_raw_content_on_one_page(
         self,
         prefix: str = "",
+        *,
         next_token: Optional[str] = None,
         page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
     ) -> dict:
@@ -290,6 +299,7 @@ class _CloudStorage(ABC):
     def list_files_on_one_page(
         self,
         prefix: str = "",
+        *,
         next_token: Optional[str] = None,
         page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
         _use_flat_listing: bool = False,
@@ -323,7 +333,7 @@ class _CloudStorage(ABC):
             else:
                 search_prefix = self.prefix
 
-        result = self._list_raw_content_on_one_page(search_prefix, next_token, page_size)
+        result = self._list_raw_content_on_one_page(search_prefix, next_token=next_token, page_size=page_size)
 
         if not _use_flat_listing:
             result['directories'] = [d.strip('/') for d in result['directories']]
@@ -346,12 +356,13 @@ class _CloudStorage(ABC):
     def list_files(
         self,
         prefix: str = "",
+        *,
         _use_flat_listing: bool = False,
     ) -> list[str]:
         all_files = []
         next_token = None
         while True:
-            batch = self.list_files_on_one_page(prefix, next_token, _use_flat_listing=_use_flat_listing)
+            batch = self.list_files_on_one_page(prefix, next_token=next_token, _use_flat_listing=_use_flat_listing)
             all_files.extend(batch['content'])
             next_token = batch['next']
             if not next_token:
@@ -373,15 +384,16 @@ class _CloudStorage(ABC):
         return Permissions.WRITE in self.access
 
 def get_cloud_storage_instance(
+    *,
     cloud_provider: CloudProviderChoice,
     resource: str,
-    credentials: str,
+    credentials: Credentials,
     specific_attributes: Optional[dict[str, Any]] = None,
 ):
     instance = None
     if cloud_provider == CloudProviderChoice.AWS_S3:
         instance = AWS_S3(
-            bucket=resource,
+            resource,
             access_key_id=credentials.key,
             secret_key=credentials.secret_key,
             session_token=credentials.session_token,
@@ -391,7 +403,7 @@ def get_cloud_storage_instance(
         )
     elif cloud_provider == CloudProviderChoice.AZURE_CONTAINER:
         instance = AzureBlobContainer(
-            container=resource,
+            resource,
             account_name=credentials.account_name,
             sas_token=credentials.session_token,
             connection_string=credentials.connection_string,
@@ -399,7 +411,7 @@ def get_cloud_storage_instance(
         )
     elif cloud_provider == CloudProviderChoice.GOOGLE_CLOUD_STORAGE:
         instance = GoogleCloudStorage(
-            bucket_name=resource,
+            resource,
             service_account_json=credentials.key_file_path,
             anonymous_access = credentials.credentials_type == CredentialsTypeChoice.ANONYMOUS_ACCESS,
             prefix=specific_attributes.get('prefix'),
@@ -422,6 +434,7 @@ class AWS_S3(_CloudStorage):
 
     def __init__(self,
                 bucket: str,
+                *,
                 region: Optional[str] = None,
                 access_key_id: Optional[str] = None,
                 secret_key: Optional[str] = None,
@@ -479,7 +492,7 @@ class AWS_S3(_CloudStorage):
     def _head(self):
         return self._client.head_bucket(Bucket=self.name)
 
-    def _head_file(self, key):
+    def _head_file(self, key: str, /):
         return self._client.head_object(Bucket=self.name, Key=key)
 
     def get_status(self):
@@ -495,7 +508,7 @@ class AWS_S3(_CloudStorage):
             else:
                 return Status.NOT_FOUND
 
-    def get_file_status(self, key):
+    def get_file_status(self, key: str, /):
         try:
             self._head_file(key)
             return Status.AVAILABLE
@@ -508,25 +521,23 @@ class AWS_S3(_CloudStorage):
 
     @validate_file_status
     @validate_bucket_status
-    def get_file_last_modified(self, key):
+    def get_file_last_modified(self, key: str, /):
         return self._head_file(key).get('LastModified')
 
     @validate_bucket_status
-    def upload_fileobj(self, file_obj, file_name):
+    def upload_fileobj(self, file_obj: BinaryIO, key: str, /):
         self._bucket.upload_fileobj(
             Fileobj=file_obj,
-            Key=file_name,
+            Key=key,
             Config=TransferConfig(max_io_queue=self.transfer_config['max_io_queue'])
         )
 
     @validate_bucket_status
-    def upload_file(self, file_path, file_name=None):
-        if not file_name:
-            file_name = os.path.basename(file_path)
+    def upload_file(self, file_path: str, key: str | None = None, /):
         try:
             self._bucket.upload_file(
                 file_path,
-                file_name,
+                key or os.path.basename(file_path),
                 Config=TransferConfig(max_io_queue=self.transfer_config['max_io_queue'])
             )
         except ClientError as ex:
@@ -534,10 +545,10 @@ class AWS_S3(_CloudStorage):
             slogger.glob.error(msg)
             raise Exception(msg)
 
-
     def _list_raw_content_on_one_page(
         self,
         prefix: str = "",
+        *,
         next_token: Optional[str] = None,
         page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
     ) -> dict:
@@ -562,18 +573,14 @@ class AWS_S3(_CloudStorage):
             'next': response.get('NextContinuationToken', None),
         }
 
-    @validate_file_status
-    @validate_bucket_status
-    def _download_fileobj_to_stream(self, key: str, stream: BinaryIO) -> None:
+    def _download_fileobj_to_stream(self, key: str, stream: BinaryIO, /) -> None:
         self.bucket.download_fileobj(
             Key=key,
             Fileobj=stream,
             Config=TransferConfig(max_io_queue=self.transfer_config['max_io_queue'])
         )
 
-    @validate_file_status
-    @validate_bucket_status
-    def _download_range_of_bytes(self, key: str, stop_byte: int, start_byte: int) -> bytes:
+    def _download_range_of_bytes(self, key: str, /, *, stop_byte: int, start_byte: int) -> bytes:
         try:
             return self._client.get_object(Bucket=self.bucket.name, Key=key, Range=f'bytes={start_byte}-{stop_byte}')['Body'].read()
         except ClientError as ex:
@@ -604,7 +611,7 @@ class AWS_S3(_CloudStorage):
             slogger.glob.info(msg)
             raise Exception(msg)
 
-    def delete_file(self, file_name: str):
+    def delete_file(self, file_name: str, /):
         try:
             self._client.delete_object(Bucket=self.name, Key=file_name)
         except Exception as ex:
@@ -646,6 +653,7 @@ class AzureBlobContainer(_CloudStorage):
     def __init__(
         self,
         container: str,
+        *,
         account_name: Optional[str] = None,
         sas_token: Optional[str] = None,
         connection_string: Optional[str] = None,
@@ -694,13 +702,13 @@ class AzureBlobContainer(_CloudStorage):
     def _head(self):
         return self._client.get_container_properties()
 
-    def _head_file(self, key):
+    def _head_file(self, key: str, /):
         blob_client = self.container.get_blob_client(key)
         return blob_client.get_blob_properties()
 
     @validate_file_status
     @validate_bucket_status
-    def get_file_last_modified(self, key):
+    def get_file_last_modified(self, key: str, /):
         return self._head_file(key).last_modified
 
     def get_status(self):
@@ -713,7 +721,7 @@ class AzureBlobContainer(_CloudStorage):
             else:
                 return Status.NOT_FOUND
 
-    def get_file_status(self, key):
+    def get_file_status(self, key: str, /):
         try:
             self._head_file(key)
             return Status.AVAILABLE
@@ -724,23 +732,17 @@ class AzureBlobContainer(_CloudStorage):
                 return Status.NOT_FOUND
 
     @validate_bucket_status
-    def upload_fileobj(self, file_obj, file_name):
-        self._client.upload_blob(name=file_name, data=file_obj, overwrite=True)
+    def upload_fileobj(self, file_obj: BinaryIO, key: str, /):
+        self._client.upload_blob(name=key, data=file_obj, overwrite=True)
 
-    def upload_file(self, file_path, file_name=None):
-        if not file_name:
-            file_name = os.path.basename(file_path)
+    def upload_file(self, file_path: str, key: str | None = None, /):
         with open(file_path, 'rb') as f:
-            self.upload_fileobj(f, file_name)
-
-    # TODO:
-    # def multipart_upload(self, file_obj):
-    #     pass
-
+            self.upload_fileobj(f, key or os.path.basename(file_path))
 
     def _list_raw_content_on_one_page(
         self,
         prefix: str = "",
+        *,
         next_token: Optional[str] = None,
         page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
     ) -> dict:
@@ -763,9 +765,7 @@ class AzureBlobContainer(_CloudStorage):
             'next': page.continuation_token,
         }
 
-    @validate_file_status
-    @validate_bucket_status
-    def _download_fileobj_to_stream(self, key: str, stream: BinaryIO) -> None:
+    def _download_fileobj_to_stream(self, key: str, stream: BinaryIO, /) -> None:
         storage_stream_downloader = self._client.download_blob(
             blob=key,
             offset=None,
@@ -774,9 +774,7 @@ class AzureBlobContainer(_CloudStorage):
         )
         storage_stream_downloader.readinto(stream)
 
-    @validate_file_status
-    @validate_bucket_status
-    def _download_range_of_bytes(self, key: str, stop_byte: int, start_byte: int) -> bytes:
+    def _download_range_of_bytes(self, key: str, /, *, stop_byte: int, start_byte: int) -> bytes:
         return self._client.download_blob(blob=key, offset=start_byte, length=stop_byte).readall()
 
     @property
@@ -808,6 +806,7 @@ class GoogleCloudStorage(_CloudStorage):
     def __init__(
         self,
         bucket_name: str,
+        *,
         prefix: Optional[str] = None,
         service_account_json: Optional[Any] = None,
         anonymous_access: bool = False,
@@ -838,7 +837,7 @@ class GoogleCloudStorage(_CloudStorage):
     def _head(self):
         return self._client.get_bucket(bucket_or_name=self.name)
 
-    def _head_file(self, key):
+    def _head_file(self, key: str, /):
         blob = self.bucket.blob(key)
         return self._client._get_resource(blob.path)
 
@@ -847,13 +846,13 @@ class GoogleCloudStorage(_CloudStorage):
         self._head()
 
     @_define_gcs_status
-    def get_file_status(self, key):
+    def get_file_status(self, key: str, /):
         self._head_file(key)
-
 
     def _list_raw_content_on_one_page(
         self,
         prefix: str = "",
+        *,
         next_token: Optional[str] = None,
         page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
     ) -> dict:
@@ -874,15 +873,11 @@ class GoogleCloudStorage(_CloudStorage):
             'next': iterator.next_page_token,
         }
 
-    @validate_file_status
-    @validate_bucket_status
-    def _download_fileobj_to_stream(self, key: str, stream: BinaryIO) -> None:
+    def _download_fileobj_to_stream(self, key: str, stream: BinaryIO, /) -> None:
         blob = self.bucket.blob(key)
         self._client.download_blob_to_file(blob, stream)
 
-    @validate_file_status
-    @validate_bucket_status
-    def _download_range_of_bytes(self, key: str, stop_byte: int, start_byte: int) -> bytes:
+    def _download_range_of_bytes(self, key: str, /, *, stop_byte: int, start_byte: int) -> bytes:
         with BytesIO() as buff:
             blob = self.bucket.blob(key)
             self._client.download_blob_to_file(blob, buff, start_byte, stop_byte)
@@ -890,14 +885,12 @@ class GoogleCloudStorage(_CloudStorage):
             return buff.getvalue()
 
     @validate_bucket_status
-    def upload_fileobj(self, file_obj, file_name):
-        self.bucket.blob(file_name).upload_from_file(file_obj)
+    def upload_fileobj(self, file_obj: BinaryIO, key: str, /):
+        self.bucket.blob(key).upload_from_file(file_obj)
 
     @validate_bucket_status
-    def upload_file(self, file_path, file_name=None):
-        if not file_name:
-            file_name = os.path.basename(file_path)
-        self.bucket.blob(file_name).upload_from_filename(file_path)
+    def upload_file(self, file_path: str, key: str | None = None, /):
+        self.bucket.blob(key or os.path.basename(file_path)).upload_from_filename(file_path)
 
     def create(self):
         try:
@@ -918,7 +911,7 @@ class GoogleCloudStorage(_CloudStorage):
 
     @validate_file_status
     @validate_bucket_status
-    def get_file_last_modified(self, key):
+    def get_file_last_modified(self, key: str, /):
         blob = self.bucket.blob(key)
         blob.reload()
         return blob.updated
@@ -1027,14 +1020,17 @@ def import_resource_from_cloud_storage(
 
 def export_resource_to_cloud_storage(
     db_storage: Any,
-    key: str,
-    key_pattern: str,
-    func: Callable[[int, Optional[str], Optional[str]], str],
+    func: Callable[[int, str | None, str | None], str],
     *args,
     **kwargs,
 ) -> str:
+    rq_job = get_current_job()
+    assert rq_job, "func can be executed only from a background job"
+
     file_path = func(*args, **kwargs)
+    rq_job_meta = ExportRQMeta.for_job(rq_job)
+
     storage = db_storage_to_storage_instance(db_storage)
-    storage.upload_file(file_path, key if key else key_pattern.format(os.path.splitext(file_path)[1].lower()))
+    storage.upload_file(file_path, rq_job_meta.result_filename)
 
     return file_path
