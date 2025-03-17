@@ -101,7 +101,7 @@ $excluded-background: #d9d9d973;
     }
 }
 
-.cvat-open-frame-button {
+.cvat-clamped-text {
     text-align: left;
 
     span {
@@ -113,6 +113,10 @@ $excluded-background: #d9d9d973;
         text-overflow: ellipsis;
         direction: rtl;
     }
+}
+
+.cvat-open-frame-button {
+    @extend .cvat-clamped-text;
 }
 
 .cvat-quality-control-page, .cvat-quality-control-wrapper {

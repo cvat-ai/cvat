@@ -137,3 +137,14 @@ $scroll-breakpoint: 1300px;
         height: 100%;
     }
 }
+
+.cvat-management-page-toolip {
+    margin-left: $grid-unit-size;
+}
+
+.cvat-management-page-toolip-inner {
+    span {
+        display: block;
+        color: white;
+    }
+}

@@ -12,7 +12,10 @@ import PaidFeaturePlaceholder from 'components/paid-feature-placeholder/paid-fea
 
 interface Props {
     instance: Project | Task;
-    qualitySettings: QualitySettings;
+    qualitySettings: {
+        settings: QualitySettings | null;
+        childrenSettings: QualitySettings[] | null;
+    };
 }
 
 function QualityOverviewTab(): JSX.Element {

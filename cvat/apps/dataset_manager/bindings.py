@@ -1661,11 +1661,8 @@ class CvatTaskOrJobDataExtractor(dm.SubsetBase, CVATDataExtractorMixin):
         self._user = self._load_user_info(instance_meta) if dimension == DimensionType.DIM_3D else {}
         self._dimension = dimension
         self._format_type = format_type
-
-        is_video = instance_meta['mode'] == 'interpolation'
-        ext = ''
-        if is_video:
-            ext = TaskFrameProvider.VIDEO_FRAME_EXT
+        self._instance_data = instance_data
+        self._include_images = include_images
 
         if dimension == DimensionType.DIM_3D or include_images:
             if isinstance(instance_data, TaskData):
@@ -1679,18 +1676,24 @@ class CvatTaskOrJobDataExtractor(dm.SubsetBase, CVATDataExtractorMixin):
                 {0: MediaSource(db_task)}
             )
 
-        dm_items: list[dm.DatasetItem] = []
-        for frame_data in instance_data.group_by_frame(include_empty=True):
+    def __iter__(self):
+        instance_meta = self._instance_data.meta[self._instance_data.META_FIELD]
+        is_video = instance_meta['mode'] == 'interpolation'
+        ext = ''
+        if is_video:
+            ext = TaskFrameProvider.VIDEO_FRAME_EXT
+
+        for frame_data in self._instance_data.group_by_frame(include_empty=True):
             dm_media_args = {
                 'path': frame_data.name + ext,
                 'ext': ext or frame_data.name.rsplit(osp.extsep, maxsplit=1)[1],
             }
-            if dimension == DimensionType.DIM_3D:
+            if self._dimension == DimensionType.DIM_3D:
                 dm_media: dm.PointCloud = self._media_provider.get_media_for_frame(
                     0, frame_data.id, **dm_media_args
                 )
 
-                if not include_images:
+                if not self._include_images:
                     dm_media_args["extra_images"] = [
                         dm.Image.from_file(path=osp.basename(image.path))
                         for image in dm_media.extra_images
@@ -1698,18 +1701,30 @@ class CvatTaskOrJobDataExtractor(dm.SubsetBase, CVATDataExtractorMixin):
                     dm_media = dm.PointCloud.from_file(**dm_media_args)
             else:
                 dm_media_args['size'] = (frame_data.height, frame_data.width)
-                if include_images:
+                if self._include_images:
                     dm_media: dm.Image = self._media_provider.get_media_for_frame(
                         0, frame_data.idx, **dm_media_args
                     )
                 else:
                     dm_media = dm.Image.from_file(**dm_media_args)
 
+            # do not keep parsed lazy list data after this iteration
+            frame_data = frame_data._replace(
+                labeled_shapes=[
+                    (
+                        shape._replace(points=shape.points.lazy_copy())
+                        if isinstance(shape.points, LazyList) and not shape.points.is_parsed
+                        else shape
+                    )
+                    for shape in frame_data.labeled_shapes
+                ]
+            )
+
             dm_anno = self._read_cvat_anno(frame_data, instance_meta['labels'])
 
             dm_attributes = {'frame': frame_data.frame}
 
-            if dimension == DimensionType.DIM_2D:
+            if self._dimension == DimensionType.DIM_2D:
                 dm_item = dm.DatasetItem(
                     id=osp.splitext(frame_data.name)[0],
                     subset=frame_data.subset,
@@ -1717,8 +1732,8 @@ class CvatTaskOrJobDataExtractor(dm.SubsetBase, CVATDataExtractorMixin):
                     media=dm_media,
                     attributes=dm_attributes,
                 )
-            elif dimension == DimensionType.DIM_3D:
-                if format_type == "sly_pointcloud":
+            elif self._dimension == DimensionType.DIM_3D:
+                if self._format_type == "sly_pointcloud":
                     dm_attributes["name"] = self._user["name"]
                     dm_attributes["createdAt"] = self._user["createdAt"]
                     dm_attributes["updatedAt"] = self._user["updatedAt"]
@@ -1735,9 +1750,10 @@ class CvatTaskOrJobDataExtractor(dm.SubsetBase, CVATDataExtractorMixin):
                     attributes=dm_attributes,
                 )
 
-            dm_items.append(dm_item)
+            yield dm_item
 
-        self._items = dm_items
+    def __len__(self):
+        return len(self._instance_data)
 
     def _read_cvat_anno(self, cvat_frame_anno: CommonData.Frame, labels: list):
         categories = self.categories()
@@ -1750,6 +1766,11 @@ class CvatTaskOrJobDataExtractor(dm.SubsetBase, CVATDataExtractorMixin):
 
         return self.convert_annotations(cvat_frame_anno,
             label_attrs, map_label, self._format_type, self._dimension)
+
+    @property
+    def is_stream(self) -> bool:
+        return True
+
 
 class CVATProjectDataExtractor(dm.DatasetBase, CVATDataExtractorMixin):
     def __init__(

@@ -65,11 +65,12 @@ const defaultState: PluginsState = {
             },
         },
         projectActions: {
-            // not used
             items: [],
         },
         taskActions: {
-            // not used
+            items: [],
+        },
+        jobActions: {
             items: [],
         },
         taskItem: {

@@ -40,7 +40,7 @@ from cvat.apps.dataset_manager.tests.utils import TestDir
 from cvat.apps.dataset_manager.util import get_export_cache_lock
 from cvat.apps.dataset_manager.views import export
 from cvat.apps.engine.models import Task
-from cvat.apps.engine.tests.utils import ApiTestBase, ForceLogin, get_paginated_collection
+from cvat.apps.engine.tests.utils import ExportApiTestBase, ForceLogin, get_paginated_collection
 
 projects_path = osp.join(osp.dirname(__file__), 'assets', 'projects.json')
 with open(projects_path) as file:
@@ -139,7 +139,7 @@ def compare_datasets(expected: Dataset, actual: Dataset):
             )
 
 
-class _DbTestBase(ApiTestBase):
+class _DbTestBase(ExportApiTestBase):
     @classmethod
     def setUpTestData(cls):
         cls.create_db_users()
@@ -233,32 +233,12 @@ class _DbTestBase(ApiTestBase):
             )
         return values
 
-    def _get_request(self, path, user):
-        with ForceLogin(user, self.client):
-            response = self.client.get(path)
-        return response
-
     def _get_data_from_task(self, task_id, include_images):
         task_ann = TaskAnnotation(task_id)
         task_ann.init_from_db()
         task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task_id))
         extractor = CvatTaskOrJobDataExtractor(task_data, include_images=include_images)
         return Dataset.from_extractors(extractor)
-
-    def _get_request_with_data(self, path, data, user):
-        with ForceLogin(user, self.client):
-            response = self.client.get(path, data)
-        return response
-
-    def _put_request_with_data(self, path, data, user):
-        with ForceLogin(user, self.client):
-            response = self.client.put(path, data)
-        return response
-
-    def _post_request_with_data(self, path, data, user):
-        with ForceLogin(user, self.client):
-            response = self.client.post(path, data)
-        return response
 
     def _delete_request(self, path, user):
         with ForceLogin(user, self.client):
@@ -325,46 +305,24 @@ class _DbTestBase(ApiTestBase):
         response = self._put_api_v2_job_id_annotations(job_id, tmp_annotations)
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.json())
 
-    def _download_file(self, url, data, user, file_name):
-        response = self._get_request_with_data(url, data, user)
-        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-        response = self._get_request_with_data(url, {**data, "action": "download"}, user)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        content = BytesIO(b"".join(response.streaming_content))
-        with open(file_name, "wb") as f:
-            f.write(content.getvalue())
-
     def _upload_file(self, url, data, user):
-        response = self._put_request_with_data(url, {"annotation_file": data}, user)
+        response = self._put_request(url, user, data={"annotation_file": data})
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-        response = self._put_request_with_data(url, {}, user)
+        response = self._put_request(url, user)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def _check_downloaded_file(self, file_name):
         if not osp.exists(file_name):
             raise FileNotFoundError(f"File '{file_name}' was not downloaded")
 
-    def _generate_url_dump_tasks_annotations(self, task_id):
+    def _generate_url_remove_tasks_annotations(self, task_id):
         return f"/api/tasks/{task_id}/annotations"
 
     def _generate_url_upload_tasks_annotations(self, task_id, upload_format_name):
         return f"/api/tasks/{task_id}/annotations?format={upload_format_name}"
 
-    def _generate_url_dump_job_annotations(self, job_id):
-        return f"/api/jobs/{job_id}/annotations"
-
     def _generate_url_upload_job_annotations(self, job_id, upload_format_name):
         return f"/api/jobs/{job_id}/annotations?format={upload_format_name}"
-
-    def _generate_url_dump_task_dataset(self, task_id):
-        return f"/api/tasks/{task_id}/dataset"
-
-    def _generate_url_dump_project_annotations(self, project_id, format_name):
-        return f"/api/projects/{project_id}/annotations?format={format_name}"
-
-    def _generate_url_dump_project_dataset(self, project_id, format_name):
-        return f"/api/projects/{project_id}/dataset?format={format_name}"
 
     def _generate_url_upload_project_dataset(self, project_id, format_name):
         return f"/api/projects/{project_id}/dataset?format={format_name}"
@@ -429,27 +387,20 @@ class TaskDumpUploadTest(_DbTestBase):
                         self._create_annotations(task, dump_format_name, "default")
                     else:
                         self._create_annotations(task, dump_format_name, "random")
+
                     # dump annotations
-                    url = self._generate_url_dump_tasks_annotations(task_id)
+                    export_params = {
+                        "format": dump_format_name,
+                    }
 
                     for user, edata in list(expected.items()):
                         self._clear_temp_data() # clean up from previous tests and iterations
 
+                        expected_4xx_status_code = None if user else status.HTTP_401_UNAUTHORIZED
                         user_name = edata['name']
                         file_zip_name = osp.join(test_dir, f'{test_name}_{user_name}_{dump_format_name}.zip')
-                        data = {
-                            "format": dump_format_name,
-                        }
-                        response = self._get_request_with_data(url, data, user)
-                        self.assertEqual(response.status_code, edata['accept code'])
-                        response = self._get_request_with_data(url, data, user)
-                        self.assertEqual(response.status_code, edata['create code'])
-                        data = {
-                            "format": dump_format_name,
-                            "action": "download",
-                        }
-                        response = self._get_request_with_data(url, data, user)
-                        self.assertEqual(response.status_code, edata['code'])
+
+                        response = self._export_task_annotations(user, task_id, query_params=export_params, expected_4xx_status_code=expected_4xx_status_code)
                         self._save_file_from_response(response, file_zip_name)
                         self.assertEqual(osp.exists(file_zip_name), edata['file_exists'])
 
@@ -484,9 +435,9 @@ class TaskDumpUploadTest(_DbTestBase):
                             url = self._generate_url_upload_tasks_annotations(task_id, upload_format_name)
 
                             with open(file_zip_name, 'rb') as binary_file:
-                                response = self._put_request_with_data(url, {"annotation_file": binary_file}, user)
+                                response = self._put_request(url, user, data={"annotation_file": binary_file})
                                 self.assertEqual(response.status_code, edata['accept code'])
-                                response = self._put_request_with_data(url, {}, user)
+                                response = self._put_request(url, user)
                                 self.assertEqual(response.status_code, edata['create code'])
 
     def test_api_v2_dump_annotations_with_objects_type_is_track(self):
@@ -530,27 +481,19 @@ class TaskDumpUploadTest(_DbTestBase):
                         self._create_annotations(task, dump_format_name, "default")
                     else:
                         self._create_annotations(task, dump_format_name, "random")
+
                     # dump annotations
-                    url = self._generate_url_dump_tasks_annotations(task_id)
+                    export_params = {
+                        "format": dump_format_name,
+                    }
 
                     for user, edata in list(expected.items()):
                         self._clear_temp_data() # clean up from previous tests and iterations
 
                         user_name = edata['name']
                         file_zip_name = osp.join(test_dir, f'{test_name}_{user_name}_{dump_format_name}.zip')
-                        data = {
-                            "format": dump_format_name,
-                        }
-                        response = self._get_request_with_data(url, data, user)
-                        self.assertEqual(response.status_code, edata['accept code'])
-                        response = self._get_request_with_data(url, data, user)
-                        self.assertEqual(response.status_code, edata['create code'])
-                        data = {
-                            "format": dump_format_name,
-                            "action": "download",
-                        }
-                        response = self._get_request_with_data(url, data, user)
-                        self.assertEqual(response.status_code, edata['code'])
+                        expected_4xx_status_code = None if user else status.HTTP_401_UNAUTHORIZED
+                        response = self._export_task_annotations(user, task_id, query_params=export_params, expected_4xx_status_code=expected_4xx_status_code)
                         self._save_file_from_response(response, file_zip_name)
                         self.assertEqual(osp.exists(file_zip_name), edata['file_exists'])
             # Upload annotations with objects type is track
@@ -584,17 +527,13 @@ class TaskDumpUploadTest(_DbTestBase):
                             url = self._generate_url_upload_tasks_annotations(task_id, upload_format_name)
 
                             with open(file_zip_name, 'rb') as binary_file:
-                                response = self._put_request_with_data(url, {"annotation_file": binary_file}, user)
+                                response = self._put_request(url, user, data={"annotation_file": binary_file})
                                 self.assertEqual(response.status_code, edata['accept code'])
-                                response = self._put_request_with_data(url, {}, user)
+                                response = self._put_request(url, user)
                                 self.assertEqual(response.status_code, edata['create code'])
 
     def test_api_v2_dump_tag_annotations(self):
         dump_format_name = "CVAT for images 1.1"
-        data = {
-            "format": dump_format_name,
-            "action": "download",
-        }
         test_cases = ['all', 'first']
         expected = {
             self.admin: {'name': 'admin', 'code': status.HTTP_200_OK, 'create code': status.HTTP_201_CREATED,
@@ -604,6 +543,10 @@ class TaskDumpUploadTest(_DbTestBase):
             None: {'name': 'none', 'code': status.HTTP_401_UNAUTHORIZED, 'create code': status.HTTP_401_UNAUTHORIZED,
                    'accept code': status.HTTP_401_UNAUTHORIZED, 'file_exists': False},
         }
+        export_params = {
+            "format": dump_format_name,
+        }
+
         for test_case in test_cases:
             images = self._generate_task_images(10)
             task = self._create_task(tasks["change overlap and segment size"], images)
@@ -622,22 +565,9 @@ class TaskDumpUploadTest(_DbTestBase):
                         self._clear_temp_data() # clean up from previous tests and iterations
 
                         user_name = edata['name']
-                        url = self._generate_url_dump_tasks_annotations(task_id)
-
                         file_zip_name = osp.join(test_dir, f'{user_name}.zip')
-                        data = {
-                            "format": dump_format_name,
-                        }
-                        response = self._get_request_with_data(url, data, user)
-                        self.assertEqual(response.status_code, edata['accept code'])
-                        response = self._get_request_with_data(url, data, user)
-                        self.assertEqual(response.status_code, edata['create code'])
-                        data = {
-                            "format": dump_format_name,
-                            "action": "download",
-                        }
-                        response = self._get_request_with_data(url, data, user)
-                        self.assertEqual(response.status_code, edata['code'])
+                        expected_4xx_status_code = None if user else status.HTTP_401_UNAUTHORIZED
+                        response = self._export_task_annotations(user, task_id, query_params=export_params, expected_4xx_status_code=expected_4xx_status_code)
                         self._save_file_from_response(response, file_zip_name)
                         self.assertEqual(osp.exists(file_zip_name), edata['file_exists'])
 
@@ -649,6 +579,9 @@ class TaskDumpUploadTest(_DbTestBase):
         images = self._generate_task_images(2)
         task = self._create_task(tasks["main"], images)
         task_id = task["id"]
+        export_params = {
+            "format": dump_format_name,
+        }
 
         for upload_type in upload_types:
             with self.subTest(format=type):
@@ -659,13 +592,12 @@ class TaskDumpUploadTest(_DbTestBase):
                         jobs = self._get_jobs(task_id)
                         job_id = jobs[0]["id"]
                         self._create_annotations_in_job(task, job_id, "CVAT for images 1.1 different types", "random")
-                    url = self._generate_url_dump_tasks_annotations(task_id)
+
                     file_zip_name = osp.join(test_dir, f'{test_name}_{upload_type}.zip')
-                    data = {
-                        "format": dump_format_name,
-                    }
-                    self._download_file(url, data, self.admin, file_zip_name)
+                    self._export_task_annotations(self.admin, task_id, query_params=export_params, file_path=file_zip_name)
                     self.assertEqual(osp.exists(file_zip_name), True)
+
+                    url = self._generate_url_remove_tasks_annotations(task_id)
                     self._remove_annotations(url, self.admin)
                     if upload_type == "task":
                         url_upload = self._generate_url_upload_tasks_annotations(task_id, "CVAT 1.1")
@@ -689,6 +621,10 @@ class TaskDumpUploadTest(_DbTestBase):
         task = self._create_task(tasks["main"], video)
         task_id = task["id"]
 
+        export_params = {
+            "format": dump_format_name,
+        }
+
         for upload_type in upload_types:
             with self.subTest(format=type):
                 with TestDir() as test_dir:
@@ -698,14 +634,11 @@ class TaskDumpUploadTest(_DbTestBase):
                         jobs = self._get_jobs(task_id)
                         job_id = jobs[0]["id"]
                         self._create_annotations_in_job(task, job_id, "CVAT for images 1.1 different types", "random")
-                    url = self._generate_url_dump_tasks_annotations(task_id)
-                    file_zip_name = osp.join(test_dir, f'{test_name}_{upload_type}.zip')
 
-                    data = {
-                        "format": dump_format_name,
-                    }
-                    self._download_file(url, data, self.admin, file_zip_name)
+                    file_zip_name = osp.join(test_dir, f'{test_name}_{upload_type}.zip')
+                    self._export_task_annotations(self.admin, task_id, query_params=export_params, file_path=file_zip_name)
                     self.assertEqual(osp.exists(file_zip_name), True)
+                    url = self._generate_url_remove_tasks_annotations(task_id)
                     self._remove_annotations(url, self.admin)
                     if upload_type == "task":
                         url_upload = self._generate_url_upload_tasks_annotations(task_id, "CVAT 1.1")
@@ -730,12 +663,11 @@ class TaskDumpUploadTest(_DbTestBase):
         task_id = task["id"]
 
         with TestDir() as test_dir:
-            url = self._generate_url_dump_tasks_annotations(task_id)
             file_zip_name = osp.join(test_dir, f'{test_name}.zip')
             data = {
                 "format": dump_format_name,
             }
-            self._download_file(url, data, self.admin, file_zip_name)
+            self._export_task_annotations(self.admin, task_id, query_params=data, file_path=file_zip_name)
             self.assertEqual(osp.exists(file_zip_name), True)
 
             with open(file_zip_name, 'rb') as binary_file:
@@ -752,13 +684,12 @@ class TaskDumpUploadTest(_DbTestBase):
         task_id = task["id"]
 
         with TestDir() as test_dir:
-            url = self._generate_url_dump_tasks_annotations(task_id)
             file_zip_name = osp.join(test_dir, f'{test_name}.zip')
 
             data = {
                 "format": dump_format_name,
             }
-            self._download_file(url, data, self.admin, file_zip_name)
+            self._export_task_annotations(self.admin, task_id, query_params=data, file_path=file_zip_name)
             self.assertEqual(osp.exists(file_zip_name), True)
 
             with open(file_zip_name, 'rb') as binary_file:
@@ -777,15 +708,15 @@ class TaskDumpUploadTest(_DbTestBase):
             self._create_annotations_in_job(task, job["id"], "CVAT for images 1.1 merge", "random")
 
         with TestDir() as test_dir:
-            url = self._generate_url_dump_tasks_annotations(task_id)
             file_zip_name = osp.join(test_dir, f'{test_name}.zip')
             data = {
                 "format": dump_format_name,
             }
-            self._download_file(url, data, self.admin, file_zip_name)
+            self._export_task_annotations(self.admin, task_id, query_params=data, file_path=file_zip_name)
             self.assertEqual(osp.exists(file_zip_name), True)
 
             # remove annotations
+            url = self._generate_url_remove_tasks_annotations(task_id)
             self._remove_annotations(url, self.admin)
             url = self._generate_url_upload_tasks_annotations(task_id, "CVAT 1.1")
             with open(file_zip_name, 'rb') as binary_file:
@@ -811,16 +742,15 @@ class TaskDumpUploadTest(_DbTestBase):
                     else:
                         self._create_annotations_in_job(task, jobs[0]["id"], dump_format_name, "default")
 
-                    url = self._generate_url_dump_tasks_annotations(task_id)
-
                     file_zip_name = osp.join(test_dir, f'{test_name}.zip')
                     data = {
                         "format": dump_format_name,
                     }
-                    self._download_file(url, data, self.admin, file_zip_name)
+                    self._export_task_annotations(self.admin, task_id, query_params=data, file_path=file_zip_name)
                     self.assertEqual(osp.exists(file_zip_name), True)
 
                     # remove annotations
+                    url = self._generate_url_remove_tasks_annotations(task_id)
                     self._remove_annotations(url, self.admin)
                     url = self._generate_url_upload_tasks_annotations(task_id, "CVAT 1.1")
                     with open(file_zip_name, 'rb') as binary_file:
@@ -859,7 +789,6 @@ class TaskDumpUploadTest(_DbTestBase):
                         task = self._create_task(tasks["main"], images)
                     task_id = task["id"]
                     # dump annotations
-                    url = self._generate_url_dump_task_dataset(task_id)
                     for user, edata in list(expected.items()):
                         self._clear_temp_data() # clean up from previous tests and iterations
 
@@ -868,18 +797,8 @@ class TaskDumpUploadTest(_DbTestBase):
                         data = {
                             "format": dump_format_name,
                         }
-                        response = self._get_request_with_data(url, data, user)
-                        self.assertEqual(response.status_code, edata["accept code"])
-                        response = self._get_request_with_data(url, data, user)
-                        self.assertEqual(response.status_code, edata["create code"])
-                        data = {
-                            "format": dump_format_name,
-                            "action": "download",
-                        }
-                        response = self._get_request_with_data(url, data, user)
-                        self.assertEqual(response.status_code, edata["code"])
-                        self._save_file_from_response(response, file_zip_name)
-                        self.assertEqual(response.status_code, edata['code'])
+                        expected_4xx_status_code = None if user else status.HTTP_401_UNAUTHORIZED
+                        self._export_task_dataset(user, task_id, query_params=data, file_path=file_zip_name, expected_4xx_status_code=expected_4xx_status_code)
                         self.assertEqual(osp.exists(file_zip_name), edata['file_exists'])
 
     def test_api_v2_dump_empty_frames(self):
@@ -896,13 +815,12 @@ class TaskDumpUploadTest(_DbTestBase):
                     task = self._create_task(tasks["no attributes"], images)
                     task_id = task["id"]
                     self._create_annotations(task, "empty annotation", "default")
-                    url = self._generate_url_dump_tasks_annotations(task_id)
 
                     file_zip_name = osp.join(test_dir, f'empty_{dump_format_name}.zip')
                     data = {
                         "format": dump_format_name,
                     }
-                    self._download_file(url, data, self.admin, file_zip_name)
+                    self._export_task_annotations(self.admin, task_id, query_params=data, file_path=file_zip_name)
                     self.assertEqual(osp.exists(file_zip_name), True)
 
             for upload_format in upload_formats:
@@ -927,9 +845,9 @@ class TaskDumpUploadTest(_DbTestBase):
                     url = self._generate_url_upload_tasks_annotations(task_id, upload_format_name)
 
                     with open(file_zip_name, 'rb') as binary_file:
-                        response = self._put_request_with_data(url, {"annotation_file": binary_file}, self.admin)
+                        response = self._put_request(url, self.admin, data={"annotation_file": binary_file})
                         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-                        response = self._put_request_with_data(url, {}, self.admin)
+                        response = self._put_request(url, self.admin)
                         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
                         self.assertIsNone(response.data)
 
@@ -970,15 +888,15 @@ class TaskDumpUploadTest(_DbTestBase):
                     task_ann = TaskAnnotation(task_id)
                     task_ann.init_from_db()
                     task_ann_prev_data = task_ann.data
-                    url = self._generate_url_dump_tasks_annotations(task_id)
 
                     file_zip_name = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')
                     data = {
                         "format": dump_format_name,
                     }
-                    self._download_file(url, data, self.admin, file_zip_name)
+                    self._export_task_annotations(self.admin, task_id, query_params=data, file_path=file_zip_name)
                     self.assertEqual(osp.exists(file_zip_name), True)
 
+                    url = self._generate_url_remove_tasks_annotations(task_id)
                     self._remove_annotations(url, self.admin)
 
                     self._create_annotations(task, "CVAT for images 1.1 many jobs", "default")
@@ -1014,17 +932,17 @@ class TaskDumpUploadTest(_DbTestBase):
                 data_from_task_before_upload = self._get_data_from_task(task_id, include_images)
 
                 # dump annotations
-                url = self._generate_url_dump_tasks_annotations(task_id)
                 with TestDir() as test_dir:
                     file_zip_name = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')
 
                     data = {
                         "format": dump_format_name,
                     }
-                    self._download_file(url, data, self.admin, file_zip_name)
+                    self._export_task_annotations(self.admin, task_id, query_params=data, file_path=file_zip_name)
                     self._check_downloaded_file(file_zip_name)
 
                     # remove annotations
+                    url = self._generate_url_remove_tasks_annotations(task_id)
                     self._remove_annotations(url, self.admin)
 
                     # upload annotations
@@ -1085,16 +1003,16 @@ class TaskDumpUploadTest(_DbTestBase):
                     data_from_task_before_upload = self._get_data_from_task(task_id, include_images)
 
                     # dump annotations
-                    url = self._generate_url_dump_tasks_annotations(task_id)
                     with TestDir() as test_dir:
                         file_zip_name = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')
                         data = {
                             "format": dump_format_name,
                         }
-                        self._download_file(url, data, self.admin, file_zip_name)
+                        self._export_task_annotations(self.admin, task_id, query_params=data, file_path=file_zip_name)
                         self._check_downloaded_file(file_zip_name)
 
                         # remove annotations
+                        url = self._generate_url_remove_tasks_annotations(task_id)
                         self._remove_annotations(url, self.admin)
 
                         # upload annotations
@@ -1125,9 +1043,8 @@ class TaskDumpUploadTest(_DbTestBase):
         annotation_points = annotations[annotation_name]["tracks"][0]["shapes"][0]['points']
 
         with TestDir() as test_dir:
-            url = self._generate_url_dump_tasks_annotations(task_id)
             file_zip_name = osp.join(test_dir, f'{test_name}.zip')
-            self._download_file(url, data, self.admin, file_zip_name)
+            self._export_task_annotations(self.admin, task_id, query_params=data, file_path=file_zip_name)
             self._check_downloaded_file(file_zip_name)
 
             folder_name = osp.join(test_dir, f'{test_name}')
@@ -1157,16 +1074,16 @@ class TaskDumpUploadTest(_DbTestBase):
                 data_from_task_before_upload = self._get_data_from_task(task_id, include_images)
 
                 # dump annotations
-                url = self._generate_url_dump_tasks_annotations(task_id)
                 data = {
                     "format": dump_format_name,
                 }
                 with TestDir() as test_dir:
                     file_zip_name = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')
-                    self._download_file(url, data, self.admin, file_zip_name)
+                    self._export_task_annotations(self.admin, task_id, query_params=data, file_path=file_zip_name)
                     self._check_downloaded_file(file_zip_name)
 
                     # remove annotations
+                    url = self._generate_url_remove_tasks_annotations(task_id)
                     self._remove_annotations(url, self.admin)
 
                     # upload annotations
@@ -1193,16 +1110,16 @@ class TaskDumpUploadTest(_DbTestBase):
                 data_from_task_before_upload = self._get_data_from_task(task_id, include_images)
 
                 # dump annotations
-                url = self._generate_url_dump_tasks_annotations(task_id)
                 data = {
                     "format": format_name,
                 }
                 with TestDir() as test_dir:
                     file_zip_name = osp.join(test_dir, f'{test_name}_{format_name}.zip')
-                    self._download_file(url, data, self.admin, file_zip_name)
+                    self._export_task_annotations(self.admin, task_id, query_params=data, file_path=file_zip_name)
                     self._check_downloaded_file(file_zip_name)
 
                     # remove annotations
+                    url = self._generate_url_remove_tasks_annotations(task_id)
                     self._remove_annotations(url, self.admin)
 
                     # upload annotations
@@ -1230,16 +1147,16 @@ class TaskDumpUploadTest(_DbTestBase):
                 data_from_task_before_upload = self._get_data_from_task(task_id, include_images)
 
                 # dump annotations
-                url = self._generate_url_dump_tasks_annotations(task_id)
                 data = {
                     "format": dump_format_name,
                 }
                 with TestDir() as test_dir:
                     file_zip_name = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')
-                    self._download_file(url, data, self.admin, file_zip_name)
+                    self._export_task_annotations(self.admin, task_id, query_params=data, file_path=file_zip_name)
                     self._check_downloaded_file(file_zip_name)
 
                     # remove annotations
+                    url = self._generate_url_remove_tasks_annotations(task_id)
                     self._remove_annotations(url, self.admin)
 
                     # upload annotations
@@ -1278,14 +1195,14 @@ class TaskDumpUploadTest(_DbTestBase):
                         self._create_annotations_in_job(task, job_id, name_ann, "default")
 
                     # dump annotations
-                    url = self._generate_url_dump_tasks_annotations(task_id)
                     data = {"format": format_name}
                     with TestDir() as test_dir:
                         file_zip_name = osp.join(test_dir, f'{test_name}_{format_name}.zip')
-                        self._download_file(url, data, self.admin, file_zip_name)
+                        self._export_task_annotations(self.admin, task_id, query_params=data, file_path=file_zip_name)
                         self._check_downloaded_file(file_zip_name)
 
                         # remove annotations
+                        url = self._generate_url_remove_tasks_annotations(task_id)
                         self._remove_annotations(url, self.admin)
 
                         # upload annotations
@@ -1649,10 +1566,7 @@ class ExportBehaviorTest(_DbTestBase):
         task = self._setup_task_with_annotations(format_name=format_name)
         task_id = task["id"]
 
-        download_url = self._generate_url_dump_tasks_annotations(task_id)
-        download_params = {
-            "format": format_name,
-        }
+        download_url: str | None = None
 
         def _download(*_, task_id: int, export_path: str):
             from os.path import exists as original_exists
@@ -1670,15 +1584,15 @@ class ExportBehaviorTest(_DbTestBase):
 
             with (
                 patch(
-                    "cvat.apps.engine.views.dm.util.get_export_cache_lock",
+                    "cvat.apps.engine.background.get_export_cache_lock",
                     new=self.patched_get_export_cache_lock,
                 ),
-                patch("cvat.apps.dataset_manager.views.osp.exists") as mock_osp_exists,
+                patch("cvat.apps.engine.background.osp.exists") as mock_osp_exists,
                 TemporaryDirectory() as temp_dir,
             ):
                 mock_osp_exists.side_effect = patched_osp_exists
 
-                response = self._get_request_with_data(download_url, download_params, self.admin)
+                response = self._get_request(download_url, self.admin)
                 self.assertEqual(response.status_code, status.HTTP_200_OK)
 
                 self._save_file_from_response(response, osp.join(temp_dir, "export.zip"))
@@ -1713,7 +1627,7 @@ class ExportBehaviorTest(_DbTestBase):
                     # should come from waiting for get_export_cache_lock
                     exited_by_timeout = True
 
-                assert exited_by_timeout
+                assert exited_by_timeout, "LockNotAvailableError should have been raised"
 
         # The problem checked is TOCTOU / race condition for file existence check and
         # further file reading / removal. There are several possible variants of the problem.
@@ -1741,13 +1655,12 @@ class ExportBehaviorTest(_DbTestBase):
             return result
 
         with patch("cvat.apps.dataset_manager.views.export", new=patched_export):
-            response = self._get_request_with_data(download_url, download_params, self.admin)
-            self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-
-            response = self._get_request_with_data(download_url, download_params, self.admin)
-            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-        download_params["action"] = "download"
+            response = self._export_task_annotations(
+                self.admin, task_id, query_params={"format": format_name},
+                download_locally=False
+            )
+            download_url = response.json().get("result_url")
+            assert download_url, "The result_url param was not found in the server response"
 
         processes_finished_correctly = False
         with ExitStack() as es:
@@ -2111,22 +2024,6 @@ class ExportBehaviorTest(_DbTestBase):
 
 
 class ProjectDumpUpload(_DbTestBase):
-    def _get_download_project_dataset_response(self, url, user, dump_format_name, edata):
-        data = {
-            "format": dump_format_name,
-        }
-        response = self._get_request_with_data(url, data, user)
-        self.assertEqual(response.status_code, edata["accept code"])
-
-        response = self._get_request_with_data(url, data, user)
-        self.assertEqual(response.status_code, edata["create code"])
-
-        data = {
-            "format": dump_format_name,
-            "action": "download",
-        }
-        return self._get_request_with_data(url, data, user)
-
     def test_api_v2_export_import_dataset(self):
         test_name = self._testMethodName
         dump_formats = dm.views.get_export_formats()
@@ -2159,7 +2056,9 @@ class ProjectDumpUpload(_DbTestBase):
                 tasks['task in project #1']['project_id'] = project['id']
                 task = self._create_task(tasks['task in project #1'], self._generate_task_images(3))
 
-                url = self._generate_url_dump_project_dataset(project['id'], dump_format_name)
+                export_params = {
+                    "format": dump_format_name,
+                }
 
                 if dump_format_name in DEFAULT_ATTRIBUTES_FORMATS + [
                     "Datumaro 1.0", "MOT 1.1",
@@ -2173,10 +2072,11 @@ class ProjectDumpUpload(_DbTestBase):
 
                     user_name = edata['name']
                     file_zip_name = osp.join(test_dir, f'{test_name}_{user_name}_{dump_format_name}.zip')
-                    response = self._get_download_project_dataset_response(url, user, dump_format_name, edata)
-                    self.assertEqual(response.status_code, edata["code"])
-                    self._save_file_from_response(response, file_zip_name)
-                    self.assertEqual(response.status_code, edata['code'])
+                    expected_4xx_status_code = None if user else status.HTTP_401_UNAUTHORIZED
+                    self._export_project_dataset(
+                        user, project['id'], query_params=export_params,
+                        file_path=file_zip_name, expected_4xx_status_code=expected_4xx_status_code
+                    )
                     self.assertEqual(osp.exists(file_zip_name), edata['file_exists'])
 
             for upload_format in upload_formats:
@@ -2199,7 +2099,7 @@ class ProjectDumpUpload(_DbTestBase):
 
                     if osp.exists(file_zip_name):
                         with open(file_zip_name, 'rb') as binary_file:
-                            response = self._post_request_with_data(url, {"dataset_file": binary_file}, user)
+                            response = self._post_request(url, user, data={"dataset_file": binary_file})
                             self.assertEqual(response.status_code, edata['accept code'])
 
     def test_api_v2_export_annotations(self):
@@ -2229,25 +2129,24 @@ class ProjectDumpUpload(_DbTestBase):
                     images = self._generate_task_images(3, 3)
                     tasks['task in project #2']['project_id'] = pid
                     self._create_task(tasks['task in project #2'], images)
-                    url = self._generate_url_dump_project_annotations(project['id'], dump_format_name)
 
                     for user, edata in list(expected.items()):
                         self._clear_temp_data() # clean up from previous tests and iterations
 
                         user_name = edata['name']
                         file_zip_name = osp.join(test_dir, f'{test_name}_{user_name}_{dump_format_name}.zip')
-                        response = self._get_download_project_dataset_response(url, user, dump_format_name, edata)
-                        self.assertEqual(response.status_code, edata["code"])
-                        self._save_file_from_response(response, file_zip_name)
-                        self.assertEqual(response.status_code, edata['code'])
+
+                        expected_4xx_status_code = None if user else status.HTTP_401_UNAUTHORIZED
+                        self._export_project_dataset(
+                            user, project['id'], query_params={"format": dump_format_name},
+                            file_path=file_zip_name, expected_4xx_status_code=expected_4xx_status_code
+                        )
                         self.assertEqual(osp.exists(file_zip_name), edata['file_exists'])
 
     def test_api_v2_dump_upload_annotations_with_objects_type_is_track(self):
         test_name = self._testMethodName
         upload_format_name = dump_format_name = "COCO Keypoints 1.0"
         user = self.admin
-        edata = {'name': 'admin', 'code': status.HTTP_200_OK, 'create code': status.HTTP_201_CREATED,
-                         'accept code': status.HTTP_202_ACCEPTED, 'file_exists': True, 'annotation_loaded': True}
 
         with TestDir() as test_dir:
             # Dump annotations with objects type is track
@@ -2272,14 +2171,12 @@ class ProjectDumpUpload(_DbTestBase):
             task_id = task["id"]
             self._create_annotations(task, "skeleton track", "default")
             # dump annotations
-            url = self._generate_url_dump_project_dataset(project['id'], dump_format_name)
-
             self._clear_rq_jobs()  # clean up from previous tests and iterations
 
             file_zip_name = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')
-            response = self._get_download_project_dataset_response(url, user, dump_format_name, edata)
-            self.assertEqual(response.status_code, edata['code'])
-            self._save_file_from_response(response, file_zip_name)
+            self._export_project_dataset(
+                user, project['id'], query_params={"format": dump_format_name}, file_path=file_zip_name
+            )
             self.assertEqual(osp.exists(file_zip_name), True)
 
             data_from_task_before_upload = self._get_data_from_task(task_id, True)
@@ -2289,7 +2186,7 @@ class ProjectDumpUpload(_DbTestBase):
             url = self._generate_url_upload_project_dataset(project["id"], upload_format_name)
 
             with open(file_zip_name, 'rb') as binary_file:
-                response = self._post_request_with_data(url, {"dataset_file": binary_file}, user)
+                response = self._post_request(url, user, data={"dataset_file": binary_file})
                 self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
 
             # equals annotations

@@ -83,7 +83,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
     );
 
     const makeTooltip = (jsx: JSX.Element): JSX.Element => (
-        <div className='cvat-analytics-settings-tooltip-inner'>
+        <div className='cvat-settings-tooltip-inner'>
             {jsx}
         </div>
     );
@@ -151,7 +151,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                 <Text strong>
                     General
                 </Text>
-                <CVATTooltip title={generalTooltip} className='cvat-analytics-tooltip' overlayStyle={{ maxWidth: '500px' }}>
+                <CVATTooltip title={generalTooltip} className='cvat-settings-tooltip' overlayStyle={{ maxWidth: '500px' }}>
                     <QuestionCircleOutlined
                         style={{ opacity: 0.5 }}
                     />
@@ -244,7 +244,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                 <Text strong>
                     Job validation
                 </Text>
-                <CVATTooltip title={jobValidationTooltip} className='cvat-analytics-tooltip' overlayStyle={{ maxWidth: '500px' }}>
+                <CVATTooltip title={jobValidationTooltip} className='cvat-settings-tooltip' overlayStyle={{ maxWidth: '500px' }}>
                     <QuestionCircleOutlined
                         style={{ opacity: 0.5 }}
                     />
@@ -270,7 +270,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                 <Text strong>
                     Shape comparison
                 </Text>
-                <CVATTooltip title={shapeComparisonTooltip} className='cvat-analytics-tooltip' overlayStyle={{ maxWidth: '500px' }}>
+                <CVATTooltip title={shapeComparisonTooltip} className='cvat-settings-tooltip' overlayStyle={{ maxWidth: '500px' }}>
                     <QuestionCircleOutlined
                         style={{ opacity: 0.5 }}
                     />
@@ -301,7 +301,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                 <Text strong>
                     Keypoint Comparison
                 </Text>
-                <CVATTooltip title={keypointTooltip} className='cvat-analytics-tooltip' overlayStyle={{ maxWidth: '500px' }}>
+                <CVATTooltip title={keypointTooltip} className='cvat-settings-tooltip' overlayStyle={{ maxWidth: '500px' }}>
                     <QuestionCircleOutlined
                         style={{ opacity: 0.5 }}
                     />
@@ -323,7 +323,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                 <Text strong>
                     Point Comparison
                 </Text>
-                <CVATTooltip title={pointTooltip} className='cvat-analytics-tooltip' overlayStyle={{ maxWidth: '500px' }}>
+                <CVATTooltip title={pointTooltip} className='cvat-settings-tooltip' overlayStyle={{ maxWidth: '500px' }}>
                     <QuestionCircleOutlined
                         style={{ opacity: 0.5 }}
                     />
@@ -355,7 +355,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                 <Text strong>
                     Line Comparison
                 </Text>
-                <CVATTooltip title={linesTooltip} className='cvat-analytics-tooltip' overlayStyle={{ maxWidth: '500px' }}>
+                <CVATTooltip title={linesTooltip} className='cvat-settings-tooltip' overlayStyle={{ maxWidth: '500px' }}>
                     <QuestionCircleOutlined
                         style={{ opacity: 0.5 }}
                     />
@@ -399,7 +399,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                 <Text strong>
                     Group Comparison
                 </Text>
-                <CVATTooltip title={groupTooltip} className='cvat-analytics-tooltip' overlayStyle={{ maxWidth: '500px' }}>
+                <CVATTooltip title={groupTooltip} className='cvat-settings-tooltip' overlayStyle={{ maxWidth: '500px' }}>
                     <QuestionCircleOutlined
                         style={{ opacity: 0.5 }}
                     />
@@ -432,7 +432,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                 <Text strong>
                     Segmentation Comparison
                 </Text>
-                <CVATTooltip title={segmentationTooltip} className='cvat-analytics-tooltip' overlayStyle={{ maxWidth: '500px' }}>
+                <CVATTooltip title={segmentationTooltip} className='cvat-settings-tooltip' overlayStyle={{ maxWidth: '500px' }}>
                     <QuestionCircleOutlined
                         style={{ opacity: 0.5 }}
                     />

@@ -307,6 +307,7 @@ function QualityControlPage(): JSX.Element {
         } catch (error: unknown) {
             dispatch(reducerActions.setError(error instanceof Error ? error : new Error('Unknown error')));
         } finally {
+            setActiveTab(getTabFromHash(supportedTabs));
             dispatch(reducerActions.setFetching(false));
         }
     };
@@ -374,7 +375,7 @@ function QualityControlPage(): JSX.Element {
 
     useEffect(() => {
         initializeData();
-    }, [readInstanceType, requestedInstanceID]);
+    }, [requestedInstanceType, requestedInstanceID]);
 
     useEffect(() => {
         window.addEventListener('hashchange', () => {
@@ -449,7 +450,10 @@ function QualityControlPage(): JSX.Element {
                 key: 'overview',
                 label: 'Overview',
                 children: (
-                    <QualityOverviewTab instance={instance} qualitySettings={qualitySettings} />
+                    <QualityOverviewTab
+                        instance={instance}
+                        qualitySettings={{ settings: qualitySettings, childrenSettings: childrenQualitySettings }}
+                    />
                 ),
             });
         }

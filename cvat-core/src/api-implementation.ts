@@ -199,6 +199,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
             search: isString,
             jobID: isInteger,
             taskID: isInteger,
+            projectID: isInteger,
             type: isString,
         });
 
@@ -215,16 +216,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
             return Object.assign([], { count: 0 });
         }
 
-        const searchParams: Record<string, string> = {};
-
-        for (const key of Object.keys(query)) {
-            if (['page', 'sort', 'search', 'filter', 'type'].includes(key)) {
-                searchParams[key] = query[key];
-            }
-        }
-        if ('taskID' in query) {
-            searchParams.task_id = `${query.taskID}`;
-        }
+        const searchParams = fieldsToSnakeCase({ ...query });
 
         const jobsData = await serverProxy.jobs.get(searchParams);
         if (query.type === JobType.GROUND_TRUTH && jobsData.count === 1) {

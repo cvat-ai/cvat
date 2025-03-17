@@ -10,16 +10,15 @@ import { useHistory } from 'react-router';
 import Text from 'antd/lib/typography/Text';
 import Card from 'antd/lib/card';
 import Meta from 'antd/lib/card/Meta';
-import Dropdown from 'antd/lib/dropdown';
-import Button from 'antd/lib/button';
 import Badge from 'antd/lib/badge';
+import Button from 'antd/lib/button';
 import { MoreOutlined } from '@ant-design/icons';
 
 import { CombinedState } from 'reducers';
 import { Project } from 'cvat-core-wrapper';
 import { useCardHeightHOC, usePlugins } from 'utils/hooks';
 import Preview from 'components/common/preview';
-import ProjectActionsMenuComponent from './actions-menu';
+import ProjectActionsComponent from './actions-menu';
 
 interface Props {
     projectInstance: Project;
@@ -109,13 +108,17 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
                                 <Text type='secondary'>{`Last updated ${updated}`}</Text>
                             </div>
                             <div>
-                                <Dropdown
-                                    destroyPopupOnHide
-                                    trigger={['click']}
-                                    overlay={<ProjectActionsMenuComponent projectInstance={instance} />}
-                                >
-                                    <Button className='cvat-project-details-button' type='link' size='large' icon={<MoreOutlined />} />
-                                </Dropdown>
+                                <ProjectActionsComponent
+                                    projectInstance={instance}
+                                    triggerElement={(
+                                        <Button
+                                            className='cvat-project-details-button'
+                                            type='link'
+                                            size='large'
+                                            icon={<MoreOutlined />}
+                                        />
+                                    )}
+                                />
                             </div>
                         </div>
                     )}
