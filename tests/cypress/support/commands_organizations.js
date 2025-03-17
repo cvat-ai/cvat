@@ -123,13 +123,13 @@ Cypress.Commands.add('checkOrganizationParams', (organizationParams) => {
 });
 
 Cypress.Commands.add('checkOrganizationMembers', (expectedMembersCount, expectedOrganizationMembers) => {
-    const orgMembersUserameText = [];
+    const orgMembersUsernameText = [];
     cy.get('.cvat-organization-member-item').should('have.length', expectedMembersCount);
     cy.get('.cvat-organization-member-item-username').each((el) => {
-        orgMembersUserameText.push(el.text());
+        orgMembersUsernameText.push(el.text());
     });
     cy.get('.cvat-organization-member-item-username').then(() => {
-        expect(orgMembersUserameText).to.include.members(expectedOrganizationMembers);
+        expect(orgMembersUsernameText).to.include.members(expectedOrganizationMembers);
     });
 });
 

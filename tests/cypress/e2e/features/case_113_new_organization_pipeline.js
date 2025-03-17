@@ -203,7 +203,7 @@ context('New organization pipeline.', () => {
             cy.contains('.cvat-projects-project-item-title', project.name).should('not.exist');
         });
 
-        it('The first user login. Assigne the project to the second user.', () => {
+        it('The first user login. Assign the project to the second user.', () => {
             cy.logout();
             cy.login(firstUserName, firstUser.password);
             cy.activateOrganization(organizationParams.shortName);
