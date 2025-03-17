@@ -28,7 +28,7 @@ from attrs import asdict, define, fields_dict, frozen
 from datumaro.util import dump_json, parse_json
 from django.conf import settings
 from django.db import transaction
-from django.db.models import Count, OuterRef, Prefetch, Q, Subquery, prefetch_related_objects
+from django.db.models import OuterRef, Subquery, prefetch_related_objects
 from django_rq.queues import DjangoRQ as RqQueue
 from rq.job import Job as RqJob
 from scipy.optimize import linear_sum_assignment
@@ -103,6 +103,7 @@ class Serializable(metaclass=ABCMeta):
 class ReportNode(Serializable):
     _CACHED_FIELDS: ClassVar[list[str] | None] = None
     "Fields that can be set externally or be computed on access. Can be defined in a subclass"
+    # sublcasses must have a __dict__ attribute (i.e. don't use slots)
 
     @classmethod
     def _find_cached_fields(cls) -> list[str]:
@@ -165,14 +166,14 @@ class ReportNode(Serializable):
             setattr(self, field_name, field_value)
 
     def __checking_setattr__(self, __name: str, __value: Any):
-        if self._enable_setattr_checks and __name not in self._get_cached_fields():
+        if __name not in self._get_cached_fields():
             self.reset_cached_fields()
 
         return super().__setattr__(__name, __value)
 
     def reset_cached_fields(self):
         for field in self._get_cached_fields():
-            if hasattr(self, field):
+            if field in self.__dict__:
                 delattr(self, field)
 
     def _as_dict(self, *, include_fields: list[str] | None = None) -> dict:
@@ -339,10 +340,6 @@ class ComparisonParameters(ReportNode):
 class ConfusionMatrix(ReportNode):
     labels: list[str] | None
     rows: np.ndarray | None
-    precision: np.ndarray | None
-    recall: np.ndarray | None
-    accuracy: np.ndarray | None
-    jaccard_index: np.ndarray | None
 
     @property
     def axes(self):
@@ -354,6 +351,56 @@ class ConfusionMatrix(ReportNode):
         else:
             return super()._value_serializer(v)
 
+    def _update_cached_fields(self):
+        self.reset_cached_fields()
+
+        labels = self.labels
+        if not labels:
+            self.precision = None
+            self.recall = None
+            self.accuracy = None
+            self.jaccard_index = None
+            return
+
+        assert self.rows is not None
+        confusion_matrix = self.rows
+        matched_ann_counts = np.diag(confusion_matrix)
+        ds_ann_counts = np.sum(confusion_matrix, axis=1)
+        gt_ann_counts = np.sum(confusion_matrix, axis=0)
+        total_annotations_count = np.sum(confusion_matrix)
+
+        self.jaccard_index = _arr_div(
+            matched_ann_counts, ds_ann_counts + gt_ann_counts - matched_ann_counts
+        )
+        self.precision = _arr_div(matched_ann_counts, ds_ann_counts)
+        self.recall = _arr_div(matched_ann_counts, gt_ann_counts)
+        self.accuracy = (
+            total_annotations_count  # TP + TN + FP + FN
+            - (ds_ann_counts - matched_ann_counts)  # - FP
+            - (gt_ann_counts - matched_ann_counts)  # - FN
+            # ... = TP + TN
+        ) / (total_annotations_count or 1)
+
+    @cached_property
+    def precision(self) -> np.ndarray | None:
+        self._update_cached_fields()
+        return self.precision
+
+    @cached_property
+    def recall(self) -> np.ndarray | None:
+        self._update_cached_fields()
+        return self.recall
+
+    @cached_property
+    def accuracy(self) -> np.ndarray | None:
+        self._update_cached_fields()
+        return self.accuracy
+
+    @cached_property
+    def jaccard_index(self) -> np.ndarray | None:
+        self._update_cached_fields()
+        return self.jaccard_index
+
     def accumulate(self, other: ConfusionMatrix, *, weight: float = 1):
         assert not other.labels or not self.labels or self.labels == other.labels
 
@@ -364,22 +411,19 @@ class ConfusionMatrix(ReportNode):
         if other.labels:
             self.rows += np.ceil(other.rows * weight).astype(self.rows.dtype)
 
-        # TODO: add accumulation / lazy computation logic for:
-        # "precision",
-        # "recall",
-        # "accuracy",
-        # "jaccard_index",
+        return self
 
     @classmethod
     def from_dict(cls, d: dict):
         return cls(
+            # Avoid computing matrix values lazily if they are not in the report.
+            # Doing so can result in unexpected extra matrix computations in a get list endpoint
+            # TODO: maybe save all the summary output values in the DB as separate fields
             labels=d["labels"],
-            rows=np.asarray(d["rows"]),
-            precision=np.asarray(d["precision"]),
-            recall=np.asarray(d["recall"]),
-            accuracy=np.asarray(d["accuracy"]),
-            # This field didn't exist at first, so it might not be present
-            # in old serialized instances.
+            rows=np.asarray(d["rows"]) if "rows" in d else None,
+            precision=np.asarray(d["precision"]) if "precision" in d else None,
+            recall=np.asarray(d["recall"]) if "recall" in d else None,
+            accuracy=np.asarray(d["accuracy"]) if "accuracy" in d else None,
             jaccard_index=np.asarray(d["jaccard_index"]) if "jaccard_index" in d else None,
         )
 
@@ -388,10 +432,6 @@ class ConfusionMatrix(ReportNode):
         return cls(
             labels=labels,
             rows=np.zeros((len(labels), len(labels)), dtype=int) if labels else None,
-            precision=np.zeros(len(labels)) if labels else None,
-            recall=np.zeros(len(labels)) if labels else None,
-            accuracy=np.zeros(len(labels)) if labels else None,
-            jaccard_index=np.zeros(len(labels)) if labels else None,
         )
 
 
@@ -2746,7 +2786,7 @@ class TaskQualityCalculator:
 
             jobs: dict[int, Job] = [j for j in job_queryset if j.id in filtered_job_ids]
             for job in job_queryset:
-                job.segment.task = gt_job.segment.task # put the prefetched object
+                job.segment.task = gt_job.segment.task  # put the prefetched object
 
             gt_job_data_provider = JobDataProvider(gt_job.id, queryset=job_queryset)
             active_validation_frames = gt_job_data_provider.job_data.get_included_frames()
