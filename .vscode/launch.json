@@ -106,26 +106,6 @@
             "justMyCode": false,
         },
         {
-            "name": "REST API tests: Attach to RQ analytics reports worker",
-            "type": "debugpy",
-            "request": "attach",
-            "connect": {
-                "host": "127.0.0.1",
-                "port": 9095
-            },
-            "pathMappings": [
-                {
-                    "localRoot": "${workspaceFolder}",
-                    "remoteRoot": "/home/django/"
-                },
-                {
-                    "localRoot": "${workspaceFolder}/.env",
-                    "remoteRoot": "/opt/venv",
-                }
-            ],
-            "justMyCode": false,
-        },
-        {
             "name": "REST API tests: Attach to RQ consensus worker",
             "type": "debugpy",
             "request": "attach",
@@ -583,7 +563,6 @@
                 "server: RQ - webhooks",
                 "server: RQ - scheduler",
                 "server: RQ - quality reports",
-                "server: RQ - analytics reports",
                 "server: RQ - cleaning",
                 "server: RQ - chunks",
                 "server: RQ - consensus",
