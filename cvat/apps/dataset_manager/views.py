@@ -235,3 +235,13 @@ def get_all_formats():
         'importers': get_import_formats(),
         'exporters': get_export_formats(),
     }
+
+
+def get_export_callback(db_instance: Project | Task | Job, save_images: bool):
+    if isinstance(db_instance, Project):
+        return export_project_as_dataset if save_images else export_project_annotations
+    elif isinstance(db_instance, Task):
+        return export_task_as_dataset if save_images else export_task_annotations
+
+    assert isinstance(db_instance, Job)
+    return export_job_as_dataset if save_images else export_job_annotations

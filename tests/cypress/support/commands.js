@@ -450,6 +450,14 @@ Cypress.Commands.add('headlessCreateJob', (jobSpec) => {
     });
 });
 
+Cypress.Commands.add('headlessUpdateJob', (jobID, updateJobParameters) => {
+    cy.window().then(async ($win) => {
+        const job = (await $win.cvat.jobs.get({ jobID }))[0];
+        const result = await job.save(updateJobParameters);
+        return cy.wrap(result);
+    });
+});
+
 Cypress.Commands.add('openTask', (taskName, projectSubsetFieldValue) => {
     cy.contains('strong', new RegExp(`^${taskName}$`))
         .parents('.cvat-tasks-list-item')
@@ -1416,7 +1424,7 @@ Cypress.Commands.add('downloadExport', ({ expectNotification = true } = {}) => {
     cy.get('.cvat-requests-card').first().within(() => {
         cy.get('.cvat-requests-page-actions-button').click();
     });
-    cy.intercept('GET', '**=download').as('download');
+    cy.intercept('GET', '**/download?rq_id=*').as('download');
     cy.get('.ant-dropdown')
         .not('.ant-dropdown-hidden')
         .within(() => {
@@ -1832,4 +1840,32 @@ Cypress.Commands.add('applyActionToSliders', (wrapper, slidersClassNames, action
         });
     });
     cy.get('.ant-tooltip').invoke('hide');
+});
+
+Cypress.Commands.add('mergeConsensusTask', (status = 202) => {
+    cy.intercept('POST', '/api/consensus/merges**').as('mergeTask');
+
+    cy.get('.cvat-task-details-wrapper').should('be.visible');
+    cy.contains('button', 'Actions').click();
+    cy.contains('Merge consensus jobs').should('be.visible').click();
+    cy.get('.cvat-modal-confirm-consensus-merge-task')
+        .contains('button', 'Merge')
+        .click();
+
+    cy.wait('@mergeTask').its('response.statusCode').should('eq', status);
+});
+
+Cypress.Commands.add('mergeConsensusJob', (jobID, status = 202) => {
+    cy.intercept('POST', '/api/consensus/merges**').as('mergeJob');
+    cy.get('.cvat-job-item')
+        .filter(':has(.cvat-tag-consensus)')
+        .filter(`:contains("Job #${jobID}")`)
+        .find('.anticon-more').first().click();
+
+    cy.get('.ant-dropdown-menu').contains('li', 'Merge consensus job').click();
+    cy.get('.cvat-modal-confirm-consensus-merge-job')
+        .contains('button', 'Merge')
+        .click();
+
+    cy.wait('@mergeJob').its('response.statusCode').should('eq', status);
 });
