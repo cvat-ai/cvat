@@ -2057,7 +2057,7 @@ class DatasetComparator:
         return source_data_provider.dm_ann_to_ann_id(ann)
 
     def _get_total_frames(self) -> int:
-        return self._task.data.size
+        return len(self._ds_data_provider.job_data)
 
     def _find_gt_conflicts(self):
         ds_job_dataset = self._ds_dataset
