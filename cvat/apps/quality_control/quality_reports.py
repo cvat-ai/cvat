@@ -667,7 +667,7 @@ class ComparisonReportSummary(ReportNode):
     tasks: ComparisonReportTaskStats | None
     jobs: ComparisonReportJobStats | None
 
-    @cached_property  # cached_property for backward compatibility with older reports, TODO: maybe add migration instead
+    @property
     def frame_share(self) -> float:
         return self.frame_count / (self.total_frames or 1)
 
@@ -696,18 +696,18 @@ class ComparisonReportSummary(ReportNode):
 
     @classmethod
     def from_dict(cls, d: dict):
-        # backward compatibility - old reports have only frame_count or frames, but not total_frames
-        if "total_frames" not in d:
-            frame_share = d["frame_share"]
+        if "total_frames" in d:
+            total_frames = d["total_frames"]
+        else:
+            # backward compatibility - old reports have only frame_count or frames,
+            # but not total_frames. However, we can obtain total_frames from frame_share
+            frame_share = d.get("frame_share", 0)
             frame_count = d.get("frame_count", len(d.get("frames", [])))
             total_frames = math.ceil(frame_count / (frame_share or 1))
-        else:
-            total_frames = d["total_frames"]
 
         return cls(
             frames=d["frames"] if "frames" in d else None,
             total_frames=total_frames,
-            **(dict(frame_share=d["frame_share"]) if "frame_share" in d else {}),
             **(dict(frame_count=d["frame_count"]) if "frame_count" in d else {}),
             conflict_count=d["conflict_count"],
             warning_count=d.get("warning_count", 0),
