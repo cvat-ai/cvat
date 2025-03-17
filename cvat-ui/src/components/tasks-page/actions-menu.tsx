@@ -88,7 +88,7 @@ function TaskActionsComponent(props: Props): JSX.Element {
     }, [taskInstance]);
 
     const onMoveTaskToProject = useCallback(() => {
-        if (taskInstance.projectId === null) {
+        if (taskInstance.projectID === null) {
             dispatch(switchMoveTaskModalVisible(true, taskInstance.id));
         }
     }, [taskInstance.id]);
@@ -131,7 +131,7 @@ function TaskActionsComponent(props: Props): JSX.Element {
                     onExportDataset,
                     onBackupTask,
                     onRunAutoAnnotation,
-                    onMoveTaskToProject: taskInstance.projectId === null ? onMoveTaskToProject : null,
+                    onMoveTaskToProject: taskInstance.projectID === null ? onMoveTaskToProject : null,
                     onDeleteTask,
                 }, { ...props, history }),
             }}

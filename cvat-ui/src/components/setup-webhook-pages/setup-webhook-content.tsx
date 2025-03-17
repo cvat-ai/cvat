@@ -211,7 +211,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
                                 </Col>
                                 <Col span={24}>
                                     <ProjectSearchField
-                                        onSelect={(_projectId: number | null) => setProjectId(_projectId)}
+                                        onSelect={(_projectID: number | null) => setProjectId(_projectID)}
                                         value={projectID}
                                     />
                                 </Col>

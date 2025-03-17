@@ -34,14 +34,14 @@ function JobActionsComponent(props: Props): JSX.Element {
     const mergingConsensus = useSelector((state: CombinedState) => state.consensus.actions.merging);
 
     const onOpenTaskPage = useCallback(() => {
-        history.push(`/tasks/${jobInstance.taskId}`);
-    }, [jobInstance.taskId]);
+        history.push(`/tasks/${jobInstance.taskID}`);
+    }, [jobInstance.taskID]);
 
     const onOpenProjectPage = useCallback(() => {
-        if (jobInstance.projectId) {
-            history.push(`/projects/${jobInstance.projectId}`);
+        if (jobInstance.projectID) {
+            history.push(`/projects/${jobInstance.projectID}`);
         }
-    }, [jobInstance.projectId]);
+    }, [jobInstance.projectID]);
 
     const onOpenBugTracker = useCallback(() => {
         if (jobInstance.bugTracker) {
@@ -105,7 +105,7 @@ function JobActionsComponent(props: Props): JSX.Element {
                     isMergingConsensusEnabled: mergingConsensus[makeKey(jobInstance)],
                     pluginActions,
                     onOpenTaskPage,
-                    onOpenProjectPage: jobInstance.projectId ? onOpenProjectPage : null,
+                    onOpenProjectPage: jobInstance.projectID ? onOpenProjectPage : null,
                     onOpenBugTracker: jobInstance.bugTracker ? onOpenBugTracker : null,
                     onImportAnnotations,
                     onExportAnnotations,
