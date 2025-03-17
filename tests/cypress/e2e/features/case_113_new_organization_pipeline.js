@@ -152,6 +152,44 @@ context('New organization pipeline.', () => {
             cy.checkOrganizationMembers(3, [firstUserName, secondUserName, thirdUserName]);
         });
 
+        it.only('Search within organizations. All members shoould be queryable', () => {
+            const searchBar = 'searchBar';
+            const searchBarRef = `@${searchBar}`;
+
+            cy.get('.cvat-organization-page-search-bar').should('be.visible')
+                .find('input')
+                .as(searchBar);
+
+            function search(string = '') {
+                cy.get(searchBarRef).debug().clear();
+                cy.get(searchBarRef).debug().type(`${string}{enter}`);
+            }
+
+            // Search for 1 member
+            search(firstUserName);
+            cy.checkOrganizationMembers(1, [firstUserName]);
+
+            // Empty search bar outputs all members
+            search();
+            cy.checkOrganizationMembers(3, [firstUserName, secondUserName, thirdUserName]);
+
+            // Common substring outputs all members
+            const commonSubstring = 'user';
+            search(commonSubstring);
+            cy.checkOrganizationMembers(3, [firstUserName, secondUserName, thirdUserName]);
+
+            // Bad search term yields no results
+            const badSearch = 'abc';
+            search(badSearch, true);
+            cy.pause();
+            cy.get('.cvat-empty-members-list').should('exist');
+
+            cy.get(searchBarRef).clear();
+        });
+
+        it('Search within organizations. Filters work correctly', () => {
+        });
+
         it('Create a project, create a task. Deactivate organization.', () => {
             cy.goToProjectsList();
             cy.createProjects(
