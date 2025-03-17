@@ -338,6 +338,9 @@ export interface PluginsState {
         taskActions: {
             items: PluginComponent[];
         };
+        jobActions: {
+            items: PluginComponent[];
+        };
         taskItem: {
             ribbon: PluginComponent[];
         };
