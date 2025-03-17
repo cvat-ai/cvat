@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { Task } from "cvat-core-wrapper";
+import { Task } from 'cvat-core-wrapper';
 
 export function sorter(path: string) {
     return (obj1: any, obj2: any): number => {

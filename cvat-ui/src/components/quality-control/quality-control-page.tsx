@@ -5,7 +5,7 @@
 import './styles.scss';
 
 import React, {
-    useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState,
+    useCallback, useEffect, useReducer, useState,
 } from 'react';
 import { useLocation } from 'react-router';
 import { Link } from 'react-router-dom';
