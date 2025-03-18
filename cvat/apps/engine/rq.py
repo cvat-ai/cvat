@@ -48,6 +48,7 @@ class RQJobMetaField:
     STATUS = "status"
     PROGRESS = "progress"
     TASK_PROGRESS = "task_progress"
+    HIDDEN = "hidden"
     # export specific fields
     RESULT_URL = "result_url"
     RESULT = "result"
@@ -206,6 +207,8 @@ class BaseRQMeta(RQMetaWithFailureInfo):
     task_id: int | None = ImmutableRQMetaAttribute(RQJobMetaField.TASK_ID, optional=True)
     job_id: int | None = ImmutableRQMetaAttribute(RQJobMetaField.JOB_ID, optional=True)
 
+    hidden: bool | None = ImmutableRQMetaAttribute(RQJobMetaField.HIDDEN, optional=True)
+
     # mutable && optional fields
     progress: float | None = MutableRQMetaAttribute(
         RQJobMetaField.PROGRESS, validator=lambda x: isinstance(x, float), optional=True
@@ -227,6 +230,7 @@ class BaseRQMeta(RQMetaWithFailureInfo):
         *,
         request: ExtendedRequest,
         db_obj: Model | None,
+        hidden: bool | None = None,
     ):
         # to prevent circular import
         from cvat.apps.events.handlers import job_id, organization_slug, task_id
@@ -255,6 +259,7 @@ class BaseRQMeta(RQMetaWithFailureInfo):
             RQJobMetaField.PROJECT_ID: pid,
             RQJobMetaField.TASK_ID: tid,
             RQJobMetaField.JOB_ID: jid,
+            **({RQJobMetaField.HIDDEN: hidden} if hidden is not None else {}),
         }
 
 
@@ -315,42 +320,30 @@ def is_rq_job_owner(rq_job: RQJob, user_id: int) -> bool:
     return BaseRQMeta.for_job(rq_job).user.id == user_id
 
 
-@attrs.frozen()
-class RQId:
-    action: RequestAction = attrs.field(validator=attrs.validators.instance_of(RequestAction))
-    target: RequestTarget = attrs.field(validator=attrs.validators.instance_of(RequestTarget))
-    identifier: Union[int, UUID] = attrs.field(validator=attrs.validators.instance_of((int, UUID)))
-    subresource: Optional[RequestSubresource] = attrs.field(
-        validator=attrs.validators.optional(attrs.validators.instance_of(RequestSubresource)),
-        kw_only=True,
-        default=None,
-    )
-    user_id: Optional[int] = attrs.field(
-        validator=attrs.validators.optional(attrs.validators.instance_of(int)),
-        kw_only=True,
-        default=None,
-    )
-    format: Optional[str] = attrs.field(
-        validator=attrs.validators.optional(attrs.validators.instance_of(str)),
-        kw_only=True,
-        default=None,
-    )
+# TODO:
+from cvat.apps.redis_handler.rq import RQId
 
-    _OPTIONAL_FIELD_REQUIREMENTS = {
-        RequestAction.AUTOANNOTATE: {"subresource": False, "format": False, "user_id": False},
-        RequestAction.CREATE: {"subresource": False, "format": False, "user_id": False},
-        RequestAction.EXPORT: {"subresource": True, "user_id": True},
-        RequestAction.IMPORT: {"subresource": True, "format": False, "user_id": False},
-    }
 
-    def __attrs_post_init__(self) -> None:
-        for field, req in self._OPTIONAL_FIELD_REQUIREMENTS[self.action].items():
-            if req:
-                if getattr(self, field) is None:
-                    raise ValueError(f"{field} is required for the {self.action} action")
-            else:
-                if getattr(self, field) is not None:
-                    raise ValueError(f"{field} is not allowed for the {self.action} action")
+class ExportRQId(RQId):
+    pass
+
+    # TODO: format, user_id, subresource
+
+    # subresource: Optional[RequestSubresource] = attrs.field(
+    #     validator=attrs.validators.optional(attrs.validators.instance_of(RequestSubresource)),
+    #     kw_only=True,
+    #     default=None,
+    # )
+    # user_id: Optional[int] = attrs.field(
+    #     validator=attrs.validators.optional(attrs.validators.instance_of(int)),
+    #     kw_only=True,
+    #     default=None,
+    # )
+    # format: Optional[str] = attrs.field(
+    #     validator=attrs.validators.optional(attrs.validators.instance_of(str)),
+    #     kw_only=True,
+    #     default=None,
+    # )
 
     # RQ ID templates:
     # autoannotate:task-<tid>
@@ -358,75 +351,6 @@ class RQId:
     # create:task-<tid>
     # export:<project|task|job>-<id>-<annotations|dataset>-in-<format>-format-by-<user_id>
     # export:<project|task>-<id>-backup-by-<user_id>
-
-    def render(
-        self,
-    ) -> str:
-        common_prefix = f"{self.action}:{self.target}-{self.identifier}"
-
-        if RequestAction.IMPORT == self.action:
-            return f"{common_prefix}-{self.subresource}"
-        elif RequestAction.EXPORT == self.action:
-            if self.format is None:
-                return f"{common_prefix}-{self.subresource}-by-{self.user_id}"
-
-            format_to_be_used_in_urls = self.format.replace(" ", "_").replace(".", "@")
-            return f"{common_prefix}-{self.subresource}-in-{format_to_be_used_in_urls}-format-by-{self.user_id}"
-        elif self.action in {RequestAction.CREATE, RequestAction.AUTOANNOTATE}:
-            return common_prefix
-        else:
-            assert False, f"Unsupported action {self.action!r} was found"
-
-    @staticmethod
-    def parse(rq_id: str) -> RQId:
-        identifier: Optional[Union[UUID, int]] = None
-        subresource: Optional[RequestSubresource] = None
-        user_id: Optional[int] = None
-        anno_format: Optional[str] = None
-
-        try:
-            action_and_resource, unparsed = rq_id.split("-", maxsplit=1)
-            action_str, target_str = action_and_resource.split(":")
-            action = RequestAction(action_str)
-            target = RequestTarget(target_str)
-
-            if action in {RequestAction.CREATE, RequestAction.AUTOANNOTATE}:
-                identifier = unparsed
-            elif RequestAction.IMPORT == action:
-                identifier, subresource_str = unparsed.rsplit("-", maxsplit=1)
-                subresource = RequestSubresource(subresource_str)
-            else:  # action == export
-                identifier, subresource_str, unparsed = unparsed.split("-", maxsplit=2)
-                subresource = RequestSubresource(subresource_str)
-
-                if RequestSubresource.BACKUP == subresource:
-                    _, user_id = unparsed.split("-")
-                else:
-                    unparsed, _, user_id = unparsed.rsplit("-", maxsplit=2)
-                    # remove prefix(in-), suffix(-format) and restore original format name
-                    # by replacing special symbols: "_" -> " ", "@" -> "."
-                    anno_format = unparsed[3:-7].replace("_", " ").replace("@", ".")
-
-            if identifier is not None:
-                if identifier.isdigit():
-                    identifier = int(identifier)
-                else:
-                    identifier = UUID(identifier)
-
-            if user_id is not None:
-                user_id = int(user_id)
-
-            return RQId(
-                action=action,
-                target=target,
-                identifier=identifier,
-                subresource=subresource,
-                user_id=user_id,
-                format=anno_format,
-            )
-
-        except Exception as ex:
-            raise ValueError(f"The {rq_id!r} RQ ID cannot be parsed: {str(ex)}") from ex
 
 
 def define_dependent_job(

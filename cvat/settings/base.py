@@ -297,42 +297,52 @@ RQ_QUEUES = {
     CVAT_QUEUES.IMPORT_DATA.value: {
         **REDIS_INMEM_SETTINGS,
         "DEFAULT_TIMEOUT": "4h",
+        "VISIBLE_VIA_REQUESTS_API": True,
     },
     CVAT_QUEUES.EXPORT_DATA.value: {
         **REDIS_INMEM_SETTINGS,
         "DEFAULT_TIMEOUT": "4h",
+        "VISIBLE_VIA_REQUESTS_API": True,
     },
     CVAT_QUEUES.AUTO_ANNOTATION.value: {
         **REDIS_INMEM_SETTINGS,
         "DEFAULT_TIMEOUT": "24h",
+        "VISIBLE_VIA_REQUESTS_API": True,
     },
     CVAT_QUEUES.WEBHOOKS.value: {
         **REDIS_INMEM_SETTINGS,
         "DEFAULT_TIMEOUT": "1h",
+        "VISIBLE_VIA_REQUESTS_API": False,
     },
     CVAT_QUEUES.NOTIFICATIONS.value: {
         **REDIS_INMEM_SETTINGS,
         "DEFAULT_TIMEOUT": "1h",
+        "VISIBLE_VIA_REQUESTS_API": False,
     },
     CVAT_QUEUES.QUALITY_REPORTS.value: {
         **REDIS_INMEM_SETTINGS,
         "DEFAULT_TIMEOUT": "1h",
+        "VISIBLE_VIA_REQUESTS_API": True,
     },
     CVAT_QUEUES.ANALYTICS_REPORTS.value: {
         **REDIS_INMEM_SETTINGS,
         "DEFAULT_TIMEOUT": "1h",
+        "VISIBLE_VIA_REQUESTS_API": True,
     },
     CVAT_QUEUES.CLEANING.value: {
         **REDIS_INMEM_SETTINGS,
         "DEFAULT_TIMEOUT": "2h",
+        "VISIBLE_VIA_REQUESTS_API": False,
     },
     CVAT_QUEUES.CHUNKS.value: {
         **REDIS_INMEM_SETTINGS,
         "DEFAULT_TIMEOUT": "5m",
+        "VISIBLE_VIA_REQUESTS_API": False,
     },
     CVAT_QUEUES.CONSENSUS.value: {
         **REDIS_INMEM_SETTINGS,
         "DEFAULT_TIMEOUT": "1h",
+        "VISIBLE_VIA_REQUESTS_API": True,
     },
 }
 

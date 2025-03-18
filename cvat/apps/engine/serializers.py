@@ -41,7 +41,7 @@ from cvat.apps.engine.frame_provider import FrameQuality, TaskFrameProvider
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.permissions import TaskPermission
-from cvat.apps.engine.rq import BaseRQMeta, ExportRQMeta, ImportRQMeta, RequestAction, RQId
+from cvat.apps.engine.rq import BaseRQMeta, ExportRQMeta, ImportRQMeta, RequestAction
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
 from cvat.apps.engine.utils import (
     CvatChunkTimestampMismatchError,
@@ -55,6 +55,7 @@ from cvat.apps.engine.utils import (
     take_by,
 )
 from cvat.apps.lambda_manager.rq import LambdaRQMeta
+from cvat.apps.redis_handler.rq import RQId
 from utils.dataset_manifest import ImageManifestManager
 
 slogger = ServerLogManager(__name__)
@@ -3511,12 +3512,8 @@ class RequestDataOperationSerializer(serializers.Serializer):
 
         base_rq_job_meta = BaseRQMeta.for_job(rq_job)
         representation = {
-            "type": ":".join(
-                [
-                    parsed_rq_id.action,
-                    parsed_rq_id.subresource or parsed_rq_id.target,
-                ]
-            ),
+            # TODO: update to action + subresource in export jobs
+            "type": parsed_rq_id.type,
             "target": parsed_rq_id.target,
             "project_id": base_rq_job_meta.project_id,
             "task_id": base_rq_job_meta.task_id,
@@ -3525,7 +3522,7 @@ class RequestDataOperationSerializer(serializers.Serializer):
         if parsed_rq_id.action == RequestAction.AUTOANNOTATE:
             representation["function_id"] = LambdaRQMeta.for_job(rq_job).function_id
         elif parsed_rq_id.action in (RequestAction.IMPORT, RequestAction.EXPORT):
-            representation["format"] = parsed_rq_id.format
+            representation["format"] = parsed_rq_id.extra["format"] # todo: refactor
 
         return representation
 
@@ -3610,7 +3607,7 @@ class RequestSerializer(serializers.Serializer):
 
             if (
                 rq_job.parsed_rq_id.action == models.RequestAction.IMPORT
-                and rq_job.parsed_rq_id.subresource == models.RequestSubresource.BACKUP
+                and rq_job.parsed_rq_id.extra["subresource"] == models.RequestSubresource.BACKUP
             ):
                 representation["result_id"] = rq_job.return_value()
 
