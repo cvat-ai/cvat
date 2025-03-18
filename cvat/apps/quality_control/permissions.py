@@ -102,6 +102,7 @@ class QualityReportPermission(OpenPolicyAgentPermission):
         return permissions
 
     def __init__(self, **kwargs):
+        # TODO: refactor
         if "rq_job_owner_id" in kwargs:
             self.rq_job_owner_id = int(kwargs.pop("rq_job_owner_id"))
 

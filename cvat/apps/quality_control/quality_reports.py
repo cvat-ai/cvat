@@ -10,22 +10,20 @@ from collections import Counter
 from collections.abc import Hashable, Sequence
 from copy import deepcopy
 from functools import cached_property, partial
-from typing import Any, Callable, Optional, TypeVar, Union, cast
+from typing import Any, Callable, ClassVar, Optional, TypeVar, Union, cast
 
 import datumaro as dm
 import datumaro.components.annotations.matcher
 import datumaro.components.comparator
 import datumaro.util.annotation_util
 import datumaro.util.mask_tools
-import django_rq
 import numpy as np
-import rq
 from attrs import asdict, define, fields_dict
 from datumaro.util import dump_json, parse_json
 from django.conf import settings
 from django.db import transaction
+from django.http import HttpResponseBadRequest
 from django_rq.queues import DjangoRQ as RqQueue
-from rq.job import Job as RqJob
 from scipy.optimize import linear_sum_assignment
 
 from cvat.apps.dataset_manager.bindings import (
@@ -45,6 +43,7 @@ from cvat.apps.engine.models import (
     Image,
     Job,
     JobType,
+    RequestTarget,
     ShapeType,
     StageChoice,
     StatusChoice,
@@ -62,6 +61,8 @@ from cvat.apps.quality_control.models import (
     AnnotationConflictType,
     AnnotationType,
 )
+from cvat.apps.redis_handler.background import AbstractRQJobManager
+from cvat.apps.redis_handler.rq import RQId
 
 
 class Serializable:
@@ -2264,95 +2265,49 @@ class DatasetComparator:
         )
 
 
-class QualityReportUpdateManager:
-    _QUEUE_CUSTOM_JOB_PREFIX = "quality-check-"
-    _RQ_CUSTOM_QUALITY_CHECK_JOB_TYPE = "custom_quality_check"
+class QualityReportUpdateManager(AbstractRQJobManager):
     _JOB_RESULT_TTL = 120
+    _JOB_FAILURE_TTL = _JOB_RESULT_TTL
 
-    def _get_queue(self) -> RqQueue:
-        return django_rq.get_queue(settings.CVAT_QUEUES.QUALITY_REPORTS.value)
+    QUEUE_NAME = settings.CVAT_QUEUES.QUALITY_REPORTS.value
+    SUPPORTED_RESOURCES: ClassVar[set[RequestTarget]] = {RequestTarget.TASK}
 
-    def _make_custom_quality_check_job_id(self, task_id: int, user_id: int) -> str:
-        # FUTURE-TODO: it looks like job ID template should not include user_id because:
-        # 1. There is no need to compute quality reports several times for different users
-        # 2. Each user (not only rq job owner) that has permission to access a task should
-        # be able to check the status of the computation process
-        return f"{self._QUEUE_CUSTOM_JOB_PREFIX}task-{task_id}-user-{user_id}"
+    def build_rq_id(self):
+        return RQId(
+            queue=self.QUEUE_NAME,
+            action="compute",
+            target=self.resource,
+            id=self.db_instance.pk,
+        ).render()
 
-    class QualityReportsNotAvailable(Exception):
-        pass
+    def validate_request(self):
+        if self.db_instance.dimension != DimensionType.DIM_2D:
+            return HttpResponseBadRequest("Quality reports are only supported in 2d tasks")
 
-    def _check_quality_reporting_available(self, task: Task):
-        if task.dimension != DimensionType.DIM_2D:
-            raise self.QualityReportsNotAvailable("Quality reports are only supported in 2d tasks")
-
-        gt_job = task.gt_job
+        gt_job = self.db_instance.gt_job
         if gt_job is None or not (
             gt_job.stage == StageChoice.ACCEPTANCE and gt_job.state == StatusChoice.COMPLETED
         ):
-            raise self.QualityReportsNotAvailable(
+            return HttpResponseBadRequest(
                 "Quality reports require a Ground Truth job in the task "
                 f"at the {StageChoice.ACCEPTANCE} stage "
                 f"and in the {StatusChoice.COMPLETED} state"
             )
 
-    class JobAlreadyExists(QualityReportsNotAvailable):
-        def __str__(self):
-            return "Quality computation job for this task already enqueued"
+    def setup_background_job(self, queue: RqQueue, rq_id: str) -> None:
+        user_id = self.request.user.id
 
-    def schedule_custom_quality_check_job(
-        self, request: ExtendedRequest, task: Task, *, user_id: int
-    ) -> str:
-        """
-        Schedules a quality report computation job, supposed for updates by a request.
-        """
-
-        self._check_quality_reporting_available(task)
-
-        queue = self._get_queue()
-        rq_id = self._make_custom_quality_check_job_id(task_id=task.id, user_id=user_id)
-
-        # ensure that there is no race condition when processing parallel requests
-        with get_rq_lock_for_job(queue, rq_id):
-            if rq_job := queue.fetch_job(rq_id):
-                if rq_job.get_status(refresh=False) in (
-                    rq.job.JobStatus.QUEUED,
-                    rq.job.JobStatus.STARTED,
-                    rq.job.JobStatus.SCHEDULED,
-                    rq.job.JobStatus.DEFERRED,
-                ):
-                    raise self.JobAlreadyExists()
-
-                rq_job.delete()
-
-            with get_rq_lock_by_user(queue, user_id=user_id):
-                dependency = define_dependent_job(
-                    queue, user_id=user_id, rq_id=rq_id, should_be_dependent=True
-                )
-
-                queue.enqueue(
-                    self._check_task_quality,
-                    task_id=task.id,
-                    job_id=rq_id,
-                    meta=BaseRQMeta.build(request=request, db_obj=task),
-                    result_ttl=self._JOB_RESULT_TTL,
-                    failure_ttl=self._JOB_RESULT_TTL,
-                    depends_on=dependency,
-                )
-
-        return rq_id
-
-    def get_quality_check_job(self, rq_id: str) -> Optional[RqJob]:
-        queue = self._get_queue()
-        rq_job = queue.fetch_job(rq_id)
-
-        if rq_job and not self.is_custom_quality_check_job(rq_job):
-            rq_job = None
-
-        return rq_job
-
-    def is_custom_quality_check_job(self, rq_job: RqJob) -> bool:
-        return isinstance(rq_job.id, str) and rq_job.id.startswith(self._QUEUE_CUSTOM_JOB_PREFIX)
+        with get_rq_lock_by_user(queue, user_id=user_id):
+            dependency = define_dependent_job(queue, user_id=user_id, rq_id=rq_id)
+            queue.enqueue(
+                self._check_task_quality,
+                task_id=self.db_instance.pk,
+                job_id=rq_id,
+                meta=BaseRQMeta.build(request=self.request, db_obj=self.db_instance),
+                result_ttl=self._JOB_RESULT_TTL,
+                failure_ttl=self._JOB_FAILURE_TTL,
+                depends_on=dependency,
+            )
 
     @classmethod
     @silk_profile()
