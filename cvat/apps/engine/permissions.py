@@ -12,9 +12,7 @@ from typing import TYPE_CHECKING, Any, Optional, Union, cast
 from django.conf import settings
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied, ValidationError
-from rq.job import Job as RQJob
 
-from cvat.apps.engine.rq import is_rq_job_owner
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import is_dataset_export
 from cvat.apps.iam.permissions import (
@@ -1193,41 +1191,6 @@ class GuideAssetPermission(OpenPolicyAgentPermission):
             'retrieve': Scopes.VIEW,
         }[view.action]]
 
-
-class RequestPermission(OpenPolicyAgentPermission):
-    class Scopes(StrEnum):
-        LIST = 'list'
-        VIEW = 'view'
-        CANCEL = 'cancel'
-
-    @classmethod
-    def create(cls, request: ExtendedRequest, view: ViewSet, obj: RQJob | None, iam_context: dict) -> list[OpenPolicyAgentPermission]:
-        permissions = []
-        if view.basename == 'request':
-            for scope in cls.get_scopes(request, view, obj):
-                if scope != cls.Scopes.LIST:
-                    user_id = request.user.id
-                    if not is_rq_job_owner(obj, user_id):
-                        raise PermissionDenied('You don\'t have permission to perform this action')
-
-        return permissions
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.url = settings.IAM_OPA_DATA_URL + '/requests/allow'
-
-    @staticmethod
-    def get_scopes(request: ExtendedRequest, view: ViewSet, obj: RQJob | None) -> list[Scopes]:
-        Scopes = __class__.Scopes
-        return [{
-            ('list', 'GET'): Scopes.LIST,
-            ('retrieve', 'GET'): Scopes.VIEW,
-            ('cancel', 'POST'): Scopes.CANCEL,
-        }[(view.action, request.method)]]
-
-
-    def get_resource(self):
-        return None
 
 def get_cloud_storage_for_import_or_export(
     storage_id: int, *, request: ExtendedRequest, is_default: bool = False
