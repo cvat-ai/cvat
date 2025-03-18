@@ -69,15 +69,19 @@ class AssetInline(admin.TabularInline):
     def has_add_permission(self, _request, obj):
         return False
 
+@admin.register(Job)
+class JobAdmin(admin.ModelAdmin):
+    pass
+
 
 class DataAdmin(admin.ModelAdmin):
     model = Data
     fields = ('chunk_size', 'size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter', 'compressed_chunk_type', 'original_chunk_type')
-    readonly_fields = fields
+    #readonly_fields = fields
     autocomplete_fields = ('cloud_storage', )
 
     def has_change_permission(self, request, obj=None):
-        return False
+        return True
 
     def has_delete_permission(self, request, obj=None):
         return False
@@ -159,7 +163,7 @@ class TaskAdmin(admin.ModelAdmin):
         'status': admin.VERTICAL,
     }
 
-    readonly_fields = ('created_date', 'updated_date', 'overlap', 'segment_size', 'data', 'dimension')
+    readonly_fields = ('created_date', 'updated_date', 'overlap', 'segment_size', 'dimension')
     autocomplete_fields = ('project', 'owner', 'assignee', 'organization')
     raw_id_fields = ('source_storage', 'target_storage', 'data')
 
