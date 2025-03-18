@@ -119,7 +119,6 @@ INSTALLED_APPS = [
     "cvat.apps.health",
     "cvat.apps.events",
     "cvat.apps.quality_control",
-    "cvat.apps.analytics_report",
     "cvat.apps.redis_handler",
     "cvat.apps.consensus",
 ]
@@ -276,7 +275,6 @@ class CVAT_QUEUES(Enum):
     WEBHOOKS = "webhooks"
     NOTIFICATIONS = "notifications"
     QUALITY_REPORTS = "quality_reports"
-    ANALYTICS_REPORTS = "analytics_reports"
     CLEANING = "cleaning"
     CHUNKS = "chunks"
     CONSENSUS = "consensus"
@@ -320,11 +318,6 @@ RQ_QUEUES = {
         "VISIBLE_VIA_REQUESTS_API": False,
     },
     CVAT_QUEUES.QUALITY_REPORTS.value: {
-        **REDIS_INMEM_SETTINGS,
-        "DEFAULT_TIMEOUT": "1h",
-        "VISIBLE_VIA_REQUESTS_API": True,
-    },
-    CVAT_QUEUES.ANALYTICS_REPORTS.value: {
         **REDIS_INMEM_SETTINGS,
         "DEFAULT_TIMEOUT": "1h",
         "VISIBLE_VIA_REQUESTS_API": True,
