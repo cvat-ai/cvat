@@ -6,12 +6,10 @@ import math
 from typing import Type
 
 import datumaro as dm
-import django_rq
 from django.conf import settings
 from django.db import transaction
+from django.http import HttpResponseBadRequest
 from django_rq.queues import DjangoRQ as RqQueue
-from rq.job import Job as RqJob
-from rq.job import JobStatus as RqJobStatus
 
 from cvat.apps.consensus.intersect_merge import IntersectMerge
 from cvat.apps.consensus.models import ConsensusSettings
@@ -21,6 +19,7 @@ from cvat.apps.engine.models import (
     DimensionType,
     Job,
     JobType,
+    RequestTarget,
     StageChoice,
     StateChoice,
     Task,
@@ -28,10 +27,11 @@ from cvat.apps.engine.models import (
     clear_annotations_in_jobs,
 )
 from cvat.apps.engine.rq import BaseRQMeta, define_dependent_job
-from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import get_rq_lock_by_user
 from cvat.apps.profiler import silk_profile
 from cvat.apps.quality_control.quality_reports import ComparisonParameters, JobDataProvider
+from cvat.apps.redis_handler.background import AbstractRQJobManager
+from cvat.apps.redis_handler.rq import RQId
 
 
 class _TaskMerger:
@@ -159,83 +159,55 @@ class MergingNotAvailable(Exception):
     pass
 
 
-class JobAlreadyExists(MergingNotAvailable):
-    def __init__(self, instance: Task | Job):
-        super().__init__()
-        self.instance = instance
+class MergingManager(AbstractRQJobManager):
+    QUEUE_NAME = settings.CVAT_QUEUES.CONSENSUS.value
+    SUPPORTED_RESOURCES = {RequestTarget.TASK, RequestTarget.JOB}
 
-    def __str__(self):
-        return f"Merging for this {type(self.instance).__name__.lower()} already enqueued"
-
-
-class MergingManager:
-    _QUEUE_CUSTOM_JOB_PREFIX = "consensus-merge-"
     _JOB_RESULT_TTL = 300
+    _JOB_FAILURE_TTL = _JOB_RESULT_TTL
 
-    def _get_queue(self) -> RqQueue:
-        return django_rq.get_queue(settings.CVAT_QUEUES.CONSENSUS.value)
+    def build_rq_id(self) -> str:
+        # todo: add redis migration
+        return RQId(
+            queue=self.QUEUE_NAME,
+            action="merge",
+            target=self.resource,
+            id=self.db_instance.pk,
+        ).render()
 
-    def _make_job_id(self, task_id: int, job_id: int | None, user_id: int) -> str:
-        key = f"{self._QUEUE_CUSTOM_JOB_PREFIX}task-{task_id}"
-        if job_id:
-            key += f"-job-{job_id}"
-        key += f"-user-{user_id}"  # TODO: remove user id, add support for non owners to get status
-        return key
+    def _split_to_task_and_job(self) -> tuple[Task, Job | None]:
+        if isinstance(self.db_instance, Job):
+            return self.db_instance.segment.task, self.db_instance
 
-    def _check_merging_available(self, task: Task, job: Job | None):
-        _TaskMerger(task=task).check_merging_available(parent_job_id=job.id if job else None)
+        return self.db_instance, None
 
-    def schedule_merge(self, target: Task | Job, *, request: ExtendedRequest) -> str:
-        if isinstance(target, Job):
-            target_task = target.segment.task
-            target_job = target
-        else:
-            target_task = target
-            target_job = None
+    def validate_request(self):
+        # FUTURE-FIXME: check that there is no indirectly dependent RQ jobs:
+        # e.g merge whole task and merge a particular job from the task
+        task, job = self._split_to_task_and_job()
 
-        self._check_merging_available(target_task, target_job)
+        try:
+            _TaskMerger(task=task).check_merging_available(parent_job_id=job.pk if job else None)
+        except MergingNotAvailable as ex:
+            return HttpResponseBadRequest(str(ex))
 
-        queue = self._get_queue()
+    def setup_background_job(self, queue: RqQueue, rq_id: str) -> None:
+        user_id = self.request.user.id
 
-        user_id = request.user.id
         with get_rq_lock_by_user(queue, user_id=user_id):
-            rq_id = self._make_job_id(
-                task_id=target_task.id,
-                job_id=target_job.id if target_job else None,
-                user_id=user_id,
-            )
-            rq_job = queue.fetch_job(rq_id)
-            if rq_job:
-                if rq_job.get_status(refresh=False) in (
-                    RqJobStatus.QUEUED,
-                    RqJobStatus.STARTED,
-                    RqJobStatus.SCHEDULED,
-                    RqJobStatus.DEFERRED,
-                ):
-                    raise JobAlreadyExists(target)
-
-                rq_job.delete()
-
             dependency = define_dependent_job(
-                queue, user_id=user_id, rq_id=rq_id, should_be_dependent=True
+                queue, user_id=user_id, rq_id=rq_id
             )
-
             queue.enqueue(
                 self._merge,
-                target_type=type(target),
-                target_id=target.id,
+                target_type=type(self.db_instance),
+                target_id=self.db_instance.pk,
                 job_id=rq_id,
-                meta=BaseRQMeta.build(request=request, db_obj=target),
+                meta=BaseRQMeta.build(request=self.request, db_obj=self.db_instance),
                 result_ttl=self._JOB_RESULT_TTL,
-                failure_ttl=self._JOB_RESULT_TTL,
+                failure_ttl=self._JOB_FAILURE_TTL,
                 depends_on=dependency,
             )
-
-        return rq_id
-
-    def get_job(self, rq_id: str) -> RqJob | None:
-        queue = self._get_queue()
-        return queue.fetch_job(rq_id)
 
     @classmethod
     @silk_profile()

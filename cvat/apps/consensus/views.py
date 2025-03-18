@@ -3,7 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 import textwrap
+from datetime import datetime
 
+from django.http import HttpResponseNotFound
+from django.utils import timezone
 from drf_spectacular.utils import (
     OpenApiParameter,
     OpenApiResponse,
@@ -90,20 +93,17 @@ class ConsensusMergesViewSet(viewsets.GenericViewSet):
                 except Job.DoesNotExist as ex:
                     raise NotFound(f"Jobs {job_id} do not exist") from ex
 
-            try:
-                manager = merging.MergingManager()
-                rq_id = manager.schedule_merge(instance, request=request)
-                serializer = RqIdSerializer({"rq_id": rq_id})
-                return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-            except merging.MergingNotAvailable as ex:
-                raise ValidationError(str(ex))
+            manager = merging.MergingManager(instance, request)
+            return manager.process()
         else:
+            deprecation_timestamp = int(datetime(2025, 3, 17, tzinfo=timezone.utc).timestamp())
+            response_headers = {"Deprecation": f"@{deprecation_timestamp}"}
+
             serializer = RqIdSerializer(data={"rq_id": rq_id})
             serializer.is_valid(raise_exception=True)
             rq_id = serializer.validated_data["rq_id"]
+            rq_job = merging.MergingManager.get_job_by_id(rq_id)
 
-            manager = merging.MergingManager()
-            rq_job = manager.get_job(rq_id)
             if (
                 not rq_job
                 or not ConsensusMergePermission.create_scope_check_status(
@@ -113,7 +113,7 @@ class ConsensusMergesViewSet(viewsets.GenericViewSet):
                 .allow
             ):
                 # We should not provide job existence information to unauthorized users
-                raise NotFound("Unknown request id")
+                return HttpResponseNotFound("Unknown request id", headers=response_headers)
 
             rq_job_status = rq_job.get_status(refresh=False)
             if rq_job_status == RqJobStatus.FAILED:
@@ -124,19 +124,26 @@ class ConsensusMergesViewSet(viewsets.GenericViewSet):
                     return Response(
                         data=exc_info[exc_pos + len(exc_name_pattern) :].strip(),
                         status=status.HTTP_400_BAD_REQUEST,
+                        headers=response_headers,
                     )
 
-                return Response(data=str(exc_info), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                return Response(
+                    data=str(exc_info),
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    headers=response_headers,
+                )
             elif rq_job_status in (
                 RqJobStatus.QUEUED,
                 RqJobStatus.STARTED,
                 RqJobStatus.SCHEDULED,
                 RqJobStatus.DEFERRED,
             ):
-                return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+                return Response(
+                    serializer.data, status=status.HTTP_202_ACCEPTED, headers=response_headers
+                )
             elif rq_job_status == RqJobStatus.FINISHED:
                 rq_job.delete()
-                return Response(status=status.HTTP_201_CREATED)
+                return Response(status=status.HTTP_201_CREATED, headers=response_headers)
 
             raise AssertionError(f"Unexpected rq job '{rq_id}' status '{rq_job_status}'")
 

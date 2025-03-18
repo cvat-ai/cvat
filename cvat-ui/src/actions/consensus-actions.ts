@@ -3,7 +3,11 @@
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
-import { Project, ProjectOrTaskOrJob } from 'cvat-core-wrapper';
+import { Project, ProjectOrTaskOrJob, getCore } from 'cvat-core-wrapper';
+
+import { updateRequestProgress } from './requests-actions';
+
+const core = getCore();
 
 export enum ConsensusActionTypes {
     MERGE_CONSENSUS_JOBS = 'MERGE_CONSENSUS_JOBS',
@@ -28,7 +32,10 @@ export const mergeConsensusJobsAsync = (
 ): ThunkAction => async (dispatch) => {
     try {
         dispatch(consensusActions.mergeConsensusJobs(instance));
-        await instance.mergeConsensusJobs();
+        const rqID = await instance.mergeConsensusJobs();
+        await core.requests.listen(rqID, {
+            callback: (updatedRequest) => updateRequestProgress(updatedRequest, dispatch),
+        });
     } catch (error) {
         dispatch(consensusActions.mergeConsensusJobsFailed(instance, error));
         return;
