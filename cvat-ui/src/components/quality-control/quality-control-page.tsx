@@ -500,7 +500,7 @@ function QualityControlPage(): JSX.Element {
                 activeKey={activeTab}
                 defaultActiveKey='Overview'
                 onChange={onTabKeyChange}
-                className='cvat-task-control-tabs'
+                className='cvat-tabs'
                 items={tabsItems}
             />
         );

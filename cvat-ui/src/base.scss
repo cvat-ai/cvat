@@ -118,6 +118,8 @@ $scroll-breakpoint: 1300px;
 }
 
 @mixin cvat-management-page-tabs {
+    height: 85%;
+    position: relative;
     overflow: hidden;
     flex-grow: 1;
     padding: 0 $grid-unit-size * 5 $grid-unit-size * 2 $grid-unit-size * 5;
@@ -133,8 +135,12 @@ $scroll-breakpoint: 1300px;
         margin-inline-end: 0;
     }
 
-    .ant-tabs-content-holder, .ant-tabs-content, .ant-tabs-tabpane {
+    .ant-tabs-content, .ant-tabs-tabpane {
         height: 100%;
+    }
+
+    .ant-tabs-content-holder {
+        height: 85%;
     }
 }
 
