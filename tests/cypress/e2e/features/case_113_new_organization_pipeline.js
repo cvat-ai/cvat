@@ -4,6 +4,9 @@
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
+/// <reference types="../../support" />
+
+import { defaultTaskSpec } from '../../support/default-specs';
 
 context('New organization pipeline.', () => {
     const caseId = '113';
@@ -48,26 +51,14 @@ context('New organization pipeline.', () => {
         name: `Project case ${caseId}`,
         label: 'car',
         attrName: 'color',
-        attrVaue: 'red',
+        attrValue: 'red',
         multiAttrParams: false,
     };
 
     const labelName = `Case ${caseId}`;
     const taskName = `New annotation task for ${labelName}`;
     const newTaskName = labelName;
-    const attrName = `Attr for ${labelName}`;
-    const textDefaultValue = 'Some default value for type Text';
-    const imagesCount = 1;
-    const imageFileName = `image_${labelName.replace(' ', '_').toLowerCase()}`;
-    const width = 800;
-    const height = 800;
-    const posX = 10;
-    const posY = 10;
-    const color = 'gray';
-    const archiveName = `${imageFileName}.zip`;
-    const archivePath = `cypress/fixtures/${archiveName}`;
-    const imagesFolder = `cypress/fixtures/${imageFileName}`;
-    const directoryToArchive = imagesFolder;
+    const serverFiles = ['archive.zip'];
     let taskId = null;
     let jobId = null;
 
@@ -97,18 +88,6 @@ context('New organization pipeline.', () => {
         tearDown();
         cy.headlessLogout();
         cy.visit('/auth/login');
-        cy.imageGenerator(
-            imagesFolder,
-            imageFileName,
-            width,
-            height,
-            color,
-            posX,
-            posY,
-            project.label,
-            imagesCount,
-        );
-        cy.createZipArchive(directoryToArchive, archivePath);
         for (const user of Object.values(users)) {
             cy.headlessCreateUser(user);
         }
@@ -187,16 +166,33 @@ context('New organization pipeline.', () => {
         });
 
         it('Create a project, create a task. Deactivate organization.', () => {
+            cy.headlessCreateProject({
+                name: project.name,
+                labels: [{
+                    name: labelName,
+                    attributes: [{
+                        name: project.attrName,
+                        mutable: false,
+                        input_type: 'text',
+                        default_value: project.attrValue,
+                        values: [project.attrValue],
+                    }],
+                }],
+            }).then(({ projectID }) => {
+                const { taskSpec, dataSpec, extras } = defaultTaskSpec({
+                    labelName, taskName, serverFiles,
+                });
+                delete taskSpec.labels;
+                taskSpec.project_id = projectID;
+                cy.headlessCreateTask(
+                    taskSpec, dataSpec, extras,
+                ).then(({ taskID }) => {
+                    taskId = taskID;
+                });
+            });
             cy.goToProjectsList();
-            cy.createProjects(
-                project.name,
-                project.label,
-                project.attrName,
-                project.attrVaue,
-                project.multiAttrParams,
-            );
             cy.goToTaskList();
-            cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName);
+
             cy.openTask(taskName);
             cy.assignTaskToUser(secondUserName);
             cy.deactivateOrganization();
@@ -210,7 +206,7 @@ context('New organization pipeline.', () => {
 
         it('Admin tries to leave from organization (not successfully because he is not a member of it).', () => {
             cy.logout();
-            cy.login();
+            cy.login(); // TODO: replace logins with headlessLogin - typing text is the main bottleneck of this suite
             cy.activateOrganization(organizationParams.shortName);
             cy.openOrganization(organizationParams.shortName);
             cy.contains('button', 'Leave organization').should('be.visible').click();
@@ -262,10 +258,6 @@ context('New organization pipeline.', () => {
                 cy.assignJobToUser(_jobID, thirdUserName);
             });
             cy.renameTask(taskName, newTaskName);
-            cy.url().then((url) => {
-                const [link] = url.split('?');
-                taskId = Number(link.split('/').slice(-1)[0]);
-            });
         });
 
         it('Logout, the third user login. The user does not see the project, the task.', () => {
