@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
 import concurrent.futures
 import contextlib
 import json
@@ -14,7 +16,7 @@ import threading
 from collections.abc import Iterator
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import attrs
 import cvat_sdk.auto_annotation as cvataa
@@ -29,6 +31,9 @@ from cvat_sdk.auto_annotation.driver import (
 from cvat_sdk.exceptions import ApiException
 
 from .common import CriticalError, FunctionLoader
+
+if TYPE_CHECKING:
+    from _typeshed import SupportsReadline
 
 FUNCTION_PROVIDER_NATIVE = "native"
 FUNCTION_KIND_DETECTOR = "detector"
@@ -104,18 +109,23 @@ class _NewReconnectionDelay:
 
 
 def _parse_event_stream(
-    response: urllib3.response.HTTPResponse,
+    stream: SupportsReadline[bytes],
 ) -> Iterator[Union[_Event, _NewReconnectionDelay]]:
     # https://html.spec.whatwg.org/multipage/server-sent-events.html#event-stream-interpretation
 
     event_type = event_data = ""
 
     while True:
-        line_bytes = response.readline()
+        line_bytes = stream.readline()
         if not line_bytes:
             return
 
-        line = line_bytes.decode("UTF-8").rstrip("\n")
+        line = line_bytes.decode("UTF-8").removesuffix("\n").removesuffix("\r")
+
+        # Technically, a standalone \r is supposed to be treated as a line terminator,
+        # but it's annoying to implement, and there's no reason for CVAT to use that.
+        if "\r" in line:
+            raise ValueError("CR found in event stream")
 
         if not line:
             yield _Event(event_type, event_data.removesuffix("\n"))
