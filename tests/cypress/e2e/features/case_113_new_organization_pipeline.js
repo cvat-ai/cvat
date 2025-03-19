@@ -149,7 +149,7 @@ context('New organization pipeline.', () => {
             cy.checkOrganizationMembers(3, [firstUserName, secondUserName, thirdUserName]);
 
             const badSearch = 'abc';
-            search(badSearch, true);
+            search(badSearch);
             cy.get('.cvat-empty-members-list').should('exist');
 
             // Empty search bar outputs all members
