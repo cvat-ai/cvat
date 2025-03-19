@@ -75,12 +75,13 @@ context('New organization pipeline.', () => {
         return email.split('@').map((part) => `${part.toUpperCase()[0]}${part.slice(1)}`).join('@');
     }
     function tearDown() {
-        cy.headlessLogout();
-        cy.getAuthKey().then((authKey) => {
-            cy.deleteUsers(authKey, [firstUserName, secondUserName, thirdUserName]);
-            cy.deleteTasks(authKey, [newTaskName]);
-            cy.deleteProjects(authKey, [project.name]);
-            cy.deleteOrganizations(authKey, [organizationParams.shortName]);
+        cy.headlessLogout().then(() => {
+            cy.getAuthKey().then((authKey) => {
+                cy.deleteUsers(authKey, [firstUserName, secondUserName, thirdUserName]);
+                cy.deleteTasks(authKey, [newTaskName]);
+                cy.deleteProjects(authKey, [project.name]);
+                cy.deleteOrganizations(authKey, [organizationParams.shortName]);
+            });
         });
     }
 
@@ -208,8 +209,7 @@ context('New organization pipeline.', () => {
         });
 
         it('Admin tries to leave from organization (not successfully because he is not a member of it).', () => {
-            cy.logout();
-            cy.login(); // TODO: replace logins with headlessLogin - typing text is the main bottleneck of this suite
+            cy.headlessLogin();
             cy.activateOrganization(organizationParams.shortName);
             cy.openOrganization(organizationParams.shortName);
             cy.contains('button', 'Leave organization').should('be.visible').click();
@@ -224,8 +224,7 @@ context('New organization pipeline.', () => {
         });
 
         it("The second user login. The user is able to see the organization, can't see the task.", () => {
-            cy.logout();
-            cy.login(secondUserName, secondUser.password);
+            cy.reloginAs(secondUser);
             cy.checkOrganizationExists(organizationParams.shortName);
             cy.contains('.cvat-item-task-name', taskName).should('not.exist');
         });
@@ -237,8 +236,7 @@ context('New organization pipeline.', () => {
         });
 
         it('The first user login. Assign the project to the second user.', () => {
-            cy.logout();
-            cy.login(firstUserName, firstUser.password);
+            cy.reloginAs(firstUser);
             cy.activateOrganization(organizationParams.shortName);
             cy.goToProjectsList();
             cy.openProject(project.name);
@@ -246,8 +244,7 @@ context('New organization pipeline.', () => {
         });
 
         it('The second user login. Now he sees the project and can open it.', () => {
-            cy.logout();
-            cy.login(secondUserName, secondUser.password);
+            cy.reloginAs(secondUser);
             cy.activateOrganization(organizationParams.shortName);
             cy.goToProjectsList();
             cy.openProject(project.name);
@@ -264,8 +261,7 @@ context('New organization pipeline.', () => {
         });
 
         it('Logout, the third user login. The user does not see the project, the task.', () => {
-            cy.logout();
-            cy.login(thirdUserName, thirdUser.password);
+            cy.reloginAs(thirdUser);
             cy.contains('.cvat-item-task-name', taskName).should('not.exist');
             cy.goToProjectsList();
             cy.contains('.cvat-projects-project-item-title', project.name).should('not.exist');
@@ -280,8 +276,7 @@ context('New organization pipeline.', () => {
         });
 
         it('The owner of the organization removes the second user from it.', () => {
-            cy.logout();
-            cy.login(firstUserName, firstUser.password);
+            cy.reloginAs(firstUser);
             cy.activateOrganization(organizationParams.shortName);
             cy.openOrganization(organizationParams.shortName);
             cy.removeMemberFromOrganization(secondUserName);
@@ -289,8 +284,7 @@ context('New organization pipeline.', () => {
         });
 
         it('The organization, project, task is no longer available to the second user.', () => {
-            cy.logout();
-            cy.login(secondUserName, secondUser.password);
+            cy.reloginAs(secondUser);
             cy.checkOrganizationExists(organizationParams.shortName, false);
             cy.contains('.cvat-item-task-name', taskName).should('not.exist');
             cy.goToProjectsList();
@@ -298,14 +292,14 @@ context('New organization pipeline.', () => {
         });
 
         it('Logout. Remove the first, the second user (deletion occurs from user admin).', () => {
-            cy.logout();
+            cy.headlessLogout();
             cy.getAuthKey().then((authKey) => {
                 cy.deleteUsers(authKey, [firstUserName, secondUserName]);
             });
         });
 
         it('Login as the third user. The organization page can be opened. The job can be opened.', () => {
-            cy.login(thirdUserName, thirdUser.password);
+            cy.reloginAs(thirdUser);
             cy.activateOrganization(organizationParams.shortName);
             cy.visit('/organization');
             cy.checkOrganizationParams(organizationParams);

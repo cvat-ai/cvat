@@ -297,6 +297,20 @@ Cypress.Commands.add('headlessLogin', ({
     });
 });
 
+Cypress.Commands.add('reloginAs', (user) => {
+    const { nextURL = '/tasks' } = user;
+    cy.intercept('GET', nextURL).as('login');
+    cy.headlessLogin({
+        ...user,
+        nextURL,
+    }).then(() => {
+        cy.wait('@login').then(() => {
+            cy.url().should('include', nextURL);
+            cy.get('.cvat-spinner').should('not.exist');
+        });
+    });
+});
+
 Cypress.Commands.add('headlessCreateObjects', (objects, jobID) => {
     const convertShape = ($win, job) => (shape) => ({
         frame: shape.frame,
