@@ -185,10 +185,10 @@ class JsonLogicFilter(filters.BaseFilterBackend):
     def parse_query(self, json_rules: str, *, raise_on_empty: bool = True) -> Rules:
         try:
             rules = json.loads(json_rules)
-            if raise_on_empty and not len(rules):
+            if raise_on_empty and not rules:
                 raise ValidationError(f"filter shouldn't be empty")
-        except json.decoder.JSONDecodeError:
-            raise ValidationError(f'filter: Json syntax should be used')
+        except json.decoder.JSONDecodeError as e:
+            raise ValidationError(f"filter: can't parse filter expression: {e}") from e
 
         return rules
 

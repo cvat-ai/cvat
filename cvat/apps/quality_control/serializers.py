@@ -9,6 +9,7 @@ from rest_framework import serializers
 
 from cvat.apps.engine import field_validation
 from cvat.apps.engine import serializers as engine_serializers
+from cvat.apps.engine.filters import JsonLogicFilter
 from cvat.apps.engine.serializers import WriteOnceMixin
 from cvat.apps.quality_control import models
 
@@ -278,8 +279,8 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 extra_kwargs.setdefault(field_name, {}).setdefault("min_value", 0)
                 extra_kwargs.setdefault(field_name, {}).setdefault("max_value", 1)
 
-    # TODO: check sdk interaction, add more validation
-    job_filter = serializers.JSONField(
+    job_filter = serializers.CharField(
+        max_length=1024,
         required=False,
         help_text=textwrap.dedent(
             """\
@@ -290,8 +291,9 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
         ),
     )
 
-    def get_extra_kwargs(self):
-        defaults = models.QualitySettings.get_defaults()
+    def validate_job_filter(self, value):
+        JsonLogicFilter().parse_query(value, raise_on_empty=False)
+        return value
 
         extra_kwargs = super().get_extra_kwargs()
 
