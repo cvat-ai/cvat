@@ -956,6 +956,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             queryset = perm.filter(queryset)
         elif self.action == 'preview':
             queryset = Task.objects.select_related('data')
+        elif self.action == 'validation_layout':
+            queryset = Task.objects.select_related('data', 'data__validation_layout')
 
         return queryset
 
