@@ -19,8 +19,8 @@ from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.api_client.exceptions import ForbiddenException
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
-
 from shared.utils.config import make_api_client
+from urllib3 import HTTPResponse
 
 
 def initialize_export(endpoint: Endpoint, *, expect_forbidden: bool = False, **kwargs) -> str:
@@ -41,6 +41,29 @@ def initialize_export(endpoint: Endpoint, *, expect_forbidden: bool = False, **k
     return rq_id
 
 
+def wait_background_request(
+    api_client: ApiClient,
+    rq_id: str,
+    *,
+    max_retries: int = 50,
+    interval: float = 0.1,
+) -> tuple[models.Request, HTTPResponse]:
+    for _ in range(max_retries):
+        (background_request, response) = api_client.requests_api.retrieve(rq_id)
+        assert response.status == HTTPStatus.OK
+        if (
+            background_request.status.value
+            == models.RequestStatus.allowed_values[("value",)]["FINISHED"]
+        ):
+            return background_request, response
+        sleep(interval)
+
+    assert False, (
+        f"Export process was not finished within allowed time ({interval * max_retries}, sec). "
+        + f"Last status was: {background_request.status.value}"
+    )
+
+
 def wait_and_download_v2(
     api_client: ApiClient,
     rq_id: str,
@@ -49,20 +72,9 @@ def wait_and_download_v2(
     interval: float = 0.1,
     download_result: bool = True,
 ) -> Optional[bytes]:
-    for _ in range(max_retries):
-        (background_request, response) = api_client.requests_api.retrieve(rq_id)
-        assert response.status == HTTPStatus.OK
-        if (
-            background_request.status.value
-            == models.RequestStatus.allowed_values[("value",)]["FINISHED"]
-        ):
-            break
-        sleep(interval)
-    else:
-        assert False, (
-            f"Export process was not finished within allowed time ({interval * max_retries}, sec). "
-            + f"Last status was: {background_request.status.value}"
-        )
+    background_request, _ = wait_background_request(
+        api_client, rq_id, max_retries=max_retries, interval=interval
+    )
 
     if not download_result:
         return None
