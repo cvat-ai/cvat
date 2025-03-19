@@ -885,6 +885,9 @@ class Job(TimestampedModel, FileSystemRelatedModel):
         related_name='child_jobs', related_query_name="child_job"
     )
 
+    user_can_view_task: MaybeUndefined[bool]
+    "Can be defined by the fetching queryset to avoid extra IAM checks, e.g. in a list serializer"
+
     def get_target_storage(self) -> Optional[Storage]:
         return self.segment.task.target_storage
 
@@ -915,6 +918,10 @@ class Job(TimestampedModel, FileSystemRelatedModel):
     @property
     def organization_id(self):
         return self.segment.task.organization_id
+
+    @property
+    def organization(self):
+        return self.segment.task.organization
 
     def get_organization_slug(self):
         return self.segment.task.organization.slug

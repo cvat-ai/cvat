@@ -19,8 +19,8 @@ class Undefined:
 
 MaybeUndefined = Union[_T, Undefined]
 """
-The reverse side of one-to-one relationship.
-May be undefined in the object, should be accessed via getattr().
+May be undefined in the object, should be accessed via hasattr/getattr().
+Typically, the reverse side of one-to-one relationship or extra annotations from model queryset.
 """
 
 

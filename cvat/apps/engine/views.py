@@ -1862,6 +1862,12 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             perm = JobPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
 
+            visible_tasks_perm = TaskPermission.create_scope_list(self.request)
+            visible_tasks = visible_tasks_perm.filter(Task.objects)
+            queryset = queryset.annotate(
+                user_can_view_task=django_models.Q(segment__task__in=visible_tasks)
+            )
+
         return queryset
 
     def get_serializer_class(self):

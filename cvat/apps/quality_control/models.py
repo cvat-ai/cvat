@@ -14,6 +14,7 @@ from django.db import models, transaction
 from django.forms.models import model_to_dict
 
 from cvat.apps.engine.models import Job, JobType, Project, ShapeType, Task, TimestampedModel, User
+from cvat.apps.organizations.models import Organization
 
 
 class AnnotationConflictType(str, Enum):
@@ -188,6 +189,14 @@ class QualityReport(models.Model):
             return task.organization_id
         elif project := self.project:
             return project.organization_id
+        return None
+
+    @property
+    def organization(self) -> Organization | None:
+        if task := self.get_task():
+            return task.organization
+        elif project := self.project:
+            return project.organization
         return None
 
 
