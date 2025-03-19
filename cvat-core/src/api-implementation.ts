@@ -191,6 +191,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
 
     implementationMixin(cvat.jobs.get, async (
         query: Parameters<CVATCore['jobs']['get']>[0],
+        aggregate: Parameters<CVATCore['jobs']['get']>[1],
     ): ReturnType<CVATCore['jobs']['get']> => {
         checkFilter(query, {
             page: isInteger,
@@ -218,7 +219,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
 
         const searchParams = fieldsToSnakeCase({ ...query });
 
-        const jobsData = await serverProxy.jobs.get(searchParams);
+        const jobsData = await serverProxy.jobs.get(searchParams, aggregate);
         if (query.type === JobType.GROUND_TRUTH && jobsData.count === 1) {
             const labels = await serverProxy.labels.get({ job_id: jobsData[0].id });
             return Object.assign([
@@ -235,6 +236,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
 
     implementationMixin(cvat.tasks.get, async (
         filter: Parameters<CVATCore['tasks']['get']>[0],
+        aggregate: Parameters<CVATCore['tasks']['get']>[1],
     ): ReturnType<CVATCore['tasks']['get']> => {
         checkFilter(filter, {
             page: isInteger,
@@ -263,7 +265,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
             }
         }
 
-        const tasksData = await serverProxy.tasks.get(searchParams);
+        const tasksData = await serverProxy.tasks.get(searchParams, aggregate);
         const tasks = await Promise.all(tasksData.map(async (taskItem) => {
             if ('id' in filter) {
                 // When request task by ID we also need to add labels and jobs to work with them
@@ -422,7 +424,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         return new ConsensusSettings({ ...settings, descriptions });
     });
 
-    implementationMixin(cvat.analytics.quality.reports, async (filter: QualityReportsFilter) => {
+    implementationMixin(cvat.analytics.quality.reports, async (filter: QualityReportsFilter, aggregate?: boolean) => {
         checkFilter(filter, {
             page: isInteger,
             pageSize: isPageSize,
@@ -438,7 +440,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
 
         const params = fieldsToSnakeCase({ ...filter, sort: '-created_date' });
 
-        const reportsData = await serverProxy.analytics.quality.reports(params);
+        const reportsData = await serverProxy.analytics.quality.reports(params, aggregate);
         const reports = Object.assign(
             reportsData.map((report) => new QualityReport({ ...report })),
             { count: reportsData.count },

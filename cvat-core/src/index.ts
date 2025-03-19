@@ -100,7 +100,7 @@ export default interface CVATCore {
             jobID?: number;
             taskID?: number;
             type?: string;
-        }) => Promise<PaginatedResource<Job>>;
+        }, aggregate: boolean) => Promise<PaginatedResource<Job>>;
     };
     tasks: {
         get: (filter: {
@@ -111,7 +111,7 @@ export default interface CVATCore {
             search?: string;
             filter?: string;
             ordering?: string;
-        }) => Promise<PaginatedResource<Task>>;
+        }, aggregate: boolean) => Promise<PaginatedResource<Task>>;
     }
     projects: {
         get: (

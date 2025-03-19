@@ -112,9 +112,9 @@ export default class QualityReport {
             validCount: this.#summary.valid_count,
             dsCount: this.#summary.ds_count,
             gtCount: this.#summary.gt_count,
-            accuracy: (this.#summary.valid_count / this.#summary.total_count) * 100,
-            precision: (this.#summary.valid_count / this.#summary.gt_count) * 100,
-            recall: (this.#summary.valid_count / this.#summary.ds_count) * 100,
+            accuracy: this.#summary.accuracy * 100,
+            precision: this.#summary.precision * 100,
+            recall: this.#summary.recall * 100,
             conflictsByType: {
                 extraAnnotations: this.#summary.conflicts_by_type?.extra_annotation,
                 missingAnnotations: this.#summary.conflicts_by_type?.missing_annotation,

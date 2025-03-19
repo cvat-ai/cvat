@@ -148,8 +148,8 @@ function build(): CVATCore {
             },
         },
         tasks: {
-            async get(filter = {}) {
-                const result = await PluginRegistry.apiWrapper(cvat.tasks.get, filter);
+            async get(filter = {}, aggregate = false) {
+                const result = await PluginRegistry.apiWrapper(cvat.tasks.get, filter, aggregate);
                 return result;
             },
         },
@@ -160,8 +160,8 @@ function build(): CVATCore {
             },
         },
         jobs: {
-            async get(filter = {}) {
-                const result = await PluginRegistry.apiWrapper(cvat.jobs.get, filter);
+            async get(filter = {}, aggregate = false) {
+                const result = await PluginRegistry.apiWrapper(cvat.jobs.get, filter, aggregate);
                 return result;
             },
         },
@@ -402,8 +402,8 @@ function build(): CVATCore {
                 },
             },
             quality: {
-                async reports(filter = {}) {
-                    const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.reports, filter);
+                async reports(filter = {}, aggregate = false) {
+                    const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.reports, filter, aggregate);
                     return result;
                 },
                 async conflicts(filter = {}) {

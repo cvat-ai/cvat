@@ -321,6 +321,9 @@ export interface SerializedQualityReportData {
     gt_last_updated?: string;
     assignee?: SerializedUser | null;
     summary?: {
+        accuracy: number;
+        precision: number;
+        recall: number;
         total_frames: number;
         validation_frames: number;
         validation_frame_share: number;
