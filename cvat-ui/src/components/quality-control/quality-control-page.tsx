@@ -300,7 +300,7 @@ function QualityControlPage(): JSX.Element {
     }, []);
 
     useEffect(() => {
-        window.location.hash = activeTab;
+        window.history.replaceState(null, '', `#${activeTab}`);
     }, [activeTab]);
 
     const onTabKeyChange = useCallback((key: string): void => {
