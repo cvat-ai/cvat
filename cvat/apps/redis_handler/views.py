@@ -1,7 +1,6 @@
 import functools
 from collections import namedtuple
 from collections.abc import Iterable
-from typing import Optional
 
 import django_rq
 from django.conf import settings
@@ -24,11 +23,12 @@ from cvat.apps.engine.filters import (
     NonModelSimpleFilter,
 )
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.models import RequestAction, RequestStatus, RequestSubresource, RequestTarget
+from cvat.apps.engine.models import RequestAction, RequestStatus, RequestTarget
 from cvat.apps.engine.rq import is_rq_job_owner
 from cvat.apps.engine.serializers import RequestSerializer
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.redis_handler.rq import RQId
+from django.utils.module_loading import import_string
 
 slogger = ServerLogManager(__name__)
 
@@ -54,6 +54,11 @@ class RequestViewSet(viewsets.GenericViewSet):
         queue_name
         for queue_name, queue_conf in settings.RQ_QUEUES.items()
         if queue_conf.get("VISIBLE_VIA_REQUESTS_API")
+    }
+    PARSED_JOB_ID_CLASSES = {
+        queue_name: import_string(settings.RQ_QUEUES[queue_name]["PARSED_JOB_ID_CLASS"])
+        for queue_name in SUPPORTED_QUEUES
+        if "PARSED_JOB_ID_CLASS" in settings.RQ_QUEUES[queue_name]
     }
 
     serializer_class = RequestSerializer
@@ -118,6 +123,10 @@ class RequestViewSet(viewsets.GenericViewSet):
     def queues(self) -> Iterable[DjangoRQ]:
         return (django_rq.get_queue(queue_name) for queue_name in self.SUPPORTED_QUEUES)
 
+    @classmethod
+    def get_parsed_id_class(cls, queue_name: str) -> type[RQId]:
+        return cls.PARSED_JOB_ID_CLASSES.get(queue_name, RQId)
+
     def _get_rq_jobs_from_queue(self, queue: DjangoRQ, user_id: int) -> list[RQJob]:
         job_ids = set(
             queue.get_job_ids()
@@ -127,13 +136,18 @@ class RequestViewSet(viewsets.GenericViewSet):
             + queue.deferred_job_registry.get_job_ids()
         )
         jobs = []
+
+        ParsedIdClass = self.get_parsed_id_class(queue.name)
+
         for job in queue.job_class.fetch_many(job_ids, queue.connection):
             # TODO: move filtration by owner?
             if job and is_rq_job_owner(job, user_id):
                 try:
-                    parsed_rq_id = RQId.parse(job.id)
+                    parsed_rq_id = ParsedIdClass.parse(job.id)
                 except Exception:  # nosec B112
                     continue
+
+                # todo: fix type annotation
                 job.parsed_rq_id = parsed_rq_id
                 jobs.append(job)
 
@@ -157,7 +171,7 @@ class RequestViewSet(viewsets.GenericViewSet):
 
         return all_jobs
 
-    def _get_rq_job_by_id(self, rq_id: str) -> Optional[RQJob]:
+    def _get_rq_job_by_id(self, rq_id: str) -> RQJob | None:
         """
         Get a RQJob by its ID from the queues.
 
@@ -169,10 +183,10 @@ class RequestViewSet(viewsets.GenericViewSet):
         """
         try:
             parsed_rq_id = RQId.parse(rq_id)
-        except Exception as ex:
+        except Exception:
             return None
 
-        job: Optional[RQJob] = None
+        job: RQJob | None = None
 
         if parsed_rq_id.queue.value not in self.SUPPORTED_QUEUES:
             raise ValidationError("Unsupported queue")
@@ -181,6 +195,10 @@ class RequestViewSet(viewsets.GenericViewSet):
 
         job = queue.fetch_job(rq_id)
         if job:
+            ParsedIdClass = self.get_parsed_id_class(queue.name)
+            if type(parsed_rq_id) is not ParsedIdClass:
+                parsed_rq_id = ParsedIdClass.from_base(parsed_rq_id)
+
             job.parsed_rq_id = parsed_rq_id
 
         return job

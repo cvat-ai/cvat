@@ -1,14 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar
+from typing import ClassVar, Any
 from uuid import UUID
 
 import attrs
 
-from cvat.apps.engine.types import ExtendedRequest
-
-if TYPE_CHECKING:
-    from django.contrib.auth.models import User
 
 import base64
 
@@ -27,6 +23,15 @@ def convert_id(value: int | str | UUID) -> int | UUID:
     return UUID(value)
 
 
+def convert_extra(value: dict) -> dict[str, Any]:
+    assert isinstance(value, dict), f"Unexpected type: {type(value)}"
+    for k, v in value.items():
+        if not isinstance(v, str):
+            value[k] = str(v)
+
+    return value
+
+
 @attrs.frozen(kw_only=True)
 class RQId:
     FIELD_SEP: ClassVar[str] = "&"
@@ -41,22 +46,34 @@ class RQId:
     )
 
     # todo: dot access
-    extra: dict | None = attrs.field(default=None)
+    extra: dict[str, Any] = attrs.field(converter=convert_extra, factory=dict)
 
     @property
     def type(self) -> str:
         return ":".join([self.action, self.target])
 
+    @classmethod
+    def from_base(cls, parsed_id: RQId, /):
+        # method is going to be used by child classes
+        return cls(
+            queue=parsed_id.queue,
+            action=parsed_id.action,
+            target=parsed_id.target,
+            id=parsed_id.id,
+            extra=parsed_id.extra,
+        )
+
     def render(self) -> str:
+        # TODO: add queue name indirectly
         bytes = self.FIELD_SEP.join(
             [
                 self.KEY_VAL_SEP.join([k, v])
                 for k, v in {
                     "queue": self.queue.value,
-                    "action": self.action,
-                    "target": self.target,
+                    "action": str(self.action),
+                    "target": str(self.target),
                     "id": str(self.id),
-                    **(self.extra or {}),
+                    **self.extra,
                 }.items()
             ]
         ).encode()
@@ -65,7 +82,7 @@ class RQId:
 
     # TODO: handle exceptions
     @classmethod
-    def parse(cls, rq_id: str, /) -> RQId:
+    def parse(cls, rq_id: str, /):
         decoded_rq_id = base64.b64decode(rq_id).decode()
 
         keys = set(attrs.fields_dict(cls).keys()) - {"extra"}
