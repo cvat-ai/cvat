@@ -2160,23 +2160,9 @@ async function createAsset(file: File, guideId: number): Promise<SerializedAsset
     }
 }
 
-async function getQualitySettings(
-    filter: APIQualitySettingsFilter,
-): Promise<SerializedQualitySettingsData[]> {
-    const { backendAPI } = config;
-
-    try {
-        const response = await Axios.get(`${backendAPI}/quality/settings`, {
-            params: {
-                ...filter,
-            },
-        });
-
-        return response.data.results;
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
+const getQualitySettings = fetchAggregatedResource<APIQualitySettingsFilter, SerializedQualitySettingsData>(
+    `${config.backendAPI}/quality/settings`,
+);
 
 async function updateQualitySettings(
     settingsID: number,

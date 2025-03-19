@@ -277,7 +277,7 @@ function QualityControlPage(): JSX.Element {
             switch (type) {
                 case 'project': {
                     [settings] = await core.analytics.quality.settings.get({ projectID: id, parentType: 'project' });
-                    childrenSettings = await core.analytics.quality.settings.get({ projectID: id, parentType: 'task' });
+                    childrenSettings = await core.analytics.quality.settings.get({ projectID: id, parentType: 'task' }, true);
                     break;
                 }
                 case 'task': {

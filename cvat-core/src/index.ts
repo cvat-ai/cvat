@@ -100,7 +100,7 @@ export default interface CVATCore {
             jobID?: number;
             taskID?: number;
             type?: string;
-        }, aggregate: boolean) => Promise<PaginatedResource<Job>>;
+        }, aggregate?: boolean) => Promise<PaginatedResource<Job>>;
     };
     tasks: {
         get: (filter: {
@@ -111,7 +111,7 @@ export default interface CVATCore {
             search?: string;
             filter?: string;
             ordering?: string;
-        }, aggregate: boolean) => Promise<PaginatedResource<Task>>;
+        }, aggregate?: boolean) => Promise<PaginatedResource<Task>>;
     }
     projects: {
         get: (
@@ -152,7 +152,7 @@ export default interface CVATCore {
             reports: (filter: QualityReportsFilter) => Promise<PaginatedResource<QualityReport>>;
             conflicts: (filter: QualityConflictsFilter) => Promise<QualityConflict[]>;
             settings: {
-                get: (filter: QualitySettingsFilter) => Promise<QualitySettings[]>;
+                get: (filter: QualitySettingsFilter, aggregate?: boolean) => Promise<QualitySettings[]>;
             };
         };
         performance: {

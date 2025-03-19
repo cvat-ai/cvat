@@ -523,25 +523,27 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
 
         return mergedConflicts;
     });
-    implementationMixin(cvat.analytics.quality.settings.get, async (filter: QualitySettingsFilter) => {
-        checkFilter(filter, {
-            taskID: isInteger,
-            projectID: isInteger,
-            parentType: isString,
+    implementationMixin(
+        cvat.analytics.quality.settings.get,
+        async (filter: QualitySettingsFilter, aggregate?: boolean) => {
+            checkFilter(filter, {
+                taskID: isInteger,
+                projectID: isInteger,
+                parentType: isString,
+            });
+
+            const params = fieldsToSnakeCase(filter);
+
+            const settingsList = await serverProxy.analytics.quality.settings.get(params, aggregate);
+            if (settingsList) {
+                const schema = await getServerAPISchema();
+                const descriptions = convertDescriptions(schema.components.schemas.QualitySettings.properties);
+
+                const settings = settingsList.map((setting) => new QualitySettings({ ...setting, descriptions }));
+                return settings;
+            }
+            return null;
         });
-
-        const params = fieldsToSnakeCase(filter);
-
-        const settingsList = await serverProxy.analytics.quality.settings.get(params);
-        if (settingsList) {
-            const schema = await getServerAPISchema();
-            const descriptions = convertDescriptions(schema.components.schemas.QualitySettings.properties);
-
-            const settings = settingsList.map((setting) => new QualitySettings({ ...setting, descriptions }));
-            return settings;
-        }
-        return null;
-    });
     implementationMixin(cvat.analytics.performance.reports, async (filter: AnalyticsReportFilter) => {
         checkFilter(filter, {
             jobID: isInteger,

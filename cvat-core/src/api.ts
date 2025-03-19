@@ -411,8 +411,12 @@ function build(): CVATCore {
                     return result;
                 },
                 settings: {
-                    async get(filter = {}) {
-                        const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.settings.get, filter);
+                    async get(filter = {}, aggregate = false) {
+                        const result = await PluginRegistry.apiWrapper(
+                            cvat.analytics.quality.settings.get,
+                            filter,
+                            aggregate,
+                        );
                         return result;
                     },
                 },
