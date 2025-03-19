@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
-/// <reference types="../../support" />
 
 import { defaultTaskSpec } from '../../support/default-specs';
 
@@ -59,8 +58,8 @@ context('New organization pipeline.', () => {
     const taskName = `New annotation task for ${labelName}`;
     const newTaskName = labelName;
     const serverFiles = ['archive.zip'];
-    let taskId = null;
-    let jobId = null;
+    let taskID = null;
+    let jobID = null;
 
     const createCuboidShape2Points = {
         points: 'From rectangle',
@@ -76,6 +75,7 @@ context('New organization pipeline.', () => {
         return email.split('@').map((part) => `${part.toUpperCase()[0]}${part.slice(1)}`).join('@');
     }
     function tearDown() {
+        cy.headlessLogout();
         cy.getAuthKey().then((authKey) => {
             cy.deleteUsers(authKey, [firstUserName, secondUserName, thirdUserName]);
             cy.deleteTasks(authKey, [newTaskName]);
@@ -85,13 +85,17 @@ context('New organization pipeline.', () => {
     }
 
     before(() => {
-        tearDown();
-        cy.headlessLogout();
         cy.visit('/auth/login');
+        cy.window().its('cvat').should('not.be.undefined');
+        tearDown();
         for (const user of Object.values(users)) {
             cy.headlessCreateUser(user);
         }
-        cy.login(firstUser.username, firstUser.password);
+        cy.headlessLogin({
+            username: firstUser.username,
+            password: firstUser.password,
+            nextURL: '/tasks',
+        });
     });
 
     beforeEach(() => {
@@ -99,7 +103,6 @@ context('New organization pipeline.', () => {
     });
 
     after(() => {
-        cy.headlessLogout();
         tearDown();
     });
 
@@ -186,8 +189,8 @@ context('New organization pipeline.', () => {
                 taskSpec.project_id = projectID;
                 cy.headlessCreateTask(
                     taskSpec, dataSpec, extras,
-                ).then(({ taskID }) => {
-                    taskId = taskID;
+                ).then((taskResponse) => {
+                    taskID = taskResponse.taskID;
                 });
             });
             cy.goToProjectsList();
@@ -254,7 +257,7 @@ context('New organization pipeline.', () => {
             cy.goToTaskList();
             cy.openTask(taskName);
             cy.getJobIDFromIdx(0).then((_jobID) => {
-                jobId = _jobID;
+                jobID = _jobID;
                 cy.assignJobToUser(_jobID, thirdUserName);
             });
             cy.renameTask(taskName, newTaskName);
@@ -269,7 +272,7 @@ context('New organization pipeline.', () => {
         });
 
         it('User can open the job using direct link. Organization is set automatically. Create an object, save annotations.', () => {
-            cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
+            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
             cy.get('.cvat-canvas-container').should('exist');
             cy.get('.cvat-header-menu-user-dropdown-organization').should('have.text', organizationParams.shortName);
             cy.createCuboid(createCuboidShape2Points);
@@ -307,7 +310,7 @@ context('New organization pipeline.', () => {
             cy.visit('/organization');
             cy.checkOrganizationParams(organizationParams);
             cy.checkOrganizationMembers(1, [thirdUserName]);
-            cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
+            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
             cy.get('.cvat-canvas-container').should('exist');
             cy.get('.cvat_canvas_shape_cuboid').should('be.visible');
         });
