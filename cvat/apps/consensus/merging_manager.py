@@ -195,9 +195,7 @@ class MergingManager(AbstractRQJobManager):
         user_id = self.request.user.id
 
         with get_rq_lock_by_user(queue, user_id=user_id):
-            dependency = define_dependent_job(
-                queue, user_id=user_id, rq_id=rq_id
-            )
+            dependency = define_dependent_job(queue, user_id=user_id, rq_id=rq_id)
             queue.enqueue(
                 self._merge,
                 target_type=type(self.db_instance),

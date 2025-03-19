@@ -964,13 +964,6 @@ paths:
     post:
       operationId: consensus_create_merge
       summary: Create a consensus merge
-      parameters:
-      - in: query
-        name: rq_id
-        schema:
-          type: string
-        description: |
-          The consensus merge request id. Can be specified to check operation status.
       tags:
       - consensus
       requestBody:
@@ -985,8 +978,6 @@ paths:
       - signatureAuth: []
       - basicAuth: []
       responses:
-        '201':
-          description: No response body
         '202':
           content:
             application/vnd.cvat+json:
@@ -994,9 +985,7 @@ paths:
                 $ref: '#/components/schemas/RqId'
           description: |
             A consensus merge request has been enqueued, the request id is returned.
-            The request status can be checked at this endpoint by passing the rq_id
-            as the query parameter. If the request id is specified, this response
-            means the consensus merge request is queued or is being processed.
+            The request status can be checked by using common requests API: GET /api/requests/rq_id
         '400':
           description: Invalid or failed request, check the response data for details
   /api/consensus/settings:
@@ -4239,6 +4228,8 @@ paths:
           description: ''
     post:
       operationId: quality_create_report
+      description: 'Deprecation warning: Do not use this endpoint ot check the report
+        computation status'
       summary: Create a quality report
       parameters:
       - in: query
@@ -4248,6 +4239,7 @@ paths:
         description: |
           The report creation request id. Can be specified to check the report
           creation status.
+        deprecated: true
       tags:
       - quality
       requestBody:
@@ -4487,12 +4479,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['status', 'project_id', 'task_id', 'job_id', 'action', 'target', 'subresource', 'format'].
-        schema:
-          type: string
-      - name: format
-        in: query
-        description: A simple equality filter for the format field
+           Available filter_fields: ['status', 'project_id', 'task_id', 'job_id', 'action', 'target'].
         schema:
           type: string
       - name: job_id
@@ -4539,15 +4526,6 @@ paths:
           - started
           - failed
           - finished
-      - name: subresource
-        in: query
-        description: A simple equality filter for the subresource field
-        schema:
-          type: string
-          enum:
-          - annotations
-          - dataset
-          - backup
       - name: target
         in: query
         description: A simple equality filter for the target field
