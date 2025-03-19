@@ -283,14 +283,14 @@ class TestPostConsensusMerge(_PermissionTestBase):
         rq_id: str,
         *,
         staff_user: str,
-        other_user: str,
-        other_user_status: HTTPStatus = HTTPStatus.FORBIDDEN,
+        another_user: str,
+        another_user_status: HTTPStatus = HTTPStatus.FORBIDDEN,
     ):
-        with make_api_client(other_user) as api_client:
+        with make_api_client(another_user) as api_client:
             (_, response) = api_client.requests_api.retrieve(
                 rq_id, _parse_response=False, _check_status=False
             )
-            assert response.status == other_user_status
+            assert response.status == another_user_status
 
         with make_api_client(staff_user) as api_client:
             wait_background_request(api_client, rq_id)
@@ -302,7 +302,7 @@ class TestPostConsensusMerge(_PermissionTestBase):
     ):
         task, task_staff = find_sandbox_task_with_consensus(is_staff=True)
 
-        other_user = next(
+        another_user = next(
             u
             for u in users
             if (
@@ -315,7 +315,7 @@ class TestPostConsensusMerge(_PermissionTestBase):
 
         rq_id = self.request_merge(task_id=task["id"], user=task_staff["username"])
         self._test_check_merge_status(
-            rq_id, staff_user=task_staff["username"], other_user=other_user["username"]
+            rq_id, staff_user=task_staff["username"], another_user=another_user["username"]
         )
 
     @pytest.mark.parametrize(
@@ -342,7 +342,7 @@ class TestPostConsensusMerge(_PermissionTestBase):
             org_filter = "exclude_" + org_filter
 
         try:
-            other_user = next(
+            another_user = next(
                 u
                 for u in find_users(
                     role=role, **{org_filter: task["organization"]}, exclude_is_superuser=True
@@ -357,7 +357,7 @@ class TestPostConsensusMerge(_PermissionTestBase):
             # create a new user that passes the requirements
             with make_api_client(admin_user) as api_client:
                 user_name = f"{same_org}{role}"
-                other_user, _ = api_client.auth_api.create_register(
+                another_user, _ = api_client.auth_api.create_register(
                     models.RegisterSerializerExRequest(
                         username=user_name,
                         password1=USER_PASS,
@@ -377,14 +377,14 @@ class TestPostConsensusMerge(_PermissionTestBase):
                 api_client.invitations_api.create(
                     models.InvitationWriteRequest(
                         role=role,
-                        email=other_user["email"],
+                        email=another_user["email"],
                     ),
                     org_id=org_id,
                 )
 
         rq_id = self.request_merge(task_id=task["id"], user=task_staff["username"])
         self._test_check_merge_status(
-            rq_id, staff_user=task_staff["username"], other_user=other_user["username"]
+            rq_id, staff_user=task_staff["username"], another_user=another_user["username"]
         )
 
     @pytest.mark.parametrize(
@@ -397,30 +397,29 @@ class TestPostConsensusMerge(_PermissionTestBase):
         find_org_task_with_consensus,
         role: str,
     ):
-        task, other_user = find_org_task_with_consensus(is_staff=False, user_org_role=role)
+        task, another_user = find_org_task_with_consensus(is_staff=False, user_org_role=role)
         task_owner = task["owner"]
 
         rq_id = self.request_merge(task_id=task["id"], user=task_owner["username"])
         self._test_check_merge_status(
             rq_id,
             staff_user=task_owner["username"],
-            other_user=other_user["username"],
-            other_user_status=HTTPStatus.FORBIDDEN,
+            another_user=another_user["username"],
         )
 
         with make_api_client(task_owner["username"]) as api_client:
             api_client.tasks_api.partial_update(
                 task["id"],
                 patched_task_write_request=models.PatchedTaskWriteRequest(
-                    assignee_id=other_user["id"]
+                    assignee_id=another_user["id"]
                 ),
             )
 
         self._test_check_merge_status(
             rq_id,
             staff_user=task_owner["username"],
-            other_user=other_user["username"],
-            other_user_status=HTTPStatus.OK,
+            another_user=another_user["username"],
+            another_user_status=HTTPStatus.OK,
         )
 
     @pytest.mark.parametrize("is_sandbox", (True, False))

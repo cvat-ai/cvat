@@ -2265,7 +2265,7 @@ class DatasetComparator:
         )
 
 
-class QualityReportUpdateManager(AbstractRQJobManager):
+class QualityReportRQJobManager(AbstractRQJobManager):
     _JOB_RESULT_TTL = 120
     _JOB_FAILURE_TTL = _JOB_RESULT_TTL
 
@@ -2300,7 +2300,7 @@ class QualityReportUpdateManager(AbstractRQJobManager):
         with get_rq_lock_by_user(queue, user_id=user_id):
             dependency = define_dependent_job(queue, user_id=user_id, rq_id=rq_id)
             queue.enqueue(
-                self._check_task_quality,
+                QualityReportUpdateManager._check_task_quality,
                 task_id=self.db_instance.pk,
                 job_id=rq_id,
                 meta=BaseRQMeta.build(request=self.request, db_obj=self.db_instance),
@@ -2309,6 +2309,7 @@ class QualityReportUpdateManager(AbstractRQJobManager):
                 depends_on=dependency,
             )
 
+class QualityReportUpdateManager:
     @classmethod
     @silk_profile()
     def _check_task_quality(cls, *, task_id: int) -> int:

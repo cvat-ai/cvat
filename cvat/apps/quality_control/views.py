@@ -277,7 +277,7 @@ class QualityReportViewSet(
             except Task.DoesNotExist as ex:
                 raise NotFound(f"Task {task_id} does not exist") from ex
 
-            manager = qc.QualityReportUpdateManager(task, request)
+            manager = qc.QualityReportRQJobManager(task, request)
             return manager.process()
 
         else:
@@ -286,7 +286,7 @@ class QualityReportViewSet(
             serializer = RqIdSerializer(data={"rq_id": rq_id})
             serializer.is_valid(raise_exception=True)
             rq_id = serializer.validated_data["rq_id"]
-            rq_job = qc.QualityReportUpdateManager.get_job_by_id(rq_id)
+            rq_job = qc.QualityReportRQJobManager.get_job_by_id(rq_id)
 
             # FUTURE-TODO: move into permissions
             # and allow not only rq job owner to check the status

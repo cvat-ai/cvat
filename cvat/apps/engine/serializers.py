@@ -3605,12 +3605,15 @@ class RequestSerializer(serializers.Serializer):
             representation["status"] = RQJobStatus.QUEUED
 
         if representation["status"] == RQJobStatus.FINISHED:
+
+            # TODO: move into a custom Job class
             if rq_job.parsed_rq_id.action == models.RequestAction.EXPORT:
                 representation["result_url"] = ExportRQMeta.for_job(rq_job).result_url
 
             if (
                 rq_job.parsed_rq_id.action == models.RequestAction.IMPORT
                 and rq_job.parsed_rq_id.subresource == models.RequestSubresource.BACKUP
+                or rq_job.parsed_rq_id.queue == settings.CVAT_QUEUES.QUALITY_REPORTS
             ):
                 representation["result_id"] = rq_job.return_value()
 
