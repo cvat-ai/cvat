@@ -2714,7 +2714,7 @@ class TaskQualityCalculator:
     JOB_FILTER_LOOKUPS = {
         "id": "id",
         "type": "type",
-        "status": "status",
+        "state": "state",
         "stage": "stage",
         "assignee": "assignee__username",
         "task_id": "segment__task__id",
