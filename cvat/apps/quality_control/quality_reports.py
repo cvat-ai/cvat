@@ -382,22 +382,22 @@ class ConfusionMatrix(ReportNode):
         ) / (total_annotations_count or 1)
 
     @cached_property
-    def precision(self) -> np.ndarray | None:
+    def precision(self) -> np.ndarray | None:  # pylint: disable=method-hidden (fixed in pylint 3.0)
         self._update_cached_fields()
         return self.precision
 
     @cached_property
-    def recall(self) -> np.ndarray | None:
+    def recall(self) -> np.ndarray | None:  # pylint: disable=method-hidden
         self._update_cached_fields()
         return self.recall
 
     @cached_property
-    def accuracy(self) -> np.ndarray | None:
+    def accuracy(self) -> np.ndarray | None:  # pylint: disable=method-hidden
         self._update_cached_fields()
         return self.accuracy
 
     @cached_property
-    def jaccard_index(self) -> np.ndarray | None:
+    def jaccard_index(self) -> np.ndarray | None:  # pylint: disable=method-hidden
         self._update_cached_fields()
         return self.jaccard_index
 
