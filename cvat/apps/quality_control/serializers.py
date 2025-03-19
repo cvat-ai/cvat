@@ -95,14 +95,8 @@ class QualityReportSummarySerializer(serializers.Serializer):
     )
 
 
-class QualityReportTargetSerializer(serializers.ChoiceField):
-    # Make a separate class in API schema, otherwise it gets merged with AnalyticsReportTarget enum
-    def __init__(self, **kwargs):
-        super().__init__(choices=models.QualityReportTarget.choices(), **kwargs)
-
-
 class QualityReportSerializer(serializers.ModelSerializer):
-    target = QualityReportTargetSerializer()
+    target = serializers.ChoiceField(choices=models.QualityReportTarget.choices())
     assignee = engine_serializers.BasicUserSerializer(allow_null=True, read_only=True)
     summary = QualityReportSummarySerializer()
     parent_id = serializers.IntegerField(
@@ -280,6 +274,7 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 extra_kwargs.setdefault(field_name, {}).setdefault("max_value", 1)
 
     job_filter = serializers.CharField(
+        allow_blank=True,
         max_length=1024,
         required=False,
         help_text=textwrap.dedent(
@@ -294,6 +289,9 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
     def validate_job_filter(self, value):
         JsonLogicFilter().parse_query(value, raise_on_empty=False)
         return value
+
+    def get_extra_kwargs(self):
+        defaults = models.QualitySettings.get_defaults()
 
         extra_kwargs = super().get_extra_kwargs()
 

@@ -3138,7 +3138,7 @@ class ProjectQualityCalculator:
                         task_quality_reports[task.id] = task_report
 
         task_comparison_reports: dict[int, ComparisonReport] = {
-            task_id: ComparisonReport.from_json(r.get_json_report())
+            task_id: ComparisonReport.from_json(r.get_report_data())
             for task_id, r in task_quality_reports.items()
         }
 
@@ -3191,7 +3191,7 @@ class ProjectQualityCalculator:
                     # Consider tasks excluded if no jobs were included
                     task_id
                     for task_id, r in task_reports.items()
-                    if not r.comparison_summary.total_frames
+                    if not r.comparison_summary.jobs.included_count
                 }
             )
         )
@@ -3325,7 +3325,7 @@ def prepare_report_for_downloading(db_report: models.QualityReport, *, host: str
         assignee=_serialize_assignee(db_report.assignee),
     )
 
-    comparison_report = ComparisonReport.from_json(db_report.get_json_report())
+    comparison_report = ComparisonReport.from_json(db_report.get_report_data())
     serialized_data.update(comparison_report.to_dict())
 
     if db_report.project:

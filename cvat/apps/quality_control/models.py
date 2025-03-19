@@ -85,21 +85,7 @@ class QualityTargetMetricType(str, Enum):
         return tuple((x.value, x.name) for x in cls)
 
 
-class QualityReportQuerySet(models.QuerySet):
-    def count(self):
-        # By default, Django produces count() requests possibly with a subquery inside
-        # in some cases, e.g. if SELECT DISTINCT is used. The DISTINCT condition
-        # compares all the rows to leave only unique ones.
-        # This works extremely slow because of the large "data" fields.
-        # In reality, we only need to check pk for uniqueness.
-        # Here is a simple workaround - we drop all the fields but pk to get COUNT.
-        # Ideally, put this optimization into paginator or permission filtering somehow.
-        return models.QuerySet.count(self.only("pk"))
-
-
 class QualityReport(models.Model):
-    objects = QualityReportQuerySet.as_manager()
-
     job = models.ForeignKey(
         Job, on_delete=models.CASCADE, related_name="quality_reports", null=True, blank=True
     )
@@ -137,19 +123,14 @@ class QualityReport(models.Model):
 
     @property
     def target(self) -> QualityReportTarget:
-        if self.job:
+        if self.job_id:
             return QualityReportTarget.JOB
-        elif self.task:
+        elif self.task_id:
             return QualityReportTarget.TASK
-        elif self.project:
+        elif self.project_id:
             return QualityReportTarget.PROJECT
         else:
             assert False
-
-    def _parse_report(self):
-        from cvat.apps.quality_control.quality_reports import ComparisonReport
-
-        return ComparisonReport.from_json(self.data)
 
     def _parse_report_summary(self):
         from cvat.apps.quality_control.quality_reports import ComparisonReport
@@ -159,6 +140,9 @@ class QualityReport(models.Model):
     @property
     def summary(self):
         return self._parse_report_summary()
+
+    def get_report_data(self) -> str:
+        return self.data
 
     def get_task(self) -> Task | None:
         if self.task:
@@ -175,9 +159,6 @@ class QualityReport(models.Model):
             return task.project
         else:
             return None
-
-    def get_json_report(self) -> str:
-        return self.data
 
     def clean(self):
         if not (self.job is not None) ^ (self.task is not None) ^ (self.project is not None):

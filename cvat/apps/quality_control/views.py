@@ -189,16 +189,15 @@ class QualityReportViewSet(
 ):
     @staticmethod
     def _add_prefetch_params(queryset: QuerySet[QualityReport]) -> QuerySet[QualityReport]:
-        return queryset.prefetch_related(
-            "assignee",
-            "parents",
+        return queryset.select_related(
             "job",
             "job__segment",
             "job__segment__task",
             "job__segment__task__project",
-            "task",
             "task__project",
             "project",
+        ).prefetch_related(
+            "assignee",
         )
 
     queryset = _add_prefetch_params(QualityReport.objects.get_queryset())

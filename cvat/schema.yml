@@ -6650,47 +6650,6 @@ components:
           type: string
       required:
       - organization_slug
-    AnalyticsReport:
-      type: object
-      properties:
-        created_date:
-          type: string
-          format: date-time
-        target:
-          $ref: '#/components/schemas/AnalyticsReportTargetEnum'
-        job_id:
-          type: integer
-        task_id:
-          type: integer
-        project_id:
-          type: integer
-        statistics:
-          type: array
-          items:
-            $ref: '#/components/schemas/Metric'
-      required:
-      - created_date
-      - statistics
-      - target
-    AnalyticsReportCreateRequest:
-      type: object
-      properties:
-        job_id:
-          type: integer
-        task_id:
-          type: integer
-        project_id:
-          type: integer
-    AnalyticsReportTargetEnum:
-      enum:
-      - job
-      - task
-      - project
-      type: string
-      description: |-
-        * `job` - JOB
-        * `task` - TASK
-        * `project` - PROJECT
     AnnotationConflict:
       type: object
       properties:
@@ -6818,21 +6777,6 @@ components:
           oneOf:
           - $ref: '#/components/schemas/ShapeType'
           - $ref: '#/components/schemas/NullEnum'
-    AnnotationIdTypeEnum:
-      enum:
-      - tag
-      - shape
-      - track
-      type: string
-      description: |-
-        * `tag` - TAG
-        * `shape` - SHAPE
-        * `track` - TRACK
-    AnnotationsRead:
-      oneOf:
-      - $ref: '#/components/schemas/LabeledData'
-      - type: string
-        format: binary
     AssetRead:
       type: object
       properties:
@@ -9480,9 +9424,10 @@ components:
       type: object
       properties:
         job_filter:
-          type: object
+          type: string
           description: |
             JSON expression filter for included jobs. Available filter terms: ['assignee', 'id', 'stage', 'status', 'task_id', 'task_name', 'type']
+          maxLength: 1024
         inherit:
           type: boolean
           description: |
@@ -9932,6 +9877,7 @@ components:
           type: integer
           readOnly: true
           nullable: true
+          description: Deprecated
         target:
           $ref: '#/components/schemas/QualityReportTarget'
         summary:
@@ -10100,9 +10046,10 @@ components:
           type: integer
           nullable: true
         job_filter:
-          type: object
+          type: string
           description: |
             JSON expression filter for included jobs. Available filter terms: ['assignee', 'id', 'stage', 'status', 'task_id', 'task_name', 'type']
+          maxLength: 1024
         inherit:
           type: boolean
           description: |
@@ -10257,9 +10204,10 @@ components:
           type: integer
           nullable: true
         job_filter:
-          type: object
+          type: string
           description: |
             JSON expression filter for included jobs. Available filter terms: ['assignee', 'id', 'stage', 'status', 'task_id', 'task_name', 'type']
+          maxLength: 1024
         inherit:
           type: boolean
           description: |
@@ -10523,7 +10471,7 @@ components:
         type:
           type: string
         target:
-          $ref: '#/components/schemas/RequestDataOperationTargetEnum'
+          $ref: '#/components/schemas/RequestTarget'
         project_id:
           type: integer
           nullable: true
@@ -10542,16 +10490,6 @@ components:
       required:
       - target
       - type
-    RequestDataOperationTargetEnum:
-      enum:
-      - project
-      - task
-      - job
-      type: string
-      description: |-
-        * `project` - Project
-        * `task` - Task
-        * `job` - Job
     RequestStatus:
       enum:
       - queued
@@ -10564,6 +10502,16 @@ components:
         * `started` - Started
         * `failed` - Failed
         * `finished` - Finished
+    RequestTarget:
+      enum:
+      - project
+      - task
+      - job
+      type: string
+      description: |-
+        * `project` - Project
+        * `task` - Task
+        * `job` - Job
     RestAuthDetail:
       type: object
       properties:
