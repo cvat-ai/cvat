@@ -104,7 +104,9 @@ class QualityReportSerializer(serializers.ModelSerializer):
     target = QualityReportTargetSerializer()
     assignee = engine_serializers.BasicUserSerializer(allow_null=True, read_only=True)
     summary = QualityReportSummarySerializer()
-    parent_id = serializers.IntegerField(default=None, allow_null=True, read_only=True)
+    parent_id = serializers.IntegerField(
+        default=None, allow_null=True, read_only=True, help_text="Deprecated"
+    )
     task_id = serializers.IntegerField(
         source="get_task.id", default=None, allow_null=True, read_only=True
     )
@@ -131,7 +133,7 @@ class QualityReportSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         result = super().to_representation(instance)
-        result["parent_id"] = getattr(next(iter(instance.parents.all()), None), "id", None)
+        result["parent_id"] = None  # backward compatibility for API fields
         return result
 
 
