@@ -180,8 +180,8 @@ class QualityReport(models.Model):
         return self.data
 
     def clean(self):
-        if not (self.job is not None) ^ (self.task is not None):
-            raise ValidationError("One of the 'job' and 'task' fields must be set")
+        if not (self.job is not None) ^ (self.task is not None) ^ (self.project is not None):
+            raise ValidationError("One of the 'job', 'task' and 'project' fields must be set")
 
     @property
     def organization_id(self) -> int | None:
