@@ -53,7 +53,7 @@ class RequestPermission(OpenPolicyAgentPermission):
                         and parsed_rq_id.target == RequestTarget.TASK
                     ):
                         permissions.append(
-                            TaskPermission.create_scope_view(request, parsed_rq_id.id, iam_context)
+                            TaskPermission.create_scope_view(request, parsed_rq_id.id)
                         )
                         continue
 
@@ -62,7 +62,7 @@ class RequestPermission(OpenPolicyAgentPermission):
                         and parsed_rq_id.target == RequestTarget.JOB
                     ):
                         permissions.append(
-                            JobPermission.create_scope_view(request, parsed_rq_id.id, iam_context)
+                            JobPermission.create_scope_view(request, parsed_rq_id.id)
                         )
                         continue
 
