@@ -5,10 +5,8 @@
 from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
-from typing import TYPE_CHECKING, Any, Callable, Optional, Protocol, Union
-from uuid import UUID
+from typing import TYPE_CHECKING, Any, Callable, Optional, Protocol
 
-import attrs
 from django.conf import settings
 from django.db.models import Model
 from django.utils import timezone
@@ -19,7 +17,9 @@ from rq.registry import BaseRegistry as RQBaseRegistry
 
 from cvat.apps.engine.types import ExtendedRequest
 
-from .models import RequestAction, RequestSubresource, RequestTarget
+from .models import RequestSubresource
+from cvat.apps.redis_handler.rq import RQId
+from functools import cached_property
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import User
@@ -52,13 +52,13 @@ class RQJobMetaField:
     PROGRESS = "progress"
     HIDDEN = "hidden"
 
-    # export specific fields
-    RESULT_URL = "result_url"
-    RESULT = "result"
-
     # import specific fields
     TMP_FILE = "tmp_file"
     TASK_PROGRESS = "task_progress"
+
+    # export specific fields
+    RESULT_URL = "result_url"
+    RESULT_FILENAME = "result_filename"
 
     # lambda fields
     LAMBDA = "lambda"
@@ -334,37 +334,33 @@ def is_rq_job_owner(rq_job: RQJob, user_id: int) -> bool:
     return BaseRQMeta.for_job(rq_job).user.id == user_id
 
 
-# TODO:
-from cvat.apps.redis_handler.rq import RQId
-
-
 class ExportRQId(RQId):
-    pass
+    @cached_property
+    def user_id(self) -> int:
+        return int(self.extra["user_id"])
 
-    # TODO: format, user_id, subresource
+    @cached_property
+    def subresource(self) -> RequestSubresource:
+        return RequestSubresource(self.extra["subresource"])
 
-    # subresource: Optional[RequestSubresource] = attrs.field(
-    #     validator=attrs.validators.optional(attrs.validators.instance_of(RequestSubresource)),
-    #     kw_only=True,
-    #     default=None,
-    # )
-    # user_id: Optional[int] = attrs.field(
-    #     validator=attrs.validators.optional(attrs.validators.instance_of(int)),
-    #     kw_only=True,
-    #     default=None,
-    # )
-    # format: Optional[str] = attrs.field(
-    #     validator=attrs.validators.optional(attrs.validators.instance_of(str)),
-    #     kw_only=True,
-    #     default=None,
-    # )
+    @cached_property
+    def format(self) -> str | None:
+        # TODO: quote/unquote
+        return self.extra.get("format")
 
-    # RQ ID templates:
-    # autoannotate:task-<tid>
-    # import:<task|project|job>-<id|uuid>-<annotations|dataset|backup>
-    # create:task-<tid>
-    # export:<project|task|job>-<id>-<annotations|dataset>-in-<format>-format-by-<user_id>
-    # export:<project|task>-<id>-backup-by-<user_id>
+
+class ImportRQId(RQId):
+    @cached_property
+    def subresource(self) -> RequestSubresource | None:
+        if subresource := self.extra.get("subresource"):
+            return RequestSubresource(subresource)
+
+        return None
+
+    @cached_property
+    def format(self) -> str | None:
+        # TODO: quote/unquote
+        return self.extra.get("format")
 
 
 def define_dependent_job(

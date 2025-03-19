@@ -40,8 +40,9 @@ from cvat.apps.engine.cloud_provider import Credentials, Status, get_cloud_stora
 from cvat.apps.engine.frame_provider import FrameQuality, TaskFrameProvider
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.model_utils import bulk_create
+from cvat.apps.engine.models import RequestAction, RequestSubresource
 from cvat.apps.engine.permissions import TaskPermission
-from cvat.apps.engine.rq import BaseRQMeta, ExportRQMeta, ImportRQMeta, RequestAction
+from cvat.apps.engine.rq import BaseRQMeta, ExportRQMeta, ImportRQMeta
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
 from cvat.apps.engine.utils import (
     CvatChunkTimestampMismatchError,
@@ -3521,8 +3522,10 @@ class RequestDataOperationSerializer(serializers.Serializer):
         }
         if parsed_rq_id.action == RequestAction.AUTOANNOTATE:
             representation["function_id"] = LambdaRQMeta.for_job(rq_job).function_id
-        elif parsed_rq_id.action in (RequestAction.IMPORT, RequestAction.EXPORT):
-            representation["format"] = parsed_rq_id.extra["format"] # todo: refactor
+        elif parsed_rq_id.action in (
+            RequestAction.IMPORT, RequestAction.EXPORT
+        ) and parsed_rq_id.subresource in (RequestSubresource.ANNOTATIONS, RequestSubresource.DATASET):
+            representation["format"] = parsed_rq_id.format
 
         return representation
 
@@ -3607,7 +3610,7 @@ class RequestSerializer(serializers.Serializer):
 
             if (
                 rq_job.parsed_rq_id.action == models.RequestAction.IMPORT
-                and rq_job.parsed_rq_id.extra["subresource"] == models.RequestSubresource.BACKUP
+                and rq_job.parsed_rq_id.subresource == models.RequestSubresource.BACKUP
             ):
                 representation["result_id"] = rq_job.return_value()
 

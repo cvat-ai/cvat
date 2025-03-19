@@ -6,13 +6,13 @@ import os.path as osp
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, ClassVar, Optional, Union
+from typing import Any, ClassVar
 from urllib.parse import quote
 
 import django_rq
 from django.conf import settings
 from django.http.response import HttpResponseBadRequest
-from django_rq.queues import DjangoRQ, DjangoScheduler
+from django_rq.queues import DjangoRQ
 from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
@@ -23,16 +23,13 @@ import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.formats.registry import EXPORT_FORMATS
 from cvat.apps.dataset_manager.util import get_export_cache_lock
 from cvat.apps.dataset_manager.views import get_export_cache_ttl, get_export_callback
-from cvat.apps.engine import models
 from cvat.apps.engine.backup import ProjectExporter, TaskExporter, create_backup
 from cvat.apps.engine.cloud_provider import export_resource_to_cloud_storage
 from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import Location, RequestAction, RequestSubresource, RequestTarget, Task
 from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
-from cvat.apps.engine.rq import ExportRQMeta, RQId, define_dependent_job
-from cvat.apps.engine.serializers import RqIdSerializer
-from cvat.apps.engine.types import ExtendedRequest
+from cvat.apps.engine.rq import ExportRQMeta, ExportRQId, define_dependent_job
 from cvat.apps.engine.utils import (
     build_annotations_file_name,
     build_backup_file_name,
@@ -50,27 +47,12 @@ REQUEST_TIMEOUT = 60
 LOCK_TTL = REQUEST_TIMEOUT - 5
 LOCK_ACQUIRE_TIMEOUT = LOCK_TTL - 5
 
+from cvat.apps.redis_handler.background import AbstractRQJobManager
 
-class ResourceExportManager(ABC):
+
+class ResourceExportManager(AbstractRQJobManager):
     QUEUE_NAME = settings.CVAT_QUEUES.EXPORT_DATA.value
-    SUPPORTED_RESOURCES: ClassVar[set[RequestSubresource]]
     SUPPORTED_SUBRESOURCES: ClassVar[set[RequestSubresource]]
-
-    def __init__(
-        self,
-        db_instance: Union[models.Project, models.Task, models.Job],
-        request: ExtendedRequest,
-    ) -> None:
-        """
-        Args:
-            db_instance (Union[models.Project, models.Task, models.Job]): Model instance
-            request (ExtendedRequest): Incoming HTTP request
-        """
-        self.db_instance = db_instance
-        self.request = request
-        self.resource = db_instance.__class__.__name__.lower()
-        if self.resource not in self.SUPPORTED_RESOURCES:
-            raise ValueError("Unexpected type of db_instance: {}".format(type(db_instance)))
 
     ### Initialization logic ###
 
@@ -80,34 +62,6 @@ class ResourceExportManager(ABC):
     @abstractmethod
     def validate_export_args(self) -> Response | None: ...
 
-    @abstractmethod
-    def build_rq_id(self) -> str: ...
-
-    def handle_existing_rq_job(
-        self, rq_job: Optional[RQJob], queue: DjangoRQ
-    ) -> Optional[Response]:
-        if not rq_job:
-            return None
-
-        rq_job_status = rq_job.get_status(refresh=False)
-
-        if rq_job_status in {RQJobStatus.STARTED, RQJobStatus.QUEUED}:
-            return Response(
-                data="Export request is being processed",
-                status=status.HTTP_409_CONFLICT,
-            )
-
-        if rq_job_status == RQJobStatus.DEFERRED:
-            rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
-
-        if rq_job_status == RQJobStatus.SCHEDULED:
-            scheduler: DjangoScheduler = django_rq.get_scheduler(queue.name, queue=queue)
-            # remove the job id from the set with scheduled keys
-            scheduler.cancel(rq_job)
-            rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
-
-        rq_job.delete()
-        return None
 
     @abstractmethod
     def get_download_api_endpoint_view_name(self) -> str: ...
@@ -129,39 +83,22 @@ class ResourceExportManager(ABC):
     @abstractmethod
     def send_events(self) -> None: ...
 
-    @abstractmethod
-    def setup_background_job(self, queue: DjangoRQ, rq_id: str) -> None: ...
-
-    def export(self) -> Response:
-        self.initialize_export_args()
-
-        if invalid_response := self.validate_export_args():
-            return invalid_response
-
-        queue: DjangoRQ = django_rq.get_queue(self.QUEUE_NAME)
-        rq_id = self.build_rq_id()
-
-        # ensure that there is no race condition when processing parallel requests
-        with get_rq_lock_for_job(queue, rq_id):
-            rq_job = queue.fetch_job(rq_id)
-            if response := self.handle_existing_rq_job(rq_job, queue):
-                return response
-            self.setup_background_job(queue, rq_id)
-
+    def after_processing(self):
         self.send_events()
 
-        serializer = RqIdSerializer({"rq_id": rq_id})
-        return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+    def process(self):
+        self.initialize_export_args()
+        return super().process()
 
     ### Logic related to prepared file downloading ###
 
     def validate_rq_id(self, rq_id: str) -> None:
-        parsed_rq_id = RQId.parse(rq_id)
+        parsed_rq_id = ExportRQId.parse(rq_id)
 
         if (
             parsed_rq_id.action != RequestAction.EXPORT
             or parsed_rq_id.target != RequestTarget(self.resource)
-            or parsed_rq_id.identifier != self.db_instance.pk
+            or parsed_rq_id.id != self.db_instance.pk
             or parsed_rq_id.subresource not in self.SUPPORTED_SUBRESOURCES
         ):
             raise ValueError("The provided request id does not match exported target or resource")
@@ -286,17 +223,21 @@ class DatasetExportManager(ResourceExportManager):
             return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def build_rq_id(self):
-        return RQId(
-            RequestAction.EXPORT,
-            RequestTarget(self.resource),
-            self.db_instance.pk,
-            subresource=(
-                RequestSubresource.DATASET
-                if self.export_args.save_images
-                else RequestSubresource.ANNOTATIONS
-            ),
-            format=self.export_args.format,
-            user_id=self.request.user.id,
+        return ExportRQId(
+            queue=self.QUEUE_NAME,
+            action=RequestAction.EXPORT,
+            target=RequestTarget(self.resource),
+            id=self.db_instance.pk,
+            # todo: refactor
+            extra={
+                "subresource": (
+                    RequestSubresource.DATASET
+                    if self.export_args.save_images
+                    else RequestSubresource.ANNOTATIONS
+                ),
+                "format": self.export_args.format,
+                "user_id": self.request.user.id,
+            },
         ).render()
 
     def send_events(self):
@@ -434,12 +375,15 @@ class BackupExportManager(ResourceExportManager):
         return filename
 
     def build_rq_id(self):
-        return RQId(
-            RequestAction.EXPORT,
-            RequestTarget(self.resource),
-            self.db_instance.pk,
-            subresource=RequestSubresource.BACKUP,
-            user_id=self.request.user.id,
+        return ExportRQId(
+            queue=self.QUEUE_NAME,
+            action=RequestAction.EXPORT,
+            target=RequestTarget(self.resource),
+            id=self.db_instance.pk,
+            extra={
+                "subresource": RequestSubresource.BACKUP,
+                "user_id": self.request.user.id,
+            },
         ).render()
 
     # FUTURE-TODO: move into ResourceExportManager

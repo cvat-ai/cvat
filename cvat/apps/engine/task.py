@@ -70,7 +70,12 @@ def create(
     """Schedule a background job to create a task and return that job's identifier"""
     q = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
     user_id = request.user.id
-    rq_id = RQId(RequestAction.CREATE, RequestTarget.TASK, db_task.pk).render()
+    rq_id = RQId(
+        queue=settings.CVAT_QUEUES.IMPORT_DATA.value,
+        action=RequestAction.CREATE,
+        target=RequestTarget.TASK,
+        id=db_task.pk
+    ).render()
 
     with get_rq_lock_by_user(q, user_id):
         q.enqueue_call(

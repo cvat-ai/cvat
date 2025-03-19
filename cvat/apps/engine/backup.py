@@ -1284,8 +1284,11 @@ def import_project(request: ExtendedRequest, queue_name: str, filename: str | No
         rq_id = request.data['rq_id']
     else:
         rq_id = RQId(
-            RequestAction.IMPORT, RequestTarget.PROJECT, uuid.uuid4(),
-            subresource=RequestSubresource.BACKUP,
+            queue=settings.CVAT_QUEUES.IMPORT_DATA.value,
+            action=RequestAction.IMPORT, target=RequestTarget.PROJECT, id=uuid.uuid4(),
+            extra={
+                "subresource": RequestSubresource.BACKUP,
+            }
         ).render()
     Serializer = ProjectFileSerializer
     file_field_name = 'project_file'
@@ -1310,8 +1313,13 @@ def import_project(request: ExtendedRequest, queue_name: str, filename: str | No
 
 def import_task(request: ExtendedRequest, queue_name: str, filename: str | None = None):
     rq_id = request.data.get('rq_id', RQId(
-        RequestAction.IMPORT, RequestTarget.TASK, uuid.uuid4(),
-        subresource=RequestSubresource.BACKUP,
+        queue=settings.CVAT_QUEUES.IMPORT_DATA.value,
+        action=RequestAction.IMPORT,
+        target=RequestTarget.TASK,
+        id=uuid.uuid4(),
+        extra={
+            "subresource": RequestSubresource.BACKUP,
+        }
     ).render())
     Serializer = TaskFileSerializer
     file_field_name = 'task_file'

@@ -365,7 +365,12 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     lookup_fields = {'owner': 'owner__username', 'assignee': 'assignee__username'}
     iam_organization_field = 'organization'
     IMPORT_RQ_ID_FACTORY = functools.partial(RQId,
-        RequestAction.IMPORT, RequestTarget.PROJECT, subresource=RequestSubresource.DATASET
+        queue=settings.CVAT_QUEUES.IMPORT_DATA.value,
+        action=RequestAction.IMPORT,
+        targte=RequestTarget.PROJECT,
+        extra={
+            "subresource": RequestSubresource.DATASET,
+        }
     )
 
     def get_serializer_class(self):
@@ -939,7 +944,12 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ordering = "-id"
     iam_organization_field = 'organization'
     IMPORT_RQ_ID_FACTORY = functools.partial(RQId,
-        RequestAction.IMPORT, RequestTarget.TASK, subresource=RequestSubresource.ANNOTATIONS,
+        queue=settings.CVAT_QUEUES.IMPORT_DATA.value,
+        action=RequestAction.IMPORT,
+        target=RequestTarget.TASK,
+        extra={
+            "subresource": RequestSubresource.ANNOTATIONS,
+        }
     )
 
     def get_serializer_class(self):
@@ -1592,7 +1602,12 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         task = self.get_object() # force call of check_object_permissions()
         response = self._get_rq_response(
             queue=settings.CVAT_QUEUES.IMPORT_DATA.value,
-            job_id=RQId(RequestAction.CREATE, RequestTarget.TASK, task.id).render()
+            job_id=RQId(
+                queue=settings.CVAT_QUEUES.IMPORT_DATA.value,
+                action=RequestAction.CREATE,
+                target=RequestTarget.TASK,
+                id=task.id
+            ).render()
         )
         serializer = RqStatusSerializer(data=response)
 
@@ -1850,7 +1865,12 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         'assignee': 'assignee__username'
     }
     IMPORT_RQ_ID_FACTORY = functools.partial(RQId,
-        RequestAction.IMPORT, RequestTarget.JOB, subresource=RequestSubresource.ANNOTATIONS
+        queue=settings.CVAT_QUEUES.IMPORT_DATA.value,
+        action=RequestAction.IMPORT,
+        target=RequestTarget.JOB,
+        extra={
+            "subresource": RequestSubresource.ANNOTATIONS,
+        }
     )
 
     def get_queryset(self):
@@ -3231,7 +3251,7 @@ def _import_annotations(
     rq_id = request.query_params.get('rq_id')
     rq_id_should_be_checked = bool(rq_id)
     if not rq_id:
-        rq_id = rq_id_factory(db_obj.pk).render()
+        rq_id = rq_id_factory(id=db_obj.pk).render()
 
     queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
 
@@ -3362,7 +3382,7 @@ def _import_project_dataset(
     elif not format_desc.ENABLED:
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    rq_id = rq_id_factory(db_obj.pk).render()
+    rq_id = rq_id_factory(id=db_obj.pk).render()
 
     queue: DjangoRQ = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
 

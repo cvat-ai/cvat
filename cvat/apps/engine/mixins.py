@@ -280,8 +280,13 @@ class UploadMixin:
                 # check whether the rq_job is in progress or has been finished/failed
                 object_class_name = self._object.__class__.__name__.lower()
                 template = RQId(
-                    RequestAction.IMPORT, RequestTarget(object_class_name), self._object.pk,
-                    subresource=RequestSubresource(import_type)
+                    queue=settings.CVAT_QUEUES.IMPORT_DATA.value,
+                    action=RequestAction.IMPORT,
+                    target=RequestTarget(object_class_name),
+                    id=self._object.pk,
+                    extra={
+                        "subresource": RequestSubresource(import_type)
+                    }
                 ).render()
                 queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
                 finished_job_ids = queue.finished_job_registry.get_job_ids()
@@ -454,7 +459,7 @@ class DatasetMixin:
         self._object = self.get_object() # force call of check_object_permissions()
 
         export_manager = DatasetExportManager(self._object, request)
-        return export_manager.export()
+        return export_manager.process()
 
     @extend_schema(summary='Download a prepared dataset file',
         parameters=[
@@ -550,7 +555,7 @@ class BackupMixin:
     def initiate_backup_export(self, request: ExtendedRequest, pk: int):
         db_object = self.get_object() # force to call check_object_permissions
         export_manager = BackupExportManager(db_object, request)
-        return export_manager.export()
+        return export_manager.process()
 
 
     @extend_schema(summary='Download a prepared backup file',
