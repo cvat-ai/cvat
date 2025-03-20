@@ -395,6 +395,14 @@ class _Agent:
                 with self._queue_watch_response_lock:
                     if self._queue_watch_response:
                         with contextlib.suppress(Exception):
+                            # shutdown() requires urllib3 2.3.0, whereas we only require 1.25
+                            # (via the SDK). The reason we can't bump the requirement is that
+                            # the testsuite depends on botocore, which is incompatible with urllib3
+                            # 2.x on Python 3.9 and earlier.
+                            # Since pip will, by default, install the latest dependency versions,
+                            # most users should not be affected. For the ones that are, shutdown
+                            # will be broken, but everything else should still work fine.
+                            # This should be revisited once we drop Python 3.9 support.
                             self._queue_watch_response.shutdown()
 
                 watcher.join()

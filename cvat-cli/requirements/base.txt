@@ -3,4 +3,3 @@ cvat-sdk==2.31.1
 attrs>=24.2.0
 Pillow>=10.3.0
 setuptools>=70.0.0 # not directly required, pinned by Snyk to avoid a vulnerability
-urllib3 >= 2.3.0 # needed for HTTPResponse.shutdown
