@@ -33,18 +33,6 @@ export const fields: Fields = {
             ],
         },
     },
-    dimension: {
-        label: 'Dimension',
-        type: 'select',
-        operators: ['select_equals'],
-        valueSources: ['value'],
-        fieldSettings: {
-            listValues: [
-                { value: '2d', title: '2D' },
-                { value: '3d', title: '3D' },
-            ],
-        },
-    },
     assignee: {
         label: 'Assignee',
         type: 'select',

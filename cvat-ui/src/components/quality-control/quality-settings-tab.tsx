@@ -23,7 +23,7 @@ interface Props {
         settings: QualitySettings | null;
         childrenSettings: QualitySettings[] | null;
     };
-    setQualitySettings: (settingsList: QualitySettings[]) => void;
+    setQualitySettings: (settingsList: QualitySettings[], onError?: () => void) => void;
 }
 
 function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
@@ -63,10 +63,7 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
         newSettings.objectVisibilityThreshold = values.objectVisibilityThreshold / 100;
 
         newSettings.panopticComparison = values.panopticComparison;
-
-        newSettings.jobFilter = values.jobFilter;
-
-        newSettings.inherit = values.inherit;
+        newSettings.jobFilter = values.jobFilter || '';
     }, [form]);
 
     const onSave = useCallback(async () => {
@@ -78,9 +75,10 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
 
     const onInheritChange = useCallback(async (value: boolean) => {
         if (settings) {
-            await setupSettingsFromForm(settings);
             settings.inherit = value;
-            setQualitySettings([settings]);
+            setQualitySettings([settings], () => {
+                settings.inherit = !value;
+            });
         }
     }, [form, settings, setQualitySettings]);
 

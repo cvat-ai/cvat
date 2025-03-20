@@ -9,6 +9,18 @@ import { fields } from 'components/common/filters/job-filter-configuration-base'
 export const config: Partial<Config> = {
     fields: {
         ...fields,
+        dimension: {
+            label: 'Dimension',
+            type: 'select',
+            operators: ['select_equals'],
+            valueSources: ['value'],
+            fieldSettings: {
+                listValues: [
+                    { value: '2d', title: '2D' },
+                    { value: '3d', title: '3D' },
+                ],
+            },
+        },
         task_id: {
             label: 'Task ID',
             type: 'number',

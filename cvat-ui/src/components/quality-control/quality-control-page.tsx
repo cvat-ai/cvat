@@ -312,7 +312,7 @@ function QualityControlPage(): JSX.Element {
         }
     };
 
-    const onSaveQualitySettings = useCallback(async (settingsList: QualitySettings[]) => {
+    const onSaveQualitySettings = useCallback(async (settingsList: QualitySettings[], onError?: () => void) => {
         const { settings, childrenSettings } = state.qualitySettings;
 
         if (!settings) {
@@ -335,6 +335,9 @@ function QualityControlPage(): JSX.Element {
                 message: 'Could not save quality settings',
                 description: typeof Error === 'object' ? (error as object).toString() : '',
             });
+            if (onError) {
+                onError();
+            }
             throw error;
         } finally {
             dispatch(reducerActions.setQualitySettingsFetching(false));
