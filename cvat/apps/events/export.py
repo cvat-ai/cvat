@@ -17,7 +17,7 @@ from rest_framework.response import Response
 
 from cvat.apps.dataset_manager.views import log_exception
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.rq import RQMetaWithFailureInfo
+from cvat.apps.engine.rq import RQMetaWithFailureInfo, BaseRQMeta
 from cvat.apps.engine.utils import sendfile
 
 slogger = ServerLogManager(__name__)
@@ -165,7 +165,7 @@ def export(request, filter_query, queue_name):
         func=_create_csv,
         args=(query_params, output_filename, DEFAULT_CACHE_TTL),
         job_id=rq_id,
-        meta={},
+        meta=BaseRQMeta.build(request=request, db_obj=None),
         result_ttl=ttl,
         failure_ttl=ttl,
     )
