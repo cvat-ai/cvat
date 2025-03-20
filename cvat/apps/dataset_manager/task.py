@@ -781,10 +781,11 @@ class JobAnnotation:
 
 
 class TaskAnnotation:
-    def __init__(self, pk):
+    def __init__(self, pk, write_only: bool = False):
         self.db_task = models.Task.objects.prefetch_related(
             Prefetch('data__images', queryset=models.Image.objects.order_by('frame'))
         ).get(id=pk)
+        self._write_only = write_only
 
         # TODO: maybe include consensus jobs except for task export
         requested_job_types = [models.JobType.ANNOTATION]
@@ -830,6 +831,8 @@ class TaskAnnotation:
             self._merge_data(data, jobs[jid]["start"])
 
     def _merge_data(self, data: AnnotationIR, start_frame: int):
+        if self._write_only:
+            return
         annotation_manager = AnnotationManager(self.ir_data, dimension=self.db_task.dimension)
         annotation_manager.merge(data, start_frame, overlap=self.db_task.overlap)
 
@@ -1127,7 +1130,7 @@ def export_task(
 
 @transaction.atomic
 def import_task_annotations(src_file, task_id, format_name, conv_mask_to_poly):
-    task = TaskAnnotation(task_id)
+    task = TaskAnnotation(task_id, write_only=True)
 
     importer = make_importer(format_name)
     with open(src_file, 'rb') as f:
