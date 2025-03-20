@@ -6,7 +6,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - id: files
-        uses: tj-actions/changed-files@v41.0.0
+        uses: tj-actions/changed-files@v45.0.8
         with:
           files: |
             **/*.py
