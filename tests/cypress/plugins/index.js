@@ -4,9 +4,10 @@
 
 /// <reference types="cypress" />
 
-/* eslint-disable security/detect-non-literal-fs-filename */
-
 const fs = require('fs');
+const { allureCypress } = require('allure-cypress/reporter');
+
+/* eslint-disable security/detect-non-literal-fs-filename */
 // eslint-disable-next-line import/no-extraneous-dependencies
 const { isFileExist } = require('cy-verify-downloads');
 const { imageGenerator, bufferToImage } = require('./imageGenerator/addPlugin');
@@ -14,8 +15,10 @@ const { createZipArchive } = require('./createZipArchive/addPlugin');
 const { compareImages } = require('./compareImages/addPlugin');
 const { unpackZipArchive } = require('./unpackZipArchive/addPlugin');
 
-module.exports = (on, config) => {
+module.exports = (cypressOn, config) => {
     // eslint-disable-next-line import/no-extraneous-dependencies
+    const on = require('cypress-on-fix')(cypressOn);
+    allureCypress(on, config);
     require('@cypress/code-coverage/task')(on, config);
     on('task', { imageGenerator });
     on('task', { createZipArchive });

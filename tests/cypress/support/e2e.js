@@ -3,6 +3,9 @@
 //
 // SPDX-License-Identifier: MIT
 
+// eslint-disable-next-line import/no-extraneous-dependencies
+import 'allure-cypress';
+
 require('./commands');
 require('./commands_projects');
 require('./commands_review_pipeline');

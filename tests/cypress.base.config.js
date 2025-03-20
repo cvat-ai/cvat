@@ -1,6 +1,7 @@
 // Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
+
 const plugins = require('./cypress/plugins/index');
 
 const baseUrl = 'http://localhost:8080';
