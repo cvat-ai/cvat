@@ -84,6 +84,10 @@ context('New organization pipeline.', () => {
             });
         });
     }
+    function makeLoginUser(user) {
+        const { nextURL = '/tasks', username, password } = user;
+        return { username, password, nextURL };
+    }
 
     before(() => {
         cy.visit('/auth/login');
@@ -92,11 +96,7 @@ context('New organization pipeline.', () => {
         for (const user of Object.values(users)) {
             cy.headlessCreateUser(user);
         }
-        cy.headlessLogin({
-            username: firstUser.username,
-            password: firstUser.password,
-            nextURL: '/tasks',
-        });
+        cy.headlessLogin(makeLoginUser(firstUser));
     });
 
     beforeEach(() => {
@@ -224,7 +224,7 @@ context('New organization pipeline.', () => {
         });
 
         it("The second user login. The user is able to see the organization, can't see the task.", () => {
-            cy.reloginAs(secondUser);
+            cy.headlessLogin(makeLoginUser(secondUser));
             cy.checkOrganizationExists(organizationParams.shortName);
             cy.contains('.cvat-item-task-name', taskName).should('not.exist');
         });
@@ -236,7 +236,7 @@ context('New organization pipeline.', () => {
         });
 
         it('The first user login. Assign the project to the second user.', () => {
-            cy.reloginAs(firstUser);
+            cy.headlessLogin(makeLoginUser(firstUser));
             cy.activateOrganization(organizationParams.shortName);
             cy.goToProjectsList();
             cy.openProject(project.name);
@@ -244,7 +244,7 @@ context('New organization pipeline.', () => {
         });
 
         it('The second user login. Now he sees the project and can open it.', () => {
-            cy.reloginAs(secondUser);
+            cy.headlessLogin(makeLoginUser(secondUser));
             cy.activateOrganization(organizationParams.shortName);
             cy.goToProjectsList();
             cy.openProject(project.name);
@@ -261,7 +261,7 @@ context('New organization pipeline.', () => {
         });
 
         it('Logout, the third user login. The user does not see the project, the task.', () => {
-            cy.reloginAs(thirdUser);
+            cy.headlessLogin(makeLoginUser(thirdUser));
             cy.contains('.cvat-item-task-name', taskName).should('not.exist');
             cy.goToProjectsList();
             cy.contains('.cvat-projects-project-item-title', project.name).should('not.exist');
@@ -276,7 +276,7 @@ context('New organization pipeline.', () => {
         });
 
         it('The owner of the organization removes the second user from it.', () => {
-            cy.reloginAs(firstUser);
+            cy.headlessLogin(makeLoginUser(firstUser));
             cy.activateOrganization(organizationParams.shortName);
             cy.openOrganization(organizationParams.shortName);
             cy.removeMemberFromOrganization(secondUserName);
@@ -284,7 +284,7 @@ context('New organization pipeline.', () => {
         });
 
         it('The organization, project, task is no longer available to the second user.', () => {
-            cy.reloginAs(secondUser);
+            cy.headlessLogin(makeLoginUser(secondUser));
             cy.checkOrganizationExists(organizationParams.shortName, false);
             cy.contains('.cvat-item-task-name', taskName).should('not.exist');
             cy.goToProjectsList();
@@ -299,7 +299,7 @@ context('New organization pipeline.', () => {
         });
 
         it('Login as the third user. The organization page can be opened. The job can be opened.', () => {
-            cy.reloginAs(thirdUser);
+            cy.headlessLogin(makeLoginUser(thirdUser));
             cy.activateOrganization(organizationParams.shortName);
             cy.visit('/organization');
             cy.checkOrganizationParams(organizationParams);

@@ -288,26 +288,17 @@ Cypress.Commands.add('headlessLogin', ({
                 password || Cypress.env('password'),
             ).then(() => win.cvat.users.get({ self: true }).then((users) => {
                 if (nextURL) {
+                    cy.intercept('GET', nextURL).as('nextPage');
                     cy.visit(nextURL);
+                    cy.wait('@nextPage').then(() => {
+                        cy.url().should('include', nextURL);
+                        cy.get('.cvat-spinner').should('not.exist');
+                    });
                 }
 
                 return users[0];
             }))
         ));
-    });
-});
-
-Cypress.Commands.add('reloginAs', (user) => {
-    const { nextURL = '/tasks' } = user;
-    cy.intercept('GET', nextURL).as('login');
-    cy.headlessLogin({
-        ...user,
-        nextURL,
-    }).then(() => {
-        cy.wait('@login').then(() => {
-            cy.url().should('include', nextURL);
-            cy.get('.cvat-spinner').should('not.exist');
-        });
     });
 });
 
