@@ -482,7 +482,11 @@ def define_dependent_job(
         job_ids = q.get_job_ids()
         jobs = q.job_class.fetch_many(job_ids, q.connection)
         jobs = filter(
-            lambda job: job and (user := BaseRQMeta.for_job(job).user) and user.id == user_id and f(job), jobs
+            lambda job: job
+            and (user := BaseRQMeta.for_job(job).user)
+            and user.id == user_id
+            and f(job),
+            jobs,
         )
         all_user_jobs.extend(jobs)
 
