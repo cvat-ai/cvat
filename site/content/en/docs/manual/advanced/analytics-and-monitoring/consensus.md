@@ -20,7 +20,7 @@ CVAT has the following features related to consensus-based annotation:
 ## Basics
 
 If you want to improve quality of your annotations, there are several widespread ways
-to achieve this. One of the methods is called *consensus-based annotation* or just *consensus*.
+to achieve this. One of the methods is called _consensus-based annotation_ or just _consensus_.
 In this method, the same data is annotated several times. Once there are several different
 annotations ("opinions") for the same objects, they can be merged in order to obtain
 annotations of higher quality.
@@ -29,7 +29,7 @@ Let's consider an explanatory example. Imagine there is a group of people,
 and you are asking them whether something is true or not. There are several
 possible combinations of votes, including all the votes only for one of the options.
 Typically, if you don't know the correct answer, you'd probably simply trust
-the most voted option. This is called *majority voting* - and it requires
+the most voted option. This is called _majority voting_ - and it requires
 such majority to exist, so in general, it's desirable to have an odd number
 of people in the group. If there is an even number of votes for both options,
 you don't have enough information to prefer one of the options to the other.
@@ -48,7 +48,7 @@ while dataset annotation is not cheap. The question arises how to apply this met
 One application for this approach that can be recommended is Ground Truth annotation.
 This type of annotations typically requires especially high quality annotations and
 includes a small portion of the whole dataset images (e.g. 3%).
-If we apply 3- or 5-fold *consensus* to GT annotations, we can get reliable GT annotations
+If we apply 3- or 5-fold _consensus_ to GT annotations, we can get reliable GT annotations
 for 10-15% full dataset annotation cost. Now, this idea actually looks interesting. Once
 you have such a reliable GT dataset, it can be used for the remaining dataset validation,
 as regular.
@@ -57,7 +57,7 @@ as regular.
 
 A **Consensus Replica job** (replica) is a way in CVAT to represent one of
 the annotator "opinions". It works similarly to regular annotation jobs, but
-there can be several *replicas* connected to each regular annotation job. When
+there can be several _replicas_ connected to each regular annotation job. When
 you decide to merge annotation in replicas, the results will be written to the
 parent regular job.
 
