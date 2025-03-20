@@ -267,7 +267,7 @@ class CommonData(InstanceLabelData):
         labeled_shapes: Sequence[CommonData.LabeledShape]
         tags: Sequence[CommonData.Tag]
         shapes: Sequence[CommonData.Shape]
-        labels: Sequence[CommonData.Label]
+        labels: Mapping[int, CommonData.Label]
         subset: str
         task_id: int
 
