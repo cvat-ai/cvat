@@ -273,6 +273,7 @@ context('New organization pipeline.', () => {
             cy.get('.cvat-header-menu-user-dropdown-organization').should('have.text', organizationParams.shortName);
             cy.createCuboid(createCuboidShape2Points);
             cy.saveJob();
+            cy.get('.cvat-spinner').should('not.exist');
         });
 
         it('The owner of the organization removes the second user from it.', () => {
