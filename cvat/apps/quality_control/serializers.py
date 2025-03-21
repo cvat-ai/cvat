@@ -287,7 +287,8 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
     )
 
     def validate_job_filter(self, value):
-        JsonLogicFilter().parse_query(value, raise_on_empty=False)
+        if value:
+            JsonLogicFilter().parse_query(value, raise_on_empty=False)
         return value
 
     def get_extra_kwargs(self):
