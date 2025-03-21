@@ -71,7 +71,7 @@ from cvat.apps.quality_control.models import (
 )
 
 
-@define
+@define(slots=False)
 class Serializable(metaclass=ABCMeta):
     def _value_serializer(self, v):
         if isinstance(v, Serializable):
@@ -3110,7 +3110,7 @@ class ProjectQualityCalculator:
             if not self.is_task_report_actual(latest_task_quality_report):
                 continue
 
-            # task_quality_reports[task.id] = latest_task_quality_report
+            task_quality_reports[task.id] = latest_task_quality_report
 
         # Compute required task reports
         # This loop can take long time, maybe use RQ dependencies for each task instead
