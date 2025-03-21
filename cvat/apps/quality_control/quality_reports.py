@@ -183,7 +183,7 @@ class ReportNode(Serializable):
         )
 
 
-@define(kw_only=True, init=False)
+@define(kw_only=True, init=False, slots=False)
 class AnnotationId(ReportNode):
     obj_id: int
     job_id: int
@@ -206,7 +206,7 @@ class AnnotationId(ReportNode):
         )
 
 
-@define(kw_only=True, init=False)
+@define(kw_only=True, init=False, slots=False)
 class AnnotationConflict(ReportNode):
     frame_id: int
     type: AnnotationConflictType
@@ -248,7 +248,7 @@ class AnnotationConflict(ReportNode):
         )
 
 
-@define(kw_only=True, init=False)
+@define(kw_only=True, init=False, slots=False)
 class ComparisonParameters(ReportNode):
     included_annotation_types: list[dm.AnnotationType] = [
         dm.AnnotationType.bbox,
@@ -336,7 +336,7 @@ class ComparisonParameters(ReportNode):
         return cls(**{field_name: d[field_name] for field_name in fields if field_name in d})
 
 
-@define(kw_only=True, init=False)
+@define(kw_only=True, init=False, slots=False)
 class ConfusionMatrix(ReportNode):
     labels: list[str] | None
     rows: np.ndarray | None
@@ -435,7 +435,7 @@ class ConfusionMatrix(ReportNode):
         )
 
 
-@define(kw_only=True, init=False)
+@define(kw_only=True, init=False, slots=False)
 class ComparisonReportAnnotationsSummary(ReportNode):
     valid_count: int
     missing_count: int
@@ -504,7 +504,7 @@ class ComparisonReportAnnotationsSummary(ReportNode):
         )
 
 
-@define(kw_only=True, init=False)
+@define(kw_only=True, init=False, slots=False)
 class ComparisonReportAnnotationShapeSummary(ReportNode):
     valid_count: int
     missing_count: int
@@ -557,7 +557,7 @@ class ComparisonReportAnnotationShapeSummary(ReportNode):
         )
 
 
-@define(kw_only=True, init=False)
+@define(kw_only=True, init=False, slots=False)
 class ComparisonReportAnnotationLabelSummary(ReportNode):
     valid_count: int
     invalid_count: int
@@ -588,7 +588,7 @@ class ComparisonReportAnnotationLabelSummary(ReportNode):
         )
 
 
-@define(kw_only=True, init=False)
+@define(kw_only=True, init=False, slots=False)
 class ComparisonReportAnnotationComponentsSummary(ReportNode):
     shape: ComparisonReportAnnotationShapeSummary
     label: ComparisonReportAnnotationLabelSummary
@@ -612,7 +612,7 @@ class ComparisonReportAnnotationComponentsSummary(ReportNode):
         )
 
 
-@define(kw_only=True, init=False)
+@define(kw_only=True, init=False, slots=False)
 class ComparisonReportTaskStats(ReportNode):
     all: set[int]
     custom: set[int]
@@ -655,7 +655,7 @@ class ComparisonReportTaskStats(ReportNode):
         return cls(all=set(), custom=set(), not_configured=set(), excluded=set())
 
 
-@define(kw_only=True, init=False)
+@define(kw_only=True, init=False, slots=False)
 class ComparisonReportJobStats(ReportNode):
     all: set[int]
     excluded: set[int]
@@ -691,7 +691,7 @@ class ComparisonReportJobStats(ReportNode):
         return cls(all=set(), excluded=set(), not_checkable=set())
 
 
-@define(kw_only=True, init=False)
+@define(kw_only=True, init=False, slots=False)
 class ComparisonReportSummary(ReportNode):
     frames: list[str] | None
     total_frames: int
@@ -764,7 +764,7 @@ class ComparisonReportSummary(ReportNode):
         )
 
 
-@define(kw_only=True, init=False)
+@define(kw_only=True, init=False, slots=False)
 class ComparisonReportFrameSummary(ReportNode):
     conflicts: list[AnnotationConflict]
 
@@ -817,7 +817,7 @@ class ComparisonReportFrameSummary(ReportNode):
         )
 
 
-@define(kw_only=True, init=False)
+@define(kw_only=True, init=False, slots=False)
 class ComparisonReport(ReportNode):
     parameters: ComparisonParameters
     comparison_summary: ComparisonReportSummary
@@ -3110,7 +3110,7 @@ class ProjectQualityCalculator:
             if not self.is_task_report_actual(latest_task_quality_report):
                 continue
 
-            task_quality_reports[task.id] = latest_task_quality_report
+            # task_quality_reports[task.id] = latest_task_quality_report
 
         # Compute required task reports
         # This loop can take long time, maybe use RQ dependencies for each task instead
