@@ -85,8 +85,11 @@ context('New organization pipeline.', () => {
         });
     }
     function makeLoginUser(user) {
-        const { nextURL = '/tasks', username, password } = user;
-        return { username, password, nextURL };
+        return {
+            username: user.username,
+            password: user.password,
+            nextURL: '/tasks',
+        };
     }
 
     before(() => {
