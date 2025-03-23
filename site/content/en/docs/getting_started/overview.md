@@ -2,35 +2,27 @@
 title: 'CVAT Overview'
 linkTitle: 'Introduction to CVAT'
 weight: 1
-description: 'The open-source tool for image and video annotation'
 ---
 
-Machine learning systems often struggle due to poor-quality data. Without effective tools,
-improving a model can be tough and inefficient.
+## Welcome to CVAT
 
-[**CVAT.ai**](https://www.cvat.ai/) **is a** versatile **tool** for
-**annotating images and videos**, serving the computer
-vision community worldwide.
+Welcome to [**CVAT.ai**](https://www.cvat.ai/) (Computer Vision Annotation Tool) - an open-source tool designed to help developers, data scientists, and businesses create high-quality labeled datasets for computer vision applications.
 
-Our goal is to help developers, businesses,
-and organizations globally by using a Data-centric AI approach.
+Machine learning systems often struggle with poor-quality data, making it difficult to train accurate models. CVAT offers a reliable solution by providing a range of powerful and versatile annotation tools for *images*, *videos*, and *3D data*.
 
-CVAT offers three versions:
+### CVAT versions
 
-- [**CVAT Cloud**](https://app.cvat.ai/): Start online with CVAT,
-  **available for free**. You can also choose a [**subscription**](https://www.cvat.ai/pricing/cloud)
-  for **unlimited data**, **collaboration**, **auto-annotations**, and [**more**](https://www.cvat.ai/post/cvat-ai-pricing-plans-choosing-the-right-plan-for-your-needs).
+CVAT is available in three different versions to suit your specific needs:
 
-- **Self-hosted CVAT Community Edition**: Follow the
-  {{< ilink "/docs/administration/basics/installation" "**Self-hosted Installation Guide**" >}}
-  for setup.
+- [**CVAT Cloud**](https://app.cvat.ai/): Fully managed service to get started quickly and free of charge. After that, you can scale up by leveraging advanced features such as collaboration, auto-annotations, unlimited data, and [more](https://www.cvat.ai/post/cvat-ai-pricing-plans-choosing-the-right-plan-for-your-needs) on a [subscription basis](https://www.cvat.ai/pricing/cloud).
 
-- **Self-hosted CVAT Enterprise Edition**: We provide [**Enterprise-level support**](https://www.cvat.ai/pricing/on-prem)
-  for this version, **including premium features** like **SSO**, **LDAP**, advanced integrations with
-  [**Roboflow and HuggingFace**](https://www.cvat.ai/post/integrating-hugging-face-and-roboflow-models),
-  and **advanced analytics**. We also offer **professional training** and **24-hour SLA support**.
+- [**Self-hosted CVAT Community Edition**](https://docs.cvat.ai/docs/administration/basics/installation/): Open-source version to be installed on your own servers, offering complete flexibility for your organization.
 
-See:
+- [**Self-hosted CVAT Enterprise Edition**](https://www.cvat.ai/pricing/on-prem): Solution tailored for enterprise needs with premium features like SSO, LDAP, advanced integrations with [Roboflow and HuggingFace](https://www.cvat.ai/post/integrating-hugging-face-and-roboflow-models), and dedicated dedicated training adn support.
+
+---
+
+**What's next?**
 
 - [Tools and formats](#tools-and-formats)
   - [Supported formats](#supported-formats)
