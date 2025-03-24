@@ -22,7 +22,7 @@ from cvat.apps.engine.models import (
     Task,
     User,
 )
-from cvat.apps.engine.rq_job_handler import RQJobMetaField
+from cvat.apps.engine.rq import BaseRQMeta
 from cvat.apps.engine.serializers import (
     BasicUserSerializer,
     CloudStorageReadSerializer,
@@ -97,7 +97,12 @@ def job_id(instance):
         return None
 
 
-def get_user(instance=None):
+def get_user(instance=None) -> User | dict | None:
+    def _get_user_from_rq_job(rq_job: rq.job.Job) -> dict | None:
+        if user := BaseRQMeta.for_job(rq_job).user:
+            return user.to_dict()
+        return None
+
     # Try to get current user from request
     user = get_current_user()
     if user is not None:
@@ -105,11 +110,11 @@ def get_user(instance=None):
 
     # Try to get user from rq_job
     if isinstance(instance, rq.job.Job):
-        return instance.meta.get(RQJobMetaField.USER, None)
+        return _get_user_from_rq_job(instance)
     else:
         rq_job = rq.get_current_job()
         if rq_job:
-            return rq_job.meta.get(RQJobMetaField.USER, None)
+            return _get_user_from_rq_job(rq_job)
 
     if isinstance(instance, User):
         return instance
@@ -118,16 +123,21 @@ def get_user(instance=None):
 
 
 def get_request(instance=None):
+    def _get_request_from_rq_job(rq_job: rq.job.Job) -> dict | None:
+        if request := BaseRQMeta.for_job(rq_job).request:
+            return request.to_dict()
+        return None
+
     request = get_current_request()
     if request is not None:
         return request
 
     if isinstance(instance, rq.job.Job):
-        return instance.meta.get(RQJobMetaField.REQUEST, None)
+        return _get_request_from_rq_job(instance)
     else:
         rq_job = rq.get_current_job()
         if rq_job:
-            return rq_job.meta.get(RQJobMetaField.REQUEST, None)
+            return _get_request_from_rq_job(rq_job)
 
     return None
 
@@ -569,11 +579,12 @@ def handle_function_call(
 
 
 def handle_rq_exception(rq_job, exc_type, exc_value, tb):
-    oid = rq_job.meta.get(RQJobMetaField.ORG_ID, None)
-    oslug = rq_job.meta.get(RQJobMetaField.ORG_SLUG, None)
-    pid = rq_job.meta.get(RQJobMetaField.PROJECT_ID, None)
-    tid = rq_job.meta.get(RQJobMetaField.TASK_ID, None)
-    jid = rq_job.meta.get(RQJobMetaField.JOB_ID, None)
+    rq_job_meta = BaseRQMeta.for_job(rq_job)
+    oid = rq_job_meta.org_id
+    oslug = rq_job_meta.org_slug
+    pid = rq_job_meta.project_id
+    tid = rq_job_meta.task_id
+    jid = rq_job_meta.job_id
     uid = user_id(rq_job)
     uname = user_name(rq_job)
     uemail = user_email(rq_job)

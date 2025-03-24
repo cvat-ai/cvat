@@ -22,6 +22,7 @@ import {
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import GoBackButton from 'components/common/go-back-button';
 import { ActionUnion, createAction } from 'utils/redux';
+import { fetchTask } from 'utils/fetch';
 import QualityOverviewTab from './task-quality/quality-overview-tab';
 import QualityManagementTab from './task-quality/quality-magement-tab';
 import QualitySettingsTab from './quality-settings-tab';
@@ -180,12 +181,7 @@ function QualityControlPage(): JSX.Element {
 
     const initializeData = async (id: number): Promise<void> => {
         try {
-            let taskInstance = null;
-            try {
-                [taskInstance] = await core.tasks.get({ id });
-            } catch (error: unknown) {
-                throw new Error('The task was not found on the server');
-            }
+            const taskInstance = await fetchTask(id);
 
             setInstance(taskInstance);
             try {
@@ -304,7 +300,7 @@ function QualityControlPage(): JSX.Element {
     }, []);
 
     useEffect(() => {
-        window.location.hash = activeTab;
+        window.history.replaceState(null, '', `#${activeTab}`);
     }, [activeTab]);
 
     const onTabKeyChange = useCallback((key: string): void => {
@@ -360,8 +356,8 @@ function QualityControlPage(): JSX.Element {
 
     if (instance) {
         title = (
-            <Col>
-                <Title level={4} className='cvat-text-color cvat-quality-page-header'>
+            <Col className='cvat-quality-page-header'>
+                <Title level={4} className='cvat-text-color'>
                     Quality control for
                     <Link to={`/tasks/${instance.id}`}>{` Task #${instance.id}`}</Link>
                 </Title>
@@ -398,7 +394,9 @@ function QualityControlPage(): JSX.Element {
                     ),
                 });
             }
+        }
 
+        if (qualitySettings) {
             tabsItems.push({
                 key: 'settings',
                 label: 'Settings',
@@ -425,19 +423,17 @@ function QualityControlPage(): JSX.Element {
     }
 
     return (
-        <div className='cvat-quality-control-page'>
-            <Row className='cvat-quality-control-wrapper'>
-                <Col span={24}>
-                    {backNavigation}
-                    <Row justify='center'>
-                        <Col span={22} xl={18} xxl={14} className='cvat-quality-control-inner'>
-                            {title}
-                            {tabs}
-                        </Col>
-                    </Row>
-                </Col>
-            </Row>
-        </div>
+        <Row className='cvat-quality-control-page'>
+            <Col className='cvat-quality-control-wrapper' span={24}>
+                {backNavigation}
+                <Row justify='center' className='cvat-quality-control-inner-wrapper'>
+                    <Col span={22} xl={18} xxl={14} className='cvat-quality-control-inner'>
+                        {title}
+                        {tabs}
+                    </Col>
+                </Row>
+            </Col>
+        </Row>
     );
 }
 

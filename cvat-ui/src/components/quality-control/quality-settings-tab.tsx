@@ -5,8 +5,10 @@
 import React, { useCallback } from 'react';
 import Text from 'antd/lib/typography/Text';
 import Form from 'antd/lib/form';
+import notification from 'antd/lib/notification';
 import { QualitySettings } from 'cvat-core-wrapper';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
+import { formFieldsError } from 'utils/validation';
 import QualitySettingsForm from './task-quality/quality-settings-form';
 
 interface Props {
@@ -24,8 +26,16 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
 
     const [form] = Form.useForm();
     const onSave = useCallback(async () => {
-        const values = await form.validateFields();
-        setQualitySettings(values);
+        try {
+            const values = await form.validateFields();
+            setQualitySettings(values);
+        } catch (error) {
+            notification.error({
+                message: 'Could not save quality settings',
+                description: formFieldsError(error).map((text: string): JSX.Element => <div>{text}</div>),
+                className: 'cvat-notification-save-quality-settings-failed',
+            });
+        }
     }, [form, setQualitySettings]);
 
     if (fetching) {

@@ -92,6 +92,17 @@ Cypress.Commands.add('deleteUsers', (authResponse, accountsToDelete) => {
     });
 });
 
+Cypress.Commands.add('headlessDeleteUser', (userId) => {
+    cy.intercept('DELETE', '/api/users/**').as('deleteUser');
+    cy.window().its('cvat', { timeout: 25000 }).should('not.be.undefined');
+    cy.window().then(async ($win) => {
+        await $win.cvat.server.request(`/api/users/${userId}`,
+            { method: 'DELETE' },
+        );
+    });
+    cy.wait('@deleteUser');
+});
+
 Cypress.Commands.add('changeUserActiveStatus', (authKey, accountsToChangeActiveStatus, isActive) => {
     cy.request({
         url: '/api/users?page_size=all',
@@ -277,7 +288,12 @@ Cypress.Commands.add('headlessLogin', ({
                 password || Cypress.env('password'),
             ).then(() => win.cvat.users.get({ self: true }).then((users) => {
                 if (nextURL) {
+                    cy.intercept('GET', nextURL).as('nextPage');
                     cy.visit(nextURL);
+                    cy.wait('@nextPage').then(() => {
+                        cy.url().should('include', nextURL);
+                        cy.get('.cvat-spinner').should('not.exist');
+                    });
                 }
 
                 return users[0];
@@ -447,6 +463,14 @@ Cypress.Commands.add('headlessCreateJob', (jobSpec) => {
 
         const result = await job.save(data);
         return cy.wrap({ jobID: result.id });
+    });
+});
+
+Cypress.Commands.add('headlessUpdateJob', (jobID, updateJobParameters) => {
+    cy.window().then(async ($win) => {
+        const job = (await $win.cvat.jobs.get({ jobID }))[0];
+        const result = await job.save(updateJobParameters);
+        return cy.wrap(result);
     });
 });
 
@@ -728,12 +752,6 @@ Cypress.Commands.add('closeSettings', () => {
     cy.get('.cvat-settings-modal').should('not.be.visible');
 });
 
-Cypress.Commands.add('saveSettings', () => {
-    cy.get('.cvat-settings-modal').within(() => {
-        cy.contains('button', 'Save').click();
-    });
-});
-
 Cypress.Commands.add('changeWorkspace', (mode) => {
     cy.get('.cvat-workspace-selector').click();
     cy.get('.cvat-workspace-selector-dropdown').within(() => {
@@ -927,7 +945,9 @@ Cypress.Commands.add('advancedConfiguration', (advancedConfigurationParams) => {
     if (advancedConfigurationParams.chunkSize) {
         cy.get('#dataChunkSize').type(advancedConfigurationParams.chunkSize);
     }
-
+    if (advancedConfigurationParams.consensusReplicas) {
+        cy.get('#consensusReplicas').type(advancedConfigurationParams.consensusReplicas);
+    }
     if (advancedConfigurationParams.overlapSize) {
         cy.get('#overlapSize').type(advancedConfigurationParams.overlapSize);
     }
@@ -1420,7 +1440,7 @@ Cypress.Commands.add('downloadExport', ({ expectNotification = true } = {}) => {
     cy.get('.cvat-requests-card').first().within(() => {
         cy.get('.cvat-requests-page-actions-button').click();
     });
-    cy.intercept('GET', '**=download').as('download');
+    cy.intercept('GET', '**/download?rq_id=*').as('download');
     cy.get('.ant-dropdown')
         .not('.ant-dropdown-hidden')
         .within(() => {
@@ -1788,4 +1808,80 @@ Cypress.Commands.add('clickDeleteFrameAnnotationView', () => {
 Cypress.Commands.add('clickSaveAnnotationView', () => {
     cy.get('button').contains('Save').click();
     cy.get('button').contains('Save').trigger('mouseout');
+});
+
+Cypress.Commands.add('makeCustomImage', (directory, fileName,
+    width, height, fontSize, backColor, textColor, posX, posY,
+    message, extension = 'png', maxWidth = undefined) => {
+    cy.window().then(async ($win) => {
+        const ofc = new $win.OffscreenCanvas(width, height);
+        const ctx = ofc.getContext('2d');
+
+        ctx.fillStyle = backColor;
+        ctx.fillRect(0, 0, width, height);
+
+        ctx.font = `${fontSize}px Impact`;
+
+        ctx.fillStyle = textColor;
+        ctx.textBaseline = 'top'; // so that text aligns with tracking coords
+        ctx.fillText(message, posX, posY, maxWidth);
+
+        cy.bufferToImage(directory, fileName, extension,
+            await (await ofc.convertToBlob()).arrayBuffer(),
+        );
+    });
+});
+
+Cypress.Commands.add('checkSlidersValues', (wrapper, slidersClassNames, expectedResults) => {
+    cy.get(wrapper).within(() => {
+        cy.wrap(slidersClassNames).each(($el, index) => {
+            cy.wrap($el)
+                .get($el)
+                .within(() => {
+                    cy.get('[role=slider]')
+                        .should('have.attr', 'aria-valuenow', expectedResults[index]);
+                });
+        });
+    });
+});
+
+Cypress.Commands.add('applyActionToSliders', (wrapper, slidersClassNames, action) => {
+    cy.get(wrapper).within(() => {
+        cy.wrap(slidersClassNames).each(($el) => {
+            cy.wrap($el)
+                .get($el)
+                .within(() => {
+                    cy.get('[role=slider]').type(action);
+                });
+        });
+    });
+    cy.get('.ant-tooltip').invoke('hide');
+});
+
+Cypress.Commands.add('mergeConsensusTask', (status = 202) => {
+    cy.intercept('POST', '/api/consensus/merges**').as('mergeTask');
+
+    cy.get('.cvat-task-details-wrapper').should('be.visible');
+    cy.contains('button', 'Actions').click();
+    cy.contains('Merge consensus jobs').should('be.visible').click();
+    cy.get('.cvat-modal-confirm-consensus-merge-task')
+        .contains('button', 'Merge')
+        .click();
+
+    cy.wait('@mergeTask').its('response.statusCode').should('eq', status);
+});
+
+Cypress.Commands.add('mergeConsensusJob', (jobID, status = 202) => {
+    cy.intercept('POST', '/api/consensus/merges**').as('mergeJob');
+    cy.get('.cvat-job-item')
+        .filter(':has(.cvat-tag-consensus)')
+        .filter(`:contains("Job #${jobID}")`)
+        .find('.anticon-more').first().click();
+
+    cy.get('.ant-dropdown-menu').contains('li', 'Merge consensus job').click();
+    cy.get('.cvat-modal-confirm-consensus-merge-job')
+        .contains('button', 'Merge')
+        .click();
+
+    cy.wait('@mergeJob').its('response.statusCode').should('eq', status);
 });

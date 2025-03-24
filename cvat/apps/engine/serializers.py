@@ -38,8 +38,9 @@ from cvat.apps.engine import field_validation, models
 from cvat.apps.engine.cloud_provider import Credentials, Status, get_cloud_storage_instance
 from cvat.apps.engine.frame_provider import FrameQuality, TaskFrameProvider
 from cvat.apps.engine.log import ServerLogManager
+from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.permissions import TaskPermission
-from cvat.apps.engine.rq_job_handler import RQId, RQJobMetaField
+from cvat.apps.engine.rq import BaseRQMeta, ExportRQMeta, ImportRQMeta, RequestAction, RQId
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
 from cvat.apps.engine.utils import (
     CvatChunkTimestampMismatchError,
@@ -52,6 +53,7 @@ from cvat.apps.engine.utils import (
     reverse,
     take_by,
 )
+from cvat.apps.lambda_manager.rq import LambdaRQMeta
 from utils.dataset_manifest import ImageManifestManager
 
 slogger = ServerLogManager(__name__)
@@ -1611,7 +1613,8 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
         # The django generated bulk_update() query is too slow, so we use bulk_create() instead
         # NOTE: Silk doesn't show these queries in the list of queries
         # for some reason, but they can be seen in the profile
-        models.Image.objects.bulk_create(
+        bulk_create(
+            models.Image,
             list(bulk_context.updated_honeypots.values()),
             update_conflicts=True,
             update_fields=['path', 'width', 'height', 'real_frame'],
@@ -1620,7 +1623,6 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
                 # https://docs.djangoproject.com/en/4.2/ref/models/querysets/#bulk-create
                 'id'
             ],
-            batch_size=1000,
         )
 
         # Update related images in 2 steps: remove all m2m for honeypots, then add (copy) new ones
@@ -1668,7 +1670,7 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
                     for m2m_obj in validation_frame_m2m_objects
                 )
 
-        models.RelatedFile.images.through.objects.bulk_create(new_m2m_objects, batch_size=1000)
+        bulk_create(models.RelatedFile.images.through, new_m2m_objects)
 
         # Update manifest if present
         manifest_path = db_task.data.get_manifest_path()
@@ -1971,9 +1973,9 @@ class ValidationParamsSerializer(serializers.ModelSerializer):
         instance = super().create(validated_data)
 
         if frames:
-            models.ValidationFrame.objects.bulk_create(
-                models.ValidationFrame(validation_params=instance, path=frame)
-                for frame in frames
+            bulk_create(
+                models.ValidationFrame,
+                [models.ValidationFrame(validation_params=instance, path=frame) for frame in frames]
             )
 
         return instance
@@ -1989,9 +1991,9 @@ class ValidationParamsSerializer(serializers.ModelSerializer):
         if frames:
             models.ValidationFrame.objects.filter(validation_params=instance).delete()
 
-            models.ValidationFrame.objects.bulk_create(
-                models.ValidationFrame(validation_params=instance, path=frame)
-                for frame in frames
+            bulk_create(
+                models.ValidationFrame,
+                [models.ValidationFrame(validation_params=instance, path=frame) for frame in frames]
             )
 
         return instance
@@ -2221,8 +2223,9 @@ class DataSerializer(serializers.ModelSerializer):
             (models.ClientFile, models.ServerFile, models.RemoteFile),
         ):
             if files_type in files:
-                files_model.objects.bulk_create(
-                    files_model(data=instance, **f) for f in files[files_type]
+                bulk_create(
+                    files_model,
+                    [files_model(data=instance, **f) for f in files[files_type]]
                 )
 
 class TaskReadSerializer(serializers.ModelSerializer):
@@ -2616,6 +2619,8 @@ class AboutSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=128)
     description = serializers.CharField(max_length=2048)
     version = serializers.CharField(max_length=64)
+    logo_url = serializers.CharField()
+    subtitle = serializers.CharField(max_length=1024)
 
 class FrameMetaSerializer(serializers.Serializer):
     width = serializers.IntegerField()
@@ -3226,7 +3231,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
             db_storage.save()
 
             manifest_file_instances = [models.Manifest(filename=manifest, cloud_storage=db_storage) for manifest in manifests]
-            models.Manifest.objects.bulk_create(manifest_file_instances)
+            bulk_create(models.Manifest, manifest_file_instances)
 
             cloud_storage_path = db_storage.get_storage_dirname()
             if os.path.isdir(cloud_storage_path):
@@ -3305,7 +3310,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
                 # check manifest files existing
                 self._manifests_validation(storage, delta_to_create)
                 manifest_instances = [models.Manifest(filename=f, cloud_storage=instance) for f in delta_to_create]
-                models.Manifest.objects.bulk_create(manifest_instances)
+                bulk_create(models.Manifest, manifest_instances)
             if temporary_file:
                 # so, gcs key file is valid and we need to set correct path to the file
                 real_path_to_key_file = instance.get_key_file_path()
@@ -3493,7 +3498,8 @@ class RequestDataOperationSerializer(serializers.Serializer):
     def to_representation(self, rq_job: RQJob) -> dict[str, Any]:
         parsed_rq_id: RQId = rq_job.parsed_rq_id
 
-        return {
+        base_rq_job_meta = BaseRQMeta.for_job(rq_job)
+        representation = {
             "type": ":".join(
                 [
                     parsed_rq_id.action,
@@ -3501,12 +3507,16 @@ class RequestDataOperationSerializer(serializers.Serializer):
                 ]
             ),
             "target": parsed_rq_id.target,
-            "project_id": rq_job.meta[RQJobMetaField.PROJECT_ID],
-            "task_id": rq_job.meta[RQJobMetaField.TASK_ID],
-            "job_id": rq_job.meta[RQJobMetaField.JOB_ID],
-            "format": parsed_rq_id.format,
-            "function_id": rq_job.meta.get(RQJobMetaField.FUNCTION_ID),
+            "project_id": base_rq_job_meta.project_id,
+            "task_id": base_rq_job_meta.task_id,
+            "job_id": base_rq_job_meta.job_id,
         }
+        if parsed_rq_id.action == RequestAction.AUTOANNOTATE:
+            representation["function_id"] = LambdaRQMeta.for_job(rq_job).function_id
+        elif parsed_rq_id.action in (RequestAction.IMPORT, RequestAction.EXPORT):
+            representation["format"] = parsed_rq_id.format
+
+        return representation
 
 class RequestSerializer(serializers.Serializer):
     # SerializerMethodField is not used here to mark "status" field as required and fix schema generation.
@@ -3530,17 +3540,23 @@ class RequestSerializer(serializers.Serializer):
     result_url = serializers.URLField(required=False, allow_null=True)
     result_id = serializers.IntegerField(required=False, allow_null=True)
 
+    def __init__(self, *args, **kwargs):
+        self._base_rq_job_meta: BaseRQMeta | None = None
+        super().__init__(*args, **kwargs)
+
     @extend_schema_field(UserIdentifiersSerializer())
     def get_owner(self, rq_job: RQJob) -> dict[str, Any]:
-        return UserIdentifiersSerializer(rq_job.meta[RQJobMetaField.USER]).data
+        assert self._base_rq_job_meta
+        return UserIdentifiersSerializer(self._base_rq_job_meta.user).data
 
     @extend_schema_field(
         serializers.FloatField(min_value=0, max_value=1, required=False, allow_null=True)
     )
     def get_progress(self, rq_job: RQJob) -> Decimal:
+        rq_job_meta = ImportRQMeta.for_job(rq_job)
         # progress of task creation is stored in "task_progress" field
         # progress of project import is stored in "progress" field
-        return Decimal(rq_job.meta.get(RQJobMetaField.PROGRESS) or rq_job.meta.get(RQJobMetaField.TASK_PROGRESS) or 0.)
+        return Decimal(rq_job_meta.progress or rq_job_meta.task_progress or 0.)
 
     @extend_schema_field(serializers.DateTimeField(required=False, allow_null=True))
     def get_expiry_date(self, rq_job: RQJob) -> Optional[str]:
@@ -3558,20 +3574,19 @@ class RequestSerializer(serializers.Serializer):
 
     @extend_schema_field(serializers.CharField(allow_blank=True))
     def get_message(self, rq_job: RQJob) -> str:
+        assert self._base_rq_job_meta
         rq_job_status = rq_job.get_status()
         message = ''
 
         if RQJobStatus.STARTED == rq_job_status:
-            message = rq_job.meta.get(RQJobMetaField.STATUS, '')
+            message = self._base_rq_job_meta.status or message
         elif RQJobStatus.FAILED == rq_job_status:
-            message = rq_job.meta.get(
-                RQJobMetaField.FORMATTED_EXCEPTION,
-                parse_exception_message(str(rq_job.exc_info or "Unknown error")),
-            )
+            message = self._base_rq_job_meta.formatted_exception or parse_exception_message(str(rq_job.exc_info or "Unknown error"))
 
         return message
 
     def to_representation(self, rq_job: RQJob) -> dict[str, Any]:
+        self._base_rq_job_meta = BaseRQMeta.for_job(rq_job)
         representation = super().to_representation(rq_job)
 
         # FUTURE-TODO: support such statuses on UI
@@ -3579,8 +3594,8 @@ class RequestSerializer(serializers.Serializer):
             representation["status"] = RQJobStatus.QUEUED
 
         if representation["status"] == RQJobStatus.FINISHED:
-            if result_url := rq_job.meta.get(RQJobMetaField.RESULT_URL):
-                representation["result_url"] = result_url
+            if rq_job.parsed_rq_id.action == models.RequestAction.EXPORT:
+                representation["result_url"] = ExportRQMeta.for_job(rq_job).result_url
 
             if (
                 rq_job.parsed_rq_id.action == models.RequestAction.IMPORT

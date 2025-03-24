@@ -60,6 +60,7 @@ UPDATE_ORG := "update:organization"
 VIEW_STATUS := "view:status"
 VIEW_VALIDATION_LAYOUT := "view:validation_layout"
 UPDATE_VALIDATION_LAYOUT := "update:validation_layout"
+DOWNLOAD_EXPORTED_FILE := "download:exported_file"
 
 
 get_priority(privilege) := {

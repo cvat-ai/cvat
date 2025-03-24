@@ -4,10 +4,12 @@
 
 /// <reference types="cypress" />
 
+/* eslint-disable security/detect-non-literal-fs-filename */
+
 const fs = require('fs');
 // eslint-disable-next-line import/no-extraneous-dependencies
 const { isFileExist } = require('cy-verify-downloads');
-const { imageGenerator } = require('./imageGenerator/addPlugin');
+const { imageGenerator, bufferToImage } = require('./imageGenerator/addPlugin');
 const { createZipArchive } = require('./createZipArchive/addPlugin');
 const { compareImages } = require('./compareImages/addPlugin');
 const { unpackZipArchive } = require('./unpackZipArchive/addPlugin');
@@ -19,6 +21,7 @@ module.exports = (on, config) => {
     on('task', { createZipArchive });
     on('task', { compareImages });
     on('task', { unpackZipArchive });
+    on('task', { bufferToImage });
     on('task', {
         log(message) {
             console.log(message);

@@ -4,23 +4,6 @@
 
 @import 'base';
 
-.cvat-requests-scrollbar {
-    &::-webkit-scrollbar {
-        background-color: #fff;
-        width: $grid-unit-size * 2;
-    }
-
-    &::-webkit-scrollbar-track {
-        background-color: #fff;
-    }
-
-    &::-webkit-scrollbar-thumb {
-        background-color: #babac0;
-        border-radius: $border-radius-base * 2;
-        border: 6px solid #fff;
-    }
-}
-
 .cvat-requests-page {
     height: 100%;
     padding-top: $grid-unit-size * 2;
@@ -88,7 +71,7 @@
 }
 
 .cvat-request-item-progress-message {
-    @extend .cvat-requests-scrollbar;
+    @extend .cvat-scrollbar;
 
     max-height: $grid-unit-size * 8;
     overflow: hidden auto;
