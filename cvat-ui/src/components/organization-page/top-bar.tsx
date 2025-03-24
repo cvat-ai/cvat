@@ -345,7 +345,7 @@ function OrganizationTopBar(props: Props): JSX.Element {
                     </Space>
                 </Col>
             </Row>
-            <Row className='cvat-oranization-page-filters-wrapper' justify='space-between'>
+            <Row className='cvat-organization-page-filters-wrapper' justify='space-between'>
                 <Col>
                     <Input.Search
                         enterButton
@@ -353,7 +353,7 @@ function OrganizationTopBar(props: Props): JSX.Element {
                             onApplySearch(phrase);
                         }}
                         defaultValue={query.search || ''}
-                        className='cvat-oranization-page-search-bar'
+                        className='cvat-organization-page-search-bar'
                         placeholder='Search ...'
                     />
                 </Col>
