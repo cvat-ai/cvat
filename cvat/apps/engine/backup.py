@@ -11,31 +11,25 @@ import os
 import re
 import shutil
 import tempfile
-import uuid
 from abc import ABCMeta, abstractmethod
 from collections.abc import Collection, Iterable
 from copy import deepcopy
 from datetime import timedelta
 from enum import Enum
 from logging import Logger
-from tempfile import NamedTemporaryFile
 from typing import Any, ClassVar, Optional, Type, Union
 from zipfile import ZipFile
 
-import django_rq
 import json_stream
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.utils import timezone
-from rest_framework import serializers, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
-from rest_framework.response import Response
 
 import cvat.apps.dataset_manager as dm
-from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.util import (
     ExportCacheManager,
     TmpDirManager,
@@ -51,23 +45,13 @@ from cvat.apps.dataset_manager.views import (
     retry_current_rq_job,
 )
 from cvat.apps.engine import models
-from cvat.apps.engine.cloud_provider import (
-    db_storage_to_storage_instance,
-    import_resource_from_cloud_storage,
-)
-from cvat.apps.engine.location import StorageType, get_location_configuration
+from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import (
     DataChoice,
-    Location,
-    RequestAction,
-    RequestSubresource,
-    RequestTarget,
     StorageChoice,
     StorageMethodChoice,
 )
-from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
-from cvat.apps.engine.rq import ImportRQMeta, RQId, define_dependent_job
 from cvat.apps.engine.serializers import (
     AnnotationGuideWriteSerializer,
     AssetWriteSerializer,
@@ -76,23 +60,14 @@ from cvat.apps.engine.serializers import (
     JobWriteSerializer,
     LabeledDataSerializer,
     LabelSerializer,
-    ProjectFileSerializer,
     ProjectReadSerializer,
-    RqIdSerializer,
     SegmentSerializer,
     SimpleJobSerializer,
-    TaskFileSerializer,
     TaskReadSerializer,
     ValidationParamsSerializer,
 )
 from cvat.apps.engine.task import JobFileMapping, _create_thread
-from cvat.apps.engine.types import ExtendedRequest
-from cvat.apps.engine.utils import (
-    av_scan_paths,
-    get_rq_lock_by_user,
-    import_resource_with_clean_up_after,
-    process_failed_job,
-)
+from cvat.apps.engine.utils import av_scan_paths
 
 slogger = ServerLogManager(__name__)
 
@@ -974,7 +949,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         return self._db_task
 
 @transaction.atomic
-def _import_task(filename, user, org_id):
+def import_task(filename, user, org_id):
     av_scan_paths(filename)
     task_importer = TaskImporter(filename, user, org_id)
     db_task = task_importer.import_task()
@@ -1110,7 +1085,7 @@ class ProjectImporter(_ImporterBase, _ProjectBackupBase):
         return self._db_project
 
 @transaction.atomic
-def _import_project(filename, user, org_id):
+def import_project(filename, user, org_id):
     av_scan_paths(filename)
     project_importer = ProjectImporter(filename, user, org_id)
     db_project = project_importer.import_project()
@@ -1178,166 +1153,5 @@ def create_backup(
         log_exception(logger)
         raise
 
-
-def _import(
-    importer: TaskImporter | ProjectImporter,
-    request: ExtendedRequest,
-    queue: django_rq.queues.DjangoRQ,
-    rq_id: str,
-    Serializer: type[TaskFileSerializer] | type[ProjectFileSerializer],
-    file_field_name: str,
-    location_conf: dict,
-    filename: str | None = None,
-):
-    rq_job = queue.fetch_job(rq_id)
-
-    if not rq_job:
-        org_id = getattr(request.iam_context['organization'], 'id', None)
-        location = location_conf.get('location')
-
-        if location == Location.LOCAL:
-            if not filename:
-                serializer = Serializer(data=request.data)
-                serializer.is_valid(raise_exception=True)
-                payload_file = serializer.validated_data[file_field_name]
-                with NamedTemporaryFile(
-                    prefix='cvat_',
-                    dir=settings.TMP_FILES_ROOT,
-                    delete=False) as tf:
-                    filename = tf.name
-                    for chunk in payload_file.chunks():
-                        tf.write(chunk)
-        else:
-            file_name = request.query_params.get('filename')
-            assert file_name, "The filename wasn't specified"
-            try:
-                storage_id = location_conf['storage_id']
-            except KeyError:
-                raise serializers.ValidationError(
-                    'Cloud storage location was selected as the source,'
-                    ' but cloud storage id was not specified')
-
-            db_storage = get_cloud_storage_for_import_or_export(
-                storage_id=storage_id, request=request,
-                is_default=location_conf['is_default'])
-
-            key = filename
-            with NamedTemporaryFile(prefix='cvat_', dir=settings.TMP_FILES_ROOT, delete=False) as tf:
-                filename = tf.name
-
-        func = import_resource_with_clean_up_after
-        func_args = (importer, filename, request.user.id, org_id)
-
-        if location == Location.CLOUD_STORAGE:
-            func_args = (db_storage, key, func) + func_args
-            func = import_resource_from_cloud_storage
-
-        user_id = request.user.id
-
-        with get_rq_lock_by_user(queue, user_id):
-            meta = ImportRQMeta.build_for(
-                request=request,
-                db_obj=None,
-                tmp_file=filename,
-            )
-            rq_job = queue.enqueue_call(
-                func=func,
-                args=func_args,
-                job_id=rq_id,
-                meta=meta,
-                depends_on=define_dependent_job(queue, user_id),
-                result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
-                failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
-            )
-    else:
-        rq_job_meta = ImportRQMeta.for_job(rq_job)
-        if rq_job_meta.user.id != request.user.id:
-            return Response(status=status.HTTP_403_FORBIDDEN)
-
-        if rq_job.is_finished:
-            project_id = rq_job.return_value()
-            rq_job.delete()
-            return Response({'id': project_id}, status=status.HTTP_201_CREATED)
-        elif rq_job.is_failed:
-            exc_info = process_failed_job(rq_job)
-            # RQ adds a prefix with exception class name
-            import_error_prefix = '{}.{}'.format(
-                CvatImportError.__module__, CvatImportError.__name__)
-            if exc_info.startswith(import_error_prefix):
-                exc_info = exc_info.replace(import_error_prefix + ': ', '')
-                return Response(data=exc_info,
-                    status=status.HTTP_400_BAD_REQUEST)
-            else:
-                return Response(data=exc_info,
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    serializer = RqIdSerializer(data={'rq_id': rq_id})
-    serializer.is_valid(raise_exception=True)
-
-    return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-
 def get_backup_dirname():
     return TmpDirManager.TMP_ROOT
-
-def import_project(request: ExtendedRequest, queue_name: str, filename: str | None = None):
-    if 'rq_id' in request.data:
-        rq_id = request.data['rq_id']
-    else:
-        rq_id = RQId(
-            queue=settings.CVAT_QUEUES.IMPORT_DATA.value,
-            action=RequestAction.IMPORT, target=RequestTarget.PROJECT, id=uuid.uuid4(),
-            extra={
-                "subresource": RequestSubresource.BACKUP,
-            }
-        ).render()
-    Serializer = ProjectFileSerializer
-    file_field_name = 'project_file'
-
-    location_conf = get_location_configuration(
-        query_params=request.query_params,
-        field_name=StorageType.SOURCE,
-    )
-
-    queue = django_rq.get_queue(queue_name)
-
-    return _import(
-        importer=_import_project,
-        request=request,
-        queue=queue,
-        rq_id=rq_id,
-        Serializer=Serializer,
-        file_field_name=file_field_name,
-        location_conf=location_conf,
-        filename=filename
-    )
-
-def import_task(request: ExtendedRequest, queue_name: str, filename: str | None = None):
-    rq_id = request.data.get('rq_id', RQId(
-        queue=settings.CVAT_QUEUES.IMPORT_DATA.value,
-        action=RequestAction.IMPORT,
-        target=RequestTarget.TASK,
-        id=uuid.uuid4(),
-        extra={
-            "subresource": RequestSubresource.BACKUP,
-        }
-    ).render())
-    Serializer = TaskFileSerializer
-    file_field_name = 'task_file'
-
-    location_conf = get_location_configuration(
-        query_params=request.query_params,
-        field_name=StorageType.SOURCE
-    )
-
-    queue = django_rq.get_queue(queue_name)
-
-    return _import(
-        importer=_import_task,
-        request=request,
-        queue=queue,
-        rq_id=rq_id,
-        Serializer=Serializer,
-        file_field_name=file_field_name,
-        location_conf=location_conf,
-        filename=filename
-    )

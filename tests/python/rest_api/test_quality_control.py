@@ -603,7 +603,7 @@ class TestPostQualityReports(_PermissionTestBase):
 
     @pytest.mark.parametrize(
         "role",
-        # owner and maintainer has rights even without being assigned to a task
+        # owner and maintainer have rights even without being assigned to a task
         ("supervisor", "worker"),
     )
     def test_task_assignee_can_check_status_of_report_creation_in_org(

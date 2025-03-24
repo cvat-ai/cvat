@@ -24,7 +24,6 @@ from rq.job import JobStatus as RqJobStatus
 from cvat.apps.engine.mixins import PartialUpdateModelMixin
 from cvat.apps.engine.models import Task
 from cvat.apps.engine.rq import BaseRQMeta
-from cvat.apps.engine.serializers import RqIdSerializer
 from cvat.apps.engine.utils import get_server_url
 from cvat.apps.quality_control import quality_reports as qc
 from cvat.apps.quality_control.models import (
@@ -44,6 +43,7 @@ from cvat.apps.quality_control.serializers import (
     QualityReportSerializer,
     QualitySettingsSerializer,
 )
+from cvat.apps.redis_handler.serializers import RequestIdSerializer
 
 
 @extend_schema(tags=["quality"])
@@ -244,7 +244,7 @@ class QualityReportViewSet(
         responses={
             "201": QualityReportSerializer,
             "202": OpenApiResponse(
-                RqIdSerializer,
+                RequestIdSerializer,
                 description=textwrap.dedent(
                     """\
                     A quality report request has been enqueued, the request id is returned.
@@ -277,13 +277,13 @@ class QualityReportViewSet(
             except Task.DoesNotExist as ex:
                 raise NotFound(f"Task {task_id} does not exist") from ex
 
-            manager = qc.QualityReportRQJobManager(task, request)
+            manager = qc.QualityReportRQJobManager(request=request, db_instance=task)
             return manager.process()
 
         else:
             deprecation_timestamp = int(datetime(2025, 3, 17, tzinfo=timezone.utc).timestamp())
             response_headers = {"Deprecation": f"@{deprecation_timestamp}"}
-            serializer = RqIdSerializer(data={"rq_id": rq_id})
+            serializer = RequestIdSerializer(data={"rq_id": rq_id})
             serializer.is_valid(raise_exception=True)
             rq_id = serializer.validated_data["rq_id"]
             rq_job = qc.QualityReportRQJobManager.get_job_by_id(rq_id)

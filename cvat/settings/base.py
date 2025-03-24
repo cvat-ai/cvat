@@ -297,13 +297,13 @@ RQ_QUEUES = {
         "DEFAULT_TIMEOUT": "4h",
         # custom fields
         "VISIBLE_VIA_REQUESTS_API": True,
-        "PARSED_JOB_ID_CLASS": "cvat.apps.engine.rq.ImportRQId",
+        "PARSED_JOB_ID_CLASS": "cvat.apps.engine.rq.ImportRequestId",
     },
     CVAT_QUEUES.EXPORT_DATA.value: {
         **REDIS_INMEM_SETTINGS,
         "DEFAULT_TIMEOUT": "4h",
         "VISIBLE_VIA_REQUESTS_API": True,
-        "PARSED_JOB_ID_CLASS": "cvat.apps.engine.rq.ExportRQId",
+        "PARSED_JOB_ID_CLASS": "cvat.apps.engine.rq.ExportRequestId",
     },
     CVAT_QUEUES.AUTO_ANNOTATION.value: {
         **REDIS_INMEM_SETTINGS,

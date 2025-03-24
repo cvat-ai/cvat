@@ -18,12 +18,12 @@ import datumaro.components.comparator
 import datumaro.util.annotation_util
 import datumaro.util.mask_tools
 import numpy as np
-from attrs import asdict, define, fields_dict
+from attrs import asdict, define, fields_dict, frozen
 from datumaro.util import dump_json, parse_json
 from django.conf import settings
 from django.db import transaction
-from django.http import HttpResponseBadRequest
 from django_rq.queues import DjangoRQ as RqQueue
+from rest_framework.serializers import ValidationError
 from scipy.optimize import linear_sum_assignment
 
 from cvat.apps.dataset_manager.bindings import (
@@ -43,6 +43,7 @@ from cvat.apps.engine.models import (
     Image,
     Job,
     JobType,
+    Project,
     RequestTarget,
     ShapeType,
     StageChoice,
@@ -53,7 +54,7 @@ from cvat.apps.engine.models import (
 )
 from cvat.apps.engine.rq import BaseRQMeta, define_dependent_job
 from cvat.apps.engine.types import ExtendedRequest
-from cvat.apps.engine.utils import get_rq_lock_by_user, get_rq_lock_for_job
+from cvat.apps.engine.utils import get_rq_lock_by_user
 from cvat.apps.profiler import silk_profile
 from cvat.apps.quality_control import models
 from cvat.apps.quality_control.models import (
@@ -61,8 +62,8 @@ from cvat.apps.quality_control.models import (
     AnnotationConflictType,
     AnnotationType,
 )
-from cvat.apps.redis_handler.background import AbstractRQJobManager
-from cvat.apps.redis_handler.rq import RQId
+from cvat.apps.redis_handler.background import AbstractRequestManager
+from cvat.apps.redis_handler.rq import RequestId
 
 
 class Serializable:
@@ -2265,15 +2266,21 @@ class DatasetComparator:
         )
 
 
-class QualityReportRQJobManager(AbstractRQJobManager):
-    _JOB_RESULT_TTL = 120
-    _JOB_FAILURE_TTL = _JOB_RESULT_TTL
-
+@define(kw_only=True)
+class QualityReportRQJobManager(AbstractRequestManager):
     QUEUE_NAME = settings.CVAT_QUEUES.QUALITY_REPORTS.value
     SUPPORTED_RESOURCES: ClassVar[set[RequestTarget]] = {RequestTarget.TASK}
 
-    def build_rq_id(self):
-        return RQId(
+    @property
+    def job_result_ttl(self):
+        return 120
+
+    @property
+    def job_failed_ttl(self):
+        return self.job_result_ttl
+
+    def build_request_id(self):
+        return RequestId(
             queue=self.QUEUE_NAME,
             action="compute",
             target=self.resource,
@@ -2281,33 +2288,27 @@ class QualityReportRQJobManager(AbstractRQJobManager):
         ).render()
 
     def validate_request(self):
+        super().validate_request()
+
         if self.db_instance.dimension != DimensionType.DIM_2D:
-            return HttpResponseBadRequest("Quality reports are only supported in 2d tasks")
+            raise ValidationError("Quality reports are only supported in 2d tasks")
 
         gt_job = self.db_instance.gt_job
         if gt_job is None or not (
             gt_job.stage == StageChoice.ACCEPTANCE and gt_job.state == StatusChoice.COMPLETED
         ):
-            return HttpResponseBadRequest(
+            raise ValidationError(
                 "Quality reports require a Ground Truth job in the task "
                 f"at the {StageChoice.ACCEPTANCE} stage "
                 f"and in the {StatusChoice.COMPLETED} state"
             )
 
-    def setup_background_job(self, queue: RqQueue, rq_id: str) -> None:
-        user_id = self.request.user.id
+    def init_callback_with_params(self):
+        self.callback = QualityReportUpdateManager._check_task_quality
+        self.callback_kwargs = {
+            "task_id": self.db_instance.pk,
+        }
 
-        with get_rq_lock_by_user(queue, user_id=user_id):
-            dependency = define_dependent_job(queue, user_id=user_id, rq_id=rq_id)
-            queue.enqueue(
-                QualityReportUpdateManager._check_task_quality,
-                task_id=self.db_instance.pk,
-                job_id=rq_id,
-                meta=BaseRQMeta.build(request=self.request, db_obj=self.db_instance),
-                result_ttl=self._JOB_RESULT_TTL,
-                failure_ttl=self._JOB_FAILURE_TTL,
-                depends_on=dependency,
-            )
 
 class QualityReportUpdateManager:
     @classmethod

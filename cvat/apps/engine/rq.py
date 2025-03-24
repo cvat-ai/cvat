@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
+from functools import cached_property
 from typing import TYPE_CHECKING, Any, Callable, Optional, Protocol
 
 from django.conf import settings
@@ -16,10 +17,9 @@ from rq.job import Job as RQJob
 from rq.registry import BaseRegistry as RQBaseRegistry
 
 from cvat.apps.engine.types import ExtendedRequest
+from cvat.apps.redis_handler.rq import RequestId
 
 from .models import RequestSubresource
-from cvat.apps.redis_handler.rq import RQId
-from functools import cached_property
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import User
@@ -53,7 +53,7 @@ class RQJobMetaField:
     HIDDEN = "hidden"
 
     # import specific fields
-    TMP_FILE = "tmp_file"
+    TMP_FILE = "tmp_file"  # TODO: unused field
     TASK_PROGRESS = "task_progress"
 
     # export specific fields
@@ -334,7 +334,7 @@ def is_rq_job_owner(rq_job: RQJob, user_id: int) -> bool:
     return BaseRQMeta.for_job(rq_job).user.id == user_id
 
 
-class ExportRQId(RQId):
+class ExportRequestId(RequestId):
     @cached_property
     def user_id(self) -> int:
         return int(self.extra["user_id"])
@@ -348,8 +348,12 @@ class ExportRQId(RQId):
         # TODO: quote/unquote
         return self.extra.get("format")
 
+    @property
+    def type(self) -> str:
+        return self.TYPE_SEP.join([self.action, self.subresource])
 
-class ImportRQId(RQId):
+
+class ImportRequestId(RequestId):
     @cached_property
     def subresource(self) -> RequestSubresource | None:
         if subresource := self.extra.get("subresource"):

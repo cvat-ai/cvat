@@ -12,12 +12,10 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from textwrap import dedent
-from typing import Callable
 from unittest import mock
 from urllib.parse import urljoin
 
 import django_rq
-from attr.converters import to_bool
 from django.conf import settings
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
@@ -27,20 +25,17 @@ from rest_framework.response import Response
 
 from cvat.apps.engine.background import BackupExportManager, DatasetExportManager
 from cvat.apps.engine.handlers import clear_import_cache
-from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import (
-    Job,
     Location,
-    Project,
     RequestAction,
     RequestSubresource,
     RequestTarget,
-    Task,
 )
-from cvat.apps.engine.rq import RQId
-from cvat.apps.engine.serializers import DataSerializer, RqIdSerializer
+from cvat.apps.engine.rq import RequestId
+from cvat.apps.engine.serializers import DataSerializer
 from cvat.apps.engine.types import ExtendedRequest
+from cvat.apps.redis_handler.serializers import RequestIdSerializer
 
 slogger = ServerLogManager(__name__)
 
@@ -279,7 +274,7 @@ class UploadMixin:
             if file_exists:
                 # check whether the rq_job is in progress or has been finished/failed
                 object_class_name = self._object.__class__.__name__.lower()
-                template = RQId(
+                template = RequestId(
                     queue=settings.CVAT_QUEUES.IMPORT_DATA.value,
                     action=RequestAction.IMPORT,
                     target=RequestTarget(object_class_name),
@@ -449,7 +444,7 @@ class DatasetMixin:
         ],
         request=OpenApiTypes.NONE,
         responses={
-            '202': OpenApiResponse(response=RqIdSerializer, description='Exporting has been started'),
+            '202': OpenApiResponse(response=RequestIdSerializer, description='Exporting has been started'),
             '405': OpenApiResponse(description='Format is not available'),
             '409': OpenApiResponse(description='Exporting is already in progress'),
         },
@@ -458,7 +453,7 @@ class DatasetMixin:
     def initiate_dataset_export(self, request: ExtendedRequest, pk: int):
         self._object = self.get_object() # force call of check_object_permissions()
 
-        export_manager = DatasetExportManager(self._object, request)
+        export_manager = DatasetExportManager(request=request, db_instance=self._object)
         return export_manager.process()
 
     @extend_schema(summary='Download a prepared dataset file',
@@ -474,60 +469,11 @@ class DatasetMixin:
     @action(methods=['GET'], detail=True, url_path='dataset/download')
     def download_dataset(self, request: ExtendedRequest, pk: int):
         obj = self.get_object()  # force to call check_object_permissions
-        export_manager = DatasetExportManager(obj, request)
+        export_manager = DatasetExportManager(request=request, db_instance=obj)
         return export_manager.download_file()
-
-    # FUTURE-TODO: migrate to new API
-    def import_annotations(
-        self,
-        request: ExtendedRequest,
-        db_obj: Project | Task | Job,
-        import_func: Callable[..., None],
-        rq_func: Callable[..., None],
-        rq_id_factory: Callable[..., RQId],
-    ):
-        is_tus_request = request.headers.get('Upload-Length', None) is not None or \
-            request.method == 'OPTIONS'
-        if is_tus_request:
-            return self.init_tus_upload(request)
-
-        conv_mask_to_poly = to_bool(request.query_params.get('conv_mask_to_poly', True))
-        location_conf = get_location_configuration(
-            db_instance=db_obj,
-            query_params=request.query_params,
-            field_name=StorageType.SOURCE,
-        )
-
-        if location_conf['location'] == Location.CLOUD_STORAGE:
-            format_name = request.query_params.get('format')
-            file_name = request.query_params.get('filename')
-
-            return import_func(
-                request=request,
-                rq_id_factory=rq_id_factory,
-                rq_func=rq_func,
-                db_obj=self._object,
-                format_name=format_name,
-                location_conf=location_conf,
-                filename=file_name,
-                conv_mask_to_poly=conv_mask_to_poly,
-            )
-
-        return self.upload_data(request)
 
 
 class BackupMixin:
-    # FUTURE-TODO: migrate to new API
-    def import_backup_v1(self, request: ExtendedRequest, import_func: Callable) -> Response:
-        location = request.query_params.get("location", Location.LOCAL)
-        if location == Location.CLOUD_STORAGE:
-            file_name = request.query_params.get("filename", "")
-            return import_func(
-                request,
-                queue_name=settings.CVAT_QUEUES.IMPORT_DATA.value,
-                filename=file_name,
-            )
-        return self.upload_data(request)
 
     @extend_schema(summary='Initiate process to backup resource',
         description=dedent("""\
@@ -546,7 +492,7 @@ class BackupMixin:
         ],
         request=OpenApiTypes.NONE,
         responses={
-            '202': OpenApiResponse(response=RqIdSerializer, description='Creating a backup file has been started'),
+            '202': OpenApiResponse(response=RequestIdSerializer, description='Creating a backup file has been started'),
             '400': OpenApiResponse(description='Wrong query parameters were passed'),
             '409': OpenApiResponse(description='The backup process has already been initiated and is not yet finished'),
         },
@@ -554,7 +500,7 @@ class BackupMixin:
     @action(detail=True, methods=['POST'], serializer_class=None, url_path='backup/export')
     def initiate_backup_export(self, request: ExtendedRequest, pk: int):
         db_object = self.get_object() # force to call check_object_permissions
-        export_manager = BackupExportManager(db_object, request)
+        export_manager = BackupExportManager(request=request, db_instance=db_object)
         return export_manager.process()
 
 
@@ -571,5 +517,5 @@ class BackupMixin:
     @action(methods=['GET'], detail=True, url_path='backup/download')
     def download_backup(self, request: ExtendedRequest, pk: int):
         obj = self.get_object()  # force to call check_object_permissions
-        export_manager = BackupExportManager(obj, request)
+        export_manager = BackupExportManager(request=request, db_instance=obj)
         return export_manager.download_file()

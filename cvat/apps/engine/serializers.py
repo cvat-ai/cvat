@@ -15,14 +15,11 @@ from collections import OrderedDict
 from collections.abc import Iterable, Sequence
 from contextlib import closing
 from copy import copy
-from datetime import timedelta
-from decimal import Decimal
 from inspect import isclass
 from tempfile import NamedTemporaryFile
 from typing import Any, Optional, Union
 
 import django_rq
-import rq.defaults as rq_defaults
 from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.db import transaction
@@ -31,8 +28,6 @@ from django.utils import timezone
 from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
 from numpy import random
 from rest_framework import exceptions, serializers
-from rq.job import Job as RQJob
-from rq.job import JobStatus as RQJobStatus
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import field_validation, models
@@ -40,9 +35,7 @@ from cvat.apps.engine.cloud_provider import Credentials, Status, get_cloud_stora
 from cvat.apps.engine.frame_provider import FrameQuality, TaskFrameProvider
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.model_utils import bulk_create
-from cvat.apps.engine.models import RequestAction, RequestSubresource
 from cvat.apps.engine.permissions import TaskPermission
-from cvat.apps.engine.rq import BaseRQMeta, ExportRQMeta, ImportRQMeta
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
 from cvat.apps.engine.utils import (
     CvatChunkTimestampMismatchError,
@@ -50,13 +43,10 @@ from cvat.apps.engine.utils import (
     format_list,
     get_list_view_name,
     grouped,
-    parse_exception_message,
     parse_specific_attributes,
     reverse,
     take_by,
 )
-from cvat.apps.lambda_manager.rq import LambdaRQMeta
-from cvat.apps.redis_handler.rq import RQId
 from utils.dataset_manifest import ImageManifestManager
 
 slogger = ServerLogManager(__name__)
@@ -1816,11 +1806,8 @@ class RqStatusSerializer(serializers.Serializer):
 
     def __init__(self, instance=None, data=..., **kwargs):
         warnings.warn("RqStatusSerializer is deprecated, "
-                      "use cvat.apps.engine.serializers.RequestSerializer instead", DeprecationWarning)
+                      "use cvat.apps.redis_handler.serializers.RequestSerializer instead", DeprecationWarning)
         super().__init__(instance, data, **kwargs)
-
-class RqIdSerializer(serializers.Serializer):
-    rq_id = serializers.CharField(help_text="Request id")
 
 
 class JobFiles(serializers.ListField):
@@ -2947,23 +2934,15 @@ class FileInfoSerializer(serializers.Serializer):
     type = serializers.ChoiceField(choices=["REG", "DIR"])
     mime_type = serializers.CharField(max_length=255)
 
-class AnnotationFileSerializer(serializers.Serializer):
-    annotation_file = serializers.FileField()
 
-class DatasetFileSerializer(serializers.Serializer):
-    dataset_file = serializers.FileField()
+class UploadedFileSerializer(serializers.Serializer):
+    file = serializers.FileField()
 
-    @staticmethod
-    def validate_dataset_file(value):
+class UploadedZipFileSerializer(UploadedFileSerializer):
+    def validate_file(self, value):
         if os.path.splitext(value.name)[1] != '.zip':
-            raise serializers.ValidationError('Dataset file should be zip archive')
+            raise serializers.ValidationError('A file should be zip archive')
         return value
-
-class TaskFileSerializer(serializers.Serializer):
-    task_file = serializers.FileField()
-
-class ProjectFileSerializer(serializers.Serializer):
-    project_file = serializers.FileField()
 
 class CommentReadSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(allow_null=True, required=False)
@@ -3490,131 +3469,3 @@ class AnnotationGuideWriteSerializer(WriteOnceMixin, serializers.ModelSerializer
     class Meta:
         model = models.AnnotationGuide
         fields = ('id', 'task_id', 'project_id', 'markdown', )
-
-class UserIdentifiersSerializer(BasicUserSerializer):
-    class Meta(BasicUserSerializer.Meta):
-        fields = (
-            "id",
-            "username",
-        )
-
-
-class RequestDataOperationSerializer(serializers.Serializer):
-    type = serializers.CharField()
-    target = serializers.ChoiceField(choices=models.RequestTarget.choices)
-    project_id = serializers.IntegerField(required=False, allow_null=True)
-    task_id = serializers.IntegerField(required=False, allow_null=True)
-    job_id = serializers.IntegerField(required=False, allow_null=True)
-    format = serializers.CharField(required=False, allow_null=True)
-    function_id = serializers.CharField(required=False, allow_null=True)
-
-    def to_representation(self, rq_job: RQJob) -> dict[str, Any]:
-        parsed_rq_id: RQId = rq_job.parsed_rq_id
-
-        base_rq_job_meta = BaseRQMeta.for_job(rq_job)
-        representation = {
-            # TODO: update to action + subresource in export jobs
-            "type": parsed_rq_id.type,
-            "target": parsed_rq_id.target,
-            "project_id": base_rq_job_meta.project_id,
-            "task_id": base_rq_job_meta.task_id,
-            "job_id": base_rq_job_meta.job_id,
-        }
-        if parsed_rq_id.action == RequestAction.AUTOANNOTATE:
-            representation["function_id"] = LambdaRQMeta.for_job(rq_job).function_id
-        elif parsed_rq_id.action in (
-            RequestAction.IMPORT, RequestAction.EXPORT
-        ) and parsed_rq_id.subresource in (RequestSubresource.ANNOTATIONS, RequestSubresource.DATASET):
-            representation["format"] = parsed_rq_id.format
-
-        return representation
-
-class RequestSerializer(serializers.Serializer):
-    # SerializerMethodField is not used here to mark "status" field as required and fix schema generation.
-    # Marking them as read_only leads to generating type as allOf with one reference to RequestStatus component.
-    # The client generated using openapi-generator from such a schema contains wrong type like:
-    # status (bool, date, datetime, dict, float, int, list, str, none_type): [optional]
-    status = serializers.ChoiceField(source="get_status", choices=models.RequestStatus.choices)
-    message = serializers.SerializerMethodField()
-    id = serializers.CharField()
-    operation = RequestDataOperationSerializer(source="*")
-    progress = serializers.SerializerMethodField()
-    created_date = serializers.DateTimeField(source="created_at")
-    started_date = serializers.DateTimeField(
-        required=False, allow_null=True, source="started_at",
-    )
-    finished_date = serializers.DateTimeField(
-        required=False, allow_null=True, source="ended_at",
-    )
-    expiry_date = serializers.SerializerMethodField()
-    owner = serializers.SerializerMethodField()
-    result_url = serializers.URLField(required=False, allow_null=True)
-    result_id = serializers.IntegerField(required=False, allow_null=True)
-
-    def __init__(self, *args, **kwargs):
-        self._base_rq_job_meta: BaseRQMeta | None = None
-        super().__init__(*args, **kwargs)
-
-    @extend_schema_field(UserIdentifiersSerializer())
-    def get_owner(self, rq_job: RQJob) -> dict[str, Any]:
-        assert self._base_rq_job_meta
-        return UserIdentifiersSerializer(self._base_rq_job_meta.user).data
-
-    @extend_schema_field(
-        serializers.FloatField(min_value=0, max_value=1, required=False, allow_null=True)
-    )
-    def get_progress(self, rq_job: RQJob) -> Decimal:
-        rq_job_meta = ImportRQMeta.for_job(rq_job)
-        # progress of task creation is stored in "task_progress" field
-        # progress of project import is stored in "progress" field
-        return Decimal(rq_job_meta.progress or rq_job_meta.task_progress or 0.)
-
-    @extend_schema_field(serializers.DateTimeField(required=False, allow_null=True))
-    def get_expiry_date(self, rq_job: RQJob) -> Optional[str]:
-        delta = None
-        if rq_job.is_finished:
-            delta = rq_job.result_ttl or rq_defaults.DEFAULT_RESULT_TTL
-        elif rq_job.is_failed:
-            delta = rq_job.failure_ttl or rq_defaults.DEFAULT_FAILURE_TTL
-
-        if rq_job.ended_at and delta:
-            expiry_date = rq_job.ended_at + timedelta(seconds=delta)
-            return expiry_date.replace(tzinfo=timezone.utc)
-
-        return None
-
-    @extend_schema_field(serializers.CharField(allow_blank=True))
-    def get_message(self, rq_job: RQJob) -> str:
-        assert self._base_rq_job_meta
-        rq_job_status = rq_job.get_status()
-        message = ''
-
-        if RQJobStatus.STARTED == rq_job_status:
-            message = self._base_rq_job_meta.status or message
-        elif RQJobStatus.FAILED == rq_job_status:
-            message = self._base_rq_job_meta.formatted_exception or parse_exception_message(str(rq_job.exc_info or "Unknown error"))
-
-        return message
-
-    def to_representation(self, rq_job: RQJob) -> dict[str, Any]:
-        self._base_rq_job_meta = BaseRQMeta.for_job(rq_job)
-        representation = super().to_representation(rq_job)
-
-        # FUTURE-TODO: support such statuses on UI
-        if representation["status"] in (RQJobStatus.DEFERRED, RQJobStatus.SCHEDULED):
-            representation["status"] = RQJobStatus.QUEUED
-
-        if representation["status"] == RQJobStatus.FINISHED:
-
-            # TODO: move into a custom Job class
-            if rq_job.parsed_rq_id.action == models.RequestAction.EXPORT:
-                representation["result_url"] = ExportRQMeta.for_job(rq_job).result_url
-
-            if (
-                rq_job.parsed_rq_id.action == models.RequestAction.IMPORT
-                and rq_job.parsed_rq_id.subresource == models.RequestSubresource.BACKUP
-                or rq_job.parsed_rq_id.queue == settings.CVAT_QUEUES.QUALITY_REPORTS
-            ):
-                representation["result_id"] = rq_job.return_value()
-
-        return representation

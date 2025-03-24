@@ -4,6 +4,7 @@
 
 import textwrap
 
+from django.http import HttpResponseGone
 from drf_spectacular.utils import (
     OpenApiParameter,
     OpenApiResponse,
@@ -23,9 +24,8 @@ from cvat.apps.consensus.serializers import (
 )
 from cvat.apps.engine.mixins import PartialUpdateModelMixin
 from cvat.apps.engine.models import Job, Task
-from cvat.apps.engine.serializers import RqIdSerializer
 from cvat.apps.engine.types import ExtendedRequest
-from django.http import HttpResponseGone
+from cvat.apps.redis_handler.serializers import RequestIdSerializer
 
 
 @extend_schema(tags=["consensus"])
@@ -38,7 +38,7 @@ class ConsensusMergesViewSet(viewsets.GenericViewSet):
         request=ConsensusMergeCreateSerializer,
         responses={
             "202": OpenApiResponse(
-                RqIdSerializer,
+                RequestIdSerializer,
                 description=textwrap.dedent(
                     """\
                     A consensus merge request has been enqueued, the request id is returned.
@@ -82,8 +82,9 @@ class ConsensusMergesViewSet(viewsets.GenericViewSet):
             except Job.DoesNotExist as ex:
                 raise NotFound(f"Jobs {job_id} do not exist") from ex
 
-        manager = merging.MergingManager(instance, request)
+        manager = merging.MergingManager(request=request, db_instance=instance)
         return manager.process()
+
 
 @extend_schema(tags=["consensus"])
 @extend_schema_view(

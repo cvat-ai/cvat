@@ -1,13 +1,10 @@
 from __future__ import annotations
 
-from typing import ClassVar, Any
+import base64
+from typing import Any, ClassVar
 from uuid import UUID
 
 import attrs
-
-
-import base64
-
 from django.conf import settings
 
 
@@ -33,9 +30,10 @@ def convert_extra(value: dict) -> dict[str, Any]:
 
 
 @attrs.frozen(kw_only=True)
-class RQId:
+class RequestId:
     FIELD_SEP: ClassVar[str] = "&"
     KEY_VAL_SEP: ClassVar[str] = "="
+    TYPE_SEP: ClassVar[str] = ":"
 
     queue: settings.CVAT_QUEUES = attrs.field(converter=settings.CVAT_QUEUES)
     action: str = attrs.field(validator=attrs.validators.instance_of(str))
@@ -50,17 +48,18 @@ class RQId:
 
     @property
     def type(self) -> str:
-        return ":".join([self.action, self.target])
+        return self.TYPE_SEP.join([self.action, self.target])
 
-    @classmethod
-    def from_base(cls, parsed_id: RQId, /):
+    # @classmethod
+    # def from_base(cls, parsed_id: RequestId, /):
+    def convert_to(self, child_class: type[RequestId], /):
         # method is going to be used by child classes
-        return cls(
-            queue=parsed_id.queue,
-            action=parsed_id.action,
-            target=parsed_id.target,
-            id=parsed_id.id,
-            extra=parsed_id.extra,
+        return child_class(
+            queue=self.queue,
+            action=self.action,
+            target=self.target,
+            id=self.id,
+            extra=self.extra,
         )
 
     def render(self) -> str:
@@ -88,8 +87,8 @@ class RQId:
         keys = set(attrs.fields_dict(cls).keys()) - {"extra"}
         params = {}
 
-        for pair in decoded_rq_id.split(RQId.FIELD_SEP):
-            key, value = pair.split(RQId.KEY_VAL_SEP, maxsplit=1)
+        for pair in decoded_rq_id.split(RequestId.FIELD_SEP):
+            key, value = pair.split(RequestId.KEY_VAL_SEP, maxsplit=1)
             if key in keys:
                 params[key] = value
             else:

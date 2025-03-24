@@ -13,7 +13,7 @@ from django.conf import settings
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
-from cvat.apps.engine.rq import ExportRQId
+from cvat.apps.engine.rq import ExportRequestId
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import is_dataset_export
 from cvat.apps.iam.permissions import (
@@ -47,7 +47,7 @@ def _get_key(d: dict[str, Any], key_path: Union[str, Sequence[str]]) -> Optional
     return d
 
 class DownloadExportedExtension:
-    rq_job_id: ExportRQId | None
+    rq_job_id: ExportRequestId | None
 
     class Scopes(StrEnum):
         DOWNLOAD_EXPORTED_FILE = 'download:exported_file'
@@ -56,7 +56,7 @@ class DownloadExportedExtension:
     def extend_params_with_rq_job_details(*, request: ExtendedRequest, params: dict[str, Any]) -> None:
         if rq_id := request.query_params.get("rq_id"):
             try:
-                params["rq_job_id"] = ExportRQId.parse(rq_id)
+                params["rq_job_id"] = ExportRequestId.parse(rq_id)
                 return
             except Exception:
                 raise ValidationError("Unexpected request id format")

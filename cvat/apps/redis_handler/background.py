@@ -2,125 +2,337 @@
 #
 # SPDX-License-Identifier: MIT
 
+import os.path as osp
 from abc import ABCMeta, abstractmethod
-from typing import ClassVar, Optional
+from dataclasses import asdict as dataclass_asdict
+from dataclasses import dataclass
+from datetime import datetime
+from functools import cached_property
+from types import NoneType
+from typing import Any, Callable, ClassVar
+from urllib.parse import quote
 
+import attrs
 import django_rq
+from django.conf import settings
+from django.db.models import Model
+from django.http.response import HttpResponseBadRequest
+from django.utils import timezone
 from django_rq.queues import DjangoRQ, DjangoScheduler
 from rest_framework import status
+from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.response import Response
+from rest_framework.serializers import ValidationError
 from rq.job import Job as RQJob
 from rq.job import JobStatus as RQJobStatus
 
+from cvat.apps.dataset_manager.util import get_export_cache_lock
+
+# from cvat.apps.dataset_manager.views import get_export_cache_ttl
+from cvat.apps.engine.location import Location, StorageType, get_location_configuration
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.serializers import RqIdSerializer
+from cvat.apps.engine.models import RequestTarget
+from cvat.apps.engine.rq import BaseRQMeta, ExportRQMeta, define_dependent_job
 from cvat.apps.engine.types import ExtendedRequest
-from cvat.apps.engine.utils import get_rq_lock_for_job
+from cvat.apps.engine.utils import (
+    get_rq_lock_by_user,
+    get_rq_lock_for_job,
+    sendfile,
+)
+from cvat.apps.redis_handler.serializers import RequestIdSerializer
 
 slogger = ServerLogManager(__name__)
-from django.conf import settings
 
-from cvat.apps.engine.models import Job, Project, RequestSubresource, RequestTarget, Task
+REQUEST_TIMEOUT = 60
+# it's better to return LockNotAvailableError instead of response with 504 status
+LOCK_TTL = REQUEST_TIMEOUT - 5
+LOCK_ACQUIRE_TIMEOUT = LOCK_TTL - 5
 
-# TODO: describe here protocol
 
-
-class AbstractRQJobManager(metaclass=ABCMeta):
+@attrs.define(kw_only=True)
+class AbstractRequestManager(metaclass=ABCMeta):
+    SUPPORTED_RESOURCES: ClassVar[set[RequestTarget]]
     QUEUE_NAME: ClassVar[str]
-    SUPPORTED_RESOURCES: ClassVar[set[RequestSubresource]]
+    REQUEST_ID_KEY = "rq_id"
+
+    # todo: frozen
+    request: ExtendedRequest = attrs.field()
+    user_id: int = attrs.field(init=False)
+
+    callback: Callable = attrs.field(init=False, validator=attrs.validators.instance_of(Callable))
+    callback_args: tuple | None = attrs.field(init=False, default=None)
+    callback_kwargs: dict[str, Any] | None = attrs.field(init=False, default=None)
+
+    db_instance: Model | None = attrs.field(default=None)
+    resource: RequestTarget | None = attrs.field(
+        init=False,
+        default=None,
+        # validator=attrs.validators.in_({NoneType} | SUPPORTED_RESOURCES),
+        on_setattr=attrs.setters.validate,
+    )
+
+    @resource.validator
+    def validate_resource(self, attribute: attrs.Attribute, value: Any):
+        if value and value not in self.SUPPORTED_RESOURCES:
+            raise ValidationError(f"Unsupported resource: {self.resource}")
+
+    def __attrs_post_init__(self):
+        self.user_id = self.request.user.id
+
+        if self.db_instance is not None:
+            self.resource = RequestTarget(self.db_instance.__class__.__name__.lower())
 
     @classmethod
     def get_queue(cls) -> DjangoRQ:
         return django_rq.get_queue(cls.QUEUE_NAME)
 
-    @classmethod
-    # @abstractmethod
-    def validate_rq_id(rq_id: str, /) -> None: ...
+    @property
+    @abstractmethod
+    def job_result_ttl(self) -> int: ...
+
+    @property
+    @abstractmethod
+    def job_failed_ttl(self) -> int: ...
+
+    @abstractmethod
+    def build_request_id(self): ...
 
     @classmethod
-    def get_job_by_id(cls, rq_id: str, /, *, validate: bool = True) -> RQJob | None:
+    def validate_request_id(rq_id: str, /) -> None: ...
+
+    @classmethod
+    def get_job_by_id(cls, id_: str, /, *, validate: bool = True) -> RQJob | None:
         if validate:
             try:
-                cls.validate_rq_id(rq_id)
+                cls.validate_request_id(id_)
             except Exception:
                 return None
 
         queue = cls.get_queue()
-        return queue.fetch_job(rq_id)
+        return queue.fetch_job(id_)
 
-    def __init__(
-        self,
-        db_instance: Project | Task | Job,
-        request: ExtendedRequest,
-    ) -> None:
-        """
-        Args:
-            db_instance (Union[models.Project, models.Task, models.Job]): Model instance
-            request (ExtendedRequest): Incoming HTTP request
-        """
-        self.db_instance = db_instance
-        self.request = request
-        self.resource = db_instance.__class__.__name__.lower()
-        if self.resource not in self.SUPPORTED_RESOURCES:
-            raise ValueError("Unexpected type of db_instance: {}".format(type(db_instance)))
+    def init_request_args(self):
+        pass
 
-    def handle_existing_rq_job(
-        self, rq_job: Optional[RQJob], queue: DjangoRQ
-    ) -> Optional[Response]:
-        if not rq_job:
+    @abstractmethod
+    def init_callback_with_params(self) -> None: ...
+
+    def validate_request(self) -> Response | None:
+        """Hook to run some validations before processing a request"""
+
+        # TODO: uncomment
+        # if self.request.method != "POST":
+        #     raise MethodNotAllowed(
+        #         self.request.method,
+        #         detail="Only POST requests can be used to initiate a background process"
+        #     )
+
+    def handle_existing_job(self, job: RQJob | None, queue: DjangoRQ) -> Response | None:
+        if not job:
             return None
 
-        rq_job_status = rq_job.get_status(refresh=False)
+        job_status = job.get_status(refresh=False)
 
-        if rq_job_status in {RQJobStatus.STARTED, RQJobStatus.QUEUED}:
+        if job_status in {RQJobStatus.STARTED, RQJobStatus.QUEUED}:
             return Response(
                 data="Request is being processed",
                 status=status.HTTP_409_CONFLICT,
             )
 
-        if rq_job_status == RQJobStatus.DEFERRED:
-            rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
+        if job_status == RQJobStatus.DEFERRED:
+            job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
 
-        if rq_job_status == RQJobStatus.SCHEDULED:
+        if job_status == RQJobStatus.SCHEDULED:
             scheduler: DjangoScheduler = django_rq.get_scheduler(queue.name, queue=queue)
             # remove the job id from the set with scheduled keys
-            scheduler.cancel(rq_job)
-            rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
+            scheduler.cancel(job)
+            job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
 
-        rq_job.delete()
+        job.delete()
         return None
 
-    def validate_request(self) -> Response | None:
-        """Hook to run some validations before processing a request"""
+    def build_meta(self):
+        return BaseRQMeta.build(request=self.request, db_obj=self.db_instance)
 
-    def after_processing(self) -> None:
+    def setup_new_job(self, queue: DjangoRQ, id_: str, /):
+        with get_rq_lock_by_user(queue, self.user_id):
+            queue.enqueue_call(
+                func=self.callback,
+                args=self.callback_args,
+                kwargs=self.callback_kwargs,
+                job_id=id_,
+                meta=self.build_meta(),
+                depends_on=define_dependent_job(queue, self.user_id, rq_id=id_),
+                result_ttl=self.job_result_ttl,
+                failure_ttl=self.job_failed_ttl,
+            )
+
+    def finalize_request(self) -> None:
         """Hook to run some actions (e.g. collect events) after processing a request"""
 
-    @abstractmethod
-    def setup_background_job(self, queue: DjangoRQ, rq_id: str) -> None: ...
-
-    @abstractmethod
-    def build_rq_id(self): ...
-
-    def get_response(self, rq_id: str) -> Response:
-        serializer = RqIdSerializer({"rq_id": rq_id})
+    def get_response(self, id_: str) -> Response:
+        serializer = RequestIdSerializer({"rq_id": id_})
         return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
     def process(self) -> Response:
-        if invalid_response := self.validate_request():
-            return invalid_response
+        self.init_request_args()
+        self.validate_request()
+        self.init_callback_with_params()
 
         queue: DjangoRQ = django_rq.get_queue(self.QUEUE_NAME)
-        rq_id = self.build_rq_id()
+        request_id = self.build_request_id()
 
         # ensure that there is no race condition when processing parallel requests
-        with get_rq_lock_for_job(queue, rq_id):
-            rq_job = queue.fetch_job(rq_id)
+        with get_rq_lock_for_job(queue, request_id):
+            job = queue.fetch_job(request_id)
 
-            if response := self.handle_existing_rq_job(rq_job, queue):
+            if response := self.handle_existing_job(job, queue):
                 return response
 
-            self.setup_background_job(queue, rq_id)
+            self.setup_new_job(queue, request_id)
 
-        self.after_processing()
-        return self.get_response(rq_id)
+        self.finalize_request()
+        return self.get_response(request_id)
+
+
+class AbstractExportableRequestManager(AbstractRequestManager):
+    QUEUE_NAME = settings.CVAT_QUEUES.EXPORT_DATA.value
+
+    @property
+    def job_result_ttl(self):
+        from cvat.apps.dataset_manager.views import get_export_cache_ttl
+
+        return int(get_export_cache_ttl(self.db_instance).total_seconds())
+
+    @property
+    def job_failed_ttl(self):
+        return self.job_result_ttl
+
+    @dataclass
+    class ExportArgs:
+        filename: str | None
+        location_config: dict[str, Any]
+
+        @property
+        def location(self) -> Location:
+            return self.location_config["location"]
+
+        def to_dict(self):
+            return dataclass_asdict(self)
+
+    @abstractmethod
+    def get_result_filename(self) -> str: ...
+
+    @abstractmethod
+    def where_to_redirect(self) -> str: ...
+
+    def make_result_url(self, *, request_id: str) -> str:
+        return self.where_to_redirect() + f"?{self.REQUEST_ID_KEY}={quote(request_id)}"
+
+    def get_file_timestamp(self) -> str:
+        # use only updated_date for the related resource, don't check children objects
+        # because every child update should touch the updated_date of the parent resource
+        date = self.db_instance.updated_date if self.db_instance else timezone.now()
+        return datetime.strftime(date, "%Y_%m_%d_%H_%M_%S")
+
+    def init_request_args(self) -> None:
+        try:
+            location_config = get_location_configuration(
+                db_instance=self.db_instance,
+                query_params=self.request.query_params,
+                field_name=StorageType.TARGET,
+            )
+        except ValueError as ex:
+            raise ValidationError(str(ex)) from ex
+
+        location = location_config["location"]
+
+        if location not in Location.list():
+            raise ValidationError(f"Unexpected location {location} specified for the request")
+
+        self.export_args = AbstractExportableRequestManager.ExportArgs(
+            location_config=location_config, filename=self.request.query_params.get("filename")
+        )
+
+    def build_meta(self, *, request_id: str):
+        return ExportRQMeta.build_for(
+            request=self.request,
+            db_obj=self.db_instance,
+            result_url=(
+                self.make_result_url(request_id=request_id)
+                if self.export_args.location != Location.CLOUD_STORAGE
+                else None
+            ),
+            result_filename=self.get_result_filename(),
+        )
+
+    # TODO:refactor and fix for import too
+    def setup_new_job(self, queue: DjangoRQ, id_: str, /):
+        with get_rq_lock_by_user(queue, self.user_id):
+            queue.enqueue_call(
+                func=self.callback,
+                args=self.callback_args,
+                kwargs=self.callback_kwargs,
+                job_id=id_,
+                meta=self.build_meta(request_id=id_),
+                depends_on=define_dependent_job(queue, self.user_id, rq_id=id_),
+                result_ttl=self.job_result_ttl,
+                failure_ttl=self.job_failed_ttl,
+            )
+
+    def download_file(self) -> Response:
+        queue = self.get_queue()
+        request_id = self.request.query_params.get(self.REQUEST_ID_KEY)
+
+        if not request_id:
+            return HttpResponseBadRequest("Missing request id in the query parameters")
+
+        try:
+            self.validate_request_id(request_id)
+        except ValueError:
+            return HttpResponseBadRequest("Invalid export request id")
+
+        # ensure that there is no race condition when processing parallel requests
+        with get_rq_lock_for_job(queue, request_id):
+            job = queue.fetch_job(request_id)
+
+            if not job:
+                return HttpResponseBadRequest("Unknown export request id")
+
+            # define status once to avoid refreshing it on each check
+            # FUTURE-TODO: get_status will raise InvalidJobOperation exception instead of returning None in one of the next releases
+            job_status = job.get_status(refresh=False)
+
+            if job_status != RQJobStatus.FINISHED:
+                return HttpResponseBadRequest("The export process is not finished")
+
+            job_meta = ExportRQMeta.for_job(job)
+            file_path = job.return_value()
+
+            if not file_path:
+                return (
+                    Response(
+                        "A result for exporting job was not found for finished RQ job",
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    )
+                    if job_meta.result_url  # user tries to download a final file locally while the export is made to cloud storage
+                    else HttpResponseBadRequest(
+                        "The export process has no result file to be downloaded locally"
+                    )
+                )
+
+            with get_export_cache_lock(
+                file_path, ttl=LOCK_TTL, acquire_timeout=LOCK_ACQUIRE_TIMEOUT
+            ):
+                if not osp.exists(file_path):
+                    return Response(
+                        "The exported file has expired, please retry exporting",
+                        status=status.HTTP_404_NOT_FOUND,
+                    )
+
+                return sendfile(
+                    self.request,
+                    file_path,
+                    attachment=True,
+                    attachment_filename=job_meta.result_filename,
+                )

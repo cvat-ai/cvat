@@ -3,13 +3,14 @@
 # SPDX-License-Identifier: MIT
 
 import math
+from functools import cached_property
 from typing import Type
 
+import attrs
 import datumaro as dm
 from django.conf import settings
 from django.db import transaction
-from django.http import HttpResponseBadRequest
-from django_rq.queues import DjangoRQ as RqQueue
+from rest_framework.serializers import ValidationError
 
 from cvat.apps.consensus.intersect_merge import IntersectMerge
 from cvat.apps.consensus.models import ConsensusSettings
@@ -27,11 +28,12 @@ from cvat.apps.engine.models import (
     clear_annotations_in_jobs,
 )
 from cvat.apps.engine.rq import BaseRQMeta, define_dependent_job
+from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import get_rq_lock_by_user
 from cvat.apps.profiler import silk_profile
 from cvat.apps.quality_control.quality_reports import ComparisonParameters, JobDataProvider
-from cvat.apps.redis_handler.background import AbstractRQJobManager
-from cvat.apps.redis_handler.rq import RQId
+from cvat.apps.redis_handler.background import AbstractRequestManager
+from cvat.apps.redis_handler.rq import RequestId
 
 
 class _TaskMerger:
@@ -159,29 +161,36 @@ class MergingNotAvailable(Exception):
     pass
 
 
-class MergingManager(AbstractRQJobManager):
+@attrs.define(kw_only=True)
+class MergingManager(AbstractRequestManager):
     QUEUE_NAME = settings.CVAT_QUEUES.CONSENSUS.value
     SUPPORTED_RESOURCES = {RequestTarget.TASK, RequestTarget.JOB}
 
-    _JOB_RESULT_TTL = 300
-    _JOB_FAILURE_TTL = _JOB_RESULT_TTL
+    @property
+    def job_result_ttl(self):
+        return 300
 
-    def build_rq_id(self) -> str:
-        # todo: add redis migration
-        return RQId(
+    @property
+    def job_failed_ttl(self):
+        return self.job_result_ttl
+
+    def build_request_id(self) -> str:
+        return RequestId(
             queue=self.QUEUE_NAME,
             action="merge",
             target=self.resource,
             id=self.db_instance.pk,
         ).render()
 
-    def _split_to_task_and_job(self) -> tuple[Task, Job | None]:
-        if isinstance(self.db_instance, Job):
-            return self.db_instance.segment.task, self.db_instance
-
-        return self.db_instance, None
+    def init_callback_with_params(self):
+        self.callback = self._merge
+        self.callback_kwargs = {
+            "target_type": type(self.db_instance),
+            "target_id": self.db_instance.pk,
+        }
 
     def validate_request(self):
+        super().validate_request()
         # FUTURE-FIXME: check that there is no indirectly dependent RQ jobs:
         # e.g merge whole task and merge a particular job from the task
         task, job = self._split_to_task_and_job()
@@ -189,23 +198,13 @@ class MergingManager(AbstractRQJobManager):
         try:
             _TaskMerger(task=task).check_merging_available(parent_job_id=job.pk if job else None)
         except MergingNotAvailable as ex:
-            return HttpResponseBadRequest(str(ex))
+            raise ValidationError(str(ex)) from ex
 
-    def setup_background_job(self, queue: RqQueue, rq_id: str) -> None:
-        user_id = self.request.user.id
+    def _split_to_task_and_job(self) -> tuple[Task, Job | None]:
+        if isinstance(self.db_instance, Job):
+            return self.db_instance.segment.task, self.db_instance
 
-        with get_rq_lock_by_user(queue, user_id=user_id):
-            dependency = define_dependent_job(queue, user_id=user_id, rq_id=rq_id)
-            queue.enqueue(
-                self._merge,
-                target_type=type(self.db_instance),
-                target_id=self.db_instance.pk,
-                job_id=rq_id,
-                meta=BaseRQMeta.build(request=self.request, db_obj=self.db_instance),
-                result_ttl=self._JOB_RESULT_TTL,
-                failure_ttl=self._JOB_FAILURE_TTL,
-                depends_on=dependency,
-            )
+        return self.db_instance, None
 
     @classmethod
     @silk_profile()

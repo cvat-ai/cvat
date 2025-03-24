@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 
 from django.conf import settings
 from rest_framework.exceptions import PermissionDenied
-from rest_framework.serializers import ValidationError
 from rq.job import Job as RQJob
 
 from cvat.apps.engine.rq import is_rq_job_owner
@@ -20,7 +19,6 @@ if TYPE_CHECKING:
 
 from cvat.apps.engine.models import RequestTarget
 from cvat.apps.engine.permissions import JobPermission, TaskPermission
-from cvat.apps.redis_handler.rq import RQId
 
 
 class RequestPermission(OpenPolicyAgentPermission):
