@@ -15,7 +15,7 @@ from copy import deepcopy
 from datetime import timedelta
 from enum import Enum
 from threading import Lock
-from typing import Any
+from typing import Any, Iterable
 
 import attrs
 import django_rq
@@ -308,3 +308,23 @@ def extend_export_file_lifetime(file_path: str):
     # as the last access time is not available on every filesystem.
     # As a result, file deletion by the cleaning job will be postponed.
     os.utime(file_path, None)
+
+
+def linear_sort_shapes(shapes: Iterable) -> list:
+    # as frame range is always has certain range
+    # it allows us use efficient linear sorting algorithm
+    min_frame = None
+    max_frame = None
+    d = {}
+    for shape in shapes:
+        frame = shape["frame"]
+        d[frame] = shape
+        min_frame = frame if min_frame is None else min(frame, min_frame)
+        max_frame = frame if max_frame is None else max(frame, max_frame)
+
+    sorted_shapes = []
+    if max_frame is not None:
+        for i in range(min_frame, max_frame + 1):
+            if i in d:
+                sorted_shapes.append(d[i])
+    return sorted_shapes
