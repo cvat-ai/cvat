@@ -12,17 +12,19 @@ from cvat.apps.engine.utils import defaultdict_to_regular
 
 from .util import linear_sort_shapes
 
-"""
-The class implements counting of VISIBLE shapes in tracks
-"""
-
-
 class TracksCounter:
+    """
+    The class implements counting of VISIBLE shapes in tracks
+
+    It keeps also track type and label id in internal data structure
+    These values directly not used inside this class
+    However this class is inherited in our private code and this is small trade-off to reduce code duplication
+    """
     def __init__(self):
         self._tracks_per_job = {}
         self._stop_frames_per_job = {}
 
-    def count_track(self, job_id: int, track_id: int):
+    def count_track_shapes(self, job_id: int, track_id: int):
         track = self._tracks_per_job.get(job_id, {}).get(track_id)
         manual = 0
         interpolated = 0

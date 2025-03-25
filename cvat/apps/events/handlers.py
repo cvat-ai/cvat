@@ -439,7 +439,7 @@ def handle_annotations_change(instance: Job, annotations, action, **kwargs):
         job_id = instance.id
         track_id = track["id"]
 
-        in_mem_shapes = in_mem_counter.count_track(job_id, track_id)
+        in_mem_shapes = in_mem_counter.count_track_shapes(job_id, track_id)
         in_mem_visible_shapes = in_mem_shapes["manual"] + in_mem_shapes["interpolated"]
         filtered_data = filter_data(track)
         if action == "create":
@@ -448,7 +448,7 @@ def handle_annotations_change(instance: Job, annotations, action, **kwargs):
             filtered_data["removed_visible_shapes"] = in_mem_visible_shapes
         elif action == "update":
             # when track is just updated, it may lead to both new or deleted visible shapes
-            in_db_shapes = ib_db_counter.count_track(job_id, track_id)
+            in_db_shapes = ib_db_counter.count_track_shapes(job_id, track_id)
             in_db_visible_shapes = in_db_shapes["manual"] + in_db_shapes["interpolated"]
             if in_db_visible_shapes > in_mem_visible_shapes:
                 filtered_data["removed_visible_shapes"] = (

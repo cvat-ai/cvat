@@ -15,7 +15,8 @@ from copy import deepcopy
 from datetime import timedelta
 from enum import Enum
 from threading import Lock
-from typing import Any, Iterable
+from typing import Any
+from abc import Iterable
 
 import attrs
 import django_rq
