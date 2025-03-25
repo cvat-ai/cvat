@@ -9,6 +9,18 @@ import { defaultTaskSpec } from '../../support/default-specs';
 context('Ground truth jobs', () => {
     const labelName = 'car';
     const taskName = 'Annotation task for Ground truth jobs';
+    const attrName = 'gt_attr';
+    const defaultAttrValue = 'GT attr';
+    const multiAttrParams = false;
+    const forProject = false;
+    const attachToProject = false;
+    const projectName = null;
+    const expectedResult = 'success';
+    const projectSubsetFieldValue = null;
+    const advancedConfigurationParams = false;
+    const posX = 10;
+    const posY = 10;
+    const color = 'gray';
 
     const jobOptions = {
         jobType: 'Ground truth',
@@ -119,6 +131,28 @@ context('Ground truth jobs', () => {
         });
     }
 
+    function createTaskWithQualityParams(qualityParams, archiveName) {
+        cy.createAnnotationTask(
+            taskName,
+            labelName,
+            attrName,
+            defaultAttrValue,
+            archiveName,
+            multiAttrParams,
+            advancedConfigurationParams,
+            forProject,
+            attachToProject,
+            projectName,
+            expectedResult,
+            projectSubsetFieldValue,
+            qualityParams,
+        );
+        cy.openTask(taskName);
+        cy.get('.cvat-job-item').first()
+            .find('.ant-tag')
+            .should('have.text', 'Ground truth');
+    }
+
     before(() => {
         cy.visit('/auth/login');
         cy.login();
@@ -203,22 +237,10 @@ context('Ground truth jobs', () => {
         const imageFileName = `image_${taskName.replace(' ', '_').toLowerCase()}`;
         const width = 800;
         const height = 800;
-        const posX = 10;
-        const posY = 10;
-        const color = 'gray';
         const archiveName = `${imageFileName}.zip`;
         const archivePath = `cypress/fixtures/${archiveName}`;
         const imagesFolder = `cypress/fixtures/${imageFileName}`;
         const directoryToArchive = imagesFolder;
-        const attrName = 'gt_attr';
-        const defaultAttrValue = 'GT attr';
-        const multiAttrParams = false;
-        const forProject = false;
-        const attachToProject = false;
-        const projectName = null;
-        const expectedResult = 'success';
-        const projectSubsetFieldValue = null;
-        const advancedConfigurationParams = false;
 
         before(() => {
             cy.contains('.cvat-header-button', 'Tasks').should('be.visible').click();
@@ -232,38 +254,16 @@ context('Ground truth jobs', () => {
             cy.deleteTask(taskName);
         });
 
-        function createTaskWithQualityParams(qualityParams) {
-            cy.createAnnotationTask(
-                taskName,
-                labelName,
-                attrName,
-                defaultAttrValue,
-                archiveName,
-                multiAttrParams,
-                advancedConfigurationParams,
-                forProject,
-                attachToProject,
-                projectName,
-                expectedResult,
-                projectSubsetFieldValue,
-                qualityParams,
-            );
-            cy.openTask(taskName);
-            cy.get('.cvat-job-item').first()
-                .find('.ant-tag')
-                .should('have.text', 'Ground truth');
-        }
-
         it('Create task with ground truth job', () => {
             createTaskWithQualityParams({
                 validationMode: 'Ground Truth',
-            });
+            }, archiveName);
         });
 
         it('Create task with honeypots', () => {
             createTaskWithQualityParams({
                 validationMode: 'Honeypots',
-            });
+            }, archiveName);
         });
     });
 
@@ -497,13 +497,32 @@ context('Ground truth jobs', () => {
             });
         });
         describe('Incorrect data returned in frames meta request for a ground truth job  (#9097)', () => {
-            const serverFiles = ['archive.zip'];
+            const imagesCount = 3;
+            const imageFileName = `image_${taskName.replace(' ', '_').toLowerCase()}`;
+            const range = [200, 500];
+            const width = Cypress._.random(...range);
+            const height = Cypress._.random(...range); // ??? should we seed the rng ?
+            const archiveName = `${imageFileName}.zip`;
+            const archivePath = `cypress/fixtures/${archiveName}`;
+            const imagesFolder = `cypress/fixtures/${imageFileName}`;
+            const directoryToArchive = imagesFolder;
             before(() => {
-                createAndOpenTask(
-                    serverFiles, { ...defaultValidationParams },
-                );
-                cy.get('.cvat-task-job-list').within(() => {
-                    cy.contains('a', `Job #${groundTruthJobID}`).click();
+                cy.visit('/tasks');
+                cy.imageGenerator(imagesFolder, imageFileName,
+                    width, height, color, posX, posY,
+                    labelName, imagesCount);
+                cy.createZipArchive(directoryToArchive, archivePath);
+                createTaskWithQualityParams({
+                    validationMode: 'Ground Truth',
+                }, archiveName);
+                cy.get('.cvat-tag-ground-truth')
+                    .should('be.visible')
+                    .and('have.length', 1);
+                cy.getJobIDFromIdx(0).then((gtJobID) => {
+                    cy.get('.cvat-task-job-list').within(() => {
+                        cy.contains('a', `Job #${gtJobID}`).click();
+                    });
+                    cy.url().should('contain', `jobs/${gtJobID}`);
                 });
             });
             // after(() => {
