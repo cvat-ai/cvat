@@ -107,7 +107,7 @@ If you want to enable consensus for one of your existing tasks, you'll need to r
 3. To enable consensus for the task, open the **Advanced** section and
   set **Consensus Replicas** to a value greater than 1.
 
-  ![Consensus replicas parameter image](/images/consensus-replicas-task-parameter.jpg)
+  ![Consensus replicas parameter image](/images/consensus-replicas-task-parameter.png)
 
 4. Create the task and open the task page
 
@@ -115,7 +115,7 @@ If a task has consensus enabled, you'll see the **Consensus** tag in the task su
 Existing **Consensus replica** jobs will be displayed in the job list under their parent
 annotation jobs.
 
-  ![Consensus replica jobs in the task job list](/images/consensus-replicas-list-task.jpg)
+  ![Consensus replica jobs in the task job list](/images/consensus-replicas-list-task.png)
 
 ### Merging
 
@@ -144,11 +144,11 @@ the next merging and avoid losing the reviewed annotations.
 1. Open the task **Actions** menu
 2. Click **Merge consensus jobs**
 
-  ![Task actions menu](/images/consensus-merge-task-jobs-button.jpg)
+  ![Task actions menu](/images/consensus-merge-task-jobs-button.png)
 
 3. Click **Merge** in the dialog window
 
-  ![Consensus merge dialog](/images/consensus-merge-task-dialog.jpg)
+  ![Consensus merge dialog](/images/consensus-merge-task-dialog.png)
 
   The operation can take some time to be completed. Once it is completed, you will
   receive a status notification in the top right corner.
@@ -158,11 +158,11 @@ the next merging and avoid losing the reviewed annotations.
 1. Open the job **Actions** menu
 2. Click **Merge consensus job**
 
-  ![Job actions menu](/images/consensus-merge-job-actions.jpg)
+  ![Job actions menu](/images/consensus-merge-job-actions.png)
 
 3. Click **Merge** in the dialog window
 
-  ![Consensus merge dialog](/images/consensus-merge-job-dialog.jpg)
+  ![Consensus merge dialog](/images/consensus-merge-job-dialog.png)
 
   The operation can take some time to be completed. Once it is completed, you will
   receive a status notification in the top right corner.
@@ -178,7 +178,7 @@ Hover over the **?** marks to understand what each field represents.
 After you set values for the parameters, click the **Save** button.
 The updated settings will take effect on the next merging.
 
-![Consensus settings page](/images/consensus-settings.jpg)
+![Consensus settings page](/images/consensus-settings.png)
 
 The following parameters are available:
 
