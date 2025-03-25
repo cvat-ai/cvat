@@ -155,31 +155,8 @@ $excluded-background: #d9d9d973;
     }
 }
 
-.cvat-dynamic-table {
-    flex-grow: 1;
-    overflow: hidden;
-
-    .ant-spin-nested-loading, .ant-spin-container, .ant-table, .ant-table-container {
-        height: 100%;
-    }
-
-    .ant-spin-container {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .ant-table {
-        flex-grow: 1;
-        height: 70%;
-    }
-
-    .ant-table-container {
-        overflow: auto;
-    }
-}
-
 .cvat-frame-allocation-table {
-    @extend .cvat-dynamic-table;
+    @include cvat-table-dynamic-size;
 
     .ant-table-tbody .ant-table-cell {
         padding: $grid-unit-size * 0.5 $grid-unit-size !important;

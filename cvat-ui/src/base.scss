@@ -85,9 +85,7 @@ $scroll-breakpoint: 1300px;
 }
 
 @mixin cvat-management-page-header {
-    position: absolute;
     height: $grid-unit-size * 3;
-    padding: 0 $grid-unit-size * 4;
     margin: $grid-unit-size * 2 0;
 
     h4 {
@@ -101,6 +99,7 @@ $scroll-breakpoint: 1300px;
     flex-direction: column;
     background: white;
     border-radius: $grid-unit-size;
+    padding: 0 $grid-unit-size * 4;
 
     @media screen and (min-width: $scroll-breakpoint) {
         height: 100%;
@@ -122,10 +121,8 @@ $scroll-breakpoint: 1300px;
     position: relative;
     overflow: hidden;
     flex-grow: 1;
-    padding: 0 $grid-unit-size * 5 $grid-unit-size * 2 $grid-unit-size * 5;
     margin-left: -$grid-unit-size;
     margin-right: -$grid-unit-size;
-    margin-top: $grid-unit-size * 7;
 
     .ant-table-pagination.ant-pagination {
         margin-bottom: 0;
@@ -152,5 +149,28 @@ $scroll-breakpoint: 1300px;
     span {
         display: block;
         color: white;
+    }
+}
+
+@mixin cvat-table-dynamic-size {
+    flex-grow: 1;
+    overflow: hidden;
+
+    .ant-spin-nested-loading, .ant-spin-container, .ant-table, .ant-table-container {
+        height: 100%;
+    }
+
+    .ant-spin-container {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .ant-table {
+        flex-grow: 1;
+        height: 70%;
+    }
+
+    .ant-table-container {
+        overflow: auto;
     }
 }

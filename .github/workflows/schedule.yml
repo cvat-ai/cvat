@@ -133,15 +133,17 @@ jobs:
           docker compose run --rm -v "$PWD:/mnt/src:ro" -w /mnt/src \
             cvat_opa test cvat/apps/*/rules
 
-      - name: REST API and SDK tests
+      - name: Generate SDK
         run: |
           pip3 install -r cvat-sdk/gen/requirements.txt
           ./cvat-sdk/gen/generate.sh
 
-          pip3 install -r ./tests/python/requirements.txt
-          pip3 install -e ./cvat-sdk
-          pip3 install -e ./cvat-cli
+      - name: Install test requirements
+        run: |
+          pip3 install -e ./cvat-sdk -e ./cvat-cli -r ./tests/python/requirements.txt
 
+      - name: REST API and SDK tests
+        run: |
           pytest tests/python/
           pytest tests/python/ --stop-services
 
