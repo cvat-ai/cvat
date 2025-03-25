@@ -218,13 +218,13 @@ class _TaskMerger:
         )
 
         slogger.task[self._task.id].info(
-            f"Agreement overall: {agreement[0] / agreement[1] * 100:.2f}"
+            f"Agreement overall: {agreement[0] / (agreement[1] or 1) * 100:.2f}"
         )
 
         slogger.task[self._task.id].info(
             f"Agreement per label: \n  "
             + "\n  ".join(
-                f"{label}: {matched / total * 100:.2f}"
+                f"{label}: {matched / (total or 1) * 100:.2f}"
                 for label, (matched, total) in agreement_per_label.items()
             )
         )
@@ -232,7 +232,7 @@ class _TaskMerger:
         slogger.task[self._task.id].info(
             f"Agreement per frame: \n  "
             + "\n  ".join(
-                f"{frame} (#{frame_idx}): {matched / total * 100:.2f}"
+                f"{frame} (#{frame_idx}): {matched / (total or 1) * 100:.2f}"
                 for frame_idx, (frame, (matched, total)) in enumerate(agreement_per_frame.items())
             )
         )
@@ -242,7 +242,7 @@ class _TaskMerger:
             + "\n".join(
                 f"  frame {frame_id} (#{frame_idx}):\n    "
                 + "\n    ".join(
-                    f"{label}: {matched / total * 100:.2f}"
+                    f"{label}: {matched / (total or 1) * 100:.2f}"
                     for label, (matched, total) in frame_agreement_per_label.items()
                 )
                 for frame_idx, (frame_id, frame_agreement_per_label) in enumerate(
