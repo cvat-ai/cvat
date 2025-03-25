@@ -9,8 +9,7 @@ import os.path as osp
 import re
 import tempfile
 import zipfile
-from abc import Iterable
-from collections.abc import Generator
+from collections.abc import Generator, Iterable
 from contextlib import contextmanager
 from copy import deepcopy
 from datetime import timedelta
