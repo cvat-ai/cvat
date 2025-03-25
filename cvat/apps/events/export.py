@@ -16,7 +16,9 @@ from django.utils import timezone
 from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
+from rest_framework.exceptions import MethodNotAllowed
 from rq import get_current_job
+from contextlib import suppress
 
 from cvat.apps.dataset_manager.util import TmpDirManager
 from cvat.apps.dataset_manager.views import log_exception
@@ -159,7 +161,7 @@ class EventsExporter(AbstractExportableRequestManager):
 
         return query_params
 
-    def init_callback_with_params(self):
+    def _init_callback_with_params(self):
         self.callback = _create_csv
         query_params = self.define_query_params()
         self.callback_args = (query_params,)
@@ -213,7 +215,8 @@ def export(request: ExtendedRequest):
             return Response(data=response_data, status=status.HTTP_202_ACCEPTED)
 
     manager.init_request_args()
-    manager.validate_request()
+    with suppress(MethodNotAllowed):
+        manager.validate_request()
     manager.init_callback_with_params()
     manager.setup_new_job(queue, request_id)
 

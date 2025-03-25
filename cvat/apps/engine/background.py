@@ -146,7 +146,7 @@ class DatasetExporter(AbstractExportableRequestManager):
         ):
             raise ValueError("The provided request id does not match exported target or resource")
 
-    def init_callback_with_params(self):
+    def _init_callback_with_params(self):
         self.callback = get_export_callback(
             self.db_instance, save_images=self.export_args.save_images
         )
@@ -162,17 +162,6 @@ class DatasetExporter(AbstractExportableRequestManager):
         self.callback_kwargs = {
             "server_url": server_address,
         }
-
-        if self.export_args.location == Location.CLOUD_STORAGE:
-            storage_id = self.export_args.location_config["storage_id"]
-            db_storage = get_cloud_storage_for_import_or_export(
-                storage_id=storage_id,
-                request=self.request,
-                is_default=self.export_args.location_config["is_default"],
-            )
-
-            self.callback_args = (db_storage, self.callback) + self.callback_args
-            self.callback = export_resource_to_cloud_storage
 
     def finalize_request(self):
         handle_dataset_export(
@@ -218,7 +207,7 @@ class BackupExporter(AbstractExportableRequestManager):
         ):
             raise ValueError("The provided request id does not match exported target or resource")
 
-    def init_callback_with_params(self):
+    def _init_callback_with_params(self):
         self.callback = create_backup
 
         if isinstance(self.db_instance, Task):
@@ -234,20 +223,6 @@ class BackupExporter(AbstractExportableRequestManager):
             logger,
             self.job_result_ttl,
         )
-
-        if self.export_args.location == Location.CLOUD_STORAGE:
-            storage_id = self.export_args.location_config["storage_id"]
-            db_storage = get_cloud_storage_for_import_or_export(
-                storage_id=storage_id,
-                request=self.request,
-                is_default=self.export_args.location_config["is_default"],
-            )
-
-            self.callback_args = (
-                db_storage,
-                self.callback,
-            ) + self.callback_args
-            self.callback = export_resource_to_cloud_storage
 
     def get_result_filename(self):
         filename = self.export_args.filename
@@ -316,7 +291,6 @@ class ResourceImporter(AbstractRequestManager):
             return dataclass_asdict(self)
 
     def init_request_args(self):
-        super().init_request_args()
         filename = self.request.query_params.get("filename")
         file_path = (self.tmp_dir / filename) if filename else None
 
@@ -519,8 +493,8 @@ class BackupImporter(ResourceImporter):
             self.callback_args = (db_storage, key, self.callback) + self.callback_args
             self.callback = import_resource_from_cloud_storage
 
-    # FUTURE-TODO: send logs to event store
     def finalize_request(self):
+        # FUTURE-TODO: send logs to event store
         pass
 
 

@@ -170,10 +170,6 @@ class MergingManager(AbstractRequestManager):
     def job_result_ttl(self):
         return 300
 
-    @property
-    def job_failed_ttl(self):
-        return self.job_result_ttl
-
     def build_request_id(self) -> str:
         return RequestId(
             queue=self.QUEUE_NAME,

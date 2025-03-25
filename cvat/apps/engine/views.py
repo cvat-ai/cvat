@@ -174,8 +174,8 @@ def get_410_response_for_export_api(path: str) -> HttpResponseGone:
         To download the prepared file, use the result_url obtained from the response of the previous request.
     """))
 
-def get_410_response_for_import_api(path: str) -> HttpResponseGone:
-    return HttpResponseGone(textwrap.dedent(f"""\
+def get_410_response_for_import_api() -> HttpResponseGone:
+    return HttpResponseGone(textwrap.dedent("""\
         This endpoint is no longer supported.
         To check the status of the import process, use GET /api/requests/rq_id,
         where rq_id is obtained from the response of the previous request.
@@ -393,11 +393,6 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
         request=UploadedZipFileSerializer(required=False),
-        # request=PolymorphicProxySerializer('DatasetWrite',
-        #     # TODO: refactor to use required=False when possible
-        #     serializers=[UploadedZipFileSerializer, OpenApiTypes.NONE],
-        #     resource_type_field_name=None
-        # ),
         responses={
             '202': OpenApiResponse(RequestIdSerializer, description='Importing has been started'),
             '400': OpenApiResponse(description='Failed to import dataset'),
@@ -484,11 +479,6 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
         request=UploadedZipFileSerializer(required=False),
-        # request=PolymorphicProxySerializer('BackupWrite',
-        #     # TODO: refactor to use required=False when possible
-        #     serializers=[UploadedZipFileSerializer, OpenApiTypes.NONE],
-        #     resource_type_field_name=None
-        # ),
         responses={
             '202': OpenApiResponse(RequestIdSerializer, description='Import of a backup file has started'),
         })
@@ -1230,11 +1220,6 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
         request=UploadedFileSerializer(required=False),
-        # request=PolymorphicProxySerializer('TaskAnnotationsWrite',
-        #     # TODO: refactor to use required=False when possible
-        #     serializers=[UploadedFileSerializer, OpenApiTypes.NONE],
-        #     resource_type_field_name=None
-        # ),
         responses={
             '201': OpenApiResponse(description='Uploading has finished'),
             '202': OpenApiResponse(RequestIdSerializer, description='Uploading has been started'),

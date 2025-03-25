@@ -25,6 +25,8 @@ from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rq.job import Job as RQJob
 from rq.job import JobStatus as RQJobStatus
+from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
+from cvat.apps.engine.cloud_provider import export_resource_to_cloud_storage
 
 from cvat.apps.dataset_manager.util import get_export_cache_lock
 
@@ -117,7 +119,9 @@ class AbstractRequestManager(metaclass=ABCMeta):
         return queue.fetch_job(id_)
 
     def init_request_args(self):
-        pass
+        """
+        Hook to initialize operation args based on the request
+        """
 
     @abstractmethod
     def init_callback_with_params(self) -> None: ...
@@ -125,12 +129,11 @@ class AbstractRequestManager(metaclass=ABCMeta):
     def validate_request(self) -> Response | None:
         """Hook to run some validations before processing a request"""
 
-        # TODO: uncomment
-        # if self.request.method != "POST":
-        #     raise MethodNotAllowed(
-        #         self.request.method,
-        #         detail="Only POST requests can be used to initiate a background process"
-        #     )
+        if self.request.method != "POST":
+            raise MethodNotAllowed(
+                self.request.method,
+                detail="Only POST requests can be used to initiate a background process",
+            )
 
     def handle_existing_job(self, job: RQJob | None, queue: DjangoRQ) -> Response | None:
         if not job:
@@ -241,7 +244,6 @@ class AbstractExportableRequestManager(AbstractRequestManager):
         return datetime.strftime(date, "%Y_%m_%d_%H_%M_%S")
 
     def init_request_args(self) -> None:
-        super().init_request_args()
         try:
             location_config = get_location_configuration(
                 db_instance=self.db_instance,
@@ -254,6 +256,23 @@ class AbstractExportableRequestManager(AbstractRequestManager):
         self.export_args = AbstractExportableRequestManager.ExportArgs(
             location_config=location_config, filename=self.request.query_params.get("filename")
         )
+
+    @abstractmethod
+    def _init_callback_with_params(self): ...
+
+    def init_callback_with_params(self):
+        self._init_callback_with_params()
+
+        if self.export_args.location == Location.CLOUD_STORAGE:
+            storage_id = self.export_args.location_config["storage_id"]
+            db_storage = get_cloud_storage_for_import_or_export(
+                storage_id=storage_id,
+                request=self.request,
+                is_default=self.export_args.location_config["is_default"],
+            )
+
+            self.callback_args = (db_storage, self.callback) + self.callback_args
+            self.callback = export_resource_to_cloud_storage
 
     def validate_request(self):
         super().validate_request()

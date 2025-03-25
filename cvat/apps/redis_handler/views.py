@@ -76,7 +76,6 @@ class RequestViewSet(viewsets.GenericViewSet):
     ordering_fields = ["created_date", "status", "action"]
     ordering = "-created_date"
 
-    # TODO: fix filters
     filter_fields = [
         # RQ job fields
         "status",
@@ -87,8 +86,8 @@ class RequestViewSet(viewsets.GenericViewSet):
         # derivatives fields (from parsed rq_id)
         "action",
         "target",
-        # "subresource",
-        # "format",
+        "subresource",
+        "format",
     ]
 
     simple_filters = filter_fields + ["org"]
@@ -97,8 +96,8 @@ class RequestViewSet(viewsets.GenericViewSet):
         "created_date": "created_at",
         "action": "parsed_rq_id.action",
         "target": "parsed_rq_id.target",
-        # "subresource": "parsed_rq_id.subresource",
-        # "format": "parsed_rq_id.format",
+        "subresource": "parsed_rq_id.subresource",
+        "format": "parsed_rq_id.format",
         "status": "get_status",
         "project_id": "meta.project_id",
         "task_id": "meta.task_id",
@@ -113,10 +112,10 @@ class RequestViewSet(viewsets.GenericViewSet):
         "project_id": SchemaField("integer"),
         "task_id": SchemaField("integer"),
         "job_id": SchemaField("integer"),
-        "action": SchemaField("string", RequestAction.choices),
-        "target": SchemaField("string", RequestTarget.choices),
-        # "subresource": SchemaField("string", RequestSubresource.choices),
-        # "format": SchemaField("string"),
+        "action": SchemaField("string"),
+        "target": SchemaField("string"),
+        "subresource": SchemaField("string"),
+        "format": SchemaField("string"),
         "org": SchemaField("string"),
     }
 

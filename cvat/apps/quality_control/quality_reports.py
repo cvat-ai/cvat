@@ -2275,10 +2275,6 @@ class QualityReportRQJobManager(AbstractRequestManager):
     def job_result_ttl(self):
         return 120
 
-    @property
-    def job_failed_ttl(self):
-        return self.job_result_ttl
-
     def build_request_id(self):
         return RequestId(
             queue=self.QUEUE_NAME,

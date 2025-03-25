@@ -42,10 +42,8 @@ class ConsensusMergesViewSet(viewsets.GenericViewSet):
                 description=textwrap.dedent(
                     """\
                     A consensus merge request has been enqueued, the request id is returned.
-                    The request status can be checked by using common requests API: GET /api/requests/rq_id
-                """.format(
-                        CREATE_MERGE_RQ_ID_PARAMETER
-                    )
+                    The request status can be checked by using common requests API: GET /api/requests/<rq_id>
+                """
                 ),
             ),
             "400": OpenApiResponse(
@@ -59,7 +57,7 @@ class ConsensusMergesViewSet(viewsets.GenericViewSet):
         if rq_id:
             return HttpResponseGone(
                 textwrap.dedent(
-                    f"""\
+                    """\
                     This endpoint is no longer handles merge status checking.
                     The common requests API should be used instead: GET /api/requests/rq_id
                     """

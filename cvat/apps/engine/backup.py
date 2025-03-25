@@ -66,7 +66,8 @@ from cvat.apps.engine.serializers import (
     TaskReadSerializer,
     ValidationParamsSerializer,
 )
-from cvat.apps.engine.task import JobFileMapping, create_thread as create_task
+from cvat.apps.engine.task import JobFileMapping
+from cvat.apps.engine.task import create_thread as create_task
 from cvat.apps.engine.utils import av_scan_paths
 
 slogger = ServerLogManager(__name__)
