@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
 import Dropdown from 'antd/lib/dropdown';
@@ -39,10 +40,6 @@ function ProjectActionsComponent(props: Props): JSX.Element {
         dispatch(exportActions.openExportBackupModal(projectInstance));
     }, [projectInstance]);
 
-    const onSetupWebhooks = useCallback(() => {
-        history.push({ pathname: `/projects/${projectInstance.id}/webhooks` });
-    }, [projectInstance.id]);
-
     const onDeleteProject = useCallback((): void => {
         Modal.confirm({
             title: `The project ${projectInstance.id} will be deleted`,
@@ -71,8 +68,10 @@ function ProjectActionsComponent(props: Props): JSX.Element {
                     onExportDataset,
                     onImportDataset,
                     onBackupProject,
-                    onSetupWebhooks,
                     onDeleteProject,
+                    labels: {
+                        webhook: <Link to={`/projects/${projectInstance.id}/webhooks`}>Setup webhooks</Link>,
+                    },
                 }, { ...props, history }),
             }}
         >

@@ -10,8 +10,10 @@ interface MenuItemsData {
     onExportDataset: () => void;
     onImportDataset: () => void;
     onBackupProject: () => void;
-    onSetupWebhooks: () => void;
     onDeleteProject: () => void;
+    labels: {
+        webhook: JSX.Element,
+    }
 }
 
 export default function ProjectActionsItems(
@@ -23,8 +25,8 @@ export default function ProjectActionsItems(
         onExportDataset,
         onImportDataset,
         onBackupProject,
-        onSetupWebhooks,
         onDeleteProject,
+        labels,
     } = menuItemsData;
 
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
@@ -49,8 +51,7 @@ export default function ProjectActionsItems(
 
     menuItems.push([{
         key: 'set-webhooks',
-        onClick: onSetupWebhooks,
-        label: 'Setup webhooks',
+        label: labels.webhook,
     }, 30]);
 
     menuItems.push([{
