@@ -138,6 +138,11 @@ The name of the service account to use for backend pods
 - name: CVAT_NUCLIO_FUNCTION_NAMESPACE
   value: "{{ .Release.Namespace }}"
 {{- end }}
+
+{{- range $envName, $envValueTemplate := .Values.cvat.backend.extensionEnv }}
+- name: {{ $envName | toYaml }}
+  value: {{ tpl $envValueTemplate $ | toYaml }}
+{{- end }}
 {{- end }}
 
 {{- define "cvat.sharedClickhouseEnv" }}

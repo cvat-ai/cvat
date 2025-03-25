@@ -5,13 +5,13 @@
 services:
   cvat_server:
     labels:
-      - traefik.http.routers.cvat.entrypoints=websecure
-      - traefik.http.routers.cvat.tls.certresolver=lets-encrypt
+      traefik.http.routers.cvat.entrypoints: websecure
+      traefik.http.routers.cvat.tls.certresolver: lets-encrypt
 
   cvat_ui:
     labels:
-      - traefik.http.routers.cvat-ui.entrypoints=websecure
-      - traefik.http.routers.cvat-ui.tls.certresolver=lets-encrypt
+      traefik.http.routers.cvat-ui.entrypoints: websecure
+      traefik.http.routers.cvat-ui.tls.certresolver: lets-encrypt
 
   traefik:
     environment:

@@ -268,3 +268,19 @@ class LazyList(list[T], metaclass=LazyListMeta):
         self._parsed = state["parsed"]
         if self._parsed:
             self.extend(state["parsed_elements"])
+
+    def lazy_copy(self) -> list[T]:
+        """
+        Makes a copy without parsing elements.
+        Only works if elements have not been parsed yet.
+        """
+        assert not self._parsed
+        return LazyList(
+            string=self._string,
+            separator=self._separator,
+            converter=self._converter,
+        )
+
+    @property
+    def is_parsed(self):
+        return self._parsed

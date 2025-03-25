@@ -397,15 +397,28 @@ class TestTaskUsecases(TestDatasetExport):
             assert len(chunk_zip.infolist()) == 1
         assert self.stdout.getvalue() == ""
 
-    def test_can_upload_annotations(self, fxt_new_task: Task, fxt_coco_file: Path):
+    @pytest.mark.parametrize("convert", [True, False])
+    def test_can_upload_annotations(
+        self, fxt_new_task: Task, fxt_camvid_dataset: Path, convert: bool
+    ):
         pbar_out = io.StringIO()
         pbar = make_pbar(file=pbar_out)
 
-        fxt_new_task.import_annotations(format_name="COCO 1.0", filename=fxt_coco_file, pbar=pbar)
+        fxt_new_task.import_annotations(
+            format_name="CamVid 1.0",
+            filename=fxt_camvid_dataset,
+            conv_mask_to_poly=convert,
+            pbar=pbar,
+        )
 
         assert "uploaded" in self.logger_stream.getvalue()
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert self.stdout.getvalue() == ""
+
+        imported_annotations = fxt_new_task.get_jobs()[0].get_annotations()
+        assert all(
+            [s.type.value == "polygon" if convert else "mask" for s in imported_annotations.shapes]
+        )
 
     def _test_can_create_from_backup(self, fxt_new_task: Task, fxt_backup_file: Path):
         pbar_out = io.StringIO()

@@ -14,6 +14,5 @@ class BaseMigration(metaclass=ABCMeta):
     app_label: str = field(validator=[validators.instance_of(str)])
     connection: Redis = field(validator=[validators.instance_of(Redis)], kw_only=True)
 
-    @classmethod
     @abstractmethod
-    def run(cls) -> None: ...
+    def run(self) -> None: ...
