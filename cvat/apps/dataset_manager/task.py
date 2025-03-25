@@ -516,6 +516,7 @@ class JobAnnotation:
                 "tracks": data["tracks"],
             }
 
+        self.reset()
         return deleted_data
 
     def delete(self, data=None):
