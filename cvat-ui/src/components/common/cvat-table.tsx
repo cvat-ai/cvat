@@ -20,6 +20,7 @@ import { ResourceFilterHOC, defaultVisibility } from 'components/resource-sortin
 type Props = TableProps & {
     onFilterDataSource?(data: TableProps['dataSource']): void;
     onChangeColumnVisibility?(id: number, isHidden: boolean): void;
+    renderExtraActions?(): JSX.Element;
     queryBuilderConfig?: Partial<Config>;
     queryBuilderPredefinedQueries?: Record<string, string>;
     queryBuilderCache?: {
@@ -48,6 +49,7 @@ function CVATTable(props: Props): JSX.Element {
     const {
         onChangeColumnVisibility,
         onFilterDataSource,
+        renderExtraActions,
         queryBuilderConfig,
         queryBuilderCache,
         queryBuilderPredefinedQueries,
@@ -68,6 +70,7 @@ function CVATTable(props: Props): JSX.Element {
 
     const downloadCSV = useCallback(() => {
         if (csvExport && columns) {
+            // function to export as CSV properly handling commas, line breaks and double quotes in both header/fields
             const header = columns.map((column) => ({
                 title: column.title ? `"${column.title}"` : undefined,
                 dataIndex: (column as any).dataIndex as string | string[],
@@ -77,10 +80,20 @@ function CVATTable(props: Props): JSX.Element {
             if (dataSource) {
                 const rows = dataSource
                     .map((dataItem) => header.map(({ dataIndex }) => {
+                        let value = null;
                         if (Array.isArray(dataIndex)) {
-                            return dataIndex.reduce((acc: unknown, path: string) => (typeof acc === 'object' && acc ? (acc as Record<string, unknown>)[path] : null), dataItem);
+                            value = dataIndex.reduce((acc: unknown, path: string) => (
+                                typeof acc === 'object' && acc ? (acc as Record<string, unknown>)[path] : null
+                            ), dataItem);
+                        } else {
+                            value = dataItem[dataIndex];
                         }
-                        return dataItem[dataIndex];
+
+                        if (typeof value === 'string') {
+                            return `"${value.replace(/"/g, '""')}"`;
+                        }
+
+                        return value;
                     }).join(','));
                 csv = `${header.map((column) => column.title).join(',')}\n${rows.join('\n')}`;
             } else {
@@ -169,6 +182,7 @@ function CVATTable(props: Props): JSX.Element {
                                 onClick={downloadCSV}
                             />
                         ) }
+                        { !!renderExtraActions && renderExtraActions() }
                     </Space>
                 </Col>
                 <Col>
