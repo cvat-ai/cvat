@@ -177,6 +177,7 @@ function CVATTable(props: Props): JSX.Element {
                         {!!tableTitle && <Text strong className='cvat-text-color cvat-table-header'>{tableTitle}</Text> }
                         { !!csvExport && !!columns && (
                             <Button
+                                className='cvat-table-export-csv-button'
                                 type='link'
                                 icon={<DownloadOutlined />}
                                 onClick={downloadCSV}
@@ -188,7 +189,12 @@ function CVATTable(props: Props): JSX.Element {
                 <Col>
                     <Space align='center'>
                         {Array.isArray(searchDataIndex) && !!searchDataIndex.length && (
-                            <Input.Search placeholder='Search ..' onSearch={setSearchPhrase} enterButton />
+                            <Input.Search
+                                className='cvat-table-search-bar'
+                                placeholder='Search ..'
+                                onSearch={setSearchPhrase}
+                                enterButton
+                            />
                         )}
                         <div>
                             { FilteringComponent !== null && (
