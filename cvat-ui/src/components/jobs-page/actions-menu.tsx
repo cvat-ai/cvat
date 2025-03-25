@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
 import Dropdown from 'antd/lib/dropdown';
@@ -32,16 +33,6 @@ function JobActionsComponent(props: Props): JSX.Element {
 
     const pluginActions = usePlugins((state: CombinedState) => state.plugins.components.jobActions.items, props);
     const mergingConsensus = useSelector((state: CombinedState) => state.consensus.actions.merging);
-
-    const onOpenTaskPage = useCallback(() => {
-        history.push(`/tasks/${jobInstance.taskId}`);
-    }, [jobInstance.taskId]);
-
-    const onOpenProjectPage = useCallback(() => {
-        if (jobInstance.projectId) {
-            history.push(`/projects/${jobInstance.projectId}`);
-        }
-    }, [jobInstance.projectId]);
 
     const onOpenBugTracker = useCallback(() => {
         if (jobInstance.bugTracker) {
@@ -104,14 +95,17 @@ function JobActionsComponent(props: Props): JSX.Element {
                 items: JobActionsItems({
                     isMergingConsensusEnabled: mergingConsensus[makeKey(jobInstance)],
                     pluginActions,
-                    onOpenTaskPage,
-                    onOpenProjectPage: jobInstance.projectId ? onOpenProjectPage : null,
                     onOpenBugTracker: jobInstance.bugTracker ? onOpenBugTracker : null,
                     onImportAnnotations,
                     onExportAnnotations,
                     onMergeConsensusJob: consensusJobsPresent && jobInstance.parentJobId === null ?
                         onMergeConsensusJob : null,
                     onDeleteJob: jobInstance.type === JobType.GROUND_TRUTH ? onDeleteJob : null,
+                    labels: {
+                        openTask: <Link to={`/tasks/${jobInstance.taskId}`}>Go to the task</Link>,
+                        openProject: jobInstance.projectId ?
+                            <Link to={`/projects/${jobInstance.projectId}`}>Go to the project</Link> : undefined,
+                    },
                 }, { ...props, history }),
             }}
         >

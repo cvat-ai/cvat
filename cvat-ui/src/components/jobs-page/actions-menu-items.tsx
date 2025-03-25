@@ -10,13 +10,15 @@ import { usePlugins } from 'utils/hooks';
 interface MenuItemsData {
     pluginActions: ReturnType<typeof usePlugins>;
     isMergingConsensusEnabled: boolean;
-    onOpenTaskPage: () => void;
-    onOpenProjectPage: (() => void) | null;
     onOpenBugTracker: (() => void) | null;
     onImportAnnotations: () => void;
     onExportAnnotations: () => void;
     onMergeConsensusJob: (() => void) | null;
     onDeleteJob: (() => void) | null;
+    labels: {
+        openTask: JSX.Element,
+        openProject?: JSX.Element,
+    }
 }
 
 export default function JobActionsItems(
@@ -26,28 +28,25 @@ export default function JobActionsItems(
     const {
         pluginActions,
         isMergingConsensusEnabled,
-        onOpenTaskPage,
-        onOpenProjectPage,
         onOpenBugTracker,
         onImportAnnotations,
         onExportAnnotations,
         onMergeConsensusJob,
         onDeleteJob,
+        labels,
     } = menuItemsData;
 
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
 
     menuItems.push([{
         key: 'task',
-        onClick: onOpenTaskPage,
-        label: 'Go to the task',
+        label: labels.openTask,
     }, 0]);
 
-    if (onOpenProjectPage) {
+    if (labels.openProject) {
         menuItems.push([{
             key: 'project',
-            onClick: onOpenProjectPage,
-            label: 'Go to the project',
+            label: labels.openProject,
         }, 10]);
     }
 
