@@ -44,22 +44,6 @@ $excluded-background: #d9d9d973;
     }
 }
 
-.cvat-quality-table-header {
-    span[role='img'] {
-        padding: 0 $grid-unit-size;
-    }
-
-    span[role='img']:hover {
-        cursor: pointer;
-    }
-}
-
-.cvat-quality-table-header-title {
-    margin-bottom: 0;
-    font-size: 20px;
-    font-weight: bold;
-}
-
 .cvat-allocation-summary {
     span {
         font-size: 13px !important;
@@ -147,14 +131,6 @@ $excluded-background: #d9d9d973;
 
 .cvat-quality-page-header {
     @include cvat-management-page-header;
-}
-
-.cvat-quality-table-search-wrapper {
-    padding-bottom: $grid-unit-size * 0.5;
-
-    .ant-input, .ant-input-search-button {
-        height: $grid-unit-size * 3.5;
-    }
 }
 
 .cvat-quality-download-report-button {
