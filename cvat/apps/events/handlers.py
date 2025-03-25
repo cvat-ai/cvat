@@ -11,12 +11,14 @@ from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated
 from rest_framework.views import exception_handler
 
+from cvat.apps.dataset_manager.annotations_counter import AnnotationsCounter
 from cvat.apps.engine.models import (
     CloudStorage,
     Comment,
     Issue,
     Job,
     Label,
+    LabeledTrack,
     Project,
     ShapeType,
     Task,
@@ -420,8 +422,61 @@ def handle_annotations_change(instance, annotations, action, **kwargs):
 
         return filtered_data
 
-    def filter_track(track):
+    countable_tracks = []
+    if action == "update" and annotations.get("tracks", []):
+        countable_tracks = (
+            AnnotationsCounter()
+            .receive_countable_tracks(
+                parent_labeledtrack_qs_filter=lambda x: x.filter(
+                    pk__in=(track["id"] for track in annotations["tracks"])
+                ),
+                child_labeledtrack_qs_filter=lambda x: x.filter(
+                    parent_id__in=(track["id"] for track in annotations["tracks"])
+                ),
+            )
+            .get(instance.id, [])
+        )
+
+    def filter_track(track_type, track):
+        stop_frame = instance.segment.stop_frame
+        job_id = instance.id
+
+        label_id = track["label_id"]
+        track_id = track["id"]
+        counter = AnnotationsCounter().init_from_job_annotations(
+            job_id, stop_frame, {"tracks": [track]}
+        )
+        visible_shapes = counter.get(instance.id, label_id, track_type, "manual") + counter.get(
+            job_id, label_id, track_type, "interpolated"
+        )
+
         filtered_data = filter_data(track)
+        if action == "create":
+            filtered_data["added_visible_shapes"] = visible_shapes
+        elif action == "delete":
+            filtered_data["removed_visible_shapes"] = visible_shapes
+        elif action == "update":
+            # When track is just updated, it may lead to both new or deleted visible shapes
+            # We need to use information from the database to handle this
+            countable_in_db_track = next(filter(lambda x: x["id"] == track_id, countable_tracks))
+            if not countable_in_db_track or not countable_in_db_track["shapes"]:
+                # track is missing in the database or it does not have any shapes, somebody has removed it?
+                # no matter, it will be re-saved at the end of transaction
+                filtered_data["added_visible_shapes"] = visible_shapes
+            else:
+                counter.init_from_data(
+                    AnnotationsCounter.handle_countable_collection(
+                        job_id, stop_frame, {"tracks": [countable_in_db_track]}
+                    )
+                )
+                in_db_visible_shapes = counter.get(
+                    instance.id, label_id, track_type, "manual"
+                ) + counter.get(job_id, label_id, track_type, "interpolated")
+                if in_db_visible_shapes > visible_shapes:
+                    filtered_data["removed_visible_shapes"] = in_db_visible_shapes - visible_shapes
+                elif visible_shapes > in_db_visible_shapes:
+                    filtered_data["added_visible_shapes"] = visible_shapes - in_db_visible_shapes
+
         filtered_data["shapes"] = [filter_data(s) for s in track["shapes"]]
         return filtered_data
 
@@ -478,8 +533,9 @@ def handle_annotations_change(instance, annotations, action, **kwargs):
 
     tracks_by_type = {shape_type[0]: [] for shape_type in ShapeType.choices()}
     for track in annotations.get("tracks", []):
-        filtered_track = filter_track(track)
-        tracks_by_type[track["shapes"][0]["type"]].append(filtered_track)
+        track_type = track["shapes"][0]["type"]
+        filtered_track = filter_track(track_type, track)
+        tracks_by_type[track_type].append(filtered_track)
 
     scope = event_scope(action, "tracks")
     for track_type, tracks in tracks_by_type.items():

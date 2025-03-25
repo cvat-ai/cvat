@@ -426,9 +426,11 @@ class JobAnnotation:
     def update(self, data):
         data = self._validate_input_annotations(data)
 
+        # in case with "update" must be called prior any annotations in database changes
+        # as this annotations are used to count removed/added shapes
+        handle_annotations_change(self.db_job, data.data, "update")
         self._delete(data)
         self._create(data)
-        handle_annotations_change(self.db_job, self.data, "update")
 
         if not self._data_is_empty(self.data):
             self._set_updated_date()
