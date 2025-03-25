@@ -5,9 +5,7 @@
 import csv
 import os
 import uuid
-from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from functools import cached_property
 from pathlib import Path
 
 import attrs
@@ -23,9 +21,9 @@ from rq import get_current_job
 from cvat.apps.dataset_manager.util import TmpDirManager
 from cvat.apps.dataset_manager.views import log_exception
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.rq import ExportRQMeta, RQMetaWithFailureInfo, define_dependent_job
+from cvat.apps.engine.rq import RQMetaWithFailureInfo
 from cvat.apps.engine.types import ExtendedRequest
-from cvat.apps.engine.utils import get_rq_lock_by_user, sendfile
+from cvat.apps.engine.utils import sendfile
 from cvat.apps.events.permissions import EventsPermission
 from cvat.apps.redis_handler.background import AbstractExportableRequestManager
 from cvat.apps.redis_handler.rq import RequestId
@@ -113,7 +111,7 @@ class EventsExporter(AbstractExportableRequestManager):
             id=self.query_id,
             extra={
                 "user_id": self.user_id,
-            }
+            },
         ).render()
 
     def init_request_args(self):
@@ -177,7 +175,7 @@ class EventsExporter(AbstractExportableRequestManager):
         return f"logs_{timestamp}.csv"
 
 
-# FUTURE-TODO: delete deprecated function
+# FUTURE-TODO: delete deprecated function after several releases
 def export(request: ExtendedRequest):
     action = request.query_params.get("action")
     if action not in (None, "download"):

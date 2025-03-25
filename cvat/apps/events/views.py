@@ -2,18 +2,18 @@
 #
 # SPDX-License-Identifier: MIT
 
-from django.conf import settings
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 
+from cvat.apps.engine.location import Location
 from cvat.apps.engine.log import vlogger
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.events.export import EventsExporter
-
 from cvat.apps.events.serializers import ClientEventsSerializer
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.redis_handler.serializers import RequestIdSerializer
@@ -77,8 +77,9 @@ api_filter_parameters = (
         location=OpenApiParameter.QUERY,
         type=OpenApiTypes.STR,
         required=False,
-    )
+    ),
 )
+
 
 class EventsViewSet(viewsets.ViewSet):
     serializer_class = None
@@ -108,6 +109,7 @@ class EventsViewSet(viewsets.ViewSet):
 
         return Response(serializer.validated_data, status=status.HTTP_201_CREATED)
 
+    # FUTURE-TODO: remove deprecated API endpoint after several releases
     @extend_schema(
         summary="Get an event log",
         methods=["GET"],
@@ -137,14 +139,40 @@ class EventsViewSet(viewsets.ViewSet):
         },
         deprecated=True,
     )
-    def list(self, request):
+    def list(self, request: ExtendedRequest):
         self.check_permissions(request)
+
+        if (
+            request.query_params.get("cloud_storage_id")
+            or request.query_params.get("location") == Location.CLOUD_STORAGE
+        ):
+            raise ValidationError(
+                "This endpoint does not support exporting events to cloud storage"
+            )
+
         return export(request=request)
 
     @extend_schema(
         summary="Initiate a process to export events",
         request=None,
-        parameters=[*api_filter_parameters],
+        parameters=[
+            *api_filter_parameters,
+            OpenApiParameter(
+                "location",
+                description="Where need to save events file",
+                location=OpenApiParameter.QUERY,
+                type=OpenApiTypes.STR,
+                required=False,
+                enum=Location.list(),
+            ),
+            OpenApiParameter(
+                "cloud_storage_id",
+                description="Storage id",
+                location=OpenApiParameter.QUERY,
+                type=OpenApiTypes.INT,
+                required=False,
+            ),
+        ],
         responses={
             "202": OpenApiResponse(RequestIdSerializer),
         },
@@ -177,4 +205,3 @@ class EventsViewSet(viewsets.ViewSet):
         self.check_permissions(request)
         exporter = EventsExporter(request=request)
         return exporter.download_file()
-
