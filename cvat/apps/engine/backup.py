@@ -66,7 +66,7 @@ from cvat.apps.engine.serializers import (
     TaskReadSerializer,
     ValidationParamsSerializer,
 )
-from cvat.apps.engine.task import JobFileMapping, _create_thread
+from cvat.apps.engine.task import JobFileMapping, create_thread as create_task
 from cvat.apps.engine.utils import av_scan_paths
 
 slogger = ServerLogManager(__name__)
@@ -892,7 +892,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         if validation_params:
             data['validation_params'] = validation_params
 
-        _create_thread(self._db_task.pk, data.copy(), is_backup_restore=True)
+        create_task(self._db_task.pk, data.copy(), is_backup_restore=True)
         self._db_task.refresh_from_db()
         db_data.refresh_from_db()
 

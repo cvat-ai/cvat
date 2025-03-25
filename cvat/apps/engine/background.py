@@ -39,6 +39,7 @@ from cvat.apps.engine.cloud_provider import (
 from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import (
+    Data,
     Job,
     Location,
     Project,
@@ -56,6 +57,7 @@ from cvat.apps.engine.rq import (
     define_dependent_job,
 )
 from cvat.apps.engine.serializers import UploadedFileSerializer, UploadedZipFileSerializer
+from cvat.apps.engine.task import create_thread as create_task
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import (
     build_annotations_file_name,
@@ -68,6 +70,7 @@ from cvat.apps.redis_handler.background import (
     AbstractExportableRequestManager,
     AbstractRequestManager,
 )
+from cvat.apps.redis_handler.rq import RequestId
 
 slogger = ServerLogManager(__name__)
 
@@ -84,7 +87,7 @@ def cancel_and_delete(rq_job: RQJob) -> None:
     rq_job.delete()
 
 
-class DatasetExportManager(AbstractExportableRequestManager):
+class DatasetExporter(AbstractExportableRequestManager):
     SUPPORTED_RESOURCES = {RequestTarget.PROJECT, RequestTarget.TASK, RequestTarget.JOB}
 
     @dataclass
@@ -131,8 +134,8 @@ class DatasetExportManager(AbstractExportableRequestManager):
             },
         ).render()
 
-    def validate_request_id(self, rq_id: str) -> None:
-        parsed_rq_id = ExportRequestId.parse(rq_id)
+    def validate_request_id(self, request_id, /) -> None:
+        parsed_rq_id = ExportRequestId.parse(request_id)
 
         if (
             parsed_rq_id.action != RequestAction.EXPORT
@@ -201,11 +204,11 @@ class DatasetExportManager(AbstractExportableRequestManager):
         )
 
 
-class BackupExportManager(AbstractExportableRequestManager):
+class BackupExporter(AbstractExportableRequestManager):
     SUPPORTED_RESOURCES = {RequestTarget.PROJECT, RequestTarget.TASK}
 
-    def validate_request_id(self, rq_id: str) -> None:
-        parsed_rq_id = ExportRequestId.parse(rq_id)
+    def validate_request_id(self, request_id, /) -> None:
+        parsed_rq_id = ExportRequestId.parse(request_id)
 
         if (
             parsed_rq_id.action != RequestAction.EXPORT
@@ -234,7 +237,6 @@ class BackupExportManager(AbstractExportableRequestManager):
 
         if self.export_args.location == Location.CLOUD_STORAGE:
             storage_id = self.export_args.location_config["storage_id"]
-            # TODO: move into validation?
             db_storage = get_cloud_storage_for_import_or_export(
                 storage_id=storage_id,
                 request=self.request,
@@ -284,13 +286,14 @@ class BackupExportManager(AbstractExportableRequestManager):
 
 
 @attrs.define(kw_only=True)
-class ResourceImportManager(AbstractRequestManager):
+class ResourceImporter(AbstractRequestManager):
     QUEUE_NAME = settings.CVAT_QUEUES.IMPORT_DATA.value
-    # SUPPORTED_SUBRESOURCES: ClassVar[set[RequestSubresource]]
 
     upload_serializer_class: type[UploadedFileSerializer | UploadedZipFileSerializer] = attrs.field(
         init=False
     )
+
+    tmp_dir: Path = attrs.field(init=False)
 
     @property
     def job_result_ttl(self):
@@ -303,6 +306,7 @@ class ResourceImportManager(AbstractRequestManager):
     @dataclass
     class ImportArgs:
         location_config: dict[str, Any]
+        file_path: str | None
 
         @property
         def location(self) -> Location:
@@ -312,6 +316,10 @@ class ResourceImportManager(AbstractRequestManager):
             return dataclass_asdict(self)
 
     def init_request_args(self):
+        super().init_request_args()
+        filename = self.request.query_params.get("filename")
+        file_path = (self.tmp_dir / filename) if filename else None
+
         try:
             location_config = get_location_configuration(
                 db_instance=self.db_instance,
@@ -321,14 +329,28 @@ class ResourceImportManager(AbstractRequestManager):
         except ValueError as ex:
             raise ValidationError(str(ex)) from ex
 
-        location = location_config["location"]
-
-        if location not in Location.list():
-            raise ValidationError(f"Unexpected location {location} specified for the request")
-
-        self.import_args = ResourceImportManager.ImportArgs(
+        self.import_args = self.ImportArgs(
             location_config=location_config,
+            file_path=file_path,
         )
+
+    def validate_request(self):
+        super().validate_request()
+
+        if self.import_args.location not in Location.list():
+            raise ValidationError(
+                f"Unexpected location {self.import_args.location} specified for the request"
+            )
+
+        if self.import_args.location == Location.CLOUD_STORAGE:
+            if not self.import_args.file_path:
+                raise ValidationError("The filename was not specified")
+
+            if self.import_args.location_config.get("storage_id") is None:
+                raise ValidationError(
+                    "Cloud storage location was selected as the source,"
+                    + " but cloud storage id was not specified"
+                )
 
     def _handle_cloud_storage_file_upload(self):
         storage_id = self.import_args.location_config["storage_id"]
@@ -355,35 +377,31 @@ class ResourceImportManager(AbstractRequestManager):
 
 
 @attrs.define(kw_only=True)
-class DatasetImporter(ResourceImportManager):
+class DatasetImporter(ResourceImporter):
     SUPPORTED_RESOURCES = {RequestTarget.PROJECT, RequestTarget.TASK, RequestTarget.JOB}
-    # SUPPORTED_SUBRESOURCES = {RequestSubresource.DATASET, RequestSubresource.ANNOTATIONS}
 
     @dataclass
-    class ImportArgs(ResourceImportManager.ImportArgs):
+    class ImportArgs(ResourceImporter.ImportArgs):
         format: str
-        file_path: str | None
         conv_mask_to_poly: bool
 
     def __attrs_post_init__(self) -> None:
+        super().__attrs_post_init__()
         self.upload_serializer_class = (
             UploadedZipFileSerializer
             if isinstance(self.db_instance, Project)
             else UploadedFileSerializer
         )
+        self.tmp_dir = Path(self.db_instance.get_tmp_dirname())
 
     def init_request_args(self) -> None:
         super().init_request_args()
         format_name = self.request.query_params.get("format", "")
         conv_mask_to_poly = to_bool(self.request.query_params.get("conv_mask_to_poly", True))
 
-        filename = self.request.query_params.get("filename")
-        tmp_dir = Path(self.db_instance.get_tmp_dirname())
-
         self.import_args = self.ImportArgs(
             **self.import_args.to_dict(),
             format=format_name,
-            file_path=str(Path(tmp_dir) / filename) if filename else None,
             conv_mask_to_poly=conv_mask_to_poly,
         )
 
@@ -423,16 +441,6 @@ class DatasetImporter(ResourceImportManager):
         elif not format_desc.ENABLED:
             raise MethodNotAllowed(self.request.method, detail="Format is disabled")
 
-        if self.import_args.location == Location.CLOUD_STORAGE:
-            if not self.import_args.file_path:
-                raise ValidationError("The filename was not specified")
-
-            if self.import_args.location_config.get("storage_id") is None:
-                raise ValidationError(
-                    "Cloud storage location was selected as the source,"
-                    + " but cloud storage id was not specified"
-                )
-
     def build_request_id(self):
         return ExportRequestId(
             queue=self.QUEUE_NAME,
@@ -462,43 +470,29 @@ class DatasetImporter(ResourceImportManager):
 
 
 @attrs.define(kw_only=True)
-class BackupImporter(ResourceImportManager):
+class BackupImporter(ResourceImporter):
     SUPPORTED_RESOURCES = {RequestTarget.PROJECT, RequestTarget.TASK}
-    # SUPPORTED_SUBRESOURCES = {RequestSubresource.BACKUP}
 
     resource: RequestTarget = attrs.field(validator=attrs.validators.in_(SUPPORTED_RESOURCES))
+    upload_serializer_class: type[UploadedZipFileSerializer] = attrs.field(
+        init=False, default=UploadedZipFileSerializer
+    )
 
     @dataclass
-    class ImportArgs(ResourceImportManager.ImportArgs):
-        file_path: str | None
+    class ImportArgs(ResourceImporter.ImportArgs):
         org_id: int | None
 
     def __attrs_post_init__(self) -> None:
-        self.upload_serializer_class = UploadedZipFileSerializer
+        super().__attrs_post_init__()
+        self.tmp_dir = Path(TmpDirManager.TMP_ROOT)
 
     def init_request_args(self) -> None:
         super().init_request_args()
-        filename = self.request.query_params.get("filename")
-        tmp_dir = Path(TmpDirManager.TMP_ROOT)
 
         self.import_args = self.ImportArgs(
             **self.import_args.to_dict(),
-            file_path=str(Path(tmp_dir) / filename) if filename else None,
             org_id=getattr(self.request.iam_context["organization"], "id", None),
         )
-
-    def validate_request(self):
-        super().validate_request()
-
-        if self.import_args.location == Location.CLOUD_STORAGE:
-            if not self.import_args.file_path:
-                raise ValidationError("The filename was not specified")
-
-            if self.import_args.location_config.get("storage_id") is None:
-                raise ValidationError(
-                    "Cloud storage location was selected as the source,"
-                    + " but cloud storage id was not specified"
-                )
 
     def build_request_id(self):
         return ImportRequestId(
@@ -528,3 +522,27 @@ class BackupImporter(ResourceImportManager):
     # FUTURE-TODO: send logs to event store
     def finalize_request(self):
         pass
+
+
+@attrs.define(kw_only=True)
+class TaskCreator(AbstractRequestManager):
+    QUEUE_NAME = settings.CVAT_QUEUES.IMPORT_DATA.value
+    SUPPORTED_RESOURCES = {RequestTarget.TASK}
+
+    db_data: Data = attrs.field()
+
+    @property
+    def job_failure_ttl(self):
+        return int(settings.IMPORT_CACHE_FAILED_TTL.total_seconds())
+
+    def build_request_id(self):
+        return RequestId(
+            queue=self.QUEUE_NAME,
+            action=RequestAction.CREATE,
+            target=RequestTarget.TASK,
+            id=self.db_instance.pk,
+        ).render()
+
+    def init_callback_with_params(self):
+        self.callback = create_task
+        self.callback_args = (self.db_instance.pk, self.db_data)

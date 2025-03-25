@@ -67,7 +67,6 @@ class AbstractRequestManager(metaclass=ABCMeta):
     resource: RequestTarget | None = attrs.field(
         init=False,
         default=None,
-        # validator=attrs.validators.in_({NoneType} | SUPPORTED_RESOURCES),
         on_setattr=attrs.setters.validate,
     )
 
@@ -87,28 +86,34 @@ class AbstractRequestManager(metaclass=ABCMeta):
         return django_rq.get_queue(cls.QUEUE_NAME)
 
     @property
-    @abstractmethod
-    def job_result_ttl(self) -> int: ...
+    def job_result_ttl(self) -> int | None:
+        """
+        Time to live for successful job result in seconds,
+        if not set, the default result TTL will be used
+        """
+        return None
 
     @property
-    @abstractmethod
-    def job_failed_ttl(self) -> int: ...
+    def job_failed_ttl(self) -> int | None:
+        """
+        Time to live for failures in seconds,
+        if not set, the default failure TTL will be used
+        """
+        return None
 
     @abstractmethod
     def build_request_id(self): ...
 
-    @classmethod
-    def validate_request_id(rq_id: str, /) -> None: ...
+    def validate_request_id(self, request_id: str, /) -> None: ...
 
-    @classmethod
-    def get_job_by_id(cls, id_: str, /, *, validate: bool = True) -> RQJob | None:
+    def get_job_by_id(self, id_: str, /, *, validate: bool = True) -> RQJob | None:
         if validate:
             try:
-                cls.validate_request_id(id_)
+                self.validate_request_id(id_)
             except Exception:
                 return None
 
-        queue = cls.get_queue()
+        queue = self.get_queue()
         return queue.fetch_job(id_)
 
     def init_request_args(self):
@@ -236,6 +241,7 @@ class AbstractExportableRequestManager(AbstractRequestManager):
         return datetime.strftime(date, "%Y_%m_%d_%H_%M_%S")
 
     def init_request_args(self) -> None:
+        super().init_request_args()
         try:
             location_config = get_location_configuration(
                 db_instance=self.db_instance,
@@ -245,14 +251,27 @@ class AbstractExportableRequestManager(AbstractRequestManager):
         except ValueError as ex:
             raise ValidationError(str(ex)) from ex
 
-        location = location_config["location"]
-
-        if location not in Location.list():
-            raise ValidationError(f"Unexpected location {location} specified for the request")
-
         self.export_args = AbstractExportableRequestManager.ExportArgs(
             location_config=location_config, filename=self.request.query_params.get("filename")
         )
+
+    def validate_request(self):
+        super().validate_request()
+
+        if self.export_args.location not in Location.list():
+            raise ValidationError(
+                f"Unexpected location {self.export_args.location} specified for the request"
+            )
+
+        if self.export_args.location == Location.CLOUD_STORAGE:
+            if not self.export_args.filename:
+                raise ValidationError("The filename was not specified")
+
+            if self.export_args.location_config.get("storage_id") is None:
+                raise ValidationError(
+                    "Cloud storage location was selected as the source,"
+                    + " but cloud storage id was not specified"
+                )
 
     def build_meta(self, *, request_id: str):
         return ExportRQMeta.build_for(

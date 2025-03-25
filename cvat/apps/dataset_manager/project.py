@@ -20,7 +20,7 @@ from cvat.apps.engine.log import DatasetLogManager
 from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.rq import ImportRQMeta
 from cvat.apps.engine.serializers import DataSerializer, TaskWriteSerializer
-from cvat.apps.engine.task import _create_thread as create_task
+from cvat.apps.engine.task import create_thread as create_task
 from cvat.apps.engine.utils import av_scan_paths
 
 from .annotation import AnnotationIR

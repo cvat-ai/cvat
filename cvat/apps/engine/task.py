@@ -20,7 +20,6 @@ from urllib import request as urlrequest
 
 import attrs
 import av
-import django_rq
 import rq
 from django.conf import settings
 from django.db import transaction
@@ -46,11 +45,9 @@ from cvat.apps.engine.media_extractors import (
     sort,
 )
 from cvat.apps.engine.model_utils import bulk_create
-from cvat.apps.engine.models import RequestAction, RequestTarget
-from cvat.apps.engine.rq import ImportRQMeta, RQId, define_dependent_job
+from cvat.apps.engine.rq import ImportRQMeta
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
-from cvat.apps.engine.types import ExtendedRequest
-from cvat.apps.engine.utils import av_scan_paths, format_list, get_rq_lock_by_user, take_by
+from cvat.apps.engine.utils import av_scan_paths, format_list, take_by
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS, make_requests_session
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, is_manifest
 from utils.dataset_manifest.core import VideoManifestValidator, is_dataset_manifest
@@ -60,34 +57,6 @@ from .cloud_provider import db_storage_to_storage_instance
 
 slogger = ServerLogManager(__name__)
 
-############################# Low Level server API
-
-def create(
-    db_task: models.Task,
-    data: models.Data,
-    request: ExtendedRequest,
-) -> str:
-    """Schedule a background job to create a task and return that job's identifier"""
-    q = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
-    user_id = request.user.id
-    rq_id = RQId(
-        queue=settings.CVAT_QUEUES.IMPORT_DATA.value,
-        action=RequestAction.CREATE,
-        target=RequestTarget.TASK,
-        id=db_task.pk
-    ).render()
-
-    with get_rq_lock_by_user(q, user_id):
-        q.enqueue_call(
-            func=_create_thread,
-            args=(db_task.pk, data),
-            job_id=rq_id,
-            meta=ImportRQMeta.build_for(request=request, db_obj=db_task),
-            depends_on=define_dependent_job(q, user_id),
-            failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds(),
-        )
-
-    return rq_id
 
 ############################# Internal implementation for server API
 
@@ -579,7 +548,7 @@ def _create_task_manifest_from_cloud_data(
     manifest.create()
 
 @transaction.atomic
-def _create_thread(
+def create_thread(
     db_task: Union[int, models.Task],
     data: dict[str, Any],
     *,

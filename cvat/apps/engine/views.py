@@ -53,7 +53,7 @@ import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine import backup
-from cvat.apps.engine.background import BackupImporter, DatasetImporter
+from cvat.apps.engine.background import BackupImporter, DatasetImporter, TaskCreator
 from cvat.apps.engine.backup import import_project, import_task
 from cvat.apps.engine.cache import CvatChunkTimestampMismatchError, LockError, MediaCache
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
@@ -154,7 +154,7 @@ from cvat.apps.iam.permissions import IsAuthenticatedOrReadPublicResource, Polic
 from cvat.apps.redis_handler.serializers import RequestIdSerializer
 from utils.dataset_manifest import ImageManifestManager
 
-from . import models, task
+from . import models
 from .log import ServerLogManager
 
 slogger = ServerLogManager(__name__)
@@ -1033,9 +1033,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     data['stop_frame'] = None
 
             # Need to process task data when the transaction is committed
-            rq_id = task.create(self._object, data, request)
-            rq_id_serializer = RequestIdSerializer({'rq_id': rq_id})
-            return Response(rq_id_serializer.data, status=status.HTTP_202_ACCEPTED)
+            creator = TaskCreator(request=request, db_instance=self._object, db_data=data)
+            return creator.process()
 
         @transaction.atomic
         def _handle_upload_backup(request: ExtendedRequest):

@@ -23,7 +23,7 @@ from rest_framework import mixins, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from cvat.apps.engine.background import BackupExportManager, DatasetExportManager
+from cvat.apps.engine.background import BackupExporter, DatasetExporter
 from cvat.apps.engine.handlers import clear_import_cache
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import (
@@ -453,7 +453,7 @@ class DatasetMixin:
     def initiate_dataset_export(self, request: ExtendedRequest, pk: int):
         self._object = self.get_object() # force call of check_object_permissions()
 
-        export_manager = DatasetExportManager(request=request, db_instance=self._object)
+        export_manager = DatasetExporter(request=request, db_instance=self._object)
         return export_manager.process()
 
     @extend_schema(summary='Download a prepared dataset file',
@@ -469,7 +469,7 @@ class DatasetMixin:
     @action(methods=['GET'], detail=True, url_path='dataset/download')
     def download_dataset(self, request: ExtendedRequest, pk: int):
         obj = self.get_object()  # force to call check_object_permissions
-        export_manager = DatasetExportManager(request=request, db_instance=obj)
+        export_manager = DatasetExporter(request=request, db_instance=obj)
         return export_manager.download_file()
 
 
@@ -500,7 +500,7 @@ class BackupMixin:
     @action(detail=True, methods=['POST'], serializer_class=None, url_path='backup/export')
     def initiate_backup_export(self, request: ExtendedRequest, pk: int):
         db_object = self.get_object() # force to call check_object_permissions
-        export_manager = BackupExportManager(request=request, db_instance=db_object)
+        export_manager = BackupExporter(request=request, db_instance=db_object)
         return export_manager.process()
 
 
@@ -517,5 +517,5 @@ class BackupMixin:
     @action(methods=['GET'], detail=True, url_path='backup/download')
     def download_backup(self, request: ExtendedRequest, pk: int):
         obj = self.get_object()  # force to call check_object_permissions
-        export_manager = BackupExportManager(request=request, db_instance=obj)
+        export_manager = BackupExporter(request=request, db_instance=obj)
         return export_manager.download_file()
