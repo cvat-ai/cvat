@@ -66,7 +66,13 @@ def _import_common(
         extractor.name_from_path(osp.relpath(p, temp_dir))
         for p in glob(osp.join(temp_dir, "**", "*.txt"), recursive=True)
     ]
-    root_hint = find_dataset_root([DatasetItem(id=frame) for frame in frames], instance_data)
+
+    class MockDataset:
+        def ids(self):
+            for frame in frames:
+                yield frame, None
+
+    root_hint = find_dataset_root(MockDataset(), instance_data)
     for frame in frames:
         frame_info = None
         try:
@@ -78,7 +84,7 @@ def _import_common(
             image_info[frame] = (frame_info["height"], frame_info["width"])
 
     detect_dataset(temp_dir, format_name=format_name, importer=dm_env.importers.get(format_name))
-    dataset = Dataset.import_from(
+    dataset = StreamDataset.import_from(
         temp_dir, format_name, env=dm_env, image_info=image_info, **(import_kwargs or {})
     )
     dataset = dataset.transform(SetKeyframeForEveryTrackShape)

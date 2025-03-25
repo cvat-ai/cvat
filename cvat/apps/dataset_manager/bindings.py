@@ -2144,10 +2144,9 @@ def match_dm_item(
 def find_dataset_root(
     dm_dataset: dm.IDataset, instance_data: Union[ProjectData, CommonData]
 ) -> Optional[str]:
-    longest_path_item = max(dm_dataset, key=lambda item: len(Path(item.id).parts), default=None)
-    if longest_path_item is None:
+    longest_path = max((item_id for item_id, _ in dm_dataset.ids()), key=lambda item_id: len(Path(item_id).parts), default=None)
+    if longest_path is None:
         return None
-    longest_path = longest_path_item.id
 
     matched_frame_number = instance_data.match_frame_fuzzy(longest_path, path_has_ext=False)
     if matched_frame_number is None:
