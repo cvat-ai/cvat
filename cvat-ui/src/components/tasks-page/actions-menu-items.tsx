@@ -11,8 +11,6 @@ interface MenuItemsData {
     isAutomaticAnnotationEnabled: boolean;
     isMergingConsensusEnabled: boolean;
     pluginActions: ReturnType<typeof usePlugins>;
-    onOpenQualityControl: () => void;
-    onOpenConsensusManagement: (() => void) | null;
     onMergeConsensusJobs: (() => void) | null;
     onOpenBugTracker: (() => void) | null;
     onUploadAnnotations: () => void;
@@ -21,6 +19,10 @@ interface MenuItemsData {
     onRunAutoAnnotation: (() => void) | null;
     onMoveTaskToProject: (() => void) | null;
     onDeleteTask: () => void;
+    labels: {
+        qualityControl: JSX.Element,
+        consensusManagement?: JSX.Element,
+    }
 }
 
 export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuProps: unknown): MenuProps['items'] {
@@ -28,8 +30,6 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
         pluginActions,
         isAutomaticAnnotationEnabled,
         isMergingConsensusEnabled,
-        onOpenQualityControl,
-        onOpenConsensusManagement,
         onMergeConsensusJobs,
         onUploadAnnotations,
         onExportDataset,
@@ -38,6 +38,7 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
         onRunAutoAnnotation,
         onMoveTaskToProject,
         onDeleteTask,
+        labels,
     } = menuItemsData;
 
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
@@ -77,15 +78,13 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
 
     menuItems.push([{
         key: 'quality_control',
-        onClick: onOpenQualityControl,
-        label: 'Quality control',
+        label: labels.qualityControl,
     }, 50]);
 
-    if (onOpenConsensusManagement) {
+    if (labels.consensusManagement) {
         menuItems.push([{
             key: 'consensus_management',
-            onClick: onOpenConsensusManagement,
-            label: 'Consensus management',
+            label: labels.consensusManagement,
         }, 55]);
     }
 
