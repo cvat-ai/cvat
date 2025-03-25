@@ -1419,13 +1419,16 @@ class ProjectData(InstanceLabelData):
 
         return task_data
 
+    def _get_one_task_data(self, task_id: int) -> TaskData:
+        if task_id in self._tasks_data:
+            return self._tasks_data[task_id]
+        else:
+            return self.init_task_data(task_id)
+
     @property
     def task_data(self):
         for task_id in self._db_tasks.keys():
-            if task_id in self._tasks_data:
-                yield self._tasks_data[task_id]
-            else:
-                yield self.init_task_data(task_id)
+            yield self._get_one_task_data(task_id)
 
     @staticmethod
     def _get_filename(path):
@@ -1458,9 +1461,10 @@ class ProjectData(InstanceLabelData):
         return None
 
     def split_dataset(self, dataset: dm.Dataset):
-        for task_data in self.task_data:
-            if task_data._db_task.id not in self.new_tasks:
+        for task_id in self._db_tasks.keys():
+            if task_id not in self.new_tasks:
                 continue
+            task_data = self._get_one_task_data(task_id)
             subset_dataset: dm.Dataset = dataset.subsets()[task_data.db_instance.subset].as_dataset()
             yield subset_dataset, task_data
 
