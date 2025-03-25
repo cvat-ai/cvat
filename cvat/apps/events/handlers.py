@@ -421,10 +421,8 @@ def handle_annotations_change(instance: Job, annotations, action, **kwargs):
 
     in_mem_counter = TracksCounter()
     in_mem_counter.load_tracks_from_job_collection(
-            instance.id,
-            instance.segment.stop_frame,
-            {"tracks": annotations.get("tracks", [])}
-        )
+        instance.id, instance.segment.stop_frame, {"tracks": annotations.get("tracks", [])}
+    )
 
     ib_db_counter = TracksCounter()
     if action == "update" and annotations.get("tracks", []):
@@ -453,7 +451,9 @@ def handle_annotations_change(instance: Job, annotations, action, **kwargs):
             in_db_shapes = ib_db_counter.count_track(job_id, track_id)
             in_db_visible_shapes = in_db_shapes["manual"] + in_db_shapes["interpolated"]
             if in_db_visible_shapes > in_mem_visible_shapes:
-                filtered_data["removed_visible_shapes"] = in_db_visible_shapes - in_mem_visible_shapes
+                filtered_data["removed_visible_shapes"] = (
+                    in_db_visible_shapes - in_mem_visible_shapes
+                )
             elif in_mem_visible_shapes > in_db_visible_shapes:
                 filtered_data["added_visible_shapes"] = in_mem_visible_shapes - in_db_visible_shapes
 

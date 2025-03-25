@@ -7,14 +7,16 @@ from typing import Callable
 
 from django.db import transaction
 
-from cvat.apps.engine.utils import defaultdict_to_regular
 from cvat.apps.engine.models import Job, LabeledTrack, ShapeType
+from cvat.apps.engine.utils import defaultdict_to_regular
+
 from .util import linear_sort_shapes
 
-
-'''
+"""
 The class implements counting of VISIBLE shapes in tracks
-'''
+"""
+
+
 class TracksCounter:
     def __init__(self):
         self._tracks_per_job = {}
@@ -141,9 +143,11 @@ class TracksCounter:
         for parent_id, element_shapes in element_shapes_per_parent.items():
             tracks_per_id[parent_id]["shapes"] = linear_sort_shapes(element_shapes.values())
 
-        self._stop_frames_per_job = dict(Job.objects.filter(
-            id__in=tracks_per_job.keys()
-        ).values_list("id", "segment__stop_frame"))
+        self._stop_frames_per_job = dict(
+            Job.objects.filter(id__in=tracks_per_job.keys()).values_list(
+                "id", "segment__stop_frame"
+            )
+        )
         self._tracks_per_job = defaultdict_to_regular(tracks_per_job)
 
     def load_tracks_from_job_collection(self, job_id: int, stop_frame: int, collection: dict):
@@ -159,9 +163,7 @@ class TracksCounter:
             if track_type == str(ShapeType.SKELETON):
                 # skeleton has keyframe if any of its elements have keyframe
                 # keyframe is not outside if any of its elements is not outside
-                track_shapes = defaultdict(
-                    lambda: {"frame": None, "outside": True}
-                )
+                track_shapes = defaultdict(lambda: {"frame": None, "outside": True})
                 skeleton_elements = track.get("elements", [])
                 for element_track in skeleton_elements:
                     for element_shape in element_track.get("shapes", []):
@@ -174,12 +176,10 @@ class TracksCounter:
                     "id": track["id"],
                     "type": track_type,
                     "label_id": track["label_id"],
-                    "shapes": linear_sort_shapes(
-                        defaultdict_to_regular(track_shapes).values()
-                    ),
+                    "shapes": linear_sort_shapes(defaultdict_to_regular(track_shapes).values()),
                 }
             else:
-                transformed_tracks[track["id"]] = {   
+                transformed_tracks[track["id"]] = {
                     "id": track["id"],
                     "type": track_type,
                     "label_id": track["label_id"],

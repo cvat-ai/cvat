@@ -14,7 +14,7 @@ import subprocess
 import sys
 import traceback
 import urllib.parse
-from collections import namedtuple, defaultdict
+from collections import defaultdict, namedtuple
 from collections.abc import Generator, Iterable, Mapping, Sequence
 from contextlib import nullcontext, suppress
 from itertools import islice
