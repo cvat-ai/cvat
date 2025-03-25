@@ -340,17 +340,18 @@ class ExportRequestId(RequestId):
         return int(self.extra["user_id"])
 
     @cached_property
-    def subresource(self) -> RequestSubresource:
-        return RequestSubresource(self.extra["subresource"])
+    def subresource(self) -> RequestSubresource | None:
+        if subresource := self.extra.get("subresource"):
+            return RequestSubresource(subresource)
+        return None
 
     @cached_property
     def format(self) -> str | None:
-        # TODO: quote/unquote
         return self.extra.get("format")
 
     @property
     def type(self) -> str:
-        return self.TYPE_SEP.join([self.action, self.subresource])
+        return self.TYPE_SEP.join([self.action, self.subresource or self.target])
 
 
 class ImportRequestId(RequestId):

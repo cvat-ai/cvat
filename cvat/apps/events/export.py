@@ -26,6 +26,7 @@ from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.rq import ExportRQMeta, RQMetaWithFailureInfo, define_dependent_job
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import get_rq_lock_by_user, sendfile
+from cvat.apps.events.permissions import EventsPermission
 from cvat.apps.redis_handler.background import AbstractExportableRequestManager
 from cvat.apps.redis_handler.rq import RequestId
 
@@ -95,19 +96,30 @@ class EventsRequestId(RequestId):
 
 
 @attrs.define(kw_only=True)
-class EventsRqJobManager(AbstractExportableRequestManager):
+class EventsExporter(AbstractExportableRequestManager):
 
-    filter_query: dict = attrs.field()
-    query_id: uuid.UUID = attrs.field(factory=uuid.uuid4)  # temporary arg
+    filter_query: dict = attrs.field(init=False)
+    query_id: uuid.UUID = attrs.field(init=False)  # temporary arg
+
+    def __attrs_post_init__(self):
+        super().__attrs_post_init__()
+        self.query_id = self.request.query_params.get("query_id") or uuid.uuid4()
 
     def build_request_id(self):
         return EventsRequestId(
             queue=self.QUEUE_NAME,
             action="export",
             target="events",
-            # id=uuid.uuid4(),
             id=self.query_id,
+            extra={
+                "user_id": self.user_id,
+            }
         ).render()
+
+    def init_request_args(self):
+        super().init_request_args()
+        perm = EventsPermission.create_scope_list(self.request)
+        self.filter_query = perm.filter(self.request.query_params)
 
     def define_query_params(self) -> dict:
         query_params = {
@@ -166,17 +178,13 @@ class EventsRqJobManager(AbstractExportableRequestManager):
 
 
 # FUTURE-TODO: delete deprecated function
-def export(request: ExtendedRequest, filter_query: dict):
-    action = request.query_params.get("action", None)
+def export(request: ExtendedRequest):
+    action = request.query_params.get("action")
     if action not in (None, "download"):
         raise serializers.ValidationError("Unexpected action specified for the request")
 
-    filename = request.query_params.get("filename", None)
-
-    query_id = request.query_params.get("query_id")
-    manager = EventsRqJobManager(
-        request=request, filter_query=filter_query, **({"query_id": query_id} if query_id else {})
-    )
+    filename = request.query_params.get("filename")
+    manager = EventsExporter(request=request)
     request_id = manager.build_request_id()
     queue = manager.get_queue()
 

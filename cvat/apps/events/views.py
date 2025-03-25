@@ -6,17 +6,79 @@ from django.conf import settings
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import status, viewsets
+from rest_framework.decorators import action
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 
 from cvat.apps.engine.log import vlogger
-from cvat.apps.events.permissions import EventsPermission
+from cvat.apps.engine.types import ExtendedRequest
+from cvat.apps.events.export import EventsExporter
+
 from cvat.apps.events.serializers import ClientEventsSerializer
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
+from cvat.apps.redis_handler.serializers import RequestIdSerializer
 
 from .export import export
 from .handlers import handle_client_events_push
 
+api_filter_parameters = (
+    OpenApiParameter(
+        "org_id",
+        location=OpenApiParameter.QUERY,
+        type=OpenApiTypes.INT,
+        required=False,
+        description="Filter events by organization ID",
+    ),
+    OpenApiParameter(
+        "project_id",
+        location=OpenApiParameter.QUERY,
+        type=OpenApiTypes.INT,
+        required=False,
+        description="Filter events by project ID",
+    ),
+    OpenApiParameter(
+        "task_id",
+        location=OpenApiParameter.QUERY,
+        type=OpenApiTypes.INT,
+        required=False,
+        description="Filter events by task ID",
+    ),
+    OpenApiParameter(
+        "job_id",
+        location=OpenApiParameter.QUERY,
+        type=OpenApiTypes.INT,
+        required=False,
+        description="Filter events by job ID",
+    ),
+    OpenApiParameter(
+        "user_id",
+        location=OpenApiParameter.QUERY,
+        type=OpenApiTypes.INT,
+        required=False,
+        description="Filter events by user ID",
+    ),
+    OpenApiParameter(
+        "from",
+        location=OpenApiParameter.QUERY,
+        type=OpenApiTypes.DATETIME,
+        required=False,
+        description="Filter events after the datetime. If no 'from' or 'to' parameters are passed, the last 30 days will be set.",
+    ),
+    OpenApiParameter(
+        "to",
+        location=OpenApiParameter.QUERY,
+        type=OpenApiTypes.DATETIME,
+        required=False,
+        description="Filter events before the datetime. If no 'from' or 'to' parameters are passed, the last 30 days will be set.",
+    ),
+    OpenApiParameter(
+        "filename",
+        description="Desired output file name",
+        location=OpenApiParameter.QUERY,
+        type=OpenApiTypes.STR,
+        required=False,
+    )
+)
 
 class EventsViewSet(viewsets.ViewSet):
     serializer_class = None
@@ -51,62 +113,7 @@ class EventsViewSet(viewsets.ViewSet):
         methods=["GET"],
         description="The log is returned in the CSV format.",
         parameters=[
-            OpenApiParameter(
-                "org_id",
-                location=OpenApiParameter.QUERY,
-                type=OpenApiTypes.INT,
-                required=False,
-                description="Filter events by organization ID",
-            ),
-            OpenApiParameter(
-                "project_id",
-                location=OpenApiParameter.QUERY,
-                type=OpenApiTypes.INT,
-                required=False,
-                description="Filter events by project ID",
-            ),
-            OpenApiParameter(
-                "task_id",
-                location=OpenApiParameter.QUERY,
-                type=OpenApiTypes.INT,
-                required=False,
-                description="Filter events by task ID",
-            ),
-            OpenApiParameter(
-                "job_id",
-                location=OpenApiParameter.QUERY,
-                type=OpenApiTypes.INT,
-                required=False,
-                description="Filter events by job ID",
-            ),
-            OpenApiParameter(
-                "user_id",
-                location=OpenApiParameter.QUERY,
-                type=OpenApiTypes.INT,
-                required=False,
-                description="Filter events by user ID",
-            ),
-            OpenApiParameter(
-                "from",
-                location=OpenApiParameter.QUERY,
-                type=OpenApiTypes.DATETIME,
-                required=False,
-                description="Filter events after the datetime. If no 'from' or 'to' parameters are passed, the last 30 days will be set.",
-            ),
-            OpenApiParameter(
-                "to",
-                location=OpenApiParameter.QUERY,
-                type=OpenApiTypes.DATETIME,
-                required=False,
-                description="Filter events before the datetime. If no 'from' or 'to' parameters are passed, the last 30 days will be set.",
-            ),
-            OpenApiParameter(
-                "filename",
-                description="Desired output file name",
-                location=OpenApiParameter.QUERY,
-                type=OpenApiTypes.STR,
-                required=False,
-            ),
+            *api_filter_parameters,
             OpenApiParameter(
                 "action",
                 location=OpenApiParameter.QUERY,
@@ -128,12 +135,46 @@ class EventsViewSet(viewsets.ViewSet):
             "201": OpenApiResponse(description="CSV log file is ready for downloading"),
             "202": OpenApiResponse(description="Creating a CSV log file has been started"),
         },
+        deprecated=True,
     )
     def list(self, request):
-        perm = EventsPermission.create_scope_list(request)
-        filter_query = perm.filter(request.query_params)
-        return export(
-            request=request,
-            filter_query=filter_query,
-            queue_name=settings.CVAT_QUEUES.EXPORT_DATA.value,
-        )
+        self.check_permissions(request)
+        return export(request=request)
+
+    @extend_schema(
+        summary="Initiate a process to export events",
+        request=None,
+        parameters=[*api_filter_parameters],
+        responses={
+            "202": OpenApiResponse(RequestIdSerializer),
+        },
+    )
+    @action(detail=False, methods=["POST"], url_path="file/export")
+    def initiate_export(self, request: ExtendedRequest):
+        self.check_permissions(request)
+        exporter = EventsExporter(request=request)
+        return exporter.process()
+
+    @extend_schema(
+        summary="Download a prepared file with events",
+        request=None,
+        parameters=[
+            OpenApiParameter(
+                "rq_id",
+                description="Request ID",
+                location=OpenApiParameter.QUERY,
+                type=OpenApiTypes.STR,
+                required=True,
+            ),
+        ],
+        responses={
+            "200": OpenApiResponse(description="Download of file started"),
+        },
+        exclude=True,  # private API endpoint that should be used only as result_url
+    )
+    @action(detail=False, methods=["GET"], url_path="file/download")
+    def download_file(self, request: ExtendedRequest):
+        self.check_permissions(request)
+        exporter = EventsExporter(request=request)
+        return exporter.download_file()
+
