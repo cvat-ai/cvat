@@ -192,5 +192,5 @@ class TracksCounter:
                     ),
                 }
 
-            self._stop_frames_per_job = {[job_id]: stop_frame}
-            self._tracks_per_job = {[job_id]: transformed_tracks}
+            self._stop_frames_per_job = {job_id: stop_frame}
+            self._tracks_per_job = {job_id: transformed_tracks}
