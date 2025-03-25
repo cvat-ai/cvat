@@ -496,5 +496,41 @@ context('Ground truth jobs', () => {
                 cy.headlessDeleteTask(taskID);
             });
         });
+        describe('Incorrect data returned in frames meta request for a ground truth job  (#9097)', () => {
+            const serverFiles = ['archive.zip'];
+            before(() => {
+                createAndOpenTask(
+                    serverFiles, { ...defaultValidationParams },
+                );
+                cy.get('.cvat-task-job-list').within(() => {
+                    cy.contains('a', `Job #${groundTruthJobID}`).click();
+                });
+            });
+            // after(() => {
+            // runs once after all tests
+            // });
+
+            it('This is your test case one title', () => {
+                cy.intercept('GET', '/api/jobs/**/data/meta**').as('getMeta');
+                cy.get('.cvat-canvas-container').should('exist').and('be.visible');
+                cy.get('.cvat-player-filename-wrapper').invoke('text').then((frameFileName) => {
+                    cy.wait('@getMeta').then((intercept) => {
+                        const { response } = intercept;
+                        const {
+                            statusCode, frames: allFrames, size,
+                            included_frames: includedFrames,
+                        } = response;
+                        expect(statusCode).to.equal(200);
+                        assert(includedFrames.length === size === defaultValidationParams.frameCount);
+                        cy.wrap(includedFrames).each((index) => {
+                            const frameObj = allFrames[index];
+                            expect(frameObj).should('not.be.undefined')
+                                .and('have.attr', 'name', frameFileName);
+                                .and('have.attr', 'width', wid)
+                        });
+                    });
+                });
+            });
+        });
     });
 });
