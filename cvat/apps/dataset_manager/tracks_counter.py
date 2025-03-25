@@ -15,11 +15,11 @@ from .util import linear_sort_shapes
 
 class TracksCounter:
     """
-    The class implements counting of VISIBLE shapes in tracks
+    The class implements counting of VISIBLE shapes in tracks.
 
-    It keeps also track type and label id in internal data structure
-    These values directly not used inside this class
-    However this class is inherited in our private code and this is small trade-off to reduce code duplication
+    It keeps also track type and label id in internal data structure.
+    These values are not used directly inside this class.
+    However this class is inherited in our private code and this is small trade-off to reduce code duplication.
     """
 
     def __init__(self):
