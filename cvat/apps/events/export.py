@@ -6,7 +6,7 @@ import csv
 import os
 import uuid
 from contextlib import suppress
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import attrs

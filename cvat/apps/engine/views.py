@@ -54,7 +54,6 @@ import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine import backup
 from cvat.apps.engine.background import BackupImporter, DatasetImporter, TaskCreator
-from cvat.apps.engine.backup import import_project, import_task
 from cvat.apps.engine.cache import CvatChunkTimestampMismatchError, LockError, MediaCache
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.engine.frame_provider import (

@@ -7,8 +7,6 @@ from abc import ABCMeta, abstractmethod
 from dataclasses import asdict as dataclass_asdict
 from dataclasses import dataclass
 from datetime import datetime
-from functools import cached_property
-from types import NoneType
 from typing import Any, Callable, ClassVar
 from urllib.parse import quote
 

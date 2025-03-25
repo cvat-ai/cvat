@@ -18,11 +18,10 @@ import datumaro.components.comparator
 import datumaro.util.annotation_util
 import datumaro.util.mask_tools
 import numpy as np
-from attrs import asdict, define, fields_dict, frozen
+from attrs import asdict, define, fields_dict
 from datumaro.util import dump_json, parse_json
 from django.conf import settings
 from django.db import transaction
-from django_rq.queues import DjangoRQ as RqQueue
 from rest_framework.serializers import ValidationError
 from scipy.optimize import linear_sum_assignment
 
@@ -43,7 +42,6 @@ from cvat.apps.engine.models import (
     Image,
     Job,
     JobType,
-    Project,
     RequestTarget,
     ShapeType,
     StageChoice,
@@ -52,9 +50,6 @@ from cvat.apps.engine.models import (
     User,
     ValidationMode,
 )
-from cvat.apps.engine.rq import BaseRQMeta, define_dependent_job
-from cvat.apps.engine.types import ExtendedRequest
-from cvat.apps.engine.utils import get_rq_lock_by_user
 from cvat.apps.profiler import silk_profile
 from cvat.apps.quality_control import models
 from cvat.apps.quality_control.models import (

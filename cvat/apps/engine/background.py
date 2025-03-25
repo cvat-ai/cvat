@@ -2,21 +2,16 @@
 #
 # SPDX-License-Identifier: MIT
 
-from abc import abstractmethod
 from dataclasses import asdict as dataclass_asdict
 from dataclasses import dataclass
-from datetime import datetime
-from functools import cached_property
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from types import NoneType
-from typing import Any, Callable, ClassVar
+from typing import Any
 from uuid import uuid4
 
 import attrs
 from attrs.converters import to_bool
 from django.conf import settings
-from rest_framework import serializers
 from rest_framework.exceptions import MethodNotAllowed, ValidationError
 from rest_framework.reverse import reverse
 from rq.job import Job as RQJob
@@ -24,7 +19,7 @@ from rq.job import Job as RQJob
 import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.formats.registry import EXPORT_FORMATS
 from cvat.apps.dataset_manager.util import TmpDirManager
-from cvat.apps.dataset_manager.views import get_export_cache_ttl, get_export_callback
+from cvat.apps.dataset_manager.views import get_export_callback
 from cvat.apps.engine.backup import (
     ProjectExporter,
     TaskExporter,
@@ -33,7 +28,6 @@ from cvat.apps.engine.backup import (
     import_task,
 )
 from cvat.apps.engine.cloud_provider import (
-    export_resource_to_cloud_storage,
     import_resource_from_cloud_storage,
 )
 from cvat.apps.engine.location import StorageType, get_location_configuration
@@ -51,18 +45,14 @@ from cvat.apps.engine.models import (
 from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
 from cvat.apps.engine.rq import (
     ExportRequestId,
-    ExportRQMeta,
     ImportRequestId,
     ImportRQMeta,
-    define_dependent_job,
 )
 from cvat.apps.engine.serializers import UploadedFileSerializer, UploadedZipFileSerializer
 from cvat.apps.engine.task import create_thread as create_task
-from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import (
     build_annotations_file_name,
     build_backup_file_name,
-    get_rq_lock_by_user,
     is_dataset_export,
 )
 from cvat.apps.events.handlers import handle_dataset_export, handle_dataset_import

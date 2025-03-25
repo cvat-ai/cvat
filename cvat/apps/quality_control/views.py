@@ -286,7 +286,7 @@ class QualityReportViewSet(
             serializer = RequestIdSerializer(data={"rq_id": rq_id})
             serializer.is_valid(raise_exception=True)
             rq_id = serializer.validated_data["rq_id"]
-            rq_job = qc.QualityReportRQJobManager.get_job_by_id(rq_id)
+            rq_job = qc.QualityReportRQJobManager(request=request).get_job_by_id(rq_id)
 
             # FUTURE-TODO: move into permissions
             # and allow not only rq job owner to check the status

@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import math
-from functools import cached_property
 from typing import Type
 
 import attrs
@@ -27,9 +26,6 @@ from cvat.apps.engine.models import (
     User,
     clear_annotations_in_jobs,
 )
-from cvat.apps.engine.rq import BaseRQMeta, define_dependent_job
-from cvat.apps.engine.types import ExtendedRequest
-from cvat.apps.engine.utils import get_rq_lock_by_user
 from cvat.apps.profiler import silk_profile
 from cvat.apps.quality_control.quality_reports import ComparisonParameters, JobDataProvider
 from cvat.apps.redis_handler.background import AbstractRequestManager

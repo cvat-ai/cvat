@@ -25,9 +25,7 @@ from cvat.apps.engine.filters import (
 )
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import (  # todo: move to the app
-    RequestAction,
     RequestStatus,
-    RequestTarget,
 )
 from cvat.apps.engine.rq import is_rq_job_owner
 from cvat.apps.engine.types import ExtendedRequest
