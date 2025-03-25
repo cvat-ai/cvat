@@ -5,6 +5,7 @@
 import csv
 import os
 import uuid
+from contextlib import suppress
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -14,11 +15,10 @@ from dateutil import parser
 from django.conf import settings
 from django.utils import timezone
 from rest_framework import serializers, status
+from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
-from rest_framework.exceptions import MethodNotAllowed
 from rq import get_current_job
-from contextlib import suppress
 
 from cvat.apps.dataset_manager.util import TmpDirManager
 from cvat.apps.dataset_manager.views import log_exception

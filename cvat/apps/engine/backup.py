@@ -3,9 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-import codecs
 import io
-import json
 import mimetypes
 import os
 import re
@@ -20,7 +18,7 @@ from logging import Logger
 from typing import Any, ClassVar, Optional, Type, Union
 from zipfile import ZipFile
 
-import json_stream
+import rapidjson
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
@@ -575,7 +573,6 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         zip_object.writestr(target_manifest_file, data=JSONRenderer().render(task))
 
     def _write_annotations(self, zip_object: ZipFile, target_dir: Optional[str] = None) -> None:
-        @json_stream.streamable_list
         def serialize_annotations():
             db_jobs = self._get_db_jobs()
             db_job_ids = (j.id for j in db_jobs)
@@ -588,7 +585,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         annotations = serialize_annotations()
         target_annotations_file = os.path.join(target_dir, self.ANNOTATIONS_FILENAME) if target_dir else self.ANNOTATIONS_FILENAME
         with zip_object.open(target_annotations_file, 'w') as f:
-            json.dump(annotations, codecs.getwriter('utf-8')(f), separators=(',', ':'))
+            rapidjson.dump(annotations, f)
 
     def _export_task(self, zip_obj, target_dir=None):
         self._write_data(zip_obj, target_dir)
@@ -782,8 +779,8 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
                 )
 
                 self._prepare_dirs(target_file)
-                with open(target_file, "wb") as out:
-                    out.write(input_archive.read(file_path))
+                with open(target_file, "wb") as out, input_archive.open(file_path) as source:
+                    shutil.copyfileobj(source, out)
 
                 uploaded_files.append(os.path.relpath(file_name, input_data_dirname))
             elif file_name.startswith(input_task_dirname + '/'):
@@ -792,8 +789,8 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
                 )
 
                 self._prepare_dirs(target_file)
-                with open(target_file, "wb") as out:
-                    out.write(input_archive.read(file_path))
+                with open(target_file, "wb") as out, input_archive.open(file_path) as source:
+                    shutil.copyfileobj(source, out)
 
         return uploaded_files
 

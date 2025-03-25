@@ -168,7 +168,7 @@ class AbstractRQMeta(metaclass=ABCMeta):
     def get_meta_on_retry(self) -> dict[str, Any]:
         resettable_fields = self._get_resettable_fields()
 
-        return {k: v for k, v in self._job.meta.items() if k not in resettable_fields}
+        return {k: v for k, v in self._meta.items() if k not in resettable_fields}
 
 
 class RQMetaWithFailureInfo(AbstractRQMeta):
@@ -198,14 +198,29 @@ class RQMetaWithFailureInfo(AbstractRQMeta):
 
 
 class BaseRQMeta(RQMetaWithFailureInfo):
-    # immutable && required fields
+    # immutable fields
+    # FUTURE-TODO: change to required fields when each enqueued job
+    # regardless of queue type will have these fields
+    # Blocked now by:
+    # - [annotation queue] Some jobs may have no user/request info
+    # - [chunks queue] Each job has no user/request info
+    # - [import queue] Jobs running to cleanup uploaded files have no user/request info
+    # - [export queue] Jobs preparing events have no user/request info.
+    # - [export queue] Jobs running to cleanup csv files with events have no user/request info
+
     @property
     def user(self):
-        return UserMeta(self.meta[RQJobMetaField.USER])
+        if user_info := self.meta.get(RQJobMetaField.USER):
+            return UserMeta(user_info)
+
+        return None
 
     @property
     def request(self):
-        return RequestMeta(self.meta[RQJobMetaField.REQUEST])
+        if request_info := self.meta.get(RQJobMetaField.REQUEST):
+            return RequestMeta(request_info)
+
+        return None
 
     # immutable && optional fields
     org_id: int | None = ImmutableRQMetaAttribute(RQJobMetaField.ORG_ID, optional=True)
@@ -331,7 +346,10 @@ class ImportRQMeta(BaseRQMeta):
 
 
 def is_rq_job_owner(rq_job: RQJob, user_id: int) -> bool:
-    return BaseRQMeta.for_job(rq_job).user.id == user_id
+    if user := BaseRQMeta.for_job(rq_job).user:
+        return user.id == user_id
+
+    return False
 
 
 class ExportRequestId(RequestId):
@@ -393,7 +411,8 @@ def define_dependent_job(
         job_ids = q.get_job_ids()
         jobs = q.job_class.fetch_many(job_ids, q.connection)
         jobs = filter(
-            lambda job: job and BaseRQMeta.for_job(job).user.id == user_id and f(job), jobs
+            lambda job: job and is_rq_job_owner(job, user_id) and f(job),
+            jobs,
         )
         all_user_jobs.extend(jobs)
 
