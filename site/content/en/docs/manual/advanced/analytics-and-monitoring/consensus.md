@@ -20,7 +20,7 @@ CVAT has the following features related to consensus-based annotation:
 
 ## Basics
 
-If you want to improve quality of your annotations, there are several widespread ways
+If you want to improve the quality of your annotations, there are several widespread ways
 to achieve this. One of the methods is called _consensus-based annotation_ or just _consensus_.
 In this method, the same data is annotated several times. Once there are several different
 annotations ("opinions") for the same objects, they can be merged in order to obtain
@@ -44,7 +44,7 @@ Returning back to datasets, consensus annotation works very similar to the examp
 Each image is annotated several times, typically by different persons, then the resulting
 annotations are compared between each other and merged, using majority voting or
 a different strategy. The key advantage of consensus annotation is that it helps to reduce
-personal annotator bias in annotation. This improves quality of annotation by filtering out
+personal annotator bias in annotation. This improves the quality of annotation by filtering out
 errors, noise (variance) and outliers in the annotation, leaving only the most representative
 ones.
 
@@ -66,7 +66,7 @@ on the remaining dataset ensuring the quality metrics are representative and obj
 
 ## Consensus replica jobs
 
-A **Consensus Replica job** (_replica_) is a way to represent one of
+A **Consensus Replica job** (_replica_) is the way to represent one of
 the annotator "opinions" in CVAT. _Consensus replicas_ work similarly to regular
 annotation jobs - they can be assigned, annotated, imported and exported.
 When you decide to merge annotations from replicas, the results will be written to the
@@ -82,7 +82,7 @@ Key properties of consensus replica jobs:
   Modifying a replica doesn't affect the parent job or other replicas and vice versa.
   Removing annotations in a parent job doesn't change annotations in its replicas.
 - Replicas are not included in _task_ annotation import or export.
-  _Per-job_ import and export still works for all job types, including replicas.
+  _Per-job_ import and export still work for all job types, including replicas.
 
 Read more about merging [here](#how-to-merge-all-replicas-in-a-task).
 
@@ -187,7 +187,7 @@ The following parameters are available:
 | **Parameter** | **Description** |
 | - | - |
 | _General_ |
-| Quorum | The minimum percent of replicas that must contain an annotation for it to be included in the results. The number is rounded up to get the job count. For instance, if there are 5 replicas in a parent job and quorum is 70%, an annotation will be included in the results only if it has ceil(5 * 0.7) = 4 votes from replicas. |
+| Quorum | The minimum percentage of replicas that must contain an annotation for it to be included in the results. The number is rounded up to get the job count. For instance, if there are 5 replicas in a parent job and quorum is 70%, an annotation will be included in the results only if it has ceil(5 * 0.7) = 4 votes from replicas. |
 
 | _Shape matching_ | |
 | - | - |
