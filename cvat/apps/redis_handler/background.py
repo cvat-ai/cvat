@@ -157,18 +157,18 @@ class AbstractRequestManager(metaclass=ABCMeta):
         job.delete()
         return None
 
-    def build_meta(self):
+    def build_meta(self, *, request_id: str):
         return BaseRQMeta.build(request=self.request, db_obj=self.db_instance)
 
-    def setup_new_job(self, queue: DjangoRQ, id_: str, /):
+    def setup_new_job(self, queue: DjangoRQ, request_id: str, /):
         with get_rq_lock_by_user(queue, self.user_id):
             queue.enqueue_call(
                 func=self.callback,
                 args=self.callback_args,
                 kwargs=self.callback_kwargs,
-                job_id=id_,
-                meta=self.build_meta(),
-                depends_on=define_dependent_job(queue, self.user_id, rq_id=id_),
+                job_id=request_id,
+                meta=self.build_meta(request_id=request_id),
+                depends_on=define_dependent_job(queue, self.user_id, rq_id=request_id),
                 result_ttl=self.job_result_ttl,
                 failure_ttl=self.job_failed_ttl,
             )
@@ -176,8 +176,8 @@ class AbstractRequestManager(metaclass=ABCMeta):
     def finalize_request(self) -> None:
         """Hook to run some actions (e.g. collect events) after processing a request"""
 
-    def get_response(self, id_: str) -> Response:
-        serializer = RequestIdSerializer({"rq_id": id_})
+    def get_response(self, request_id: str) -> Response:
+        serializer = RequestIdSerializer({"rq_id": request_id})
         return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
     def process(self) -> Response:
@@ -201,7 +201,7 @@ class AbstractRequestManager(metaclass=ABCMeta):
         return self.get_response(request_id)
 
 
-class AbstractExportableRequestManager(AbstractRequestManager):
+class AbstractExporter(AbstractRequestManager):
     QUEUE_NAME = settings.CVAT_QUEUES.EXPORT_DATA.value
 
     @property
@@ -251,7 +251,7 @@ class AbstractExportableRequestManager(AbstractRequestManager):
         except ValueError as ex:
             raise ValidationError(str(ex)) from ex
 
-        self.export_args = AbstractExportableRequestManager.ExportArgs(
+        self.export_args = AbstractExporter.ExportArgs(
             location_config=location_config, filename=self.request.query_params.get("filename")
         )
 
@@ -290,7 +290,7 @@ class AbstractExportableRequestManager(AbstractRequestManager):
                     + " but cloud storage id was not specified"
                 )
 
-    def build_meta(self, *, request_id: str):
+    def build_meta(self, *, request_id):
         return ExportRQMeta.build_for(
             request=self.request,
             db_obj=self.db_instance,
@@ -301,20 +301,6 @@ class AbstractExportableRequestManager(AbstractRequestManager):
             ),
             result_filename=self.get_result_filename(),
         )
-
-    # TODO:refactor and fix for import too
-    def setup_new_job(self, queue: DjangoRQ, id_: str, /):
-        with get_rq_lock_by_user(queue, self.user_id):
-            queue.enqueue_call(
-                func=self.callback,
-                args=self.callback_args,
-                kwargs=self.callback_kwargs,
-                job_id=id_,
-                meta=self.build_meta(request_id=id_),
-                depends_on=define_dependent_job(queue, self.user_id, rq_id=id_),
-                result_ttl=self.job_result_ttl,
-                failure_ttl=self.job_failed_ttl,
-            )
 
     def download_file(self) -> Response:
         queue = self.get_queue()

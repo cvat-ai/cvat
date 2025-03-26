@@ -57,7 +57,7 @@ from cvat.apps.engine.utils import (
 )
 from cvat.apps.events.handlers import handle_dataset_export, handle_dataset_import
 from cvat.apps.redis_handler.background import (
-    AbstractExportableRequestManager,
+    AbstractExporter,
     AbstractRequestManager,
 )
 from cvat.apps.redis_handler.rq import RequestId
@@ -77,11 +77,11 @@ def cancel_and_delete(rq_job: RQJob) -> None:
     rq_job.delete()
 
 
-class DatasetExporter(AbstractExportableRequestManager):
+class DatasetExporter(AbstractExporter):
     SUPPORTED_RESOURCES = {RequestTarget.PROJECT, RequestTarget.TASK, RequestTarget.JOB}
 
     @dataclass
-    class ExportArgs(AbstractExportableRequestManager.ExportArgs):
+    class ExportArgs(AbstractExporter.ExportArgs):
         format: str
         save_images: bool
 
@@ -183,7 +183,7 @@ class DatasetExporter(AbstractExportableRequestManager):
         )
 
 
-class BackupExporter(AbstractExportableRequestManager):
+class BackupExporter(AbstractExporter):
     SUPPORTED_RESOURCES = {RequestTarget.PROJECT, RequestTarget.TASK}
 
     def validate_request_id(self, request_id, /) -> None:

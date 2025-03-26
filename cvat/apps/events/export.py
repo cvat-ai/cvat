@@ -27,7 +27,7 @@ from cvat.apps.engine.rq import RQMetaWithFailureInfo
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import sendfile
 from cvat.apps.events.permissions import EventsPermission
-from cvat.apps.redis_handler.background import AbstractExportableRequestManager
+from cvat.apps.redis_handler.background import AbstractExporter
 from cvat.apps.redis_handler.rq import RequestId
 
 slogger = ServerLogManager(__name__)
@@ -96,7 +96,7 @@ class EventsRequestId(RequestId):
 
 
 @attrs.define(kw_only=True)
-class EventsExporter(AbstractExportableRequestManager):
+class EventsExporter(AbstractExporter):
 
     filter_query: dict = attrs.field(init=False)
     query_id: uuid.UUID = attrs.field(init=False)  # temporary arg
