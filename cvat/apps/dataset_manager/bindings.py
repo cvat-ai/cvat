@@ -14,7 +14,7 @@ from functools import reduce
 from operator import add
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any, Callable, Dict, Literal, NamedTuple, Optional, Union
+from typing import Any, Callable, Dict, Generator, Literal, NamedTuple, Optional, Tuple, Union
 
 import attr
 import datumaro as dm
@@ -1791,6 +1791,11 @@ class CvatTaskOrJobDataExtractor(dm.SubsetBase, CvatDataExtractorBase):
     def is_stream(self) -> bool:
         return True
 
+    def ids(self) -> Generator[Tuple[str, str], None, None]:
+        for frame_idx in sorted(set(self._instance_data.frame_info) & self._instance_data.get_included_frames()):
+            frame_info = self._instance_data.frame_info[frame_idx]
+            yield frame_info.get("id", 0), frame_info["subset"]
+
 
 class CVATProjectDataExtractor(StreamingDatasetBase, CvatDataExtractorBase):
     def __init__(self, *args, **kwargs):
@@ -1839,6 +1844,10 @@ class CVATProjectDataExtractor(StreamingDatasetBase, CvatDataExtractorBase):
             @property
             def is_stream(self) -> bool:
                 return True
+
+            def ids(self) -> Generator[Tuple[str, str], None, None]:
+                for frame_data in extractor._frame_data_by_subset[name]:
+                    yield osp.splitext(frame_data.name)[0], name
 
         return Subset(
             subset=name,
