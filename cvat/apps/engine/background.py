@@ -420,11 +420,6 @@ class DatasetImporter(ResourceImporter):
             },
         ).render()
 
-    def build_meta(self, *, file_path: str):
-        return ImportRQMeta.build_for(  # TODO: looks like tmp_file is not used anywhere
-            request=self.request, db_obj=self.db_instance, tmp_file=file_path
-        )
-
     def finalize_request(self):
         handle_dataset_import(
             self.db_instance,

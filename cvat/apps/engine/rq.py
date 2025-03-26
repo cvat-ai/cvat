@@ -53,7 +53,6 @@ class RQJobMetaField:
     HIDDEN = "hidden"
 
     # import specific fields
-    TMP_FILE = "tmp_file"  # TODO: unused field
     TASK_PROGRESS = "task_progress"
 
     # export specific fields
@@ -316,11 +315,6 @@ class ExportRQMeta(BaseRQMeta):
 
 
 class ImportRQMeta(BaseRQMeta):
-    # immutable && optional fields
-    tmp_file: str | None = ImmutableRQMetaAttribute(
-        RQJobMetaField.TMP_FILE, optional=True
-    )  # used only when importing annotations|datasets|backups
-
     # mutable fields
     task_progress: float | None = MutableRQMetaAttribute(
         RQJobMetaField.TASK_PROGRESS, validator=lambda x: isinstance(x, float), optional=True
@@ -331,18 +325,6 @@ class ImportRQMeta(BaseRQMeta):
         base_fields = BaseRQMeta._get_resettable_fields()
 
         return base_fields + [RQJobMetaField.TASK_PROGRESS]
-
-    @classmethod
-    def build_for(
-        cls,
-        *,
-        request: ExtendedRequest,
-        db_obj: Model | None,
-        tmp_file: str | None = None,
-    ):
-        base_meta = BaseRQMeta.build(request=request, db_obj=db_obj)
-
-        return {**base_meta, RQJobMetaField.TMP_FILE: tmp_file}
 
 
 def is_rq_job_owner(rq_job: RQJob, user_id: int) -> bool:
