@@ -7,10 +7,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from django.conf import settings
-from rest_framework.exceptions import PermissionDenied
 from rq.job import Job as RQJob
 
-from cvat.apps.engine.rq import is_rq_job_owner
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.iam.permissions import OpenPolicyAgentPermission, StrEnum
 
@@ -19,6 +17,7 @@ if TYPE_CHECKING:
 
 from cvat.apps.engine.models import RequestTarget
 from cvat.apps.engine.permissions import JobPermission, TaskPermission
+from cvat.apps.engine.rq import BaseRQMeta
 
 
 class RequestPermission(OpenPolicyAgentPermission):
@@ -34,8 +33,6 @@ class RequestPermission(OpenPolicyAgentPermission):
     ) -> list[OpenPolicyAgentPermission]:
         permissions = []
         if view.basename == "request":
-            user_id = request.user.id
-
             for scope in cls.get_scopes(request, view, obj):
                 if scope == cls.Scopes.LIST:
                     continue
@@ -64,9 +61,8 @@ class RequestPermission(OpenPolicyAgentPermission):
                         )
                         continue
 
-                # TODO: move into OPA
-                if not is_rq_job_owner(obj, user_id):
-                    raise PermissionDenied("You don't have permission to perform this action")
+                self = cls.create_base_perm(request, view, scope, iam_context, obj)
+                permissions.append(self)
 
         return permissions
 
@@ -85,4 +81,10 @@ class RequestPermission(OpenPolicyAgentPermission):
         ]
 
     def get_resource(self):
+        if owner := BaseRQMeta.for_job(self.obj).user:
+            return {
+                "owner": {
+                    "id": owner.id,
+                },
+            }
         return None
