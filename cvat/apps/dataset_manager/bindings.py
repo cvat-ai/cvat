@@ -1599,7 +1599,7 @@ class CVATDataExtractorMixin:
         raise NotImplementedError()
 
     @staticmethod
-    def _load_categories(labels: list):
+    def load_categories(labels: list):
         categories: dict[dm.AnnotationType,
             dm.Categories] = {}
 
@@ -1756,7 +1756,7 @@ class CvatTaskOrJobDataExtractor(dm.SubsetBase, CvatDataExtractorBase):
             media_type=dm.Image if self._dimension == DimensionType.DIM_2D else dm.PointCloud,
             subset=self._instance_meta['subset'],
         )
-        self._categories = self._load_categories(self._instance_meta['labels'])
+        self._categories = self.load_categories(self._instance_meta['labels'])
 
     def __iter__(self):
         for frame_data in self._instance_data.group_by_frame(include_empty=True):
@@ -1812,7 +1812,7 @@ class CVATProjectDataExtractor(StreamingDatasetBase, CvatDataExtractorBase):
             subsets=list(self._frame_data_by_subset.keys()),
             media_type=dm.Image if self._dimension == DimensionType.DIM_2D else dm.PointCloud,
         )
-        self._categories = self._load_categories(self._instance_meta['labels'])
+        self._categories = self.load_categories(self._instance_meta['labels'])
 
     def get_subset(self, name) -> IDataset:
         extractor = self
