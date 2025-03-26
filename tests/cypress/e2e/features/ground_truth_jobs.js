@@ -4,7 +4,6 @@
 
 /// <reference types="cypress" />
 
-// import { inspect } from 'util';
 import { defaultTaskSpec } from '../../support/default-specs';
 
 context('Ground truth jobs', () => {
@@ -498,21 +497,21 @@ context('Ground truth jobs', () => {
                 cy.headlessDeleteTask(taskID);
             });
         });
-        describe('Incorrect data returned in frames meta request for a ground truth job  (#9097)', () => {
-            const imagesCount = 3;
-            const imageFileName = `image_${taskName.replace(' ', '_').toLowerCase()}`;
-            const range = [700, 1500];
-            const widthRandom = Cypress._.random(...range);
-            const heightRandom = Cypress._.random(...range); // ??? should we seed the rng ?
+        describe('GT job metadata ', () => {
+            const width = 660;
+            const height = 714;
+            const newTaskName = `GT_TASK:w${width},h${height}`;
+            const imagesCount = 10;
+            const imageFileName = `image_${newTaskName.replace(' ', '_').toLowerCase()}`;
             const archiveName = `${imageFileName}.zip`;
             const archivePath = `cypress/fixtures/${archiveName}`;
             const imagesFolder = `cypress/fixtures/${imageFileName}`;
             const directoryToArchive = imagesFolder;
-            const newTaskName = `GT_TASK:w${widthRandom},h${heightRandom}`;
+
             before(() => {
                 cy.goToTaskList();
                 cy.imageGenerator(imagesFolder, imageFileName,
-                    widthRandom, heightRandom, color, posX, posY,
+                    width, height, color, posX, posY,
                     labelName, imagesCount);
                 cy.createZipArchive(directoryToArchive, archivePath);
                 createTaskWithQualityParams({
@@ -525,10 +524,10 @@ context('Ground truth jobs', () => {
                 });
             });
             after(() => {
-                // cy.headlessDeleteTask(taskID);
+                cy.headlessDeleteTask(taskID);
             });
 
-            it('Open ground truth job. Check frame metadata of ground truth frames', () => {
+            it('Incorrect data returned in frames meta response for a GT job (#9097)', () => {
                 cy.get('.cvat-tag-ground-truth').should('be.visible').and('have.length', 1);
                 cy.intercept('GET', '/api/jobs/**/data/meta**').as('getMeta');
                 cy.getJobIDFromIdx(1).then((gtJobID) => {
@@ -538,25 +537,17 @@ context('Ground truth jobs', () => {
                     const { response } = intercept;
                     const { statusCode, body } = response;
                     const { included_frames: includedFrames, frames: allFrames } = body;
-                    cy.task('log', allFrames);
-                    cy.task('log', includedFrames);
-                    cy.task('log', heightRandom);
-                    cy.task('log', widthRandom);
                     expect(statusCode).to.equal(200);
                     cy.get('.cvat-annotation-page').should('exist').and('be.visible').then(() => {
-                        cy.get('.cvat-player-filename-wrapper').invoke('text').then((frameFileName) => {
-                            cy.wrap(includedFrames).should('not.be.null').each((index) => {
-                                const frameObj = allFrames[index];
-                                assert(frameObj);
-                                expect(frameObj.name).equals(frameFileName);
-                                expect(frameObj.width).equals(widthRandom);
-                                expect(frameObj.height).equals(heightRandom);
-                            });
+                        cy.wrap(includedFrames).should('not.be.null').each((index) => {
+                            cy.goCheckFrameNumber(index);
+                            const frameObj = allFrames[index];
+                            assert(frameObj);
+                            expect(frameObj.width).equals(width);
+                            expect(frameObj.height).equals(height);
+                            cy.get('.cvat-player-filename-wrapper').should('have.text', frameObj.name);
                         });
                     });
-                });
-                cy.request({ method: 'GET', url: `/api/tasks/${taskID}/validation_layout` }).then((response) => {
-                    cy.task('log', response.body);
                 });
             });
         });
