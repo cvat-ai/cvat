@@ -44,7 +44,7 @@ class UserIdentifiersSerializer(BasicUserSerializer):
 
 class RequestDataOperationSerializer(serializers.Serializer):
     type = serializers.CharField()
-    target = serializers.ChoiceField(choices=models.RequestTarget.choices)
+    target = serializers.CharField()
     project_id = serializers.IntegerField(required=False, allow_null=True)
     task_id = serializers.IntegerField(required=False, allow_null=True)
     job_id = serializers.IntegerField(required=False, allow_null=True)

@@ -7,7 +7,7 @@ from collections.abc import Iterable
 from copy import deepcopy
 from functools import partial
 from http import HTTPStatus
-from itertools import groupby
+from itertools import groupby, product
 from typing import Any, Callable, Optional
 
 import pytest
@@ -16,8 +16,7 @@ from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
 
-from shared.utils.config import make_api_client, USER_PASS
-from itertools import product
+from shared.utils.config import USER_PASS, make_api_client
 
 from .utils import CollectionSimpleFilterTestBase, parse_frame_step, wait_background_request
 
