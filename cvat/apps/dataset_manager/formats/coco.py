@@ -12,6 +12,7 @@ from datumaro.plugins.data_formats.coco.importer import CocoImporter
 from cvat.apps.dataset_manager.bindings import (
     GetCVATDataExtractor,
     NoMediaInAnnotationFileError,
+    ProjectData,
     detect_dataset,
     import_dm_annotations,
 )
@@ -31,11 +32,12 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
 
 @importer(name="COCO", ext="JSON, ZIP", version="1.0")
 def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
+    dataset_cls = Dataset if isinstance(instance_data, ProjectData) else StreamDataset
     if zipfile.is_zipfile(src_file):
         zipfile.ZipFile(src_file).extractall(temp_dir)
         # We use coco importer because it gives better error message
         detect_dataset(temp_dir, format_name="coco", importer=CocoImporter)
-        dataset = Dataset.import_from(temp_dir, "coco_instances", env=dm_env)
+        dataset = dataset_cls.import_from(temp_dir, "coco_instances", env=dm_env)
         if load_data_callback is not None:
             load_data_callback(dataset, instance_data)
         import_dm_annotations(dataset, instance_data)
@@ -43,7 +45,7 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
         if load_data_callback:
             raise NoMediaInAnnotationFileError()
 
-        dataset = Dataset.import_from(src_file.name, "coco_instances", env=dm_env)
+        dataset = dataset_cls.import_from(src_file.name, "coco_instances", env=dm_env)
         import_dm_annotations(dataset, instance_data)
 
 
@@ -67,11 +69,12 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
             annotations = [ann for ann in item.annotations if ann.type != AnnotationType.bbox]
             item.annotations = annotations
 
+    dataset_cls = Dataset if isinstance(instance_data, ProjectData) else StreamDataset
     if zipfile.is_zipfile(src_file):
         zipfile.ZipFile(src_file).extractall(temp_dir)
         # We use coco importer because it gives better error message
         detect_dataset(temp_dir, format_name="coco", importer=CocoImporter)
-        dataset = Dataset.import_from(temp_dir, "coco_person_keypoints", env=dm_env)
+        dataset = dataset_cls.import_from(temp_dir, "coco_person_keypoints", env=dm_env)
         remove_extra_annotations(dataset)
         if load_data_callback is not None:
             load_data_callback(dataset, instance_data)
@@ -80,6 +83,6 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
         if load_data_callback:
             raise NoMediaInAnnotationFileError()
 
-        dataset = Dataset.import_from(src_file.name, "coco_person_keypoints", env=dm_env)
+        dataset = dataset_cls.import_from(src_file.name, "coco_person_keypoints", env=dm_env)
         remove_extra_annotations(dataset)
         import_dm_annotations(dataset, instance_data)
