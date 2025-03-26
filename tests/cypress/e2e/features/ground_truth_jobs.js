@@ -4,6 +4,7 @@
 
 /// <reference types="cypress" />
 
+// import { inspect } from 'util';
 import { defaultTaskSpec } from '../../support/default-specs';
 
 context('Ground truth jobs', () => {
@@ -131,9 +132,9 @@ context('Ground truth jobs', () => {
         });
     }
 
-    function createTaskWithQualityParams(qualityParams, archiveName) {
+    function createTaskWithQualityParams(qualityParams, archiveName, name = taskName) {
         cy.createAnnotationTask(
-            taskName,
+            name,
             labelName,
             attrName,
             defaultAttrValue,
@@ -147,13 +148,14 @@ context('Ground truth jobs', () => {
             projectSubsetFieldValue,
             qualityParams,
         );
-        cy.openTask(taskName);
+        cy.openTask(name);
         cy.get('.cvat-job-item').first()
             .find('.ant-tag')
             .should('have.text', 'Ground truth');
     }
 
     before(() => {
+        cy.headlessLogout();
         cy.visit('/auth/login');
         cy.login();
     });
@@ -499,55 +501,62 @@ context('Ground truth jobs', () => {
         describe('Incorrect data returned in frames meta request for a ground truth job  (#9097)', () => {
             const imagesCount = 3;
             const imageFileName = `image_${taskName.replace(' ', '_').toLowerCase()}`;
-            const range = [200, 500];
-            const width = Cypress._.random(...range);
-            const height = Cypress._.random(...range); // ??? should we seed the rng ?
+            const range = [700, 1500];
+            const widthRandom = Cypress._.random(...range);
+            const heightRandom = Cypress._.random(...range); // ??? should we seed the rng ?
             const archiveName = `${imageFileName}.zip`;
             const archivePath = `cypress/fixtures/${archiveName}`;
             const imagesFolder = `cypress/fixtures/${imageFileName}`;
             const directoryToArchive = imagesFolder;
+            const newTaskName = `GT_TASK:w${widthRandom},h${heightRandom}`;
             before(() => {
-                cy.visit('/tasks');
+                cy.goToTaskList();
                 cy.imageGenerator(imagesFolder, imageFileName,
-                    width, height, color, posX, posY,
+                    widthRandom, heightRandom, color, posX, posY,
                     labelName, imagesCount);
                 cy.createZipArchive(directoryToArchive, archivePath);
                 createTaskWithQualityParams({
                     validationMode: 'Ground Truth',
-                }, archiveName);
-                cy.get('.cvat-tag-ground-truth')
-                    .should('be.visible')
-                    .and('have.length', 1);
-                cy.getJobIDFromIdx(0).then((gtJobID) => {
-                    cy.get('.cvat-task-job-list').within(() => {
-                        cy.contains('a', `Job #${gtJobID}`).click();
+                }, archiveName, newTaskName);
+                cy.then(() => {
+                    cy.location('pathname').should('match', /\/tasks\/\d+/).then((path) => {
+                        taskID = Number(path.split('/').slice(-1)[0]);
                     });
-                    cy.url().should('contain', `jobs/${gtJobID}`);
                 });
             });
-            // after(() => {
-            // runs once after all tests
-            // });
+            after(() => {
+                // cy.headlessDeleteTask(taskID);
+            });
 
-            it('This is your test case one title', () => {
+            it('Open ground truth job. Check frame metadata of ground truth frames', () => {
+                cy.get('.cvat-tag-ground-truth').should('be.visible').and('have.length', 1);
                 cy.intercept('GET', '/api/jobs/**/data/meta**').as('getMeta');
-                cy.get('.cvat-canvas-container').should('exist').and('be.visible');
-                cy.get('.cvat-player-filename-wrapper').invoke('text').then((frameFileName) => {
-                    cy.wait('@getMeta').then((intercept) => {
-                        const { response } = intercept;
-                        const {
-                            statusCode, frames: allFrames, size,
-                            included_frames: includedFrames,
-                        } = response;
-                        expect(statusCode).to.equal(200);
-                        assert(includedFrames.length === size === defaultValidationParams.frameCount);
-                        cy.wrap(includedFrames).each((index) => {
-                            const frameObj = allFrames[index];
-                            expect(frameObj).should('not.be.undefined')
-                                .and('have.attr', 'name', frameFileName);
-                                .and('have.attr', 'width', wid)
+                cy.getJobIDFromIdx(1).then((gtJobID) => {
+                    cy.get('.cvat-job-item').contains('a', `Job #${gtJobID}`).click();
+                });
+                cy.wait('@getMeta').then((intercept) => {
+                    const { response } = intercept;
+                    const { statusCode, body } = response;
+                    const { included_frames: includedFrames, frames: allFrames } = body;
+                    cy.task('log', allFrames);
+                    cy.task('log', includedFrames);
+                    cy.task('log', heightRandom);
+                    cy.task('log', widthRandom);
+                    expect(statusCode).to.equal(200);
+                    cy.get('.cvat-annotation-page').should('exist').and('be.visible').then(() => {
+                        cy.get('.cvat-player-filename-wrapper').invoke('text').then((frameFileName) => {
+                            cy.wrap(includedFrames).should('not.be.null').each((index) => {
+                                const frameObj = allFrames[index];
+                                assert(frameObj);
+                                expect(frameObj.name).equals(frameFileName);
+                                expect(frameObj.width).equals(widthRandom);
+                                expect(frameObj.height).equals(heightRandom);
+                            });
                         });
                     });
+                });
+                cy.request({ method: 'GET', url: `/api/tasks/${taskID}/validation_layout` }).then((response) => {
+                    cy.task('log', response.body);
                 });
             });
         });
