@@ -16,10 +16,7 @@ def __save_task__initialize_quality_settings(
 ):
     # Initializes default quality settings for the task
     # this is done in a signal to decouple this component from the engine app
-    if raw:
-        return
-
-    if created:
+    if created and not raw:
         if isinstance(instance, Task):
             task = instance
         elif isinstance(instance, Job):
