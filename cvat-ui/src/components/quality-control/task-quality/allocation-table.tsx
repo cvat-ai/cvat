@@ -194,7 +194,7 @@ function AllocationTable(props: Readonly<Props>): JSX.Element | null {
                 },
             }}
             size='small'
-            pagination={{ showSizeChanger: true, defaultPageSize }}
+            pagination={{ showSizeChanger: true, defaultPageSize, position: ['bottomCenter'] }}
             renderExtraActions={selection.selectedRowKeys.length ? renderExtras : undefined}
         />
     );
