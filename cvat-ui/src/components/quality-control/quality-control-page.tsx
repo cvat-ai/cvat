@@ -7,8 +7,7 @@ import './styles.scss';
 import React, {
     useCallback, useEffect, useReducer, useState,
 } from 'react';
-import { useLocation } from 'react-router';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Row, Col } from 'antd/lib/grid';
 import Tabs, { TabsProps } from 'antd/lib/tabs';
 import Title from 'antd/lib/typography/Title';
@@ -25,16 +24,12 @@ import GoBackButton from 'components/common/go-back-button';
 import { ActionUnion, createAction } from 'utils/redux';
 import { readInstanceId, readInstanceType, InstanceType } from 'utils/instance-helper';
 import { useIsMounted } from 'utils/hooks';
+import { getTabFromHash } from 'utils/location-utils';
 import QualityOverviewTab from './quality-overview-tab';
 import QualityManagementTab from './task-quality/quality-magement-tab';
 import QualitySettingsTab from './quality-settings-tab';
 
 const core = getCore();
-
-function getTabFromHash(supportedTabs: string[]): string {
-    const tab = window.location.hash.slice(1);
-    return supportedTabs.includes(tab) ? tab : supportedTabs[0];
-}
 
 interface State {
     instance: Task | Project | null;
@@ -200,10 +195,8 @@ function setupTitle(instance: Task | Project): JSX.Element {
     );
 }
 
+const supportedTabs = ['overview', 'settings', 'management'];
 function QualityControlPage(): JSX.Element {
-    const location = useLocation();
-
-    const supportedTabs = ['overview', 'settings', 'management'];
     const [state, dispatch] = useReducer(reducer, {
         instance: null,
         instanceType: null,
@@ -222,6 +215,7 @@ function QualityControlPage(): JSX.Element {
 
     const [activeTab, setActiveTab] = useState(getTabFromHash(supportedTabs));
 
+    const location = useLocation();
     const requestedInstanceType: InstanceType = readInstanceType(location);
     const requestedInstanceID = readInstanceId(requestedInstanceType);
 
@@ -381,10 +375,9 @@ function QualityControlPage(): JSX.Element {
     }, [requestedInstanceType, requestedInstanceID]);
 
     useEffect(() => {
-        window.addEventListener('hashchange', () => {
-            const hash = getTabFromHash(supportedTabs);
-            setActiveTab(hash);
-        });
+        const onHashChange = () => setActiveTab(getTabFromHash(supportedTabs));
+        window.addEventListener('hashchange', onHashChange);
+        return () => window.removeEventListener('hashchange', onHashChange);
     }, []);
 
     useEffect(() => {
