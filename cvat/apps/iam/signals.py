@@ -16,6 +16,9 @@ def register_groups(sender, **kwargs):
 if settings.IAM_TYPE == "BASIC":
 
     def create_user(sender, instance, created, **kwargs):
+        if created and kwargs.get("raw"):
+            return
+
         from allauth.account import app_settings as allauth_settings
         from allauth.account.models import EmailAddress
 
@@ -36,6 +39,9 @@ if settings.IAM_TYPE == "BASIC":
 elif settings.IAM_TYPE == "LDAP":
 
     def create_user(sender, user=None, ldap_user=None, **kwargs):
+        if kwargs.get("created") and kwargs.get("raw"):
+            return
+
         user_groups = []
         for role in settings.IAM_ROLES:
             db_group = Group.objects.get(name=role)
