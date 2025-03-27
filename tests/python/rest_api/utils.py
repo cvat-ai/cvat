@@ -7,9 +7,9 @@ from abc import ABCMeta, abstractmethod
 from collections.abc import Hashable, Iterator, Sequence
 from copy import deepcopy
 from http import HTTPStatus
+from io import BytesIO
 from time import sleep
 from typing import Any, Callable, Iterable, Optional, TypeVar, Union
-from io import BytesIO
 
 import requests
 from cvat_sdk.api_client import apis, models
@@ -255,12 +255,16 @@ def import_backup(
 
 def import_project_backup(username: str, file_content: BytesIO, **kwargs) -> None:
     with make_api_client(username) as api_client:
-        return import_backup(api_client.projects_api, uploaded_zip_file_request={"file": file_content}, **kwargs)
+        return import_backup(
+            api_client.projects_api, uploaded_zip_file_request={"file": file_content}, **kwargs
+        )
 
 
 def import_task_backup(username: str, file_content: BytesIO, **kwargs) -> None:
     with make_api_client(username) as api_client:
-        return import_backup(api_client.tasks_api, uploaded_zip_file_request={"file": file_content}, **kwargs)
+        return import_backup(
+            api_client.tasks_api, uploaded_zip_file_request={"file": file_content}, **kwargs
+        )
 
 
 FieldPath = Sequence[Union[str, Callable]]
