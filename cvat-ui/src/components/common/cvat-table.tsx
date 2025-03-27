@@ -21,18 +21,30 @@ type Props = TableProps & {
     onFilterDataSource?(data: TableProps['dataSource']): void;
     onChangeColumnVisibility?(id: number, isHidden: boolean): void;
     renderExtraActions?(): JSX.Element;
-    queryBuilderConfig?: Partial<Config>;
-    queryBuilderPredefinedQueries?: Record<string, string>;
-    queryBuilderCache?: {
-        key: string;
-        capacity: number;
-    };
+    queryBuilder?: {
+        config: Partial<Config>;
+        memoryKey: string;
+        memoryCapacity?: number;
+        predefinedQueries?: Record<string, string>;
+    }
     csvExport?: {
         filename: string;
     };
     tableTitle?: string;
     searchDataIndex?: (string | string[])[];
 };
+
+function getValueFromDataItem<T>(
+    dataItem: NonNullable<TableProps['dataSource']>[0],
+    dataIndex: string | string[],
+): T | null {
+    if (Array.isArray(dataIndex)) {
+        return dataIndex.reduce((acc: unknown, path: string) => (
+            typeof acc === 'object' && acc ? (acc as Record<string, unknown>)[path] : null
+        ), dataItem) as T;
+    }
+    return dataItem[dataIndex];
+}
 
 /*
     Enhanced table component
@@ -43,16 +55,14 @@ type Props = TableProps & {
     * csv export
     * show/hide columns
     Current restrictions:
-    * queryBuilderConfig, queryBuilderPredefinedQueries, queryBuilderCache are supposed to be static
+    * queryBuilder prop is supposed to be static
 */
 function CVATTable(props: Props): JSX.Element {
     const {
         onChangeColumnVisibility,
         onFilterDataSource,
         renderExtraActions,
-        queryBuilderConfig,
-        queryBuilderCache,
-        queryBuilderPredefinedQueries,
+        queryBuilder,
         searchDataIndex,
         tableTitle,
         dataSource,
@@ -80,19 +90,10 @@ function CVATTable(props: Props): JSX.Element {
             if (dataSource) {
                 const rows = dataSource
                     .map((dataItem) => header.map(({ dataIndex }) => {
-                        let value = null;
-                        if (Array.isArray(dataIndex)) {
-                            value = dataIndex.reduce((acc: unknown, path: string) => (
-                                typeof acc === 'object' && acc ? (acc as Record<string, unknown>)[path] : null
-                            ), dataItem);
-                        } else {
-                            value = dataItem[dataIndex];
-                        }
-
+                        const value = getValueFromDataItem<string>(dataItem, dataIndex);
                         if (typeof value === 'string') {
                             return `"${value.replace(/"/g, '""')}"`;
                         }
-
                         return value;
                     }).join(','));
                 csv = `${header.map((column) => column.title).join(',')}\n${rows.join('\n')}`;
@@ -130,20 +131,11 @@ function CVATTable(props: Props): JSX.Element {
                 const lowerCaseQuery = searchPhrase.toLowerCase();
                 filtered = filtered.filter((dataItem) => {
                     for (const dataIndex of searchDataIndex) {
-                        if (Array.isArray(dataIndex)) {
-                            const dataValue = dataIndex.reduce((acc: unknown, path: string) => (typeof acc === 'object' && acc ? (acc as Record<string, unknown>)[path] : null), dataItem);
-
-                            if (typeof dataValue === 'string' && dataValue.toLowerCase().includes(lowerCaseQuery)) {
-                                return true;
-                            }
-                        } else {
-                            const dataValue = dataItem[dataIndex];
-                            if (typeof dataValue === 'string' && dataValue.toLowerCase().includes(lowerCaseQuery)) {
-                                return true;
-                            }
+                        const value = getValueFromDataItem<string>(dataItem, dataIndex);
+                        if (typeof value === 'string' && value.toLowerCase().includes(lowerCaseQuery)) {
+                            return true;
                         }
                     }
-
                     return false;
                 });
             }
@@ -156,18 +148,20 @@ function CVATTable(props: Props): JSX.Element {
     }, [dataSource, searchDataIndex, filterValue, searchPhrase]);
 
     useEffect(() => {
-        if (queryBuilderConfig && queryBuilderCache?.key) {
-            const capacity = queryBuilderCache?.capacity ?? 0;
-            setFilteringComponent(
-                ResourceFilterHOC(
-                    queryBuilderConfig,
-                    queryBuilderCache.key,
-                    capacity,
-                    queryBuilderPredefinedQueries ?? undefined,
-                ),
-            );
+        if (!FilteringComponent) {
+            if (queryBuilder?.config && queryBuilder?.memoryKey) {
+                const capacity = queryBuilder?.memoryCapacity ?? 0;
+                setFilteringComponent(
+                    ResourceFilterHOC(
+                        queryBuilder.config,
+                        queryBuilder.memoryKey,
+                        capacity,
+                        queryBuilder.predefinedQueries ?? undefined,
+                    ),
+                );
+            }
         }
-    }, [queryBuilderConfig, queryBuilderCache?.key, queryBuilderCache?.capacity, queryBuilderPredefinedQueries]);
+    }, [queryBuilder, FilteringComponent]);
 
     return (
         <div className='cvat-table-wrapper'>
