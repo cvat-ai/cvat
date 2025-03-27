@@ -280,6 +280,8 @@ class ResourceImporter(AbstractRequestManager):
         def to_dict(self):
             return dataclass_asdict(self)
 
+    import_args: ImportArgs | None = attrs.field(init=False)
+
     def init_request_args(self):
         filename = self.request.query_params.get("filename")
         file_path = (self.tmp_dir / filename) if filename else None
@@ -293,7 +295,7 @@ class ResourceImporter(AbstractRequestManager):
         except ValueError as ex:
             raise ValidationError(str(ex)) from ex
 
-        self.import_args = self.ImportArgs(
+        self.import_args = ResourceImporter.ImportArgs(
             location_config=location_config,
             file_path=file_path,
         )
@@ -332,7 +334,7 @@ class ResourceImporter(AbstractRequestManager):
     def _handle_non_tus_file_upload(self):
         file_serializer = self.upload_serializer_class(data=self.request.data)
         file_serializer.is_valid(raise_exception=True)
-        payload_file = file_serializer.validated_data[file_serializer.file.field_name]
+        payload_file = file_serializer.validated_data["file"]
 
         with NamedTemporaryFile(prefix="cvat_", dir=TmpDirManager.TMP_ROOT, delete=False) as tf:
             self.import_args.file_path = tf.name

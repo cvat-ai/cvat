@@ -390,7 +390,7 @@ class TestGetPostProjectBackup:
         tmp_file.name = "dataset.zip"
 
         import_data = {
-            "project_file": tmp_file,
+            "file": tmp_file,
         }
 
         with make_api_client(admin_user) as api_client:
@@ -671,7 +671,7 @@ class TestImportExportDatasetProject:
         tmp_file.name = "dataset.zip"
 
         import_data = {
-            "dataset_file": tmp_file,
+            "file": tmp_file,
         }
 
         self._test_import_project(admin_user, project_id, "CVAT 1.1", import_data)
@@ -713,7 +713,7 @@ class TestImportExportDatasetProject:
         tmp_file = io.BytesIO(dataset)
         tmp_file.name = "dataset.zip"
         import_data = {
-            "dataset_file": tmp_file,
+            "file": tmp_file,
         }
 
         self._test_import_project(admin_user, project_id, import_format, import_data)
@@ -736,7 +736,7 @@ class TestImportExportDatasetProject:
         tmp_file.name = "dataset.zip"
 
         import_data = {
-            "dataset_file": tmp_file,
+            "file": tmp_file,
         }
 
         self._test_import_project(username, project_id, format_name, import_data)
@@ -802,7 +802,7 @@ class TestImportExportDatasetProject:
         tmp_file.name = "dataset.zip"
 
         import_data = {
-            "dataset_file": tmp_file,
+            "file": tmp_file,
         }
 
         self._test_import_project(username, project_id, "CVAT 1.1", import_data)
@@ -916,7 +916,7 @@ class TestImportExportDatasetProject:
         with io.BytesIO(dataset) as tmp_file:
             tmp_file.name = "dataset.zip"
             import_data = {
-                "dataset_file": tmp_file,
+                "file": tmp_file,
             }
 
             self._test_import_project(admin_user, project_id, "CVAT 1.1", import_data)
@@ -972,7 +972,7 @@ class TestImportExportDatasetProject:
                 )
             )
 
-            import_data = {"dataset_file": dataset_file}
+            import_data = {"file": dataset_file}
 
             with pytest.raises(exceptions.ApiException, match="Dataset file should be zip archive"):
                 self._test_import_project(

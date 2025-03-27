@@ -201,6 +201,7 @@ class AbstractRequestManager(metaclass=ABCMeta):
         return self.get_response(request_id)
 
 
+@attrs.define(kw_only=True)
 class AbstractExporter(AbstractRequestManager):
     QUEUE_NAME = settings.CVAT_QUEUES.EXPORT_DATA.value
 
@@ -225,6 +226,8 @@ class AbstractExporter(AbstractRequestManager):
 
         def to_dict(self):
             return dataclass_asdict(self)
+
+    export_args: ExportArgs | None = attrs.field(init=False)
 
     @abstractmethod
     def get_result_filename(self) -> str: ...

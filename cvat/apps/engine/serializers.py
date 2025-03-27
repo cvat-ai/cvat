@@ -2939,6 +2939,7 @@ class UploadedFileSerializer(serializers.Serializer):
     file = serializers.FileField()
 
 class UploadedZipFileSerializer(UploadedFileSerializer):
+    # probably there is no need in such validation
     def validate_file(self, value):
         if os.path.splitext(value.name)[1] != '.zip':
             raise serializers.ValidationError('A file should be zip archive')

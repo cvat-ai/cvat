@@ -5,7 +5,6 @@
 import csv
 import os
 import uuid
-from contextlib import suppress
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -15,7 +14,6 @@ from dateutil import parser
 from django.conf import settings
 from django.utils import timezone
 from rest_framework import serializers, status
-from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from rq import get_current_job
@@ -191,6 +189,8 @@ def export(request: ExtendedRequest):
     response_data = {
         "query_id": manager.query_id,
     }
+    deprecation_timestamp = int(datetime(2025, 3, 17, tzinfo=timezone.utc).timestamp())
+    response_headers = {"Deprecation": f"@{deprecation_timestamp}"}
 
     rq_job = queue.fetch_job(request_id)
 
@@ -205,18 +205,21 @@ def export(request: ExtendedRequest):
                 return sendfile(request, file_path, attachment=True, attachment_filename=filename)
             else:
                 if os.path.exists(file_path):
-                    return Response(status=status.HTTP_201_CREATED)
+                    return Response(status=status.HTTP_201_CREATED, headers=response_headers)
         elif rq_job.is_failed:
             rq_job_meta = RQMetaWithFailureInfo.for_job(rq_job)
             exc_info = rq_job_meta.formatted_exception or str(rq_job.exc_info)
             rq_job.delete()
-            return Response(exc_info, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                exc_info, status=status.HTTP_500_INTERNAL_SERVER_ERROR, headers=response_headers
+            )
         else:
-            return Response(data=response_data, status=status.HTTP_202_ACCEPTED)
+            return Response(
+                data=response_data, status=status.HTTP_202_ACCEPTED, headers=response_headers
+            )
 
     manager.init_request_args()
-    with suppress(MethodNotAllowed):
-        manager.validate_request()
+    # request validation is missed here since exporting to a cloud_storage is disabled
     manager.init_callback_with_params()
     manager.setup_new_job(queue, request_id)
 
