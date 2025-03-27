@@ -1598,9 +1598,7 @@ class TestQualityReportMetrics(_PermissionTestBase):
                 ]
             }
 
-            api_client.jobs_api.update_annotations(
-                gt_job.id, labeled_data_request=gt_annotations
-            )
+            api_client.jobs_api.update_annotations(gt_job.id, labeled_data_request=gt_annotations)
 
             api_client.tasks_api.update_annotations(
                 task_id, labeled_data_request=normal_annotations

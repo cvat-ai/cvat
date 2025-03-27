@@ -11,6 +11,7 @@ from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
 from io import StringIO
 from time import sleep
+from typing import Optional
 
 import pytest
 from cvat_sdk.api_client import ApiClient
@@ -157,7 +158,7 @@ class TestGetAuditEvents:
         max_retries: int = 20,
         interval: float = 0.1,
         **kwargs,
-    ) -> bytes | None:
+    ) -> Optional[bytes]:
         if api_version == 1:
             endpoint = api_client.events_api.list_endpoint
             query_id = ""
