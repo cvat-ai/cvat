@@ -10,7 +10,7 @@ from enum import Enum
 from typing import Any
 
 from django.core.exceptions import ValidationError
-from django.db import models, transaction
+from django.db import models
 from django.forms.models import model_to_dict
 
 from cvat.apps.engine.models import Job, JobType, Project, ShapeType, Task, TimestampedModel, User
@@ -242,46 +242,9 @@ class PointSizeBase(str, Enum):
         return tuple((x.value, x.name) for x in cls)
 
 
-class QualitySettingsQuerySet(models.QuerySet):
-    @transaction.atomic
-    def create(self, **kwargs: Any):
-        self._validate_constraints(kwargs)
-
-        return super().create(**kwargs)
-
-    @transaction.atomic
-    def update(self, **kwargs: Any) -> int:
-        self._validate_constraints(kwargs)
-
-        return super().update(**kwargs)
-
-    @transaction.atomic
-    def get_or_create(self, *args, **kwargs: Any):
-        self._validate_constraints(kwargs)
-
-        return super().get_or_create(*args, **kwargs)
-
-    @transaction.atomic
-    def update_or_create(self, *args, **kwargs: Any):
-        self._validate_constraints(kwargs)
-
-        return super().update_or_create(*args, **kwargs)
-
-    @transaction.atomic(savepoint=False)
-    def _validate_constraints(self, obj: dict[str, Any]):
-        # Constraints can't be set on the related model fields
-        # This method requires the save operation to be called as a transaction
-        if obj.get("task_id") and obj.get("project_id"):
-            raise QualitySettings.InvalidParametersError(
-                "'task[_id]' and 'project[_id]' cannot be used together"
-            )
-
-
 class QualitySettings(TimestampedModel):
     class InvalidParametersError(ValidationError):
         pass
-
-    objects = QualitySettingsQuerySet.as_manager()
 
     task = models.OneToOneField(
         Task, on_delete=models.CASCADE, related_name="quality_settings", null=True, blank=True
@@ -332,6 +295,17 @@ class QualitySettings(TimestampedModel):
     target_metric_threshold = models.FloatField(default=0.7)
 
     max_validations_per_job = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                name="quality_settings_task_or_project",
+                check=(
+                    models.Q(task_id__isnull=False, project_id__isnull=True)
+                    | models.Q(task_id__isnull=True, project_id__isnull=False)
+                ),
+            )
+        ]
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         defaults = deepcopy(self.get_defaults())
