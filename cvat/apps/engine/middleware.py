@@ -21,6 +21,6 @@ class RequestTrackingMiddleware:
     def __call__(self, request):
         request.uuid = self._generate_id()
         response = self.get_response(request)
-        response.headers['X-Request-Id'] = request.uuid
+        response.headers["X-Request-Id"] = request.uuid
 
         return response
