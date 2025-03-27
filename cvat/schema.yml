@@ -9426,7 +9426,7 @@ components:
         job_filter:
           type: string
           description: |
-            JSON expression filter for included jobs. Available filter terms: ['assignee', 'id', 'stage', 'status', 'task_id', 'task_name', 'type']
+            JSON expression filter for included jobs. Available filter terms: ['assignee', 'id', 'stage', 'state', 'task_id', 'task_name', 'type']
           maxLength: 1024
         inherit:
           type: boolean
@@ -10048,7 +10048,7 @@ components:
         job_filter:
           type: string
           description: |
-            JSON expression filter for included jobs. Available filter terms: ['assignee', 'id', 'stage', 'status', 'task_id', 'task_name', 'type']
+            JSON expression filter for included jobs. Available filter terms: ['assignee', 'id', 'stage', 'state', 'task_id', 'task_name', 'type']
           maxLength: 1024
         inherit:
           type: boolean
@@ -10206,7 +10206,7 @@ components:
         job_filter:
           type: string
           description: |
-            JSON expression filter for included jobs. Available filter terms: ['assignee', 'id', 'stage', 'status', 'task_id', 'task_name', 'type']
+            JSON expression filter for included jobs. Available filter terms: ['assignee', 'id', 'stage', 'state', 'task_id', 'task_name', 'type']
           maxLength: 1024
         inherit:
           type: boolean
@@ -10471,7 +10471,7 @@ components:
         type:
           type: string
         target:
-          $ref: '#/components/schemas/RequestTarget'
+          $ref: '#/components/schemas/RequestDataOperationTargetEnum'
         project_id:
           type: integer
           nullable: true
@@ -10490,6 +10490,16 @@ components:
       required:
       - target
       - type
+    RequestDataOperationTargetEnum:
+      enum:
+      - project
+      - task
+      - job
+      type: string
+      description: |-
+        * `project` - Project
+        * `task` - Task
+        * `job` - Job
     RequestStatus:
       enum:
       - queued
@@ -10502,16 +10512,6 @@ components:
         * `started` - Started
         * `failed` - Failed
         * `finished` - Finished
-    RequestTarget:
-      enum:
-      - project
-      - task
-      - job
-      type: string
-      description: |-
-        * `project` - Project
-        * `task` - Task
-        * `job` - Job
     RestAuthDetail:
       type: object
       properties:
