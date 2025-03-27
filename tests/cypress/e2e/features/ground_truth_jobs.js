@@ -378,7 +378,7 @@ context('Ground truth jobs', () => {
 
             const expectedFileName = `allocation-table-task_${taskID}.csv`;
             cy.verifyDownload(expectedFileName);
-            cy.checkCsvFileContent(expectedFileName, '"Frame","Name","Actions"', 4, (row, index) => {
+            cy.checkCsvFileContent(expectedFileName, 'frame,name,active', 4, (row, index) => {
                 expect(row).to.include(`images/image_${index + 1}.jpg`);
                 expect(row).to.include('true');
             });

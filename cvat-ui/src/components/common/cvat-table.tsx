@@ -81,8 +81,8 @@ function CVATTable(props: Props): JSX.Element {
     const downloadCSV = useCallback(() => {
         if (csvExport && columns) {
             // function to export as CSV properly handling commas, line breaks and double quotes in both header/fields
-            const header = columns.map((column) => ({
-                title: column.title ? `"${column.title}"` : undefined,
+            const header = columns.map((column: any) => ({
+                title: column.dataIndex ? `${[column.dataIndex as string | string[]].flat().join('.')}` : undefined,
                 dataIndex: (column as any).dataIndex as string | string[],
             })).filter((column) => !!column.title);
 
