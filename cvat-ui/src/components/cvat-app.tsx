@@ -148,9 +148,32 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         } = appConfig;
 
         // Logger configuration
-        window.addEventListener('click', (event: MouseEvent) => {
-            EventRecorder.recordMouseEvent(event);
-        });
+        const listener = (e: MouseEvent | KeyboardEvent): void => {
+            if (e instanceof MouseEvent && e.type === 'click') {
+                EventRecorder.recordMouseEvent(e);
+            }
+
+            EventRecorder.recordUserActivity();
+        };
+
+        let listenerRegistered = false;
+        const visibilityChangeListener = (): void => {
+            const state = window.document.visibilityState;
+            if (state === 'visible') {
+                if (!listenerRegistered) {
+                    window.addEventListener('keydown', listener, { capture: true });
+                    window.addEventListener('click', listener, { capture: true });
+                    listenerRegistered = true;
+                }
+            } else {
+                window.removeEventListener('keydown', listener);
+                window.removeEventListener('click', listener);
+                listenerRegistered = false;
+            }
+        };
+
+        visibilityChangeListener(); // initial setup other event listeners
+        window.addEventListener('visibilitychange', visibilityChangeListener);
 
         core.logger.configure(() => window.document.hasFocus());
         core.config.onOrganizationChange = (newOrgId: number | null) => {

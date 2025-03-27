@@ -289,6 +289,9 @@ def get_serializer_without_url(instance):
         serializer.fields.pop("url", None)
     return serializer
 
+from cvat.apps.engine.log import ServerLogManager
+slogger = ServerLogManager(__name__)
+
 
 def handle_create(scope, instance, **kwargs):
     oid = organization_id(instance)
@@ -299,6 +302,9 @@ def handle_create(scope, instance, **kwargs):
     uid = user_id(instance)
     uname = user_name(instance)
     uemail = user_email(instance)
+
+    # if scope == 'create:job':
+    #     slogger.glob.info(f"handle create for job #{jid}")
 
     serializer = get_serializer_without_url(instance=instance)
     try:
