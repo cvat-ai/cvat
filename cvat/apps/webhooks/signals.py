@@ -140,6 +140,9 @@ def get_sender(instance):
 @receiver(pre_save, sender=Invitation, dispatch_uid=__name__ + ":invitation:pre_save")
 @receiver(pre_save, sender=Membership, dispatch_uid=__name__ + ":membership:pre_save")
 def pre_save_resource_event(sender, instance, **kwargs):
+    if kwargs.get('raw'):
+        return
+
     instance._webhooks_selected_webhooks = []
 
     if instance.pk is None:
