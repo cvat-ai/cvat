@@ -13,11 +13,17 @@ from cvat.apps.quality_control.models import QualitySettings
     post_save, sender=Project, dispatch_uid=__name__ + ".save_project-initialize_quality_settings"
 )
 def __save_project__initialize_quality_settings(instance: Project, created: bool, **kwargs):
+    if created and kwargs.get("raw"):
+        return
+
     if created:
         QualitySettings.objects.get_or_create(project_id=instance.id)
 
 
 @receiver(post_save, sender=Task, dispatch_uid=__name__ + ".save_task-initialize_quality_settings")
 def __save_task__initialize_quality_settings(instance: Task, created: bool, **kwargs):
+    if created and kwargs.get("raw"):
+        return
+
     if created:
         QualitySettings.objects.get_or_create(task_id=instance.id)

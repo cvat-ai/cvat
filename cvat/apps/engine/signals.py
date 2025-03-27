@@ -39,6 +39,9 @@ def __save_job_handler(instance, created, **kwargs):
 
 @receiver(post_save, sender=User, dispatch_uid=__name__ + ".save_user_handler")
 def __save_user_handler(instance: User, **kwargs):
+    if kwargs.get("created") and kwargs.get("raw"):
+        return
+
     should_access_analytics = (
         instance.is_superuser or instance.groups.filter(name=settings.IAM_ADMIN_ROLE).exists()
     )
