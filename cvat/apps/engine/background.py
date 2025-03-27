@@ -41,7 +41,7 @@ from cvat.apps.engine.models import (
     Task,
 )
 from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
-from cvat.apps.engine.rq import ExportRequestId, ImportRequestId, ImportRQMeta
+from cvat.apps.engine.rq import ExportRequestId, ImportRequestId
 from cvat.apps.engine.serializers import UploadedFileSerializer, UploadedZipFileSerializer
 from cvat.apps.engine.task import create_thread as create_task
 from cvat.apps.engine.utils import (

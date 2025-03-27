@@ -29,6 +29,10 @@ def convert_extra(value: dict) -> dict[str, Any]:
     return value
 
 
+class IncorrectRequestIdError(ValueError):
+    pass
+
+
 @attrs.frozen(kw_only=True)
 class RequestId:
     FIELD_SEP: ClassVar[str] = "&"
@@ -42,16 +46,12 @@ class RequestId:
         validator=attrs.validators.instance_of((int, UUID)),
         converter=convert_id,
     )
-
-    # todo: dot access
     extra: dict[str, Any] = attrs.field(converter=convert_extra, factory=dict)
 
     @property
     def type(self) -> str:
         return self.TYPE_SEP.join([self.action, self.target])
 
-    # @classmethod
-    # def from_base(cls, parsed_id: RequestId, /):
     def convert_to(self, child_class: type[RequestId], /):
         # method is going to be used by child classes
         return child_class(
@@ -63,8 +63,7 @@ class RequestId:
         )
 
     def render(self) -> str:
-        # TODO: add queue name indirectly
-        bytes = self.FIELD_SEP.join(
+        data = self.FIELD_SEP.join(
             [
                 self.KEY_VAL_SEP.join([k, v])
                 for k, v in {
@@ -77,21 +76,23 @@ class RequestId:
             ]
         ).encode()
 
-        return base64.b64encode(bytes).decode()
+        return base64.b64encode(data).decode()
 
-    # TODO: handle exceptions
     @classmethod
-    def parse(cls, rq_id: str, /):
-        decoded_rq_id = base64.b64decode(rq_id).decode()
+    def parse(cls, request_id: str, /):
+        try:
+            decoded_rq_id = base64.b64decode(request_id).decode()
 
-        keys = set(attrs.fields_dict(cls).keys()) - {"extra"}
-        params = {}
+            keys = set(attrs.fields_dict(cls).keys()) - {"extra"}
+            params = {}
 
-        for pair in decoded_rq_id.split(RequestId.FIELD_SEP):
-            key, value = pair.split(RequestId.KEY_VAL_SEP, maxsplit=1)
-            if key in keys:
-                params[key] = value
-            else:
-                params.setdefault("extra", {})[key] = value
+            for pair in decoded_rq_id.split(RequestId.FIELD_SEP):
+                key, value = pair.split(RequestId.KEY_VAL_SEP, maxsplit=1)
+                if key in keys:
+                    params[key] = value
+                else:
+                    params.setdefault("extra", {})[key] = value
 
-        return cls(**params)
+            return cls(**params)
+        except Exception as ex:
+            raise IncorrectRequestIdError from ex

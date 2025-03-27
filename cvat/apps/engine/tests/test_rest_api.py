@@ -5895,13 +5895,9 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
         if owner:
             HTTP_200_OK = status.HTTP_200_OK
             HTTP_204_NO_CONTENT = status.HTTP_204_NO_CONTENT
-            HTTP_202_ACCEPTED = status.HTTP_202_ACCEPTED
-            HTTP_201_CREATED = status.HTTP_201_CREATED
         else:
             HTTP_200_OK = status.HTTP_401_UNAUTHORIZED
             HTTP_204_NO_CONTENT = status.HTTP_401_UNAUTHORIZED
-            HTTP_202_ACCEPTED = status.HTTP_401_UNAUTHORIZED
-            HTTP_201_CREATED = status.HTTP_401_UNAUTHORIZED
 
         def _get_initial_annotation(annotation_format):
             if annotation_format not in ["Market-1501 1.0", "ICDAR Recognition 1.0",
