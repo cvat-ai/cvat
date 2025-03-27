@@ -305,9 +305,6 @@ def handle_create(scope, instance, **kwargs):
     uname = user_name(instance)
     uemail = user_email(instance)
 
-    # if scope == 'create:job':
-    #     slogger.glob.info(f"handle create for job #{jid}")
-
     serializer = get_serializer_without_url(instance=instance)
     try:
         payload = serializer.data
