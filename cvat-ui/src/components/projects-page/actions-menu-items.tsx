@@ -2,18 +2,18 @@
 //
 // SPDX-License-Identifier: MIT
 
+import React from 'react';
+import { Link } from 'react-router-dom';
 import { MenuProps } from 'antd/lib/menu';
 import { usePlugins } from 'utils/hooks';
 
 interface MenuItemsData {
+    projectID: number;
     pluginActions: ReturnType<typeof usePlugins>;
     onExportDataset: () => void;
     onImportDataset: () => void;
     onBackupProject: () => void;
     onDeleteProject: () => void;
-    labels: {
-        webhook: JSX.Element,
-    }
 }
 
 export default function ProjectActionsItems(
@@ -21,12 +21,12 @@ export default function ProjectActionsItems(
     projectMenuProps: unknown,
 ): MenuProps['items'] {
     const {
+        projectID,
         pluginActions,
         onExportDataset,
         onImportDataset,
         onBackupProject,
         onDeleteProject,
-        labels,
     } = menuItemsData;
 
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
@@ -51,7 +51,7 @@ export default function ProjectActionsItems(
 
     menuItems.push([{
         key: 'set-webhooks',
-        label: labels.webhook,
+        label: <Link to={`/projects/${projectID}/webhooks`}>Setup webhooks</Link>,
     }, 30]);
 
     menuItems.push([{

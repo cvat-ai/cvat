@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback } from 'react';
-import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
 import Dropdown from 'antd/lib/dropdown';
@@ -93,6 +92,8 @@ function JobActionsComponent(props: Props): JSX.Element {
                 selectable: false,
                 className: 'cvat-job-item-menu',
                 items: JobActionsItems({
+                    taskID: jobInstance.taskId,
+                    projectID: jobInstance.projectId,
                     isMergingConsensusEnabled: mergingConsensus[makeKey(jobInstance)],
                     pluginActions,
                     onOpenBugTracker: jobInstance.bugTracker ? onOpenBugTracker : null,
@@ -101,11 +102,6 @@ function JobActionsComponent(props: Props): JSX.Element {
                     onMergeConsensusJob: consensusJobsPresent && jobInstance.parentJobId === null ?
                         onMergeConsensusJob : null,
                     onDeleteJob: jobInstance.type === JobType.GROUND_TRUTH ? onDeleteJob : null,
-                    labels: {
-                        openTask: <Link to={`/tasks/${jobInstance.taskId}`}>Go to the task</Link>,
-                        openProject: jobInstance.projectId ?
-                            <Link to={`/projects/${jobInstance.projectId}`}>Go to the project</Link> : undefined,
-                    },
                 }, { ...props, history }),
             }}
         >

@@ -3,12 +3,15 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { LoadingOutlined } from '@ant-design/icons';
 import { MenuProps } from 'antd/lib/menu';
 import { usePlugins } from 'utils/hooks';
 
 interface MenuItemsData {
+    taskID: number;
     isAutomaticAnnotationEnabled: boolean;
+    isConsensusEnabled: boolean;
     isMergingConsensusEnabled: boolean;
     pluginActions: ReturnType<typeof usePlugins>;
     onMergeConsensusJobs: (() => void) | null;
@@ -19,16 +22,14 @@ interface MenuItemsData {
     onRunAutoAnnotation: (() => void) | null;
     onMoveTaskToProject: (() => void) | null;
     onDeleteTask: () => void;
-    labels: {
-        qualityControl: JSX.Element,
-        consensusManagement?: JSX.Element,
-    }
 }
 
 export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuProps: unknown): MenuProps['items'] {
     const {
+        taskID,
         pluginActions,
         isAutomaticAnnotationEnabled,
+        isConsensusEnabled,
         isMergingConsensusEnabled,
         onMergeConsensusJobs,
         onUploadAnnotations,
@@ -38,7 +39,6 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
         onRunAutoAnnotation,
         onMoveTaskToProject,
         onDeleteTask,
-        labels,
     } = menuItemsData;
 
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
@@ -78,13 +78,13 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
 
     menuItems.push([{
         key: 'quality_control',
-        label: labels.qualityControl,
+        label: <Link to={`/tasks/${taskID}/quality-control`}>Quality control</Link>,
     }, 50]);
 
-    if (labels.consensusManagement) {
+    if (isConsensusEnabled) {
         menuItems.push([{
             key: 'consensus_management',
-            label: labels.consensusManagement,
+            label: <Link to={`/tasks/${taskID}/consensus`}>Consensus management</Link>,
         }, 55]);
     }
 

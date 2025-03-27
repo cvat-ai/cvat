@@ -3,11 +3,14 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { MenuProps } from 'antd/lib/menu';
 import { LoadingOutlined } from '@ant-design/icons';
 import { usePlugins } from 'utils/hooks';
 
 interface MenuItemsData {
+    taskID: number;
+    projectID: number | null;
     pluginActions: ReturnType<typeof usePlugins>;
     isMergingConsensusEnabled: boolean;
     onOpenBugTracker: (() => void) | null;
@@ -15,10 +18,6 @@ interface MenuItemsData {
     onExportAnnotations: () => void;
     onMergeConsensusJob: (() => void) | null;
     onDeleteJob: (() => void) | null;
-    labels: {
-        openTask: JSX.Element,
-        openProject?: JSX.Element,
-    }
 }
 
 export default function JobActionsItems(
@@ -26,6 +25,7 @@ export default function JobActionsItems(
     jobMenuProps: unknown,
 ): MenuProps['items'] {
     const {
+        taskID, projectID,
         pluginActions,
         isMergingConsensusEnabled,
         onOpenBugTracker,
@@ -33,20 +33,19 @@ export default function JobActionsItems(
         onExportAnnotations,
         onMergeConsensusJob,
         onDeleteJob,
-        labels,
     } = menuItemsData;
 
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
 
     menuItems.push([{
         key: 'task',
-        label: labels.openTask,
+        label: <Link to={`/tasks/${taskID}`}>Go to the task</Link>,
     }, 0]);
 
-    if (labels.openProject) {
+    if (projectID) {
         menuItems.push([{
             key: 'project',
-            label: labels.openProject,
+            label: <Link to={`/projects/${projectID}`}>Go to the project</Link>,
         }, 10]);
     }
 

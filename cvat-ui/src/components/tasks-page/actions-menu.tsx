@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback } from 'react';
-import { Link } from 'react-router-dom';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
 import Modal from 'antd/lib/modal';
@@ -108,10 +107,12 @@ function TaskActionsComponent(props: Props): JSX.Element {
                 selectable: false,
                 className: 'cvat-actions-menu',
                 items: TaskActionsItems({
+                    taskID: taskInstance.id,
                     isAutomaticAnnotationEnabled: (
                         activeInference &&
                         ![RQStatus.FAILED, RQStatus.FINISHED].includes(activeInference.status)
                     ),
+                    isConsensusEnabled: taskInstance.consensusEnabled,
                     isMergingConsensusEnabled: mergingConsensus[`task_${taskInstance.id}`],
                     pluginActions,
                     onMergeConsensusJobs: taskInstance.consensusEnabled ? onMergeConsensusJobs : null,
@@ -122,12 +123,6 @@ function TaskActionsComponent(props: Props): JSX.Element {
                     onRunAutoAnnotation,
                     onMoveTaskToProject: taskInstance.projectId === null ? onMoveTaskToProject : null,
                     onDeleteTask,
-                    labels: {
-                        qualityControl: <Link to={`/tasks/${taskInstance.id}/quality-control`}>Quality control</Link>,
-                        consensusManagement: taskInstance.consensusEnabled ? (
-                            <Link to={`/tasks/${taskInstance.id}/consensus`}>Consensus management</Link>
-                        ) : undefined,
-                    },
                 }, { ...props, history }),
             }}
         >

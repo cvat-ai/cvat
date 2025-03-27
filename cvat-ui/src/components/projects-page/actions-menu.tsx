@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback } from 'react';
-import { Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
 import Dropdown from 'antd/lib/dropdown';
@@ -64,14 +63,12 @@ function ProjectActionsComponent(props: Props): JSX.Element {
                 selectable: false,
                 className: 'cvat-project-actions-menu',
                 items: ProjectActionsItems({
+                    projectID: projectInstance.id,
                     pluginActions,
                     onExportDataset,
                     onImportDataset,
                     onBackupProject,
                     onDeleteProject,
-                    labels: {
-                        webhook: <Link to={`/projects/${projectInstance.id}/webhooks`}>Setup webhooks</Link>,
-                    },
                 }, { ...props, history }),
             }}
         >
