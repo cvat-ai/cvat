@@ -104,7 +104,7 @@ def export_v2(
     download_result: bool = True,
     return_request_id: bool = False,
     **kwargs,
-) -> bytes | str | None:
+) -> Optional[Union[bytes, str]]:
     """Export datasets|annotations|backups using the second version of export API
 
     Args:
