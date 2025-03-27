@@ -289,7 +289,9 @@ def get_serializer_without_url(instance):
         serializer.fields.pop("url", None)
     return serializer
 
+
 from cvat.apps.engine.log import ServerLogManager
+
 slogger = ServerLogManager(__name__)
 
 
