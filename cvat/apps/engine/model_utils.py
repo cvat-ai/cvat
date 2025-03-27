@@ -19,8 +19,12 @@ class Undefined:
 
 MaybeUndefined = Union[_T, Undefined]
 """
-May be undefined in the object, should be accessed via hasattr/getattr().
-Typically, the reverse side of one-to-one relationship or extra annotations from model queryset.
+Can be used to annotate dynamic class members that may be undefined in the object.
+Such fields should typically be accessed via hasattr() and getattr().
+
+Common use cases:
+- the reverse side of one-to-one relationship
+- extra annotations from a model queryset
 """
 
 

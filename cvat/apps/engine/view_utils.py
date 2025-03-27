@@ -100,7 +100,11 @@ def get_or_404(
     queryset: type[_ModelT] | QuerySet[_ModelT] | Manager[_ModelT],
     pk: Any,
 ) -> _ModelT:
-    # A simpler version of django.shortcuts.get_object_or_404()
+    """
+    A simpler version of django.shortcuts.get_object_or_404()
+    Produces a better error message.
+    """
+
     if hasattr(queryset, "_default_manager"):
         queryset = queryset._default_manager.all()
 
