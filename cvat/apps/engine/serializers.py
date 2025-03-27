@@ -707,7 +707,7 @@ class JobReadSerializer(serializers.ModelSerializer):
                 issue_counts = dict(
                     models.Job.objects.with_issue_counts().filter(
                         id__in=set(j.id for j in page)
-                    ).values_list("id", "issues")
+                    ).values_list("id", "issues__count")
                 )
 
                 for job in page:
