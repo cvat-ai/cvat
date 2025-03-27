@@ -34,11 +34,7 @@ from cvat.apps.engine.models import RequestTarget
 from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
 from cvat.apps.engine.rq import BaseRQMeta, ExportRQMeta, define_dependent_job
 from cvat.apps.engine.types import ExtendedRequest
-from cvat.apps.engine.utils import (
-    get_rq_lock_by_user,
-    get_rq_lock_for_job,
-    sendfile,
-)
+from cvat.apps.engine.utils import get_rq_lock_by_user, get_rq_lock_for_job, sendfile
 from cvat.apps.redis_handler.serializers import RequestIdSerializer
 
 slogger = ServerLogManager(__name__)

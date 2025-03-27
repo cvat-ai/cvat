@@ -45,11 +45,7 @@ from cvat.apps.dataset_manager.views import (
 from cvat.apps.engine import models
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.models import (
-    DataChoice,
-    StorageChoice,
-    StorageMethodChoice,
-)
+from cvat.apps.engine.models import DataChoice, StorageChoice, StorageMethodChoice
 from cvat.apps.engine.serializers import (
     AnnotationGuideWriteSerializer,
     AssetWriteSerializer,

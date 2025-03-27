@@ -24,9 +24,7 @@ from cvat.apps.engine.filters import (
     NonModelSimpleFilter,
 )
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.models import (  # todo: move to the app
-    RequestStatus,
-)
+from cvat.apps.engine.models import RequestStatus  # todo: move to the app
 from cvat.apps.engine.rq import is_rq_job_owner
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.redis_handler.rq import RequestId
@@ -141,7 +139,6 @@ class RequestViewSet(viewsets.GenericViewSet):
         ParsedIdClass = self.get_parsed_id_class(queue.name)
 
         for job in queue.job_class.fetch_many(job_ids, queue.connection):
-            # TODO: move filtration by owner?
             if job and is_rq_job_owner(job, user_id):
                 try:
                     parsed_rq_id = ParsedIdClass.parse(job.id)
@@ -165,7 +162,6 @@ class RequestViewSet(viewsets.GenericViewSet):
             List[RQJob]: A list of RQJob objects representing all jobs for the specified user.
         """
         all_jobs = []
-        # TODO: optimize filtration here
         for queue in self.queues:
             jobs = self._get_rq_jobs_from_queue(queue, user_id)
             all_jobs.extend(jobs)

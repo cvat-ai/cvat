@@ -27,9 +27,7 @@ from cvat.apps.engine.backup import (
     import_project,
     import_task,
 )
-from cvat.apps.engine.cloud_provider import (
-    import_resource_from_cloud_storage,
-)
+from cvat.apps.engine.cloud_provider import import_resource_from_cloud_storage
 from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import (
@@ -43,11 +41,7 @@ from cvat.apps.engine.models import (
     Task,
 )
 from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
-from cvat.apps.engine.rq import (
-    ExportRequestId,
-    ImportRequestId,
-    ImportRQMeta,
-)
+from cvat.apps.engine.rq import ExportRequestId, ImportRequestId, ImportRQMeta
 from cvat.apps.engine.serializers import UploadedFileSerializer, UploadedZipFileSerializer
 from cvat.apps.engine.task import create_thread as create_task
 from cvat.apps.engine.utils import (
@@ -56,10 +50,7 @@ from cvat.apps.engine.utils import (
     is_dataset_export,
 )
 from cvat.apps.events.handlers import handle_dataset_export, handle_dataset_import
-from cvat.apps.redis_handler.background import (
-    AbstractExporter,
-    AbstractRequestManager,
-)
+from cvat.apps.redis_handler.background import AbstractExporter, AbstractRequestManager
 from cvat.apps.redis_handler.rq import RequestId
 
 slogger = ServerLogManager(__name__)

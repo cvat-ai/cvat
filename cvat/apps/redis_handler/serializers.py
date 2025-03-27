@@ -21,9 +21,7 @@ from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import RequestAction, RequestSubresource
 from cvat.apps.engine.rq import BaseRQMeta, ExportRQMeta, ImportRQMeta
 from cvat.apps.engine.serializers import BasicUserSerializer
-from cvat.apps.engine.utils import (
-    parse_exception_message,
-)
+from cvat.apps.engine.utils import parse_exception_message
 from cvat.apps.lambda_manager.rq import LambdaRQMeta
 from cvat.apps.redis_handler.rq import RequestId
 

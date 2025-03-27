@@ -66,12 +66,7 @@ from cvat.apps.engine.frame_provider import (
 from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.mixins import BackupMixin, DatasetMixin, PartialUpdateModelMixin, UploadMixin
 from cvat.apps.engine.model_utils import bulk_create
-from cvat.apps.engine.models import (
-    AnnotationGuide,
-    Asset,
-    ClientFile,
-    CloudProviderChoice,
-)
+from cvat.apps.engine.models import AnnotationGuide, Asset, ClientFile, CloudProviderChoice
 from cvat.apps.engine.models import CloudStorage as CloudStorageModel
 from cvat.apps.engine.models import (
     Comment,
@@ -100,11 +95,7 @@ from cvat.apps.engine.permissions import (
     UserPermission,
     get_iam_context,
 )
-from cvat.apps.engine.rq import (
-    ImportRQMeta,
-    RequestId,
-    RQMetaWithFailureInfo,
-)
+from cvat.apps.engine.rq import ImportRQMeta, RequestId, RQMetaWithFailureInfo
 from cvat.apps.engine.serializers import (
     AboutSerializer,
     AnnotationGuideReadSerializer,
@@ -143,10 +134,7 @@ from cvat.apps.engine.serializers import (
     UserSerializer,
 )
 from cvat.apps.engine.types import ExtendedRequest
-from cvat.apps.engine.utils import (
-    parse_exception_message,
-    sendfile,
-)
+from cvat.apps.engine.utils import parse_exception_message, sendfile
 from cvat.apps.engine.view_utils import tus_chunk_action
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.iam.permissions import IsAuthenticatedOrReadPublicResource, PolicyEnforcer
