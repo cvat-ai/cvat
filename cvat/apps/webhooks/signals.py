@@ -139,8 +139,8 @@ def get_sender(instance):
 @receiver(pre_save, sender=Organization, dispatch_uid=__name__ + ":organization:pre_save")
 @receiver(pre_save, sender=Invitation, dispatch_uid=__name__ + ":invitation:pre_save")
 @receiver(pre_save, sender=Membership, dispatch_uid=__name__ + ":membership:pre_save")
-def pre_save_resource_event(sender, instance, **kwargs):
-    if kwargs.get('raw'):
+def pre_save_resource_event(sender, instance, raw: bool, **kwargs):
+    if raw:
         return
 
     instance._webhooks_selected_webhooks = []
@@ -179,8 +179,8 @@ def pre_save_resource_event(sender, instance, **kwargs):
 @receiver(post_save, sender=Organization, dispatch_uid=__name__ + ":organization:post_save")
 @receiver(post_save, sender=Invitation, dispatch_uid=__name__ + ":invitation:post_save")
 @receiver(post_save, sender=Membership, dispatch_uid=__name__ + ":membership:post_save")
-def post_save_resource_event(sender, instance, **kwargs):
-    if kwargs.get("created") and kwargs.get("raw"):
+def post_save_resource_event(sender, instance, raw: bool, **kwargs):
+    if raw:
         return
 
     selected_webhooks = instance._webhooks_selected_webhooks
