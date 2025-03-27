@@ -281,6 +281,8 @@ class QualityReportViewSet(
                         )
                     )
 
+            queryset = queryset.defer("data")  # heavy field, should be excluded from COUNT(*)
+
         return queryset
 
     CREATE_REPORT_RQ_ID_PARAMETER = "rq_id"

@@ -131,6 +131,32 @@ class QualityReportSerializer(serializers.ModelSerializer):
         result["parent_id"] = None  # backward compatibility for API fields
         return result
 
+    @classmethod
+    def many_init(cls, *args, **kwargs):
+        if len(args) == 1 and isinstance(args[0], list):
+            from .views import QualityReportViewSet  # avoid circular import
+
+            ctx_view = kwargs.get("context", {}).get("view")
+            if isinstance(ctx_view, QualityReportViewSet) and ctx_view.action == "list":
+                page: list[models.QualityReport] = args[0]
+
+                # Annotate page objects
+                # We do it explicitly here and not in the LIST queryset to avoid
+                # doing computing this twice - one time for the page retrieval
+                # and another one for the COUNT(*) request to get total count
+                report_ids = set(report.id for report in page)
+                reports_data = {
+                    report_id: data
+                    for report_id, data in models.QualityReport.objects.filter(
+                        id__in=report_ids
+                    ).values_list("id", "data")
+                }
+
+                for report in page:
+                    report.data = reports_data.get(report.id, "")
+
+        return super(cls, cls).many_init(*args, **kwargs)
+
 
 class QualityReportCreateSerializer(serializers.Serializer):
     task_id = serializers.IntegerField(write_only=True, required=False)
