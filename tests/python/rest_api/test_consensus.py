@@ -741,11 +741,11 @@ class TestMerging(_PermissionTestBase):
 
             api_client.jobs_api.update_annotations(
                 replicas[0]["id"],
-                job_annotations_update_request=models.JobAnnotationsUpdateRequest(shapes=[bbox1]),
+                labeled_data_request=models.LabeledDataRequest(shapes=[bbox1]),
             )
             api_client.jobs_api.update_annotations(
                 replicas[1]["id"],
-                job_annotations_update_request=models.JobAnnotationsUpdateRequest(
+                labeled_data_request=models.LabeledDataRequest(
                     shapes=[bbox1, bbox2]
                 ),
             )

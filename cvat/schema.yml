@@ -3801,10 +3801,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UploadedZipFileRequest'
+              $ref: '#/components/schemas/UploadedFileRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/UploadedZipFileRequest'
+              $ref: '#/components/schemas/UploadedFileRequest'
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -3970,10 +3970,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UploadedZipFileRequest'
+              $ref: '#/components/schemas/UploadedFileRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/UploadedZipFileRequest'
+              $ref: '#/components/schemas/UploadedFileRequest'
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -5797,10 +5797,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UploadedZipFileRequest'
+              $ref: '#/components/schemas/UploadedFileRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/UploadedZipFileRequest'
+              $ref: '#/components/schemas/UploadedFileRequest'
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -10674,14 +10674,6 @@ components:
       - frame
       - type
     UploadedFileRequest:
-      type: object
-      properties:
-        file:
-          type: string
-          format: binary
-      required:
-      - file
-    UploadedZipFileRequest:
       type: object
       properties:
         file:

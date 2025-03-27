@@ -256,14 +256,14 @@ def import_backup(
 def import_project_backup(username: str, file_content: BytesIO, **kwargs) -> None:
     with make_api_client(username) as api_client:
         return import_backup(
-            api_client.projects_api, uploaded_zip_file_request={"file": file_content}, **kwargs
+            api_client.projects_api, uploaded_file_request={"file": file_content}, **kwargs
         )
 
 
 def import_task_backup(username: str, file_content: BytesIO, **kwargs) -> None:
     with make_api_client(username) as api_client:
         return import_backup(
-            api_client.tasks_api, uploaded_zip_file_request={"file": file_content}, **kwargs
+            api_client.tasks_api, uploaded_file_request={"file": file_content}, **kwargs
         )
 
 

@@ -275,7 +275,7 @@ class ResourceImporter(AbstractRequestManager):
 
     def init_request_args(self):
         filename = self.request.query_params.get("filename")
-        file_path = (self.tmp_dir / filename) if filename else None
+        file_path = str(self.tmp_dir / filename) if filename else None
 
         try:
             location_config = get_location_configuration(

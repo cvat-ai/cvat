@@ -59,7 +59,7 @@ class _PermissionTestBase:
             (labels, _) = api_client.labels_api.list(task_id=task_id)
             api_client.jobs_api.update_annotations(
                 job.id,
-                job_annotations_update_request=dict(
+                labeled_data_request=dict(
                     shapes=[
                         dict(
                             frame=start_frame,
@@ -1388,7 +1388,7 @@ class TestQualityReportMetrics(_PermissionTestBase):
             new_label_id = new_label_obj.results[0].id
             api_client.tasks_api.update_annotations(
                 task_id,
-                task_annotations_update_request={
+                labeled_data_request={
                     "shapes": [
                         models.LabeledShapeRequest(
                             type="rectangle",
@@ -1599,11 +1599,11 @@ class TestQualityReportMetrics(_PermissionTestBase):
             }
 
             api_client.jobs_api.update_annotations(
-                gt_job.id, job_annotations_update_request=gt_annotations
+                gt_job.id, labeled_data_request=gt_annotations
             )
 
             api_client.tasks_api.update_annotations(
-                task_id, task_annotations_update_request=normal_annotations
+                task_id, labeled_data_request=normal_annotations
             )
 
             api_client.jobs_api.partial_update(
