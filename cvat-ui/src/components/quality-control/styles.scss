@@ -100,10 +100,10 @@ $excluded-background: #d9d9d973;
     }
 }
 
-.cvat-frame-allocation-table {
+.cvat-table-wrapper:has(.cvat-frame-allocation-table) {
     @include cvat-table-dynamic-size;
 
-    height: calc(100vh - $grid-unit-size * 56);
+    margin-bottom: $grid-unit-size;
 
     .ant-table-tbody .ant-table-cell {
         padding: $grid-unit-size * 0.5 $grid-unit-size !important;
