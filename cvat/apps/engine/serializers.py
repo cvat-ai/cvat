@@ -691,10 +691,10 @@ class JobReadSerializer(serializers.ModelSerializer):
             if isinstance(ctx_view, JobViewSet) and ctx_view.action == "list" and ctx_request:
                 page: list[models.Job] = args[0]
 
-                # Annotate page objects with task visibility
+                # Annotate page objects
                 # We do it explicitly here and not in the LIST queryset to avoid
                 # doing computing this twice - one time for the page retrieval
-                # and another one for the COUNT(*) request to get total count
+                # and another one for the COUNT(*) request to get the total count
                 page_task_ids = set(j.get_task_id() for j in page)
                 visible_tasks_perm = TaskPermission.create_scope_list(ctx_request)
                 visible_tasks_queryset = models.Task.objects.filter(id__in=page_task_ids)
@@ -704,15 +704,15 @@ class JobReadSerializer(serializers.ModelSerializer):
 
                 # Fetching it here removes 1 extra join for all jobs in the COUNT(*) request,
                 # limiting in only for the page
-                issue_counts = {
-                    id: count for id, count in models.Job.objects.with_issue_counts().filter(
+                issue_counts = dict(
+                    models.Job.objects.with_issue_counts().filter(
                         id__in=set(j.id for j in page)
                     ).values_list("id", "issues")
-                }
+                )
 
                 for job in page:
                     job.user_can_view_task = job.get_task_id() in visible_tasks
-                    job.issues__count = issue_counts[job.id]
+                    job.issues__count = issue_counts.get(job.id, 0)
 
         return super(cls, cls).many_init(*args, **kwargs)
 
