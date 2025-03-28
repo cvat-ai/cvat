@@ -17,6 +17,7 @@ concurrency:
 env:
   CYPRESS_VERIFY_TIMEOUT: 180000 # https://docs.cypress.io/guides/guides/command-line#cypress-verify
   CVAT_VERSION: "local"
+  ALLURE_REULTS_DIR: "allure-results-"
 
 jobs:
   search_cache:
@@ -355,6 +356,20 @@ jobs:
           path: |
             tests/coverage/${{ matrix.specs }}_coverage.json
 
+      # TODO: new step with allure report serving/generating/uploading as an artifact
+      # TODO: a separate worker (=job:) uploads all allure reports from each machine as artifacts - they will be published after the run
+      # Collect all allure-results into one file and generate a '--single-file' HTML report
+      # Publish the report as a github artifact (upload-artifact)
+      # Use codecov: block as reference
+
+      - name: Uploading allure-results as an artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-${{ matrix.specs }}
+          path: |
+            tests/allure-results
+
+
       - name: Creating a log file from "cvat" container logs
         if: failure()
         run: |
@@ -549,3 +564,14 @@ jobs:
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  allure-report:
+    runs-on: ubuntu-latest
+    needs: e2e_testing
+    steps:
+      - uses: ./.github/workflows/allure-report.yml
+        with:
+          results-pattern: 'allure-results-*'
+          results-directory: 'combined-allure-results'
+          report-directory: 'allure-report'
+          publish-to-pages: 'false'
