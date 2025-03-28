@@ -564,15 +564,11 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
 
   allure-report:
-    runs-on: ubuntu-latest
-    needs: e2e_testing
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Combine allure results
-        uses: ./.github/workflows/allure-action.yml
-        with:
-          results-pattern: 'allure-results-*'
-          results-directory: 'combined-allure-results'
-          report-directory: 'allure-report'
-          publish-to-pages: 'false'
+    # https://docs.github.com/en/actions/sharing-automations/reusing-workflows#calling-a-reusable-workflow
+    needs: e2e_testing # TODO: if this breaks, wrap it in a job and reference from here
+    uses: ./.github/workflows/allure-action.yml
+    with:
+      results-pattern: 'allure-results-*'
+      results-directory: 'combined-allure-results'
+      report-directory: 'allure-report'
+      publish-to-pages: 'false'
