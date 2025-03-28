@@ -31,7 +31,7 @@ class TracksCounter:
     """
 
     def __init__(self):
-        self._tracks_per_job: Dict[int, _CountableTrack] = {}
+        self._tracks_per_job: Dict[int, Dict[int, _CountableTrack]] = {}
         self._stop_frames_per_job = {}
 
     def _init_stop_frames(self):
