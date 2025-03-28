@@ -567,7 +567,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: e2e_testing
     steps:
-      - uses: ./.github/workflows/allure-report.yml
+      - uses: ./.github/workflows/allure-action.yml
         with:
           results-pattern: 'allure-results-*'
           results-directory: 'combined-allure-results'
