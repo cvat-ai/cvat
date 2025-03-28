@@ -11,7 +11,6 @@ from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated
 from rest_framework.views import exception_handler
 
-from cvat.apps.dataset_manager.task import PatchAction
 from cvat.apps.dataset_manager.tracks_counter import TracksCounter
 from cvat.apps.engine.models import (
     CloudStorage,
