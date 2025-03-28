@@ -41,7 +41,7 @@ class TracksCounter:
             for shape in track["shapes"][1:]:
                 frame = shape["frame"]
                 is_outside = shape["outside"]
-                assert frame > prev_frame
+                assert frame > prev_frame, f"{frame} > {prev_frame}. Track id: {track['id']}" # Catch invalid tracks
 
                 if not prev_is_outside:
                     # -1 means that current keyframe is not interpolated frame
@@ -154,9 +154,9 @@ class TracksCounter:
         )
         self._tracks_per_job = defaultdict_to_regular(tracks_per_job)
 
-    def load_tracks_from_job_collection(self, job_id: int, stop_frame: int, collection: dict):
+    def load_tracks_from_job(self, job_id: int, stop_frame: int, job_tracks: list):
         transformed_tracks = {}
-        for track in collection.get("tracks", []):
+        for track in job_tracks:
             if not track.get("shapes", []) and not track.get("elements", []):
                 # track misses any shapes and elements
                 continue

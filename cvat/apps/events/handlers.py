@@ -12,6 +12,7 @@ from rest_framework.exceptions import NotAuthenticated
 from rest_framework.views import exception_handler
 
 from cvat.apps.dataset_manager.tracks_counter import TracksCounter
+from cvat.apps.dataset_manager.task import PatchAction
 from cvat.apps.engine.models import (
     CloudStorage,
     Comment,
@@ -420,13 +421,13 @@ def handle_annotations_change(instance: Job, annotations, action, **kwargs):
         }
 
     in_mem_counter = TracksCounter()
-    in_mem_counter.load_tracks_from_job_collection(
-        instance.id, instance.segment.stop_frame, {"tracks": annotations.get("tracks", [])}
+    in_mem_counter.load_tracks_from_job(
+        instance.id, instance.segment.stop_frame, annotations.get("tracks", [])
     )
 
-    ib_db_counter = TracksCounter()
+    in_db_counter = TracksCounter()
     if action == "update" and annotations.get("tracks", []):
-        ib_db_counter.load_tracks_from_db(
+        in_db_counter.load_tracks_from_db(
             parent_labeledtrack_qs_filter=lambda x: x.filter(
                 pk__in=(track["id"] for track in annotations["tracks"])
             ),
@@ -442,13 +443,13 @@ def handle_annotations_change(instance: Job, annotations, action, **kwargs):
         in_mem_shapes = in_mem_counter.count_track_shapes(job_id, track_id)
         in_mem_visible_shapes = in_mem_shapes["manual"] + in_mem_shapes["interpolated"]
         filtered_data = filter_data(track)
-        if action == "create":
+        if action == str(PatchAction.CREATE):
             filtered_data["added_visible_shapes"] = in_mem_visible_shapes
-        elif action == "delete":
+        elif action == str(PatchAction.DELETE):
             filtered_data["removed_visible_shapes"] = in_mem_visible_shapes
-        elif action == "update":
+        elif action == str(PatchAction.UPDATE):
             # when track is just updated, it may lead to both new or deleted visible shapes
-            in_db_shapes = ib_db_counter.count_track_shapes(job_id, track_id)
+            in_db_shapes = in_db_counter.count_track_shapes(job_id, track_id)
             in_db_visible_shapes = in_db_shapes["manual"] + in_db_shapes["interpolated"]
             if in_db_visible_shapes > in_mem_visible_shapes:
                 filtered_data["removed_visible_shapes"] = (
