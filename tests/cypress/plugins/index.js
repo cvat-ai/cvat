@@ -5,6 +5,7 @@
 /// <reference types="cypress" />
 
 const fs = require('fs');
+// eslint-disable-next-line import/no-unresolved
 const { allureCypress } = require('allure-cypress/reporter');
 
 /* eslint-disable security/detect-non-literal-fs-filename */
