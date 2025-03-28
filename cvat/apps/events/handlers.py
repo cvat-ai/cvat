@@ -442,11 +442,11 @@ def handle_annotations_change(instance: Job, annotations, action, **kwargs):
         in_mem_visible_shapes = in_mem_shapes["manual"] + in_mem_shapes["interpolated"]
         filtered_data = filter_data(track)
 
-        if action == str(PatchAction.CREATE):
+        if action == "create":
             filtered_data["visible_shapes_count_diff"] = in_mem_visible_shapes
-        elif action == str(PatchAction.DELETE):
+        elif action == "delete":
             filtered_data["visible_shapes_count_diff"] = -in_mem_visible_shapes
-        elif action == str(PatchAction.UPDATE):
+        elif action == "update":
             # when track is just updated, it may lead to both new or deleted visible shapes
             in_db_shapes = in_db_counter.count_track_shapes(job_id, track_id)
             in_db_visible_shapes = in_db_shapes["manual"] + in_db_shapes["interpolated"]
