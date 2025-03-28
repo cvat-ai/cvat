@@ -421,9 +421,7 @@ def handle_annotations_change(instance: Job, annotations, action, **kwargs):
         }
 
     in_mem_counter = TracksCounter()
-    in_mem_counter.load_tracks_from_job(
-        instance.id, instance.segment.stop_frame, annotations.get("tracks", [])
-    )
+    in_mem_counter.load_tracks_from_job(instance.id, annotations.get("tracks", []))
 
     in_db_counter = TracksCounter()
     if action == "update" and annotations.get("tracks", []):

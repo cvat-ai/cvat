@@ -26,6 +26,16 @@ class TracksCounter:
         self._tracks_per_job = {}
         self._stop_frames_per_job = {}
 
+    def _init_stop_frames(self):
+        if self._tracks_per_job:
+            self._stop_frames_per_job = dict(
+                Job.objects.filter(id__in=self.tracks_per_job.keys()).values_list(
+                    "id", "segment__stop_frame"
+                )
+            )
+        else:
+            self._stop_frames_per_job = {}
+
     def count_track_shapes(self, job_id: int, track_id: int):
         track = self._tracks_per_job.get(job_id, {}).get(track_id)
         manual = 0
@@ -147,14 +157,10 @@ class TracksCounter:
         for parent_id, element_shapes in element_shapes_per_parent.items():
             tracks_per_id[parent_id]["shapes"] = linear_sort_shapes(element_shapes.values())
 
-        self._stop_frames_per_job = dict(
-            Job.objects.filter(id__in=tracks_per_job.keys()).values_list(
-                "id", "segment__stop_frame"
-            )
-        )
         self._tracks_per_job = defaultdict_to_regular(tracks_per_job)
+        self._init_stop_frames()
 
-    def load_tracks_from_job(self, job_id: int, stop_frame: int, job_tracks: list):
+    def load_tracks_from_job(self, job_id: int, job_tracks: list):
         transformed_tracks = {}
         for track in job_tracks:
             if not track.get("shapes", []) and not track.get("elements", []):
@@ -196,5 +202,5 @@ class TracksCounter:
                     ),
                 }
 
-            self._stop_frames_per_job = {job_id: stop_frame}
             self._tracks_per_job = {job_id: transformed_tracks}
+            self._init_stop_frames()
