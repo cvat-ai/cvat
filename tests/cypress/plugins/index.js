@@ -17,7 +17,7 @@ const { compareImages } = require('./compareImages/addPlugin');
 const { unpackZipArchive } = require('./unpackZipArchive/addPlugin');
 
 module.exports = (cypressOn, config) => {
-    // eslint-disable-next-line import/no-extraneous-dependencies
+    // eslint-disable-next-line    import/no-extraneous-dependencies
     const on = require('cypress-on-fix')(cypressOn);
     allureCypress(on, config);
     require('@cypress/code-coverage/task')(on, config);
