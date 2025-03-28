@@ -18,7 +18,7 @@ interface Props {
     };
     className?: string;
     value?: string | number;
-    tooltip?: JSX.Element;
+    tooltip?: string | JSX.Element;
     bottomElement?: JSX.Element;
     rightElement?: JSX.Element;
     entryName?: string;

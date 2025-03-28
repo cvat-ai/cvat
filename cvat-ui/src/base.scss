@@ -85,6 +85,7 @@ $scroll-breakpoint: 1300px;
 }
 
 @mixin cvat-management-page-header {
+    flex-shrink: 0;
     height: $grid-unit-size * 3;
     margin: $grid-unit-size * 2 0;
 
@@ -153,24 +154,34 @@ $scroll-breakpoint: 1300px;
 }
 
 @mixin cvat-table-dynamic-size {
+    display: flex;
     flex-grow: 1;
     overflow: hidden;
 
-    .ant-spin-nested-loading, .ant-spin-container, .ant-table, .ant-table-container {
-        height: 100%;
-    }
-
-    .ant-spin-container {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .ant-table {
+    .ant-table-wrapper {
         flex-grow: 1;
-        height: 70%;
-    }
+        overflow: hidden;
 
-    .ant-table-container {
-        overflow: auto;
+        .ant-spin-nested-loading {
+            height: 100%;
+
+            .ant-spin-container {
+                display: flex;
+                flex-direction: column;
+                height: 100%;
+
+                &:has(.ant-pagination) {
+                    .ant-table {
+                        flex-grow: 1;
+                        height: calc(100% - $grid-unit-size);
+                    }
+                }
+
+                .ant-table {
+                    height: 100%;
+                    overflow: auto;
+                }
+            }
+        }
     }
 }

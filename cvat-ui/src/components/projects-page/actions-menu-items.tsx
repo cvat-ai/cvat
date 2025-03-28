@@ -2,17 +2,18 @@
 //
 // SPDX-License-Identifier: MIT
 
+import React from 'react';
+import { Link } from 'react-router-dom';
 import { MenuProps } from 'antd/lib/menu';
 import { usePlugins } from 'utils/hooks';
 
 interface MenuItemsData {
+    projectID: number;
     pluginActions: ReturnType<typeof usePlugins>;
     onExportDataset: () => void;
     onImportDataset: () => void;
     onBackupProject: () => void;
-    onSetupWebhooks: () => void;
     onDeleteProject: () => void;
-    onOpenQualityControl: () => void;
 }
 
 export default function ProjectActionsItems(
@@ -20,13 +21,12 @@ export default function ProjectActionsItems(
     projectMenuProps: unknown,
 ): MenuProps['items'] {
     const {
+        projectID,
         pluginActions,
         onExportDataset,
         onImportDataset,
         onBackupProject,
-        onSetupWebhooks,
         onDeleteProject,
-        onOpenQualityControl,
     } = menuItemsData;
 
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
@@ -51,14 +51,12 @@ export default function ProjectActionsItems(
 
     menuItems.push([{
         key: 'quality-control',
-        onClick: onOpenQualityControl,
-        label: 'Quality control',
+        label: <Link to={`/projects/${projectID}/quality-control`}>Quality control</Link>,
     }, 30]);
 
     menuItems.push([{
         key: 'set-webhooks',
-        onClick: onSetupWebhooks,
-        label: 'Setup webhooks',
+        label: <Link to={`/projects/${projectID}/webhooks`}>Setup webhooks</Link>,
     }, 40]);
 
     menuItems.push([{

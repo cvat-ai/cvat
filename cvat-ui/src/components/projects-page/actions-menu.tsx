@@ -39,14 +39,6 @@ function ProjectActionsComponent(props: Props): JSX.Element {
         dispatch(exportActions.openExportBackupModal(projectInstance));
     }, [projectInstance]);
 
-    const onSetupWebhooks = useCallback(() => {
-        history.push({ pathname: `/projects/${projectInstance.id}/webhooks` });
-    }, [projectInstance.id]);
-
-    const onOpenQualityControl = useCallback(() => {
-        history.push(`/projects/${projectInstance.id}/quality-control`);
-    }, [projectInstance.id]);
-
     const onDeleteProject = useCallback((): void => {
         Modal.confirm({
             title: `The project ${projectInstance.id} will be deleted`,
@@ -71,11 +63,11 @@ function ProjectActionsComponent(props: Props): JSX.Element {
                 selectable: false,
                 className: 'cvat-project-actions-menu',
                 items: ProjectActionsItems({
+                    projectID: projectInstance.id,
                     pluginActions,
                     onExportDataset,
                     onImportDataset,
                     onBackupProject,
-                    onSetupWebhooks,
                     onDeleteProject,
                     onOpenQualityControl,
                 }, { ...props, history }),
