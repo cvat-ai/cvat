@@ -43,7 +43,7 @@ context('Objects ordering feature', () => {
                 /* eslint-disable-next-line */
                 expect(idAscent).to.be.true; // expected true to be true (ascent)
             } else {
-                /* eslint-disable-next-line  */
+                /* eslint-disable-next-line */
                 expect(idAscent).to.be.false; // expected false to be false (descent)
             }
         });
