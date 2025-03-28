@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from collections import defaultdict
-from typing import Callable
+from typing import Callable, Dict, TypedDict
 
 from django.db import transaction
 
@@ -13,17 +13,25 @@ from cvat.apps.engine.utils import defaultdict_to_regular
 from .util import linear_sort_shapes
 
 
+class _CountableShape(TypedDict):
+    frame: int
+    outside: bool
+
+
+class _CountableTrack(TypedDict):
+    type: ShapeType
+    id: int
+    label_id: int
+    shapes: list[_CountableShape]
+
+
 class TracksCounter:
     """
     The class implements counting of VISIBLE shapes in tracks.
-
-    It keeps also track type and label id in internal data structure.
-    These values are not used directly inside this class.
-    However this class is inherited in our private code and this is small trade-off to reduce code duplication.
     """
 
     def __init__(self):
-        self._tracks_per_job = {}
+        self._tracks_per_job: Dict[int, _CountableTrack] = {}
         self._stop_frames_per_job = {}
 
     def _init_stop_frames(self):
@@ -51,7 +59,9 @@ class TracksCounter:
             for shape in track["shapes"][1:]:
                 frame = shape["frame"]
                 is_outside = shape["outside"]
-                assert frame > prev_frame, f"{frame} > {prev_frame}. Track id: {track['id']}" # Catch invalid tracks
+                assert (
+                    frame > prev_frame
+                ), f"{frame} > {prev_frame}. Track id: {track['id']}"  # Catch invalid tracks
 
                 if not prev_is_outside:
                     # -1 means that current keyframe is not interpolated frame

@@ -11,8 +11,8 @@ from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated
 from rest_framework.views import exception_handler
 
-from cvat.apps.dataset_manager.tracks_counter import TracksCounter
 from cvat.apps.dataset_manager.task import PatchAction
+from cvat.apps.dataset_manager.tracks_counter import TracksCounter
 from cvat.apps.engine.models import (
     CloudStorage,
     Comment,
@@ -450,7 +450,9 @@ def handle_annotations_change(instance: Job, annotations, action, **kwargs):
             # when track is just updated, it may lead to both new or deleted visible shapes
             in_db_shapes = in_db_counter.count_track_shapes(job_id, track_id)
             in_db_visible_shapes = in_db_shapes["manual"] + in_db_shapes["interpolated"]
-            filtered_data["visible_shapes_count_diff"] = in_db_visible_shapes - in_mem_visible_shapes
+            filtered_data["visible_shapes_count_diff"] = (
+                in_db_visible_shapes - in_mem_visible_shapes
+            )
 
         filtered_data["shapes"] = [filter_data(s) for s in track["shapes"]]
         return filtered_data
