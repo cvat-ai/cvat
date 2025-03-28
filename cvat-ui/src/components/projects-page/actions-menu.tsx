@@ -69,7 +69,6 @@ function ProjectActionsComponent(props: Props): JSX.Element {
                     onImportDataset,
                     onBackupProject,
                     onDeleteProject,
-                    onOpenQualityControl,
                 }, { ...props, history }),
             }}
         >
