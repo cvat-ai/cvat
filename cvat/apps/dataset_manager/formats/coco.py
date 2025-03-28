@@ -19,6 +19,7 @@ from cvat.apps.dataset_manager.bindings import (
 from cvat.apps.dataset_manager.util import make_zip_archive
 
 from .registry import dm_env, exporter, importer
+from .transformations import RemoveBboxAnnotations
 
 
 @exporter(name="COCO", ext="ZIP", version="1.0")
@@ -62,12 +63,8 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
 
 @importer(name="COCO Keypoints", ext="JSON, ZIP", version="1.0")
 def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
-    def remove_extra_annotations(dataset):
-        for item in dataset:
-            # Boxes would have invalid (skeleton) labels, so remove them
-            # TODO: find a way to import boxes
-            annotations = [ann for ann in item.annotations if ann.type != AnnotationType.bbox]
-            item.annotations = annotations
+    # Boxes would have invalid (skeleton) labels, so remove them
+    # TODO: find a way to import boxes
 
     dataset_cls = Dataset if isinstance(instance_data, ProjectData) else StreamDataset
     if zipfile.is_zipfile(src_file):
@@ -75,7 +72,7 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
         # We use coco importer because it gives better error message
         detect_dataset(temp_dir, format_name="coco", importer=CocoImporter)
         dataset = dataset_cls.import_from(temp_dir, "coco_person_keypoints", env=dm_env)
-        remove_extra_annotations(dataset)
+        dataset = dataset.transform(RemoveBboxAnnotations)
         if load_data_callback is not None:
             load_data_callback(dataset, instance_data)
         import_dm_annotations(dataset, instance_data)
@@ -84,5 +81,5 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
             raise NoMediaInAnnotationFileError()
 
         dataset = dataset_cls.import_from(src_file.name, "coco_person_keypoints", env=dm_env)
-        remove_extra_annotations(dataset)
+        dataset = dataset.transform(RemoveBboxAnnotations)
         import_dm_annotations(dataset, instance_data)
