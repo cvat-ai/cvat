@@ -572,3 +572,4 @@ jobs:
       results-directory: 'combined-allure-results'
       report-directory: 'allure-report'
       publish-to-pages: 'false'
+
