@@ -1,139 +1,151 @@
 name: 'Allure Results Combiner and Publisher'
 description: 'Combines Allure results from matrix jobs, generates a unified report, and publishes it to GitHub Pages'
-author: 'Oleg Valiulin <https://github.com/archibald1418>'
-branding:
-  icon: 'bar-chart-2'
-  color: 'green'
 
-inputs:
-  github-token:
-    description: 'GitHub token for publishing to GitHub Pages'
-    required: false
-  results-pattern:
-    description: 'Pattern to match when downloading Allure results artifacts'
-    required: false
-    default: 'allure-results-*'
-  results-directory:
-    description: 'Directory where combined Allure results will be stored'
-    required: false
-    default: 'combined-allure-results'
-  report-directory:
-    description: 'Directory where the Allure report will be generated'
-    required: false
-    default: 'allure-report'
-  history-directory:
-    description: 'Directory for Allure history'
-    required: false
-    default: 'allure-history'
-  gh-pages:
-    description: 'Directory for GitHub Pages'
-    required: false
-    default: 'gh-pages'
-  gh-pages-branch:
-    description: 'Branch for GitHub Pages'
-    required: false
-    default: 'gh-pages'
-  retention-days:
-    description: 'Number of days to retain the Allure report artifact'
-    required: false
-    default: '14'
-  publish-to-pages:
-    description: 'Whether to publish the report to GitHub Pages'
-    required: false
-    default: 'true'
-  fail-on-empty-results:
-    description: 'Whether to fail if no Allure results are found'
-    required: false
-    default: 'false'
-  add-env:
-    description: 'Whether to collect and add to report the env variables'
-    required: false
-    default: 'false'
-runs:
-  using: 'composite'
-  steps:
-  - name: Checkout code
-    uses: actions/checkout@v4
+on:
+  workflow_call:
+    inputs:
+      github-token:
+        description: 'GitHub token for publishing to GitHub Pages'
+        required: false
+        type: string
+      results-pattern:
+        description: 'Pattern to match when downloading Allure results artifacts'
+        required: false
+        type: string
+        default: 'allure-results-*'
+      results-directory:
+        description: 'Directory where combined Allure results will be stored'
+        required: false
+        type: string
+        default: 'combined-allure-results'
+      report-directory:
+        description: 'Directory where the Allure report will be generated'
+        required: false
+        type: string
+        default: 'allure-report'
+      history-directory:
+        description: 'Directory for Allure history'
+        required: false
+        type: string
+        default: 'allure-history'
+      gh-pages:
+        description: 'Directory for GitHub Pages'
+        required: false
+        type: string
+        default: 'gh-pages'
+      gh-pages-branch:
+        description: 'Branch for GitHub Pages'
+        required: false
+        type: string
+        default: 'gh-pages'
+      retention-days:
+        description: 'Number of days to retain the Allure report artifact'
+        required: false
+        type: string
+        default: '14'
+      publish-to-pages:
+        description: 'Whether to publish the report to GitHub Pages'
+        required: false
+        type: string
+        default: 'true'
+      fail-on-empty-results:
+        description: 'Whether to fail if no Allure results are found'
+        required: false
+        type: string
+        default: 'false'
+      add-env:
+        description: 'Whether to collect and add to report the env variables'
+        required: false
+        type: string
+        default: 'false'
 
-  - name: Download all Allure Results
-    uses: actions/download-artifact@v4
-    with:
-      path: download-results
-      pattern: ${{ inputs.results-pattern }}
+jobs:
+  allure-report:
+    # using: 'composite'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-  - name: Merge Allure Results
-    shell: bash
-    run: |
-      echo "Merging Allure results..."
-      mkdir -p ${{ inputs.results-directory }}
+    - name: Download all Allure Results
+      uses: actions/download-artifact@v4
+      with:
+        path: download-results
+        pattern: ${{ inputs.results-pattern }}
 
-      # Use rsync to merge all results - more efficient than find/cp
-      rsync -av --ignore-existing download-results/*/ ${{ inputs.results-directory }}/
+    - name: Merge Allure Results
+      shell: bash
+      run: |
+        echo "Merging Allure results..."
+        mkdir -p ${{ inputs.results-directory }}
 
-      # Count total files to verify results
-      TOTAL_FILES=$(find ${{ inputs.results-directory }} -type f | wc -l)
-      echo "Total files in combined results: $TOTAL_FILES"
+        # Use rsync to merge all results - more efficient than find/cp
+        rsync -av --ignore-existing download-results/*/ ${{ inputs.results-directory }}/
 
-      # Fail if no results found and fail-on-empty-results is true
-      if [ "$TOTAL_FILES" -eq 0 ] && [ "${{ inputs.fail-on-empty-results }}" = "true" ]; then
-        echo "No Allure results found. Exiting with error."
-        exit 1
-      fi
+        # Count total files to verify results
+        TOTAL_FILES=$(find ${{ inputs.results-directory }} -type f | wc -l)
+        echo "Total files in combined results: $TOTAL_FILES"
 
-  - name: Load test report history
-    if: inputs.publish-to-pages == 'true'
-    uses: actions/checkout@v4
-    with:
-      ref: ${{ inputs.gh-pages-branch }}
-      path: ${{ inputs.gh-pages }}
-    continue-on-error: true
+        # Fail if no results found and fail-on-empty-results is true
+        if [ "$TOTAL_FILES" -eq 0 ] && [ "${{ inputs.fail-on-empty-results }}" = "true" ]; then
+          echo "No Allure results found. Exiting with error."
+          exit 1
+        fi
 
-  - name: Link Git Information And Browser Version To Allure Report
-    shell: bash
-    working-directory: ${{ inputs.results-directory }}
-    if: inputs.add-env == 'true'
-    run: |
-      git config --global --add safe.directory "$GITHUB_WORKSPACE"
-      {
-        echo BUILD_URL=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        echo GIT_BRANCH=${{ github.head_ref || github.ref_name }}
-        echo GIT_COMMIT_ID=${{ github.sha }}
-        echo GIT_COMMIT_MESSAGE="$(git show -s --format=%s HEAD)"
-        echo GIT_COMMIT_AUTHOR_NAME="$(git show -s --format='%ae' HEAD)"
-        echo GIT_COMMIT_TIME="$(git show -s --format=%ci HEAD)"
-        echo NODE_JS: "$(node -v)",
-        echo OS: "$(grep -E '^(VERSION|NAME)=' /etc/os-release | tr '\n' ' ' | sed 's/NAME=//; s/VERSION=//; s/ / /')"
-      } >> environment.properties
+    - name: Load test report history
+      if: inputs.publish-to-pages == 'true'
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.gh-pages-branch }}
+        path: ${{ inputs.gh-pages }}
+      continue-on-error: true
 
-  - name: Generate Allure Report
-    uses: simple-elf/allure-report-action@v1.11
-    with:
-      gh_pages: ${{ inputs.gh-pages }}
-      allure_results: ${{ inputs.results-directory }}
-      allure_history: ${{ inputs.history-directory }}
-      allure_report: ${{ inputs.report-directory }}
+    - name: Link Git Information And Browser Version To Allure Report
+      shell: bash
+      working-directory: ${{ inputs.results-directory }}
+      if: inputs.add-env == 'true'
+      run: |
+        git config --global --add safe.directory "$GITHUB_WORKSPACE"
+        {
+          echo BUILD_URL=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          echo GIT_BRANCH=${{ github.head_ref || github.ref_name }}
+          echo GIT_COMMIT_ID=${{ github.sha }}
+          echo GIT_COMMIT_MESSAGE="$(git show -s --format=%s HEAD)"
+          echo GIT_COMMIT_AUTHOR_NAME="$(git show -s --format='%ae' HEAD)"
+          echo GIT_COMMIT_TIME="$(git show -s --format=%ci HEAD)"
+          echo NODE_JS: "$(node -v)",
+          echo OS: "$(grep -E '^(VERSION|NAME)=' /etc/os-release | tr '\n' ' ' | sed 's/NAME=//; s/VERSION=//; s/ / /')"
+        } >> environment.properties
 
-  - name: Upload Allure report as artifact
-    uses: actions/upload-artifact@v4
-    with:
-      name: allure-report
-      path: ${{ inputs.report-directory }}
-      if-no-files-found: warn
-      retention-days: ${{ inputs.retention-days }}
+    - name: Generate Allure Report
+      uses: simple-elf/allure-report-action@v1.11
+      with:
+        gh_pages: ${{ inputs.gh-pages }}
+        allure_results: ${{ inputs.results-directory }}
+        allure_history: ${{ inputs.history-directory }}
+        allure_report: ${{ inputs.report-directory }}
 
-  - name: Queue deployment
-    if: inputs.publish-to-pages == 'true'
-    uses: softprops/turnstyle@v2
-    with:
-      poll-interval-seconds: 20
-      timeout-seconds: 1200
-    env:
-      github_token: ${{ inputs.github-token }}
+    - name: Upload Allure report as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: allure-report
+        path: ${{ inputs.report-directory }}
+        if-no-files-found: warn
+        retention-days: ${{ inputs.retention-days }}
 
-  - name: Deploy report to GitHub Pages
-    if: inputs.publish-to-pages == 'true'
-    uses: peaceiris/actions-gh-pages@v4
-    with:
-      github_token: ${{ inputs.github-token }}
-      publish_branch: ${{ inputs.gh-pages-branch }}
-      publish_dir: ${{ inputs.history-directory }}
+    - name: Queue deployment
+      if: inputs.publish-to-pages == 'true'
+      uses: softprops/turnstyle@v2
+      with:
+        poll-interval-seconds: 20
+        # timeout-minutes: 1200
+      env:
+        github_token: ${{ inputs.github-token }}
+
+    - name: Deploy report to GitHub Pages
+      if: inputs.publish-to-pages == 'true'
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+        github_token: ${{ inputs.github-token }}
+        publish_branch: ${{ inputs.gh-pages-branch }}
+        publish_dir: ${{ inputs.history-directory }}

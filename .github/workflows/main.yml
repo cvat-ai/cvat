@@ -564,12 +564,12 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
 
   allure-report:
-    # https://docs.github.com/en/actions/sharing-automations/reusing-workflows#calling-a-reusable-workflow
-    needs: e2e_testing # TODO: if this breaks, wrap it in a job and reference from here
+    needs: e2e_testing
     uses: ./.github/workflows/allure-action.yml
     with:
       results-pattern: 'allure-results-*'
       results-directory: 'combined-allure-results'
       report-directory: 'allure-report'
       publish-to-pages: 'false'
+      add-env: 'true'
 
