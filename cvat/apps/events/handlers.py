@@ -441,20 +441,16 @@ def handle_annotations_change(instance: Job, annotations, action, **kwargs):
         in_mem_shapes = in_mem_counter.count_track_shapes(job_id, track_id)
         in_mem_visible_shapes = in_mem_shapes["manual"] + in_mem_shapes["interpolated"]
         filtered_data = filter_data(track)
+
         if action == str(PatchAction.CREATE):
-            filtered_data["added_visible_shapes"] = in_mem_visible_shapes
+            filtered_data["visible_shapes_count_diff"] = in_mem_visible_shapes
         elif action == str(PatchAction.DELETE):
-            filtered_data["removed_visible_shapes"] = in_mem_visible_shapes
+            filtered_data["visible_shapes_count_diff"] = -in_mem_visible_shapes
         elif action == str(PatchAction.UPDATE):
             # when track is just updated, it may lead to both new or deleted visible shapes
             in_db_shapes = in_db_counter.count_track_shapes(job_id, track_id)
             in_db_visible_shapes = in_db_shapes["manual"] + in_db_shapes["interpolated"]
-            if in_db_visible_shapes > in_mem_visible_shapes:
-                filtered_data["removed_visible_shapes"] = (
-                    in_db_visible_shapes - in_mem_visible_shapes
-                )
-            elif in_mem_visible_shapes > in_db_visible_shapes:
-                filtered_data["added_visible_shapes"] = in_mem_visible_shapes - in_db_visible_shapes
+            filtered_data["visible_shapes_count_diff"] = in_db_visible_shapes - in_mem_visible_shapes
 
         filtered_data["shapes"] = [filter_data(s) for s in track["shapes"]]
         return filtered_data
