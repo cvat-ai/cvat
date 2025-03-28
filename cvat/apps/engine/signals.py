@@ -19,7 +19,7 @@ from .models import Asset, CloudStorage, Data, Job, Profile, Project, StatusChoi
 
 
 @receiver(post_save, sender=Job, dispatch_uid=__name__ + ".save_job_handler")
-def __save_job_handler(instance, created, **kwargs):
+def __save_job_handler(instance, created, raw: bool, **kwargs):
     # no need to update task status for newly created jobs
     if created:
         return
@@ -38,7 +38,10 @@ def __save_job_handler(instance, created, **kwargs):
 
 
 @receiver(post_save, sender=User, dispatch_uid=__name__ + ".save_user_handler")
-def __save_user_handler(instance: User, **kwargs):
+def __save_user_handler(instance: User, created: bool, raw: bool, **kwargs):
+    if created and raw:
+        return
+
     should_access_analytics = (
         instance.is_superuser or instance.groups.filter(name=settings.IAM_ADMIN_ROLE).exists()
     )
