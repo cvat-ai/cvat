@@ -85,31 +85,30 @@ class TracksCounter:
         parent_labeledtrack_qs_filter: Callable,
         child_labeledtrack_qs_filter: Callable,
     ):
-        with transaction.atomic():
-            unmerged_parent_tracks = (
-                parent_labeledtrack_qs_filter(LabeledTrack.objects)
-                .filter(parent=None)
-                .values_list(
-                    "job_id",
-                    "label_id",
-                    "shape__type",
-                    "id",
-                    "shape__frame",
-                    "shape__outside",
-                )
-                .order_by("job_id", "label_id", "shape__type", "id", "shape__frame")
+        unmerged_parent_tracks = (
+            parent_labeledtrack_qs_filter(LabeledTrack.objects)
+            .filter(parent=None)
+            .values_list(
+                "job_id",
+                "label_id",
+                "shape__type",
+                "id",
+                "shape__frame",
+                "shape__outside",
             )
+            .order_by("job_id", "label_id", "shape__type", "id", "shape__frame")
+        )
 
-            unmerged_child_tracks = (
-                child_labeledtrack_qs_filter(LabeledTrack.objects)
-                .exclude(parent=None)
-                .values_list(
-                    "parent_id",
-                    "shape__frame",
-                    "shape__outside",
-                )
-                .order_by("parent_id", "shape__frame")
+        unmerged_child_tracks = (
+            child_labeledtrack_qs_filter(LabeledTrack.objects)
+            .exclude(parent=None)
+            .values_list(
+                "parent_id",
+                "shape__frame",
+                "shape__outside",
             )
+            .order_by("parent_id", "shape__frame")
+        )
 
         i = 0
         tracks_per_job = defaultdict(lambda: {})
