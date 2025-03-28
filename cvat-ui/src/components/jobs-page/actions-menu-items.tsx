@@ -3,15 +3,16 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { MenuProps } from 'antd/lib/menu';
 import { LoadingOutlined } from '@ant-design/icons';
 import { usePlugins } from 'utils/hooks';
 
 interface MenuItemsData {
+    taskID: number;
+    projectID: number | null;
     pluginActions: ReturnType<typeof usePlugins>;
     isMergingConsensusEnabled: boolean;
-    onOpenTaskPage: () => void;
-    onOpenProjectPage: (() => void) | null;
     onOpenBugTracker: (() => void) | null;
     onImportAnnotations: () => void;
     onExportAnnotations: () => void;
@@ -24,10 +25,9 @@ export default function JobActionsItems(
     jobMenuProps: unknown,
 ): MenuProps['items'] {
     const {
+        taskID, projectID,
         pluginActions,
         isMergingConsensusEnabled,
-        onOpenTaskPage,
-        onOpenProjectPage,
         onOpenBugTracker,
         onImportAnnotations,
         onExportAnnotations,
@@ -39,15 +39,13 @@ export default function JobActionsItems(
 
     menuItems.push([{
         key: 'task',
-        onClick: onOpenTaskPage,
-        label: 'Go to the task',
+        label: <Link to={`/tasks/${taskID}`}>Go to the task</Link>,
     }, 0]);
 
-    if (onOpenProjectPage) {
+    if (projectID) {
         menuItems.push([{
             key: 'project',
-            onClick: onOpenProjectPage,
-            label: 'Go to the project',
+            label: <Link to={`/projects/${projectID}`}>Go to the project</Link>,
         }, 10]);
     }
 
