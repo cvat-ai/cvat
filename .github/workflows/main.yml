@@ -572,4 +572,5 @@ jobs:
       report-directory: 'allure-report'
       publish-to-pages: 'false'
       add-env: 'true'
+      single-file: 'true'
 

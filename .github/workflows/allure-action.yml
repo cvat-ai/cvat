@@ -58,6 +58,10 @@ on:
         required: false
         type: string
         default: 'false'
+      single-file:
+        description: 'Whether to generate report as a single .html file'
+        required: false
+        type: string
 
 jobs:
   allure-report:
@@ -115,6 +119,7 @@ jobs:
           echo GIT_COMMIT_TIME="$(git show -s --format=%ci HEAD)"
           echo NODE_JS: "$(node -v)",
           echo OS: "$(grep -E '^(VERSION|NAME)=' /etc/os-release | tr '\n' ' ' | sed 's/NAME=//; s/VERSION=//; s/ / /')"
+          echo WHICH_ALLURE?: "$(which allure)"
         } >> environment.properties
 
     - name: Generate Allure Report
@@ -125,6 +130,11 @@ jobs:
         allure_history: ${{ inputs.history-directory }}
         allure_report: ${{ inputs.report-directory }}
 
+    - name: Generate Allure Report
+      if: inputs.single-file == 'true'
+      run: |
+        allure generate --clean --single-file ${{ inputs.results-directory }} -o ${{ inputs.report-directory }}-single-file
+
     - name: Upload Allure report as artifact
       uses: actions/upload-artifact@v4
       with:
@@ -133,7 +143,15 @@ jobs:
         if-no-files-found: warn
         retention-days: ${{ inputs.retention-days }}
 
-    - name: Queue deployment
+    - name: Upload single file Allure report as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: allure-report-single-file
+        path: ${{ inputs.report-directory }}-single-file
+        if-no-files-found: warn
+        retention-days: ${{ inputs.retention-days }}
+
+    - name: Queue report deployment
       if: inputs.publish-to-pages == 'true'
       uses: softprops/turnstyle@v2
       with:
