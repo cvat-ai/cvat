@@ -92,6 +92,17 @@ Cypress.Commands.add('deleteUsers', (authResponse, accountsToDelete) => {
     });
 });
 
+Cypress.Commands.add('headlessDeleteUser', (userId) => {
+    cy.intercept('DELETE', '/api/users/**').as('deleteUser');
+    cy.window().its('cvat', { timeout: 25000 }).should('not.be.undefined');
+    cy.window().then(async ($win) => {
+        await $win.cvat.server.request(`/api/users/${userId}`,
+            { method: 'DELETE' },
+        );
+    });
+    cy.wait('@deleteUser');
+});
+
 Cypress.Commands.add('changeUserActiveStatus', (authKey, accountsToChangeActiveStatus, isActive) => {
     cy.request({
         url: '/api/users?page_size=all',
@@ -277,7 +288,12 @@ Cypress.Commands.add('headlessLogin', ({
                 password || Cypress.env('password'),
             ).then(() => win.cvat.users.get({ self: true }).then((users) => {
                 if (nextURL) {
+                    cy.intercept('GET', nextURL).as('nextPage');
                     cy.visit(nextURL);
+                    cy.wait('@nextPage').then(() => {
+                        cy.url().should('include', nextURL);
+                        cy.get('.cvat-spinner').should('not.exist');
+                    });
                 }
 
                 return users[0];

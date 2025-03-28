@@ -803,8 +803,8 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
                 )
 
                 self._prepare_dirs(target_file)
-                with open(target_file, "wb") as out:
-                    out.write(input_archive.read(file_path))
+                with open(target_file, "wb") as out, input_archive.open(file_path) as source:
+                    shutil.copyfileobj(source, out)
 
                 uploaded_files.append(os.path.relpath(file_name, input_data_dirname))
             elif file_name.startswith(input_task_dirname + '/'):
@@ -813,8 +813,8 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
                 )
 
                 self._prepare_dirs(target_file)
-                with open(target_file, "wb") as out:
-                    out.write(input_archive.read(file_path))
+                with open(target_file, "wb") as out, input_archive.open(file_path) as source:
+                    shutil.copyfileobj(source, out)
 
         return uploaded_files
 
