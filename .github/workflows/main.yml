@@ -567,7 +567,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: e2e_testing
     steps:
-      - uses: ./.github/workflows/allure-action.yml
+      - uses: actions/checkout@v4
+
+      - name: Combine allure results
+        uses: ./.github/workflows/allure-action.yml
         with:
           results-pattern: 'allure-results-*'
           results-directory: 'combined-allure-results'
