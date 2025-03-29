@@ -5,7 +5,6 @@
 
 import zipfile
 
-from datumaro.components.annotation import AnnotationType
 from datumaro.components.dataset import Dataset, StreamDataset
 from datumaro.plugins.data_formats.coco.importer import CocoImporter
 
