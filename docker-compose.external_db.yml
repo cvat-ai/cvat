@@ -21,7 +21,6 @@ services:
 
   cvat_server: *backend-settings
   cvat_utils: *backend-settings
-  cvat_worker_analytics_reports: *backend-settings
   cvat_worker_annotation: *backend-settings
   cvat_worker_export: *backend-settings
   cvat_worker_import: *backend-settings

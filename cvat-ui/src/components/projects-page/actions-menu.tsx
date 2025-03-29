@@ -1,30 +1,43 @@
-// Copyright (C) 2020-2022 Intel Corporation
 // Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback } from 'react';
 import { useDispatch } from 'react-redux';
+import { useHistory } from 'react-router';
+import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
+
+import { Project } from 'cvat-core-wrapper';
+import { usePlugins } from 'utils/hooks';
 import { CombinedState } from 'reducers';
 import { deleteProjectAsync } from 'actions/projects-actions';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
-import { useHistory } from 'react-router';
-import Menu from 'components/dropdown-menu';
-
-import { usePlugins } from 'utils/hooks';
+import ProjectActionsItems from './actions-menu-items';
 
 interface Props {
-    projectInstance: any;
+    projectInstance: Project;
+    triggerElement: JSX.Element;
 }
 
-function ProjectActionsMenuComponent(props: Props): JSX.Element {
-    const { projectInstance } = props;
-
-    const history = useHistory();
+function ProjectActionsComponent(props: Props): JSX.Element {
+    const { projectInstance, triggerElement } = props;
     const dispatch = useDispatch();
-    const plugins = usePlugins((state: CombinedState) => state.plugins.components.projectActions.items, props);
+    const history = useHistory();
+
+    const pluginActions = usePlugins((state: CombinedState) => state.plugins.components.projectActions.items, props);
+    const onExportDataset = useCallback(() => {
+        dispatch(exportActions.openExportDatasetModal(projectInstance));
+    }, [projectInstance]);
+
+    const onImportDataset = useCallback(() => {
+        dispatch(importActions.openImportDatasetModal(projectInstance));
+    }, [projectInstance]);
+
+    const onBackupProject = useCallback(() => {
+        dispatch(exportActions.openExportBackupModal(projectInstance));
+    }, [projectInstance]);
 
     const onDeleteProject = useCallback((): void => {
         Modal.confirm({
@@ -40,86 +53,28 @@ function ProjectActionsMenuComponent(props: Props): JSX.Element {
             },
             okText: 'Delete',
         });
-    }, []);
-
-    const menuItems: [JSX.Element, number][] = [];
-    menuItems.push([(
-        <Menu.Item key='export-dataset' onClick={() => dispatch(exportActions.openExportDatasetModal(projectInstance))}>
-            Export dataset
-        </Menu.Item>
-    ), 0]);
-
-    menuItems.push([(
-        <Menu.Item key='import-dataset' onClick={() => dispatch(importActions.openImportDatasetModal(projectInstance))}>
-            Import dataset
-        </Menu.Item>
-    ), 10]);
-
-    menuItems.push([(
-        <Menu.Item
-            key='backup-project'
-            onClick={() => dispatch(exportActions.openExportBackupModal(projectInstance))}
-        >
-            Backup Project
-        </Menu.Item>
-    ), 20]);
-
-    menuItems.push([(
-        <Menu.Item key='view-analytics'>
-            <a
-                href={`/projects/${projectInstance.id}/analytics`}
-                onClick={(e: React.MouseEvent) => {
-                    e.preventDefault();
-                    history.push({
-                        pathname: `/projects/${projectInstance.id}/analytics`,
-                    });
-                    return false;
-                }}
-            >
-                View analytics
-            </a>
-        </Menu.Item>
-    ), 30]);
-
-    menuItems.push([(
-        <Menu.Item key='set-webhooks'>
-            <a
-                href={`/projects/${projectInstance.id}/webhooks`}
-                onClick={(e: React.MouseEvent) => {
-                    e.preventDefault();
-                    history.push({
-                        pathname: `/projects/${projectInstance.id}/webhooks`,
-                    });
-                    return false;
-                }}
-            >
-                Setup webhooks
-            </a>
-        </Menu.Item>
-    ), 40]);
-
-    menuItems.push([(
-        <React.Fragment key='delete'>
-            <Menu.Divider />
-            <Menu.Item key='delete' onClick={onDeleteProject}>
-                Delete
-            </Menu.Item>
-        </React.Fragment>
-    ), 50]);
-
-    menuItems.push(
-        ...plugins.map(({ component: Component, weight }, index) => {
-            const menuItem = Component({ key: index, targetProps: props });
-            return [menuItem, weight] as [JSX.Element, number];
-        }),
-    );
+    }, [projectInstance]);
 
     return (
-        <Menu selectable={false} className='cvat-project-actions-menu'>
-            { menuItems.sort((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1])
-                .map((menuItem) => menuItem[0]) }
-        </Menu>
+        <Dropdown
+            destroyPopupOnHide
+            trigger={['click']}
+            menu={{
+                selectable: false,
+                className: 'cvat-project-actions-menu',
+                items: ProjectActionsItems({
+                    projectID: projectInstance.id,
+                    pluginActions,
+                    onExportDataset,
+                    onImportDataset,
+                    onBackupProject,
+                    onDeleteProject,
+                }, { ...props, history }),
+            }}
+        >
+            {triggerElement}
+        </Dropdown>
     );
 }
 
-export default React.memo(ProjectActionsMenuComponent);
+export default React.memo(ProjectActionsComponent);
