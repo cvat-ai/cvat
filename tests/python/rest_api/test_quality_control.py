@@ -1240,7 +1240,7 @@ class TestQualityReportMetrics(_PermissionTestBase):
         elif parameter == "point_size_base":
             settings[parameter] = next(
                 v
-                for v in models.PointSizeBaseEnum.allowed_values[("value",)].values()
+                for v in models.QualityPointSizeBase.allowed_values[("value",)].values()
                 if v != settings[parameter]
             )
         else:
