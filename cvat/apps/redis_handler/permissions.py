@@ -25,7 +25,7 @@ class RequestPermission(OpenPolicyAgentPermission):
     class Scopes(StrEnum):
         LIST = "list"
         VIEW = "view"
-        CANCEL = "cancel"
+        DELETE = "delete"
 
     @classmethod
     def create(
@@ -76,7 +76,7 @@ class RequestPermission(OpenPolicyAgentPermission):
             {
                 ("list", "GET"): __class__.Scopes.LIST,
                 ("retrieve", "GET"): __class__.Scopes.VIEW,
-                ("cancel", "POST"): __class__.Scopes.CANCEL,
+                ("cancel", "POST"): __class__.Scopes.DELETE,
             }[(view.action, request.method)]
         ]
 

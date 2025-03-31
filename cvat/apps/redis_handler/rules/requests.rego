@@ -6,7 +6,7 @@ import data.utils
 import data.organizations
 
 # input: {
-#     "scope": <"view"|"cancel"> or null,
+#     "scope": <"view"|"delete"> or null,
 #     "auth": {
 #         "user": {
 #             "id": <num>,
@@ -34,5 +34,6 @@ allow if {
 }
 
 allow if {
+    input.scope in {utils.VIEW, utils.DELETE}
     input.auth.user.id == input.resource.owner.id
 }
