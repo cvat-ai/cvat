@@ -2666,16 +2666,16 @@ class QualityReportManager:
                     queue, user_id=user_id, rq_id=rq_id, should_be_dependent=True
                 )
 
-            job_callback, job_params = self._make_rq_job_params(target=target)
-            queue.enqueue(
-                job_callback,
-                **job_params,
-                job_id=rq_id,
-                meta=BaseRQMeta.build(request=request, db_obj=target),
-                result_ttl=self._JOB_RESULT_TTL,
-                failure_ttl=self._JOB_RESULT_TTL,
-                depends_on=dependency,
-            )
+                job_callback, job_params = self._make_rq_job_params(target=target)
+                queue.enqueue(
+                    job_callback,
+                    **job_params,
+                    job_id=rq_id,
+                    meta=BaseRQMeta.build(request=request, db_obj=target),
+                    result_ttl=self._JOB_RESULT_TTL,
+                    failure_ttl=self._JOB_RESULT_TTL,
+                    depends_on=dependency,
+                )
 
         return rq_id
 
