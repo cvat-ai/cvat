@@ -37,7 +37,7 @@ export default function ConsensusSettingsForm(props: Readonly<Props>): JSX.Eleme
     );
 
     const makeTooltip = (jsx: JSX.Element): JSX.Element => (
-        <div className='cvat-analytics-settings-tooltip-inner'>
+        <div className='cvat-settings-tooltip-inner'>
             {jsx}
         </div>
     );
@@ -75,7 +75,7 @@ export default function ConsensusSettingsForm(props: Readonly<Props>): JSX.Eleme
                 <Text strong>General</Text>
                 <CVATTooltip
                     title={generalTooltip}
-                    className='cvat-analytics-tooltip'
+                    className='cvat-settings-tooltip'
                     overlayStyle={{ maxWidth: '500px' }}
                 >
                     <QuestionCircleOutlined style={{ opacity: 0.5 }} />
@@ -97,7 +97,7 @@ export default function ConsensusSettingsForm(props: Readonly<Props>): JSX.Eleme
                 <Text strong>Shape comparison</Text>
                 <CVATTooltip
                     title={shapeComparisonTooltip}
-                    className='cvat-analytics-tooltip'
+                    className='cvat-settings-tooltip'
                     overlayStyle={{ maxWidth: '500px' }}
                 >
                     <QuestionCircleOutlined style={{ opacity: 0.5 }} />

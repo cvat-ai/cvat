@@ -16,6 +16,106 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.32.0'></a>
+## \[2.32.0\] - 2025-03-24
+
+### Added
+
+- Added parameter `conv_mask_to_poly` support for importing annotations in projects,tasks and jobs
+  (<https://github.com/cvat-ai/cvat/pull/8823>)
+
+- \[SDK\] Auto-annotation functions that output skeletons can now be used
+  via agents
+  (<https://github.com/cvat-ai/cvat/pull/9122>)
+
+- Search bar and filtering components on the organization page (<https://github.com/cvat-ai/cvat/pull/9151>)
+
+- Error notification if something is wrong in quality/consensus settings
+  (<https://github.com/cvat-ai/cvat/pull/9178>)
+
+- \[Helm\] Added a new value, `cvat.backend.extensionEnv`, to support
+  supercharts adding environment variables to backend containers
+  (<https://github.com/cvat-ai/cvat/pull/9214>)
+
+- Timestamps to Uvicorn stdout logs
+  (<https://github.com/cvat-ai/cvat/pull/9210>)
+
+- Added robots.txt file to manage crawling traffic
+  (<https://github.com/cvat-ai/cvat/pull/9241>)
+
+### Changed
+
+- \[SDK\] `DetectionFunctionSpec` now requires that the type of keypoint
+  sublabels is set to `points`. Accordingly, `keypoint_spec` now sets
+  this type by default
+  (<https://github.com/cvat-ai/cvat/pull/9122>)
+
+- Optimized memory usage on export with YOLO and COCO formats for tasks
+  (<https://github.com/cvat-ai/cvat/pull/9084>)
+
+- Optimized memory usage for project export in YOLO and COCO formats
+  (<https://github.com/cvat-ai/cvat/pull/9159>)
+
+- Updated Traefik to v3.3.x
+  (<https://github.com/cvat-ai/cvat/pull/9202>)
+
+- \[Compose\] Traefik access log is now limited to the same fields as in
+  Helm-based deployments
+  (<https://github.com/cvat-ai/cvat/pull/9202>)
+
+### Deprecated
+
+- Utilizing `GET /api/projects/id/dataset?action=import_status` API endpoint
+  to check the status of the import process. Instead, the `GET /api/requests/rq_id`
+  requests API should be used (<https://github.com/cvat-ai/cvat/pull/9075>)
+
+### Removed
+
+- `GET /api/projects/id/dataset` API endpoint no longer handles dataset export process
+  (<https://github.com/cvat-ai/cvat/pull/9075>)
+- `GET /api/projects/id/annotations` API endpoint no longer handles annotations export process
+  (<https://github.com/cvat-ai/cvat/pull/9075>)
+- `GET /api/projects/id/backup` API endpoint no longer handles project export process
+  (<https://github.com/cvat-ai/cvat/pull/9075>)
+- `GET /api/tasks/id/dataset` API endpoint no longer handles dataset export process
+  (<https://github.com/cvat-ai/cvat/pull/9075>)
+- `GET /api/tasks/id/annotations?format=` API endpoint no longer handles annotations export process
+  (<https://github.com/cvat-ai/cvat/pull/9075>)
+- `GET /api/tasks/id/backup` API endpoint no longer handles task export process
+  (<https://github.com/cvat-ai/cvat/pull/9075>)
+- `GET /api/jobs/id/dataset` API endpoint no longer handles dataset export process
+  (<https://github.com/cvat-ai/cvat/pull/9075>)
+- `GET /api/jobs/id/annotations?format=` API endpoint no longer handles annotations export process
+  (<https://github.com/cvat-ai/cvat/pull/9075>)
+
+- Existing implementation of analytics reports
+  (<https://github.com/cvat-ai/cvat/pull/9174>)
+
+### Fixed
+
+- Removed extra sliders on quality control page
+  (<https://github.com/cvat-ai/cvat/pull/9168>)
+
+- Server returns a 404 status code with details instead of a 500
+  when cloud storage preview defined by a manifest cannot be downloaded
+  (<https://github.com/cvat-ai/cvat/pull/9170>)
+
+- Broken styles on Consensus management page
+  (<https://github.com/cvat-ai/cvat/pull/9178>)
+
+- \[Helm\] Fixed frontend deployment template issue that caused rendering to fail if
+  additional volumes and volume mounts were defined.
+  (<https://github.com/cvat-ai/cvat/pull/9181>)
+
+- Incorrect behavior of standard browser back button on the quality page
+  (<https://github.com/cvat-ai/cvat/pull/9039>)
+
+- Fixed a 500 status code that could occur when listing requests by GET /api/requests
+  (<https://github.com/cvat-ai/cvat/pull/9236>)
+
+- Memory usage optimization on backup import
+  (<https://github.com/cvat-ai/cvat/pull/9227>)
+
 <a id='changelog-2.31.0'></a>
 ## \[2.31.0\] - 2025-03-03
 

@@ -7,6 +7,7 @@ from glob import glob
 from typing import Callable, Optional
 
 from datumaro.components.annotation import AnnotationType
+from datumaro.components.dataset import StreamDataset
 from datumaro.components.dataset_base import DatasetItem
 from datumaro.components.project import Dataset
 from pyunpack import Archive
@@ -36,7 +37,7 @@ def _export_common(
     **kwargs,
 ):
     with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
-        dataset = Dataset.from_extractors(extractor, env=dm_env)
+        dataset = StreamDataset.from_extractors(extractor, env=dm_env)
         dataset.export(temp_dir, format_name, save_media=save_images, **kwargs)
 
     make_zip_archive(temp_dir, dst_file)
@@ -109,7 +110,7 @@ def _export_yolo_ultralytics_oriented_boxes(*args, **kwargs):
 @exporter(name="Ultralytics YOLO Segmentation", ext="ZIP", version="1.0")
 def _export_yolo_ultralytics_segmentation(dst_file, temp_dir, instance_data, *, save_images=False):
     with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
-        dataset = Dataset.from_extractors(extractor, env=dm_env)
+        dataset = StreamDataset.from_extractors(extractor, env=dm_env)
         dataset = dataset.transform("masks_to_polygons")
         dataset.export(temp_dir, "yolo_ultralytics_segmentation", save_media=save_images)
 

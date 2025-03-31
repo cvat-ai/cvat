@@ -19,6 +19,7 @@ class _LoggerAdapter(logging.LoggerAdapter):
             msg = msg_prefix + msg
         return msg, kwargs
 
+
 class _LoggerAdapterMapping:
     def __init__(self, logger: logging.Logger, object_type: str) -> None:
         self._logger = logger
@@ -27,6 +28,7 @@ class _LoggerAdapterMapping:
     def __getitem__(self, id_: int) -> logging.LoggerAdapter:
         return _LoggerAdapter(self._logger, {"msg_prefix": f"[{self._object_type}.id={id_}] "})
 
+
 class ServerLogManager:
     def __init__(self, logger_name: str) -> None:
         self.glob = logging.getLogger(logger_name)
@@ -34,6 +36,7 @@ class ServerLogManager:
         self.task = _LoggerAdapterMapping(self.glob, "Task")
         self.job = _LoggerAdapterMapping(self.glob, "Job")
         self.cloud_storage = _LoggerAdapterMapping(self.glob, "CloudStorage")
+
 
 class DatasetLogManager:
     def __init__(self, directory_depth=5) -> None:
@@ -49,25 +52,29 @@ class DatasetLogManager:
         log_error = f"{base_info} \nDirectory tree:\n{dir_tree}"
         self.glob.error(log_error)
 
+
 def get_logger(logger_name, log_file):
     logger = logging.getLogger(name=logger_name)
     logger.setLevel(logging.INFO)
     file_handler = logging.FileHandler(log_file)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
     logger.addHandler(logging.StreamHandler(sys.stdout))
     logger.addHandler(logging.StreamHandler(sys.stderr))
     return logger
 
-vlogger = logging.getLogger('vector')
+
+vlogger = logging.getLogger("vector")
 
 
 def get_migration_log_dir() -> str:
     return settings.MIGRATIONS_LOGS_ROOT
 
+
 def get_migration_log_file_path(migration_name: str) -> str:
-    return osp.join(get_migration_log_dir(), f'{migration_name}.log')
+    return osp.join(get_migration_log_dir(), f"{migration_name}.log")
+
 
 @contextmanager
 def get_migration_logger(migration_name):
@@ -76,7 +83,7 @@ def get_migration_logger(migration_name):
     stderr = sys.stderr
 
     # redirect all stdout to the file
-    with open(migration_log_file_path, 'w') as log_file_object:
+    with open(migration_log_file_path, "w") as log_file_object:
         sys.stdout = log_file_object
         sys.stderr = log_file_object
 
