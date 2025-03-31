@@ -183,12 +183,14 @@ def organization_slug(instance):
     except Exception:
         return None
 
+
 def user_agent(instance=None):
     request_headers = _get_value(get_request(instance), "headers")
     if request_headers is not None:
         return request_headers.get("User-Agent")
 
     return None
+
 
 def get_instance_diff(old_data, data):
     ignore_related_fields = ("labels",)
@@ -316,8 +318,8 @@ def handle_create(scope, instance, **kwargs):
     record_server_event(
         scope=scope,
         request_info={
-            id: request_id(),
-            user_agent: user_agent(),
+            "id": request_id(),
+            "user_agent": user_agent(),
         },
         on_commit=True,
         obj_id=getattr(instance, "id", None),
@@ -353,8 +355,8 @@ def handle_update(scope, instance, old_instance, **kwargs):
         record_server_event(
             scope=scope,
             request_info={
-                id: request_id(),
-                user_agent: user_agent(),
+                "id": request_id(),
+                "user_agent": user_agent(),
             },
             on_commit=True,
             obj_name=prop,
@@ -410,8 +412,8 @@ def handle_delete(scope, instance, store_in_deletion_cache=False, **kwargs):
     record_server_event(
         scope=scope,
         request_info={
-            id: request_id(),
-            user_agent: user_agent(),
+            "id": request_id(),
+            "user_agent": user_agent(),
         },
         on_commit=True,
         obj_id=instance_id,
@@ -454,8 +456,8 @@ def handle_annotations_change(instance, annotations, action, **kwargs):
         record_server_event(
             scope=event_scope(action, "tags"),
             request_info={
-                id: request_id(),
-                user_agent: user_agent(),
+                "id": request_id(),
+                "user_agent": user_agent(),
             },
             on_commit=True,
             count=len(tags),
@@ -480,8 +482,8 @@ def handle_annotations_change(instance, annotations, action, **kwargs):
             record_server_event(
                 scope=scope,
                 request_info={
-                    id: request_id(),
-                    user_agent: user_agent(),
+                    "id": request_id(),
+                    "user_agent": user_agent(),
                 },
                 on_commit=True,
                 obj_name=shape_type,
@@ -508,8 +510,8 @@ def handle_annotations_change(instance, annotations, action, **kwargs):
             record_server_event(
                 scope=scope,
                 request_info={
-                    id: request_id(),
-                    user_agent: user_agent(),
+                    "id": request_id(),
+                    "user_agent": user_agent(),
                 },
                 on_commit=True,
                 obj_name=track_type,
@@ -542,7 +544,7 @@ def handle_dataset_io(
     record_server_event(
         scope=event_scope(action, "dataset"),
         request_info={
-            id: request_id(),
+            "id": request_id(),
         },
         user_agent=user_agent(),
         org_id=organization_id(instance),
@@ -592,8 +594,8 @@ def handle_function_call(
     record_server_event(
         scope=event_scope("call", "function"),
         request_info={
-            id: request_id(),
-            user_agent: user_agent(),
+            "id": request_id(),
+            "user_agent": user_agent(),
         },
         project_id=project_id(target),
         task_id=task_id(target),
@@ -628,7 +630,7 @@ def handle_rq_exception(rq_job, exc_type, exc_value, tb):
     record_server_event(
         scope="send:exception",
         request_info={
-            id: request_id(instance=rq_job),
+            "id": request_id(instance=rq_job),
         },
         count=1,
         org_id=oid,
@@ -678,8 +680,8 @@ def handle_viewset_exception(exc, context):
     record_server_event(
         scope="send:exception",
         request_info={
-            id: request_id(),
-            user_agent: user_agent(),
+            "id": request_id(),
+            "user_agent": user_agent(),
         },
         count=1,
         user_id=getattr(request.user, "id", None),
@@ -712,7 +714,7 @@ def handle_client_events_push(request, data: dict):
                 record_server_event(
                     scope=WORKING_TIME_SCOPE,
                     request_info={
-                        id: request_id(),
+                        "id": request_id(),
                     },
                     # keep it in payload for backward compatibility
                     # but in the future it is much better to use a "duration" field
