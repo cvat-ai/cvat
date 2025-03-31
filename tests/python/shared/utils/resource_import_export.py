@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from contextlib import ExitStack
 from http import HTTPStatus
 from time import sleep
-from typing import Any, Optional, TypeVar
+from typing import Any, TypeVar
 
 import pytest
 
