@@ -46,8 +46,7 @@ class EventScopes:
 def record_server_event(
     *,
     scope: str,
-    request_id: Optional[str],
-    user_agent: Optional[str] = None,
+    request_info: dict[str, str],
     payload: Optional[dict] = None,
     on_commit: bool = False,
     **kwargs,
@@ -58,8 +57,7 @@ def record_server_event(
         **payload,
         "request": {
             **payload.get("request", {}),
-            "id": request_id,
-            "user-agent": user_agent,
+            **request_info,
         },
     }
 
