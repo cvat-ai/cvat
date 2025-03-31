@@ -2,11 +2,12 @@
 #
 # SPDX-License-Identifier: MIT
 
+from abc import abstractmethod
 from dataclasses import asdict as dataclass_asdict
 from dataclasses import dataclass
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Any
+from typing import Any, Callable
 from uuid import uuid4
 
 import attrs
@@ -47,6 +48,7 @@ from cvat.apps.engine.task import create_thread as create_task
 from cvat.apps.engine.utils import (
     build_annotations_file_name,
     build_backup_file_name,
+    import_resource_with_clean_up_after,
     is_dataset_export,
 )
 from cvat.apps.events.handlers import handle_dataset_export, handle_dataset_import
@@ -274,8 +276,7 @@ class ResourceImporter(AbstractRequestManager):
     import_args: ImportArgs | None = attrs.field(init=False)
 
     def init_request_args(self):
-        filename = self.request.query_params.get("filename")
-        file_path = str(self.tmp_dir / filename) if filename else None
+        file_path: str | None = None
 
         try:
             location_config = get_location_configuration(
@@ -285,6 +286,13 @@ class ResourceImporter(AbstractRequestManager):
             )
         except ValueError as ex:
             raise ValidationError(str(ex)) from ex
+
+        if filename := self.request.query_params.get("filename"):
+            file_path = (
+                str(self.tmp_dir / filename)
+                if location_config["location"] != Location.CLOUD_STORAGE
+                else filename
+            )
 
         self.import_args = ResourceImporter.ImportArgs(
             location_config=location_config,
@@ -332,6 +340,37 @@ class ResourceImporter(AbstractRequestManager):
             for chunk in payload_file.chunks():
                 tf.write(chunk)
 
+    @abstractmethod
+    def _init_callback_with_params(self) -> tuple[Callable, tuple]: ...
+
+    def init_callback_with_params(self):
+        # Note: self.import_args are changed here
+        if self.import_args.location == Location.CLOUD_STORAGE:
+            db_storage, key = self._handle_cloud_storage_file_upload()
+        elif not self.import_args.file_path:
+            self._handle_non_tus_file_upload()
+
+        # redefine here callback and callback args in order to:
+        # - (optional) download file from cloud storage
+        # - remove uploaded file at the end
+        self.callback = import_resource_with_clean_up_after
+        import_func, import_func_args = self._init_callback_with_params()
+
+        if self.import_args.location == Location.LOCAL:
+            self.callback_args = (
+                import_func,
+                *import_func_args,
+            )
+        else:
+            self.callback_args = (
+                import_resource_from_cloud_storage,
+                import_func_args[0],
+                db_storage,
+                key,
+                import_func,
+                *import_func_args[1:],
+            )
+
 
 @attrs.define(kw_only=True)
 class DatasetImporter(ResourceImporter):
@@ -356,36 +395,28 @@ class DatasetImporter(ResourceImporter):
         format_name = self.request.query_params.get("format", "")
         conv_mask_to_poly = to_bool(self.request.query_params.get("conv_mask_to_poly", True))
 
-        self.import_args = self.ImportArgs(
+        self.import_args: DatasetImporter.ImportArgs = self.ImportArgs(
             **self.import_args.to_dict(),
             format=format_name,
             conv_mask_to_poly=conv_mask_to_poly,
         )
 
-    def init_callback_with_params(self):
+    def _init_callback_with_params(self):
         if isinstance(self.db_instance, Project):
-            self.callback = dm.project.import_dataset_as_project
+            callback = dm.project.import_dataset_as_project
         elif isinstance(self.db_instance, Task):
-            self.callback = dm.task.import_task_annotations
+            callback = dm.task.import_task_annotations
         else:
             assert isinstance(self.db_instance, Job)
-            self.callback = dm.task.import_job_annotations
+            callback = dm.task.import_job_annotations
 
-        if self.import_args.location == Location.CLOUD_STORAGE:
-            db_storage, key = self._handle_cloud_storage_file_upload()
-        elif not self.import_args.file_path:
-            self._handle_non_tus_file_upload()
-
-        self.callback_args = (
+        callback_args = (
             self.import_args.file_path,
             self.db_instance.pk,
             self.import_args.format,
             self.import_args.conv_mask_to_poly,
         )
-
-        if self.import_args.location == Location.CLOUD_STORAGE:
-            self.callback_args = (db_storage, key, self.callback) + self.callback_args
-            self.callback = import_resource_from_cloud_storage
+        return callback, callback_args
 
     def validate_request(self):
         super().validate_request()
@@ -441,7 +472,7 @@ class BackupImporter(ResourceImporter):
     def init_request_args(self) -> None:
         super().init_request_args()
 
-        self.import_args = self.ImportArgs(
+        self.import_args: BackupImporter.ImportArgs = self.ImportArgs(
             **self.import_args.to_dict(),
             org_id=getattr(self.request.iam_context["organization"], "id", None),
         )
@@ -457,19 +488,10 @@ class BackupImporter(ResourceImporter):
             },
         ).render()
 
-    def init_callback_with_params(self):
-        self.callback = import_project if self.resource == RequestTarget.PROJECT else import_task
-
-        if self.import_args.location == Location.CLOUD_STORAGE:
-            db_storage, key = self._handle_cloud_storage_file_upload()
-        elif not self.import_args.file_path:
-            self._handle_non_tus_file_upload()
-
-        self.callback_args = (self.import_args.file_path, self.user_id, self.import_args.org_id)
-
-        if self.import_args.location == Location.CLOUD_STORAGE:
-            self.callback_args = (db_storage, key, self.callback) + self.callback_args
-            self.callback = import_resource_from_cloud_storage
+    def _init_callback_with_params(self):
+        callback = import_project if self.resource == RequestTarget.PROJECT else import_task
+        callback_args = (self.import_args.file_path, self.user_id, self.import_args.org_id)
+        return callback, callback_args
 
     def finalize_request(self):
         # FUTURE-TODO: send logs to event store
