@@ -9,7 +9,7 @@
       "gt_last_updated": "2023-11-24T15:18:55.216000Z",
       "id": 12,
       "job_id": 27,
-      "parent_id": null,
+      "parent_id": 11,
       "project_id": null,
       "summary": {
         "accuracy": 0.4583333333333333,
@@ -91,7 +91,7 @@
       "gt_last_updated": "2024-03-21T20:50:20.020000Z",
       "id": 10,
       "job_id": 29,
-      "parent_id": null,
+      "parent_id": 7,
       "project_id": null,
       "summary": {
         "accuracy": 0.0,
@@ -126,7 +126,7 @@
       "gt_last_updated": "2024-03-21T20:50:20.020000Z",
       "id": 9,
       "job_id": 30,
-      "parent_id": null,
+      "parent_id": 7,
       "project_id": null,
       "summary": {
         "accuracy": 1.0,
@@ -160,7 +160,7 @@
       "gt_last_updated": "2024-03-21T20:50:20.020000Z",
       "id": 8,
       "job_id": 31,
-      "parent_id": null,
+      "parent_id": 7,
       "project_id": null,
       "summary": {
         "accuracy": 0.0,
@@ -228,7 +228,7 @@
       "gt_last_updated": "2023-11-24T15:18:55.216000Z",
       "id": 6,
       "job_id": 27,
-      "parent_id": null,
+      "parent_id": 5,
       "project_id": null,
       "summary": {
         "accuracy": 0.4782608695652174,
@@ -310,7 +310,7 @@
       "gt_last_updated": "2023-11-24T15:18:55.216000Z",
       "id": 4,
       "job_id": 27,
-      "parent_id": null,
+      "parent_id": 3,
       "project_id": null,
       "summary": {
         "accuracy": 0.4782608695652174,
@@ -392,7 +392,7 @@
       "gt_last_updated": "2023-05-26T16:16:50.630000Z",
       "id": 2,
       "job_id": 27,
-      "parent_id": null,
+      "parent_id": 1,
       "project_id": null,
       "summary": {
         "accuracy": 0.4883720930232558,

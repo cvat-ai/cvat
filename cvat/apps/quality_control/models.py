@@ -7,6 +7,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from copy import deepcopy
 from enum import Enum
+from functools import cached_property
 from typing import Any
 
 from django.core.exceptions import ValidationError
@@ -114,7 +115,11 @@ class QualityReport(models.Model):
 
     conflicts: models.manager.RelatedManager[AnnotationConflict]
 
-    @property
+    @cached_property
+    def parent_id(self) -> int | None:
+        return getattr(self.parent, "id", None)
+
+    @cached_property
     def parent(self) -> QualityReport | None:
         try:
             return self.parents.first()

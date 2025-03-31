@@ -5,6 +5,7 @@
 import textwrap
 from enum import Enum
 
+from django.db import models as django_models
 from rest_framework import serializers
 
 from cvat.apps.engine import field_validation
@@ -99,9 +100,7 @@ class QualityReportSerializer(serializers.ModelSerializer):
     target = serializers.ChoiceField(choices=models.QualityReportTarget.choices())
     assignee = engine_serializers.BasicUserSerializer(allow_null=True, read_only=True)
     summary = QualityReportSummarySerializer()
-    parent_id = serializers.IntegerField(
-        default=None, allow_null=True, read_only=True, help_text="Deprecated"
-    )
+    parent_id = serializers.IntegerField(default=None, allow_null=True, read_only=True)
     task_id = serializers.IntegerField(
         source="get_task.id", default=None, allow_null=True, read_only=True
     )
@@ -126,11 +125,6 @@ class QualityReportSerializer(serializers.ModelSerializer):
         )
         read_only_fields = fields
 
-    def to_representation(self, instance):
-        result = super().to_representation(instance)
-        result["parent_id"] = None  # backward compatibility for API fields
-        return result
-
     @classmethod
     def many_init(cls, *args, **kwargs):
         if len(args) == 1 and isinstance(args[0], list):
@@ -145,15 +139,32 @@ class QualityReportSerializer(serializers.ModelSerializer):
                 # doing computing this twice - one time for the page retrieval
                 # and another one for the COUNT(*) request to get total count
                 report_ids = set(report.id for report in page)
-                reports_data = {
-                    report_id: data
-                    for report_id, data in models.QualityReport.objects.filter(
+                report_fields = {
+                    report_id: {
+                        "data": data,
+                        "parent_id": parent_id,
+                    }
+                    for report_id, data, parent_id in models.QualityReport.objects.filter(
                         id__in=report_ids
-                    ).values_list("id", "data")
+                    )
+                    .annotate(parent_id=django_models.Min("parents__id"))
+                    .values_list("id", "data", "parent_id")
                 }
 
                 for report in page:
-                    report.data = reports_data.get(report.id, "")
+                    report.data = report_fields.get(report.id, {}).get("data")
+                    report.parent_id = report_fields.get(report.id, {}).get("parent_id")
+
+                django_models.prefetch_related_objects(
+                    page,
+                    "job",
+                    "job__segment",
+                    "job__segment__task",
+                    "job__segment__task__project",
+                    "task",
+                    "task__project",
+                    "project",
+                )
 
         return super(cls, cls).many_init(*args, **kwargs)
 

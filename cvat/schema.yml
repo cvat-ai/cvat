@@ -9877,7 +9877,6 @@ components:
           type: integer
           readOnly: true
           nullable: true
-          description: Deprecated
         target:
           $ref: '#/components/schemas/QualityReportTarget'
         summary:
