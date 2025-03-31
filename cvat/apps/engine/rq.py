@@ -367,6 +367,10 @@ class ImportRequestId(RequestId):
         # TODO: quote/unquote
         return self.extra.get("format")
 
+    @property
+    def type(self) -> str:
+        return self.TYPE_SEP.join([self.action, self.subresource or self.target])
+
 
 def define_dependent_job(
     queue: DjangoRQ,
