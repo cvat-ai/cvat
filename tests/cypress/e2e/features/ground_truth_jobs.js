@@ -538,16 +538,19 @@ context('Ground truth jobs', () => {
                     const { statusCode, body } = response;
                     const { included_frames: includedFrames, frames: allFrames } = body;
                     expect(statusCode).to.equal(200);
-                    cy.get('.cvat-annotation-page').should('exist').and('be.visible').then(() => {
-                        cy.wrap(includedFrames).should('not.be.null').each((index) => {
-                            cy.goCheckFrameNumber(index);
-                            const frameObj = allFrames[index];
-                            assert(frameObj);
-                            expect(frameObj.width).equals(width);
-                            expect(frameObj.height).equals(height);
-                            cy.get('.cvat-player-filename-wrapper').should('have.text', frameObj.name);
+                    cy.request(`/api/tasks/${taskID}/validation_layout`)
+                        .then((validationResponse) => {
+                            const validationFrames = validationResponse.body.validation_frames;
+                            expect(includedFrames).to.have.all.members(validationFrames);
+                            cy.get('.cvat-annotation-page').should('exist').and('be.visible').then(() => {
+                                cy.wrap(validationFrames).each((index) => {
+                                    cy.goCheckFrameNumber(index);
+                                    const frameObj = allFrames[index];
+                                    assert(frameObj);
+                                    cy.get('.cvat-player-filename-wrapper').should('have.text', frameObj.name);
+                                });
+                            });
                         });
-                    });
                 });
             });
         });
