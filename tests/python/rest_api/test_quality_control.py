@@ -1129,7 +1129,13 @@ class TestQualityReportMetrics(_PermissionTestBase):
 
     def test_unmodified_task_produces_the_same_metrics(self, admin_user, quality_reports):
         old_report = max(
-            (r for r in quality_reports if r["task_id"] == self.demo_task_id), key=lambda r: r["id"]
+            (
+                r
+                for r in quality_reports
+                if r["task_id"] == self.demo_task_id
+                if r["target"] == "task"
+            ),
+            key=lambda r: r["id"],
         )
         task_id = old_report["task_id"]
 

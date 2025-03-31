@@ -5,7 +5,7 @@
   "results": [
     {
       "assignee": null,
-      "created_date": "2024-04-03T09:51:29.992000Z",
+      "created_date": "2025-03-31T13:38:00.464000Z",
       "gt_last_updated": "2023-11-24T15:18:55.216000Z",
       "id": 12,
       "job_id": 27,
@@ -46,7 +46,7 @@
     },
     {
       "assignee": null,
-      "created_date": "2024-04-03T09:51:29.971000Z",
+      "created_date": "2025-03-31T13:38:00.460000Z",
       "gt_last_updated": "2023-11-24T15:18:55.216000Z",
       "id": 11,
       "job_id": null,
@@ -70,7 +70,12 @@
         "frame_count": 3,
         "frame_share": 0.2727272727272727,
         "gt_count": 37,
-        "jobs": null,
+        "jobs": {
+          "excluded": 0,
+          "included": 1,
+          "not_checkable": 0,
+          "total": 1
+        },
         "precision": 0.6111111111111112,
         "recall": 0.5945945945945946,
         "tasks": null,
