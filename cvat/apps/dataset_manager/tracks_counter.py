@@ -37,7 +37,7 @@ class TracksCounter:
     def _init_stop_frames(self):
         if self._tracks_per_job:
             self._stop_frames_per_job = dict(
-                Job.objects.filter(id__in=self.tracks_per_job.keys()).values_list(
+                Job.objects.filter(id__in=self._tracks_per_job.keys()).values_list(
                     "id", "segment__stop_frame"
                 )
             )
