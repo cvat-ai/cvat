@@ -15,8 +15,8 @@ def register_groups(sender, **kwargs):
 
 if settings.IAM_TYPE == "BASIC":
 
-    def create_user(sender, instance, created, **kwargs):
-        if created and kwargs.get("raw"):
+    def create_user(sender, instance, created: bool, raw: bool, **kwargs):
+        if created and raw:
             return
 
         from allauth.account import app_settings as allauth_settings
@@ -38,8 +38,8 @@ if settings.IAM_TYPE == "BASIC":
 
 elif settings.IAM_TYPE == "LDAP":
 
-    def create_user(sender, user=None, ldap_user=None, **kwargs):
-        if kwargs.get("created") and kwargs.get("raw"):
+    def create_user(sender, created: bool, raw: bool, user=None, ldap_user=None, **kwargs):
+        if created and raw:
             return
 
         user_groups = []

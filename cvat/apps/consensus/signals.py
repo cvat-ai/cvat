@@ -14,11 +14,8 @@ from cvat.apps.engine.models import Task
     sender=Task,
     dispatch_uid=__name__ + ".save_task-initialize_consensus_settings",
 )
-def __save_task__initialize_consensus_settings(instance: Task, created, **kwargs):
+def __save_task__initialize_consensus_settings(instance: Task, created: bool, raw: bool, **kwargs):
     # Initializes default quality settings for the task
     # this is done in a signal to decouple this component from the engine app
-    if created and kwargs.get("raw"):
-        return
-
-    if created and instance.consensus_replicas:
+    if created and instance.consensus_replicas and not raw:
         ConsensusSettings.objects.get_or_create(task=instance)

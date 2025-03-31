@@ -12,11 +12,10 @@ from cvat.apps.quality_control.models import QualitySettings
 @receiver(
     post_save, sender=Project, dispatch_uid=__name__ + ".save_project-initialize_quality_settings"
 )
-def __save_project__initialize_quality_settings(instance: Project, created: bool, **kwargs):
-    if created and kwargs.get("raw"):
-        return
-
-    if created:
+def __save_project__initialize_quality_settings(
+    instance: Project, created: bool, raw: bool, **kwargs
+):
+    if created and not raw:
         QualitySettings.objects.get_or_create(project_id=instance.id)
 
 
