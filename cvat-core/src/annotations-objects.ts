@@ -754,8 +754,10 @@ export class Shape extends Drawn {
             updated[readOnlyField] = false;
         }
 
+        console.log('saved points', data);
         const fittedPoints = this.validateStateBeforeSave(data, updated, frame);
         const { rotation } = data;
+        console.log('fitted points', fittedPoints);
 
         // Now when all fields are validated, we can apply them
         if (updated.label) {
