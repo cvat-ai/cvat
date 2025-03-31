@@ -193,6 +193,10 @@
     align-items: center;
     padding: $grid-unit-size;
     line-height: 14px;
+
+    > div {
+        display: flex;
+    }
 }
 
 .cvat-item-open-task-button {

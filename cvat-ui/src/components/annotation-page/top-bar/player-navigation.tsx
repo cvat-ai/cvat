@@ -207,6 +207,8 @@ function PlayerNavigation(props: Props): JSX.Element {
                         type='number'
                         disabled={workspace === Workspace.SINGLE_SHAPE}
                         value={frameInputValue}
+                        min={startFrame}
+                        max={stopFrame}
                         onChange={(value: number | undefined | string | null) => {
                             if (typeof value !== 'undefined' && value !== null) {
                                 setFrameInputValue(Math.floor(clamp(+value, startFrame, stopFrame)));

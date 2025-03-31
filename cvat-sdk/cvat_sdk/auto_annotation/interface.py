@@ -94,6 +94,9 @@ class DetectionFunctionSpec:
 
                 seen_sl_ids.add(sl.id)
 
+                if sl.type != "points":
+                    raise BadFunctionError(f"{sl_desc} has type {sl.type!r} (should be 'points')")
+
                 cls._validate_attributes(getattr(sl, "attributes", []), sl_desc)
 
     @labels.validator
@@ -236,8 +239,8 @@ def skeleton_label_spec(
 
 # pylint: disable-next=redefined-builtin
 def keypoint_spec(name: str, id: int, **kwargs) -> models.SublabelRequest:
-    """Helper factory function for SublabelRequest."""
-    return models.SublabelRequest(name=name, id=id, **kwargs)
+    """Helper factory function for SublabelRequest with type="points"."""
+    return models.SublabelRequest(name=name, id=id, type="points", **kwargs)
 
 
 def attribute_spec(

@@ -137,12 +137,14 @@ To do this, you will need to edit `traefik.http.<router>.cvat.rule` docker label
 ```yaml
   cvat_server:
     labels:
-      - traefik.http.routers.cvat.rule=(Host(`example1.com`) || Host(`example2.com`)) &&
-          PathPrefix(`/api/`, `/analytics/`, `/static/`, `/admin`, `/documentation/`, `/django-rq`)
+      traefik.http.routers.cvat.rule:
+        (Host(`example1.com`) || Host(`example2.com`)) &&
+        (PathPrefix(`/api/`) || PathPrefix(`/static/`) || PathPrefix(`/admin`)
+          || PathPrefix(`/django-rq`))
 
   cvat_ui:
     labels:
-      - traefik.http.routers.cvat-ui.rule=Host(`example1.com`) || Host(`example2.com`)
+      traefik.http.routers.cvat-ui.rule: Host(`example1.com`) || Host(`example2.com`)
 ```
 
 ## How to create a task with multiple jobs

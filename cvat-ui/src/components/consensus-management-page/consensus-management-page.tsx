@@ -21,14 +21,10 @@ import Result from 'antd/lib/result';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import { ActionUnion, createAction } from 'utils/redux';
 import { fetchTask } from 'utils/fetch';
+import { getTabFromHash } from 'utils/location-utils';
 import ConsensusSettingsTab from './consensus-settings-tab';
 
 const core = getCore();
-
-function getTabFromHash(supportedTabs: string[]): string {
-    const tab = window.location.hash.slice(1);
-    return supportedTabs.includes(tab) ? tab : supportedTabs[0];
-}
 
 enum TabName {
     settings = 'settings',
@@ -107,8 +103,8 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
     return state;
 };
 
+const supportedTabs = Object.values(TabName);
 function ConsensusManagementPage(): JSX.Element {
-    const supportedTabs = Object.values(TabName);
     const [state, dispatch] = useReducer(reducer, {
         fetching: true,
         reportRefreshingStatus: null,
@@ -176,14 +172,13 @@ function ConsensusManagementPage(): JSX.Element {
     }, [requestedInstanceID]);
 
     useEffect(() => {
-        window.addEventListener('hashchange', () => {
-            const hash = getTabFromHash(supportedTabs);
-            setActiveTab(hash);
-        });
+        const onHashChange = () => setActiveTab(getTabFromHash(supportedTabs));
+        window.addEventListener('hashchange', onHashChange);
+        return () => window.removeEventListener('hashchange', onHashChange);
     }, []);
 
     useEffect(() => {
-        window.location.hash = activeTab;
+        window.history.replaceState(null, '', `#${activeTab}`);
     }, [activeTab]);
 
     const onTabKeyChange = useCallback((key: string): void => {
@@ -236,7 +231,7 @@ function ConsensusManagementPage(): JSX.Element {
 
     if (instance) {
         title = (
-            <Col>
+            <Col className='cvat-consensus-management-header'>
                 <Title level={4} className='cvat-text-color'>
                     Consensus management for
                     <Link to={`/tasks/${instance.id}`}>{` Task #${instance.id}`}</Link>
@@ -277,7 +272,7 @@ function ConsensusManagementPage(): JSX.Element {
             <Row className='cvat-consensus-management-wrapper'>
                 <Col span={24}>
                     {backNavigation}
-                    <Row justify='center'>
+                    <Row justify='center' className='cvat-consensus-management-inner-wrapper'>
                         <Col span={22} xl={18} xxl={14} className='cvat-consensus-management-inner'>
                             {title}
                             {tabs}

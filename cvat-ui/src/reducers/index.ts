@@ -330,6 +330,9 @@ export interface PluginsState {
         taskActions: {
             items: PluginComponent[];
         };
+        jobActions: {
+            items: PluginComponent[];
+        };
         taskItem: {
             ribbon: PluginComponent[];
         };
@@ -404,12 +407,6 @@ export type OpenCVTool = IntelligentScissors | OpenCVTracker;
 export interface ToolsBlockerState {
     algorithmsLocked?: boolean;
     buttonVisible?: boolean;
-}
-
-export enum TaskStatus {
-    ANNOTATION = 'annotation',
-    REVIEW = 'validation',
-    COMPLETED = 'completed',
 }
 
 export interface ActiveInference {
@@ -670,23 +667,6 @@ export enum ActiveControl {
     OPENCV_TOOLS = 'opencv_tools',
 }
 
-export enum ShapeType {
-    RECTANGLE = 'rectangle',
-    POLYGON = 'polygon',
-    POLYLINE = 'polyline',
-    POINTS = 'points',
-    ELLIPSE = 'ellipse',
-    CUBOID = 'cuboid',
-    MASK = 'mask',
-    SKELETON = 'skeleton',
-}
-
-export enum ObjectType {
-    SHAPE = 'shape',
-    TRACK = 'track',
-    TAG = 'tag',
-}
-
 export enum StatesOrdering {
     ID_DESCENT = 'ID - descent',
     ID_ASCENT = 'ID - ascent',
@@ -927,11 +907,6 @@ export interface ShortcutsState {
     defaultState: Record<string, KeyMapItem>
 }
 
-export enum StorageLocation {
-    LOCAL = 'local',
-    CLOUD_STORAGE = 'cloud_storage',
-}
-
 export enum ReviewStatus {
     ACCEPTED = 'accepted',
     REJECTED = 'rejected',
@@ -959,6 +934,14 @@ export interface ReviewState {
         jobId: number | null;
         issueId: number | null;
     };
+}
+
+export interface OrganizationMembersQuery {
+    search: string | null;
+    filter: string | null;
+    sort: string | null;
+    page: number;
+    pageSize: number;
 }
 
 export interface OrganizationState {
