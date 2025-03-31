@@ -489,6 +489,7 @@ class JobAnnotation:
             self.init_from_db()
             deleted_data = self.data
             models.clear_annotations_in_jobs([self.db_job.id])
+            self.reset()
         else:
             labeledimage_ids = [image["id"] for image in data["tags"]]
             labeledshape_ids = [shape["id"] for shape in data["shapes"]]
@@ -761,7 +762,6 @@ class JobAnnotation:
             create_callback=self.create,
         )
         self.delete()
-        self.reset()
 
         with TmpDirManager.get_tmp_directory() as temp_dir:
             try:
