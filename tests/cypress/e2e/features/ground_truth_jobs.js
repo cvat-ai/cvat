@@ -500,19 +500,20 @@ context('Ground truth jobs', () => {
         describe('Check metadata in a GT job is correct', () => {
             const width = 660;
             const height = 714;
-            const newTaskName = `GT_TASK:w${width},h${height}`;
+            const newTaskName = `GT_TASK_w${width},h${height}`;
             const imagesCount = 10;
             const imageFileName = `image_${newTaskName.replace(' ', '_').toLowerCase()}`;
             const archiveName = `${imageFileName}.zip`;
             const archivePath = `cypress/fixtures/${archiveName}`;
             const imagesFolder = `cypress/fixtures/${imageFileName}`;
             const directoryToArchive = imagesFolder;
+            const extension = 'png';
 
             before(() => {
                 cy.goToTaskList();
                 cy.imageGenerator(imagesFolder, imageFileName,
                     width, height, color, posX, posY,
-                    labelName, imagesCount);
+                    labelName, imagesCount, extension);
                 cy.createZipArchive(directoryToArchive, archivePath);
                 createTaskWithQualityParams({
                     validationMode: 'Ground Truth',
@@ -547,7 +548,8 @@ context('Ground truth jobs', () => {
                                     cy.goCheckFrameNumber(index);
                                     const frameObj = allFrames[index];
                                     assert(frameObj);
-                                    cy.get('.cvat-player-filename-wrapper').should('have.text', frameObj.name);
+                                    // eslint-disable-next-line security/detect-non-literal-regexp
+                                    cy.get('.cvat-player-filename-wrapper').should('have.text', `${imageFileName}_${index}.${extension}`);
                                 });
                             });
                         });
