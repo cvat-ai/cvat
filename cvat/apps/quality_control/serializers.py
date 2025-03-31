@@ -95,6 +95,16 @@ class QualityReportSummarySerializer(serializers.Serializer):
         required=False, help_text="Included only in task and project reports"
     )
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+
+        # Old reports may miss "tasks" and "jobs", new reports may miss "frame_*" fields
+        for optional_field in ("tasks", "jobs", "frame_count", "frame_share"):
+            if representation.get(optional_field) is None:
+                representation.pop(optional_field, None)
+
+        return representation
+
 
 class QualityReportSerializer(serializers.ModelSerializer):
     target = serializers.ChoiceField(choices=models.QualityReportTarget.choices())
