@@ -158,8 +158,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         let listenerRegistered = false;
         const visibilityChangeListener = (): void => {
-            const state = window.document.visibilityState;
-            if (state === 'visible') {
+            if (!window.document.hidden) {
                 if (!listenerRegistered) {
                     window.addEventListener('keydown', listener, { capture: true });
                     window.addEventListener('click', listener, { capture: true });
