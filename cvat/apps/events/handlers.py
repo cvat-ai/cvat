@@ -291,6 +291,11 @@ def get_serializer_without_url(instance):
     return serializer
 
 
+from cvat.apps.engine.log import ServerLogManager
+
+slogger = ServerLogManager(__name__)
+
+
 def handle_create(scope, instance, **kwargs):
     oid = organization_id(instance)
     oslug = organization_slug(instance)
