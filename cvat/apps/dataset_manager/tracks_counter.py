@@ -5,8 +5,6 @@
 from collections import defaultdict
 from typing import Callable, Dict, TypedDict
 
-from django.db import transaction
-
 from cvat.apps.engine.models import Job, LabeledTrack, ShapeType
 from cvat.apps.engine.utils import defaultdict_to_regular
 
