@@ -196,12 +196,12 @@ def kube_exec_clickhouse_db(command):
 
 
 def docker_exec_redis_inmem(command):
-    _run(["docker", "exec", f"{PREFIX}_cvat_redis_inmem_1"] + command)
+    return _run(["docker", "exec", f"{PREFIX}_cvat_redis_inmem_1"] + command)
 
 
 def kube_exec_redis_inmem(command):
     pod_name = _kube_get_redis_inmem_pod_name()
-    _run(["kubectl", "exec", pod_name, "--"] + command)
+    return _run(["kubectl", "exec", pod_name, "--"] + command)
 
 
 def docker_exec_redis_ondisk(command):
