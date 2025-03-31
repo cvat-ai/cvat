@@ -22,17 +22,13 @@ import {
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import GoBackButton from 'components/common/go-back-button';
 import { ActionUnion, createAction } from 'utils/redux';
+import { getTabFromHash } from 'utils/location-utils';
 import { fetchTask } from 'utils/fetch';
 import QualityOverviewTab from './task-quality/quality-overview-tab';
 import QualityManagementTab from './task-quality/quality-magement-tab';
 import QualitySettingsTab from './quality-settings-tab';
 
 const core = getCore();
-
-function getTabFromHash(supportedTabs: string[]): string {
-    const tab = window.location.hash.slice(1);
-    return supportedTabs.includes(tab) ? tab : supportedTabs[0];
-}
 
 interface State {
     fetching: boolean;
@@ -159,8 +155,8 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
     return state;
 };
 
+const supportedTabs = ['overview', 'settings', 'management'];
 function QualityControlPage(): JSX.Element {
-    const supportedTabs = ['overview', 'settings', 'management'];
     const [state, dispatch] = useReducer(reducer, {
         fetching: true,
         reportRefreshingStatus: null,
@@ -293,10 +289,9 @@ function QualityControlPage(): JSX.Element {
     }, [requestedInstanceID]);
 
     useEffect(() => {
-        window.addEventListener('hashchange', () => {
-            const hash = getTabFromHash(supportedTabs);
-            setActiveTab(hash);
-        });
+        const onHashChange = () => setActiveTab(getTabFromHash(supportedTabs));
+        window.addEventListener('hashchange', onHashChange);
+        return () => window.removeEventListener('hashchange', onHashChange);
     }, []);
 
     useEffect(() => {
