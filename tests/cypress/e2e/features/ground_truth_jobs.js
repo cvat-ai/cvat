@@ -497,7 +497,7 @@ context('Ground truth jobs', () => {
                 cy.headlessDeleteTask(taskID);
             });
         });
-        describe('GT job metadata ', () => {
+        describe('Check metadata in a GT job is correct', () => {
             const width = 660;
             const height = 714;
             const newTaskName = `GT_TASK:w${width},h${height}`;
