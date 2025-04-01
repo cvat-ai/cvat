@@ -1,0 +1,104 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { Row, Col } from 'antd/lib/grid';
+import Title from 'antd/lib/typography/Title';
+import Button from 'antd/lib/button';
+import DatePicker from 'antd/lib/date-picker';
+import { DownloadOutlined } from '@ant-design/icons';
+
+import { Project, Task, Job } from 'cvat-core-wrapper';
+
+interface Props {
+    onEventsExport(): void;
+    onUpdateTimePeriod(from: Date | null, to: Date | null): void;
+    resource: Project | Task | Job | null;
+    fetching: boolean;
+}
+
+function makeResourceLink(resource: NonNullable<Props['resource']>): JSX.Element | null {
+    if (resource instanceof Project) {
+        return (
+            <Link to={`/projects/${resource.id}`}>
+Project #
+                {resource.id}
+            </Link>
+        );
+    }
+
+    if (resource instanceof Task) {
+        return (
+            <Link to={`/tasks/${resource.id}`}>
+Task #
+                {resource.id}
+            </Link>
+        );
+    }
+
+    if (resource instanceof Job) {
+        return (
+            <Link to={`/tasks/${resource.taskId}/jobs/${resource.id}`}>
+Job #
+                {resource.id}
+            </Link>
+        );
+    }
+
+    return null;
+}
+
+function AnaylyticsPageHeader(props: Props): JSX.Element {
+    const {
+        onUpdateTimePeriod,
+        onEventsExport,
+        resource,
+        fetching,
+    } = props;
+
+    return (
+        <Row justify='space-between' align='middle'>
+            <Col className='cvat-analytics-header'>
+                {resource ? (
+                    <Title level={4} className='cvat-text-color'>
+                        {'Analytics page for '}
+                        {makeResourceLink(resource)}
+                    </Title>
+                ) : (
+                    <Title level={4} className='cvat-text-color'>
+                            Analytics page
+                    </Title>
+                )}
+            </Col>
+            <Col>
+                <DatePicker.RangePicker
+                    placeholder={['UTC start date', 'UTC end date']}
+                    className='cvat-analytics-date-picker'
+                    onChange={(value) => {
+                        if (value) {
+                            const [from, to] = value;
+                            if (from && to) {
+                                onUpdateTimePeriod(from.toDate(), to.toDate());
+                            }
+                        } else {
+                            onUpdateTimePeriod(null, null);
+                        }
+                    }}
+                />
+                <Button
+                    className='cvat-analytics-export-button'
+                    disabled={fetching}
+                    type='link'
+                    icon={<DownloadOutlined />}
+                    onClick={onEventsExport}
+                >
+                        Export events
+                </Button>
+            </Col>
+        </Row>
+    );
+}
+
+export default React.memo(AnaylyticsPageHeader);

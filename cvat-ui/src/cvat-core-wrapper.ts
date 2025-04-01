@@ -28,8 +28,8 @@ import { FramesMetaData, FrameData } from 'cvat-core/src/frames';
 import { ServerError, RequestError } from 'cvat-core/src/exceptions';
 import {
     ShapeType, ObjectType, LabelType, ModelKind, ModelProviders,
-    DimensionType, JobType, Source,
-    JobStage, JobState, RQStatus, StorageLocation,
+    DimensionType, JobType, Source, MembershipRole,
+    JobStage, JobState, RQStatus, StorageLocation, InstanceType,
 } from 'cvat-core/src/enums';
 import { Storage, StorageData } from 'cvat-core/src/storage';
 import Issue from 'cvat-core/src/issue';
@@ -117,6 +117,8 @@ export {
     JobValidationLayout,
     TaskValidationLayout,
     StorageLocation,
+    MembershipRole,
+    InstanceType,
     AboutData,
 };
 

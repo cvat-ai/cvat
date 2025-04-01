@@ -83,6 +83,12 @@ export enum ShapeType {
     MASK = 'mask',
 }
 
+export enum InstanceType {
+    PROJECT = 'project',
+    TASK = 'task',
+    JOB = 'job',
+}
+
 export enum Source {
     MANUAL = 'manual',
     SEMI_AUTO = 'semi-auto',
