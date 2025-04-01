@@ -3730,30 +3730,6 @@ paths:
           description: The backup process has already been initiated and is not yet
             finished
   /api/projects/{id}/dataset/:
-    get:
-      operationId: projects_retrieve_dataset
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this project.
-        required: true
-      tags:
-      - projects
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                $ref: '#/components/schemas/ProjectRead'
-          description: ''
     post:
       operationId: projects_create_dataset
       description: |2

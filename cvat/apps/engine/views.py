@@ -360,6 +360,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         # Required for the extra summary information added in the queryset
         serializer.instance = self.get_queryset().get(pk=serializer.instance.pk)
 
+    @extend_schema(methods=['GET'], exclude=True)
     @extend_schema(methods=['POST'],
         summary='Import a dataset into a project',
         description=textwrap.dedent("""
