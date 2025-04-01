@@ -29,13 +29,11 @@ function WrappedSkeletonElementLabelForm(props: ContextMenuProps & { hideConfigu
 
     return (
         <Modal
-            visible
+            open
             width={700}
-            cancelButtonProps={{ style: { display: 'none' } }} // More explicit than hidden
-            okButtonProps={{ style: { display: 'none' } }} // More explicit than hidden
             closable={false}
             destroyOnClose
-            footer={null} // Explicitly remove default footer
+            footer={null}
         >
             <LabelForm
                 label={elementLabel}
