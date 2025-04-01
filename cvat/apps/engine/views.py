@@ -163,8 +163,7 @@ def get_410_response_for_export_api(path: str) -> HttpResponseGone:
 
 def get_410_response_for_import_api() -> HttpResponseGone:
     return HttpResponseGone(textwrap.dedent("""\
-        This endpoint is no longer supported.
-        To check the status of the import process, use GET /api/requests/rq_id,
+        This endpoint no longer supports checking the status of the import process, use GET /api/requests/rq_id,
         where rq_id is obtained from the response of the previous request.
     """))
 
@@ -474,6 +473,9 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         serializer_class=None,
         parser_classes=_UPLOAD_PARSER_CLASSES)
     def import_backup(self, request: ExtendedRequest):
+        if request.query_params.get("rq_id"):
+            return get_410_response_for_import_api()
+
         return self.upload_data(request)
 
     @tus_chunk_action(detail=False, suffix_base="backup")
@@ -820,6 +822,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         serializer_class=None,
         parser_classes=_UPLOAD_PARSER_CLASSES)
     def import_backup(self, request: ExtendedRequest):
+        if request.query_params.get("rq_id"):
+            return get_410_response_for_import_api()
+
         return self.upload_data(request)
 
     @tus_chunk_action(detail=False, suffix_base="backup")
@@ -1252,7 +1257,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return self.upload_data(request)
 
         elif request.method == 'PUT':
-            if "format" in request.query_params.keys():
+            if {"format", "rq_id"} & set(request.query_params.keys()):
                 return get_410_response_for_import_api()
 
             serializer = LabeledDataSerializer(data=request.data)
@@ -1725,7 +1730,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             return self.upload_data(request)
 
         elif request.method == 'PUT':
-            if "format" in request.query_params.keys():
+            if {"format", "rq_id"} & set(request.query_params.keys()):
                 return get_410_response_for_import_api()
 
             serializer = LabeledDataSerializer(data=request.data)
