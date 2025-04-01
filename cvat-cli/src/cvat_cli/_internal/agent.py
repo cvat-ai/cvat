@@ -313,12 +313,9 @@ class _Agent:
         )
 
     def _watch_queue(self) -> None:
-        while True:
+        while not self._queue_watcher_should_stop.is_set():
             # Until we can (re)connect to the event stream, poll more frequently.
             self._polling_interval = _POLLING_INTERVAL_MEAN_FREQUENT
-
-            if self._queue_watcher_should_stop.is_set():
-                break
 
             with self._queue_watch_response_lock:
                 self._client.logger.info("Attempting to watch the function's queue...")
@@ -344,15 +341,17 @@ class _Agent:
                     self._polling_interval = _POLLING_INTERVAL_MEAN_RARE
 
             try:
-                for event in _parse_event_stream(self._queue_watch_response):
-                    if isinstance(event, _Event):
-                        self._dispatch_queue_event(event)
-                    elif isinstance(event, _NewReconnectionDelay):
-                        self._queue_reconnection_delay = event.delay
+                for message in _parse_event_stream(self._queue_watch_response):
+                    if isinstance(message, _Event):
+                        self._dispatch_queue_event(message)
+                    elif isinstance(message, _NewReconnectionDelay):
+                        self._queue_reconnection_delay = message.delay
                         self._client.logger.info(
                             "New queue event stream reconnection delay is %fs",
                             self._queue_reconnection_delay.total_seconds(),
                         )
+                    else:
+                        assert False, f"unexpected message type {type(message)}"
 
                 self._queue_watch_response.release_conn()
 
@@ -371,6 +370,8 @@ class _Agent:
                 self._client.logger.error(
                     "Event stream interrupted or other error; will reconnect", exc_info=True
                 )
+            finally:
+                self._queue_watch_response.close()
 
             self._wait_before_reconnecting_to_queue()
 
