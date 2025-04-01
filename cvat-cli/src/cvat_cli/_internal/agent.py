@@ -356,9 +356,14 @@ class _Agent:
                 self._queue_watch_response.release_conn()
 
                 # We should normally not get here unless the function is deleted on the server.
-                # However, we don't know that for sure, so let's just retry.
-                # If the function did get deleted,
-                # then eventually the main thread will poll for an AR, get a 404, and quit.
+                # However, we don't know that for sure, so instead of quitting immediately,
+                # we'll ask the main thread to poll for an AR.
+                # If the function did get deleted, the main thread will get a 404 and quit.
+                # Otherwise, we'll just reconnect again.
+                with self._potential_work_condition:
+                    self._batch_request_might_be_available = True
+                    self._potential_work_condition.notify()
+
                 self._client.logger.warning("Event stream ended; will reconnect")
             except Exception:
                 # This is an extra check to prevent useless messages.
