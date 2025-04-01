@@ -535,14 +535,18 @@ context('Ground truth jobs', () => {
                     cy.get('.cvat-job-item').contains('a', `Job #${gtJobID}`).click();
                 });
                 cy.wait('@getMeta').then((intercept) => {
-                    const { response } = intercept;
-                    const { statusCode, body } = response;
-                    const { included_frames: includedFrames } = body;
+                    const {
+                        response: {
+                            statusCode, body: {
+                                included_frames: includedFrames,
+                            },
+                        },
+                    } = intercept;
                     expect(statusCode).to.equal(200);
                     cy.request(`/api/tasks/${taskID}/validation_layout`)
                         .then((validationResponse) => {
                             const validationFrames = validationResponse.body.validation_frames;
-                            expect(includedFrames).to.have.all.members(validationFrames);
+                            expect(includedFrames).to.have.ordered.members(validationFrames);
                             cy.get('.cvat-annotation-page').should('exist').and('be.visible').then(() => {
                                 cy.wrap(validationFrames).each((index) => {
                                     cy.goCheckFrameNumber(index);

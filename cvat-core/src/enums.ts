@@ -124,6 +124,7 @@ export enum EventScope {
 
     annotationsAction = 'run:annotations_action',
     clickElement = 'click:element',
+    userActivity = 'user:activity',
 }
 
 export enum HistoryActions {
