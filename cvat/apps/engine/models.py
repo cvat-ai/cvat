@@ -929,7 +929,7 @@ class Job(TimestampedModel, FileSystemRelatedModel):
     def organization(self) -> Organization | None:
         return self.segment.task.organization
 
-    def get_organization_slug(self) -> str | None:
+    def get_organization_slug(self) -> str:
         return self.segment.task.organization.slug
 
     def get_bug_tracker(self):
