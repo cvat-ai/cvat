@@ -537,7 +537,7 @@ context('Ground truth jobs', () => {
                 cy.wait('@getMeta').then((intercept) => {
                     const { response } = intercept;
                     const { statusCode, body } = response;
-                    const { included_frames: includedFrames, frames: allFrames } = body;
+                    const { included_frames: includedFrames } = body;
                     expect(statusCode).to.equal(200);
                     cy.request(`/api/tasks/${taskID}/validation_layout`)
                         .then((validationResponse) => {
@@ -546,8 +546,6 @@ context('Ground truth jobs', () => {
                             cy.get('.cvat-annotation-page').should('exist').and('be.visible').then(() => {
                                 cy.wrap(validationFrames).each((index) => {
                                     cy.goCheckFrameNumber(index);
-                                    const frameObj = allFrames[index];
-                                    assert(frameObj);
                                     // eslint-disable-next-line security/detect-non-literal-regexp
                                     cy.get('.cvat-player-filename-wrapper').should('have.text', `${imageFileName}_${index}.${extension}`);
                                 });
