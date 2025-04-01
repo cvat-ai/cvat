@@ -114,7 +114,7 @@ class ProjectAnnotationAndData:
 
         create_task(db_task, data, is_dataset_import=True)
         self.db_tasks = models.Task.objects.filter(project__id=self.db_project.id).exclude(data=None).order_by('id')
-        self._init_one_task_from_db(db_task.id)
+        self._init_task_from_db(db_task.id)
         if project_data is not None:
             project_data.new_tasks.add(db_task.id)
             project_data.init()
@@ -131,7 +131,7 @@ class ProjectAnnotationAndData:
         if attributes:
             bulk_create(models.AttributeSpec, [a[1] for a in attributes])
 
-    def _init_one_task_from_db(self, task_id: int) -> None:
+    def _init_task_from_db(self, task_id: int) -> None:
         annotation = TaskAnnotation(pk=task_id)
         annotation.init_from_db()
         self.task_annotations[task_id] = annotation
@@ -141,7 +141,7 @@ class ProjectAnnotationAndData:
         self.reset()
 
         for task in self.db_tasks:
-            self._init_one_task_from_db(task.id)
+            self._init_task_from_db(task.id)
 
     def export(
         self,
