@@ -226,7 +226,7 @@ class ImportApiTestBase(ApiTestBase):
         expected_4xx_status_code: int | None = None
     ) -> int | None:
         response = self._import(
-            user, f"/api/projects/backup", file_content,
+            user, "/api/projects/backup", file_content,
             query_params=query_params, expected_4xx_status_code=expected_4xx_status_code
         )
         if expected_4xx_status_code:
@@ -239,7 +239,7 @@ class ImportApiTestBase(ApiTestBase):
         expected_4xx_status_code: int | None = None
     ) -> int | None:
         response = self._import(
-            user, f"/api/tasks/backup", file_content,
+            user, "/api/tasks/backup", file_content,
             query_params=query_params, expected_4xx_status_code=expected_4xx_status_code
         )
         if expected_4xx_status_code:

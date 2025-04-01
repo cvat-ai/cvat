@@ -344,7 +344,7 @@ class ResourceImporter(AbstractRequestManager):
     def _init_callback_with_params(self) -> tuple[Callable, tuple]: ...
 
     def init_callback_with_params(self):
-        # Note: self.import_args are changed here
+        # Note: self.import_args is changed here
         if self.import_args.location == Location.CLOUD_STORAGE:
             db_storage, key = self._handle_cloud_storage_file_upload()
         elif not self.import_args.file_path:
