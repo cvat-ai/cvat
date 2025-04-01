@@ -59,50 +59,52 @@ function AnalyticsReportPage(): JSX.Element {
             return;
         }
 
-        const params: {
-            orgId?: number;
-            userId?: number;
-            projectId?: number;
-            taskId?: number;
-            jobId?: number;
-            filename?: string;
-            from?: string;
-            to?: string;
-        } = {};
-
-        if (timePeriod) {
-            params.from = timePeriod.startDate;
-            params.to = timePeriod.endDate;
-        }
-
-        if (resource instanceof Project) {
-            params.projectId = resource.id;
-            params.filename = `export-csv-events-project-${resource.id}.csv`;
-        } else if (resource instanceof Task) {
-            params.taskId = resource.id;
-            params.filename = `export-csv-events-task-${resource.id}.csv`;
-        } else {
-            params.jobId = resource.id;
-            params.filename = `export-csv-events-job-${resource.id}.csv`;
-        }
-
-        if (org) {
-            const memberships = await org.members({ filter: `{"and":[{"==":[{"var":"user"},"${user.username}"]}]}` });
-            const isMaintainer = !!memberships.length &&
-                [MembershipRole.MAINTAINER, MembershipRole.OWNER].includes(memberships[0].role);
-
-            if (!(user.isSuperuser || isMaintainer)) {
-                // in an organization only admin and maintainer may export all events
-                // for others add user filter
-                params.userId = user.id;
-            }
-        } else if (!user.isSuperuser) {
-            // in sandbox only admin may export all events, for others add user filter
-            params.userId = user.id;
-        }
-
         try {
             setIsEventsExport(true);
+            const params: {
+                orgId?: number;
+                userId?: number;
+                projectId?: number;
+                taskId?: number;
+                jobId?: number;
+                filename?: string;
+                from?: string;
+                to?: string;
+            } = {};
+
+            if (timePeriod) {
+                params.from = timePeriod.startDate;
+                params.to = timePeriod.endDate;
+            }
+
+            if (resource instanceof Project) {
+                params.projectId = resource.id;
+                params.filename = `export-csv-events-project-${resource.id}.csv`;
+            } else if (resource instanceof Task) {
+                params.taskId = resource.id;
+                params.filename = `export-csv-events-task-${resource.id}.csv`;
+            } else {
+                params.jobId = resource.id;
+                params.filename = `export-csv-events-job-${resource.id}.csv`;
+            }
+
+            if (org) {
+                const memberships = await org.members(
+                    { filter: `{"and":[{"==":[{"var":"user"},"${user.username}"]}]}` },
+                );
+                const isMaintainer = !!memberships.length &&
+                    [MembershipRole.MAINTAINER, MembershipRole.OWNER].includes(memberships[0].role);
+
+                if (!(user.isSuperuser || isMaintainer)) {
+                    // in an organization only admin and maintainer may export all events
+                    // for others add user filter
+                    params.userId = user.id;
+                }
+            } else if (!user.isSuperuser) {
+                // in sandbox only admin may export all events, for others add user filter
+                params.userId = user.id;
+            }
+
             const url = await core.analytics.events.export(params);
             const a = document.createElement('a');
 
