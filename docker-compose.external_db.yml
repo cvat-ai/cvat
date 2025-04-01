@@ -12,7 +12,8 @@ x-backend-settings: &backend-settings
     CVAT_POSTGRES_USER:
     CVAT_POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
   secrets:
-    - postgres_password
+    - source: postgres_password
+      mode: '0444'
 
 services:
   cvat_db:
