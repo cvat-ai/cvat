@@ -12,7 +12,6 @@ from rest_framework import routers
 from . import views
 
 router = routers.DefaultRouter(trailing_slash=False)
-
 router.register("projects", views.ProjectViewSet)
 router.register("tasks", views.TaskViewSet)
 router.register("jobs", views.JobViewSet)
@@ -24,7 +23,6 @@ router.register("labels", views.LabelViewSet)
 router.register("cloudstorages", views.CloudStorageViewSet)
 router.register("assets", views.AssetsViewSet)
 router.register("guides", views.AnnotationGuidesViewSet)
-
 
 urlpatterns = [
     # Entry point for a client
