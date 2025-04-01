@@ -43,16 +43,6 @@ function TaskActionsComponent(props: Props): JSX.Element {
         }
     }, [taskInstance.bugTracker]);
 
-    const onOpenQualityControl = useCallback(() => {
-        history.push(`/tasks/${taskInstance.id}/quality-control`);
-    }, [taskInstance.id]);
-
-    const onOpenConsensusManagement = useCallback(() => {
-        if (taskInstance.consensusEnabled) {
-            history.push(`/tasks/${taskInstance.id}/consensus`);
-        }
-    }, [taskInstance.consensusEnabled, taskInstance.id]);
-
     const onMergeConsensusJobs = useCallback(() => {
         if (taskInstance.consensusEnabled) {
             Modal.confirm({
@@ -117,14 +107,14 @@ function TaskActionsComponent(props: Props): JSX.Element {
                 selectable: false,
                 className: 'cvat-actions-menu',
                 items: TaskActionsItems({
+                    taskID: taskInstance.id,
                     isAutomaticAnnotationEnabled: (
                         activeInference &&
                         ![RQStatus.FAILED, RQStatus.FINISHED].includes(activeInference.status)
                     ),
+                    isConsensusEnabled: taskInstance.consensusEnabled,
                     isMergingConsensusEnabled: mergingConsensus[`task_${taskInstance.id}`],
                     pluginActions,
-                    onOpenQualityControl,
-                    onOpenConsensusManagement: taskInstance.consensusEnabled ? onOpenConsensusManagement : null,
                     onMergeConsensusJobs: taskInstance.consensusEnabled ? onMergeConsensusJobs : null,
                     onOpenBugTracker: taskInstance.bugTracker ? onOpenBugTracker : null,
                     onUploadAnnotations,
