@@ -8,6 +8,7 @@ import mimetypes
 import os
 import re
 import shutil
+import tempfile
 import uuid
 from abc import ABCMeta, abstractmethod
 from collections.abc import Collection, Iterable
@@ -20,6 +21,7 @@ from typing import Any, ClassVar, Optional, Type, Union
 from zipfile import ZipFile
 
 import django_rq
+import rapidjson
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
@@ -47,7 +49,10 @@ from cvat.apps.dataset_manager.views import (
     retry_current_rq_job,
 )
 from cvat.apps.engine import models
-from cvat.apps.engine.cloud_provider import import_resource_from_cloud_storage
+from cvat.apps.engine.cloud_provider import (
+    db_storage_to_storage_instance,
+    import_resource_from_cloud_storage,
+)
 from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import (
@@ -60,7 +65,7 @@ from cvat.apps.engine.models import (
     StorageMethodChoice,
 )
 from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
-from cvat.apps.engine.rq_job_handler import RQId, RQJobMetaField
+from cvat.apps.engine.rq import ImportRQMeta, RQId, define_dependent_job
 from cvat.apps.engine.serializers import (
     AnnotationGuideWriteSerializer,
     AssetWriteSerializer,
@@ -79,10 +84,9 @@ from cvat.apps.engine.serializers import (
     ValidationParamsSerializer,
 )
 from cvat.apps.engine.task import JobFileMapping, _create_thread
+from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import (
     av_scan_paths,
-    define_dependent_job,
-    get_rq_job_meta,
     get_rq_lock_by_user,
     import_resource_with_clean_up_after,
     process_failed_job,
@@ -395,14 +399,14 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
     def __init__(self, pk, version=Version.V1):
         super().__init__(logger=slogger.task[pk])
 
-        self._db_task = (
+        self._db_task: models.Task = (
             models.Task.objects
             .prefetch_related('data__images', 'annotation_guide__assets')
             .select_related('data__video', 'data__validation_layout', 'annotation_guide')
             .get(pk=pk)
         )
 
-        self._db_data = self._db_task.data
+        self._db_data: models.Data = self._db_task.data
         self._version = version
 
         db_labels = (self._db_task.project if self._db_task.project_id else self._db_task).label_set.all().prefetch_related(
@@ -443,8 +447,31 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 files=[self._db_data.get_manifest_path()],
                 target_dir=target_data_dir,
             )
+        elif self._db_data.storage == StorageChoice.CLOUD_STORAGE:
+            assert self._db_task.dimension != models.DimensionType.DIM_3D, "Cloud storage cannot contain 3d images"
+            assert not hasattr(self._db_data, 'video'), "Only images can be stored in cloud storage"
+            assert self._db_data.related_files.count() == 0, "No related images can be stored in cloud storage"
+            media_files = [im.path for im in self._db_data.images.all()]
+            cloud_storage_instance = db_storage_to_storage_instance(self._db_data.cloud_storage)
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                cloud_storage_instance.bulk_download_to_dir(files=media_files, upload_dir=tmp_dir)
+                self._write_files(
+                    source_dir=tmp_dir,
+                    zip_object=zip_object,
+                    files=[
+                        os.path.join(tmp_dir, file)
+                        for file in media_files
+                    ],
+                    target_dir=target_data_dir,
+                )
+            self._write_files(
+                source_dir=self._db_data.get_upload_dirname(),
+                zip_object=zip_object,
+                files=[self._db_data.get_manifest_path()],
+                target_dir=target_data_dir,
+            )
         else:
-            raise NotImplementedError("We don't currently support backing up tasks with data from cloud storage")
+            raise NotImplementedError
 
     def _write_task(self, zip_object, target_dir=None):
         task_dir = self._db_task.get_dirname()
@@ -556,6 +583,9 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 ]
                 data['validation_layout'] = validation_params
 
+            if self._db_data.storage == StorageChoice.CLOUD_STORAGE:
+                data["storage"] = StorageChoice.LOCAL
+
             return self._prepare_data_meta(data)
 
         task = serialize_task()
@@ -566,22 +596,20 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         target_manifest_file = os.path.join(target_dir, self.MANIFEST_FILENAME) if target_dir else self.MANIFEST_FILENAME
         zip_object.writestr(target_manifest_file, data=JSONRenderer().render(task))
 
-    def _write_annotations(self, zip_object, target_dir=None):
+    def _write_annotations(self, zip_object: ZipFile, target_dir: Optional[str] = None) -> None:
         def serialize_annotations():
-            job_annotations = []
             db_jobs = self._get_db_jobs()
             db_job_ids = (j.id for j in db_jobs)
             for db_job_id in db_job_ids:
                 annotations = dm.task.get_job_data(db_job_id)
                 annotations_serializer = LabeledDataSerializer(data=annotations)
                 annotations_serializer.is_valid(raise_exception=True)
-                job_annotations.append(self._prepare_annotations(annotations_serializer.data, self._label_mapping))
-
-            return job_annotations
+                yield self._prepare_annotations(annotations_serializer.data, self._label_mapping)
 
         annotations = serialize_annotations()
         target_annotations_file = os.path.join(target_dir, self.ANNOTATIONS_FILENAME) if target_dir else self.ANNOTATIONS_FILENAME
-        zip_object.writestr(target_annotations_file, data=JSONRenderer().render(annotations))
+        with zip_object.open(target_annotations_file, 'w') as f:
+            rapidjson.dump(annotations, f)
 
     def _export_task(self, zip_obj, target_dir=None):
         self._write_data(zip_obj, target_dir)
@@ -775,8 +803,8 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
                 )
 
                 self._prepare_dirs(target_file)
-                with open(target_file, "wb") as out:
-                    out.write(input_archive.read(file_path))
+                with open(target_file, "wb") as out, input_archive.open(file_path) as source:
+                    shutil.copyfileobj(source, out)
 
                 uploaded_files.append(os.path.relpath(file_name, input_data_dirname))
             elif file_name.startswith(input_task_dirname + '/'):
@@ -785,8 +813,8 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
                 )
 
                 self._prepare_dirs(target_file)
-                with open(target_file, "wb") as out:
-                    out.write(input_archive.read(file_path))
+                with open(target_file, "wb") as out, input_archive.open(file_path) as source:
+                    shutil.copyfileobj(source, out)
 
         return uploaded_files
 
@@ -1147,11 +1175,18 @@ def create_backup(
         log_exception(logger)
         raise
 
-def _import(importer, request, queue, rq_id, Serializer, file_field_name, location_conf, filename=None):
-    rq_job = queue.fetch_job(rq_id)
 
-    if (user_id_from_meta := getattr(rq_job, 'meta', {}).get(RQJobMetaField.USER, {}).get('id')) and user_id_from_meta != request.user.id:
-        return Response(status=status.HTTP_403_FORBIDDEN)
+def _import(
+    importer: TaskImporter | ProjectImporter,
+    request: ExtendedRequest,
+    queue: django_rq.queues.DjangoRQ,
+    rq_id: str,
+    Serializer: type[TaskFileSerializer] | type[ProjectFileSerializer],
+    file_field_name: str,
+    location_conf: dict,
+    filename: str | None = None,
+):
+    rq_job = queue.fetch_job(rq_id)
 
     if not rq_job:
         org_id = getattr(request.iam_context['organization'], 'id', None)
@@ -1197,19 +1232,25 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
         user_id = request.user.id
 
         with get_rq_lock_by_user(queue, user_id):
+            meta = ImportRQMeta.build_for(
+                request=request,
+                db_obj=None,
+                tmp_file=filename,
+            )
             rq_job = queue.enqueue_call(
                 func=func,
                 args=func_args,
                 job_id=rq_id,
-                meta={
-                    'tmp_file': filename,
-                    **get_rq_job_meta(request=request, db_obj=None)
-                },
+                meta=meta,
                 depends_on=define_dependent_job(queue, user_id),
                 result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
                 failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
             )
     else:
+        rq_job_meta = ImportRQMeta.for_job(rq_job)
+        if rq_job_meta.user.id != request.user.id:
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
         if rq_job.is_finished:
             project_id = rq_job.return_value()
             rq_job.delete()
@@ -1235,7 +1276,7 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
 def get_backup_dirname():
     return TmpDirManager.TMP_ROOT
 
-def import_project(request, queue_name, filename=None):
+def import_project(request: ExtendedRequest, queue_name: str, filename: str | None = None):
     if 'rq_id' in request.data:
         rq_id = request.data['rq_id']
     else:
@@ -1264,7 +1305,7 @@ def import_project(request, queue_name, filename=None):
         filename=filename
     )
 
-def import_task(request, queue_name, filename=None):
+def import_task(request: ExtendedRequest, queue_name: str, filename: str | None = None):
     rq_id = request.data.get('rq_id', RQId(
         RequestAction.IMPORT, RequestTarget.TASK, uuid.uuid4(),
         subresource=RequestSubresource.BACKUP,

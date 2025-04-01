@@ -90,6 +90,31 @@ export function translateToSVG(svg: SVGSVGElement, points: number[]): number[] {
     return output;
 }
 
+export function composeShapeDimensions(width: number, height: number, rotation: number | null): string {
+    const text = `${width.toFixed(1)}x${height.toFixed(1)}px`;
+    let adjustableRotation = rotation;
+    if (adjustableRotation) {
+        // make sure, that rotation is in range [0; 360]
+        while (adjustableRotation < 0) {
+            adjustableRotation += 360;
+        }
+        adjustableRotation %= 360;
+        return `${text} ${adjustableRotation.toFixed(1)}\u00B0`;
+    }
+
+    return text;
+}
+
+export function getRoundedRotation(shape: SVG.Shape, defaultValue: number = 0): number {
+    const rotation = shape.transform().rotation ?? defaultValue;
+    // Due to floating point arithmeic, rotation value may be updated incorrectly
+    // even when no rotation actually happened.
+    // E.g. in one call it may be 16.000000000000014
+    // On the next call it may be 16.00000000000003
+    // As it may lead to other issues, we round this value up to 5 digits after "."
+    return +rotation.toFixed(5);
+}
+
 export function displayShapeSize(shapesContainer: SVG.Container, textContainer: SVG.Container): ShapeSizeElement {
     const shapeSize: ShapeSizeElement = {
         sizeElement: textContainer
@@ -100,16 +125,9 @@ export function displayShapeSize(shapesContainer: SVG.Container, textContainer: 
             .fill('white')
             .addClass('cvat_canvas_text'),
         update(shape: SVG.Shape): void {
-            let text = `${Math.round(shape.width())}x${Math.round(shape.height())}px`;
-            if (shape.type === 'rect' || shape.type === 'ellipse') {
-                let rotation = shape.transform().rotation || 0;
-                // be sure, that rotation in range [0; 360]
-                while (rotation < 0) rotation += 360;
-                rotation %= 360;
-                if (rotation) {
-                    text = `${text} ${rotation.toFixed(1)}\u00B0`;
-                }
-            }
+            const rotation = shape.type === 'rect' || shape.type === 'ellipse' ?
+                getRoundedRotation(shape) : null;
+            const text = composeShapeDimensions(shape.width(), shape.height(), rotation);
             const [x, y, cx, cy]: number[] = translateToSVG(
                 (textContainer.node as any) as SVGSVGElement,
                 translateFromSVG((shapesContainer.node as any) as SVGSVGElement, [
@@ -123,7 +141,7 @@ export function displayShapeSize(shapesContainer: SVG.Container, textContainer: 
                 .clear()
                 .plain(text)
                 .move(x + consts.TEXT_MARGIN, y + consts.TEXT_MARGIN)
-                .rotate(shape.transform().rotation, cx, cy);
+                .rotate(rotation ?? 0, cx, cy);
         },
         rm(): void {
             if (this.sizeElement) {

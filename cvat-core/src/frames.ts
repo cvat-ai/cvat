@@ -207,6 +207,14 @@ export class FramesMetaData {
         if (initialData.frames.length === 1) {
             // it may be a videofile or one image
             framesInfo = frameNumbers.map(() => initialData.frames[0]);
+        } else if (this.includedFrames?.length) {
+            // Only simple GT jobs have includedFrames, so this condition works only for them
+            const framesNumbers = new Set(this.includedFrames.map((dataFrameNumber: number) => (
+                Math.floor((dataFrameNumber - this.startFrame) / this.frameStep)
+            )));
+            // Frames must contain placeholders on positions out of includedFrames.
+            // That is, we can use frames with indices corresponding to frame numbers
+            framesInfo = initialData.frames.filter((frame, idx) => framesNumbers.has(idx));
         } else {
             framesInfo = initialData.frames;
         }
@@ -728,7 +736,9 @@ export async function getContextImage(jobID: number, frame: number): Promise<Rec
     const meta = await frameData.getMeta();
     const requestId = frame;
     const { jobStartFrame } = frameData;
-    const { related_files: relatedFiles } = meta.frames[frame - jobStartFrame];
+    const dataFrameNumber = meta.getDataFrameNumber(frame - jobStartFrame);
+    const frameIndex = meta.getFrameIndex(dataFrameNumber);
+    const { related_files: relatedFiles } = meta.frames[frameIndex];
     return new Promise<Record<string, ImageBitmap>>((resolve, reject) => {
         if (!(jobID in frameDataCache)) {
             reject(new Error(
@@ -898,7 +908,9 @@ export async function getFrame(
     await refreshJobCacheIfOutdated(jobID);
 
     const framesMetaData = await frameDataCache[jobID].getMeta();
-    const frameMeta = framesMetaData.frames[frame - jobStartFrame];
+    const dataFrameNumber = framesMetaData.getDataFrameNumber(frame - jobStartFrame);
+    const frameIndex = framesMetaData.getFrameIndex(dataFrameNumber);
+    const frameMeta = framesMetaData.frames[frameIndex];
     frameDataCache[jobID].provider.setRenderSize(frameMeta.width, frameMeta.height);
     frameDataCache[jobID].decodeForward = isPlaying;
     frameDataCache[jobID].forwardStep = step;

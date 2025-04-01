@@ -1,8 +1,61 @@
 {
-  "count": 25,
+  "count": 26,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "assignee": null,
+      "assignee_updated_date": null,
+      "bug_tracker": "",
+      "consensus_enabled": true,
+      "created_date": "2025-01-27T16:42:31.302000Z",
+      "data": 30,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "data_original_chunk_type": "imageset",
+      "dimension": "2d",
+      "guide_id": null,
+      "id": 31,
+      "image_quality": 70,
+      "jobs": {
+        "completed": 0,
+        "count": 3,
+        "url": "http://localhost:8080/api/jobs?task_id=31",
+        "validation": 0
+      },
+      "labels": {
+        "url": "http://localhost:8080/api/labels?task_id=31"
+      },
+      "mode": "annotation",
+      "name": "sandbox task with consensus",
+      "organization": null,
+      "overlap": 0,
+      "owner": {
+        "first_name": "User",
+        "id": 2,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/2",
+        "username": "user1"
+      },
+      "project_id": null,
+      "segment_size": 3,
+      "size": 3,
+      "source_storage": {
+        "cloud_storage_id": null,
+        "id": 53,
+        "location": "local"
+      },
+      "status": "annotation",
+      "subset": "",
+      "target_storage": {
+        "cloud_storage_id": null,
+        "id": 54,
+        "location": "local"
+      },
+      "updated_date": "2025-01-27T16:43:36.188000Z",
+      "url": "http://localhost:8080/api/tasks/31",
+      "validation_mode": null
+    },
     {
       "assignee": null,
       "assignee_updated_date": null,

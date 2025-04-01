@@ -53,7 +53,7 @@ from cvat.apps.engine.media_extractors import (
     ZipCompressedChunkWriter,
     load_image,
 )
-from cvat.apps.engine.rq_job_handler import RQJobMetaField
+from cvat.apps.engine.rq import RQMetaWithFailureInfo
 from cvat.apps.engine.utils import (
     CvatChunkTimestampMismatchError,
     format_list,
@@ -107,9 +107,10 @@ def wait_for_rq_job(rq_job: rq.job.Job):
         if job_status in ("finished",):
             return
         elif job_status in ("failed",):
-            job_meta = rq_job.get_meta()
-            exc_type = job_meta.get(RQJobMetaField.EXCEPTION_TYPE, Exception)
-            exc_args = job_meta.get(RQJobMetaField.EXCEPTION_ARGS, ("Cannot create chunk",))
+            rq_job.get_meta()  # refresh from Redis
+            job_meta = RQMetaWithFailureInfo.for_job(rq_job)
+            exc_type = job_meta.exc_type or Exception
+            exc_args = job_meta.exc_args or ("Cannot create chunk",)
             raise exc_type(*exc_args)
 
         time.sleep(settings.CVAT_CHUNK_CREATE_CHECK_INTERVAL)

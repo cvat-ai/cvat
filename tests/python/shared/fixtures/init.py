@@ -196,12 +196,12 @@ def kube_exec_clickhouse_db(command):
 
 
 def docker_exec_redis_inmem(command):
-    _run(["docker", "exec", f"{PREFIX}_cvat_redis_inmem_1"] + command)
+    return _run(["docker", "exec", f"{PREFIX}_cvat_redis_inmem_1"] + command)
 
 
 def kube_exec_redis_inmem(command):
     pod_name = _kube_get_redis_inmem_pod_name()
-    _run(["kubectl", "exec", pod_name, "--"] + command)
+    return _run(["kubectl", "exec", pod_name, "--"] + command)
 
 
 def docker_exec_redis_ondisk(command):
@@ -250,7 +250,14 @@ def kube_restore_clickhouse_db():
 
 
 def _get_redis_inmem_keys_to_keep():
-    return ("rq:worker:", "rq:workers", "rq:scheduler_instance:", "rq:queues:")
+    return (
+        "rq:worker:",
+        "rq:workers",
+        "rq:scheduler_instance:",
+        "rq:queues:",
+        "cvat:applied_migrations",
+        "cvat:applied_migration:",
+    )
 
 
 def docker_restore_redis_inmem():
@@ -341,9 +348,10 @@ def delete_compose_files(container_name_files):
 def wait_for_services(num_secs: int = 300) -> None:
     for i in range(num_secs):
         logger.debug(f"waiting for the server to load ... ({i})")
-        response = requests.get(get_server_url("api/server/health/", format="json"))
 
         try:
+            response = requests.get(get_server_url("api/server/health/", format="json"))
+
             statuses = response.json()
             logger.debug(f"server status: \n{statuses}")
 

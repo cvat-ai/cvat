@@ -32,13 +32,15 @@ import Webhook from './webhook';
 import { ArgumentError } from './exceptions';
 import {
     AnalyticsReportFilter, QualityConflictsFilter, QualityReportsFilter,
-    QualitySettingsFilter, SerializedAsset,
+    QualitySettingsFilter, SerializedAsset, ConsensusSettingsFilter,
 } from './server-response-types';
 import QualityReport from './quality-report';
+import AboutData from './about';
 import QualityConflict, { ConflictSeverity } from './quality-conflict';
 import QualitySettings from './quality-settings';
 import { getFramesMeta } from './frames';
 import AnalyticsReport from './analytics-report';
+import ConsensusSettings from './consensus-settings';
 import {
     callAction, listActions, registerAction, runAction,
 } from './annotations-actions/annotations-actions';
@@ -72,7 +74,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
 
     implementationMixin(cvat.server.about, async () => {
         const result = await serverProxy.server.about();
-        return result;
+        return new AboutData(result);
     });
     implementationMixin(cvat.server.share, async (directory: string, searchPrefix?: string) => {
         const result = await serverProxy.server.share(directory, searchPrefix);
@@ -412,6 +414,20 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         const webhooks = webhooksData.map((webhookData) => new Webhook(webhookData));
         Object.assign(webhooks, { count: webhooksData.count });
         return webhooks;
+    });
+
+    implementationMixin(cvat.consensus.settings.get, async (filter: ConsensusSettingsFilter) => {
+        checkFilter(filter, {
+            taskID: isInteger,
+        });
+
+        const params = fieldsToSnakeCase(filter);
+
+        const settings = await serverProxy.consensus.settings.get(params);
+        const schema = await getServerAPISchema();
+        const descriptions = convertDescriptions(schema.components.schemas.ConsensusSettings.properties);
+
+        return new ConsensusSettings({ ...settings, descriptions });
     });
 
     implementationMixin(cvat.analytics.quality.reports, async (filter: QualityReportsFilter) => {

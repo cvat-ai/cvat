@@ -6,6 +6,7 @@
 import _ from 'lodash';
 import {
     useRef, useEffect, useState, useCallback,
+    EffectCallback, DependencyList,
 } from 'react';
 import { useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
@@ -148,4 +149,17 @@ export function useResetShortcutsOnUnmount(componentShortcuts: Record<string, Ke
         }, {});
         registerComponentShortcuts(revertedShortcuts);
     }, []);
+}
+
+export function useUpdateEffect(effect: EffectCallback, deps?: DependencyList): void {
+    const isFirstRender = useRef(true);
+
+    useEffect(() => {
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            return () => {};
+        }
+
+        return effect();
+    }, deps);
 }

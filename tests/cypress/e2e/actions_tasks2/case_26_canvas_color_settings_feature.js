@@ -48,32 +48,6 @@ context('Canvas color settings feature', () => {
             );
     }
 
-    function applyStringAction(wrapper, slidersClassNames, action) {
-        cy.get(wrapper).within(() => {
-            cy.wrap(slidersClassNames).each(($el) => {
-                cy.wrap($el)
-                    .get($el)
-                    .within(() => {
-                        cy.get('[role=slider]').type(action);
-                    });
-            });
-        });
-        cy.get('.ant-tooltip').invoke('hide');
-    }
-
-    function checkSlidersValue(wrapper, slidersClassNames, expectedResult) {
-        cy.get(wrapper).within(() => {
-            cy.wrap(slidersClassNames).each(($el, index) => {
-                cy.wrap($el)
-                    .get($el)
-                    .within(() => {
-                        cy.get('[role=slider]')
-                            .should('have.attr', 'aria-valuenow', expectedResult[index]);
-                    });
-            });
-        });
-    }
-
     before(() => {
         cy.openTaskJob(taskName);
         cy.get('.cvat-canvas-image-setups-trigger').click();
@@ -82,10 +56,10 @@ context('Canvas color settings feature', () => {
     describe(`Testing case "${caseId}"`, () => {
         it('Check application of CSS filters', () => {
             const stringAction = generateString(countActionMoveSlider, 'rightarrow');
-            applyStringAction(
+            cy.applyActionToSliders(
                 '.cvat-canvas-image-setups-content', classNameSliders, stringAction,
             );
-            checkSlidersValue(
+            cy.checkSlidersValues(
                 '.cvat-canvas-image-setups-content', classNameSliders, expectedResultInSetting,
             );
             const expectedResultInBackground = (defaultValueInSidebar + countActionMoveSlider) / 100;
@@ -94,10 +68,10 @@ context('Canvas color settings feature', () => {
 
         it('Check application of image processing filters', () => {
             const stringAction = generateString(countActionMoveFilterSlider, 'rightarrow');
-            applyStringAction(
+            cy.applyActionToSliders(
                 '.cvat-image-setups-filters', filterSlidersClassNames, stringAction,
             );
-            checkSlidersValue(
+            cy.checkSlidersValues(
                 '.cvat-image-setups-filters', filterSlidersClassNames, expectedResultInSettingFilters,
             );
             cy.get('.cvat-notification-notice-image-processing-error').should('not.exist');
@@ -107,10 +81,10 @@ context('Canvas color settings feature', () => {
             cy.get('.cvat-image-setups-reset-color-settings').find('button').click();
             const expectedResultInBackground = defaultValueInSidebar / 100;
             checkStateValuesInBackground(expectedResultInBackground);
-            checkSlidersValue(
+            cy.checkSlidersValues(
                 '.cvat-canvas-image-setups-content', classNameSliders, defaultValueInSetting,
             );
-            checkSlidersValue(
+            cy.checkSlidersValues(
                 '.cvat-image-setups-filters', filterSlidersClassNames, defaultValueInSettingFilters,
             );
         });
@@ -118,19 +92,19 @@ context('Canvas color settings feature', () => {
         it('Check persisting image filters across jobs', () => {
             const sliderAction = generateString(countActionMoveSlider, 'rightarrow');
             const filterAction = generateString(countActionMoveFilterSlider, 'rightarrow');
-            applyStringAction(
+            cy.applyActionToSliders(
                 '.cvat-canvas-image-setups-content', classNameSliders, sliderAction,
             );
-            applyStringAction(
+            cy.applyActionToSliders(
                 '.cvat-image-setups-filters', filterSlidersClassNames, filterAction,
             );
             cy.interactMenu('Open the task');
             cy.openJob(1);
             cy.get('.cvat-canvas-image-setups-trigger').click();
-            checkSlidersValue(
+            cy.checkSlidersValues(
                 '.cvat-canvas-image-setups-content', classNameSliders, expectedResultInSetting,
             );
-            checkSlidersValue(
+            cy.checkSlidersValues(
                 '.cvat-image-setups-filters', filterSlidersClassNames, expectedResultInSettingFilters,
             );
             cy.get('.cvat-notification-notice-image-processing-error').should('not.exist');

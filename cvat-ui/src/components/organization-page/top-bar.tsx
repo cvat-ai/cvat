@@ -3,26 +3,23 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, {
+    useState, useRef, useEffect, useCallback,
+} from 'react';
 import { useHistory } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import moment from 'moment';
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
-import Paragraph from 'antd/lib/typography/Paragraph';
 import Modal from 'antd/lib/modal';
 import Button from 'antd/lib/button';
 import Space from 'antd/lib/space';
 import Input from 'antd/lib/input';
-import Form from 'antd/lib/form';
-import Select from 'antd/lib/select';
 import Popover from 'antd/lib/popover';
-import { useForm } from 'antd/lib/form/Form';
 import { Store } from 'antd/lib/form/interface';
-
 import {
     EditTwoTone, EnvironmentOutlined,
-    MailOutlined, PhoneOutlined, PlusCircleOutlined, DeleteOutlined, MoreOutlined,
+    MailOutlined, PhoneOutlined, PlusCircleOutlined, MoreOutlined,
 } from '@ant-design/icons';
 
 import {
@@ -31,12 +28,24 @@ import {
     removeOrganizationAsync,
     updateOrganizationAsync,
 } from 'actions/organization-actions';
+import { OrganizationMembersQuery } from 'reducers';
+import { Organization, User } from 'cvat-core-wrapper';
+import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
 import Menu from 'components/dropdown-menu';
+import InvitationModal from './invitation-modal';
+
+import {
+    localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
+} from './memberships-filter-configuration';
 
 export interface Props {
-    organizationInstance: any;
-    userInstance: any;
+    organizationInstance: Organization;
+    userInstance: User;
+    query: OrganizationMembersQuery;
     fetchMembers: () => void;
+    onApplySearch: (search: string | null) => void;
+    onApplyFilter: (filter: string | null) => void;
+    onApplySorting: (sort: string | null) => void;
 }
 
 export enum MenuActions {
@@ -44,17 +53,34 @@ export enum MenuActions {
     REMOVE_ORGANIZATION = 'REMOVE_ORGANIZATION',
 }
 
+const FilteringComponent = ResourceFilterHOC(
+    config, localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues,
+);
+
 function OrganizationTopBar(props: Props): JSX.Element {
-    const { organizationInstance, userInstance, fetchMembers } = props;
+    const {
+        organizationInstance, userInstance, fetchMembers, query,
+        onApplyFilter, onApplySearch, onApplySorting,
+    } = props;
     const {
         owner, createdDate, description, updatedDate, slug, name, contact,
     } = organizationInstance;
     const { id: userID } = userInstance;
-    const [form] = useForm();
     const descriptionEditingRef = useRef<HTMLDivElement>(null);
-    const [visibleInviteModal, setVisibleInviteModal] = useState<boolean>(false);
-    const [editingDescription, setEditingDescription] = useState<boolean>(false);
+    const [editingDescription, setEditingDescription] = useState(false);
+    const [visibleInviteModal, setVisibleInviteModal] = useState(false);
+    const [visibility, setVisibility] = useState(defaultVisibility);
     const dispatch = useDispatch();
+
+    const onInvite = useCallback((values: Store) => {
+        dispatch(inviteOrganizationMembersAsync(organizationInstance, values.users, () => {
+            fetchMembers();
+        }));
+        setVisibleInviteModal(false);
+    }, [organizationInstance, fetchMembers]);
+    const onCancelInvite = useCallback(() => {
+        setVisibleInviteModal(false);
+    }, []);
 
     useEffect(() => {
         const listener = (event: MouseEvent): void => {
@@ -319,93 +345,57 @@ function OrganizationTopBar(props: Props): JSX.Element {
                     </Space>
                 </Col>
             </Row>
-            <Modal
-                className='cvat-organization-invitation-modal'
-                open={visibleInviteModal}
-                onCancel={() => {
-                    setVisibleInviteModal(false);
-                    form.resetFields(['users']);
-                }}
-                destroyOnClose
-                onOk={() => {
-                    form.submit();
-                }}
-            >
-                <Form
-                    initialValues={{
-                        users: [{ email: '', role: 'worker' }],
-                    }}
-                    onFinish={(values: Store) => {
-                        dispatch(
-                            inviteOrganizationMembersAsync(organizationInstance, values.users, () => {
-                                fetchMembers();
-                            }),
-                        );
-                        setVisibleInviteModal(false);
-                        form.resetFields(['users']);
-                    }}
-                    layout='vertical'
-                    form={form}
-                >
-                    <Paragraph>
-                        <Text>Invite CVAT users to collaborate </Text>
-                    </Paragraph>
-                    <Paragraph>
-                        <Text type='secondary'>
-                            If the email address is registered on CVAT, the user will be added to the organization
-                        </Text>
-                    </Paragraph>
-                    <Form.List name='users'>
-                        {(fields, { add, remove }) => (
-                            <>
-                                {fields.map((field: any, index: number) => (
-                                    <Row className='cvat-organization-invitation-field' key={field.key}>
-                                        <Col span={10}>
-                                            <Form.Item
-                                                className='cvat-organization-invitation-field-email'
-                                                hasFeedback
-                                                name={[field.name, 'email']}
-                                                fieldKey={[field.fieldKey, 'email']}
-                                                rules={[
-                                                    { required: true, message: 'This field is required' },
-                                                    { type: 'email', message: 'The input is not a valid email' },
-                                                ]}
-                                            >
-                                                <Input placeholder='Enter an email address' />
-                                            </Form.Item>
-                                        </Col>
-                                        <Col span={10} offset={1}>
-                                            <Form.Item
-                                                className='cvat-organization-invitation-field-role'
-                                                name={[field.name, 'role']}
-                                                fieldKey={[field.fieldKey, 'role']}
-                                                initialValue='worker'
-                                                rules={[{ required: true, message: 'This field is required' }]}
-                                            >
-                                                <Select>
-                                                    <Select.Option value='worker'>Worker</Select.Option>
-                                                    <Select.Option value='supervisor'>Supervisor</Select.Option>
-                                                    <Select.Option value='maintainer'>Maintainer</Select.Option>
-                                                </Select>
-                                            </Form.Item>
-                                        </Col>
-                                        <Col span={1} offset={1}>
-                                            {index > 0 ? (
-                                                <DeleteOutlined onClick={() => remove(field.name)} />
-                                            ) : null}
-                                        </Col>
-                                    </Row>
-                                ))}
-                                <Form.Item>
-                                    <Button className='cvat-invite-more-org-members-button' icon={<PlusCircleOutlined />} onClick={() => add()}>
-                                        Invite more
-                                    </Button>
-                                </Form.Item>
-                            </>
+            <Row className='cvat-organization-page-filters-wrapper' justify='space-between'>
+                <Col>
+                    <Input.Search
+                        enterButton
+                        onSearch={(phrase: string) => {
+                            onApplySearch(phrase);
+                        }}
+                        defaultValue={query.search || ''}
+                        className='cvat-organization-page-search-bar'
+                        placeholder='Search ...'
+                    />
+                </Col>
+                <Col>
+                    <SortingComponent
+                        visible={visibility.sorting}
+                        onVisibleChange={(visible: boolean) => (
+                            setVisibility({ ...defaultVisibility, sorting: visible })
                         )}
-                    </Form.List>
-                </Form>
-            </Modal>
+                        defaultFields={query.sort?.split(',') || ['-ID']}
+                        sortingFields={['User', 'Role']}
+                        onApplySorting={onApplySorting}
+                    />
+                    <FilteringComponent
+                        value={query.filter}
+                        predefinedVisible={visibility.predefined}
+                        builderVisible={visibility.builder}
+                        recentVisible={visibility.recent}
+                        onPredefinedVisibleChange={(visible: boolean) => (
+                            setVisibility({ ...defaultVisibility, predefined: visible })
+                        )}
+                        onBuilderVisibleChange={(visible: boolean) => (
+                            setVisibility({ ...defaultVisibility, builder: visible })
+                        )}
+                        onRecentVisibleChange={(visible: boolean) => (
+                            setVisibility({
+                                ...defaultVisibility, builder: visibility.builder, recent: visible,
+                            })
+                        )}
+                        onApplyFilter={onApplyFilter}
+                    />
+                </Col>
+            </Row>
+            {
+                visibleInviteModal && (
+                    <InvitationModal
+                        onInvite={onInvite}
+                        onCancelInvite={onCancelInvite}
+                    />
+                )
+            }
+
         </>
     );
 }

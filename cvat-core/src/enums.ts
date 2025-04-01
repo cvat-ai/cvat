@@ -124,6 +124,7 @@ export enum EventScope {
 
     annotationsAction = 'run:annotations_action',
     clickElement = 'click:element',
+    userActivity = 'user:activity',
 }
 
 export enum HistoryActions {
@@ -161,13 +162,6 @@ export enum ModelKind {
 
 export enum ModelProviders {
     CVAT = 'cvat',
-}
-
-export enum ModelReturnType {
-    RECTANGLE = 'rectangle',
-    TAG = 'tag',
-    POLYGON = 'polygon',
-    MASK = 'mask',
 }
 
 export const colors = [

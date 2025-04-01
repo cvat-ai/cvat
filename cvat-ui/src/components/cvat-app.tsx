@@ -79,8 +79,8 @@ import EmailConfirmationPage from './email-confirmation-pages/email-confirmed';
 import EmailVerificationSentPage from './email-confirmation-pages/email-verification-sent';
 import IncorrectEmailConfirmationPage from './email-confirmation-pages/incorrect-email-confirmation';
 import CreateJobPage from './create-job-page/create-job-page';
-import AnalyticsPage from './analytics-page/analytics-page';
 import QualityControlPage from './quality-control/quality-control-page';
+import ConsensusManagementPage from './consensus-management-page/consensus-management-page';
 import InvitationWatcher from './invitation-watcher/invitation-watcher';
 
 interface CVATAppProps {
@@ -148,9 +148,31 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         } = appConfig;
 
         // Logger configuration
-        window.addEventListener('click', (event: MouseEvent) => {
-            EventRecorder.recordMouseEvent(event);
-        });
+        const listener = (e: MouseEvent | KeyboardEvent): void => {
+            if (e instanceof MouseEvent && e.type === 'click') {
+                EventRecorder.recordMouseEvent(e);
+            }
+
+            EventRecorder.recordUserActivity();
+        };
+
+        let listenerRegistered = false;
+        const visibilityChangeListener = (): void => {
+            if (!window.document.hidden) {
+                if (!listenerRegistered) {
+                    window.addEventListener('keydown', listener, { capture: true });
+                    window.addEventListener('click', listener, { capture: true });
+                    listenerRegistered = true;
+                }
+            } else {
+                window.removeEventListener('keydown', listener);
+                window.removeEventListener('click', listener);
+                listenerRegistered = false;
+            }
+        };
+
+        visibilityChangeListener(); // initial setup other event listeners
+        window.addEventListener('visibilitychange', visibilityChangeListener);
 
         core.logger.configure(() => window.document.hasFocus());
         core.config.onOrganizationChange = (newOrgId: number | null) => {
@@ -325,6 +347,11 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             loadServerAPISchema();
         }
 
+        if (!aboutInitialized && !aboutFetching) {
+            loadAbout();
+            return;
+        }
+
         if (user == null || !user.isVerified || !user.id) {
             return;
         }
@@ -335,10 +362,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         if (!formatsInitialized && !formatsFetching) {
             loadFormats();
-        }
-
-        if (!aboutInitialized && !aboutFetching) {
-            loadAbout();
         }
 
         if (organizationInitialized && !requestsInitialized && !requestsFetching) {
@@ -503,16 +526,15 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         <Route exact path='/projects/:id' component={ProjectPageComponent} />
                                         <Route exact path='/projects/:id/webhooks' component={WebhooksPage} />
                                         <Route exact path='/projects/:id/guide' component={AnnotationGuidePage} />
-                                        <Route exact path='/projects/:pid/analytics' component={AnalyticsPage} />
                                         <Route exact path='/tasks' component={TasksPageContainer} />
                                         <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
                                         <Route exact path='/tasks/:id' component={TaskPageComponent} />
-                                        <Route exact path='/tasks/:tid/analytics' component={AnalyticsPage} />
                                         <Route exact path='/tasks/:tid/quality-control' component={QualityControlPage} />
+                                        <Route exact path='/tasks/:tid/consensus' component={ConsensusManagementPage} />
                                         <Route exact path='/tasks/:id/jobs/create' component={CreateJobPage} />
                                         <Route exact path='/tasks/:id/guide' component={AnnotationGuidePage} />
                                         <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
-                                        <Route exact path='/tasks/:tid/jobs/:jid/analytics' component={AnalyticsPage} />
+
                                         <Route exact path='/jobs' component={JobsPageComponent} />
                                         <Route exact path='/cloudstorages' component={CloudStoragesPageComponent} />
                                         <Route

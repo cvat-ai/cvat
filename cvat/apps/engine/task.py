@@ -9,12 +9,12 @@ import itertools
 import os
 import re
 import shutil
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from contextlib import closing
 from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, NamedTuple, Optional, Union
+from typing import Any, Callable, NamedTuple, Optional, Union
 from urllib import parse as urlparse
 from urllib import request as urlrequest
 
@@ -25,7 +25,6 @@ import rq
 from django.conf import settings
 from django.db import transaction
 from django.forms.models import model_to_dict
-from django.http import HttpRequest
 from rest_framework.serializers import ValidationError
 
 from cvat.apps.engine import models
@@ -46,17 +45,12 @@ from cvat.apps.engine.media_extractors import (
     load_image,
     sort,
 )
+from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.models import RequestAction, RequestTarget
-from cvat.apps.engine.rq_job_handler import RQId
+from cvat.apps.engine.rq import ImportRQMeta, RQId, define_dependent_job
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
-from cvat.apps.engine.utils import (
-    av_scan_paths,
-    define_dependent_job,
-    format_list,
-    get_rq_job_meta,
-    get_rq_lock_by_user,
-    take_by,
-)
+from cvat.apps.engine.types import ExtendedRequest
+from cvat.apps.engine.utils import av_scan_paths, format_list, get_rq_lock_by_user, take_by
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS, make_requests_session
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, is_manifest
 from utils.dataset_manifest.core import VideoManifestValidator, is_dataset_manifest
@@ -71,7 +65,7 @@ slogger = ServerLogManager(__name__)
 def create(
     db_task: models.Task,
     data: models.Data,
-    request: HttpRequest,
+    request: ExtendedRequest,
 ) -> str:
     """Schedule a background job to create a task and return that job's identifier"""
     q = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
@@ -83,7 +77,7 @@ def create(
             func=_create_thread,
             args=(db_task.pk, data),
             job_id=rq_id,
-            meta=get_rq_job_meta(request=request, db_obj=db_task),
+            meta=ImportRQMeta.build_for(request=request, db_obj=db_task),
             depends_on=define_dependent_job(q, user_id),
             failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds(),
         )
@@ -107,13 +101,13 @@ class SegmentsParams(NamedTuple):
 
 def _copy_data_from_share_point(
     server_files: list[str],
+    *,
+    update_status_callback: Callable[[str], None],
     upload_dir: str,
-    server_dir: Optional[str] = None,
-    server_files_exclude: Optional[list[str]] = None,
+    server_dir: str | None = None,
+    server_files_exclude: list[str] | None = None,
 ):
-    job = rq.get_current_job()
-    job.meta['status'] = 'Data are being copied from source..'
-    job.save_meta()
+    update_status_callback('Data are being copied from source..')
 
     filtered_server_files = server_files.copy()
 
@@ -198,11 +192,10 @@ def _generate_segment_params(
 def _create_segments_and_jobs(
     db_task: models.Task,
     *,
+    update_status_callback: Callable[[str], None],
     job_file_mapping: Optional[JobFileMapping] = None,
 ):
-    rq_job = rq.get_current_job()
-    rq_job.meta['status'] = 'Task is being saved in database'
-    rq_job.save_meta()
+    update_status_callback('Task is being saved in database')
 
     segments, segment_size, overlap = _generate_segment_params(
         db_task=db_task, job_file_mapping=job_file_mapping,
@@ -441,8 +434,12 @@ def _validate_scheme(url):
     if parsed_url.scheme not in ALLOWED_SCHEMES:
         raise ValueError('Unsupported URL scheme: {}. Only http and https are supported'.format(parsed_url.scheme))
 
-def _download_data(urls, upload_dir):
-    job = rq.get_current_job()
+def _download_data(
+    urls: Iterable[str],
+    upload_dir: str,
+    *,
+    update_status_callback: Callable[[str], None],
+):
     local_files = {}
 
     with make_requests_session() as session:
@@ -452,8 +449,7 @@ def _download_data(urls, upload_dir):
                 raise Exception("filename collision: {}".format(name))
             _validate_scheme(url)
             slogger.glob.info("Downloading: {}".format(url))
-            job.meta['status'] = '{} is being downloaded..'.format(url)
-            job.save_meta()
+            update_status_callback('{} is being downloaded..'.format(url))
 
             response = session.get(url, stream=True, proxies=PROXIES_FOR_UNTRUSTED_URLS)
             if response.status_code == 200:
@@ -591,10 +587,11 @@ def _create_thread(
     slogger.glob.info("create task #{}".format(db_task.id))
 
     job = rq.get_current_job()
+    rq_job_meta = ImportRQMeta.for_job(job)
 
-    def _update_status(msg: str) -> None:
-        job.meta['status'] = msg
-        job.save_meta()
+    def update_status(msg: str) -> None:
+        rq_job_meta.status = msg
+        rq_job_meta.save()
 
     job_file_mapping = _validate_job_file_mapping(db_task, data)
 
@@ -607,7 +604,7 @@ def _create_thread(
     is_data_in_cloud = db_data.storage == models.StorageChoice.CLOUD_STORAGE
 
     if data['remote_files'] and not is_dataset_import:
-        data['remote_files'] = _download_data(data['remote_files'], upload_dir)
+        data['remote_files'] = _download_data(data['remote_files'], upload_dir, update_status_callback=update_status)
 
     # find and validate manifest file
     manifest_files = _find_manifest_files(data)
@@ -751,7 +748,7 @@ def _create_thread(
             # Packed media must be downloaded for task creation
             any(v for k, v in media.items() if k != 'image')
         ):
-            _update_status("Downloading input media")
+            update_status("Downloading input media")
 
             filtered_data = []
             for files in (i for i in media.values() if i):
@@ -785,7 +782,11 @@ def _create_thread(
             # this means that the data has not been downloaded from the storage to the host
             _copy_data_from_share_point(
                 (data['server_files'] + [manifest_file]) if manifest_file else data['server_files'],
-                upload_dir, data.get('server_files_path'), data.get('server_files_exclude'))
+                upload_dir=upload_dir,
+                server_dir=data.get('server_files_path'),
+                server_files_exclude=data.get('server_files_exclude'),
+                update_status_callback=update_status,
+            )
             manifest_root = upload_dir
         elif is_data_in_cloud:
             # we should sort media before sorting in the extractor because the manifest structure should match to the sorted media
@@ -807,8 +808,7 @@ def _create_thread(
 
     av_scan_paths(upload_dir)
 
-    job.meta['status'] = 'Media files are being extracted...'
-    job.save_meta()
+    update_status('Media files are being extracted...')
 
     # If upload from server_files image and directories
     # need to update images list by all found images in directories
@@ -1032,7 +1032,7 @@ def _create_thread(
         if task_mode == MEDIA_TYPES['video']['mode']:
             if manifest_file:
                 try:
-                    _update_status('Validating the input manifest file')
+                    update_status('Validating the input manifest file')
 
                     manifest = VideoManifestValidator(
                         source_path=os.path.join(upload_dir, media_files[0]),
@@ -1054,13 +1054,13 @@ def _create_thread(
                         base_msg = "Failed to parse the uploaded manifest file"
                         slogger.glob.warning(ex, exc_info=True)
 
-                    _update_status(base_msg)
+                    update_status(base_msg)
             else:
                 manifest = None
 
             if not manifest:
                 try:
-                    _update_status('Preparing a manifest file')
+                    update_status('Preparing a manifest file')
 
                     # TODO: maybe generate manifest in a temp directory
                     manifest = VideoManifestManager(db_data.get_manifest_path())
@@ -1072,7 +1072,7 @@ def _create_thread(
                     )
                     manifest.create()
 
-                    _update_status('A manifest has been created')
+                    update_status('A manifest has been created')
 
                 except Exception as ex:
                     manifest.remove()
@@ -1084,7 +1084,7 @@ def _create_thread(
                         base_msg = ""
                         slogger.glob.warning(ex, exc_info=True)
 
-                    _update_status(
+                    update_status(
                         f"Failed to create manifest for the uploaded video{base_msg}. "
                         "A manifest will not be used in this task"
                     )
@@ -1358,7 +1358,7 @@ def _create_thread(
         ))
 
     if db_task.mode == 'annotation':
-        images = models.Image.objects.bulk_create(images)
+        images = bulk_create(models.Image, images)
 
         db_related_files = [
             models.RelatedFile(
@@ -1367,20 +1367,23 @@ def _create_thread(
             )
             for related_file_path in set(itertools.chain.from_iterable(related_images.values()))
         ]
-        db_related_files = models.RelatedFile.objects.bulk_create(db_related_files)
+        db_related_files = bulk_create(models.RelatedFile, db_related_files)
         db_related_files_by_path = {
             os.path.relpath(rf.path.path, upload_dir): rf for rf in db_related_files
         }
 
         ThroughModel = models.RelatedFile.images.through
-        models.RelatedFile.images.through.objects.bulk_create((
-            ThroughModel(
-                relatedfile_id=db_related_files_by_path[related_file_path].id,
-                image_id=image.id
+        bulk_create(
+            ThroughModel,
+            (
+                ThroughModel(
+                    relatedfile_id=db_related_files_by_path[related_file_path].id,
+                    image_id=image.id
+                )
+                for image in images
+                for related_file_path in related_images.get(image.path, [])
             )
-            for image in images
-            for related_file_path in related_images.get(image.path, [])
-        ))
+        )
     else:
         models.Video.objects.create(
             data=db_data,
@@ -1397,7 +1400,7 @@ def _create_thread(
 
     slogger.glob.info("Found frames {} for Data #{}".format(db_data.size, db_data.id))
 
-    _create_segments_and_jobs(db_task, job_file_mapping=job_file_mapping)
+    _create_segments_and_jobs(db_task, job_file_mapping=job_file_mapping, update_status_callback=update_status)
 
     if validation_params and validation_params['mode'] == models.ValidationMode.GT:
         # The RNG backend must not change to yield reproducible frame picks,
@@ -1547,9 +1550,10 @@ def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader
                     status_message, progress_animation[self._call_counter]
                 )
 
-            self._rq_job.meta['status'] = status_message
-            self._rq_job.meta['task_progress'] = progress or 0.
-            self._rq_job.save_meta()
+            rq_job_meta = ImportRQMeta.for_job(self._rq_job)
+            rq_job_meta.status = status_message
+            rq_job_meta.task_progress = progress or 0.
+            rq_job_meta.save()
 
             self._call_counter = (self._call_counter + 1) % len(progress_animation)
 

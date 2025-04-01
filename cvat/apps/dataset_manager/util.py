@@ -9,20 +9,19 @@ import os.path as osp
 import re
 import tempfile
 import zipfile
-from collections.abc import Generator, Iterable, Sequence
+from collections.abc import Generator, Iterable
 from contextlib import contextmanager
 from copy import deepcopy
 from datetime import timedelta
 from enum import Enum
 from threading import Lock
-from typing import Any, TypeVar
+from typing import Any
 
 import attrs
 import django_rq
 from datumaro.util import to_snake_case
 from datumaro.util.os_util import make_file_name
 from django.conf import settings
-from django.db import models
 from pottery import Redlock
 
 
@@ -36,62 +35,6 @@ def make_zip_archive(src_path, dst_path):
             for name in filenames:
                 path = osp.join(dirpath, name)
                 archive.write(path, osp.relpath(path, src_path))
-
-
-_ModelT = TypeVar("_ModelT", bound=models.Model)
-
-def bulk_create(
-    db_model: type[_ModelT],
-    objects: Iterable[_ModelT],
-    *,
-    flt_param: dict[str, Any] | None = None,
-    batch_size: int | None = 10000
-) -> list[_ModelT]:
-    if objects:
-        if flt_param:
-            if "postgresql" in settings.DATABASES["default"]["ENGINE"]:
-                return db_model.objects.bulk_create(objects, batch_size=batch_size)
-            else:
-                ids = list(db_model.objects.filter(**flt_param).values_list('id', flat=True))
-                db_model.objects.bulk_create(objects, batch_size=batch_size)
-
-                return list(db_model.objects.exclude(id__in=ids).filter(**flt_param))
-        else:
-            return db_model.objects.bulk_create(objects, batch_size=batch_size)
-
-    return []
-
-
-def is_prefetched(queryset: models.QuerySet, field: str) -> bool:
-    return field in queryset._prefetch_related_lookups
-
-
-def add_prefetch_fields(queryset: models.QuerySet, fields: Sequence[str]) -> models.QuerySet:
-    for field in fields:
-        if not is_prefetched(queryset, field):
-            queryset = queryset.prefetch_related(field)
-
-    return queryset
-
-
-def get_cached(queryset: models.QuerySet, pk: int) -> models.Model:
-    """
-    Like regular queryset.get(), but checks for the cached values first
-    instead of just making a request.
-    """
-
-    # Read more about caching insights:
-    # https://www.mattduck.com/2021-01-django-orm-result-cache.html
-    # The field is initialized on accessing the query results, eg. on iteration
-    if getattr(queryset, '_result_cache'):
-        result = next((obj for obj in queryset if obj.pk == pk), None)
-    else:
-        result = None
-
-    if result is None:
-        result = queryset.get(id=pk)
-
-    return result
 
 
 def faster_deepcopy(v):
@@ -365,3 +308,23 @@ def extend_export_file_lifetime(file_path: str):
     # as the last access time is not available on every filesystem.
     # As a result, file deletion by the cleaning job will be postponed.
     os.utime(file_path, None)
+
+
+def linear_sort_shapes(shapes: Iterable) -> list:
+    # as frame range is always has certain range
+    # it allows us use efficient linear sorting algorithm
+    min_frame = None
+    max_frame = None
+    d = {}
+    for shape in shapes:
+        frame = shape["frame"]
+        d[frame] = shape
+        min_frame = frame if min_frame is None else min(frame, min_frame)
+        max_frame = frame if max_frame is None else max(frame, max_frame)
+
+    sorted_shapes = []
+    if max_frame is not None:
+        for i in range(min_frame, max_frame + 1):
+            if i in d:
+                sorted_shapes.append(d[i])
+    return sorted_shapes
