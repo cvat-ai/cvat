@@ -87,7 +87,7 @@ def build_iam_context(
         "group_name": request.iam_context["privilege"],
         "org_id": getattr(organization, "id", None),
         "org_slug": getattr(organization, "slug", None),
-        "org_owner_id": getattr(organization, "owner_id", None) if organization else None,
+        "org_owner_id": organization.owner_id if organization else None,
         "org_role": getattr(membership, "role", None),
     }
 
