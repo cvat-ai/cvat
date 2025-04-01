@@ -759,7 +759,6 @@ class JobAnnotation:
             create_callback=self.create,
         )
         self.delete()
-        self.reset()
 
         with TmpDirManager.get_tmp_directory() as temp_dir:
             try:
