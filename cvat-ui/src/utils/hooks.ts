@@ -6,7 +6,7 @@
 import _ from 'lodash';
 import {
     useRef, useEffect, useState, useCallback,
-    useLayoutEffect,
+    useLayoutEffect, EffectCallback, DependencyList,
 } from 'react';
 import { useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
@@ -171,4 +171,17 @@ export function usePageSizeData(ref: any): any {
     }, []);
 
     return pageSizeData;
+}
+
+export function useUpdateEffect(effect: EffectCallback, deps?: DependencyList): void {
+    const isFirstRender = useRef(true);
+
+    useEffect(() => {
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            return () => {};
+        }
+
+        return effect();
+    }, deps);
 }
