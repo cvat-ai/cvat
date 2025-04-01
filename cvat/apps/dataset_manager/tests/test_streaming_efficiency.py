@@ -1,5 +1,6 @@
 import os
 import tempfile
+import unittest
 from typing import Callable, Generator, Optional, Tuple
 from unittest import TestCase, mock
 from unittest.mock import MagicMock, Mock
@@ -380,8 +381,10 @@ class TestImporters(ApiTestBase):
             assert self.extractor.iter_call_count == 0
             assert self.extractor.iter_subset_call_dict == {"train": 1, "test": 0, "foo": 0}
 
+    @unittest.expectedFailure
     @mock.patch("rq.get_current_job")
     def test_import_project_annotations_efficiency(self, mock_current_job):
+        # streaming import to project should not be turned on until this test passes
         mock_current_job.return_value = Mock(spec=RQJob, meta=dict())
         mock_current_job.return_value.save_meta = lambda: None
 
@@ -390,6 +393,4 @@ class TestImporters(ApiTestBase):
             open(fake_file_name, "w").close()
             import_dataset_as_project(fake_file_name, self.project_id, "dummy_format 1.0", True)
             assert self.extractor.iter_call_count == 0
-
-            # well, it should be 1, but it's a work in progress
-            assert self.extractor.iter_subset_call_dict == {"train": 2, "test": 2, "foo": 2}
+            assert self.extractor.iter_subset_call_dict == {"train": 1, "test": 1, "foo": 1}
