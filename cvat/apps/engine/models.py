@@ -926,7 +926,7 @@ class Job(TimestampedModel, FileSystemRelatedModel):
         return self.segment.task.organization_id
 
     @property
-    def organization(self) -> Organization | None:
+    def organization(self) -> Organization:
         return self.segment.task.organization
 
     def get_organization_slug(self) -> str:
