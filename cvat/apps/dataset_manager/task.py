@@ -426,9 +426,11 @@ class JobAnnotation:
     def update(self, data):
         data = self._validate_input_annotations(data)
 
+        # in case with "update" must be called prior any annotations in database changes
+        # as this annotations are used to count removed/added shapes
+        handle_annotations_change(self.db_job, data.data, "update")
         self._delete(data)
         self._create(data)
-        handle_annotations_change(self.db_job, self.data, "update")
 
         if not self._data_is_empty(self.data):
             self._set_updated_date()
@@ -494,13 +496,6 @@ class JobAnnotation:
             labeledshape_ids = [shape["id"] for shape in data["shapes"]]
             labeledtrack_ids = [track["id"] for track in data["tracks"]]
 
-            # It is not important for us that data had some "invalid" objects
-            # which were skipped (not actually deleted). The main idea is to
-            # say that all requested objects are absent in DB after the method.
-            self.ir_data.tags = data['tags']
-            self.ir_data.shapes = data['shapes']
-            self.ir_data.tracks = data['tracks']
-
             for labeledimage_ids_chunk in take_by(labeledimage_ids, chunk_size=1000):
                 self._delete_job_labeledimages(labeledimage_ids_chunk)
 
@@ -511,11 +506,13 @@ class JobAnnotation:
                 self._delete_job_labeledtracks(labeledtrack_ids_chunk)
 
             deleted_data = {
+                "version": self.ir_data.version,
                 "tags": data["tags"],
                 "shapes": data["shapes"],
                 "tracks": data["tracks"],
             }
 
+        self.reset()
         return deleted_data
 
     def delete(self, data=None):
@@ -524,6 +521,7 @@ class JobAnnotation:
             self._set_updated_date()
 
         handle_annotations_change(self.db_job, deleted_data, "delete")
+        return deleted_data
 
     @staticmethod
     def _extend_attributes(attributeval_set, default_attribute_values):
@@ -1032,7 +1030,7 @@ def patch_job_data(pk, data: AnnotationIR | dict, action: PatchAction, *, db_job
     elif action == PatchAction.UPDATE:
         annotation.update(data)
     elif action == PatchAction.DELETE:
-        annotation.delete(data)
+        return annotation.delete(data)
 
     return annotation.data
 
