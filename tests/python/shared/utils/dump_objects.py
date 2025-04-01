@@ -2,6 +2,19 @@
 #
 # SPDX-License-Identifier: MIT
 
+"""
+This script lists resources on the CVAT server
+and saves them to JSON files in the `assets` directory.
+Before running it, start the test instance by running:
+
+    pytest tests/python --start-services
+
+The script determines which endpoints to query by looking at the set of existing JSON files.
+For example, if `tasks.json` exists, the script will overwrite it with output of `GET /api/tasks`.
+Underscores in the file name are replaced with slashes in the URL path.
+In addition, `annotations.json` is always saved.
+"""
+
 import argparse
 import json
 from datetime import timezone
