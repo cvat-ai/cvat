@@ -347,49 +347,18 @@ export interface SerializedConsensusSettingsData {
     descriptions?: Record<string, string>;
 }
 
-export interface SerializedDataEntry {
-    date?: string;
-    value?: number | Record<string, number>
-}
-
-export interface SerializedTransformBinaryOp {
-    left: string;
-    operator: string;
-    right: string;
-}
-
-export interface SerializedTransformationEntry {
-    name: string;
-    binary?: SerializedTransformBinaryOp;
-}
-
-export interface SerializedAnalyticsEntry {
-    name?: string;
-    title?: string;
-    description?: string;
-    granularity?: string;
-    default_view?: string;
-    data_series?: Record<string, SerializedDataEntry[]>;
-    transformations?: SerializedTransformationEntry[];
-}
-
-export interface APIAnalyticsReportFilter {
+export interface APIAnalyticsEventsFilter {
+    from?: string;
+    to?: string;
+    filename?: string;
+    org_id?: number;
+    user_id?: number;
     project_id?: number;
     task_id?: number;
     job_id?: number;
-    start_date?: string;
-    end_date?: string;
 }
-export type AnalyticsReportFilter = Camelized<APIAnalyticsReportFilter>;
 
-export interface SerializedAnalyticsReport {
-    job_id?: number;
-    task_id?: number;
-    project_id?: number;
-    target?: string;
-    created_date?: string;
-    statistics?: SerializedAnalyticsEntry[];
-}
+export type AnalyticsEventsFilter = Camelized<APIAnalyticsEventsFilter>;
 
 export interface SerializedInvitationData {
     created_date: string;

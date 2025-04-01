@@ -15,6 +15,7 @@ import { Project, Task, Job } from 'cvat-core-wrapper';
 interface Props {
     onEventsExport(): void;
     onUpdateTimePeriod(from: Date | null, to: Date | null): void;
+    isEventsExport: boolean;
     resource: Project | Task | Job | null;
     fetching: boolean;
 }
@@ -23,8 +24,7 @@ function makeResourceLink(resource: NonNullable<Props['resource']>): JSX.Element
     if (resource instanceof Project) {
         return (
             <Link to={`/projects/${resource.id}`}>
-Project #
-                {resource.id}
+                {`Project #${resource.id}`}
             </Link>
         );
     }
@@ -32,8 +32,7 @@ Project #
     if (resource instanceof Task) {
         return (
             <Link to={`/tasks/${resource.id}`}>
-Task #
-                {resource.id}
+                {`Task #${resource.id}`}
             </Link>
         );
     }
@@ -41,8 +40,7 @@ Task #
     if (resource instanceof Job) {
         return (
             <Link to={`/tasks/${resource.taskId}/jobs/${resource.id}`}>
-Job #
-                {resource.id}
+                {`Job #${resource.id}`}
             </Link>
         );
     }
@@ -54,6 +52,7 @@ function AnaylyticsPageHeader(props: Props): JSX.Element {
     const {
         onUpdateTimePeriod,
         onEventsExport,
+        isEventsExport,
         resource,
         fetching,
     } = props;
@@ -89,7 +88,8 @@ function AnaylyticsPageHeader(props: Props): JSX.Element {
                 />
                 <Button
                     className='cvat-analytics-export-button'
-                    disabled={fetching}
+                    disabled={fetching || isEventsExport}
+                    loading={isEventsExport}
                     type='link'
                     icon={<DownloadOutlined />}
                     onClick={onEventsExport}

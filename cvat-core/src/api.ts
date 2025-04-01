@@ -27,7 +27,6 @@ import { BaseShapesAction } from './annotations-actions/base-shapes-action';
 import QualityReport from './quality-report';
 import QualityConflict from './quality-conflict';
 import QualitySettings from './quality-settings';
-import AnalyticsReport from './analytics-report';
 import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
 import { Request } from './request';
 
@@ -387,17 +386,9 @@ function build(): CVATCore {
             },
         },
         analytics: {
-            performance: {
-                async reports(filter = {}) {
-                    const result = await PluginRegistry.apiWrapper(cvat.analytics.performance.reports, filter);
-                    return result;
-                },
-                async calculate(body, onUpdate) {
-                    const result = await PluginRegistry.apiWrapper(
-                        cvat.analytics.performance.calculate,
-                        body,
-                        onUpdate,
-                    );
+            events: {
+                async export(filter = {}) {
+                    const result = await PluginRegistry.apiWrapper(cvat.analytics.events.export, filter);
                     return result;
                 },
             },
@@ -459,7 +450,6 @@ function build(): CVATCore {
             BaseShapesAction,
             BaseCollectionAction,
             QualitySettings,
-            AnalyticsReport,
             QualityConflict,
             QualityReport,
             Request,

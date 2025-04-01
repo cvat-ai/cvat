@@ -46,6 +46,7 @@ function AnalyticsReportPage(): JSX.Element {
     const requestedInstanceType: InstanceType = useInstanceType();
     const requestedInstanceID = useInstanceID(requestedInstanceType);
     const [timePeriod, setTimePeriod] = useState<{ startDate: string; endDate: string; } | null>(null);
+    const [isEventsExport, setIsEventsExport] = useState(false);
     const [resource, setResource] = useState<Project | Task | Job | null>(null);
     const [fetching, setFetching] = useState(true);
     const { user, org } = useSelector((state: CombinedState) => ({
@@ -86,7 +87,6 @@ function AnalyticsReportPage(): JSX.Element {
         }
 
         if (org) {
-            params.orgId = org.id;
             const memberships = await org.members({ filter: `{"and":[{"==":[{"var":"user"},"${user.username}"]}]}` });
             const isMaintainer = !!memberships.length &&
                 [MembershipRole.MAINTAINER, MembershipRole.OWNER].includes(memberships[0].role);
@@ -101,7 +101,26 @@ function AnalyticsReportPage(): JSX.Element {
             params.userId = user.id;
         }
 
-        // todo: run export
+        try {
+            setIsEventsExport(true);
+            const url = await core.analytics.events.export(params);
+            const a = document.createElement('a');
+
+            try {
+                a.setAttribute('href', url);
+                a.setAttribute('download', params.filename);
+                a.click();
+            } finally {
+                a.remove();
+            }
+        } catch (error: unknown) {
+            notification.error({
+                message: 'Could not export events for the target resource',
+                description: error instanceof Error ? error.message : '',
+            });
+        } finally {
+            setIsEventsExport(false);
+        }
     }, [user, org, resource, timePeriod]);
 
     useEffect(() => {
@@ -149,6 +168,7 @@ function AnalyticsReportPage(): JSX.Element {
                 <Row justify='center' className='cvat-analytics-inner-wrapper'>
                     <Col span={22} xl={18} xxl={14} className='cvat-analytics-inner'>
                         <AnalyticsPageHeader
+                            isEventsExport={isEventsExport}
                             fetching={fetching}
                             resource={resource}
                             onEventsExport={onEventsExport}

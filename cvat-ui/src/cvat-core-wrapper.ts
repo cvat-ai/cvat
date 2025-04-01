@@ -38,7 +38,6 @@ import User from 'cvat-core/src/user';
 import Organization, { Membership, Invitation } from 'cvat-core/src/organization';
 import AnnotationGuide from 'cvat-core/src/guide';
 import { JobValidationLayout, TaskValidationLayout } from 'cvat-core/src/validation-layout';
-import AnalyticsReport, { AnalyticsEntryViewType, AnalyticsEntry } from 'cvat-core/src/analytics-report';
 import { Dumper } from 'cvat-core/src/annotation-formats';
 import { Event } from 'cvat-core/src/event';
 import { APIWrapperEnterOptions } from 'cvat-core/src/plugins';
@@ -105,9 +104,6 @@ export {
     AnnotationConflict,
     ConflictSeverity,
     FramesMetaData,
-    AnalyticsReport,
-    AnalyticsEntry,
-    AnalyticsEntryViewType,
     ServerError,
     RequestError,
     Event,
