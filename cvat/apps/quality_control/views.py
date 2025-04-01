@@ -226,7 +226,12 @@ class QualityReportViewSet(
     @extend_schema(
         operation_id="quality_create_report",
         summary="Create a quality report",
-        description="Deprecation warning: Do not use this endpoint ot check the report computation status",
+        description=textwrap.dedent(
+            """\
+            Deprecation warning: Utilizing this endpoint to check the computation status is no longer possible.
+            Consider using common requests API: GET /api/requests/<rq_id>
+            """
+        ),
         parameters=[
             OpenApiParameter(
                 CREATE_REPORT_RQ_ID_PARAMETER,

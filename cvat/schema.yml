@@ -4168,8 +4168,9 @@ paths:
           description: ''
     post:
       operationId: quality_create_report
-      description: 'Deprecation warning: Do not use this endpoint ot check the report
-        computation status'
+      description: |
+        Deprecation warning: Utilizing this endpoint to check the computation status is no longer possible.
+        Consider using common requests API: GET /api/requests/<rq_id>
       summary: Create a quality report
       parameters:
       - in: query
