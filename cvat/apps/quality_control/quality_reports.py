@@ -2058,7 +2058,6 @@ class DatasetComparator:
         self,
         ds_data_provider: JobDataProvider,
         gt_data_provider: JobDataProvider,
-        task: Task,
         *,
         settings: ComparisonParameters | None = None,
     ) -> None:
@@ -2070,7 +2069,6 @@ class DatasetComparator:
         self._gt_data_provider = gt_data_provider
         self._ds_dataset = self._ds_data_provider.dm_dataset
         self._gt_dataset = self._gt_data_provider.dm_dataset
-        self._task = task
 
         self._frame_results: dict[int, ComparisonReportFrameSummary] = {}
 
@@ -2823,7 +2821,6 @@ class TaskQualityCalculator:
             comparator = DatasetComparator(
                 job_data_provider,
                 gt_job_data_provider,
-                task=task,
                 settings=quality_params,
             )
             job_comparison_reports[job.id] = comparator.generate_report()
