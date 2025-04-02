@@ -21,7 +21,11 @@ import urllib3
 import urllib3.exceptions
 
 from cvat_sdk.api_client import ApiClient, Configuration, exceptions, models
-from cvat_sdk.core.exceptions import IncompatibleVersionException, InvalidHostException
+from cvat_sdk.core.exceptions import (
+    BackgroundRequestException,
+    IncompatibleVersionException,
+    InvalidHostException,
+)
 from cvat_sdk.core.proxies.issues import CommentsRepo, IssuesRepo
 from cvat_sdk.core.proxies.jobs import JobsRepo
 from cvat_sdk.core.proxies.model_proxy import Repo
@@ -224,9 +228,7 @@ class Client:
             if request.status.value == models.RequestStatus.allowed_values[("value",)]["FINISHED"]:
                 break
             elif request.status.value == models.RequestStatus.allowed_values[("value",)]["FAILED"]:
-                raise exceptions.ApiException(
-                    status=request.status, reason=request.message, http_resp=response
-                )
+                raise BackgroundRequestException(request.message)
 
         return request, response
 

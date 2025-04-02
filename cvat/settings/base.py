@@ -762,3 +762,13 @@ LOGO_FILENAME = "logo.svg"
 ABOUT_INFO = {
     "subtitle": "Open Data Annotation Platform",
 }
+
+if ONE_RUNNING_JOB_IN_QUEUE_PER_USER:
+    PERIODIC_RQ_JOBS.append(
+        {
+            "queue": CVAT_QUEUES.CLEANING.value,
+            "id": "cleanup_deferred_job_registry",
+            "func": "cvat.apps.redis_handler.cron.cleanup_deferred_job_registry",
+            "cron_string": "0 0,8,16 * * *",
+        }
+    )

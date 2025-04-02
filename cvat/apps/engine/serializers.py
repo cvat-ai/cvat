@@ -1819,6 +1819,7 @@ class RqStatusSerializer(serializers.Serializer):
 
 class RqIdSerializer(serializers.Serializer):
     rq_id = serializers.CharField(help_text="Request id")
+    response_4xx_reason = serializers.CharField(required=False)
 
 
 class JobFiles(serializers.ListField):
