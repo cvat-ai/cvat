@@ -1618,7 +1618,7 @@ def _export_project(
         dump_project_anno(f, project_data, anno_callback)
 
     if save_images:
-        for task_data in project_data.task_data:
+        for task_data in project_data.all_task_data:
             subset = get_defaulted_subset(task_data.db_instance.subset, project_data.subsets)
             subset_dir = osp.join(temp_dir, "images", subset)
             os.makedirs(subset_dir, exist_ok=True)
