@@ -115,7 +115,7 @@ class ProjectAnnotationAndData:
 
         create_task(db_task, data, is_dataset_import=True)
         self.db_tasks = models.Task.objects.filter(project__id=self.db_project.id).exclude(data=None).order_by('id')
-        self.init_from_db()
+        self._init_task_from_db(db_task.id)
         if project_data is not None:
             project_data.new_tasks.add(db_task.id)
             project_data.init()
@@ -132,14 +132,17 @@ class ProjectAnnotationAndData:
         if attributes:
             bulk_create(models.AttributeSpec, [a[1] for a in attributes])
 
+    def _init_task_from_db(self, task_id: int) -> None:
+        annotation = TaskAnnotation(pk=task_id)
+        annotation.init_from_db()
+        self.task_annotations[task_id] = annotation
+        self.annotation_irs[task_id] = annotation.ir_data
+
     def init_from_db(self):
         self.reset()
 
         for task in self.db_tasks:
-            annotation = TaskAnnotation(pk=task.id)
-            annotation.init_from_db()
-            self.task_annotations[task.id] = annotation
-            self.annotation_irs[task.id] = annotation.ir_data
+            self._init_task_from_db(task.id)
 
     def export(
         self,
@@ -207,7 +210,6 @@ def import_dataset_as_project(src_file, project_id, format_name, conv_mask_to_po
     av_scan_paths(src_file)
 
     project = ProjectAnnotationAndData(project_id)
-    project.init_from_db()
 
     importer = make_importer(format_name)
     with open(src_file, 'rb') as f:

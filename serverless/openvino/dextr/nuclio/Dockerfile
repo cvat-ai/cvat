@@ -19,7 +19,7 @@ RUN python3 -m zipfile -e dextr.zip .
 
 WORKDIR /root/DEXTR-PyTorch-$DEXTR_COMMIT
 
-ADD export.py adaptive-pool.patch .
+COPY export.py adaptive-pool.patch ./
 
 RUN patch -p1 -i adaptive-pool.patch
 
