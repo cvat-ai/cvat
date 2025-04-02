@@ -233,9 +233,14 @@ context('Customizable Shortcuts', () => {
             cy.get('.cvat-canvas-container').click();
             cy.realPress(['F1']);
             cy.get('.cvat-shortcuts-modal-window').should('exist').and('be.visible');
-            cy.get('.cvat-shortcuts-modal-window .ant-pagination-item-5').click();
+            cy.get('.cvat-shortcuts-modal-window .ant-pagination-options-size-changer').click();
+            cy.get('.ant-select-dropdown')
+                .not('.ant-select-dropdown-hidden')
+                .within(() => {
+                    cy.contains('100 / page').click();
+                });
             checkShortcutsMounted((i) => `Switch label to label ${i}`);
-            cy.realPress(['F1']);
+            cy.contains('.cvat-shortcuts-modal-window [type="button"]', 'OK').click();
         });
     });
 });

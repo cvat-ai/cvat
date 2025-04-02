@@ -171,7 +171,6 @@ function RequestCard(props: Props): JSX.Element {
                 const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
                 downloadAnchor.href = request.url;
                 downloadAnchor.click();
-                dispatch(requestsActions.disableRequest(request));
             },
         });
     }

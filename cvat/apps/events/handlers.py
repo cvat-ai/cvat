@@ -11,6 +11,7 @@ from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated
 from rest_framework.views import exception_handler
 
+from cvat.apps.dataset_manager.tracks_counter import TracksCounter
 from cvat.apps.engine.models import (
     CloudStorage,
     Comment,
@@ -99,11 +100,9 @@ def job_id(instance):
 
 def get_user(instance=None) -> User | dict | None:
     def _get_user_from_rq_job(rq_job: rq.job.Job) -> dict | None:
-        # RQ jobs created in the chunks|annotation queues have no user info
-        try:
-            return BaseRQMeta.for_job(rq_job).user.to_dict()
-        except KeyError:
-            return None
+        if user := BaseRQMeta.for_job(rq_job).user:
+            return user.to_dict()
+        return None
 
     # Try to get current user from request
     user = get_current_user()
@@ -126,11 +125,9 @@ def get_user(instance=None) -> User | dict | None:
 
 def get_request(instance=None):
     def _get_request_from_rq_job(rq_job: rq.job.Job) -> dict | None:
-        # RQ jobs created in the chunks|annotation queues have no request info
-        try:
-            return BaseRQMeta.for_job(rq_job).request.to_dict()
-        except KeyError:
-            return None
+        if request := BaseRQMeta.for_job(rq_job).request:
+            return request.to_dict()
+        return None
 
     request = get_current_request()
     if request is not None:
@@ -294,6 +291,11 @@ def get_serializer_without_url(instance):
     return serializer
 
 
+from cvat.apps.engine.log import ServerLogManager
+
+slogger = ServerLogManager(__name__)
+
+
 def handle_create(scope, instance, **kwargs):
     oid = organization_id(instance)
     oslug = organization_slug(instance)
@@ -416,16 +418,46 @@ def handle_delete(scope, instance, store_in_deletion_cache=False, **kwargs):
     )
 
 
-def handle_annotations_change(instance, annotations, action, **kwargs):
+def handle_annotations_change(instance: Job, annotations, action, **kwargs):
     def filter_data(data):
-        filtered_data = {
+        return {
             "id": data["id"],
         }
 
-        return filtered_data
+    in_mem_counter = TracksCounter()
+    in_mem_counter.load_tracks_from_job(instance.id, annotations.get("tracks", []))
+
+    in_db_counter = TracksCounter()
+    if action == "update" and annotations.get("tracks", []):
+        in_db_counter.load_tracks_from_db(
+            parent_labeledtrack_qs_filter=lambda x: x.filter(
+                pk__in=(track["id"] for track in annotations["tracks"])
+            ),
+            child_labeledtrack_qs_filter=lambda x: x.filter(
+                parent_id__in=(track["id"] for track in annotations["tracks"])
+            ),
+        )
 
     def filter_track(track):
+        job_id = instance.id
+        track_id = track["id"]
+
+        in_mem_shapes = in_mem_counter.count_track_shapes(job_id, track_id)
+        in_mem_visible_shapes = in_mem_shapes["manual"] + in_mem_shapes["interpolated"]
         filtered_data = filter_data(track)
+
+        if action == "create":
+            filtered_data["visible_shapes_count_diff"] = in_mem_visible_shapes
+        elif action == "delete":
+            filtered_data["visible_shapes_count_diff"] = -in_mem_visible_shapes
+        elif action == "update":
+            # when track is just updated, it may lead to both new or deleted visible shapes
+            in_db_shapes = in_db_counter.count_track_shapes(job_id, track_id)
+            in_db_visible_shapes = in_db_shapes["manual"] + in_db_shapes["interpolated"]
+            filtered_data["visible_shapes_count_diff"] = (
+                in_db_visible_shapes - in_mem_visible_shapes
+            )
+
         filtered_data["shapes"] = [filter_data(s) for s in track["shapes"]]
         return filtered_data
 

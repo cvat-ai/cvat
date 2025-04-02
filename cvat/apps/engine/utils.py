@@ -14,7 +14,7 @@ import subprocess
 import sys
 import traceback
 import urllib.parse
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 from collections.abc import Generator, Iterable, Mapping, Sequence
 from contextlib import nullcontext, suppress
 from itertools import islice
@@ -299,11 +299,10 @@ def build_backup_file_name(
     class_name: str,
     identifier: str | int,
     timestamp: str,
-    extension: str = "{}",
 ) -> str:
     # "<project|task>_<name>_backup_<timestamp>.zip"
-    return "{}_{}_backup_{}{}".format(
-        class_name, identifier, timestamp, extension,
+    return "{}_{}_backup_{}.zip".format(
+        class_name, identifier, timestamp,
     ).lower()
 
 def build_annotations_file_name(
@@ -312,13 +311,13 @@ def build_annotations_file_name(
     identifier: str | int,
     timestamp: str,
     format_name: str,
+    extension: str,
     is_annotation_file: bool = True,
-    extension: str = "{}",
 ) -> str:
-    # "<project|task|job>_<name|id>_<annotations|dataset>_<timestamp>_<format>.zip"
-    return "{}_{}_{}_{}_{}{}".format(
+    # "<project|task|job>_<name|id>_<annotations|dataset>_<timestamp>_<format>.<ext>"
+    return "{}_{}_{}_{}_{}.{}".format(
         class_name, identifier, 'annotations' if is_annotation_file else 'dataset',
-        timestamp, format_name, extension,
+        timestamp, format_name, extension
     ).lower()
 
 
@@ -403,3 +402,9 @@ def grouped(items: Iterable[_V], *, key: Callable[[_V], _K]) -> Mapping[_K, Sequ
         grouped_items.setdefault(key(item), []).append(item)
 
     return grouped_items
+
+
+def defaultdict_to_regular(d):
+    if isinstance(d, defaultdict):
+        d = {k: defaultdict_to_regular(v) for k, v in d.items()}
+    return d

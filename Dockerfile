@@ -94,7 +94,7 @@ FROM ${BASE_IMAGE}
 
 ARG http_proxy
 ARG https_proxy
-ARG no_proxy="nuclio,${no_proxy}"
+ARG no_proxy
 ARG socks_proxy
 ARG TZ="Etc/UTC"
 
