@@ -65,6 +65,12 @@
             opacity: 0.5;
         }
     }
+
+    .cvat-quality-settings-form {
+        display: block;
+        position: relative;
+        height: calc(100vh - $grid-unit-size * 30);
+    }
 }
 
 
