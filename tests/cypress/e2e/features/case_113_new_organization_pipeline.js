@@ -130,7 +130,9 @@ context('New organization pipeline.', () => {
                 },
             ];
             cy.inviteMembersToOrganization(membersToInvite);
-            cy.checkOrganizationMembers(3, [firstUserName, secondUserName, thirdUserName]);
+            cy.then(() => {
+                cy.checkOrganizationMembers(3, [firstUserName, secondUserName, thirdUserName]);
+            });
         });
 
         it('Search within organizations: All members shoould be queryable', () => {

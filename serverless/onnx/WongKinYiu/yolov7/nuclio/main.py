@@ -29,7 +29,7 @@ def handler(context, event):
     data = event.body
     buf = io.BytesIO(base64.b64decode(data["image"]))
     threshold = float(data.get("threshold", 0.5))
-    image = Image.open(buf)
+    image = Image.open(buf).convert("RGB")
 
     results = context.user_data.model.infer(image, threshold)
 
