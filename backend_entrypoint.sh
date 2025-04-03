@@ -38,32 +38,25 @@ _get_worker_list() {
     echo $workers
 }
 
-_merge_worker_configs() {
-    local -n target=$1
-    local -n source=$2
-    for key in "${!source[@]}"; do
-        if [ -v target[$key] ]; then
-            fail "Duplicated worker definition: $key"
-        fi
-        target[$key]=${source[$key]}
-    done
-}
-
 _get_worker_includes() {
-    declare -A worker_includes
-    for config in "backend_entrypoint.d/*.conf"; do
-        declare -rA worker_config=$(cat $config)
-        _merge_worker_configs worker_includes worker_config
+    declare -A worker_merged_config
+    for config in ~/backend_entrypoint.d/*.conf; do
+        declare -A worker_conf=$(cat $config)
+        for key in "${!worker_conf[@]}"; do
+            if [ -v worker_merged_config[$key] ]; then
+                fail "Duplicated worker definition: $key"
+            fi
+            worker_merged_config[$key]=${worker_conf[$key]}
+        done
     done
 
     extra_configs=()
-
     for worker in "$@"; do
-        if [ ! -v worker_includes[$worker] ]; then
+        if [ ! -v worker_merged_config[$worker] ]; then
             fail "Unexpected worker: $worker"
         fi
 
-        for include in ${worker_includes["$worker"]}; do
+        for include in ${worker_merged_config["$worker"]}; do
             if ! [[ ${extra_configs[@]} =~ $include ]] && \
                 ( ! [[ "$include" == "clamav" ]] || ( [[ -v CLAM_AV ]] && [[ "$CLAM_AV" == "yes" ]] )); then
                 extra_configs+=("$include")
