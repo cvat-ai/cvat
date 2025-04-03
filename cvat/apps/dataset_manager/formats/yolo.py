@@ -14,6 +14,7 @@ from pyunpack import Archive
 
 from cvat.apps.dataset_manager.bindings import (
     CommonData,
+    CVATDataExtractorMixin,
     GetCVATDataExtractor,
     ProjectData,
     detect_dataset,
@@ -145,13 +146,15 @@ def _import_yolo_ultralytics_oriented_boxes(*args, **kwargs):
 
 @importer(name="Ultralytics YOLO Pose", ext="ZIP", version="1.0")
 def _import_yolo_ultralytics_pose(src_file, temp_dir, instance_data, **kwargs):
-    with GetCVATDataExtractor(instance_data) as extractor:
-        point_categories = extractor.categories().get(AnnotationType.points)
-        label_categories = extractor.categories().get(AnnotationType.label)
-        true_skeleton_point_labels = {
-            label_categories[label_id].name: category.labels
-            for label_id, category in point_categories.items.items()
-        }
+    instance_meta = instance_data.meta[instance_data.META_FIELD]
+    categories = CVATDataExtractorMixin.load_categories(instance_meta["labels"])
+    point_categories = categories.get(AnnotationType.points)
+    label_categories = categories.get(AnnotationType.label)
+    true_skeleton_point_labels = {
+        label_categories[label_id].name: category.labels
+        for label_id, category in point_categories.items.items()
+    }
+
     _import_common(
         src_file,
         temp_dir,
