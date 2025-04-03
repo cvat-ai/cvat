@@ -97,7 +97,7 @@ services:
       CVAT_ANALYTICS: 1
       CVAT_BASE_URL:
       ONE_RUNNING_JOB_IN_QUEUE_PER_USER:
-    command: init run server include=clamav include=smokescreen
+    command: init run server
     labels:
       traefik.enable: "true"
       traefik.http.services.cvat.loadbalancer.server.port: "8080"
@@ -124,7 +124,7 @@ services:
       <<: *backend-env
       CVAT_REDIS_INMEM_PASSWORD: ''
       NUMPROCS: 1
-    command: run worker notifications cleaning include=rqscheduler
+    command: run worker notifications cleaning
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -140,7 +140,7 @@ services:
     environment:
       <<: *backend-env
       NUMPROCS: 2
-    command: run worker import include=smokescreen include=clamav
+    command: run worker import
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -156,7 +156,7 @@ services:
     environment:
       <<: [*backend-env, *clickhouse-env]
       NUMPROCS: 2
-    command: run worker export include=smokescreen
+    command: run worker export
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -172,7 +172,7 @@ services:
     environment:
       <<: *backend-env
       NUMPROCS: 1
-    command: run worker annotation include=smokescreen
+    command: run worker annotation
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -188,7 +188,7 @@ services:
     environment:
       <<: *backend-env
       NUMPROCS: 1
-    command: run worker webhooks include=smokescreen
+    command: run worker webhooks
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -220,7 +220,7 @@ services:
     environment:
       <<: *backend-env
       NUMPROCS: 2
-    command: run worker chunks include=smokescreen
+    command: run worker chunks
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys

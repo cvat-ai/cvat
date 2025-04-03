@@ -47,8 +47,6 @@ cvat:
         - "import"
         - "notifications"
         - "webhooks"
-        - "include=rqscheduler"
-        - "include=smokescreen"
 
     # Images are already present in the node
     imagePullPolicy: Never

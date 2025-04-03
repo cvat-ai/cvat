@@ -55,11 +55,13 @@ spec:
           {{- toYaml . | nindent 12 }}
           {{- end }}
           args:
-          {{- with $localValues.args }}
-          {{- range . }}
-          - {{ . | quote }}
-          {{- end }}
-          {{- end }}
+          {{- if $localValues.args }}
+          {{ $localValues.args | toYaml }}
+          {{- else }}
+          - "run"
+          - "worker"
+          - "webhooks"
+          {{- end}}
           env:
           {{ include "cvat.sharedBackendEnv" . | indent 10 }}
           {{- with concat .Values.cvat.backend.additionalEnv $localValues.additionalEnv }}

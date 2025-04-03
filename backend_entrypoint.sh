@@ -28,16 +28,6 @@ cmd_init() {
     ~/manage.py syncperiodicjobs
 }
 
-_get_supervisord_includes() {
-    extra_configs=""
-    for arg in "$@"; do
-        if [[ "$arg" = include=* ]]; then
-            extra_configs+=" ${arg#include=}_reusable.conf"
-        fi
-    done
-    echo $extra_configs
-}
-
 _get_worker_list() {
     workers=""
     for arg in "$@"; do
@@ -48,12 +38,42 @@ _get_worker_list() {
     echo $workers
 }
 
-_get_app_label() {
-    label=$1
-    for arg in "${@:2}"; do
-        label+="+${arg}"
+_merge_worker_configs() {
+    local -n target=$1
+    local -n source=$2
+    for key in "${!source[@]}"; do
+        if [ -v target[$key] ]; then
+            fail "Duplicated worker definition: $key"
+        fi
+        target[$key]=${source[$key]}
     done
-    echo $label
+}
+
+_get_worker_includes() {
+    declare -A worker_includes
+    for config in "backend_entrypoint.d/*.conf"; do
+        declare -rA worker_config=$(cat $config)
+        _merge_worker_configs worker_includes worker_config
+    done
+
+    extra_configs=()
+
+    for worker in "$@"; do
+        if [ ! -v worker_includes[$worker] ]; then
+            fail "Unexpected worker: $worker"
+        fi
+
+        for include in ${worker_includes["$worker"]}; do
+            if ! [[ ${extra_configs[@]} =~ $include ]] && \
+                ( ! [[ "$include" == "clamav" ]] || ( [[ -v CLAM_AV ]] && [[ "$CLAM_AV" == "yes" ]] )); then
+                extra_configs+=("$include")
+            fi
+        done
+    done
+
+    if [ ${#extra_configs[@]} -gt 0 ]; then
+        printf 'reusable/%s.conf ' "${extra_configs[@]}"
+    fi
 }
 
 cmd_run() {
@@ -80,18 +100,22 @@ cmd_run() {
         sleep 10
     done
 
-    supervisord_includes=$(_get_supervisord_includes "${@:2}")
+    supervisord_includes=""
     postgres_app_name="cvat:$component"
 
     if [ "$component" = "worker"  ]; then
-        if [ "$#" = 1 ]; then
+        if [ "$#" -eq 1 ]; then
             fail "run worker: expected at least 1 worker name"
         fi
 
         worker_list=$(_get_worker_list "${@:2}")
         echo "Workers to run: $worker_list"
         export CVAT_WORKERS=$worker_list
-        postgres_app_name+=":$(_get_app_label $worker_list)"
+
+        postgres_app_name+=":${worker_list// /+}"
+
+        supervisord_includes=$(_get_worker_includes "${@:2}")
+        echo "Additional components: $supervisord_includes"
     fi
 
     export CVAT_POSTGRES_APPLICATION_NAME=$postgres_app_name
@@ -106,7 +130,7 @@ if [ $# -eq 0 ]; then
     echo >&2 "available subcommands:"
     echo >&2 "    bash <bash args...>"
     echo >&2 "    init"
-    echo >&2 "    run server <list of optional services in the format include=config, e.g. include=smokescreen>"
+    echo >&2 "    run server"
     echo >&2 "    run worker <list of workers> <list of optional services in the format include=config, e.g. include=smokescreen>"
     exit 1
 fi
