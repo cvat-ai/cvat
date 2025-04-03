@@ -36,6 +36,7 @@ from cvat_sdk import exceptions
 from cvat_sdk.api_client import models
 from cvat_sdk.api_client.api_client import ApiClient, ApiException, Endpoint
 from cvat_sdk.api_client.exceptions import ForbiddenException
+from cvat_sdk.core.exceptions import BackgroundRequestException
 from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.progress import NullProgressReporter
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
@@ -5672,7 +5673,7 @@ class TestImportTaskAnnotations:
             zip_file.write(self.tmp_dir / path, path)
         task = self.client.tasks.retrieve(task_id)
 
-        with pytest.raises(exceptions.ApiException) as capture:
+        with pytest.raises(BackgroundRequestException) as capture:
             task.import_annotations(format_name, source_archive_path)
 
             assert b"Check [format docs]" in capture.value.body
