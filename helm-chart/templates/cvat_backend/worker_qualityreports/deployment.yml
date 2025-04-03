@@ -60,7 +60,7 @@ spec:
           {{- else }}
           - "run"
           - "worker"
-          - "qualityreports"
+          - "quality_reports"
           {{- end}}
           env:
           {{ include "cvat.sharedBackendEnv" . | indent 10 }}

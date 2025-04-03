@@ -58,7 +58,6 @@ cvat:
         args:
         - "run"
         - "worker"
-        - "analytics_reports"
         - "annotation"
         - "chunks"
         - "cleaning"
@@ -66,6 +65,7 @@ cvat:
         - "export"
         - "import"
         - "notifications"
+        - "quality_reports"
         - "webhooks"
 
     # Images are already present in the node
