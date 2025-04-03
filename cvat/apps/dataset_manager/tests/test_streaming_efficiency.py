@@ -89,17 +89,19 @@ class TestExtractors(TestCase):
         elif data_cls is ProjectData:
             instance_data.tasks = [Mock(id=index) for index in range(len(subsets))]
 
-        instance_data.group_by_frame.return_value = [
-            self._make_mock_frame(
-                data_cls=data_cls,
-                id=index,
-                task_id=subsets.index(subset),
-                name=f"{item_id}.png",
-                subset=subset,
-                frame=index,
-            )
-            for index, (item_id, subset) in enumerate(item_ids)
-        ]
+        def mock_group_by_frame(*args, **kwargs):
+            for index, (item_id, subset) in enumerate(item_ids):
+                yield self._make_mock_frame(
+                    data_cls=data_cls,
+                    id=index,
+                    task_id=subsets.index(subset),
+                    name=f"{item_id}.png",
+                    subset=subset,
+                    frame=index,
+                )
+
+        instance_data.group_by_frame.side_effect = mock_group_by_frame
+
         if data_cls is not ProjectData:
             instance_data.__len__.return_value = len(item_ids)
             instance_data.frame_info = {

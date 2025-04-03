@@ -8,6 +8,7 @@ import os.path as osp
 import tempfile
 import zipfile
 from io import BytesIO
+from unittest.mock import patch
 
 import datumaro
 import numpy as np
@@ -94,6 +95,19 @@ class _DbTestBase(ApiTestBase):
         return task
 
 
+class MockTaskExtractor(CvatTaskOrJobDataExtractor):
+    def __init__(self, *args, **kwargs):
+        self.ann_init_counter = 0
+        super().__init__(*args, **kwargs)
+
+    def _read_cvat_anno(self, *args, **kwargs):
+        # check that annotations were initialized once per item
+        assert self.ann_init_counter < len(self)
+        self.ann_init_counter += 1
+        return super()._read_cvat_anno(*args, **kwargs)
+
+
+@patch("cvat.apps.dataset_manager.bindings.CvatTaskOrJobDataExtractor", MockTaskExtractor)
 class TaskExportTest(_DbTestBase):
     def _generate_custom_annotations(self, annotations, task):
         self._put_api_v2_task_id_annotations(task["id"], annotations)

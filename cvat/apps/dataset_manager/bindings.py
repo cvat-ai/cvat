@@ -1754,7 +1754,7 @@ class CvatTaskOrJobDataExtractor(StreamingSubsetBase, CvatDataExtractorBase):
         )
         self._categories = self._load_categories(self._instance_meta['labels'])
 
-        self.grouped_by_frame = self._instance_data.group_by_frame(include_empty=True)
+        self.grouped_by_frame = list(self._instance_data.group_by_frame(include_empty=True))
 
     def __iter__(self):
         for frame_data in self.grouped_by_frame:
