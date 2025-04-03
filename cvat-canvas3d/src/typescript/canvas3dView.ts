@@ -2107,10 +2107,10 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     private renderRotateAction(view: ViewType, viewType: any): void {
-        const rotationSpeed = Math.PI / CONST.ROTATION_SPEED;
         const { renderer } = viewType;
         const canvas = renderer.domElement;
         if (!canvas) return;
+
         const canvasCentre = {
             x: canvas.offsetLeft + canvas.offsetWidth / 2,
             y: canvas.offsetTop + canvas.offsetHeight / 2,
@@ -2123,25 +2123,39 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             return;
         }
 
-        if (
-            this.action.rotation.recentMouseVector.x === this.views[view].rayCaster.mouseVector.x &&
-            this.action.rotation.recentMouseVector.y === this.views[view].rayCaster.mouseVector.y
-        ) {
+        const startVector = {
+            x: this.action.rotation.screenInit.x - canvasCentre.x,
+            y: this.action.rotation.screenInit.y - canvasCentre.y,
+        };
+        const endVector = {
+            x: this.action.rotation.screenMove.x - canvasCentre.x,
+            y: this.action.rotation.screenMove.y - canvasCentre.y,
+        };
+
+        const startMagnitude = Math.sqrt(startVector.x ** 2 + startVector.y ** 2);
+        const endMagnitude = Math.sqrt(endVector.x ** 2 + endVector.y ** 2);
+
+        if (startMagnitude === 0 || endMagnitude === 0) {
             return;
         }
-        this.action.rotation.recentMouseVector = this.views[view].rayCaster.mouseVector.clone();
-        if (Canvas3dViewImpl.isLeft(canvasCentre, this.action.rotation.screenInit, this.action.rotation.screenMove)) {
-            this.rotateCube(this.selectedCuboid, -rotationSpeed, view);
-            this.rotatePlane(-rotationSpeed, view);
-        } else {
-            this.rotateCube(this.selectedCuboid, rotationSpeed, view);
-            this.rotatePlane(rotationSpeed, view);
+
+        const dotProduct = startVector.x * endVector.x + startVector.y * endVector.y;
+        let angle = Math.acos(dotProduct / (startMagnitude * endMagnitude));
+
+        const crossProduct = startVector.x * endVector.y - startVector.y * endVector.x;
+        if (crossProduct < 0) {
+            angle = -angle; // Counterclockwise rotation
         }
+
+        this.action.rotation.recentMouseVector = this.views[view].rayCaster.mouseVector.clone();
+        this.rotateCube(this.selectedCuboid, angle, view);
+        this.rotatePlane(angle, view);
 
         this.updateResizeHelperPos();
         this.updateRotationHelperPos();
         this.detachCamera();
         this.updateCameraFrustrumPlane();
+
         this.action.rotation.screenInit.x = this.action.rotation.screenMove.x;
         this.action.rotation.screenInit.y = this.action.rotation.screenMove.y;
     }
