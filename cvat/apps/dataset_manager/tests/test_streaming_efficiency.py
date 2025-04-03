@@ -1,7 +1,6 @@
 import os
 import tempfile
-import unittest
-from typing import Callable, Generator, Optional, Tuple
+from typing import Callable, Optional
 from unittest import TestCase, mock
 from unittest.mock import MagicMock, Mock
 
@@ -60,14 +59,12 @@ class TestExtractors(TestCase):
     def _make_counting_data_extractor_cls(extractor_cls):
         class CountingDataExtractor(extractor_cls):
             def __init__(self, *args, **kwargs):
-                self.items_processed = 0
+                self.item_anns_processed = 0
                 super().__init__(*args, **kwargs)
 
-            def _process_one_frame_data(
-                self, frame_data: CommonData.Frame | ProjectData.Frame
-            ) -> DatasetItem:
-                self.items_processed += 1
-                return super()._process_one_frame_data(frame_data)
+            def _read_cvat_anno(self, *args, **kwargs):
+                self.item_anns_processed += 1
+                return super()._read_cvat_anno(*args, **kwargs)
 
         return CountingDataExtractor
 
@@ -113,73 +110,56 @@ class TestExtractors(TestCase):
 
         return instance_data
 
-    def test_can_stream_efficiently_on_export_for_tasks_and_jobs(self):
-        item_ids = {("image", "foo"), ("another_image", "foo")}
-        for data_cls in [TaskData, JobData]:
+    @mock.patch("attr.evolve", lambda x, **kwargs: x)
+    def test_can_stream_efficiently_on_export(self):
+        for data_cls in [TaskData, JobData, ProjectData]:
+            if data_cls is ProjectData:
+                item_ids = {
+                    ("image", "foo"),
+                    ("another_image", "foo"),
+                    ("third_image", "bar"),
+                    ("fourth_image", "bar"),
+                }
+            else:
+                item_ids = {("image", "foo"), ("another_image", "foo")}
             with self.subTest(data_cls=data_cls.__name__):
                 instance_data = self._make_mock_instance_data(data_cls, item_ids)
-                extractor_cls = self._make_counting_data_extractor_cls(CvatTaskOrJobDataExtractor)
+                extractor_cls = (
+                    CVATProjectDataExtractor
+                    if data_cls is ProjectData
+                    else CvatTaskOrJobDataExtractor
+                )
+                extractor_cls = self._make_counting_data_extractor_cls(extractor_cls)
 
                 with extractor_cls(instance_data=instance_data) as extractor:
                     dataset = StreamDataset.from_extractors(extractor, env=dm_env)
-                    assert set(dataset.ids()) == item_ids, set(dataset.ids())
-                    # did not iterate anything to init a dataset or to access ids
-                    assert instance_data.group_by_frame.call_count == 0
-                    assert extractor.items_processed == 0
-
-                    # processes items when dataset is iterated and iterates over frame data
-                    list(dataset)
-                    assert extractor.items_processed == len(item_ids)
+                    # iterated over instance frame data on init
                     assert instance_data.group_by_frame.call_count == 1
 
-                    # does not keep items in memory
-                    list(dataset)
-                    assert extractor.items_processed == len(item_ids) * 2
-                    assert instance_data.group_by_frame.call_count == 2
+                    # does not convert annotations to get various dataset properties
+                    len(dataset)
+                    list(dataset.subsets())
+                    list(dataset.shallow_items())
+                    assert extractor.item_anns_processed == 0
 
-                    # iterates frames once, when items are iterated through subsets
-                    for subset in dataset.subsets().values():
-                        list(subset)
-                    assert extractor.items_processed == len(item_ids) * 3
-                    assert instance_data.group_by_frame.call_count == 3
+                    # does not convert annotations to get various subset properties
+                    for subset in dataset.subsets():
+                        subset_dataset = dataset.get_subset(subset).as_dataset()
+                        len(subset_dataset)
+                        list(subset_dataset.subsets())
+                        list(subset_dataset.shallow_items())
+                    assert extractor.item_anns_processed == 0
 
-    @mock.patch("attr.evolve", lambda x, **kwargs: x)
-    def test_can_stream_efficiently_on_export_for_projects(self):
-        # counts should be the same as for task/job case, but it's a work in progress for now
-        item_ids = {
-            ("image", "foo"),
-            ("another_image", "foo"),
-            ("third_image", "bar"),
-            ("fourth_image", "bar"),
-        }
-        instance_data = self._make_mock_instance_data(ProjectData, item_ids)
-        extractor_cls = self._make_counting_data_extractor_cls(CVATProjectDataExtractor)
+                    # initiates annotations only when they are accessed
+                    list(item.annotations for item in dataset)
+                    assert extractor.item_anns_processed == len(item_ids)
 
-        with extractor_cls(instance_data=instance_data) as extractor:
-            dataset = StreamDataset.from_extractors(extractor, env=dm_env)
-            # iterated over instance frame data
-            assert instance_data.group_by_frame.call_count == 1
-            assert extractor.items_processed == 0
+                    # does not keep annotations in memory
+                    list(item.annotations for item in dataset)
+                    assert extractor.item_anns_processed == len(item_ids) * 2
 
-            # does not process any items to get ids
-            assert set(dataset.ids()) == item_ids
-            assert extractor.items_processed == 0
-
-            # processes items when dataset is iterated
-            list(dataset)
-            assert extractor.items_processed == len(item_ids)
-
-            # does not keep items in memory
-            list(dataset)
-            assert extractor.items_processed == len(item_ids) * 2
-
-            # iterates frames once, when items are iterated through subsets
-            for subset in dataset.subsets().values():
-                list(subset)
-            assert extractor.items_processed == len(item_ids) * 3
-
-            # did not iterate over instance frame data anymore
-            assert instance_data.group_by_frame.call_count == 1
+                    # did not iterate over instance frame data anymore
+                    assert instance_data.group_by_frame.call_count == 1
 
 
 class TestImporters(ApiTestBase):
@@ -229,43 +209,29 @@ class TestImporters(ApiTestBase):
 
         class DummyStreamingExtractor(StreamingDatasetBase):
             def __init__(self):
-                super().__init__(length=6, subsets=subsets)
-                self.iter_subset_call_dict = {subset: 0 for subset in self._subsets}
-                self.iter_call_count = 0
+                super().__init__(subsets=subsets)
+                self.ann_init_count = 0
 
-            def __iter__(self):
-                self.iter_call_count += 1
-                yield from super().__iter__()
+            def _gen_anns(self):
+                assert self.ann_init_count < 6
+                self.ann_init_count += 1
+                return [Bbox(x=5, y=5, w=2, h=2, label=1)]
 
             def get_subset(self, name: str) -> StreamingSubsetBase:
-                assert name in self._subsets
-
                 class _SubsetExtractor(StreamingSubsetBase):
-                    def __init__(self, parent):
-                        super().__init__(subset=name)
-                        self.parent = parent
-                        self._dummy_ids = [f"{name}_1", f"{name}_2"]
-
-                    def __iter__(self):
-                        self.parent.iter_subset_call_dict[name] += 1
+                    def __iter__(_):
                         for item_id, image_path in dataset_items[name]:
                             yield DatasetItem(
                                 id=item_id,
                                 subset=name,
                                 media=media.Image.from_file(image_path),
-                                annotations=[
-                                    Bbox(x=5, y=5, w=2, h=2, label=1),
-                                ],
+                                annotations=self._gen_anns,
                             )
 
-                    def ids(self) -> Generator[Tuple[str, str], None, None]:
-                        for item_id, _ in dataset_items[name]:
-                            yield item_id, name
+                    def categories(_):
+                        return self.categories()
 
-                    def categories(self):
-                        return self.parent.categories()
-
-                return _SubsetExtractor(self)
+                return _SubsetExtractor()
 
             def categories(self) -> CategoriesInfo:
                 return {AnnotationType.label: LabelCategories.from_iterable(["a", "b", "c"])}
@@ -370,21 +336,17 @@ class TestImporters(ApiTestBase):
             fake_file_name = os.path.join(temp_dir, "fake.zip")
             open(fake_file_name, "w").close()
             import_job_annotations(fake_file_name, self.job_id, "dummy_format 1.0", True)
-            assert self.extractor.iter_call_count == 0
-            assert self.extractor.iter_subset_call_dict == {"train": 1, "test": 0, "foo": 0}
+            assert self.extractor.ann_init_count == 2
 
     def test_import_task_annotations_efficiency(self):
         with TmpDirManager.get_tmp_directory() as temp_dir:
             fake_file_name = os.path.join(temp_dir, "fake.zip")
             open(fake_file_name, "w").close()
             import_task_annotations(fake_file_name, self.task_id, "dummy_format 1.0", True)
-            assert self.extractor.iter_call_count == 0
-            assert self.extractor.iter_subset_call_dict == {"train": 1, "test": 0, "foo": 0}
+            assert self.extractor.ann_init_count == 2
 
-    @unittest.expectedFailure
     @mock.patch("rq.get_current_job")
     def test_import_project_annotations_efficiency(self, mock_current_job):
-        # streaming import to project should not be turned on until this test passes
         mock_current_job.return_value = Mock(spec=RQJob, meta=dict())
         mock_current_job.return_value.save_meta = lambda: None
 
@@ -392,5 +354,4 @@ class TestImporters(ApiTestBase):
             fake_file_name = os.path.join(temp_dir, "fake.zip")
             open(fake_file_name, "w").close()
             import_dataset_as_project(fake_file_name, self.project_id, "dummy_format 1.0", True)
-            assert self.extractor.iter_call_count == 0
-            assert self.extractor.iter_subset_call_dict == {"train": 1, "test": 1, "foo": 1}
+            assert self.extractor.ann_init_count == 6

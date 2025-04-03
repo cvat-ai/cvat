@@ -9,7 +9,6 @@ from itertools import chain
 import cv2
 import datumaro as dm
 import numpy as np
-from datumaro import AnnotationType
 from pycocotools import mask as mask_utils
 
 
@@ -170,7 +169,8 @@ class MaskToPolygonTransformation:
 
 
 class SetKeyframeForEveryTrackShape(dm.ItemTransform):
-    KEEPS_IDS_INTACT = True
+    IS_SHALLOW_FRIENDLY = True
+    KEEPS_SUBSETS_INTACT = True
 
     def transform_item(self, item):
         annotations = []
@@ -178,12 +178,4 @@ class SetKeyframeForEveryTrackShape(dm.ItemTransform):
             if "track_id" in ann.attributes:
                 ann = ann.wrap(attributes=dict(ann.attributes, keyframe=True))
             annotations.append(ann)
-        return item.wrap(annotations=annotations)
-
-
-class RemoveBboxAnnotations(dm.ItemTransform):
-    KEEPS_IDS_INTACT = True
-
-    def transform_item(self, item):
-        annotations = [ann for ann in item.annotations if ann.type != AnnotationType.bbox]
         return item.wrap(annotations=annotations)

@@ -5,6 +5,7 @@
 
 import zipfile
 
+from datumaro import AnnotationType, ItemTransform
 from datumaro.components.dataset import Dataset, StreamDataset
 from datumaro.plugins.data_formats.coco.importer import CocoImporter
 
@@ -18,7 +19,6 @@ from cvat.apps.dataset_manager.bindings import (
 from cvat.apps.dataset_manager.util import make_zip_archive
 
 from .registry import dm_env, exporter, importer
-from .transformations import RemoveBboxAnnotations
 
 
 @exporter(name="COCO", ext="ZIP", version="1.0")
@@ -60,11 +60,19 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
     make_zip_archive(temp_dir, dst_file)
 
 
-@importer(name="COCO Keypoints", ext="JSON, ZIP", version="1.0")
-def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
+class RemoveBboxAnnotations(ItemTransform):
     # Boxes would have invalid (skeleton) labels, so remove them
     # TODO: find a way to import boxes
+    IS_SHALLOW_FRIENDLY = True
+    KEEPS_SUBSETS_INTACT = True
 
+    def transform_item(self, item):
+        annotations = [ann for ann in item.annotations if ann.type != AnnotationType.bbox]
+        return item.wrap(annotations=annotations)
+
+
+@importer(name="COCO Keypoints", ext="JSON, ZIP", version="1.0")
+def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
     dataset_cls = Dataset if isinstance(instance_data, ProjectData) else StreamDataset
     if zipfile.is_zipfile(src_file):
         zipfile.ZipFile(src_file).extractall(temp_dir)
