@@ -80,8 +80,8 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
     const maxAutoSaveInterval = 60;
     const minAAMMargin = 0;
     const maxAAMMargin = 1000;
-    const minControlPointsSize = 4;
-    const maxControlPointsSize = 8;
+    const minControlPointsSize = 2;
+    const maxControlPointsSize = 10;
 
     return (
         <div className='cvat-workspace-settings'>
@@ -168,6 +168,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                         <Select.Option value='attributes'>Attributes</Select.Option>
                         <Select.Option value='source'>Source</Select.Option>
                         <Select.Option value='descriptions'>Descriptions</Select.Option>
+                        <Select.Option value='dimensions'>Dimensions</Select.Option>
                     </Select>
                 </Col>
             </Row>

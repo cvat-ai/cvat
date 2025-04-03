@@ -6,7 +6,7 @@
 #    pip-compile-multi
 #
 -r base.txt
-anyio==4.8.0
+anyio==4.9.0
     # via watchfiles
 coverage==7.2.3
     # via -r cvat/requirements/production.in
@@ -26,5 +26,5 @@ uvloop==0.21.0
     # via uvicorn
 watchfiles==1.0.4
     # via uvicorn
-websockets==14.1
+websockets==15.0.1
     # via uvicorn

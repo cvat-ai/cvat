@@ -42,8 +42,10 @@ To start automatic annotation, do the following:
 1. [Match the labels](#labels-matching) of the model and the task.
 1. (Optional) In case you need the model to return masks as polygons, switch toggle **Return masks as polygons**.
 1. (Optional) In case you need to remove all previous annotations, switch toggle **Clean old annotations**.
+1. (Optional) You can specify a **Threshold** for the model.
+    If not provided, the default value from the model settings will be used.
 
-   ![](/images/image120.jpg)
+   ![](/images/running_automatic_annotation.png)
 
 1. Click **Annotate**.
 

@@ -2938,10 +2938,10 @@ axios-retry@^4.0.0:
   dependencies:
     is-retry-allowed "^2.2.0"
 
-axios@^1.7.4:
-  version "1.7.4"
-  resolved "https://registry.yarnpkg.com/axios/-/axios-1.7.4.tgz#4c8ded1b43683c8dd362973c393f3ede24052aa2"
-  integrity sha512-DukmaFRnY6AzAALSH4J2M3k6PkaC+MfaAGdEERRWcC9q3/TWQwLpHR8ZRLKTdQ3aBDL64EdluRDjJqKw+BPZEw==
+axios@^1.8.2:
+  version "1.8.2"
+  resolved "https://registry.yarnpkg.com/axios/-/axios-1.8.2.tgz#fabe06e241dfe83071d4edfbcaa7b1c3a40f7979"
+  integrity sha512-ls4GYBm5aig9vWx8AWDSGLpnpDQRtWAfrjU+EuytuODrFBkqesN2RkOQCBzrA1RQNHw1SmRMSDDDSwzNAYQ6Rg==
   dependencies:
     follow-redirects "^1.15.6"
     form-data "^4.0.0"
@@ -3230,9 +3230,9 @@ camera-controls@^1.25.3:
   integrity sha512-EfzbovxLssyWpJVG9uKcazSDDIEcd1hUsPhPF/OWWnICsKY9WbLY/2S4UPW73HHbvnVeR/Z9wsWaQKtANy/2Yg==
 
 caniuse-lite@^1.0.30001587, caniuse-lite@^1.0.30001599:
-  version "1.0.30001617"
-  resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30001617.tgz#809bc25f3f5027ceb33142a7d6c40759d7a901eb"
-  integrity sha512-mLyjzNI9I+Pix8zwcrpxEbGlfqOkF9kM3ptzmKNw5tizSyYwMe+nGLTqMK9cO+0E+Bh6TsBxNAaHWEM8xwSsmA==
+  version "1.0.30001690"
+  resolved "https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30001690.tgz"
+  integrity sha512-5ExiE3qQN6oF8Clf8ifIDcMRCRE/dMGcETG/XGMD8/XiXm6HXQgQTh1yZYLXXpSOsEUlJm1Xr7kGULZTuGtP/w==
 
 canvas@^2.8.0:
   version "2.11.2"
@@ -3318,12 +3318,17 @@ character-reference-invalid@^2.0.0:
   resolved "https://registry.yarnpkg.com/character-reference-invalid/-/character-reference-invalid-2.0.1.tgz#85c66b041e43b47210faf401278abf808ac45cb9"
   integrity sha512-iBZ4F4wRbyORVsu0jPV7gXkOsGYjGHPmAyv+HiHG8gi5PtC9KI2j1+v8/tlibRvjoWX027ypmG/n0HtO5t7unw==
 
-chart.js@^4.3.0:
-  version "4.4.2"
-  resolved "https://registry.yarnpkg.com/chart.js/-/chart.js-4.4.2.tgz#95962fa6430828ed325a480cc2d5f2b4e385ac31"
-  integrity sha512-6GD7iKwFpP5kbSD4MeRRRlTnQvxfQREy36uEtm1hzHzcOqwWx0YEHuspuoNlslu+nciLIB7fjjsHkUv/FzFcOg==
+chart.js@^4.4.8:
+  version "4.4.8"
+  resolved "https://registry.yarnpkg.com/chart.js/-/chart.js-4.4.8.tgz#54645b638e9d585099bc16b892947b5e6cd2a552"
+  integrity sha512-IkGZlVpXP+83QpMm4uxEiGqSI7jFizwVtF3+n5Pc3k7sMO+tkd0qxh2OzLhenM0K80xtmAONWGBn082EiBQSDA==
   dependencies:
     "@kurkle/color" "^0.3.0"
+
+chartjs-plugin-datalabels@^2.2.0:
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/chartjs-plugin-datalabels/-/chartjs-plugin-datalabels-2.2.0.tgz#369578e131d743c2e34b5fbe2d3f9335f6639b8f"
+  integrity sha512-14ZU30lH7n89oq+A4bWaJPnAG8a7ZTk7dKf48YAzMvJjQtjrgg5Dpk9f+LbjCF6bpx3RAGTeL13IXpKQYyRvlw==
 
 check-links@^1.1.8:
   version "1.1.8"
@@ -3875,7 +3880,7 @@ custom-error-instance@2.1.1:
 "cvat-core@link:./cvat-core":
   version "15.3.1"
   dependencies:
-    axios "^1.7.4"
+    axios "^1.8.2"
     axios-retry "^4.0.0"
     cvat-data "link:./cvat-data"
     detect-browser "^5.2.1"

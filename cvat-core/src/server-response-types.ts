@@ -121,6 +121,7 @@ export interface SerializedTask {
     subset: string;
     updated_date: string;
     url: string;
+    consensus_enabled: boolean;
 }
 
 export interface SerializedJob {
@@ -147,6 +148,8 @@ export interface SerializedJob {
     url: string;
     source_storage: SerializedStorage | null;
     target_storage: SerializedStorage | null;
+    parent_job_id: number | null;
+    consensus_replicas: number;
 }
 
 export type AttrInputType = 'select' | 'radio' | 'checkbox' | 'number' | 'text';
@@ -174,6 +177,8 @@ export interface SerializedAbout {
     description: string;
     name: string;
     version: string;
+    logo_url: string;
+    subtitle: string;
 }
 
 export interface SerializedRemoteFile {
@@ -237,7 +242,14 @@ export interface SerializedOrganization {
 export interface APIQualitySettingsFilter extends APICommonFilterParams {
     task_id?: number;
 }
+
 export type QualitySettingsFilter = Camelized<APIQualitySettingsFilter>;
+
+export interface APIConsensusSettingsFilter extends APICommonFilterParams {
+    task_id?: number;
+}
+
+export type ConsensusSettingsFilter = Camelized<APIConsensusSettingsFilter>;
 
 export interface SerializedQualitySettingsData {
     id?: number;
@@ -325,6 +337,14 @@ export interface SerializedQualityReportData {
             covered_annotation: number;
         }
     };
+}
+
+export interface SerializedConsensusSettingsData {
+    id?: number;
+    task?: number;
+    quorum?: number;
+    iou_threshold?: number;
+    descriptions?: Record<string, string>;
 }
 
 export interface SerializedDataEntry {
@@ -460,7 +480,7 @@ export interface SerializedCloudStorage {
 export interface SerializedFramesMetaData {
     chunk_size: number;
     deleted_frames: number[];
-    included_frames: number[];
+    included_frames: number[] | null;
     frame_filter: string;
     chunks_updated_date: string;
     frames: {
@@ -539,3 +559,6 @@ export interface SerializedTaskValidationLayout extends SerializedJobValidationL
     validation_frames?: number[];
     disabled_frames?: number[];
 }
+
+export interface APIOrganizationMembersFilter extends APICommonFilterParams {}
+export type OrganizationMembersFilter = Camelized<APIOrganizationMembersFilter>;

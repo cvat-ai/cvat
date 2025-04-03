@@ -7,7 +7,7 @@ from functools import update_wrapper
 __plugins = {}
 
 
-def add_plugin(name, function, order, exc_ok = False):
+def add_plugin(name, function, order, exc_ok=False):
     if order not in ["before", "after"]:
         raise Exception("Order may be 'before' or 'after' only. Got {}.".format(order))
 
@@ -18,10 +18,7 @@ def add_plugin(name, function, order, exc_ok = False):
         raise Exception("'name' argument should be a string. Got {}.".format(type(name)))
 
     if name not in __plugins:
-        __plugins[name] = {
-            "before": [],
-            "after": []
-        }
+        __plugins[name] = {"before": [], "after": []}
 
     if function in __plugins[name][order]:
         raise Exception("plugin has been attached already")

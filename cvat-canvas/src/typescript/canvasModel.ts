@@ -457,18 +457,18 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
         const { angle } = this.data;
 
-        const mutiplier = Math.sin((angle * Math.PI) / 180) + Math.cos((angle * Math.PI) / 180);
+        const multiplier = Math.sin((angle * Math.PI) / 180) + Math.cos((angle * Math.PI) / 180);
         if ((angle / 90) % 2) {
             // 90, 270, ..
             const topMultiplier = (x - this.data.imageSize.width / 2) * (oldScale / this.data.scale - 1);
             const leftMultiplier = (y - this.data.imageSize.height / 2) * (oldScale / this.data.scale - 1);
-            this.data.top += mutiplier * topMultiplier * this.data.scale;
-            this.data.left -= mutiplier * leftMultiplier * this.data.scale;
+            this.data.top += multiplier * topMultiplier * this.data.scale;
+            this.data.left -= multiplier * leftMultiplier * this.data.scale;
         } else {
             const leftMultiplier = (x - this.data.imageSize.width / 2) * (oldScale / this.data.scale - 1);
             const topMultiplier = (y - this.data.imageSize.height / 2) * (oldScale / this.data.scale - 1);
-            this.data.left += mutiplier * leftMultiplier * this.data.scale;
-            this.data.top += mutiplier * topMultiplier * this.data.scale;
+            this.data.left += multiplier * leftMultiplier * this.data.scale;
+            this.data.top += multiplier * topMultiplier * this.data.scale;
         }
 
         this.notify(UpdateReasons.IMAGE_ZOOMED);
@@ -590,7 +590,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 };
 
                 this.data.image = data;
-                this.fit();
+                this.resetScale();
 
                 // restore correct image position after switching to a new frame
                 // if corresponding option is disabled
@@ -684,7 +684,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.notify(UpdateReasons.SHAPE_FOCUSED);
     }
 
-    public fit(): void {
+    private resetScale(): boolean {
         const { angle } = this.data;
 
         let updatedScale = this.data.scale;
@@ -713,6 +713,14 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             // scale is changed during zooming or translating
             // so, remember fitted scale to compute fit-relative scaling
             this.data.fittedScale = this.data.scale;
+            return true;
+        }
+
+        return false;
+    }
+
+    public fit(): void {
+        if (this.resetScale()) {
             this.notify(UpdateReasons.IMAGE_FITTED);
         }
     }
@@ -939,7 +947,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
         if (typeof configuration.textContent === 'string') {
             const splitted = configuration.textContent.split(',').filter((entry: string) => !!entry);
-            if (splitted.every((entry: string) => ['id', 'label', 'attributes', 'source', 'descriptions'].includes(entry))) {
+            if (splitted.every((entry: string) => ['id', 'label', 'attributes', 'source', 'descriptions', 'dimensions'].includes(entry))) {
                 this.data.configuration.textContent = configuration.textContent;
             }
         }

@@ -176,7 +176,10 @@ def pre_save_resource_event(sender, instance, **kwargs):
 @receiver(post_save, sender=Organization, dispatch_uid=__name__ + ":organization:post_save")
 @receiver(post_save, sender=Invitation, dispatch_uid=__name__ + ":invitation:post_save")
 @receiver(post_save, sender=Membership, dispatch_uid=__name__ + ":membership:post_save")
-def post_save_resource_event(sender, instance, **kwargs):
+def post_save_resource_event(sender, instance, created: bool, raw: bool, **kwargs):
+    if created and raw:
+        return
+
     selected_webhooks = instance._webhooks_selected_webhooks
     del instance._webhooks_selected_webhooks
 

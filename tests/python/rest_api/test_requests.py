@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import io
+import json
 from http import HTTPStatus
 from urllib.parse import urlparse
 
@@ -11,6 +12,8 @@ from cvat_sdk.api_client import ApiClient, models
 from cvat_sdk.api_client.api_client import Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
 
+from shared.fixtures.data import Container
+from shared.fixtures.init import docker_exec_redis_inmem, kube_exec_redis_inmem
 from shared.utils.config import make_api_client
 from shared.utils.helpers import generate_image_files
 
@@ -153,7 +156,7 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
                 ),
             }[(resource, subresource)]
 
-            data = func(self.user, api_version=2, id=rid, download_result=True)
+            data = func(self.user, id=rid, download_result=True)
             assert data, f"Failed to download {resource} {subresource} locally"
             return data
 
@@ -163,15 +166,12 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
     def fxt_make_export_project_requests(self):
         def make_requests(project_ids: list[int]):
             for project_id in project_ids:
-                export_project_backup(
-                    self.user, api_version=2, id=project_id, download_result=False
-                )
+                export_project_backup(self.user, id=project_id, download_result=False)
                 export_project_dataset(
-                    self.user, api_version=2, save_images=True, id=project_id, download_result=False
+                    self.user, save_images=True, id=project_id, download_result=False
                 )
                 export_project_dataset(
                     self.user,
-                    api_version=2,
                     save_images=False,
                     id=project_id,
                     download_result=False,
@@ -183,13 +183,9 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
     def fxt_make_export_task_requests(self):
         def make_requests(task_ids: list[int]):
             for task_id in task_ids:
-                export_task_backup(self.user, api_version=2, id=task_id, download_result=False)
-                export_task_dataset(
-                    self.user, api_version=2, save_images=True, id=task_id, download_result=False
-                )
-                export_task_dataset(
-                    self.user, api_version=2, save_images=False, id=task_id, download_result=False
-                )
+                export_task_backup(self.user, id=task_id, download_result=False)
+                export_task_dataset(self.user, save_images=True, id=task_id, download_result=False)
+                export_task_dataset(self.user, save_images=False, id=task_id, download_result=False)
 
         return make_requests
 
@@ -199,7 +195,6 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
             for job_id in job_ids:
                 export_job_dataset(
                     self.user,
-                    api_version=2,
                     save_images=True,
                     id=job_id,
                     format="COCO 1.0",
@@ -207,7 +202,6 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
                 )
                 export_job_dataset(
                     self.user,
-                    api_version=2,
                     save_images=False,
                     id=job_id,
                     format="YOLO 1.1",
@@ -251,6 +245,42 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
 
         return super()._test_can_use_simple_filter_for_object_list(simple_filter, values)
 
+    def test_list_requests_when_there_is_job_with_non_regular_or_corrupted_meta(
+        self, jobs: Container, admin_user: str, request: pytest.FixtureRequest
+    ):
+        job = next(iter(jobs))
+
+        export_job_dataset(admin_user, save_images=True, id=job["id"], download_result=False)
+        export_job_dataset(admin_user, save_images=False, id=job["id"], download_result=False)
+
+        with make_api_client(admin_user) as api_client:
+            background_requests, response = api_client.requests_api.list(_check_status=False)
+            assert response.status == HTTPStatus.OK
+            assert 2 == background_requests.count
+
+            corrupted_job, normal_job = background_requests.results
+
+            remove_meta_command = f'redis-cli -e HDEL rq:job:{corrupted_job["id"]} meta'
+
+            if request.config.getoption("--platform") == "local":
+                stdout, _ = docker_exec_redis_inmem(["sh", "-c", remove_meta_command])
+            else:
+                stdout, _ = kube_exec_redis_inmem(
+                    [
+                        "sh",
+                        "-c",
+                        'export REDISCLI_AUTH="${REDIS_PASSWORD}" && ' + remove_meta_command,
+                    ]
+                )
+            assert bool(int(stdout.strip()))
+
+            _, response = api_client.requests_api.list(_check_status=False, _parse_response=False)
+            assert response.status == HTTPStatus.OK
+
+            background_requests = json.loads(response.data)
+            assert 1 == background_requests["count"]
+            assert normal_job.id == background_requests["results"][0]["id"]
+
 
 @pytest.mark.usefixtures("restore_db_per_class")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
@@ -284,7 +314,6 @@ class TestGetRequests:
         subresource = "dataset" if save_images else "annotations"
         export_project_dataset(
             owner["username"],
-            api_version=2,
             save_images=save_images,
             id=project["id"],
             download_result=False,
@@ -326,7 +355,6 @@ class TestGetRequests:
 
         export_project_dataset(
             owner["username"],
-            api_version=2,
             save_images=True,
             id=project["id"],
             download_result=False,

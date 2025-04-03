@@ -106,12 +106,12 @@
             "justMyCode": false,
         },
         {
-            "name": "REST API tests: Attach to RQ analytics reports worker",
+            "name": "REST API tests: Attach to RQ consensus worker",
             "type": "debugpy",
             "request": "attach",
             "connect": {
                 "host": "127.0.0.1",
-                "port": 9095
+                "port": 9096
             },
             "pathMappings": [
                 {
@@ -261,28 +261,6 @@
             "console": "internalConsole"
         },
         {
-            "name": "server: RQ - analytics reports",
-            "type": "debugpy",
-            "request": "launch",
-            "stopOnEntry": false,
-            "justMyCode": false,
-            "python": "${command:python.interpreterPath}",
-            "program": "${workspaceFolder}/manage.py",
-            "args": [
-                "rqworker",
-                "analytics_reports",
-                "--worker-class",
-                "cvat.rqworker.SimpleWorker",
-            ],
-            "django": true,
-            "cwd": "${workspaceFolder}",
-            "env": {
-                "DJANGO_LOG_SERVER_HOST": "localhost",
-                "DJANGO_LOG_SERVER_PORT": "8282"
-            },
-            "console": "internalConsole"
-        },
-        {
             "name": "server: RQ - scheduler",
             "type": "debugpy",
             "request": "launch",
@@ -372,6 +350,28 @@
             "args": [
                 "rqworker",
                 "chunks",
+                "--worker-class",
+                "cvat.rqworker.SimpleWorker"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "DJANGO_LOG_SERVER_HOST": "localhost",
+                "DJANGO_LOG_SERVER_PORT": "8282"
+            },
+            "console": "internalConsole"
+        },
+        {
+            "name": "server: RQ - consensus",
+            "type": "debugpy",
+            "request": "launch",
+            "stopOnEntry": false,
+            "justMyCode": false,
+            "python": "${command:python.interpreterPath}",
+            "program": "${workspaceRoot}/manage.py",
+            "args": [
+                "rqworker",
+                "consensus",
                 "--worker-class",
                 "cvat.rqworker.SimpleWorker"
             ],
@@ -563,9 +563,9 @@
                 "server: RQ - webhooks",
                 "server: RQ - scheduler",
                 "server: RQ - quality reports",
-                "server: RQ - analytics reports",
                 "server: RQ - cleaning",
                 "server: RQ - chunks",
+                "server: RQ - consensus",
             ]
         }
     ]

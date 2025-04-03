@@ -150,13 +150,6 @@ context('Customizable Shortcuts', () => {
             cy.openSettings();
             registerF2(false);
             registerF2(true);
-        });
-    });
-
-    describe('Saving, Clearing and Restoring to Default', () => {
-        it('Saving shortcuts and checking if they persist', () => {
-            cy.openSettings();
-            cy.saveSettings();
             cy.reload();
             cy.openSettings();
             cy.contains('Shortcuts').click();
@@ -166,6 +159,9 @@ context('Customizable Shortcuts', () => {
                 cy.get('.ant-select-selection-overflow-item').contains('ctrl+space').should('exist');
             });
         });
+    });
+
+    describe('Saving, Clearing and Restoring to Default', () => {
         it('Cleaning Shortcuts', () => {
             cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select').first().click();
             cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select .ant-select-selection-item-remove').first().click();
@@ -176,14 +172,6 @@ context('Customizable Shortcuts', () => {
             cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select').first().within(() => {
                 cy.get('.ant-select-selection-overflow-item').should('not.have.text');
             });
-        });
-        it('Restoring Defaults', () => {
-            cy.get('.cvat-shortcuts-settings-restore').click();
-            cy.get('.cvat-shortcuts-settings-restore-modal .ant-btn-primary').click();
-            cy.get(
-                '.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select .ant-select-selection-overflow-item').first().should('exist').and('be.visible');
-            cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select .ant-select-selection-overflow-item').first().contains('f1');
-            cy.saveSettings();
         });
         it('Modifying a shortcut via local storage and testing if its conflict is resolved', () => {
             cy.window().then((window) => {
@@ -201,6 +189,18 @@ context('Customizable Shortcuts', () => {
             cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select .ant-select-selection-overflow-item').eq(1).should('not.have.text');
             cy.get('.cvat-shortcuts-settings-restore').click();
             cy.get('.cvat-shortcuts-settings-restore-modal .ant-btn-primary').click();
+        });
+        it('Restoring Defaults', () => {
+            cy.get('.cvat-shortcuts-settings-restore').click();
+            cy.get('.cvat-shortcuts-settings-restore-modal .ant-btn-primary').click();
+            cy.get(
+                '.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select .ant-select-selection-overflow-item').first().should('exist').and('be.visible');
+            cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select .ant-select-selection-overflow-item').first().contains('f1');
+            cy.closeSettings();
+            cy.window().then((window) => {
+                const { localStorage } = window;
+                cy.wrap(localStorage.getItem('clientSettings')).should('exist').and('not.be.null');
+            });
         });
     });
 
@@ -233,9 +233,14 @@ context('Customizable Shortcuts', () => {
             cy.get('.cvat-canvas-container').click();
             cy.realPress(['F1']);
             cy.get('.cvat-shortcuts-modal-window').should('exist').and('be.visible');
-            cy.get('.cvat-shortcuts-modal-window .ant-pagination-item-5').click();
+            cy.get('.cvat-shortcuts-modal-window .ant-pagination-options-size-changer').click();
+            cy.get('.ant-select-dropdown')
+                .not('.ant-select-dropdown-hidden')
+                .within(() => {
+                    cy.contains('100 / page').click();
+                });
             checkShortcutsMounted((i) => `Switch label to label ${i}`);
-            cy.realPress(['F1']);
+            cy.contains('.cvat-shortcuts-modal-window [type="button"]', 'OK').click();
         });
     });
 });

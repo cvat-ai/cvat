@@ -10,16 +10,15 @@ import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
 import { MoreOutlined } from '@ant-design/icons';
-import Dropdown from 'antd/lib/dropdown';
 import Progress from 'antd/lib/progress';
 import Badge from 'antd/lib/badge';
 import moment from 'moment';
 import { Task, RQStatus, Request } from 'cvat-core-wrapper';
-import ActionsMenuContainer from 'containers/actions-menu/actions-menu';
 import Preview from 'components/common/preview';
 import { ActiveInference, PluginComponent } from 'reducers';
 import StatusMessage from 'components/requests-page/request-status';
 import AutomaticAnnotationProgress from './automatic-annotation-progress';
+import TaskActionsComponent from './actions-menu';
 
 export interface TaskItemProps {
     taskInstance: any;
@@ -235,13 +234,6 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         const { taskInstance, history } = this.props;
         const { id } = taskInstance;
 
-        const onViewAnalytics = (): void => {
-            history.push(`/tasks/${taskInstance.id}/analytics`);
-        };
-        const onViewQualityControl = (): void => {
-            history.push(`/tasks/${taskInstance.id}/quality-control`);
-        };
-
         return (
             <Col span={3}>
                 <Row justify='end'>
@@ -263,22 +255,17 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                     </Col>
                 </Row>
                 <Row justify='end'>
-                    <Dropdown
-                        trigger={['click']}
-                        destroyPopupOnHide
-                        overlay={(
-                            <ActionsMenuContainer
-                                taskInstance={taskInstance}
-                                onViewAnalytics={onViewAnalytics}
-                                onViewQualityControl={onViewQualityControl}
-                            />
-                        )}
-                    >
-                        <Col className='cvat-item-open-task-actions'>
-                            <Text className='cvat-text-color'>Actions</Text>
-                            <MoreOutlined className='cvat-menu-icon' />
-                        </Col>
-                    </Dropdown>
+                    <Col className='cvat-item-open-task-actions'>
+                        <TaskActionsComponent
+                            taskInstance={taskInstance}
+                            triggerElement={(
+                                <div>
+                                    <Text className='cvat-text-color'>Actions</Text>
+                                    <MoreOutlined className='cvat-menu-icon' />
+                                </div>
+                            )}
+                        />
+                    </Col>
                 </Row>
             </Col>
         );

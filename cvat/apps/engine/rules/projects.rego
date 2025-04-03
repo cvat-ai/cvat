@@ -29,6 +29,7 @@ import data.organizations
 #         "owner": { "id": <num> },
 #         "assignee": { "id": <num> },
 #         "organization": { "id": <num> } or null,
+#         "rq_job": { "owner": { "id": <num> } } or null,
 #     }
 # }
 
@@ -212,4 +213,9 @@ allow if {
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.MAINTAINER)
+}
+
+allow if {
+    input.scope == utils.DOWNLOAD_EXPORTED_FILE
+    input.auth.user.id == input.resource.rq_job.owner.id
 }
