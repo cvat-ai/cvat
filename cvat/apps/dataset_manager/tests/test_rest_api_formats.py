@@ -36,7 +36,11 @@ import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.bindings import CvatTaskOrJobDataExtractor, TaskData
 from cvat.apps.dataset_manager.cron import clear_export_cache
 from cvat.apps.dataset_manager.task import TaskAnnotation
-from cvat.apps.dataset_manager.tests.utils import TestDir
+from cvat.apps.dataset_manager.tests.utils import (
+    TestDir,
+    ensure_extractors_efficiency,
+    ensure_streaming_importers,
+)
 from cvat.apps.dataset_manager.util import get_export_cache_lock
 from cvat.apps.dataset_manager.views import export
 from cvat.apps.engine.models import Task
@@ -345,6 +349,8 @@ class _DbTestBase(ExportApiTestBase):
                 f.write(content)
 
 
+@ensure_extractors_efficiency
+@ensure_streaming_importers
 class TaskDumpUploadTest(_DbTestBase):
     def test_api_v2_dump_and_upload_annotations_with_objects_type_is_shape(self):
         test_name = self._testMethodName
@@ -2023,6 +2029,8 @@ class ExportBehaviorTest(_DbTestBase):
                 self.assertFalse(osp.exists(export_path))
 
 
+@ensure_extractors_efficiency
+@ensure_streaming_importers
 class ProjectDumpUpload(_DbTestBase):
     def test_api_v2_export_import_dataset(self):
         test_name = self._testMethodName

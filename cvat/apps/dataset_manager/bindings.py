@@ -2140,7 +2140,7 @@ def match_dm_item(
 def find_dataset_root(
     dm_dataset: dm.IDataset, instance_data: Union[ProjectData, CommonData]
 ) -> Optional[str]:
-    longest_path_item = max(dm_dataset, key=lambda item: len(Path(item.id).parts), default=None)
+    longest_path_item = max(dm_dataset.shallow_items(), key=lambda item: len(Path(item.id).parts), default=None)
     if longest_path_item is None:
         return None
     longest_path = longest_path_item.id

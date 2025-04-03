@@ -25,6 +25,10 @@ from cvat.apps.dataset_manager.bindings import (
     find_dataset_root,
 )
 from cvat.apps.dataset_manager.task import TaskAnnotation
+from cvat.apps.dataset_manager.tests.utils import (
+    ensure_extractors_efficiency,
+    ensure_streaming_importers,
+)
 from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.apps.engine.models import Task
 from cvat.apps.engine.tests.utils import (
@@ -95,19 +99,7 @@ class _DbTestBase(ApiTestBase):
         return task
 
 
-class MockTaskExtractor(CvatTaskOrJobDataExtractor):
-    def __init__(self, *args, **kwargs):
-        self.ann_init_counter = 0
-        super().__init__(*args, **kwargs)
-
-    def _read_cvat_anno(self, *args, **kwargs):
-        # check that annotations were initialized once per item
-        assert self.ann_init_counter < len(self)
-        self.ann_init_counter += 1
-        return super()._read_cvat_anno(*args, **kwargs)
-
-
-@patch("cvat.apps.dataset_manager.bindings.CvatTaskOrJobDataExtractor", MockTaskExtractor)
+@ensure_extractors_efficiency
 class TaskExportTest(_DbTestBase):
     def _generate_custom_annotations(self, annotations, task):
         self._put_api_v2_task_id_annotations(task["id"], annotations)
@@ -692,12 +684,16 @@ class FrameMatchingTest(_DbTestBase):
                 task = self._generate_task(images)
                 task_data = TaskData(AnnotationIR('2d'),
                     Task.objects.get(pk=task["id"]))
-                dataset = [DatasetItem(id=osp.splitext(p)[0]) for p in dataset_paths]
 
-                root = find_dataset_root(dataset, task_data)
+                class MockDataset:
+                    def shallow_items(self):
+                        yield from [DatasetItem(id=osp.splitext(p)[0]) for p in dataset_paths]
+
+                root = find_dataset_root(MockDataset(), task_data)
                 self.assertEqual(expected, root)
 
 
+@ensure_streaming_importers
 class TaskAnnotationsImportTest(_DbTestBase):
     def _generate_custom_annotations(self, annotations, task):
         self._put_api_v2_task_id_annotations(task["id"], annotations)
