@@ -1674,8 +1674,8 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
     if is_zip:
         zipfile.ZipFile(src_file).extractall(temp_dir)
 
+        detect_dataset(temp_dir, format_name="cvat", importer=_CvatImporter)
         if isinstance(instance_data, ProjectData):
-            detect_dataset(temp_dir, format_name="cvat", importer=_CvatImporter)
             dataset = Dataset.import_from(temp_dir, "cvat", env=dm_env)
             if load_data_callback is not None:
                 load_data_callback(dataset, instance_data)

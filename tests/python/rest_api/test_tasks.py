@@ -5678,11 +5678,11 @@ class TestImportTaskAnnotations:
         with pytest.raises(exceptions.ApiException) as capture:
             task.import_annotations(format_name, source_archive_path)
 
-        assert "Check [format docs]" in str(capture.value)
-        try:
-            assert "Dataset must contain a file:" in str(capture.value)
-        except:
-            assert "specific requirement information unavailable" in str(capture.value)
+        error_message = str(capture.value)
+        assert "Check [format docs]" in error_message
+
+        if "specific requirement information unavailable" not in error_message:
+            assert "Dataset must contain a file:" in error_message
 
 
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
