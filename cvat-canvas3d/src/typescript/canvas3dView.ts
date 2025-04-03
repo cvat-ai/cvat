@@ -2142,9 +2142,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         const dotProduct = startVector.x * endVector.x + startVector.y * endVector.y;
         let angle = Math.acos(dotProduct / (startMagnitude * endMagnitude));
 
-        const crossProduct = startVector.x * endVector.y - startVector.y * endVector.x;
-        if (crossProduct < 0) {
-            angle = -angle; // Counterclockwise rotation
+        if (Canvas3dViewImpl.isLeft(canvasCentre, this.action.rotation.screenInit, this.action.rotation.screenMove)) {
+            angle = -angle;
         }
 
         this.action.rotation.recentMouseVector = this.views[view].rayCaster.mouseVector.clone();
