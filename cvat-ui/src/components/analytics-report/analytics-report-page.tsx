@@ -5,18 +5,17 @@
 import './styles.scss';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { shallowEqual, useSelector } from 'react-redux';
+import notification from 'antd/lib/notification';
 import { useLocation, useParams } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 
 import {
-    Project, Task, Job,
-    getCore, MembershipRole, InstanceType,
+    Project, Task, Job, getCore, MembershipRole, InstanceType,
 } from 'cvat-core-wrapper';
 import { CombinedState } from 'reducers';
 import GoBackButton from 'components/common/go-back-button';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
-import { notification } from 'antd';
-import { shallowEqual, useSelector } from 'react-redux';
 import AnalyticsReportContent from './analytics-report-content';
 import AnalyticsPageHeader from './analytics-page-header';
 
@@ -46,7 +45,7 @@ function AnalyticsReportPage(): JSX.Element {
     const requestedInstanceType: InstanceType = useInstanceType();
     const requestedInstanceID = useInstanceID(requestedInstanceType);
     const [timePeriod, setTimePeriod] = useState<{ startDate: string; endDate: string; } | null>(null);
-    const [isEventsExport, setIsEventsExport] = useState(false);
+    const [exporting, setExporting] = useState(false);
     const [resource, setResource] = useState<Project | Task | Job | null>(null);
     const [fetching, setFetching] = useState(true);
     const { user, org } = useSelector((state: CombinedState) => ({
@@ -54,13 +53,13 @@ function AnalyticsReportPage(): JSX.Element {
         org: state.organizations.current,
     }), shallowEqual);
 
-    const onEventsExport = useCallback(async () => {
+    const onExportEvents = useCallback(async () => {
         if (!resource || !user) {
             return;
         }
 
         try {
-            setIsEventsExport(true);
+            setExporting(true);
             const params: {
                 orgId?: number;
                 userId?: number;
@@ -121,7 +120,7 @@ function AnalyticsReportPage(): JSX.Element {
                 description: error instanceof Error ? error.message : '',
             });
         } finally {
-            setIsEventsExport(false);
+            setExporting(false);
         }
     }, [user, org, resource, timePeriod]);
 
@@ -170,10 +169,10 @@ function AnalyticsReportPage(): JSX.Element {
                 <Row justify='center' className='cvat-analytics-inner-wrapper'>
                     <Col span={22} xl={18} xxl={14} className='cvat-analytics-inner'>
                         <AnalyticsPageHeader
-                            isEventsExport={isEventsExport}
+                            exporting={exporting}
                             fetching={fetching}
                             resource={resource}
-                            onEventsExport={onEventsExport}
+                            onExportEvents={onExportEvents}
                             onUpdateTimePeriod={(from: Date | null, to: Date | null) => {
                                 function localToUTC(date: Date): string {
                                     // convert local time to UTC string WITHOUT applying any timezone offset

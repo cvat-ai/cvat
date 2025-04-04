@@ -31,9 +31,8 @@ import Organization, { Invitation } from './organization';
 import Webhook from './webhook';
 import { ArgumentError } from './exceptions';
 import {
-    QualityConflictsFilter, QualityReportsFilter,
+    AnalyticsEventsFilter, QualityConflictsFilter, QualityReportsFilter,
     QualitySettingsFilter, SerializedAsset, ConsensusSettingsFilter,
-    AnalyticsEventsFilter,
 } from './server-response-types';
 import QualityReport from './quality-report';
 import AboutData from './about';

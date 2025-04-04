@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import {
-    QualityConflictsFilter, QualityReportsFilter, QualitySettingsFilter,
-    ConsensusSettingsFilter, AnalyticsEventsFilter,
+    AnalyticsEventsFilter, QualityConflictsFilter, QualityReportsFilter,
+    QualitySettingsFilter, ConsensusSettingsFilter,
 } from './server-response-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';

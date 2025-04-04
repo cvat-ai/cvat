@@ -4,56 +4,28 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Row, Col } from 'antd/lib/grid';
 import Title from 'antd/lib/typography/Title';
 import Button from 'antd/lib/button';
 import DatePicker from 'antd/lib/date-picker';
+import { Row, Col } from 'antd/lib/grid';
 import { DownloadOutlined } from '@ant-design/icons';
 
 import { Project, Task, Job } from 'cvat-core-wrapper';
 
 interface Props {
-    onEventsExport(): void;
+    onExportEvents(): void;
     onUpdateTimePeriod(from: Date | null, to: Date | null): void;
-    isEventsExport: boolean;
     resource: Project | Task | Job | null;
+    exporting: boolean;
     fetching: boolean;
-}
-
-function makeResourceLink(resource: NonNullable<Props['resource']>): JSX.Element | null {
-    if (resource instanceof Project) {
-        return (
-            <Link to={`/projects/${resource.id}`}>
-                {`Project #${resource.id}`}
-            </Link>
-        );
-    }
-
-    if (resource instanceof Task) {
-        return (
-            <Link to={`/tasks/${resource.id}`}>
-                {`Task #${resource.id}`}
-            </Link>
-        );
-    }
-
-    if (resource instanceof Job) {
-        return (
-            <Link to={`/tasks/${resource.taskId}/jobs/${resource.id}`}>
-                {`Job #${resource.id}`}
-            </Link>
-        );
-    }
-
-    return null;
 }
 
 function AnaylyticsPageHeader(props: Props): JSX.Element {
     const {
         onUpdateTimePeriod,
-        onEventsExport,
-        isEventsExport,
+        onExportEvents,
         resource,
+        exporting,
         fetching,
     } = props;
 
@@ -63,7 +35,33 @@ function AnaylyticsPageHeader(props: Props): JSX.Element {
                 {resource ? (
                     <Title level={4} className='cvat-text-color'>
                         {'Analytics page for '}
-                        {makeResourceLink(resource)}
+                        {((resource: NonNullable<Props['resource']>): JSX.Element | null => {
+                            if (resource instanceof Project) {
+                                return (
+                                    <Link to={`/projects/${resource.id}`}>
+                                        {`Project #${resource.id}`}
+                                    </Link>
+                                );
+                            }
+
+                            if (resource instanceof Task) {
+                                return (
+                                    <Link to={`/tasks/${resource.id}`}>
+                                        {`Task #${resource.id}`}
+                                    </Link>
+                                );
+                            }
+
+                            if (resource instanceof Job) {
+                                return (
+                                    <Link to={`/tasks/${resource.taskId}/jobs/${resource.id}`}>
+                                        {`Job #${resource.id}`}
+                                    </Link>
+                                );
+                            }
+
+                            return null;
+                        })(resource)}
                     </Title>
                 ) : (
                     <Title level={4} className='cvat-text-color'>
@@ -88,11 +86,11 @@ function AnaylyticsPageHeader(props: Props): JSX.Element {
                 />
                 <Button
                     className='cvat-analytics-export-button'
-                    disabled={fetching || isEventsExport}
-                    loading={isEventsExport}
+                    disabled={fetching || exporting}
+                    loading={exporting}
                     type='link'
                     icon={<DownloadOutlined />}
-                    onClick={onEventsExport}
+                    onClick={onExportEvents}
                 >
                         Export events
                 </Button>

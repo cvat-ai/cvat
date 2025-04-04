@@ -281,7 +281,7 @@ Cypress.Commands.add('headlessLogin', ({
     nextURL,
 } = {}) => {
     cy.window().its('cvat', { timeout: 25000 }).should('not.be.undefined');
-    cy.window().then((win) => {
+    return cy.window().then((win) => (
         cy.headlessLogout().then(() => (
             win.cvat.server.login(
                 username || Cypress.env('user'),
@@ -290,16 +290,18 @@ Cypress.Commands.add('headlessLogin', ({
                 if (nextURL) {
                     cy.intercept('GET', nextURL).as('nextPage');
                     cy.visit(nextURL);
-                    cy.wait('@nextPage').then(() => {
+                    return cy.wait('@nextPage').then(() => {
                         cy.url().should('include', nextURL);
                         cy.get('.cvat-spinner').should('not.exist');
+                    }).then(() => {
+                        return users[0];
                     });
                 }
 
                 return users[0];
             }))
-        ));
-    });
+        ))
+    ));
 });
 
 Cypress.Commands.add('headlessCreateObjects', (objects, jobID) => {

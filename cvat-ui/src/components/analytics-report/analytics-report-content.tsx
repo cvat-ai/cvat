@@ -5,9 +5,9 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 
+import config from 'config';
 import { Project, Task, Job } from 'cvat-core-wrapper';
 import { CombinedState } from 'reducers';
-import config from 'config';
 import PaidFeaturePlaceholder from 'components/paid-feature-placeholder/paid-feature-placeholder';
 
 interface Props {
