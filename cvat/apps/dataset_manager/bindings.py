@@ -10,11 +10,11 @@ import re
 import sys
 from collections import OrderedDict, defaultdict
 from collections.abc import Iterable, Iterator, Mapping, Sequence
-from functools import reduce
+from functools import partial, reduce
 from operator import add
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any, Callable, Dict, Generator, Literal, NamedTuple, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Literal, NamedTuple, Optional, Union
 
 import attr
 import datumaro as dm
@@ -1715,7 +1715,7 @@ class CvatDataExtractorBase(CVATDataExtractorMixin):
             else:
                 dm_media = dm.Image.from_file(**dm_media_args)
 
-        dm_anno = lambda: self._read_cvat_anno(frame_data, self._instance_meta['labels'])
+        dm_anno = partial(self._read_cvat_anno, frame_data, self._instance_meta['labels'])
 
         dm_attributes = {'frame': frame_data.frame}
 

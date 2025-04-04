@@ -5,14 +5,14 @@
 
 import zipfile
 
-from datumaro import AnnotationType, ItemTransform
-from datumaro.components.dataset import Dataset, StreamDataset
+from datumaro.components.annotation import AnnotationType
+from datumaro.components.dataset import StreamDataset
+from datumaro.components.transformer import ItemTransform
 from datumaro.plugins.data_formats.coco.importer import CocoImporter
 
 from cvat.apps.dataset_manager.bindings import (
     GetCVATDataExtractor,
     NoMediaInAnnotationFileError,
-    ProjectData,
     detect_dataset,
     import_dm_annotations,
 )

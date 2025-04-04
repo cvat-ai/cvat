@@ -8,7 +8,6 @@ import os.path as osp
 import tempfile
 import zipfile
 from io import BytesIO
-from unittest.mock import patch
 
 import datumaro
 import numpy as np
