@@ -324,6 +324,7 @@ RQ_QUEUES = {
         **REDIS_INMEM_SETTINGS,
         "DEFAULT_TIMEOUT": "1h",
         "VISIBLE_VIA_REQUESTS_API": True,
+        "PARSED_JOB_ID_CLASS": "cvat.apps.quality_control.quality_reports.QualityRequestId",
     },
     CVAT_QUEUES.CLEANING.value: {
         **REDIS_INMEM_SETTINGS,

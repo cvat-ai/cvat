@@ -17,6 +17,8 @@ from rest_framework.viewsets import GenericViewSet
 from cvat.apps.engine.mixins import UploadMixin
 from cvat.apps.engine.parsers import TusUploadParser
 from cvat.apps.engine.types import ExtendedRequest
+from django.http import HttpResponseGone
+import textwrap
 
 
 def make_paginated_response(
@@ -92,3 +94,19 @@ def tus_chunk_action(*, detail: bool, suffix_base: str):
         return f
 
     return decorator
+
+def get_410_response_for_export_api(path: str) -> HttpResponseGone:
+    return HttpResponseGone(textwrap.dedent(f"""\
+        This endpoint is no longer supported.
+        To initiate the export process, use POST {path}.
+        To check the process status, use GET /api/requests/rq_id,
+        where rq_id is obtained from the response of the previous request.
+        To download the prepared file, use the result_url obtained from the response of the previous request.
+    """))
+
+def get_410_response_when_checking_process_status(process_type: str, /) -> HttpResponseGone:
+    return HttpResponseGone(textwrap.dedent(f"""\
+        This endpoint no longer supports checking the status of the {process_type} process.
+        The common requests API should be used instead: GET /api/requests/rq_id,
+        where rq_id is obtained from the response of the initializing request.
+    """))

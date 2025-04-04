@@ -9,12 +9,11 @@ from decimal import Decimal
 from typing import Any
 
 import rq.defaults as rq_defaults
-from django.conf import settings
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
-from rq.job import Job as RQJob
 from rq.job import JobStatus as RQJobStatus
+from cvat.apps.redis_handler.rq import CustomRQJob
 
 from cvat.apps.engine import models
 from cvat.apps.engine.log import ServerLogManager
@@ -49,27 +48,27 @@ class RequestDataOperationSerializer(serializers.Serializer):
     format = serializers.CharField(required=False, allow_null=True)
     function_id = serializers.CharField(required=False, allow_null=True)
 
-    def to_representation(self, rq_job: RQJob) -> dict[str, Any]:
-        parsed_rq_id: RequestId = rq_job.parsed_rq_id
+    def to_representation(self, rq_job: CustomRQJob) -> dict[str, Any]:
+        parsed_request_id: RequestId = rq_job.parsed_id
 
         base_rq_job_meta = BaseRQMeta.for_job(rq_job)
         representation = {
-            "type": parsed_rq_id.type,
-            "target": parsed_rq_id.target,
+            "type": parsed_request_id.type,
+            "target": parsed_request_id.target,
             "project_id": base_rq_job_meta.project_id,
             "task_id": base_rq_job_meta.task_id,
             "job_id": base_rq_job_meta.job_id,
         }
-        if parsed_rq_id.action == RequestAction.AUTOANNOTATE:
+        if parsed_request_id.action == RequestAction.AUTOANNOTATE:
             representation["function_id"] = LambdaRQMeta.for_job(rq_job).function_id
-        elif parsed_rq_id.action in (
+        elif parsed_request_id.action in (
             RequestAction.IMPORT,
             RequestAction.EXPORT,
-        ) and parsed_rq_id.subresource in (
+        ) and parsed_request_id.subresource in (
             RequestSubresource.ANNOTATIONS,
             RequestSubresource.DATASET,
         ):
-            representation["format"] = parsed_rq_id.format
+            representation["format"] = parsed_request_id.format
 
         return representation
 
@@ -105,21 +104,21 @@ class RequestSerializer(serializers.Serializer):
         super().__init__(*args, **kwargs)
 
     @extend_schema_field(UserIdentifiersSerializer())
-    def get_owner(self, rq_job: RQJob) -> dict[str, Any]:
+    def get_owner(self, rq_job: CustomRQJob) -> dict[str, Any]:
         assert self._base_rq_job_meta
         return UserIdentifiersSerializer(self._base_rq_job_meta.user).data
 
     @extend_schema_field(
         serializers.FloatField(min_value=0, max_value=1, required=False, allow_null=True)
     )
-    def get_progress(self, rq_job: RQJob) -> Decimal:
+    def get_progress(self, rq_job: CustomRQJob) -> Decimal:
         rq_job_meta = ImportRQMeta.for_job(rq_job)
         # progress of task creation is stored in "task_progress" field
         # progress of project import is stored in "progress" field
         return Decimal(rq_job_meta.progress or rq_job_meta.task_progress or 0.0)
 
     @extend_schema_field(serializers.DateTimeField(required=False, allow_null=True))
-    def get_expiry_date(self, rq_job: RQJob) -> str | None:
+    def get_expiry_date(self, rq_job: CustomRQJob) -> str | None:
         delta = None
         if rq_job.is_finished:
             delta = rq_job.result_ttl or rq_defaults.DEFAULT_RESULT_TTL
@@ -133,9 +132,7 @@ class RequestSerializer(serializers.Serializer):
         return None
 
     @extend_schema_field(serializers.CharField(allow_blank=True))
-    def get_message(self, rq_job: RQJob) -> str:
-        # TODO: from cvat.apps.engine.utils import parse_exception_message
-
+    def get_message(self, rq_job: CustomRQJob) -> str:
         assert self._base_rq_job_meta
         rq_job_status = rq_job.get_status()
         message = ""
@@ -150,7 +147,7 @@ class RequestSerializer(serializers.Serializer):
 
         return message
 
-    def to_representation(self, rq_job: RQJob) -> dict[str, Any]:
+    def to_representation(self, rq_job: CustomRQJob) -> dict[str, Any]:
         self._base_rq_job_meta = BaseRQMeta.for_job(rq_job)
         representation = super().to_representation(rq_job)
 
@@ -159,16 +156,9 @@ class RequestSerializer(serializers.Serializer):
             representation["status"] = RQJobStatus.QUEUED
 
         if representation["status"] == RQJobStatus.FINISHED:
-
-            # TODO: move into a custom Job class
-            if rq_job.parsed_rq_id.action == models.RequestAction.EXPORT:
+            if rq_job.parsed_id.action == models.RequestAction.EXPORT:
                 representation["result_url"] = ExportRQMeta.for_job(rq_job).result_url
-
-            if (
-                rq_job.parsed_rq_id.action == models.RequestAction.IMPORT
-                and rq_job.parsed_rq_id.subresource == models.RequestSubresource.BACKUP
-                or rq_job.parsed_rq_id.queue == settings.CVAT_QUEUES.QUALITY_REPORTS
-            ):
-                representation["result_id"] = rq_job.return_value()
+            elif self._base_rq_job_meta.result_id is not None:
+                representation["result_id"] = self._base_rq_job_meta.result_id
 
         return representation

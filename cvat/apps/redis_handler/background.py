@@ -156,7 +156,7 @@ class AbstractRequestManager(metaclass=ABCMeta):
     def build_meta(self, *, request_id: str):
         return BaseRQMeta.build(request=self.request, db_obj=self.db_instance)
 
-    def setup_new_job(self, queue: DjangoRQ, request_id: str, /):
+    def setup_new_job(self, queue: DjangoRQ, request_id: str, /, **kwargs):
         with get_rq_lock_by_user(queue, self.user_id):
             queue.enqueue_call(
                 func=self.callback,
@@ -167,6 +167,7 @@ class AbstractRequestManager(metaclass=ABCMeta):
                 depends_on=define_dependent_job(queue, self.user_id, rq_id=request_id),
                 result_ttl=self.job_result_ttl,
                 failure_ttl=self.job_failed_ttl,
+                **kwargs,
             )
 
     def finalize_request(self) -> None:
@@ -176,7 +177,7 @@ class AbstractRequestManager(metaclass=ABCMeta):
         serializer = RequestIdSerializer({"rq_id": request_id})
         return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
-    def process(self) -> Response:
+    def schedule_job(self) -> Response:
         self.init_request_args()
         self.validate_request()
         self.init_callback_with_params()

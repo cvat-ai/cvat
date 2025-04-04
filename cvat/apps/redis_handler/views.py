@@ -27,7 +27,7 @@ from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import RequestStatus  # todo: move to the app
 from cvat.apps.engine.rq import is_rq_job_owner
 from cvat.apps.engine.types import ExtendedRequest
-from cvat.apps.redis_handler.rq import RequestId
+from cvat.apps.redis_handler.rq import RequestId, CustomRQJob
 from cvat.apps.redis_handler.serializers import RequestSerializer
 
 slogger = ServerLogManager(__name__)
@@ -90,10 +90,10 @@ class RequestViewSet(viewsets.GenericViewSet):
 
     lookup_fields = {
         "created_date": "created_at",
-        "action": "parsed_rq_id.action",
-        "target": "parsed_rq_id.target",
-        "subresource": "parsed_rq_id.subresource",
-        "format": "parsed_rq_id.format",
+        "action": "parsed_id.action",
+        "target": "parsed_id.target",
+        "subresource": "parsed_id.subresource",
+        "format": "parsed_id.format",
         "status": "get_status",
         "project_id": "meta.project_id",
         "task_id": "meta.task_id",
@@ -141,12 +141,11 @@ class RequestViewSet(viewsets.GenericViewSet):
         for job in queue.job_class.fetch_many(job_ids, queue.connection):
             if job and is_rq_job_owner(job, user_id):
                 try:
-                    parsed_rq_id = ParsedIdClass.parse(job.id)
+                    parsed_request_id = ParsedIdClass.parse(job.id)
                 except Exception:  # nosec B112
                     continue
 
-                # todo: fix type annotation
-                job.parsed_rq_id = parsed_rq_id
+                job.parsed_id = parsed_request_id
                 jobs.append(job)
 
         return jobs
@@ -179,24 +178,24 @@ class RequestViewSet(viewsets.GenericViewSet):
             Optional[RQJob]: The retrieved RQJob, or None if not found.
         """
         try:
-            parsed_rq_id = RequestId.parse(rq_id)
+            parsed_request_id = RequestId.parse(rq_id)
         except Exception:
             return None
 
-        job: RQJob | None = None
+        job: CustomRQJob | None = None
 
-        if parsed_rq_id.queue.value not in self.SUPPORTED_QUEUES:
+        if parsed_request_id.queue not in self.SUPPORTED_QUEUES:
             raise ValidationError("Unsupported queue")
 
-        queue: DjangoRQ = django_rq.get_queue(parsed_rq_id.queue.value)
+        queue: DjangoRQ = django_rq.get_queue(parsed_request_id.queue)
 
         job = queue.fetch_job(rq_id)
         if job:
             ParsedIdClass = self.get_parsed_id_class(queue.name)
-            if type(parsed_rq_id) is not ParsedIdClass:  # pylint: disable=unidiomatic-typecheck
-                parsed_rq_id = parsed_rq_id.convert_to(ParsedIdClass)
+            if type(parsed_request_id) is not ParsedIdClass:  # pylint: disable=unidiomatic-typecheck
+                parsed_request_id = parsed_request_id.convert_to(ParsedIdClass)
 
-            job.parsed_rq_id = parsed_rq_id
+            job.parsed_id = parsed_request_id
 
         return job
 

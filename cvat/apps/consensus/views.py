@@ -26,6 +26,7 @@ from cvat.apps.engine.mixins import PartialUpdateModelMixin
 from cvat.apps.engine.models import Job, Task
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.redis_handler.serializers import RequestIdSerializer
+from cvat.apps.engine.view_utils import get_410_response_when_checking_process_status
 
 
 @extend_schema(tags=["consensus"])
@@ -55,14 +56,7 @@ class ConsensusMergesViewSet(viewsets.GenericViewSet):
         rq_id = request.query_params.get(self.CREATE_MERGE_RQ_ID_PARAMETER, None)
 
         if rq_id:
-            return HttpResponseGone(
-                textwrap.dedent(
-                    """\
-                    This endpoint is no longer handles merge status checking.
-                    The common requests API should be used instead: GET /api/requests/rq_id
-                    """
-                )
-            )
+            return get_410_response_when_checking_process_status("merge")
 
         input_serializer = ConsensusMergeCreateSerializer(data=request.data)
         input_serializer.is_valid(raise_exception=True)
@@ -81,7 +75,7 @@ class ConsensusMergesViewSet(viewsets.GenericViewSet):
                 raise NotFound(f"Jobs {job_id} do not exist") from ex
 
         manager = merging.MergingManager(request=request, db_instance=instance)
-        return manager.process()
+        return manager.schedule_job()
 
 
 @extend_schema(tags=["consensus"])

@@ -283,7 +283,7 @@ class QualityReportViewSet(
                 raise NotFound(f"Task {task_id} does not exist") from ex
 
             manager = qc.QualityReportRQJobManager(request=request, db_instance=task)
-            return manager.process()
+            return manager.schedule_job()
 
         else:
             deprecation_timestamp = int(datetime(2025, 3, 17, tzinfo=timezone.utc).timestamp())
@@ -335,7 +335,7 @@ class QualityReportViewSet(
                         headers=response_headers,
                     )
 
-                report = self.get_queryset().get(pk=return_value)
+                report = self.get_queryset().get(pk=return_value) # fixme: no result_id in response
                 report_serializer = QualityReportSerializer(
                     instance=report, context={"request": request}
                 )

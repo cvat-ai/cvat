@@ -16,8 +16,9 @@ if TYPE_CHECKING:
     from rest_framework.viewsets import ViewSet
 
 from cvat.apps.engine.models import RequestTarget
-from cvat.apps.engine.permissions import JobPermission, TaskPermission
+from cvat.apps.engine.permissions import JobPermission, TaskPermission, ProjectPermission
 from cvat.apps.engine.rq import BaseRQMeta
+from cvat.apps.redis_handler.rq import CustomRQJob
 
 
 class RequestPermission(OpenPolicyAgentPermission):
@@ -29,7 +30,7 @@ class RequestPermission(OpenPolicyAgentPermission):
 
     @classmethod
     def create(
-        cls, request: ExtendedRequest, view: ViewSet, obj: RQJob | None, iam_context: dict
+        cls, request: ExtendedRequest, view: ViewSet, obj: CustomRQJob | None, iam_context: dict
     ) -> list[OpenPolicyAgentPermission]:
         permissions = []
         if view.basename == "request":
@@ -37,29 +38,26 @@ class RequestPermission(OpenPolicyAgentPermission):
                 if scope == cls.Scopes.LIST:
                     continue
                 elif scope == cls.Scopes.VIEW:
-                    parsed_rq_id = obj.parsed_rq_id
+                    parsed_request_id = obj.parsed_id
 
-                    if (
-                        parsed_rq_id.queue
-                        in (
-                            settings.CVAT_QUEUES.CONSENSUS,
-                            settings.CVAT_QUEUES.QUALITY_REPORTS,
-                        )
-                        and parsed_rq_id.target == RequestTarget.TASK
-                    ):
-                        permissions.append(
-                            TaskPermission.create_scope_view(request, parsed_rq_id.id)
-                        )
-                        continue
-
-                    if (
-                        parsed_rq_id.queue == settings.CVAT_QUEUES.CONSENSUS
-                        and parsed_rq_id.target == RequestTarget.JOB
-                    ):
-                        permissions.append(
-                            JobPermission.create_scope_view(request, parsed_rq_id.id)
-                        )
-                        continue
+                    # In case when background job is unique for a user, status check should be available only for this user
+                    # In other cases, status check should be available for all users that have target resource VIEW permission
+                    if not parsed_request_id.user_id:
+                        if parsed_request_id.target == RequestTarget.PROJECT.value:
+                            permissions.append(
+                                ProjectPermission.create_scope_view(request, parsed_request_id.id)
+                            )
+                            continue
+                        elif parsed_request_id.target == RequestTarget.TASK.value:
+                            permissions.append(
+                                TaskPermission.create_scope_view(request, parsed_request_id.id)
+                            )
+                            continue
+                        elif parsed_request_id.target == RequestTarget.JOB.value:
+                            permissions.append(
+                                JobPermission.create_scope_view(request, parsed_request_id.id)
+                            )
+                            continue
 
                 self = cls.create_base_perm(request, view, scope, iam_context, obj)
                 permissions.append(self)

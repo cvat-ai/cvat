@@ -106,6 +106,7 @@ class DatasetExporter(AbstractExporter):
             action=RequestAction.EXPORT,
             target=RequestTarget(self.resource),
             id=self.db_instance.pk,
+            user_id=self.user_id,
             extra={
                 "subresource": (
                     RequestSubresource.DATASET
@@ -113,18 +114,17 @@ class DatasetExporter(AbstractExporter):
                     else RequestSubresource.ANNOTATIONS
                 ),
                 "format": self.export_args.format,
-                "user_id": self.user_id,
             },
         ).render()
 
     def validate_request_id(self, request_id, /) -> None:
-        parsed_rq_id = ExportRequestId.parse(request_id)
+        parsed_request_id = ExportRequestId.parse(request_id)
 
         if (
-            parsed_rq_id.action != RequestAction.EXPORT
-            or parsed_rq_id.target != RequestTarget(self.resource)
-            or parsed_rq_id.id != self.db_instance.pk
-            or parsed_rq_id.subresource
+            parsed_request_id.action != RequestAction.EXPORT
+            or parsed_request_id.target != RequestTarget(self.resource)
+            or parsed_request_id.id != self.db_instance.pk
+            or parsed_request_id.subresource
             not in {RequestSubresource.DATASET, RequestSubresource.ANNOTATIONS}
         ):
             raise ValueError("The provided request id does not match exported target or resource")
@@ -180,13 +180,13 @@ class BackupExporter(AbstractExporter):
     SUPPORTED_RESOURCES = {RequestTarget.PROJECT, RequestTarget.TASK}
 
     def validate_request_id(self, request_id, /) -> None:
-        parsed_rq_id = ExportRequestId.parse(request_id)
+        parsed_request_id = ExportRequestId.parse(request_id)
 
         if (
-            parsed_rq_id.action != RequestAction.EXPORT
-            or parsed_rq_id.target != RequestTarget(self.resource)
-            or parsed_rq_id.id != self.db_instance.pk
-            or parsed_rq_id.subresource is not RequestSubresource.BACKUP
+            parsed_request_id.action != RequestAction.EXPORT
+            or parsed_request_id.target != RequestTarget(self.resource)
+            or parsed_request_id.id != self.db_instance.pk
+            or parsed_request_id.subresource is not RequestSubresource.BACKUP
         ):
             raise ValueError("The provided request id does not match exported target or resource")
 
@@ -227,9 +227,9 @@ class BackupExporter(AbstractExporter):
             action=RequestAction.EXPORT,
             target=RequestTarget(self.resource),
             id=self.db_instance.pk,
+            user_id=self.user_id,
             extra={
                 "subresource": RequestSubresource.BACKUP,
-                "user_id": self.user_id,
             },
         ).render()
 
@@ -430,7 +430,7 @@ class DatasetImporter(ResourceImporter):
             raise MethodNotAllowed(self.request.method, detail="Format is disabled")
 
     def build_request_id(self):
-        return ExportRequestId(
+        return ImportRequestId(
             queue=self.QUEUE_NAME,
             action=RequestAction.IMPORT,
             target=RequestTarget(self.resource),

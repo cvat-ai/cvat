@@ -51,6 +51,7 @@ class RQJobMetaField:
     STATUS = "status"
     PROGRESS = "progress"
     HIDDEN = "hidden"
+    RESULT_ID = "result_id"
 
     # import specific fields
     TASK_PROGRESS = "task_progress"
@@ -238,6 +239,9 @@ class BaseRQMeta(RQMetaWithFailureInfo):
         RQJobMetaField.STATUS, validator=lambda x: isinstance(x, str), optional=True
     )
 
+    # TODO: looks like result duplicating
+    result_id: int | None = MutableRQMetaAttribute(RQJobMetaField.RESULT_ID, optional=True)
+
     @staticmethod
     def _get_resettable_fields() -> list[str]:
         return RQMetaWithFailureInfo._get_resettable_fields() + [
@@ -336,10 +340,6 @@ def is_rq_job_owner(rq_job: RQJob, user_id: int) -> bool:
 
 class ExportRequestId(RequestId):
     @cached_property
-    def user_id(self) -> int:
-        return int(self.extra["user_id"])
-
-    @cached_property
     def subresource(self) -> RequestSubresource | None:
         if subresource := self.extra.get("subresource"):
             return RequestSubresource(subresource)
@@ -348,10 +348,6 @@ class ExportRequestId(RequestId):
     @cached_property
     def format(self) -> str | None:
         return self.extra.get("format")
-
-    @property
-    def type(self) -> str:
-        return self.TYPE_SEP.join([self.action, self.subresource or self.target])
 
 
 class ImportRequestId(RequestId):
@@ -366,10 +362,6 @@ class ImportRequestId(RequestId):
     def format(self) -> str | None:
         # TODO: quote/unquote
         return self.extra.get("format")
-
-    @property
-    def type(self) -> str:
-        return self.TYPE_SEP.join([self.action, self.subresource or self.target])
 
 
 def define_dependent_job(

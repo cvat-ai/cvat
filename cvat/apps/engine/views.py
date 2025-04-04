@@ -135,7 +135,7 @@ from cvat.apps.engine.serializers import (
 )
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import parse_exception_message, sendfile
-from cvat.apps.engine.view_utils import tus_chunk_action
+from cvat.apps.engine.view_utils import tus_chunk_action, get_410_response_when_checking_process_status, get_410_response_for_export_api
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.iam.permissions import IsAuthenticatedOrReadPublicResource, PolicyEnforcer
 from cvat.apps.redis_handler.serializers import RequestIdSerializer
@@ -152,20 +152,6 @@ _DATA_CHECKSUM_HEADER_NAME = 'X-Checksum'
 _DATA_UPDATED_DATE_HEADER_NAME = 'X-Updated-Date'
 _RETRY_AFTER_TIMEOUT = 10
 
-def get_410_response_for_export_api(path: str) -> HttpResponseGone:
-    return HttpResponseGone(textwrap.dedent(f"""\
-        This endpoint is no longer supported.
-        To initiate the export process, use POST {path}.
-        To check the process status, use GET /api/requests/rq_id,
-        where rq_id is obtained from the response of the previous request.
-        To download the prepared file, use the result_url obtained from the response of the previous request.
-    """))
-
-def get_410_response_for_import_api() -> HttpResponseGone:
-    return HttpResponseGone(textwrap.dedent("""\
-        This endpoint no longer supports checking the status of the import process, use GET /api/requests/rq_id,
-        where rq_id is obtained from the response of the previous request.
-    """))
 
 @extend_schema(tags=['server'])
 class ServerViewSet(viewsets.ViewSet):
@@ -399,7 +385,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 # depends on rq job status (like 201 - finished),
                 # while GET /api/requests/rq_id returns a 200 status code
                 # if such a request exists regardless of job status.
-                return get_410_response_for_import_api()
+                return get_410_response_when_checking_process_status("import")
 
             # we cannot redirect to the new API here since this endpoint used not only to check the status
             # of exporting process|download a result file, but also to initiate export process
@@ -423,11 +409,11 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def upload_finished(self, request: ExtendedRequest):
         if self.action == 'dataset':
             importer = DatasetImporter(request=request, db_instance=self._object)
-            return importer.process()
+            return importer.schedule_job()
 
         elif self.action == 'import_backup':
             importer = BackupImporter(request=request, resource=RequestTarget.PROJECT)
-            return importer.process()
+            return importer.schedule_job()
 
         return Response(data='Unknown upload was finished',
                         status=status.HTTP_400_BAD_REQUEST)
@@ -474,7 +460,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         parser_classes=_UPLOAD_PARSER_CLASSES)
     def import_backup(self, request: ExtendedRequest):
         if request.query_params.get("rq_id"):
-            return get_410_response_for_import_api()
+            return get_410_response_when_checking_process_status("import")
 
         return self.upload_data(request)
 
@@ -823,7 +809,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         parser_classes=_UPLOAD_PARSER_CLASSES)
     def import_backup(self, request: ExtendedRequest):
         if request.query_params.get("rq_id"):
-            return get_410_response_for_import_api()
+            return get_410_response_when_checking_process_status("import")
 
         return self.upload_data(request)
 
@@ -953,7 +939,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         @transaction.atomic
         def _handle_upload_annotations(request: ExtendedRequest):
             importer = DatasetImporter(request=request, db_instance=self._object)
-            return importer.process()
+            return importer.schedule_job()
 
         def _handle_upload_data(request: ExtendedRequest):
             with transaction.atomic():
@@ -1017,12 +1003,12 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
             # Need to process task data when the transaction is committed
             creator = TaskCreator(request=request, db_instance=self._object, db_data=data)
-            return creator.process()
+            return creator.schedule_job()
 
         @transaction.atomic
         def _handle_upload_backup(request: ExtendedRequest):
             importer = BackupImporter(request=request, resource=RequestTarget.TASK)
-            return importer.process()
+            return importer.schedule_job()
 
         if self.action == 'annotations':
             return _handle_upload_annotations(request)
@@ -1258,7 +1244,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         elif request.method == 'PUT':
             if {"format", "rq_id"} & set(request.query_params.keys()):
-                return get_410_response_for_import_api()
+                return get_410_response_when_checking_process_status("import")
 
             serializer = LabeledDataSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
@@ -1615,7 +1601,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     def upload_finished(self, request: ExtendedRequest):
         if self.action == 'annotations':
             importer = DatasetImporter(request=request, db_instance=self._object)
-            return importer.process()
+            return importer.schedule_job()
 
         return Response(data='Unknown upload was finished',
                         status=status.HTTP_400_BAD_REQUEST)
@@ -1731,7 +1717,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
 
         elif request.method == 'PUT':
             if {"format", "rq_id"} & set(request.query_params.keys()):
-                return get_410_response_for_import_api()
+                return get_410_response_when_checking_process_status("import")
 
             serializer = LabeledDataSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):

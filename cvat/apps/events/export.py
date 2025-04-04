@@ -87,12 +87,6 @@ def _create_csv(query_params: dict):
         raise
 
 
-class EventsRequestId(RequestId):
-    @property
-    def user_id(self) -> int:
-        return self.extra["user_id"]
-
-
 @attrs.define(kw_only=True)
 class EventsExporter(AbstractExporter):
 
@@ -104,14 +98,12 @@ class EventsExporter(AbstractExporter):
         self.query_id = self.request.query_params.get("query_id") or uuid.uuid4()
 
     def build_request_id(self):
-        return EventsRequestId(
+        return RequestId(
             queue=self.QUEUE_NAME,
             action="export",
             target="events",
             id=self.query_id,
-            extra={
-                "user_id": self.user_id,
-            },
+            user_id=self.user_id,
         ).render()
 
     def init_request_args(self):

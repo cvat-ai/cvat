@@ -2261,6 +2261,12 @@ class DatasetComparator:
         )
 
 
+class QualityRequestId(RequestId):
+    @property
+    def subresource(self):
+        return self.extra["subresource"]
+
+
 @define(kw_only=True)
 class QualityReportRQJobManager(AbstractRequestManager):
     QUEUE_NAME = settings.CVAT_QUEUES.QUALITY_REPORTS.value
@@ -2271,11 +2277,14 @@ class QualityReportRQJobManager(AbstractRequestManager):
         return 120
 
     def build_request_id(self):
-        return RequestId(
+        return QualityRequestId(
             queue=self.QUEUE_NAME,
-            action="compute",
+            action="calculate",
             target=self.resource,
             id=self.db_instance.pk,
+            extra={
+                "subresource": "quality"
+            }
         ).render()
 
     def validate_request(self):
@@ -2308,6 +2317,7 @@ class QualityReportUpdateManager:
         return cls()._compute_reports(task_id=task_id)
 
     def _compute_reports(self, task_id: int) -> int:
+        # raise Exception("Ooops")
         with transaction.atomic():
             try:
                 # Preload all the data for the computations.
