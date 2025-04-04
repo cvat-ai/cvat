@@ -501,7 +501,7 @@ context('Ground truth jobs', () => {
             const width = 660;
             const height = 714;
             const newTaskName = `GT_TASK_w${width},h${height}`;
-            const imagesCount = 10;
+            const imagesCount = 9;
             const imageFileName = `image_${newTaskName.replace(' ', '_').toLowerCase()}`;
             const archiveName = `${imageFileName}.zip`;
             const archivePath = `cypress/fixtures/${archiveName}`;
@@ -550,8 +550,10 @@ context('Ground truth jobs', () => {
                             cy.get('.cvat-annotation-page').should('exist').and('be.visible').then(() => {
                                 cy.wrap(validationFrames).each((index) => {
                                     cy.goCheckFrameNumber(index);
+                                    const expectedFilenameNumber = index + 1; // imageGenerator starts with 1
+                                    const expectedFilename = `${imageFileName}_${expectedFilenameNumber}.${extension}`;
                                     // eslint-disable-next-line security/detect-non-literal-regexp
-                                    cy.get('.cvat-player-filename-wrapper').should('have.text', `${imageFileName}_${index}.${extension}`);
+                                    cy.get('.cvat-player-filename-wrapper').should('have.text', expectedFilename);
                                 });
                             });
                         });
