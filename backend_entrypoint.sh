@@ -28,37 +28,27 @@ cmd_init() {
     ~/manage.py syncperiodicjobs
 }
 
-_get_worker_list() {
-    workers=""
-    for arg in "$@"; do
-        if [[ "$arg" != include=* ]]; then
-            workers+=" $arg"
-        fi
-    done
-    echo $workers
-}
-
-_get_worker_includes() {
-    declare -A worker_merged_config
+_get_includes() {
+    declare -A merged_config
     for config in ~/backend_entrypoint.d/*.conf; do
-        declare -A worker_conf=$(cat $config)
-        for key in "${!worker_conf[@]}"; do
-            if [ -v worker_merged_config[$key] ]; then
-                fail "Duplicated worker definition: $key"
+        declare -A config=$(cat $config)
+        for key in "${!config[@]}"; do
+            if [ -v merged_config[$key] ]; then
+                fail "Duplicated component definition: $key"
             fi
-            worker_merged_config[$key]=${worker_conf[$key]}
+            merged_config[$key]=${config[$key]}
         done
     done
 
     extra_configs=()
-    for worker in "$@"; do
-        if [ ! -v worker_merged_config[$worker] ]; then
-            fail "Unexpected worker: $worker"
+    for component in "$@"; do
+        if ! [ -v merged_config[$component] ]; then
+            fail "Unexpected worker: $component"
         fi
 
-        for include in ${worker_merged_config["$worker"]}; do
+        for include in ${merged_config["$component"]}; do
             if ! [[ ${extra_configs[@]} =~ $include ]] && \
-                ( ! [[ "$include" == "clamav" ]] || ( [[ -v CLAM_AV ]] && [[ "$CLAM_AV" == "yes" ]] )); then
+                ( ! [[ "$include" == "clamav" ]] || [[ "${CLAM_AV:-}" == "yes" ]] ); then
                 extra_configs+=("$include")
             fi
         done
@@ -95,21 +85,22 @@ cmd_run() {
 
     supervisord_includes=""
     postgres_app_name="cvat:$component"
-
-    if [ "$component" = "worker"  ]; then
+    if [ "$component" = "server" ]; then
+        supervisord_includes=$(_get_includes "$component")
+    elif [ "$component" = "worker"  ]; then
         if [ "$#" -eq 1 ]; then
-            fail "run worker: expected at least 1 worker name"
+            fail "run worker: expected at least 1 queue name"
         fi
 
-        worker_list=$(_get_worker_list "${@:2}")
+        worker_list="${@:2}"
         echo "Workers to run: $worker_list"
-        export CVAT_WORKERS=$worker_list
+        export CVAT_QUEUES=$worker_list
 
         postgres_app_name+=":${worker_list// /+}"
 
-        supervisord_includes=$(_get_worker_includes "${@:2}")
-        echo "Additional components: $supervisord_includes"
+        supervisord_includes=$(_get_includes $worker_list)
     fi
+    echo "Additional components: $supervisord_includes"
 
     export CVAT_POSTGRES_APPLICATION_NAME=$postgres_app_name
     export CVAT_SUPERVISORD_INCLUDES=$supervisord_includes
@@ -124,7 +115,7 @@ if [ $# -eq 0 ]; then
     echo >&2 "    bash <bash args...>"
     echo >&2 "    init"
     echo >&2 "    run server"
-    echo >&2 "    run worker <list of workers> <list of optional services in the format include=config, e.g. include=smokescreen>"
+    echo >&2 "    run worker <list of queues>"
     exit 1
 fi
 

@@ -12,6 +12,33 @@ cvat:
         - name: DJANGO_SETTINGS_MODULE
           value: cvat.settings.testing_rest
     worker:
+      additionalEnv:
+      - name: DJANGO_SETTINGS_MODULE
+        value: cvat.settings.testing_rest
+      - name: CLICKHOUSE_HOST
+        valueFrom:
+          secretKeyRef:
+            name: cvat-analytics-secret
+            key: CLICKHOUSE_HOST
+      - name: CLICKHOUSE_PORT
+        valueFrom:
+          secretKeyRef:
+            name: cvat-analytics-secret
+            key: CLICKHOUSE_PORT
+      - name: CLICKHOUSE_USER
+        valueFrom:
+          secretKeyRef:
+            name: cvat-analytics-secret
+            key: CLICKHOUSE_USER
+      - name: CLICKHOUSE_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: cvat-analytics-secret
+            key: CLICKHOUSE_PASSWORD
+      additionalVolumeMounts:
+      - mountPath: /home/django/share
+        name: cvat-backend-data
+        subPath: share
       analytics_reports:
         replicas: 0
       annotation:
@@ -28,33 +55,6 @@ cvat:
         replicas: 0
       utils:
         replicas: 1
-        additionalEnv:
-          - name: DJANGO_SETTINGS_MODULE
-            value: cvat.settings.testing_rest
-          - name: CLICKHOUSE_HOST
-            valueFrom:
-              secretKeyRef:
-                name: cvat-analytics-secret
-                key: CLICKHOUSE_HOST
-          - name: CLICKHOUSE_PORT
-            valueFrom:
-              secretKeyRef:
-                name: cvat-analytics-secret
-                key: CLICKHOUSE_PORT
-          - name: CLICKHOUSE_USER
-            valueFrom:
-              secretKeyRef:
-                name: cvat-analytics-secret
-                key: CLICKHOUSE_USER
-          - name: CLICKHOUSE_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: cvat-analytics-secret
-                key: CLICKHOUSE_PASSWORD
-        additionalVolumeMounts:
-        - mountPath: /home/django/share
-          name: cvat-backend-data
-          subPath: share
         args:
         - "run"
         - "worker"
