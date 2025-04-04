@@ -84,8 +84,7 @@ def _import_common(
             image_info[frame] = (frame_info["height"], frame_info["width"])
 
     detect_dataset(temp_dir, format_name=format_name, importer=dm_env.importers.get(format_name))
-    dataset_cls = Dataset if isinstance(instance_data, ProjectData) else StreamDataset
-    dataset = dataset_cls.import_from(
+    dataset = StreamDataset.import_from(
         temp_dir, format_name, env=dm_env, image_info=image_info, **(import_kwargs or {})
     )
     dataset = dataset.transform(SetKeyframeForEveryTrackShape)

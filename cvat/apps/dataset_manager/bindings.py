@@ -2473,7 +2473,7 @@ def load_dataset_data(project_annotation, dataset: dm.Dataset, project_data):
         }
 
         root_paths = set()
-        for dataset_item in subset_dataset:
+        for dataset_item in subset_dataset.shallow_items():
             if isinstance(dataset_item.media, dm.Image) and dataset_item.media.has_data:
                 dataset_files['media'].append(dataset_item.media.path)
                 data_root = dataset_item.media.path.rsplit(dataset_item.id, 1)
