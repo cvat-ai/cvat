@@ -186,8 +186,8 @@ function setupTitle(instance: Task | Project): JSX.Element {
     const instanceType = instance instanceof Task ? 'Task' : 'Project';
     const instanceLink = instance instanceof Task ? `/tasks/${instance.id}` : `/projects/${instance.id}`;
     return (
-        <Col>
-            <Title level={4} className='cvat-text-color cvat-quality-page-header'>
+        <Col className='cvat-quality-page-header'>
+            <Title level={4} className='cvat-text-color'>
                 Quality control for
                 <Link to={instanceLink}>{` ${instanceType} #${instance.id}`}</Link>
             </Title>
