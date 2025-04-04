@@ -55,16 +55,11 @@ spec:
           {{- toYaml . | nindent 12 }}
           {{- end }}
           args:
-          {{- if $localValues.args }}
-          {{- $localValues.args | toYaml | nindent 10}}
-          {{- else }}
           - "run"
           - "worker"
           - "export"
-          {{- end}}
           env:
           {{ include "cvat.sharedBackendEnv" . | indent 10 }}
-          {{ include "cvat.sharedClickhouseEnv" . | indent 10 }}
           {{- with concat .Values.cvat.backend.additionalEnv $localValues.additionalEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}

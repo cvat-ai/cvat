@@ -92,15 +92,15 @@ cmd_run() {
             fail "run worker: expected at least 1 queue name"
         fi
 
-        worker_list="${@:2}"
-        echo "Workers to run: $worker_list"
-        export CVAT_QUEUES=$worker_list
+        queue_list="${@:2}"
+        echo "Workers to run: $queue_list"
+        export CVAT_QUEUES=$queue_list
 
-        postgres_app_name+=":${worker_list// /+}"
+        postgres_app_name+=":${queue_list// /+}"
 
-        supervisord_includes=$(_get_includes $worker_list)
+        supervisord_includes=$(_get_includes $queue_list)
     fi
-    echo "Additional components: $supervisord_includes"
+    echo "Additional supervisor configs that will be includes: $supervisord_includes"
 
     export CVAT_POSTGRES_APPLICATION_NAME=$postgres_app_name
     export CVAT_SUPERVISORD_INCLUDES=$supervisord_includes

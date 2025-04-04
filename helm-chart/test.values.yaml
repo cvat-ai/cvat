@@ -15,32 +15,6 @@ cvat:
       additionalEnv:
       - name: DJANGO_SETTINGS_MODULE
         value: cvat.settings.testing_rest
-      - name: CLICKHOUSE_HOST
-        valueFrom:
-          secretKeyRef:
-            name: cvat-analytics-secret
-            key: CLICKHOUSE_HOST
-      - name: CLICKHOUSE_PORT
-        valueFrom:
-          secretKeyRef:
-            name: cvat-analytics-secret
-            key: CLICKHOUSE_PORT
-      - name: CLICKHOUSE_USER
-        valueFrom:
-          secretKeyRef:
-            name: cvat-analytics-secret
-            key: CLICKHOUSE_USER
-      - name: CLICKHOUSE_PASSWORD
-        valueFrom:
-          secretKeyRef:
-            name: cvat-analytics-secret
-            key: CLICKHOUSE_PASSWORD
-      additionalVolumeMounts:
-      - mountPath: /home/django/share
-        name: cvat-backend-data
-        subPath: share
-      analytics_reports:
-        replicas: 0
       annotation:
         replicas: 0
       chunks:
@@ -51,20 +25,22 @@ cvat:
         replicas: 0
       import:
         replicas: 0
+      qualityreports:
+        replicas: 0
       webhooks:
         replicas: 0
       utils:
         replicas: 1
-        args:
-        - "run"
-        - "worker"
+        additionalVolumeMounts:
+        - mountPath: /home/django/share
+          name: cvat-backend-data
+          subPath: share
+        extraArgs:
         - "annotation"
         - "chunks"
-        - "cleaning"
         - "consensus"
         - "export"
         - "import"
-        - "notifications"
         - "quality_reports"
         - "webhooks"
 
@@ -89,4 +65,3 @@ traefik:
       level: DEBUG
     access:
       enabled: true
-

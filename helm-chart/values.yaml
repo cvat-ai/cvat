@@ -56,7 +56,6 @@ cvat:
         periodSeconds: 15
         failureThreshold: 5
         initialDelaySeconds: 60
-      args: []
     worker:
       livenessProbe:
         enabled: true
@@ -73,7 +72,6 @@ cvat:
         additionalEnv: []
         additionalVolumes: []
         additionalVolumeMounts: []
-        args: []
       import:
         replicas: 2
         labels: {}
@@ -84,7 +82,6 @@ cvat:
         additionalEnv: []
         additionalVolumes: []
         additionalVolumeMounts: []
-        args: []
       annotation:
         replicas: 1
         labels: {}
@@ -95,7 +92,6 @@ cvat:
         additionalEnv: []
         additionalVolumes: []
         additionalVolumeMounts: []
-        args: []
       webhooks:
         replicas: 1
         labels: {}
@@ -106,7 +102,6 @@ cvat:
         additionalEnv: []
         additionalVolumes: []
         additionalVolumeMounts: []
-        args: []
       qualityreports:
         replicas: 1
         labels: {}
@@ -117,7 +112,6 @@ cvat:
         additionalEnv: []
         additionalVolumes: []
         additionalVolumeMounts: []
-        args: []
       chunks:
         replicas: 2
         labels: {}
@@ -128,7 +122,6 @@ cvat:
         additionalEnv: []
         additionalVolumes: []
         additionalVolumeMounts: []
-        args: []
       consensus:
         replicas: 1
         labels: {}
@@ -139,7 +132,6 @@ cvat:
         additionalEnv: []
         additionalVolumes: []
         additionalVolumeMounts: []
-        args: []
       utils:
         replicas: 1
         labels: {}
@@ -150,7 +142,7 @@ cvat:
         additionalEnv: []
         additionalVolumes: []
         additionalVolumeMounts: []
-        args: []
+        extraArgs: []
     replicas: 1
     image: cvat/server
     tag: dev
