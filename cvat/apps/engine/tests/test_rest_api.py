@@ -6898,10 +6898,12 @@ class TaskAnnotation2DContext(ApiTestBase):
             }
             task = self._create_task(self.task , img_data)
             task_id = task["id"]
-            data = {
+            query_params = {
                 "quality": "original",
                 "type": "context_image",
                 "number": 0
             }
-            response = self._get_request("/api/tasks/%s/data" % task_id, self.admin, data=data)
+            response = self._get_request(
+                "/api/tasks/%s/data" % task_id, self.admin, query_params=query_params
+            )
             self.assertEqual(response.status_code, status.HTTP_200_OK)
