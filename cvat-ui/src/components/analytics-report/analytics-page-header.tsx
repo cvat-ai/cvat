@@ -35,7 +35,7 @@ function AnaylyticsPageHeader(props: Props): JSX.Element {
                 {resource ? (
                     <Title level={4} className='cvat-text-color'>
                         {'Analytics page for '}
-                        {((resource: NonNullable<Props['resource']>): JSX.Element | null => {
+                        {((): JSX.Element | null => {
                             if (resource instanceof Project) {
                                 return (
                                     <Link to={`/projects/${resource.id}`}>
@@ -61,7 +61,7 @@ function AnaylyticsPageHeader(props: Props): JSX.Element {
                             }
 
                             return null;
-                        })(resource)}
+                        })()}
                     </Title>
                 ) : (
                     <Title level={4} className='cvat-text-color'>

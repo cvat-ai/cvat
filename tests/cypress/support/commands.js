@@ -293,9 +293,7 @@ Cypress.Commands.add('headlessLogin', ({
                     return cy.wait('@nextPage').then(() => {
                         cy.url().should('include', nextURL);
                         cy.get('.cvat-spinner').should('not.exist');
-                    }).then(() => {
-                        return users[0];
-                    });
+                    }).then(() => users[0]);
                 }
 
                 return users[0];
