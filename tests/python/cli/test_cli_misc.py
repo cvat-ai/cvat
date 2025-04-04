@@ -4,9 +4,12 @@
 
 import json
 import os
+from datetime import timedelta
+from io import BytesIO
 
 import packaging.version as pv
 import pytest
+from cvat_cli._internal.agent import _Event, _NewReconnectionDelay, _parse_event_stream
 from cvat_sdk import Client
 from cvat_sdk.api_client import models
 from cvat_sdk.core.proxies.tasks import ResourceType
@@ -92,3 +95,48 @@ class TestCliMisc(TestCliBase):
         all_task_ids = list(map(int, self.run_cli("task", "ls").split()))
         assert personal_task_id in all_task_ids
         assert org_task_id in all_task_ids
+
+
+@pytest.mark.parametrize(
+    ["lines", "messages"],
+    [
+        # empty
+        ([], []),
+        ([""], [_Event("", "")]),
+        # event only
+        (["event: test", ""], [_Event("test", "")]),
+        (["event: foo", "event: bar", ""], [_Event("bar", "")]),
+        # data only
+        (["data: test", ""], [_Event("", "test")]),
+        (["data: foo", "data: bar", ""], [_Event("", "foo\nbar")]),
+        # event and data
+        (["event: test", "data: foo", "data: bar", ""], [_Event("test", "foo\nbar")]),
+        (["data: foo", "event: test", "data: bar", ""], [_Event("test", "foo\nbar")]),
+        (["data: foo", "data: bar", "event: test", ""], [_Event("test", "foo\nbar")]),
+        # fields without values
+        (["event: test", "event", ""], [_Event("", "")]),
+        (["data: test", "data", ""], [_Event("", "test\n")]),
+        # incomplete event
+        (["event: test", "data: foo"], []),
+        # multiple events
+        (
+            ["event: test1", "data: foo", "", "event: test2", "data: bar", ""],
+            [_Event("test1", "foo"), _Event("test2", "bar")],
+        ),
+        # comments
+        ([":"], []),
+        ([":1", "event: test", ":2", "data: foo", ":3", ""], [_Event("test", "foo")]),
+        # retry
+        (["retry: 1234"], [_NewReconnectionDelay(timedelta(milliseconds=1234))]),
+        (["retry", "retry:", "retry: a"], []),
+        # no space
+        (["event:test", "data:foo", ""], [_Event("test", "foo")]),
+        # two spaces
+        (["event:  test", "data:  foo", ""], [_Event(" test", " foo")]),
+        # carriage return
+        (["event: test\r", "data: foo\r", "\r"], [_Event("test", "foo")]),
+    ],
+)
+def test_parse_event_stream(lines, messages):
+    stream = BytesIO(b"".join(line.encode() + b"\n" for line in lines))
+    assert list(_parse_event_stream(stream)) == messages
