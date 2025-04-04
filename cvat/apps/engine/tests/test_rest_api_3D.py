@@ -137,7 +137,7 @@ class _DbTestBase(ExportApiTestBase):
         return values
 
     def _upload_file(self, url, data, user):
-        response = self._put_request(url, user, data={"annotation_file": data})
+        response = self._put_request(url, user, data={"annotation_file": data}, format="multipart")
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
         response = self._put_request(url, user)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
