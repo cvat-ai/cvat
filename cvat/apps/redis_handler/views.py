@@ -193,7 +193,7 @@ class RequestViewSet(viewsets.GenericViewSet):
         if job:
             ParsedIdClass = self.get_parsed_id_class(queue.name)
             if (
-                type(parsed_request_id) is not ParsedIdClass # pylint: disable=unidiomatic-typecheck
+                type(parsed_request_id) is not ParsedIdClass # fmt: skip # pylint: disable=unidiomatic-typecheck
             ):
                 parsed_request_id = parsed_request_id.convert_to(ParsedIdClass)
 
