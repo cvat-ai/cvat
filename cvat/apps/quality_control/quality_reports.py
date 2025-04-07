@@ -2282,9 +2282,7 @@ class QualityReportRQJobManager(AbstractRequestManager):
             action="calculate",
             target=self.resource,
             id=self.db_instance.pk,
-            extra={
-                "subresource": "quality"
-            }
+            extra={"subresource": "quality"},
         ).render()
 
     def validate_request(self):

@@ -72,11 +72,17 @@ class RequestId:
             [
                 self.KEY_VAL_SEP.join([k, v])
                 for k, v in {
-                    "queue": self.queue, # TODO: probably can be added in RequestIdSerializer?
+                    "queue": self.queue,  # TODO: probably can be added in RequestIdSerializer?
                     "action": str(self.action),
                     "target": str(self.target),
                     "id": str(self.id),
-                    **({"user_id": str(self.user_id),} if self.user_id is not None else {}),
+                    **(
+                        {
+                            "user_id": str(self.user_id),
+                        }
+                        if self.user_id is not None
+                        else {}
+                    ),
                     **self.extra,
                 }.items()
             ]
@@ -103,8 +109,10 @@ class RequestId:
         except Exception as ex:
             raise IncorrectRequestIdError from ex
 
+
 class WithParsedId(Protocol):
     parsed_id: RequestId
+
 
 class CustomRQJob(RQJob, WithParsedId):
     pass
