@@ -40,9 +40,9 @@ class RequestPermission(OpenPolicyAgentPermission):
                 elif scope == cls.Scopes.VIEW:
                     parsed_request_id = obj.parsed_id
 
-                    # In case when background job is unique for a user, status check should be available only for this user
+                    # In case when background job is unique for a user, status check should be available only for this user/admin
                     # In other cases, status check should be available for all users that have target resource VIEW permission
-                    if not parsed_request_id.user_id:
+                    if not parsed_request_id.user_id and isinstance(parsed_request_id.id, int):
                         if parsed_request_id.target == RequestTarget.PROJECT.value:
                             permissions.append(
                                 ProjectPermission.create_scope_view(request, parsed_request_id.id)
