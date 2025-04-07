@@ -2187,6 +2187,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
     }
 
     sources = {'auto', 'semi-auto', 'manual', 'file', 'consensus'}
+    source = 'file' if dm_dataset._source_path else None
 
     track_formats = [
         'cvat',
@@ -2273,8 +2274,9 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                     ) is True
 
                     track_id = ann.attributes.pop('track_id', None)
-                    source = ann.attributes.pop('source').lower() \
-                        if ann.attributes.get('source', '').lower() in sources else 'manual'
+                    if not source: # can they duplicate in other entities?
+                        source = ann.attributes.pop('source', 'manual').lower() \
+                            if ann.attributes.get('source', '').lower() in sources else 'manual'
 
                     shape_type = shapes[ann.type]
                     if track_id is None or 'keyframe' not in ann.attributes or dm_dataset.format not in track_formats:

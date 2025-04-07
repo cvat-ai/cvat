@@ -5541,11 +5541,18 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
             )
         return response
 
-    def _check_response(self, response, data):
+    def _check_response(self, response, data, expected_source='manual'):
+        IGNORE_KEYS = ["id", "version"]
         if not response.status_code in [
             status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN]:
             try:
-                compare_objects(self, data, response.data, ignore_keys=["id", "version"])
+                # Special checks for some fileds
+                # 1. 'source' is always 'file' after importing anno from file
+                if (anns := (response.data['shapes'] or response.data['tracks'])):
+                    for ann in anns:
+                        self.assertEquals(ann.get('source'), expected_source)
+                    IGNORE_KEYS.append('source')
+                compare_objects(self, data, response.data, ignore_keys=IGNORE_KEYS)
             except AssertionError as e:
                 print("Objects are not equal: ", data, response.data)
                 print(e)
@@ -6206,6 +6213,20 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                         }
                     ],
                 }]
+                skeletons_wo_attrs = [{
+                    "frame": 0,
+                    "label_id": task["labels"][1]["id"],
+                    "type": "skeleton",
+                    "source": "manual",
+                    "attributes": [],
+                    "group": 0,
+                    "outside": False,
+                    "points": [],
+                    "occluded": False,
+                    "elements": [],
+                    "rotation": 0.0,
+                    "z_order": 0
+                }]
 
             annotations = {
                 "version": 0,
@@ -6245,7 +6266,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                 annotations["shapes"] = polygon_shapes_wo_attrs
 
             elif annotation_format == "COCO Keypoints 1.0":
-                annotations["shapes"] = points_wo_attrs
+                annotations["shapes"] = skeletons_wo_attrs
 
             elif annotation_format == "Segmentation mask 1.1":
                 annotations["shapes"] = rectangle_shapes_wo_attrs \
@@ -6560,9 +6581,10 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                 self.assertEqual(response.status_code, HTTP_200_OK)
 
                 data["version"] += 2 # upload is delete + put
-                self._check_response(response, data)
+                self._check_response(response, data, expected_source='file')
 
-                break
+                # break # the break
+                # { source: 'manual' } after the file in COCO is a bug
     def _check_dump_content(self, content, task, jobs, data, format_name):
         def etree_to_dict(t):
             d = {t.tag: {} if t.attrib else None}
