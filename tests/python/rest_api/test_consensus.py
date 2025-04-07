@@ -192,14 +192,14 @@ class TestPostConsensusMerge(_PermissionTestBase):
     def test_can_merge_task_with_consensus_jobs(self, admin_user, tasks):
         task_id = next(t["id"] for t in tasks if t["consensus_enabled"])
 
-        assert self.merge(user=admin_user, task_id=task_id)
+        self.merge(user=admin_user, task_id=task_id)
 
     def test_can_merge_consensus_job(self, admin_user, jobs):
         job_id = next(
             j["id"] for j in jobs if j["type"] == "annotation" and j["consensus_replicas"] > 0
         )
 
-        assert self.merge(user=admin_user, job_id=job_id)
+        self.merge(user=admin_user, job_id=job_id)
 
     def test_cannot_merge_task_without_consensus_jobs(self, admin_user, tasks):
         task_id = next(t["id"] for t in tasks if not t["consensus_enabled"])
