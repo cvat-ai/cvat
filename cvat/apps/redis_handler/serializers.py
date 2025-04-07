@@ -97,6 +97,7 @@ class RequestSerializer(serializers.Serializer):
     expiry_date = serializers.SerializerMethodField()
     owner = serializers.SerializerMethodField()
     result_url = serializers.URLField(required=False, allow_null=True)
+    result_id = serializers.IntegerField(required=False, allow_null=True)
 
     def __init__(self, *args, **kwargs):
         self._base_rq_job_meta: BaseRQMeta | None = None
