@@ -51,7 +51,6 @@ class RQJobMetaField:
     STATUS = "status"
     PROGRESS = "progress"
     HIDDEN = "hidden"
-    RESULT_ID = "result_id"
 
     # import specific fields
     TASK_PROGRESS = "task_progress"
@@ -238,9 +237,6 @@ class BaseRQMeta(RQMetaWithFailureInfo):
     status: str | None = MutableRQMetaAttribute(
         RQJobMetaField.STATUS, validator=lambda x: isinstance(x, str), optional=True
     )
-
-    # TODO: looks like result duplicating
-    result_id: int | None = MutableRQMetaAttribute(RQJobMetaField.RESULT_ID, optional=True)
 
     @staticmethod
     def _get_resettable_fields() -> list[str]:

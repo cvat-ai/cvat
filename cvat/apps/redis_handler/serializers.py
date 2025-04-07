@@ -23,6 +23,7 @@ from cvat.apps.engine.serializers import BasicUserSerializer
 from cvat.apps.engine.utils import parse_exception_message
 from cvat.apps.lambda_manager.rq import LambdaRQMeta
 from cvat.apps.redis_handler.rq import RequestId
+from uuid import UUID
 
 slogger = ServerLogManager(__name__)
 
@@ -97,7 +98,6 @@ class RequestSerializer(serializers.Serializer):
     expiry_date = serializers.SerializerMethodField()
     owner = serializers.SerializerMethodField()
     result_url = serializers.URLField(required=False, allow_null=True)
-    result_id = serializers.IntegerField(required=False, allow_null=True)
 
     def __init__(self, *args, **kwargs):
         self._base_rq_job_meta: BaseRQMeta | None = None
@@ -158,7 +158,9 @@ class RequestSerializer(serializers.Serializer):
         if representation["status"] == RQJobStatus.FINISHED:
             if rq_job.parsed_id.action == models.RequestAction.EXPORT:
                 representation["result_url"] = ExportRQMeta.for_job(rq_job).result_url
-            elif self._base_rq_job_meta.result_id is not None:
-                representation["result_id"] = self._base_rq_job_meta.result_id
+            else:
+                return_value = rq_job.return_value()
+                if isinstance(return_value, (int, UUID)):
+                    representation["result_id"] = return_value
 
         return representation

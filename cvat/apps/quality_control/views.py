@@ -335,7 +335,7 @@ class QualityReportViewSet(
                         headers=response_headers,
                     )
 
-                report = self.get_queryset().get(pk=return_value) # fixme: no result_id in response
+                report = self.get_queryset().get(pk=return_value)
                 report_serializer = QualityReportSerializer(
                     instance=report, context={"request": request}
                 )
