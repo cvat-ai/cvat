@@ -107,6 +107,7 @@ services:
           || PathPrefix(`/django-rq`))
       traefik.http.routers.cvat.entrypoints: web
     volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/custom.conf:ro
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
       - cvat_logs:/home/django/logs
@@ -263,7 +264,8 @@ services:
     container_name: traefik
     restart: always
     ports:
-      - 8080:8080
+      # - 8080:8080
+      - 8082:8080
       - 8090:8090
     environment:
       CVAT_HOST: ${CVAT_HOST:-localhost}
@@ -290,13 +292,13 @@ services:
       TRAEFIK_PROVIDERS_DOCKER_NETWORK: cvat
       TRAEFIK_PROVIDERS_FILE_DIRECTORY: /etc/traefik/rules
     # Uncomment to get Traefik dashboard
-    #   TRAEFIK_API_DASHBOARD: "true"
-    #   TRAEFIK_ENTRYPOINTS_dashboard_ADDRESS: :8090
-    # labels:
-    #   traefik.enable: "true"
-    #   traefik.http.routers.dashboard.entrypoints: dashboard
-    #   traefik.http.routers.dashboard.service: api@internal
-    #   traefik.http.routers.dashboard.rule: Host(`${CVAT_HOST:-localhost}`)
+      TRAEFIK_API_DASHBOARD: "true"
+      TRAEFIK_ENTRYPOINTS_dashboard_ADDRESS: :8090
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.dashboard.entrypoints: dashboard
+      traefik.http.routers.dashboard.service: api@internal
+      traefik.http.routers.dashboard.rule: Host(`${CVAT_HOST:-localhost}`)
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./components/analytics/grafana_conf.yml:/etc/traefik/rules/grafana_conf.yml:ro
