@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from rest_framework.viewsets import ViewSet
 
 from cvat.apps.engine.models import RequestTarget
-from cvat.apps.engine.permissions import JobPermission, TaskPermission, ProjectPermission
+from cvat.apps.engine.permissions import JobPermission, ProjectPermission, TaskPermission
 from cvat.apps.engine.rq import BaseRQMeta
 from cvat.apps.redis_handler.rq import CustomRQJob
 

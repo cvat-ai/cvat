@@ -4,7 +4,6 @@
 
 import textwrap
 
-from django.http import HttpResponseGone
 from drf_spectacular.utils import (
     OpenApiParameter,
     OpenApiResponse,
@@ -25,8 +24,8 @@ from cvat.apps.consensus.serializers import (
 from cvat.apps.engine.mixins import PartialUpdateModelMixin
 from cvat.apps.engine.models import Job, Task
 from cvat.apps.engine.types import ExtendedRequest
-from cvat.apps.redis_handler.serializers import RequestIdSerializer
 from cvat.apps.engine.view_utils import get_410_response_when_checking_process_status
+from cvat.apps.redis_handler.serializers import RequestIdSerializer
 
 
 @extend_schema(tags=["consensus"])

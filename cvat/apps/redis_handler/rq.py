@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 import base64
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Protocol
 from uuid import UUID
 
 import attrs
-from django.conf import settings
 from rq.job import Job as RQJob
-from typing import Protocol
 
 
 def convert_id(value: int | str | UUID) -> int | UUID:

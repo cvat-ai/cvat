@@ -28,7 +28,7 @@ from django.db import IntegrityError
 from django.db import models as django_models
 from django.db import transaction
 from django.db.models.query import Prefetch
-from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseGone, HttpResponseNotFound
+from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
@@ -135,7 +135,11 @@ from cvat.apps.engine.serializers import (
 )
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import parse_exception_message, sendfile
-from cvat.apps.engine.view_utils import tus_chunk_action, get_410_response_when_checking_process_status, get_410_response_for_export_api
+from cvat.apps.engine.view_utils import (
+    get_410_response_for_export_api,
+    get_410_response_when_checking_process_status,
+    tus_chunk_action,
+)
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.iam.permissions import IsAuthenticatedOrReadPublicResource, PolicyEnforcer
 from cvat.apps.redis_handler.serializers import RequestIdSerializer
@@ -808,7 +812,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         serializer_class=None,
         parser_classes=_UPLOAD_PARSER_CLASSES)
     def import_backup(self, request: ExtendedRequest):
-        if request.query_params.get("rq_id"):
+        if request.query_params.get("rq_id"): # permissions?
             return get_410_response_when_checking_process_status("import")
 
         return self.upload_data(request)

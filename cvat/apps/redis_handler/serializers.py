@@ -7,13 +7,13 @@ from __future__ import annotations
 from datetime import timedelta
 from decimal import Decimal
 from typing import Any
+from uuid import UUID
 
 import rq.defaults as rq_defaults
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from rq.job import JobStatus as RQJobStatus
-from cvat.apps.redis_handler.rq import CustomRQJob
 
 from cvat.apps.engine import models
 from cvat.apps.engine.log import ServerLogManager
@@ -22,8 +22,7 @@ from cvat.apps.engine.rq import BaseRQMeta, ExportRQMeta, ImportRQMeta
 from cvat.apps.engine.serializers import BasicUserSerializer
 from cvat.apps.engine.utils import parse_exception_message
 from cvat.apps.lambda_manager.rq import LambdaRQMeta
-from cvat.apps.redis_handler.rq import RequestId
-from uuid import UUID
+from cvat.apps.redis_handler.rq import CustomRQJob, RequestId
 
 slogger = ServerLogManager(__name__)
 

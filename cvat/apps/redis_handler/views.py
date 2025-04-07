@@ -27,7 +27,7 @@ from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import RequestStatus  # todo: move to the app
 from cvat.apps.engine.rq import is_rq_job_owner
 from cvat.apps.engine.types import ExtendedRequest
-from cvat.apps.redis_handler.rq import RequestId, CustomRQJob
+from cvat.apps.redis_handler.rq import CustomRQJob, RequestId
 from cvat.apps.redis_handler.serializers import RequestSerializer
 
 slogger = ServerLogManager(__name__)

@@ -4,9 +4,11 @@
 
 # NOTE: importing in the utils.py header leads to circular importing
 
+import textwrap
 from typing import Optional
 
 from django.db.models.query import QuerySet
+from django.http import HttpResponseGone
 from django.http.response import HttpResponse
 from drf_spectacular.utils import extend_schema
 from rest_framework.decorators import action
@@ -17,8 +19,6 @@ from rest_framework.viewsets import GenericViewSet
 from cvat.apps.engine.mixins import UploadMixin
 from cvat.apps.engine.parsers import TusUploadParser
 from cvat.apps.engine.types import ExtendedRequest
-from django.http import HttpResponseGone
-import textwrap
 
 
 def make_paginated_response(
