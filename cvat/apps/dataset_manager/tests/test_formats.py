@@ -236,6 +236,13 @@ class TaskExportTest(_DbTestBase):
                     "name": "car",
                     "attributes": [
                         {
+                            "name": "index",
+                            "mutable": False,
+                            "input_type": "number",
+                            "default_value": "0",
+                            "values": ["0", "1", "2"]
+                        },
+                        {
                             "name": "model",
                             "mutable": False,
                             "input_type": "select",
@@ -349,11 +356,11 @@ class TaskExportTest(_DbTestBase):
 
         for f in dm.views.get_export_formats():
             if not f.ENABLED:
-                self.skipTest("Format is disabled")
+                continue
 
             format_name = f.DISPLAY_NAME
             if format_name == "VGGFace2 1.0":
-                self.skipTest("Format is disabled")
+                continue
 
             for save_images in { True, False }:
                 images = self._generate_task_images(3)
