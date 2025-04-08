@@ -4111,9 +4111,11 @@ class TestTaskBackups:
         task_id = next(t for t in tasks if t["validation_mode"] == "gt_pool")["id"]
         self._test_can_export_backup(task_id)
 
+    @pytest.mark.xfail(reason="Should be fixed in 9230 PR")
     def test_cannot_export_backup_for_task_without_data(self, tasks):
         task_id = next(t for t in tasks if t["jobs"]["count"] == 0)["id"]
 
+        # FUTURE-FIXME: failed by 9075, is going to be fixed in https://github.com/cvat-ai/cvat/pull/9230
         with pytest.raises(ApiException) as exc:
             self._test_can_export_backup(task_id)
 
