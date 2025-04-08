@@ -5628,38 +5628,38 @@ class TestImportTaskAnnotations:
 
         assert compare_annotations(original_annotations, updated_annotations) == {}
 
-    @pytest.mark.parametrize(
-        "format_name",
+    @parametrize(
+        "format_name, specific_info_included",
         [
-            # FIXME: RejectionReason.detection_unsupported
-            # "COCO 1.0",
-            # "COCO Keypoints 1.0",
-            "CVAT 1.1",
-            "LabelMe 3.0",
-            "MOT 1.1",
-            "MOTS PNG 1.0",  # RejectionReason.unmet_requirements, but specific requirement information unavailable
-            # FIXME: looks like it desn't fail
-            # "PASCAL VOC 1.1",
-            "Segmentation mask 1.1",
-            "YOLO 1.1",
-            "WiderFace 1.0",
-            "VGGFace2 1.0",
-            "Market-1501 1.0",  # RejectionReason.unmet_requirements, but specific requirement information unavailable
-            "Kitti Raw Format 1.0",
-            "Sly Point Cloud Format 1.0",
-            "KITTI 1.0",  # RejectionReason.unmet_requirements, but specific requirement information unavailable
-            "LFW 1.0",
-            "Cityscapes 1.0",
-            "Open Images V6 1.0",
-            "Datumaro 1.0",
-            "Datumaro 3D 1.0",
-            "Ultralytics YOLO Oriented Bounding Boxes 1.0",
-            "Ultralytics YOLO Detection 1.0",
-            "Ultralytics YOLO Pose 1.0",
-            "Ultralytics YOLO Segmentation 1.0",
+            ("COCO 1.0", None),
+            ("COCO Keypoints 1.0", None),
+            ("CVAT 1.1", True),
+            ("LabelMe 3.0", True),
+            ("MOT 1.1", True),
+            ("MOTS PNG 1.0", False),
+            pytest.param("PASCAL VOC 1.1", None, marks=pytest.mark.xfail),
+            ("Segmentation mask 1.1", True),
+            ("YOLO 1.1", True),
+            ("WiderFace 1.0", True),
+            ("VGGFace2 1.0", True),
+            ("Market-1501 1.0", False),
+            ("Kitti Raw Format 1.0", True),
+            ("Sly Point Cloud Format 1.0", False),
+            ("KITTI 1.0", False),
+            ("LFW 1.0", True),
+            ("Cityscapes 1.0", True),
+            ("Open Images V6 1.0", True),
+            ("Datumaro 1.0", True),
+            ("Datumaro 3D 1.0", True),
+            ("Ultralytics YOLO Oriented Bounding Boxes 1.0", True),
+            ("Ultralytics YOLO Detection 1.0", True),
+            ("Ultralytics YOLO Pose 1.0", True),
+            ("Ultralytics YOLO Segmentation 1.0", True),
         ],
     )
-    def test_check_import_error_on_wrong_file_structure(self, tasks_with_shapes, format_name):
+    def test_check_import_error_on_wrong_file_structure(
+        self, tasks_with_shapes: Iterable, format_name: str, specific_info_included: Optional[bool]
+    ):
         task_id = tasks_with_shapes[0]["id"]
 
         source_archive_path = self.tmp_dir / "incorrect_archive.zip"
@@ -5678,11 +5678,19 @@ class TestImportTaskAnnotations:
         with pytest.raises(exceptions.ApiException) as capture:
             task.import_annotations(format_name, source_archive_path)
 
-        error_message = str(capture.value)
-        assert "Check [format docs]" in error_message
+        error_message = capture.value.body.decode()
 
-        if "specific requirement information unavailable" not in error_message:
-            assert "Dataset must contain a file:" in error_message
+        if specific_info_included is None:
+            assert "Failed to find dataset" in error_message
+            return
+
+        assert "Check [format docs]" in error_message
+        expected_msg = (
+            "Dataset must contain a file:"
+            if specific_info_included
+            else "specific requirement information unavailable"
+        )
+        assert expected_msg in error_message
 
 
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
