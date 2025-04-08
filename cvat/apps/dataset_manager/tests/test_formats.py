@@ -226,7 +226,7 @@ class TaskExportTest(_DbTestBase):
         images["image_quality"] = 75
         return images
 
-    def _generate_task(self, images, **overrides):
+    def _generate_task(self, images, format_name=None, **overrides):
         task = {
             "name": "my task #1",
             "overlap": 0,
@@ -235,13 +235,6 @@ class TaskExportTest(_DbTestBase):
                 {
                     "name": "car",
                     "attributes": [
-                        {
-                            "name": "index",
-                            "mutable": False,
-                            "input_type": "number",
-                            "default_value": "0",
-                            "values": ["0", "1", "2"]
-                        },
                         {
                             "name": "model",
                             "mutable": False,
@@ -261,6 +254,17 @@ class TaskExportTest(_DbTestBase):
                 {"name": "person"},
             ]
         }
+        if format_name == 'ICDAR Segmentation 1.0':
+            task["labels"][0]["attributes"] = [
+                {
+                    "name": "index",
+                    "mutable": False,
+                    "input_type": "number",
+                    "default_value": "0",
+                    "values": ["0", "1", "2"]
+                }
+            ] + task["labels"][0]["attributes"]
+
         task.update(overrides)
         return self._create_task(task, images)
 
@@ -364,7 +368,7 @@ class TaskExportTest(_DbTestBase):
 
             for save_images in { True, False }:
                 images = self._generate_task_images(3)
-                task = self._generate_task(images)
+                task = self._generate_task(images, format_name=format_name)
                 self._generate_annotations(task)
                 with self.subTest(format=format_name, save_images=save_images):
                     self._test_export(check, task,
