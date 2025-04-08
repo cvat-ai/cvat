@@ -465,20 +465,21 @@ Cypress.Commands.add('headlessCreateJob', (jobSpec) => {
     });
 });
 
-Cypress.Commands.add('headlessUpdateTask', (taskId, updateTaskParameters) => {
-    cy.window().then(async ($win) => {
-        const [task] = await $win.cvat.tasks.get({ id: taskId });
-        const result = await task.save(updateTaskParameters);
-        return cy.wrap(result);
-    });
+Cypress.Commands.add('headlessUpdateTask', (taskId, callback) => {
+    cy.window().then(async ($win) => (
+        cy.wrap($win.cvat.tasks.get({ id: taskId }))
+            .then(([task]) => {
+                callback(task);
+                return cy.wrap(task.save());
+            })
+    ));
 });
 
 Cypress.Commands.add('headlessUpdateJob', (jobID, updateJobParameters) => {
-    cy.window().then(async ($win) => {
-        const job = (await $win.cvat.jobs.get({ jobID }))[0];
-        const result = await job.save(updateJobParameters);
-        return cy.wrap(result);
-    });
+    cy.window().then(async ($win) => (
+        cy.wrap($win.cvat.jobs.get({ jobID }))
+            .then(([job]) => cy.wrap(job.save(updateJobParameters)))
+    ));
 });
 
 Cypress.Commands.add('openTask', (taskName, projectSubsetFieldValue) => {
