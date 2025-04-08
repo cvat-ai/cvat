@@ -248,15 +248,15 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                         <Row>
                             <Col>
                                 <Text>
-                                    {`The browser you are using is ${name} ${version} based on ${engine}.` +
-                                        ' CVAT was tested in the latest versions of Chrome and Firefox.' +
-                                        ' We recommend to use Chrome (or another Chromium based browser)'}
+                                    {`你正在使用的浏览器是基于${engine}的 ${name} ${version}.` +
+                                        ' CVAT仅在最新版本的Firefox和谷歌Chrome浏览器上测试过.' +
+                                        ' 我们推荐使用Chrome (或其他基于Chromium的浏览器)'}
                                 </Text>
                             </Col>
                         </Row>
                         <Row>
                             <Col>
-                                <Text type='secondary'>{`The operating system is ${os}`}</Text>
+                                <Text type='secondary'>{`该操作系统是${os}`}</Text>
                             </Col>
                         </Row>
                     </>

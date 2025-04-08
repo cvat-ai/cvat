@@ -66,6 +66,8 @@ const SERVER_UNAVAILABLE_COMPONENT = (
             Upgrade Guide
         </a>
         .
+
+        此错误很有可能是存储空间不足导致的
     </>
 );
 
