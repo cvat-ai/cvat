@@ -411,10 +411,9 @@ Cypress.Commands.add('headlessCreateProject', (projectSpec) => {
 });
 
 Cypress.Commands.add('headlessDeleteProject', (projectID) => {
-    cy.window().then(async ($win) => {
-        const [project] = await $win.cvat.projects.get({ id: projectID });
-        await project.delete();
-    });
+    cy.window()
+        .then(($win) => cy.wrap($win.cvat.projects.get({ id: projectID })))
+        .then(([project]) => cy.wrap(project.delete()));
 });
 
 Cypress.Commands.add('headlessDeleteTask', (taskID) => {
@@ -463,6 +462,14 @@ Cypress.Commands.add('headlessCreateJob', (jobSpec) => {
 
         const result = await job.save(data);
         return cy.wrap({ jobID: result.id });
+    });
+});
+
+Cypress.Commands.add('headlessUpdateTask', (taskId, updateTaskParameters) => {
+    cy.window().then(async ($win) => {
+        const [task] = await $win.cvat.tasks.get({ id: taskId });
+        const result = await task.save(updateTaskParameters);
+        return cy.wrap(result);
     });
 });
 
