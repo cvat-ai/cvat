@@ -1239,9 +1239,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/ClientEvents'
           description: ''
-  /api/events/file/export:
+  /api/events/export:
     post:
-      operationId: events_create_file_export
+      operationId: events_create_export
       summary: Initiate a process to export events
       parameters:
       - in: query

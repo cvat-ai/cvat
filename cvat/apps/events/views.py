@@ -182,7 +182,7 @@ class EventsViewSet(viewsets.ViewSet):
             "202": OpenApiResponse(RequestIdSerializer),
         },
     )
-    @action(detail=False, methods=["POST"], url_path="file/export")
+    @action(detail=False, methods=["POST"], url_path="export")
     def initiate_export(self, request: ExtendedRequest):
         self.check_permissions(request)
         exporter = EventsExporter(request=request)
@@ -205,7 +205,7 @@ class EventsViewSet(viewsets.ViewSet):
         },
         exclude=True,  # private API endpoint that should be used only as result_url
     )
-    @action(detail=False, methods=["GET"], url_path="file/download")
+    @action(detail=False, methods=["GET"], url_path="download")
     def download_file(self, request: ExtendedRequest):
         self.check_permissions(request)
         exporter = EventsExporter(request=request)
