@@ -16,7 +16,8 @@ import Button from 'antd/lib/button';
 import ColorPicker from 'components/annotation-page/standard-workspace/objects-side-bar/color-picker';
 import { ColorizeIcon } from 'icons';
 import { ColorBy, CombinedState, Workspace } from 'reducers';
-import { DimensionType } from 'cvat-core-wrapper';
+import { DimensionType, Job } from 'cvat-core-wrapper';
+import { AxisOrientationArrowsConfig } from 'cvat-canvas3d-wrapper';
 import { collapseAppearance as collapseAppearanceAction } from 'actions/annotation-actions';
 import {
     changeShapesColorBy as changeShapesColorByAction,
@@ -25,6 +26,7 @@ import {
     changeShapesOutlinedBorders as changeShapesOutlinedBordersAction,
     changeShowBitmap as changeShowBitmapAction,
     changeShowProjections as changeShowProjectionsAction,
+    changeShowAxisArrows as changeShowAxisArrowsAction,
 } from 'actions/settings-actions';
 
 interface StateToProps {
@@ -36,8 +38,9 @@ interface StateToProps {
     outlineColor: string;
     showBitmap: boolean;
     showProjections: boolean;
+    showAxisArrows: AxisOrientationArrowsConfig;
     workspace: Workspace;
-    jobInstance: any;
+    jobInstance: Job;
 }
 
 interface DispatchToProps {
@@ -48,6 +51,7 @@ interface DispatchToProps {
     changeShapesOutlinedBorders(outlined: boolean, color: string): void;
     changeShowBitmap(event: CheckboxChangeEvent): void;
     changeShowProjections(event: CheckboxChangeEvent): void;
+    changeShowAxisArrows(showArrows: Partial<AxisOrientationArrowsConfig>): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -60,6 +64,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         settings: {
             shapes: {
                 colorBy, opacity, selectedOpacity, outlined, outlineColor, showBitmap, showProjections,
+                showAxisArrows,
             },
         },
     } = state;
@@ -74,7 +79,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         showBitmap,
         showProjections,
         workspace,
-        jobInstance,
+        showAxisArrows,
+        jobInstance: jobInstance as Job,
     };
 }
 
@@ -101,6 +107,9 @@ function mapDispatchToProps(dispatch: Dispatch<AnyAction>): DispatchToProps {
         changeShowProjections(event: CheckboxChangeEvent): void {
             dispatch(changeShowProjectionsAction(event.target.checked));
         },
+        changeShowAxisArrows(showArrows: Partial<AxisOrientationArrowsConfig>): void {
+            dispatch(changeShowAxisArrowsAction(showArrows));
+        },
     };
 }
 
@@ -116,6 +125,7 @@ function AppearanceBlock(props: Props): JSX.Element {
         outlineColor,
         showBitmap,
         showProjections,
+        showAxisArrows,
         collapseAppearance,
         changeShapesColorBy,
         changeShapesOpacity,
@@ -123,10 +133,12 @@ function AppearanceBlock(props: Props): JSX.Element {
         changeShapesOutlinedBorders,
         changeShowBitmap,
         changeShowProjections,
+        changeShowAxisArrows,
         jobInstance,
     } = props;
 
     const is2D = jobInstance.dimension === DimensionType.DIMENSION_2D;
+    const is3D = jobInstance.dimension === DimensionType.DIMENSION_3D;
 
     return (
         <Collapse
@@ -168,6 +180,29 @@ function AppearanceBlock(props: Props): JSX.Element {
                             min={0}
                             max={100}
                         />
+                        {is3D && (
+                            <div className='cvat-appearance-arrows-checkboxes'>
+                                <div>
+                                    <Text type='secondary'>Orientation arrows:</Text>
+                                </div>
+                                <div>
+                                    {
+                                        Object.keys(showAxisArrows).map((axis) => (
+                                            <Checkbox
+                                                key={axis}
+                                                className={`cvat-appearance-arrow-${axis}-checkbox`}
+                                                checked={showAxisArrows[axis as keyof AxisOrientationArrowsConfig]}
+                                                onChange={(event: CheckboxChangeEvent) => {
+                                                    changeShowAxisArrows({ [axis]: event.target.checked });
+                                                }}
+                                            >
+                                                {`${axis.toUpperCase()}-axis`}
+                                            </Checkbox>
+                                        ))
+                                    }
+                                </div>
+                            </div>
+                        )}
                         <Checkbox
                             className='cvat-appearance-outlinded-borders-checkbox'
                             onChange={(event: CheckboxChangeEvent) => {

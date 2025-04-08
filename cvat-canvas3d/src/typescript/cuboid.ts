@@ -4,11 +4,17 @@
 // SPDX-License-Identifier: MIT
 
 import * as THREE from 'three';
-import { ViewType } from './canvas3dModel';
+import { AxisOrientationArrowsConfig, ViewType } from './canvas3dModel';
 import constants from './consts';
 
 export interface Indexable {
     [key: string]: any;
+}
+
+export interface ObjectArrowHelper {
+    x: THREE.ArrowHelper;
+    y: THREE.ArrowHelper;
+    z: THREE.ArrowHelper;
 }
 
 export function makeCornerPointsMatrix(x: number, y: number, z: number): number[][] {
@@ -31,6 +37,15 @@ export class CuboidModel {
     public front: THREE.Mesh;
     public wireframe: THREE.LineSegments;
 
+    public orientationArrows: {
+        [key: string]: ObjectArrowHelper
+    } = {
+            [ViewType.PERSPECTIVE]: null,
+            [ViewType.TOP]: null,
+            [ViewType.SIDE]: null,
+            [ViewType.FRONT]: null,
+        };
+
     public constructor(outline: string, outlineColor: string) {
         const geometry = new THREE.BoxGeometry(1, 1, 1);
         const material = new THREE.MeshBasicMaterial({
@@ -39,6 +54,8 @@ export class CuboidModel {
             transparent: true,
             opacity: 0.4,
         });
+
+        // Create the main meshes for each view
         this.perspective = new THREE.Mesh(geometry, material);
         const geo = new THREE.EdgesGeometry(this.perspective.geometry);
         this.wireframe = new THREE.LineSegments(
@@ -57,6 +74,14 @@ export class CuboidModel {
         this.top = new THREE.Mesh(geometry, material);
         this.side = new THREE.Mesh(geometry, material);
         this.front = new THREE.Mesh(geometry, material);
+
+        [ViewType.PERSPECTIVE, ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view): void => {
+            this.orientationArrows[view] = this.createArrows();
+            Object.values(this.orientationArrows[view]).forEach((arrow) => {
+                this[view].add(arrow);
+            });
+        });
+        this.updateArrowLengths();
 
         const planeTop = new THREE.Mesh(
             new THREE.PlaneGeometry(1, 1, 1, 1),
@@ -113,6 +138,40 @@ export class CuboidModel {
         camRotateHelper.up = new THREE.Vector3(0, 0, 1);
         camRotateHelper.lookAt(new THREE.Vector3(0, 0, 0));
         this.front.add(camRotateHelper.clone());
+    }
+
+    private createArrows(): ObjectArrowHelper {
+        return {
+            x: new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(0.5, 0, 0), 2, 0xff0000),
+            y: new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0.5, 0), 2, 0x00ff00),
+            z: new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, 0.5), 2, 0x0000ff),
+        };
+    }
+
+    public updateArrowLengths(): void {
+        // Calculate the arrow length based on the cuboid size
+        const size = new THREE.Vector3();
+        this.perspective.geometry.computeBoundingBox();
+        const { boundingBox } = this.perspective.geometry;
+        size.subVectors(boundingBox.max, boundingBox.min);
+        size.multiply(this.perspective.scale);
+
+        const arrowLength = size.length() * 0.25;
+
+        [ViewType.PERSPECTIVE, ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view): void => {
+            Object.values(this.orientationArrows[view]).forEach((arrow) => {
+                arrow.setLength(arrowLength);
+            });
+        });
+    }
+
+    public setAxisArrowsVisibility(showAxisArrows: AxisOrientationArrowsConfig): void {
+        [ViewType.PERSPECTIVE, ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view): void => {
+            Object.entries(this.orientationArrows[view]).forEach(([axis, arrow]) => {
+                arrow.visible = showAxisArrows[axis];
+                console.log(`Arrow ${axis} visibility: ${arrow.visible}`);
+            });
+        });
     }
 
     public setPosition(x: number, y: number, z: number): void {

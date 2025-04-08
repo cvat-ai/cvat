@@ -979,7 +979,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
     private addCuboid(state: ObjectState): CuboidModel {
         const {
-            opacity, outlined, outlineColor,
+            opacity, outlined, outlineColor, showAxisArrows,
         } = this.model.data.shapeProperties;
         const clientID = String(state.clientID);
         const cuboid = new CuboidModel(state.occluded ? 'dashed' : 'line', outlined ? outlineColor : '#ffffff');
@@ -992,6 +992,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         cuboid.setScale(state.points[6], state.points[7], state.points[8]);
         cuboid.setRotation(state.points[3], state.points[4], state.points[5]);
         cuboid.attachCameraReference();
+        cuboid.setAxisArrowsVisibility(showAxisArrows);
 
         cuboid[ViewType.PERSPECTIVE].visible = !(state.hidden || state.outside);
         for (const view of BOTTOM_VIEWS) {
@@ -1304,6 +1305,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 if (config.outlined) {
                     cuboid.setOutlineColor(config.outlineColor || CONST.DEFAULT_OUTLINE_COLOR);
                 }
+                cuboid.setAxisArrowsVisibility(config.showAxisArrows);
             }
         } else if (reason === UpdateReasons.SHAPE_ACTIVATED) {
             this.deactivateObject();
