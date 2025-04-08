@@ -169,7 +169,6 @@ export class CuboidModel {
         [ViewType.PERSPECTIVE, ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view): void => {
             Object.entries(this.orientationArrows[view]).forEach(([axis, arrow]) => {
                 arrow.visible = showAxisArrows[axis];
-                console.log(`Arrow ${axis} visibility: ${arrow.visible}`);
             });
         });
     }

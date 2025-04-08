@@ -183,7 +183,7 @@ function AppearanceBlock(props: Props): JSX.Element {
                         {is3D && (
                             <div className='cvat-appearance-arrows-checkboxes'>
                                 <div>
-                                    <Text type='secondary'>Orientation arrows:</Text>
+                                    <Text type='secondary'>Orientation arrows</Text>
                                 </div>
                                 <div>
                                     {

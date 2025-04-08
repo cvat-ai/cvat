@@ -1335,6 +1335,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 }
             } else {
                 this.cube = new CuboidModel('line', '#ffffff');
+                this.cube.setAxisArrowsVisibility(this.model.data.shapeProperties.showAxisArrows);
             }
 
             this.cube.setName('drawTemplate');
