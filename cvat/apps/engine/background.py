@@ -103,7 +103,7 @@ class ResourceExportManager(ABC):
                 status=status.HTTP_409_CONFLICT,
             )
 
-        # FUTURE-FIXME:
+        # RQ jobs can be scheduled only by CVAT internal logic, in that case job has no dependencies
         if rq_job_status == RQJobStatus.SCHEDULED:
             scheduler: DjangoScheduler = django_rq.get_scheduler(queue.name, queue=queue)
             # remove the job id from the set with scheduled keys
