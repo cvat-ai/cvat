@@ -1,0 +1,36 @@
+{
+    "loginForm": {
+        "New user?": "New User?",
+        "Create an account": "Create an account",
+        "Forgot password?": "Forgot password?",
+        "Sign in": "Sign in",
+        "Email or username": "Email or username",
+        "Please specify a password": "Please specify a password"
+    },
+    "registerForm": {
+        "Please specify a first name": "Please specify a first name",
+        "Please specify a last name": "Please specify a last name",
+        "The input is not valid E-mail!": "The input is not valid E-mail!",
+        "Please specify an email address": "Please specify an email address",
+        "Please specify a username": "Please specify a username",
+        "Please input your password!": "Please input your password!",
+        "You must accept to continue!": "You must accept to continue!",
+        "Create account": "Create account",
+        "Two passwords that you enter is inconsistent!": "Two passwords that you enter is inconsistent!",
+        "You must accept agreement to continue!": "You must accept {{agreement.urlDisplayText}} to continue!"
+    },
+    "passwordReset": {
+        "Forgot password?": "Forgot password?",
+        "Let's create a new one": "Let's create a new one",
+        "The input is not valid E-mail!": "The input is not valid E-mail!",
+        "Please specify an email address": "Please specify an email address",
+        "We will send link to your email": "We will send link to your email"
+    },
+    "passwordResetConfirm": {
+        "Change password": "Change password",
+        "New password": "New password",
+        "Please input new password!": "Please input new password!",
+        "Please confirm your new password!": "Please confirm your new password!",
+        "Confirm new password": "Confirm new password"
+    }
+}

@@ -11,6 +11,7 @@ import { Col, Row } from 'antd/lib/grid';
 import Title from 'antd/lib/typography/Title';
 import CVATLogo from 'components/common/cvat-logo';
 import SVGSigningBackground from '../../assets/signing-background.svg';
+import SwitchLocaleWithToolTip from '../switch-locale-component';
 
 interface SignInLayoutComponentProps {
     children: JSX.Element | JSX.Element[];
@@ -77,6 +78,9 @@ function SignInLayout(props: SignInLayoutComponentProps): JSX.Element {
                 <Row className='cvat-signing-header-logo-wrapper' justify='center' align='middle'>
                     <Col {...logoSizes}>
                         <CVATLogo />
+                    </Col>
+                    <Col span={2}>
+                        <SwitchLocaleWithToolTip />
                     </Col>
                 </Row>
             </Header>

@@ -1,0 +1,87 @@
+{
+    "Could not receive a list of organizations": "Could not receive a list of organizations",
+    "about": {
+        "What's new": "What's new",
+        "MIT License": "MIT License",
+        "Find us on Discord": "Find us on Discord",
+        "Server version": "Server version:",
+        "UI version": "UI version"
+    },
+    "Admin page": "Admin page",
+    "Switch organization": "Switch organization",
+    "Personal workspace": "Personal workspace",
+    "Click to open": "Click to open ",
+    "Press {{shortcut}} to switch": "Press {{shortcut}} to switch",
+    "settings": {
+        "title": "Settings",
+        "Player": {
+            "label": "Player",
+            "step": "Player step",
+            "step-tips": "Number of frames skipped when selecting<1/>or</3>",
+            "speed": "Player speed",
+            "speeds": {
+                "Fastest": "Fastest",
+                "Fast": "Fast",
+                "Usual": "Usual",
+                "Slow": "Slow",
+                "Slower": "Slower",
+                "Slowest": "Slowest"
+            },
+            "Select canvas background color": "Select canvas background color",
+            "Reset zoom": "Reset zoom",
+            "Fit image after changing frame": "Fit image after changing frame",
+            "Rotate all images": "Rotate all images",
+            "Rotate all images simultaneously": "Rotate all images simultaneously",
+            "Smooth image": "Smooth image",
+            "Smooth image when zoom-in it": "Smooth image when zoom-in it",
+            "Show deleted frames": "Show deleted frames",
+            "You will be able to navigate and restore deleted frames": "You will be able to navigate and restore deleted frames"
+        },
+        "Workspace": {
+            "label": "Workspace",
+            "Enable auto save": "Enable auto save",
+            "auto-save-tips": [
+                "Auto save every",
+                "minutes"
+            ],
+            "show-interpolated": "Show all interpolation tracks",
+            "show-interpolated-tips": "Show hidden interpolated objects in the side panel",
+            "show-text-always": "Always show object details",
+            "show-text-always-tips": "Show text for an object on the canvas not only when the object is activated",
+            "text-settings-content": "Content of a text",
+            "text-settings-contents": {
+                "ID": "ID",
+                "Label": "Label",
+                "Attributes": "Attributes",
+                "Source": "Source",
+                "Descriptions": "Descriptions",
+                "Dimensions": "Dimensions"
+            },
+            "text-settings-text-position": "Position of a text",
+            "text-settings-text-positions": {
+                "Auto": "Auto",
+                "Center": "Center"
+            },
+            "text-settings-font-size": "Font size of a text",
+            "auto-borders": "Automatic bordering",
+            "auto-borders-tips": "Enable automatic bordering for polygons and polylines during drawing/editing",
+            "intelligent-polygon-cropping": "Intelligent polygon cropping",
+            "intelligent-polygon-cropping-tips": "Try to crop polygons automatically when editing",
+            "Show tags on frame": "Show tags on frame",
+            "Show frame tags in the corner of the workspace": "Show frame tags in the corner of the workspace",
+            "aam-zoom-margin": "Attribute annotation mode (AAM) zoom margin",
+            "control-points-size": "Control points size",
+            "approx-poly-threshold": "Default number of points in polygon approximation",
+            "approx-poly-threshold-tips": "Works for serverless interactors and OpenCV scissors"
+        },
+        "Shortcuts": {
+            "label": "Shortcuts",
+            "restore-modal-title": "Are you sure you want to restore defaults?",
+            "search-placeholder": "Search for a shortcut here...",
+            "warning": "Shortcut may consist of any combination of modifiers (alt, ctrl, or shift) and one non-modifier at the end. Some key combinations may be reserved by the browser and cannot be overridden in CVAT.",
+            "SWITCH_SHORTCUTS": ["Show shortcuts", "Open/hide the list of available shortcuts"],
+            "SWITCH_SETTINGS": ["Show settings", "Open/hide settings dialog"],
+            "TOGGLE_ANNOTATION_PAGE": ["Toggle layout grid", "The grid is used to UI development"]
+        }
+    }
+}
