@@ -15,7 +15,7 @@ import { Project, Task, Job } from 'cvat-core-wrapper';
 interface Props {
     onExportEvents(): void;
     onUpdateTimePeriod(from: Date | null, to: Date | null): void;
-    resource: Project | Task | Job | null;
+    resource: Project | Task | Job;
     exporting: boolean;
     fetching: boolean;
 }
@@ -32,42 +32,36 @@ function AnaylyticsPageHeader(props: Props): JSX.Element {
     return (
         <Row justify='space-between' align='middle'>
             <Col className='cvat-analytics-header'>
-                {resource ? (
-                    <Title level={4} className='cvat-text-color'>
-                        {'Analytics page for '}
-                        {((): JSX.Element | null => {
-                            if (resource instanceof Project) {
-                                return (
-                                    <Link to={`/projects/${resource.id}`}>
-                                        {`Project #${resource.id}`}
-                                    </Link>
-                                );
-                            }
+                <Title level={4} className='cvat-text-color'>
+                    {'Analytics page for '}
+                    {((): JSX.Element | null => {
+                        if (resource instanceof Project) {
+                            return (
+                                <Link to={`/projects/${resource.id}`}>
+                                    {`Project #${resource.id}`}
+                                </Link>
+                            );
+                        }
 
-                            if (resource instanceof Task) {
-                                return (
-                                    <Link to={`/tasks/${resource.id}`}>
-                                        {`Task #${resource.id}`}
-                                    </Link>
-                                );
-                            }
+                        if (resource instanceof Task) {
+                            return (
+                                <Link to={`/tasks/${resource.id}`}>
+                                    {`Task #${resource.id}`}
+                                </Link>
+                            );
+                        }
 
-                            if (resource instanceof Job) {
-                                return (
-                                    <Link to={`/tasks/${resource.taskId}/jobs/${resource.id}`}>
-                                        {`Job #${resource.id}`}
-                                    </Link>
-                                );
-                            }
+                        if (resource instanceof Job) {
+                            return (
+                                <Link to={`/tasks/${resource.taskId}/jobs/${resource.id}`}>
+                                    {`Job #${resource.id}`}
+                                </Link>
+                            );
+                        }
 
-                            return null;
-                        })()}
-                    </Title>
-                ) : (
-                    <Title level={4} className='cvat-text-color'>
-                            Analytics page
-                    </Title>
-                )}
+                        return null;
+                    })()}
+                </Title>
             </Col>
             <Col>
                 <DatePicker.RangePicker

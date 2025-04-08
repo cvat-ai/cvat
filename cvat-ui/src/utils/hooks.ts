@@ -9,7 +9,8 @@ import {
     EffectCallback, DependencyList,
 } from 'react';
 import { useSelector } from 'react-redux';
-import { useHistory } from 'react-router';
+import { useHistory, useLocation, useParams } from 'react-router';
+import { InstanceType } from 'cvat-core-wrapper';
 import { CombinedState, PluginComponent } from 'reducers';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { authQuery } from './auth-query';
@@ -162,4 +163,24 @@ export function useUpdateEffect(effect: EffectCallback, deps?: DependencyList): 
 
         return effect();
     }, deps);
+}
+
+export function useInstanceType(): InstanceType {
+    const location = useLocation();
+    const { pathname } = location;
+    if (pathname.includes('projects')) return InstanceType.PROJECT;
+    if (pathname.includes('jobs')) return InstanceType.JOB;
+    return InstanceType.TASK;
+}
+
+export function useInstanceId(type: InstanceType): number {
+    const params = useParams<{
+        pid?: string,
+        jid?: string,
+        tid?: string,
+    }>();
+
+    if (type === 'project') return +(params.pid as string);
+    if (type === 'job') return +(params.jid as string);
+    return +(params.tid as string);
 }

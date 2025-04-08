@@ -9,7 +9,7 @@ import {
     ShareFileType, Source, TaskMode, TaskStatus,
     CloudStorageCredentialsType, CloudStorageProviderType, ObjectType,
 } from './enums';
-import { Camelized } from './type-utils';
+import { Camelized, CamelizedV2 } from './type-utils';
 
 export interface SerializedAnnotationImporter {
     name: string;
@@ -358,7 +358,7 @@ export interface APIAnalyticsEventsFilter {
     job_id?: number;
 }
 
-export type AnalyticsEventsFilter = Camelized<APIAnalyticsEventsFilter>;
+export type AnalyticsEventsFilter = CamelizedV2<APIAnalyticsEventsFilter>;
 
 export interface SerializedInvitationData {
     created_date: string;

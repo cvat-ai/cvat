@@ -7,12 +7,12 @@ import './styles.scss';
 import React, { useState, useEffect, useCallback } from 'react';
 import { shallowEqual, useSelector } from 'react-redux';
 import notification from 'antd/lib/notification';
-import { useLocation, useParams } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 
 import {
-    Project, Task, Job, getCore, MembershipRole, InstanceType,
+    Project, Task, Job, getCore, MembershipRole, InstanceType, AnalyticsEventsFilter,
 } from 'cvat-core-wrapper';
+import { useInstanceType, useInstanceId } from 'utils/hooks';
 import { CombinedState } from 'reducers';
 import GoBackButton from 'components/common/go-back-button';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
@@ -21,29 +21,9 @@ import AnalyticsPageHeader from './analytics-page-header';
 
 const core = getCore();
 
-function useInstanceType(): InstanceType {
-    const location = useLocation();
-    const { pathname } = location;
-    if (pathname.includes('projects')) return InstanceType.PROJECT;
-    if (pathname.includes('jobs')) return InstanceType.JOB;
-    return InstanceType.TASK;
-}
-
-function useInstanceID(type: InstanceType): number {
-    const params = useParams<{
-        pid?: string,
-        jid?: string,
-        tid?: string,
-    }>();
-
-    if (type === 'project') return +(params.pid as string);
-    if (type === 'job') return +(params.jid as string);
-    return +(params.tid as string);
-}
-
 function AnalyticsReportPage(): JSX.Element {
     const requestedInstanceType: InstanceType = useInstanceType();
-    const requestedInstanceID = useInstanceID(requestedInstanceType);
+    const requestedInstanceId = useInstanceId(requestedInstanceType);
     const [timePeriod, setTimePeriod] = useState<{ startDate: string; endDate: string; } | null>(null);
     const [exporting, setExporting] = useState(false);
     const [resource, setResource] = useState<Project | Task | Job | null>(null);
@@ -60,16 +40,7 @@ function AnalyticsReportPage(): JSX.Element {
 
         try {
             setExporting(true);
-            const params: {
-                orgId?: number;
-                userId?: number;
-                projectId?: number;
-                taskId?: number;
-                jobId?: number;
-                filename?: string;
-                from?: string;
-                to?: string;
-            } = {};
+            const params: AnalyticsEventsFilter = {};
 
             if (timePeriod) {
                 params.from = timePeriod.startDate;
@@ -126,7 +97,7 @@ function AnalyticsReportPage(): JSX.Element {
 
     useEffect(() => {
         if (
-            Number.isInteger(requestedInstanceID) &&
+            Number.isInteger(requestedInstanceId) &&
             [InstanceType.PROJECT, InstanceType.TASK, InstanceType.JOB].includes(requestedInstanceType)
         ) {
             let resourcePromise = null as (
@@ -137,11 +108,11 @@ function AnalyticsReportPage(): JSX.Element {
             );
 
             if (requestedInstanceType === InstanceType.PROJECT) {
-                resourcePromise = core.projects.get({ id: requestedInstanceID });
+                resourcePromise = core.projects.get({ id: requestedInstanceId });
             } else if (requestedInstanceType === InstanceType.TASK) {
-                resourcePromise = core.tasks.get({ id: requestedInstanceID });
+                resourcePromise = core.tasks.get({ id: requestedInstanceId });
             } else {
-                resourcePromise = core.jobs.get({ jobID: requestedInstanceID });
+                resourcePromise = core.jobs.get({ jobID: requestedInstanceId });
             }
 
             setFetching(true);
@@ -168,30 +139,34 @@ function AnalyticsReportPage(): JSX.Element {
                 </Row>
                 <Row justify='center' className='cvat-analytics-inner-wrapper'>
                     <Col span={22} xl={18} xxl={14} className='cvat-analytics-inner'>
-                        <AnalyticsPageHeader
-                            exporting={exporting}
-                            fetching={fetching}
-                            resource={resource}
-                            onExportEvents={onExportEvents}
-                            onUpdateTimePeriod={(from: Date | null, to: Date | null) => {
-                                function localToUTC(date: Date): string {
-                                    // convert local time to UTC string WITHOUT applying any timezone offset
-                                    // the user specified UTC time already in the date picker
-                                    // basically we only convert timezone information
-                                    return new Date((Number(date) - date.getTimezoneOffset() * 60000)).toISOString();
-                                }
+                        { resource && (
+                            <AnalyticsPageHeader
+                                exporting={exporting}
+                                fetching={fetching}
+                                resource={resource}
+                                onExportEvents={onExportEvents}
+                                onUpdateTimePeriod={(from: Date | null, to: Date | null) => {
+                                    function localToUTC(date: Date): string {
+                                        // convert local time to UTC string WITHOUT applying any timezone offset
+                                        // the user specified UTC time already in the date picker
+                                        // basically we only convert timezone information
+                                        return (
+                                            new Date((Number(date) - date.getTimezoneOffset() * 60000)).toISOString()
+                                        );
+                                    }
 
-                                let newPeriod = null;
-                                if (from && to) {
-                                    newPeriod = {
-                                        startDate: localToUTC(from),
-                                        endDate: localToUTC(to),
-                                    };
-                                }
+                                    let newPeriod = null;
+                                    if (from && to) {
+                                        newPeriod = {
+                                            startDate: localToUTC(from),
+                                            endDate: localToUTC(to),
+                                        };
+                                    }
 
-                                setTimePeriod(newPeriod);
-                            }}
-                        />
+                                    setTimePeriod(newPeriod);
+                                }}
+                            />
+                        )}
                         { fetching && <CVATLoadingSpinner /> }
                         { resource && <AnalyticsReportContent timePeriod={timePeriod} resource={resource} /> }
                     </Col>
