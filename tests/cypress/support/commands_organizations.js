@@ -180,6 +180,6 @@ Cypress.Commands.add('headlessCreateOrganization', (data = {}) => {
 
 Cypress.Commands.add('headlessDeleteOrganization', (orgId) => {
     cy.window().then(($win) => cy.wrap($win.cvat.organizations.get({
-        filter: `{"and":[{"==":[{"var":"id"},${newOrgId}]}]}`,
+        filter: `{"and":[{"==":[{"var":"id"},${orgId}]}]}`,
     })).then(([organization]) => cy.wrap(organization.remove())));
 });
