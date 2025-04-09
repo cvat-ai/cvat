@@ -25,6 +25,8 @@
       "project_id": null,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": 2
     },
     {
@@ -49,6 +51,8 @@
       "project_id": null,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": 5
     },
     {
@@ -73,6 +77,8 @@
       "project_id": null,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": 6
     },
     {
@@ -97,6 +103,8 @@
       "project_id": null,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": 7
     },
     {
@@ -121,6 +129,8 @@
       "project_id": null,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": 8
     },
     {
@@ -145,6 +155,8 @@
       "project_id": null,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": 9
     },
     {
@@ -169,6 +181,8 @@
       "project_id": null,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": 11
     },
     {
@@ -193,6 +207,8 @@
       "project_id": null,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": 12
     },
     {
@@ -217,6 +233,8 @@
       "project_id": null,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": 13
     },
     {
@@ -241,6 +259,8 @@
       "project_id": null,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": 14
     },
     {
@@ -265,6 +285,8 @@
       "project_id": null,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": 15
     },
     {
@@ -289,6 +311,8 @@
       "project_id": null,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": 17
     },
     {
@@ -313,6 +337,8 @@
       "project_id": null,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": 18
     },
     {
@@ -337,6 +363,8 @@
       "project_id": null,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": 19
     },
     {
@@ -361,6 +389,8 @@
       "project_id": null,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": 20
     },
     {
@@ -385,6 +415,8 @@
       "project_id": null,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": 21
     },
     {
@@ -409,6 +441,8 @@
       "project_id": null,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": 22
     },
     {
@@ -433,6 +467,8 @@
       "project_id": null,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": 23
     },
     {
@@ -457,6 +493,8 @@
       "project_id": null,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": 24
     },
     {
@@ -481,6 +519,8 @@
       "project_id": null,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": 25
     },
     {
@@ -505,6 +545,8 @@
       "project_id": null,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": 26
     },
     {
@@ -529,6 +571,8 @@
       "project_id": null,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": 27
     },
     {
@@ -553,6 +597,8 @@
       "project_id": null,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": 28
     },
     {
@@ -577,6 +623,8 @@
       "project_id": null,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": 29
     },
     {
@@ -601,6 +649,8 @@
       "project_id": null,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": 30
     },
     {
@@ -625,6 +675,8 @@
       "project_id": null,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": 31
     },
     {
@@ -649,6 +701,8 @@
       "project_id": 1,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": null
     },
     {
@@ -673,6 +727,8 @@
       "project_id": 2,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": null
     },
     {
@@ -697,6 +753,8 @@
       "project_id": 3,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": null
     },
     {
@@ -721,6 +779,8 @@
       "project_id": 4,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": null
     },
     {
@@ -745,6 +805,8 @@
       "project_id": 5,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": null
     },
     {
@@ -769,6 +831,8 @@
       "project_id": 6,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": null
     },
     {
@@ -793,6 +857,8 @@
       "project_id": 7,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": null
     },
     {
@@ -817,6 +883,8 @@
       "project_id": 8,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": null
     },
     {
@@ -841,6 +909,8 @@
       "project_id": 10,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": null
     },
     {
@@ -865,6 +935,8 @@
       "project_id": 11,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": null
     },
     {
@@ -889,6 +961,8 @@
       "project_id": 12,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": null
     },
     {
@@ -913,6 +987,8 @@
       "project_id": 13,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": null
     },
     {
@@ -937,6 +1013,8 @@
       "project_id": 14,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": null
     },
     {
@@ -961,6 +1039,8 @@
       "project_id": 15,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": null
     },
     {
@@ -985,6 +1065,8 @@
       "project_id": 16,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
+      "created_date": "2025-03-31T13:38:00.464000Z",
+      "updated_date": "2025-03-31T13:40:00.464000Z",
       "task_id": null
     }
   ]
