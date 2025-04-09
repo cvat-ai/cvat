@@ -10193,6 +10193,14 @@ components:
             accuracy in cases there are no annotations. If disabled, frames without annotations
             are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.
             This will also add virtual annotations to empty frames in the comparison results.
+        created_date:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_date:
+          type: string
+          format: date-time
+          readOnly: true
     QualitySettingsRequest:
       type: object
       properties:

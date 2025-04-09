@@ -229,6 +229,8 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
             "panoptic_comparison",
             "compare_attributes",
             "empty_is_annotated",
+            "created_date",
+            "updated_date",
         )
         read_only_fields = ("id",)
         write_once_fields = ("task_id", "project_id")
