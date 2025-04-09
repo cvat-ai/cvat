@@ -31,7 +31,7 @@ import django_rq
 import numpy as np
 from django.conf import settings
 from django.contrib.auth.models import Group, User
-from django.http import HttpResponse
+from django.http import HttpResponse, FileResponse
 from django.test import override_settings
 from pdf2image import convert_from_bytes
 from PIL import Image
@@ -4967,6 +4967,27 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     },
                 ]
             }]
+        elif annotation_format == "COCO Keypoints 1.0":
+            data["labels"] = [
+                {
+                    "name": "skel",
+                    "color": "#5c5eba",
+                    "attributes": [],
+                    "type": "skeleton",
+                    "sublabels": [
+                        {"name": "1", "color": "#d12345", "attributes": [], "type": "points"},
+                        {"name": "2", "color": "#350dea", "attributes": [], "type": "points"},
+                    ],
+                    "svg": '<line x1="36.329429626464844" y1="45.98662185668945" x2="59.07190704345703" y2="23.076923370361328" '
+                    'stroke="black" data-type="edge" data-node-from="2" stroke-width="0.5" data-node-to="3"></line>'
+                    '<line x1="22.61705780029297" y1="25.75250816345215" x2="36.329429626464844" y2="45.98662185668945" '
+                    'stroke="black" data-type="edge" data-node-from="1" stroke-width="0.5" data-node-to="2"></line>'
+                    '<circle r="1.5" stroke="black" fill="#b3b3b3" cx="22.61705780029297" cy="25.75250816345215" '
+                    'stroke-width="0.1" data-type="element node" data-element-id="1" data-node-id="1" data-label-name="1">'
+                    '</circle><circle r="1.5" stroke="black" fill="#b3b3b3" cx="36.329429626464844" cy="45.98662185668945" '
+                    'stroke-width="0.1" data-type="element node" data-element-id="2" data-node-id="2" data-label-name="2"></circle>'
+                }
+            ]
 
         with ForceLogin(owner, self.client):
             response = self.client.post('/api/tasks', data=data, format="json")
@@ -5962,7 +5983,8 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
             if annotation_format not in ["Market-1501 1.0", "ICDAR Recognition 1.0",
                                          "ICDAR Localization 1.0", "ICDAR Segmentation 1.0",
                                          'Kitti Raw Format 1.0', 'Sly Point Cloud Format 1.0',
-                                         'Datumaro 3D 1.0']:
+                                         'Datumaro 3D 1.0',
+                                         'COCO Keypoints 1.0']:
                 rectangle_tracks_with_attrs = [{
                     "frame": 0,
                     "label_id": task["labels"][0]["id"],
@@ -6213,21 +6235,6 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                         }
                     ],
                 }]
-                skeletons_wo_attrs = [{
-                    "frame": 0,
-                    "label_id": task["labels"][1]["id"],
-                    "type": "skeleton",
-                    "source": "manual",
-                    "attributes": [],
-                    "group": 0,
-                    "outside": False,
-                    "points": [],
-                    "occluded": False,
-                    "elements": [],
-                    "rotation": 0.0,
-                    "z_order": 0
-                }]
-
             annotations = {
                 "version": 0,
                 "tags": [],
@@ -6483,6 +6490,53 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                 annotations["shapes"] = rectangle_shapes_with_attrs \
                                       + polygon_shapes_with_attrs
 
+            elif annotation_format == "COCO Keypoints 1.0":
+                skeleton_wo_attrs = [
+                    {
+                        "type": "skeleton",
+                        "label_id": task["labels"][0]['id'],
+                        "points": [],
+                        "rotation": 0.0,
+                        "outside": False,
+                        "z_order": 0,
+                        "occluded": False,
+                        "group": 0,
+                        "frame": 0,
+                        "source": "manual",
+                        "attributes": [],
+                        "elements": [
+                            {
+                                "type": "points",
+                                "occluded": False,
+                                "outside": False,
+                                "z_order": 0,
+                                "rotation": 0,
+                                "points": [20.0, 0.1],
+                                # "id": 10,
+                                "frame": 0,
+                                "label_id": task["labels"][0]['sublabels'][0]['id'],
+                                "group": 0,
+                                "source": "manual",
+                                "attributes": [],
+                            },
+                            {
+                                "type": "points",
+                                "occluded": False,
+                                "outside": False,
+                                "z_order": 0,
+                                "rotation": 0,
+                                "points": [10, 3.22],
+                                # "id": 11,
+                                "frame": 0,
+                                "label_id": task["labels"][0]['sublabels'][1]['id'],
+                                "group": 0,
+                                "source": "manual",
+                                "attributes": [],
+                            },
+                        ],
+                    }
+                ]
+                annotations['shapes'] = skeleton_wo_attrs
             else:
                 raise Exception("Unknown format {}".format(annotation_format))
 
@@ -6541,7 +6595,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                     )
                     continue
 
-                response = self._export_task_annotations(
+                response: FileResponse = self._export_task_annotations(
                     owner, task["id"], query_params={"format": export_format},
                 )
 
