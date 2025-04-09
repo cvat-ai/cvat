@@ -16,7 +16,7 @@ FROM cvat.openvino.base
 
 USER root
 
-RUN pip install --no-cache-dir scikit-image
+RUN pip install -i https://pypi.tuna.tsinghua.edu.cn/simple  --no-cache-dir scikit-image
 
 COPY --from=build /opt/nuclio/open_model_zoo /opt/nuclio/open_model_zoo
 
