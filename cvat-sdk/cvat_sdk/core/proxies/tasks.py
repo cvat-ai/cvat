@@ -7,6 +7,7 @@ from __future__ import annotations
 import io
 import json
 import mimetypes
+import os
 import shutil
 from collections.abc import Sequence
 from enum import Enum
@@ -109,14 +110,13 @@ class Task(
             data["frame_filter"] = f"step={params.get('frame_step')}"
 
         if resource_type in [ResourceType.REMOTE, ResourceType.SHARE]:
-            for resource in resources:
-                if not isinstance(resource, str):
-                    raise TypeError(f"resources: expected instances of str, got {type(resource)}")
+
+            str_resources = list(map(os.fspath, resources))
 
             if resource_type is ResourceType.REMOTE:
-                data["remote_files"] = resources
+                data["remote_files"] = str_resources
             elif resource_type is ResourceType.SHARE:
-                data["server_files"] = resources
+                data["server_files"] = str_resources
 
             result, _ = self.api.create_data(
                 self.id,
@@ -165,6 +165,7 @@ class Task(
         format_name: str,
         filename: StrPath,
         *,
+        conv_mask_to_poly: Optional[bool] = None,
         status_check_period: Optional[int] = None,
         pbar: Optional[ProgressReporter] = None,
     ):
@@ -179,6 +180,7 @@ class Task(
             filename,
             format_name,
             url_params={"id": self.id},
+            conv_mask_to_poly=conv_mask_to_poly,
             pbar=pbar,
             status_check_period=status_check_period,
         )

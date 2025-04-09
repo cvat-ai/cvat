@@ -9,13 +9,12 @@ import { useHistory } from 'react-router';
 import Card from 'antd/lib/card';
 import Descriptions from 'antd/lib/descriptions';
 import { MoreOutlined } from '@ant-design/icons';
-import Dropdown from 'antd/lib/dropdown';
 
 import { Job, JobType } from 'cvat-core-wrapper';
 import { useCardHeightHOC } from 'utils/hooks';
 import Preview from 'components/common/preview';
-import JobActionsMenu from 'components/job-item/job-actions-menu';
 import { CombinedState } from 'reducers';
+import JobActionsComponent from './actions-menu';
 
 const useCardHeight = useCardHeightHOC({
     containerClassName: 'cvat-jobs-page',
@@ -92,13 +91,13 @@ function JobCardComponent(props: Props): JSX.Element {
                     <Descriptions.Item label='Assignee'> </Descriptions.Item>
                 )}
             </Descriptions>
-            <Dropdown
-                trigger={['click']}
-                destroyPopupOnHide
-                overlay={<JobActionsMenu job={job} />}
-            >
-                <MoreOutlined className='cvat-job-card-more-button' />
-            </Dropdown>
+            <JobActionsComponent
+                jobInstance={job}
+                consensusJobsPresent={false} // consensus merging is not allowed from jobs page
+                triggerElement={
+                    <MoreOutlined className='cvat-job-card-more-button' />
+                }
+            />
         </Card>
     );
 }

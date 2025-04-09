@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from datetime import timedelta
-from typing import Callable
+from typing import Any, Callable, Protocol
 
 from django.conf import settings
 from django.http import HttpRequest, HttpResponse
@@ -11,7 +11,11 @@ from django.utils.functional import SimpleLazyObject
 from rest_framework.exceptions import NotFound, ValidationError
 
 
-def get_organization(request):
+class WithIAMContext(Protocol):
+    iam_context: dict[str, Any]
+
+
+def get_organization(request: HttpRequest):
     from cvat.apps.organizations.models import Organization
 
     IAM_ROLES = {role: priority for priority, role in enumerate(settings.IAM_ROLES)}
@@ -56,7 +60,7 @@ class ContextMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
 
-    def __call__(self, request):
+    def __call__(self, request: HttpRequest):
 
         # https://stackoverflow.com/questions/26240832/django-and-middleware-which-uses-request-user-is-always-anonymous
         request.iam_context = SimpleLazyObject(lambda: get_organization(request))

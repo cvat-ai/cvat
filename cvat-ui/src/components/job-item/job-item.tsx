@@ -13,7 +13,6 @@ import { Col, Row } from 'antd/lib/grid';
 import Card from 'antd/lib/card';
 import Text from 'antd/lib/typography/Text';
 import Select from 'antd/lib/select';
-import Dropdown from 'antd/lib/dropdown';
 import Icon from '@ant-design/icons';
 import {
     BorderOutlined,
@@ -29,7 +28,7 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import { CombinedState } from 'reducers';
 import Collapse from 'antd/lib/collapse';
 import CVATTag, { TagType } from 'components/common/cvat-tag';
-import JobActionsMenu from './job-actions-menu';
+import JobActionsComponent from 'components/jobs-page/actions-menu';
 
 function formatDate(value: moment.Moment): string {
     return value.format('MMM Do YYYY HH:mm');
@@ -129,9 +128,10 @@ function JobItem(props: Props): JSX.Element {
     const frameCountPercentRepresentation = frameCountPercent === '0' ? '<1' : frameCountPercent;
     const jobName = `Job #${job.id}`;
 
-    const childJobViews: React.JSX.Element[] = childJobs ? childJobs.map((eachJob: Job) => (
-        <JobItem key={eachJob.id} job={eachJob} task={task} onJobUpdate={onJobUpdate} />
-    )) : [];
+    const childJobViews: React.JSX.Element[] = childJobs ? childJobs.sort((a, b) => a.id - b.id)
+        .map((eachJob: Job) => (
+            <JobItem key={eachJob.id} job={eachJob} task={task} onJobUpdate={onJobUpdate} />
+        )) : [];
 
     let tag = null;
     if (job.type === JobType.GROUND_TRUTH) {
@@ -293,14 +293,13 @@ function JobItem(props: Props): JSX.Element {
                         </Row>
                     </Col>
                 </Row>
-                <Dropdown
-                    trigger={['click']}
-                    destroyPopupOnHide
-                    className='job-actions-menu'
-                    overlay={<JobActionsMenu job={job} />}
-                >
-                    <MoreOutlined className='cvat-job-item-more-button' />
-                </Dropdown>
+                <JobActionsComponent
+                    jobInstance={job}
+                    consensusJobsPresent={(childJobs as Job[]).length > 0}
+                    triggerElement={
+                        <MoreOutlined className='cvat-job-item-more-button' />
+                    }
+                />
                 {childJobViews.length > 0 && (
                     <Collapse
                         className='cvat-consensus-job-collapse'

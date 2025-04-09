@@ -25,15 +25,10 @@ from cvat.apps.dataset_manager.bindings import (
     TaskData,
 )
 from cvat.apps.dataset_manager.formats.registry import make_exporter, make_importer
-from cvat.apps.dataset_manager.util import (
-    TmpDirManager,
-    add_prefetch_fields,
-    bulk_create,
-    faster_deepcopy,
-    get_cached,
-)
+from cvat.apps.dataset_manager.util import TmpDirManager, faster_deepcopy
 from cvat.apps.engine import models, serializers
 from cvat.apps.engine.log import DatasetLogManager
+from cvat.apps.engine.model_utils import add_prefetch_fields, bulk_create, get_cached
 from cvat.apps.engine.plugins import plugin_decorator
 from cvat.apps.engine.utils import take_by
 from cvat.apps.events.handlers import handle_annotations_change
@@ -284,38 +279,22 @@ class JobAnnotation:
                 if elements or parent_track is None:
                     track["elements"] = elements
 
-            db_tracks = bulk_create(
-                db_model=models.LabeledTrack,
-                objects=db_tracks,
-                flt_param={"job_id": self.db_job.id}
-            )
+            db_tracks = bulk_create(models.LabeledTrack, db_tracks)
 
             for db_attr_val in db_track_attr_vals:
                 db_attr_val.track_id = db_tracks[db_attr_val.track_id].id
 
-            bulk_create(
-                db_model=models.LabeledTrackAttributeVal,
-                objects=db_track_attr_vals,
-                flt_param={}
-            )
+            bulk_create(models.LabeledTrackAttributeVal, db_track_attr_vals)
 
             for db_shape in db_shapes:
                 db_shape.track_id = db_tracks[db_shape.track_id].id
 
-            db_shapes = bulk_create(
-                db_model=models.TrackedShape,
-                objects=db_shapes,
-                flt_param={"track__job_id": self.db_job.id}
-            )
+            db_shapes = bulk_create(models.TrackedShape, db_shapes)
 
             for db_attr_val in db_shape_attr_vals:
                 db_attr_val.shape_id = db_shapes[db_attr_val.shape_id].id
 
-            bulk_create(
-                db_model=models.TrackedShapeAttributeVal,
-                objects=db_shape_attr_vals,
-                flt_param={}
-            )
+            bulk_create(models.TrackedShapeAttributeVal, db_shape_attr_vals,)
 
             shape_idx = 0
             for track, db_track in zip(tracks, db_tracks):
@@ -355,20 +334,12 @@ class JobAnnotation:
                 if shape_elements or parent_shape is None:
                     shape["elements"] = shape_elements
 
-            db_shapes = bulk_create(
-                db_model=models.LabeledShape,
-                objects=db_shapes,
-                flt_param={"job_id": self.db_job.id}
-            )
+            db_shapes = bulk_create(models.LabeledShape, db_shapes)
 
             for db_attr_val in db_attr_vals:
                 db_attr_val.shape_id = db_shapes[db_attr_val.shape_id].id
 
-            bulk_create(
-                db_model=models.LabeledShapeAttributeVal,
-                objects=db_attr_vals,
-                flt_param={}
-            )
+            bulk_create(models.LabeledShapeAttributeVal, db_attr_vals)
 
             for shape, db_shape in zip(shapes, db_shapes):
                 shape["id"] = db_shape.id
@@ -399,20 +370,12 @@ class JobAnnotation:
             db_tags.append(db_tag)
             tag["attributes"] = attributes
 
-        db_tags = bulk_create(
-            db_model=models.LabeledImage,
-            objects=db_tags,
-            flt_param={"job_id": self.db_job.id}
-        )
+        db_tags = bulk_create(models.LabeledImage, db_tags)
 
         for db_attr_val in db_attr_vals:
             db_attr_val.image_id = db_tags[db_attr_val.tag_id].id
 
-        bulk_create(
-            db_model=models.LabeledImageAttributeVal,
-            objects=db_attr_vals,
-            flt_param={}
-        )
+        bulk_create(models.LabeledImageAttributeVal, db_attr_vals)
 
         for tag, db_tag in zip(tags, db_tags):
             tag["id"] = db_tag.id
@@ -463,9 +426,11 @@ class JobAnnotation:
     def update(self, data):
         data = self._validate_input_annotations(data)
 
+        # in case with "update" must be called prior any annotations in database changes
+        # as this annotations are used to count removed/added shapes
+        handle_annotations_change(self.db_job, data.data, "update")
         self._delete(data)
         self._create(data)
-        handle_annotations_change(self.db_job, self.data, "update")
 
         if not self._data_is_empty(self.data):
             self._set_updated_date()
@@ -531,13 +496,6 @@ class JobAnnotation:
             labeledshape_ids = [shape["id"] for shape in data["shapes"]]
             labeledtrack_ids = [track["id"] for track in data["tracks"]]
 
-            # It is not important for us that data had some "invalid" objects
-            # which were skipped (not actually deleted). The main idea is to
-            # say that all requested objects are absent in DB after the method.
-            self.ir_data.tags = data['tags']
-            self.ir_data.shapes = data['shapes']
-            self.ir_data.tracks = data['tracks']
-
             for labeledimage_ids_chunk in take_by(labeledimage_ids, chunk_size=1000):
                 self._delete_job_labeledimages(labeledimage_ids_chunk)
 
@@ -548,11 +506,13 @@ class JobAnnotation:
                 self._delete_job_labeledtracks(labeledtrack_ids_chunk)
 
             deleted_data = {
+                "version": self.ir_data.version,
                 "tags": data["tags"],
                 "shapes": data["shapes"],
                 "tracks": data["tracks"],
             }
 
+        self.reset()
         return deleted_data
 
     def delete(self, data=None):
@@ -561,6 +521,7 @@ class JobAnnotation:
             self._set_updated_date()
 
         handle_annotations_change(self.db_job, deleted_data, "delete")
+        return deleted_data
 
     @staticmethod
     def _extend_attributes(attributeval_set, default_attribute_values):
@@ -818,10 +779,11 @@ class JobAnnotation:
 
 
 class TaskAnnotation:
-    def __init__(self, pk):
+    def __init__(self, pk, *, write_only: bool = False):
         self.db_task = models.Task.objects.prefetch_related(
             Prefetch('data__images', queryset=models.Image.objects.order_by('frame'))
         ).get(id=pk)
+        self._write_only = write_only
 
         # TODO: maybe include consensus jobs except for task export
         requested_job_types = [models.JobType.ANNOTATION]
@@ -833,7 +795,8 @@ class TaskAnnotation:
             .filter(segment__task_id=pk, type__in=requested_job_types)
         )
 
-        self.ir_data = AnnotationIR(self.db_task.dimension)
+        if not write_only:
+            self.ir_data = AnnotationIR(self.db_task.dimension)
 
     def reset(self):
         self.ir_data.reset()
@@ -861,10 +824,11 @@ class TaskAnnotation:
             else:
                 data.data = patch_job_data(jid, job_data, action, db_job=db_job)
 
-            if data.version > self.ir_data.version:
-                self.ir_data.version = data.version
+            if not self._write_only:
+                if data.version > self.ir_data.version:
+                    self.ir_data.version = data.version
 
-            self._merge_data(data, jobs[jid]["start"])
+                self._merge_data(data, jobs[jid]["start"])
 
     def _merge_data(self, data: AnnotationIR, start_frame: int):
         annotation_manager = AnnotationManager(self.ir_data, dimension=self.db_task.dimension)
@@ -1065,7 +1029,7 @@ def patch_job_data(pk, data: AnnotationIR | dict, action: PatchAction, *, db_job
     elif action == PatchAction.UPDATE:
         annotation.update(data)
     elif action == PatchAction.DELETE:
-        annotation.delete(data)
+        return annotation.delete(data)
 
     return annotation.data
 
@@ -1164,7 +1128,7 @@ def export_task(
 
 @transaction.atomic
 def import_task_annotations(src_file, task_id, format_name, conv_mask_to_poly):
-    task = TaskAnnotation(task_id)
+    task = TaskAnnotation(task_id, write_only=True)
 
     importer = make_importer(format_name)
     with open(src_file, 'rb') as f:

@@ -27,12 +27,12 @@ import lodash, { omit } from 'lodash';
 import { AIToolsIcon } from 'icons';
 import { Canvas, convertShapesForInteractor } from 'cvat-canvas-wrapper';
 import {
-    getCore, Label, MLModel, ObjectState, Job,
+    getCore, Label, MLModel, ObjectState, ObjectType, ShapeType, Job,
     LabelType,
 } from 'cvat-core-wrapper';
 import openCVWrapper, { MatType } from 'utils/opencv-wrapper/opencv-wrapper';
 import {
-    CombinedState, ActiveControl, ObjectType, ShapeType, ToolsBlockerState,
+    CombinedState, ActiveControl, ToolsBlockerState,
 } from 'reducers';
 import {
     interactWithCanvas,
@@ -385,7 +385,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         try {
             this.interaction.hideMessage = message.loading({
-                content: `Waiting a response from ${activeInteractor?.name}..`,
+                content: `Waiting for a response from ${activeInteractor?.name}`,
                 duration: 0,
                 className: 'cvat-tracking-notice',
             });

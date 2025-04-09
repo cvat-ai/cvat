@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.26.2
+  version: 2.32.1
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -12,95 +12,6 @@ info:
     name: MIT License
     url: https://en.wikipedia.org/wiki/MIT_License
 paths:
-  /api/analytics/reports:
-    get:
-      operationId: analytics_get_reports
-      description: Receive analytics report
-      summary: Get an analytics report
-      parameters:
-      - in: query
-        name: end_date
-        schema:
-          type: string
-          format: date-time
-        description: Specify the end date for filtering report data.
-      - in: query
-        name: job_id
-        schema:
-          type: integer
-        description: Specify job ID
-      - in: query
-        name: project_id
-        schema:
-          type: integer
-        description: Specify project ID
-      - in: query
-        name: start_date
-        schema:
-          type: string
-          format: date-time
-        description: Specify a start date for filtering report data.
-      - in: query
-        name: task_id
-        schema:
-          type: integer
-        description: Specify task ID
-      tags:
-      - analytics
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                $ref: '#/components/schemas/AnalyticsReport'
-          description: ''
-        '404':
-          description: Not found
-    post:
-      operationId: analytics_create_report
-      summary: Create an analytics report
-      parameters:
-      - in: query
-        name: rq_id
-        schema:
-          type: string
-        description: |
-          The report creation request id. Can be specified to check the report
-          creation status.
-      tags:
-      - analytics
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AnalyticsReportCreateRequest'
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '201':
-          description: A analytics report request has been computed
-        '202':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                $ref: '#/components/schemas/RqId'
-          description: |
-            A analytics report request has been enqueued, the request id is returned.
-            The request status can be checked at this endpoint by passing the rq_id
-            as the query parameter. If the request id is specified, this response
-            means the analytics report request is queued or is being processed.
-        '400':
-          description: Invalid or failed request, check the response data for details
   /api/assets:
     post:
       operationId: assets_create
@@ -1049,6 +960,176 @@ paths:
       responses:
         '204':
           description: The comment has been deleted
+  /api/consensus/merges:
+    post:
+      operationId: consensus_create_merge
+      summary: Create a consensus merge
+      parameters:
+      - in: query
+        name: rq_id
+        schema:
+          type: string
+        description: |
+          The consensus merge request id. Can be specified to check operation status.
+      tags:
+      - consensus
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsensusMergeCreateRequest'
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          description: No response body
+        '202':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
+          description: |
+            A consensus merge request has been enqueued, the request id is returned.
+            The request status can be checked at this endpoint by passing the rq_id
+            as the query parameter. If the request id is specified, this response
+            means the consensus merge request is queued or is being processed.
+        '400':
+          description: Invalid or failed request, check the response data for details
+  /api/consensus/settings:
+    get:
+      operationId: consensus_list_settings
+      summary: List consensus settings instances
+      parameters:
+      - name: X-Organization
+        in: header
+        description: Organization unique slug
+        schema:
+          type: string
+      - name: filter
+        required: false
+        in: query
+        description: |2-
+
+          JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.
+
+          For example, using such a filter you can get all resources created by you:
+
+              - {"and":[{"==":[{"var":"owner"},"<user>"]}]}
+
+          Details about the syntax used can be found at the link: https://jsonlogic.com/
+
+           Available filter_fields: ['id', 'task_id'].
+        schema:
+          type: string
+      - name: org
+        in: query
+        description: Organization unique slug
+        schema:
+          type: string
+      - name: org_id
+        in: query
+        description: Organization identifier
+        schema:
+          type: integer
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: sort
+        required: false
+        in: query
+        description: 'Which field to use when ordering the results. Available ordering_fields:
+          [''id'']'
+        schema:
+          type: string
+      - name: task_id
+        in: query
+        description: A simple equality filter for the task_id field
+        schema:
+          type: integer
+      tags:
+      - consensus
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/PaginatedConsensusSettingsList'
+          description: ''
+  /api/consensus/settings/{id}:
+    get:
+      operationId: consensus_retrieve_settings
+      summary: Get consensus settings instance details
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: An id of a consensus settings instance
+        required: true
+      tags:
+      - consensus
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/ConsensusSettings'
+          description: ''
+    patch:
+      operationId: consensus_partial_update_settings
+      summary: Update a consensus settings instance
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: An id of a consensus settings instance
+        required: true
+      tags:
+      - consensus
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedConsensusSettingsRequest'
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/ConsensusSettings'
+          description: ''
   /api/events:
     get:
       operationId: events_list
@@ -2067,47 +2148,43 @@ paths:
     get:
       operationId: jobs_retrieve_annotations
       description: |
-        If format is specified, a ZIP archive will be returned. Otherwise,
-        the annotations will be returned as a JSON document.
-
         Deprecation warning:
 
-        Utilizing this endpoint to export annotations as a dataset in
-        a specific format will be deprecated in one of the next releases.
+        Utilizing this endpoint to export job dataset in a specific format
+        is no longer possible.
 
         Consider using new API:
-        - POST /api/jobs/<job_id>/dataset/export?save_images=False to initiate export process
-        - GET /api/requests/<rq_id> to check process status,
-            where rq_id is request id returned on initializing request
-      summary: Get job annotations or export job annotations as a dataset in a specific
-        format
+        - `POST /api/jobs/<job_id>/dataset/export?save_images=True` to initiate export process
+        - `GET /api/requests/<rq_id>` to check process status,
+            where `rq_id` is request id returned on initializing request
+        - `GET result_url` to download a prepared file,
+            where `result_url` can be found in the response on checking status request
+      summary: Get job annotations
       parameters:
       - in: query
         name: action
         schema:
           type: string
-          enum:
-          - download
-        description: Used to start downloading process locally after annotation file
-          has been created
+        description: This parameter is no longer supported
+        deprecated: true
       - in: query
         name: cloud_storage_id
         schema:
           type: integer
-        description: Storage id
+        description: This parameter is no longer supported
+        deprecated: true
       - in: query
         name: filename
         schema:
           type: string
-        description: Desired output file name
+        description: This parameter is no longer supported
+        deprecated: true
       - in: query
         name: format
         schema:
           type: string
-        description: |-
-          Desired output format name
-          You can get the list of supported formats at:
-          /server/annotation/formats
+        description: This parameter is no longer supported
+        deprecated: true
       - in: path
         name: id
         schema:
@@ -2121,13 +2198,7 @@ paths:
           enum:
           - cloud_storage
           - local
-        description: Where need to save downloaded annotation
-      - in: query
-        name: use_default_location
-        schema:
-          type: boolean
-          default: true
-        description: Use the location that was configured in the task to export annotation
+        description: This parameter is no longer supported
         deprecated: true
       tags:
       - jobs
@@ -2142,21 +2213,17 @@ paths:
           content:
             application/vnd.cvat+json:
               schema:
-                $ref: '#/components/schemas/AnnotationsRead'
-          description: Download of file started
-        '201':
-          description: Output file is ready for downloading
-        '202':
-          description: Exporting has been started
-        '405':
-          description: Format is not available
+                $ref: '#/components/schemas/LabeledData'
+          description: ''
+        '410':
+          description: API endpoint no longer handles dataset exporting process
     post:
       operationId: jobs_create_annotations
       description: |2
 
-        The request POST /api/jobs/id/annotations will initiate the import and will create
-        the rq job on the server in which the import will be carried out.
-        Please, use the PUT /api/jobs/id/annotations endpoint for checking status of the process.
+        The request POST /api/jobs/id/annotations initiates a background process to import annotations into a job.
+        Please, use the GET /api/requests/<rq_id> endpoint for checking status of the process.
+        The `rq_id` parameter can be found in the response on initiating request.
       summary: Import annotations into a job
       parameters:
       - in: query
@@ -2229,11 +2296,10 @@ paths:
       operationId: jobs_update_annotations
       description: |2
 
-        To check the status of an import request:
-
-        After initiating the annotation import, you will receive an rq_id parameter.
-        Make sure to include this parameter as a query parameter in your subsequent
-        PUT /api/jobs/id/annotations requests to track the status of the import.
+        Utilizing this endpoint to check status of the import process is deprecated
+        in favor of the new requests API:
+        GET /api/requests/<rq_id>, where `rq_id` parameter is returned in the response
+        on initializing request.
       summary: Replace job annotations / Get annotation import status
       parameters:
       - in: query
@@ -2241,11 +2307,13 @@ paths:
         schema:
           type: integer
         description: Storage id
+        deprecated: true
       - in: query
         name: filename
         schema:
           type: string
         description: Annotation file name
+        deprecated: true
       - in: query
         name: format
         schema:
@@ -2254,6 +2322,7 @@ paths:
           Input format name
           You can get the list of supported formats at:
           /server/annotation/formats
+        deprecated: true
       - in: path
         name: id
         schema:
@@ -2268,17 +2337,12 @@ paths:
           - cloud_storage
           - local
         description: where to import the annotation from
+        deprecated: true
       - in: query
         name: rq_id
         schema:
           type: string
         description: rq id
-      - in: query
-        name: use_default_location
-        schema:
-          type: boolean
-          default: true
-        description: Use the location that was configured in the task to import annotation
         deprecated: true
       tags:
       - jobs
@@ -2474,88 +2538,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/DataMetaRead'
           description: ''
-  /api/jobs/{id}/dataset:
-    get:
-      operationId: jobs_retrieve_dataset
-      description: |
-        Deprecation warning:
-            This endpoint will be deprecated in one of the next releases.
-            Consider using new API:
-            - POST /api/jobs/<job_id>/dataset/export?save_images=True to initiate export process
-            - GET /api/requests/<rq_id> to check process status,
-                where rq_id is request id returned on initializing request
-      summary: Export job as a dataset in a specific format
-      parameters:
-      - in: query
-        name: action
-        schema:
-          type: string
-          enum:
-          - download
-        description: Used to start downloading process locally after annotation file
-          has been created
-      - in: query
-        name: cloud_storage_id
-        schema:
-          type: integer
-        description: Storage id
-      - in: query
-        name: filename
-        schema:
-          type: string
-        description: Desired output file name
-      - in: query
-        name: format
-        schema:
-          type: string
-        description: |-
-          Desired output format name
-          You can get the list of supported formats at:
-          /server/annotation/formats
-        required: true
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this job.
-        required: true
-      - in: query
-        name: location
-        schema:
-          type: string
-          enum:
-          - cloud_storage
-          - local
-        description: Where need to save downloaded dataset
-      - in: query
-        name: use_default_location
-        schema:
-          type: boolean
-          default: true
-        description: Use the location that was configured in the task to export dataset
-        deprecated: true
-      tags:
-      - jobs
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                type: string
-                format: binary
-          description: Download of file started
-        '201':
-          description: Output file is ready for downloading
-        '202':
-          description: Exporting has been started
-        '405':
-          description: Format is not available
   /api/jobs/{id}/dataset/export:
     post:
       operationId: jobs_create_dataset_export
@@ -2673,6 +2655,11 @@ paths:
           description: ''
     patch:
       operationId: jobs_partial_update_validation_layout
+      description: |2
+
+        WARNING: this operation is not protected from race conditions.
+        It's up to the user to ensure no parallel calls to this operation happen.
+        It affects image access, including exports with images, backups, chunk downloading etc.
       summary: Allows updating current validation configuration
       parameters:
       - in: path
@@ -3668,157 +3655,6 @@ paths:
       responses:
         '204':
           description: The project has been deleted
-  /api/projects/{id}/annotations:
-    get:
-      operationId: projects_retrieve_annotations
-      description: |
-        Deprecation warning:
-
-        Using this endpoint to initiate export of annotations as a dataset or to check export status is deprecated.
-        Consider using new API:
-        - POST /api/projects/<project_id>/dataset/export?save_images=False to initiate exporting process
-        - GET /api/requests/<rq_id> to check export status,
-            where rq_id is request id returned on initializing request'
-      summary: Export project annotations as a dataset
-      parameters:
-      - in: query
-        name: action
-        schema:
-          type: string
-          enum:
-          - download
-        description: Used to start downloading process locally after annotation file
-          has been created
-      - in: query
-        name: cloud_storage_id
-        schema:
-          type: integer
-        description: Storage id
-      - in: query
-        name: filename
-        schema:
-          type: string
-        description: Desired output file name
-      - in: query
-        name: format
-        schema:
-          type: string
-        description: |-
-          Desired output format name
-          You can get the list of supported formats at:
-          /server/annotation/formats
-        required: true
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this project.
-        required: true
-      - in: query
-        name: location
-        schema:
-          type: string
-          enum:
-          - cloud_storage
-          - local
-        description: Where need to save downloaded dataset
-      - in: query
-        name: use_default_location
-        schema:
-          type: boolean
-          default: true
-        description: Use the location that was configured in project to export annotation
-        deprecated: true
-      tags:
-      - projects
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                $ref: '#/components/schemas/AnnotationsRead'
-          description: Download of file started
-        '201':
-          description: Annotations file is ready to download
-        '202':
-          description: Dump of annotations has been started
-        '401':
-          description: Format is not specified
-        '405':
-          description: Format is not available
-  /api/projects/{id}/backup:
-    get:
-      operationId: projects_retrieve_backup
-      description: |
-        Deprecation warning:
-
-        This endpoint will be deprecated in one of the next releases.
-        Consider using new API:
-        - POST /api/projects/<project_id>/backup/export to initiate backup process
-        - GET /api/requests/<rq_id> to check process status,
-            where rq_id is request id returned on initializing request
-      summary: Back up a project
-      parameters:
-      - in: query
-        name: action
-        schema:
-          type: string
-          enum:
-          - download
-        description: Used to start downloading process after backup file had been
-          created
-      - in: query
-        name: cloud_storage_id
-        schema:
-          type: integer
-        description: Storage id
-      - in: query
-        name: filename
-        schema:
-          type: string
-        description: Backup file name
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this project.
-        required: true
-      - in: query
-        name: location
-        schema:
-          type: string
-          enum:
-          - cloud_storage
-          - local
-        description: Where need to save downloaded backup
-      - in: query
-        name: use_default_location
-        schema:
-          type: boolean
-          default: true
-        description: Use the location that was configured in project to export backup
-        deprecated: true
-      tags:
-      - projects
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          description: Download of file started
-        '201':
-          description: Output backup file is ready for downloading
-        '202':
-          description: Creating a backup file has been started
   /api/projects/{id}/backup/export:
     post:
       operationId: projects_create_backup_export
@@ -3877,49 +3713,46 @@ paths:
       operationId: projects_retrieve_dataset
       description: |2
 
-        To check the status of the process of importing a project dataset from a file:
+        Utilizing this endpoint to check the status of the process
+        of importing a project dataset from a file is deprecated.
+        In addition, this endpoint no longer handles the project dataset export process.
 
-        After initiating the dataset upload, you will receive an rq_id parameter.
-        Make sure to include this parameter as a query parameter in your subsequent
-        GET /api/projects/id/dataset requests to track the status of the dataset import.
-        Also you should specify action parameter: action=import_status.
-
-        Deprecation warning:
-        Utilizing this endpoint to export project dataset in
-        a specific format will be deprecated in one of the next releases.
         Consider using new API:
-        - POST /api/projects/<project_id>/dataset/export/?save_images=True to initiate export process
-        - GET /api/requests/<rq_id> to check process status,
-            where rq_id is request id returned on initializing request
-      summary: Export a project as a dataset / Check dataset import status
+        - `POST /api/projects/<project_id>/dataset/export/?save_images=True` to initiate export process
+        - `GET /api/requests/<rq_id>` to check process status
+        - `GET result_url` to download a prepared file
+
+        Where:
+        - `rq_id` can be found in the response on initializing request
+        - `result_url` can be found in the response on checking status request
+      summary: Check dataset import status
       parameters:
       - in: query
         name: action
         schema:
           type: string
           enum:
-          - download
           - import_status
-        description: Used to start downloading process locally after annotation file
-          has been created
+        description: Used to check the import status
+        deprecated: true
       - in: query
         name: cloud_storage_id
         schema:
           type: integer
-        description: Storage id
+        description: This parameter is no longer supported
+        deprecated: true
       - in: query
         name: filename
         schema:
           type: string
-        description: Desired output file name
+        description: This parameter is no longer supported
+        deprecated: true
       - in: query
         name: format
         schema:
           type: string
-        description: |-
-          Desired output format name
-          You can get the list of supported formats at:
-          /server/annotation/formats
+        description: This parameter is no longer supported
+        deprecated: true
       - in: path
         name: id
         schema:
@@ -3933,19 +3766,14 @@ paths:
           enum:
           - cloud_storage
           - local
-        description: Where need to save downloaded dataset
+        description: This parameter is no longer supported
+        deprecated: true
       - in: query
         name: rq_id
         schema:
           type: string
-        description: rq id
-      - in: query
-        name: use_default_location
-        schema:
-          type: boolean
-          default: true
-        description: Use the location that was configured in project to import dataset
-        deprecated: true
+        description: This parameter is no longer supported
+        required: true
       tags:
       - projects
       security:
@@ -3954,27 +3782,17 @@ paths:
         tokenAuth: []
       - signatureAuth: []
       - basicAuth: []
+      deprecated: true
       responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                type: string
-                format: binary
-          description: Download of file started
-        '201':
-          description: Output file is ready for downloading
-        '202':
-          description: Exporting has been started
-        '405':
-          description: Format is not available
+        '410':
+          description: API endpoint no longer supports exporting datasets
     post:
       operationId: projects_create_dataset
       description: |2
 
-        The request POST /api/projects/id/dataset will initiate file upload and will create
-        the rq job on the server in which the process of dataset import from a file
-        will be carried out. Please, use the GET /api/projects/id/dataset endpoint for checking status of the process.
+        The request POST /api/projects/id/dataset initiates a background process to import dataset into a project.
+        Please, use the GET /api/requests/<rq_id> endpoint for checking status of the process.
+        The `rq_id` parameter can be found in the response on initiating request.
       summary: Import a dataset into a project
       parameters:
       - in: query
@@ -5316,14 +5134,16 @@ paths:
       description: |
         Deprecation warning:
 
-        Utilizing this endpoint ot export annotations as a dataset in
-        a specific format will be deprecated in one of the next releases.
+        Utilizing this endpoint to export annotations as a dataset in
+        a specific format is no longer possible.
 
         Consider using new API:
-        - POST /api/tasks/<task_id>/dataset/export?save_images=False to initiate export process
-        - GET /api/requests/<rq_id> to check process status,
-            where rq_id is request id returned on initializing request
-      summary: Get task annotations or export them as a dataset in a specific format
+        - `POST /api/tasks/<task_id>/dataset/export?save_images=False` to initiate export process
+        - `GET /api/requests/<rq_id>` to check process status,
+            where `rq_id` is request id returned on initializing request
+        - `GET result_url` to download a prepared file,
+            where `result_url` can be found in the response on checking status request
+      summary: Get task annotations
       parameters:
       - in: query
         name: action
@@ -5331,26 +5151,26 @@ paths:
           type: string
           enum:
           - download
-        description: Used to start downloading process locally after annotation file
-          has been created
+        description: This parameter is no longer supported
+        deprecated: true
       - in: query
         name: cloud_storage_id
         schema:
           type: integer
-        description: Storage id
+        description: This parameter is no longer supported
+        deprecated: true
       - in: query
         name: filename
         schema:
           type: string
-        description: Desired output file name
+        description: This parameter is no longer supported
+        deprecated: true
       - in: query
         name: format
         schema:
           type: string
-        description: |-
-          Desired output format name
-          You can get the list of supported formats at:
-          /server/annotation/formats
+        description: This parameter is no longer supported
+        deprecated: true
       - in: path
         name: id
         schema:
@@ -5364,13 +5184,7 @@ paths:
           enum:
           - cloud_storage
           - local
-        description: Where need to save downloaded dataset
-      - in: query
-        name: use_default_location
-        schema:
-          type: boolean
-          default: true
-        description: Use the location that was configured in the task to export annotation
+        description: This parameter is no longer supported
         deprecated: true
       tags:
       - tasks
@@ -5385,23 +5199,19 @@ paths:
           content:
             application/vnd.cvat+json:
               schema:
-                $ref: '#/components/schemas/AnnotationsRead'
-          description: Download of file started
-        '201':
-          description: Annotations file is ready to download
-        '202':
-          description: Dump of annotations has been started
+                $ref: '#/components/schemas/LabeledData'
+          description: ''
         '400':
           description: Exporting without data is not allowed
-        '405':
-          description: Format is not available
+        '410':
+          description: API endpoint no longer handles exporting process
     post:
       operationId: tasks_create_annotations
       description: |2
 
-        The request POST /api/tasks/id/annotations will initiate the import and will create
-        the rq job on the server in which the import will be carried out.
-        Please, use the PUT /api/tasks/id/annotations endpoint for checking status of the process.
+        The request POST /api/tasks/id/annotations initiates a background process to import annotations into a task.
+        Please, use the GET /api/requests/<rq_id> endpoint for checking status of the process.
+        The `rq_id` parameter can be found in the response on initiating request.
       summary: Import annotations into a task
       parameters:
       - in: query
@@ -5474,11 +5284,11 @@ paths:
       operationId: tasks_update_annotations
       description: |2
 
-        To check the status of an import request:
+        Utilizing this endpoint to check status of the import process is deprecated
+        in favor of the new requests API:
 
-        After initiating the annotation import, you will receive an rq_id parameter.
-        Make sure to include this parameter as a query parameter in your subsequent
-        PUT /api/tasks/id/annotations requests to track the status of the import.
+        GET /api/requests/<rq_id>, where `rq_id` parameter is returned in the response
+        on initializing request.
       summary: Replace task annotations / Get annotation import status
       parameters:
       - in: query
@@ -5489,6 +5299,7 @@ paths:
           Input format name
           You can get the list of supported formats at:
           /server/annotation/formats
+        deprecated: true
       - in: path
         name: id
         schema:
@@ -5500,6 +5311,7 @@ paths:
         schema:
           type: string
         description: rq id
+        deprecated: true
       tags:
       - tasks
       requestBody:
@@ -5586,74 +5398,6 @@ paths:
       responses:
         '204':
           description: The annotation has been deleted
-  /api/tasks/{id}/backup:
-    get:
-      operationId: tasks_retrieve_backup
-      description: |
-        Deprecation warning:
-            This endpoint will be deprecated in one of the next releases.
-            Consider using new API:
-            - POST /api/tasks/<task_id>/backup/export to initiate backup process
-            - GET /api/requests/<rq_id> to check process status,
-                where rq_id is request id returned on initializing request'
-      summary: Back up a task
-      parameters:
-      - in: query
-        name: action
-        schema:
-          type: string
-          enum:
-          - download
-        description: Used to start downloading process after backup file had been
-          created
-      - in: query
-        name: cloud_storage_id
-        schema:
-          type: integer
-        description: Storage id
-      - in: query
-        name: filename
-        schema:
-          type: string
-        description: Backup file name
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this task.
-        required: true
-      - in: query
-        name: location
-        schema:
-          type: string
-          enum:
-          - cloud_storage
-          - local
-        description: Where need to save downloaded backup
-      - in: query
-        name: use_default_location
-        schema:
-          type: boolean
-          default: true
-        description: Use the location that was configured in the task to export backup
-        deprecated: true
-      tags:
-      - tasks
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          description: Download of file started
-        '201':
-          description: Output backup file is ready for downloading
-        '202':
-          description: Creating a backup file has been started
-        '400':
-          description: Backup of a task without data is not allowed
   /api/tasks/{id}/backup/export:
     post:
       operationId: tasks_create_backup_export
@@ -5920,93 +5664,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/DataMetaRead'
           description: ''
-  /api/tasks/{id}/dataset:
-    get:
-      operationId: tasks_retrieve_dataset
-      description: |
-        Deprecation warning:
-
-        Utilizing this endpoint to export task dataset in
-        a specific format will be deprecated in one of the next releases.
-
-        Consider using new API:
-        - POST /api/tasks/<task_id>/dataset/export?save_images=True to initiate export process
-        - GET /api/requests/<rq_id> to check process status,
-            where rq_id is request id returned on initializing request
-      summary: Export task as a dataset in a specific format
-      parameters:
-      - in: query
-        name: action
-        schema:
-          type: string
-          enum:
-          - download
-        description: Used to start downloading process locally after annotation file
-          has been created
-      - in: query
-        name: cloud_storage_id
-        schema:
-          type: integer
-        description: Storage id
-      - in: query
-        name: filename
-        schema:
-          type: string
-        description: Desired output file name
-      - in: query
-        name: format
-        schema:
-          type: string
-        description: |-
-          Desired output format name
-          You can get the list of supported formats at:
-          /server/annotation/formats
-        required: true
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this task.
-        required: true
-      - in: query
-        name: location
-        schema:
-          type: string
-          enum:
-          - cloud_storage
-          - local
-        description: Where need to save downloaded dataset
-      - in: query
-        name: use_default_location
-        schema:
-          type: boolean
-          default: true
-        description: Use the location that was configured in task to export annotations
-        deprecated: true
-      tags:
-      - tasks
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                type: string
-                format: binary
-          description: Download of file started
-        '201':
-          description: Output file is ready for downloading
-        '202':
-          description: Exporting has been started
-        '400':
-          description: Exporting without data is not allowed
-        '405':
-          description: Format is not available
   /api/tasks/{id}/dataset/export:
     post:
       operationId: tasks_create_dataset_export
@@ -6156,6 +5813,11 @@ paths:
           description: ''
     patch:
       operationId: tasks_partial_update_validation_layout
+      description: |2
+
+        WARNING: this operation is not protected from race conditions.
+        It's up to the user to ensure no parallel calls to this operation happen.
+        It affects image access, including exports with images, backups, chunk downloading etc.
       summary: Allows updating current validation configuration
       parameters:
       - in: path
@@ -6895,9 +6557,16 @@ components:
         version:
           type: string
           maxLength: 64
+        logo_url:
+          type: string
+        subtitle:
+          type: string
+          maxLength: 1024
       required:
       - description
+      - logo_url
       - name
+      - subtitle
       - version
     AcceptInvitationRead:
       type: object
@@ -6906,47 +6575,6 @@ components:
           type: string
       required:
       - organization_slug
-    AnalyticsReport:
-      type: object
-      properties:
-        created_date:
-          type: string
-          format: date-time
-        target:
-          $ref: '#/components/schemas/AnalyticsReportTargetEnum'
-        job_id:
-          type: integer
-        task_id:
-          type: integer
-        project_id:
-          type: integer
-        statistics:
-          type: array
-          items:
-            $ref: '#/components/schemas/Metric'
-      required:
-      - created_date
-      - statistics
-      - target
-    AnalyticsReportCreateRequest:
-      type: object
-      properties:
-        job_id:
-          type: integer
-        task_id:
-          type: integer
-        project_id:
-          type: integer
-    AnalyticsReportTargetEnum:
-      enum:
-      - job
-      - task
-      - project
-      type: string
-      description: |-
-        * `job` - JOB
-        * `task` - TASK
-        * `project` - PROJECT
     AnnotationConflict:
       type: object
       properties:
@@ -7066,11 +6694,6 @@ components:
         * `tag` - TAG
         * `shape` - SHAPE
         * `track` - TRACK
-    AnnotationsRead:
-      oneOf:
-      - $ref: '#/components/schemas/LabeledData'
-      - type: string
-        format: binary
     AssetRead:
       type: object
       properties:
@@ -7221,23 +6844,6 @@ components:
           maxLength: 150
       required:
       - username
-    BinaryOperation:
-      type: object
-      properties:
-        left:
-          type: string
-          nullable: true
-          description: The name of the data series used as the left (first) operand
-            of the binary operation.
-        operator:
-          $ref: '#/components/schemas/OperatorEnum'
-        right:
-          type: string
-          nullable: true
-          description: The name of the data series used as the right (second) operand
-            of the binary operation.
-      required:
-      - operator
     ChunkType:
       enum:
       - video
@@ -7436,6 +7042,37 @@ components:
           type: string
           format: uri
           readOnly: true
+    ConsensusMergeCreateRequest:
+      type: object
+      properties:
+        task_id:
+          type: integer
+          writeOnly: true
+        job_id:
+          type: integer
+          writeOnly: true
+    ConsensusSettings:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        task_id:
+          type: integer
+          readOnly: true
+        iou_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          description: Pairwise annotation matching IoU threshold
+        quorum:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          description: |
+            Minimum required share of sources having an annotation for it to be accepted
     CredentialsTypeEnum:
       enum:
       - KEY_SECRET_KEY_PAIR
@@ -7450,18 +7087,6 @@ components:
         * `KEY_FILE_PATH` - KEY_FILE_PATH
         * `ANONYMOUS_ACCESS` - ANONYMOUS_ACCESS
         * `CONNECTION_STRING` - CONNECTION_STRING
-    DataFrame:
-      type: object
-      properties:
-        value:
-          type: number
-          format: double
-        date:
-          type: string
-          format: date
-      required:
-      - date
-      - value
     DataMetaRead:
       type: object
       properties:
@@ -7743,14 +7368,6 @@ components:
       oneOf:
       - $ref: '#/components/schemas/DatasetFileRequest'
       nullable: true
-    DefaultViewEnum:
-      enum:
-      - numeric
-      - histogram
-      type: string
-      description: |-
-        * `numeric` - NUMERIC
-        * `histogram` - HISTOGRAM
     Event:
       type: object
       properties:
@@ -8080,16 +7697,6 @@ components:
       required:
       - function
       - task
-    GranularityEnum:
-      enum:
-      - day
-      - week
-      - month
-      type: string
-      description: |-
-        * `day` - DAY
-        * `week` - WEEK
-        * `month` - MONTH
     InputTypeEnum:
       enum:
       - checkbox
@@ -8924,39 +8531,6 @@ components:
       anyOf:
       - $ref: '#/components/schemas/User'
       - $ref: '#/components/schemas/BasicUser'
-    Metric:
-      type: object
-      properties:
-        name:
-          type: string
-        title:
-          type: string
-        description:
-          type: string
-        granularity:
-          nullable: true
-          oneOf:
-          - $ref: '#/components/schemas/GranularityEnum'
-          - $ref: '#/components/schemas/NullEnum'
-        default_view:
-          $ref: '#/components/schemas/DefaultViewEnum'
-        data_series:
-          type: object
-          additionalProperties:
-            type: array
-            items:
-              $ref: '#/components/schemas/DataFrame'
-        transformations:
-          type: array
-          items:
-            $ref: '#/components/schemas/Transformation'
-      required:
-      - data_series
-      - default_view
-      - description
-      - name
-      - title
-      - transformations
     NullEnum:
       enum:
       - null
@@ -8979,18 +8553,6 @@ components:
         * `in progress` - IN_PROGRESS
         * `completed` - COMPLETED
         * `rejected` - REJECTED
-    OperatorEnum:
-      enum:
-      - +
-      - '-'
-      - '*'
-      - /
-      type: string
-      description: |-
-        * `+` - ADDITION
-        * `-` - SUBTRACTION
-        * `*` - MULTIPLICATION
-        * `/` - DIVISION
     OrganizationRead:
       type: object
       properties:
@@ -9110,6 +8672,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/CommentRead'
+    PaginatedConsensusSettingsList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsensusSettings'
     PaginatedInvitationReadList:
       type: object
       required:
@@ -9548,6 +9133,22 @@ components:
         message:
           type: string
           minLength: 1
+    PatchedConsensusSettingsRequest:
+      type: object
+      properties:
+        iou_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          description: Pairwise annotation matching IoU threshold
+        quorum:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          description: |
+            Minimum required share of sources having an annotation for it to be accepted
     PatchedDataMetaWriteRequest:
       type: object
       properties:
@@ -9751,6 +9352,8 @@ components:
         target_metric_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Defines the minimal quality requirements in terms of the selected target metric.
         max_validations_per_job:
@@ -9764,10 +9367,14 @@ components:
         iou_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: Used for distinction between matched / unmatched shapes
         oks_sigma:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Like IoU threshold, but for points.
             The percent of the bbox side, used as the radius of the circle around the GT point,
@@ -9795,6 +9402,8 @@ components:
         line_thickness:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Thickness of polylines, relatively to the (image area) ^ 0.5.
             The distance to the boundary around the GT line,
@@ -9802,6 +9411,8 @@ components:
         low_overlap_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Used for distinction between strong / weak (low_overlap) matches
         compare_line_orientation:
@@ -9810,6 +9421,8 @@ components:
         line_orientation_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             The minimal gain in the GT IoU between the given and reversed line directions
             to consider the line inverted.
@@ -9820,6 +9433,8 @@ components:
         group_match_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Minimal IoU for groups to be considered matching.
             Only used when the 'compare_groups' parameter is true
@@ -9830,6 +9445,8 @@ components:
         object_visibility_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Minimal visible area percent of the spatial annotations (polygons, masks)
             for reporting covered annotations.
@@ -10258,6 +9875,8 @@ components:
         target_metric_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Defines the minimal quality requirements in terms of the selected target metric.
         max_validations_per_job:
@@ -10271,10 +9890,14 @@ components:
         iou_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: Used for distinction between matched / unmatched shapes
         oks_sigma:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Like IoU threshold, but for points.
             The percent of the bbox side, used as the radius of the circle around the GT point,
@@ -10302,6 +9925,8 @@ components:
         line_thickness:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Thickness of polylines, relatively to the (image area) ^ 0.5.
             The distance to the boundary around the GT line,
@@ -10309,6 +9934,8 @@ components:
         low_overlap_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Used for distinction between strong / weak (low_overlap) matches
         compare_line_orientation:
@@ -10317,6 +9944,8 @@ components:
         line_orientation_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             The minimal gain in the GT IoU between the given and reversed line directions
             to consider the line inverted.
@@ -10327,6 +9956,8 @@ components:
         group_match_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Minimal IoU for groups to be considered matching.
             Only used when the 'compare_groups' parameter is true
@@ -10337,6 +9968,8 @@ components:
         object_visibility_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Minimal visible area percent of the spatial annotations (polygons, masks)
             for reporting covered annotations.
@@ -11240,17 +10873,6 @@ components:
       required:
       - frame
       - type
-    Transformation:
-      type: object
-      properties:
-        name:
-          type: string
-        binary:
-          allOf:
-          - $ref: '#/components/schemas/BinaryOperation'
-          nullable: true
-      required:
-      - name
     User:
       type: object
       properties:

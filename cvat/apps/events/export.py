@@ -17,7 +17,7 @@ from rest_framework.response import Response
 
 from cvat.apps.dataset_manager.views import log_exception
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.rq_job_handler import RQJobMetaField
+from cvat.apps.engine.rq import BaseRQMeta, RQMetaWithFailureInfo
 from cvat.apps.engine.utils import sendfile
 
 slogger = ServerLogManager(__name__)
@@ -136,7 +136,7 @@ def export(request, filter_query, queue_name):
         "query_id": query_id,
     }
 
-    queue = django_rq.get_queue(queue_name)
+    queue: django_rq.queues.DjangoRQ = django_rq.get_queue(queue_name)
     rq_job = queue.fetch_job(rq_id)
 
     if rq_job:
@@ -152,7 +152,8 @@ def export(request, filter_query, queue_name):
                 if os.path.exists(file_path):
                     return Response(status=status.HTTP_201_CREATED)
         elif rq_job.is_failed:
-            exc_info = rq_job.meta.get(RQJobMetaField.FORMATTED_EXCEPTION, str(rq_job.exc_info))
+            rq_job_meta = RQMetaWithFailureInfo.for_job(rq_job)
+            exc_info = rq_job_meta.formatted_exception or str(rq_job.exc_info)
             rq_job.delete()
             return Response(exc_info, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         else:
@@ -164,7 +165,7 @@ def export(request, filter_query, queue_name):
         func=_create_csv,
         args=(query_params, output_filename, DEFAULT_CACHE_TTL),
         job_id=rq_id,
-        meta={},
+        meta=BaseRQMeta.build(request=request, db_obj=None),
         result_ttl=ttl,
         failure_ttl=ttl,
     )

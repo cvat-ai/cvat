@@ -20,7 +20,6 @@ extend-exclude = """
 ^/cvat/apps/(
     dataset_manager/(
         annotation.py
-        |apps.py
         |bindings.py
         |project.py
         |serializers.py
@@ -32,36 +31,21 @@ extend-exclude = """
     )
     |engine/(
         admin.py
-        |apps.py
         |backup.py
         |cloud_provider.py
         |filters.py
-        |handlers.py
-        |location.py
-        |log.py
         |media_extractors.py
-        |middleware.py
-        |migrations/
-        |mime_types.py
         |mixins.py
         |models.py
-        |pagination.py
         |parsers.py
         |permissions.py
-        |plugins.py
-        |renderers.py
-        |rq_job_handler.py
-        |schema.py
         |serializers.py
-        |signals.py
         |task.py
         |tests/
-        |urls.py
         |utils.py
         |view_utils.py
         |views.py
     )
 )
-| ^/cvat/settings/
 | ^/serverless/
 """

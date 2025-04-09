@@ -49,5 +49,5 @@ if apps.is_installed("silk"):
 if apps.is_installed("health_check"):
     urlpatterns.append(path("api/server/health/", include("health_check.urls")))
 
-if apps.is_installed("cvat.apps.analytics_report"):
-    urlpatterns.append(path("api/", include("cvat.apps.analytics_report.urls")))
+if apps.is_installed("cvat.apps.consensus"):
+    urlpatterns.append(path("api/", include("cvat.apps.consensus.urls")))

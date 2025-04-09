@@ -2,11 +2,10 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useHistory } from 'react-router';
 import { useSelector } from 'react-redux';
 import { CombinedState } from 'reducers';
-import Table from 'antd/lib/table';
 import Button from 'antd/lib/button';
 import { Key } from 'antd/lib/table/interface';
 import Icon, { DeleteOutlined } from '@ant-design/icons';
@@ -16,9 +15,8 @@ import {
     Task, FramesMetaData, TaskValidationLayout, QualitySettings,
 } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import CVATTable from 'components/common/cvat-table';
 import { sorter, tablePaginationPageSize } from 'utils/quality';
-import { ValidationMode } from 'components/create-task-page/quality-configuration-form';
-import QualityTableHeader from './quality-table-header';
 
 interface Props {
     task: Task;
@@ -55,27 +53,36 @@ function AllocationTable(props: Readonly<Props>): JSX.Element | null {
     const data = validationLayout.validationFrames.map((frame: number, index: number) => ({
         key: frame,
         frame,
-        name: gtJobMeta.frames[
-            // - gt job meta starts from the 0 task frame;
-            // - honeypot gt job meta starts from the job start frame;
-            (validationLayout.mode === ValidationMode.GT) ? frame : index
-        ]?.name ?? gtJobMeta.frames[0].name,
+        // videos have only 1 frame in meta
+        name: gtJobMeta.frames[index]?.name ?? gtJobMeta.frames[0].name,
         active: !disabledFrames.includes(frame),
     }));
 
-    const [filteredData, setFilteredData] = useState(data);
-
-    const handleSearch = (query: string): void => {
-        const lowerCaseQuery = query.toLowerCase();
-        const filtered = data.filter((item) => item.name.toLowerCase().includes(lowerCaseQuery));
-        setFilteredData(filtered);
-    };
-
-    const handleDownload = () => {
-        const filename = `allocation-table-task_${task.id}.csv`;
-        const csvContent = filteredData.map(({ key, ...rest }) => rest);
-        return { filename, data: csvContent };
-    };
+    const renderExtras = useCallback((): JSX.Element => (
+        <>
+            <DeleteOutlined
+                className='cvat-allocation-selection-frame-delete'
+                onClick={() => {
+                    const framesToUpdate = selection.selectedRows
+                        .filter((frameData) => frameData.active)
+                        .map((frameData) => frameData.frame);
+                    onDeleteFrames(framesToUpdate);
+                    setSelection({ selectedRowKeys: [], selectedRows: [] });
+                }}
+            />
+            <Icon
+                className='cvat-allocation-selection-frame-restore'
+                onClick={() => {
+                    const framesToUpdate = selection.selectedRows
+                        .filter((frameData) => !frameData.active)
+                        .map((frameData) => frameData.frame);
+                    onRestoreFrames(framesToUpdate);
+                    setSelection({ selectedRowKeys: [], selectedRows: [] });
+                }}
+                component={RestoreIcon}
+            />
+        </>
+    ), [selection, onDeleteFrames, onRestoreFrames]);
 
     const { width: pageWidth, height: pageHeight } = pageSizeData;
     const frameNameWidth = FRAME_NAME_WIDTH_COEF * pageWidth;
@@ -163,63 +170,33 @@ function AllocationTable(props: Readonly<Props>): JSX.Element | null {
     ];
 
     return (
-        <div className='cvat-frame-allocation-list'>
-            <QualityTableHeader
-                title='Frames'
-                onSearch={handleSearch}
-                onDownload={handleDownload}
-                actions={
-                    selection.selectedRowKeys.length !== 0 ? (
-                        <>
-                            <DeleteOutlined
-                                className='cvat-allocation-selection-frame-delete'
-                                onClick={() => {
-                                    const framesToUpdate = selection.selectedRows
-                                        .filter((frameData) => frameData.active)
-                                        .map((frameData) => frameData.frame);
-                                    onDeleteFrames(framesToUpdate);
-                                    setSelection({ selectedRowKeys: [], selectedRows: [] });
-                                }}
-                            />
-                            <Icon
-                                className='cvat-allocation-selection-frame-restore'
-                                onClick={() => {
-                                    const framesToUpdate = selection.selectedRows
-                                        .filter((frameData) => !frameData.active)
-                                        .map((frameData) => frameData.frame);
-                                    onRestoreFrames(framesToUpdate);
-                                    setSelection({ selectedRowKeys: [], selectedRows: [] });
-                                }}
-                                component={RestoreIcon}
-                            />
-                        </>
-                    ) : null
+        <CVATTable
+            tableTitle='Frames'
+            searchDataIndex={['name']}
+            csvExport={{ filename: `allocation-table-task_${task.id}.csv` }}
+            className='cvat-frame-allocation-table'
+            rowClassName={(rowData) => {
+                if (!rowData.active) {
+                    return 'cvat-allocation-frame-row cvat-allocation-frame-row-excluded';
                 }
-            />
-            <Table
-                className='cvat-frame-allocation-table'
-                rowClassName={(rowData) => {
-                    if (!rowData.active) {
-                        return 'cvat-allocation-frame-row cvat-allocation-frame-row-excluded';
-                    }
-                    return 'cvat-allocation-frame-row';
-                }}
-                columns={columns}
-                dataSource={filteredData}
-                rowSelection={{
-                    selectedRowKeys: selection.selectedRowKeys,
-                    onChange: (selectedRowKeys: Key[], selectedRows: RowData[]) => {
-                        setSelection({
-                            ...selection,
-                            selectedRowKeys,
-                            selectedRows,
-                        });
-                    },
-                }}
-                size='small'
-                pagination={{ showSizeChanger: true, defaultPageSize }}
-            />
-        </div>
+                return 'cvat-allocation-frame-row';
+            }}
+            columns={columns}
+            dataSource={data}
+            rowSelection={{
+                selectedRowKeys: selection.selectedRowKeys,
+                onChange: (selectedRowKeys: Key[], selectedRows: RowData[]) => {
+                    setSelection({
+                        ...selection,
+                        selectedRowKeys,
+                        selectedRows,
+                    });
+                },
+            }}
+            size='small'
+            pagination={{ showSizeChanger: true, defaultPageSize, position: ['bottomCenter'] }}
+            renderExtraActions={selection.selectedRowKeys.length ? renderExtras : undefined}
+        />
     );
 }
 

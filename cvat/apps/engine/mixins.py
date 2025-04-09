@@ -8,35 +8,39 @@ import json
 import os
 import os.path
 import uuid
-from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from textwrap import dedent
-from typing import Any, Callable, Optional
+from typing import Callable
 from unittest import mock
 from urllib.parse import urljoin
 
 import django_rq
 from attr.converters import to_bool
 from django.conf import settings
-from django.http import HttpRequest
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import mixins, status
-from rest_framework.authentication import SessionAuthentication
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
 from cvat.apps.engine.background import BackupExportManager, DatasetExportManager
 from cvat.apps.engine.handlers import clear_import_cache
 from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.models import Location, RequestAction, RequestSubresource, RequestTarget
-from cvat.apps.engine.rq_job_handler import RQId
+from cvat.apps.engine.models import (
+    Job,
+    Location,
+    Project,
+    RequestAction,
+    RequestSubresource,
+    RequestTarget,
+    Task,
+)
+from cvat.apps.engine.rq import RQId
 from cvat.apps.engine.serializers import DataSerializer, RqIdSerializer
-from cvat.apps.engine.utils import is_dataset_export
+from cvat.apps.engine.types import ExtendedRequest
 
 slogger = ServerLogManager(__name__)
 
@@ -159,7 +163,7 @@ class TusFile:
         return tus_file
 
 class TusChunk:
-    def __init__(self, request):
+    def __init__(self, request: ExtendedRequest):
         self.META = request.META
         self.offset = int(request.META.get("HTTP_UPLOAD_OFFSET", 0))
         self.size = int(request.META.get("CONTENT_LENGTH", settings.TUS_DEFAULT_CHUNK_SIZE))
@@ -215,7 +219,7 @@ class UploadMixin:
                 response.__setitem__(key, value)
         return response
 
-    def _get_metadata(self, request):
+    def _get_metadata(self, request: ExtendedRequest):
         metadata = {}
         if request.META.get("HTTP_UPLOAD_METADATA"):
             for kv in request.META.get("HTTP_UPLOAD_METADATA").split(","):
@@ -230,7 +234,7 @@ class UploadMixin:
                     metadata[splited_metadata[0]] = ""
         return metadata
 
-    def upload_data(self, request):
+    def upload_data(self, request: ExtendedRequest):
         tus_request = request.headers.get('Upload-Length', None) is not None or request.method == 'OPTIONS'
         bulk_file_upload = request.headers.get('Upload-Multiple', None) is not None
         start_upload = request.headers.get('Upload-Start', None) is not None
@@ -247,9 +251,9 @@ class UploadMixin:
         else: # backward compatibility case - no upload headers were found
             return self.upload_finished(request)
 
-    def init_tus_upload(self, request):
+    def init_tus_upload(self, request: ExtendedRequest):
         if request.method == 'OPTIONS':
-            return self._tus_response(status=status.HTTP_204)
+            return self._tus_response(status=status.HTTP_204_NO_CONTENT)
         else:
             metadata = self._get_metadata(request)
             filename = metadata.get('filename', '')
@@ -321,7 +325,7 @@ class UploadMixin:
                 extra_headers={'Location': urljoin(location, tus_file.file_id),
                                'Upload-Filename': tus_file.filename})
 
-    def append_tus_chunk(self, request, file_id):
+    def append_tus_chunk(self, request: ExtendedRequest, file_id: str):
         tus_file = TusFile(str(file_id), self.get_upload_dir())
         if request.method == 'HEAD':
             if tus_file.exists():
@@ -361,12 +365,12 @@ class UploadMixin:
     def get_upload_dir(self) -> str:
         return self._object.data.get_upload_dirname()
 
-    def _get_request_client_files(self, request):
+    def _get_request_client_files(self, request: ExtendedRequest):
         serializer = DataSerializer(self._object, data=request.data)
         serializer.is_valid(raise_exception=True)
         return serializer.validated_data.get('client_files')
 
-    def append_files(self, request):
+    def append_files(self, request: ExtendedRequest):
         """
         Processes a single or multiple files sent in a single request inside
         a file uploading session.
@@ -385,13 +389,13 @@ class UploadMixin:
                     destination.write(client_file['file'].read())
         return Response(status=status.HTTP_200_OK)
 
-    def upload_started(self, request):
+    def upload_started(self, request: ExtendedRequest):
         """
         Allows to do actions before upcoming file uploading.
         """
         return Response(status=status.HTTP_202_ACCEPTED)
 
-    def upload_finished(self, request):
+    def upload_finished(self, request: ExtendedRequest):
         """
         Allows to process uploaded files.
         """
@@ -405,38 +409,18 @@ class PartialUpdateModelMixin:
     Almost the same as UpdateModelMixin, but has no public PUT / update() method.
     """
 
-    def _update(self, request, *args, **kwargs):
+    def _update(self, request: ExtendedRequest, *args, **kwargs):
         # This method must not be named "update" not to be matched with the PUT method
         return mixins.UpdateModelMixin.update(self, request, *args, **kwargs)
 
     def perform_update(self, serializer):
         mixins.UpdateModelMixin.perform_update(self, serializer=serializer)
 
-    def partial_update(self, request, *args, **kwargs):
+    def partial_update(self, request: ExtendedRequest, *args, **kwargs):
         with mock.patch.object(self, 'update', new=self._update, create=True):
             return mixins.UpdateModelMixin.partial_update(self, request=request, *args, **kwargs)
 
-
 class DatasetMixin:
-    def export_dataset_v1(
-        self,
-        request,
-        save_images: bool,
-        *,
-        get_data: Optional[Callable[[int], dict[str, Any]]] = None,
-    ) -> Response:
-        if request.query_params.get("format"):
-            callback = self.get_export_callback(save_images)
-
-            dataset_export_manager = DatasetExportManager(self._object, request, callback, save_images=save_images, version=1)
-            return dataset_export_manager.export()
-
-        if not get_data:
-            return Response("Format is not specified", status=status.HTTP_400_BAD_REQUEST)
-
-        data = get_data(self._object.pk)
-        return Response(data)
-
     @extend_schema(
         summary='Initialize process to export resource as a dataset in a specific format',
         description=dedent("""\
@@ -466,17 +450,37 @@ class DatasetMixin:
         },
     )
     @action(detail=True, methods=['POST'], serializer_class=None, url_path='dataset/export')
-    def export_dataset_v2(self, request: HttpRequest, pk: int):
+    def initiate_dataset_export(self, request: ExtendedRequest, pk: int):
         self._object = self.get_object() # force call of check_object_permissions()
 
-        save_images = is_dataset_export(request)
-        callback = self.get_export_callback(save_images)
+        export_manager = DatasetExportManager(self._object, request)
+        return export_manager.export()
 
-        dataset_export_manager = DatasetExportManager(self._object, request, callback, save_images=save_images, version=2)
-        return dataset_export_manager.export()
+    @extend_schema(summary='Download a prepared dataset file',
+        parameters=[
+            OpenApiParameter('rq_id', description='Request ID',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=True),
+        ],
+        responses={
+            '200': OpenApiResponse(description='Download of file started'),
+        },
+        exclude=True, # private API endpoint that should be used only as result_url
+    )
+    @action(methods=['GET'], detail=True, url_path='dataset/download')
+    def download_dataset(self, request: ExtendedRequest, pk: int):
+        obj = self.get_object()  # force to call check_object_permissions
+        export_manager = DatasetExportManager(obj, request)
+        return export_manager.download_file()
 
     # FUTURE-TODO: migrate to new API
-    def import_annotations(self, request, db_obj, import_func, rq_func, rq_id_factory):
+    def import_annotations(
+        self,
+        request: ExtendedRequest,
+        db_obj: Project | Task | Job,
+        import_func: Callable[..., None],
+        rq_func: Callable[..., None],
+        rq_id_factory: Callable[..., RQId],
+    ):
         is_tus_request = request.headers.get('Upload-Length', None) is not None or \
             request.method == 'OPTIONS'
         if is_tus_request:
@@ -508,19 +512,8 @@ class DatasetMixin:
 
 
 class BackupMixin:
-    def export_backup_v1(self, request: HttpRequest) -> Response:
-        db_object = self.get_object() # force to call check_object_permissions
-
-        export_backup_manager = BackupExportManager(db_object, request, version=1)
-        response = export_backup_manager.export()
-
-        if request.query_params.get('action') != 'download':
-            response.headers['Deprecated'] = True
-
-        return response
-
     # FUTURE-TODO: migrate to new API
-    def import_backup_v1(self, request: HttpRequest, import_func: Callable) -> Response:
+    def import_backup_v1(self, request: ExtendedRequest, import_func: Callable) -> Response:
         location = request.query_params.get("location", Location.LOCAL)
         if location == Location.CLOUD_STORAGE:
             file_name = request.query_params.get("filename", "")
@@ -554,42 +547,24 @@ class BackupMixin:
         },
     )
     @action(detail=True, methods=['POST'], serializer_class=None, url_path='backup/export')
-    def export_backup_v2(self, request: HttpRequest, pk: int):
+    def initiate_backup_export(self, request: ExtendedRequest, pk: int):
         db_object = self.get_object() # force to call check_object_permissions
+        export_manager = BackupExportManager(db_object, request)
+        return export_manager.export()
 
-        export_backup_manager = BackupExportManager(db_object, request, version=2)
-        return export_backup_manager.export()
 
-
-class CsrfWorkaroundMixin(APIView):
-    """
-    Disables session authentication for GET/HEAD requests
-    for which csrf_workaround_is_needed returns True.
-
-    csrf_workaround_is_needed is supposed to be overridden by each view.
-
-    This only exists to mitigate CSRF attacks on several known endpoints that
-    perform side effects in response to GET requests. Do not use this in
-    new code: instead, make sure that all endpoints with side effects use
-    a method other than GET/HEAD. Then Django's built-in CSRF protection
-    will cover them.
-    """
-
-    @staticmethod
-    def csrf_workaround_is_needed(query_params: Mapping[str, str]) -> bool:
-        return False
-
-    def get_authenticators(self):
-        authenticators = super().get_authenticators()
-
-        if (
-            self.request and
-            # Don't apply the workaround for requests from unit tests, since
-            # they can only use session authentication.
-            not getattr(self.request, "_dont_enforce_csrf_checks", False) and
-            self.request.method in ("GET", "HEAD") and
-            self.csrf_workaround_is_needed(self.request.GET)
-        ):
-            authenticators = [a for a in authenticators if not isinstance(a, SessionAuthentication)]
-
-        return authenticators
+    @extend_schema(summary='Download a prepared backup file',
+        parameters=[
+            OpenApiParameter('rq_id', description='Request ID',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=True),
+        ],
+        responses={
+            '200': OpenApiResponse(description='Download of file started'),
+        },
+        exclude=True, # private API endpoint that should be used only as result_url
+    )
+    @action(methods=['GET'], detail=True, url_path='backup/download')
+    def download_backup(self, request: ExtendedRequest, pk: int):
+        obj = self.get_object()  # force to call check_object_permissions
+        export_manager = BackupExportManager(obj, request)
+        return export_manager.download_file()
