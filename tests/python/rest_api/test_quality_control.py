@@ -1029,7 +1029,12 @@ class TestPatchSettings(_PermissionTestBase):
             assert response.status == HTTPStatus.OK
 
         if expected_data is not None:
-            assert DeepDiff(expected_data, json.loads(response.data), ignore_order=True) == {}
+            assert DeepDiff(
+                expected_data,
+                json.loads(response.data),
+                exclude_paths=["root['updated_date']"],
+                ignore_order=True
+            ) == {}
 
         return response
 
