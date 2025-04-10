@@ -13,6 +13,9 @@ COPY cvat-canvas3d/package.json /tmp/cvat-canvas3d/
 COPY cvat-ui/package.json /tmp/cvat-ui/
 COPY cvat-data/package.json /tmp/cvat-data/
 
+RUN yarn config set proxy "http://192.16.16.182:7890" && \
+    yarn config set https-proxy "http://192.16.16.182:7890"
+
 # Install common dependencies
 WORKDIR /tmp/
 RUN DISABLE_HUSKY=1 yarn --frozen-lockfile

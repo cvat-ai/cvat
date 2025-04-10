@@ -34,6 +34,13 @@ x-clickhouse-env: &clickhouse-env
   CLICKHOUSE_PASSWORD: user
 
 services:
+  cvat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      extra_hosts:
+        - "github.com:140.82.116.3"
+
   cvat_db:
     container_name: cvat_db
     image: postgres:15-alpine
