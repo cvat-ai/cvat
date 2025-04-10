@@ -50,7 +50,6 @@ class RQJobMetaField:
     JOB_ID = "job_id"
     STATUS = "status"
     PROGRESS = "progress"
-    HIDDEN = "hidden"
 
     # import specific fields
     TASK_PROGRESS = "task_progress"
@@ -228,8 +227,6 @@ class BaseRQMeta(RQMetaWithFailureInfo):
     task_id: int | None = ImmutableRQMetaAttribute(RQJobMetaField.TASK_ID, optional=True)
     job_id: int | None = ImmutableRQMetaAttribute(RQJobMetaField.JOB_ID, optional=True)
 
-    hidden: bool | None = ImmutableRQMetaAttribute(RQJobMetaField.HIDDEN, optional=True)
-
     # mutable && optional fields
     progress: float | None = MutableRQMetaAttribute(
         RQJobMetaField.PROGRESS, validator=lambda x: isinstance(x, float), optional=True
@@ -251,7 +248,6 @@ class BaseRQMeta(RQMetaWithFailureInfo):
         *,
         request: ExtendedRequest,
         db_obj: Model | None,
-        hidden: bool | None = None,
     ):
         # to prevent circular import
         from cvat.apps.events.handlers import job_id, organization_slug, task_id
@@ -280,7 +276,6 @@ class BaseRQMeta(RQMetaWithFailureInfo):
             RQJobMetaField.PROJECT_ID: pid,
             RQJobMetaField.TASK_ID: tid,
             RQJobMetaField.JOB_ID: jid,
-            **({RQJobMetaField.HIDDEN: hidden} if hidden is not None else {}),
         }
 
 
@@ -335,6 +330,7 @@ def is_rq_job_owner(rq_job: RQJob, user_id: int) -> bool:
 
 
 class ExportRequestId(RequestId):
+    # optional because export queue works also with events
     @cached_property
     def subresource(self) -> RequestSubresource | None:
         if subresource := self.extra.get("subresource"):
@@ -356,7 +352,6 @@ class ImportRequestId(RequestId):
 
     @cached_property
     def format(self) -> str | None:
-        # TODO: quote/unquote
         return self.extra.get("format")
 
 
