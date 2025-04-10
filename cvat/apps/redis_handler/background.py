@@ -26,8 +26,6 @@ from rq.job import JobStatus as RQJobStatus
 
 from cvat.apps.dataset_manager.util import get_export_cache_lock
 from cvat.apps.engine.cloud_provider import export_resource_to_cloud_storage
-
-# from cvat.apps.dataset_manager.views import get_export_cache_ttl
 from cvat.apps.engine.location import Location, StorageType, get_location_configuration
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import RequestTarget
@@ -123,11 +121,10 @@ class AbstractRequestManager(metaclass=ABCMeta):
     def validate_request(self) -> Response | None:
         """Hook to run some validations before processing a request"""
 
-        if self.request.method != "POST":
-            raise MethodNotAllowed(
-                self.request.method,
-                detail="Only POST requests can be used to initiate a background process",
-            )
+        # prevent architecture bugs
+        assert (
+            self.request.method == "POST"
+        ), "Only POST requests can be used to initiate a background process"
 
     def handle_existing_job(self, job: RQJob | None, queue: DjangoRQ) -> Response | None:
         if not job:
@@ -135,14 +132,17 @@ class AbstractRequestManager(metaclass=ABCMeta):
 
         job_status = job.get_status(refresh=False)
 
-        if job_status in {RQJobStatus.STARTED, RQJobStatus.QUEUED}:
-            return Response(
-                data="Request is being processed",
-                status=status.HTTP_409_CONFLICT,
+        if job_status in {RQJobStatus.STARTED, RQJobStatus.QUEUED, RQJobStatus.DEFERRED}:
+            from cvat.apps.redis_handler.serializers import ExistedRequestIdSerializer
+
+            serializer = ExistedRequestIdSerializer(
+                {"reason": "Request is being processed", "rq_id": job.id}
             )
 
-        if job_status == RQJobStatus.DEFERRED:
-            job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
+            return Response(
+                serializer.data,
+                status=status.HTTP_409_CONFLICT,
+            )
 
         if job_status == RQJobStatus.SCHEDULED:
             scheduler: DjangoScheduler = django_rq.get_scheduler(queue.name, queue=queue)
@@ -200,6 +200,85 @@ class AbstractRequestManager(metaclass=ABCMeta):
 
 @attrs.define(kw_only=True)
 class AbstractExporter(AbstractRequestManager):
+
+    class Downloader:
+        def __init__(
+            self,
+            *,
+            request: ExtendedRequest,
+            queue: DjangoRQ,
+            request_id: str,
+        ):
+            self.request = request
+            self.queue = queue
+            self.request_id = request_id
+
+        def validate_request(self):
+            # prevent architecture bugs
+            assert "GET" == self.request.method, "Only GET requests can be used to download a file"
+
+        def download_file(self) -> Response:
+            self.validate_request()
+
+            # ensure that there is no race condition when processing parallel requests
+            with get_rq_lock_for_job(self.queue, self.request_id):
+                job = self.queue.fetch_job(self.request_id)
+
+                if not job:
+                    return HttpResponseBadRequest("Unknown export request id")
+
+                # define status once to avoid refreshing it on each check
+                # FUTURE-TODO: get_status will raise InvalidJobOperation exception instead of returning None in one of the next releases
+                job_status = job.get_status(refresh=False)
+
+                if job_status != RQJobStatus.FINISHED:
+                    return HttpResponseBadRequest("The export process is not finished")
+
+                job_meta = ExportRQMeta.for_job(job)
+                file_path = job.return_value()
+
+                if not file_path:
+                    return (
+                        Response(
+                            "A result for exporting job was not found for finished RQ job",
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        )
+                        if job_meta.result_url
+                        # user tries to download a final file locally while the export is made to cloud storage
+                        else HttpResponseBadRequest(
+                            "The export process has no result file to be downloaded locally"
+                        )
+                    )
+
+                with get_export_cache_lock(
+                    file_path, ttl=LOCK_TTL, acquire_timeout=LOCK_ACQUIRE_TIMEOUT
+                ):
+                    if not osp.exists(file_path):
+                        return Response(
+                            "The exported file has expired, please retry exporting",
+                            status=status.HTTP_404_NOT_FOUND,
+                        )
+
+                    return sendfile(
+                        self.request,
+                        file_path,
+                        attachment=True,
+                        attachment_filename=job_meta.result_filename,
+                    )
+
+    def get_downloader(self):
+        request_id = self.request.query_params.get(self.REQUEST_ID_KEY)
+
+        if not request_id:
+            raise ValidationError("Missing request id in the query parameters")
+
+        try:
+            self.validate_request_id(request_id)
+        except ValueError:
+            raise ValidationError("Invalid export request id")
+
+        return self.Downloader(request=self.request, queue=self.get_queue(), request_id=request_id)
+
     QUEUE_NAME = settings.CVAT_QUEUES.EXPORT_DATA.value
 
     @property
@@ -301,60 +380,3 @@ class AbstractExporter(AbstractRequestManager):
             ),
             result_filename=self.get_result_filename(),
         )
-
-    def download_file(self) -> Response:
-        queue = self.get_queue()
-        request_id = self.request.query_params.get(self.REQUEST_ID_KEY)
-
-        if not request_id:
-            return HttpResponseBadRequest("Missing request id in the query parameters")
-
-        try:
-            self.validate_request_id(request_id)
-        except ValueError:
-            return HttpResponseBadRequest("Invalid export request id")
-
-        # ensure that there is no race condition when processing parallel requests
-        with get_rq_lock_for_job(queue, request_id):
-            job = queue.fetch_job(request_id)
-
-            if not job:
-                return HttpResponseBadRequest("Unknown export request id")
-
-            # define status once to avoid refreshing it on each check
-            # FUTURE-TODO: get_status will raise InvalidJobOperation exception instead of returning None in one of the next releases
-            job_status = job.get_status(refresh=False)
-
-            if job_status != RQJobStatus.FINISHED:
-                return HttpResponseBadRequest("The export process is not finished")
-
-            job_meta = ExportRQMeta.for_job(job)
-            file_path = job.return_value()
-
-            if not file_path:
-                return (
-                    Response(
-                        "A result for exporting job was not found for finished RQ job",
-                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    )
-                    if job_meta.result_url  # user tries to download a final file locally while the export is made to cloud storage
-                    else HttpResponseBadRequest(
-                        "The export process has no result file to be downloaded locally"
-                    )
-                )
-
-            with get_export_cache_lock(
-                file_path, ttl=LOCK_TTL, acquire_timeout=LOCK_ACQUIRE_TIMEOUT
-            ):
-                if not osp.exists(file_path):
-                    return Response(
-                        "The exported file has expired, please retry exporting",
-                        status=status.HTTP_404_NOT_FOUND,
-                    )
-
-                return sendfile(
-                    self.request,
-                    file_path,
-                    attachment=True,
-                    attachment_filename=job_meta.result_filename,
-                )

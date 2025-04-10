@@ -208,5 +208,6 @@ class EventsViewSet(viewsets.ViewSet):
     @action(detail=False, methods=["GET"], url_path="download")
     def download_file(self, request: ExtendedRequest):
         self.check_permissions(request)
-        exporter = EventsExporter(request=request)
-        return exporter.download_file()
+
+        downloader = EventsExporter(request=request).get_downloader()
+        return downloader.download_file()

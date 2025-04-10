@@ -464,8 +464,9 @@ class DatasetMixin:
     @action(methods=['GET'], detail=True, url_path='dataset/download')
     def download_dataset(self, request: ExtendedRequest, pk: int):
         obj = self.get_object()  # force to call check_object_permissions
-        export_manager = DatasetExporter(request=request, db_instance=obj)
-        return export_manager.download_file()
+
+        downloader = DatasetExporter(request=request, db_instance=obj).get_downloader()
+        return downloader.download_file()
 
 
 class BackupMixin:
@@ -512,5 +513,6 @@ class BackupMixin:
     @action(methods=['GET'], detail=True, url_path='backup/download')
     def download_backup(self, request: ExtendedRequest, pk: int):
         obj = self.get_object()  # force to call check_object_permissions
-        export_manager = BackupExporter(request=request, db_instance=obj)
-        return export_manager.download_file()
+
+        downloader = BackupExporter(request=request, db_instance=obj).get_downloader()
+        return downloader.download_file()
