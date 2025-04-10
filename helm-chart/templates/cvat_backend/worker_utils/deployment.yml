@@ -59,9 +59,9 @@ spec:
           - "worker"
           - "notifications"
           - "cleaning"
-          {{- with $localValues.extraArgs}}
-          {{- toYaml . | nindent 10}}
-          {{- end}}
+          {{- with $localValues.extraArgs }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
           env:
           {{ include "cvat.sharedBackendEnv" . | indent 10 }}
           {{- with concat .Values.cvat.backend.additionalEnv $localValues.additionalEnv }}
