@@ -6222,7 +6222,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                 tags_with_attrs = [{
                     "frame": 1,
                     "label_id": task["labels"][0]["id"],
-                    "group": 3,
+                    "group": 0,
                     "source": "manual",
                     "attributes": [
                         {
