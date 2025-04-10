@@ -6,7 +6,6 @@ import csv
 import os
 import uuid
 from datetime import datetime, timedelta
-from pathlib import Path
 
 import attrs
 import clickhouse_connect
@@ -16,9 +15,8 @@ from django.utils import timezone
 from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
-from rq import get_current_job
 
-from cvat.apps.dataset_manager.util import TmpDirManager
+from cvat.apps.dataset_manager.util import ExportCacheManager
 from cvat.apps.dataset_manager.views import log_exception
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.rq import RQMetaWithFailureInfo
@@ -33,7 +31,7 @@ slogger = ServerLogManager(__name__)
 DEFAULT_CACHE_TTL = timedelta(hours=1)
 
 
-def _create_csv(query_params: dict):
+def _create_csv(query_params: dict, output_filename: str):
     try:
         clickhouse_settings = settings.CLICKHOUSE["events"]
 
@@ -73,9 +71,6 @@ def _create_csv(query_params: dict):
         ) as client:
             result = client.query(query, parameters=parameters)
 
-        current_job = get_current_job()
-        output_filename = Path(TmpDirManager.TMP_ROOT) / current_job.id
-
         with open(output_filename, "w", encoding="UTF8") as f:
             writer = csv.writer(f)
             writer.writerow(result.column_names)
@@ -111,7 +106,9 @@ class EventsExporter(AbstractExporter):
         perm = EventsPermission.create_scope_list(self.request)
         self.filter_query = perm.filter(self.request.query_params)
 
-    def define_query_params(self) -> dict:
+    def _init_callback_with_params(self):
+        self.callback = _create_csv
+
         query_params = {
             "org_id": self.filter_query.get("org_id", None),
             "project_id": self.filter_query.get("project_id", None),
@@ -149,12 +146,10 @@ class EventsExporter(AbstractExporter):
             query_params["to"] = datetime.now(timezone.utc)
             query_params["from"] = query_params["to"] - timedelta(days=30)
 
-        return query_params
-
-    def _init_callback_with_params(self):
-        self.callback = _create_csv
-        query_params = self.define_query_params()
-        self.callback_args = (query_params,)
+        output_filename = ExportCacheManager.make_file_path(
+            file_type="events", file_id=self.query_id, file_ext="csv"
+        )
+        self.callback_args = (query_params, output_filename)
 
     def where_to_redirect(self) -> str:
         return reverse("events-download-file", request=self.request)

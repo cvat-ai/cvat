@@ -16,6 +16,7 @@ from django.utils import timezone
 
 from cvat.apps.dataset_manager.util import (
     CacheFileOrDirPathParseError,
+    ConstructedFileId,
     ExportCacheManager,
     TmpDirManager,
     get_export_cache_lock,
@@ -39,7 +40,10 @@ def clear_export_cache(file_path: Path) -> bool:
         ttl=EXPORT_CACHE_LOCK_TTL,
     ):
         parsed_filename = ExportCacheManager.parse_filename(file_path.name)
-        cache_ttl = get_export_cache_ttl(parsed_filename.instance_type)
+        if isinstance(parsed_filename.file_id, ConstructedFileId):
+            cache_ttl = get_export_cache_ttl(parsed_filename.file_id.instance_type)
+        else:
+            cache_ttl = get_export_cache_ttl(None)  # use common default cache TTL
 
         if timezone.now().timestamp() <= file_path.stat().st_mtime + cache_ttl.total_seconds():
             logger.debug(f"Export cache file {file_path.name!r} was recently accessed")
@@ -100,7 +104,7 @@ class ExportCacheDirectoryCleaner(BaseCleaner):
     task_description: ClassVar[str] = "export cache directory cleanup"
 
     def do_cleanup(self) -> None:
-        export_cache_dir_path = settings.EXPORT_CACHE_ROOT
+        export_cache_dir_path = ExportCacheManager.ROOT
         assert os.path.exists(export_cache_dir_path)
 
         for child in os.scandir(export_cache_dir_path):
