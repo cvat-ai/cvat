@@ -2186,9 +2186,6 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
         dm.AnnotationType.mask: ShapeType.MASK
     }
 
-    sources = {'auto', 'semi-auto', 'manual', 'file', 'consensus'}
-    source = 'file' if dm_dataset._source_path else None
-
     track_formats = [
         'cvat',
         'datumaro',
@@ -2202,6 +2199,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
         'yolo_ultralytics_oriented_boxes',
         'yolo_ultralytics_pose',
     ]
+    import_source = 'file' # safe to assume this on any import from a file
 
     label_cat = dm_dataset.categories()[dm.AnnotationType.label]
 
@@ -2274,9 +2272,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                     ) is True
 
                     track_id = ann.attributes.pop('track_id', None)
-                    if not source: # can they duplicate in other entities?
-                        source = ann.attributes.pop('source', 'manual').lower() \
-                            if ann.attributes.get('source', '').lower() in sources else 'manual'
+                    ann.attributes.pop('source', None)
 
                     shape_type = shapes[ann.type]
                     if track_id is None or 'keyframe' not in ann.attributes or dm_dataset.format not in track_formats:
@@ -2289,8 +2285,8 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                                 ]
                                 element_occluded = element.visibility[0] == dm.Points.Visibility.hidden
                                 element_outside = element.visibility[0] == dm.Points.Visibility.absent
-                                element_source = element.attributes.pop('source').lower() \
-                                    if element.attributes.get('source', '').lower() in sources else 'manual'
+                                element_source = import_source
+                                element.attributes.pop('source', None)
                                 elements.append(instance_data.LabeledShape(
                                     type=shapes[element.type],
                                     frame=frame_number,
@@ -2312,7 +2308,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                             occluded=occluded,
                             z_order=ann.z_order if ann.type != dm.AnnotationType.cuboid_3d else 0,
                             group=group_map.get(ann.group, 0),
-                            source=source,
+                            source=import_source,
                             rotation=rotation,
                             attributes=attributes,
                             elements=elements,
@@ -2324,7 +2320,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                             tracks[track_id] = {
                                 'label': label_cat.items[ann.label].name,
                                 'group': group_map.get(ann.group, 0),
-                                'source': source,
+                                'source': import_source,
                                 'shapes': [],
                                 'elements':{},
                             }
@@ -2337,7 +2333,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                             keyframe=keyframe,
                             points=points,
                             z_order=ann.z_order if ann.type != dm.AnnotationType.cuboid_3d else 0,
-                            source=source,
+                            source=import_source,
                             rotation=rotation,
                             attributes=attributes,
                         )
@@ -2353,7 +2349,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                                     tracks[track_id]['elements'][element.label] = instance_data.Track(
                                         label=label_cat.items[element.label].name,
                                         group=0,
-                                        source=source,
+                                        source=import_source,
                                         shapes=[],
                                     )
 
@@ -2361,8 +2357,8 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                                     instance_data.Attribute(name=n, value=str(v))
                                     for n, v in element.attributes.items()
                                 ]
-                                element_source = element.attributes.pop('source').lower() \
-                                    if element.attributes.get('source', '').lower() in sources else 'manual'
+                                element.attributes.pop('source')
+                                element_source = import_source
 
                                 tracks[track_id]['elements'][element.label].shapes.append(instance_data.TrackedShape(
                                     type=shapes[element.type],
@@ -2381,7 +2377,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                         frame=frame_number,
                         label=label_cat.items[ann.label].name,
                         group=group_map.get(ann.group, 0),
-                        source='manual',
+                        source=import_source,
                         attributes=attributes,
                     ))
             except Exception as e:
