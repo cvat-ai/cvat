@@ -100,7 +100,7 @@ cmd_run() {
 
         supervisord_includes=$(_get_includes $queue_list)
     fi
-    echo "Additional supervisor configs that will be includes: $supervisord_includes"
+    echo "Additional supervisor configs that will be included: $supervisord_includes"
 
     export CVAT_POSTGRES_APPLICATION_NAME=$postgres_app_name
     export CVAT_SUPERVISORD_INCLUDES=$supervisord_includes
