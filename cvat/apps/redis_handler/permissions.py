@@ -58,6 +58,7 @@ class RequestPermission(OpenPolicyAgentPermission):
                                 JobPermission.create_scope_view(request, parsed_request_id.id)
                             )
                             continue
+                        assert False, "Unsupported operation on resource"
 
                 self = cls.create_base_perm(request, view, scope, iam_context, obj)
                 permissions.append(self)
@@ -79,7 +80,7 @@ class RequestPermission(OpenPolicyAgentPermission):
         ]
 
     def get_resource(self):
-        if owner := BaseRQMeta.for_job(self.obj).user:
+        if self.obj and (owner := BaseRQMeta.for_job(self.obj).user):
             return {
                 "owner": {
                     "id": owner.id,
