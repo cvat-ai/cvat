@@ -185,7 +185,7 @@ class TestGetAuditEvents:
 
         assert api_version == 2
 
-        request_id, response = api_client.events_api.create_file_export(
+        request_id, response = api_client.events_api.create_export(
             **kwargs, _check_status=False
         )
         assert response.status == HTTPStatus.ACCEPTED
