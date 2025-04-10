@@ -5,6 +5,7 @@
 # NOTE: importing in the utils.py header leads to circular importing
 
 import textwrap
+from datetime import datetime
 from typing import Optional
 
 from django.db.models.query import QuerySet
@@ -110,3 +111,21 @@ def get_410_response_when_checking_process_status(process_type: str, /) -> HttpR
         The common requests API should be used instead: GET /api/requests/rq_id,
         where rq_id is obtained from the response of the initializing request.
     """))
+
+class DeprecatedResponse(Response):
+    def __init__(self,
+        data=None,
+        status=None,
+        template_name=None,
+        headers=None,
+        exception=False,
+        content_type=None,
+        *,
+        deprecation_date: datetime,
+    ):
+        headers = headers or {}
+        # https://greenbytes.de/tech/webdav/draft-ietf-httpapi-deprecation-header-latest.html#the-deprecation-http-response-header-field
+        deprecation_timestamp = int(deprecation_date.timestamp())
+        headers["Deprecation"] = f"@{deprecation_timestamp}"
+
+        super().__init__(data, status, template_name, headers, exception, content_type)

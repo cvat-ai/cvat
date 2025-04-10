@@ -13,7 +13,6 @@ from dateutil import parser
 from django.conf import settings
 from django.utils import timezone
 from rest_framework import serializers, status
-from rest_framework.response import Response
 from rest_framework.reverse import reverse
 
 from cvat.apps.dataset_manager.util import ExportCacheManager
@@ -22,6 +21,7 @@ from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.rq import RQMetaWithFailureInfo
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import sendfile
+from cvat.apps.engine.view_utils import DeprecatedResponse
 from cvat.apps.events.permissions import EventsPermission
 from cvat.apps.redis_handler.background import AbstractExporter
 from cvat.apps.redis_handler.rq import RequestId
@@ -90,7 +90,10 @@ class EventsExporter(AbstractExporter):
 
     def __attrs_post_init__(self):
         super().__attrs_post_init__()
-        self.query_id = self.request.query_params.get("query_id") or uuid.uuid4()
+        if query_id := self.request.query_params.get("query_id"):
+            self.query_id = uuid.UUID(query_id)
+        else:
+            self.query_id = uuid.uuid4()
 
     def build_request_id(self):
         return RequestId(
@@ -176,9 +179,7 @@ def export(request: ExtendedRequest):
     response_data = {
         "query_id": manager.query_id,
     }
-    deprecation_timestamp = int(datetime(2025, 3, 17, tzinfo=timezone.utc).timestamp())
-    response_headers = {"Deprecation": f"@{deprecation_timestamp}"}
-
+    deprecation_date = datetime(2025, 3, 17, tzinfo=timezone.utc)
     rq_job = queue.fetch_job(request_id)
 
     if rq_job:
@@ -192,17 +193,23 @@ def export(request: ExtendedRequest):
                 return sendfile(request, file_path, attachment=True, attachment_filename=filename)
             else:
                 if os.path.exists(file_path):
-                    return Response(status=status.HTTP_201_CREATED, headers=response_headers)
+                    return DeprecatedResponse(
+                        status=status.HTTP_201_CREATED, deprecation_date=deprecation_date
+                    )
         elif rq_job.is_failed:
             rq_job_meta = RQMetaWithFailureInfo.for_job(rq_job)
             exc_info = rq_job_meta.formatted_exception or str(rq_job.exc_info)
             rq_job.delete()
-            return Response(
-                exc_info, status=status.HTTP_500_INTERNAL_SERVER_ERROR, headers=response_headers
+            return DeprecatedResponse(
+                exc_info,
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                deprecation_date=deprecation_date,
             )
         else:
-            return Response(
-                data=response_data, status=status.HTTP_202_ACCEPTED, headers=response_headers
+            return DeprecatedResponse(
+                data=response_data,
+                status=status.HTTP_202_ACCEPTED,
+                deprecation_date=deprecation_date,
             )
 
     manager.init_request_args()
@@ -210,4 +217,6 @@ def export(request: ExtendedRequest):
     manager.init_callback_with_params()
     manager.setup_new_job(queue, request_id)
 
-    return Response(data=response_data, status=status.HTTP_202_ACCEPTED)
+    return DeprecatedResponse(
+        data=response_data, status=status.HTTP_202_ACCEPTED, deprecation_date=deprecation_date
+    )
