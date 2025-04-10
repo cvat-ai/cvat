@@ -179,6 +179,14 @@ class DatasetExporter(AbstractExporter):
 class BackupExporter(AbstractExporter):
     SUPPORTED_RESOURCES = {RequestTarget.PROJECT, RequestTarget.TASK}
 
+    # def validate_request(self):
+    #     super().validate_request()
+
+    #     if isinstance(self.db_instance, Task) and self.db_instance.data is None:
+    #         raise ValidationError("Backup of a task without data is not allowed")
+    #     elif isinstance(self.db_instance, Project) and Data.objects.filter():
+    #         pass
+
     def validate_request_id(self, request_id, /) -> None:
         parsed_request_id = ExportRequestId.parse(request_id)
 
@@ -341,7 +349,7 @@ class ResourceImporter(AbstractRequestManager):
                 tf.write(chunk)
 
     @abstractmethod
-    def _init_callback_with_params(self) -> tuple[Callable, tuple]: ...
+    def _init_callback_with_params(self): ...
 
     def init_callback_with_params(self):
         # Note: self.import_args is changed here
@@ -350,26 +358,25 @@ class ResourceImporter(AbstractRequestManager):
         elif not self.import_args.file_path:
             self._handle_non_tus_file_upload()
 
+        self._init_callback_with_params()
+
         # redefine here callback and callback args in order to:
         # - (optional) download file from cloud storage
         # - remove uploaded file at the end
-        self.callback = import_resource_with_clean_up_after
-        import_func, import_func_args = self._init_callback_with_params()
 
-        if self.import_args.location == Location.LOCAL:
+        if self.import_args.location == Location.CLOUD_STORAGE:
             self.callback_args = (
-                import_func,
-                *import_func_args,
-            )
-        else:
-            self.callback_args = (
-                import_resource_from_cloud_storage,
-                import_func_args[0],
+                *self.callback_args[0],
                 db_storage,
                 key,
-                import_func,
-                *import_func_args[1:],
+                self.callback,
+                *self.callback_args[1:],
             )
+            self.callback = import_resource_from_cloud_storage
+
+        # redefine callback to clean up uploaded file
+        self.callback_args = (self.callback, *self.callback_args)
+        self.callback = import_resource_with_clean_up_after
 
 
 @attrs.define(kw_only=True)
@@ -403,20 +410,19 @@ class DatasetImporter(ResourceImporter):
 
     def _init_callback_with_params(self):
         if isinstance(self.db_instance, Project):
-            callback = dm.project.import_dataset_as_project
+            self.callback = dm.project.import_dataset_as_project
         elif isinstance(self.db_instance, Task):
-            callback = dm.task.import_task_annotations
+            self.callback = dm.task.import_task_annotations
         else:
             assert isinstance(self.db_instance, Job)
-            callback = dm.task.import_job_annotations
+            self.callback = dm.task.import_job_annotations
 
-        callback_args = (
+        self.callback_args = (
             self.import_args.file_path,
             self.db_instance.pk,
             self.import_args.format,
             self.import_args.conv_mask_to_poly,
         )
-        return callback, callback_args
 
     def validate_request(self):
         super().validate_request()
@@ -489,9 +495,8 @@ class BackupImporter(ResourceImporter):
         ).render()
 
     def _init_callback_with_params(self):
-        callback = import_project if self.resource == RequestTarget.PROJECT else import_task
-        callback_args = (self.import_args.file_path, self.user_id, self.import_args.org_id)
-        return callback, callback_args
+        self.callback = import_project if self.resource == RequestTarget.PROJECT else import_task
+        self.callback_args = (self.import_args.file_path, self.user_id, self.import_args.org_id)
 
     def finalize_request(self):
         # FUTURE-TODO: send logs to event store
