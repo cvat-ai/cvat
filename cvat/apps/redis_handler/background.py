@@ -123,7 +123,7 @@ class AbstractRequestManager(metaclass=ABCMeta):
 
         # prevent architecture bugs
         assert (
-            self.request.method == "POST"
+            "POST" == self.request.method
         ), "Only POST requests can be used to initiate a background process"
 
     def handle_existing_job(self, job: RQJob | None, queue: DjangoRQ) -> Response | None:
@@ -132,17 +132,14 @@ class AbstractRequestManager(metaclass=ABCMeta):
 
         job_status = job.get_status(refresh=False)
 
-        if job_status in {RQJobStatus.STARTED, RQJobStatus.QUEUED, RQJobStatus.DEFERRED}:
-            from cvat.apps.redis_handler.serializers import ExistedRequestIdSerializer
-
-            serializer = ExistedRequestIdSerializer(
-                {"reason": "Request is being processed", "rq_id": job.id}
-            )
-
+        if job_status in {RQJobStatus.STARTED, RQJobStatus.QUEUED}:
             return Response(
-                serializer.data,
+                data="Request is being processed",
                 status=status.HTTP_409_CONFLICT,
             )
+
+        if job_status == RQJobStatus.DEFERRED:
+            job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
 
         if job_status == RQJobStatus.SCHEDULED:
             scheduler: DjangoScheduler = django_rq.get_scheduler(queue.name, queue=queue)
