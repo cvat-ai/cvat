@@ -100,12 +100,11 @@ class AbstractRequestManager(metaclass=ABCMeta):
 
     def validate_request_id(self, request_id: str, /) -> None: ...
 
-    def get_job_by_id(self, id_: str, /, *, validate: bool = True) -> RQJob | None:
-        if validate:
-            try:
-                self.validate_request_id(id_)
-            except Exception:
-                return None
+    def get_job_by_id(self, id_: str, /) -> RQJob | None:
+        try:
+            self.validate_request_id(id_)
+        except Exception:
+            return None
 
         queue = self.get_queue()
         return queue.fetch_job(id_)
@@ -174,7 +173,7 @@ class AbstractRequestManager(metaclass=ABCMeta):
         serializer = RequestIdSerializer({"rq_id": request_id})
         return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
-    def schedule_job(self) -> Response:
+    def enqueue_job(self) -> Response:
         self.init_request_args()
         self.validate_request()
         self.init_callback_with_params()

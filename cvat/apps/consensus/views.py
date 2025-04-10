@@ -74,7 +74,7 @@ class ConsensusMergesViewSet(viewsets.GenericViewSet):
                 raise NotFound(f"Jobs {job_id} do not exist") from ex
 
         manager = merging.MergingManager(request=request, db_instance=instance)
-        return manager.schedule_job()
+        return manager.enqueue_job()
 
 
 @extend_schema(tags=["consensus"])

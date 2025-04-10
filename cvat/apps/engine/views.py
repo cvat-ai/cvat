@@ -413,11 +413,11 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def upload_finished(self, request: ExtendedRequest):
         if self.action == 'dataset':
             importer = DatasetImporter(request=request, db_instance=self._object)
-            return importer.schedule_job()
+            return importer.enqueue_job()
 
         elif self.action == 'import_backup':
             importer = BackupImporter(request=request, resource=RequestTarget.PROJECT)
-            return importer.schedule_job()
+            return importer.enqueue_job()
 
         return Response(data='Unknown upload was finished',
                         status=status.HTTP_400_BAD_REQUEST)
@@ -943,7 +943,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         @transaction.atomic
         def _handle_upload_annotations(request: ExtendedRequest):
             importer = DatasetImporter(request=request, db_instance=self._object)
-            return importer.schedule_job()
+            return importer.enqueue_job()
 
         def _handle_upload_data(request: ExtendedRequest):
             with transaction.atomic():
@@ -1007,12 +1007,12 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
             # Need to process task data when the transaction is committed
             creator = TaskCreator(request=request, db_instance=self._object, db_data=data)
-            return creator.schedule_job()
+            return creator.enqueue_job()
 
         @transaction.atomic
         def _handle_upload_backup(request: ExtendedRequest):
             importer = BackupImporter(request=request, resource=RequestTarget.TASK)
-            return importer.schedule_job()
+            return importer.enqueue_job()
 
         if self.action == 'annotations':
             return _handle_upload_annotations(request)
@@ -1605,7 +1605,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     def upload_finished(self, request: ExtendedRequest):
         if self.action == 'annotations':
             importer = DatasetImporter(request=request, db_instance=self._object)
-            return importer.schedule_job()
+            return importer.enqueue_job()
 
         return Response(data='Unknown upload was finished',
                         status=status.HTTP_400_BAD_REQUEST)

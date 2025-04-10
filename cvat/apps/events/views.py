@@ -186,7 +186,7 @@ class EventsViewSet(viewsets.ViewSet):
     def initiate_export(self, request: ExtendedRequest):
         self.check_permissions(request)
         exporter = EventsExporter(request=request)
-        return exporter.schedule_job()
+        return exporter.enqueue_job()
 
     @extend_schema(
         summary="Download a prepared file with events",

@@ -374,7 +374,7 @@ class ResourceImporter(AbstractRequestManager):
             )
             self.callback = import_resource_from_cloud_storage
 
-        # redefine callback to clean up uploaded file
+        # re-define callback to clean up uploaded file
         self.callback_args = (self.callback, *self.callback_args)
         self.callback = import_resource_with_clean_up_after
 

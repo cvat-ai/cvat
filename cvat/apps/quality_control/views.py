@@ -284,7 +284,7 @@ class QualityReportViewSet(
                 raise NotFound(f"Task {task_id} does not exist") from ex
 
             manager = qc.QualityReportRQJobManager(request=request, db_instance=task)
-            return manager.schedule_job()
+            return manager.enqueue_job()
 
         else:
             deprecation_date = datetime(2025, 3, 17, tzinfo=timezone.utc)
