@@ -76,6 +76,7 @@ spec:
           - mountPath: /home/django/models
             name: cvat-backend-data
             subPath: models
+          {{- end }}
           {{- with concat .Values.cvat.backend.additionalVolumeMounts $localValues.additionalVolumeMounts }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
