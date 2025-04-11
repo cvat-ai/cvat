@@ -108,8 +108,8 @@ class PasswordResetSerializerEx(PasswordResetSerializer):
 
     def get_email_options(self):
         domain = None
-        if hasattr(settings, "CVAT_UI_HOST") and settings.CVAT_UI_HOST:
-            domain = settings.CVAT_UI_HOST
+        if hasattr(settings, "UI_HOST") and settings.UI_HOST:
+            domain = settings.UI_HOST
             if hasattr(settings, "UI_PORT") and settings.UI_PORT:
                 domain += ":{}".format(settings.UI_PORT)
         return {"domain_override": domain}
