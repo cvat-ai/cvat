@@ -134,9 +134,11 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
         });
 
         it('Third user login. The task does not exist. Logout', () => {
-            cy.login(thirdUserName, thirdUser.password);
-            cy.contains('strong', taskName).should('not.exist');
-            cy.logout();
+            cy.then(() => {
+                cy.login(thirdUserName, thirdUser.password);
+                cy.contains('strong', taskName).should('not.exist');
+                cy.logout();
+            });
         });
 
         it('First user login and assign the job to the third user. Logout', () => {
