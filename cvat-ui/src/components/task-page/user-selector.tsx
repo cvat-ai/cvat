@@ -9,7 +9,7 @@ import Autocomplete from 'antd/lib/auto-complete';
 import Input from 'antd/lib/input';
 import debounce from 'lodash/debounce';
 
-import { User, getCore } from 'cvat-core-wrapper';
+import { User, getCore, ServerError } from 'cvat-core-wrapper';
 import { getCVATStore } from 'cvat-store';
 
 const core = getCore();
@@ -28,10 +28,15 @@ const searchUsers = debounce(
                 search: searchValue,
                 limit: 10,
                 is_active: true,
-            })
-            .then((result: User[]) => {
+            }).then((result: User[]) => {
                 if (result) {
                     setUsers(result);
+                }
+            }).catch((error: unknown) => {
+                // user may get logged out while debounding
+                // it is normal situation
+                if (!(error instanceof ServerError && error.code === 401)) {
+                    throw error;
                 }
             });
     }, 500,
