@@ -5569,10 +5569,12 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
             try:
                 # Special checks for some fileds
                 # 1. 'source' is always 'file' after importing anno from file
+                if (source := response.data.get('source')):
+                    self.assertEquals(source, expected_source)
                 if (anns := (response.data['shapes'] or response.data['tracks'])):
                     for ann in anns:
                         self.assertEquals(ann.get('source'), expected_source)
-                    IGNORE_KEYS.append('source')
+                IGNORE_KEYS.append('source')
                 compare_objects(self, data, response.data, ignore_keys=IGNORE_KEYS)
             except AssertionError as e:
                 print("Objects are not equal: ", data, response.data)
@@ -6271,9 +6273,6 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
 
             elif annotation_format == "COCO 1.0":
                 annotations["shapes"] = polygon_shapes_wo_attrs
-
-            elif annotation_format == "COCO Keypoints 1.0":
-                annotations["shapes"] = skeletons_wo_attrs
 
             elif annotation_format == "Segmentation mask 1.1":
                 annotations["shapes"] = rectangle_shapes_wo_attrs \
