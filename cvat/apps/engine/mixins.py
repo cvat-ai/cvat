@@ -30,7 +30,7 @@ from cvat.apps.engine.models import Location, RequestAction, RequestSubresource,
 from cvat.apps.engine.rq import RequestId
 from cvat.apps.engine.serializers import DataSerializer
 from cvat.apps.engine.types import ExtendedRequest
-from cvat.apps.redis_handler.serializers import RequestIdSerializer
+from cvat.apps.redis_handler.serializers import RqIdSerializer
 
 slogger = ServerLogManager(__name__)
 
@@ -439,7 +439,7 @@ class DatasetMixin:
         ],
         request=OpenApiTypes.NONE,
         responses={
-            '202': OpenApiResponse(response=RequestIdSerializer, description='Exporting has been started'),
+            '202': OpenApiResponse(response=RqIdSerializer, description='Exporting has been started'),
             '405': OpenApiResponse(description='Format is not available'),
             '409': OpenApiResponse(description='Exporting is already in progress'),
         },
@@ -488,7 +488,7 @@ class BackupMixin:
         ],
         request=OpenApiTypes.NONE,
         responses={
-            '202': OpenApiResponse(response=RequestIdSerializer, description='Creating a backup file has been started'),
+            '202': OpenApiResponse(response=RqIdSerializer, description='Creating a backup file has been started'),
             '400': OpenApiResponse(description='Wrong query parameters were passed'),
             '409': OpenApiResponse(description='The backup process has already been initiated and is not yet finished'),
         },

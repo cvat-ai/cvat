@@ -16,7 +16,7 @@ from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.events.export import EventsExporter
 from cvat.apps.events.serializers import ClientEventsSerializer
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
-from cvat.apps.redis_handler.serializers import RequestIdSerializer
+from cvat.apps.redis_handler.serializers import RqIdSerializer
 
 from .const import USER_ACTIVITY_SCOPE
 from .export import export
@@ -179,7 +179,7 @@ class EventsViewSet(viewsets.ViewSet):
             ),
         ],
         responses={
-            "202": OpenApiResponse(RequestIdSerializer),
+            "202": OpenApiResponse(RqIdSerializer),
         },
     )
     @action(detail=False, methods=["POST"], url_path="export")

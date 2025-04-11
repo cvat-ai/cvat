@@ -33,7 +33,7 @@ from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
 from cvat.apps.engine.rq import BaseRQMeta, ExportRQMeta, define_dependent_job
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import get_rq_lock_by_user, get_rq_lock_for_job, sendfile
-from cvat.apps.redis_handler.serializers import RequestIdSerializer
+from cvat.apps.redis_handler.serializers import RqIdSerializer
 
 slogger = ServerLogManager(__name__)
 
@@ -170,7 +170,7 @@ class AbstractRequestManager(metaclass=ABCMeta):
         """Hook to run some actions (e.g. collect events) after processing a request"""
 
     def get_response(self, request_id: str) -> Response:
-        serializer = RequestIdSerializer({"rq_id": request_id})
+        serializer = RqIdSerializer({"rq_id": request_id})
         return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
     def enqueue_job(self) -> Response:

@@ -27,7 +27,7 @@ from cvat.apps.redis_handler.rq import CustomRQJob, RequestId
 slogger = ServerLogManager(__name__)
 
 
-class RequestIdSerializer(serializers.Serializer):
+class RqIdSerializer(serializers.Serializer):
     rq_id = serializers.CharField(help_text="Request id")
 
 

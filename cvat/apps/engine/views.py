@@ -142,7 +142,7 @@ from cvat.apps.engine.view_utils import (
 )
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.iam.permissions import IsAuthenticatedOrReadPublicResource, PolicyEnforcer
-from cvat.apps.redis_handler.serializers import RequestIdSerializer
+from cvat.apps.redis_handler.serializers import RqIdSerializer
 from utils.dataset_manifest import ImageManifestManager
 
 from . import models
@@ -371,7 +371,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         ],
         request=UploadedZipFileSerializer(required=False),
         responses={
-            '202': OpenApiResponse(RequestIdSerializer, description='Importing has been started'),
+            '202': OpenApiResponse(RqIdSerializer, description='Importing has been started'),
             '400': OpenApiResponse(description='Failed to import dataset'),
             '405': OpenApiResponse(description='Format is not available'),
         })
@@ -457,7 +457,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         ],
         request=UploadedZipFileSerializer(required=False),
         responses={
-            '202': OpenApiResponse(RequestIdSerializer, description='Import of a backup file has started'),
+            '202': OpenApiResponse(RqIdSerializer, description='Import of a backup file has started'),
         })
     @action(detail=False, methods=['OPTIONS', 'POST'], url_path=r'backup/?$',
         serializer_class=None,
@@ -805,7 +805,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         ],
         request=UploadedZipFileSerializer(required=False),
         responses={
-            '202': OpenApiResponse(RequestIdSerializer, description='Import of a backup file has started'),
+            '202': OpenApiResponse(RqIdSerializer, description='Import of a backup file has started'),
         })
 
     @action(detail=False, methods=['OPTIONS', 'POST'], url_path=r'backup/?$',
@@ -1098,10 +1098,10 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '202': OpenApiResponse(
                 response=PolymorphicProxySerializer(
                     component_name='DataResponse',
-                    # FUTURE-FIXME: endpoint should return RequestIdSerializer or OpenApiTypes.NONE
-                    # but SDK generated from a schema with nullable RequestIdSerializer
+                    # FUTURE-FIXME: endpoint should return RqIdSerializer or OpenApiTypes.NONE
+                    # but SDK generated from a schema with nullable RqIdSerializer
                     # throws an error when tried to convert empty response to a specific type
-                    serializers=[RequestIdSerializer, OpenApiTypes.BINARY],
+                    serializers=[RqIdSerializer, OpenApiTypes.BINARY],
                     resource_type_field_name=None
                 ),
 
@@ -1205,7 +1205,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         request=UploadedFileSerializer(required=False),
         responses={
             '201': OpenApiResponse(description='Uploading has finished'),
-            '202': OpenApiResponse(RequestIdSerializer, description='Uploading has been started'),
+            '202': OpenApiResponse(RqIdSerializer, description='Uploading has been started'),
             '405': OpenApiResponse(description='Format is not available'),
         })
     @extend_schema(methods=['PUT'], summary='Replace task annotations',
@@ -1678,7 +1678,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         request=UploadedFileSerializer(required=False),
         responses={
             '201': OpenApiResponse(description='Uploading has finished'),
-            '202': OpenApiResponse(RequestIdSerializer, description='Uploading has been started'),
+            '202': OpenApiResponse(RqIdSerializer, description='Uploading has been started'),
             '405': OpenApiResponse(description='Format is not available'),
         })
     @extend_schema(

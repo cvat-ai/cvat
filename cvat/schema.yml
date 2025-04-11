@@ -982,7 +982,7 @@ paths:
           content:
             application/vnd.cvat+json:
               schema:
-                $ref: '#/components/schemas/RequestId'
+                $ref: '#/components/schemas/RqId'
           description: |
             A consensus merge request has been enqueued, the request id is returned.
             The request status can be checked by using common requests API: GET /api/requests/<rq_id>
@@ -1314,7 +1314,7 @@ paths:
           content:
             application/vnd.cvat+json:
               schema:
-                $ref: '#/components/schemas/RequestId'
+                $ref: '#/components/schemas/RqId'
           description: ''
   /api/guides:
     post:
@@ -2355,7 +2355,7 @@ paths:
           content:
             application/vnd.cvat+json:
               schema:
-                $ref: '#/components/schemas/RequestId'
+                $ref: '#/components/schemas/RqId'
           description: Uploading has been started
         '405':
           description: Format is not available
@@ -2620,7 +2620,7 @@ paths:
           content:
             application/vnd.cvat+json:
               schema:
-                $ref: '#/components/schemas/RequestId'
+                $ref: '#/components/schemas/RqId'
           description: Exporting has been started
         '405':
           description: Format is not available
@@ -3722,7 +3722,7 @@ paths:
           content:
             application/vnd.cvat+json:
               schema:
-                $ref: '#/components/schemas/RequestId'
+                $ref: '#/components/schemas/RqId'
           description: Creating a backup file has been started
         '400':
           description: Wrong query parameters were passed
@@ -3792,7 +3792,7 @@ paths:
           content:
             application/vnd.cvat+json:
               schema:
-                $ref: '#/components/schemas/RequestId'
+                $ref: '#/components/schemas/RqId'
           description: Importing has been started
         '400':
           description: Failed to import dataset
@@ -3859,7 +3859,7 @@ paths:
           content:
             application/vnd.cvat+json:
               schema:
-                $ref: '#/components/schemas/RequestId'
+                $ref: '#/components/schemas/RqId'
           description: Exporting has been started
         '405':
           description: Format is not available
@@ -3961,7 +3961,7 @@ paths:
           content:
             application/vnd.cvat+json:
               schema:
-                $ref: '#/components/schemas/RequestId'
+                $ref: '#/components/schemas/RqId'
           description: Import of a backup file has started
   /api/quality/conflicts:
     get:
@@ -4205,7 +4205,7 @@ paths:
           content:
             application/vnd.cvat+json:
               schema:
-                $ref: '#/components/schemas/RequestId'
+                $ref: '#/components/schemas/RqId'
           description: |
             A quality report request has been enqueued, the request id is returned.
             The request status can be checked at this endpoint by passing the rq_id
@@ -5149,7 +5149,7 @@ paths:
           content:
             application/vnd.cvat+json:
               schema:
-                $ref: '#/components/schemas/RequestId'
+                $ref: '#/components/schemas/RqId'
           description: Uploading has been started
         '405':
           description: Format is not available
@@ -5291,7 +5291,7 @@ paths:
           content:
             application/vnd.cvat+json:
               schema:
-                $ref: '#/components/schemas/RequestId'
+                $ref: '#/components/schemas/RqId'
           description: Creating a backup file has been started
         '400':
           description: Wrong query parameters were passed
@@ -5572,7 +5572,7 @@ paths:
           content:
             application/vnd.cvat+json:
               schema:
-                $ref: '#/components/schemas/RequestId'
+                $ref: '#/components/schemas/RqId'
           description: Exporting has been started
         '405':
           description: Format is not available
@@ -5789,7 +5789,7 @@ paths:
           content:
             application/vnd.cvat+json:
               schema:
-                $ref: '#/components/schemas/RequestId'
+                $ref: '#/components/schemas/RqId'
           description: Import of a backup file has started
   /api/users:
     get:
@@ -7144,7 +7144,7 @@ components:
       - image_quality
     DataResponse:
       oneOf:
-      - $ref: '#/components/schemas/RequestId'
+      - $ref: '#/components/schemas/RqId'
       - type: string
         format: binary
     DatasetFormat:
@@ -9921,14 +9921,6 @@ components:
       required:
       - target
       - type
-    RequestId:
-      type: object
-      properties:
-        rq_id:
-          type: string
-          description: Request id
-      required:
-      - rq_id
     RequestStatus:
       enum:
       - queued
@@ -9959,6 +9951,14 @@ components:
         * `supervisor` - Supervisor
         * `maintainer` - Maintainer
         * `owner` - Owner
+    RqId:
+      type: object
+      properties:
+        rq_id:
+          type: string
+          description: Request id
+      required:
+      - rq_id
     RqStatus:
       type: object
       properties:

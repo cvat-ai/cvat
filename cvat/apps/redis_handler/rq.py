@@ -72,7 +72,7 @@ class RequestId:
             [
                 self.KEY_VAL_SEP.join([k, v])
                 for k, v in {
-                    "queue": self.queue,  # TODO: probably can be added in RequestIdSerializer?
+                    "queue": self.queue,
                     "action": str(self.action),
                     "target": str(self.target),
                     "id": str(self.id),

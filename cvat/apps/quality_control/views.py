@@ -44,7 +44,7 @@ from cvat.apps.quality_control.serializers import (
     QualityReportSerializer,
     QualitySettingsSerializer,
 )
-from cvat.apps.redis_handler.serializers import RequestIdSerializer
+from cvat.apps.redis_handler.serializers import RqIdSerializer
 
 
 @extend_schema(tags=["quality"])
@@ -250,7 +250,7 @@ class QualityReportViewSet(
         responses={
             "201": QualityReportSerializer,
             "202": OpenApiResponse(
-                RequestIdSerializer,
+                RqIdSerializer,
                 description=textwrap.dedent(
                     """\
                     A quality report request has been enqueued, the request id is returned.
@@ -288,7 +288,7 @@ class QualityReportViewSet(
 
         else:
             deprecation_date = datetime(2025, 3, 17, tzinfo=timezone.utc)
-            serializer = RequestIdSerializer(data={"rq_id": rq_id})
+            serializer = RqIdSerializer(data={"rq_id": rq_id})
             serializer.is_valid(raise_exception=True)
             rq_id = serializer.validated_data["rq_id"]
             rq_job = qc.QualityReportRQJobManager(request=request).get_job_by_id(rq_id)

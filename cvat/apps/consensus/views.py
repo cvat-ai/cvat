@@ -25,7 +25,7 @@ from cvat.apps.engine.mixins import PartialUpdateModelMixin
 from cvat.apps.engine.models import Job, Task
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.view_utils import get_410_response_when_checking_process_status
-from cvat.apps.redis_handler.serializers import RequestIdSerializer
+from cvat.apps.redis_handler.serializers import RqIdSerializer
 
 
 @extend_schema(tags=["consensus"])
@@ -38,7 +38,7 @@ class ConsensusMergesViewSet(viewsets.GenericViewSet):
         request=ConsensusMergeCreateSerializer,
         responses={
             "202": OpenApiResponse(
-                RequestIdSerializer,
+                RqIdSerializer,
                 description=textwrap.dedent(
                     """\
                     A consensus merge request has been enqueued, the request id is returned.
