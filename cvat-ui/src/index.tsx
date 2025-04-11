@@ -148,13 +148,5 @@ window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => 
 });
 
 window.addEventListener('error', (errorEvent: ErrorEvent) => {
-    const { error } = errorEvent;
-
-    // workaround recommended in https://github.com/facebook/react/issues/10474
-    // to avoid double logging in dev as react rendering errors logged in componentDidCatch
-    if (typeof error?.stack === 'string' && error.stack.indexOf('invokeGuardedCallbackDev') >= 0) {
-        return;
-    }
-
-    logError(error, false, { type: 'error' });
+    logError(errorEvent.error, false, { type: 'error' });
 });
