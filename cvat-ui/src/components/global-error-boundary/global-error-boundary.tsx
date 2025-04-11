@@ -78,14 +78,10 @@ class GlobalErrorBoundary extends React.PureComponent<Props, State> {
     }
 
     public componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
-        const extras = {
+        logError(error, true, {
             type: 'component',
             componentStack: errorInfo.componentStack,
-        };
-
-        if (error instanceof Error) {
-            logError(error, true, extras);
-        }
+        });
     }
 
     public render(): React.ReactNode {

@@ -12,7 +12,11 @@ const core = getCore();
 const { logger } = core;
 const { EventScope } = core.enums;
 
-export function logError(error: Error, save: boolean, extras = {}): boolean {
+export function logError(error: unknown, save: boolean, extras = {}): void {
+    if (!(error instanceof Error)) {
+        console.error('Unknown error caught', error);
+        return;
+    }
     // stack is not guaranteed by ECMA but
     // de facto implemented by all major JavaScript engines
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error/stack
@@ -26,6 +30,10 @@ export function logError(error: Error, save: boolean, extras = {}): boolean {
             stack: error.stack,
             ...extras,
         };
+
+        if (!payload.filename) {
+            return;
+        }
 
         const state: CombinedState = getCVATStore().getState();
         const { instance: job } = state.annotation.job;
@@ -46,8 +54,6 @@ export function logError(error: Error, save: boolean, extras = {}): boolean {
             logger.save().catch(onError);
         }
     }
-
-    return false;
 }
 
 export default logger;

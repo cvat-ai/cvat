@@ -144,26 +144,17 @@ root.render((
 ));
 
 window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
-    const { reason } = event;
-    if (reason instanceof Error) {
-        return logError(reason, false, { type: 'unhandledrejection' });
-    }
-
-    return false;
+    logError(event.reason, false, { type: 'unhandledrejection' });
 });
 
-window.addEventListener('error', (errorEvent: ErrorEvent): boolean => {
+window.addEventListener('error', (errorEvent: ErrorEvent) => {
     const { error } = errorEvent;
 
     // workaround recommended in https://github.com/facebook/react/issues/10474
     // to avoid double logging in dev as react rendering errors logged in componentDidCatch
     if (typeof error?.stack === 'string' && error.stack.indexOf('invokeGuardedCallbackDev') >= 0) {
-        return true;
+        return;
     }
 
-    if (error instanceof Error) {
-        return logError(error, false, { type: 'error' });
-    }
-
-    return false;
+    logError(error, false, { type: 'error' });
 });
