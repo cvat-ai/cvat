@@ -17,7 +17,7 @@ import { getUserAgreementsAsync } from 'actions/useragreements-actions';
 import CVATApplication from 'components/cvat-app';
 import PluginsEntrypoint from 'components/plugins-entrypoint';
 import LayoutGrid from 'components/layout-grid/layout-grid';
-import logger, { EventScope } from 'cvat-logger';
+import { logError } from 'cvat-logger';
 import createCVATStore, { getCVATStore } from 'cvat-store';
 import createRootReducer from 'reducers/root-reducer';
 import { activateOrganizationAsync } from 'actions/organization-actions';
@@ -143,41 +143,26 @@ root.render((
     </Provider>
 ));
 
+window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
+    const { reason } = event;
+    if (reason instanceof Error) {
+        return logError(reason, false, { type: 'unhandledrejection' });
+    }
+
+    return false;
+});
+
 window.addEventListener('error', (errorEvent: ErrorEvent): boolean => {
-    const {
-        filename, lineno, colno, error,
-    } = errorEvent;
+    const { error } = errorEvent;
 
-    if (
-        filename && typeof lineno === 'number' &&
-        typeof colno === 'number' && error
-    ) {
-        // weird react behaviour
-        // it also gets event only in development environment, caught and handled in componentDidCatch
-        // discussion is here https://github.com/facebook/react/issues/10474
-        // and workaround is:
-        if (error.stack && error.stack.indexOf('invokeGuardedCallbackDev') >= 0) {
-            return true;
-        }
+    // workaround recommended in https://github.com/facebook/react/issues/10474
+    // to avoid double logging in dev as react rendering errors logged in componentDidCatch
+    if (typeof error?.stack === 'string' && error.stack.indexOf('invokeGuardedCallbackDev') >= 0) {
+        return true;
+    }
 
-        const logPayload = {
-            filename: errorEvent.filename,
-            line: errorEvent.lineno,
-            message: errorEvent.error.message,
-            column: errorEvent.colno,
-            stack: errorEvent.error.stack,
-        };
-
-        const store = getCVATStore();
-        const state: CombinedState = store.getState();
-        const { pathname } = window.location;
-        const re = /\/tasks\/[0-9]+\/jobs\/[0-9]+$/;
-        const { instance: job } = state.annotation.job;
-        if (re.test(pathname) && job) {
-            job.logger.log(EventScope.exception, logPayload);
-        } else {
-            logger.log(EventScope.exception, logPayload);
-        }
+    if (error instanceof Error) {
+        return logError(error, false, { type: 'error' });
     }
 
     return false;
