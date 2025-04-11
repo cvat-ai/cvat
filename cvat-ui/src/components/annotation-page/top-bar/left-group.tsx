@@ -21,6 +21,12 @@ import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { finishDrawAvailable } from 'utils/drawing';
 import SaveAnnotationsButton from './save-annotations-button';
 
+import { useTranslation } from 'react-i18next';
+import i18n from 'i18n';
+import { localeOptions } from 'i18n/config';
+
+const { t } = useTranslation('base');
+
 interface Props {
     saving: boolean;
     undoAction?: string;
@@ -121,7 +127,7 @@ function LeftGroup(props: Props): JSX.Element {
             <Col className='cvat-annotation-header-left-group'>
                 <AnnotationMenuComponent />
                 <SaveAnnotationsButton />
-                <CVATTooltip overlay={`Undo: ${undoAction} ${undoShortcut}`}>
+                <CVATTooltip overlay={t(`Undo: ${undoAction}`) +` ${undoShortcut}`}>
                     <Button
                         style={{ pointerEvents: undoAction ? 'initial' : 'none', opacity: undoAction ? 1 : 0.5 }}
                         type='link'
@@ -132,7 +138,7 @@ function LeftGroup(props: Props): JSX.Element {
                         <span>Undo</span>
                     </Button>
                 </CVATTooltip>
-                <CVATTooltip overlay={`Redo: ${redoAction} ${redoShortcut}`}>
+                <CVATTooltip overlay={t(`Redo: ${redoAction}`) + ` ${redoShortcut}`}>
                     <Button
                         style={{ pointerEvents: redoAction ? 'initial' : 'none', opacity: redoAction ? 1 : 0.5 }}
                         type='link'
@@ -144,7 +150,7 @@ function LeftGroup(props: Props): JSX.Element {
                     </Button>
                 </CVATTooltip>
                 {includesDoneButton ? (
-                    <CVATTooltip overlay={`Press "${drawShortcut}" to finish`}>
+                    <CVATTooltip overlay={t(`Press `) + "${drawShortcut}" +t(` to finish`)}>
                         <Button type='link' className='cvat-annotation-header-done-button cvat-annotation-header-button' onClick={onFinishDraw}>
                             <CheckCircleOutlined />
                             Done
@@ -152,7 +158,7 @@ function LeftGroup(props: Props): JSX.Element {
                     </CVATTooltip>
                 ) : null}
                 {includesToolsBlockerButton ? (
-                    <CVATTooltip overlay={`Press "${switchToolsBlockerShortcut}" to postpone running the algorithm `}>
+                    <CVATTooltip overlay={t(`Press "${switchToolsBlockerShortcut}" to postpone running the algorithm `)}>
                         <Button
                             type='link'
                             className={`cvat-annotation-header-block-tool-button cvat-annotation-header-button ${

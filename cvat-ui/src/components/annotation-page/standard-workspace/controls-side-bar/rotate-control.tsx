@@ -12,6 +12,12 @@ import { Rotation } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import withVisibilityHandling from './handle-popover-visibility';
 
+import { useTranslation } from 'react-i18next';
+import i18n from 'i18n';
+import { localeOptions } from 'i18n/config';
+
+const { t } = useTranslation('base');
+
 export interface Props {
     clockwiseShortcut: string;
     anticlockwiseShortcut: string;
@@ -27,7 +33,7 @@ function RotateControl(props: Props): JSX.Element {
             placement='right'
             content={(
                 <>
-                    <CVATTooltip title={`Rotate the image anticlockwise ${anticlockwiseShortcut}`} placement='topRight'>
+                    <CVATTooltip title={t(`Rotate the image anticlockwise`)+` ${anticlockwiseShortcut}`} placement='topRight'>
                         <Icon
                             className='cvat-rotate-canvas-controls-left'
                             onClick={(): void => rotateFrame(Rotation.ANTICLOCKWISE90)}

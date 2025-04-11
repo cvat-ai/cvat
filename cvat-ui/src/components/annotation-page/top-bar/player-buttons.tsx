@@ -28,6 +28,12 @@ import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
 
+import { useTranslation } from 'react-i18next';
+import i18n from 'i18n';
+import { localeOptions } from 'i18n/config';
+
+const { t } = useTranslation('base');
+
 interface Props {
     playing: boolean;
     playPauseShortcut: string;
@@ -196,7 +202,7 @@ function PlayerButtons(props: Props): JSX.Element {
     return (
         <Col className='cvat-player-buttons'>
             <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
-            <CVATTooltip title='Go to the first frame'>
+            <CVATTooltip title={t('Go to the first frame')}>
                 <Icon
                     style={navIconStyle}
                     className='cvat-player-first-button'

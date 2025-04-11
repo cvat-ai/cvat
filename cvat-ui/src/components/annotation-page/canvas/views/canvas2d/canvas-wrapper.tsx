@@ -66,6 +66,13 @@ import { subKeyMap } from 'utils/component-subkeymap';
 import ImageSetupsContent from './image-setups-content';
 import CanvasTipsComponent from './canvas-hints';
 
+// translation
+import { useTranslation } from 'react-i18next';
+import i18n from 'i18n';
+import { localeOptions } from 'i18n/config';
+
+const { t } = useTranslation('base');
+
 const cvat = getCore();
 const MAX_DISTANCE_TO_OPEN_SHAPE = 50;
 
@@ -1164,7 +1171,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                         defaultValue={0}
                         onChange={(value: number): void => onSwitchZLayer(value as number)}
                     />
-                    <CVATTooltip title={`Add new layer ${maxZLayer + 1} and switch to it`}>
+                    <CVATTooltip title={t(`Add new layer ${maxZLayer + 1} and switch to it`)}>
                         <PlusCircleOutlined onClick={onAddZLayer} />
                     </CVATTooltip>
                 </div>

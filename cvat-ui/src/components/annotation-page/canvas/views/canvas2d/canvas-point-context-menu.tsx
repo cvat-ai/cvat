@@ -13,6 +13,12 @@ import { updateAnnotationsAsync, updateCanvasContextMenu } from 'actions/annotat
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { ShapeType } from 'cvat-core-wrapper';
 
+import { useTranslation } from 'react-i18next';
+import i18n from 'i18n';
+import { localeOptions } from 'i18n/config';
+
+const { t } = useTranslation('base');
+
 interface StateToProps {
     activatedState: any | null;
     selectedPoint: number | null;
@@ -109,7 +115,7 @@ function CanvasPointContextMenu(props: Props): React.ReactPortal | null {
                     (contextMenuFor.shapeType === ShapeType.POLYLINE && contextMenuFor.points.length > 4) ||
                     (contextMenuFor.shapeType === ShapeType.POINTS && contextMenuFor.points.length > 2)) &&
                 (
-                    <CVATTooltip title='Delete point [Alt + dblclick]'>
+                    <CVATTooltip title={t('Delete point [Alt + dblclick]')}>
                         <Button
                             type='link'
                             icon={<DeleteOutlined />}

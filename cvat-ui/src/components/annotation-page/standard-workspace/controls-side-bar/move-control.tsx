@@ -11,6 +11,12 @@ import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
+import { useTranslation } from 'react-i18next';
+import i18n from 'i18n';
+import { localeOptions } from 'i18n/config';
+
+const { t } = useTranslation('base');
+
 export interface Props {
     canvasInstance: Canvas | Canvas3d;
     activeControl: ActiveControl;
@@ -20,7 +26,7 @@ function MoveControl(props: Props): JSX.Element {
     const { canvasInstance, activeControl } = props;
 
     return (
-        <CVATTooltip title='Move the image' placement='right'>
+        <CVATTooltip title={t('Move the image')} placement='right'>
             <Icon
                 component={MoveIcon}
                 className={

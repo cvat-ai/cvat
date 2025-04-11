@@ -20,6 +20,12 @@ import {
     DimensionType, Job, ObjectType, ShapeType,
 } from 'cvat-core-wrapper';
 
+import { useTranslation } from 'react-i18next';
+import i18n from 'i18n';
+import { localeOptions } from 'i18n/config';
+
+const { t } = useTranslation('base');
+
 interface Props {
     readonly: boolean;
     serverID: number | null;
@@ -78,7 +84,7 @@ function MakeCopyItem(props: ItemProps): JSX.Element {
     const { toolProps } = props;
     const { copyShortcut, pasteShortcut, copy } = toolProps;
     return (
-        <CVATTooltip title={`${copyShortcut} and ${pasteShortcut}`}>
+        <CVATTooltip title={`${copyShortcut}` + t(` and `) + `${pasteShortcut}`}>
             <Button
                 className='cvat-object-item-menu-make-copy'
                 type='link'
