@@ -24,8 +24,8 @@ RUN apt-get update && \
         cargo \
     && rm -rf /var/lib/apt/lists/*
 
-# RUN git config --global http.proxy "192.16.16.182:7890";
-# RUN git config --global https.proxy "192.16.16.182:7890";
+RUN git config --global http.proxy "192.16.16.182:7890";
+RUN git config --global https.proxy "192.16.16.182:7890";
 
 ARG PIP_VERSION
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
