@@ -38,18 +38,17 @@ export function logError(error: unknown, save: boolean, extras = {}): void {
         const state: CombinedState = getCVATStore().getState();
         const { instance: job } = state.annotation.job;
 
-        if (job) {
-            job.logger.log(EventScope.exception, payload);
-        } else {
-            logger.log(EventScope.exception, payload);
-        }
-
         const onError = (_error: unknown): void => {
             const message = 'Error occured during another error logging';
             console.error(message, _error instanceof Error ? _error.message : String(_error));
         };
 
-        (job ? job.logger : logger).log(EventScope.exception, payload).catch(onError);
+        if (job) {
+            job.logger.log(EventScope.exception, payload).catch(onError);
+        } else {
+            logger.log(EventScope.exception, payload).catch(onError);
+        }
+
         if (save) {
             logger.save().catch(onError);
         }
