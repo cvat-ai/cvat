@@ -2140,7 +2140,7 @@ def match_dm_item(
 def find_dataset_root(
     dm_dataset: dm.IDataset, instance_data: Union[ProjectData, CommonData]
 ) -> Optional[str]:
-    longest_path_item = max(dm_dataset.shallow_items(), key=lambda item: len(Path(item.id).parts), default=None)
+    longest_path_item = max(dm_dataset, key=lambda item: len(Path(item.id).parts), default=None)
     if longest_path_item is None:
         return None
     longest_path = longest_path_item.id
@@ -2473,7 +2473,7 @@ def load_dataset_data(project_annotation, dataset: dm.Dataset, project_data):
         }
 
         root_paths = set()
-        for dataset_item in subset_dataset.shallow_items():
+        for dataset_item in subset_dataset:
             if isinstance(dataset_item.media, dm.Image) and dataset_item.media.has_data:
                 dataset_files['media'].append(dataset_item.media.path)
                 data_root = dataset_item.media.path.rsplit(dataset_item.id, 1)

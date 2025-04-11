@@ -683,12 +683,9 @@ class FrameMatchingTest(_DbTestBase):
                 task = self._generate_task(images)
                 task_data = TaskData(AnnotationIR('2d'),
                     Task.objects.get(pk=task["id"]))
+                dataset = [DatasetItem(id=osp.splitext(p)[0]) for p in dataset_paths]
 
-                class MockDataset:
-                    def shallow_items(self):
-                        yield from [DatasetItem(id=osp.splitext(p)[0]) for p in dataset_paths]
-
-                root = find_dataset_root(MockDataset(), task_data)
+                root = find_dataset_root(dataset, task_data)
                 self.assertEqual(expected, root)
 
 

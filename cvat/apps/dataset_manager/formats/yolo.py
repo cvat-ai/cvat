@@ -66,12 +66,7 @@ def _import_common(
         extractor.name_from_path(osp.relpath(p, temp_dir))
         for p in glob(osp.join(temp_dir, "**", "*.txt"), recursive=True)
     ]
-
-    class MockDataset:
-        def shallow_items(self):
-            yield from [DatasetItem(id=frame) for frame in frames]
-
-    root_hint = find_dataset_root(MockDataset(), instance_data)
+    root_hint = find_dataset_root([DatasetItem(id=frame) for frame in frames], instance_data)
     for frame in frames:
         frame_info = None
         try:

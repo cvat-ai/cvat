@@ -68,11 +68,9 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
         image_meta = {}
         item_ids = list(find_item_ids(temp_dir))
 
-        class MockDataset:
-            def shallow_items(self):
-                yield from [DatasetItem(id=item_id) for item_id in item_ids]
-
-        root_hint = find_dataset_root(MockDataset(), instance_data)
+        root_hint = find_dataset_root(
+            [DatasetItem(id=item_id) for item_id in item_ids], instance_data
+        )
 
         for item_id in item_ids:
             frame_info = None

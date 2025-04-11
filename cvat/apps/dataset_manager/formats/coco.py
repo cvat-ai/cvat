@@ -62,12 +62,13 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
 class RemoveBboxAnnotations(ItemTransform):
     # Boxes would have invalid (skeleton) labels, so remove them
     # TODO: find a way to import boxes
-    IS_SHALLOW_FRIENDLY = True
     KEEPS_SUBSETS_INTACT = True
 
     def transform_item(self, item):
-        annotations = [ann for ann in item.annotations if ann.type != AnnotationType.bbox]
-        return item.wrap(annotations=annotations)
+        def convert_annotations():
+            return [ann for ann in item.annotations if ann.type != AnnotationType.bbox]
+
+        return item.wrap(annotations=convert_annotations)
 
 
 @importer(name="COCO Keypoints", ext="JSON, ZIP", version="1.0")

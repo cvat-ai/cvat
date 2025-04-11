@@ -141,7 +141,6 @@ class TestExtractors(TestCase):
                     # does not convert annotations to get various dataset properties
                     len(dataset)
                     list(dataset.subsets())
-                    list(dataset.shallow_items())
                     assert extractor.item_anns_processed == 0
 
                     # does not convert annotations to get various subset properties
@@ -149,7 +148,13 @@ class TestExtractors(TestCase):
                         subset_dataset = dataset.get_subset(subset).as_dataset()
                         len(subset_dataset)
                         list(subset_dataset.subsets())
-                        list(subset_dataset.shallow_items())
+                    assert extractor.item_anns_processed == 0
+
+                    # does not convert annotations to iterate items
+                    list(dataset)
+                    for subset in dataset.subsets():
+                        subset_dataset = dataset.get_subset(subset).as_dataset()
+                        list(subset_dataset)
                     assert extractor.item_anns_processed == 0
 
                     # initiates annotations only when they are accessed
