@@ -505,7 +505,14 @@ class LambdaFunction:
 
             db_attr_type = db_attr["input_type"]
             if db_attr_type == "number":
-                return value.isnumeric()
+                min_value, max_value, step = map(int, db_attr["values"].split("\n"))
+
+                try:
+                    value_num = int(value)
+                except ValueError:
+                    return False
+
+                return min_value <= value_num <= max_value and (value_num - min_value) % step == 0
             elif db_attr_type == "checkbox":
                 return value in ["true", "false"]
             elif db_attr_type == "text":
