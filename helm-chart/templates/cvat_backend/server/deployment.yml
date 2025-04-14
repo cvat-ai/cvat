@@ -54,12 +54,13 @@ spec:
           resources:
           {{- toYaml . | nindent 12 }}
           {{- end }}
-          args: ["run", "server"]
+          args:
+          - "run"
+          - "server"
           env:
           - name: ALLOWED_HOSTS
             value: {{ $localValues.envs.ALLOWED_HOSTS | squote}}
           {{ include "cvat.sharedBackendEnv" . | indent 10 }}
-          {{ include "cvat.sharedClickhouseEnv" . | indent 10 }}
           {{- with concat .Values.cvat.backend.additionalEnv $localValues.additionalEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
