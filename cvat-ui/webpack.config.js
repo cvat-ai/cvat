@@ -72,6 +72,12 @@ module.exports = (env) => {
                 target: env && env.API_URL,
                 secure: false,
                 changeOrigin: true,
+                onProxyReq: (proxyReq, req) => {
+                    const forwardedHost = req.headers.host;
+                    if (forwardedHost) {
+                        proxyReq.setHeader('X-FORWARDED-HOST', forwardedHost);
+                    }
+                },
             }],
         },
         resolve: {
