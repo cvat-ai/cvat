@@ -33,6 +33,8 @@ module.exports = (env) => {
     console.log('Source maps: ', sourceMapsDisabled ? 'disabled' : 'enabled');
     console.log('List of plugins: ', Object.values(transformedPlugins).map((plugin) => plugin.import));
 
+    const host = process.env.CVAT_UI_HOST ?? 'localhost';
+    const port = process.env.CVAT_UI_PORT ?? 3000;
     return {
         target: 'web',
         mode: 'production',
@@ -47,13 +49,13 @@ module.exports = (env) => {
             publicPath: '/',
         },
         devServer: {
+            host,
+            port,
             compress: false,
-            host: process.env.CVAT_UI_HOST ?? 'localhost',
             client: {
                 overlay: false,
                 webSocketURL: 'ws://0.0.0.0:0/ws',
             },
-            port: process.env.CVAT_UI_PORT ?? 3000,
             historyApiFallback: true,
             static: {
                 directory: path.join(__dirname, 'dist'),
@@ -72,11 +74,8 @@ module.exports = (env) => {
                 target: env && env.API_URL,
                 secure: false,
                 changeOrigin: true,
-                onProxyReq: (proxyReq, req) => {
-                    const forwardedHost = req.headers.host;
-                    if (forwardedHost) {
-                        proxyReq.setHeader('X-FORWARDED-HOST', forwardedHost);
-                    }
+                onProxyReq: (proxyReq) => {
+                    proxyReq.setHeader('X-FORWARDED-HOST', `${host}:${port}`);
                 },
             }],
         },
