@@ -5,8 +5,9 @@
 from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
+from contextlib import suppress
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Callable, Optional, Protocol
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Protocol
 
 from django.conf import settings
 from django.db.models import Model
@@ -329,30 +330,53 @@ def is_rq_job_owner(rq_job: RQJob, user_id: int) -> bool:
     return False
 
 
-class ExportRequestId(RequestId):
-    # optional because export queue works also with events
-    @cached_property
-    def subresource(self) -> RequestSubresource | None:
-        if subresource := self.extra.get("subresource"):
-            return RequestSubresource(subresource)
-        return None
+class RequestIdWithFormatMixin:
+    extra: dict[str, Any]
 
     @cached_property
     def format(self) -> str | None:
         return self.extra.get("format")
 
 
-class ImportRequestId(RequestId):
+class RequestIdWithSubresourceMixin:
+    TYPE_SEP: ClassVar[str]
+
+    action: str
+    target: str
+    extra: dict[str, Any]
+
+    @cached_property
+    def subresource(self) -> RequestSubresource:
+        return RequestSubresource(self.extra["subresource"])
+
+    @cached_property
+    def type(self) -> str:
+        return self.TYPE_SEP.join([self.action, self.subresource or self.target])
+
+
+class RequestIdWithOptionalSubresourceMixin(RequestIdWithSubresourceMixin):
     @cached_property
     def subresource(self) -> RequestSubresource | None:
-        if subresource := self.extra.get("subresource"):
-            return RequestSubresource(subresource)
+        with suppress(KeyError):
+            return super().subresource
 
         return None
 
-    @cached_property
-    def format(self) -> str | None:
-        return self.extra.get("format")
+
+class ExportRequestId(
+    RequestIdWithOptionalSubresourceMixin,  # subresource is optional because export queue works also with events
+    RequestIdWithFormatMixin,
+    RequestId,
+):
+    pass
+
+
+class ImportRequestId(
+    RequestIdWithOptionalSubresourceMixin,  # subresource is optional because import queue works also with backups/task creation jobs
+    RequestIdWithFormatMixin,
+    RequestId,
+):
+    pass
 
 
 def define_dependent_job(

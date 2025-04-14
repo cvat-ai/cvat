@@ -7,12 +7,11 @@ from dataclasses import asdict as dataclass_asdict
 from dataclasses import dataclass
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Any, Callable
 from uuid import uuid4
 
-import attrs
 from attrs.converters import to_bool
 from django.conf import settings
+from django.db.models import Model
 from rest_framework.exceptions import MethodNotAllowed, ValidationError
 from rest_framework.reverse import reverse
 from rq.job import Job as RQJob
@@ -29,7 +28,7 @@ from cvat.apps.engine.backup import (
     import_task,
 )
 from cvat.apps.engine.cloud_provider import import_resource_from_cloud_storage
-from cvat.apps.engine.location import StorageType, get_location_configuration
+from cvat.apps.engine.location import LocationConfig, StorageType, get_location_configuration
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import (
     Data,
@@ -43,8 +42,14 @@ from cvat.apps.engine.models import (
 )
 from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
 from cvat.apps.engine.rq import ExportRequestId, ImportRequestId
-from cvat.apps.engine.serializers import UploadedFileSerializer, UploadedZipFileSerializer
+from cvat.apps.engine.serializers import (
+    AnnotationFileSerializer,
+    DatasetFileSerializer,
+    ProjectFileSerializer,
+    TaskFileSerializer,
+)
 from cvat.apps.engine.task import create_thread as create_task
+from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import (
     build_annotations_file_name,
     build_backup_file_name,
@@ -83,7 +88,7 @@ class DatasetExporter(AbstractExporter):
         save_images = is_dataset_export(self.request)
         format_name = self.request.query_params.get("format", "")
 
-        self.export_args = self.ExportArgs(
+        self.export_args: DatasetExporter.ExportArgs = self.ExportArgs(
             **self.export_args.to_dict(),
             format=format_name,
             save_images=save_images,
@@ -118,6 +123,7 @@ class DatasetExporter(AbstractExporter):
         ).render()
 
     def validate_request_id(self, request_id, /) -> None:
+        # FUTURE-TODO: optimize, request_id is parsed 2 times (first one when checking permissions)
         parsed_request_id = ExportRequestId.parse(request_id)
 
         if (
@@ -150,7 +156,7 @@ class DatasetExporter(AbstractExporter):
         handle_dataset_export(
             self.db_instance,
             format_name=self.export_args.format,
-            cloud_storage_id=self.export_args.location_config.get("storage_id"),
+            cloud_storage_id=self.export_args.location_config.storage_id,
             save_images=self.export_args.save_images,
         )
 
@@ -251,15 +257,22 @@ class BackupExporter(AbstractExporter):
         pass
 
 
-@attrs.define(kw_only=True)
 class ResourceImporter(AbstractRequestManager):
     QUEUE_NAME = settings.CVAT_QUEUES.IMPORT_DATA.value
 
-    upload_serializer_class: type[UploadedFileSerializer | UploadedZipFileSerializer] = attrs.field(
-        init=False
-    )
+    @dataclass
+    class ImportArgs:
+        location_config: LocationConfig
+        file_path: str | None
 
-    tmp_dir: Path = attrs.field(init=False)
+        def to_dict(self):
+            return dataclass_asdict(self)
+
+    import_args: ImportArgs | None
+
+    def __init__(self, *, request: ExtendedRequest, db_instance: Model | None, tmp_dir: Path):
+        super().__init__(request=request, db_instance=db_instance)
+        self.tmp_dir = tmp_dir
 
     @property
     def job_result_ttl(self):
@@ -268,20 +281,6 @@ class ResourceImporter(AbstractRequestManager):
     @property
     def job_failed_ttl(self):
         return int(settings.IMPORT_CACHE_FAILED_TTL.total_seconds())
-
-    @dataclass
-    class ImportArgs:
-        location_config: dict[str, Any]
-        file_path: str | None
-
-        @property
-        def location(self) -> Location:
-            return self.location_config["location"]
-
-        def to_dict(self):
-            return dataclass_asdict(self)
-
-    import_args: ImportArgs | None = attrs.field(init=False)
 
     def init_request_args(self):
         file_path: str | None = None
@@ -298,7 +297,7 @@ class ResourceImporter(AbstractRequestManager):
         if filename := self.request.query_params.get("filename"):
             file_path = (
                 str(self.tmp_dir / filename)
-                if location_config["location"] != Location.CLOUD_STORAGE
+                if location_config.location != Location.CLOUD_STORAGE
                 else filename
             )
 
@@ -310,27 +309,18 @@ class ResourceImporter(AbstractRequestManager):
     def validate_request(self):
         super().validate_request()
 
-        if self.import_args.location not in Location.list():
-            raise ValidationError(
-                f"Unexpected location {self.import_args.location} specified for the request"
-            )
-
-        if self.import_args.location == Location.CLOUD_STORAGE:
-            if not self.import_args.file_path:
-                raise ValidationError("The filename was not specified")
-
-            if self.import_args.location_config.get("storage_id") is None:
-                raise ValidationError(
-                    "Cloud storage location was selected as the source,"
-                    + " but cloud storage id was not specified"
-                )
+        if (
+            self.import_args.location_config.location == Location.CLOUD_STORAGE
+            and not self.import_args.file_path
+        ):
+            raise ValidationError("The filename was not specified")
 
     def _handle_cloud_storage_file_upload(self):
-        storage_id = self.import_args.location_config["storage_id"]
+        storage_id = self.import_args.location_config.storage_id
         db_storage = get_cloud_storage_for_import_or_export(
             storage_id=storage_id,
             request=self.request,
-            is_default=self.import_args.location_config["is_default"],
+            is_default=self.import_args.location_config.is_default,
         )
 
         key = self.import_args.file_path
@@ -338,10 +328,11 @@ class ResourceImporter(AbstractRequestManager):
             self.import_args.file_path = tf.name
         return db_storage, key
 
+    @abstractmethod
+    def _get_payload_file(self): ...
+
     def _handle_non_tus_file_upload(self):
-        file_serializer = self.upload_serializer_class(data=self.request.data)
-        file_serializer.is_valid(raise_exception=True)
-        payload_file = file_serializer.validated_data["file"]
+        payload_file = self._get_payload_file()
 
         with NamedTemporaryFile(prefix="cvat_", dir=TmpDirManager.TMP_ROOT, delete=False) as tf:
             self.import_args.file_path = tf.name
@@ -353,7 +344,7 @@ class ResourceImporter(AbstractRequestManager):
 
     def init_callback_with_params(self):
         # Note: self.import_args is changed here
-        if self.import_args.location == Location.CLOUD_STORAGE:
+        if self.import_args.location_config.location == Location.CLOUD_STORAGE:
             db_storage, key = self._handle_cloud_storage_file_upload()
         elif not self.import_args.file_path:
             self._handle_non_tus_file_upload()
@@ -363,8 +354,7 @@ class ResourceImporter(AbstractRequestManager):
         # redefine here callback and callback args in order to:
         # - (optional) download file from cloud storage
         # - remove uploaded file at the end
-
-        if self.import_args.location == Location.CLOUD_STORAGE:
+        if self.import_args.location_config.location == Location.CLOUD_STORAGE:
             self.callback_args = (
                 *self.callback_args[0],
                 db_storage,
@@ -374,12 +364,10 @@ class ResourceImporter(AbstractRequestManager):
             )
             self.callback = import_resource_from_cloud_storage
 
-        # re-define callback to clean up uploaded file
         self.callback_args = (self.callback, *self.callback_args)
         self.callback = import_resource_with_clean_up_after
 
 
-@attrs.define(kw_only=True)
 class DatasetImporter(ResourceImporter):
     SUPPORTED_RESOURCES = {RequestTarget.PROJECT, RequestTarget.TASK, RequestTarget.JOB}
 
@@ -388,14 +376,15 @@ class DatasetImporter(ResourceImporter):
         format: str
         conv_mask_to_poly: bool
 
-    def __attrs_post_init__(self) -> None:
-        super().__attrs_post_init__()
-        self.upload_serializer_class = (
-            UploadedZipFileSerializer
-            if isinstance(self.db_instance, Project)
-            else UploadedFileSerializer
+    def __init__(
+        self,
+        *,
+        request: ExtendedRequest,
+        db_instance: Project | Task | Job,
+    ):
+        super().__init__(
+            request=request, db_instance=db_instance, tmp_dir=Path(db_instance.get_tmp_dirname())
         )
-        self.tmp_dir = Path(self.db_instance.get_tmp_dirname())
 
     def init_request_args(self) -> None:
         super().init_request_args()
@@ -407,6 +396,19 @@ class DatasetImporter(ResourceImporter):
             format=format_name,
             conv_mask_to_poly=conv_mask_to_poly,
         )
+
+    def _get_payload_file(self):
+        # Common serializer is not used to not break API
+        if isinstance(self.db_instance, Project):
+            serializer_class = DatasetFileSerializer
+            file_field = "dataset_file"
+        else:
+            serializer_class = AnnotationFileSerializer
+            file_field = "annotation_file"
+
+        file_serializer = serializer_class(data=self.request.data)
+        file_serializer.is_valid(raise_exception=True)
+        return file_serializer.validated_data[file_field]
 
     def _init_callback_with_params(self):
         if isinstance(self.db_instance, Project):
@@ -454,26 +456,26 @@ class DatasetImporter(ResourceImporter):
         handle_dataset_import(
             self.db_instance,
             format_name=self.import_args.format,
-            cloud_storage_id=self.import_args.location_config.get("storage_id"),
+            cloud_storage_id=self.import_args.location_config.storage_id,
         )
 
 
-@attrs.define(kw_only=True)
 class BackupImporter(ResourceImporter):
     SUPPORTED_RESOURCES = {RequestTarget.PROJECT, RequestTarget.TASK}
-
-    resource: RequestTarget = attrs.field(validator=attrs.validators.in_(SUPPORTED_RESOURCES))
-    upload_serializer_class: type[UploadedZipFileSerializer] = attrs.field(
-        init=False, default=UploadedZipFileSerializer
-    )
 
     @dataclass
     class ImportArgs(ResourceImporter.ImportArgs):
         org_id: int | None
 
-    def __attrs_post_init__(self) -> None:
-        super().__attrs_post_init__()
-        self.tmp_dir = Path(TmpDirManager.TMP_ROOT)
+    def __init__(
+        self,
+        *,
+        request: ExtendedRequest,
+        resource: RequestTarget,
+    ):
+        super().__init__(request=request, db_instance=None, tmp_dir=Path(TmpDirManager.TMP_ROOT))
+        assert resource in self.SUPPORTED_RESOURCES, f"Unsupported resource: {resource}"
+        self.resource = resource
 
     def init_request_args(self) -> None:
         super().init_request_args()
@@ -494,6 +496,19 @@ class BackupImporter(ResourceImporter):
             },
         ).render()
 
+    def _get_payload_file(self):
+        # Common serializer is not used to not break API
+        if isinstance(self.db_instance, Project):
+            serializer_class = ProjectFileSerializer
+            file_field = "project_file"
+        else:
+            serializer_class = TaskFileSerializer
+            file_field = "task_file"
+
+        file_serializer = serializer_class(data=self.request.data)
+        file_serializer.is_valid(raise_exception=True)
+        return file_serializer.validated_data[file_field]
+
     def _init_callback_with_params(self):
         self.callback = import_project if self.resource == RequestTarget.PROJECT else import_task
         self.callback_args = (self.import_args.file_path, self.user_id, self.import_args.org_id)
@@ -503,12 +518,19 @@ class BackupImporter(ResourceImporter):
         pass
 
 
-@attrs.define(kw_only=True)
 class TaskCreator(AbstractRequestManager):
     QUEUE_NAME = settings.CVAT_QUEUES.IMPORT_DATA.value
     SUPPORTED_RESOURCES = {RequestTarget.TASK}
 
-    db_data: Data = attrs.field()
+    def __init__(
+        self,
+        *,
+        request: ExtendedRequest,
+        db_instance: Task,
+        db_data: Data,
+    ):
+        super().__init__(request=request, db_instance=db_instance)
+        self.db_data = db_data
 
     @property
     def job_failure_ttl(self):

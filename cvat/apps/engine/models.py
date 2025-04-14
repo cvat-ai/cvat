@@ -1260,6 +1260,10 @@ class Location(str, Enum):
     def list(cls):
         return [i.value for i in cls]
 
+    @classmethod
+    def _missing_(cls, value):
+        raise ValueError(f"The specified location {value} is not supported")
+
 class CloudStorage(TimestampedModel):
     # restrictions:
     # AWS bucket name, Azure container name - 63, Google bucket name - 63 without dots and 222 with dots

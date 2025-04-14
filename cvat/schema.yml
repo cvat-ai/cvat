@@ -2338,10 +2338,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UploadedFileRequest'
+              $ref: '#/components/schemas/AnnotationFileRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/UploadedFileRequest'
+              $ref: '#/components/schemas/AnnotationFileRequest'
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -3777,10 +3777,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UploadedFileRequest'
+              $ref: '#/components/schemas/DatasetFileRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/UploadedFileRequest'
+              $ref: '#/components/schemas/DatasetFileRequest'
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -3897,10 +3897,10 @@ paths:
         The backup import process is as follows:
 
         The first request POST /api/projects/backup schedules a background job on the server
-        in which the process of a project creating from an uploaded backup is carried out.
+        in which the process of creating a project from the uploaded backup is carried out.
 
         To check the status of the import process, use GET /api/requests/rq_id,
-        where rq_id is request ID obtained from the response of the previous request.
+        where rq_id is the request ID obtained from the response to the previous request.
 
         Once the import completes successfully, the response will contain the ID
         of the newly created project in the result_id field.
@@ -3946,10 +3946,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UploadedFileRequest'
+              $ref: '#/components/schemas/ProjectFileRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/UploadedFileRequest'
+              $ref: '#/components/schemas/ProjectFileRequest'
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -3962,7 +3962,7 @@ paths:
             application/vnd.cvat+json:
               schema:
                 $ref: '#/components/schemas/RqId'
-          description: Import of a backup file has started
+          description: Import of the backup file has started
   /api/quality/conflicts:
     get:
       operationId: quality_list_conflicts
@@ -5132,10 +5132,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UploadedFileRequest'
+              $ref: '#/components/schemas/AnnotationFileRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/UploadedFileRequest'
+              $ref: '#/components/schemas/AnnotationFileRequest'
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -5728,7 +5728,7 @@ paths:
         in which the process of a task creating from an uploaded backup is carried out.
 
         To check the status of the import process, use GET /api/requests/rq_id,
-        where rq_id is request ID obtained from the response of the previous request.
+        where rq_id is the request ID obtained from the response to the previous request.
 
         Once the import completes successfully, the response will contain the ID
         of the newly created task in the result_id field.
@@ -5774,10 +5774,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UploadedFileRequest'
+              $ref: '#/components/schemas/TaskFileRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/UploadedFileRequest'
+              $ref: '#/components/schemas/TaskFileRequest'
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -5790,7 +5790,7 @@ paths:
             application/vnd.cvat+json:
               schema:
                 $ref: '#/components/schemas/RqId'
-          description: Import of a backup file has started
+          description: Import of the backup file has started
   /api/users:
     get:
       operationId: users_list
@@ -6461,6 +6461,14 @@ components:
         * `mismatching_attributes` - MISMATCHING_ATTRIBUTES
         * `mismatching_groups` - MISMATCHING_GROUPS
         * `covered_annotation` - COVERED_ANNOTATION
+    AnnotationFileRequest:
+      type: object
+      properties:
+        annotation_file:
+          type: string
+          format: binary
+      required:
+      - annotation_file
     AnnotationGuideRead:
       type: object
       properties:
@@ -7147,6 +7155,14 @@ components:
       - $ref: '#/components/schemas/RqId'
       - type: string
         format: binary
+    DatasetFileRequest:
+      type: object
+      properties:
+        dataset_file:
+          type: string
+          format: binary
+      required:
+      - dataset_file
     DatasetFormat:
       type: object
       properties:
@@ -9430,6 +9446,14 @@ components:
       description: |-
         * `image_size` - IMAGE_SIZE
         * `group_bbox_size` - GROUP_BBOX_SIZE
+    ProjectFileRequest:
+      type: object
+      properties:
+        project_file:
+          type: string
+          format: binary
+      required:
+      - project_file
     ProjectRead:
       type: object
       properties:
@@ -10339,6 +10363,14 @@ components:
         * `accuracy` - ACCURACY
         * `precision` - PRECISION
         * `recall` - RECALL
+    TaskFileRequest:
+      type: object
+      properties:
+        task_file:
+          type: string
+          format: binary
+      required:
+      - task_file
     TaskRead:
       type: object
       properties:
@@ -10650,14 +10682,6 @@ components:
       required:
       - frame
       - type
-    UploadedFileRequest:
-      type: object
-      properties:
-        file:
-          type: string
-          format: binary
-      required:
-      - file
     User:
       type: object
       properties:

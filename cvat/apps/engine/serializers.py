@@ -2934,27 +2934,24 @@ class FileInfoSerializer(serializers.Serializer):
     type = serializers.ChoiceField(choices=["REG", "DIR"])
     mime_type = serializers.CharField(max_length=255)
 
+class AnnotationFileSerializer(serializers.Serializer):
+    annotation_file = serializers.FileField()
 
-class UploadedFileSerializer(serializers.Serializer):
-    file = serializers.FileField()
+class DatasetFileSerializer(serializers.Serializer):
+    dataset_file = serializers.FileField()
 
-    def __init__(self, *args, only_zip: bool = False, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._only_zip = only_zip
-
-    # probably there is no need in such validation
-    def validate_file(self, value):
-        if self._only_zip and os.path.splitext(value.name)[1] != '.zip':
-            raise serializers.ValidationError('A file should be a zip archive')
+    @staticmethod
+    def validate_dataset_file(value):
+        if os.path.splitext(value.name)[1] != '.zip':
+            raise serializers.ValidationError('Dataset file should be zip archive')
         return value
 
+class TaskFileSerializer(serializers.Serializer):
+    task_file = serializers.FileField()
 
-@extend_schema_serializer(
-    component_name="UploadedFile",
-)
-class UploadedZipFileSerializer(UploadedFileSerializer):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs, only_zip=True)
+class ProjectFileSerializer(serializers.Serializer):
+    project_file = serializers.FileField()
+
 
 class CommentReadSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(allow_null=True, required=False)

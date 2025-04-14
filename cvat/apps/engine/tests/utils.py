@@ -196,6 +196,7 @@ class ImportApiTestBase(ApiTestBase):
         api_path: str,
         file_content: BytesIO,
         *,
+        through_field: str,
         query_params: dict[str, Any] | None = None,
         expected_4xx_status_code: int | None = None,
     ):
@@ -205,7 +206,7 @@ class ImportApiTestBase(ApiTestBase):
 
         response = self._post_request(
             api_path, user,
-            data={"file": file_content},
+            data={through_field: file_content},
             format="multipart",
         )
         self.assertEqual(response.status_code, expected_4xx_status_code or status.HTTP_202_ACCEPTED)
@@ -222,7 +223,7 @@ class ImportApiTestBase(ApiTestBase):
         expected_4xx_status_code: int | None = None
     ):
         return self._import(
-            user, f"/api/projects/{projetc_id}/dataset", file_content,
+            user, f"/api/projects/{projetc_id}/dataset", file_content, through_field="dataset_file",
             query_params=query_params, expected_4xx_status_code=expected_4xx_status_code
         )
 
@@ -231,7 +232,7 @@ class ImportApiTestBase(ApiTestBase):
         expected_4xx_status_code: int | None = None
     ):
         return self._import(
-            user, f"/api/tasks/{task_id}/annotations", file_content,
+            user, f"/api/tasks/{task_id}/annotations", file_content, through_field="annotation_file",
             query_params=query_params, expected_4xx_status_code=expected_4xx_status_code
         )
 
@@ -240,7 +241,7 @@ class ImportApiTestBase(ApiTestBase):
         expected_4xx_status_code: int | None = None
     ):
         return self._import(
-            user, f"/api/jobs/{job_id}/annotations", file_content,
+            user, f"/api/jobs/{job_id}/annotations", file_content, through_field="annotation_file",
             query_params=query_params, expected_4xx_status_code=expected_4xx_status_code
         )
 
@@ -249,7 +250,7 @@ class ImportApiTestBase(ApiTestBase):
         expected_4xx_status_code: int | None = None
     ) -> int | None:
         response = self._import(
-            user, "/api/projects/backup", file_content,
+            user, "/api/projects/backup", file_content, through_field="project_file",
             query_params=query_params, expected_4xx_status_code=expected_4xx_status_code
         )
         if expected_4xx_status_code:
@@ -262,7 +263,7 @@ class ImportApiTestBase(ApiTestBase):
         expected_4xx_status_code: int | None = None
     ) -> int | None:
         response = self._import(
-            user, "/api/tasks/backup", file_content,
+            user, "/api/tasks/backup", file_content, through_field="task_file",
             query_params=query_params, expected_4xx_status_code=expected_4xx_status_code
         )
         if expected_4xx_status_code:

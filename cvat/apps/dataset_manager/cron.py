@@ -11,7 +11,6 @@ from datetime import timedelta
 from pathlib import Path
 from typing import ClassVar, Type
 
-from django.conf import settings
 from django.utils import timezone
 
 from cvat.apps.dataset_manager.util import (

@@ -98,6 +98,7 @@ from cvat.apps.engine.permissions import (
 from cvat.apps.engine.rq import ImportRQMeta, RequestId, RQMetaWithFailureInfo
 from cvat.apps.engine.serializers import (
     AboutSerializer,
+    AnnotationFileSerializer,
     AnnotationGuideReadSerializer,
     AnnotationGuideWriteSerializer,
     AssetReadSerializer,
@@ -111,6 +112,7 @@ from cvat.apps.engine.serializers import (
     DataMetaReadSerializer,
     DataMetaWriteSerializer,
     DataSerializer,
+    DatasetFileSerializer,
     FileInfoSerializer,
     IssueReadSerializer,
     IssueWriteSerializer,
@@ -122,15 +124,15 @@ from cvat.apps.engine.serializers import (
     LabeledDataSerializer,
     LabelSerializer,
     PluginsSerializer,
+    ProjectFileSerializer,
     ProjectReadSerializer,
     ProjectWriteSerializer,
     RqStatusSerializer,
+    TaskFileSerializer,
     TaskReadSerializer,
     TaskValidationLayoutReadSerializer,
     TaskValidationLayoutWriteSerializer,
     TaskWriteSerializer,
-    UploadedFileSerializer,
-    UploadedZipFileSerializer,
     UserSerializer,
 )
 from cvat.apps.engine.types import ExtendedRequest
@@ -369,7 +371,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             OpenApiParameter('filename', description='Dataset file name',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
-        request=UploadedZipFileSerializer(required=False),
+        request=DatasetFileSerializer(required=False),
         responses={
             '202': OpenApiResponse(RqIdSerializer, description='Importing has been started'),
             '400': OpenApiResponse(description='Failed to import dataset'),
@@ -437,10 +439,10 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             The backup import process is as follows:
 
             The first request POST /api/projects/backup schedules a background job on the server
-            in which the process of a project creating from an uploaded backup is carried out.
+            in which the process of creating a project from the uploaded backup is carried out.
 
             To check the status of the import process, use GET /api/requests/rq_id,
-            where rq_id is request ID obtained from the response of the previous request.
+            where rq_id is the request ID obtained from the response to the previous request.
 
             Once the import completes successfully, the response will contain the ID
             of the newly created project in the result_id field.
@@ -455,9 +457,9 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             OpenApiParameter('filename', description='Backup file name',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
-        request=UploadedZipFileSerializer(required=False),
+        request=ProjectFileSerializer(required=False),
         responses={
-            '202': OpenApiResponse(RqIdSerializer, description='Import of a backup file has started'),
+            '202': OpenApiResponse(RqIdSerializer, description='Import of the backup file has started'),
         })
     @action(detail=False, methods=['OPTIONS', 'POST'], url_path=r'backup/?$',
         serializer_class=None,
@@ -788,7 +790,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             in which the process of a task creating from an uploaded backup is carried out.
 
             To check the status of the import process, use GET /api/requests/rq_id,
-            where rq_id is request ID obtained from the response of the previous request.
+            where rq_id is the request ID obtained from the response to the previous request.
 
             Once the import completes successfully, the response will contain the ID
             of the newly created task in the result_id field.
@@ -803,9 +805,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             OpenApiParameter('filename', description='Backup file name',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
-        request=UploadedZipFileSerializer(required=False),
+        request=TaskFileSerializer(required=False),
         responses={
-            '202': OpenApiResponse(RqIdSerializer, description='Import of a backup file has started'),
+            '202': OpenApiResponse(RqIdSerializer, description='Import of the backup file has started'),
         })
 
     @action(detail=False, methods=['OPTIONS', 'POST'], url_path=r'backup/?$',
@@ -1202,7 +1204,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             OpenApiParameter('filename', description='Annotation file name',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
-        request=UploadedFileSerializer(required=False),
+        request=AnnotationFileSerializer(required=False),
         responses={
             '201': OpenApiResponse(description='Uploading has finished'),
             '202': OpenApiResponse(RqIdSerializer, description='Uploading has been started'),
@@ -1675,7 +1677,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             OpenApiParameter('filename', description='Annotation file name',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
-        request=UploadedFileSerializer(required=False),
+        request=AnnotationFileSerializer(required=False),
         responses={
             '201': OpenApiResponse(description='Uploading has finished'),
             '202': OpenApiResponse(RqIdSerializer, description='Uploading has been started'),

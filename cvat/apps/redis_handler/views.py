@@ -1,12 +1,12 @@
 import functools
 from collections import namedtuple
 from collections.abc import Iterable
+from typing import cast
 
 import django_rq
 from django.conf import settings
 from django.http import HttpResponseBadRequest, HttpResponseNotFound
 from django.utils.decorators import method_decorator
-from django.utils.module_loading import import_string
 from django.views.decorators.cache import never_cache
 from django_rq.queues import DjangoRQ
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
@@ -49,16 +49,10 @@ slogger = ServerLogManager(__name__)
     ),
 )
 class RequestViewSet(viewsets.GenericViewSet):
-    # FUTURE-TODO: support re-enqueue action
     SUPPORTED_QUEUES = {
         queue_name
         for queue_name, queue_conf in settings.RQ_QUEUES.items()
         if queue_conf.get("VISIBLE_VIA_REQUESTS_API")
-    }
-    PARSED_JOB_ID_CLASSES = {
-        queue_name: import_string(settings.RQ_QUEUES[queue_name]["PARSED_JOB_ID_CLASS"])
-        for queue_name in SUPPORTED_QUEUES
-        if "PARSED_JOB_ID_CLASS" in settings.RQ_QUEUES[queue_name]
     }
 
     serializer_class = RequestSerializer
@@ -122,10 +116,6 @@ class RequestViewSet(viewsets.GenericViewSet):
     def queues(self) -> Iterable[DjangoRQ]:
         return (django_rq.get_queue(queue_name) for queue_name in self.SUPPORTED_QUEUES)
 
-    @classmethod
-    def get_parsed_id_class(cls, queue_name: str) -> type[RequestId]:
-        return cls.PARSED_JOB_ID_CLASSES.get(queue_name, RequestId)
-
     def _get_rq_jobs_from_queue(self, queue: DjangoRQ, user_id: int) -> list[RQJob]:
         job_ids = set(
             queue.get_job_ids()
@@ -136,12 +126,11 @@ class RequestViewSet(viewsets.GenericViewSet):
         )
         jobs = []
 
-        ParsedIdClass = self.get_parsed_id_class(queue.name)
-
         for job in queue.job_class.fetch_many(job_ids, queue.connection):
             if job and is_rq_job_owner(job, user_id):
+                job = cast(CustomRQJob, job)
                 try:
-                    parsed_request_id = ParsedIdClass.parse(job.id)
+                    parsed_request_id = RequestId.parse(job.id)
                 except Exception:  # nosec B112
                     continue
 
@@ -191,12 +180,6 @@ class RequestViewSet(viewsets.GenericViewSet):
 
         job = queue.fetch_job(rq_id)
         if job:
-            ParsedIdClass = self.get_parsed_id_class(queue.name)
-            if (
-                type(parsed_request_id) is not ParsedIdClass # fmt: skip # pylint: disable=unidiomatic-typecheck
-            ):
-                parsed_request_id = parsed_request_id.convert_to(ParsedIdClass)
-
             job.parsed_id = parsed_request_id
 
         return job

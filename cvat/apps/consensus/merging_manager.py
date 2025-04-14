@@ -5,7 +5,6 @@
 import math
 from typing import Type
 
-import attrs
 import datumaro as dm
 from django.conf import settings
 from django.db import transaction
@@ -157,7 +156,6 @@ class MergingNotAvailable(Exception):
     pass
 
 
-@attrs.define(kw_only=True)
 class MergingManager(AbstractRequestManager):
     QUEUE_NAME = settings.CVAT_QUEUES.CONSENSUS.value
     SUPPORTED_RESOURCES = {RequestTarget.TASK, RequestTarget.JOB}

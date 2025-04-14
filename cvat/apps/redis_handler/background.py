@@ -10,7 +10,6 @@ from datetime import datetime
 from typing import Any, Callable, ClassVar
 from urllib.parse import quote
 
-import attrs
 import django_rq
 from django.conf import settings
 from django.db.models import Model
@@ -18,7 +17,6 @@ from django.http.response import HttpResponseBadRequest
 from django.utils import timezone
 from django_rq.queues import DjangoRQ, DjangoScheduler
 from rest_framework import status
-from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rq.job import Job as RQJob
@@ -26,7 +24,12 @@ from rq.job import JobStatus as RQJobStatus
 
 from cvat.apps.dataset_manager.util import get_export_cache_lock
 from cvat.apps.engine.cloud_provider import export_resource_to_cloud_storage
-from cvat.apps.engine.location import Location, StorageType, get_location_configuration
+from cvat.apps.engine.location import (
+    Location,
+    LocationConfig,
+    StorageType,
+    get_location_configuration,
+)
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import RequestTarget
 from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
@@ -43,37 +46,31 @@ LOCK_TTL = REQUEST_TIMEOUT - 5
 LOCK_ACQUIRE_TIMEOUT = LOCK_TTL - 5
 
 
-@attrs.define(kw_only=True)
 class AbstractRequestManager(metaclass=ABCMeta):
-    SUPPORTED_RESOURCES: ClassVar[set[RequestTarget]]
+    SUPPORTED_RESOURCES: ClassVar[set[RequestTarget] | None] = None
     QUEUE_NAME: ClassVar[str]
     REQUEST_ID_KEY = "rq_id"
 
-    # todo: frozen
-    request: ExtendedRequest = attrs.field()
-    user_id: int = attrs.field(init=False)
+    callback: Callable
+    callback_args: tuple | None
+    callback_kwargs: dict[str, Any] | None
 
-    callback: Callable = attrs.field(init=False, validator=attrs.validators.instance_of(Callable))
-    callback_args: tuple | None = attrs.field(init=False, default=None)
-    callback_kwargs: dict[str, Any] | None = attrs.field(init=False, default=None)
+    def __init__(
+        self,
+        *,
+        request: ExtendedRequest,
+        db_instance: Model | None = None,
+    ) -> None:
+        self.request = request
+        self.user_id = request.user.id
+        self.db_instance = db_instance
 
-    db_instance: Model | None = attrs.field(default=None)
-    resource: RequestTarget | None = attrs.field(
-        init=False,
-        default=None,
-        on_setattr=attrs.setters.validate,
-    )
-
-    @resource.validator
-    def validate_resource(self, attribute: attrs.Attribute, value: Any):
-        if value and value not in self.SUPPORTED_RESOURCES:
-            raise ValidationError(f"Unsupported resource: {self.resource}")
-
-    def __attrs_post_init__(self):
-        self.user_id = self.request.user.id
-
-        if self.db_instance is not None:
-            self.resource = RequestTarget(self.db_instance.__class__.__name__.lower())
+        if db_instance:
+            assert self.SUPPORTED_RESOURCES, "Should be defined"
+            self.resource = RequestTarget(db_instance.__class__.__name__.lower())
+            assert (
+                self.resource in self.SUPPORTED_RESOURCES
+            ), f"Unsupported resource: {self.resource}"
 
     @classmethod
     def get_queue(cls) -> DjangoRQ:
@@ -115,7 +112,18 @@ class AbstractRequestManager(metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def init_callback_with_params(self) -> None: ...
+    def init_callback_with_params(self) -> None:
+        """
+        Method should initialize callback function with its args/kwargs:
+
+        self.callback = ...
+        (optional) self.callback_args = ...
+        (optional) self.callback_kwargs = ...
+        """
+
+    def _set_default_callback_params(self):
+        self.callback_args = None
+        self.callback_kwargs = None
 
     def validate_request(self) -> Response | None:
         """Hook to run some validations before processing a request"""
@@ -176,6 +184,7 @@ class AbstractRequestManager(metaclass=ABCMeta):
     def enqueue_job(self) -> Response:
         self.init_request_args()
         self.validate_request()
+        self._set_default_callback_params()
         self.init_callback_with_params()
 
         queue: DjangoRQ = django_rq.get_queue(self.QUEUE_NAME)
@@ -194,7 +203,6 @@ class AbstractRequestManager(metaclass=ABCMeta):
         return self.get_response(request_id)
 
 
-@attrs.define(kw_only=True)
 class AbstractExporter(AbstractRequestManager):
 
     class Downloader:
@@ -262,20 +270,17 @@ class AbstractExporter(AbstractRequestManager):
                         attachment_filename=job_meta.result_filename,
                     )
 
-    def get_downloader(self):
-        request_id = self.request.query_params.get(self.REQUEST_ID_KEY)
+    @dataclass
+    class ExportArgs:
+        filename: str | None
+        location_config: LocationConfig
 
-        if not request_id:
-            raise ValidationError("Missing request id in the query parameters")
-
-        try:
-            self.validate_request_id(request_id)
-        except ValueError:
-            raise ValidationError("Invalid export request id")
-
-        return self.Downloader(request=self.request, queue=self.get_queue(), request_id=request_id)
+        def to_dict(self):
+            return dataclass_asdict(self)
 
     QUEUE_NAME = settings.CVAT_QUEUES.EXPORT_DATA.value
+
+    export_args: ExportArgs | None
 
     @property
     def job_result_ttl(self):
@@ -286,20 +291,6 @@ class AbstractExporter(AbstractRequestManager):
     @property
     def job_failed_ttl(self):
         return self.job_result_ttl
-
-    @dataclass
-    class ExportArgs:
-        filename: str | None
-        location_config: dict[str, Any]
-
-        @property
-        def location(self) -> Location:
-            return self.location_config["location"]
-
-        def to_dict(self):
-            return dataclass_asdict(self)
-
-    export_args: ExportArgs | None = attrs.field(init=False)
 
     @abstractmethod
     def get_result_filename(self) -> str: ...
@@ -331,17 +322,24 @@ class AbstractExporter(AbstractRequestManager):
         )
 
     @abstractmethod
-    def _init_callback_with_params(self): ...
+    def _init_callback_with_params(self):
+        """
+        Private method that should initialize callback function with its args/kwargs
+        like the init_callback_with_params method in the parent class.
+        """
 
     def init_callback_with_params(self):
+        """
+        Method should not be overridden
+        """
         self._init_callback_with_params()
 
-        if self.export_args.location == Location.CLOUD_STORAGE:
-            storage_id = self.export_args.location_config["storage_id"]
+        if self.export_args.location_config.location == Location.CLOUD_STORAGE:
+            storage_id = self.export_args.location_config.storage_id
             db_storage = get_cloud_storage_for_import_or_export(
                 storage_id=storage_id,
                 request=self.request,
-                is_default=self.export_args.location_config["is_default"],
+                is_default=self.export_args.location_config.is_default,
             )
 
             self.callback_args = (db_storage, self.callback) + self.callback_args
@@ -350,20 +348,11 @@ class AbstractExporter(AbstractRequestManager):
     def validate_request(self):
         super().validate_request()
 
-        if self.export_args.location not in Location.list():
-            raise ValidationError(
-                f"Unexpected location {self.export_args.location} specified for the request"
-            )
-
-        if self.export_args.location == Location.CLOUD_STORAGE:
-            if not self.export_args.filename:
-                raise ValidationError("The filename was not specified")
-
-            if self.export_args.location_config.get("storage_id") is None:
-                raise ValidationError(
-                    "Cloud storage location was selected as the source,"
-                    + " but cloud storage id was not specified"
-                )
+        if (
+            self.export_args.location_config.location == Location.CLOUD_STORAGE
+            and not self.export_args.filename
+        ):
+            raise ValidationError("The filename was not specified")
 
     def build_meta(self, *, request_id):
         return ExportRQMeta.build_for(
@@ -371,8 +360,21 @@ class AbstractExporter(AbstractRequestManager):
             db_obj=self.db_instance,
             result_url=(
                 self.make_result_url(request_id=request_id)
-                if self.export_args.location != Location.CLOUD_STORAGE
+                if self.export_args.location_config.location != Location.CLOUD_STORAGE
                 else None
             ),
             result_filename=self.get_result_filename(),
         )
+
+    def get_downloader(self):
+        request_id = self.request.query_params.get(self.REQUEST_ID_KEY)
+
+        if not request_id:
+            raise ValidationError("Missing request id in the query parameters")
+
+        try:
+            self.validate_request_id(request_id)
+        except ValueError:
+            raise ValidationError("Invalid export request id")
+
+        return self.Downloader(request=self.request, queue=self.get_queue(), request_id=request_id)

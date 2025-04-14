@@ -50,6 +50,7 @@ from cvat.apps.engine.models import (
     User,
     ValidationMode,
 )
+from cvat.apps.engine.rq import RequestIdWithSubresourceMixin
 from cvat.apps.profiler import silk_profile
 from cvat.apps.quality_control import models
 from cvat.apps.quality_control.models import (
@@ -2261,13 +2262,10 @@ class DatasetComparator:
         )
 
 
-class QualityRequestId(RequestId):
-    @property
-    def subresource(self):
-        return self.extra["subresource"]
+class QualityRequestId(RequestIdWithSubresourceMixin, RequestId):
+    pass
 
 
-@define(kw_only=True)
 class QualityReportRQJobManager(AbstractRequestManager):
     QUEUE_NAME = settings.CVAT_QUEUES.QUALITY_REPORTS.value
     SUPPORTED_RESOURCES: ClassVar[set[RequestTarget]] = {RequestTarget.TASK}

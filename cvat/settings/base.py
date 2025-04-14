@@ -302,43 +302,51 @@ RQ_QUEUES = {
     CVAT_QUEUES.EXPORT_DATA.value: {
         **REDIS_INMEM_SETTINGS,
         "DEFAULT_TIMEOUT": "4h",
+        # custom fields
         "VISIBLE_VIA_REQUESTS_API": True,
         "PARSED_JOB_ID_CLASS": "cvat.apps.engine.rq.ExportRequestId",
     },
     CVAT_QUEUES.AUTO_ANNOTATION.value: {
         **REDIS_INMEM_SETTINGS,
         "DEFAULT_TIMEOUT": "24h",
+        # custom fields
         "VISIBLE_VIA_REQUESTS_API": True,
     },
     CVAT_QUEUES.WEBHOOKS.value: {
         **REDIS_INMEM_SETTINGS,
         "DEFAULT_TIMEOUT": "1h",
+        # custom fields
         "VISIBLE_VIA_REQUESTS_API": False,
     },
     CVAT_QUEUES.NOTIFICATIONS.value: {
         **REDIS_INMEM_SETTINGS,
         "DEFAULT_TIMEOUT": "1h",
+        # custom fields
         "VISIBLE_VIA_REQUESTS_API": False,
     },
     CVAT_QUEUES.QUALITY_REPORTS.value: {
         **REDIS_INMEM_SETTINGS,
         "DEFAULT_TIMEOUT": "1h",
+        # custom fields
         "VISIBLE_VIA_REQUESTS_API": True,
         "PARSED_JOB_ID_CLASS": "cvat.apps.quality_control.quality_reports.QualityRequestId",
     },
     CVAT_QUEUES.CLEANING.value: {
         **REDIS_INMEM_SETTINGS,
         "DEFAULT_TIMEOUT": "2h",
+        # custom fields
         "VISIBLE_VIA_REQUESTS_API": False,
     },
     CVAT_QUEUES.CHUNKS.value: {
         **REDIS_INMEM_SETTINGS,
         "DEFAULT_TIMEOUT": "5m",
+        # custom fields
         "VISIBLE_VIA_REQUESTS_API": False,
     },
     CVAT_QUEUES.CONSENSUS.value: {
         **REDIS_INMEM_SETTINGS,
         "DEFAULT_TIMEOUT": "1h",
+        # custom fields
         "VISIBLE_VIA_REQUESTS_API": True,
     },
 }
