@@ -2,7 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
 from enum import Enum
+from functools import cached_property
 
 from django.contrib.auth.models import User
 from django.db import models
@@ -58,6 +61,8 @@ class Webhook(TimestampedModel):
         Organization, null=True, on_delete=models.CASCADE, related_name="+"
     )
 
+    deliveries: models.manager.RelatedManager[WebhookDelivery]
+
     class Meta:
         default_permissions = ()
         constraints = [
@@ -73,6 +78,10 @@ class Webhook(TimestampedModel):
                 ),
             )
         ]
+
+    @cached_property
+    def last_delivery(self) -> WebhookDelivery:
+        return self.deliveries.last
 
 
 class WebhookDelivery(TimestampedModel):

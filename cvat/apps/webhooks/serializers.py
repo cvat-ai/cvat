@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from django.db import models
 from rest_framework import serializers
 
 from cvat.apps.engine.models import Project
@@ -60,10 +61,10 @@ class WebhookReadSerializer(serializers.ModelSerializer):
     type = serializers.ChoiceField(choices=WebhookTypeChoice.choices())
     content_type = serializers.ChoiceField(choices=WebhookContentTypeChoice.choices())
 
-    last_status = serializers.IntegerField(source="deliveries.last.status_code", read_only=True)
+    last_status = serializers.IntegerField(source="last_delivery.status_code", read_only=True)
 
     last_delivery_date = serializers.DateTimeField(
-        source="deliveries.last.updated_date", read_only=True
+        source="last_delivery.updated_date", read_only=True
     )
 
     class Meta:
@@ -90,6 +91,39 @@ class WebhookReadSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             "organization": {"allow_null": True},
         }
+
+    @classmethod
+    def many_init(cls, *args, **kwargs):
+        if len(args) == 1 and isinstance(args[0], list):
+            from .views import WebhookViewSet  # avoid circular import
+
+            ctx_view = kwargs.get("context", {}).get("view")
+            if isinstance(ctx_view, WebhookViewSet) and ctx_view.action == "list":
+                page: list[Webhook] = args[0]
+
+                # Annotate page objects with last delivery
+                # We do it explicitly here and not in the LIST queryset to avoid
+                # doing this heavy join twice - one time for the page retrieval
+                # and another one for the COUNT(*) request to get total count
+                # It would be  great to put all this into a prefetch_related() call,
+                # but it's not supported.
+                last_delivery_ids = set(
+                    Webhook.objects.filter(id__in=[webhook.id for webhook in page])
+                    .annotate(
+                        last_delivery_id=models.aggregates.Max("deliveries__id"),
+                    )
+                    .values_list("last_delivery_id", flat=True)
+                )
+                last_deliveries = WebhookDelivery.objects.filter(id__in=last_delivery_ids).defer(
+                    "request", "response"  # potentially heavy fields
+                )
+                last_deliveries_by_webhook = {
+                    delivery.webhook_id: delivery for delivery in last_deliveries
+                }
+                for webhook in page:
+                    webhook.last_delivery = last_deliveries_by_webhook.get(webhook.id)
+
+        return super(cls, cls).many_init(*args, **kwargs)
 
 
 class WebhookWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
