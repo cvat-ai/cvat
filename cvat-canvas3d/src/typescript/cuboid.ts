@@ -140,9 +140,9 @@ export class CuboidModel {
 
     private createArrows(): ObjectArrowHelper {
         return {
-            x: new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(0.5, 0, 0), 2, 0xff0000),
-            y: new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0.5, 0), 2, 0x00ff00),
-            z: new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, 0.5), 2, 0x0000ff),
+            x: new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(0.5, 0, 0), 1, 0xff0000),
+            y: new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0.5, 0), 1, 0x00ff00),
+            z: new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, 0.5), 1, 0x0000ff),
         };
     }
 
@@ -180,6 +180,18 @@ export class CuboidModel {
     public setScale(x: number, y: number, z: number): void {
         [ViewType.PERSPECTIVE, ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view): void => {
             (this as Indexable)[view].scale.set(x, y, z);
+
+            // By default, the arrow points along the global Y axis.
+            // When we change its direction to align with the X or Z axis,
+            // the arrow’s local coordinate system rotates accordingly.
+            // To maintain correct proportions, we apply the X or Z scaling of the cuboid
+            // to the arrow's Y axis (its original forward direction).
+            const xscale = 1.0 / x;
+            const yscale = 1.0 / y;
+            const zscale = 1.0 / z;
+            this.orientationArrows[view].x.scale.set(yscale, xscale, zscale);
+            this.orientationArrows[view].y.scale.set(xscale, yscale, zscale);
+            this.orientationArrows[view].z.scale.set(xscale, zscale, yscale);
         });
     }
 
