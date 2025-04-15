@@ -88,7 +88,7 @@ export default function JobActionsItems(
     }, 60]);
 
     if (onDeleteJob) {
-        menuItems.push([{ type: 'divider' }, 59]);
+        menuItems.push([{ type: 'divider' }, 69]);
         menuItems.push([{
             key: 'delete',
             onClick: onDeleteJob,

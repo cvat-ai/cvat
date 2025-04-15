@@ -33,7 +33,7 @@ function AnaylyticsPageHeader(props: Props): JSX.Element {
         <Row justify='space-between' align='middle'>
             <Col className='cvat-analytics-header'>
                 <Title level={4} className='cvat-text-color'>
-                    {'Analytics page for '}
+                    {'Analytics for '}
                     {((): JSX.Element | null => {
                         if (resource instanceof Project) {
                             return (
