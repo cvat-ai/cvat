@@ -11,10 +11,10 @@ import {
     ViewsDOM,
     CanvasMode,
 } from 'cvat-canvas3d/src/typescript/canvas3d';
-import { AxisOrientationArrowsConfig } from 'cvat-canvas3d/src/typescript/canvas3dModel';
+import { OrientationVisibility } from 'cvat-canvas3d/src/typescript/canvas3dModel';
 
 export {
     Canvas3d, MouseInteraction, ViewType, CameraAction, CanvasMode,
 };
 
-export type { ViewsDOM, AxisOrientationArrowsConfig };
+export type { ViewsDOM, OrientationVisibility };

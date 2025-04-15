@@ -29,7 +29,7 @@ import {
     ColorBy, CombinedState, ContextMenuType, Workspace,
 } from 'reducers';
 import {
-    AxisOrientationArrowsConfig, CameraAction, Canvas3d, ViewsDOM,
+    OrientationVisibility, CameraAction, Canvas3d, ViewsDOM,
 } from 'cvat-canvas3d-wrapper';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
@@ -115,7 +115,7 @@ interface StateToProps {
     outlined: boolean;
     outlineColor: string;
     colorBy: ColorBy;
-    showAxisArrows: AxisOrientationArrowsConfig;
+    orientationVisibility: OrientationVisibility;
     frameFetching: boolean;
     canvasInstance: Canvas3d;
     jobInstance: Job;
@@ -166,7 +166,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 resetZoom,
             },
             shapes: {
-                opacity, colorBy, selectedOpacity, outlined, outlineColor, showAxisArrows,
+                opacity, colorBy, selectedOpacity, outlined, outlineColor, orientationVisibility,
             },
         },
     } = state;
@@ -184,7 +184,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         selectedOpacity,
         outlined,
         outlineColor,
-        showAxisArrows,
+        orientationVisibility,
         activeLabelID,
         activatedStateID,
         activeObjectType,
@@ -482,7 +482,7 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
         opacity,
         outlined,
         outlineColor,
-        showAxisArrows,
+        orientationVisibility,
         selectedOpacity,
         colorBy,
         contextMenuVisibility,
@@ -645,7 +645,7 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
             outlineColor,
             selectedOpacity,
             colorBy,
-            showAxisArrows,
+            orientationVisibility,
         });
     };
 
@@ -678,7 +678,7 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
 
     useEffect(() => {
         updateShapesView();
-    }, [opacity, outlined, outlineColor, selectedOpacity, colorBy, showAxisArrows]);
+    }, [opacity, outlined, outlineColor, selectedOpacity, colorBy, orientationVisibility]);
 
     useEffect(() => {
         const canvasInstanceDOM = canvasInstance.html() as ViewsDOM;

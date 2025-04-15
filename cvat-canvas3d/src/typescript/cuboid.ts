@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import * as THREE from 'three';
-import { AxisOrientationArrowsConfig, ViewType } from './canvas3dModel';
+import { OrientationVisibility, ViewType } from './canvas3dModel';
 import constants from './consts';
 
 export interface Indexable {
@@ -37,14 +37,12 @@ export class CuboidModel {
     public front: THREE.Mesh;
     public wireframe: THREE.LineSegments;
 
-    public orientationArrows: {
-        [key: string]: ObjectArrowHelper
-    } = {
-            [ViewType.PERSPECTIVE]: null,
-            [ViewType.TOP]: null,
-            [ViewType.SIDE]: null,
-            [ViewType.FRONT]: null,
-        };
+    public orientationArrows: Record<ViewType, ObjectArrowHelper> = {
+        [ViewType.PERSPECTIVE]: null,
+        [ViewType.TOP]: null,
+        [ViewType.SIDE]: null,
+        [ViewType.FRONT]: null,
+    };
 
     public constructor(outline: string, outlineColor: string) {
         const geometry = new THREE.BoxGeometry(1, 1, 1);
@@ -165,7 +163,7 @@ export class CuboidModel {
         });
     }
 
-    public setAxisArrowsVisibility(showAxisArrows: AxisOrientationArrowsConfig): void {
+    public setAxisArrowsVisibility(showAxisArrows: OrientationVisibility): void {
         [ViewType.PERSPECTIVE, ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view): void => {
             Object.entries(this.orientationArrows[view]).forEach(([axis, arrow]) => {
                 arrow.visible = showAxisArrows[axis];

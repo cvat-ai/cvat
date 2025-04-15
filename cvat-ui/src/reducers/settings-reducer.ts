@@ -22,7 +22,7 @@ const defaultState: SettingsState = {
         showBitmap: false,
         showProjections: false,
         showGroundTruth: false,
-        showAxisArrows: {
+        orientationVisibility: {
             x: false,
             y: false,
             z: false,
@@ -174,8 +174,8 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 ...state,
                 shapes: {
                     ...state.shapes,
-                    showAxisArrows: {
-                        ...state.shapes.showAxisArrows,
+                    orientationVisibility: {
+                        ...state.shapes.orientationVisibility,
                         ...action.payload.showArrows,
                     },
                 },

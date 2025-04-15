@@ -17,7 +17,7 @@ import ColorPicker from 'components/annotation-page/standard-workspace/objects-s
 import { ColorizeIcon } from 'icons';
 import { ColorBy, CombinedState, Workspace } from 'reducers';
 import { DimensionType, Job } from 'cvat-core-wrapper';
-import { AxisOrientationArrowsConfig } from 'cvat-canvas3d-wrapper';
+import { OrientationVisibility } from 'cvat-canvas3d-wrapper';
 import { collapseAppearance as collapseAppearanceAction } from 'actions/annotation-actions';
 import {
     changeShapesColorBy as changeShapesColorByAction,
@@ -26,7 +26,7 @@ import {
     changeShapesOutlinedBorders as changeShapesOutlinedBordersAction,
     changeShowBitmap as changeShowBitmapAction,
     changeShowProjections as changeShowProjectionsAction,
-    changeShowAxisArrows as changeShowAxisArrowsAction,
+    changeOrientationVisibility as changeOrientationVisibilityAction,
 } from 'actions/settings-actions';
 
 interface StateToProps {
@@ -38,7 +38,7 @@ interface StateToProps {
     outlineColor: string;
     showBitmap: boolean;
     showProjections: boolean;
-    showAxisArrows: AxisOrientationArrowsConfig;
+    orientationVisibility: OrientationVisibility;
     workspace: Workspace;
     jobInstance: Job;
 }
@@ -51,7 +51,7 @@ interface DispatchToProps {
     changeShapesOutlinedBorders(outlined: boolean, color: string): void;
     changeShowBitmap(event: CheckboxChangeEvent): void;
     changeShowProjections(event: CheckboxChangeEvent): void;
-    changeShowAxisArrows(showArrows: Partial<AxisOrientationArrowsConfig>): void;
+    changeOrientationVisibility(showArrows: Partial<OrientationVisibility>): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -64,7 +64,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         settings: {
             shapes: {
                 colorBy, opacity, selectedOpacity, outlined, outlineColor, showBitmap, showProjections,
-                showAxisArrows,
+                orientationVisibility,
             },
         },
     } = state;
@@ -79,7 +79,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         showBitmap,
         showProjections,
         workspace,
-        showAxisArrows,
+        orientationVisibility,
         jobInstance: jobInstance as Job,
     };
 }
@@ -107,8 +107,8 @@ function mapDispatchToProps(dispatch: Dispatch<AnyAction>): DispatchToProps {
         changeShowProjections(event: CheckboxChangeEvent): void {
             dispatch(changeShowProjectionsAction(event.target.checked));
         },
-        changeShowAxisArrows(showArrows: Partial<AxisOrientationArrowsConfig>): void {
-            dispatch(changeShowAxisArrowsAction(showArrows));
+        changeOrientationVisibility(showArrows: Partial<OrientationVisibility>): void {
+            dispatch(changeOrientationVisibilityAction(showArrows));
         },
     };
 }
@@ -125,7 +125,7 @@ function AppearanceBlock(props: Props): JSX.Element {
         outlineColor,
         showBitmap,
         showProjections,
-        showAxisArrows,
+        orientationVisibility,
         collapseAppearance,
         changeShapesColorBy,
         changeShapesOpacity,
@@ -133,7 +133,7 @@ function AppearanceBlock(props: Props): JSX.Element {
         changeShapesOutlinedBorders,
         changeShowBitmap,
         changeShowProjections,
-        changeShowAxisArrows,
+        changeOrientationVisibility,
         jobInstance,
     } = props;
 
@@ -180,29 +180,6 @@ function AppearanceBlock(props: Props): JSX.Element {
                             min={0}
                             max={100}
                         />
-                        {is3D && (
-                            <div className='cvat-appearance-arrows-checkboxes'>
-                                <div>
-                                    <Text type='secondary'>Orientation arrows</Text>
-                                </div>
-                                <div>
-                                    {
-                                        Object.keys(showAxisArrows).map((axis) => (
-                                            <Checkbox
-                                                key={axis}
-                                                className={`cvat-appearance-arrow-${axis}-checkbox`}
-                                                checked={showAxisArrows[axis as keyof AxisOrientationArrowsConfig]}
-                                                onChange={(event: CheckboxChangeEvent) => {
-                                                    changeShowAxisArrows({ [axis]: event.target.checked });
-                                                }}
-                                            >
-                                                {`${axis.toUpperCase()}-axis`}
-                                            </Checkbox>
-                                        ))
-                                    }
-                                </div>
-                            </div>
-                        )}
                         <Checkbox
                             className='cvat-appearance-outlinded-borders-checkbox'
                             onChange={(event: CheckboxChangeEvent) => {
@@ -222,6 +199,22 @@ function AppearanceBlock(props: Props): JSX.Element {
                                 </Button>
                             </ColorPicker>
                         </Checkbox>
+                        {is3D && (
+                            <div className='cvat-appearance-cuboid-orientation-checkboxes'>
+                                <Checkbox
+                                    checked={orientationVisibility.x}
+                                    onChange={(event: CheckboxChangeEvent) => {
+                                        changeOrientationVisibility({
+                                            x: event.target.checked,
+                                            y: event.target.checked,
+                                            z: event.target.checked,
+                                        });
+                                    }}
+                                >
+                                    Cuboid orientation
+                                </Checkbox>
+                            </div>
+                        )}
                         {is2D && (
                             <Checkbox
                                 className='cvat-appearance-bitmap-checkbox'

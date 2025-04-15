@@ -10,7 +10,7 @@ import {
     GridColor, ColorBy, SettingsState, ToolsBlockerState,
     CombinedState,
 } from 'reducers';
-import { AxisOrientationArrowsConfig } from 'cvat-canvas3d-wrapper';
+import { OrientationVisibility } from 'cvat-canvas3d-wrapper';
 import { ImageFilter, ImageFilterAlias, SerializedImageFilter } from 'utils/image-processing';
 import { conflict, conflictDetector } from 'utils/conflict-detector';
 import GammaCorrection, { GammaFilterOptions } from 'utils/fabric-wrapper/gamma-correciton';
@@ -124,7 +124,7 @@ export function changeShowProjections(showProjections: boolean): AnyAction {
     };
 }
 
-export function changeShowAxisArrows(showArrows: Partial<AxisOrientationArrowsConfig>): AnyAction {
+export function changeOrientationVisibility(showArrows: Partial<OrientationVisibility>): AnyAction {
     return {
         type: SettingsActionTypes.CHANGE_SHAPES_SHOW_AXIS_ARROWS,
         payload: {
