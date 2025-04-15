@@ -32,7 +32,7 @@ import {
     vectorLength, ShapeSizeElement, DrawnState, rotate2DPoints,
     readPointsFromShape, setupSkeletonEdges, makeSVGFromTemplate,
     imageDataToDataURL, expandChannels, stringifyPoints, zipChannels,
-    composeShapeDimensions,
+    composeShapeDimensions, getRoundedRotation,
 } from './shared';
 import {
     CanvasModel, Geometry, UpdateReasons, FrameZoom, ActiveElement,
@@ -1390,7 +1390,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     this.resizableShape = null;
 
                     // be sure, that rotation in range [0; 360]
-                    let rotation = shape.transform().rotation || 0;
+                    let rotation = getRoundedRotation(shape);
                     while (rotation < 0) rotation += 360;
                     rotation %= 360;
 
@@ -2962,7 +2962,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         text.untransform();
         text.style({ 'font-size': `${textFontSize}px` });
-        const rotation = options.rotation?.angle || shape.transform().rotation;
+        const rotation = options.rotation?.angle || getRoundedRotation(shape);
 
         // Find the best place for a text
         let [clientX, clientY, clientCX, clientCY]: number[] = [0, 0, 0, 0];
