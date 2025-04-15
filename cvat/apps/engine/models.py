@@ -1262,7 +1262,7 @@ class Location(str, Enum):
 
     @classmethod
     def _missing_(cls, value):
-        raise ValueError(f"The specified location {value} is not supported")
+        raise ValueError(f"The specified location {value!r} is not supported")
 
 class CloudStorage(TimestampedModel):
     # restrictions:

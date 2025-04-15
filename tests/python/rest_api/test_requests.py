@@ -255,8 +255,8 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
             assert 2 == background_requests.count
 
             corrupted_job, normal_job = background_requests.results
-
-            remove_meta_command = f'redis-cli -e HDEL rq:job:{corrupted_job["id"]} meta'
+            corrupted_job_key = f"rq:job:{corrupted_job['id']}"
+            remove_meta_command = f'redis-cli -e HDEL "{corrupted_job_key}" meta'
 
             if request.config.getoption("--platform") == "local":
                 stdout, _ = docker_exec_redis_inmem(["sh", "-c", remove_meta_command])

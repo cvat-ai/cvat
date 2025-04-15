@@ -42,7 +42,7 @@ def clear_export_cache(file_path: Path) -> bool:
         if isinstance(parsed_filename.file_id, ConstructedFileId):
             cache_ttl = get_export_cache_ttl(parsed_filename.file_id.instance_type)
         else:
-            cache_ttl = get_export_cache_ttl(None)  # use common default cache TTL
+            cache_ttl = get_export_cache_ttl()  # use common default cache TTL
 
         if timezone.now().timestamp() <= file_path.stat().st_mtime + cache_ttl.total_seconds():
             logger.debug(f"Export cache file {file_path.name!r} was recently accessed")

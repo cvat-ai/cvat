@@ -42,11 +42,12 @@ class RequestId:
     FIELD_SEP: ClassVar[str] = "&"
     KEY_VAL_SEP: ClassVar[str] = "="
 
-    SPECIAL_CHARS = {FIELD_SEP, KEY_VAL_SEP, "/", "."}
     ENCODE_MAPPING = {
         ".": "@",
+        " ": "__",  # one underscore can be used in the queue name
     }
     DECODE_MAPPING = {v: k for k, v in ENCODE_MAPPING.items()}
+    NOT_ALLOWED_CHARS = {FIELD_SEP, KEY_VAL_SEP, "/"} | set(DECODE_MAPPING.keys())
 
     TYPE_SEP: ClassVar[str] = ":"  # used in serialization logic
 
@@ -66,26 +67,24 @@ class RequestId:
         return self.TYPE_SEP.join([self.action, self.target])
 
     def to_dict(self) -> dict[str, Any]:
-        repr_ = attrs.asdict(self, filter=lambda _, v: bool(v))
-        if extra := repr_.pop("extra", None):
-            repr_.update(extra)
-
-        return repr_
+        base = attrs.asdict(self, filter=lambda _, v: bool(v))
+        extra_data = base.pop("extra", {})
+        return {**base, **extra_data}
 
     @classmethod
     def normalize(cls, repr_: dict[str, Any]) -> None:
         for key, value in repr_.items():
             str_value = str(value)
-
-            for spec_char in cls.SPECIAL_CHARS:
-                if spec_char in str_value:
-                    if spec_char in cls.ENCODE_MAPPING:
-                        str_value = str_value.replace(spec_char, cls.ENCODE_MAPPING[spec_char])
-                        continue
-
+            for reserved in cls.NOT_ALLOWED_CHARS:
+                if reserved in str_value:
                     raise IncorrectRequestIdError(
-                        f"{key} contains special characters: {spec_char!r}"
+                        f"{key} contains special character/sequence of characters: {reserved!r}"
                     )
+
+            for from_char, to_char in cls.ENCODE_MAPPING.items():
+                if from_char in str_value:
+                    str_value = str_value.replace(from_char, to_char)
+
             repr_[key] = str_value
 
     def render(self) -> str:
