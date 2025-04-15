@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import urllib.parse
-from functools import cached_property
 from typing import Any, ClassVar, Protocol
 from uuid import UUID
 
@@ -62,7 +61,7 @@ class RequestId:
 
     user_id: int | None = attrs.field(converter=lambda x: x if x is None else int(x), default=None)
 
-    @cached_property
+    @property
     def type(self) -> str:
         return self.TYPE_SEP.join([self.action, self.target])
 

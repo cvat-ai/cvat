@@ -6,7 +6,6 @@ from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
 from contextlib import suppress
-from functools import cached_property
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Protocol
 
 from django.conf import settings
@@ -331,7 +330,7 @@ def is_rq_job_owner(rq_job: RQJob, user_id: int) -> bool:
 class RequestIdWithFormatMixin:
     extra: dict[str, Any]
 
-    @cached_property
+    @property
     def format(self) -> str | None:
         return self.extra.get("format")
 
@@ -343,17 +342,17 @@ class RequestIdWithSubresourceMixin:
     target: str
     extra: dict[str, Any]
 
-    @cached_property
+    @property
     def subresource(self) -> str:
         return self.extra["subresource"]
 
-    @cached_property
+    @property
     def type(self) -> str:
         return self.TYPE_SEP.join([self.action, self.subresource or self.target])
 
 
 class RequestIdWithOptionalSubresourceMixin(RequestIdWithSubresourceMixin):
-    @cached_property
+    @property
     def subresource(self) -> str | None:
         with suppress(KeyError):
             return super().subresource

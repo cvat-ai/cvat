@@ -18,7 +18,13 @@ from deepdiff import DeepDiff
 
 from shared.utils.config import USER_PASS, make_api_client
 
-from .utils import CollectionSimpleFilterTestBase, compare_annotations, wait_background_request
+from .utils import (
+    CollectionSimpleFilterTestBase,
+    compare_annotations,
+    invite_user_to_org,
+    register_new_user,
+    wait_background_request,
+)
 
 
 class _PermissionTestBase:
@@ -330,58 +336,20 @@ class TestPostConsensusMerge(_PermissionTestBase):
     def test_user_without_rights_cannot_check_status_of_merge_in_org(
         self,
         find_org_task_with_consensus,
-        find_users,
         same_org: bool,
         role: str,
-        admin_user,
         organizations,
     ):
         task, task_staff = find_org_task_with_consensus(is_staff=True, user_org_role="supervisor")
 
-        org_filter = "org"
-        if not same_org:
-            org_filter = "exclude_" + org_filter
-
-        try:
-            another_user = next(
-                u
-                for u in find_users(
-                    role=role, **{org_filter: task["organization"]}, exclude_is_superuser=True
-                )
-                if (
-                    u["id"] != task_staff["id"]
-                    and u["id"] != task["owner"]["id"]
-                    and u["id"] != (task["assignee"] or {}).get("id")
-                )
-            )
-        except StopIteration:
-            # create a new user that passes the requirements
-            with make_api_client(admin_user) as api_client:
-                user_name = f"{same_org}{role}"
-                another_user, _ = api_client.auth_api.create_register(
-                    models.RegisterSerializerExRequest(
-                        username=user_name,
-                        password1=USER_PASS,
-                        password2=USER_PASS,
-                        email=f"{user_name}@email.com",
-                    )
-                )
-
-                org_id = (
-                    task["organization"]
-                    if same_org
-                    else next(o for o in organizations if o["id"] != task["organization"])["id"]
-                )
-
-            # looks like a bug in SDK, second post request fails with CSRF issue when the same api_client is used
-            with make_api_client(admin_user) as api_client:
-                api_client.invitations_api.create(
-                    models.InvitationWriteRequest(
-                        role=role,
-                        email=another_user["email"],
-                    ),
-                    org_id=org_id,
-                )
+        # create a new user that passes the requirements
+        another_user = register_new_user(f"{same_org}{role}")
+        org_id = (
+            task["organization"]
+            if same_org
+            else next(o for o in organizations if o["id"] != task["organization"])["id"]
+        )
+        invite_user_to_org(another_user["email"], org_id, role)
 
         rq_id = self.request_merge(task_id=task["id"], user=task_staff["username"])
         self._test_check_merge_status(

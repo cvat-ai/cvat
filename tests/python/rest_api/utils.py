@@ -22,7 +22,7 @@ from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
 from urllib3 import HTTPResponse
 
-from shared.utils.config import make_api_client
+from shared.utils.config import USER_PASS, make_api_client, post_method
 
 
 def initialize_export(endpoint: Endpoint, *, expect_forbidden: bool = False, **kwargs) -> str:
@@ -491,3 +491,35 @@ def unique(
     it: Union[Iterator[_T], Iterable[_T]], *, key: Callable[[_T], Hashable] = None
 ) -> Iterable[_T]:
     return {key(v): v for v in it}.values()
+
+
+def register_new_user(username: str) -> dict[str, Any]:
+    response = post_method(
+        "admin1",
+        "auth/register",
+        data={
+            "username": username,
+            "password1": USER_PASS,
+            "password2": USER_PASS,
+            "email": f"{username}@email.com",
+        },
+    )
+
+    assert response.status_code == HTTPStatus.CREATED
+    return response.json()
+
+
+def invite_user_to_org(
+    user_email: str,
+    org_id: int,
+    role: str,
+):
+    with make_api_client("admin1") as api_client:
+        invitation, _ = api_client.invitations_api.create(
+            models.InvitationWriteRequest(
+                role=role,
+                email=user_email,
+            ),
+            org_id=org_id,
+        )
+        return invitation

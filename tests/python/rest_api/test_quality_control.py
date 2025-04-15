@@ -16,9 +16,15 @@ from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
 
-from shared.utils.config import USER_PASS, make_api_client
+from shared.utils.config import make_api_client
 
-from .utils import CollectionSimpleFilterTestBase, parse_frame_step, wait_background_request
+from .utils import (
+    CollectionSimpleFilterTestBase,
+    invite_user_to_org,
+    parse_frame_step,
+    register_new_user,
+    wait_background_request,
+)
 
 
 class _PermissionTestBase:
@@ -677,57 +683,21 @@ class TestPostQualityReports(_PermissionTestBase):
         role: str,
         admin_user: str,
         find_org_task_without_gt: Callable[[bool, str], tuple[dict[str, Any], dict[str, Any]]],
-        find_users: Callable[..., list[dict[str, Any]]],
         organizations,
     ):
         task, task_staff = find_org_task_without_gt(is_staff=True, user_org_role="supervisor")
 
         self.create_gt_job(admin_user, task["id"])
 
-        org_filter = "org"
-        if not same_org:
-            org_filter = "exclude_" + org_filter
+        # create another user that passes the requirements
+        another_user = register_new_user(f"{same_org}{role}")
+        org_id = (
+            task["organization"]
+            if same_org
+            else next(o for o in organizations if o["id"] != task["organization"])["id"]
+        )
+        invite_user_to_org(another_user["email"], org_id, role)
 
-        try:
-            another_user = next(
-                u
-                for u in find_users(
-                    role=role, exclude_is_superuser=True, **{org_filter: task["organization"]}
-                )
-                if (
-                    u["id"] != task_staff["id"]
-                    and u["id"] != task["owner"]["id"]
-                    and u["id"] != (task["assignee"] or {}).get("id")
-                )
-            )
-        except StopIteration:
-            # create a new user that passes the requirements
-            with make_api_client(admin_user) as api_client:
-                user_name = f"{same_org}{role}"
-                another_user, _ = api_client.auth_api.create_register(
-                    models.RegisterSerializerExRequest(
-                        username=user_name,
-                        password1=USER_PASS,
-                        password2=USER_PASS,
-                        email=f"{user_name}@email.com",
-                    )
-                )
-
-                org_id = (
-                    task["organization"]
-                    if same_org
-                    else next(o for o in organizations if o["id"] != task["organization"])["id"]
-                )
-
-            # looks like a bug in SDK, second post request fails with CSRF issue when the same api_client is used
-            with make_api_client(admin_user) as api_client:
-                api_client.invitations_api.create(
-                    models.InvitationWriteRequest(
-                        role=role,
-                        email=another_user["email"],
-                    ),
-                    org_id=org_id,
-                )
         rq_id = self._initialize_report_creation(task["id"], task_staff["username"])
         self._test_check_status_of_report_creation(
             rq_id, task_staff=task_staff["username"], another_user=another_user["username"]
