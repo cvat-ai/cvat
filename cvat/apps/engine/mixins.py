@@ -26,7 +26,7 @@ from rest_framework.response import Response
 from cvat.apps.engine.background import BackupExporter, DatasetExporter
 from cvat.apps.engine.handlers import clear_import_cache
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.models import Location, RequestAction, RequestSubresource, RequestTarget
+from cvat.apps.engine.models import Location, RequestAction, RequestTarget
 from cvat.apps.engine.rq import RequestId
 from cvat.apps.engine.serializers import DataSerializer
 from cvat.apps.engine.types import ExtendedRequest
@@ -275,7 +275,7 @@ class UploadMixin:
                     target=RequestTarget(object_class_name),
                     id=self._object.pk,
                     extra={
-                        "subresource": RequestSubresource(import_type)
+                        "subresource": import_type,
                     }
                 ).render()
                 queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)

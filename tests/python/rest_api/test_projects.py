@@ -623,7 +623,7 @@ class TestImportExportDatasetProject:
             (_, response) = api_client.projects_api.create_dataset(
                 id=project_id,
                 format=format_name,
-                dataset_write_request={"dataset_file": data},
+                dataset_file_request={"dataset_file": data},
                 _content_type="multipart/form-data",
             )
             assert response.status == HTTPStatus.ACCEPTED

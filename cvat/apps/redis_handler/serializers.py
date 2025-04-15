@@ -17,8 +17,8 @@ from rq.job import JobStatus as RQJobStatus
 
 from cvat.apps.engine import models
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.models import RequestAction, RequestSubresource
-from cvat.apps.engine.rq import BaseRQMeta, ExportRQMeta, ImportRQMeta
+from cvat.apps.engine.models import RequestAction
+from cvat.apps.engine.rq import BaseRQMeta, ExportRQMeta, ImportRQMeta, RequestIdWithFormatMixin
 from cvat.apps.engine.serializers import BasicUserSerializer
 from cvat.apps.engine.utils import parse_exception_message
 from cvat.apps.lambda_manager.rq import LambdaRQMeta
@@ -61,13 +61,7 @@ class RequestDataOperationSerializer(serializers.Serializer):
         }
         if parsed_request_id.action == RequestAction.AUTOANNOTATE:
             representation["function_id"] = LambdaRQMeta.for_job(rq_job).function_id
-        elif parsed_request_id.action in (
-            RequestAction.IMPORT,
-            RequestAction.EXPORT,
-        ) and parsed_request_id.subresource in (
-            RequestSubresource.ANNOTATIONS,
-            RequestSubresource.DATASET,
-        ):
+        elif isinstance(parsed_request_id, RequestIdWithFormatMixin):
             representation["format"] = parsed_request_id.format
 
         return representation

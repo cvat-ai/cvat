@@ -126,9 +126,9 @@ class RequestId:
             raise IncorrectRequestIdError from ex
 
 
-class WithParsedId(Protocol):
+class _WithParsedId(Protocol):
     parsed_id: RequestId
 
 
-class CustomRQJob(RQJob, WithParsedId):
+class CustomRQJob(RQJob, _WithParsedId):
     pass

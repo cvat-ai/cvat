@@ -2313,7 +2313,6 @@ class QualityReportUpdateManager:
         return cls()._compute_reports(task_id=task_id)
 
     def _compute_reports(self, task_id: int) -> int:
-        # raise Exception("Ooops")
         with transaction.atomic():
             try:
                 # Preload all the data for the computations.

@@ -200,7 +200,7 @@ class BackupExporter(AbstractExporter):
             parsed_request_id.action != RequestAction.EXPORT
             or parsed_request_id.target != RequestTarget(self.resource)
             or parsed_request_id.id != self.db_instance.pk
-            or parsed_request_id.subresource is not RequestSubresource.BACKUP
+            or parsed_request_id.subresource != RequestSubresource.BACKUP
         ):
             raise ValueError("The provided request id does not match exported target or resource")
 
@@ -498,7 +498,7 @@ class BackupImporter(ResourceImporter):
 
     def _get_payload_file(self):
         # Common serializer is not used to not break API
-        if isinstance(self.db_instance, Project):
+        if self.resource == RequestTarget.PROJECT:
             serializer_class = ProjectFileSerializer
             file_field = "project_file"
         else:

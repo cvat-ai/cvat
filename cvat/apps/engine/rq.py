@@ -20,8 +20,6 @@ from rq.registry import BaseRegistry as RQBaseRegistry
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.redis_handler.rq import RequestId
 
-from .models import RequestSubresource
-
 if TYPE_CHECKING:
     from django.contrib.auth.models import User
 
@@ -346,8 +344,8 @@ class RequestIdWithSubresourceMixin:
     extra: dict[str, Any]
 
     @cached_property
-    def subresource(self) -> RequestSubresource:
-        return RequestSubresource(self.extra["subresource"])
+    def subresource(self) -> str:
+        return self.extra["subresource"]
 
     @cached_property
     def type(self) -> str:
@@ -356,7 +354,7 @@ class RequestIdWithSubresourceMixin:
 
 class RequestIdWithOptionalSubresourceMixin(RequestIdWithSubresourceMixin):
     @cached_property
-    def subresource(self) -> RequestSubresource | None:
+    def subresource(self) -> str | None:
         with suppress(KeyError):
             return super().subresource
 

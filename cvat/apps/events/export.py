@@ -7,7 +7,6 @@ import os
 import uuid
 from datetime import datetime, timedelta
 
-import attrs
 import clickhouse_connect
 from dateutil import parser
 from django.conf import settings
@@ -18,7 +17,8 @@ from rest_framework.reverse import reverse
 from cvat.apps.dataset_manager.util import ExportCacheManager
 from cvat.apps.dataset_manager.views import log_exception
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.rq import RQMetaWithFailureInfo
+from cvat.apps.engine.models import RequestAction
+from cvat.apps.engine.rq import ExportRequestId, RQMetaWithFailureInfo
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import sendfile
 from cvat.apps.engine.view_utils import DeprecatedResponse
@@ -29,6 +29,7 @@ from cvat.apps.redis_handler.rq import RequestId
 slogger = ServerLogManager(__name__)
 
 DEFAULT_CACHE_TTL = timedelta(hours=1)
+TARGET = "events"
 
 
 def _create_csv(query_params: dict, output_filename: str):
@@ -82,14 +83,16 @@ def _create_csv(query_params: dict, output_filename: str):
         raise
 
 
-@attrs.define(kw_only=True)
 class EventsExporter(AbstractExporter):
 
-    filter_query: dict = attrs.field(init=False)
-    query_id: uuid.UUID = attrs.field(init=False)  # temporary arg
+    def __init__(
+        self,
+        *,
+        request: ExtendedRequest,
+    ) -> None:
+        super().__init__(request=request)
 
-    def __attrs_post_init__(self):
-        super().__attrs_post_init__()
+        # temporary arg
         if query_id := self.request.query_params.get("query_id"):
             self.query_id = uuid.UUID(query_id)
         else:
@@ -98,11 +101,17 @@ class EventsExporter(AbstractExporter):
     def build_request_id(self):
         return RequestId(
             queue=self.QUEUE_NAME,
-            action="export",
-            target="events",
+            action=RequestAction.EXPORT,
+            target=TARGET,
             id=self.query_id,
             user_id=self.user_id,
         ).render()
+
+    def validate_request_id(self, request_id, /) -> None:
+        parsed_request_id = ExportRequestId.parse(request_id)
+
+        if parsed_request_id.action != RequestAction.EXPORT or parsed_request_id.target != TARGET:
+            raise ValueError("The provided request id does not match exported target")
 
     def init_request_args(self):
         super().init_request_args()

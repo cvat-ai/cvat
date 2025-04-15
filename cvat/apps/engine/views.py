@@ -1311,7 +1311,6 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def _get_rq_response(queue, job_id):
         queue = django_rq.get_queue(queue)
         job = queue.fetch_job(job_id)
-        rq_job_meta = ImportRQMeta.for_job(job)
         response = {}
         if job is None or job.is_finished:
             response = { "state": "Finished" }
@@ -1324,6 +1323,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             # https://github.com/cvat-ai/cvat/issues/5215
             response = { "state": "Failed", "message": parse_exception_message(job.exc_info or "Unknown error") }
         else:
+            rq_job_meta = ImportRQMeta.for_job(job)
             response = { "state": "Started" }
             if rq_job_meta.status:
                 response['message'] = rq_job_meta.status
