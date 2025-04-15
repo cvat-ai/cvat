@@ -122,18 +122,24 @@ class Migration(BaseMigration):
         scheduler: django_rq.queues.DjangoScheduler = django_rq.get_scheduler(
             settings.CVAT_QUEUES.EXPORT_DATA.value
         )
-        job_ids = set(
-            queue.get_job_ids()
-            + queue.started_job_registry.get_job_ids()
-            + queue.deferred_job_registry.get_job_ids()
-            + queue.finished_job_registry.get_job_ids()
-            + queue.failed_job_registry.get_job_ids()
-        )
 
         with get_migration_logger(Path(__file__).stem) as logger:
-            for subset_with_ids in take_by(job_ids, 1000):
-                for job in queue.job_class.fetch_many(subset_with_ids, connection=self.connection):
-                    process_job(job, logger=logger)
+            for registry in (
+                queue,
+                queue.started_job_registry,
+                queue.deferred_job_registry,
+                queue.finished_job_registry,
+                queue.failed_job_registry,
+            ):
+                job_ids = set(registry.get_job_ids())
+                for subset_with_ids in take_by(job_ids, 1000):
+                    for idx, job in enumerate(
+                        queue.job_class.fetch_many(subset_with_ids, connection=self.connection)
+                    ):
+                        if job:
+                            process_job(job, logger=logger)
+                        else:
+                            registry.remove(subset_with_ids[idx])
 
             for job in scheduler.get_jobs():
                 process_job(job, logger=logger, scheduler=scheduler)

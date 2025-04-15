@@ -33,6 +33,7 @@ import CanvasWrapper3DComponent, {
 } from 'components/annotation-page/canvas/views/canvas3d/canvas-wrapper3D';
 import ContextImage from 'components/annotation-page/canvas/views/context-image/context-image';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import { useUpdateEffect } from 'utils/hooks';
 import defaultLayout, { ItemLayout, ViewType } from './canvas-layout.conf';
 
 const ReactGridLayout = WidthProvider(RGL);
@@ -197,7 +198,7 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
         setRowHeight(computeRowHeight());
     }, []);
 
-    useEffect(() => {
+    useUpdateEffect(() => {
         window.dispatchEvent(new Event('resize'));
     }, [layoutConfig]);
 

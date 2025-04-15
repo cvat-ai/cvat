@@ -426,9 +426,11 @@ class JobAnnotation:
     def update(self, data):
         data = self._validate_input_annotations(data)
 
+        # in case with "update" must be called prior any annotations in database changes
+        # as this annotations are used to count removed/added shapes
+        handle_annotations_change(self.db_job, data.data, "update")
         self._delete(data)
         self._create(data)
-        handle_annotations_change(self.db_job, self.data, "update")
 
         if not self._data_is_empty(self.data):
             self._set_updated_date()
@@ -494,13 +496,6 @@ class JobAnnotation:
             labeledshape_ids = [shape["id"] for shape in data["shapes"]]
             labeledtrack_ids = [track["id"] for track in data["tracks"]]
 
-            # It is not important for us that data had some "invalid" objects
-            # which were skipped (not actually deleted). The main idea is to
-            # say that all requested objects are absent in DB after the method.
-            self.ir_data.tags = data['tags']
-            self.ir_data.shapes = data['shapes']
-            self.ir_data.tracks = data['tracks']
-
             for labeledimage_ids_chunk in take_by(labeledimage_ids, chunk_size=1000):
                 self._delete_job_labeledimages(labeledimage_ids_chunk)
 
@@ -511,11 +506,13 @@ class JobAnnotation:
                 self._delete_job_labeledtracks(labeledtrack_ids_chunk)
 
             deleted_data = {
+                "version": self.ir_data.version,
                 "tags": data["tags"],
                 "shapes": data["shapes"],
                 "tracks": data["tracks"],
             }
 
+        self.reset()
         return deleted_data
 
     def delete(self, data=None):
@@ -524,6 +521,7 @@ class JobAnnotation:
             self._set_updated_date()
 
         handle_annotations_change(self.db_job, deleted_data, "delete")
+        return deleted_data
 
     @staticmethod
     def _extend_attributes(attributeval_set, default_attribute_values):
@@ -781,10 +779,11 @@ class JobAnnotation:
 
 
 class TaskAnnotation:
-    def __init__(self, pk):
+    def __init__(self, pk, *, write_only: bool = False):
         self.db_task = models.Task.objects.prefetch_related(
             Prefetch('data__images', queryset=models.Image.objects.order_by('frame'))
         ).get(id=pk)
+        self._write_only = write_only
 
         # TODO: maybe include consensus jobs except for task export
         requested_job_types = [models.JobType.ANNOTATION]
@@ -796,7 +795,8 @@ class TaskAnnotation:
             .filter(segment__task_id=pk, type__in=requested_job_types)
         )
 
-        self.ir_data = AnnotationIR(self.db_task.dimension)
+        if not write_only:
+            self.ir_data = AnnotationIR(self.db_task.dimension)
 
     def reset(self):
         self.ir_data.reset()
@@ -824,10 +824,11 @@ class TaskAnnotation:
             else:
                 data.data = patch_job_data(jid, job_data, action, db_job=db_job)
 
-            if data.version > self.ir_data.version:
-                self.ir_data.version = data.version
+            if not self._write_only:
+                if data.version > self.ir_data.version:
+                    self.ir_data.version = data.version
 
-            self._merge_data(data, jobs[jid]["start"])
+                self._merge_data(data, jobs[jid]["start"])
 
     def _merge_data(self, data: AnnotationIR, start_frame: int):
         annotation_manager = AnnotationManager(self.ir_data, dimension=self.db_task.dimension)
@@ -1028,7 +1029,7 @@ def patch_job_data(pk, data: AnnotationIR | dict, action: PatchAction, *, db_job
     elif action == PatchAction.UPDATE:
         annotation.update(data)
     elif action == PatchAction.DELETE:
-        annotation.delete(data)
+        return annotation.delete(data)
 
     return annotation.data
 
@@ -1127,7 +1128,7 @@ def export_task(
 
 @transaction.atomic
 def import_task_annotations(src_file, task_id, format_name, conv_mask_to_poly):
-    task = TaskAnnotation(task_id)
+    task = TaskAnnotation(task_id, write_only=True)
 
     importer = make_importer(format_name)
     with open(src_file, 'rb') as f:

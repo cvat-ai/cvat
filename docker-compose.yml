@@ -81,7 +81,7 @@ services:
 
   cvat_server:
     container_name: cvat_server
-    image: cvat/server:${CVAT_VERSION:-v2.32.0}
+    image: cvat/server:${CVAT_VERSION:-v2.33.0}
     restart: always
     depends_on:
       <<: *backend-deps
@@ -115,16 +115,16 @@ services:
         aliases:
           - cvat-server
 
-  cvat_utils:
-    container_name: cvat_utils
-    image: cvat/server:${CVAT_VERSION:-v2.32.0}
+  cvat_worker_utils:
+    container_name: cvat_worker_utils
+    image: cvat/server:${CVAT_VERSION:-v2.33.0}
     restart: always
     depends_on: *backend-deps
     environment:
       <<: *backend-env
       CVAT_REDIS_INMEM_PASSWORD: ''
       NUMPROCS: 1
-    command: run utils
+    command: run worker notifications cleaning
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -134,13 +134,13 @@ services:
 
   cvat_worker_import:
     container_name: cvat_worker_import
-    image: cvat/server:${CVAT_VERSION:-v2.32.0}
+    image: cvat/server:${CVAT_VERSION:-v2.33.0}
     restart: always
     depends_on: *backend-deps
     environment:
       <<: *backend-env
       NUMPROCS: 2
-    command: run worker.import
+    command: run worker import
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -150,13 +150,13 @@ services:
 
   cvat_worker_export:
     container_name: cvat_worker_export
-    image: cvat/server:${CVAT_VERSION:-v2.32.0}
+    image: cvat/server:${CVAT_VERSION:-v2.33.0}
     restart: always
     depends_on: *backend-deps
     environment:
       <<: [*backend-env, *clickhouse-env]
       NUMPROCS: 2
-    command: run worker.export
+    command: run worker export
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -166,13 +166,13 @@ services:
 
   cvat_worker_annotation:
     container_name: cvat_worker_annotation
-    image: cvat/server:${CVAT_VERSION:-v2.32.0}
+    image: cvat/server:${CVAT_VERSION:-v2.33.0}
     restart: always
     depends_on: *backend-deps
     environment:
       <<: *backend-env
       NUMPROCS: 1
-    command: run worker.annotation
+    command: run worker annotation
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -182,13 +182,13 @@ services:
 
   cvat_worker_webhooks:
     container_name: cvat_worker_webhooks
-    image: cvat/server:${CVAT_VERSION:-v2.32.0}
+    image: cvat/server:${CVAT_VERSION:-v2.33.0}
     restart: always
     depends_on: *backend-deps
     environment:
       <<: *backend-env
       NUMPROCS: 1
-    command: run worker.webhooks
+    command: run worker webhooks
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -198,13 +198,13 @@ services:
 
   cvat_worker_quality_reports:
     container_name: cvat_worker_quality_reports
-    image: cvat/server:${CVAT_VERSION:-v2.32.0}
+    image: cvat/server:${CVAT_VERSION:-v2.33.0}
     restart: always
     depends_on: *backend-deps
     environment:
       <<: *backend-env
       NUMPROCS: 1
-    command: run worker.quality_reports
+    command: run worker quality_reports
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -214,13 +214,13 @@ services:
 
   cvat_worker_chunks:
     container_name: cvat_worker_chunks
-    image: cvat/server:${CVAT_VERSION:-v2.32.0}
+    image: cvat/server:${CVAT_VERSION:-v2.33.0}
     restart: always
     depends_on: *backend-deps
     environment:
       <<: *backend-env
       NUMPROCS: 2
-    command: run worker.chunks
+    command: run worker chunks
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -230,13 +230,13 @@ services:
 
   cvat_worker_consensus:
     container_name: cvat_worker_consensus
-    image: cvat/server:${CVAT_VERSION:-v2.32.0}
+    image: cvat/server:${CVAT_VERSION:-v2.33.0}
     restart: always
     depends_on: *backend-deps
     environment:
       <<: *backend-env
       NUMPROCS: 1
-    command: run worker.consensus
+    command: run worker consensus
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -246,7 +246,7 @@ services:
 
   cvat_ui:
     container_name: cvat_ui
-    image: cvat/ui:${CVAT_VERSION:-v2.32.0}
+    image: cvat/ui:${CVAT_VERSION:-v2.33.0}
     restart: always
     depends_on:
       - cvat_server
