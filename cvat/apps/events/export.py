@@ -223,6 +223,7 @@ def export(request: ExtendedRequest):
 
     manager.init_request_args()
     # request validation is missed here since exporting to a cloud_storage is disabled
+    manager._set_default_callback_params()
     manager.init_callback_with_params()
     manager.setup_new_job(queue, request_id)
 
