@@ -595,7 +595,7 @@ class TestPostQualityReports(_PermissionTestBase):
         *,
         task_staff: str,
         another_user: str,
-        another_user_status: HTTPStatus = HTTPStatus.FORBIDDEN,
+        another_user_status: int = HTTPStatus.FORBIDDEN,
     ):
         with make_api_client(another_user) as api_client:
             (_, response) = api_client.requests_api.retrieve(
