@@ -356,7 +356,7 @@ class ResourceImporter(AbstractRequestManager):
         # - remove uploaded file at the end
         if self.import_args.location_config.location == Location.CLOUD_STORAGE:
             self.callback_args = (
-                *self.callback_args[0],
+                self.callback_args[0],
                 db_storage,
                 key,
                 self.callback,
