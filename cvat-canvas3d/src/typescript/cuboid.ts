@@ -79,7 +79,6 @@ export class CuboidModel {
                 this[view].add(arrow);
             });
         });
-        this.updateArrowLengths();
 
         const planeTop = new THREE.Mesh(
             new THREE.PlaneGeometry(1, 1, 1, 1),
@@ -146,27 +145,10 @@ export class CuboidModel {
         };
     }
 
-    public updateArrowLengths(): void {
-        // Calculate the arrow length based on the cuboid size
-        const size = new THREE.Vector3();
-        this.perspective.geometry.computeBoundingBox();
-        const { boundingBox } = this.perspective.geometry;
-        size.subVectors(boundingBox.max, boundingBox.min);
-        size.multiply(this.perspective.scale);
-
-        const arrowLength = size.length() * 0.25;
-
-        [ViewType.PERSPECTIVE, ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view): void => {
-            Object.values(this.orientationArrows[view]).forEach((arrow) => {
-                arrow.setLength(arrowLength);
-            });
-        });
-    }
-
-    public setAxisArrowsVisibility(showAxisArrows: OrientationVisibility): void {
+    public setAxisArrowsVisibility(orientationVisibility: OrientationVisibility): void {
         [ViewType.PERSPECTIVE, ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view): void => {
             Object.entries(this.orientationArrows[view]).forEach(([axis, arrow]) => {
-                arrow.visible = showAxisArrows[axis];
+                arrow.visible = orientationVisibility[axis];
             });
         });
     }
