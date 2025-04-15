@@ -53,7 +53,6 @@ export class CuboidModel {
             opacity: 0.4,
         });
 
-        // Create the main meshes for each view
         this.perspective = new THREE.Mesh(geometry, material);
         const geo = new THREE.EdgesGeometry(this.perspective.geometry);
         this.wireframe = new THREE.LineSegments(
@@ -145,7 +144,7 @@ export class CuboidModel {
         };
     }
 
-    public setOrientationVisibilityVisibility(orientationVisibility: OrientationVisibility): void {
+    public setOrientationVisibility(orientationVisibility: OrientationVisibility): void {
         [ViewType.PERSPECTIVE, ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view): void => {
             Object.entries(this.orientationArrows[view]).forEach(([axis, arrow]) => {
                 arrow.visible = orientationVisibility[axis];

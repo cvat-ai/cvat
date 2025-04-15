@@ -992,7 +992,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         cuboid.setScale(state.points[6], state.points[7], state.points[8]);
         cuboid.setRotation(state.points[3], state.points[4], state.points[5]);
         cuboid.attachCameraReference();
-        cuboid.setOrientationVisibilityVisibility(orientationVisibility);
+        cuboid.setOrientationVisibility(orientationVisibility);
 
         cuboid[ViewType.PERSPECTIVE].visible = !(state.hidden || state.outside);
         for (const view of BOTTOM_VIEWS) {
@@ -1305,7 +1305,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 if (config.outlined) {
                     cuboid.setOutlineColor(config.outlineColor || CONST.DEFAULT_OUTLINE_COLOR);
                 }
-                cuboid.setOrientationVisibilityVisibility(config.orientationVisibility);
+                cuboid.setOrientationVisibility(config.orientationVisibility);
             }
         } else if (reason === UpdateReasons.SHAPE_ACTIVATED) {
             this.deactivateObject();
@@ -1335,7 +1335,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 }
             } else {
                 this.cube = new CuboidModel('line', '#ffffff');
-                this.cube.setOrientationVisibilityVisibility(this.model.data.shapeProperties.orientationVisibility);
+                this.cube.setOrientationVisibility(this.model.data.shapeProperties.orientationVisibility);
             }
 
             this.cube.setName('drawTemplate');

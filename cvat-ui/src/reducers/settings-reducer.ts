@@ -169,7 +169,7 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 },
             };
         }
-        case SettingsActionTypes.CHANGE_SHAPES_SHOW_AXIS_ARROWS: {
+        case SettingsActionTypes.CHANGE_SHAPES_ORIENTATION_VISIBILITY: {
             return {
                 ...state,
                 shapes: {

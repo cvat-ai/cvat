@@ -57,7 +57,7 @@ export enum SettingsActionTypes {
     ENABLE_IMAGE_FILTER = 'ENABLE_IMAGE_FILTER',
     DISABLE_IMAGE_FILTER = 'DISABLE_IMAGE_FILTER',
     RESET_IMAGE_FILTERS = 'RESET_IMAGE_FILTERS',
-    CHANGE_SHAPES_SHOW_AXIS_ARROWS = 'CHANGE_SHAPES_SHOW_AXIS_ARROWS',
+    CHANGE_SHAPES_ORIENTATION_VISIBILITY = 'CHANGE_SHAPES_ORIENTATION_VISIBILITY',
 }
 
 export function changeShapesOpacity(opacity: number): AnyAction {
@@ -126,7 +126,7 @@ export function changeShowProjections(showProjections: boolean): AnyAction {
 
 export function changeOrientationVisibility(showArrows: Partial<OrientationVisibility>): AnyAction {
     return {
-        type: SettingsActionTypes.CHANGE_SHAPES_SHOW_AXIS_ARROWS,
+        type: SettingsActionTypes.CHANGE_SHAPES_ORIENTATION_VISIBILITY,
         payload: {
             showArrows,
         },
