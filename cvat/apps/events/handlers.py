@@ -473,13 +473,13 @@ def handle_annotations_change(instance: Job, annotations, action, **kwargs):
     uid = user_id(instance)
     uname = user_name(instance)
     uemail = user_email(instance)
-    request_info = request_info()
+    request_info_ = request_info()
 
     tags = [filter_data(tag) for tag in annotations.get("tags", [])]
     if tags:
         record_server_event(
             scope=event_scope(action, "tags"),
-            request_info=request_info,
+            request_info=request_info_,
             on_commit=True,
             count=len(tags),
             org_id=oid,
@@ -502,7 +502,7 @@ def handle_annotations_change(instance: Job, annotations, action, **kwargs):
         if shapes:
             record_server_event(
                 scope=scope,
-                request_info=request_info,
+                request_info=request_info_,
                 on_commit=True,
                 obj_name=shape_type,
                 count=len(shapes),
@@ -527,7 +527,7 @@ def handle_annotations_change(instance: Job, annotations, action, **kwargs):
         if tracks:
             record_server_event(
                 scope=scope,
-                request_info=request_info,
+                request_info=request_info_,
                 on_commit=True,
                 obj_name=track_type,
                 count=len(tracks),
