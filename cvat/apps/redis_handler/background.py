@@ -345,15 +345,6 @@ class AbstractExporter(AbstractRequestManager):
             self.callback_args = (db_storage, self.callback) + self.callback_args
             self.callback = export_resource_to_cloud_storage
 
-    def validate_request(self):
-        super().validate_request()
-
-        if (
-            self.export_args.location_config.location == Location.CLOUD_STORAGE
-            and not self.export_args.filename
-        ):
-            raise ValidationError("The filename was not specified")
-
     def build_meta(self, *, request_id):
         return ExportRQMeta.build_for(
             request=self.request,
@@ -370,6 +361,7 @@ class AbstractExporter(AbstractRequestManager):
         request_id = self.request.query_params.get(self.REQUEST_ID_KEY)
 
         if not request_id:
+            # TODO: check response content type
             raise ValidationError("Missing request id in the query parameters")
 
         try:
