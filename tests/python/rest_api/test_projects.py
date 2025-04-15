@@ -946,7 +946,7 @@ class TestImportExportDatasetProject:
                 )
             )
 
-            with pytest.raises(exceptions.ApiException, match="A file should be a zip archive"):
+            with pytest.raises(exceptions.ApiException, match="Dataset file should be zip archive"):
                 self._test_import_project(
                     admin_user,
                     project.id,
