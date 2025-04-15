@@ -9,10 +9,11 @@ import config from 'config';
 import { Project, Task, Job } from 'cvat-core-wrapper';
 import { CombinedState } from 'reducers';
 import PaidFeaturePlaceholder from 'components/paid-feature-placeholder/paid-feature-placeholder';
+import { TimePeriod } from '.';
 
 interface Props {
     resource: Project | Task | Job;
-    timePeriod: { startDate: string; endDate: string; } | null;
+    timePeriod: TimePeriod | null;
 }
 
 function AnalyticsReportContent(): JSX.Element {

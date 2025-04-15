@@ -18,13 +18,14 @@ import GoBackButton from 'components/common/go-back-button';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import AnalyticsReportContent from './analytics-report-content';
 import AnalyticsPageHeader from './analytics-page-header';
+import { TimePeriod } from '.';
 
 const core = getCore();
 
 function AnalyticsReportPage(): JSX.Element {
     const requestedInstanceType: InstanceType = useInstanceType();
     const requestedInstanceId = useInstanceId(requestedInstanceType);
-    const [timePeriod, setTimePeriod] = useState<{ startDate: string; endDate: string; } | null>(null);
+    const [timePeriod, setTimePeriod] = useState<TimePeriod | null>(null);
     const [exporting, setExporting] = useState(false);
     const [resource, setResource] = useState<Project | Task | Job | null>(null);
     const [fetching, setFetching] = useState(true);
@@ -155,15 +156,10 @@ function AnalyticsReportPage(): JSX.Element {
                                         );
                                     }
 
-                                    let newPeriod = null;
-                                    if (from && to) {
-                                        newPeriod = {
-                                            startDate: localToUTC(from),
-                                            endDate: localToUTC(to),
-                                        };
-                                    }
-
-                                    setTimePeriod(newPeriod);
+                                    setTimePeriod((from && to) ? {
+                                        startDate: localToUTC(from),
+                                        endDate: localToUTC(to),
+                                    } : null);
                                 }}
                             />
                         )}
