@@ -221,6 +221,21 @@ description: 'Installing a development environment for different operating syste
 You have done! Now it is possible to insert breakpoints and debug server and client of the tool.
 Instructions for running tests locally are available {{< ilink "/docs/contributing/running-tests" "here" >}}.
 
+### Run CVAT in PyCharm
+
+- Open the project in PyCharm
+- Configure a new python interpreter in the _Interpreter Settings_ pointing to `.env/bin/python`
+- Start the npm UI debug server.
+  - if you want to run CVAT in localhost run or debug the run configuration `start:cvat-ui`
+  - if you want to access CVAT from outside of your host:
+    - Edit the `start:cvat-ui` run configuration and
+    - Add CVAT_UI_HOST='<YOUR_HOST_IP>' under _Environment:_
+    - Click on run or debug `start:cvat-ui`
+
+- For the backend run or debug the configurations: `server: django`, `server: RQ - export`, `server: RQ - import`,
+  `server: RQ - annotation`, `server: RQ - scheduler`, `server: RQ - webhooks`, `server: RQ - analytics reports`,
+  `server: RQ - cleaning` and `server: RQ - quality reports`
+
 ## Note for Windows users
 
 You develop CVAT under WSL (Windows subsystem for Linux) following next steps.
