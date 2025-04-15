@@ -145,7 +145,7 @@ export class CuboidModel {
         };
     }
 
-    public setAxisArrowsVisibility(orientationVisibility: OrientationVisibility): void {
+    public setOrientationVisibilityVisibility(orientationVisibility: OrientationVisibility): void {
         [ViewType.PERSPECTIVE, ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view): void => {
             Object.entries(this.orientationArrows[view]).forEach(([axis, arrow]) => {
                 arrow.visible = orientationVisibility[axis];
