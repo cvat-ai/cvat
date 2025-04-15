@@ -163,7 +163,7 @@ export class CuboidModel {
         [ViewType.PERSPECTIVE, ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view): void => {
             (this as Indexable)[view].scale.set(x, y, z);
 
-            // By default, the arrow points along the global Y axis.
+            // Arrow direction specifies its local Y axis, where it points to.
             // When we change its direction to align with the X or Z axis,
             // the arrow’s local coordinate system rotates accordingly.
             // To maintain correct proportions, we apply the X or Z scaling of the cuboid
