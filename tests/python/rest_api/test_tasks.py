@@ -4116,7 +4116,7 @@ class TestTaskBackups:
         task_id = next(t for t in tasks if t["jobs"]["count"] == 0)["id"]
 
         # FUTURE-FIXME: failed by 9075, is going to be fixed in https://github.com/cvat-ai/cvat/pull/9230
-        with pytest.raises(ApiException) as exc:
+        with pytest.raises(BackgroundRequestException) as exc:
             self._test_can_export_backup(task_id)
 
             assert exc.status == HTTPStatus.BAD_REQUEST

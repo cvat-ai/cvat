@@ -97,9 +97,7 @@ class ResourceExportManager(ABC):
             RQJobStatus.DEFERRED,
         }:
             return Response(
-                RqIdSerializer(
-                    {"rq_id": rq_job.id, "response_4xx_reason": "Export request is being processed"}
-                ).data,
+                RqIdSerializer({"rq_id": rq_job.id}).data,
                 status=status.HTTP_409_CONFLICT,
             )
 
