@@ -44,7 +44,7 @@ from cvat.apps.engine.models import (
     LabelType,
     Project,
     SegmentType,
-    SourceType
+    SourceType,
     ShapeType,
     Task,
 )
