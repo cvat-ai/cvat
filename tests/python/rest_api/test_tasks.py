@@ -4115,12 +4115,11 @@ class TestTaskBackups:
     def test_cannot_export_backup_for_task_without_data(self, tasks):
         task_id = next(t for t in tasks if t["jobs"]["count"] == 0)["id"]
 
-        # FUTURE-FIXME: failed by 9075, is going to be fixed in https://github.com/cvat-ai/cvat/pull/9230
+        # FUTURE-FIXME: broken by 9075, is going to be fixed in https://github.com/cvat-ai/cvat/pull/9230
         with pytest.raises(BackgroundRequestException) as exc:
             self._test_can_export_backup(task_id)
 
-            assert exc.status == HTTPStatus.BAD_REQUEST
-            assert "Backup of a task without data is not allowed" == exc.body.encode()
+        assert "Backup of a task without data is not allowed" == str(exc.value)
 
     @pytest.mark.with_external_services
     def test_can_export_and_import_backup_task_with_cloud_storage(self, tasks):
