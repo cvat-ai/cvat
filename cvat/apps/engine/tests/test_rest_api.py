@@ -6299,7 +6299,9 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                                       + polygon_shapes_with_attrs
                 annotations["tags"] = tags_with_attrs + tags_wo_attrs
 
-            elif annotation_format == "ImageNet 1.0":
+            elif annotation_format in [
+                "ImageNet 1.0",
+                "Ultralytics YOLO Classification 1.0"]:
                 annotations["tags"] = tags_wo_attrs
 
             elif annotation_format == "CamVid 1.0":
