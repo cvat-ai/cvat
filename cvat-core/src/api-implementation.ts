@@ -31,8 +31,8 @@ import Organization, { Invitation } from './organization';
 import Webhook from './webhook';
 import { ArgumentError } from './exceptions';
 import {
-    AnalyticsReportFilter, QualityConflictsFilter, QualityReportsFilter,
-    QualitySettingsFilter, SerializedAsset, ConsensusSettingsFilter,
+    AnalyticsReportFilter, QualityConflictsFilter,
+    SerializedAsset, ConsensusSettingsFilter,
 } from './server-response-types';
 import QualityReport from './quality-report';
 import AboutData from './about';
@@ -424,7 +424,10 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         return new ConsensusSettings({ ...settings, descriptions });
     });
 
-    implementationMixin(cvat.analytics.quality.reports, async (filter: QualityReportsFilter, aggregate?: boolean) => {
+    implementationMixin(cvat.analytics.quality.reports, async (
+        filter: Parameters<CVATCore['analytics']['quality']['reports']>[0],
+        aggregate?: Parameters<CVATCore['analytics']['quality']['reports']>[1],
+    ) => {
         checkFilter(filter, {
             page: isInteger,
             pageSize: isPageSize,
@@ -524,8 +527,10 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         return mergedConflicts;
     });
     implementationMixin(
-        cvat.analytics.quality.settings.get,
-        async (filter: QualitySettingsFilter, aggregate?: boolean) => {
+        cvat.analytics.quality.settings.get, async (
+            filter: Parameters<CVATCore['analytics']['quality']['settings']['get']>[0],
+            aggregate?: Parameters<CVATCore['analytics']['quality']['settings']['get']>[1],
+        ) => {
             checkFilter(filter, {
                 taskID: isInteger,
                 projectID: isInteger,
@@ -535,14 +540,11 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
             const params = fieldsToSnakeCase(filter);
 
             const settingsList = await serverProxy.analytics.quality.settings.get(params, aggregate);
-            if (settingsList) {
-                const schema = await getServerAPISchema();
-                const descriptions = convertDescriptions(schema.components.schemas.QualitySettings.properties);
+            const schema = await getServerAPISchema();
+            const descriptions = convertDescriptions(schema.components.schemas.QualitySettings.properties);
 
-                const settings = settingsList.map((setting) => new QualitySettings({ ...setting, descriptions }));
-                return settings;
-            }
-            return null;
+            const settings = settingsList.map((setting) => new QualitySettings({ ...setting, descriptions }));
+            return settings;
         });
     implementationMixin(cvat.analytics.performance.reports, async (filter: AnalyticsReportFilter) => {
         checkFilter(filter, {
