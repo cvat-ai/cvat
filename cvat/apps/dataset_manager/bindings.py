@@ -1758,10 +1758,10 @@ class CvatTaskOrJobDataExtractor(StreamingSubsetBase, CvatDataExtractorBase):
         )
         self._categories = self.load_categories(self._instance_meta['labels'])
 
-        self.grouped_by_frame = list(self._instance_data.group_by_frame(include_empty=True))
+        self._grouped_by_frame = list(self._instance_data.group_by_frame(include_empty=True))
 
     def __iter__(self):
-        for frame_data in self.grouped_by_frame:
+        for frame_data in self._grouped_by_frame:
             # do not keep parsed lazy list data after this iteration
             frame_data = frame_data._replace(
                 labeled_shapes=[
