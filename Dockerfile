@@ -193,10 +193,10 @@ RUN python -m pip uninstall -y pip
 # Install and initialize CVAT, copy all necessary files
 COPY cvat/nginx.conf /etc/nginx/nginx.conf
 COPY --chown=${USER} supervisord/ ${HOME}/supervisord
-COPY --chown=${USER} manage.py backend_entrypoint.sh wait_for_deps.sh ${HOME}/
+COPY --chown=${USER} backend_entrypoint.d/ ${HOME}/backend_entrypoint.d
+COPY --chown=${USER} manage.py rqscheduler.py backend_entrypoint.sh wait_for_deps.sh ${HOME}/
 COPY --chown=${USER} utils/ ${HOME}/utils
 COPY --chown=${USER} cvat/ ${HOME}/cvat
-COPY --chown=${USER} rqscheduler.py ${HOME}
 
 ARG COVERAGE_PROCESS_START
 RUN if [ "${COVERAGE_PROCESS_START}" ]; then \

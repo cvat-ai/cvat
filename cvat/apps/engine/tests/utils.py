@@ -11,7 +11,7 @@ from contextlib import contextmanager
 from io import BytesIO
 from pathlib import Path
 from typing import Any, Callable, TypeVar
-from urllib.parse import quote
+from urllib.parse import urlencode
 
 import av
 import django_rq
@@ -128,9 +128,9 @@ class ApiTestBase(APITestCase):
         super().setUp()
         self.client = self.client_class()
 
-    def _get_request(self, path: str, user: str, *, data: dict[str, Any] | None = None) -> Response:
+    def _get_request(self, path: str, user: str, *, query_params: dict[str, Any] | None = None) -> Response:
         with ForceLogin(user, self.client):
-            response = self.client.get(path, data=data)
+            response = self.client.get(path, data=query_params)
         return response
 
     def _delete_request(self, path: str, user: str):
@@ -138,14 +138,39 @@ class ApiTestBase(APITestCase):
             response = self.client.delete(path)
         return response
 
-    def _post_request(self, path: str, user: str, *, data: dict[str, Any] | None = None):
+    def _post_request(
+        self,
+        path: str,
+        user: str,
+        *,
+        format: str = "json",  # pylint: disable=redefined-builtin
+        query_params: dict[str, Any] = None,
+        data: dict[str, Any] | None = None
+    ):
+        if query_params:
+            # Note: once we upgrade to Django 5.1+, this should be changed to pass query_params
+            # directly to self.client.
+            assert "?" not in path
+            path += "?" + urlencode(query_params)
         with ForceLogin(user, self.client):
-            response = self.client.post(path, data=data)
+            response = self.client.post(path, data=data, format=format)
         return response
 
-    def _put_request(self, url: str, user: str, *, data: dict[str, Any] | None = None):
+    def _patch_request(self, path: str, user: str, *, data: dict[str, Any] | None = None):
         with ForceLogin(user, self.client):
-            response = self.client.put(url, data=data)
+            response = self.client.patch(path, data=data, format="json")
+        return response
+
+    def _put_request(
+        self,
+        url: str,
+        user: str,
+        *,
+        format: str = "json",  # pylint: disable=redefined-builtin
+        data: dict[str, Any] | None = None,
+    ):
+        with ForceLogin(user, self.client):
+            response = self.client.put(url, data=data, format=format)
         return response
 
     def _check_request_status(
@@ -164,9 +189,6 @@ class ApiTestBase(APITestCase):
         assert request_status == "finished", f"The last request status was {request_status}"
         return response
 
-    def _query_params_to_str(self, **params: dict[str, Any]) -> str:
-        return "?" + "&".join([f"{k}={quote(str(v))}"for k, v in params.items()])
-
 
 class ExportApiTestBase(ApiTestBase):
     def _export(
@@ -179,16 +201,13 @@ class ExportApiTestBase(ApiTestBase):
         file_path: str | None = None,
         expected_4xx_status_code: int | None = None,
     ):
-        if query_params:
-            api_path += self._query_params_to_str(**query_params)
-
-        response = self._post_request(api_path, user)
+        response = self._post_request(api_path, user, query_params=query_params)
         self.assertEqual(response.status_code, expected_4xx_status_code or status.HTTP_202_ACCEPTED)
 
         rq_id = response.json().get("rq_id")
         if expected_4xx_status_code:
             # export task by admin to get real rq_id
-            response = self._post_request(api_path, self.admin)
+            response = self._post_request(api_path, self.admin, query_params=query_params)
             self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
             rq_id = response.json().get("rq_id")
 
