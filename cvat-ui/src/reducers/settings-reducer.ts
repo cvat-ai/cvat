@@ -176,7 +176,7 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                     ...state.shapes,
                     orientationVisibility: {
                         ...state.shapes.orientationVisibility,
-                        ...action.payload.showArrows,
+                        ...action.payload.orientationVisibility,
                     },
                 },
             };

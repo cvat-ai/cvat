@@ -51,7 +51,7 @@ interface DispatchToProps {
     changeShapesOutlinedBorders(outlined: boolean, color: string): void;
     changeShowBitmap(event: CheckboxChangeEvent): void;
     changeShowProjections(event: CheckboxChangeEvent): void;
-    changeOrientationVisibility(showArrows: Partial<OrientationVisibility>): void;
+    changeOrientationVisibility(orientationVisibility: Partial<OrientationVisibility>): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -107,8 +107,8 @@ function mapDispatchToProps(dispatch: Dispatch<AnyAction>): DispatchToProps {
         changeShowProjections(event: CheckboxChangeEvent): void {
             dispatch(changeShowProjectionsAction(event.target.checked));
         },
-        changeOrientationVisibility(showArrows: Partial<OrientationVisibility>): void {
-            dispatch(changeOrientationVisibilityAction(showArrows));
+        changeOrientationVisibility(orientationVisibility: Partial<OrientationVisibility>): void {
+            dispatch(changeOrientationVisibilityAction(orientationVisibility));
         },
     };
 }

@@ -124,11 +124,11 @@ export function changeShowProjections(showProjections: boolean): AnyAction {
     };
 }
 
-export function changeOrientationVisibility(showArrows: Partial<OrientationVisibility>): AnyAction {
+export function changeOrientationVisibility(orientationVisibility: Partial<OrientationVisibility>): AnyAction {
     return {
         type: SettingsActionTypes.CHANGE_SHAPES_ORIENTATION_VISIBILITY,
         payload: {
-            showArrows,
+            orientationVisibility,
         },
     };
 }
