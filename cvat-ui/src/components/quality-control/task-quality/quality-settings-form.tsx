@@ -94,6 +94,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
             {makeTooltipFragment('Target metric threshold', settings.descriptions.targetMetricThreshold)}
             {makeTooltipFragment('Compare attributes', settings.descriptions.compareAttributes)}
             {makeTooltipFragment('Empty frames are annotated', settings.descriptions.emptyIsAnnotated)}
+            {makeTooltipFragment('Job selection filter', settings.descriptions.jobFilter)}
         </>,
     );
 

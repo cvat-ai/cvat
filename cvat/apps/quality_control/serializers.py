@@ -328,7 +328,8 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
         required=False,
         help_text=textwrap.dedent(
             """\
-        JSON expression filter for included jobs. Available filter terms: {}
+        A JSON-based logic expression used to filter jobs for quality validation.
+        The filter supports various terms to specify conditions on job: {}
         """.format(
                 Meta.model.get_job_filter_terms()
             )

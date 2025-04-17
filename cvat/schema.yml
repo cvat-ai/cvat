@@ -9426,7 +9426,8 @@ components:
         job_filter:
           type: string
           description: |
-            JSON expression filter for included jobs. Available filter terms: ['assignee', 'id', 'stage', 'state', 'task_id', 'task_name', 'type']
+            A JSON-based logic expression used to filter jobs for quality validation.
+            The filter supports various terms to specify conditions on job: ['assignee', 'id', 'stage', 'state', 'task_id', 'task_name', 'type']
           maxLength: 1024
         inherit:
           type: boolean
@@ -10047,7 +10048,8 @@ components:
         job_filter:
           type: string
           description: |
-            JSON expression filter for included jobs. Available filter terms: ['assignee', 'id', 'stage', 'state', 'task_id', 'task_name', 'type']
+            A JSON-based logic expression used to filter jobs for quality validation.
+            The filter supports various terms to specify conditions on job: ['assignee', 'id', 'stage', 'state', 'task_id', 'task_name', 'type']
           maxLength: 1024
         inherit:
           type: boolean
@@ -10213,7 +10215,8 @@ components:
         job_filter:
           type: string
           description: |
-            JSON expression filter for included jobs. Available filter terms: ['assignee', 'id', 'stage', 'state', 'task_id', 'task_name', 'type']
+            A JSON-based logic expression used to filter jobs for quality validation.
+            The filter supports various terms to specify conditions on job: ['assignee', 'id', 'stage', 'state', 'task_id', 'task_name', 'type']
           maxLength: 1024
         inherit:
           type: boolean

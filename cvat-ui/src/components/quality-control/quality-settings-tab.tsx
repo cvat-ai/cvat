@@ -117,7 +117,7 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
                     message={(
                         <div>
                             <ExclamationCircleFilled className='ant-alert-icon' />
-                            <Text>{`Custom settings are used in ${nonInheritedChildSettings.length} tasks`}</Text>
+                            <Text>{`Own settings are used in ${nonInheritedChildSettings.length} tasks`}</Text>
                         </div>
                     )}
                     action={(
@@ -128,7 +128,7 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
                                 Modal.confirm({
                                     title: 'Are you sure you want to force project settings?',
                                     icon: <ExclamationCircleFilled />,
-                                    content: 'This action will override custom settings in all tasks.',
+                                    content: 'This action will override own settings in all tasks.',
                                     okText: 'Yes',
                                     cancelText: 'No',
                                     onOk: async () => {
