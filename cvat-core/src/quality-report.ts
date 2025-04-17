@@ -8,7 +8,7 @@ import User from './user';
 export interface QualitySummary {
     totalFrames: number;
     validationFrames: number;
-    validationFrameSharePercent: number;
+    validationFrameShare: number;
     conflictCount: number;
     validCount: number;
     dsCount: number;
@@ -107,14 +107,14 @@ export default class QualityReport {
         return {
             totalFrames: this.#summary.total_frames,
             validationFrames: this.#summary.validation_frames,
-            validationFrameSharePercent: this.#summary.validation_frame_share * 100,
+            validationFrameShare: this.#summary.validation_frame_share,
             conflictCount: this.#summary.conflict_count,
             validCount: this.#summary.valid_count,
             dsCount: this.#summary.ds_count,
             gtCount: this.#summary.gt_count,
-            accuracy: this.#summary.accuracy * 100,
-            precision: this.#summary.precision * 100,
-            recall: this.#summary.recall * 100,
+            accuracy: this.#summary.accuracy,
+            precision: this.#summary.precision,
+            recall: this.#summary.recall,
             conflictsByType: {
                 extraAnnotations: this.#summary.conflicts_by_type?.extra_annotation,
                 missingAnnotations: this.#summary.conflicts_by_type?.missing_annotation,
