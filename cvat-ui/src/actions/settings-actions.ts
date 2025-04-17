@@ -10,6 +10,7 @@ import {
     GridColor, ColorBy, SettingsState, ToolsBlockerState,
     CombinedState,
 } from 'reducers';
+import { OrientationVisibility } from 'cvat-canvas3d-wrapper';
 import { ImageFilter, ImageFilterAlias, SerializedImageFilter } from 'utils/image-processing';
 import { conflict, conflictDetector } from 'utils/conflict-detector';
 import GammaCorrection, { GammaFilterOptions } from 'utils/fabric-wrapper/gamma-correciton';
@@ -56,6 +57,7 @@ export enum SettingsActionTypes {
     ENABLE_IMAGE_FILTER = 'ENABLE_IMAGE_FILTER',
     DISABLE_IMAGE_FILTER = 'DISABLE_IMAGE_FILTER',
     RESET_IMAGE_FILTERS = 'RESET_IMAGE_FILTERS',
+    CHANGE_SHAPES_ORIENTATION_VISIBILITY = 'CHANGE_SHAPES_ORIENTATION_VISIBILITY',
 }
 
 export function changeShapesOpacity(opacity: number): AnyAction {
@@ -118,6 +120,15 @@ export function changeShowProjections(showProjections: boolean): AnyAction {
         type: SettingsActionTypes.CHANGE_SHAPES_SHOW_PROJECTIONS,
         payload: {
             showProjections,
+        },
+    };
+}
+
+export function changeOrientationVisibility(orientationVisibility: Partial<OrientationVisibility>): AnyAction {
+    return {
+        type: SettingsActionTypes.CHANGE_SHAPES_ORIENTATION_VISIBILITY,
+        payload: {
+            orientationVisibility,
         },
     };
 }
