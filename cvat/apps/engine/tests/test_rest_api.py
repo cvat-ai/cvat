@@ -22,6 +22,7 @@ from enum import Enum
 from glob import glob
 from io import BytesIO, IOBase
 from itertools import product
+from pprint import pformat
 from time import sleep
 from typing import BinaryIO
 from unittest import mock
@@ -4988,10 +4989,25 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     'stroke-width="0.1" data-type="element node" data-element-id="2" data-node-id="2" data-label-name="2"></circle>'
                 }
             ]
+        elif annotation_format == "Cityscapes 1.0":
+            data["labels"] = [
+                {
+                    "name": "car",
+                    "color": "#00AFF0",
+                    "attributes": [],
+                },
+                {
+                    "name": "background",
+                    "color": "#000000",
+                    "attributes": []
+                }
+            ]
 
         with ForceLogin(owner, self.client):
             response = self.client.post('/api/tasks', data=data, format="json")
-            assert response.status_code == status.HTTP_201_CREATED
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED,
+                f"Reason:\n{pformat(dict(response.data))}"
+            )
             tid = response.data["id"]
 
             images = {
@@ -5986,7 +6002,8 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                                          "ICDAR Localization 1.0", "ICDAR Segmentation 1.0",
                                          'Kitti Raw Format 1.0', 'Sly Point Cloud Format 1.0',
                                          'Datumaro 3D 1.0',
-                                         'COCO Keypoints 1.0']:
+                                         'COCO Keypoints 1.0',
+                                         'Cityscapes 1.0']:
                 rectangle_tracks_with_attrs = [{
                     "frame": 0,
                     "label_id": task["labels"][0]["id"],
@@ -6317,8 +6334,28 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                 annotations["shapes"] = points_wo_attrs \
                                       + rectangle_shapes_wo_attrs
             elif annotation_format == "Cityscapes 1.0":
-                annotations["shapes"] = points_wo_attrs \
-                                      + rectangle_shapes_wo_attrs
+                background_polygon_wo_attrs = [{
+                    "frame": 1,
+                    "label_id": task["labels"][0]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [],
+                    "points": [4, 4, 5, 91, 96, 93, 97, 4],
+                    "type": "polygon",
+                    "occluded": False,
+                }]
+                object_polygon_wo_attrs = [{
+                    "frame": 1,
+                    "label_id": task["labels"][1]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [],
+                    "points": [14, 14, 15, 85, 88, 87, 90, 13],
+                    "type": "polygon",
+                    "occluded": False,
+                }]
+                annotations["shapes"] = background_polygon_wo_attrs \
+                                      + object_polygon_wo_attrs
             elif annotation_format == "Open Images V6 1.0":
                 annotations["tags"] = tags_wo_attrs
                 annotations["shapes"] = rectangle_shapes_wo_attrs \
@@ -6573,7 +6610,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
             print("The following export formats have no pair:",
                 set(export_formats) - set(import_formats))
 
-        # Buggy formats that are not crucial for testing
+        # Rare and buggy formats that are not crucial for testing
         formats.pop('Market-1501 1.0')
 
         for export_format, import_format in formats.items():
@@ -6634,7 +6671,8 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
 
                 # 7. check annotation
                 if export_format in {"Segmentation mask 1.1", "MOTS PNG 1.0",
-                        "CamVid 1.0", "ICDAR Segmentation 1.0"}:
+                        "CamVid 1.0", "ICDAR Segmentation 1.0",
+                        "Cityscapes 1.0"}:
                     continue # can't really predict the result to check
                 response = self._get_api_v2_tasks_id_annotations(task["id"], owner)
                 self.assertEqual(response.status_code, HTTP_200_OK)
