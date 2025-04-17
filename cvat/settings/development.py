@@ -19,9 +19,9 @@ ALLOWED_HOSTS.append("testserver")
 SENDFILE_BACKEND = "django_sendfile.backends.development"
 
 # Cross-Origin Resource Sharing settings for CVAT UI
-UI_SCHEME = os.environ.get("UI_SCHEME", "http")
-UI_HOST = os.environ.get("UI_HOST", "localhost")
-UI_PORT = os.environ.get("UI_PORT", 3000)
+UI_SCHEME = os.environ.get("CVAT_UI_SCHEME", "http")
+UI_HOST = os.environ.get("CVAT_UI_HOST", "localhost")
+UI_PORT = os.environ.get("CVAT_UI_PORT", 3000)
 CORS_ALLOW_CREDENTIALS = True
 UI_URL = "{}://{}".format(UI_SCHEME, UI_HOST)
 
