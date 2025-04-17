@@ -46,20 +46,26 @@ class RequestPermission(OpenPolicyAgentPermission):
                         job_owner = BaseRQMeta.for_job(obj).user
                         assert job_owner and job_owner.id == parsed_request_id.user_id
 
-                    elif isinstance(parsed_request_id.id, int):
+                    elif parsed_request_id.target_id is not None:
                         if parsed_request_id.target == RequestTarget.PROJECT.value:
                             permissions.append(
-                                ProjectPermission.create_scope_view(request, parsed_request_id.id)
+                                ProjectPermission.create_scope_view(
+                                    request, parsed_request_id.target_id
+                                )
                             )
                             continue
                         elif parsed_request_id.target == RequestTarget.TASK.value:
                             permissions.append(
-                                TaskPermission.create_scope_view(request, parsed_request_id.id)
+                                TaskPermission.create_scope_view(
+                                    request, parsed_request_id.target_id
+                                )
                             )
                             continue
                         elif parsed_request_id.target == RequestTarget.JOB.value:
                             permissions.append(
-                                JobPermission.create_scope_view(request, parsed_request_id.id)
+                                JobPermission.create_scope_view(
+                                    request, parsed_request_id.target_id
+                                )
                             )
                             continue
                         assert False, "Unsupported operation on resource"

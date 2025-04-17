@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import urllib.parse
-from typing import Any, ClassVar, Protocol
+from contextlib import suppress
+from types import NoneType
+from typing import Any, ClassVar, Protocol, overload
 from uuid import UUID
 
 import attrs
@@ -9,17 +11,7 @@ from django.conf import settings
 from django.utils.module_loading import import_string
 from rq.job import Job as RQJob
 
-
-def convert_id(value: int | str | UUID) -> int | UUID:
-    if isinstance(value, (int, UUID)):
-        return value
-
-    assert isinstance(value, str)
-
-    if value.isnumeric():
-        return int(value)
-
-    return UUID(value)
+from cvat.apps.redis_handler.apps import MAPPING
 
 
 def convert_extra(value: dict) -> dict[str, Any]:
@@ -37,6 +29,31 @@ class IncorrectRequestIdError(ValueError):
     pass
 
 
+class RequestIdWithSubresourceMixin:
+    TYPE_SEP: ClassVar[str]
+
+    action: str
+    target: str
+    extra: dict[str, Any]
+
+    @property
+    def subresource(self) -> str:
+        return self.extra["subresource"]
+
+    @property
+    def type(self) -> str:
+        return self.TYPE_SEP.join([self.action, self.subresource or self.target])
+
+
+class RequestIdWithOptionalSubresourceMixin(RequestIdWithSubresourceMixin):
+    @property
+    def subresource(self) -> str | None:
+        with suppress(KeyError):
+            return super().subresource
+
+        return None
+
+
 @attrs.frozen(kw_only=True)
 class RequestId:
     FIELD_SEP: ClassVar[str] = "&"
@@ -44,23 +61,30 @@ class RequestId:
 
     ENCODE_MAPPING = {
         ".": "@",
-        " ": "__",  # one underscore can be used in the queue name
+        " ": "_",
     }
     DECODE_MAPPING = {v: k for k, v in ENCODE_MAPPING.items()}
     NOT_ALLOWED_CHARS = {FIELD_SEP, KEY_VAL_SEP, "/"} | set(DECODE_MAPPING.keys())
 
     TYPE_SEP: ClassVar[str] = ":"  # used in serialization logic
 
-    queue: str = attrs.field(validator=attrs.validators.instance_of(str))
     action: str = attrs.field(validator=attrs.validators.instance_of(str))
     target: str = attrs.field(validator=attrs.validators.instance_of(str))
-    id: int | UUID = attrs.field(
-        validator=attrs.validators.instance_of((int, UUID)),
-        converter=convert_id,
+    target_id: int | None = attrs.field(
+        converter=lambda x: x if x is None else int(x), default=None
     )
-    extra: dict[str, Any] = attrs.field(converter=convert_extra, factory=dict)
 
+    id: UUID | None = attrs.field(
+        converter=lambda x: x if isinstance(x, (NoneType, UUID)) else UUID(x),
+        default=None,
+    )  # operation id
+    extra: dict[str, str] = attrs.field(converter=convert_extra, factory=dict)
     user_id: int | None = attrs.field(converter=lambda x: x if x is None else int(x), default=None)
+
+    def __attrs_post_init__(self):
+        assert (
+            sum(1 for i in (self.target_id, self.id) if i) == 1
+        ), "Only one of target_id or id should be set"
 
     @property
     def type(self) -> str:
@@ -77,9 +101,7 @@ class RequestId:
             str_value = str(value)
             for reserved in cls.NOT_ALLOWED_CHARS:
                 if reserved in str_value:
-                    raise IncorrectRequestIdError(
-                        f"{key} contains special character/sequence of characters: {reserved!r}"
-                    )
+                    raise IncorrectRequestIdError(f"{key} contains special character: {reserved!r}")
 
             for from_char, to_char in cls.ENCODE_MAPPING.items():
                 if from_char in str_value:
@@ -100,7 +122,20 @@ class RequestId:
         return self.FIELD_SEP.join([f"{k}{self.KEY_VAL_SEP}{v}" for k, v in rq_id_repr.items()])
 
     @classmethod
-    def parse(cls, request_id: str, /):
+    @overload
+    def parse(cls, request_id: str, /, *, queue: str) -> RequestId: ...
+
+    @classmethod
+    @overload
+    def parse(cls, request_id: str, /, *, queue: None = None) -> tuple[RequestId, str]: ...
+
+    @classmethod
+    def parse(
+        cls, request_id: str, /, *, queue: str | None = None
+    ) -> RequestId | tuple[RequestId, str]:
+        class _RequestIdForMapping(RequestIdWithOptionalSubresourceMixin, RequestId):
+            pass
+
         try:
             common_keys = set(attrs.fields_dict(cls).keys()) - {"extra"}
             params = {}
@@ -115,11 +150,22 @@ class RequestId:
                 else:
                     params.setdefault("extra", {})[key] = value
 
-            if custom_cls_path := settings.RQ_QUEUES[params["queue"]].get("PARSED_JOB_ID_CLASS"):
-                custom_cls = import_string(custom_cls_path)
-                return custom_cls(**params)
+            queue_is_known = bool(queue)
 
-            return cls(**params)
+            if not queue_is_known:
+                _parsed = _RequestIdForMapping(**params)
+                queue = MAPPING[(_parsed.action, _parsed.target, _parsed.subresource)]
+
+            if custom_cls_path := settings.RQ_QUEUES[queue].get("PARSED_JOB_ID_CLASS"):
+                custom_cls = import_string(custom_cls_path)
+                result = custom_cls(**params)
+            else:
+                result = cls(**params)
+
+            if not queue_is_known:
+                result = (result, queue)
+
+            return result
         except Exception as ex:
             raise IncorrectRequestIdError from ex
 

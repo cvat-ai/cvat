@@ -5,8 +5,7 @@
 from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
-from contextlib import suppress
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Protocol
+from typing import TYPE_CHECKING, Any, Callable, Optional, Protocol
 
 from django.conf import settings
 from django.db.models import Model
@@ -17,7 +16,7 @@ from rq.job import Job as RQJob
 from rq.registry import BaseRegistry as RQBaseRegistry
 
 from cvat.apps.engine.types import ExtendedRequest
-from cvat.apps.redis_handler.rq import RequestId
+from cvat.apps.redis_handler.rq import RequestId, RequestIdWithOptionalSubresourceMixin
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import User
@@ -333,31 +332,6 @@ class RequestIdWithFormatMixin:
     @property
     def format(self) -> str | None:
         return self.extra.get("format")
-
-
-class RequestIdWithSubresourceMixin:
-    TYPE_SEP: ClassVar[str]
-
-    action: str
-    target: str
-    extra: dict[str, Any]
-
-    @property
-    def subresource(self) -> str:
-        return self.extra["subresource"]
-
-    @property
-    def type(self) -> str:
-        return self.TYPE_SEP.join([self.action, self.subresource or self.target])
-
-
-class RequestIdWithOptionalSubresourceMixin(RequestIdWithSubresourceMixin):
-    @property
-    def subresource(self) -> str | None:
-        with suppress(KeyError):
-            return super().subresource
-
-        return None
 
 
 class ExportRequestId(

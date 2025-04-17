@@ -13,7 +13,6 @@ from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_
 from redis.exceptions import ConnectionError as RedisConnectionError
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rq.job import Job as RQJob
 from rq.job import JobStatus as RQJobStatus
@@ -27,6 +26,7 @@ from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import RequestStatus  # todo: move to the app
 from cvat.apps.engine.rq import is_rq_job_owner
 from cvat.apps.engine.types import ExtendedRequest
+from cvat.apps.redis_handler.apps import MAPPING
 from cvat.apps.redis_handler.rq import CustomRQJob, RequestId
 from cvat.apps.redis_handler.serializers import RequestSerializer
 
@@ -49,12 +49,6 @@ slogger = ServerLogManager(__name__)
     ),
 )
 class RequestViewSet(viewsets.GenericViewSet):
-    SUPPORTED_QUEUES = {
-        queue_name
-        for queue_name, queue_conf in settings.RQ_QUEUES.items()
-        if queue_conf.get("VISIBLE_VIA_REQUESTS_API")
-    }
-
     serializer_class = RequestSerializer
     iam_organization_field = None
     filter_backends = [
@@ -114,7 +108,7 @@ class RequestViewSet(viewsets.GenericViewSet):
 
     @property
     def queues(self) -> Iterable[DjangoRQ]:
-        return (django_rq.get_queue(queue_name) for queue_name in self.SUPPORTED_QUEUES)
+        return (django_rq.get_queue(queue_name) for queue_name in set(MAPPING.values()))
 
     def _get_rq_jobs_from_queue(self, queue: DjangoRQ, user_id: int) -> list[RQJob]:
         job_ids = set(
@@ -130,7 +124,7 @@ class RequestViewSet(viewsets.GenericViewSet):
             if job and is_rq_job_owner(job, user_id):
                 job = cast(CustomRQJob, job)
                 try:
-                    parsed_request_id = RequestId.parse(job.id)
+                    parsed_request_id = RequestId.parse(job.id, queue=queue.name)
                 except Exception:  # nosec B112
                     continue
 
@@ -167,18 +161,13 @@ class RequestViewSet(viewsets.GenericViewSet):
             Optional[RQJob]: The retrieved RQJob, or None if not found.
         """
         try:
-            parsed_request_id = RequestId.parse(rq_id)
+            parsed_request_id, queue_name = RequestId.parse(rq_id)
         except Exception:
             return None
 
-        job: CustomRQJob | None = None
+        queue: DjangoRQ = django_rq.get_queue(queue_name)
+        job: CustomRQJob | None = queue.fetch_job(rq_id)
 
-        if parsed_request_id.queue not in self.SUPPORTED_QUEUES:
-            raise ValidationError("Unsupported queue")
-
-        queue: DjangoRQ = django_rq.get_queue(parsed_request_id.queue)
-
-        job = queue.fetch_job(rq_id)
         if job:
             job.parsed_id = parsed_request_id
 

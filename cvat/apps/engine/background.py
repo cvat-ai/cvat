@@ -107,10 +107,9 @@ class DatasetExporter(AbstractExporter):
 
     def build_request_id(self):
         return ExportRequestId(
-            queue=self.QUEUE_NAME,
             action=RequestAction.EXPORT,
             target=RequestTarget(self.resource),
-            id=self.db_instance.pk,
+            target_id=self.db_instance.pk,
             user_id=self.user_id,
             extra={
                 "subresource": (
@@ -122,14 +121,14 @@ class DatasetExporter(AbstractExporter):
             },
         ).render()
 
-    def validate_request_id(self, request_id, /) -> None:
+    def validate_request_id(self, request_id, /, queue_name) -> None:
         # FUTURE-TODO: optimize, request_id is parsed 2 times (first one when checking permissions)
-        parsed_request_id = ExportRequestId.parse(request_id)
+        parsed_request_id: ExportRequestId = ExportRequestId.parse(request_id, queue=queue_name)
 
         if (
             parsed_request_id.action != RequestAction.EXPORT
             or parsed_request_id.target != RequestTarget(self.resource)
-            or parsed_request_id.id != self.db_instance.pk
+            or parsed_request_id.target_id != self.db_instance.pk
             or parsed_request_id.subresource
             not in {RequestSubresource.DATASET, RequestSubresource.ANNOTATIONS}
         ):
@@ -193,13 +192,14 @@ class BackupExporter(AbstractExporter):
     #     elif isinstance(self.db_instance, Project) and Data.objects.filter():
     #         pass
 
-    def validate_request_id(self, request_id, /) -> None:
-        parsed_request_id = ExportRequestId.parse(request_id)
+    def validate_request_id(self, request_id, /, queue_name) -> None:
+        # FUTURE-TODO: optimize, request_id is parsed 2 times (first one when checking permissions)
+        parsed_request_id: ExportRequestId = ExportRequestId.parse(request_id, queue=queue_name)
 
         if (
             parsed_request_id.action != RequestAction.EXPORT
             or parsed_request_id.target != RequestTarget(self.resource)
-            or parsed_request_id.id != self.db_instance.pk
+            or parsed_request_id.target_id != self.db_instance.pk
             or parsed_request_id.subresource != RequestSubresource.BACKUP
         ):
             raise ValueError("The provided request id does not match exported target or resource")
@@ -237,10 +237,9 @@ class BackupExporter(AbstractExporter):
 
     def build_request_id(self):
         return ExportRequestId(
-            queue=self.QUEUE_NAME,
             action=RequestAction.EXPORT,
             target=RequestTarget(self.resource),
-            id=self.db_instance.pk,
+            target_id=self.db_instance.pk,
             user_id=self.user_id,
             extra={
                 "subresource": RequestSubresource.BACKUP,
@@ -439,10 +438,9 @@ class DatasetImporter(ResourceImporter):
 
     def build_request_id(self):
         return ImportRequestId(
-            queue=self.QUEUE_NAME,
             action=RequestAction.IMPORT,
             target=RequestTarget(self.resource),
-            id=self.db_instance.pk,
+            target_id=self.db_instance.pk,
             extra={
                 "subresource": (
                     RequestSubresource.DATASET
@@ -487,7 +485,6 @@ class BackupImporter(ResourceImporter):
 
     def build_request_id(self):
         return ImportRequestId(
-            queue=self.QUEUE_NAME,
             action=RequestAction.IMPORT,
             target=self.resource,
             id=uuid4(),
@@ -538,10 +535,9 @@ class TaskCreator(AbstractRequestManager):
 
     def build_request_id(self):
         return RequestId(
-            queue=self.QUEUE_NAME,
             action=RequestAction.CREATE,
             target=RequestTarget.TASK,
-            id=self.db_instance.pk,
+            target_id=self.db_instance.pk,
         ).render()
 
     def init_callback_with_params(self):

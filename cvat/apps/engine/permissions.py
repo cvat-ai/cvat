@@ -56,7 +56,7 @@ class DownloadExportedExtension:
     def extend_params_with_rq_job_details(*, request: ExtendedRequest, params: dict[str, Any]) -> None:
         if rq_id := request.query_params.get("rq_id"):
             try:
-                params["rq_job_id"] = ExportRequestId.parse(rq_id)
+                params["rq_job_id"] = ExportRequestId.parse(rq_id)[0]
                 return
             except Exception:
                 raise ValidationError("Unexpected request id format")

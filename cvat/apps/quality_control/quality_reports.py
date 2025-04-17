@@ -50,7 +50,6 @@ from cvat.apps.engine.models import (
     User,
     ValidationMode,
 )
-from cvat.apps.engine.rq import RequestIdWithSubresourceMixin
 from cvat.apps.profiler import silk_profile
 from cvat.apps.quality_control import models
 from cvat.apps.quality_control.models import (
@@ -59,7 +58,7 @@ from cvat.apps.quality_control.models import (
     AnnotationType,
 )
 from cvat.apps.redis_handler.background import AbstractRequestManager
-from cvat.apps.redis_handler.rq import RequestId
+from cvat.apps.redis_handler.rq import RequestId, RequestIdWithSubresourceMixin
 
 
 class Serializable:
@@ -2276,10 +2275,9 @@ class QualityReportRQJobManager(AbstractRequestManager):
 
     def build_request_id(self):
         return QualityRequestId(
-            queue=self.QUEUE_NAME,
             action="calculate",
             target=self.resource,
-            id=self.db_instance.pk,
+            target_id=self.db_instance.pk,
             extra={"subresource": "quality"},
         ).render()
 

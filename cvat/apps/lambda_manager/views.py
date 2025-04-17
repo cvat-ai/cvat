@@ -608,7 +608,7 @@ class LambdaQueue:
     ) -> LambdaJob:
         queue = self._get_queue()
         rq_id = RequestId(
-            queue=queue.name, action=RequestAction.AUTOANNOTATE, target=RequestTarget.TASK, id=task
+            action=RequestAction.AUTOANNOTATE, target=RequestTarget.TASK, target_id=task
         ).render()
 
         # Ensure that there is no race condition when processing parallel requests.

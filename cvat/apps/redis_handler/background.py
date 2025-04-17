@@ -95,15 +95,16 @@ class AbstractRequestManager(metaclass=ABCMeta):
     @abstractmethod
     def build_request_id(self): ...
 
-    def validate_request_id(self, request_id: str, /) -> None: ...
+    def validate_request_id(self, request_id: str, /, queue_name: str) -> None: ...
 
     def get_job_by_id(self, id_: str, /) -> RQJob | None:
+        queue = self.get_queue()
+
         try:
-            self.validate_request_id(id_)
+            self.validate_request_id(id_, queue_name=queue.name)
         except Exception:
             return None
 
-        queue = self.get_queue()
         return queue.fetch_job(id_)
 
     def init_request_args(self):
@@ -364,9 +365,10 @@ class AbstractExporter(AbstractRequestManager):
             # TODO: check response content type
             raise ValidationError("Missing request id in the query parameters")
 
+        queue = self.get_queue()
         try:
-            self.validate_request_id(request_id)
+            self.validate_request_id(request_id, queue_name=queue.name)
         except ValueError:
             raise ValidationError("Invalid export request id")
 
-        return self.Downloader(request=self.request, queue=self.get_queue(), request_id=request_id)
+        return self.Downloader(request=self.request, queue=queue, request_id=request_id)

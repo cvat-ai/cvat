@@ -166,10 +166,9 @@ class MergingManager(AbstractRequestManager):
 
     def build_request_id(self) -> str:
         return RequestId(
-            queue=self.QUEUE_NAME,
             action="merge",
             target=self.resource,
-            id=self.db_instance.pk,
+            target_id=self.db_instance.pk,
         ).render()
 
     def init_callback_with_params(self):

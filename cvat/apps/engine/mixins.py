@@ -270,10 +270,9 @@ class UploadMixin:
                 # check whether the rq_job is in progress or has been finished/failed
                 object_class_name = self._object.__class__.__name__.lower()
                 template = RequestId(
-                    queue=settings.CVAT_QUEUES.IMPORT_DATA.value,
                     action=RequestAction.IMPORT,
                     target=RequestTarget(object_class_name),
-                    id=self._object.pk,
+                    target_id=self._object.pk,
                     extra={
                         "subresource": import_type,
                     }

@@ -100,15 +100,14 @@ class EventsExporter(AbstractExporter):
 
     def build_request_id(self):
         return RequestId(
-            queue=self.QUEUE_NAME,
             action=RequestAction.EXPORT,
             target=TARGET,
             id=self.query_id,
             user_id=self.user_id,
         ).render()
 
-    def validate_request_id(self, request_id, /) -> None:
-        parsed_request_id = ExportRequestId.parse(request_id)
+    def validate_request_id(self, request_id, /, queue_name) -> None:
+        parsed_request_id: ExportRequestId = ExportRequestId.parse(request_id, queue=queue_name)
 
         if parsed_request_id.action != RequestAction.EXPORT or parsed_request_id.target != TARGET:
             raise ValueError("The provided request id does not match exported target")
