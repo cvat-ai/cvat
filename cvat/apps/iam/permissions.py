@@ -44,7 +44,7 @@ def get_organization(request, obj):
 
     if obj:
         try:
-            organization_id = getattr(obj, "organization_id")
+            org_id = obj.organization_id
         except AttributeError as exc:
             # Skip initialization of organization for those objects that don't related with organization
             view = request.parser_context.get("view")
@@ -53,8 +53,14 @@ def get_organization(request, obj):
 
             raise exc
 
+        if not org_id:
+            return None
+
         try:
-            return Organization.objects.select_related("owner").get(id=organization_id)
+            if hasattr(obj, "organization"):
+                return obj.organization
+            else:
+                return Organization.objects.get(id=org_id)
         except Organization.DoesNotExist:
             return None
 
@@ -78,7 +84,7 @@ def build_iam_context(
         "group_name": request.iam_context["privilege"],
         "org_id": getattr(organization, "id", None),
         "org_slug": getattr(organization, "slug", None),
-        "org_owner_id": getattr(organization.owner, "id", None) if organization else None,
+        "org_owner_id": getattr(organization, "owner_id", None) if organization else None,
         "org_role": getattr(membership, "role", None),
     }
 

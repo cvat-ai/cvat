@@ -956,6 +956,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             queryset = perm.filter(queryset)
         elif self.action == 'preview':
             queryset = Task.objects.select_related('data')
+        elif self.action == 'validation_layout':
+            queryset = Task.objects.select_related('data', 'data__validation_layout')
 
         return queryset
 
@@ -1859,6 +1861,12 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         if self.action == 'list':
             perm = JobPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
+
+            visible_tasks_perm = TaskPermission.create_scope_list(self.request)
+            visible_tasks = visible_tasks_perm.filter(Task.objects)
+            queryset = queryset.annotate(
+                user_can_view_task=django_models.Q(segment__task__in=visible_tasks)
+            )
 
         return queryset
 

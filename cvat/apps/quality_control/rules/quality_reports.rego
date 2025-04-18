@@ -87,6 +87,28 @@ allow if {
     organizations.has_perm(organizations.WORKER)
 }
 
+
+q_user_is_maintainer(user) := [
+    {"job__segment__task__owner_id": user.id},
+    {"job__segment__task__assignee_id": user.id}, "|",
+    {"job__segment__task__project__owner_id": user.id}, "|",
+    {"job__segment__task__project__assignee_id": user.id}, "|",
+    {"task__owner_id": user.id}, "|",
+    {"task__assignee_id": user.id}, "|",
+    {"task__project__owner_id": user.id}, "|",
+    {"task__project__assignee_id": user.id}, "|",
+    {"project__owner_id": user.id}, "|",
+    {"project__assignee_id": user.id}, "|",
+]
+
+q_object_has_org(org) := [
+    {"job__segment__task__organization": org.id},
+    {"job__segment__task__project__organization": org.id}, "|",
+    {"task__organization": org.id}, "|",
+    {"task__project__organization": org.id}, "|",
+    {"project__organization": org.id}, "|",
+]
+
 filter := [] if { # Django Q object to filter list of entries
     utils.is_admin
     utils.is_sandbox
@@ -94,55 +116,26 @@ filter := [] if { # Django Q object to filter list of entries
     utils.is_admin
     utils.is_organization
     org := input.auth.organization
-    qobject := [
-        {"job__segment__task__organization": org.id},
-        {"job__segment__task__project__organization": org.id}, "|",
-        {"task__organization": org.id}, "|",
-        {"task__project__organization": org.id}, "|",
-    ]
+    qobject := q_object_has_org(org)
 } else := qobject if {
     utils.is_sandbox
     user := input.auth.user
-    qobject := [
-        {"job__segment__task__owner_id": user.id},
-        {"job__segment__task__assignee_id": user.id}, "|",
-        {"job__segment__task__project__owner_id": user.id}, "|",
-        {"job__segment__task__project__assignee_id": user.id}, "|",
-        {"task__owner_id": user.id}, "|",
-        {"task__assignee_id": user.id}, "|",
-        {"task__project__owner_id": user.id}, "|",
-        {"task__project__assignee_id": user.id}, "|",
-    ]
+    qobject := q_user_is_maintainer(user)
 } else := qobject if {
     utils.is_organization
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.MAINTAINER)
     org := input.auth.organization
-    qobject := [
-        {"job__segment__task__organization": org.id},
-        {"job__segment__task__project__organization": org.id}, "|",
-        {"task__organization": org.id}, "|",
-        {"task__project__organization": org.id}, "|",
-    ]
+    qobject := q_object_has_org(org)
 } else := qobject if {
     organizations.has_perm(organizations.WORKER)
     user := input.auth.user
     org := input.auth.organization
-    qobject := [
-        {"job__segment__task__organization": org.id},
-        {"job__segment__task__project__organization": org.id}, "|",
-        {"task__organization": org.id}, "|",
-        {"task__project__organization": org.id}, "|",
-
-        {"job__segment__task__owner_id": user.id},
-        {"job__segment__task__assignee_id": user.id}, "|",
-        {"job__segment__task__project__owner_id": user.id}, "|",
-        {"job__segment__task__project__assignee_id": user.id}, "|",
-        {"task__owner_id": user.id}, "|",
-        {"task__assignee_id": user.id}, "|",
-        {"task__project__owner_id": user.id}, "|",
-        {"task__project__assignee_id": user.id}, "|",
-
-        "&"
-    ]
+    qobject := array.concat(
+        array.concat(
+            q_object_has_org(org),
+            q_user_is_maintainer(user),
+        ),
+        ["&"]
+    )
 }

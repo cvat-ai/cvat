@@ -667,9 +667,13 @@ class JobReadSerializer(serializers.ModelSerializer):
             data['consensus_replicas'] = 0
 
         if request := self.context.get('request'):
-            perm = TaskPermission.create_scope_view(request, instance.segment.task)
-            result = perm.check_access()
-            if result.allow:
+            can_view_task = getattr(instance, "user_can_view_task", None)
+            if can_view_task is None:
+                perm = TaskPermission.create_scope_view(request, instance.segment.task)
+                result = perm.check_access()
+                can_view_task = result.allow
+
+            if can_view_task:
                 if task_source_storage := instance.get_source_storage():
                     data['source_storage'] = StorageSerializer(task_source_storage).data
                 if task_target_storage := instance.get_target_storage():

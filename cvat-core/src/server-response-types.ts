@@ -241,6 +241,8 @@ export interface SerializedOrganization {
 
 export interface APIQualitySettingsFilter extends APICommonFilterParams {
     task_id?: number;
+    project_id?: number;
+    parent_type?: string;
 }
 
 export type QualitySettingsFilter = Camelized<APIQualitySettingsFilter>;
@@ -253,7 +255,7 @@ export type ConsensusSettingsFilter = Camelized<APIConsensusSettingsFilter>;
 
 export interface SerializedQualitySettingsData {
     id?: number;
-    task?: number;
+    task_id?: number;
     target_metric?: string;
     target_metric_threshold?: number;
     max_validations_per_job?: number;
@@ -272,6 +274,8 @@ export interface SerializedQualitySettingsData {
     compare_attributes?: boolean;
     empty_is_annotated?: boolean;
     descriptions?: Record<string, string>;
+    inherit?: boolean;
+    job_filter?: string;
 }
 
 export interface APIQualityConflictsFilter extends APICommonFilterParams {
@@ -317,8 +321,12 @@ export interface SerializedQualityReportData {
     gt_last_updated?: string;
     assignee?: SerializedUser | null;
     summary?: {
-        frame_count: number;
-        frame_share: number;
+        accuracy: number;
+        precision: number;
+        recall: number;
+        total_frames: number;
+        validation_frames: number;
+        validation_frame_share: number;
         conflict_count: number;
         valid_count: number;
         ds_count: number;
@@ -335,6 +343,19 @@ export interface SerializedQualityReportData {
             mismatching_attributes: number;
             mismatching_groups: number;
             covered_annotation: number;
+        }
+        tasks?: {
+            total: number;
+            custom: number;
+            not_configured: number;
+            excluded: number;
+            included: number;
+        }
+        jobs?: {
+            total: number;
+            excluded: number;
+            not_checkable: number;
+            included: number;
         }
     };
 }

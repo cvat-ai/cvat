@@ -182,13 +182,13 @@ class JsonLogicFilter(filters.BaseFilterBackend):
         else:
             raise ValidationError(f'filter: {op} operation with {args} arguments is not implemented')
 
-    def _parse_query(self, json_rules: str) -> Rules:
+    def parse_query(self, json_rules: str, *, raise_on_empty: bool = True) -> Rules:
         try:
             rules = json.loads(json_rules)
-            if not len(rules):
+            if raise_on_empty and not rules:
                 raise ValidationError(f"filter shouldn't be empty")
-        except json.decoder.JSONDecodeError:
-            raise ValidationError(f'filter: Json syntax should be used')
+        except json.decoder.JSONDecodeError as e:
+            raise ValidationError(f"filter: can't parse filter expression: {e}") from e
 
         return rules
 
@@ -205,7 +205,7 @@ class JsonLogicFilter(filters.BaseFilterBackend):
     def filter_queryset(self, request: ExtendedRequest, queryset: QuerySet, view):
         json_rules = request.query_params.get(self.filter_param)
         if json_rules:
-            parsed_rules = self._parse_query(json_rules)
+            parsed_rules = self.parse_query(json_rules)
             lookup_fields = self._get_lookup_fields(view)
             queryset = self.apply_filter(queryset, parsed_rules, lookup_fields=lookup_fields)
 
@@ -527,7 +527,7 @@ class NonModelJsonLogicFilter(JsonLogicFilter, _NestedAttributeHandler):
         json_rules = request.query_params.get(self.filter_param)
         if json_rules:
             filtered_queryset = []
-            parsed_rules = self._parse_query(json_rules)
+            parsed_rules = self.parse_query(json_rules)
             lookup_fields = self._get_lookup_fields(view)
 
             for obj in queryset:

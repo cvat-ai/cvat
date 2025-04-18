@@ -507,6 +507,8 @@ class Project(TimestampedModel, FileSystemRelatedModel):
     target_storage = models.ForeignKey('Storage', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
 
+    tasks: models.manager.RelatedManager[Task]
+
     def get_labels(self, prefetch=False):
         queryset = self.label_set.filter(parent__isnull=True).select_related('skeleton')
         return queryset.prefetch_related(
@@ -883,6 +885,9 @@ class Job(TimestampedModel, FileSystemRelatedModel):
         related_name='child_jobs', related_query_name="child_job"
     )
 
+    user_can_view_task: MaybeUndefined[bool]
+    "Can be defined by the fetching queryset to avoid extra IAM checks, e.g. in a list serializer"
+
     def get_target_storage(self) -> Optional[Storage]:
         return self.segment.task.target_storage
 
@@ -913,6 +918,10 @@ class Job(TimestampedModel, FileSystemRelatedModel):
     @property
     def organization_id(self):
         return self.segment.task.organization_id
+
+    @property
+    def organization(self):
+        return self.segment.task.organization
 
     def get_organization_slug(self):
         return self.segment.task.organization.slug
