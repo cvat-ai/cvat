@@ -8,7 +8,6 @@ import React, {
     useCallback, useEffect, useReducer, useState,
 } from 'react';
 import { useParams } from 'react-router';
-import { Link } from 'react-router-dom';
 import { Row, Col } from 'antd/lib/grid';
 import Tabs, { TabsProps } from 'antd/lib/tabs';
 import Title from 'antd/lib/typography/Title';
@@ -21,6 +20,7 @@ import {
 } from 'cvat-core-wrapper';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import GoBackButton from 'components/common/go-back-button';
+import ResourceLink from 'components/common/resource-link';
 import { ActionUnion, createAction } from 'utils/redux';
 import { getTabFromHash } from 'utils/location-utils';
 import { fetchTask } from 'utils/fetch';
@@ -353,8 +353,8 @@ function QualityControlPage(): JSX.Element {
         title = (
             <Col className='cvat-quality-page-header'>
                 <Title level={4} className='cvat-text-color'>
-                    Quality control for
-                    <Link to={`/tasks/${instance.id}`}>{` Task #${instance.id}`}</Link>
+                    {'Quality control for '}
+                    <ResourceLink resource={instance} />
                 </Title>
             </Col>
         );
