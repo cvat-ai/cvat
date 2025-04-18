@@ -34,7 +34,7 @@ export const multiAttrParams = {
     type: 'Text',
 };
 
-it('Prepare to testing', () => {
+it('Prepare for testing', () => {
     cy.visit('/auth/login');
     cy.login();
     cy.get('.cvat-tasks-page').should('exist');
