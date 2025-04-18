@@ -39,6 +39,12 @@ interface Preview {
     preview: string;
 }
 
+export enum InstanceType {
+    PROJECT = 'project',
+    TASK = 'task',
+    JOB = 'job',
+}
+
 export interface ProjectsState {
     fetchingTimestamp: number;
     initialized: boolean;

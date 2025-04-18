@@ -10,10 +10,10 @@ import notification from 'antd/lib/notification';
 import { Row, Col } from 'antd/lib/grid';
 
 import {
-    Project, Task, Job, getCore, MembershipRole, InstanceType, AnalyticsEventsFilter,
+    Project, Task, Job, getCore, MembershipRole, AnalyticsEventsFilter,
 } from 'cvat-core-wrapper';
 import { useInstanceType, useInstanceId } from 'utils/hooks';
-import { CombinedState } from 'reducers';
+import { CombinedState, InstanceType } from 'reducers';
 import GoBackButton from 'components/common/go-back-button';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import AnalyticsReportContent from './analytics-report-content';

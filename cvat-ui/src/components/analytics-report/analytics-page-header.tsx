@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { Link } from 'react-router-dom';
 import Title from 'antd/lib/typography/Title';
 import Button from 'antd/lib/button';
 import DatePicker from 'antd/lib/date-picker';
@@ -11,6 +10,7 @@ import { Row, Col } from 'antd/lib/grid';
 import { DownloadOutlined } from '@ant-design/icons';
 
 import { Project, Task, Job } from 'cvat-core-wrapper';
+import ResourceLink from 'components/common/resource-link';
 
 interface Props {
     onExportEvents(): void;
@@ -34,33 +34,7 @@ function AnaylyticsPageHeader(props: Props): JSX.Element {
             <Col className='cvat-analytics-header'>
                 <Title level={4} className='cvat-text-color'>
                     {'Analytics for '}
-                    {((): JSX.Element | null => {
-                        if (resource instanceof Project) {
-                            return (
-                                <Link to={`/projects/${resource.id}`}>
-                                    {`Project #${resource.id}`}
-                                </Link>
-                            );
-                        }
-
-                        if (resource instanceof Task) {
-                            return (
-                                <Link to={`/tasks/${resource.id}`}>
-                                    {`Task #${resource.id}`}
-                                </Link>
-                            );
-                        }
-
-                        if (resource instanceof Job) {
-                            return (
-                                <Link to={`/tasks/${resource.taskId}/jobs/${resource.id}`}>
-                                    {`Job #${resource.id}`}
-                                </Link>
-                            );
-                        }
-
-                        return null;
-                    })()}
+                    <ResourceLink resource={resource} />
                 </Title>
             </Col>
             <Col>

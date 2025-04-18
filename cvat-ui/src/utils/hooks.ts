@@ -10,8 +10,7 @@ import {
 } from 'react';
 import { useSelector } from 'react-redux';
 import { useHistory, useLocation, useParams } from 'react-router';
-import { InstanceType } from 'cvat-core-wrapper';
-import { CombinedState, PluginComponent } from 'reducers';
+import { CombinedState, PluginComponent, InstanceType } from 'reducers';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { authQuery } from './auth-query';
 import { KeyMap, KeyMapItem } from './mousetrap-react';
@@ -180,7 +179,7 @@ export function useInstanceId(type: InstanceType): number {
         tid?: string,
     }>();
 
-    if (type === 'project') return +(params.pid as string);
-    if (type === 'job') return +(params.jid as string);
+    if (type === InstanceType.PROJECT) return +(params.pid as string);
+    if (type === InstanceType.JOB) return +(params.jid as string);
     return +(params.tid as string);
 }
