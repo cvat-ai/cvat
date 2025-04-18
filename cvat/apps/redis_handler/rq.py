@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import urllib.parse
 from contextlib import suppress
 from types import NoneType
@@ -7,11 +8,16 @@ from typing import Any, ClassVar, Protocol, overload
 from uuid import UUID
 
 import attrs
-from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
+from django.utils.html import escape
 from django.utils.module_loading import import_string
 from rq.job import Job as RQJob
 
-from cvat.apps.redis_handler.apps import MAPPING
+from cvat.apps.redis_handler.apps import (
+    ACTION_TO_QUEUE,
+    PARSED_JOB_ID_CLS_TO_QUEUE,
+    QUEUE_TO_PARSED_JOB_ID_CLS,
+)
 
 
 def convert_extra(value: dict) -> dict[str, Any]:
@@ -68,6 +74,11 @@ class RequestId:
 
     TYPE_SEP: ClassVar[str] = ":"  # used in serialization logic
 
+    # FUTURE-TODO: remove after several releases
+    # backward compatibility with previous ID formats
+    LEGACY_FORMAT_PATTERNS: ClassVar[tuple[str]] = ()
+    LEGACY_FORMAT_EXTRA: tuple[tuple[str, str]] = ()
+
     action: str = attrs.field(validator=attrs.validators.instance_of(str))
     target: str = attrs.field(validator=attrs.validators.instance_of(str))
     target_id: int | None = attrs.field(
@@ -123,49 +134,99 @@ class RequestId:
 
     @classmethod
     @overload
-    def parse(cls, request_id: str, /, *, queue: str) -> RequestId: ...
+    def parse(
+        cls, request_id: str, /, *, queue: str, try_legacy_format: bool = False
+    ) -> RequestId: ...
 
     @classmethod
     @overload
-    def parse(cls, request_id: str, /, *, queue: None = None) -> tuple[RequestId, str]: ...
+    def parse(
+        cls, request_id: str, /, *, queue: None = None, try_legacy_format: bool = False
+    ) -> tuple[RequestId, str]: ...
 
     @classmethod
     def parse(
-        cls, request_id: str, /, *, queue: str | None = None
+        cls,
+        request_id: str,
+        /,
+        *,
+        queue: str | None = None,
+        try_legacy_format: bool = False,
     ) -> RequestId | tuple[RequestId, str]:
         class _RequestIdForMapping(RequestIdWithOptionalSubresourceMixin, RequestId):
             pass
 
-        try:
-            common_keys = set(attrs.fields_dict(cls).keys()) - {"extra"}
-            params = {}
+        queue_provided = bool(queue)
+        is_new_format = True
+        common_keys = set(attrs.fields_dict(cls).keys()) - {"extra"}
+        dict_repr = {}
+        fragments = {}
 
-            for key, value in dict(urllib.parse.parse_qsl(request_id)).items():
+        actual_cls = cls
+
+        try:
+            # try to parse ID as key=value pairs (newly introduced format)
+            fragments = dict(urllib.parse.parse_qsl(request_id))
+
+            if not fragments:
+                # try to use legacy format
+                if not try_legacy_format:
+                    raise IncorrectRequestIdError(
+                        f"Unable to parse request ID: {escape(request_id)!r}"
+                    )
+
+                match: re.Match | None = None
+                subclasses = (cls,) if cls is not RequestId else RequestId.__subclasses__()
+
+                for subclass in subclasses:
+                    for pattern in subclass.LEGACY_FORMAT_PATTERNS:
+                        match = re.match(pattern, request_id)
+                        if match:
+                            break
+                    if match:
+                        break
+
+                if not match:
+                    raise IncorrectRequestIdError(
+                        f"Unable to parse request ID: {escape(request_id)!r}"
+                    )
+
+                is_new_format = False
+                fragments = {**match.groupdict(), **dict(subclass.LEGACY_FORMAT_EXTRA)}
+
+                queue = PARSED_JOB_ID_CLS_TO_QUEUE.get(f"{subclass.__module__}.{subclass.__name__}")
+                if not queue:
+                    raise ImproperlyConfigured(
+                        "Job ID class must be set in the related queue config"
+                    )
+                actual_cls = subclass
+
+            # init dict representation for request ID
+            for key, value in fragments.items():
                 for from_char, to_char in cls.DECODE_MAPPING.items():
                     if from_char in value:
                         value = value.replace(from_char, to_char)
 
                 if key in common_keys:
-                    params[key] = value
+                    dict_repr[key] = value
                 else:
-                    params.setdefault("extra", {})[key] = value
+                    dict_repr.setdefault("extra", {})[key] = value
 
-            queue_is_known = bool(queue)
+            if is_new_format:
+                # try to define queue dynamically based on action/target/subresource
+                if not queue_provided:
+                    _parsed = _RequestIdForMapping(**dict_repr)
+                    queue = ACTION_TO_QUEUE[(_parsed.action, _parsed.target, _parsed.subresource)]
 
-            if not queue_is_known:
-                _parsed = _RequestIdForMapping(**params)
-                queue = MAPPING[(_parsed.action, _parsed.target, _parsed.subresource)]
+                if actual_cls_path := QUEUE_TO_PARSED_JOB_ID_CLS.get(queue):
+                    actual_cls = import_string(actual_cls_path)
 
-            if custom_cls_path := settings.RQ_QUEUES[queue].get("PARSED_JOB_ID_CLASS"):
-                custom_cls = import_string(custom_cls_path)
-                result = custom_cls(**params)
-            else:
-                result = cls(**params)
+            result = actual_cls(**dict_repr)
 
-            if not queue_is_known:
-                result = (result, queue)
+            return (result, queue) if not queue_provided else result
 
-            return result
+        except ImproperlyConfigured:
+            raise
         except Exception as ex:
             raise IncorrectRequestIdError from ex
 

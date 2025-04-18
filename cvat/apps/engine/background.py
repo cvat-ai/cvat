@@ -123,7 +123,9 @@ class DatasetExporter(AbstractExporter):
 
     def validate_request_id(self, request_id, /, queue_name) -> None:
         # FUTURE-TODO: optimize, request_id is parsed 2 times (first one when checking permissions)
-        parsed_request_id: ExportRequestId = ExportRequestId.parse(request_id, queue=queue_name)
+        parsed_request_id: ExportRequestId = ExportRequestId.parse(
+            request_id, queue=queue_name, try_legacy_format=True
+        )
 
         if (
             parsed_request_id.action != RequestAction.EXPORT
@@ -194,7 +196,9 @@ class BackupExporter(AbstractExporter):
 
     def validate_request_id(self, request_id, /, queue_name) -> None:
         # FUTURE-TODO: optimize, request_id is parsed 2 times (first one when checking permissions)
-        parsed_request_id: ExportRequestId = ExportRequestId.parse(request_id, queue=queue_name)
+        parsed_request_id: ExportRequestId = ExportRequestId.parse(
+            request_id, queue=queue_name, try_legacy_format=True
+        )
 
         if (
             parsed_request_id.action != RequestAction.EXPORT
@@ -534,7 +538,7 @@ class TaskCreator(AbstractRequestManager):
         return int(settings.IMPORT_CACHE_FAILED_TTL.total_seconds())
 
     def build_request_id(self):
-        return RequestId(
+        return ImportRequestId(
             action=RequestAction.CREATE,
             target=RequestTarget.TASK,
             target_id=self.db_instance.pk,

@@ -26,7 +26,7 @@ from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import RequestStatus  # todo: move to the app
 from cvat.apps.engine.rq import is_rq_job_owner
 from cvat.apps.engine.types import ExtendedRequest
-from cvat.apps.redis_handler.apps import MAPPING
+from cvat.apps.redis_handler.apps import ACTION_TO_QUEUE
 from cvat.apps.redis_handler.rq import CustomRQJob, RequestId
 from cvat.apps.redis_handler.serializers import RequestSerializer
 
@@ -108,7 +108,7 @@ class RequestViewSet(viewsets.GenericViewSet):
 
     @property
     def queues(self) -> Iterable[DjangoRQ]:
-        return (django_rq.get_queue(queue_name) for queue_name in set(MAPPING.values()))
+        return (django_rq.get_queue(queue_name) for queue_name in set(ACTION_TO_QUEUE.values()))
 
     def _get_rq_jobs_from_queue(self, queue: DjangoRQ, user_id: int) -> list[RQJob]:
         job_ids = set(
@@ -161,7 +161,9 @@ class RequestViewSet(viewsets.GenericViewSet):
             Optional[RQJob]: The retrieved RQJob, or None if not found.
         """
         try:
-            parsed_request_id, queue_name = RequestId.parse(rq_id)
+            parsed_request_id, queue_name = RequestId.parse(rq_id, try_legacy_format=True)
+            # TODO: return flag that legacy format is used
+            rq_id = parsed_request_id.render()
         except Exception:
             return None
 

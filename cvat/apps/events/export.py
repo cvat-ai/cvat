@@ -24,7 +24,6 @@ from cvat.apps.engine.utils import sendfile
 from cvat.apps.engine.view_utils import DeprecatedResponse
 from cvat.apps.events.permissions import EventsPermission
 from cvat.apps.redis_handler.background import AbstractExporter
-from cvat.apps.redis_handler.rq import RequestId
 
 slogger = ServerLogManager(__name__)
 
@@ -99,7 +98,7 @@ class EventsExporter(AbstractExporter):
             self.query_id = uuid.uuid4()
 
     def build_request_id(self):
-        return RequestId(
+        return ExportRequestId(
             action=RequestAction.EXPORT,
             target=TARGET,
             id=self.query_id,
@@ -107,7 +106,10 @@ class EventsExporter(AbstractExporter):
         ).render()
 
     def validate_request_id(self, request_id, /, queue_name) -> None:
-        parsed_request_id: ExportRequestId = ExportRequestId.parse(request_id, queue=queue_name)
+        parsed_request_id: ExportRequestId = ExportRequestId.parse(
+            request_id,
+            queue=queue_name,  # try_legacy_format is not set here since deprecated API accepts query_id, not the whole Request ID
+        )
 
         if parsed_request_id.action != RequestAction.EXPORT or parsed_request_id.target != TARGET:
             raise ValueError("The provided request id does not match exported target")

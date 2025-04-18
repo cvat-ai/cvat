@@ -2262,7 +2262,10 @@ class DatasetComparator:
 
 
 class QualityRequestId(RequestIdWithSubresourceMixin, RequestId):
-    pass
+    LEGACY_FORMAT_PATTERNS = (
+        r"quality-check-(?P<target>(task))-(?P<target_id>\d+)-user-(\d+)",  # user id is excluded in the new format
+    )
+    LEGACY_FORMAT_EXTRA = (("subresource", "quality"), ("action", "calculate"))
 
 
 class QualityReportRQJobManager(AbstractRequestManager):
@@ -2272,6 +2275,16 @@ class QualityReportRQJobManager(AbstractRequestManager):
     @property
     def job_result_ttl(self):
         return 120
+
+    def get_job_by_id(self, id_, /):
+        try:
+            id_ = QualityRequestId.parse(
+                id_, queue=self.QUEUE_NAME, try_legacy_format=True
+            ).render()
+        except ValueError:
+            raise ValidationError("Provider request ID is invalid")
+
+        return super().get_job_by_id(id_)
 
     def build_request_id(self):
         return QualityRequestId(

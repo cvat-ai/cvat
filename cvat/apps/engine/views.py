@@ -95,7 +95,7 @@ from cvat.apps.engine.permissions import (
     UserPermission,
     get_iam_context,
 )
-from cvat.apps.engine.rq import ImportRQMeta, RequestId, RQMetaWithFailureInfo
+from cvat.apps.engine.rq import ImportRequestId, ImportRQMeta, RQMetaWithFailureInfo
 from cvat.apps.engine.serializers import (
     AboutSerializer,
     AnnotationFileSerializer,
@@ -814,7 +814,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         serializer_class=None,
         parser_classes=_UPLOAD_PARSER_CLASSES)
     def import_backup(self, request: ExtendedRequest):
-        if request.query_params.get("rq_id"): # permissions?
+        if request.query_params.get("rq_id"):
             return get_410_response_when_checking_process_status("import")
 
         return self.upload_data(request)
@@ -1294,7 +1294,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         task = self.get_object() # force call of check_object_permissions()
         response = self._get_rq_response(
             queue=settings.CVAT_QUEUES.IMPORT_DATA.value,
-            job_id=RequestId(
+            job_id=ImportRequestId(
                 action=RequestAction.CREATE,
                 target=RequestTarget.TASK,
                 target_id=task.id

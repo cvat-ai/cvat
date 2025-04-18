@@ -18,19 +18,27 @@ class LayeredKeyDict(dict):
         return super().__getitem__(key)
 
 
-MAPPING = LayeredKeyDict()
+ACTION_TO_QUEUE = LayeredKeyDict()
+QUEUE_TO_PARSED_JOB_ID_CLS = {}
+PARSED_JOB_ID_CLS_TO_QUEUE = {}
 
 
-def initialize_mapping():
+def initialize_mappings():
     for queue_name, queue_conf in settings.RQ_QUEUES.items():
+        # initialize ACTION_TO_QUEUE mapping
         if supported_actions := queue_conf.get("SUPPORTED_ACTIONS"):
             for action in supported_actions:
                 if isinstance(action, str):
-                    MAPPING[action] = queue_name
+                    ACTION_TO_QUEUE[action] = queue_name
                     continue
 
                 assert isinstance(action, tuple)
-                MAPPING[action] = queue_name
+                ACTION_TO_QUEUE[action] = queue_name
+
+        # initialize QUEUE_TO_PARSED_JOB_ID_CLS/PARSED_JOB_ID_CLS_TO_QUEUE mappings
+        if parsed_job_id_cls := queue_conf.get("PARSED_JOB_ID_CLASS"):
+            QUEUE_TO_PARSED_JOB_ID_CLS[queue_name] = parsed_job_id_cls
+            PARSED_JOB_ID_CLS_TO_QUEUE[parsed_job_id_cls] = queue_name
 
 
 class RedisHandlerConfig(AppConfig):
@@ -40,4 +48,4 @@ class RedisHandlerConfig(AppConfig):
         from cvat.apps.iam.permissions import load_app_permissions
 
         load_app_permissions(self)
-        initialize_mapping()
+        initialize_mappings()

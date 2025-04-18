@@ -54,9 +54,12 @@ class DownloadExportedExtension:
 
     @staticmethod
     def extend_params_with_rq_job_details(*, request: ExtendedRequest, params: dict[str, Any]) -> None:
+        # prevent importing from partially initialized module
+        from cvat.apps.redis_handler.background import AbstractExporter
+
         if rq_id := request.query_params.get("rq_id"):
             try:
-                params["rq_job_id"] = ExportRequestId.parse(rq_id)[0]
+                params["rq_job_id"] = ExportRequestId.parse(rq_id, queue=AbstractExporter.QUEUE_NAME, try_legacy_format=True)
                 return
             except Exception:
                 raise ValidationError("Unexpected request id format")
