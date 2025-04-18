@@ -6276,13 +6276,11 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                 annotations["shapes"] = rectangle_shapes_wo_attrs
                 annotations["tags"] = tags_wo_attrs
 
-            elif annotation_format == "YOLO 1.1":
-                annotations["shapes"] = rectangle_shapes_wo_attrs
-
-            elif annotation_format == "Ultralytics YOLO Detection 1.0":
-                annotations["shapes"] = rectangle_shapes_wo_attrs
-
-            elif annotation_format == "Ultralytics YOLO Oriented Bounding Boxes 1.0":
+            elif annotation_format in [
+                "YOLO 1.1",
+                "Ultralytics YOLO Detection 1.0",
+                "Ultralytics YOLO Oriented Bounding Boxes 1.0",
+            ]:
                 annotations["shapes"] = rectangle_shapes_wo_attrs
 
             elif annotation_format == "Ultralytics YOLO Segmentation 1.0":
@@ -6296,7 +6294,10 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                                       + polygon_shapes_wo_attrs
                 annotations["tracks"] = rectangle_tracks_wo_attrs
 
-            elif annotation_format == "MOT 1.1":
+            elif annotation_format in [
+                "MOT 1.1",
+                "Ultralytics YOLO Detection Track 1.0"
+            ]:
                 annotations["shapes"] = rectangle_shapes_wo_attrs
                 annotations["tracks"] = rectangle_tracks_wo_attrs
 
