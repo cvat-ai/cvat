@@ -2282,7 +2282,7 @@ class QualityReportRQJobManager(AbstractRequestManager):
                 id_, queue=self.QUEUE_NAME, try_legacy_format=True
             ).render()
         except ValueError:
-            raise ValidationError("Provider request ID is invalid")
+            raise ValidationError("Provided request ID is invalid")
 
         return super().get_job_by_id(id_)
 

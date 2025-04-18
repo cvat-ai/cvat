@@ -58,7 +58,6 @@ from cvat.apps.engine.utils import (
 )
 from cvat.apps.events.handlers import handle_dataset_export, handle_dataset_import
 from cvat.apps.redis_handler.background import AbstractExporter, AbstractRequestManager
-from cvat.apps.redis_handler.rq import RequestId
 
 slogger = ServerLogManager(__name__)
 
