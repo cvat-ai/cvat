@@ -6618,6 +6618,8 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
     def _run_coco_annotation_upload_test(self, user):
         def generate_coco_anno():
             return b"""{
+            "licenses": [],
+            "info": {},
             "categories": [
                 {
                 "id": 1,
