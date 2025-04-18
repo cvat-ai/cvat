@@ -4968,7 +4968,10 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     },
                 ]
             }]
-        elif annotation_format == "COCO Keypoints 1.0":
+        elif annotation_format in [
+            "COCO Keypoints 1.0",
+            "Ultralytics YOLO Pose 1.0"
+        ]:
             data["labels"] = [
                 {
                     "name": "skel",
@@ -6002,7 +6005,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                                          "ICDAR Localization 1.0", "ICDAR Segmentation 1.0",
                                          'Kitti Raw Format 1.0', 'Sly Point Cloud Format 1.0',
                                          'Datumaro 3D 1.0',
-                                         'COCO Keypoints 1.0',
+                                         'COCO Keypoints 1.0', 'Ultralytics YOLO Pose 1.0',
                                          'Cityscapes 1.0']:
                 rectangle_tracks_with_attrs = [{
                     "frame": 0,
@@ -6531,7 +6534,10 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                 annotations["shapes"] = rectangle_shapes_with_attrs \
                                       + polygon_shapes_with_attrs
 
-            elif annotation_format == "COCO Keypoints 1.0":
+            elif annotation_format in [
+                "COCO Keypoints 1.0",
+                "Ultralytics YOLO Pose 1.0"
+            ]:
                 skeleton_wo_attrs = [
                     {
                         "type": "skeleton",
