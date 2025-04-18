@@ -967,12 +967,15 @@ you can use the Ubuntu subsystem, for this do the following:
 [opencv-python-github]: https://github.com/opencv/opencv-python
 [detectron2-tutorial]: https://detectron2.readthedocs.io/en/latest/tutorials/getting_started.html
 [retinanet-model-zoo]: https://github.com/facebookresearch/detectron2/blob/master/MODEL_ZOO.md#retinanet
+[panoptic-fpn-model-zoo]: https://github.com/facebookresearch/detectron2/blob/main/MODEL_ZOO.md#coco-panoptic-segmentation-baselines-with-panoptic-fpn
 [faster-rcnn-function]: https://raw.githubusercontent.com/cvat-ai/cvat/38b774046d41d604ed85a521587e4bacce61b69c/serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio/function.yaml
 [nuclio-doc]: https://nuclio.io/docs/latest/reference/function-configuration/function-configuration-reference.html
 [nuclio-http-trigger-doc]: https://nuclio.io/docs/latest/reference/triggers/http.html
 [nuclio-bkms-doc]: https://nuclio.io/docs/latest/concepts/best-practices-and-common-pitfalls.html
 [retinanet-function-yaml]: https://github.com/cvat-ai/cvat/blob/b2f616859ca64687c385e636b4a25014fbb9d17c/serverless/pytorch/facebookresearch/detectron2/retinanet/nuclio/function.yaml
 [retinanet-main-py]: https://github.com/cvat-ai/cvat/blob/b2f616859ca64687c385e636b4a25014fbb9d17c/serverless/pytorch/facebookresearch/detectron2/retinanet/nuclio/main.py
+[panoptic-fpn-function-yaml]: https://github.com/cvat-ai/cvat/blob/develop/serverless/pytorch/facebookresearch/detectron2/panoptic_r101/nuclio/function.yaml
+[panoptic-fpn-main-py]: https://github.com/cvat-ai/cvat/blob/develop/serverless/pytorch/facebookresearch/detectron2/panoptic_r101/nuclio/main.py
 [nuclio-homepage]: https://nuclio.io/
 [cvat-builtin-serverless]: https://github.com/cvat-ai/cvat/tree/develop/serverless
 [cvat-auto-annotation-guide]: /docs/administration/advanced/installation_automatic_annotation
