@@ -7,6 +7,7 @@ from abc import ABCMeta, abstractmethod
 from collections.abc import Hashable, Iterator, Sequence
 from copy import deepcopy
 from http import HTTPStatus
+from io import BytesIO
 from time import sleep
 from typing import Any, Callable, Iterable, Optional, TypeVar, Union
 
@@ -19,8 +20,9 @@ from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.api_client.exceptions import ForbiddenException
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
+from urllib3 import HTTPResponse
 
-from shared.utils.config import make_api_client
+from shared.utils.config import USER_PASS, make_api_client, post_method
 
 
 def initialize_export(endpoint: Endpoint, *, expect_forbidden: bool = False, **kwargs) -> str:
@@ -41,6 +43,29 @@ def initialize_export(endpoint: Endpoint, *, expect_forbidden: bool = False, **k
     return rq_id
 
 
+def wait_background_request(
+    api_client: ApiClient,
+    rq_id: str,
+    *,
+    max_retries: int = 50,
+    interval: float = 0.1,
+) -> tuple[models.Request, HTTPResponse]:
+    for _ in range(max_retries):
+        (background_request, response) = api_client.requests_api.retrieve(rq_id)
+        assert response.status == HTTPStatus.OK
+        if (
+            background_request.status.value
+            == models.RequestStatus.allowed_values[("value",)]["FINISHED"]
+        ):
+            return background_request, response
+        sleep(interval)
+
+    assert False, (
+        f"Export process was not finished within allowed time ({interval * max_retries}, sec). "
+        + f"Last status was: {background_request.status.value}"
+    )
+
+
 def wait_and_download_v2(
     api_client: ApiClient,
     rq_id: str,
@@ -49,26 +74,15 @@ def wait_and_download_v2(
     interval: float = 0.1,
     download_result: bool = True,
 ) -> Optional[bytes]:
-    for _ in range(max_retries):
-        (background_request, response) = api_client.requests_api.retrieve(rq_id)
-        assert response.status == HTTPStatus.OK
-        if (
-            background_request.status.value
-            == models.RequestStatus.allowed_values[("value",)]["FINISHED"]
-        ):
-            break
-        sleep(interval)
-    else:
-        assert False, (
-            f"Export process was not finished within allowed time ({interval * max_retries}, sec). "
-            + f"Last status was: {background_request.status.value}"
-        )
+    background_request, _ = wait_background_request(
+        api_client, rq_id, max_retries=max_retries, interval=interval
+    )
 
     if not download_result:
         return None
 
     # return downloaded file in case of local downloading or None otherwise
-    if background_request.result_url:
+    if download_result and background_request.result_url:
         response = requests.get(
             background_request.result_url,
             auth=(api_client.configuration.username, api_client.configuration.password),
@@ -88,8 +102,9 @@ def export_v2(
     expect_forbidden: bool = False,
     wait_result: bool = True,
     download_result: bool = True,
+    return_request_id: bool = False,
     **kwargs,
-) -> Optional[bytes]:
+) -> Optional[Union[bytes, str]]:
     """Export datasets|annotations|backups using the second version of export API
 
     Args:
@@ -102,6 +117,7 @@ def export_v2(
     Returns:
         bytes: The content of the file if downloaded locally.
         None: If `wait_result` or `download_result` were False or the file is downloaded to cloud storage.
+        str: If `download_result` was False and `return_request_id` was True.
     """
     # initialize background process and ensure that the first request returns 403 code if request should be forbidden
     rq_id = initialize_export(endpoint, expect_forbidden=expect_forbidden, **kwargs)
@@ -110,13 +126,17 @@ def export_v2(
         return None
 
     # check status of background process
-    return wait_and_download_v2(
+    result = wait_and_download_v2(
         endpoint.api_client,
         rq_id,
         max_retries=max_retries,
         interval=interval,
         download_result=download_result,
     )
+    if not download_result and return_request_id:
+        return rq_id
+
+    return result
 
 
 def export_dataset(
@@ -233,14 +253,18 @@ def import_backup(
     return import_resource(endpoint, max_retries=max_retries, interval=interval, **kwargs)
 
 
-def import_project_backup(username: str, data: dict, **kwargs) -> None:
+def import_project_backup(username: str, file_content: BytesIO, **kwargs) -> None:
     with make_api_client(username) as api_client:
-        return import_backup(api_client.projects_api, project_file_request=deepcopy(data), **kwargs)
+        return import_backup(
+            api_client.projects_api, project_file_request={"project_file": file_content}, **kwargs
+        )
 
 
-def import_task_backup(username: str, data: dict, **kwargs) -> None:
+def import_task_backup(username: str, file_content: BytesIO, **kwargs) -> None:
     with make_api_client(username) as api_client:
-        return import_backup(api_client.tasks_api, task_file_request=deepcopy(data), **kwargs)
+        return import_backup(
+            api_client.tasks_api, task_file_request={"task_file": file_content}, **kwargs
+        )
 
 
 FieldPath = Sequence[Union[str, Callable]]
@@ -467,3 +491,35 @@ def unique(
     it: Union[Iterator[_T], Iterable[_T]], *, key: Callable[[_T], Hashable] = None
 ) -> Iterable[_T]:
     return {key(v): v for v in it}.values()
+
+
+def register_new_user(username: str) -> dict[str, Any]:
+    response = post_method(
+        "admin1",
+        "auth/register",
+        data={
+            "username": username,
+            "password1": USER_PASS,
+            "password2": USER_PASS,
+            "email": f"{username}@email.com",
+        },
+    )
+
+    assert response.status_code == HTTPStatus.CREATED
+    return response.json()
+
+
+def invite_user_to_org(
+    user_email: str,
+    org_id: int,
+    role: str,
+):
+    with make_api_client("admin1") as api_client:
+        invitation, _ = api_client.invitations_api.create(
+            models.InvitationWriteRequest(
+                role=role,
+                email=user_email,
+            ),
+            org_id=org_id,
+        )
+        return invitation

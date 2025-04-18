@@ -10,22 +10,19 @@ from collections import Counter
 from collections.abc import Hashable, Sequence
 from copy import deepcopy
 from functools import cached_property, partial
-from typing import Any, Callable, Optional, TypeVar, Union, cast
+from typing import Any, Callable, ClassVar, Optional, TypeVar, Union, cast
 
 import datumaro as dm
 import datumaro.components.annotations.matcher
 import datumaro.components.comparator
 import datumaro.util.annotation_util
 import datumaro.util.mask_tools
-import django_rq
 import numpy as np
-import rq
 from attrs import asdict, define, fields_dict
 from datumaro.util import dump_json, parse_json
 from django.conf import settings
 from django.db import transaction
-from django_rq.queues import DjangoRQ as RqQueue
-from rq.job import Job as RqJob
+from rest_framework.serializers import ValidationError
 from scipy.optimize import linear_sum_assignment
 
 from cvat.apps.dataset_manager.bindings import (
@@ -45,6 +42,7 @@ from cvat.apps.engine.models import (
     Image,
     Job,
     JobType,
+    RequestTarget,
     ShapeType,
     StageChoice,
     StatusChoice,
@@ -52,9 +50,6 @@ from cvat.apps.engine.models import (
     User,
     ValidationMode,
 )
-from cvat.apps.engine.rq import BaseRQMeta, define_dependent_job
-from cvat.apps.engine.types import ExtendedRequest
-from cvat.apps.engine.utils import get_rq_lock_by_user, get_rq_lock_for_job
 from cvat.apps.profiler import silk_profile
 from cvat.apps.quality_control import models
 from cvat.apps.quality_control.models import (
@@ -62,6 +57,8 @@ from cvat.apps.quality_control.models import (
     AnnotationConflictType,
     AnnotationType,
 )
+from cvat.apps.redis_handler.background import AbstractRequestManager
+from cvat.apps.redis_handler.rq import RequestId, RequestIdWithSubresourceMixin
 
 
 class Serializable:
@@ -2264,96 +2261,63 @@ class DatasetComparator:
         )
 
 
-class QualityReportUpdateManager:
-    _QUEUE_CUSTOM_JOB_PREFIX = "quality-check-"
-    _RQ_CUSTOM_QUALITY_CHECK_JOB_TYPE = "custom_quality_check"
-    _JOB_RESULT_TTL = 120
+class QualityRequestId(RequestIdWithSubresourceMixin, RequestId):
+    LEGACY_FORMAT_PATTERNS = (
+        r"quality-check-(?P<target>(task))-(?P<target_id>\d+)-user-(\d+)",  # user id is excluded in the new format
+    )
+    LEGACY_FORMAT_EXTRA = (("subresource", "quality"), ("action", "calculate"))
 
-    def _get_queue(self) -> RqQueue:
-        return django_rq.get_queue(settings.CVAT_QUEUES.QUALITY_REPORTS.value)
 
-    def _make_custom_quality_check_job_id(self, task_id: int, user_id: int) -> str:
-        # FUTURE-TODO: it looks like job ID template should not include user_id because:
-        # 1. There is no need to compute quality reports several times for different users
-        # 2. Each user (not only rq job owner) that has permission to access a task should
-        # be able to check the status of the computation process
-        return f"{self._QUEUE_CUSTOM_JOB_PREFIX}task-{task_id}-user-{user_id}"
+class QualityReportRQJobManager(AbstractRequestManager):
+    QUEUE_NAME = settings.CVAT_QUEUES.QUALITY_REPORTS.value
+    SUPPORTED_RESOURCES: ClassVar[set[RequestTarget]] = {RequestTarget.TASK}
 
-    class QualityReportsNotAvailable(Exception):
-        pass
+    @property
+    def job_result_ttl(self):
+        return 120
 
-    def _check_quality_reporting_available(self, task: Task):
-        if task.dimension != DimensionType.DIM_2D:
-            raise self.QualityReportsNotAvailable("Quality reports are only supported in 2d tasks")
+    def get_job_by_id(self, id_, /):
+        try:
+            id_ = QualityRequestId.parse(
+                id_, queue=self.QUEUE_NAME, try_legacy_format=True
+            ).render()
+        except ValueError:
+            raise ValidationError("Provided request ID is invalid")
 
-        gt_job = task.gt_job
+        return super().get_job_by_id(id_)
+
+    def build_request_id(self):
+        return QualityRequestId(
+            action="calculate",
+            target=self.resource,
+            target_id=self.db_instance.pk,
+            extra={"subresource": "quality"},
+        ).render()
+
+    def validate_request(self):
+        super().validate_request()
+
+        if self.db_instance.dimension != DimensionType.DIM_2D:
+            raise ValidationError("Quality reports are only supported in 2d tasks")
+
+        gt_job = self.db_instance.gt_job
         if gt_job is None or not (
             gt_job.stage == StageChoice.ACCEPTANCE and gt_job.state == StatusChoice.COMPLETED
         ):
-            raise self.QualityReportsNotAvailable(
+            raise ValidationError(
                 "Quality reports require a Ground Truth job in the task "
                 f"at the {StageChoice.ACCEPTANCE} stage "
                 f"and in the {StatusChoice.COMPLETED} state"
             )
 
-    class JobAlreadyExists(QualityReportsNotAvailable):
-        def __str__(self):
-            return "Quality computation job for this task already enqueued"
+    def init_callback_with_params(self):
+        self.callback = QualityReportUpdateManager._check_task_quality
+        self.callback_kwargs = {
+            "task_id": self.db_instance.pk,
+        }
 
-    def schedule_custom_quality_check_job(
-        self, request: ExtendedRequest, task: Task, *, user_id: int
-    ) -> str:
-        """
-        Schedules a quality report computation job, supposed for updates by a request.
-        """
 
-        self._check_quality_reporting_available(task)
-
-        queue = self._get_queue()
-        rq_id = self._make_custom_quality_check_job_id(task_id=task.id, user_id=user_id)
-
-        # ensure that there is no race condition when processing parallel requests
-        with get_rq_lock_for_job(queue, rq_id):
-            if rq_job := queue.fetch_job(rq_id):
-                if rq_job.get_status(refresh=False) in (
-                    rq.job.JobStatus.QUEUED,
-                    rq.job.JobStatus.STARTED,
-                    rq.job.JobStatus.SCHEDULED,
-                    rq.job.JobStatus.DEFERRED,
-                ):
-                    raise self.JobAlreadyExists()
-
-                rq_job.delete()
-
-            with get_rq_lock_by_user(queue, user_id=user_id):
-                dependency = define_dependent_job(
-                    queue, user_id=user_id, rq_id=rq_id, should_be_dependent=True
-                )
-
-                queue.enqueue(
-                    self._check_task_quality,
-                    task_id=task.id,
-                    job_id=rq_id,
-                    meta=BaseRQMeta.build(request=request, db_obj=task),
-                    result_ttl=self._JOB_RESULT_TTL,
-                    failure_ttl=self._JOB_RESULT_TTL,
-                    depends_on=dependency,
-                )
-
-        return rq_id
-
-    def get_quality_check_job(self, rq_id: str) -> Optional[RqJob]:
-        queue = self._get_queue()
-        rq_job = queue.fetch_job(rq_id)
-
-        if rq_job and not self.is_custom_quality_check_job(rq_job):
-            rq_job = None
-
-        return rq_job
-
-    def is_custom_quality_check_job(self, rq_job: RqJob) -> bool:
-        return isinstance(rq_job.id, str) and rq_job.id.startswith(self._QUEUE_CUSTOM_JOB_PREFIX)
-
+class QualityReportUpdateManager:
     @classmethod
     @silk_profile()
     def _check_task_quality(cls, *, task_id: int) -> int:

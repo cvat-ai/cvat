@@ -112,9 +112,7 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
                     if resource_type == "task" and subresource == "backup":
                         import_task_backup(
                             self.user,
-                            data={
-                                "task_file": tmp_file,
-                            },
+                            file_content=tmp_file,
                         )
 
             empty_file = io.BytesIO(b"empty_file")
@@ -123,9 +121,7 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
             # import corrupted backup
             import_task_backup(
                 self.user,
-                data={
-                    "task_file": empty_file,
-                },
+                file_content=empty_file,
             )
 
         return _make_requests
@@ -259,8 +255,8 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
             assert 2 == background_requests.count
 
             corrupted_job, normal_job = background_requests.results
-
-            remove_meta_command = f'redis-cli -e HDEL rq:job:{corrupted_job["id"]} meta'
+            corrupted_job_key = f"rq:job:{corrupted_job['id']}"
+            remove_meta_command = f'redis-cli -e HDEL "{corrupted_job_key}" meta'
 
             if request.config.getoption("--platform") == "local":
                 stdout, _ = docker_exec_redis_inmem(["sh", "-c", remove_meta_command])
@@ -312,16 +308,16 @@ class TestGetRequests:
         owner = project["owner"]
 
         subresource = "dataset" if save_images else "annotations"
-        export_project_dataset(
+        request_id = export_project_dataset(
             owner["username"],
             save_images=save_images,
             id=project["id"],
             download_result=False,
+            return_request_id=True,
         )
-        rq_id = f'export:project-{project["id"]}-{subresource}-in-{format_name.replace(" ", "_").replace(".", "@")}-format-by-{owner["id"]}'
 
         with make_api_client(owner["username"]) as owner_client:
-            bg_request = self._test_get_request_200(owner_client, rq_id)
+            bg_request = self._test_get_request_200(owner_client, request_id)
 
             assert (
                 bg_request.created_date
@@ -331,7 +327,7 @@ class TestGetRequests:
             )
             assert bg_request.operation.format == format_name
             assert bg_request.operation.project_id == project["id"]
-            assert bg_request.operation.target.value == "project"
+            assert bg_request.operation.target == "project"
             assert bg_request.operation.task_id is None
             assert bg_request.operation.job_id is None
             assert bg_request.operation.type == f"export:{subresource}"
@@ -353,13 +349,12 @@ class TestGetRequests:
         owner = project["owner"]
         malefactor = find_users(exclude_username=owner["username"])[0]
 
-        export_project_dataset(
+        request_id = export_project_dataset(
             owner["username"],
             save_images=True,
             id=project["id"],
             download_result=False,
+            return_request_id=True,
         )
-        rq_id = f'export:project-{project["id"]}-dataset-in-{format_name.replace(" ", "_").replace(".", "@")}-format-by-{owner["id"]}'
-
         with make_api_client(malefactor["username"]) as malefactor_client:
-            self._test_get_request_403(malefactor_client, rq_id)
+            self._test_get_request_403(malefactor_client, request_id)

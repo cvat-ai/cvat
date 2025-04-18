@@ -612,6 +612,57 @@ const defaultRequestConfig = {
     fetchAll: false,
 };
 
+async function getRequestsList(): Promise<PaginatedResource<SerializedRequest>> {
+    const { backendAPI } = config;
+    const params = enableOrganization();
+
+    try {
+        const response = await fetchAll(`${backendAPI}/requests`, params);
+
+        return response.results;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+// Temporary solution for server availability problems
+const retryTimeouts = [5000, 10000, 15000];
+async function getRequestStatus(rqID: string): Promise<SerializedRequest> {
+    const { backendAPI } = config;
+    let retryCount = 0;
+    let lastError = null;
+
+    while (retryCount < 3) {
+        try {
+            const response = await Axios.get(`${backendAPI}/requests/${rqID}`);
+
+            return response.data;
+        } catch (errorData) {
+            lastError = generateError(errorData);
+            const { response } = errorData;
+            if (response && [502, 503, 504].includes(response.status)) {
+                const timeout = retryTimeouts[retryCount];
+                await new Promise((resolve) => { setTimeout(resolve, timeout); });
+                retryCount++;
+            } else {
+                throw generateError(errorData);
+            }
+        }
+    }
+
+    throw lastError;
+}
+
+async function cancelRequest(requestID): Promise<void> {
+    const { backendAPI } = config;
+
+    try {
+        await Axios.post(`${backendAPI}/requests/${requestID}/cancel`);
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
 async function serverRequest(
     url: string, data: object,
     requestConfig: ServerRequestConfig = defaultRequestConfig,
@@ -768,30 +819,19 @@ async function deleteTask(id: number, organizationID: string | null = null): Pro
     }
 }
 
-async function mergeConsensusJobs(id: number, instanceType: string): Promise<void> {
+async function mergeConsensusJobs(id: number, instanceType: string): Promise<string> {
     const { backendAPI } = config;
     const url = `${backendAPI}/consensus/merges`;
-    const params = {
-        rq_id: null,
-    };
-    const requestBody = {
-        task_id: undefined,
-        job_id: undefined,
-    };
+    const requestBody = (instanceType === 'task') ? { task_id: id } : { job_id: id };
 
-    if (instanceType === 'task') requestBody.task_id = id;
-    else requestBody.job_id = id;
-
-    return new Promise<void>((resolve, reject) => {
+    return new Promise<string>((resolve, reject) => {
         async function request() {
             try {
-                const response = await Axios.post(url, requestBody, { params });
-                params.rq_id = response.data.rq_id;
+                const response = await Axios.post(url, requestBody);
+                const rqID = response.data.rq_id;
                 const { status } = response;
                 if (status === 202) {
-                    setTimeout(request, 3000);
-                } else if (status === 201) {
-                    resolve();
+                    resolve(rqID);
                 } else {
                     reject(generateError(response));
                 }
@@ -2299,57 +2339,6 @@ async function getAnalyticsReports(
         });
 
         return response.data;
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
-async function getRequestsList(): Promise<PaginatedResource<SerializedRequest>> {
-    const { backendAPI } = config;
-    const params = enableOrganization();
-
-    try {
-        const response = await fetchAll(`${backendAPI}/requests`, params);
-
-        return response.results;
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
-// Temporary solution for server availability problems
-const retryTimeouts = [5000, 10000, 15000];
-async function getRequestStatus(rqID: string): Promise<SerializedRequest> {
-    const { backendAPI } = config;
-    let retryCount = 0;
-    let lastError = null;
-
-    while (retryCount < 3) {
-        try {
-            const response = await Axios.get(`${backendAPI}/requests/${rqID}`);
-
-            return response.data;
-        } catch (errorData) {
-            lastError = generateError(errorData);
-            const { response } = errorData;
-            if (response && [502, 503, 504].includes(response.status)) {
-                const timeout = retryTimeouts[retryCount];
-                await new Promise((resolve) => { setTimeout(resolve, timeout); });
-                retryCount++;
-            } else {
-                throw generateError(errorData);
-            }
-        }
-    }
-
-    throw lastError;
-}
-
-async function cancelRequest(requestID): Promise<void> {
-    const { backendAPI } = config;
-
-    try {
-        await Axios.post(`${backendAPI}/requests/${requestID}/cancel`);
     } catch (errorData) {
         throw generateError(errorData);
     }

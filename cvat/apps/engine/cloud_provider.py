@@ -1005,18 +1005,17 @@ def db_storage_to_storage_instance(db_storage):
 T = TypeVar('T', Callable[[str, int, int], int], Callable[[str, int, str, bool], None])
 
 def import_resource_from_cloud_storage(
+    filename: str,
     db_storage: Any,
     key: str,
-    cleanup_func: Callable[[T, str,], Any],
     import_func: T,
-    filename: str,
     *args,
     **kwargs,
 ) -> Any:
     storage = db_storage_to_storage_instance(db_storage)
     storage.download_file(key, filename)
 
-    return cleanup_func(import_func, filename, *args, **kwargs)
+    return import_func(filename, *args, **kwargs)
 
 def export_resource_to_cloud_storage(
     db_storage: Any,

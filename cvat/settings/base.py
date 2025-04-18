@@ -295,14 +295,22 @@ RQ_QUEUES = {
     CVAT_QUEUES.IMPORT_DATA.value: {
         **REDIS_INMEM_SETTINGS,
         "DEFAULT_TIMEOUT": "4h",
+        # custom fields
+        "PARSED_JOB_ID_CLASS": "cvat.apps.engine.rq.ImportRequestId",
+        "SUPPORTED_ACTIONS": ["create", "import"],
     },
     CVAT_QUEUES.EXPORT_DATA.value: {
         **REDIS_INMEM_SETTINGS,
         "DEFAULT_TIMEOUT": "4h",
+        # custom fields
+        "PARSED_JOB_ID_CLASS": "cvat.apps.engine.rq.ExportRequestId",
+        "SUPPORTED_ACTIONS": ["export"],
     },
     CVAT_QUEUES.AUTO_ANNOTATION.value: {
         **REDIS_INMEM_SETTINGS,
         "DEFAULT_TIMEOUT": "24h",
+        # custom fields
+        "SUPPORTED_ACTIONS": ["autoannotate"],
     },
     CVAT_QUEUES.WEBHOOKS.value: {
         **REDIS_INMEM_SETTINGS,
@@ -315,6 +323,11 @@ RQ_QUEUES = {
     CVAT_QUEUES.QUALITY_REPORTS.value: {
         **REDIS_INMEM_SETTINGS,
         "DEFAULT_TIMEOUT": "1h",
+        # custom fields
+        "PARSED_JOB_ID_CLASS": "cvat.apps.quality_control.quality_reports.QualityRequestId",
+        "SUPPORTED_ACTIONS": [
+            ("calculate", "quality"),
+        ],
     },
     CVAT_QUEUES.CLEANING.value: {
         **REDIS_INMEM_SETTINGS,
@@ -327,6 +340,8 @@ RQ_QUEUES = {
     CVAT_QUEUES.CONSENSUS.value: {
         **REDIS_INMEM_SETTINGS,
         "DEFAULT_TIMEOUT": "1h",
+        # custom fields
+        "SUPPORTED_ACTIONS": ["merge"],
     },
 }
 

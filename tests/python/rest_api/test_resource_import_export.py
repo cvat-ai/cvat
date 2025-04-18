@@ -202,7 +202,19 @@ class TestImportResourceFromS3(_S3ResourceTest):
             resource, is_default=False, obj=obj, cloud_storage_id=cloud_storage_id
         )
         self._export_resource(cloud_storage, obj_id, obj, resource, **export_kwargs)
-        self._import_resource(cloud_storage, resource, obj_id, obj, **kwargs)
+        self._import_resource(
+            cloud_storage,
+            resource,
+            *(
+                [
+                    obj_id,
+                ]
+                if resource != "backup"
+                else []
+            ),
+            obj,
+            **kwargs,
+        )
 
     @pytest.mark.usefixtures("restore_redis_inmem_per_function")
     @pytest.mark.parametrize(
@@ -326,7 +338,13 @@ class TestImportResourceFromS3(_S3ResourceTest):
         self._import_resource(
             cloud_storage,
             resource,
-            obj_id,
+            *(
+                [
+                    obj_id,
+                ]
+                if resource != "backup"
+                else []
+            ),
             obj,
             user=user,
             _expect_status=HTTPStatus.FORBIDDEN,
