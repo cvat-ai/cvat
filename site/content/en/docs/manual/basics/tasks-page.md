@@ -61,9 +61,9 @@ For clear all filters press `Clear filters`.
 
 Push `Open` button to go to {{< ilink "/docs/manual/basics/task-details" "task details" >}}.
 
-[create-filter]: /docs/manual/advanced/filter/#create-a-filter
-[operators]: /docs/manual/advanced/filter/#supported-operators-for-properties
-[groups]: /docs/manual/advanced/filter/#groups
-[data-and-time]: /docs/manual/advanced/filter#date-and-time-selection
-[sorting]: /docs/manual/advanced/filter/#sort-by
-[quick-filters]: /docs/manual/advanced/filter/#quick-filters
+[create-filter]: /docs/manual/advanced/search-and-filters#create-a-filter
+[operators]: /docs/manual/advanced/search-and-filters#supported-operators-for-properties
+[groups]: /docs/manual/advanced/search-and-filters#groups
+[data-and-time]: /docs/manual/advanced/search-and-filters#date-and-time-selection
+[sorting]: /docs/manual/advanced/search-and-filters#sort-by
+[quick-filters]: /docs/manual/advanced/search-and-filters#quick-filters

@@ -84,15 +84,13 @@ Here you can do the following:
    Start typing an assignee's name and/or choose the right person out of the dropdown list.
 1. `Tasks` — is a list of all tasks for a particular project, with the ability to search,
    sort and filter for tasks in the project.
-   {{< ilink "/docs/manual/advanced/search" "Read more about search" >}}.
-   {{< ilink "/docs/manual/advanced/filter#sort-and-filter-projects-tasks-and-jobs"
-     "Read more about sorting and filter" >}}
+   {{< ilink "/docs/manual/advanced/search-and-filters" "Read more about search and filters" >}}.
 It is possible to choose a subset for tasks in the project. You can use the available options
 (`Train`, `Test`, `Validation`) or set your own.
 
-[create-filter]: /docs/manual/advanced/filter/#create-a-filter
-[operators]: /docs/manual/advanced/filter/#supported-operators-for-properties
-[groups]: /docs/manual/advanced/filter/#groups
+[create-filter]: /docs/manual/advanced/search-and-filters/#create-a-filter
+[operators]: /docs/manual/advanced/search-and-filters/#supported-operators-for-properties
+[groups]: /docs/manual/advanced/search-and-filters/#groups
 [data-and-time]: /docs/manual/advanced/filter#date-and-time-selection
-[sorting]: /docs/manual/advanced/filter/#sort-by
-[quick-filters]: /docs/manual/advanced/filter/#quick-filters
+[sorting]: /docs/manual/advanced/search-and-filters/#sort-by
+[quick-filters]: /docs/manual/advanced/search-and-filters/#quick-filters
