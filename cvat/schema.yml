@@ -2604,6 +2604,10 @@ paths:
         '405':
           description: Format is not available
         '409':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
           description: Exporting is already in progress
   /api/jobs/{id}/preview:
     get:
@@ -3706,6 +3710,10 @@ paths:
         '400':
           description: Wrong query parameters were passed
         '409':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
           description: The backup process has already been initiated and is not yet
             finished
   /api/projects/{id}/dataset/:
@@ -3928,6 +3936,10 @@ paths:
         '405':
           description: Format is not available
         '409':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
           description: Exporting is already in progress
   /api/projects/{id}/preview:
     get:
@@ -5449,6 +5461,10 @@ paths:
         '400':
           description: Wrong query parameters were passed
         '409':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
           description: The backup process has already been initiated and is not yet
             finished
   /api/tasks/{id}/data/:
@@ -5730,6 +5746,10 @@ paths:
         '405':
           description: Format is not available
         '409':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
           description: Exporting is already in progress
   /api/tasks/{id}/preview:
     get:
@@ -10163,6 +10183,8 @@ components:
         rq_id:
           type: string
           description: Request id
+        response_4xx_reason:
+          type: string
       required:
       - rq_id
     RqStatus:

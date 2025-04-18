@@ -748,9 +748,9 @@ ONE_RUNNING_JOB_IN_QUEUE_PER_USER = to_bool(os.getenv("ONE_RUNNING_JOB_IN_QUEUE_
 # How many chunks can be prepared simultaneously during task creation in case the cache is not used
 CVAT_CONCURRENT_CHUNK_PROCESSING = int(os.getenv("CVAT_CONCURRENT_CHUNK_PROCESSING", 1))
 
-from cvat.rq_patching import update_started_job_registry_cleanup
+from cvat.rq_patching import patch_rq
 
-update_started_job_registry_cleanup()
+patch_rq()
 
 CLOUD_DATA_DOWNLOADING_MAX_THREADS_NUMBER = 4
 CLOUD_DATA_DOWNLOADING_NUMBER_OF_FILES_PER_THREAD = 1000
@@ -762,3 +762,13 @@ LOGO_FILENAME = "logo.svg"
 ABOUT_INFO = {
     "subtitle": "Open Data Annotation Platform",
 }
+
+if ONE_RUNNING_JOB_IN_QUEUE_PER_USER:
+    PERIODIC_RQ_JOBS.append(
+        {
+            "queue": CVAT_QUEUES.CLEANING.value,
+            "id": "cleanup_deferred_job_registry",
+            "func": "cvat.apps.redis_handler.cron.cleanup_deferred_job_registry",
+            "cron_string": "0 0,8,16 * * *",
+        }
+    )
