@@ -147,6 +147,12 @@ const PAID_PLACEHOLDER_CONFIG = {
         'The Quality Control feature enables effortless evaluation of annotation quality by creating' +
         ' a Ground Truth job that works as benchmark. CVAT automatically compares all task-related jobs' +
         ' to this benchmark, calculating annotation precision to ensure high-quality results.',
+        analyticsReport:
+        'The Analytics Report feature provides comprehensive insights into your resource, including key metrics like' +
+        ' object statistics, working time, and annotation speed. It allows you to filter data by time period,' +
+        ' subresource, or user, offering a clear view of performance trends. Additionally, it presents historical' +
+        ' job data within the resource, along with detailed charts to visualize the information.' +
+        ' This feature is perfect for those seeking in-depth analysis and better resource management.',
     },
 };
 

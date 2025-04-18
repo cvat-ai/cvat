@@ -9,6 +9,7 @@ import { LoadingOutlined } from '@ant-design/icons';
 import { usePlugins } from 'utils/hooks';
 
 interface MenuItemsData {
+    jobID: number;
     taskID: number;
     projectID: number | null;
     pluginActions: ReturnType<typeof usePlugins>;
@@ -25,7 +26,9 @@ export default function JobActionsItems(
     jobMenuProps: unknown,
 ): MenuProps['items'] {
     const {
-        taskID, projectID,
+        jobID,
+        taskID,
+        projectID,
         pluginActions,
         isMergingConsensusEnabled,
         onOpenBugTracker,
@@ -79,13 +82,18 @@ export default function JobActionsItems(
         }, 50]);
     }
 
+    menuItems.push([{
+        key: 'view-analytics',
+        label: <Link to={`/tasks/${taskID}/jobs/${jobID}/analytics`}>View analytics</Link>,
+    }, 60]);
+
     if (onDeleteJob) {
-        menuItems.push([{ type: 'divider' }, 59]);
+        menuItems.push([{ type: 'divider' }, 69]);
         menuItems.push([{
             key: 'delete',
             onClick: onDeleteJob,
             label: 'Delete',
-        }, 60]);
+        }, 70]);
     }
 
     menuItems.push(

@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import {
-    AnalyticsReportFilter, QualityConflictsFilter, QualityReportsFilter, QualitySettingsFilter,
-    ConsensusSettingsFilter,
+    AnalyticsEventsFilter, QualityConflictsFilter, QualityReportsFilter,
+    QualitySettingsFilter, ConsensusSettingsFilter,
 } from './server-response-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
@@ -32,7 +32,6 @@ import QualityReport from './quality-report';
 import QualityConflict from './quality-conflict';
 import QualitySettings from './quality-settings';
 import ConsensusSettings from './consensus-settings';
-import AnalyticsReport from './analytics-report';
 import AnnotationGuide from './guide';
 import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
 import { Request } from './request';
@@ -155,12 +154,8 @@ export default interface CVATCore {
                 get: (filter: QualitySettingsFilter) => Promise<QualitySettings>;
             };
         };
-        performance: {
-            reports: (filter: AnalyticsReportFilter) => Promise<AnalyticsReport>;
-            calculate: (
-                body: { jobID?: number; taskID?: number; projectID?: number; },
-                onUpdate: (status: enums.RQStatus, progress: number, message: string) => void,
-            ) => Promise<void>;
+        events: {
+            export: (filter: AnalyticsEventsFilter) => Promise<string>;
         };
     };
     frames: {
@@ -228,7 +223,6 @@ export default interface CVATCore {
         QualityReport: typeof QualityReport;
         QualityConflict: typeof QualityConflict;
         QualitySettings: typeof QualitySettings;
-        AnalyticsReport: typeof AnalyticsReport;
         Request: typeof Request;
         FramesMetaData: typeof FramesMetaData;
         JobValidationLayout: typeof JobValidationLayout;

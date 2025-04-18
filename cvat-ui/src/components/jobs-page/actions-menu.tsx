@@ -4,7 +4,6 @@
 
 import React, { useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useHistory } from 'react-router';
 import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
 
@@ -28,7 +27,6 @@ interface Props {
 function JobActionsComponent(props: Props): JSX.Element {
     const { jobInstance, triggerElement, consensusJobsPresent } = props;
     const dispatch = useDispatch();
-    const history = useHistory();
 
     const pluginActions = usePlugins((state: CombinedState) => state.plugins.components.jobActions.items, props);
     const mergingConsensus = useSelector((state: CombinedState) => state.consensus.actions.merging);
@@ -92,6 +90,7 @@ function JobActionsComponent(props: Props): JSX.Element {
                 selectable: false,
                 className: 'cvat-job-item-menu',
                 items: JobActionsItems({
+                    jobID: jobInstance.id,
                     taskID: jobInstance.taskId,
                     projectID: jobInstance.projectId,
                     isMergingConsensusEnabled: mergingConsensus[makeKey(jobInstance)],
@@ -102,7 +101,7 @@ function JobActionsComponent(props: Props): JSX.Element {
                     onMergeConsensusJob: consensusJobsPresent && jobInstance.parentJobId === null ?
                         onMergeConsensusJob : null,
                     onDeleteJob: jobInstance.type === JobType.GROUND_TRUTH ? onDeleteJob : null,
-                }, { ...props, history }),
+                }, props),
             }}
         >
             {triggerElement}

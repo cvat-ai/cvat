@@ -77,15 +77,20 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
     }, 40]);
 
     menuItems.push([{
+        key: 'view-analytics',
+        label: <Link to={`/tasks/${taskID}/analytics`}>View analytics</Link>,
+    }, 50]);
+
+    menuItems.push([{
         key: 'quality_control',
         label: <Link to={`/tasks/${taskID}/quality-control`}>Quality control</Link>,
-    }, 50]);
+    }, 60]);
 
     if (isConsensusEnabled) {
         menuItems.push([{
             key: 'consensus_management',
             label: <Link to={`/tasks/${taskID}/consensus`}>Consensus management</Link>,
-        }, 55]);
+        }, 65]);
     }
 
     if (onMergeConsensusJobs) {
@@ -95,7 +100,7 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
             label: 'Merge consensus jobs',
             disabled: isMergingConsensusEnabled,
             itemIcon: isMergingConsensusEnabled ? <LoadingOutlined /> : undefined,
-        }, 60]);
+        }, 70]);
     }
 
     if (onMoveTaskToProject) {
@@ -103,15 +108,15 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
             key: 'move_task_to_project',
             onClick: onMoveTaskToProject,
             label: 'Move to project',
-        }, 70]);
+        }, 80]);
     }
 
-    menuItems.push([{ type: 'divider' }, 79]);
+    menuItems.push([{ type: 'divider' }, 89]);
     menuItems.push([{
         key: 'delete_task',
         onClick: onDeleteTask,
         label: 'Delete',
-    }, 80]);
+    }, 90]);
 
     menuItems.push(
         ...pluginActions.map(({ component: Component, weight }, index) => {

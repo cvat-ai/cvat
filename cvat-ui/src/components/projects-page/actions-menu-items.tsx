@@ -50,19 +50,24 @@ export default function ProjectActionsItems(
     }, 20]);
 
     menuItems.push([{
-        key: 'set-webhooks',
-        label: <Link to={`/projects/${projectID}/webhooks`}>Setup webhooks</Link>,
+        key: 'view-analytics',
+        label: <Link to={`/projects/${projectID}/analytics`}>View analytics</Link>,
     }, 30]);
 
     menuItems.push([{
+        key: 'set-webhooks',
+        label: <Link to={`/projects/${projectID}/webhooks`}>Setup webhooks</Link>,
+    }, 40]);
+
+    menuItems.push([{
         type: 'divider',
-    }, 39]);
+    }, 49]);
 
     menuItems.push([{
         key: 'delete',
         onClick: onDeleteProject,
         label: 'Delete',
-    }, 40]);
+    }, 50]);
 
     menuItems.push(
         ...pluginActions.map(({ component: Component, weight }, index) => {

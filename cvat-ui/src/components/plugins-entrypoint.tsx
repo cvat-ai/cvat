@@ -83,6 +83,10 @@ function PluginEntrypoint(): null {
                     });
 
                     dispatch(pluginActions.addPlugin(name, destructor, globalStateDidUpdate));
+                    window.document.dispatchEvent(new CustomEvent('plugins.registered', {
+                        detail: { name },
+                        bubbles: true,
+                    }));
                 },
             }),
         });

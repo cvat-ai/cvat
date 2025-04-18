@@ -10,7 +10,7 @@ import {
     Webhook, MLModel, Organization, Job, Task, Project, Label, User,
     QualityConflict, FramesMetaData, RQStatus, Event, Invitation, SerializedAPISchema,
     Request, JobValidationLayout, QualitySettings, TaskValidationLayout, ObjectState,
-    ConsensusSettings, AboutData,
+    ConsensusSettings, AboutData, ShapeType, ObjectType,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
@@ -290,10 +290,12 @@ export interface PluginsState {
             };
         };
         qualityControlPage: {
-            overviewTab: ((props: {
-                task: Task;
-                qualitySettings: QualitySettings;
-            }) => JSX.Element)[];
+            overviewTab: ((
+                props: {
+                    task: Task;
+                    qualitySettings: QualitySettings;
+                },
+            ) => JSX.Element)[];
 
             allocationTable: ((
                 props: {
@@ -304,7 +306,16 @@ export interface PluginsState {
                     validationLayout: TaskValidationLayout;
                     onDeleteFrames: (frames: number[]) => void;
                     onRestoreFrames: (frames: number[]) => void;
-                }) => JSX.Element)[];
+                },
+            ) => JSX.Element)[];
+        };
+        analyticsReportPage: {
+            content: ((
+                props: {
+                    resource: Project | Task | Job;
+                    timePeriod: { startDate: string; endDate: string; } | null;
+                },
+            ) => JSX.Element)[];
         };
     },
     components: {
