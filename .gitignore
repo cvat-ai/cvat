@@ -37,7 +37,6 @@ yarn-error.log*
 #Ignore helm-related files
 /helm-chart/Chart.lock
 /helm-chart/values.*.yaml
-/helm-chart/*.values.yaml
 /helm-chart/charts/*
 
 #Ignore website temp files
