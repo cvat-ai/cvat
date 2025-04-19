@@ -20,6 +20,7 @@ import {
 import CVATSigningInput, { CVATInputType } from 'components/signing-common/cvat-signing-input';
 import { CombinedState } from 'reducers';
 import { useAuthQuery, usePlugins } from 'utils/hooks';
+import { useTranslation } from 'react-i18next';
 
 export interface LoginData {
     credential: string;
@@ -47,6 +48,8 @@ function LoginFormComponent(props: Props): JSX.Element {
         props,
         { credential },
     );
+    const { t } = useTranslation('base');
+    const { t: tLoginForm } = useTranslation('auth', { keyPrefix: 'loginForm' });
 
     let resetSearch = authQuery ? new URLSearchParams(authQuery).toString() : '';
     if (credential.includes('@')) {
@@ -58,7 +61,7 @@ function LoginFormComponent(props: Props): JSX.Element {
         <Col className='cvat-credentials-link'>
             <Text strong>
                 <Link to={{ pathname: '/auth/password/reset', search: resetSearch }}>
-                    Forgot password?
+                    {tLoginForm('Forgot password?')}
                 </Link>
             </Text>
         </Col>
@@ -85,13 +88,14 @@ function LoginFormComponent(props: Props): JSX.Element {
                         <Row>
                             <Col className='cvat-credentials-link'>
                                 <Text strong>
-                                    New user?&nbsp;
+                                    {tLoginForm('New user?')}
+                                    &nbsp;
                                     <Link to={{
                                         pathname: '/auth/register',
                                         search: authQuery ? new URLSearchParams(authQuery).toString() : '',
                                     }}
                                     >
-                                        Create an account
+                                        {tLoginForm('Create an account')}
                                     </Link>
                                 </Text>
                             </Col>
@@ -103,7 +107,7 @@ function LoginFormComponent(props: Props): JSX.Element {
                 }
             </Row>
             <Col>
-                <Title level={2}> Sign in </Title>
+                <Title level={2}>{tLoginForm('Sign in')}</Title>
             </Col>
             <Form
                 className={`cvat-login-form ${credential ? 'cvat-login-form-extended' : ''}`}
@@ -120,7 +124,7 @@ function LoginFormComponent(props: Props): JSX.Element {
                         >
                             <Input
                                 autoComplete='credential'
-                                prefix={<Text>Email or username</Text>}
+                                prefix={<Text>{tLoginForm('Email or username')}</Text>}
                                 className={credential ? 'cvat-input-floating-label-above' : 'cvat-input-floating-label'}
                                 suffix={credential && (
                                     <Icon
@@ -146,14 +150,14 @@ function LoginFormComponent(props: Props): JSX.Element {
                                     rules={[
                                         {
                                             required: true,
-                                            message: 'Please specify a password',
+                                            message: tLoginForm('Please specify a password'),
                                         },
                                     ]}
                                 >
                                     <CVATSigningInput
                                         type={CVATInputType.PASSWORD}
                                         id='password'
-                                        placeholder='Password'
+                                        placeholder={t('Password')}
                                         autoComplete='password'
                                     />
                                 </Form.Item>
@@ -168,7 +172,7 @@ function LoginFormComponent(props: Props): JSX.Element {
                                         disabled={!credential}
                                         htmlType='submit'
                                     >
-                                        Next
+                                        {t('Next')}
                                     </Button>
                                 </Form.Item>
                             )

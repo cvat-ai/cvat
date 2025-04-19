@@ -14,6 +14,7 @@ import { Link } from 'react-router-dom';
 import Title from 'antd/lib/typography/Title';
 import CVATSigningInput from 'components/signing-common/cvat-signing-input';
 import { useAuthQuery } from 'utils/hooks';
+import { useTranslation } from 'react-i18next';
 
 export interface ResetPasswordData {
     email: string;
@@ -28,6 +29,9 @@ function ResetPasswordFormComponent({ fetching, onSubmit }: Props): JSX.Element 
     const [form] = Form.useForm();
     const authQuery = useAuthQuery();
     const defaultCredential = authQuery?.email;
+    const { t } = useTranslation('base');
+    const { t: tPasswordReset } = useTranslation('auth', { keyPrefix: 'passwordReset' });
+
     return (
         <div className='cvat-password-reset-form-wrapper'>
             <Row justify='space-between' className='cvat-credentials-navigation'>
@@ -45,12 +49,12 @@ function ResetPasswordFormComponent({ fetching, onSubmit }: Props): JSX.Element 
             </Row>
             <Row>
                 <Col>
-                    <Title level={2}> Forgot password? </Title>
+                    <Title level={2}>{tPasswordReset('Forgot password?')}</Title>
                 </Col>
             </Row>
             <Row>
                 <Col>
-                    <Title level={2}> Let&apos;s create a new one </Title>
+                    <Title level={2}>{tPasswordReset('Let\'s create a new one')}</Title>
                 </Col>
             </Row>
             <Form
@@ -69,23 +73,23 @@ function ResetPasswordFormComponent({ fetching, onSubmit }: Props): JSX.Element 
                     rules={[
                         {
                             type: 'email',
-                            message: 'The input is not valid E-mail!',
+                            message: tPasswordReset('The input is not valid E-mail!'),
                         },
                         {
                             required: true,
-                            message: 'Please specify an email address',
+                            message: tPasswordReset('Please specify an email address'),
                         },
                     ]}
                 >
                     <CVATSigningInput
                         autoComplete='email'
-                        placeholder='Email'
+                        placeholder={t('Email')}
                         onReset={() => form.setFieldsValue({ email: '' })}
                     />
                 </Form.Item>
                 <Row>
                     <Col className='cvat-password-reset-tip'>
-                        <Text> We will send link to your email </Text>
+                        <Text>{tPasswordReset('We will send link to your email')}</Text>
                     </Col>
                 </Row>
                 <Form.Item>
@@ -94,7 +98,7 @@ function ResetPasswordFormComponent({ fetching, onSubmit }: Props): JSX.Element 
                         loading={fetching}
                         htmlType='submit'
                     >
-                        Send
+                        {t('Send')}
                     </Button>
                 </Form.Item>
             </Form>

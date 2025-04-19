@@ -47,6 +47,14 @@ $social-google-background: #4286f5;
     .cvat-logo-icon {
         filter: brightness(0) invert(1);
     }
+
+    .cvat-switch-i18n-locale-button{
+        color: $heading-color;
+    }
+
+    .cvat-switch-i18n-locale-button.cvat-switch-i18n-locale-button:hover{
+        color: $action-button-color-3;
+    }
 }
 
 .cvat-signing-background {

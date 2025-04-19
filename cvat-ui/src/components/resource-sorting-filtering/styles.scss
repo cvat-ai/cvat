@@ -64,7 +64,7 @@
 }
 
 .cvat-resource-page-sorting-list {
-    width: $grid-unit-size * 24;
+    width: $grid-unit-size * 34;
 }
 
 .cvat-sorting-field {
@@ -74,9 +74,13 @@
     margin-bottom: $grid-unit-size;
 
     .ant-radio-button-wrapper {
-        width: $grid-unit-size * 16;
+        width: $grid-unit-size * 32;
         user-select: none;
         cursor: move;
+    }
+
+    &-prop {
+        float: right;
     }
 }
 
