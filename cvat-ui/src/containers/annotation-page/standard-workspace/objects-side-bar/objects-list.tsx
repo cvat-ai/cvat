@@ -143,6 +143,18 @@ const componentShortcuts = {
         sequences: ['+', '='],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
+    MOVE_TO_PREVIOUS_LAYER: {
+        name: 'Move to previous layer',
+        description: 'Move the active object one layer backward (decrease z-order value)',
+        sequences: ['u'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    MOVE_TO_NEXT_LAYER: {
+        name: 'Move to next layer',
+        description: 'Move the active object one layer forward (increase z-order value)',
+        sequences: ['j'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
     COPY_SHAPE: {
         name: 'Copy shape',
         description: 'Copy shape to CVAT internal clipboard',
@@ -586,6 +598,24 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 const state = activatedState(true);
                 if (state && !readonly && state.objectType !== ObjectType.TAG) {
                     state.zOrder = maxZLayer + 1;
+                    updateAnnotations([state]);
+                }
+            },
+            MOVE_TO_PREVIOUS_LAYER: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                const state = activatedState(true);
+                if (state && !readonly && state.objectType !== ObjectType.TAG) {
+                    const newZOrder = state.zOrder - 1;
+                    state.zOrder = newZOrder;
+                    updateAnnotations([state]);
+                }
+            },
+            MOVE_TO_NEXT_LAYER: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                const state = activatedState(true);
+                if (state && !readonly && state.objectType !== ObjectType.TAG) {
+                    const newZOrder = state.zOrder + 1;
+                    state.zOrder = newZOrder;
                     updateAnnotations([state]);
                 }
             },

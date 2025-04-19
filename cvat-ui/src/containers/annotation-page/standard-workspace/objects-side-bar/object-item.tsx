@@ -288,6 +288,30 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         }
     };
 
+    private readonly moveToPreviousLayer = (): void => {
+        const { objectState, readonly, minZLayer } = this.props;
+
+        if (!readonly) {
+            const newZOrder = objectState.zOrder - 1;
+            if (newZOrder <= minZLayer) {
+                objectState.zOrder = newZOrder;
+                this.commit();
+            }
+        }
+    };
+
+    private readonly moveToNextLayer = (): void => {
+        const { objectState, readonly, maxZLayer } = this.props;
+
+        if (!readonly) {
+            const newZOrder = objectState.zOrder + 1;
+            if (newZOrder >= maxZLayer) {
+                objectState.zOrder = newZOrder;
+                this.commit();
+            }
+        }
+    };
+
     private activate = (activeElementID?: number): void => {
         const {
             objectState, ready, activeControl, activateObject,
@@ -419,6 +443,8 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                 switchOrientation={this.switchOrientation}
                 toBackground={this.toBackground}
                 toForeground={this.toForeground}
+                moveToPreviousLayer={this.moveToPreviousLayer}
+                moveToNextLayer={this.moveToNextLayer}
                 changeColor={this.changeColor}
                 changeLabel={this.changeLabel}
                 edit={this.edit}
