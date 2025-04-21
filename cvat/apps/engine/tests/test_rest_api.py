@@ -6621,7 +6621,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
 
         # Rare and buggy formats that are not crucial for testing
         formats.pop('Market-1501 1.0')
-        formats.pop('KITTI Raw Format 1.0') # temporary until review
+        formats.pop('Kitti Raw Format 1.0') # temporary until review
         # FIXME: KITTI Raw Format 1.0 bug in Datumaro Exporter
         # when track_ids are absent, negative indices are assigned by the exporter
         # if annotations contain shapes
