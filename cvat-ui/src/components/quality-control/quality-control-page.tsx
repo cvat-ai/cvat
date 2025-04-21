@@ -302,7 +302,7 @@ function QualityControlPage(): JSX.Element {
             const updatedChildrenSettings = childrenSettings?.map((childSetting) => {
                 const updatedSetting = updatedSettingsMap[childSetting.id];
                 return updatedSetting || childSetting;
-            }) || null;
+            }) ?? null;
 
             dispatch(reducerActions.setQualitySettings(updatedInstanceSettings, updatedChildrenSettings));
             notification.info({ message: 'Settings have been updated' });
@@ -315,7 +315,7 @@ function QualityControlPage(): JSX.Element {
         } finally {
             dispatch(reducerActions.setQualitySettingsFetching(false));
         }
-    }, [state.qualitySettings.settings]);
+    }, [state.qualitySettings.settings, state.qualitySettings.childrenSettings]);
 
     const updateMeta = async (): Promise<void> => {
         dispatch(reducerActions.setFetching(true));
