@@ -384,7 +384,7 @@ function fetchAggregatedResource<FilterType, SerializedDataType>(
         filter: FilterType,
         aggregate = false,
     ): Promise<PaginatedResource<SerializedDataType>> {
-        const id = (filter as any)?.id || null;
+        const id = (filter as any)?.id ?? null;
 
         let response = null;
         try {

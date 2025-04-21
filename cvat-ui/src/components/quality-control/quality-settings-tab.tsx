@@ -2,11 +2,13 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback } from 'react';
 import Text from 'antd/lib/typography/Text';
 import Form from 'antd/lib/form';
 import Switch from 'antd/lib/switch';
-import { Project, QualitySettings, Task } from 'cvat-core-wrapper';
+import {
+    Project, QualitySettings, QualitySettingsSaveFields, Task,
+} from 'cvat-core-wrapper';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import { Col, Row } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
@@ -16,6 +18,8 @@ import { ExclamationCircleFilled } from '@ant-design/icons/lib/icons';
 import Modal from 'antd/lib/modal';
 import QualitySettingsForm from './task-quality/quality-settings-form';
 
+export type UpdateSettingsData = Record<number, { settings: QualitySettings, fields: QualitySettingsSaveFields }>;
+
 interface Props {
     instance: Task | Project;
     fetching: boolean;
@@ -23,7 +27,7 @@ interface Props {
         settings: QualitySettings | null;
         childrenSettings: QualitySettings[] | null;
     };
-    setQualitySettings: (settingsList: QualitySettings[], onError?: () => void) => void;
+    setQualitySettings: (updatedSettingsData: UpdateSettingsData) => void;
 }
 
 function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
@@ -36,59 +40,50 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
 
     const [form] = Form.useForm();
 
-    const setupSettingsFromForm = useCallback(async (newSettings: QualitySettings) => {
-        const values = await form.validateFields();
-
-        newSettings.targetMetric = values.targetMetric;
-        newSettings.targetMetricThreshold = values.targetMetricThreshold / 100;
-
-        newSettings.maxValidationsPerJob = values.maxValidationsPerJob;
-
-        newSettings.lowOverlapThreshold = values.lowOverlapThreshold / 100;
-        newSettings.iouThreshold = values.iouThreshold / 100;
-        newSettings.compareAttributes = values.compareAttributes;
-        newSettings.emptyIsAnnotated = values.emptyIsAnnotated;
-
-        newSettings.oksSigma = values.oksSigma / 100;
-        newSettings.pointSizeBase = values.pointSizeBase;
-
-        newSettings.lineThickness = values.lineThickness / 100;
-        newSettings.lineOrientationThreshold = values.lineOrientationThreshold / 100;
-        newSettings.orientedLines = values.orientedLines;
-
-        newSettings.compareGroups = values.compareGroups;
-        newSettings.groupMatchThreshold = values.groupMatchThreshold / 100;
-
-        newSettings.checkCoveredAnnotations = values.checkCoveredAnnotations;
-        newSettings.objectVisibilityThreshold = values.objectVisibilityThreshold / 100;
-
-        newSettings.panopticComparison = values.panopticComparison;
-        newSettings.jobFilter = values.jobFilter || '';
-    }, [form]);
-
     const onSave = useCallback(async () => {
         if (settings) {
-            await setupSettingsFromForm(settings);
-            setQualitySettings([settings]);
+            const values = await form.validateFields();
+            const fields = {
+                targetMetric: values.targetMetric,
+                targetMetricThreshold: values.targetMetricThreshold / 100,
+                maxValidationsPerJob: values.maxValidationsPerJob,
+                lowOverlapThreshold: values.lowOverlapThreshold / 100,
+                iouThreshold: values.iouThreshold / 100,
+                compareAttributes: values.compareAttributes,
+                emptyIsAnnotated: values.emptyIsAnnotated,
+                oksSigma: values.oksSigma / 100,
+                pointSizeBase: values.pointSizeBase,
+                lineThickness: values.lineThickness / 100,
+                lineOrientationThreshold: values.lineOrientationThreshold / 100,
+                orientedLines: values.orientedLines,
+                compareGroups: values.compareGroups,
+                groupMatchThreshold: values.groupMatchThreshold / 100,
+                checkCoveredAnnotations: values.checkCoveredAnnotations,
+                objectVisibilityThreshold: values.objectVisibilityThreshold / 100,
+                panopticComparison: values.panopticComparison,
+                jobFilter: values.jobFilter || '',
+            };
+            setQualitySettings({ [settings.id]: { settings, fields } });
         }
     }, [form, settings, setQualitySettings]);
 
-    const onInheritChange = useCallback(async (value: boolean) => {
+    const onInheritChange = useCallback((value: boolean) => {
         if (settings) {
-            settings.inherit = value;
-            setQualitySettings([settings], () => {
-                settings.inherit = !value;
-            });
+            setQualitySettings({ [settings.id]: { settings, fields: { inherit: value } } });
         }
-    }, [form, settings, setQualitySettings]);
+    }, [settings, setQualitySettings]);
 
-    const [nonInheritedChildSettings, setNonInheritedChildSettings] = useState<QualitySettings[]>([]);
-    useEffect(() => {
-        if (childrenSettings) {
-            const filteredSettings = childrenSettings.filter((child) => !child.inherit);
-            setNonInheritedChildSettings(filteredSettings);
-        }
-    }, [childrenSettings]);
+    const nonInheritedChildSettings = childrenSettings ? childrenSettings.filter((child) => !child.inherit) : [];
+    const onChildInheritChange = useCallback(() => {
+        const updatedSettings = nonInheritedChildSettings.reduce<UpdateSettingsData>((acc, child) => {
+            acc[child.id] = {
+                settings: child,
+                fields: { inherit: true },
+            };
+            return acc;
+        }, {});
+        setQualitySettings(updatedSettings);
+    }, [nonInheritedChildSettings, setQualitySettings]);
 
     if (fetching) {
         return (
@@ -131,13 +126,7 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
                                     content: 'This action will override own settings in all tasks.',
                                     okText: 'Yes',
                                     cancelText: 'No',
-                                    onOk: async () => {
-                                        const updatedSettings = nonInheritedChildSettings.map((child) => {
-                                            child.inherit = true;
-                                            return child;
-                                        });
-                                        setQualitySettings(updatedSettings);
-                                    },
+                                    onOk: onChildInheritChange,
                                 });
                             }}
                         >

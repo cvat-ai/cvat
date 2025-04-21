@@ -3,11 +3,12 @@
 // SPDX-License-Identifier: MIT
 
 import _ from 'lodash';
-import { FieldUpdateTrigger } from './common';
 import { SerializedQualitySettingsData } from './server-response-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 import { convertDescriptions, getServerAPISchema } from './server-schema';
+import { fieldsToSnakeCase } from './common';
+import { Camelized } from './type-utils';
 
 export enum TargetMetric {
     ACCURACY = 'accuracy',
@@ -20,34 +21,16 @@ export enum PointSizeBase {
     GROUP_BBOX_SIZE = 'group_bbox_size',
 }
 
-const settingsMapping: Record<string, string> = {
-    iouThreshold: 'iou_threshold',
-    oksSigma: 'oks_sigma',
-    pointSizeBase: 'point_size_base',
-    lineThickness: 'line_thickness',
-    lowOverlapThreshold: 'low_overlap_threshold',
-    orientedLines: 'compare_line_orientation',
-    lineOrientationThreshold: 'line_orientation_threshold',
-    compareGroups: 'compare_groups',
-    groupMatchThreshold: 'group_match_threshold',
-    checkCoveredAnnotations: 'check_covered_annotations',
-    objectVisibilityThreshold: 'object_visibility_threshold',
-    panopticComparison: 'panoptic_comparison',
-    compareAttributes: 'compare_attributes',
-    targetMetric: 'target_metric',
-    targetMetricThreshold: 'target_metric_threshold',
-    maxValidationsPerJob: 'max_validations_per_job',
-    emptyIsAnnotated: 'empty_is_annotated',
-    jobFilter: 'job_filter',
-    inherit: 'inherit',
-};
+export type QualitySettingsSaveFields = Partial<Camelized<
+Omit<SerializedQualitySettingsData, 'id' | 'task_id' | 'descriptions'>
+>>;
 
 export default class QualitySettings {
     #id: number;
     #targetMetric: TargetMetric;
     #targetMetricThreshold: number;
     #maxValidationsPerJob: number;
-    #taskID: number;
+    #taskId: number;
     #iouThreshold: number;
     #oksSigma: number;
     #pointSizeBase: PointSizeBase;
@@ -66,11 +49,9 @@ export default class QualitySettings {
     #inherit: boolean;
     #descriptions: Record<string, string>;
 
-    #updateTrigger: FieldUpdateTrigger;
-
     constructor(initialData: SerializedQualitySettingsData) {
         this.#id = initialData.id;
-        this.#taskID = initialData.task_id;
+        this.#taskId = initialData.task_id;
         this.#targetMetric = initialData.target_metric as TargetMetric;
         this.#targetMetricThreshold = initialData.target_metric_threshold;
         this.#maxValidationsPerJob = initialData.max_validations_per_job;
@@ -91,168 +72,90 @@ export default class QualitySettings {
         this.#jobFilter = initialData.job_filter || '';
         this.#inherit = initialData.inherit;
         this.#descriptions = initialData.descriptions;
-
-        this.#updateTrigger = new FieldUpdateTrigger();
     }
 
     get id(): number {
         return this.#id;
     }
 
-    get taskID(): number {
-        return this.#taskID;
+    get taskId(): number {
+        return this.#taskId;
     }
 
     get iouThreshold(): number {
         return this.#iouThreshold;
     }
-    set iouThreshold(newVal: number) {
-        this.#iouThreshold = newVal;
-        this.#updateTrigger.update('iou_threshold');
-    }
 
     get oksSigma(): number {
         return this.#oksSigma;
-    }
-    set oksSigma(newVal: number) {
-        this.#oksSigma = newVal;
-        this.#updateTrigger.update('oksSigma');
     }
 
     get pointSizeBase(): PointSizeBase {
         return this.#pointSizeBase;
     }
-    set pointSizeBase(newVal: PointSizeBase) {
-        this.#pointSizeBase = newVal;
-        this.#updateTrigger.update('pointSizeBase');
-    }
 
     get lineThickness(): number {
         return this.#lineThickness;
-    }
-    set lineThickness(newVal: number) {
-        this.#lineThickness = newVal;
-        this.#updateTrigger.update('lineThickness');
     }
 
     get lowOverlapThreshold(): number {
         return this.#lowOverlapThreshold;
     }
-    set lowOverlapThreshold(newVal: number) {
-        this.#lowOverlapThreshold = newVal;
-        this.#updateTrigger.update('lowOverlapThreshold');
-    }
 
     get orientedLines(): boolean {
         return this.#orientedLines;
-    }
-    set orientedLines(newVal: boolean) {
-        this.#orientedLines = newVal;
-        this.#updateTrigger.update('orientedLines');
     }
 
     get lineOrientationThreshold(): number {
         return this.#lineOrientationThreshold;
     }
-    set lineOrientationThreshold(newVal: number) {
-        this.#lineOrientationThreshold = newVal;
-        this.#updateTrigger.update('lineOrientationThreshold');
-    }
 
     get compareGroups(): boolean {
         return this.#compareGroups;
-    }
-    set compareGroups(newVal: boolean) {
-        this.#compareGroups = newVal;
-        this.#updateTrigger.update('compareGroups');
     }
 
     get groupMatchThreshold(): number {
         return this.#groupMatchThreshold;
     }
-    set groupMatchThreshold(newVal: number) {
-        this.#groupMatchThreshold = newVal;
-        this.#updateTrigger.update('groupMatchThreshold');
-    }
 
     get checkCoveredAnnotations(): boolean {
         return this.#checkCoveredAnnotations;
-    }
-    set checkCoveredAnnotations(newVal: boolean) {
-        this.#checkCoveredAnnotations = newVal;
-        this.#updateTrigger.update('checkCoveredAnnotations');
     }
 
     get objectVisibilityThreshold(): number {
         return this.#objectVisibilityThreshold;
     }
-    set objectVisibilityThreshold(newVal: number) {
-        this.#objectVisibilityThreshold = newVal;
-        this.#updateTrigger.update('objectVisibilityThreshold');
-    }
 
     get panopticComparison(): boolean {
         return this.#panopticComparison;
-    }
-    set panopticComparison(newVal: boolean) {
-        this.#panopticComparison = newVal;
-        this.#updateTrigger.update('panopticComparison');
     }
 
     get compareAttributes(): boolean {
         return this.#compareAttributes;
     }
-    set compareAttributes(newVal: boolean) {
-        this.#compareAttributes = newVal;
-        this.#updateTrigger.update('compareAttributes');
-    }
 
     get targetMetric(): TargetMetric {
         return this.#targetMetric;
-    }
-    set targetMetric(newVal: TargetMetric) {
-        this.#targetMetric = newVal;
-        this.#updateTrigger.update('targetMetric');
     }
 
     get targetMetricThreshold(): number {
         return this.#targetMetricThreshold;
     }
-    set targetMetricThreshold(newVal: number) {
-        this.#targetMetricThreshold = newVal;
-        this.#updateTrigger.update('targetMetricThreshold');
-    }
 
     get maxValidationsPerJob(): number {
         return this.#maxValidationsPerJob;
-    }
-    set maxValidationsPerJob(newVal: number) {
-        this.#maxValidationsPerJob = newVal;
-        this.#updateTrigger.update('maxValidationsPerJob');
     }
 
     get emptyIsAnnotated(): boolean {
         return this.#emptyIsAnnotated;
     }
-    set emptyIsAnnotated(newVal: boolean) {
-        this.#emptyIsAnnotated = newVal;
-        this.#updateTrigger.update('emptyIsAnnotated');
-    }
 
     get jobFilter(): string {
         return this.#jobFilter;
     }
-    set jobFilter(newVal: string) {
-        this.#jobFilter = newVal;
-        this.#updateTrigger.update('jobFilter');
-    }
 
     get inherit(): boolean {
         return this.#inherit;
-    }
-    set inherit(newVal: boolean) {
-        this.#inherit = newVal;
-        this.#updateTrigger.update('inherit');
     }
 
     get descriptions(): Record<string, string> {
@@ -265,25 +168,8 @@ export default class QualitySettings {
         return descriptions;
     }
 
-    resetUpdated(): void {
-        this.#updateTrigger.reset();
-    }
-
-    getUpdated(): Record<string, unknown> {
-        return this.#updateTrigger.getUpdated(this, settingsMapping);
-    }
-
-    public toJSON(): SerializedQualitySettingsData {
-        const result: Record<string, unknown> = {};
-        for (const [key, value] of Object.entries(settingsMapping)) {
-            result[value] = this[key];
-        }
-
-        return result;
-    }
-
-    public async save(): Promise<QualitySettings> {
-        const result = await PluginRegistry.apiWrapper.call(this, QualitySettings.prototype.save);
+    public async save(fields: QualitySettingsSaveFields = {}): Promise<QualitySettings> {
+        const result = await PluginRegistry.apiWrapper.call(this, QualitySettings.prototype.save, fields);
         return result;
     }
 }
@@ -292,12 +178,23 @@ Object.defineProperties(QualitySettings.prototype.save, {
     implementation: {
         writable: false,
         enumerable: false,
-        value: async function implementation(): Promise<QualitySettings> {
-            const result = await serverProxy.analytics.quality.settings.update(
-                this.id, this.getUpdated(),
-            );
+        value: async function implementation(
+            fields: Parameters<typeof QualitySettings.prototype.save>[0],
+        ): Promise<QualitySettings> {
+            const data = fieldsToSnakeCase(fields);
+            const allowedFields = [
+                'iou_threshold', 'oks_sigma', 'point_size_base', 'line_thickness',
+                'low_overlap_threshold', 'compare_line_orientation', 'line_orientation_threshold',
+                'compare_groups', 'group_match_threshold', 'check_covered_annotations',
+                'object_visibility_threshold', 'panoptic_comparison', 'compare_attributes',
+                'target_metric', 'target_metric_threshold', 'max_validations_per_job',
+                'empty_is_annotated', 'job_filter', 'inherit',
+            ];
+            const filteredData = _.pick(data, allowedFields);
 
-            this.resetUpdated();
+            const result = await serverProxy.analytics.quality.settings.update(
+                this.id, filteredData,
+            );
             const schema = await getServerAPISchema();
             const descriptions = convertDescriptions(schema.components.schemas.QualitySettings.properties);
             return new QualitySettings({ ...result, descriptions });

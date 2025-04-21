@@ -27,7 +27,7 @@ import { useIsMounted } from 'utils/hooks';
 import { getTabFromHash } from 'utils/location-utils';
 import QualityOverviewTab from './quality-overview-tab';
 import QualityManagementTab from './task-quality/quality-magement-tab';
-import QualitySettingsTab from './quality-settings-tab';
+import QualitySettingsTab, { UpdateSettingsData } from './quality-settings-tab';
 
 const core = getCore();
 
@@ -306,7 +306,7 @@ function QualityControlPage(): JSX.Element {
         }
     };
 
-    const onSaveQualitySettings = useCallback(async (settingsList: QualitySettings[], onError?: () => void) => {
+    const onSaveQualitySettings = useCallback(async (updatedSettingsData: UpdateSettingsData) => {
         const { settings, childrenSettings } = state.qualitySettings;
 
         if (!settings) {
@@ -315,10 +315,19 @@ function QualityControlPage(): JSX.Element {
 
         try {
             dispatch(reducerActions.setQualitySettingsFetching(true));
-            const updatedSettings = await Promise.all(settingsList.map((setting) => setting.save()));
-            const updatedInstanceSettings = updatedSettings.find((setting) => setting.id === settings.id) || settings;
+            const updatedSettings = await Promise.all(
+                Object.entries(updatedSettingsData).map(([, data]) => {
+                    const { settings: settingsInstance, fields } = data;
+                    return settingsInstance.save(fields);
+                }),
+            );
+            const updatedSettingsMap = updatedSettings.reduce((acc, setting) => {
+                acc[setting.id] = setting;
+                return acc;
+            }, {} as Record<number, QualitySettings>);
+            const updatedInstanceSettings = updatedSettingsMap[settings.id] ?? settings;
             const updatedChildrenSettings = childrenSettings?.map((childSetting) => {
-                const updatedSetting = updatedSettings.find((setting) => setting.id === childSetting.id);
+                const updatedSetting = updatedSettingsMap[childSetting.id];
                 return updatedSetting || childSetting;
             }) || null;
 
@@ -329,9 +338,6 @@ function QualityControlPage(): JSX.Element {
                 message: 'Could not save quality settings',
                 description: typeof Error === 'object' ? (error as object).toString() : '',
             });
-            if (onError) {
-                onError();
-            }
             throw error;
         } finally {
             dispatch(reducerActions.setQualitySettingsFetching(false));
