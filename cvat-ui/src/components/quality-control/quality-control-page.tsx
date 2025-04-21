@@ -21,10 +21,10 @@ import {
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import GoBackButton from 'components/common/go-back-button';
 import ResourceLink from 'components/common/resource-link';
+import { InstanceType } from 'reducers';
 import { ActionUnion, createAction } from 'utils/redux';
-import { readInstanceId, readInstanceType, InstanceType } from 'utils/instance-helper';
-import { useIsMounted } from 'utils/hooks';
 import { getTabFromHash } from 'utils/location-utils';
+import { useInstanceId, useInstanceType } from 'utils/hooks';
 import QualityOverviewTab from './quality-overview-tab';
 import QualityManagementTab from './task-quality/quality-magement-tab';
 import QualitySettingsTab, { UpdateSettingsData } from './quality-settings-tab';
@@ -202,11 +202,8 @@ function QualityControlPage(): JSX.Element {
 
     const [activeTab, setActiveTab] = useState(getTabFromHash(supportedTabs));
 
-    const location = useLocation();
-    const requestedInstanceType: InstanceType = readInstanceType(location);
-    const requestedInstanceID = readInstanceId(requestedInstanceType);
-
-    const isMounted = useIsMounted();
+    const requestedInstanceType: InstanceType = useInstanceType();
+    const requestedInstanceID = useInstanceId(requestedInstanceType);
 
     const { instance } = state;
 
@@ -215,14 +212,14 @@ function QualityControlPage(): JSX.Element {
 
         try {
             switch (type) {
-                case 'project': {
+                case InstanceType.PROJECT: {
                     [receivedInstance] = await core.projects.get({ id });
                     dispatch(reducerActions.setGtJob(null));
                     dispatch(reducerActions.setGtJobMeta(null));
                     dispatch(reducerActions.setValidationLayout(null));
                     break;
                 }
-                case 'task': {
+                case InstanceType.TASK: {
                     [receivedInstance] = await core.tasks.get({ id });
                     const gtJob = receivedInstance.jobs.find((job: Job) => job.type === JobType.GROUND_TRUTH) ?? null;
                     if (gtJob) {
@@ -238,10 +235,8 @@ function QualityControlPage(): JSX.Element {
                     return;
             }
 
-            if (isMounted()) {
-                dispatch(reducerActions.setInstance(receivedInstance));
-                dispatch(reducerActions.setInstanceType(type));
-            }
+            dispatch(reducerActions.setInstance(receivedInstance));
+            dispatch(reducerActions.setInstanceType(type));
         } catch (error: unknown) {
             notification.error({
                 message: `Could not receive requested ${type}`,
@@ -256,12 +251,12 @@ function QualityControlPage(): JSX.Element {
             let settings: QualitySettings | null = null;
             let childrenSettings: QualitySettings[] | null = null;
             switch (type) {
-                case 'project': {
+                case InstanceType.PROJECT: {
                     [settings] = await core.analytics.quality.settings.get({ projectID: id, parentType: 'project' });
                     childrenSettings = await core.analytics.quality.settings.get({ projectID: id, parentType: 'task' }, true);
                     break;
                 }
-                case 'task': {
+                case InstanceType.TASK: {
                     [settings] = await core.analytics.quality.settings.get({ taskID: id });
                     break;
                 }
