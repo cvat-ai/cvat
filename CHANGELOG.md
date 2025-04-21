@@ -16,6 +16,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.34.0'></a>
+## \[2.34.0\] - 2025-04-17
+
+### Added
+
+- Cuboid orientation arrows for 3D canvas
+  (<https://github.com/cvat-ai/cvat/pull/9312>)
+
+### Fixed
+
+- Fixed rotation of shapes existing in CVAT before #9289
+  (<https://github.com/cvat-ai/cvat/pull/9337>)
+
+<a id='changelog-2.33.0'></a>
+## \[2.33.0\] - 2025-04-15
+
+### Added
+
+- \[CLI\] Agents can now receive real-time notifications about new annotation
+  requests from the server
+  (<https://github.com/cvat-ai/cvat/pull/9191>)
+
+- Collecting User-Agent info in events
+  (<https://github.com/cvat-ai/cvat/pull/9154>)
+
+### Fixed
+
+- Reduced memory consumption for annotation import to tasks
+  (<https://github.com/cvat-ai/cvat/pull/9234>)
+
+- Reduced memory consumption for annotation import to jobs
+  (<https://github.com/cvat-ai/cvat/pull/9256>)
+
+- Links in the actions menu now behave as regular links, allowing middle-click to open them in a new tab.
+  (<https://github.com/cvat-ai/cvat/pull/9255>)
+
+- Recorded working time may be less than actual when dealing with complex masks or polygons
+  (<https://github.com/cvat-ai/cvat/pull/9277>)
+
+- Rotated rectangles and ellipses unstably reset after resizing
+  (<https://github.com/cvat-ai/cvat/pull/9289>)
+
+- Redis migration `002_update_meta_in_export_related_jobs` could fail
+  due to stale RQ job keys in the deferred job registry
+  (<https://github.com/cvat-ai/cvat/pull/9278>)
+
+- Duplicate buttons in skeleton point config modal
+  (<https://github.com/cvat-ai/cvat/pull/9137>)
+
+- Fixed inference with the YOLOv7 model on grayscale images
+  (<https://github.com/cvat-ai/cvat/pull/9267>)
+
+- Reduced memory consumption for dataset import to project
+  (<https://github.com/cvat-ai/cvat/pull/9264>)
+
+- Rough rotation of cuboids in 3D workspace
+  (<https://github.com/cvat-ai/cvat/pull/9301>)
+
+- Dataset structure validation now runs when uploading task/job annotations in CVAT format
+  (<https://github.com/cvat-ai/cvat/pull/9303>)
+
+- Incorrect link on job import success notification
+  (<https://github.com/cvat-ai/cvat/pull/9309>)
+
 <a id='changelog-2.32.0'></a>
 ## \[2.32.0\] - 2025-03-24
 
