@@ -211,28 +211,23 @@ function QualityControlPage(): JSX.Element {
         let receivedInstance: Task | Project | null = null;
 
         try {
-            switch (type) {
-                case InstanceType.PROJECT: {
-                    [receivedInstance] = await core.projects.get({ id });
-                    dispatch(reducerActions.setGtJob(null));
-                    dispatch(reducerActions.setGtJobMeta(null));
-                    dispatch(reducerActions.setValidationLayout(null));
-                    break;
+            if (type === InstanceType.PROJECT) {
+                [receivedInstance] = await core.projects.get({ id });
+                dispatch(reducerActions.setGtJob(null));
+                dispatch(reducerActions.setGtJobMeta(null));
+                dispatch(reducerActions.setValidationLayout(null));
+            } else if (type === InstanceType.TASK) {
+                [receivedInstance] = await core.tasks.get({ id });
+                const gtJob = receivedInstance.jobs.find((job: Job) => job.type === JobType.GROUND_TRUTH) ?? null;
+                if (gtJob) {
+                    const validationLayout: TaskValidationLayout | null = await receivedInstance.validationLayout();
+                    const gtJobMeta = await core.frames.getMeta('job', gtJob.id) as FramesMetaData;
+                    dispatch(reducerActions.setGtJob(gtJob));
+                    dispatch(reducerActions.setGtJobMeta(gtJobMeta));
+                    dispatch(reducerActions.setValidationLayout(validationLayout));
                 }
-                case InstanceType.TASK: {
-                    [receivedInstance] = await core.tasks.get({ id });
-                    const gtJob = receivedInstance.jobs.find((job: Job) => job.type === JobType.GROUND_TRUTH) ?? null;
-                    if (gtJob) {
-                        const validationLayout: TaskValidationLayout | null = await receivedInstance.validationLayout();
-                        const gtJobMeta = await core.frames.getMeta('job', gtJob.id) as FramesMetaData;
-                        dispatch(reducerActions.setGtJob(gtJob));
-                        dispatch(reducerActions.setGtJobMeta(gtJobMeta));
-                        dispatch(reducerActions.setValidationLayout(validationLayout));
-                    }
-                    break;
-                }
-                default:
-                    return;
+            } else {
+                return;
             }
 
             dispatch(reducerActions.setInstance(receivedInstance));
@@ -242,6 +237,7 @@ function QualityControlPage(): JSX.Element {
                 message: `Could not receive requested ${type}`,
                 description: `${error instanceof Error ? error.message : ''}`,
             });
+            throw error;
         }
     };
 
@@ -250,19 +246,13 @@ function QualityControlPage(): JSX.Element {
             dispatch(reducerActions.setQualitySettingsFetching(true));
             let settings: QualitySettings | null = null;
             let childrenSettings: QualitySettings[] | null = null;
-            switch (type) {
-                case InstanceType.PROJECT: {
-                    [settings] = await core.analytics.quality.settings.get({ projectID: id, parentType: 'project' });
-                    childrenSettings = await core.analytics.quality.settings.get({ projectID: id, parentType: 'task' }, true);
-                    break;
-                }
-                case InstanceType.TASK: {
-                    [settings] = await core.analytics.quality.settings.get({ taskID: id });
-                    break;
-                }
-
-                default:
-                    return;
+            if (type === InstanceType.PROJECT) {
+                [settings] = await core.analytics.quality.settings.get({ projectID: id, parentType: 'project' });
+                childrenSettings = await core.analytics.quality.settings.get({ projectID: id, parentType: 'task' }, true);
+            } else if (type === InstanceType.TASK) {
+                [settings] = await core.analytics.quality.settings.get({ taskID: id });
+            } else {
+                return;
             }
 
             dispatch(reducerActions.setQualitySettings(settings, childrenSettings));
@@ -271,6 +261,7 @@ function QualityControlPage(): JSX.Element {
                 message: 'Could not receive quality settings',
                 description: `${error instanceof Error ? error.message : ''}`,
             });
+            throw error;
         } finally {
             dispatch(reducerActions.setQualitySettingsFetching(false));
         }
@@ -280,10 +271,10 @@ function QualityControlPage(): JSX.Element {
         try {
             await receiveInstance(requestedInstanceType, requestedInstanceID);
             await receiveSettings(requestedInstanceType, requestedInstanceID);
+            setActiveTab(getTabFromHash(supportedTabs));
         } catch (error: unknown) {
             dispatch(reducerActions.setError(error instanceof Error ? error : new Error('Unknown error')));
         } finally {
-            setActiveTab(getTabFromHash(supportedTabs));
             dispatch(reducerActions.setFetching(false));
         }
     };
@@ -449,10 +440,10 @@ function QualityControlPage(): JSX.Element {
             });
         }
 
-        const isTaskWithGT = instance instanceof Task && gtJobInstance && gtJobMeta && qualitySettings;
-        const isProject = instance instanceof Project && qualitySettings;
+        const isTaskWithGT = instance instanceof Task && gtJobInstance && gtJobMeta;
+        const isProject = instance instanceof Project;
 
-        if (isTaskWithGT && validationLayout) {
+        if (isTaskWithGT && validationLayout && qualitySettings) {
             tabsItems.push({
                 key: 'management',
                 label: 'Management',
