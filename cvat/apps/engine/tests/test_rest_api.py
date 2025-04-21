@@ -5569,7 +5569,10 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                 IGNORE_KEYS.append('source')
                 compare_objects(self, data, response.data, ignore_keys=IGNORE_KEYS)
             except AssertionError as e:
-                print(f"Objects are not equal:\n%s\n!=\n%s"  %  (pformat(data, compact=True), pformat(response.data)))
+                print("Objects are not equal:",
+                      pformat(data, compact=True),
+                      "!=",
+                      pformat(response.data), sep='\n')
                 print(e)
                 raise
 

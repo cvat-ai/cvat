@@ -459,25 +459,25 @@ def filter_dict(
 
 
 def compare_objects(self, obj1, obj2, ignore_keys, fp_tolerance=0.001, current_key=None):
-    key_info = "{}: ".format(current_key) if current_key else ""
+    key_info = "{}: ".format(current_key or "")
+    error_msg = "{}{} != {}"
 
     if isinstance(obj1, dict):
-        self.assertTrue(isinstance(obj2, dict), "{}{} != {}".format(key_info, obj1, obj2))
-        for k, v1 in obj1.items():
-            if k in ignore_keys:
-                continue
+        self.assertTrue(isinstance(obj2, dict), error_msg.format(key_info, obj1, obj2))
+        for k in (obj1.keys() - ignore_keys):
+            v1 = obj1[k]
             v2 = obj2[k]
             if k == "attributes":
-                key = lambda a: a["spec_id"] if "spec_id" in a else a["id"]
+                key = lambda a: (a.get("spec_id") or a["id"])
                 v1.sort(key=key)
                 v2.sort(key=key)
             compare_objects(self, v1, v2, ignore_keys, current_key=k)
     elif isinstance(obj1, list):
-        self.assertTrue(isinstance(obj2, list), "{}{} != {}".format(key_info, obj1, obj2))
+        self.assertTrue(isinstance(obj2, list), error_msg.format(key_info, obj1, obj2))
         self.assertEqual(
             len(obj1),
             len(obj2),
-            "{}{} != {}".format(key_info, pformat(obj1, compact=True), pformat(obj2)),
+            error_msg.format(key_info, pformat(obj1, compact=True), pformat(obj2)),
         )
         for v1, v2 in zip(obj1, obj2):
             compare_objects(self, v1, v2, ignore_keys, current_key=current_key)
