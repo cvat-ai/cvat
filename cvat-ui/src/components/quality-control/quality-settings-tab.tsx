@@ -3,19 +3,19 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import Text from 'antd/lib/typography/Text';
 import Form from 'antd/lib/form';
 import Switch from 'antd/lib/switch';
+import { Col, Row } from 'antd/lib/grid';
+import Button from 'antd/lib/button';
+import Alert from 'antd/lib/alert';
+import { ExclamationCircleFilled } from '@ant-design/icons/lib/icons';
+import Modal from 'antd/lib/modal';
 import {
     Project, QualitySettings, QualitySettingsSaveFields, Task,
 } from 'cvat-core-wrapper';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
-import { Col, Row } from 'antd/lib/grid';
-import Button from 'antd/lib/button';
-import { Link } from 'react-router-dom';
-import Alert from 'antd/lib/alert';
-import { ExclamationCircleFilled } from '@ant-design/icons/lib/icons';
-import Modal from 'antd/lib/modal';
 import QualitySettingsForm from './task-quality/quality-settings-form';
 
 export type UpdateSettingsData = Record<number, { settings: QualitySettings, fields: QualitySettingsSaveFields }>;
@@ -61,7 +61,7 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
                 checkCoveredAnnotations: values.checkCoveredAnnotations,
                 objectVisibilityThreshold: values.objectVisibilityThreshold / 100,
                 panopticComparison: values.panopticComparison,
-                jobFilter: values.jobFilter || '',
+                jobFilter: values.jobFilter ?? '',
             };
             setQualitySettings({ [settings.id]: { settings, fields } });
         }
