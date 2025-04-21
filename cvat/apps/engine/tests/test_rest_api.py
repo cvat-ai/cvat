@@ -72,6 +72,7 @@ from cvat.apps.engine.tests.utils import (
     get_paginated_collection,
 )
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
+from .utils import compare_objects
 
 #suppress av warnings
 logging.getLogger('libav').setLevel(logging.ERROR)
@@ -4803,35 +4804,6 @@ class TaskDataAPITestCase(ApiTestBase):
         response = self._create_task(None, data)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-def compare_objects(self, obj1, obj2, ignore_keys, fp_tolerance=.001,
-        current_key=None):
-    key_info = "{}: ".format(current_key) if current_key else ""
-
-    if isinstance(obj1, dict):
-        self.assertTrue(isinstance(obj2, dict),
-            "{}{} != {}".format(key_info, obj1, obj2))
-        for k, v1 in obj1.items():
-            if k in ignore_keys:
-                continue
-            v2 = obj2[k]
-            if k == 'attributes':
-                key = lambda a: a['spec_id'] if 'spec_id' in a else a['id']
-                v1.sort(key=key)
-                v2.sort(key=key)
-            compare_objects(self, v1, v2, ignore_keys, current_key=k)
-    elif isinstance(obj1, list):
-        self.assertTrue(isinstance(obj2, list),
-            "{}{} != {}".format(key_info, obj1, obj2))
-        self.assertEqual(len(obj1), len(obj2),
-            "{}{} != {}".format(key_info, pformat(obj1, compact=True), pformat(obj2)))
-        for v1, v2 in zip(obj1, obj2):
-            compare_objects(self, v1, v2, ignore_keys, current_key=current_key)
-    else:
-        if isinstance(obj1, float) or isinstance(obj2, float):
-            self.assertAlmostEqual(obj1, obj2, delta=fp_tolerance,
-                msg=current_key)
-        else:
-            self.assertEqual(obj1, obj2, msg=current_key)
 
 class JobAnnotationAPITestCase(ApiTestBase):
     @classmethod
@@ -6622,7 +6594,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
         # Rare and buggy formats that are not crucial for testing
         formats.pop('Market-1501 1.0')
         formats.pop('Kitti Raw Format 1.0') # temporary until review
-        # FIXME: KITTI Raw Format 1.0 bug in Datumaro Exporter
+        # FIXME: Kitti Raw Format 1.0 bug in Datumaro Exporter
         # when track_ids are absent, negative indices are assigned by the exporter
         # if annotations contain shapes
         # results in incorrect order of shapes inside dataset item subsets

@@ -22,6 +22,7 @@ from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.dataset_manager.tests.utils import TestDir
 from cvat.apps.engine.media_extractors import ValidateDimension
 from cvat.apps.engine.tests.utils import ExportApiTestBase, ForceLogin, get_paginated_collection
+from .utils import compare_objects
 
 CREATE_ACTION = "create"
 UPDATE_ACTION = "update"
@@ -208,6 +209,15 @@ class _DbTestBase(ExportApiTestBase):
 
 
 class Task3DTest(_DbTestBase):
+
+    def compare_annotations(self, a, b):
+        assert a.get('source') in ('manual', None)
+        assert b.get('source') in ('file', None)
+        compare_objects(self, a, b, ignore_keys=["source"])
+
+    def assertDictEqual(self, a, b):
+        self.compare_annotations(a, b)
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -509,7 +519,11 @@ class Task3DTest(_DbTestBase):
                     task_ann_prev.data["shapes"][0].pop("id")
                     task_ann.data["shapes"][0].pop("id")
                     self.assertEqual(len(task_ann_prev.data["shapes"]), len(task_ann.data["shapes"]))
-                    self.assertEqual(task_ann_prev.data["shapes"], task_ann.data["shapes"])
+                    for shape_prev,shape_ann in zip(
+                        task_ann_prev.data["shapes"],
+                        task_ann.data["shapes"]
+                    ):
+                        self.assertDictEqual(shape_prev, shape_ann)
 
     def test_api_v2_rewrite_annotation(self):
         with TestDir() as test_dir:
@@ -548,7 +562,11 @@ class Task3DTest(_DbTestBase):
                     task_ann_prev.data["shapes"][0].pop("id")
                     task_ann.data["shapes"][0].pop("id")
                     self.assertEqual(len(task_ann_prev.data["shapes"]), len(task_ann.data["shapes"]))
-                    self.assertEqual(task_ann_prev.data["shapes"], task_ann.data["shapes"])
+                    for shape_prev, shape_ann in zip(
+                        task_ann_prev.data["shapes"],
+                        task_ann.data["shapes"]
+                    ):
+                        self.assertDictEqual(shape_prev, shape_ann)
 
     def test_api_v2_dump_and_upload_empty_annotation(self):
         with TestDir() as test_dir:
@@ -673,4 +691,3 @@ class Task3DTest(_DbTestBase):
                                     f, task_ann_prev.data, format_name, related_files=False
                                 )
                         self.assertEqual(osp.exists(file_name), edata['file_exists'])
-

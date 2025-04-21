@@ -10,6 +10,7 @@ from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from io import BytesIO
 from pathlib import Path
+from pprint import pformat
 from typing import Any, Callable, TypeVar
 from urllib.parse import urlencode
 
@@ -455,3 +456,33 @@ def filter_dict(
     d: dict[str, Any], *, keep: Sequence[str] = None, drop: Sequence[str] = None
 ) -> dict[str, Any]:
     return {k: v for k, v in d.items() if (not keep or k in keep) and (not drop or k not in drop)}
+
+
+def compare_objects(self, obj1, obj2, ignore_keys, fp_tolerance=0.001, current_key=None):
+    key_info = "{}: ".format(current_key) if current_key else ""
+
+    if isinstance(obj1, dict):
+        self.assertTrue(isinstance(obj2, dict), "{}{} != {}".format(key_info, obj1, obj2))
+        for k, v1 in obj1.items():
+            if k in ignore_keys:
+                continue
+            v2 = obj2[k]
+            if k == "attributes":
+                key = lambda a: a["spec_id"] if "spec_id" in a else a["id"]
+                v1.sort(key=key)
+                v2.sort(key=key)
+            compare_objects(self, v1, v2, ignore_keys, current_key=k)
+    elif isinstance(obj1, list):
+        self.assertTrue(isinstance(obj2, list), "{}{} != {}".format(key_info, obj1, obj2))
+        self.assertEqual(
+            len(obj1),
+            len(obj2),
+            "{}{} != {}".format(key_info, pformat(obj1, compact=True), pformat(obj2)),
+        )
+        for v1, v2 in zip(obj1, obj2):
+            compare_objects(self, v1, v2, ignore_keys, current_key=current_key)
+    else:
+        if isinstance(obj1, float) or isinstance(obj2, float):
+            self.assertAlmostEqual(obj1, obj2, delta=fp_tolerance, msg=current_key)
+        else:
+            self.assertEqual(obj1, obj2, msg=current_key)
