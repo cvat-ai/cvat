@@ -12,9 +12,9 @@ django-extensions==3.0.8
     # via -r cvat/requirements/development.in
 django-silk==5.3.2
     # via -r cvat/requirements/development.in
-gprof2dot==2024.6.6
+gprof2dot==2025.4.14
     # via django-silk
-pycodestyle==2.12.1
+pycodestyle==2.13.0
     # via autopep8
 rope==0.17.0
     # via -r cvat/requirements/development.in
