@@ -32,7 +32,7 @@ import django_rq
 import numpy as np
 from django.conf import settings
 from django.contrib.auth.models import Group, User
-from django.http import HttpResponse, FileResponse
+from django.http import FileResponse, HttpResponse
 from django.test import override_settings
 from pdf2image import convert_from_bytes
 from PIL import Image

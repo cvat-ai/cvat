@@ -44,8 +44,8 @@ from cvat.apps.engine.models import (
     LabelType,
     Project,
     SegmentType,
-    SourceType,
     ShapeType,
+    SourceType,
     Task,
 )
 from cvat.apps.engine.rq import ImportRQMeta

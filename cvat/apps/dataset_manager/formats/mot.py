@@ -8,6 +8,7 @@ from pyunpack import Archive
 
 from cvat.apps.dataset_manager.bindings import GetCVATDataExtractor, detect_dataset
 from cvat.apps.dataset_manager.util import make_zip_archive
+from cvat.apps.engine.models import SourceType
 
 from .registry import dm_env, exporter, importer
 
@@ -15,7 +16,7 @@ from .registry import dm_env, exporter, importer
 def _import_to_task(dataset, instance_data):
     tracks = {}
     label_cat = dataset.categories()[dm.AnnotationType.label]
-    import_source = 'file'
+    import_source = str(SourceType.FILE)
 
     for item in dataset:
         # NOTE: MOT frames start from 1
