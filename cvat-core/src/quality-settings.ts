@@ -182,18 +182,9 @@ Object.defineProperties(QualitySettings.prototype.save, {
             fields: Parameters<typeof QualitySettings.prototype.save>[0],
         ): Promise<QualitySettings> {
             const data = fieldsToSnakeCase(fields);
-            const allowedFields = [
-                'iou_threshold', 'oks_sigma', 'point_size_base', 'line_thickness',
-                'low_overlap_threshold', 'compare_line_orientation', 'line_orientation_threshold',
-                'compare_groups', 'group_match_threshold', 'check_covered_annotations',
-                'object_visibility_threshold', 'panoptic_comparison', 'compare_attributes',
-                'target_metric', 'target_metric_threshold', 'max_validations_per_job',
-                'empty_is_annotated', 'job_filter', 'inherit',
-            ];
-            const filteredData = _.pick(data, allowedFields);
 
             const result = await serverProxy.analytics.quality.settings.update(
-                this.id, filteredData,
+                this.id, data,
             );
             const schema = await getServerAPISchema();
             const descriptions = convertDescriptions(schema.components.schemas.QualitySettings.properties);
