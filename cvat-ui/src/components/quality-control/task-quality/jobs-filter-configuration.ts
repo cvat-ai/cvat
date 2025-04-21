@@ -2,25 +2,15 @@
 //
 // SPDX-License-Identifier: MIT
 
+import _ from 'lodash';
 import { Config } from '@react-awesome-query-builder/antd';
-import { fields } from 'components/common/filters/job-filter-configuration-base';
+import { config as jobPageFilterConfig } from 'components/jobs-page/jobs-filter-configuration';
 
 export const config: Partial<Config> = {
     fields: {
-        ...fields,
-        task_id: {
-            label: 'Task ID',
-            type: 'number',
-            operators: ['equal', 'between', 'greater', 'greater_or_equal', 'less', 'less_or_equal'],
-            fieldSettings: { min: 0 },
-            valueSources: ['value'],
-        },
-        task_name: {
-            label: 'Task name',
-            type: 'text',
-            valueSources: ['value'],
-            operators: ['like'],
-        },
+        ..._.pick(
+            jobPageFilterConfig.fields, ['state', 'stage', 'assignee', 'updatedDate', 'id', 'task_name', 'task_id'],
+        ),
         type: {
             label: 'Job Type',
             type: 'select',
@@ -37,4 +27,4 @@ export const config: Partial<Config> = {
 };
 
 export const localStorageRecentCapacity = 10;
-export const localStorageRecentKeyword = 'recentlyAppliedQualitySettingsJobsFilters';
+export const localStorageRecentKeyword = 'recentlyAppliedQualityJobsFilters';
