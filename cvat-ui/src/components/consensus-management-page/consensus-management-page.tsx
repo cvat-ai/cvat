@@ -8,7 +8,6 @@ import React, {
     useCallback, useEffect, useState, useReducer,
 } from 'react';
 import { useParams } from 'react-router';
-import { Link } from 'react-router-dom';
 import { Row, Col } from 'antd/lib/grid';
 import Title from 'antd/lib/typography/Title';
 import notification from 'antd/lib/notification';
@@ -19,6 +18,7 @@ import Tabs, { TabsProps } from 'antd/lib/tabs';
 import Result from 'antd/lib/result';
 
 import CVATLoadingSpinner from 'components/common/loading-spinner';
+import ResourceLink from 'components/common/resource-link';
 import { ActionUnion, createAction } from 'utils/redux';
 import { fetchTask } from 'utils/fetch';
 import { getTabFromHash } from 'utils/location-utils';
@@ -233,8 +233,8 @@ function ConsensusManagementPage(): JSX.Element {
         title = (
             <Col className='cvat-consensus-management-header'>
                 <Title level={4} className='cvat-text-color'>
-                    Consensus management for
-                    <Link to={`/tasks/${instance.id}`}>{` Task #${instance.id}`}</Link>
+                    {'Consensus management for '}
+                    <ResourceLink resource={instance} />
                 </Title>
             </Col>
         );

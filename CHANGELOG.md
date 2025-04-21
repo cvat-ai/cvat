@@ -16,6 +16,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.34.0'></a>
+## \[2.34.0\] - 2025-04-17
+
+### Added
+
+- Cuboid orientation arrows for 3D canvas
+  (<https://github.com/cvat-ai/cvat/pull/9312>)
+
+### Fixed
+
+- Fixed rotation of shapes existing in CVAT before #9289
+  (<https://github.com/cvat-ai/cvat/pull/9337>)
+
 <a id='changelog-2.33.0'></a>
 ## \[2.33.0\] - 2025-04-15
 

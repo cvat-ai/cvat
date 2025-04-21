@@ -7,7 +7,6 @@ import './styles.scss';
 import React, {
     useCallback, useEffect, useReducer, useState,
 } from 'react';
-import { Link, useLocation } from 'react-router-dom';
 import { Row, Col } from 'antd/lib/grid';
 import Tabs, { TabsProps } from 'antd/lib/tabs';
 import Title from 'antd/lib/typography/Title';
@@ -21,6 +20,7 @@ import {
 } from 'cvat-core-wrapper';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import GoBackButton from 'components/common/go-back-button';
+import ResourceLink from 'components/common/resource-link';
 import { ActionUnion, createAction } from 'utils/redux';
 import { readInstanceId, readInstanceType, InstanceType } from 'utils/instance-helper';
 import { useIsMounted } from 'utils/hooks';
@@ -181,19 +181,6 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
 
     return state;
 };
-
-function setupTitle(instance: Task | Project): JSX.Element {
-    const instanceType = instance instanceof Task ? 'Task' : 'Project';
-    const instanceLink = instance instanceof Task ? `/tasks/${instance.id}` : `/projects/${instance.id}`;
-    return (
-        <Col className='cvat-quality-page-header'>
-            <Title level={4} className='cvat-text-color'>
-                Quality control for
-                <Link to={instanceLink}>{` ${instanceType} #${instance.id}`}</Link>
-            </Title>
-        </Col>
-    );
-}
 
 const supportedTabs = ['overview', 'settings', 'management'];
 function QualityControlPage(): JSX.Element {
@@ -443,7 +430,14 @@ function QualityControlPage(): JSX.Element {
     }
 
     if (instance) {
-        title = setupTitle(instance);
+        title = (
+            <Col className='cvat-quality-page-header'>
+                <Title level={4} className='cvat-text-color'>
+                    {'Quality control for '}
+                    <ResourceLink resource={instance} />
+                </Title>
+            </Col>
+        );
 
         const tabsItems: NonNullable<TabsProps['items']>[0][] = [];
 
