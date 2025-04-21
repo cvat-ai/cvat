@@ -157,7 +157,7 @@ class AbstractRequestManager(metaclass=ABCMeta):
         job.delete()
         return None
 
-    def build_meta(self, *, request_id: str):
+    def build_meta(self, *, request_id: str) -> dict[str, Any]:
         return BaseRQMeta.build(request=self.request, db_obj=self.db_instance)
 
     def setup_new_job(self, queue: DjangoRQ, request_id: str, /, **kwargs):
