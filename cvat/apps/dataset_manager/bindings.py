@@ -2350,7 +2350,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                                     instance_data.Attribute(name=n, value=str(v))
                                     for n, v in element.attributes.items()
                                 ]
-                                element.attributes.pop('source')
+                                element.attributes.pop('source', None)
                                 element_source = import_source
 
                                 tracks[track_id]['elements'][element.label].shapes.append(instance_data.TrackedShape(
