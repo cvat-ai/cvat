@@ -72,6 +72,7 @@ from cvat.apps.engine.tests.utils import (
     get_paginated_collection,
 )
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
+
 from .utils import compare_objects
 
 #suppress av warnings

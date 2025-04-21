@@ -22,6 +22,7 @@ from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.dataset_manager.tests.utils import TestDir
 from cvat.apps.engine.media_extractors import ValidateDimension
 from cvat.apps.engine.tests.utils import ExportApiTestBase, ForceLogin, get_paginated_collection
+
 from .utils import compare_objects
 
 CREATE_ACTION = "create"
