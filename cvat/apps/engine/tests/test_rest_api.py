@@ -4932,7 +4932,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     },
                 ]
             }]
-        elif annotation_format in ['Kitti Raw Format 1.0', 'Sly Point Cloud Format 1.0']:
+        elif annotation_format in ['Datumaro 3D 1.0', 'Kitti Raw Format 1.0', 'Sly Point Cloud Format 1.0']:
             data["labels"] = [{
                 "name": "car"},
                 {"name": "bus"}
@@ -6364,7 +6364,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                 annotations["tags"] = tags_wo_attrs
                 annotations["shapes"] = rectangle_shapes_wo_attrs \
                                     #   + polygon_shapes_wo_attrs
-                                    # polygons get converted to masks, hard to check
+                # polygons get converted to masks, hard to check
 
             elif annotation_format == "LFW 1.0":
                 annotations["shapes"] = points_wo_attrs
@@ -6405,11 +6405,10 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                     "label_id": task["labels"][0]["id"],
                     "group": 0,
                     "source": "manual",
-                    "attributes": [
-                    ],
+                    "attributes": [],
                     "points": [-3.62, 7.95, -1.03, 0.0, 0.0, 0.0, 1.0, 1.0,
                                1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                    "type": "cuboid_3d",
+                    "type": "cuboid",
                     "occluded": False,
                 },
                     {
@@ -6420,7 +6419,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                         "attributes": [],
                         "points": [23.01, 8.34, -0.76, 0.0, 0.0, 0.0, 1.0, 1.0,
                                    1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                        "type": "cuboid_3d",
+                        "type": "cuboid",
                         "occluded": False,
                     }
                 ]
