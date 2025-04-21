@@ -105,10 +105,10 @@ class EventsExporter(AbstractExporter):
             user_id=self.user_id,
         ).render()
 
-    def validate_request_id(self, request_id, /, queue_name) -> None:
+    def validate_request_id(self, request_id, /) -> None:
         parsed_request_id: ExportRequestId = ExportRequestId.parse(
             request_id,
-            queue=queue_name,  # try_legacy_format is not set here since deprecated API accepts query_id, not the whole Request ID
+            queue=self.QUEUE_NAME,  # try_legacy_format is not set here since deprecated API accepts query_id, not the whole Request ID
         )
 
         if parsed_request_id.action != RequestAction.EXPORT or parsed_request_id.target != TARGET:

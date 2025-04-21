@@ -120,10 +120,10 @@ class DatasetExporter(AbstractExporter):
             },
         ).render()
 
-    def validate_request_id(self, request_id, /, queue_name) -> None:
+    def validate_request_id(self, request_id, /) -> None:
         # FUTURE-TODO: optimize, request_id is parsed 2 times (first one when checking permissions)
         parsed_request_id: ExportRequestId = ExportRequestId.parse(
-            request_id, queue=queue_name, try_legacy_format=True
+            request_id, queue=self.QUEUE_NAME, try_legacy_format=True
         )
 
         if (
@@ -193,10 +193,10 @@ class BackupExporter(AbstractExporter):
     #     elif isinstance(self.db_instance, Project) and Data.objects.filter():
     #         pass
 
-    def validate_request_id(self, request_id, /, queue_name) -> None:
+    def validate_request_id(self, request_id, /) -> None:
         # FUTURE-TODO: optimize, request_id is parsed 2 times (first one when checking permissions)
         parsed_request_id: ExportRequestId = ExportRequestId.parse(
-            request_id, queue=queue_name, try_legacy_format=True
+            request_id, queue=self.QUEUE_NAME, try_legacy_format=True
         )
 
         if (
