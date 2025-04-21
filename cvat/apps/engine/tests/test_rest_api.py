@@ -6367,8 +6367,8 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                                     # polygons get converted to masks, hard to check
 
             elif annotation_format == "LFW 1.0":
-                annotations["shapes"] = points_wo_attrs \
-                                      + tags_wo_attrs
+                annotations["shapes"] = points_wo_attrs
+                annotations["tags"] = tags_wo_attrs
 
             elif annotation_format == "KITTI 1.0":
                 annotations["shapes"] = rectangle_shapes_wo_attrs \
