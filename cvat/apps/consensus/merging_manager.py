@@ -158,7 +158,7 @@ class MergingNotAvailable(Exception):
 
 class MergingManager(AbstractRequestManager):
     QUEUE_NAME = settings.CVAT_QUEUES.CONSENSUS.value
-    SUPPORTED_RESOURCES = {RequestTarget.TASK, RequestTarget.JOB}
+    SUPPORTED_TARGETS = {RequestTarget.TASK, RequestTarget.JOB}
 
     @property
     def job_result_ttl(self):
@@ -167,7 +167,7 @@ class MergingManager(AbstractRequestManager):
     def build_request_id(self) -> str:
         return RequestId(
             action="merge",
-            target=self.resource,
+            target=self.target,
             target_id=self.db_instance.pk,
         ).render()
 

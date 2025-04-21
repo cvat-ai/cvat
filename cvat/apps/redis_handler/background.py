@@ -47,7 +47,7 @@ LOCK_ACQUIRE_TIMEOUT = LOCK_TTL - 5
 
 
 class AbstractRequestManager(metaclass=ABCMeta):
-    SUPPORTED_RESOURCES: ClassVar[set[RequestTarget] | None] = None
+    SUPPORTED_TARGETS: ClassVar[set[RequestTarget] | None] = None
     QUEUE_NAME: ClassVar[str]
     REQUEST_ID_KEY = "rq_id"
 
@@ -66,11 +66,11 @@ class AbstractRequestManager(metaclass=ABCMeta):
         self.db_instance = db_instance
 
         if db_instance:
-            assert self.SUPPORTED_RESOURCES, "Should be defined"
-            self.resource = RequestTarget(db_instance.__class__.__name__.lower())
+            assert self.SUPPORTED_TARGETS, "Should be defined"
+            self.target = RequestTarget(db_instance.__class__.__name__.lower())
             assert (
-                self.resource in self.SUPPORTED_RESOURCES
-            ), f"Unsupported resource: {self.resource}"
+                self.target in self.SUPPORTED_TARGETS
+            ), f"Unsupported target: {self.target}"
 
     @classmethod
     def get_queue(cls) -> DjangoRQ:

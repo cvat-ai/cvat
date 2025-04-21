@@ -418,7 +418,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return importer.enqueue_job()
 
         elif self.action == 'import_backup':
-            importer = BackupImporter(request=request, resource=RequestTarget.PROJECT)
+            importer = BackupImporter(request=request, target=RequestTarget.PROJECT)
             return importer.enqueue_job()
 
         return Response(data='Unknown upload was finished',
@@ -1013,7 +1013,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         @transaction.atomic
         def _handle_upload_backup(request: ExtendedRequest):
-            importer = BackupImporter(request=request, resource=RequestTarget.TASK)
+            importer = BackupImporter(request=request, target=RequestTarget.TASK)
             return importer.enqueue_job()
 
         if self.action == 'annotations':

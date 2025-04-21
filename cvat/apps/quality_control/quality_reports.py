@@ -2270,7 +2270,7 @@ class QualityRequestId(RequestIdWithSubresourceMixin, RequestId):
 
 class QualityReportRQJobManager(AbstractRequestManager):
     QUEUE_NAME = settings.CVAT_QUEUES.QUALITY_REPORTS.value
-    SUPPORTED_RESOURCES: ClassVar[set[RequestTarget]] = {RequestTarget.TASK}
+    SUPPORTED_TARGETS: ClassVar[set[RequestTarget]] = {RequestTarget.TASK}
 
     @property
     def job_result_ttl(self):
@@ -2289,7 +2289,7 @@ class QualityReportRQJobManager(AbstractRequestManager):
     def build_request_id(self):
         return QualityRequestId(
             action="calculate",
-            target=self.resource,
+            target=self.target,
             target_id=self.db_instance.pk,
             extra={"subresource": "quality"},
         ).render()

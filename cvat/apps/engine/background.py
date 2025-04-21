@@ -75,7 +75,7 @@ def cancel_and_delete(rq_job: RQJob) -> None:
 
 
 class DatasetExporter(AbstractExporter):
-    SUPPORTED_RESOURCES = {RequestTarget.PROJECT, RequestTarget.TASK, RequestTarget.JOB}
+    SUPPORTED_TARGETS = {RequestTarget.PROJECT, RequestTarget.TASK, RequestTarget.JOB}
 
     @dataclass
     class ExportArgs(AbstractExporter.ExportArgs):
@@ -107,7 +107,7 @@ class DatasetExporter(AbstractExporter):
     def build_request_id(self):
         return ExportRequestId(
             action=RequestAction.EXPORT,
-            target=RequestTarget(self.resource),
+            target=RequestTarget(self.target),
             target_id=self.db_instance.pk,
             user_id=self.user_id,
             extra={
@@ -128,12 +128,12 @@ class DatasetExporter(AbstractExporter):
 
         if (
             parsed_request_id.action != RequestAction.EXPORT
-            or parsed_request_id.target != RequestTarget(self.resource)
+            or parsed_request_id.target != RequestTarget(self.target)
             or parsed_request_id.target_id != self.db_instance.pk
             or parsed_request_id.subresource
             not in {RequestSubresource.DATASET, RequestSubresource.ANNOTATIONS}
         ):
-            raise ValueError("The provided request id does not match exported target or resource")
+            raise ValueError("The provided request id does not match exported target or subresource")
 
     def _init_callback_with_params(self):
         self.callback = get_export_callback(
@@ -166,7 +166,7 @@ class DatasetExporter(AbstractExporter):
         if not filename:
             timestamp = self.get_file_timestamp()
             filename = build_annotations_file_name(
-                class_name=self.resource,
+                class_name=self.target,
                 identifier=self.db_instance.pk,
                 timestamp=timestamp,
                 format_name=self.export_args.format,
@@ -178,12 +178,12 @@ class DatasetExporter(AbstractExporter):
 
     def where_to_redirect(self) -> str:
         return reverse(
-            f"{self.resource}-download-dataset", args=[self.db_instance.pk], request=self.request
+            f"{self.target}-download-dataset", args=[self.db_instance.pk], request=self.request
         )
 
 
 class BackupExporter(AbstractExporter):
-    SUPPORTED_RESOURCES = {RequestTarget.PROJECT, RequestTarget.TASK}
+    SUPPORTED_TARGETS = {RequestTarget.PROJECT, RequestTarget.TASK}
 
     # def validate_request(self):
     #     super().validate_request()
@@ -201,11 +201,11 @@ class BackupExporter(AbstractExporter):
 
         if (
             parsed_request_id.action != RequestAction.EXPORT
-            or parsed_request_id.target != RequestTarget(self.resource)
+            or parsed_request_id.target != RequestTarget(self.target)
             or parsed_request_id.target_id != self.db_instance.pk
             or parsed_request_id.subresource != RequestSubresource.BACKUP
         ):
-            raise ValueError("The provided request id does not match exported target or resource")
+            raise ValueError("The provided request id does not match exported target or subresource")
 
     def _init_callback_with_params(self):
         self.callback = create_backup
@@ -231,7 +231,7 @@ class BackupExporter(AbstractExporter):
             instance_timestamp = self.get_file_timestamp()
 
             filename = build_backup_file_name(
-                class_name=self.resource,
+                class_name=self.target,
                 identifier=self.db_instance.name,
                 timestamp=instance_timestamp,
             )
@@ -241,7 +241,7 @@ class BackupExporter(AbstractExporter):
     def build_request_id(self):
         return ExportRequestId(
             action=RequestAction.EXPORT,
-            target=RequestTarget(self.resource),
+            target=RequestTarget(self.target),
             target_id=self.db_instance.pk,
             user_id=self.user_id,
             extra={
@@ -251,7 +251,7 @@ class BackupExporter(AbstractExporter):
 
     def where_to_redirect(self) -> str:
         return reverse(
-            f"{self.resource}-download-backup", args=[self.db_instance.pk], request=self.request
+            f"{self.target}-download-backup", args=[self.db_instance.pk], request=self.request
         )
 
     def finalize_request(self):
@@ -371,7 +371,7 @@ class ResourceImporter(AbstractRequestManager):
 
 
 class DatasetImporter(ResourceImporter):
-    SUPPORTED_RESOURCES = {RequestTarget.PROJECT, RequestTarget.TASK, RequestTarget.JOB}
+    SUPPORTED_TARGETS = {RequestTarget.PROJECT, RequestTarget.TASK, RequestTarget.JOB}
 
     @dataclass
     class ImportArgs(ResourceImporter.ImportArgs):
@@ -442,7 +442,7 @@ class DatasetImporter(ResourceImporter):
     def build_request_id(self):
         return ImportRequestId(
             action=RequestAction.IMPORT,
-            target=RequestTarget(self.resource),
+            target=RequestTarget(self.target),
             target_id=self.db_instance.pk,
             extra={
                 "subresource": (
@@ -462,7 +462,7 @@ class DatasetImporter(ResourceImporter):
 
 
 class BackupImporter(ResourceImporter):
-    SUPPORTED_RESOURCES = {RequestTarget.PROJECT, RequestTarget.TASK}
+    SUPPORTED_TARGETS = {RequestTarget.PROJECT, RequestTarget.TASK}
 
     @dataclass
     class ImportArgs(ResourceImporter.ImportArgs):
@@ -472,11 +472,11 @@ class BackupImporter(ResourceImporter):
         self,
         *,
         request: ExtendedRequest,
-        resource: RequestTarget,
+        target: RequestTarget,
     ):
         super().__init__(request=request, db_instance=None, tmp_dir=Path(TmpDirManager.TMP_ROOT))
-        assert resource in self.SUPPORTED_RESOURCES, f"Unsupported resource: {resource}"
-        self.resource = resource
+        assert target in self.SUPPORTED_TARGETS, f"Unsupported target: {target}"
+        self.target = target
 
     def init_request_args(self) -> None:
         super().init_request_args()
@@ -489,7 +489,7 @@ class BackupImporter(ResourceImporter):
     def build_request_id(self):
         return ImportRequestId(
             action=RequestAction.IMPORT,
-            target=self.resource,
+            target=self.target,
             id=uuid4(),
             extra={
                 "subresource": RequestSubresource.BACKUP,
@@ -498,7 +498,7 @@ class BackupImporter(ResourceImporter):
 
     def _get_payload_file(self):
         # Common serializer is not used to not break API
-        if self.resource == RequestTarget.PROJECT:
+        if self.target == RequestTarget.PROJECT:
             serializer_class = ProjectFileSerializer
             file_field = "project_file"
         else:
@@ -510,7 +510,7 @@ class BackupImporter(ResourceImporter):
         return file_serializer.validated_data[file_field]
 
     def _init_callback_with_params(self):
-        self.callback = import_project if self.resource == RequestTarget.PROJECT else import_task
+        self.callback = import_project if self.target == RequestTarget.PROJECT else import_task
         self.callback_args = (self.import_args.file_path, self.user_id, self.import_args.org_id)
 
     def finalize_request(self):
@@ -520,7 +520,7 @@ class BackupImporter(ResourceImporter):
 
 class TaskCreator(AbstractRequestManager):
     QUEUE_NAME = settings.CVAT_QUEUES.IMPORT_DATA.value
-    SUPPORTED_RESOURCES = {RequestTarget.TASK}
+    SUPPORTED_TARGETS = {RequestTarget.TASK}
 
     def __init__(
         self,
