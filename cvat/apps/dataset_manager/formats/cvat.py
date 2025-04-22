@@ -29,6 +29,8 @@ from datumaro.plugins.data_formats.cvat.base import CvatImporter as _CvatImporte
 from defusedxml import ElementTree
 
 from cvat.apps.dataset_manager.bindings import (
+    CVATProjectDataExtractor,
+    CvatTaskOrJobDataExtractor,
     JobData,
     NoMediaInAnnotationFileError,
     ProjectData,
@@ -36,7 +38,7 @@ from cvat.apps.dataset_manager.bindings import (
     detect_dataset,
     get_defaulted_subset,
     import_dm_annotations,
-    match_dm_item, CVATProjectDataExtractor, CvatTaskOrJobDataExtractor,
+    match_dm_item,
 )
 from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.apps.engine.frame_provider import FrameOutputType, FrameQuality, make_frame_provider
