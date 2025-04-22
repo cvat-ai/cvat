@@ -178,6 +178,9 @@ class RequestId:
                     )
 
                 fragments = match.groupdict()
+                # "." was replaced with "@" in previous format
+                if "format" in fragments:
+                    fragments["format"] = fragments["format"].replace("@", cls.ENCODE_MAPPING["."])
 
             # init dict representation for request ID
             for key, value in fragments.items():

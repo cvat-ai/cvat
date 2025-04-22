@@ -282,10 +282,14 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestGetRequests:
 
-    def _test_get_request_200(self, api_client: ApiClient, rq_id: str, **kwargs) -> models.Request:
+    def _test_get_request_200(
+        self, api_client: ApiClient, rq_id: str, validate_rq_id: bool = True, **kwargs
+    ) -> models.Request:
         (background_request, response) = api_client.requests_api.retrieve(rq_id, **kwargs)
         assert response.status == HTTPStatus.OK
-        assert background_request.id == rq_id
+
+        if validate_rq_id:
+            assert background_request.id == rq_id
 
         return background_request
 
@@ -314,6 +318,7 @@ class TestGetRequests:
             id=project["id"],
             download_result=False,
             return_request_id=True,
+            format=format_name,
         )
 
         with make_api_client(owner["username"]) as owner_client:
@@ -337,8 +342,7 @@ class TestGetRequests:
             parsed_url = urlparse(bg_request.result_url)
             assert all([parsed_url.scheme, parsed_url.netloc, parsed_url.path, parsed_url.query])
 
-    @pytest.mark.parametrize("format_name", ("CVAT for images 1.1",))
-    def test_non_owner_cannot_retrieve_request(self, find_users, projects, format_name: str):
+    def test_non_owner_cannot_retrieve_request(self, find_users, projects):
         project = next(
             (
                 p
@@ -358,3 +362,107 @@ class TestGetRequests:
         )
         with make_api_client(malefactor["username"]) as malefactor_client:
             self._test_get_request_403(malefactor_client, request_id)
+
+    @pytest.mark.parametrize("target_type", ("project", "task", "job"))
+    @pytest.mark.parametrize("save_images", (True, False))
+    @pytest.mark.parametrize("format_name", ("CVAT for images 1.1",))
+    def test_can_retrieve_export_dataset_requests_using_legacy_ids(
+        self,
+        target_type: str,
+        save_images: bool,
+        format_name: str,
+        projects,
+        tasks,
+        jobs,
+    ):
+        def build_legacy_request_id(
+            target_type: str,
+            target_id: int,
+            subresource: str,
+            format_name: str,
+            user_id: int,
+        ):
+            return f"export:{target_type}-{target_id}-{subresource}-in-{format_name.replace(' ', '_').replace('.', '@')}-format-by-{user_id}"
+
+        if target_type == "project":
+            export_func = export_project_dataset
+            target = next(iter(projects))
+            owner = target["owner"]
+        elif target_type == "task":
+            export_func = export_task_dataset
+            target = next(iter(tasks))
+            owner = target["owner"]
+        else:
+            assert target_type == "job"
+            export_func = export_job_dataset
+            target = next(iter(jobs))
+            owner = tasks[target["task_id"]]["owner"]
+
+        request_id = export_func(
+            owner["username"],
+            save_images=save_images,
+            format=format_name,
+            id=target["id"],
+            download_result=False,
+            return_request_id=True,
+        )
+
+        legacy_request_id = build_legacy_request_id(
+            target_type,
+            target["id"],
+            "dataset" if save_images else "annotations",
+            format_name,
+            owner["id"],
+        )
+
+        with make_api_client(owner["username"]) as owner_client:
+            self._test_get_request_200(owner_client, request_id)
+            bg_request = self._test_get_request_200(
+                owner_client, legacy_request_id, validate_rq_id=False
+            )
+            assert bg_request.id == request_id
+
+    @pytest.mark.parametrize("target_type", ("project", "task"))
+    def test_can_retrieve_export_backup_requests_using_legacy_ids(
+        self,
+        target_type: str,
+        projects,
+        tasks,
+    ):
+        def build_legacy_request_id(
+            target_type: str,
+            target_id: int,
+            user_id: int,
+        ):
+            return f"export:{target_type}-{target_id}-backup-by-{user_id}"
+
+        if target_type == "project":
+            export_func = export_project_backup
+            target = next(iter(projects))
+        else:
+            assert target_type == "task"
+            export_func = export_task_backup
+            target = next(iter(tasks))
+
+        owner = target["owner"]
+
+        request_id = export_func(
+            owner["username"],
+            id=target["id"],
+            download_result=False,
+            return_request_id=True,
+        )
+
+        legacy_request_id = build_legacy_request_id(target_type, target["id"], owner["id"])
+
+        with make_api_client(owner["username"]) as owner_client:
+            self._test_get_request_200(owner_client, request_id)
+            bg_request = self._test_get_request_200(
+                owner_client, legacy_request_id, validate_rq_id=False
+            )
+            assert bg_request.id == request_id
+
+    # TODO:
+    # - quality
+    # - task creation
+    # - import

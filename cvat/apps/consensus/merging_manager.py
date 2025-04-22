@@ -29,7 +29,6 @@ from cvat.apps.engine.models import (
 from cvat.apps.profiler import silk_profile
 from cvat.apps.quality_control.quality_reports import ComparisonParameters, JobDataProvider
 from cvat.apps.redis_handler.background import AbstractRequestManager
-from cvat.apps.redis_handler.rq import RequestId
 
 
 class _TaskMerger:

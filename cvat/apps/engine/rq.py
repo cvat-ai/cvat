@@ -348,8 +348,7 @@ class ExportRequestId(
 
     # will be deleted after several releases
     LEGACY_FORMAT_PATTERNS: ClassVar[tuple[str]] = (
-        r"export:(?P<target>(task|project))-(?P<id>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})"
-        + r"-(?P<subresource>(backup))-by-(?P<user_id>\d+)",
+        r"export:(?P<target>(task|project))-(?P<target_id>\d+)-(?P<subresource>(backup))-by-(?P<user_id>\d+)",
         r"export:(?P<target>(project|task|job))-(?P<target_id>\d+)-(?P<subresource>(annotations|dataset))"
         + r"-in-(?P<format>[\w@]+)-format-by-(?P<user_id>\d+)",
     )
