@@ -36,7 +36,7 @@ from cvat.apps.dataset_manager.bindings import (
     detect_dataset,
     get_defaulted_subset,
     import_dm_annotations,
-    match_dm_item,
+    match_dm_item, CVATProjectDataExtractor, CvatTaskOrJobDataExtractor,
 )
 from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.apps.engine.frame_provider import FrameOutputType, FrameQuality, make_frame_provider
@@ -854,6 +854,12 @@ def dump_as_cvat_annotation(dumper, annotations):
                 [("width", str(frame_annotation.width)), ("height", str(frame_annotation.height))]
             )
         )
+
+        if isinstance(annotations, ProjectData):
+            frame_annotation = CVATProjectDataExtractor.replace_lazy_lists(frame_annotation)
+        else:
+            frame_annotation = CvatTaskOrJobDataExtractor.replace_lazy_lists(frame_annotation)
+
         dumper.open_image(image_attrs)
 
         def dump_labeled_shapes(shapes, is_skeleton=False):
