@@ -9,7 +9,6 @@ from typing import Callable, Optional
 from datumaro.components.annotation import AnnotationType
 from datumaro.components.dataset import StreamDataset
 from datumaro.components.dataset_base import DatasetItem
-from datumaro.components.project import Dataset
 from pyunpack import Archive
 
 from cvat.apps.dataset_manager.bindings import (
@@ -79,7 +78,7 @@ def _import_common(
             image_info[frame] = (frame_info["height"], frame_info["width"])
 
     detect_dataset(temp_dir, format_name=format_name, importer=dm_env.importers.get(format_name))
-    dataset = Dataset.import_from(
+    dataset = StreamDataset.import_from(
         temp_dir, format_name, env=dm_env, image_info=image_info, **(import_kwargs or {})
     )
     dataset = dataset.transform(SetKeyframeForEveryTrackShape)
