@@ -57,8 +57,8 @@ from cvat.apps.quality_control.models import (
     AnnotationConflictType,
     AnnotationType,
 )
+from cvat.apps.quality_control.rq import QualityRequestId
 from cvat.apps.redis_handler.background import AbstractRequestManager
-from cvat.apps.redis_handler.rq import RequestId, RequestIdWithSubresourceMixin
 
 
 class Serializable:
@@ -2261,13 +2261,6 @@ class DatasetComparator:
         )
 
 
-class QualityRequestId(RequestIdWithSubresourceMixin, RequestId):
-    LEGACY_FORMAT_PATTERNS = (
-        r"quality-check-(?P<target>(task))-(?P<target_id>\d+)-user-(\d+)",  # user id is excluded in the new format
-    )
-    LEGACY_FORMAT_EXTRA = (("subresource", "quality"), ("action", "calculate"))
-
-
 class QualityReportRQJobManager(AbstractRequestManager):
     QUEUE_NAME = settings.CVAT_QUEUES.QUALITY_REPORTS.value
     SUPPORTED_TARGETS: ClassVar[set[RequestTarget]] = {RequestTarget.TASK}
@@ -2278,8 +2271,8 @@ class QualityReportRQJobManager(AbstractRequestManager):
 
     def get_job_by_id(self, id_, /):
         try:
-            id_ = QualityRequestId.parse(
-                id_, queue=self.QUEUE_NAME, try_legacy_format=True
+            id_ = QualityRequestId.parse_and_validate_queue(
+                id_, expected_queue=self.QUEUE_NAME, try_legacy_format=True
             ).render()
         except ValueError:
             raise ValidationError("Provided request ID is invalid")
@@ -2288,10 +2281,8 @@ class QualityReportRQJobManager(AbstractRequestManager):
 
     def build_request_id(self):
         return QualityRequestId(
-            action="calculate",
             target=self.target,
             target_id=self.db_instance.pk,
-            extra={"subresource": "quality"},
         ).render()
 
     def validate_request(self):

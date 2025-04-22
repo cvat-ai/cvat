@@ -68,9 +68,7 @@ class AbstractRequestManager(metaclass=ABCMeta):
         if db_instance:
             assert self.SUPPORTED_TARGETS, "Should be defined"
             self.target = RequestTarget(db_instance.__class__.__name__.lower())
-            assert (
-                self.target in self.SUPPORTED_TARGETS
-            ), f"Unsupported target: {self.target}"
+            assert self.target in self.SUPPORTED_TARGETS, f"Unsupported target: {self.target}"
 
     @classmethod
     def get_queue(cls) -> DjangoRQ:
@@ -219,7 +217,10 @@ class AbstractExporter(AbstractRequestManager):
 
         def validate_request(self):
             # prevent architecture bugs
-            assert "GET" == self.request.method, "Only GET requests can be used to download a file"
+            assert self.request.method in (
+                "GET",
+                "HEAD",
+            ), "Only GET/HEAD requests can be used to download a file"
 
         def download_file(self) -> Response:
             self.validate_request()
@@ -296,10 +297,10 @@ class AbstractExporter(AbstractRequestManager):
     def get_result_filename(self) -> str: ...
 
     @abstractmethod
-    def where_to_redirect(self) -> str: ...
+    def get_result_endpoint_url(self) -> str: ...
 
     def make_result_url(self, *, request_id: str) -> str:
-        return self.where_to_redirect() + f"?{self.REQUEST_ID_KEY}={quote(request_id)}"
+        return self.get_result_endpoint_url() + f"?{self.REQUEST_ID_KEY}={quote(request_id)}"
 
     def get_file_timestamp(self) -> str:
         # use only updated_date for the related resource, don't check children objects

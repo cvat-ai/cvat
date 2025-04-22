@@ -99,16 +99,15 @@ class EventsExporter(AbstractExporter):
 
     def build_request_id(self):
         return ExportRequestId(
-            action=RequestAction.EXPORT,
             target=TARGET,
             id=self.query_id,
             user_id=self.user_id,
         ).render()
 
     def validate_request_id(self, request_id, /) -> None:
-        parsed_request_id: ExportRequestId = ExportRequestId.parse(
+        parsed_request_id: ExportRequestId = ExportRequestId.parse_and_validate_queue(
             request_id,
-            queue=self.QUEUE_NAME,  # try_legacy_format is not set here since deprecated API accepts query_id, not the whole Request ID
+            expected_queue=self.QUEUE_NAME,  # try_legacy_format is not set here since deprecated API accepts query_id, not the whole Request ID
         )
 
         if parsed_request_id.action != RequestAction.EXPORT or parsed_request_id.target != TARGET:
@@ -164,7 +163,7 @@ class EventsExporter(AbstractExporter):
         )
         self.callback_args = (query_params, output_filename)
 
-    def where_to_redirect(self) -> str:
+    def get_result_endpoint_url(self) -> str:
         return reverse("events-download-file", request=self.request)
 
     def get_result_filename(self):

@@ -12,6 +12,7 @@ from rest_framework.serializers import ValidationError
 
 from cvat.apps.consensus.intersect_merge import IntersectMerge
 from cvat.apps.consensus.models import ConsensusSettings
+from cvat.apps.consensus.rq import ConsensusRequestId
 from cvat.apps.dataset_manager.bindings import import_dm_annotations
 from cvat.apps.dataset_manager.task import PatchAction, patch_job_data
 from cvat.apps.engine.models import (
@@ -165,8 +166,7 @@ class MergingManager(AbstractRequestManager):
         return 300
 
     def build_request_id(self) -> str:
-        return RequestId(
-            action="merge",
+        return ConsensusRequestId(
             target=self.target,
             target_id=self.db_instance.pk,
         ).render()

@@ -59,7 +59,7 @@ class DownloadExportedExtension:
 
         if rq_id := request.query_params.get("rq_id"):
             try:
-                params["rq_job_id"] = ExportRequestId.parse(rq_id, queue=AbstractExporter.QUEUE_NAME, try_legacy_format=True)
+                params["rq_job_id"] = ExportRequestId.parse_and_validate_queue(rq_id, expected_queue=AbstractExporter.QUEUE_NAME, try_legacy_format=True)
                 return
             except Exception:
                 raise ValidationError("Unexpected request id format")

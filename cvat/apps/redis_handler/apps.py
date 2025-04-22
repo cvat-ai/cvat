@@ -7,6 +7,8 @@ from contextlib import suppress
 
 from django.apps import AppConfig
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
+from django.utils.module_loading import import_string
 
 
 class LayeredKeyDict(dict):
@@ -20,25 +22,24 @@ class LayeredKeyDict(dict):
 
 ACTION_TO_QUEUE = LayeredKeyDict()
 QUEUE_TO_PARSED_JOB_ID_CLS = {}
-PARSED_JOB_ID_CLS_TO_QUEUE = {}
 
 
 def initialize_mappings():
+    from cvat.apps.redis_handler.rq import RequestId
+
     for queue_name, queue_conf in settings.RQ_QUEUES.items():
-        # initialize ACTION_TO_QUEUE mapping
-        if supported_actions := queue_conf.get("SUPPORTED_ACTIONS"):
-            for action in supported_actions:
-                if isinstance(action, str):
-                    ACTION_TO_QUEUE[action] = queue_name
-                    continue
+        if path_to_parsed_job_id_cls := queue_conf.get("PARSED_JOB_ID_CLASS"):
+            parsed_job_id_cls = import_string(path_to_parsed_job_id_cls)
 
-                assert isinstance(action, tuple)
-                ACTION_TO_QUEUE[action] = queue_name
+            if not issubclass(parsed_job_id_cls, RequestId):
+                raise ImproperlyConfigured(
+                    f"The {path_to_parsed_job_id_cls!r} must be inherited from the RequestId class"
+                )
 
-        # initialize QUEUE_TO_PARSED_JOB_ID_CLS/PARSED_JOB_ID_CLS_TO_QUEUE mappings
-        if parsed_job_id_cls := queue_conf.get("PARSED_JOB_ID_CLASS"):
+            for queue_selector in parsed_job_id_cls.QUEUE_SELECTORS:
+                ACTION_TO_QUEUE[queue_selector] = queue_name
+
             QUEUE_TO_PARSED_JOB_ID_CLS[queue_name] = parsed_job_id_cls
-            PARSED_JOB_ID_CLS_TO_QUEUE[parsed_job_id_cls] = queue_name
 
 
 class RedisHandlerConfig(AppConfig):

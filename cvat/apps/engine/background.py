@@ -110,20 +110,18 @@ class DatasetExporter(AbstractExporter):
             target=RequestTarget(self.target),
             target_id=self.db_instance.pk,
             user_id=self.user_id,
-            extra={
-                "subresource": (
-                    RequestSubresource.DATASET
-                    if self.export_args.save_images
-                    else RequestSubresource.ANNOTATIONS
-                ),
-                "format": self.export_args.format,
-            },
+            subresource=(
+                RequestSubresource.DATASET
+                if self.export_args.save_images
+                else RequestSubresource.ANNOTATIONS
+            ),
+            format=self.export_args.format,
         ).render()
 
     def validate_request_id(self, request_id, /) -> None:
         # FUTURE-TODO: optimize, request_id is parsed 2 times (first one when checking permissions)
-        parsed_request_id: ExportRequestId = ExportRequestId.parse(
-            request_id, queue=self.QUEUE_NAME, try_legacy_format=True
+        parsed_request_id: ExportRequestId = ExportRequestId.parse_and_validate_queue(
+            request_id, expected_queue=self.QUEUE_NAME, try_legacy_format=True
         )
 
         if (
@@ -133,7 +131,9 @@ class DatasetExporter(AbstractExporter):
             or parsed_request_id.subresource
             not in {RequestSubresource.DATASET, RequestSubresource.ANNOTATIONS}
         ):
-            raise ValueError("The provided request id does not match exported target or subresource")
+            raise ValueError(
+                "The provided request id does not match exported target or subresource"
+            )
 
     def _init_callback_with_params(self):
         self.callback = get_export_callback(
@@ -176,7 +176,7 @@ class DatasetExporter(AbstractExporter):
 
         return filename
 
-    def where_to_redirect(self) -> str:
+    def get_result_endpoint_url(self) -> str:
         return reverse(
             f"{self.target}-download-dataset", args=[self.db_instance.pk], request=self.request
         )
@@ -195,8 +195,8 @@ class BackupExporter(AbstractExporter):
 
     def validate_request_id(self, request_id, /) -> None:
         # FUTURE-TODO: optimize, request_id is parsed 2 times (first one when checking permissions)
-        parsed_request_id: ExportRequestId = ExportRequestId.parse(
-            request_id, queue=self.QUEUE_NAME, try_legacy_format=True
+        parsed_request_id: ExportRequestId = ExportRequestId.parse_and_validate_queue(
+            request_id, expected_queue=self.QUEUE_NAME, try_legacy_format=True
         )
 
         if (
@@ -205,7 +205,9 @@ class BackupExporter(AbstractExporter):
             or parsed_request_id.target_id != self.db_instance.pk
             or parsed_request_id.subresource != RequestSubresource.BACKUP
         ):
-            raise ValueError("The provided request id does not match exported target or subresource")
+            raise ValueError(
+                "The provided request id does not match exported target or subresource"
+            )
 
     def _init_callback_with_params(self):
         self.callback = create_backup
@@ -244,12 +246,10 @@ class BackupExporter(AbstractExporter):
             target=RequestTarget(self.target),
             target_id=self.db_instance.pk,
             user_id=self.user_id,
-            extra={
-                "subresource": RequestSubresource.BACKUP,
-            },
+            subresource=RequestSubresource.BACKUP,
         ).render()
 
-    def where_to_redirect(self) -> str:
+    def get_result_endpoint_url(self) -> str:
         return reverse(
             f"{self.target}-download-backup", args=[self.db_instance.pk], request=self.request
         )
@@ -444,13 +444,11 @@ class DatasetImporter(ResourceImporter):
             action=RequestAction.IMPORT,
             target=RequestTarget(self.target),
             target_id=self.db_instance.pk,
-            extra={
-                "subresource": (
-                    RequestSubresource.DATASET
-                    if isinstance(self.db_instance, Project)
-                    else RequestSubresource.ANNOTATIONS
-                ),
-            },
+            subresource=(
+                RequestSubresource.DATASET
+                if isinstance(self.db_instance, Project)
+                else RequestSubresource.ANNOTATIONS
+            ),
         ).render()
 
     def finalize_request(self):
@@ -491,9 +489,7 @@ class BackupImporter(ResourceImporter):
             action=RequestAction.IMPORT,
             target=self.target,
             id=uuid4(),
-            extra={
-                "subresource": RequestSubresource.BACKUP,
-            },
+            subresource=RequestSubresource.BACKUP,
         ).render()
 
     def _get_payload_file(self):

@@ -273,9 +273,7 @@ class UploadMixin:
                     action=RequestAction.IMPORT,
                     target=RequestTarget(object_class_name),
                     target_id=self._object.pk,
-                    extra={
-                        "subresource": import_type,
-                    }
+                    subresource=import_type,
                 ).render()
                 queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
                 finished_job_ids = queue.finished_job_registry.get_job_ids()

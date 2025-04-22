@@ -5,8 +5,10 @@
 from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
-from typing import TYPE_CHECKING, Any, Callable, Optional, Protocol
+from types import NoneType
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Protocol
 
+import attrs
 from django.conf import settings
 from django.db.models import Model
 from django.utils import timezone
@@ -16,7 +18,7 @@ from rq.job import Job as RQJob
 from rq.registry import BaseRegistry as RQBaseRegistry
 
 from cvat.apps.engine.types import ExtendedRequest
-from cvat.apps.redis_handler.rq import RequestId, RequestIdWithOptionalSubresourceMixin
+from cvat.apps.redis_handler.rq import RequestId, RequestIdWithOptionalSubresource
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import User
@@ -326,20 +328,26 @@ def is_rq_job_owner(rq_job: RQJob, user_id: int) -> bool:
     return False
 
 
-class RequestIdWithFormatMixin:
-    extra: dict[str, Any]
+@attrs.frozen(kw_only=True, slots=False)
+class RequestIdWithOptionalFormat(RequestId):
+    format: str | None = attrs.field(
+        validator=attrs.validators.instance_of((str, NoneType)), default=None
+    )
 
-    @property
-    def format(self) -> str | None:
-        return self.extra.get("format")
 
-
+@attrs.frozen(kw_only=True, slots=False)
 class ExportRequestId(
-    RequestIdWithOptionalSubresourceMixin,  # subresource is optional because export queue works also with events
-    RequestIdWithFormatMixin,
-    RequestId,
+    RequestIdWithOptionalSubresource,  # subresource is optional because export queue works also with events
+    RequestIdWithOptionalFormat,
 ):
-    LEGACY_FORMAT_PATTERNS = (
+    ACTION_DEFAULT_VALUE: ClassVar[str] = "export"
+    ACTION_ALLOWED_VALUES: ClassVar[tuple[str]] = (ACTION_DEFAULT_VALUE,)
+
+    SUBRESOURCE_ALLOWED_VALUES: ClassVar[tuple[str]] = ("backup", "dataset", "annotations")
+    QUEUE_SELECTORS: ClassVar[tuple[str]] = ACTION_ALLOWED_VALUES
+
+    # will be deleted after several releases
+    LEGACY_FORMAT_PATTERNS: ClassVar[tuple[str]] = (
         r"export:(?P<target>(task|project))-(?P<id>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})"
         + r"-(?P<subresource>(backup))-by-(?P<user_id>\d+)",
         r"export:(?P<target>(project|task|job))-(?P<target_id>\d+)-(?P<subresource>(annotations|dataset))"
@@ -347,11 +355,16 @@ class ExportRequestId(
     )
 
 
+@attrs.frozen(kw_only=True, slots=False)
 class ImportRequestId(
-    RequestIdWithOptionalSubresourceMixin,  # subresource is optional because import queue works also with backups/task creation jobs
-    RequestIdWithFormatMixin,
-    RequestId,
+    RequestIdWithOptionalSubresource,  # subresource is optional because import queue works also with task creation jobs
+    RequestIdWithOptionalFormat,
 ):
+    ACTION_ALLOWED_VALUES: ClassVar[tuple[str]] = ("create", "import")
+    SUBRESOURCE_ALLOWED_VALUES: ClassVar[tuple[str]] = ("backup", "dataset", "annotations")
+    QUEUE_SELECTORS: ClassVar[tuple[str]] = ACTION_ALLOWED_VALUES
+
+    # will be deleted after several releases
     LEGACY_FORMAT_PATTERNS = (
         r"create:task-(?P<task_id>\d+)",
         r"import:(?P<target>(task|project|job))-(?P<target_id>\d+)-(?P<subresource>(annotations|dataset))",

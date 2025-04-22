@@ -2,84 +2,69 @@ from __future__ import annotations
 
 import re
 import urllib.parse
-from contextlib import suppress
 from types import NoneType
-from typing import Any, ClassVar, Protocol, overload
+from typing import Any, ClassVar, Protocol
 from uuid import UUID
 
 import attrs
 from django.core.exceptions import ImproperlyConfigured
 from django.utils.html import escape
-from django.utils.module_loading import import_string
 from rq.job import Job as RQJob
 
-from cvat.apps.redis_handler.apps import (
-    ACTION_TO_QUEUE,
-    PARSED_JOB_ID_CLS_TO_QUEUE,
-    QUEUE_TO_PARSED_JOB_ID_CLS,
-)
-
-
-def convert_extra(value: dict) -> dict[str, Any]:
-    assert isinstance(value, dict), f"Unexpected type: {type(value)}"
-
-    for k, v in value.items():
-        assert v
-        if not isinstance(v, str):
-            value[k] = str(v)
-
-    return value
+from cvat.apps.redis_handler.apps import ACTION_TO_QUEUE, QUEUE_TO_PARSED_JOB_ID_CLS
 
 
 class IncorrectRequestIdError(ValueError):
     pass
 
 
-class RequestIdWithSubresourceMixin:
-    TYPE_SEP: ClassVar[str]
+def _default_from_class_attr(attr_name: str):
+    def factory(self):
+        cls = type(self)
+        if attrs_value := getattr(cls, attr_name, None):
+            return attrs_value
+        raise AttributeError(
+            f"[{cls.__name__}] Unable to set default value for the {attr_name} attribute"
+        )
 
-    action: str
-    target: str
-    extra: dict[str, Any]
-
-    @property
-    def subresource(self) -> str:
-        return self.extra["subresource"]
-
-    @property
-    def type(self) -> str:
-        return self.TYPE_SEP.join([self.action, self.subresource or self.target])
+    return attrs.Factory(factory, takes_self=True)
 
 
-class RequestIdWithOptionalSubresourceMixin(RequestIdWithSubresourceMixin):
-    @property
-    def subresource(self) -> str | None:
-        with suppress(KeyError):
-            return super().subresource
-
-        return None
-
-
-@attrs.frozen(kw_only=True)
+@attrs.frozen(kw_only=True, slots=False)  # to be able to inherit from RequestId
 class RequestId:
-    FIELD_SEP: ClassVar[str] = "&"
-    KEY_VAL_SEP: ClassVar[str] = "="
-
+    # https://datatracker.ietf.org/doc/html/rfc3986#section-2.3 - ALPHA / DIGIT / "-" / "." / "_" / "~"
+    UNRESERVED_BY_RFC3986_SPECIAL_CHARACTERS: ClassVar[tuple[str]] = ("-", ".", "_", "~")
     ENCODE_MAPPING = {
-        ".": "@",
+        ".": "~",  # dot is a default DRF path parameter pattern
         " ": "_",
     }
-    DECODE_MAPPING = {v: k for k, v in ENCODE_MAPPING.items()}
-    NOT_ALLOWED_CHARS = {FIELD_SEP, KEY_VAL_SEP, "/"} | set(DECODE_MAPPING.keys())
 
+    # "&" and "=" characters are reserved sub-delims symbols, but request ID is going to be used only as path parameter
+    FIELD_SEP: ClassVar[str] = "&"
+    KEY_VAL_SEP: ClassVar[str] = "="
     TYPE_SEP: ClassVar[str] = ":"  # used in serialization logic
 
-    # FUTURE-TODO: remove after several releases
-    # backward compatibility with previous ID formats
-    LEGACY_FORMAT_PATTERNS: ClassVar[tuple[str]] = ()
-    LEGACY_FORMAT_EXTRA: tuple[tuple[str, str]] = ()
+    STR_WITH_UNRESERVED_SPECIAL_CHARACTERS: ClassVar[str] = "".join(
+        re.escape(c)
+        for c in (
+            set(UNRESERVED_BY_RFC3986_SPECIAL_CHARACTERS)
+            - {FIELD_SEP, KEY_VAL_SEP, *ENCODE_MAPPING.values()}
+        )
+    )
+    VALIDATION_PATTERN: ClassVar[str] = rf"[\w{STR_WITH_UNRESERVED_SPECIAL_CHARACTERS}]+"
 
-    action: str = attrs.field(validator=attrs.validators.instance_of(str))
+    action: str = attrs.field(
+        validator=attrs.validators.instance_of(str),
+        default=_default_from_class_attr("ACTION_DEFAULT_VALUE"),
+    )
+    ACTION_ALLOWED_VALUES: ClassVar[tuple[str]]
+    QUEUE_SELECTORS: ClassVar[tuple]
+
+    @action.validator
+    def validate_action(self, attribute: attrs.Attribute, value: Any):
+        if hasattr(self, "ACTION_ALLOWED_VALUES") and value not in self.ACTION_ALLOWED_VALUES:
+            raise ValueError(f"Action must be one of {self.ACTION_ALLOWED_VALUES!r}")
+
     target: str = attrs.field(validator=attrs.validators.instance_of(str))
     target_id: int | None = attrs.field(
         converter=lambda x: x if x is None else int(x), default=None
@@ -89,8 +74,11 @@ class RequestId:
         converter=lambda x: x if isinstance(x, (NoneType, UUID)) else UUID(x),
         default=None,
     )  # operation id
-    extra: dict[str, str] = attrs.field(converter=convert_extra, factory=dict)
     user_id: int | None = attrs.field(converter=lambda x: x if x is None else int(x), default=None)
+
+    # FUTURE-TODO: remove after several releases
+    # backward compatibility with previous ID formats
+    LEGACY_FORMAT_PATTERNS: ClassVar[tuple[str]] = ()
 
     def __attrs_post_init__(self):
         assert (
@@ -102,21 +90,19 @@ class RequestId:
         return self.TYPE_SEP.join([self.action, self.target])
 
     def to_dict(self) -> dict[str, Any]:
-        base = attrs.asdict(self, filter=lambda _, v: bool(v))
-        extra_data = base.pop("extra", {})
-        return {**base, **extra_data}
+        return attrs.asdict(self, filter=lambda _, v: bool(v))
 
     @classmethod
     def normalize(cls, repr_: dict[str, Any]) -> None:
         for key, value in repr_.items():
             str_value = str(value)
-            for reserved in cls.NOT_ALLOWED_CHARS:
-                if reserved in str_value:
-                    raise IncorrectRequestIdError(f"{key} contains special character: {reserved!r}")
+            if not re.match(cls.VALIDATION_PATTERN, str_value):
+                raise IncorrectRequestIdError(
+                    f"{key} does not match allowed format: {cls.VALIDATION_PATTERN}"
+                )
 
             for from_char, to_char in cls.ENCODE_MAPPING.items():
-                if from_char in str_value:
-                    str_value = str_value.replace(from_char, to_char)
+                str_value = str_value.replace(from_char, to_char)
 
             repr_[key] = str_value
 
@@ -133,36 +119,24 @@ class RequestId:
         return self.FIELD_SEP.join([f"{k}{self.KEY_VAL_SEP}{v}" for k, v in rq_id_repr.items()])
 
     @classmethod
-    @overload
-    def parse(
-        cls, request_id: str, /, *, queue: str, try_legacy_format: bool = False
-    ) -> RequestId: ...
-
-    @classmethod
-    @overload
-    def parse(
-        cls, request_id: str, /, *, queue: None = None, try_legacy_format: bool = False
-    ) -> tuple[RequestId, str]: ...
-
-    @classmethod
     def parse(
         cls,
         request_id: str,
         /,
         *,
-        queue: str | None = None,
         try_legacy_format: bool = False,
-    ) -> RequestId | tuple[RequestId, str]:
-        class _RequestIdForMapping(RequestIdWithOptionalSubresourceMixin, RequestId):
-            pass
+    ) -> tuple[RequestId, str]:
 
-        queue_provided = bool(queue)
-        is_new_format = True
-        common_keys = set(attrs.fields_dict(cls).keys()) - {"extra"}
+        actual_cls = cls
+        subclasses = set()
+        queue: str | None = None
         dict_repr = {}
         fragments = {}
 
-        actual_cls = cls
+        def init_subclasses(cur_cls: type[RequestId] = RequestId):
+            for subclass in cur_cls.__subclasses__():
+                subclasses.add(subclass)
+                init_subclasses(subclass)
 
         try:
             # try to parse ID as key=value pairs (newly introduced format)
@@ -176,59 +150,107 @@ class RequestId:
                     )
 
                 match: re.Match | None = None
-                subclasses = (cls,) if cls is not RequestId else RequestId.__subclasses__()
+
+                if cls is RequestId:
+                    init_subclasses()
+                else:
+                    subclasses = (cls,)
 
                 for subclass in subclasses:
                     for pattern in subclass.LEGACY_FORMAT_PATTERNS:
                         match = re.match(pattern, request_id)
                         if match:
+                            actual_cls = subclass
                             break
                     if match:
                         break
-
-                if not match:
+                else:
                     raise IncorrectRequestIdError(
                         f"Unable to parse request ID: {escape(request_id)!r}"
                     )
 
-                is_new_format = False
-                fragments = {**match.groupdict(), **dict(subclass.LEGACY_FORMAT_EXTRA)}
-
-                queue = PARSED_JOB_ID_CLS_TO_QUEUE.get(f"{subclass.__module__}.{subclass.__name__}")
+                queue = ACTION_TO_QUEUE.get(
+                    actual_cls.QUEUE_SELECTORS[0]
+                )  # each selector match the same queue
                 if not queue:
                     raise ImproperlyConfigured(
                         "Job ID class must be set in the related queue config"
                     )
-                actual_cls = subclass
+
+                fragments = match.groupdict()
 
             # init dict representation for request ID
             for key, value in fragments.items():
-                for from_char, to_char in cls.DECODE_MAPPING.items():
-                    if from_char in value:
-                        value = value.replace(from_char, to_char)
+                for to_char, from_char in cls.ENCODE_MAPPING.items():
+                    value = value.replace(from_char, to_char)
 
-                if key in common_keys:
-                    dict_repr[key] = value
-                else:
-                    dict_repr.setdefault("extra", {})[key] = value
+                dict_repr[key] = value
 
-            if is_new_format:
+            if not queue:
                 # try to define queue dynamically based on action/target/subresource
-                if not queue_provided:
-                    _parsed = _RequestIdForMapping(**dict_repr)
-                    queue = ACTION_TO_QUEUE[(_parsed.action, _parsed.target, _parsed.subresource)]
+                queue = ACTION_TO_QUEUE[
+                    (dict_repr["action"], dict_repr["target"], dict_repr.get("subresource"))
+                ]
 
-                if actual_cls_path := QUEUE_TO_PARSED_JOB_ID_CLS.get(queue):
-                    actual_cls = import_string(actual_cls_path)
+                if queue in QUEUE_TO_PARSED_JOB_ID_CLS:
+                    actual_cls = QUEUE_TO_PARSED_JOB_ID_CLS[queue]
 
             result = actual_cls(**dict_repr)
 
-            return (result, queue) if not queue_provided else result
+            return (result, queue)
 
         except ImproperlyConfigured:
             raise
         except Exception as ex:
             raise IncorrectRequestIdError from ex
+
+    @classmethod
+    def parse_and_validate_queue(
+        cls,
+        request_id: str,
+        /,
+        *,
+        expected_queue: str,
+        try_legacy_format: bool = False,
+    ) -> RequestId:
+        parsed_request_id, queue = cls.parse(request_id, try_legacy_format=try_legacy_format)
+        assert queue == expected_queue
+        return parsed_request_id
+
+
+@attrs.frozen(kw_only=True, slots=False)
+class RequestIdWithSubresource(RequestId):
+    SUBRESOURCE_ALLOWED_VALUES: ClassVar[tuple[str]]
+
+    subresource: str = attrs.field(
+        validator=attrs.validators.instance_of(str),
+        default=_default_from_class_attr("SUBRESOURCE_DEFAULT_VALUE"),
+    )
+
+    @subresource.validator
+    def validate_subresource(self, attribute: attrs.Attribute, value: Any):
+        if value not in self.SUBRESOURCE_ALLOWED_VALUES:
+            raise ValueError(f"Subresource must be one of {self.SUBRESOURCE_ALLOWED_VALUES!r}")
+
+    @property
+    def type(self) -> str:
+        return self.TYPE_SEP.join([self.action, self.subresource])
+
+
+@attrs.frozen(kw_only=True, slots=False)
+class RequestIdWithOptionalSubresource(RequestIdWithSubresource):
+    subresource: str | None = attrs.field(
+        validator=attrs.validators.instance_of((str, NoneType)), default=None
+    )
+
+    @subresource.validator
+    def validate_subresource(self, attribute: attrs.Attribute, value: Any):
+        if value is not None:
+            super().validate_subresource(attribute, value)
+
+    @property
+    def type(self) -> str:
+        return self.TYPE_SEP.join([self.action, self.subresource or self.target])
 
 
 class _WithParsedId(Protocol):

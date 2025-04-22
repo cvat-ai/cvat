@@ -124,7 +124,9 @@ class RequestViewSet(viewsets.GenericViewSet):
             if job and is_rq_job_owner(job, user_id):
                 job = cast(CustomRQJob, job)
                 try:
-                    parsed_request_id = RequestId.parse(job.id, queue=queue.name)
+                    parsed_request_id = RequestId.parse_and_validate_queue(
+                        job.id, expected_queue=queue.name
+                    )
                 except Exception:  # nosec B112
                     continue
 
@@ -162,7 +164,6 @@ class RequestViewSet(viewsets.GenericViewSet):
         """
         try:
             parsed_request_id, queue_name = RequestId.parse(rq_id, try_legacy_format=True)
-            # TODO: return flag that legacy format is used
             rq_id = parsed_request_id.render()
         except Exception:
             return None
