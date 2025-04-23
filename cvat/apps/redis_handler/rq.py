@@ -11,7 +11,7 @@ from django.utils.html import escape
 from rq.job import Job as RQJob
 
 from cvat.apps.redis_handler.apps import (
-    ACTION_TO_QUEUE,
+    SELECTOR_TO_QUEUE,
     QUEUE_TO_PARSED_JOB_ID_CLS,
     REQUEST_ID_SUBCLASSES,
 )
@@ -161,7 +161,7 @@ class RequestId:
                         f"Unable to parse request ID: {escape(request_id)!r}"
                     )
 
-                queue = ACTION_TO_QUEUE[
+                queue = SELECTOR_TO_QUEUE[
                     actual_cls.QUEUE_SELECTORS[0]
                 ]  # each selector match the same queue
                 fragments = match.groupdict()
@@ -178,7 +178,7 @@ class RequestId:
 
             if not queue:
                 # try to define queue dynamically based on action/target/subresource
-                queue = ACTION_TO_QUEUE[
+                queue = SELECTOR_TO_QUEUE[
                     (dict_repr["action"], dict_repr["target"], dict_repr.get("subresource"))
                 ]
 

@@ -21,7 +21,7 @@ class LayeredKeyDict(dict):
         return super().__getitem__(key)
 
 
-ACTION_TO_QUEUE = LayeredKeyDict()
+SELECTOR_TO_QUEUE = LayeredKeyDict()
 QUEUE_TO_PARSED_JOB_ID_CLS = {}
 
 REQUEST_ID_SUBCLASSES = set()
@@ -47,7 +47,7 @@ def initialize_mappings():
             for queue_selector in parsed_job_id_cls.QUEUE_SELECTORS:
                 if not isinstance(queue_selector, (tuple, str)):
                     raise ImproperlyConfigured("Wrong queue selector, must be either tuple or str")
-                ACTION_TO_QUEUE[queue_selector] = queue_name
+                SELECTOR_TO_QUEUE[queue_selector] = queue_name
 
             QUEUE_TO_PARSED_JOB_ID_CLS[queue_name] = parsed_job_id_cls
 
@@ -62,7 +62,7 @@ def initialize_mappings():
 
         if subclass.QUEUE_SELECTORS:
             for queue_selector in subclass.QUEUE_SELECTORS:
-                if not ACTION_TO_QUEUE.get(queue_selector):
+                if not SELECTOR_TO_QUEUE.get(queue_selector):
                     raise ImproperlyConfigured(
                         f"Queue selector {queue_selector!r} for the class {subclass.__name__!r} is missed in the queue configuration"
                     )

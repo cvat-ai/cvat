@@ -25,7 +25,7 @@ from cvat.apps.engine.filters import (
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.rq import is_rq_job_owner
 from cvat.apps.engine.types import ExtendedRequest
-from cvat.apps.redis_handler.apps import ACTION_TO_QUEUE
+from cvat.apps.redis_handler.apps import SELECTOR_TO_QUEUE
 from cvat.apps.redis_handler.rq import CustomRQJob, RequestId
 from cvat.apps.redis_handler.serializers import RequestSerializer, RequestStatus
 
@@ -107,7 +107,7 @@ class RequestViewSet(viewsets.GenericViewSet):
 
     @property
     def queues(self) -> Iterable[DjangoRQ]:
-        return (django_rq.get_queue(queue_name) for queue_name in set(ACTION_TO_QUEUE.values()))
+        return (django_rq.get_queue(queue_name) for queue_name in set(SELECTOR_TO_QUEUE.values()))
 
     def _get_rq_jobs_from_queue(self, queue: DjangoRQ, user_id: int) -> list[RQJob]:
         job_ids = set(
