@@ -465,7 +465,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         serializer_class=None,
         parser_classes=_UPLOAD_PARSER_CLASSES)
     def import_backup(self, request: ExtendedRequest):
-        if request.query_params.get("rq_id"):
+        if "rq_id" in request.query_params:
             return get_410_response_when_checking_process_status("import")
 
         return self.upload_data(request)
