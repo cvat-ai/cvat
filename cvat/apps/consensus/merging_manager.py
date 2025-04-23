@@ -8,7 +8,7 @@ from typing import Type
 import datumaro as dm
 from django.conf import settings
 from django.db import transaction
-from rest_framework.serializers import ValidationError
+from rest_framework import serializers
 
 from cvat.apps.consensus.intersect_merge import IntersectMerge
 from cvat.apps.consensus.models import ConsensusSettings
@@ -186,7 +186,7 @@ class MergingManager(AbstractRequestManager):
         try:
             _TaskMerger(task=task).check_merging_available(parent_job_id=job.pk if job else None)
         except MergingNotAvailable as ex:
-            raise ValidationError(str(ex)) from ex
+            raise serializers.ValidationError(str(ex)) from ex
 
     def _split_to_task_and_job(self) -> tuple[Task, Job | None]:
         if isinstance(self.db_instance, Job):

@@ -18,7 +18,7 @@ from django.utils import timezone
 from django_rq.queues import DjangoRQ, DjangoScheduler
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.serializers import ValidationError
+from rest_framework import serializers
 from rq.job import Job as RQJob
 from rq.job import JobStatus as RQJobStatus
 
@@ -316,7 +316,7 @@ class AbstractExporter(AbstractRequestManager):
                 field_name=StorageType.TARGET,
             )
         except ValueError as ex:
-            raise ValidationError(str(ex)) from ex
+            raise serializers.ValidationError(str(ex)) from ex
 
         self.export_args = AbstractExporter.ExportArgs(
             location_config=location_config, filename=self.request.query_params.get("filename")
@@ -362,11 +362,11 @@ class AbstractExporter(AbstractRequestManager):
         request_id = self.request.query_params.get(self.REQUEST_ID_KEY)
 
         if not request_id:
-            raise ValidationError("Missing request id in the query parameters")
+            raise serializers.ValidationError("Missing request id in the query parameters")
 
         try:
             self.validate_request_id(request_id)
         except ValueError:
-            raise ValidationError("Invalid export request id")
+            raise serializers.ValidationError("Invalid export request id")
 
         return self.Downloader(request=self.request, queue=self.get_queue(), request_id=request_id)

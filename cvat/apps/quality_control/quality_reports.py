@@ -22,7 +22,7 @@ from attrs import asdict, define, fields_dict
 from datumaro.util import dump_json, parse_json
 from django.conf import settings
 from django.db import transaction
-from rest_framework.serializers import ValidationError
+from rest_framework import serializers
 from scipy.optimize import linear_sum_assignment
 
 from cvat.apps.dataset_manager.bindings import (
@@ -2275,7 +2275,7 @@ class QualityReportRQJobManager(AbstractRequestManager):
                 id_, expected_queue=self.QUEUE_NAME, try_legacy_format=True
             ).render()
         except ValueError:
-            raise ValidationError("Provided request ID is invalid")
+            raise serializers.ValidationError("Provided request ID is invalid")
 
         return super().get_job_by_id(id_)
 
@@ -2289,13 +2289,13 @@ class QualityReportRQJobManager(AbstractRequestManager):
         super().validate_request()
 
         if self.db_instance.dimension != DimensionType.DIM_2D:
-            raise ValidationError("Quality reports are only supported in 2d tasks")
+            raise serializers.ValidationError("Quality reports are only supported in 2d tasks")
 
         gt_job = self.db_instance.gt_job
         if gt_job is None or not (
             gt_job.stage == StageChoice.ACCEPTANCE and gt_job.state == StatusChoice.COMPLETED
         ):
-            raise ValidationError(
+            raise serializers.ValidationError(
                 "Quality reports require a Ground Truth job in the task "
                 f"at the {StageChoice.ACCEPTANCE} stage "
                 f"and in the {StatusChoice.COMPLETED} state"

@@ -6,7 +6,7 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
+from rest_framework import serializers
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 
@@ -151,7 +151,7 @@ class EventsViewSet(viewsets.ViewSet):
             request.query_params.get("cloud_storage_id")
             or request.query_params.get("location") == Location.CLOUD_STORAGE
         ):
-            raise ValidationError(
+            raise serializers.ValidationError(
                 "This endpoint does not support exporting events to cloud storage"
             )
 

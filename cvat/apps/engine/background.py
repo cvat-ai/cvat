@@ -12,7 +12,8 @@ from uuid import uuid4
 from attrs.converters import to_bool
 from django.conf import settings
 from django.db.models import Model
-from rest_framework.exceptions import MethodNotAllowed, ValidationError
+from rest_framework.exceptions import MethodNotAllowed
+from rest_framework import serializers
 from rest_framework.reverse import reverse
 from rq.job import Job as RQJob
 
@@ -100,7 +101,7 @@ class DatasetExporter(AbstractExporter):
             self.export_args.format
         )
         if format_desc is None:
-            raise ValidationError("Unknown format specified for the request")
+            raise serializers.ValidationError("Unknown format specified for the request")
         elif not format_desc.ENABLED:
             raise MethodNotAllowed(self.request.method, detail="Format is disabled")
 
@@ -189,7 +190,7 @@ class BackupExporter(AbstractExporter):
     #     super().validate_request()
 
     #     if isinstance(self.db_instance, Task) and self.db_instance.data is None:
-    #         raise ValidationError("Backup of a task without data is not allowed")
+    #         raise serializers.ValidationError("Backup of a task without data is not allowed")
     #     elif isinstance(self.db_instance, Project) and Data.objects.filter():
     #         pass
 
@@ -294,7 +295,7 @@ class ResourceImporter(AbstractRequestManager):
                 field_name=StorageType.SOURCE,
             )
         except ValueError as ex:
-            raise ValidationError(str(ex)) from ex
+            raise serializers.ValidationError(str(ex)) from ex
 
         if filename := self.request.query_params.get("filename"):
             file_path = (
@@ -315,7 +316,7 @@ class ResourceImporter(AbstractRequestManager):
             self.import_args.location_config.location == Location.CLOUD_STORAGE
             and not self.import_args.file_path
         ):
-            raise ValidationError("The filename was not specified")
+            raise serializers.ValidationError("The filename was not specified")
 
     def _handle_cloud_storage_file_upload(self):
         storage_id = self.import_args.location_config.cloud_storage_id
@@ -435,7 +436,7 @@ class DatasetImporter(ResourceImporter):
             self.import_args.format
         )
         if format_desc is None:
-            raise ValidationError(f"Unknown input format {self.import_args.format!r}")
+            raise serializers.ValidationError(f"Unknown input format {self.import_args.format!r}")
         elif not format_desc.ENABLED:
             raise MethodNotAllowed(self.request.method, detail="Format is disabled")
 
