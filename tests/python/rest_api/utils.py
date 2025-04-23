@@ -204,7 +204,7 @@ def import_resource(
     expect_forbidden: bool = False,
     wait_result: bool = True,
     **kwargs,
-) -> None:
+) -> Optional[models.Request]:
     # initialize background process and ensure that the first request returns 403 code if request should be forbidden
     (_, response) = endpoint.call_with_http_info(
         **kwargs,
@@ -240,6 +240,7 @@ def import_resource(
             f"Import process was not finished within allowed time ({interval * max_retries}, sec). "
             + f"Last status was: {background_request.status.value}"
         )
+    return background_request
 
 
 def import_backup(
@@ -248,19 +249,19 @@ def import_backup(
     max_retries: int = 50,
     interval: float = 0.1,
     **kwargs,
-) -> None:
+):
     endpoint = api.create_backup_endpoint
     return import_resource(endpoint, max_retries=max_retries, interval=interval, **kwargs)
 
 
-def import_project_backup(username: str, file_content: BytesIO, **kwargs) -> None:
+def import_project_backup(username: str, file_content: BytesIO, **kwargs):
     with make_api_client(username) as api_client:
         return import_backup(
             api_client.projects_api, project_file_request={"project_file": file_content}, **kwargs
         )
 
 
-def import_task_backup(username: str, file_content: BytesIO, **kwargs) -> None:
+def import_task_backup(username: str, file_content: BytesIO, **kwargs):
     with make_api_client(username) as api_client:
         return import_backup(
             api_client.tasks_api, task_file_request={"task_file": file_content}, **kwargs

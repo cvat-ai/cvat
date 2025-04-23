@@ -11,9 +11,9 @@ from django.utils.html import escape
 from rq.job import Job as RQJob
 
 from cvat.apps.redis_handler.apps import (
-    SELECTOR_TO_QUEUE,
     QUEUE_TO_PARSED_JOB_ID_CLS,
     REQUEST_ID_SUBCLASSES,
+    SELECTOR_TO_QUEUE,
 )
 
 

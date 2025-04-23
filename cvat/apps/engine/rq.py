@@ -348,7 +348,7 @@ class ExportRequestId(
 
     # will be deleted after several releases
     LEGACY_FORMAT_PATTERNS: ClassVar[tuple[str]] = (
-        r"export:(?P<target>(task|project))-(?P<target_id>\d+)-(?P<subresource>(backup))-by-(?P<user_id>\d+)",
+        r"export:(?P<target>(task|project))-(?P<target_id>\d+)-(?P<subresource>backup)-by-(?P<user_id>\d+)",
         r"export:(?P<target>(project|task|job))-(?P<target_id>\d+)-(?P<subresource>(annotations|dataset))"
         + r"-in-(?P<format>[\w@]+)-format-by-(?P<user_id>\d+)",
     )
@@ -365,9 +365,9 @@ class ImportRequestId(
 
     # will be deleted after several releases
     LEGACY_FORMAT_PATTERNS = (
-        r"create:task-(?P<task_id>\d+)",
-        r"import:(?P<target>(task|project|job))-(?P<target_id>\d+)-(?P<subresource>(annotations|dataset))",
-        r"import:(?P<target>(task|project))-(?P<id>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})-(?P<subresource>(backup))",
+        r"(?P<action>create):(?P<target>task)-(?P<target_id>\d+)",
+        r"(?P<action>import):(?P<target>(task|project|job))-(?P<target_id>\d+)-(?P<subresource>(annotations|dataset))",
+        r"(?P<action>import):(?P<target>(task|project))-(?P<id>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})-(?P<subresource>backup)",
     )
 
 

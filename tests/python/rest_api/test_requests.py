@@ -5,7 +5,7 @@
 import io
 import json
 from http import HTTPStatus
-from urllib.parse import urlparse
+from urllib.parse import parse_qsl, urlparse
 
 import pytest
 from cvat_sdk.api_client import ApiClient, models
@@ -25,7 +25,9 @@ from .utils import (
     export_project_dataset,
     export_task_backup,
     export_task_dataset,
+    import_project_backup,
     import_task_backup,
+    wait_background_request,
 )
 
 
@@ -366,7 +368,7 @@ class TestGetRequests:
     @pytest.mark.parametrize("target_type", ("project", "task", "job"))
     @pytest.mark.parametrize("save_images", (True, False))
     @pytest.mark.parametrize("format_name", ("CVAT for images 1.1",))
-    def test_can_retrieve_export_dataset_requests_using_legacy_ids(
+    def test_can_retrieve_dataset_import_export_requests_using_legacy_ids(  # todo:
         self,
         target_type: str,
         save_images: bool,
@@ -423,46 +425,129 @@ class TestGetRequests:
             assert bg_request.id == request_id
 
     @pytest.mark.parametrize("target_type", ("project", "task"))
-    def test_can_retrieve_export_backup_requests_using_legacy_ids(
+    def test_can_retrieve_backup_import_export_requests_using_legacy_ids(
         self,
         target_type: str,
         projects,
         tasks,
     ):
-        def build_legacy_request_id(
+        def build_legacy_id_for_export_request(
             target_type: str,
             target_id: int,
             user_id: int,
         ):
             return f"export:{target_type}-{target_id}-backup-by-{user_id}"
 
+        def build_legacy_id_for_import_request(
+            target_type: str,
+            uuid_: str,
+        ):
+            return f"import:{target_type}-{uuid_}-backup"
+
         if target_type == "project":
-            export_func = export_project_backup
+            export_func, import_func = export_project_backup, import_project_backup
             target = next(iter(projects))
         else:
             assert target_type == "task"
-            export_func = export_task_backup
+            export_func, import_func = export_task_backup, import_task_backup
             target = next(iter(tasks))
 
         owner = target["owner"]
 
-        request_id = export_func(
-            owner["username"],
-            id=target["id"],
-            download_result=False,
-            return_request_id=True,
+        # check export requests
+        backup_file = io.BytesIO(
+            export_func(
+                owner["username"],
+                id=target["id"],
+            )
+        )
+        backup_file.name = "file.zip"
+
+        legacy_request_id = build_legacy_id_for_export_request(
+            target_type, target["id"], owner["id"]
         )
 
-        legacy_request_id = build_legacy_request_id(target_type, target["id"], owner["id"])
+        with make_api_client(owner["username"]) as api_client:
+            paginated_list, _ = api_client.requests_api.list(action="export", target=target_type)
+            assert len(paginated_list.results) == 1
+            request_id = paginated_list.results[0].id
 
-        with make_api_client(owner["username"]) as owner_client:
-            self._test_get_request_200(owner_client, request_id)
             bg_request = self._test_get_request_200(
-                owner_client, legacy_request_id, validate_rq_id=False
+                api_client, legacy_request_id, validate_rq_id=False
             )
             assert bg_request.id == request_id
 
-    # TODO:
-    # - quality
-    # - task creation
-    # - import
+        # check import requests
+        result_id = import_func(
+            owner["username"],
+            file_content=backup_file,
+        ).id
+        legacy_request_id = build_legacy_id_for_import_request(
+            target_type, dict(parse_qsl(result_id))["id"]
+        )
+
+        with make_api_client(owner["username"]) as api_client:
+            bg_request = self._test_get_request_200(
+                api_client, legacy_request_id, validate_rq_id=False
+            )
+            assert bg_request.id == result_id
+
+    def test_can_retrieve_task_creation_requests_using_legacy_ids(self, admin_user: str):
+        task_id = create_task(
+            admin_user,
+            spec={"name": f"Test task", "labels": [{"name": "car"}]},
+            data={
+                "image_quality": 75,
+                "client_files": generate_image_files(2),
+                "segment_size": 1,
+            },
+        )[0]
+
+        legacy_request_id = f"create:task-{task_id}"
+
+        with make_api_client(admin_user) as api_client:
+            paginated_list, _ = api_client.requests_api.list(action="create", target="task")
+            assert len(paginated_list.results) == 1
+            request_id = paginated_list.results[0].id
+
+            bg_request = self._test_get_request_200(
+                api_client, legacy_request_id, validate_rq_id=False
+            )
+            assert bg_request.id == request_id
+
+    def test_can_retrieve_quality_calculation_requests_using_legacy_ids(self, jobs, tasks):
+        gt_job = next(
+            j
+            for j in jobs
+            if (
+                j["type"] == "ground_truth"
+                and j["stage"] == "acceptance"
+                and j["state"] == "completed"
+            )
+        )
+        task_id = gt_job["task_id"]
+        owner = tasks[task_id]["owner"]
+
+        legacy_request_id = f"quality-check-task-{task_id}-user-{owner['id']}"
+
+        with make_api_client(owner["username"]) as api_client:
+            # initiate quality report calculation
+            (_, response) = api_client.quality_api.create_report(
+                quality_report_create_request=models.QualityReportCreateRequest(task_id=task_id),
+                _parse_response=False,
+            )
+            assert response.status == HTTPStatus.ACCEPTED
+            request_id = json.loads(response.data)["rq_id"]
+
+            # get background request details using common request API
+            bg_request = self._test_get_request_200(
+                api_client, legacy_request_id, validate_rq_id=False
+            )
+            assert bg_request.id == request_id
+
+            # get quality report by legacy request ID using the deprecated API endpoint
+            wait_background_request(api_client, request_id)
+            api_client.quality_api.create_report(
+                quality_report_create_request=models.QualityReportCreateRequest(task_id=task_id),
+                rq_id=request_id,
+            )

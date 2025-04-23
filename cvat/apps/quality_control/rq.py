@@ -23,5 +23,5 @@ class QualityRequestId(RequestIdWithSubresource):
 
     # will be deleted after several releases
     LEGACY_FORMAT_PATTERNS = (
-        r"quality-check-(?P<target>(task))-(?P<target_id>\d+)-user-(\d+)",  # user id is excluded in the new format
+        r"quality-check-(?P<target>task)-(?P<target_id>\d+)-user-(\d+)",  # user id is excluded in the new format
     )
