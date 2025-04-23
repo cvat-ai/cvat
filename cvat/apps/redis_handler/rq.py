@@ -182,9 +182,12 @@ class RequestId:
                     (dict_repr["action"], dict_repr["target"], dict_repr.get("subresource"))
                 ]
 
-                if queue in QUEUE_TO_PARSED_JOB_ID_CLS:
-                    actual_cls = QUEUE_TO_PARSED_JOB_ID_CLS[queue]
+                # queue that could be determined using SELECTOR_TO_QUEUE
+                # must also be included into QUEUE_TO_PARSED_JOB_ID_CLS
+                assert queue in QUEUE_TO_PARSED_JOB_ID_CLS
+                actual_cls = QUEUE_TO_PARSED_JOB_ID_CLS[queue]
 
+            assert issubclass(actual_cls, cls)
             result = actual_cls(**dict_repr)
 
             return (result, queue)
