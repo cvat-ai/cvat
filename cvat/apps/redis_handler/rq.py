@@ -7,11 +7,14 @@ from typing import Any, ClassVar, Protocol
 from uuid import UUID
 
 import attrs
-from django.core.exceptions import ImproperlyConfigured
 from django.utils.html import escape
 from rq.job import Job as RQJob
 
-from cvat.apps.redis_handler.apps import ACTION_TO_QUEUE, QUEUE_TO_PARSED_JOB_ID_CLS
+from cvat.apps.redis_handler.apps import (
+    ACTION_TO_QUEUE,
+    QUEUE_TO_PARSED_JOB_ID_CLS,
+    REQUEST_ID_SUBCLASSES,
+)
 
 
 class IncorrectRequestIdError(ValueError):
@@ -58,7 +61,7 @@ class RequestId:
         default=_default_from_class_attr("ACTION_DEFAULT_VALUE"),
     )
     ACTION_ALLOWED_VALUES: ClassVar[tuple[str]]
-    QUEUE_SELECTORS: ClassVar[tuple]
+    QUEUE_SELECTORS: ClassVar[tuple] = ()
 
     @action.validator
     def validate_action(self, attribute: attrs.Attribute, value: Any):
@@ -128,15 +131,9 @@ class RequestId:
     ) -> tuple[RequestId, str]:
 
         actual_cls = cls
-        subclasses = set()
         queue: str | None = None
         dict_repr = {}
         fragments = {}
-
-        def init_subclasses(cur_cls: type[RequestId] = RequestId):
-            for subclass in cur_cls.__subclasses__():
-                subclasses.add(subclass)
-                init_subclasses(subclass)
 
         try:
             # try to parse ID as key=value pairs (newly introduced format)
@@ -151,12 +148,7 @@ class RequestId:
 
                 match: re.Match | None = None
 
-                if cls is RequestId:
-                    init_subclasses()
-                else:
-                    subclasses = (cls,)
-
-                for subclass in subclasses:
+                for subclass in REQUEST_ID_SUBCLASSES if cls is RequestId else (cls,):
                     for pattern in subclass.LEGACY_FORMAT_PATTERNS:
                         match = re.match(pattern, request_id)
                         if match:
@@ -169,14 +161,9 @@ class RequestId:
                         f"Unable to parse request ID: {escape(request_id)!r}"
                     )
 
-                queue = ACTION_TO_QUEUE.get(
+                queue = ACTION_TO_QUEUE[
                     actual_cls.QUEUE_SELECTORS[0]
-                )  # each selector match the same queue
-                if not queue:
-                    raise ImproperlyConfigured(
-                        "Job ID class must be set in the related queue config"
-                    )
-
+                ]  # each selector match the same queue
                 fragments = match.groupdict()
                 # "." was replaced with "@" in previous format
                 if "format" in fragments:
@@ -201,9 +188,6 @@ class RequestId:
             result = actual_cls(**dict_repr)
 
             return (result, queue)
-
-        except ImproperlyConfigured:
-            raise
         except Exception as ex:
             raise IncorrectRequestIdError from ex
 

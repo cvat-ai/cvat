@@ -10,6 +10,7 @@ from typing import Any
 from uuid import UUID
 
 import rq.defaults as rq_defaults
+from django.db.models import TextChoices
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
@@ -23,9 +24,9 @@ from cvat.apps.engine.serializers import BasicUserSerializer
 from cvat.apps.engine.utils import parse_exception_message
 from cvat.apps.lambda_manager.rq import LambdaRQMeta
 from cvat.apps.redis_handler.rq import CustomRQJob, RequestId
-from django.db.models import TextChoices
 
 slogger = ServerLogManager(__name__)
+
 
 class RequestStatus(TextChoices):
     QUEUED = "queued"

@@ -23,12 +23,11 @@ from cvat.apps.engine.filters import (
     NonModelSimpleFilter,
 )
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.redis_handler.serializers import RequestStatus
 from cvat.apps.engine.rq import is_rq_job_owner
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.redis_handler.apps import ACTION_TO_QUEUE
 from cvat.apps.redis_handler.rq import CustomRQJob, RequestId
-from cvat.apps.redis_handler.serializers import RequestSerializer
+from cvat.apps.redis_handler.serializers import RequestSerializer, RequestStatus
 
 slogger = ServerLogManager(__name__)
 
