@@ -200,14 +200,11 @@ class ImportApiTestBase(ApiTestBase):
         query_params: dict[str, Any] | None = None,
         expected_4xx_status_code: int | None = None,
     ):
-        if query_params:
-            assert "?" not in api_path
-            api_path += "?" + urlencode(query_params)
-
         response = self._post_request(
             api_path, user,
             data={through_field: file_content},
             format="multipart",
+            query_params=query_params,
         )
         self.assertEqual(response.status_code, expected_4xx_status_code or status.HTTP_202_ACCEPTED)
 
