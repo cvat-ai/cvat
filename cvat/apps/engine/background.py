@@ -156,7 +156,7 @@ class DatasetExporter(AbstractExporter):
         handle_dataset_export(
             self.db_instance,
             format_name=self.export_args.format,
-            cloud_storage_id=self.export_args.location_config.storage_id,
+            cloud_storage_id=self.export_args.location_config.cloud_storage_id,
             save_images=self.export_args.save_images,
         )
 
@@ -318,7 +318,7 @@ class ResourceImporter(AbstractRequestManager):
             raise ValidationError("The filename was not specified")
 
     def _handle_cloud_storage_file_upload(self):
-        storage_id = self.import_args.location_config.storage_id
+        storage_id = self.import_args.location_config.cloud_storage_id
         db_storage = get_cloud_storage_for_import_or_export(
             storage_id=storage_id,
             request=self.request,
@@ -455,7 +455,7 @@ class DatasetImporter(ResourceImporter):
         handle_dataset_import(
             self.db_instance,
             format_name=self.import_args.format,
-            cloud_storage_id=self.import_args.location_config.storage_id,
+            cloud_storage_id=self.import_args.location_config.cloud_storage_id,
         )
 
 

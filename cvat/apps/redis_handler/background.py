@@ -336,7 +336,7 @@ class AbstractExporter(AbstractRequestManager):
         self._init_callback_with_params()
 
         if self.export_args.location_config.location == Location.CLOUD_STORAGE:
-            storage_id = self.export_args.location_config.storage_id
+            storage_id = self.export_args.location_config.cloud_storage_id
             db_storage = get_cloud_storage_for_import_or_export(
                 storage_id=storage_id,
                 request=self.request,

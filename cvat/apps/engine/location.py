@@ -20,14 +20,14 @@ class StorageType(str, Enum):
 
 @attrs.frozen(kw_only=True)
 class LocationConfig:
-    is_default: bool = attrs.field(validator=attrs.validators.instance_of(bool), default=True)
+    is_default: bool = attrs.field(validator=attrs.validators.instance_of(bool))
     location: Location = attrs.field(converter=Location)
-    storage_id: int | None = attrs.field(
+    cloud_storage_id: int | None = attrs.field(
         converter=lambda x: x if x is None else int(x), default=None
     )
 
     def __attrs_post_init__(self):
-        if self.location == Location.CLOUD_STORAGE and not self.storage_id:
+        if self.location == Location.CLOUD_STORAGE and not self.cloud_storage_id:
             raise ValueError(
                 "Trying to use undefined cloud storage (cloud_storage_id was not provided)"
             )
@@ -54,11 +54,11 @@ def get_location_configuration(
             else getattr(db_instance.segment.task, field_name)
         )
         return (
-            LocationConfig(location=Location.LOCAL)
+            LocationConfig(is_default=True, location=Location.LOCAL)
             if storage is None
-            else LocationConfig(location=storage.location, storage_id=storage.cloud_storage_id)
+            else LocationConfig(is_default=True, location=storage.location, cloud_storage_id=storage.cloud_storage_id)
         )
 
     return LocationConfig(
-        is_default=False, location=location, storage_id=query_params.get("cloud_storage_id")
+        is_default=False, location=location, cloud_storage_id=query_params.get("cloud_storage_id")
     )
