@@ -1350,12 +1350,6 @@ class Asset(models.Model):
     def get_asset_dir(self):
         return os.path.join(settings.ASSETS_ROOT, str(self.uuid))
 
-class RequestStatus(TextChoices):
-    QUEUED = "queued"
-    STARTED = "started"
-    FAILED = "failed"
-    FINISHED = "finished"
-
 class RequestAction(TextChoices):
     AUTOANNOTATE = "autoannotate"
     CREATE = "create"

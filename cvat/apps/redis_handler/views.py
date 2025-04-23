@@ -23,7 +23,7 @@ from cvat.apps.engine.filters import (
     NonModelSimpleFilter,
 )
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.models import RequestStatus  # todo: move to the app
+from cvat.apps.redis_handler.serializers import RequestStatus
 from cvat.apps.engine.rq import is_rq_job_owner
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.redis_handler.apps import ACTION_TO_QUEUE

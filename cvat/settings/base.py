@@ -673,7 +673,7 @@ SPECTACULAR_SETTINGS = {
         "SortingMethod": "cvat.apps.engine.models.SortingMethod",
         "WebhookType": "cvat.apps.webhooks.models.WebhookTypeChoice",
         "WebhookContentType": "cvat.apps.webhooks.models.WebhookContentTypeChoice",
-        "RequestStatus": "cvat.apps.engine.models.RequestStatus",
+        "RequestStatus": "cvat.apps.redis_handler.serializers.RequestStatus",
         "ValidationMode": "cvat.apps.engine.models.ValidationMode",
         "FrameSelectionMethod": "cvat.apps.engine.models.JobFrameSelectionMethod",
     },

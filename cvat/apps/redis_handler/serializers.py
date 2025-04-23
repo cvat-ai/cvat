@@ -23,8 +23,15 @@ from cvat.apps.engine.serializers import BasicUserSerializer
 from cvat.apps.engine.utils import parse_exception_message
 from cvat.apps.lambda_manager.rq import LambdaRQMeta
 from cvat.apps.redis_handler.rq import CustomRQJob, RequestId
+from django.db.models import TextChoices
 
 slogger = ServerLogManager(__name__)
+
+class RequestStatus(TextChoices):
+    QUEUED = "queued"
+    STARTED = "started"
+    FAILED = "failed"
+    FINISHED = "finished"
 
 
 class RqIdSerializer(serializers.Serializer):
@@ -72,7 +79,7 @@ class RequestSerializer(serializers.Serializer):
     # Marking them as read_only leads to generating type as allOf with one reference to RequestStatus component.
     # The client generated using openapi-generator from such a schema contains wrong type like:
     # status (bool, date, datetime, dict, float, int, list, str, none_type): [optional]
-    status = serializers.ChoiceField(source="get_status", choices=models.RequestStatus.choices)
+    status = serializers.ChoiceField(source="get_status", choices=RequestStatus.choices)
     message = serializers.SerializerMethodField()
     id = serializers.CharField()
     operation = RequestDataOperationSerializer(source="*")
