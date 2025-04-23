@@ -466,3 +466,18 @@
         fill: #1890ff;
     }
 }
+
+.cvat-objects-sidebar-size-params {
+    .ant-typography {
+        font-size: 10px;
+    }
+
+    .ant-input-number-input-wrap {
+        font-size: 12px;
+    }
+
+    .ant-input-number {
+        margin-left: $grid-unit-size * 0.5;
+        width: $grid-unit-size * 9;
+    }
+}

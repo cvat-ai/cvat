@@ -854,6 +854,12 @@ export enum ColorBy {
     LABEL = 'Label',
 }
 
+export enum SizeType {
+    WIDTH = 'width',
+    HEIGHT = 'height',
+    LENGTH = 'length',
+}
+
 export interface PlayerSettingsState {
     canvasBackgroundColor: string;
     frameStep: number;
