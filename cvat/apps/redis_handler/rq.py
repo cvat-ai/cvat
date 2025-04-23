@@ -191,6 +191,8 @@ class RequestId:
             result = actual_cls(**dict_repr)
 
             return (result, queue)
+        except AssertionError:
+            raise
         except Exception as ex:
             raise IncorrectRequestIdError from ex
 
