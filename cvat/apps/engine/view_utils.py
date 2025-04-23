@@ -124,7 +124,7 @@ class DeprecatedResponse(Response):
         deprecation_date: datetime,
     ):
         headers = headers or {}
-        # https://greenbytes.de/tech/webdav/draft-ietf-httpapi-deprecation-header-latest.html#the-deprecation-http-response-header-field
+        # https://www.rfc-editor.org/rfc/rfc9745
         deprecation_timestamp = int(deprecation_date.timestamp())
         headers["Deprecation"] = f"@{deprecation_timestamp}"
 
