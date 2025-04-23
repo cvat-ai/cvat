@@ -180,6 +180,20 @@ class LazyList(list[T], metaclass=LazyListMeta):
         if self._parsed:
             return
 
+        if index == -1:
+            # _iter_unparsed is not effective when we want to parse the whole list
+            splitted = self._string.split(self._separator)
+            if len(splitted):
+                if splitted[0].startswith("["):
+                    splitted[0] = splitted[0][1:]
+                if splitted[-1].endswith("]"):
+                    splitted[-1] = splitted[-1][:-1]
+
+            list.clear(self)
+            list.extend(self, [self._converter(str_item) for str_item in splitted if str_item])
+            self._mark_parsed()
+            return
+
         if index < 0:
             index += self._compute_max_length(self._string)
 
