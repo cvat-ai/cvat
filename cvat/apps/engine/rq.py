@@ -50,7 +50,7 @@ class RQJobMetaField:
     STATUS = "status"
     PROGRESS = "progress"
 
-    # import specific fields
+    # import-specific fields
     TASK_PROGRESS = "task_progress"
 
     # export specific fields
