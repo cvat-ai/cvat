@@ -16,9 +16,8 @@ from django.db.models import Model
 from django.http.response import HttpResponseBadRequest
 from django.utils import timezone
 from django_rq.queues import DjangoRQ, DjangoScheduler
-from rest_framework import status
+from rest_framework import serializers, status
 from rest_framework.response import Response
-from rest_framework import serializers
 from rq.job import Job as RQJob
 from rq.job import JobStatus as RQJobStatus
 

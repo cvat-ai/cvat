@@ -56,7 +56,11 @@ def get_location_configuration(
         return (
             LocationConfig(is_default=True, location=Location.LOCAL)
             if storage is None
-            else LocationConfig(is_default=True, location=storage.location, cloud_storage_id=storage.cloud_storage_id)
+            else LocationConfig(
+                is_default=True,
+                location=storage.location,
+                cloud_storage_id=storage.cloud_storage_id,
+            )
         )
 
     return LocationConfig(

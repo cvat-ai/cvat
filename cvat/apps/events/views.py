@@ -4,9 +4,8 @@
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
-from rest_framework import status, viewsets
+from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import action
-from rest_framework import serializers
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 

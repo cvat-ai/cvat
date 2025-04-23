@@ -12,8 +12,8 @@ from uuid import uuid4
 from attrs.converters import to_bool
 from django.conf import settings
 from django.db.models import Model
-from rest_framework.exceptions import MethodNotAllowed
 from rest_framework import serializers
+from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.reverse import reverse
 from rq.job import Job as RQJob
 
