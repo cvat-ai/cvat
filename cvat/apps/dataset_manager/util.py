@@ -15,7 +15,7 @@ from copy import deepcopy
 from datetime import timedelta
 from enum import Enum
 from threading import Lock
-from typing import Any
+from typing import Any, Protocol
 from uuid import UUID
 
 import attrs
@@ -109,6 +109,9 @@ def get_export_cache_lock(
 class OperationType(str, Enum):
     EXPORT = "export"
 
+    def __str__(self):
+        return self.value
+
 
 class ExportFileType(str, Enum):
     ANNOTATIONS = "annotations"
@@ -120,6 +123,9 @@ class ExportFileType(str, Enum):
     def values(cls) -> list[str]:
         return list(map(lambda x: x.value, cls))
 
+    def __str__(self):
+        return self.value
+
 class InstanceType(str, Enum):
     PROJECT = "project"
     TASK = "task"
@@ -129,30 +135,34 @@ class InstanceType(str, Enum):
     def values(cls) -> list[str]:
         return list(map(lambda x: x.value, cls))
 
+    def __str__(self):
+        return self.value
 
-@attrs.define(kw_only=True)
-class SimpleFileId:
-    value: str = attrs.field(converter=str)
+class FileId(Protocol):
+    value: str
 
-@attrs.define(kw_only=True)
-class ConstructedFileId(SimpleFileId):
-    value: str = attrs.field(init=False)
+@attrs.frozen(kw_only=True)
+class SimpleFileId(FileId):
+    value: str = attrs.field()
 
-    instance_type: InstanceType = attrs.field(converter=InstanceType, on_setattr=attrs.setters.frozen)
-    instance_id: int = attrs.field(converter=int, on_setattr=attrs.setters.frozen)
-    instance_timestamp: float = attrs.field(converter=float, on_setattr=attrs.setters.frozen)
+@attrs.frozen(kw_only=True)
+class ConstructedFileId(FileId):
+    instance_type: InstanceType = attrs.field(converter=InstanceType)
+    instance_id: int = attrs.field(converter=int)
+    instance_timestamp: float = attrs.field(converter=float)
 
-    def __attrs_post_init__(self):
-        self.value = "-".join(map(str, [self.instance_type, self.instance_id, self.instance_timestamp]))
+    @property
+    def value(self):
+        return "-".join(map(str, [self.instance_type, self.instance_id, self.instance_timestamp]))
 
 
-@attrs.frozen
+@attrs.frozen(kw_only=True)
 class ParsedExportFilename:
     file_type: ExportFileType = attrs.field(converter=ExportFileType)
     file_ext: str
     file_id: SimpleFileId = attrs.field(validator=attrs.validators.instance_of(SimpleFileId))
 
-@attrs.frozen
+@attrs.frozen(kw_only=True)
 class ParsedExportFilenameWithConstructedId(ParsedExportFilename):
     file_id: ConstructedFileId = attrs.field(validator=attrs.validators.instance_of(ConstructedFileId))
 
