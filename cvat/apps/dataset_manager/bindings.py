@@ -2192,7 +2192,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
         'yolo_ultralytics_oriented_boxes',
         'yolo_ultralytics_pose',
     ]
-    import_source = str(SourceType.FILE) # safe to assume this on any import from a file
+    import_source = SourceType.FILE.value # safe to assume this on any import from a file
 
     label_cat = dm_dataset.categories()[dm.AnnotationType.label]
 
