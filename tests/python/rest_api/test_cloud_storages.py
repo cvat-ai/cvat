@@ -237,6 +237,8 @@ class TestPostCloudStorage:
     def test_anonymous_access(self, users):
         username = [u for u in users if "user" in u["groups"]][0]["username"]
         spec = deepcopy(self._SPEC)
+
+        # set anonymous access and try to access the public bucket
         spec.update(
             {
                 "credentials_type": "ANONYMOUS_ACCESS",
@@ -252,6 +254,7 @@ class TestPostCloudStorage:
         username = [u for u in users if "user" in u["groups"]][0]["username"]
 
         spec = deepcopy(self._SPEC)
+        # completely remove credentials, these should then be pulled from environment
         spec.pop("key", None)
         spec.pop("secret_key", None)
 
