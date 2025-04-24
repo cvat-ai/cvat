@@ -239,10 +239,12 @@ class TestPostCloudStorage:
     def test_anonymous_access(self, users):
         username = [u for u in users if "user" in u["groups"]][0]["username"]
         spec = deepcopy(self._SPEC)
-        spec.update({
-            "credentials_type": "ANONYMOUS_ACCESS",
-            "resource": "public",
-        })
+        spec.update(
+            {
+                "credentials_type": "ANONYMOUS_ACCESS",
+                "resource": "public",
+            }
+        )
         spec.pop("key", None)
         spec.pop("secret_key", None)
 
