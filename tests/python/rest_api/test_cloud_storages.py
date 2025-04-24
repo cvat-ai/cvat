@@ -5,6 +5,7 @@
 
 import io
 import json
+import copy
 from functools import partial
 from http import HTTPStatus
 from typing import Any, Optional
@@ -192,7 +193,7 @@ class TestPostCloudStorage:
 
             assert (
                 DeepDiff(
-                    self._SPEC, response_json, ignore_order=True, exclude_paths=self._EXCLUDE_PATHS
+                    spec, response_json, ignore_order=True, exclude_paths=self._EXCLUDE_PATHS
                 )
                 == {}
             )
@@ -234,6 +235,27 @@ class TestPostCloudStorage:
             self._test_can_create(username, self._SPEC, org_id=org_id)
         else:
             self._test_cannot_create(username, self._SPEC, org_id=org_id)
+
+    def test_anonymous_access(self, users):
+        username = [u for u in users if "user" in u["groups"]][0]["username"]
+        spec = copy.deepcopy(self._SPEC)
+        spec.update({
+            "credentials_type": "ANONYMOUS_ACCESS",
+            "resource": "public",
+        })
+        spec.pop("key", None)
+        spec.pop("secret_key", None)
+
+        self._test_can_create(username, spec)
+
+    def test_env_credentials_fallback(self, users, monkeypatch):
+        username = [u for u in users if "user" in u["groups"]][0]["username"]
+
+        spec = copy.deepcopy(self._SPEC)
+        spec.pop("key", None)
+        spec.pop("secret_key", None)
+
+        self._test_can_create(username, spec)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
