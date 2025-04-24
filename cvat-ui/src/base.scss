@@ -136,17 +136,6 @@ $scroll-breakpoint: 1300px;
     }
 }
 
-.cvat-management-page-tooltip {
-    margin-left: $grid-unit-size;
-}
-
-.cvat-management-page-tooltip-inner {
-    span {
-        display: block;
-        color: white;
-    }
-}
-
 @mixin cvat-table-dynamic-size {
     display: flex;
     flex-grow: 1;

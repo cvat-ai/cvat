@@ -138,28 +138,28 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
         );
     }
 
-    return (
-        <div className='cvat-quality-control-settings-tab'>
-            { settings ? (
-                <>
-                    <Row justify='end' className='cvat-quality-settings-save-btn'>
-                        <Col>
-                            <Button onClick={onSave} type='primary'>
-                                Save
-                            </Button>
-                        </Col>
-                    </Row>
-                    {header}
-                    <QualitySettingsForm
-                        form={form}
-                        settings={settings}
-                        onSave={onSave}
-                        disabled={settings.inherit && instance instanceof Task && instance.projectId !== null}
-                    />
-                </>
-            ) : <Text>No quality settings found</Text> }
-        </div>
-    );
+    if (settings) {
+        return (
+            <div className='cvat-quality-control-settings-tab'>
+                <Row justify='end' className='cvat-quality-settings-save-btn'>
+                    <Col>
+                        <Button onClick={onSave} type='primary'>
+                            Save
+                        </Button>
+                    </Col>
+                </Row>
+                {header}
+                <QualitySettingsForm
+                    form={form}
+                    settings={settings}
+                    onSave={onSave}
+                    disabled={settings.inherit && instance instanceof Task && instance.projectId !== null}
+                />
+            </div>
+        );
+    }
+
+    return null;
 }
 
 export default React.memo(QualitySettingsTab);
