@@ -214,7 +214,7 @@ context('Basic manipulations with consensus job replicas', () => {
                 cy.get('#cvat_canvas_text_content').should('be.visible')
                     .invoke('text')
                     .should('include', `${labelName}`)
-                    .and('include', 'Consensus');
+                    .and('include', 'consensus');
             });
             cy.go('back'); // go to previous page
             // After returning to task page, consensus job should be 'completed'
