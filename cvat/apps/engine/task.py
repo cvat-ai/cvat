@@ -57,9 +57,6 @@ from .cloud_provider import db_storage_to_storage_instance
 
 slogger = ServerLogManager(__name__)
 
-
-############################# Internal implementation for server API
-
 JobFileMapping = list[list[str]]
 
 class SegmentParams(NamedTuple):
