@@ -495,7 +495,7 @@ class TestGetRequests:
     def test_can_retrieve_task_creation_requests_using_legacy_ids(self, admin_user: str):
         task_id = create_task(
             admin_user,
-            spec={"name": f"Test task", "labels": [{"name": "car"}]},
+            spec={"name": "Test task", "labels": [{"name": "car"}]},
             data={
                 "image_quality": 75,
                 "client_files": generate_image_files(2),

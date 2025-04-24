@@ -4116,8 +4116,8 @@ class TestTaskBackups:
         with pytest.raises(ApiException) as exc:
             self._test_can_export_backup(task_id)
 
-            assert exc.status == HTTPStatus.BAD_REQUEST
-            assert "Backup of a task without data is not allowed" == exc.body.encode()
+        assert exc.value.status == HTTPStatus.BAD_REQUEST
+        assert "Backup of a task without data is not allowed" == exc.value.body.encode()
 
     @pytest.mark.with_external_services
     def test_can_export_and_import_backup_task_with_cloud_storage(self, tasks):

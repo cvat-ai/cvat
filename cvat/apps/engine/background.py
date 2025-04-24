@@ -186,13 +186,12 @@ class DatasetExporter(AbstractExporter):
 class BackupExporter(AbstractExporter):
     SUPPORTED_TARGETS = {RequestTarget.PROJECT, RequestTarget.TASK}
 
-    # def validate_request(self):
-    #     super().validate_request()
+    def validate_request(self):
+        super().validate_request()
 
-    #     if isinstance(self.db_instance, Task) and self.db_instance.data is None:
-    #         raise serializers.ValidationError("Backup of a task without data is not allowed")
-    #     elif isinstance(self.db_instance, Project) and Data.objects.filter():
-    #         pass
+        # do not add this check when a project is backed up, as empty tasks are skipped
+        if isinstance(self.db_instance, Task) and not self.db_instance.data:
+            raise serializers.ValidationError("Backup of a task without data is not allowed")
 
     def validate_request_id(self, request_id, /) -> None:
         # FUTURE-TODO: optimize, request_id is parsed 2 times (first one when checking permissions)
