@@ -192,9 +192,7 @@ class TestPostCloudStorage:
             response_json = json.loads(response.data)
 
             assert (
-                DeepDiff(
-                    spec, response_json, ignore_order=True, exclude_paths=self._EXCLUDE_PATHS
-                )
+                DeepDiff(spec, response_json, ignore_order=True, exclude_paths=self._EXCLUDE_PATHS)
                 == {}
             )
 
