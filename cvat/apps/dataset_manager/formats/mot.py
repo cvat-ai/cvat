@@ -16,7 +16,7 @@ from .registry import dm_env, exporter, importer
 def _import_to_task(dataset, instance_data):
     tracks = {}
     label_cat = dataset.categories()[dm.AnnotationType.label]
-    import_source = str(SourceType.FILE)
+    import_source = SourceType.FILE.value
 
     for item in dataset:
         # NOTE: MOT frames start from 1

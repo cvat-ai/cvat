@@ -4982,7 +4982,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
         with ForceLogin(owner, self.client):
             response = self.client.post('/api/tasks', data=data, format="json")
             self.assertEqual(response.status_code, status.HTTP_201_CREATED,
-                f"Reason:\n{pformat(dict(response.data))}"
+                f"Reason:\n{pformat(response.data)}"
             )
             tid = response.data["id"]
 
