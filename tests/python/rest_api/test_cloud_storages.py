@@ -5,7 +5,7 @@
 
 import io
 import json
-import copy
+from copy import deepcopy
 from functools import partial
 from http import HTTPStatus
 from typing import Any, Optional
@@ -238,7 +238,7 @@ class TestPostCloudStorage:
 
     def test_anonymous_access(self, users):
         username = [u for u in users if "user" in u["groups"]][0]["username"]
-        spec = copy.deepcopy(self._SPEC)
+        spec = deepcopy(self._SPEC)
         spec.update({
             "credentials_type": "ANONYMOUS_ACCESS",
             "resource": "public",
@@ -251,7 +251,7 @@ class TestPostCloudStorage:
     def test_env_credentials_fallback(self, users, monkeypatch):
         username = [u for u in users if "user" in u["groups"]][0]["username"]
 
-        spec = copy.deepcopy(self._SPEC)
+        spec = deepcopy(self._SPEC)
         spec.pop("key", None)
         spec.pop("secret_key", None)
 

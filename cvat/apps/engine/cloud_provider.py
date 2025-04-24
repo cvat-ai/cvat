@@ -509,8 +509,6 @@ class AWS_S3(_CloudStorage):
                 return Status.FORBIDDEN
             else:
                 return Status.NOT_FOUND
-        except Exception as ex:
-            raise
 
     def get_file_status(self, key: str, /):
         try:
