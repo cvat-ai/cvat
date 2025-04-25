@@ -113,14 +113,19 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
 
     @classmethod
     def get_scopes(cls, request: ExtendedRequest, view: ViewSet, obj: Any):
-        with suppress(KeyError):
+        # rest_framework.viewsets.ViewSetMixin.initialize_request implementation
+        if view.action is None:
+            return view.http_method_not_allowed(request)
+
+        try:
             scopes = cls._get_scopes(request, view, obj)
-
             # prevent code bugs when _get_scope defines scopes "softly"
-            if all(scopes):
-                return scopes
-
-        return view.http_method_not_allowed(request)
+            assert all(scopes)
+            return scopes
+        except KeyError:
+            assert (
+                False
+            ), f"Permissions for the ({view.basename}, {view.action}, {request.method}) triplet are not defined"
 
     @classmethod
     @abstractmethod
