@@ -6,23 +6,13 @@
 import serverProxy from './server-proxy';
 import { ArgumentError } from './exceptions';
 import MLModel from './ml-model';
-import { RQStatus, ShapeType } from './enums';
+import { RQStatus } from './enums';
+import { SerializedCollection } from './server-response-types';
 
 export interface InteractorResults {
     mask: number[][];
     points?: [number, number][];
     bounds?: [number, number, number, number]
-}
-
-export interface DetectedShape {
-    type: ShapeType | 'tag';
-    rotation?: number;
-    attributes: { name: string; value: string }[];
-    label: string;
-    outside?: boolean;
-    points?: number[];
-    mask?: number[];
-    elements: DetectedShape[];
 }
 
 export interface TrackerResults {
@@ -84,7 +74,7 @@ class LambdaManager {
         return result.id;
     }
 
-    async call(taskID, model, args): Promise<TrackerResults | InteractorResults | DetectedShape[]> {
+    async call(taskID, model, args): Promise<TrackerResults | InteractorResults | SerializedCollection> {
         if (!Number.isInteger(taskID) || taskID < 0) {
             throw new ArgumentError(`Argument taskID must be a positive integer. Got "${taskID}"`);
         }
