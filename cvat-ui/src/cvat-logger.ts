@@ -12,9 +12,15 @@ const core = getCore();
 const { logger } = core;
 const { EventScope } = core.enums;
 
-export function logError(error: unknown, save: boolean, extras = {}): void {
+const ignoredSources = ['snippet:///', 'chrome-extension://'];
+
+export function logError(
+    error: unknown,
+    save: boolean,
+    extras: { type: string } & Record<string, unknown>,
+): void {
     if (!(error instanceof Error)) {
-        console.error('Unknown error caught', error);
+        console.warn('Unknown error type caught', error);
         return;
     }
     // stack is not guaranteed by ECMA but
@@ -22,8 +28,14 @@ export function logError(error: unknown, save: boolean, extras = {}): void {
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error/stack
     if (error.stack) {
         const stackFrames = ErrorStackParser.parse(error);
+        if (!stackFrames.length) {
+            console.warn('Error cannot be logged. No stack frames found', error);
+            return;
+        }
+
+        const filename = stackFrames[0].fileName;
         const payload = {
-            filename: stackFrames[0].fileName,
+            filename,
             line: stackFrames[0].lineNumber,
             message: error.message,
             column: stackFrames[0].columnNumber,
@@ -31,7 +43,9 @@ export function logError(error: unknown, save: boolean, extras = {}): void {
             ...extras,
         };
 
-        if (!payload.filename) {
+        if (!filename || ignoredSources.some((source) => filename.startsWith(source))) {
+            // filename is missing or the error comes from external script (extension, console, snippets, etc)
+            console.warn('Error will not be logged as comes from external source', error);
             return;
         }
 
