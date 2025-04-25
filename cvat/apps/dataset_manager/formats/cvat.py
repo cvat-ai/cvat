@@ -857,10 +857,15 @@ def dump_as_cvat_annotation(dumper, annotations):
             )
         )
 
+        # do not keep parsed lazy list data after this iteration
         if isinstance(annotations, ProjectData):
-            frame_annotation = CVATProjectDataExtractor.replace_lazy_lists(frame_annotation)
+            frame_annotation = CVATProjectDataExtractor.copy_frame_data_with_replaced_lazy_lists(
+                frame_annotation
+            )
         else:
-            frame_annotation = CvatTaskOrJobDataExtractor.replace_lazy_lists(frame_annotation)
+            frame_annotation = CvatTaskOrJobDataExtractor.copy_frame_data_with_replaced_lazy_lists(
+                frame_annotation
+            )
 
         dumper.open_image(image_attrs)
 
