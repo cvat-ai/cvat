@@ -9,7 +9,6 @@ import importlib
 import operator
 from abc import ABCMeta, abstractmethod
 from collections.abc import Sequence
-from contextlib import suppress
 from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, TypeVar
