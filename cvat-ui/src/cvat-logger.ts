@@ -12,7 +12,7 @@ const core = getCore();
 const { logger } = core;
 const { EventScope } = core.enums;
 
-const ignoredSources = ['snippet:///', 'chrome-extension://'];
+const ignoredSources = ['snippet://', 'chrome-extension://'];
 
 export function logError(
     error: unknown,
