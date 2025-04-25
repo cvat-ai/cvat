@@ -12,26 +12,38 @@ cvat:
         - name: DJANGO_SETTINGS_MODULE
           value: cvat.settings.testing_rest
     worker:
-      import:
-        replicas: 1
-        additionalVolumeMounts:
-        - mountPath: /home/django/share
-          name: cvat-backend-data
-          subPath: share
-      export:
-        replicas: 1
-      chunks:
-        replicas: 1
-        additionalVolumeMounts:
-        - mountPath: /home/django/share
-          name: cvat-backend-data
-          subPath: share
-    utils:
       additionalEnv:
-        - name: DJANGO_SETTINGS_MODULE
-          value: cvat.settings.testing_rest
-    annotation:
-      replicas: 0
+      - name: DJANGO_SETTINGS_MODULE
+        value: cvat.settings.testing_rest
+      annotation:
+        replicas: 0
+      chunks:
+        replicas: 0
+      consensus:
+        replicas: 0
+      export:
+        replicas: 0
+      import:
+        replicas: 0
+      qualityreports:
+        replicas: 0
+      webhooks:
+        replicas: 0
+      utils:
+        replicas: 1
+        additionalVolumeMounts:
+        - mountPath: /home/django/share
+          name: cvat-backend-data
+          subPath: share
+        extraArgs:
+        - "annotation"
+        - "chunks"
+        - "consensus"
+        - "export"
+        - "import"
+        - "quality_reports"
+        - "webhooks"
+
     # Images are already present in the node
     imagePullPolicy: Never
   frontend:
@@ -53,4 +65,3 @@ traefik:
       level: DEBUG
     access:
       enabled: true
-

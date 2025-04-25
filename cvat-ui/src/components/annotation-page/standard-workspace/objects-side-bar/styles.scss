@@ -376,7 +376,7 @@
 }
 
 .cvat-objects-appearance-content {
-    > div {
+    > div:not(.cvat-appearance-cuboid-orientation-checkboxes) {
         width: 100%;
 
         > label {
