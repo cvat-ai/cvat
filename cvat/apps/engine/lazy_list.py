@@ -181,16 +181,14 @@ class LazyList(list[T], metaclass=LazyListMeta):
             return
 
         if index == -1:
-            # _iter_unparsed is not effective when we want to parse the whole list
-            splitted = self._string.split(self._separator)
-            if len(splitted):
-                if splitted[0].startswith("["):
-                    splitted[0] = splitted[0][1:]
-                if splitted[-1].endswith("]"):
-                    splitted[-1] = splitted[-1][:-1]
+            # _iter_unparsed is inefficient when we want to parse the whole list
+            element_strs = self._string.split(self._separator)
+            if len(element_strs):
+                element_strs[0] = element_strs[0].removeprefix("[")
+                element_strs[-1] = element_strs[-1].removesuffix("]")
 
             list.clear(self)
-            list.extend(self, [self._converter(str_item) for str_item in splitted if str_item])
+            list.extend(self, [self._converter(str_item) for str_item in element_strs if str_item])
             self._mark_parsed()
             return
 
