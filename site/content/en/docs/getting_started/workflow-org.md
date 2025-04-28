@@ -4,7 +4,7 @@ linkTitle: 'CVAT Complete Workflow Guide for Organizations'
 weight: 2
 ---
 
-Welcome to CVAT.ai, this page is the place to start your team’s
+Welcome to CVAT, this page is the place to start your team’s
 annotation process using the Computer Vision Annotation Tool (CVAT).
 
 This guide aims to equip your organization with the knowledge
