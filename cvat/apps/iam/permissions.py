@@ -60,9 +60,9 @@ def get_organization(request, obj):
             # If the object belongs to an organization transitively via the parent object
             # there might be no organization field, because it has to be defined and implemented
             # manually
-            if hasattr(obj, "organization"):
+            try:
                 return obj.organization
-            else:
+            except AttributeError:
                 return Organization.objects.get(id=org_id)
         except Organization.DoesNotExist:
             return None
