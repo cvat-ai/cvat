@@ -620,6 +620,37 @@ class StorageSerializer(serializers.ModelSerializer):
         model = models.Storage
         fields = ('id', 'location', 'cloud_storage_id')
 
+class JobReadListSerializer(serializers.ListSerializer):
+    def to_representation(self, data):
+        if (request := self.context.get("request")) and isinstance(data, list) and data:
+            # Optimized prefetch only for the current page
+            page: list[models.Job] = data
+
+            # Annotate page objects
+            # We do it explicitly here and not in the LIST queryset to avoid
+            # doing the same DB computations twice - one time for the page retrieval
+            # and another one for the COUNT(*) request to get the total count
+            page_task_ids = set(j.get_task_id() for j in page)
+            visible_tasks_perm = TaskPermission.create_scope_list(request)
+            visible_tasks_queryset = models.Task.objects.filter(id__in=page_task_ids)
+            visible_tasks = set(
+                visible_tasks_perm.filter(visible_tasks_queryset).values_list("id", flat=True)
+            )
+
+            # Fetching it here removes 1 extra join for all jobs in the COUNT(*) request,
+            # limiting in only for the page
+            issue_counts = dict(
+                models.Job.objects.with_issue_counts().filter(
+                    id__in=set(j.id for j in page)
+                ).values_list("id", "issues__count")
+            )
+
+            for job in page:
+                job.user_can_view_task = job.get_task_id() in visible_tasks
+                job.issues__count = issue_counts.get(job.id, 0)
+
+        return super().to_representation(data)
+
 class JobReadSerializer(serializers.ModelSerializer):
     task_id = serializers.ReadOnlyField(source="get_task_id")
     project_id = serializers.ReadOnlyField(source="get_project_id", allow_null=True)
@@ -654,6 +685,7 @@ class JobReadSerializer(serializers.ModelSerializer):
             'consensus_replicas'
         )
         read_only_fields = fields
+        list_serializer_class = JobReadListSerializer
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -680,41 +712,6 @@ class JobReadSerializer(serializers.ModelSerializer):
                     data['target_storage'] = StorageSerializer(task_target_storage).data
 
         return data
-
-    @classmethod
-    def many_init(cls, *args, **kwargs):
-        if len(args) == 1 and isinstance(args[0], list):
-            from .views import JobViewSet  # avoid circular import
-
-            ctx_request = kwargs.get("context", {}).get("request")
-            ctx_view = kwargs.get("context", {}).get("view")
-            if isinstance(ctx_view, JobViewSet) and ctx_view.action == "list" and ctx_request:
-                page: list[models.Job] = args[0]
-
-                # Annotate page objects
-                # We do it explicitly here and not in the LIST queryset to avoid
-                # doing computing this twice - one time for the page retrieval
-                # and another one for the COUNT(*) request to get the total count
-                page_task_ids = set(j.get_task_id() for j in page)
-                visible_tasks_perm = TaskPermission.create_scope_list(ctx_request)
-                visible_tasks_queryset = models.Task.objects.filter(id__in=page_task_ids)
-                visible_tasks = set(
-                    visible_tasks_perm.filter(visible_tasks_queryset).values_list("id", flat=True)
-                )
-
-                # Fetching it here removes 1 extra join for all jobs in the COUNT(*) request,
-                # limiting in only for the page
-                issue_counts = dict(
-                    models.Job.objects.with_issue_counts().filter(
-                        id__in=set(j.id for j in page)
-                    ).values_list("id", "issues__count")
-                )
-
-                for job in page:
-                    job.user_can_view_task = job.get_task_id() in visible_tasks
-                    job.issues__count = issue_counts.get(job.id, 0)
-
-        return super(cls, cls).many_init(*args, **kwargs)
 
 class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     assignee = serializers.IntegerField(allow_null=True, required=False)
