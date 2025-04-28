@@ -15,8 +15,8 @@ CVAT offers two distinct types of roles:
 Organization roles complement global roles by determining the
 visibility of different resources for example, tasks or jobs.
 
-**Limits**: Limits are applicable to all users of the CVAT.ai Cloud Platform
-using the [**Free plan**](https://www.cvat.ai/pricing/cloud) and can be lifted upon
+**Limits**: Limits are applicable to all users of the CVAT Online
+using the [**Free plan**](https://www.cvat.ai/pricing/cvat-online) and can be lifted upon
 {{< ilink "/docs/enterprise/subscription-management" "**choosing a subscription**" >}}.
 
 All roles are predefined and cannot be modified through the user interface.
@@ -33,11 +33,11 @@ in the [**OPA documentation**](https://www.openpolicyagent.org/docs/latest/polic
 
 See:
 
-- [Global roles in CVAT.ai](#global-roles-in-cvatai)
-- [Organization roles in CVAT.ai](#organization-roles-in-cvatai)
+- [Global roles in CVAT.ai](#global-roles-in-cvat)
+- [Organization roles in CVAT.ai](#organization-roles-in-cvat)
 - [Job Stage](#job-stage)
 
-## Global roles in CVAT.ai
+## Global roles in CVAT
 
 > **Note:** Global roles can be adjusted only on self-hosted solution.
 
@@ -53,7 +53,7 @@ CVAT has implemented three Global roles, categorized as user Groups. These roles
 
 <!--lint enable maximum-line-length-->
 
-## Organization roles in CVAT.ai
+## Organization roles in CVAT
 
 Organization Roles are available only within the
 {{< ilink "/docs/manual/advanced/organization" "**CVAT Organization**" >}}.

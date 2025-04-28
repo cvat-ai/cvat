@@ -35,7 +35,7 @@ To use CVAT within your organization, please follow these steps:
    created and {{< ilink "/docs/enterprise/subscription-management#team-plan" "subscribe to the **Team plan**" >}}.
 4. {{< ilink "/docs/manual/advanced/organization#invite-members-into-organization"
      "Invite members to **Organization**" >}} and
-   assign {{< ilink "/docs/manual/advanced/iam_user_roles" "User roles" >}} to invited members.
+   assign {{< ilink "/docs/manual/advanced/cvat-user-roles" "User roles" >}} to invited members.
 5. {{< ilink "/docs/manual/advanced/projects" "Create **Project**" >}}.
 6. (Optional) Attach {{< ilink "/docs/manual/basics/attach-cloud-storage" "**Cloud storages**" >}} to the **Project**.
 7. Create {{< ilink "/docs/manual/basics/create-annotation-task" "**Task**" >}} or [
@@ -47,7 +47,7 @@ To use CVAT within your organization, please follow these steps:
 9. (Optional) Add {{< ilink "/docs/manual/advanced/specification" "**Instructions for annotators**" >}}.
 10. (Optional) Configure {{< ilink "/docs/administration/advanced/webhooks" "**Webhooks**" >}}.
 11. Assign jobs to annotators by adding the annotator name to **Assignee** and
-    changing the {{< ilink "/docs/manual/advanced/iam_user_roles#job-stage" "**Job stage**" >}}
+    changing the {{< ilink "/docs/manual/advanced/cvat-user-roles#job-stage" "**Job stage**" >}}
     to **Annotation**.
 12. Annotator will see assigned jobs and annotate them.
 13. (Optional) In case you've created
@@ -56,7 +56,7 @@ To use CVAT within your organization, please follow these steps:
     check the accuracy of the annotation.
 14. If you are using the manual validation,
     assign jobs to validators by adding the validator name to **Assignee** and
-    changing the {{< ilink "/docs/manual/advanced/iam_user_roles#job-stage" "**Job stage**" >}}
+    changing the {{< ilink "/docs/manual/advanced/cvat-user-roles#job-stage" "**Job stage**" >}}
     to **Validation**.
 15. Validator will see assigned jobs and report issues.
     <br>Note, that validators can correct issues,

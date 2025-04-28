@@ -109,7 +109,7 @@ Quality estimation is configured on the Task level.
   It can be any integer number, the same value will yield the same random selection (given that the
   frame number is unchanged). <br> **Note** that if you want to use a
   custom frame sequence, you can do this using the server API instead,
-  see [Job API create()](https://docs.cvat.ai/docs/api_sdk/sdk/reference/apis/jobs-api/#create).
+  see [Job API create()](/docs/api_sdk/sdk/reference/apis/jobs-api/#create).
 
 4. Click **Submit**.
 
