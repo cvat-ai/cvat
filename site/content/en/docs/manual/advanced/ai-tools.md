@@ -236,6 +236,20 @@ To annotate with trackers, do the following:
    to move to the next frame.
    <br>All annotated objects will be automatically tracked.
 
+### When tracking
+
+- To enable/disable tracking, use **Tracker switcher** on the sidebar.
+
+  ![Tracker switcher](/images/tracker_switcher.png)
+
+- Trackable objects have an indication on canvas with a model name.
+
+  ![Tracker indication](/images/tracker_indication_detrac.png)
+
+- You can follow the tracking by the messages appearing at the top.
+
+  ![Tracker pop-up window](/images/tracker_pop-up_window.png)
+
 ### OpenCV: annotate with trackers
 
 To annotate with trackers, do the following:
@@ -258,20 +272,6 @@ and `Convert rectangle shapes to tracks` parameters and click `Run`
    <br>![Tracker action](/images/tracker_mil_action.png)
 
 All annotated objects will be automatically tracked up until target frame parameter.
-
-### When tracking
-
-- To enable/disable tracking, use **Tracker switcher** on the sidebar.
-
-  ![Tracker switcher](/images/tracker_switcher.png)
-
-- Trackable objects have an indication on canvas with a model name.
-
-  ![Tracker indication](/images/tracker_indication_detrac.png)
-
-- You can follow the tracking by the messages appearing at the top.
-
-  ![Tracker pop-up window](/images/tracker_pop-up_window.png)
 
 ### Trackers models
 
