@@ -106,6 +106,47 @@ class QualityReportSummarySerializer(serializers.Serializer):
         return representation
 
 
+class QualityReportListSerializer(serializers.ListSerializer):
+    def to_representation(self, data):
+        if isinstance(data, list) and data:
+            # Optimized prefetch only for the current page
+            page: list[models.QualityReport] = data
+
+            # Annotate page objects
+            # We do it explicitly here and not in the LIST queryset to avoid
+            # doing the same DB computations twice - one time for the page retrieval
+            # and another one for the COUNT(*) request to get total count
+            report_ids = set(report.id for report in page)
+            report_fields = {
+                report_id: {
+                    "data": data,
+                    "parent_id": parent_id,
+                }
+                for report_id, data, parent_id in models.QualityReport.objects.filter(
+                    id__in=report_ids
+                )
+                .annotate(parent_id=django_models.Min("parents__id"))
+                .values_list("id", "data", "parent_id")
+            }
+
+            for report in page:
+                report.data = report_fields.get(report.id, {}).get("data")
+                report.parent_id = report_fields.get(report.id, {}).get("parent_id")
+
+            django_models.prefetch_related_objects(
+                page,
+                "job",
+                "job__segment",
+                "job__segment__task",
+                "job__segment__task__project",
+                "task",
+                "task__project",
+                "project",
+            )
+
+        return super().to_representation(data)
+
+
 class QualityReportSerializer(serializers.ModelSerializer):
     target = serializers.ChoiceField(choices=models.QualityReportTarget.choices())
     assignee = engine_serializers.BasicUserSerializer(allow_null=True, read_only=True)
@@ -134,49 +175,7 @@ class QualityReportSerializer(serializers.ModelSerializer):
             "assignee",
         )
         read_only_fields = fields
-
-    @classmethod
-    def many_init(cls, *args, **kwargs):
-        if len(args) == 1 and isinstance(args[0], list):
-            from .views import QualityReportViewSet  # avoid circular import
-
-            ctx_view = kwargs.get("context", {}).get("view")
-            if isinstance(ctx_view, QualityReportViewSet) and ctx_view.action == "list":
-                page: list[models.QualityReport] = args[0]
-
-                # Annotate page objects
-                # We do it explicitly here and not in the LIST queryset to avoid
-                # doing computing this twice - one time for the page retrieval
-                # and another one for the COUNT(*) request to get total count
-                report_ids = set(report.id for report in page)
-                report_fields = {
-                    report_id: {
-                        "data": data,
-                        "parent_id": parent_id,
-                    }
-                    for report_id, data, parent_id in models.QualityReport.objects.filter(
-                        id__in=report_ids
-                    )
-                    .annotate(parent_id=django_models.Min("parents__id"))
-                    .values_list("id", "data", "parent_id")
-                }
-
-                for report in page:
-                    report.data = report_fields.get(report.id, {}).get("data")
-                    report.parent_id = report_fields.get(report.id, {}).get("parent_id")
-
-                django_models.prefetch_related_objects(
-                    page,
-                    "job",
-                    "job__segment",
-                    "job__segment__task",
-                    "job__segment__task__project",
-                    "task",
-                    "task__project",
-                    "project",
-                )
-
-        return super(cls, cls).many_init(*args, **kwargs)
+        list_serializer_class = QualityReportListSerializer
 
 
 class QualityReportCreateSerializer(serializers.Serializer):
