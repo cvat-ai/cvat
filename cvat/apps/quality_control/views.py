@@ -107,13 +107,11 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
                 if report.target == QualityReportTarget.JOB:
                     queryset = queryset.filter(report=report)
                 elif report.target == QualityReportTarget.TASK:
-                    queryset = queryset.filter(Q(report=report) | Q(report__parents__in=[report]))
+                    # Task reports do not have own conflicts
+                    queryset = queryset.filter(report__parents=report)
                 elif report.target == QualityReportTarget.PROJECT:
-                    queryset = queryset.filter(
-                        Q(report=report)
-                        | Q(report__parents=report)
-                        | Q(report__parents__parents=report)
-                    )
+                    # Project reports do not have own conflicts
+                    queryset = queryset.filter(report__parents__parents=report)
                 else:
                     assert False
             else:
