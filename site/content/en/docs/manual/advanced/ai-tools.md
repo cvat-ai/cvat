@@ -240,7 +240,7 @@ To annotate with trackers, do the following:
 
 To annotate with trackers, do the following:
 
-1. Create basic rectangle shapes for tracker initialization
+1. Create basic rectangle shapes or tracks for tracker initialization
 
 2. On the menu toolbar, click **OpenCV**![OpenCV](/images/image201.jpg) and wait for the library to load.
 
