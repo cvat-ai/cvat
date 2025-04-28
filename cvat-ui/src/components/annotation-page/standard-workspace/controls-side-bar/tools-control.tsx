@@ -638,6 +638,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                         <EnvironmentOutlined
                                             onClick={() => {
                                                 objectState.descriptions = [`Trackable (${activeTracker.name})`];
+                                                objectState.keyframe = true;
                                                 objectState.save().then(() => {
                                                     this.setState({
                                                         trackedShapes: [
