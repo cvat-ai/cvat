@@ -4,6 +4,7 @@ linkTitle: 'Track mode'
 weight: 18
 description: 'Usage examples and basic operations available during annotation in track mode.'
 ---
+
 Usage examples:
 
 - Create new annotations for a sequence of frames.

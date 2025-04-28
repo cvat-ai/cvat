@@ -34,7 +34,7 @@ you can create rules from [properties](#supported-properties-for-jobs-list),
 For more details, see the [filter section][create-filter].
 Learn more about [date and time selection][data-and-time].
 
-For clear all filters press `Clear filters`.
+To clear all filters, press `Clear filters`.
 
 ### Supported properties for cloud storages list
 

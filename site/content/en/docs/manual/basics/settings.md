@@ -9,7 +9,7 @@ To open the settings open the user menu in the header and select the settings it
 
 `Settings` have two tabs:
 
-In tab `Player` you can:
+In the `Player` tab, you can:
 
 - Control step of `C` and `V` shortcuts.
 - Control speed of `Space`/`Play` button.
@@ -25,7 +25,7 @@ In tab `Player` you can:
 
 ---
 
-In tab `Workspace` you can:
+In the `Workspace` tab, you can:
 
 ![](/images/image155.jpg)
 

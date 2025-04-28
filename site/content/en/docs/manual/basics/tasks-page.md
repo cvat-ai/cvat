@@ -48,7 +48,7 @@ For clear all filters press `Clear filters`.
 | `Dimension`    | `2D` or `3D`                                 | Depends on the data format <br>(read more in {{< ilink "/docs/manual/basics/create-annotation-task" "creating an annotation task" >}}) |
 | `Status`       | `annotation`, `validation` or `completed`    |                                             |
 | `Data`         | `video`, `images`                            | Depends on the data format <br>(read more in {{< ilink "/docs/manual/basics/create-annotation-task" "creating an annotation task" >}}) |
-| `Subset`       | `test`, `train`, `validation` or custom subset | [read more] [subset]                      |
+| `Subset`       | `test`, `train`, `validation` or custom subset | [read more][subset]                      |
 | `Assignee`     | username                                     | Assignee is the user who is working on the project, task or job. <br>(is specified on task page) |
 | `Owner`        | username                                     | The user who owns the project, task, or job |
 | `Last updated` | last modified date and time (or value range) | The date can be entered in the `dd.MM.yyyy HH:mm` format <br>or by selecting the date in the window that appears <br>when you click on the input field |
@@ -67,3 +67,4 @@ Push `Open` button to go to {{< ilink "/docs/manual/basics/task-details" "task d
 [data-and-time]: /docs/manual/advanced/filter#date-and-time-selection
 [sorting]: /docs/manual/advanced/filter/#sort-by
 [quick-filters]: /docs/manual/advanced/filter/#quick-filters
+[subset]: /docs/manual/basics/vocabulary/#subset

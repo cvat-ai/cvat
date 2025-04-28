@@ -7,7 +7,7 @@ description: 'Overview of quality control features'
 
 CVAT has the following features for automated quality control of annotations:
 - [Validation set configuration for a task](#how-to-enable-quality-control)
-- Job validation on job finish ("{{< ilink "/docs/enterprise/immediate-feedback" "Immediate feedback" >}}")
+- Job validation on job finish ({{< ilink "/docs/enterprise/immediate-feedback" "Immediate feedback" >}})
 - [Review mode for problems found](#how-to-review-problems-found)
 - [Quality analytics](#how-to-check-task-quality-metrics)
 

@@ -4,6 +4,7 @@ linkTitle: 'Shape mode'
 weight: 17
 description: 'Usage examples and basic operations available during annotation in shape mode.'
 ---
+
 Usage examples:
 
 - Create new annotations for a set of images.

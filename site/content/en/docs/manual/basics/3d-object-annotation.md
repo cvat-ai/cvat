@@ -16,7 +16,7 @@ See:
 
 ## Navigation
 
-The 3D annotation canvas looks like the following
+The 3D annotation canvas looks like the following:
 
 ![3D canvas](/images/3d-canvas.jpg)
 
