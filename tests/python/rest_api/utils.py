@@ -268,6 +268,33 @@ def import_task_backup(username: str, file_content: BytesIO, **kwargs):
         )
 
 
+def import_project_dataset(username: str, file_content: BytesIO, **kwargs):
+    with make_api_client(username) as api_client:
+        return import_resource(
+            api_client.projects_api.create_dataset_endpoint,
+            dataset_file_request={"dataset_file": file_content},
+            **kwargs,
+        )
+
+
+def import_task_annotations(username: str, file_content: BytesIO, **kwargs):
+    with make_api_client(username) as api_client:
+        return import_resource(
+            api_client.tasks_api.create_annotations_endpoint,
+            annotation_file_request={"annotation_file": file_content},
+            **kwargs,
+        )
+
+
+def import_job_annotations(username: str, file_content: BytesIO, **kwargs):
+    with make_api_client(username) as api_client:
+        return import_resource(
+            api_client.jobs_api.create_annotations_endpoint,
+            annotation_file_request={"annotation_file": file_content},
+            **kwargs,
+        )
+
+
 FieldPath = Sequence[Union[str, Callable]]
 
 
