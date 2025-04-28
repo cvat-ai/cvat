@@ -3024,7 +3024,7 @@ class TaskQualityCalculator:
 
 
 class ProjectQualityCalculator:
-    def is_task_report_actual(self, quality_report: models.QualityReport) -> bool:
+    def is_task_report_relevant(self, quality_report: models.QualityReport) -> bool:
         assert quality_report.target == models.QualityReportTarget.TASK
 
         task = quality_report.task
@@ -3104,7 +3104,7 @@ class ProjectQualityCalculator:
                 continue
 
             latest_task_quality_report.task = task  # put the prefetched object
-            if not self.is_task_report_actual(latest_task_quality_report):
+            if not self.is_task_report_relevant(latest_task_quality_report):
                 continue
 
             task_quality_reports[task.id] = latest_task_quality_report
