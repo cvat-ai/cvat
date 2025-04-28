@@ -32,7 +32,7 @@ Manifest files can be used in the following cases:
   the caching mode is enabled. {{< ilink "/docs/manual/advanced/data_on_fly" "Read more" >}}
 - The data is located in a cloud storage. {{< ilink "/docs/manual/basics/cloud-storages" "Read more" >}}
 - The `predefined` file sorting method is specified.
-  {{< ilink "/docs/manual/basics/create_an_annotation_task#sorting-method" "Read more" >}}
+  {{< ilink "/docs/manual/basics/create-annotation-task#sorting-method" "Read more" >}}
 
 ### The predefined sorting method
 

@@ -45,9 +45,9 @@ For clear all filters press `Clear filters`.
 
 | Properties     | Supported values                             | Description                                 |
 | -------------- | -------------------------------------------- | ------------------------------------------- |
-| `Dimension`    | `2D` or `3D`                                 | Depends on the data format <br>(read more in {{< ilink "/docs/manual/basics/create_an_annotation_task" "creating an annotation task" >}}) |
+| `Dimension`    | `2D` or `3D`                                 | Depends on the data format <br>(read more in {{< ilink "/docs/manual/basics/create-annotation-task" "creating an annotation task" >}}) |
 | `Status`       | `annotation`, `validation` or `completed`    |                                             |
-| `Data`         | `video`, `images`                            | Depends on the data format <br>(read more in {{< ilink "/docs/manual/basics/create_an_annotation_task" "creating an annotation task" >}}) |
+| `Data`         | `video`, `images`                            | Depends on the data format <br>(read more in {{< ilink "/docs/manual/basics/create-annotation-task" "creating an annotation task" >}}) |
 | `Subset`       | `test`, `train`, `validation` or custom subset | [read more] [subset]                      |
 | `Assignee`     | username                                     | Assignee is the user who is working on the project, task or job. <br>(is specified on task page) |
 | `Owner`        | username                                     | The user who owns the project, task, or job |

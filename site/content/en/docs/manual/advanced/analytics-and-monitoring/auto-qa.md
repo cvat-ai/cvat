@@ -72,7 +72,7 @@ Quality estimation is configured on the Task level.
 {{< tabpane text=true >}}
 
 {{%tab header="In a new task" %}}
-1. Go to the {{< ilink "/docs/manual/basics/create_an_annotation_task" "task creation" >}} page
+1. Go to the {{< ilink "/docs/manual/basics/create-annotation-task" "task creation" >}} page
 2. Configure basic and advanced parameters according to your requirements, and attach a dataset to be annotated
 3. Scroll down to the **Quality Control** section below
 4. Select one of the [validation modes](#validation-modes) available

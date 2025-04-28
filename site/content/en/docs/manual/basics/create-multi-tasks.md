@@ -47,9 +47,9 @@ And specify the following parameters:
 4. In the **Label name** field, enter the name of the label.
 5. (Optional) Select the color for the label.
 6. (Optional) Click
-   {{< ilink "/docs/manual/basics/create_an_annotation_task#add-an-attribute" "**Add an attribute**" >}}
+   {{< ilink "/docs/manual/basics/create-annotation-task#add-an-attribute" "**Add an attribute**" >}}
    and set up its properties.
-7. Click {{< ilink "/docs/manual/basics/create_an_annotation_task#select-files" "**Select files**" >}}
+7. Click {{< ilink "/docs/manual/basics/create-annotation-task#select-files" "**Select files**" >}}
    to upload files for annotation.
    > **Note:** You cannot upload multiple tasks from the cloud storage.
 8. Click **Submit `N` tasks**
@@ -98,4 +98,4 @@ Use advanced configuration to set additional parameters for the task
 and customize it to meet specific needs or requirements.
 
 For more information, see
-{{< ilink "/docs/manual/basics/create_an_annotation_task#advanced-configuration" "Advanced configuration" >}}
+{{< ilink "/docs/manual/basics/create-annotation-task#advanced-configuration" "Advanced configuration" >}}

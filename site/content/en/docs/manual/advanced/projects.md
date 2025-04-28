@@ -51,7 +51,7 @@ or create a new project by clicking on the `+` button and select `Create New Pro
 You can change: the name of the project, the list of labels
 (which will be used for tasks created as parts of this project) and a skeleton if it's necessary.
 In advanced configuration also you can specify: a link to the issue, source and target storages.
-Learn more about {{< ilink "/docs/manual/basics/create_an_annotation_task#labels" "creating a label list" >}},
+Learn more about {{< ilink "/docs/manual/basics/create-annotation-task#labels" "creating a label list" >}},
 {{< ilink "/docs/manual/advanced/skeletons" "creating the skeleton" >}} and
 {{< ilink "/docs/manual/basics/attach-cloud-storage" "attach cloud storage" >}}.
 
