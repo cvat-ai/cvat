@@ -4,7 +4,7 @@
 
 import textwrap
 
-from django.db.models import Q, QuerySet
+from django.db.models import Q
 from django.http import HttpResponse
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
@@ -185,11 +185,7 @@ class QualityReportViewSet(
     mixins.RetrieveModelMixin,
     mixins.CreateModelMixin,
 ):
-    @staticmethod
-    def _add_prefetch_params(queryset: QuerySet[QualityReport]) -> QuerySet[QualityReport]:
-        return queryset.prefetch_related("assignee")
-
-    queryset = _add_prefetch_params(QualityReport.objects.get_queryset())
+    queryset = QualityReport.objects.prefetch_related("assignee")
 
     iam_organization_field = [
         "job__segment__task__organization",
@@ -221,7 +217,7 @@ class QualityReportViewSet(
         if self.action == "list":
             iam_context = None
 
-            # NOTE: parent id filter requires a different queryset,
+            # NOTE: the parent_id filter requires a different queryset
             if parent_id := self.request.query_params.get("parent_id", None):
                 parent_report = get_or_404(QualityReport, parent_id)
                 iam_context = get_iam_context(self.request, parent_report)
