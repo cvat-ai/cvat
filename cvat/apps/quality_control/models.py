@@ -115,6 +115,18 @@ class QualityReport(models.Model):
 
     conflicts: models.manager.RelatedManager[AnnotationConflict]
 
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                name="quality_report_job_or_task_or_project",
+                check=(
+                    models.Q(job_id__isnull=False, task_id__isnull=True, project_id__isnull=True)
+                    | models.Q(job_id__isnull=True, task_id__isnull=False, project_id__isnull=True)
+                    | models.Q(job_id__isnull=True, task_id__isnull=True, project_id__isnull=False)
+                ),
+            )
+        ]
+
     @cached_property
     def parent_id(self) -> int | None:
         return getattr(self.parent, "id", None)
@@ -164,10 +176,6 @@ class QualityReport(models.Model):
             return task.project
         else:
             return None
-
-    def clean(self):
-        if not (self.job is not None) ^ (self.task is not None) ^ (self.project is not None):
-            raise ValidationError("One of the 'job', 'task' and 'project' fields must be set")
 
     @property
     def organization_id(self) -> int | None:
