@@ -160,11 +160,7 @@ class ConstructedFileId(FileId):
 class ParsedExportFilename:
     file_type: ExportFileType = attrs.field(converter=ExportFileType)
     file_ext: str
-    file_id: SimpleFileId = attrs.field(validator=attrs.validators.instance_of(SimpleFileId))
-
-@attrs.frozen(kw_only=True)
-class ParsedExportFilenameWithConstructedId(ParsedExportFilename):
-    file_id: ConstructedFileId = attrs.field(validator=attrs.validators.instance_of(ConstructedFileId))
+    file_id: FileId
 
 
 class TmpDirManager:
@@ -303,7 +299,7 @@ class ExportCacheManager:
     @classmethod
     def parse_filename(
         cls, filename: str,
-    ) -> ParsedExportFilename | ParsedExportFilenameWithConstructedId:
+    ) -> ParsedExportFilename:
         basename, file_ext = osp.splitext(filename)
         file_ext = file_ext.strip(".").lower()
 
@@ -340,7 +336,7 @@ class ExportCacheManager:
                 # no need to use it after filename parsing, so just drop it.
                 instance_timestamp, _ = unparsed.split(cls.SPLITTER, maxsplit=1)
 
-            parsed_file_name = ParsedExportFilenameWithConstructedId(
+            parsed_file_name = ParsedExportFilename(
                 file_type=fragments.pop("file_type"),
                 file_id=ConstructedFileId(
                     instance_timestamp=instance_timestamp,
