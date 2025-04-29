@@ -211,6 +211,8 @@ function QualityControlPage(): JSX.Element {
         let receivedInstance: Task | Project | null = null;
 
         try {
+            dispatch(reducerActions.setFetching(true));
+
             if (type === InstanceType.PROJECT) {
                 [receivedInstance] = await core.projects.get({ id });
                 dispatch(reducerActions.setGtJob(null));
