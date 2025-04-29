@@ -6598,12 +6598,9 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
 
         # Rare and buggy formats that are not crucial for testing
         formats.pop('Market-1501 1.0') # Issue: https://github.com/cvat-ai/datumaro/issues/99
-        formats.pop('Kitti Raw Format 1.0') # temporary until review
-        # FIXME: Kitti Raw Format 1.0 bug in Datumaro Exporter
-        # when track_ids are absent, negative indices are assigned by the exporter
-        # if annotations contain shapes
-        # results in incorrect order of shapes inside dataset item subsets
-        # https://github.com/cvat-ai/datumaro/blob/4f6748e4f9eac038453e8f03344cdd9c73b00bc4/src/datumaro/plugins/data_formats/kitti_raw/exporter.py#L423C17-L423C18
+        formats.pop('Kitti Raw Format 1.0')
+        # can change order of shapes
+        # this format is already checked in test_rest_api_3D.py
 
         for export_format, import_format in formats.items():
             print(f"{export_format} :: {import_format}")
