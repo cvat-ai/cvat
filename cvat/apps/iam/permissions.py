@@ -114,7 +114,7 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
     def get_scopes(cls, request: ExtendedRequest, view: ViewSet, obj: Any):
         # rest_framework.viewsets.ViewSetMixin.initialize_request implementation
         if view.action is None:
-            return view.http_method_not_allowed(request)
+            view.http_method_not_allowed(request)
 
         try:
             scopes = cls._get_scopes(request, view, obj)
