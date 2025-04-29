@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 from logging import Logger
-from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 import django_rq
@@ -11,7 +10,6 @@ from django.conf import settings
 from rq.job import Job, JobStatus
 from rq_scheduler import Scheduler
 
-from cvat.apps.engine.log import get_migration_logger
 from cvat.apps.engine.utils import take_by
 from cvat.apps.redis_handler.redis_migrations import BaseMigration
 
@@ -115,7 +113,7 @@ def process_job(
 
 
 class Migration(BaseMigration):
-    def run(self):
+    def _run(self):
         queue: django_rq.queues.DjangoRQ = django_rq.get_queue(
             settings.CVAT_QUEUES.EXPORT_DATA.value, connection=self.connection
         )
@@ -123,23 +121,22 @@ class Migration(BaseMigration):
             settings.CVAT_QUEUES.EXPORT_DATA.value
         )
 
-        with get_migration_logger(Path(__file__).stem) as logger:
-            for registry in (
-                queue,
-                queue.started_job_registry,
-                queue.deferred_job_registry,
-                queue.finished_job_registry,
-                queue.failed_job_registry,
-            ):
-                job_ids = set(registry.get_job_ids())
-                for subset_with_ids in take_by(job_ids, 1000):
-                    for idx, job in enumerate(
-                        queue.job_class.fetch_many(subset_with_ids, connection=self.connection)
-                    ):
-                        if job:
-                            process_job(job, logger=logger)
-                        else:
-                            registry.remove(subset_with_ids[idx])
+        for registry in (
+            queue,
+            queue.started_job_registry,
+            queue.deferred_job_registry,
+            queue.finished_job_registry,
+            queue.failed_job_registry,
+        ):
+            job_ids = set(registry.get_job_ids())
+            for subset_with_ids in take_by(job_ids, 1000):
+                for idx, job in enumerate(
+                    queue.job_class.fetch_many(subset_with_ids, connection=self.connection)
+                ):
+                    if job:
+                        process_job(job, logger=self.logger)
+                    else:
+                        registry.remove(subset_with_ids[idx])
 
-            for job in scheduler.get_jobs():
-                process_job(job, logger=logger, scheduler=scheduler)
+        for job in scheduler.get_jobs():
+            process_job(job, logger=self.logger, scheduler=scheduler)

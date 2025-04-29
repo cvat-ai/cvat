@@ -5,24 +5,31 @@
 
 import django_rq
 from rq.job import Job
-from rq.registry import DeferredJobRegistry
+
+from cvat.apps.engine.utils import take_by
 
 
-def force_deferred_jobs_into_queue(
-    job: Job, *, queue: django_rq.queues.DjangoRQ, registry: DeferredJobRegistry, **kwargs
-):
-    registry.remove(job)
-    job._dependency_ids = []
+def force_enqueue_deferred_jobs(queue: django_rq.queues.DjangoRQ):
+    registry = queue.deferred_job_registry
+    for subset_with_ids in take_by(set(registry.get_job_ids()), 1000):
+        for idx, job in enumerate(
+            registry.job_class.fetch_many(subset_with_ids, connection=queue.connection)
+        ):
+            registry.remove(subset_with_ids[idx])
 
-    pipeline = job.connection.pipeline()  # todo
-    for parent_job in job.fetch_dependencies(pipeline=pipeline):
-        if not parent_job:
-            continue
+            if not job:
+                continue
 
-        dependents_key = parent_job.dependents_key
-        pipeline.srem(dependents_key, job.id)
+            job._dependency_ids = []
 
-    queue._enqueue_job(job)
+            for parent_job in job.fetch_dependencies():
+                if not parent_job:
+                    continue
+
+                dependents_key = parent_job.dependents_key
+                queue.connection.srem(dependents_key, job.id)
+
+                queue._enqueue_job(job)
 
 
 def get_job_func_name(job: Job) -> str:
