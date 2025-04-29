@@ -6347,10 +6347,11 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                 annotations["tags"] = tags_wo_attrs
 
             elif annotation_format == "KITTI 1.0":
-                annotations["shapes"] = rectangle_shapes_wo_attrs \
-                                            # + polygon_shapes_wo_attrs
-                # FIXME: polygons disappear after export in KITTI
-                # although documentation says the opposite
+                annotations["shapes"] = rectangle_shapes_wo_attrs
+                                    # + polygon_shapes_wo_attrs
+                # polygons get converted to masks, hard to check
+                # KITTI supports only one annotation type at a time
+                # Issue: https://github.com/cvat-ai/datumaro/issues/103
 
             elif annotation_format == "Market-1501 1.0":
                 tags_with_attrs = [{
@@ -6596,7 +6597,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                 set(export_formats) - set(import_formats))
 
         # Rare and buggy formats that are not crucial for testing
-        formats.pop('Market-1501 1.0')
+        formats.pop('Market-1501 1.0') # Issue: https://github.com/cvat-ai/datumaro/issues/99
         formats.pop('Kitti Raw Format 1.0') # temporary until review
         # FIXME: Kitti Raw Format 1.0 bug in Datumaro Exporter
         # when track_ids are absent, negative indices are assigned by the exporter
