@@ -11,6 +11,7 @@ from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated
 from rest_framework.views import exception_handler
 
+from cvat.apps.dataset_manager.tracks_counter import TracksCounter
 from cvat.apps.engine.models import (
     CloudStorage,
     Comment,
@@ -151,9 +152,13 @@ def _get_value(obj, key):
     return None
 
 
-def request_id(instance=None):
+def request_info(instance=None):
     request = get_request(instance)
-    return _get_value(request, "uuid")
+    request_headers = _get_value(request, "headers")
+    return {
+        "id": _get_value(request, "uuid"),
+        "user_agent": request_headers.get("User-Agent") if request_headers is not None else None,
+    }
 
 
 def user_id(instance=None):
@@ -290,6 +295,11 @@ def get_serializer_without_url(instance):
     return serializer
 
 
+from cvat.apps.engine.log import ServerLogManager
+
+slogger = ServerLogManager(__name__)
+
+
 def handle_create(scope, instance, **kwargs):
     oid = organization_id(instance)
     oslug = organization_slug(instance)
@@ -309,7 +319,7 @@ def handle_create(scope, instance, **kwargs):
     payload = _cleanup_fields(obj=payload)
     record_server_event(
         scope=scope,
-        request_id=request_id(),
+        request_info=request_info(),
         on_commit=True,
         obj_id=getattr(instance, "id", None),
         obj_name=_get_object_name(instance),
@@ -343,7 +353,7 @@ def handle_update(scope, instance, old_instance, **kwargs):
         change = _cleanup_fields(change)
         record_server_event(
             scope=scope,
-            request_id=request_id(),
+            request_info=request_info(),
             on_commit=True,
             obj_name=prop,
             obj_id=getattr(instance, f"{prop}_id", None),
@@ -397,7 +407,7 @@ def handle_delete(scope, instance, store_in_deletion_cache=False, **kwargs):
 
     record_server_event(
         scope=scope,
-        request_id=request_id(),
+        request_info=request_info(),
         on_commit=True,
         obj_id=instance_id,
         obj_name=_get_object_name(instance),
@@ -412,16 +422,46 @@ def handle_delete(scope, instance, store_in_deletion_cache=False, **kwargs):
     )
 
 
-def handle_annotations_change(instance, annotations, action, **kwargs):
+def handle_annotations_change(instance: Job, annotations, action, **kwargs):
     def filter_data(data):
-        filtered_data = {
+        return {
             "id": data["id"],
         }
 
-        return filtered_data
+    in_mem_counter = TracksCounter()
+    in_mem_counter.load_tracks_from_job(instance.id, annotations.get("tracks", []))
+
+    in_db_counter = TracksCounter()
+    if action == "update" and annotations.get("tracks", []):
+        in_db_counter.load_tracks_from_db(
+            parent_labeledtrack_qs_filter=lambda x: x.filter(
+                pk__in=(track["id"] for track in annotations["tracks"])
+            ),
+            child_labeledtrack_qs_filter=lambda x: x.filter(
+                parent_id__in=(track["id"] for track in annotations["tracks"])
+            ),
+        )
 
     def filter_track(track):
+        job_id = instance.id
+        track_id = track["id"]
+
+        in_mem_shapes = in_mem_counter.count_track_shapes(job_id, track_id)
+        in_mem_visible_shapes = in_mem_shapes["manual"] + in_mem_shapes["interpolated"]
         filtered_data = filter_data(track)
+
+        if action == "create":
+            filtered_data["visible_shapes_count_diff"] = in_mem_visible_shapes
+        elif action == "delete":
+            filtered_data["visible_shapes_count_diff"] = -in_mem_visible_shapes
+        elif action == "update":
+            # when track is just updated, it may lead to both new or deleted visible shapes
+            in_db_shapes = in_db_counter.count_track_shapes(job_id, track_id)
+            in_db_visible_shapes = in_db_shapes["manual"] + in_db_shapes["interpolated"]
+            filtered_data["visible_shapes_count_diff"] = (
+                in_db_visible_shapes - in_mem_visible_shapes
+            )
+
         filtered_data["shapes"] = [filter_data(s) for s in track["shapes"]]
         return filtered_data
 
@@ -433,12 +473,13 @@ def handle_annotations_change(instance, annotations, action, **kwargs):
     uid = user_id(instance)
     uname = user_name(instance)
     uemail = user_email(instance)
+    request_info_ = request_info()
 
     tags = [filter_data(tag) for tag in annotations.get("tags", [])]
     if tags:
         record_server_event(
             scope=event_scope(action, "tags"),
-            request_id=request_id(),
+            request_info=request_info_,
             on_commit=True,
             count=len(tags),
             org_id=oid,
@@ -461,7 +502,7 @@ def handle_annotations_change(instance, annotations, action, **kwargs):
         if shapes:
             record_server_event(
                 scope=scope,
-                request_id=request_id(),
+                request_info=request_info_,
                 on_commit=True,
                 obj_name=shape_type,
                 count=len(shapes),
@@ -486,7 +527,7 @@ def handle_annotations_change(instance, annotations, action, **kwargs):
         if tracks:
             record_server_event(
                 scope=scope,
-                request_id=request_id(),
+                request_info=request_info_,
                 on_commit=True,
                 obj_name=track_type,
                 count=len(tracks),
@@ -517,7 +558,7 @@ def handle_dataset_io(
 
     record_server_event(
         scope=event_scope(action, "dataset"),
-        request_id=request_id(),
+        request_info=request_info(),
         org_id=organization_id(instance),
         org_slug=organization_slug(instance),
         project_id=project_id(instance),
@@ -564,7 +605,7 @@ def handle_function_call(
 ) -> None:
     record_server_event(
         scope=event_scope("call", "function"),
-        request_id=request_id(),
+        request_info=request_info(),
         project_id=project_id(target),
         task_id=task_id(target),
         job_id=job_id(target),
@@ -597,7 +638,7 @@ def handle_rq_exception(rq_job, exc_type, exc_value, tb):
 
     record_server_event(
         scope="send:exception",
-        request_id=request_id(instance=rq_job),
+        request_info=request_info(instance=rq_job),
         count=1,
         org_id=oid,
         org_slug=oslug,
@@ -645,7 +686,7 @@ def handle_viewset_exception(exc, context):
 
     record_server_event(
         scope="send:exception",
-        request_id=request_id(),
+        request_info=request_info(),
         count=1,
         user_id=getattr(request.user, "id", None),
         user_name=getattr(request.user, "username", None),
@@ -676,7 +717,7 @@ def handle_client_events_push(request, data: dict):
                 value = working_time["value"] // WORKING_TIME_RESOLUTION
                 record_server_event(
                     scope=WORKING_TIME_SCOPE,
-                    request_id=request_id(),
+                    request_info=request_info(),
                     # keep it in payload for backward compatibility
                     # but in the future it is much better to use a "duration" field
                     # because parsing JSON in SQL query is very slow

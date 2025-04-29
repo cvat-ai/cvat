@@ -463,7 +463,6 @@ export class EditHandlerImpl implements EditHandler {
         }
 
         if (this.editLine) {
-            (this.editLine as any).draw('transform');
             if (this.editData.state.shapeType !== 'points') {
                 this.editLine.attr({
                     'stroke-width': consts.BASE_STROKE_WIDTH / geometry.scale,
@@ -471,7 +470,6 @@ export class EditHandlerImpl implements EditHandler {
             }
 
             const paintHandler = this.editLine.remember('_paintHandler');
-
             for (const point of paintHandler.set.members) {
                 point.attr('stroke-width', `${consts.POINTS_STROKE_WIDTH / geometry.scale}`);
                 point.attr('r', `${this.controlPointsSize / geometry.scale}`);

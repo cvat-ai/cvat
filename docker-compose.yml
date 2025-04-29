@@ -115,8 +115,8 @@ services:
         aliases:
           - cvat-server
 
-  cvat_utils:
-    container_name: cvat_utils
+  cvat_worker_utils:
+    container_name: cvat_worker_utils
     image: cvat/server:${CVAT_VERSION:-dev}
     restart: always
     depends_on: *backend-deps
@@ -124,7 +124,7 @@ services:
       <<: *backend-env
       CVAT_REDIS_INMEM_PASSWORD: ''
       NUMPROCS: 1
-    command: run utils
+    command: run worker notifications cleaning
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -140,7 +140,7 @@ services:
     environment:
       <<: *backend-env
       NUMPROCS: 2
-    command: run worker.import
+    command: run worker import
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -156,7 +156,7 @@ services:
     environment:
       <<: [*backend-env, *clickhouse-env]
       NUMPROCS: 2
-    command: run worker.export
+    command: run worker export
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -172,7 +172,7 @@ services:
     environment:
       <<: *backend-env
       NUMPROCS: 1
-    command: run worker.annotation
+    command: run worker annotation
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -188,7 +188,7 @@ services:
     environment:
       <<: *backend-env
       NUMPROCS: 1
-    command: run worker.webhooks
+    command: run worker webhooks
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -204,7 +204,7 @@ services:
     environment:
       <<: *backend-env
       NUMPROCS: 1
-    command: run worker.quality_reports
+    command: run worker quality_reports
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -220,7 +220,7 @@ services:
     environment:
       <<: *backend-env
       NUMPROCS: 2
-    command: run worker.chunks
+    command: run worker chunks
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -236,7 +236,7 @@ services:
     environment:
       <<: *backend-env
       NUMPROCS: 1
-    command: run worker.consensus
+    command: run worker consensus
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys

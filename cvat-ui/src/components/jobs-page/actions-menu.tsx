@@ -33,16 +33,6 @@ function JobActionsComponent(props: Props): JSX.Element {
     const pluginActions = usePlugins((state: CombinedState) => state.plugins.components.jobActions.items, props);
     const mergingConsensus = useSelector((state: CombinedState) => state.consensus.actions.merging);
 
-    const onOpenTaskPage = useCallback(() => {
-        history.push(`/tasks/${jobInstance.taskId}`);
-    }, [jobInstance.taskId]);
-
-    const onOpenProjectPage = useCallback(() => {
-        if (jobInstance.projectId) {
-            history.push(`/projects/${jobInstance.projectId}`);
-        }
-    }, [jobInstance.projectId]);
-
     const onOpenBugTracker = useCallback(() => {
         if (jobInstance.bugTracker) {
             window.open(jobInstance.bugTracker as string, '_blank', 'noopener noreferrer');
@@ -102,10 +92,10 @@ function JobActionsComponent(props: Props): JSX.Element {
                 selectable: false,
                 className: 'cvat-job-item-menu',
                 items: JobActionsItems({
+                    taskID: jobInstance.taskId,
+                    projectID: jobInstance.projectId,
                     isMergingConsensusEnabled: mergingConsensus[makeKey(jobInstance)],
                     pluginActions,
-                    onOpenTaskPage,
-                    onOpenProjectPage: jobInstance.projectId ? onOpenProjectPage : null,
                     onOpenBugTracker: jobInstance.bugTracker ? onOpenBugTracker : null,
                     onImportAnnotations,
                     onExportAnnotations,

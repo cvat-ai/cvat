@@ -6618,6 +6618,8 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
     def _run_coco_annotation_upload_test(self, user):
         def generate_coco_anno():
             return b"""{
+            "licenses": [],
+            "info": {},
             "categories": [
                 {
                 "id": 1,
@@ -6968,10 +6970,12 @@ class TaskAnnotation2DContext(ApiTestBase):
             }
             task = self._create_task(self.task , img_data)
             task_id = task["id"]
-            data = {
+            query_params = {
                 "quality": "original",
                 "type": "context_image",
                 "number": 0
             }
-            response = self._get_request("/api/tasks/%s/data" % task_id, self.admin, data=data)
+            response = self._get_request(
+                "/api/tasks/%s/data" % task_id, self.admin, query_params=query_params
+            )
             self.assertEqual(response.status_code, status.HTTP_200_OK)

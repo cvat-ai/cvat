@@ -14,7 +14,7 @@ import subprocess
 import sys
 import traceback
 import urllib.parse
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 from collections.abc import Generator, Iterable, Mapping, Sequence
 from contextlib import nullcontext, suppress
 from itertools import islice
@@ -402,3 +402,9 @@ def grouped(items: Iterable[_V], *, key: Callable[[_V], _K]) -> Mapping[_K, Sequ
         grouped_items.setdefault(key(item), []).append(item)
 
     return grouped_items
+
+
+def defaultdict_to_regular(d):
+    if isinstance(d, defaultdict):
+        d = {k: defaultdict_to_regular(v) for k, v in d.items()}
+    return d

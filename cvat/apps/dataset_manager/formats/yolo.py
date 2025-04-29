@@ -9,11 +9,11 @@ from typing import Callable, Optional
 from datumaro.components.annotation import AnnotationType
 from datumaro.components.dataset import StreamDataset
 from datumaro.components.dataset_base import DatasetItem
-from datumaro.components.project import Dataset
 from pyunpack import Archive
 
 from cvat.apps.dataset_manager.bindings import (
     CommonData,
+    CVATDataExtractorMixin,
     GetCVATDataExtractor,
     ProjectData,
     detect_dataset,
@@ -78,7 +78,7 @@ def _import_common(
             image_info[frame] = (frame_info["height"], frame_info["width"])
 
     detect_dataset(temp_dir, format_name=format_name, importer=dm_env.importers.get(format_name))
-    dataset = Dataset.import_from(
+    dataset = StreamDataset.import_from(
         temp_dir, format_name, env=dm_env, image_info=image_info, **(import_kwargs or {})
     )
     dataset = dataset.transform(SetKeyframeForEveryTrackShape)
@@ -144,13 +144,15 @@ def _import_yolo_ultralytics_oriented_boxes(*args, **kwargs):
 
 @importer(name="Ultralytics YOLO Pose", ext="ZIP", version="1.0")
 def _import_yolo_ultralytics_pose(src_file, temp_dir, instance_data, **kwargs):
-    with GetCVATDataExtractor(instance_data) as extractor:
-        point_categories = extractor.categories().get(AnnotationType.points)
-        label_categories = extractor.categories().get(AnnotationType.label)
-        true_skeleton_point_labels = {
-            label_categories[label_id].name: category.labels
-            for label_id, category in point_categories.items.items()
-        }
+    instance_meta = instance_data.meta[instance_data.META_FIELD]
+    categories = CVATDataExtractorMixin.load_categories(instance_meta["labels"])
+    point_categories = categories.get(AnnotationType.points)
+    label_categories = categories.get(AnnotationType.label)
+    true_skeleton_point_labels = {
+        label_categories[label_id].name: category.labels
+        for label_id, category in point_categories.items.items()
+    }
+
     _import_common(
         src_file,
         temp_dir,

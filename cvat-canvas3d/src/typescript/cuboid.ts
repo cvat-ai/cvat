@@ -4,11 +4,17 @@
 // SPDX-License-Identifier: MIT
 
 import * as THREE from 'three';
-import { ViewType } from './canvas3dModel';
+import { OrientationVisibility, ViewType } from './canvas3dModel';
 import constants from './consts';
 
 export interface Indexable {
     [key: string]: any;
+}
+
+export interface ObjectArrowHelper {
+    x: THREE.ArrowHelper;
+    y: THREE.ArrowHelper;
+    z: THREE.ArrowHelper;
 }
 
 export function makeCornerPointsMatrix(x: number, y: number, z: number): number[][] {
@@ -31,6 +37,13 @@ export class CuboidModel {
     public front: THREE.Mesh;
     public wireframe: THREE.LineSegments;
 
+    public orientationArrows: Record<ViewType, ObjectArrowHelper> = {
+        [ViewType.PERSPECTIVE]: null,
+        [ViewType.TOP]: null,
+        [ViewType.SIDE]: null,
+        [ViewType.FRONT]: null,
+    };
+
     public constructor(outline: string, outlineColor: string) {
         const geometry = new THREE.BoxGeometry(1, 1, 1);
         const material = new THREE.MeshBasicMaterial({
@@ -39,6 +52,7 @@ export class CuboidModel {
             transparent: true,
             opacity: 0.4,
         });
+
         this.perspective = new THREE.Mesh(geometry, material);
         const geo = new THREE.EdgesGeometry(this.perspective.geometry);
         this.wireframe = new THREE.LineSegments(
@@ -57,6 +71,13 @@ export class CuboidModel {
         this.top = new THREE.Mesh(geometry, material);
         this.side = new THREE.Mesh(geometry, material);
         this.front = new THREE.Mesh(geometry, material);
+
+        [ViewType.PERSPECTIVE, ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view): void => {
+            this.orientationArrows[view] = this.createArrows();
+            Object.values(this.orientationArrows[view]).forEach((arrow) => {
+                this[view].add(arrow);
+            });
+        });
 
         const planeTop = new THREE.Mesh(
             new THREE.PlaneGeometry(1, 1, 1, 1),
@@ -115,6 +136,22 @@ export class CuboidModel {
         this.front.add(camRotateHelper.clone());
     }
 
+    private createArrows(): ObjectArrowHelper {
+        return {
+            x: new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(0.5, 0, 0), 1, 0xff0000),
+            y: new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0.5, 0), 1, 0x00ff00),
+            z: new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, 0.5), 1, 0x0000ff),
+        };
+    }
+
+    public setOrientationVisibility(orientationVisibility: OrientationVisibility): void {
+        [ViewType.PERSPECTIVE, ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view): void => {
+            Object.entries(this.orientationArrows[view]).forEach(([axis, arrow]) => {
+                arrow.visible = orientationVisibility[axis];
+            });
+        });
+    }
+
     public setPosition(x: number, y: number, z: number): void {
         [ViewType.PERSPECTIVE, ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view): void => {
             (this as Indexable)[view].position.set(x, y, z);
@@ -124,6 +161,18 @@ export class CuboidModel {
     public setScale(x: number, y: number, z: number): void {
         [ViewType.PERSPECTIVE, ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view): void => {
             (this as Indexable)[view].scale.set(x, y, z);
+
+            // Arrow direction specifies its local Y axis, where it points to.
+            // When we change its direction to align with the X or Z axis,
+            // the arrow’s local coordinate system rotates accordingly.
+            // To maintain correct proportions, we apply the X or Z scaling of the cuboid
+            // to the arrow's Y axis (its original forward direction).
+            const xscale = 1.0 / x;
+            const yscale = 1.0 / y;
+            const zscale = 1.0 / z;
+            this.orientationArrows[view].x.scale.set(yscale, xscale, zscale);
+            this.orientationArrows[view].y.scale.set(xscale, yscale, zscale);
+            this.orientationArrows[view].z.scale.set(xscale, zscale, yscale);
         });
     }
 
