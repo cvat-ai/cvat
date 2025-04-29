@@ -112,20 +112,7 @@ def get_410_response_when_checking_process_status(process_type: str, /) -> HttpR
         where rq_id is obtained from the response of the initializing request.
     """))
 
-class DeprecatedResponse(Response):
-    def __init__(self,
-        data=None,
-        status=None,
-        template_name=None,
-        headers=None,
-        exception=False,
-        content_type=None,
-        *,
-        deprecation_date: datetime,
-    ):
-        headers = headers or {}
-        # https://www.rfc-editor.org/rfc/rfc9745
-        deprecation_timestamp = int(deprecation_date.timestamp())
-        headers["Deprecation"] = f"@{deprecation_timestamp}"
-
-        super().__init__(data, status, template_name, headers, exception, content_type)
+def deprecate_response(response: Response, *, deprecation_date: datetime) -> None:
+    # https://www.rfc-editor.org/rfc/rfc9745
+    deprecation_timestamp = int(deprecation_date.timestamp())
+    response.headers["Deprecation"] = f"@{deprecation_timestamp}"

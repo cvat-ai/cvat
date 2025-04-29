@@ -18,6 +18,7 @@ from drf_spectacular.utils import (
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.response import Response
 from rq.job import JobStatus as RqJobStatus
 
 from cvat.apps.engine.mixins import PartialUpdateModelMixin
@@ -25,7 +26,7 @@ from cvat.apps.engine.models import Task
 from cvat.apps.engine.rq import BaseRQMeta
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import get_server_url
-from cvat.apps.engine.view_utils import DeprecatedResponse
+from cvat.apps.engine.view_utils import deprecate_response
 from cvat.apps.quality_control import quality_reports as qc
 from cvat.apps.quality_control.models import (
     AnnotationConflict,
@@ -304,22 +305,24 @@ class QualityReportViewSet(
                 .allow
             ):
                 # We should not provide job existence information to unauthorized users
-                return DeprecatedResponse(
+                response = Response(
                     "Unknown request id",
                     status=status.HTTP_404_NOT_FOUND,
-                    deprecation_date=deprecation_date,
                 )
+                deprecate_response(response, deprecation_date=deprecation_date)
+                return response
 
             rq_job_status = rq_job.get_status(refresh=False)
 
             if rq_job_status == RqJobStatus.FAILED:
                 message = str(rq_job.exc_info)
                 rq_job.delete()
-                return DeprecatedResponse(
+                response = Response(
                     message,
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    deprecation_date=deprecation_date,
                 )
+                deprecate_response(response, deprecation_date=deprecation_date)
+                return response
 
             elif rq_job_status in (
                 RqJobStatus.QUEUED,
@@ -327,32 +330,35 @@ class QualityReportViewSet(
                 RqJobStatus.SCHEDULED,
                 RqJobStatus.DEFERRED,
             ):
-                return DeprecatedResponse(
+                response = Response(
                     serializer.data,
                     status=status.HTTP_202_ACCEPTED,
-                    deprecation_date=deprecation_date,
                 )
+                deprecate_response(response, deprecation_date=deprecation_date)
+                return response
 
             elif rq_job_status == RqJobStatus.FINISHED:
                 return_value = rq_job.return_value()
                 rq_job.delete()
                 if not return_value:
-                    return DeprecatedResponse(
+                    response = Response(
                         "No report has been computed",
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                        deprecation_date=deprecation_date,
                     )
+                    deprecate_response(response, deprecation_date=deprecation_date)
+                    return response
 
                 report = self.get_queryset().get(pk=return_value)
                 report_serializer = QualityReportSerializer(
                     instance=report, context={"request": request}
                 )
-                return DeprecatedResponse(
+                response = Response(
                     data=report_serializer.data,
                     status=status.HTTP_201_CREATED,
                     headers=self.get_success_headers(report_serializer.data),
-                    deprecation_date=deprecation_date,
                 )
+                deprecate_response(response, deprecation_date=deprecation_date)
+                return response
 
             raise AssertionError(f"Unexpected rq job '{rq_id}' status '{rq_job_status}'")
 

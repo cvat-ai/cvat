@@ -12,6 +12,7 @@ from dateutil import parser
 from django.conf import settings
 from django.utils import timezone
 from rest_framework import serializers, status
+from rest_framework.response import Response
 from rest_framework.reverse import reverse
 
 from cvat.apps.dataset_manager.util import ExportCacheManager
@@ -21,7 +22,7 @@ from cvat.apps.engine.models import RequestAction
 from cvat.apps.engine.rq import ExportRequestId, RQMetaWithFailureInfo
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import sendfile
-from cvat.apps.engine.view_utils import DeprecatedResponse
+from cvat.apps.engine.view_utils import deprecate_response
 from cvat.apps.events.permissions import EventsPermission
 from cvat.apps.redis_handler.background import AbstractExporter
 
@@ -202,24 +203,27 @@ def export(request: ExtendedRequest):
                 return sendfile(request, file_path, attachment=True, attachment_filename=filename)
             else:
                 if os.path.exists(file_path):
-                    return DeprecatedResponse(
-                        status=status.HTTP_201_CREATED, deprecation_date=deprecation_date
-                    )
+                    response = Response(status=status.HTTP_201_CREATED)
+                    deprecate_response(response, deprecation_date=deprecation_date)
+                    return response
+
         elif rq_job.is_failed:
             rq_job_meta = RQMetaWithFailureInfo.for_job(rq_job)
             exc_info = rq_job_meta.formatted_exception or str(rq_job.exc_info)
             rq_job.delete()
-            return DeprecatedResponse(
+            response = Response(
                 exc_info,
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                deprecation_date=deprecation_date,
             )
+            deprecate_response(response, deprecation_date=deprecation_date)
+            return response
         else:
-            return DeprecatedResponse(
+            response = Response(
                 data=response_data,
                 status=status.HTTP_202_ACCEPTED,
-                deprecation_date=deprecation_date,
             )
+            deprecate_response(response, deprecation_date=deprecation_date)
+            return response
 
     manager.init_request_args()
     # request validation is missed here since exporting to a cloud_storage is disabled
@@ -227,6 +231,6 @@ def export(request: ExtendedRequest):
     manager.init_callback_with_params()
     manager.setup_new_job(queue, request_id)
 
-    return DeprecatedResponse(
-        data=response_data, status=status.HTTP_202_ACCEPTED, deprecation_date=deprecation_date
-    )
+    response = Response(data=response_data, status=status.HTTP_202_ACCEPTED)
+    deprecate_response(response, deprecation_date=deprecation_date)
+    return response
