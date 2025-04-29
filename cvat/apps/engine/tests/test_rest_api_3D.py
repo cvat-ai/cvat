@@ -210,14 +210,11 @@ class _DbTestBase(ExportApiTestBase):
 
 
 class Task3DTest(_DbTestBase):
-
-    def compare_annotations(self, a, b):
-        assert a.get('source') in ('manual', None)
-        assert b.get('source') in ('file', None)
-        compare_objects(self, a, b, ignore_keys=["source"])
-
-    def assertDictEqual(self, a, b):
-        self.compare_annotations(a, b)
+    def compare_shapes(self, shapes_orig: list[dict], shapes_imported: list[dict]):
+        for a, b in zip(shapes_orig, shapes_imported):
+            assert a.get('source') in ('manual', None)
+            assert b["source"] == "file"
+            compare_objects(self, a, b, ignore_keys=["source"])
 
     @classmethod
     def setUpClass(cls):
@@ -520,11 +517,7 @@ class Task3DTest(_DbTestBase):
                     task_ann_prev.data["shapes"][0].pop("id")
                     task_ann.data["shapes"][0].pop("id")
                     self.assertEqual(len(task_ann_prev.data["shapes"]), len(task_ann.data["shapes"]))
-                    for shape_prev,shape_ann in zip(
-                        task_ann_prev.data["shapes"],
-                        task_ann.data["shapes"]
-                    ):
-                        self.assertDictEqual(shape_prev, shape_ann)
+                    self.compare_shapes(task_ann_prev.data["shapes"], task_ann.data["shapes"])
 
     def test_api_v2_rewrite_annotation(self):
         with TestDir() as test_dir:
@@ -563,11 +556,7 @@ class Task3DTest(_DbTestBase):
                     task_ann_prev.data["shapes"][0].pop("id")
                     task_ann.data["shapes"][0].pop("id")
                     self.assertEqual(len(task_ann_prev.data["shapes"]), len(task_ann.data["shapes"]))
-                    for shape_prev, shape_ann in zip(
-                        task_ann_prev.data["shapes"],
-                        task_ann.data["shapes"]
-                    ):
-                        self.assertDictEqual(shape_prev, shape_ann)
+                    self.compare_shapes(task_ann_prev.data["shapes"], task_ann.data["shapes"])
 
     def test_api_v2_dump_and_upload_empty_annotation(self):
         with TestDir() as test_dir:
