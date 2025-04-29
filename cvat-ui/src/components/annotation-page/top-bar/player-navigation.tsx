@@ -8,7 +8,9 @@ import React, {
 } from 'react';
 
 import { Row, Col } from 'antd/lib/grid';
-import Icon, { LinkOutlined, DeleteOutlined, CopyOutlined } from '@ant-design/icons';
+import Icon, {
+    LinkOutlined, DeleteOutlined, CopyOutlined, SearchOutlined,
+} from '@ant-design/icons';
 import Slider from 'antd/lib/slider';
 import InputNumber from 'antd/lib/input-number';
 import Text from 'antd/lib/typography/Text';
@@ -43,6 +45,7 @@ interface Props {
     onDeleteFrame(): void;
     onRestoreFrame(): void;
     switchNavigationBlocked(blocked: boolean): void;
+    switchShowSearchPallet(visible: boolean): void;
 }
 
 const componentShortcuts = {
@@ -84,6 +87,7 @@ function PlayerNavigation(props: Props): JSX.Element {
         onDeleteFrame,
         onRestoreFrame,
         switchNavigationBlocked,
+        switchShowSearchPallet,
     } = props;
 
     const [frameInputValue, setFrameInputValue] = useState<number>(frameNumber);
@@ -189,6 +193,12 @@ function PlayerNavigation(props: Props): JSX.Element {
                         </CVATTooltip>
                     </Col>
                     <Col className='cvat-player-frame-actions' offset={1}>
+                        <CVATTooltip title='Search frame filenames'>
+                            <SearchOutlined
+                                className='cvat-player-search-frame-name-icon'
+                                onClick={() => switchShowSearchPallet(true)}
+                            />
+                        </CVATTooltip>
                         <CVATTooltip title='Copy frame filename'>
                             <CopyOutlined className='cvat-player-copy-frame-name-icon' onClick={onCopyFilenameIconClick} />
                         </CVATTooltip>

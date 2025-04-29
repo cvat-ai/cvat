@@ -24,6 +24,7 @@ import {
     restoreFrameAsync,
     switchNavigationBlocked as switchNavigationBlockedAction,
     setNavigationType as setNavigationTypeAction,
+    switchShowPallet as showSearchPalletAction,
 } from 'actions/annotation-actions';
 import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-bar';
 import { Canvas } from 'cvat-canvas-wrapper';
@@ -77,6 +78,7 @@ interface StateToProps {
 interface DispatchToProps {
     onChangeFrame(frame: number, fillBuffer?: boolean, frameStep?: number): void;
     onSwitchPlay(playing: boolean): void;
+    switchShowSearchPallet(visible: boolean): void;
     onSaveAnnotation(): void;
     showStatistics(sessionInstance: Job): void;
     showFilters(): void;
@@ -182,6 +184,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         showFilters(): void {
             dispatch(showFiltersAction(true));
+        },
+        switchShowSearchPallet(visible: boolean): void {
+            dispatch(showSearchPalletAction(visible));
         },
         undo(): void {
             dispatch(undoActionAsync());
@@ -643,6 +648,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             navigationType,
             switchNavigationBlocked,
             setNavigationType,
+            switchShowSearchPallet,
         } = this.props;
 
         return (
@@ -665,6 +671,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 onDeleteFrame={this.onDeleteFrame}
                 onRestoreFrame={this.onRestoreFrame}
                 changeWorkspace={this.changeWorkspace}
+                switchShowSearchPallet={switchShowSearchPallet}
                 switchNavigationBlocked={switchNavigationBlocked}
                 keyMap={keyMap}
                 workspace={workspace}
