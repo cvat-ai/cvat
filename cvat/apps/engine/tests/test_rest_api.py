@@ -5554,20 +5554,20 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
             )
         return response
 
-    def _check_response(self, response, data, expected_source='manual'):
-        IGNORE_KEYS = ["id", "version"]
+    def _check_response(self, response, data, expected_source=None):
         if not response.status_code in [
-            status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN]:
+            status.HTTP_401_UNAUTHORIZED,
+            status.HTTP_403_FORBIDDEN
+        ]:
             try:
-                # Special checks for some fileds
-                # 1. 'source' is always 'file' after importing anno from file
-                if (source := response.data.get('source')):
-                    self.assertEquals(source, expected_source)
-                if (anns := (response.data['shapes'] or response.data['tracks'])):
-                    for ann in anns:
-                        self.assertEquals(ann.get('source'), expected_source)
-                IGNORE_KEYS.append('source')
-                compare_objects(self, data, response.data, ignore_keys=IGNORE_KEYS)
+                if expected_source:
+                    for key in ['shapes', 'tracks', 'tags']:
+                        anns = response.data[key]
+                        for ann in anns:
+                            self.assertEquals(ann.get('source'), expected_source)
+                    compare_objects(self, data, response.data, ignore_keys=["id", "version", "source"])
+                else:
+                    compare_objects(self, data, response.data, ignore_keys=["id", "version"])
             except AssertionError as e:
                 print("Objects are not equal:",
                       pformat(data, compact=True),
@@ -6298,7 +6298,8 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
 
             elif annotation_format in [
                 "ImageNet 1.0",
-                "Ultralytics YOLO Classification 1.0"]:
+                "Ultralytics YOLO Classification 1.0"
+            ]:
                 annotations["tags"] = tags_wo_attrs
 
             elif annotation_format == "CamVid 1.0":
@@ -6616,7 +6617,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
 
                 self.assertEqual(response.status_code, HTTP_200_OK,
                     pformat(response.data))
-                self._check_response(response, data)
+                self._check_response(response, data, expected_source='manual')
 
                 # 3. download annotation
                 if not export_formats[export_format]['enabled']:
