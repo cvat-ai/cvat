@@ -1075,7 +1075,9 @@ class LambdaTestCases(_LambdaTestCaseBase):
             f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data=data
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.json(), [])
+
+        annotations = response.json()
+        self.assertEqual(annotations["shapes"], [])
 
     def test_api_v2_lambda_functions_create_detector_without_task(self):
         data = {
@@ -1600,7 +1602,7 @@ class TestComplexFrameSetupCases(_LambdaTestCaseBase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         annotations = response.json()
-        self.assertEqual(1, len(annotations))
+        self.assertEqual(1, len(annotations["shapes"]))
 
     def test_can_run_online_function_on_invalid_task_frame(self):
         data = self.common_request_data.copy()
@@ -1621,7 +1623,7 @@ class TestComplexFrameSetupCases(_LambdaTestCaseBase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         annotations = response.json()
-        self.assertEqual(1, len(annotations))
+        self.assertEqual(1, len(annotations["shapes"]))
 
     def test_can_run_online_function_on_invalid_job_frame(self):
         data = self.common_request_data.copy()
