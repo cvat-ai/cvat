@@ -6233,6 +6233,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                         }
                     ],
                 }]
+
             annotations = {
                 "version": 0,
                 "tags": [],
@@ -6604,7 +6605,6 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
         # this format is already checked in test_rest_api_3D.py
 
         for export_format, import_format in formats.items():
-            print(f"{export_format} :: {import_format}")
             with self.subTest(export_format=export_format,
                     import_format=import_format):
                 # 1. create task

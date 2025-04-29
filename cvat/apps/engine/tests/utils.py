@@ -459,7 +459,7 @@ def filter_dict(
 
 
 def compare_objects(self, obj1, obj2, ignore_keys, fp_tolerance=0.001, current_key=None):
-    key_info = "{}: ".format(current_key or "")
+    key_info = "{}: ".format(current_key) if current_key else ""
     error_msg = "{}{} != {}"
 
     if isinstance(obj1, dict):
