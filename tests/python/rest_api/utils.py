@@ -72,26 +72,19 @@ def wait_and_download_v2(
     *,
     max_retries: int = 50,
     interval: float = 0.1,
-    download_result: bool = True,
-) -> Optional[bytes]:
+) -> bytes:
     background_request, _ = wait_background_request(
         api_client, rq_id, max_retries=max_retries, interval=interval
     )
 
-    if not download_result:
-        return None
-
-    # return downloaded file in case of local downloading or None otherwise
-    if download_result and background_request.result_url:
-        response = requests.get(
-            background_request.result_url,
-            auth=(api_client.configuration.username, api_client.configuration.password),
-        )
-        assert response.status_code == HTTPStatus.OK, f"Status: {response.status_code}"
-
-        return response.content
-
-    return None
+    # return downloaded file in case of local downloading
+    assert background_request.result_url
+    response = requests.get(
+        background_request.result_url,
+        auth=(api_client.configuration.username, api_client.configuration.password),
+    )
+    assert response.status_code == HTTPStatus.OK, f"Status: {response.status_code}"
+    return response.content
 
 
 def export_v2(
@@ -102,9 +95,8 @@ def export_v2(
     expect_forbidden: bool = False,
     wait_result: bool = True,
     download_result: bool = True,
-    return_request_id: bool = False,
     **kwargs,
-) -> Optional[Union[bytes, str]]:
+) -> Union[bytes, str]:
     """Export datasets|annotations|backups using the second version of export API
 
     Args:
@@ -116,27 +108,27 @@ def export_v2(
 
     Returns:
         bytes: The content of the file if downloaded locally.
-        None: If `wait_result` or `download_result` were False or the file is downloaded to cloud storage.
-        str: If `download_result` was False and `return_request_id` was True.
+        str: If `wait_result` or `download_result` were False.
     """
     # initialize background process and ensure that the first request returns 403 code if request should be forbidden
     rq_id = initialize_export(endpoint, expect_forbidden=expect_forbidden, **kwargs)
 
     if not wait_result:
-        return None
-
-    # check status of background process
-    result = wait_and_download_v2(
-        endpoint.api_client,
-        rq_id,
-        max_retries=max_retries,
-        interval=interval,
-        download_result=download_result,
-    )
-    if not download_result and return_request_id:
         return rq_id
 
-    return result
+    # check status of background process
+    if download_result:
+        return wait_and_download_v2(
+            endpoint.api_client,
+            rq_id,
+            max_retries=max_retries,
+            interval=interval,
+        )
+
+    background_request, _ = wait_background_request(
+        endpoint.api_client, rq_id, max_retries=max_retries, interval=interval
+    )
+    return background_request.id
 
 
 def export_dataset(

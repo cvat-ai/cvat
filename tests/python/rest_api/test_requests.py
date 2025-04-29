@@ -323,7 +323,6 @@ class TestGetRequests:
             save_images=save_images,
             id=project["id"],
             download_result=False,
-            return_request_id=True,
             format=format_name,
         )
 
@@ -364,7 +363,6 @@ class TestGetRequests:
             save_images=True,
             id=project["id"],
             download_result=False,
-            return_request_id=True,
         )
         with make_api_client(malefactor["username"]) as malefactor_client:
             self._test_get_request_403(malefactor_client, request_id)
