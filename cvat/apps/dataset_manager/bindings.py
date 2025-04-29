@@ -2009,14 +2009,12 @@ class CvatToDmAnnotationConverter:
                 label=dm_label, attributes=dm_attr, group=dm_group,
                 z_order=shape.z_order)
         elif shape.type == ShapeType.ELLIPSE:
-            cx, cy, rightX, topY = shape.points
-            rx = rightX - cx
-            ry = cy - topY
+            center_x, center_y, right, top = shape.points
             anno = dm.Ellipse(
-                x1=cx - rx,
-                x2=rightX,
-                y1=topY,
-                y2=cy + ry,
+                x1=center_x - (right - center_x),
+                x2=right,
+                y1=top,
+                y2=center_y + (center_y - top),
                 label=dm_label,
                 attributes=dm_attr,
                 group=dm_group,
