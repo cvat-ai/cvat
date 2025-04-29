@@ -90,7 +90,7 @@ class TorchvisionDetectionFunction:
         ]
 
 # log into the CVAT server
-with make_client(host="localhost", credentials=("user", "password")) as client:
+with make_client(host="http://localhost", credentials=("user", "password")) as client:
     # annotate task 12345 using Faster R-CNN
     cvataa.annotate_task(client, 41617,
         TorchvisionDetectionFunction("fasterrcnn_resnet50_fpn_v2", "DEFAULT", box_score_thresh=0.5),
