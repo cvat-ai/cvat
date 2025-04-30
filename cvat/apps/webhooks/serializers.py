@@ -52,6 +52,35 @@ class EventsSerializer(serializers.Serializer):
     events = EventTypesSerializer()
 
 
+class WebhookReadListSerializer(serializers.ListSerializer):
+    def to_representation(self, data):
+        if isinstance(data, list) and data:
+            # Optimized prefetch only for the current page
+            page: list[Webhook] = data
+
+            # Annotate page objects
+            # We do it explicitly here and not in the LIST queryset to avoid
+            # doing the same DB computations twice - one time for the page retrieval
+            # and another one for the COUNT(*) request to get the total count
+            last_delivery_ids = set(
+                Webhook.objects.filter(id__in=[webhook.id for webhook in page])
+                .annotate(
+                    last_delivery_id=models.aggregates.Max("deliveries__id"),
+                )
+                .values_list("last_delivery_id", flat=True)
+            )
+            last_deliveries = WebhookDelivery.objects.filter(id__in=last_delivery_ids).defer(
+                "request", "response"  # potentially heavy fields
+            )
+            last_deliveries_by_webhook = {
+                delivery.webhook_id: delivery for delivery in last_deliveries
+            }
+            for webhook in page:
+                webhook.last_delivery = last_deliveries_by_webhook.get(webhook.id)
+
+        return super().to_representation(data)
+
+
 class WebhookReadSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(read_only=True, required=False, allow_null=True)
 
@@ -91,39 +120,7 @@ class WebhookReadSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             "organization": {"allow_null": True},
         }
-
-    @classmethod
-    def many_init(cls, *args, **kwargs):
-        if len(args) == 1 and isinstance(args[0], list):
-            from .views import WebhookViewSet  # avoid circular import
-
-            ctx_view = kwargs.get("context", {}).get("view")
-            if isinstance(ctx_view, WebhookViewSet) and ctx_view.action == "list":
-                page: list[Webhook] = args[0]
-
-                # Annotate page objects with last delivery
-                # We do it explicitly here and not in the LIST queryset to avoid
-                # doing this heavy join twice - one time for the page retrieval
-                # and another one for the COUNT(*) request to get total count
-                # It would be  great to put all this into a prefetch_related() call,
-                # but it's not supported.
-                last_delivery_ids = set(
-                    Webhook.objects.filter(id__in=[webhook.id for webhook in page])
-                    .annotate(
-                        last_delivery_id=models.aggregates.Max("deliveries__id"),
-                    )
-                    .values_list("last_delivery_id", flat=True)
-                )
-                last_deliveries = WebhookDelivery.objects.filter(id__in=last_delivery_ids).defer(
-                    "request", "response"  # potentially heavy fields
-                )
-                last_deliveries_by_webhook = {
-                    delivery.webhook_id: delivery for delivery in last_deliveries
-                }
-                for webhook in page:
-                    webhook.last_delivery = last_deliveries_by_webhook.get(webhook.id)
-
-        return super(cls, cls).many_init(*args, **kwargs)
+        list_serializer_class = WebhookReadListSerializer
 
 
 class WebhookWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
