@@ -57,7 +57,7 @@ Trackable object will be tracked automatically if the previous frame was
 a latest keyframe for the object. More details in the section
 {{< ilink "/docs/manual/advanced/ai-tools#trackers" "trackers" >}}.
 
-![](/images/tracker_indication_detrac.jpg)
+![](/images/tracker_indication_detrac.png)
 
 ---
 
