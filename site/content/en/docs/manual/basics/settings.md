@@ -3,7 +3,7 @@ title: 'Settings'
 linkTitle: 'Settings'
 weight: 15
 ---
-To open the **Settings**, open the user menu in the header and select the **Settings**. Or you can use the default `F2` shortcut.
+To open the **Settings**, open the user menu in the header and select **Settings**. Or you can use the default `F2` shortcut.
 
 The **Settings** section has three tabs:
 - [**Player**](#player)
