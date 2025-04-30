@@ -73,12 +73,17 @@ function ItemAttributesComponent(props: Props): JSX.Element {
                             <Row key='size' justify='space-around' className='cvat-objects-sidebar-size-params'>
                                 {Object.keys(sizeParams).map((key) => (
                                     <Col key={key}>
-                                        <Text type='secondary'>{key.charAt(0).toUpperCase()}:</Text>
+                                        <Text type='secondary'>
+                                            {`${key.charAt(0).toUpperCase()}:`}
+                                        </Text>
                                         <InputNumber
                                             value={sizeParams[key as keyof SizeParams] || ''}
                                             onChange={(value) => {
                                                 if (typeof value === 'number') {
-                                                    changeSize(SizeType[key.toUpperCase() as keyof typeof SizeType], value);
+                                                    changeSize(
+                                                        SizeType[key.toUpperCase() as keyof typeof SizeType],
+                                                        value,
+                                                    );
                                                 }
                                             }}
                                             disabled={readonly}
