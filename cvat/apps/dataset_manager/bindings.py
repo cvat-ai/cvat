@@ -1758,19 +1758,25 @@ class CvatTaskOrJobDataExtractor(dm.SubsetBase, CvatDataExtractorBase):
         )
         self._categories = self.load_categories(self._instance_meta['labels'])
 
+        self._grouped_by_frame = list(self._instance_data.group_by_frame(include_empty=True))
+
+    @staticmethod
+    def copy_frame_data_with_replaced_lazy_lists(frame_data: CommonData.Frame) -> CommonData.Frame:
+        return frame_data._replace(
+            labeled_shapes=[
+                (
+                    shape._replace(points=shape.points.lazy_copy())
+                    if isinstance(shape.points, LazyList) and not shape.points.is_parsed
+                    else shape
+                )
+                for shape in frame_data.labeled_shapes
+            ]
+        )
+
     def __iter__(self):
         for frame_data in self._instance_data.group_by_frame(include_empty=True):
             # do not keep parsed lazy list data after this iteration
-            frame_data = frame_data._replace(
-                labeled_shapes=[
-                    (
-                        shape._replace(points=shape.points.lazy_copy())
-                        if isinstance(shape.points, LazyList) and not shape.points.is_parsed
-                        else shape
-                    )
-                    for shape in frame_data.labeled_shapes
-                ]
-            )
+            frame_data = self.copy_frame_data_with_replaced_lazy_lists(frame_data)
             yield self._process_one_frame_data(frame_data)
 
     def _read_cvat_anno(self, cvat_frame_anno: CommonData.Frame, labels: list):
@@ -1814,6 +1820,20 @@ class CVATProjectDataExtractor(StreamingDatasetBase, CvatDataExtractorBase):
         )
         self._categories = self.load_categories(self._instance_meta['labels'])
 
+    @staticmethod
+    def copy_frame_data_with_replaced_lazy_lists(frame_data: ProjectData.Frame) -> ProjectData.Frame:
+        return attr.evolve(
+            frame_data,
+            labeled_shapes=[
+                (
+                    attr.evolve(shape, points=shape.points.lazy_copy())
+                    if isinstance(shape.points, LazyList) and not shape.points.is_parsed
+                    else shape
+                )
+                for shape in frame_data.labeled_shapes
+            ],
+        )
+
     def get_subset(self, name) -> IDataset:
         extractor = self
 
@@ -1821,18 +1841,8 @@ class CVATProjectDataExtractor(StreamingDatasetBase, CvatDataExtractorBase):
             def __iter__(self):
                 for frame_data in extractor._frame_data_by_subset[name]:
                     # do not keep parsed lazy list data after this iteration
-                    frame_data = attr.evolve(
-                        frame_data,
-                        labeled_shapes=[
-                            (
-                                attr.evolve(shape, points=shape.points.lazy_copy())
-                                if isinstance(shape.points, LazyList) and not shape.points.is_parsed
-                                else shape
-                            )
-                            for shape in frame_data.labeled_shapes
-                        ],
-                    )
-                    yield extractor._process_one_frame_data(frame_data)
+                    frame_data = self.copy_frame_data_with_replaced_lazy_lists(frame_data)
+                    yield self._process_one_frame_data(frame_data)
 
             def __len__(self):
                 return len(extractor._frame_data_by_subset[name])

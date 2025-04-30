@@ -1346,7 +1346,7 @@ export class DrawHandlerImpl implements DrawHandler {
             });
         }
 
-        if (this.drawInstance && (isFilalblePolygon)) {
+        if (this.drawInstance && isFilalblePolygon) {
             const paintHandler = this.drawInstance.remember('_paintHandler');
             if (paintHandler) {
                 for (const point of (paintHandler as any).set.members) {
@@ -1398,17 +1398,17 @@ export class DrawHandlerImpl implements DrawHandler {
         }
 
         if (this.drawInstance) {
-            this.drawInstance.draw('transform');
             this.drawInstance.attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / geometry.scale,
             });
 
             const paintHandler = this.drawInstance.remember('_paintHandler');
-
-            for (const point of (paintHandler as any).set.members) {
-                this.strokePoint(point);
-                point.attr('stroke-width', `${consts.POINTS_STROKE_WIDTH / geometry.scale}`);
-                point.attr('r', `${this.controlPointsSize / geometry.scale}`);
+            if (paintHandler) {
+                for (const point of (paintHandler as any).set.members) {
+                    this.strokePoint(point);
+                    point.attr('stroke-width', `${consts.POINTS_STROKE_WIDTH / geometry.scale}`);
+                    point.attr('r', `${this.controlPointsSize / geometry.scale}`);
+                }
             }
         }
     }
