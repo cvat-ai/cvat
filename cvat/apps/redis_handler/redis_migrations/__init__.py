@@ -54,12 +54,12 @@ class BaseMigration(metaclass=ABCMeta):
     )
 
     def run(self) -> None:
-        try:
-            with get_migration_logger(Path(self.__class__.__module__).stem) as logger:
-                self.logger = logger
+        with get_migration_logger(Path(self.__class__.__module__).stem) as logger:
+            self.logger = logger
+            try:
                 self._run()
-        finally:
-            self.logger = None
+            finally:
+                self.logger = None
 
     @abstractmethod
     def _run(self) -> None: ...
