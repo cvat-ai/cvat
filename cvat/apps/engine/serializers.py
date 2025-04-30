@@ -2275,6 +2275,35 @@ class DataSerializer(serializers.ModelSerializer):
                     [files_model(data=instance, **f) for f in files[files_type]]
                 )
 
+class TaskReadListSerializer(serializers.ListSerializer):
+    def to_representation(self, data):
+        if isinstance(data, list) and data:
+            # Optimized prefetch only for the current page
+            page: list[models.Task] = data
+
+            # Annotate page objects
+            # We do it explicitly here and not in the LIST queryset to avoid
+            # doing the same DB computations twice - one time for the page retrieval
+            # and another one for the COUNT(*) request to get the total count
+            page_task_ids = set(t.id for t in page)
+            job_summary_fields = [
+                m.value for m in models.TaskQuerySet.JobSummaryFields.__members__.values()
+            ]
+            job_counts = {
+                task["id"]: task
+                for task in models.Task.objects
+                .filter(id__in=page_task_ids)
+                .with_job_summary()
+                .values("id", *job_summary_fields)
+            }
+
+            for task in page:
+                task_job_summary = job_counts.get(task.id)
+                for k in job_summary_fields:
+                    setattr(task, k, task_job_summary[k])
+
+        return super().to_representation(data)
+
 class TaskReadSerializer(serializers.ModelSerializer):
     data_chunk_size = serializers.ReadOnlyField(source='data.chunk_size', required=False)
     data_compressed_chunk_type = serializers.ReadOnlyField(source='data.compressed_chunk_type', required=False)
@@ -2313,6 +2342,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
             'organization': { 'allow_null': True },
             'overlap': { 'allow_null': True },
         }
+        list_serializer_class = TaskReadListSerializer
 
     def get_consensus_enabled(self, instance: models.Task) -> bool:
         return instance.consensus_replicas > 0

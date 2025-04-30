@@ -903,16 +903,14 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 ):
     queryset = Task.objects.select_related(
         'data',
-        'data__validation_layout',
         'assignee',
         'owner',
         'target_storage',
         'source_storage',
         'annotation_guide',
     ).prefetch_related(
-        'segment_set__job_set',
-        'segment_set__job_set__assignee',
-    ).with_job_summary()
+        'data__validation_layout',
+    )
 
     lookup_fields = {
         'project_name': 'project__name',
@@ -954,6 +952,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             queryset = perm.filter(queryset)
         elif self.action == 'preview':
             queryset = Task.objects.select_related('data')
+        else:
+            queryset = queryset.with_job_summary()
 
         return queryset
 
