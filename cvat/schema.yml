@@ -7934,8 +7934,8 @@ components:
           readOnly: true
         organization:
           type: integer
-          readOnly: true
           nullable: true
+          readOnly: true
         target_storage:
           allOf:
           - $ref: '#/components/schemas/Storage'
