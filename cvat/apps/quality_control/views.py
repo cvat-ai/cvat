@@ -452,14 +452,6 @@ SETTINGS_PARENT_TYPE_PARAM_NAME = "parent_type"
             "200": QualitySettingsSerializer,
         },
     ),
-    create=extend_schema(
-        summary="Method creates quality settings",
-        description="Can only be called for a project, task settings are initialized automatically",
-        request=QualitySettingsSerializer,
-        responses={
-            "200": QualitySettingsSerializer,
-        },
-    ),
     partial_update=extend_schema(
         summary="Update a quality settings instance",
         parameters=[
@@ -480,12 +472,11 @@ class QualitySettingsViewSet(
     viewsets.GenericViewSet,
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
-    mixins.CreateModelMixin,
     PartialUpdateModelMixin,
 ):
     queryset = QualitySettings.objects
 
-    iam_organization_field = "task__organization"
+    iam_organization_field = ["task__organization", "project__organization"]
 
     search_fields = []
     filter_fields = ["id", "task_id", "project_id", "inherit", "created_date", "updated_date"]
