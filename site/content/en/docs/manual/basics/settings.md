@@ -3,11 +3,14 @@ title: 'Settings'
 linkTitle: 'Settings'
 weight: 15
 ---
-To open the settings, open the user menu in the header and select the **Settings** or `F2`.
+To open the **Settings**, open the user menu in the header and select the **Settings**. Or you can use the default `F2` shortcut.
 
-![](/images/image067.jpg)
+The **Settings** section has three tabs:
+- [**Player**](#player)
+- [**Workspace**](#workspace)
+- [**Shortcuts**](#shortcuts)
 
-**Settings** have two tabs:
+## Player
 
 In the **Player** tab, you can:
 
@@ -23,7 +26,7 @@ In the **Player** tab, you can:
   |---------------------------|----------------------------|
   | ![](/images/smoothed.jpg) | ![](/images/pixelized.jpg) |
 
----
+## Workspace
 
 In the **Workspace** tab, you can:
 
@@ -75,3 +78,7 @@ In the **Workspace** tab, you can:
 will not change after the page is refreshed).
   Select **Cancel** or press `F2` to return to the annotation.
 
+## Shortcuts
+
+In the **Shortcuts** tab, you can set the keyboard combinations.
+Learn more in {{< ilink "/docs/manual/advanced/shortcuts" "Shortcuts" >}}.
