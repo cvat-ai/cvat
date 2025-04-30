@@ -11,24 +11,25 @@ from cvat.apps.redis_handler.redis_migrations.utils import get_job_func_name
 
 
 class EventsJobProcessor(AbstractJobProcessor):
-    def __call__(self, job, *, logger, registry):
+    def __call__(self, job, *, logger, queue_or_registry):
         func_name = get_job_func_name(job)
 
         if func_name != "_create_csv":
-            return
+            raise self.JobSkippedError()
 
         user_id = job.meta.get("user", {}).get("id")
         if not user_id:  # this information was added recently
-            raise self.JobMustBeDeletedError()
+            raise self.JobDeletionRequiredError()
 
         try:
             query_id = UUID(job.id.split("-by-")[0].split("-", maxsplit=2)[-1])
         except ValueError:
-            raise self.UnexpectedJobIdFormatError()
+            raise self.InvalidJobIdFormatError()
 
         job.id = f"action=export&target=events&id={query_id}&user_id={user_id}"
         job.args = job.args[:-1]  # cache_ttl was dropped
         job.save()
+        return job
 
 
 class Migration(BaseMigration):

@@ -3,35 +3,45 @@
 # SPDX-License-Identifier: MIT
 
 from abc import ABCMeta, abstractmethod
+from datetime import datetime
 from logging import Logger
 from pathlib import Path
 from types import NoneType
+from typing import Generator, Literal, overload
 
 import django_rq
 from attrs import define, field, validators
 from redis import Redis
 from rq.job import Job
 from rq.registry import BaseRegistry
+from rq_scheduler.utils import to_unix
+from typing import cast
+
 
 from cvat.apps.engine.log import get_migration_logger
 from cvat.apps.engine.utils import take_by
 from cvat.apps.redis_handler.redis_migrations.utils import force_enqueue_deferred_jobs
 
+QUEUE_OR_REGISTRY_TYPE = django_rq.queues.DjangoRQ | BaseRegistry
+
 
 class AbstractJobProcessor(metaclass=ABCMeta):
-    class JobMustBeDeletedError(Exception):
+    class JobDeletionRequiredError(Exception):
         pass
 
-    class UnexpectedJobIdFormatError(Exception):
+    class InvalidJobIdFormatError(Exception):
         pass
 
-    class UnexpectedJobError(Exception):
+    class InvalidJobError(Exception):
+        pass
+
+    class JobSkippedError(Exception):
         pass
 
     @abstractmethod
     def __call__(
-        self, job: Job, *, logger: Logger, registry: BaseRegistry | django_rq.queues.DjangoRQ | None
-    ) -> None: ...
+        self, job: Job, *, logger: Logger, queue_or_registry: QUEUE_OR_REGISTRY_TYPE | None
+    ) -> Job: ...
 
 
 @define
@@ -44,46 +54,165 @@ class BaseMigration(metaclass=ABCMeta):
     )
 
     def run(self) -> None:
-        with get_migration_logger(Path(self.__class__.__module__).stem) as logger:
-            self.logger = logger
-            self._run()
-        self.logger = None
+        try:
+            with get_migration_logger(Path(self.__class__.__module__).stem) as logger:
+                self.logger = logger
+                self._run()
+        finally:
+            self.logger = None
 
     @abstractmethod
     def _run(self) -> None: ...
 
-    def migrate_jobs_from_registry(
+    @overload
+    def _migrate_jobs_from_queue_list_or_registry_set(
         self,
         *,
-        registry: BaseRegistry | django_rq.queues.DjangoRQ,
+        queue_or_registry: QUEUE_OR_REGISTRY_TYPE,
         job_processor: AbstractJobProcessor,
-    ) -> None:
-        for subset_with_ids in take_by(set(registry.get_job_ids()), 1000):
+        yield_old_job_too: Literal[False] = False,
+    ) -> Generator[Job, None, None]: ...
+
+    @overload
+    def _migrate_jobs_from_queue_list_or_registry_set(
+        self,
+        *,
+        queue_or_registry: QUEUE_OR_REGISTRY_TYPE,
+        job_processor: AbstractJobProcessor,
+        yield_old_job_too: Literal[True] = True,
+    ) -> Generator[tuple[Job, Job], None, None]: ...
+
+    def _migrate_jobs_from_queue_list_or_registry_set(
+        self,
+        *,
+        queue_or_registry: QUEUE_OR_REGISTRY_TYPE,
+        job_processor: AbstractJobProcessor,
+        yield_old_job_too: bool = False,
+    ) -> Generator[Job | tuple[Job, Job], None, None]:
+        for subset_with_ids in take_by(set(queue_or_registry.get_job_ids()), 1000):
             for idx, job in enumerate(
-                registry.job_class.fetch_many(subset_with_ids, connection=self.connection)
+                queue_or_registry.job_class.fetch_many(subset_with_ids, connection=self.connection)
             ):
                 if job:
                     try:
-                        job_processor(
+                        updated_job = job_processor(
                             job,
-                            registry=registry,
+                            queue_or_registry=queue_or_registry,
                             logger=self.logger,
                         )
-                    except AbstractJobProcessor.JobMustBeDeletedError:
-                        registry.remove(job)  # queue.remove has no "delete_job" argument
-                        job.delete()
-                    except AbstractJobProcessor.UnexpectedJobIdFormatError:
-                        self.logger.error(
-                            f"Unexpected job id format in the {registry.name!r} queue: {job.id}"
-                        )
-                    except AbstractJobProcessor.UnexpectedJobError:
-                        self.logger.error(
-                            f"Unexpected job in the {registry.name!r} queue: {job.id}"
-                        )
-                    except Exception:  # nosec
+
+                        if yield_old_job_too:
+                            yield updated_job, job
+                        else:
+                            yield updated_job
+                    except AbstractJobProcessor.JobSkippedError:
                         continue
+                    except AbstractJobProcessor.JobDeletionRequiredError:
+                        queue_or_registry.remove(job)  # queue.remove has no "delete_job" argument
+                        job.delete()
+                    except AbstractJobProcessor.InvalidJobIdFormatError:
+                        self.logger.error(
+                            f"Unexpected job id format in the {queue_or_registry.name!r} queue: {job.id}"
+                        )
+                    except AbstractJobProcessor.InvalidJobError:
+                        self.logger.error(
+                            f"Unexpected job in the {queue_or_registry.name!r} queue: {job.id}"
+                        )
                 else:
-                    registry.remove(subset_with_ids[idx])
+                    queue_or_registry.remove(subset_with_ids[idx])
+
+    def _migrate_jobs_from_queue_list(
+        self,
+        *,
+        queue: django_rq.queues.DjangoRQ,
+        job_processor: AbstractJobProcessor,
+        recreate_queue: bool = False,
+    ) -> None:
+        if not recreate_queue:
+            for _ in self._migrate_jobs_from_queue_list_or_registry_set(
+                queue_or_registry=queue, job_processor=job_processor
+            ):
+                pass
+            return
+
+        list_with_updated_ids = [
+            j.id
+            for j in self._migrate_jobs_from_queue_list_or_registry_set(
+                queue_or_registry=queue, job_processor=job_processor
+            )
+        ]
+
+        with queue.connection.pipeline() as pipe:
+            # replace the queue LIST key with updated ids
+            pipe.delete(queue.key)
+            pipe.rpush(queue.key, *list_with_updated_ids)
+            pipe.execute()
+
+    def _migrate_jobs_from_registry_sorted_set(
+        self,
+        *,
+        registry: BaseRegistry,
+        job_processor: AbstractJobProcessor,
+        recreate_registry: bool = False,
+    ) -> None:
+        if not recreate_registry:
+            for _ in self._migrate_jobs_from_queue_list_or_registry_set(
+                queue_or_registry=registry, job_processor=job_processor
+            ):
+                pass
+            return
+
+        keys_with_scores = {
+            key.decode(): score
+            for key, score in self.connection.zrange(registry.key, 0, -1, withscores=True)
+        }
+        dict_with_updated_items = {
+            updated_job.id: keys_with_scores[old_job.id]
+            for updated_job, old_job in self._migrate_jobs_from_queue_list_or_registry_set(
+                queue_or_registry=registry, job_processor=job_processor, yield_old_job_too=True
+            )
+        }
+
+        with registry.connection.pipeline() as pipe:
+            # replace the registry SORTED SET key with updated id/score pairs
+            pipe.delete(registry.key)
+            pipe.zadd(registry.key, dict_with_updated_items)
+            pipe.execute()
+
+    def _migrate_jobs_from_scheduler(
+        self,
+        *,
+        scheduler: django_rq.queues.DjangoScheduler,
+        job_processor: AbstractJobProcessor,
+    ) -> None:
+        for job, dt in scheduler.get_jobs(with_times=True):
+            job = cast(Job, job)
+            # TODO: check
+            job_queue = scheduler.get_queue_for_job(job)
+            if job_queue.name != scheduler.queue_name:
+                continue
+
+            try:
+                updated_job = job_processor(
+                    job,
+                    logger=self.logger,
+                    queue_or_registry=None,
+                )
+                if updated_job.id != job.id:
+                    scheduler.cancel(job)
+                    job.delete()  # job.dependents_key and job.dependencies_key are deleted here too
+                    scheduler.connection.zadd(scheduler.scheduled_jobs_key, {job.id: to_unix(dt)})
+            except AbstractJobProcessor.JobSkippedError:
+                continue
+            except AbstractJobProcessor.JobDeletionRequiredError:
+                scheduler.cancel(job)
+                job.delete()
+            except AbstractJobProcessor.InvalidJobIdFormatError:
+                self.logger.error(
+                    f"Unexpected job id format in the {scheduler.queue_name!r} queue: {job.id}"
+                )
+            except AbstractJobProcessor.InvalidJobError:
+                self.logger.error(f"Unexpected job in the {scheduler.queue_name!r} queue: {job.id}")
 
     def migrate_queue_jobs(
         self,
@@ -91,40 +220,30 @@ class BaseMigration(metaclass=ABCMeta):
         queue_name: str,
         job_processor: AbstractJobProcessor,
         enqueue_deferred_jobs: bool = False,
+        job_ids_are_changed: bool = False,
     ):
         queue: django_rq.queues.DjangoRQ = django_rq.get_queue(
             queue_name, connection=self.connection
         )
-        scheduler: django_rq.queues.DjangoScheduler = django_rq.get_scheduler(queue_name)
+        self._migrate_jobs_from_queue_list(
+            queue=queue, job_processor=job_processor, recreate_queue=job_ids_are_changed
+        )
 
         if enqueue_deferred_jobs:
             force_enqueue_deferred_jobs(queue)
 
         for registry in (
-            queue,
             queue.started_job_registry,
             queue.deferred_job_registry,
             queue.finished_job_registry,
             queue.failed_job_registry,
         ):
-            self.migrate_jobs_from_registry(
+            self._migrate_jobs_from_registry_sorted_set(
                 registry=registry,
                 job_processor=job_processor,
+                recreate_registry=job_ids_are_changed,
             )
 
-        for job in scheduler.get_jobs():
-            try:
-                job_processor(
-                    job,
-                    logger=self.logger,
-                    registry=None,
-                )
-            except AbstractJobProcessor.JobMustBeDeletedError:
-                scheduler.cancel(job)
-                job.delete()
-            except AbstractJobProcessor.UnexpectedJobIdFormatError:
-                self.logger.error(f"Unexpected job id format in the {queue_name!r} queue: {job.id}")
-            except AbstractJobProcessor.UnexpectedJobError:
-                self.logger.error(f"Unexpected job in the {queue_name!r} queue: {job.id}")
-            except Exception:  # nosec
-                continue
+        scheduler: django_rq.queues.DjangoScheduler = django_rq.get_scheduler(queue_name)
+
+        self._migrate_jobs_from_scheduler(scheduler=scheduler, job_processor=job_processor)

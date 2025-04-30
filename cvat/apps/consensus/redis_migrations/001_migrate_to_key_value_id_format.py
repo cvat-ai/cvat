@@ -11,9 +11,9 @@ from cvat.apps.redis_handler.redis_migrations.utils import get_job_func_name
 
 
 class JobProcessor(AbstractJobProcessor):
-    def __call__(self, job, *, logger, registry):
+    def __call__(self, job, *, logger, queue_or_registry):
         if get_job_func_name(job) != "_merge":
-            raise self.UnexpectedJobError()
+            raise self.InvalidJobError()
 
         # previous ID formats:
         # consensus-merge-task-<task_id>-user-<user_id>
@@ -26,9 +26,9 @@ class JobProcessor(AbstractJobProcessor):
                 matched = match.groupdict()
                 job.id = f"action=merge&target={matched['target']}&target_id={matched['target_id']}"
                 job.save()
-                return
+                return job
 
-        raise self.UnexpectedJobIdFormatError()
+        raise self.InvalidJobIdFormatError()
 
 
 class Migration(BaseMigration):

@@ -11,7 +11,7 @@ from cvat.apps.redis_handler.redis_migrations.utils import get_job_func_name
 
 
 class ImportQueueJobProcessor(AbstractJobProcessor):
-    def __call__(self, job, *, logger, registry):
+    def __call__(self, job, *, logger, queue_or_registry):
         func_name = get_job_func_name(job)
 
         if func_name not in (
@@ -19,7 +19,7 @@ class ImportQueueJobProcessor(AbstractJobProcessor):
             "import_resource_with_clean_up_after",
             "import_resource_from_cloud_storage",
         ):
-            return  # do not raise UnexpectedJobError here since there can be cleanup functions
+            raise self.JobSkippedError()  # do not raise InvalidJobError here since there can be cleanup functions
 
         for pattern in (
             r"(?P<action>create):(?P<target>task)-(?P<target_id>\d+)",
@@ -36,13 +36,13 @@ class ImportQueueJobProcessor(AbstractJobProcessor):
                     db_storage, key, _, import_func, filename, rest = job.args
                     job.args = (filename, db_storage, key, import_func, *rest)
                 job.save()
-                return
+                return job
 
-        raise self.UnexpectedJobIdFormatError()
+        raise self.InvalidJobIdFormatError()
 
 
 class ExportQueueJobProcessor(AbstractJobProcessor):
-    def __call__(self, job, *, logger, registry):
+    def __call__(self, job, *, logger, queue_or_registry):
         func_name = get_job_func_name(job)
 
         if func_name not in (
@@ -55,7 +55,7 @@ class ExportQueueJobProcessor(AbstractJobProcessor):
             "create_backup",
             "export_resource_to_cloud_storage",
         ):
-            return  # do not raise UnexpectedJobError here since there can be export events jobs
+            raise self.JobSkippedError()  # do not raise InvalidJobError here since there can be export events jobs
 
         for pattern in (
             r"(?P<action>export):(?P<target>(task|project))-(?P<target_id>\d+)-(?P<subresource>backup)-by-(?P<user_id>\d+)",
@@ -65,9 +65,9 @@ class ExportQueueJobProcessor(AbstractJobProcessor):
             if match := re.fullmatch(pattern, job.id):
                 job.id = "&".join([f"{k}={v}" for k, v in match.groupdict()])
                 job.save()
-                return
+                return job
 
-        raise self.UnexpectedJobIdFormatError()
+        raise self.InvalidJobIdFormatError()
 
 
 class Migration(BaseMigration):
