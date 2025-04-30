@@ -27,7 +27,6 @@ import { BaseShapesAction } from './annotations-actions/base-shapes-action';
 import QualityReport from './quality-report';
 import QualityConflict from './quality-conflict';
 import QualitySettings from './quality-settings';
-import AnalyticsReport from './analytics-report';
 import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
 import { Request } from './request';
 
@@ -378,18 +377,18 @@ function build(): CVATCore {
                 return result;
             },
         },
-        analytics: {
-            performance: {
-                async reports(filter = {}) {
-                    const result = await PluginRegistry.apiWrapper(cvat.analytics.performance.reports, filter);
+        consensus: {
+            settings: {
+                async get(filter = {}) {
+                    const result = await PluginRegistry.apiWrapper(cvat.consensus.settings.get, filter);
                     return result;
                 },
-                async calculate(body, onUpdate) {
-                    const result = await PluginRegistry.apiWrapper(
-                        cvat.analytics.performance.calculate,
-                        body,
-                        onUpdate,
-                    );
+            },
+        },
+        analytics: {
+            events: {
+                async export(filter = {}) {
+                    const result = await PluginRegistry.apiWrapper(cvat.analytics.events.export, filter);
                     return result;
                 },
             },
@@ -451,7 +450,6 @@ function build(): CVATCore {
             BaseShapesAction,
             BaseCollectionAction,
             QualitySettings,
-            AnalyticsReport,
             QualityConflict,
             QualityReport,
             Request,
@@ -482,6 +480,7 @@ function build(): CVATCore {
     cvat.cloudStorages = Object.freeze(cvat.cloudStorages);
     cvat.organizations = Object.freeze(cvat.organizations);
     cvat.webhooks = Object.freeze(cvat.webhooks);
+    cvat.consensus = Object.freeze(cvat.consensus);
     cvat.analytics = Object.freeze(cvat.analytics);
     cvat.classes = Object.freeze(cvat.classes);
     cvat.utils = Object.freeze(cvat.utils);

@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('engine', '0036_auto_20201216_0943'),
+        ("engine", "0036_auto_20201216_0943"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='task',
-            name='subset',
-            field=models.CharField(blank=True, default='', max_length=64),
+            model_name="task",
+            name="subset",
+            field=models.CharField(blank=True, default="", max_length=64),
         ),
     ]

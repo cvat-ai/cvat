@@ -185,11 +185,13 @@ To annotate with detectors, do the following:
 3. From the left drop-down select the DL model label, from the right drop-down
    select the matching label of your task.
 
-   ![](/images/image187.jpg)
+   ![](/images/detectors_tab.png)
 
 4. (Optional) If the model returns masks, and you
    need to convert masks to polygons, use the **Convert masks to polygons** toggle.
-5. Click **Annotate**.
+5. (Optional) You can specify a **Threshold** for the model. If not provided, the
+    default value from the model settings will be used.
+6. Click **Annotate**.
 
 This action will automatically annotate one frame.
 For automatic annotation of multiple frames,
@@ -205,7 +207,6 @@ see {{< ilink "/docs/manual/advanced/automatic-annotation" "Automatic annotation
 | Faster RCNN                    | The model generates bounding boxes for each instance of an object in the image. <br>In this model, RPN and Fast R-CNN are combined into a single network. <br><br> For more information, see: <li>[GitHub: Faster RCNN](https://github.com/ShaoqingRen/faster_rcnn) <li>[Paper: Faster RCNN](https://arxiv.org/pdf/1506.01497.pdf)                                                                                             |
 | YOLO v3                        | YOLO v3 is a family of object detection architectures and models pre-trained on the COCO dataset. <br><br> For more information, see: <li>[GitHub: YOLO v3](https://github.com/ultralytics/yolov3) <li>[Site: YOLO v3](https://docs.ultralytics.com/#yolov3) <li>[Paper: YOLO v3](https://arxiv.org/pdf/1804.02767v1.pdf)                                                                                                      |
 | Semantic segmentation for ADAS | This is a segmentation network to classify each pixel into 20 classes. <br><br> For more information, see: <li>[Site: ADAS](https://docs.openvino.ai/2019_R1/_semantic_segmentation_adas_0001_description_semantic_segmentation_adas_0001.html)                                                                                                                                                                                |
-| Mask RCNN with Tensorflow      | Mask RCNN version with Tensorflow. The model generates polygons for each instance of an object in the image. <br><br> For more information, see: <li>[GitHub: Mask RCNN](https://github.com/matterport/Mask_RCNN) <li>[Paper: Mask RCNN](https://arxiv.org/pdf/1703.06870.pdf)                                                                                                                                                 |
 | Faster RCNN with Tensorflow    | Faster RCNN version with Tensorflow. The model generates bounding boxes for each instance of an object in the image. <br>In this model, RPN and Fast R-CNN are combined into a single network. <br><br> For more information, see: <li>[Site: Faster RCNN with Tensorflow](https://docs.openvino.ai/2021.4/omz_models_model_faster_rcnn_inception_v2_coco.html) <li>[Paper: Faster RCNN](https://arxiv.org/pdf/1506.01497.pdf) |
 | RetinaNet                      | Pytorch implementation of RetinaNet object detection. <br> <br><br> For more information, see: <li>[Specification: RetinaNet](https://paperswithcode.com/lib/detectron2/retinanet) <li>[Paper: RetinaNet](https://arxiv.org/pdf/1708.02002.pdf)<li>[Documentation: RetinaNet](https://detectron2.readthedocs.io/en/latest/tutorials/training.html)                                                                             |
 | Face Detection                 | Face detector based on MobileNetV2 as a backbone for indoor and outdoor scenes shot by a front-facing camera. <br> <br><br> For more information, see: <li>[Site: Face Detection 0205](https://docs.openvino.ai/latest/omz_models_model_face_detection_0205.html)                                                                                                                                                              |
@@ -235,38 +236,42 @@ To annotate with trackers, do the following:
    to move to the next frame.
    <br>All annotated objects will be automatically tracked.
 
-### OpenCV: annotate with trackers
-
-To annotate with trackers, do the following:
-
-1. On the menu toolbar, click **OpenCV**![OpenCV](/images/image201.jpg) and wait for the library to load.
-
-   <br>![](/images/image198.jpg)
-
-2. Go to the **Tracker** tab, select the label, and click **Tracking**.
-
-   <br>![Start tracking an object](/images/image242.jpg)
-
-3. From the **Label** drop-down, select the label for the object.
-4. From **Tracker** drop-down, select tracker.
-5. Click **Track**.
-6. To move to the next frame, on the top menu click the **Next** button (or **F** on the keyboard).
-
-All annotated objects will be automatically tracked when you move to the next frame.
-
 ### When tracking
 
 - To enable/disable tracking, use **Tracker switcher** on the sidebar.
 
-  ![Tracker switcher](/images/tracker_switcher.jpg)
+  ![Tracker switcher](/images/tracker_switcher.png)
 
 - Trackable objects have an indication on canvas with a model name.
 
-  ![Tracker indication](/images/tracker_indication_detrac.jpg)
+  ![Tracker indication](/images/tracker_indication_detrac.png)
 
 - You can follow the tracking by the messages appearing at the top.
 
-  ![Tracker pop-up window](/images/tracker_pop-up_window.jpg)
+  ![Tracker pop-up window](/images/tracker_pop-up_window.png)
+
+### OpenCV: annotate with trackers
+
+To annotate with trackers, do the following:
+
+1. Create basic rectangle shapes or tracks for tracker initialization
+
+2. On the menu toolbar, click **OpenCV**![OpenCV](/images/image201.jpg) and wait for the library to load.
+
+   <br>![](/images/image198.jpg)
+
+3. From **Tracker** drop-down, select tracker and Click **Track**
+
+   <br>![Start tracking an object](/images/tracker_mil_control.png)
+
+4. Annotation actions window will pop-up. Setup `Target frame`
+and `Convert rectangle shapes to tracks` parameters and click `Run`
+
+   > **Note:** Tracking will be applied to all filtered rectangle annotations.
+
+   <br>![Tracker action](/images/tracker_mil_action.png)
+
+All annotated objects will be automatically tracked up until target frame parameter.
 
 ### Trackers models
 

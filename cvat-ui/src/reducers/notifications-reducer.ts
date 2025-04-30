@@ -23,9 +23,11 @@ import { JobsActionTypes } from 'actions/jobs-actions';
 import { WebhooksActionsTypes } from 'actions/webhooks-actions';
 import { InvitationsActionTypes } from 'actions/invitations-actions';
 import { ServerAPIActionTypes } from 'actions/server-actions';
-import { RequestsActionsTypes, getInstanceType } from 'actions/requests-actions';
+import { RequestsActionsTypes } from 'actions/requests-actions';
 import { ImportActionTypes } from 'actions/import-actions';
 import { ExportActionTypes } from 'actions/export-actions';
+import { ConsensusActionTypes } from 'actions/consensus-actions';
+import { getInstanceType } from 'actions/common';
 
 import config from 'config';
 import { NotificationsState } from '.';
@@ -72,6 +74,7 @@ const defaultState: NotificationsState = {
             exporting: null,
             importing: null,
             moving: null,
+            mergingConsensus: null,
         },
         jobs: {
             updating: null,
@@ -195,6 +198,7 @@ const defaultState: NotificationsState = {
             loadingDone: null,
             importingDone: null,
             movingDone: null,
+            mergingConsensusDone: null,
         },
         models: {
             inferenceDone: null,
@@ -618,11 +622,11 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 'Dataset was imported to the ';
             const instanceType = getInstanceType(instance);
             if (instanceType === 'project') {
-                description += `[Project ${instance.id}](/projects/${instance.id})`;
+                description += `[Project #${instance.id}](/projects/${instance.id})`;
             } else if (instanceType === 'task') {
-                description += `[Task ${instance.id}](/tasks/${instance.id})`;
+                description += `[Task #${instance.id}](/tasks/${instance.id})`;
             } else {
-                description += `[Job ${instance.id}](/jobs/${instance.id})`;
+                description += `[Job #${instance.id}](/tasks/${instance.taskId}/jobs/${instance.id})`;
             }
 
             return {
@@ -644,8 +648,8 @@ export default function (state = defaultState, action: AnyAction): Notifications
             const { instance, resource } = action.payload;
             const message = resource === 'annotation' ?
                 'Could not upload annotation for the ' +
-                `[task ${instance?.taskId || instance.id}](/tasks/${instance?.taskId || instance.id})` :
-                `Could not import dataset to the [project ${instance.id}](/projects/${instance.id})`;
+                `[task #${instance?.taskId || instance.id}](/tasks/${instance?.taskId || instance.id})` :
+                `Could not import dataset to the [project #${instance.id}](/projects/${instance.id})`;
             return {
                 ...state,
                 errors: {
@@ -725,10 +729,59 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     tasks: {
                         ...state.errors.tasks,
                         deleting: {
-                            message: `Could not delete the [task ${taskID}](/tasks/${taskID})`,
+                            message: `Could not delete the [task #${taskID}](/tasks/${taskID})`,
                             reason: action.payload.error,
                             shouldLog: shouldLog(action.payload.error),
                             className: 'cvat-notification-notice-delete-task-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case ConsensusActionTypes.MERGE_CONSENSUS_JOBS_SUCCESS: {
+            const { instance } = action.payload;
+            let message = '';
+            const instanceType = getInstanceType(instance);
+            if (instanceType === 'job') {
+                message =
+                    `Consensus [job #${instance.id}](/tasks/${instance.taskId}/jobs/${instance.id}) has been merged`;
+            } else if (instanceType === 'task') {
+                message = `Consensus jobs in the [task #${instance.id}](/tasks/${instance.id}) have been merged`;
+            }
+            return {
+                ...state,
+                messages: {
+                    ...state.messages,
+                    tasks: {
+                        ...state.messages.tasks,
+                        mergingConsensusDone: {
+                            message,
+                        },
+                    },
+                },
+            };
+        }
+        case ConsensusActionTypes.MERGE_CONSENSUS_JOBS_FAILED: {
+            const { instance } = action.payload;
+            let message = '';
+            const instanceType = getInstanceType(instance);
+            if (instanceType === 'job') {
+                message =
+                    `Could not merge the [job #${instance.id}](/tasks/${instance.taskId}/jobs/${instance.id})`;
+            } else if (instanceType === 'task') {
+                message = `Could not merge the [task #${instance.id}](/tasks/${instance.id})`;
+            }
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    tasks: {
+                        ...state.errors.tasks,
+                        mergingConsensus: {
+                            message,
+                            reason: action.payload.error,
+                            shouldLog: !(action.payload.error instanceof ServerError),
+                            className: 'cvat-notification-notice-consensus-merge-task-failed',
                         },
                     },
                 },
@@ -793,7 +846,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     projects: {
                         ...state.errors.projects,
                         updating: {
-                            message: `Could not delete [project ${projectId}](/project/${projectId})`,
+                            message: `Could not delete [project #${projectId}](/project/${projectId})`,
                             reason: action.payload.error,
                             shouldLog: shouldLog(action.payload.error),
                             className: 'cvat-notification-notice-delete-project-failed',
@@ -845,7 +898,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             ...state.messages.models,
                             inferenceDone: {
                                 message: 'Automatic annotation accomplished for the ' +
-                                `[task ${taskID}](/tasks/${taskID})`,
+                                `[task #${taskID}](/tasks/${taskID})`,
                             },
                         },
                     },
@@ -885,7 +938,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     models: {
                         ...state.errors.models,
                         inferenceStatusFetching: {
-                            message: `Fetching inference status for the [task ${taskID}](/tasks/${taskID})`,
+                            message: `Fetching inference status for the [task #${taskID}](/tasks/${taskID})`,
                             reason: action.payload.error,
                             shouldLog: shouldLog(action.payload.error),
                         },
@@ -918,7 +971,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     models: {
                         ...state.errors.models,
                         starting: {
-                            message: `Could not infer model for the [task ${taskID}](/tasks/${taskID})`,
+                            message: `Could not infer model for the [task #${taskID}](/tasks/${taskID})`,
                             reason: action.payload.error,
                             shouldLog: shouldLog(action.payload.error),
                         },
@@ -935,7 +988,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     models: {
                         ...state.errors.models,
                         canceling: {
-                            message: `Could not cancel model inference for the [task ${taskID}](/tasks/${taskID})`,
+                            message: `Could not cancel model inference for the [task #${taskID}](/tasks/${taskID})`,
                             reason: action.payload.error,
                             shouldLog: shouldLog(action.payload.error),
                         },

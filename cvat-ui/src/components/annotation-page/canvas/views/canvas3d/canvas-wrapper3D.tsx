@@ -26,13 +26,17 @@ import {
 } from 'actions/annotation-actions';
 import {
     ActiveControl,
-    ColorBy, CombinedState, ContextMenuType, ObjectType, Workspace,
+    ColorBy, CombinedState, ContextMenuType, Workspace,
 } from 'reducers';
-import { CameraAction, Canvas3d, ViewsDOM } from 'cvat-canvas3d-wrapper';
+import {
+    OrientationVisibility, CameraAction, Canvas3d, ViewsDOM,
+} from 'cvat-canvas3d-wrapper';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { EventScope } from 'cvat-logger';
-import { getCore, ObjectState, Job } from 'cvat-core-wrapper';
+import {
+    getCore, ObjectState, ObjectType, Job,
+} from 'cvat-core-wrapper';
 import GlobalHotKeys from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
@@ -111,6 +115,7 @@ interface StateToProps {
     outlined: boolean;
     outlineColor: string;
     colorBy: ColorBy;
+    orientationVisibility: OrientationVisibility;
     frameFetching: boolean;
     canvasInstance: Canvas3d;
     jobInstance: Job;
@@ -161,14 +166,14 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 resetZoom,
             },
             shapes: {
-                opacity, colorBy, selectedOpacity, outlined, outlineColor,
+                opacity, colorBy, selectedOpacity, outlined, outlineColor, orientationVisibility,
             },
         },
     } = state;
 
     return {
         canvasInstance: canvasInstance as Canvas3d,
-        jobInstance,
+        jobInstance: jobInstance as Job,
         frameData,
         contextMenuVisibility,
         annotations,
@@ -179,6 +184,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         selectedOpacity,
         outlined,
         outlineColor,
+        orientationVisibility,
         activeLabelID,
         activatedStateID,
         activeObjectType,
@@ -476,6 +482,7 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
         opacity,
         outlined,
         outlineColor,
+        orientationVisibility,
         selectedOpacity,
         colorBy,
         contextMenuVisibility,
@@ -632,12 +639,13 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
     }, [resetZoom]);
 
     const updateShapesView = (): void => {
-        (canvasInstance as Canvas3d).configureShapes({
+        canvasInstance.configureShapes({
             opacity,
             outlined,
             outlineColor,
             selectedOpacity,
             colorBy,
+            orientationVisibility,
         });
     };
 
@@ -670,7 +678,7 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
 
     useEffect(() => {
         updateShapesView();
-    }, [opacity, outlined, outlineColor, selectedOpacity, colorBy]);
+    }, [opacity, outlined, outlineColor, selectedOpacity, colorBy, orientationVisibility]);
 
     useEffect(() => {
         const canvasInstanceDOM = canvasInstance.html() as ViewsDOM;

@@ -1,16 +1,12 @@
 # Project Specific
 /data/
-/models/
+/events/
 /share/
 /static/
 /db.sqlite3
 /keys
 /logs
 /profiles
-/ssh/*
-!/ssh/README.md
-/Mask_RCNN/
-/letsencrypt-webroot/
 
 # Ignore temporary files
 docker-compose.override.yml
@@ -20,8 +16,8 @@ __pycache__
 .coverage
 .husky/
 .python-version
-tmp*cvat/
-temp*/
+/tmp*cvat/
+/temp*/
 
 # Ignore generated test files
 docker-compose.tests.yml
@@ -41,7 +37,6 @@ yarn-error.log*
 #Ignore helm-related files
 /helm-chart/Chart.lock
 /helm-chart/values.*.yaml
-/helm-chart/*.values.yaml
 /helm-chart/charts/*
 
 #Ignore website temp files
@@ -63,10 +58,6 @@ cvat-canvas/dist
 cvat-canvas3d/dist
 cvat-ui/dist
 
-# produced by npm run docs in cvat-core
-cvat-core/docs
-# produced by npm run test in cvat-core
-cvat-core/reports
 # produced by prepare in the root package.json script
 .husky
 

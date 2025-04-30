@@ -87,8 +87,11 @@ for i, color in enumerate(colormap):
 To backup DB and data volume, please use commands below.
 
 ```console
-docker exec test_cvat_server_1 python manage.py dumpdata --indent 2 --natural-foreign --exclude=auth.permission --exclude=contenttypes --exclude=django_rq > shared/assets/cvat_db/data.json
-docker exec test_cvat_server_1 tar -cjv /home/django/data > shared/assets/cvat_db/cvat_data.tar.bz2
+docker exec test_cvat_server_1 python manage.py dumpdata --indent 2 --natural-foreign \
+    --exclude=admin --exclude=auth.permission --exclude=authtoken --exclude=contenttypes \
+    --exclude=django_rq --exclude=sessions \
+    > shared/assets/cvat_db/data.json
+docker exec test_cvat_server_1 tar --exclude "/home/django/data/cache" -cjv /home/django/data > shared/assets/cvat_db/cvat_data.tar.bz2
 ```
 
 > Note: if you won't be use --indent options or will be use with other value

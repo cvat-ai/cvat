@@ -7,13 +7,16 @@ from __future__ import annotations
 from collections.abc import Sequence
 from copy import deepcopy
 from enum import Enum
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.forms.models import model_to_dict
 
 from cvat.apps.engine.models import Job, ShapeType, Task, User
+
+if TYPE_CHECKING:
+    from cvat.apps.organizations.models import Organization
 
 
 class AnnotationConflictType(str, Enum):
@@ -142,9 +145,15 @@ class QualityReport(models.Model):
             raise ValidationError("One of the 'job' and 'task' fields must be set")
 
     @property
-    def organization_id(self):
+    def organization_id(self) -> int | None:
         if task := self.get_task():
-            return getattr(task.organization, "id", None)
+            return task.organization_id
+        return None
+
+    @property
+    def organization(self) -> Organization | None:
+        if task := self.get_task():
+            return task.organization
         return None
 
 
@@ -269,4 +278,4 @@ class QualitySettings(models.Model):
 
     @property
     def organization_id(self):
-        return getattr(self.task.organization, "id", None)
+        return self.task.organization_id

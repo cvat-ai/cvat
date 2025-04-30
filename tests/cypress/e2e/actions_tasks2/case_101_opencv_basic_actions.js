@@ -57,23 +57,33 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
     const textDefaultValue = 'Some default value for type Text';
     const imagesCount = 5;
     const imageFileName = `image_${labelName.replace(' ', '_').toLowerCase()}`;
-    const width = 400;
-    const height = 400;
-    const posX = 10;
-    const posY = 10;
-    const color = 'gray';
+    const width = 5000;
+    const height = 5000;
+    const delta = 5;
+    const step = 62.5;
+    const maxTextWidth = undefined;
+    const textHeightPx = 981.25;
+    const posX = 125;
+    const posY = 125;
     const archiveName = `${imageFileName}.zip`;
     const archivePath = `cypress/fixtures/${archiveName}`;
     const imagesFolder = `cypress/fixtures/${imageFileName}`;
     const directoryToArchive = imagesFolder;
     const extension = 'jpg';
+    const color = 'grey';
+    const textColor = 'black';
+    const fontSize = textHeightPx;
 
     before(() => {
         cy.visit('/auth/login');
         cy.login();
         for (let i = 0; i < imagesCount; i++) {
-            cy.imageGenerator(imagesFolder, imageFileName + i, width, height, color, posX + i * 5,
-                posY + i * 5, labelName, 1, extension);
+            cy.makeCustomImage(imagesFolder, `${imageFileName}_${i}`,
+                width, height,
+                fontSize, color, textColor,
+                posX + i * step, posY + i * step,
+                `${labelName}. Num ${i}`, extension,
+                maxTextWidth);
         }
         cy.createZipArchive(directoryToArchive, archivePath);
         cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName);
@@ -114,7 +124,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
                     .find('[role="slider"]')
                     .type(generateString(4, 'rightarrow'));
                 cy.get('.cvat_canvas_interact_intermediate_shape').then((_intermediateShape) => {
-                    // Get count of points againe
+                    // Get count of points again
                     const intermediateShapeNumberPointsAfterChange = _intermediateShape.attr('points').split(' ').length;
                     // expected 7 to be below 10
                     expect(intermediateShapeNumberPointsBeforeChange).to.be.lt(
@@ -212,7 +222,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
 
         it('Create a shape with "TrackerMIL". Track it for several frames.', () => {
             cy.createRectangle(createRectangleTrack2Points);
-            // We will start testing tracking from 2-d frame because it's a bit unstable on inintialization
+            // We will start testing tracking from 2nd frame because it's a bit unstable on inintialization
             cy.useOpenCVTracker({ tracker: 'TrackerMIL', targetFrame: 4 });
             cy.get('#cvat_canvas_shape_4')
                 .then((shape) => {
@@ -221,13 +231,11 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
                     for (let i = 1; i < imagesCount; i++) {
                         cy.goToNextFrame(i);
                         // In the beginning of this test we created images with text
-                        // On each frame text is moved by 5px on x and y axis,
+                        // On each frame text is moved by `${step}px` on x and y axis,
                         // so we expect shape to be close to real text positions
-                        cy.get('#cvat_canvas_shape_4').invoke('attr', 'x').then((xVal) => {
-                            expect(parseFloat(xVal)).to.be.closeTo(x + i * 5, 3.0);
-                        });
-                        cy.get('#cvat_canvas_shape_4').invoke('attr', 'y').then((yVal) => {
-                            expect(parseFloat(yVal)).to.be.closeTo(y + i * 5, 3.0);
+                        cy.get('#cvat_canvas_shape_4').then(($shape) => {
+                            expect(+$shape.attr('x')).to.be.closeTo(x + i * step, delta);
+                            expect(+$shape.attr('y')).to.be.closeTo(y + i * step, delta);
                         });
                         cy.get('#cvat-objects-sidebar-state-item-4')
                             .should('contain', 'RECTANGLE TRACK')

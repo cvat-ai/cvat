@@ -1,4 +1,3 @@
-
 # Copyright (C) 2018-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
@@ -11,13 +10,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('engine', '0003_objectpath_shapes'),
+        ("engine", "0003_objectpath_shapes"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='task',
-            name='z_order',
+            model_name="task",
+            name="z_order",
             field=models.BooleanField(default=False),
         ),
     ]

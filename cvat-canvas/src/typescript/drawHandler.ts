@@ -47,16 +47,18 @@ interface FinalCoordinates {
 function checkConstraint(shapeType: string, points: number[], box: Box | null = null): boolean {
     if (shapeType === 'rectangle') {
         const [xtl, ytl, xbr, ybr] = points;
-        return (xbr - xtl) * (ybr - ytl) >= consts.AREA_THRESHOLD;
+        const [width, height] = [xbr - xtl, ybr - ytl];
+        return width >= consts.SIZE_THRESHOLD && height >= consts.SIZE_THRESHOLD;
     }
 
     if (shapeType === 'polygon') {
-        return (box.xbr - box.xtl) * (box.ybr - box.ytl) >= consts.AREA_THRESHOLD && points.length >= 3 * 2;
+        const [width, height] = [box.xbr - box.xtl, box.ybr - box.ytl];
+        return (width >= consts.SIZE_THRESHOLD || height > consts.SIZE_THRESHOLD) && points.length >= 3 * 2;
     }
 
     if (shapeType === 'polyline') {
-        return (box.xbr - box.xtl >= consts.SIZE_THRESHOLD ||
-            box.ybr - box.ytl >= consts.SIZE_THRESHOLD) && points.length >= 2 * 2;
+        const [width, height] = [box.xbr - box.xtl, box.ybr - box.ytl];
+        return (width >= consts.SIZE_THRESHOLD || height >= consts.SIZE_THRESHOLD) && points.length >= 2 * 2;
     }
 
     if (shapeType === 'points') {
@@ -64,18 +66,22 @@ function checkConstraint(shapeType: string, points: number[], box: Box | null = 
     }
 
     if (shapeType === 'ellipse') {
-        const [rx, ry] = [points[2] - points[0], points[1] - points[3]];
-        return rx * ry * Math.PI >= consts.AREA_THRESHOLD;
+        const [width, height] = [(points[2] - points[0]) * 2, (points[1] - points[3]) * 2];
+        return width >= consts.SIZE_THRESHOLD && height > consts.SIZE_THRESHOLD;
     }
 
     if (shapeType === 'cuboid') {
         return points.length === 4 * 2 || points.length === 8 * 2 ||
-            (points.length === 2 * 2 && (points[2] - points[0]) * (points[3] - points[1]) >= consts.AREA_THRESHOLD);
+            (points.length === 2 * 2 &&
+                (points[2] - points[0]) >= consts.SIZE_THRESHOLD &&
+                (points[3] - points[1]) >= consts.SIZE_THRESHOLD
+            );
     }
 
     if (shapeType === 'skeleton') {
         const [xtl, ytl, xbr, ybr] = points;
-        return (xbr - xtl >= 1 || ybr - ytl >= 1);
+        const [width, height] = [xbr - xtl, ybr - ytl];
+        return width >= consts.SIZE_THRESHOLD || height >= consts.SIZE_THRESHOLD;
     }
 
     return false;
@@ -1340,7 +1346,7 @@ export class DrawHandlerImpl implements DrawHandler {
             });
         }
 
-        if (this.drawInstance && (isFilalblePolygon)) {
+        if (this.drawInstance && isFilalblePolygon) {
             const paintHandler = this.drawInstance.remember('_paintHandler');
             if (paintHandler) {
                 for (const point of (paintHandler as any).set.members) {
@@ -1392,17 +1398,17 @@ export class DrawHandlerImpl implements DrawHandler {
         }
 
         if (this.drawInstance) {
-            this.drawInstance.draw('transform');
             this.drawInstance.attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / geometry.scale,
             });
 
             const paintHandler = this.drawInstance.remember('_paintHandler');
-
-            for (const point of (paintHandler as any).set.members) {
-                this.strokePoint(point);
-                point.attr('stroke-width', `${consts.POINTS_STROKE_WIDTH / geometry.scale}`);
-                point.attr('r', `${this.controlPointsSize / geometry.scale}`);
+            if (paintHandler) {
+                for (const point of (paintHandler as any).set.members) {
+                    this.strokePoint(point);
+                    point.attr('stroke-width', `${consts.POINTS_STROKE_WIDTH / geometry.scale}`);
+                    point.attr('r', `${this.controlPointsSize / geometry.scale}`);
+                }
             }
         }
     }

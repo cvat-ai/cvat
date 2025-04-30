@@ -7,8 +7,8 @@ import React, { useEffect } from 'react';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import message from 'antd/lib/message';
 
-import { LabelType, ShapeType } from 'cvat-core-wrapper';
-import { CombinedState, ObjectType } from 'reducers';
+import { LabelType, ObjectType, ShapeType } from 'cvat-core-wrapper';
+import { CombinedState } from 'reducers';
 import { rememberObject, updateAnnotationsAsync } from 'actions/annotation-actions';
 import LabelItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/label-item';
 import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';

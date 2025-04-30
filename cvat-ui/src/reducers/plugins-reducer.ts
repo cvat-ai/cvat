@@ -34,6 +34,9 @@ const defaultState: PluginsState = {
             overviewTab: [],
             allocationTable: [],
         },
+        analyticsReportPage: {
+            content: [],
+        },
     },
     components: {
         header: {
@@ -60,11 +63,12 @@ const defaultState: PluginsState = {
             },
         },
         projectActions: {
-            // not used
             items: [],
         },
         taskActions: {
-            // not used
+            items: [],
+        },
+        jobActions: {
             items: [],
         },
         taskItem: {

@@ -31,14 +31,15 @@ import Organization, { Invitation } from './organization';
 import Webhook from './webhook';
 import { ArgumentError } from './exceptions';
 import {
-    AnalyticsReportFilter, QualityConflictsFilter, QualityReportsFilter,
-    QualitySettingsFilter, SerializedAsset,
+    AnalyticsEventsFilter, QualityConflictsFilter, QualityReportsFilter,
+    QualitySettingsFilter, SerializedAsset, ConsensusSettingsFilter,
 } from './server-response-types';
 import QualityReport from './quality-report';
+import AboutData from './about';
 import QualityConflict, { ConflictSeverity } from './quality-conflict';
 import QualitySettings from './quality-settings';
 import { getFramesMeta } from './frames';
-import AnalyticsReport from './analytics-report';
+import ConsensusSettings from './consensus-settings';
 import {
     callAction, listActions, registerAction, runAction,
 } from './annotations-actions/annotations-actions';
@@ -72,7 +73,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
 
     implementationMixin(cvat.server.about, async () => {
         const result = await serverProxy.server.about();
-        return result;
+        return new AboutData(result);
     });
     implementationMixin(cvat.server.share, async (directory: string, searchPrefix?: string) => {
         const result = await serverProxy.server.share(directory, searchPrefix);
@@ -414,6 +415,20 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         return webhooks;
     });
 
+    implementationMixin(cvat.consensus.settings.get, async (filter: ConsensusSettingsFilter) => {
+        checkFilter(filter, {
+            taskID: isInteger,
+        });
+
+        const params = fieldsToSnakeCase(filter);
+
+        const settings = await serverProxy.consensus.settings.get(params);
+        const schema = await getServerAPISchema();
+        const descriptions = convertDescriptions(schema.components.schemas.ConsensusSettings.properties);
+
+        return new ConsensusSettings({ ...settings, descriptions });
+    });
+
     implementationMixin(cvat.analytics.quality.reports, async (filter: QualityReportsFilter) => {
         checkFilter(filter, {
             page: isInteger,
@@ -526,38 +541,24 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
 
         return new QualitySettings({ ...settings, descriptions });
     });
-    implementationMixin(cvat.analytics.performance.reports, async (filter: AnalyticsReportFilter) => {
+    implementationMixin(cvat.analytics.events.export, async (
+        filter: AnalyticsEventsFilter,
+    ): ReturnType<CVATCore['analytics']['events']['export']> => {
         checkFilter(filter, {
-            jobID: isInteger,
-            taskID: isInteger,
-            projectID: isInteger,
-            startDate: isString,
-            endDate: isString,
+            orgId: isInteger,
+            userId: isInteger,
+            jobId: isInteger,
+            taskId: isInteger,
+            projectId: isInteger,
+            from: isString,
+            to: isString,
+            filename: isString,
         });
 
-        checkExclusiveFields(filter, ['jobID', 'taskID', 'projectID'], ['startDate', 'endDate']);
+        checkExclusiveFields(filter, ['jobId', 'taskId', 'projectId'], ['from', 'to']);
 
         const params = fieldsToSnakeCase(filter);
-        const reportData = await serverProxy.analytics.performance.reports(params);
-        return new AnalyticsReport(reportData);
-    });
-    implementationMixin(cvat.analytics.performance.calculate, async (
-        body: Parameters<CVATCore['analytics']['performance']['calculate']>[0],
-        onUpdate: Parameters<CVATCore['analytics']['performance']['calculate']>[1],
-    ) => {
-        checkFilter(body, {
-            jobID: isInteger,
-            taskID: isInteger,
-            projectID: isInteger,
-        });
-
-        checkExclusiveFields(body, ['jobID', 'taskID', 'projectID'], []);
-        if (!('jobID' in body || 'taskID' in body || 'projectID' in body)) {
-            throw new ArgumentError('One of "jobID", "taskID", "projectID" is required, but not provided');
-        }
-
-        const params = fieldsToSnakeCase(body);
-        await serverProxy.analytics.performance.calculate(params, onUpdate);
+        return serverProxy.events.export(params);
     });
     implementationMixin(cvat.frames.getMeta, async (type: 'job' | 'task', id: number) => {
         const result = await getFramesMeta(type, id);

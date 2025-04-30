@@ -14,7 +14,7 @@ import traceback
 import zlib
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable
 from contextlib import suppress
 from copy import copy
 from datetime import datetime
@@ -27,11 +27,10 @@ import django_rq
 from attr.converters import to_bool
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.db import IntegrityError
-from django.db import models as django_models
-from django.db import transaction
+from django.core.files.storage import storages
+from django.db import IntegrityError, transaction
 from django.db.models.query import Prefetch
-from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
+from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseGone, HttpResponseNotFound
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
@@ -81,13 +80,8 @@ from cvat.apps.engine.frame_provider import (
 )
 from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.media_extractors import get_mime
-from cvat.apps.engine.mixins import (
-    BackupMixin,
-    CsrfWorkaroundMixin,
-    DatasetMixin,
-    PartialUpdateModelMixin,
-    UploadMixin,
-)
+from cvat.apps.engine.mixins import BackupMixin, DatasetMixin, PartialUpdateModelMixin, UploadMixin
+from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.models import AnnotationGuide, Asset, ClientFile, CloudProviderChoice
 from cvat.apps.engine.models import CloudStorage as CloudStorageModel
 from cvat.apps.engine.models import (
@@ -120,7 +114,13 @@ from cvat.apps.engine.permissions import (
     get_cloud_storage_for_import_or_export,
     get_iam_context,
 )
-from cvat.apps.engine.rq_job_handler import RQId, RQJobMetaField, is_rq_job_owner
+from cvat.apps.engine.rq import (
+    ImportRQMeta,
+    RQId,
+    RQMetaWithFailureInfo,
+    define_dependent_job,
+    is_rq_job_owner,
+)
 from cvat.apps.engine.serializers import (
     AboutSerializer,
     AnnotationFileSerializer,
@@ -162,11 +162,11 @@ from cvat.apps.engine.serializers import (
     TaskWriteSerializer,
     UserSerializer,
 )
+from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import (
     av_scan_paths,
-    define_dependent_job,
-    get_rq_job_meta,
     get_rq_lock_by_user,
+    get_rq_lock_for_job,
     import_resource_with_clean_up_after,
     parse_exception_message,
     process_failed_job,
@@ -189,6 +189,15 @@ _DATA_CHECKSUM_HEADER_NAME = 'X-Checksum'
 _DATA_UPDATED_DATE_HEADER_NAME = 'X-Updated-Date'
 _RETRY_AFTER_TIMEOUT = 10
 
+def get_410_response_for_export_api(path: str) -> HttpResponseGone:
+    return HttpResponseGone(textwrap.dedent(f"""\
+        This endpoint is no longer supported.
+        To initiate the export process, use POST {path}.
+        To check the process status, use GET /api/requests/rq_id,
+        where rq_id is obtained from the response of the previous request.
+        To download the prepared file, use the result_url obtained from the response of the previous request.
+    """))
+
 @extend_schema(tags=['server'])
 class ServerViewSet(viewsets.ViewSet):
     serializer_class = None
@@ -207,18 +216,20 @@ class ServerViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['GET'], serializer_class=AboutSerializer,
         permission_classes=[] # This endpoint is available for everyone
     )
-    def about(request):
+    def about(request: ExtendedRequest):
         from cvat import __version__ as cvat_version
         about = {
             "name": "Computer Vision Annotation Tool",
-            "version": cvat_version,
+            "subtitle": settings.ABOUT_INFO["subtitle"],
             "description": "CVAT is completely re-designed and re-implemented " +
                 "version of Video Annotation Tool from Irvine, California " +
                 "tool. It is free, online, interactive video and image annotation " +
                 "tool for computer vision. It is being used by our team to " +
                 "annotate million of objects with different properties. Many UI " +
                 "and UX decisions are based on feedbacks from professional data " +
-                "annotation team."
+                "annotation team.",
+            "version": cvat_version,
+            "logo_url": request.build_absolute_uri(storages["staticfiles"].url(settings.LOGO_FILENAME)),
         }
         serializer = AboutSerializer(data=about)
         if serializer.is_valid(raise_exception=True):
@@ -237,7 +248,7 @@ class ServerViewSet(viewsets.ViewSet):
             '200' : FileInfoSerializer(many=True)
         })
     @action(detail=False, methods=['GET'], serializer_class=FileInfoSerializer)
-    def share(request):
+    def share(request: ExtendedRequest):
         directory_param = request.query_params.get('directory', '/')
         search_param = request.query_params.get('search', '')
 
@@ -282,7 +293,7 @@ class ServerViewSet(viewsets.ViewSet):
             '200': DatasetFormatsSerializer,
         })
     @action(detail=False, methods=['GET'], url_path='annotation/formats')
-    def annotation_formats(request):
+    def annotation_formats(request: ExtendedRequest):
         data = dm.views.get_all_formats()
         return Response(DatasetFormatsSerializer(data).data)
 
@@ -293,7 +304,7 @@ class ServerViewSet(viewsets.ViewSet):
             '200': PluginsSerializer,
         })
     @action(detail=False, methods=['GET'], url_path='plugins', serializer_class=PluginsSerializer)
-    def plugins(request):
+    def plugins(request: ExtendedRequest):
         data = {
             'GIT_INTEGRATION': False, # kept for backwards compatibility
             'ANALYTICS': settings.ANALYTICS_ENABLED,
@@ -301,12 +312,6 @@ class ServerViewSet(viewsets.ViewSet):
             'PREDICT': False, # FIXME: it is unused anymore (for UI only)
         }
         return Response(PluginsSerializer(data).data)
-
-def csrf_workaround_is_needed_for_backup(query_params: Mapping[str, str]) -> bool:
-    return query_params.get('action') != 'download'
-
-def csrf_workaround_is_needed_for_export(query_params: Mapping[str, str]) -> bool:
-    return 'format' in query_params and query_params.get('action') != 'download'
 
 @extend_schema(tags=['projects'])
 @extend_schema_view(
@@ -341,7 +346,7 @@ def csrf_workaround_is_needed_for_export(query_params: Mapping[str, str]) -> boo
 )
 class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
-    PartialUpdateModelMixin, UploadMixin, DatasetMixin, BackupMixin, CsrfWorkaroundMixin
+    PartialUpdateModelMixin, UploadMixin, DatasetMixin, BackupMixin
 ):
     # NOTE: The search_fields attribute should be a list of names of text
     # type fields on the model,such as CharField or TextField
@@ -388,58 +393,56 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         # Required for the extra summary information added in the queryset
         serializer.instance = self.get_queryset().get(pk=serializer.instance.pk)
 
-    def get_export_callback(self, save_images: bool) -> Callable:
-        return dm.views.export_project_as_dataset if save_images else dm.views.export_project_annotations
-
-    @extend_schema(methods=['GET'], summary='Export a project as a dataset / Check dataset import status',
+    @extend_schema(methods=['GET'], summary='Check dataset import status',
         description=textwrap.dedent("""
-            To check the status of the process of importing a project dataset from a file:
+            Utilizing this endpoint to check the status of the process
+            of importing a project dataset from a file is deprecated.
+            In addition, this endpoint no longer handles the project dataset export process.
 
-            After initiating the dataset upload, you will receive an rq_id parameter.
-            Make sure to include this parameter as a query parameter in your subsequent
-            GET /api/projects/id/dataset requests to track the status of the dataset import.
-            Also you should specify action parameter: action=import_status.
-
-            Deprecation warning:
-            Utilizing this endpoint to export project dataset in
-            a specific format will be deprecated in one of the next releases.
             Consider using new API:
-            - POST /api/projects/<project_id>/dataset/export/?save_images=True to initiate export process
-            - GET /api/requests/<rq_id> to check process status,
-                where rq_id is request id returned on initializing request
+            - `POST /api/projects/<project_id>/dataset/export/?save_images=True` to initiate export process
+            - `GET /api/requests/<rq_id>` to check process status
+            - `GET result_url` to download a prepared file
+
+            Where:
+            - `rq_id` can be found in the response on initializing request
+            - `result_url` can be found in the response on checking status request
         """),
         parameters=[
-            OpenApiParameter('format', description='Desired output format name\n'
-                'You can get the list of supported formats at:\n/server/annotation/formats',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
-            OpenApiParameter('filename', description='Desired output file name',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
-            OpenApiParameter('action', description='Used to start downloading process locally after annotation file has been created',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False, enum=['download', 'import_status']),
-            OpenApiParameter('location', description='Where need to save downloaded dataset',
+            OpenApiParameter('format', description='This parameter is no longer supported',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
-                enum=Location.list()),
-            OpenApiParameter('cloud_storage_id', description='Storage id',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
-            OpenApiParameter('use_default_location', description='Use the location that was configured in project to import dataset',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False,
-                default=True, deprecated=True),
-            OpenApiParameter('rq_id', description='rq id',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
+                deprecated=True
+            ),
+            OpenApiParameter('filename', description='This parameter is no longer supported',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
+                deprecated=True
+            ),
+            OpenApiParameter('action', description='Used to check the import status',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False, enum=['import_status'],
+                deprecated=True
+            ),
+            OpenApiParameter('location', description='This parameter is no longer supported',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
+                enum=Location.list(),
+                deprecated=True
+            ),
+            OpenApiParameter('cloud_storage_id', description='This parameter is no longer supported',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False,
+                deprecated=True
+            ),
+            OpenApiParameter('rq_id', description='This parameter is no longer supported',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=True),
         ],
-        # deprecated=True, FUTURE-TODO: uncomment when new API for result downloading will be implemented
+        deprecated=True,
         responses={
-            '200': OpenApiResponse(OpenApiTypes.BINARY, description='Download of file started'),
-            '201': OpenApiResponse(description='Output file is ready for downloading'),
-            '202': OpenApiResponse(description='Exporting has been started'),
-            '405': OpenApiResponse(description='Format is not available'),
+            '410': OpenApiResponse(description='API endpoint no longer supports exporting datasets'),
         })
     @extend_schema(methods=['POST'],
         summary='Import a dataset into a project',
         description=textwrap.dedent("""
-            The request POST /api/projects/id/dataset will initiate file upload and will create
-            the rq job on the server in which the process of dataset import from a file
-            will be carried out. Please, use the GET /api/projects/id/dataset endpoint for checking status of the process.
+            The request POST /api/projects/id/dataset initiates a background process to import dataset into a project.
+            Please, use the GET /api/requests/<rq_id> endpoint for checking status of the process.
+            The `rq_id` parameter can be found in the response on initiating request.
         """),
         parameters=[
             OpenApiParameter('format', description='Desired dataset format name\n'
@@ -468,47 +471,51 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         })
     @action(detail=True, methods=['GET', 'POST', 'OPTIONS'], serializer_class=None,
         url_path=r'dataset/?$', parser_classes=_UPLOAD_PARSER_CLASSES,
-        csrf_workaround_is_needed=lambda qp:
-            csrf_workaround_is_needed_for_export(qp) and qp.get("action") != "import_status")
-    def dataset(self, request, pk):
+    )
+    def dataset(self, request: ExtendedRequest, pk: int):
         self._object = self.get_object() # force call of check_object_permissions()
 
-        if request.method in {'POST', 'OPTIONS'}:
-            return self.import_annotations(
-                request=request,
-                db_obj=self._object,
-                import_func=_import_project_dataset,
-                rq_func=dm.project.import_dataset_as_project,
-                rq_id_factory=self.IMPORT_RQ_ID_FACTORY,
-            )
-        else:
-            action = request.query_params.get("action", "").lower()
-            if action in ("import_status",):
+        if request.method == "GET":
+            if request.query_params.get("action") == "import_status":
+                # We cannot redirect to the requests API here because
+                # it wouldn't be compatible with the outdated API:
+                # the current API endpoint returns a different status codes
+                # depends on rq job status (like 201 - finished),
+                # while GET /api/requests/rq_id returns a 200 status code
+                # if such a request exists regardless of job status.
+
+                deprecation_timestamp = int(datetime(2025, 2, 27, tzinfo=timezone.utc).timestamp())
+                response_headers  = {
+                    "Deprecation": f"@{deprecation_timestamp}"
+                }
+
                 queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
                 rq_id = request.query_params.get('rq_id')
                 if not rq_id:
                     return Response(
                         'The rq_id param should be specified in the query parameters',
                         status=status.HTTP_400_BAD_REQUEST,
+                        headers=response_headers,
                     )
 
                 rq_job = queue.fetch_job(rq_id)
 
                 if rq_job is None:
-                    return Response(status=status.HTTP_404_NOT_FOUND)
+                    return Response(status=status.HTTP_404_NOT_FOUND, headers=response_headers)
                 # check that the user has access to the current rq_job
                 elif not is_rq_job_owner(rq_job, request.user.id):
-                    return Response(status=status.HTTP_403_FORBIDDEN)
+                    return Response(status=status.HTTP_403_FORBIDDEN, headers=response_headers)
 
                 if rq_job.is_finished:
                     rq_job.delete()
-                    return Response(status=status.HTTP_201_CREATED)
+                    return Response(status=status.HTTP_201_CREATED, headers=response_headers)
                 elif rq_job.is_failed:
                     exc_info = process_failed_job(rq_job)
 
                     return Response(
                         data=str(exc_info),
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        headers=response_headers
                     )
                 else:
                     return Response(
@@ -517,12 +524,24 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                             rq_id,
                         ),
                         status=status.HTTP_202_ACCEPTED,
+                        headers=response_headers
                     )
-            else:
-                return self.export_dataset_v1(request=request, save_images=True)
+
+            # we cannot redirect to the new API here since this endpoint used not only to check the status
+            # of exporting process|download a result file, but also to initiate export process
+            return get_410_response_for_export_api("/api/projects/id/dataset/export?save_images=True")
+
+        return self.import_annotations(
+            request=request,
+            db_obj=self._object,
+            import_func=_import_project_dataset,
+            rq_func=dm.project.import_dataset_as_project,
+            rq_id_factory=self.IMPORT_RQ_ID_FACTORY,
+        )
+
 
     @tus_chunk_action(detail=True, suffix_base="dataset")
-    def append_dataset_chunk(self, request, pk, file_id):
+    def append_dataset_chunk(self, request: ExtendedRequest, pk: int, file_id: str):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
 
@@ -533,7 +552,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return backup.get_backup_dirname()
         assert False
 
-    def upload_finished(self, request):
+    def upload_finished(self, request: ExtendedRequest):
         if self.action == 'dataset':
             format_name = request.query_params.get("format", "")
             filename = request.query_params.get("filename", "")
@@ -569,87 +588,15 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return Response(data='Unknown upload was finished',
                         status=status.HTTP_400_BAD_REQUEST)
 
-    @extend_schema(summary='Export project annotations as a dataset',
-        description=textwrap.dedent("""\
-            Deprecation warning:
+    @extend_schema(exclude=True)
+    @action(detail=True, methods=['GET'])
+    def annotations(self, request: ExtendedRequest, pk: int):
+        return get_410_response_for_export_api("/api/projects/id/dataset/export?save_images=False")
 
-            Using this endpoint to initiate export of annotations as a dataset or to check export status is deprecated.
-            Consider using new API:
-            - POST /api/projects/<project_id>/dataset/export?save_images=False to initiate exporting process
-            - GET /api/requests/<rq_id> to check export status,
-                where rq_id is request id returned on initializing request'
-        """),
-        parameters=[
-            OpenApiParameter('format', description='Desired output format name\n'
-                'You can get the list of supported formats at:\n/server/annotation/formats',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=True),
-            OpenApiParameter('filename', description='Desired output file name',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
-            OpenApiParameter('action', description='Used to start downloading process locally after annotation file has been created',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False, enum=['download']),
-            OpenApiParameter('location', description='Where need to save downloaded dataset',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
-                enum=Location.list()),
-            OpenApiParameter('cloud_storage_id', description='Storage id',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
-            OpenApiParameter('use_default_location', description='Use the location that was configured in project to export annotation',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False,
-                default=True, deprecated=True),
-        ],
-        responses={
-            '200': OpenApiResponse(PolymorphicProxySerializer(
-                component_name='AnnotationsRead',
-                serializers=[LabeledDataSerializer, OpenApiTypes.BINARY],
-                resource_type_field_name=None
-            ), description='Download of file started'),
-            '201': OpenApiResponse(description='Annotations file is ready to download'),
-            '202': OpenApiResponse(description='Dump of annotations has been started'),
-            '401': OpenApiResponse(description='Format is not specified'),
-            '405': OpenApiResponse(description='Format is not available'),
-        })
-    @action(detail=True, methods=['GET'],
-        serializer_class=LabeledDataSerializer,
-        csrf_workaround_is_needed=csrf_workaround_is_needed_for_export)
-    def annotations(self, request, pk):
-        # FUTURE-TODO: mark exporting dataset using this endpoint as deprecated when new API for result file downloading will be implemented
-        self._object = self.get_object() # force call of check_object_permissions()
-        return self.export_dataset_v1(request=request, save_images=False)
-
-    @extend_schema(summary='Back up a project',
-        description=textwrap.dedent("""\
-        Deprecation warning:
-
-        This endpoint will be deprecated in one of the next releases.
-        Consider using new API:
-        - POST /api/projects/<project_id>/backup/export to initiate backup process
-        - GET /api/requests/<rq_id> to check process status,
-            where rq_id is request id returned on initializing request
-        """),
-        parameters=[
-            OpenApiParameter('action', location=OpenApiParameter.QUERY,
-                description='Used to start downloading process after backup file had been created',
-                type=OpenApiTypes.STR, required=False, enum=['download']),
-            OpenApiParameter('filename', description='Backup file name',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
-            OpenApiParameter('location', description='Where need to save downloaded backup',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
-                enum=Location.list()),
-            OpenApiParameter('cloud_storage_id', description='Storage id',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
-            OpenApiParameter('use_default_location', description='Use the location that was configured in project to export backup',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False,
-                default=True, deprecated=True),
-        ],
-        responses={
-            '200': OpenApiResponse(description='Download of file started'),
-            '201': OpenApiResponse(description='Output backup file is ready for downloading'),
-            '202': OpenApiResponse(description='Creating a backup file has been started'),
-        })
-    @action(methods=['GET'], detail=True, url_path='backup',
-        csrf_workaround_is_needed=csrf_workaround_is_needed_for_backup)
-    def export_backup(self, request, pk=None):
-        # FUTURE-TODO: mark this endpoint as deprecated when new API for result file downloading will be implemented
-        return self.export_backup_v1(request)
+    @extend_schema(exclude=True)
+    @action(methods=['GET'], detail=True, url_path='backup')
+    def export_backup(self, request: ExtendedRequest, pk: int):
+        return get_410_response_for_export_api("/api/projects/id/backup/export")
 
     @extend_schema(methods=['POST'], summary='Recreate a project from a backup',
         description=textwrap.dedent("""
@@ -692,11 +639,11 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=False, methods=['OPTIONS', 'POST'], url_path=r'backup/?$',
         serializer_class=None,
         parser_classes=_UPLOAD_PARSER_CLASSES)
-    def import_backup(self, request, pk=None):
+    def import_backup(self, request: ExtendedRequest):
         return self.import_backup_v1(request, backup.import_project)
 
     @tus_chunk_action(detail=False, suffix_base="backup")
-    def append_backup_chunk(self, request, file_id):
+    def append_backup_chunk(self, request: ExtendedRequest, file_id: str):
         return self.append_tus_chunk(request, file_id)
 
     @extend_schema(summary='Get a preview image for a project',
@@ -706,7 +653,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         })
     @action(detail=True, methods=['GET'], url_path='preview')
-    def preview(self, request, pk):
+    def preview(self, request: ExtendedRequest, pk: int):
         self._object = self.get_object() # call check_object_permissions as well
 
         first_task: Optional[models.Task] = self._object.tasks.order_by('-id').first()
@@ -725,6 +672,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def _get_rq_response(queue, job_id):
         queue = django_rq.get_queue(queue)
         job = queue.fetch_job(job_id)
+        rq_job_meta = ImportRQMeta.for_job(job)
         response = {}
         if job is None or job.is_finished:
             response = { "state": "Finished" }
@@ -734,8 +682,8 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             response = { "state": "Failed", "message": job.exc_info }
         else:
             response = { "state": "Started" }
-            response['message'] = job.meta.get('status', '')
-            response['progress'] = job.meta.get('progress', 0.)
+            response['message'] = rq_job_meta.status or ""
+            response['progress'] = rq_job_meta.progress or 0.
 
         return response
 
@@ -951,7 +899,7 @@ class _JobDataGetter(_DataGetter):
 
 class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
-    PartialUpdateModelMixin, UploadMixin, DatasetMixin, BackupMixin, CsrfWorkaroundMixin
+    PartialUpdateModelMixin, UploadMixin, DatasetMixin, BackupMixin
 ):
     queryset = Task.objects.select_related(
         'data',
@@ -1047,53 +995,17 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=False, methods=['OPTIONS', 'POST'], url_path=r'backup/?$',
         serializer_class=None,
         parser_classes=_UPLOAD_PARSER_CLASSES)
-    def import_backup(self, request, pk=None):
+    def import_backup(self, request: ExtendedRequest):
         return self.import_backup_v1(request, backup.import_task)
 
     @tus_chunk_action(detail=False, suffix_base="backup")
-    def append_backup_chunk(self, request, file_id):
+    def append_backup_chunk(self, request: ExtendedRequest, file_id: str):
         return self.append_tus_chunk(request, file_id)
 
-    @extend_schema(summary='Back up a task',
-        description=textwrap.dedent("""\
-        Deprecation warning:
-            This endpoint will be deprecated in one of the next releases.
-            Consider using new API:
-            - POST /api/tasks/<task_id>/backup/export to initiate backup process
-            - GET /api/requests/<rq_id> to check process status,
-                where rq_id is request id returned on initializing request'
-        """),
-        parameters=[
-            OpenApiParameter('action', location=OpenApiParameter.QUERY,
-                description='Used to start downloading process after backup file had been created',
-                type=OpenApiTypes.STR, required=False, enum=['download']),
-            OpenApiParameter('filename', description='Backup file name',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
-            OpenApiParameter('location', description='Where need to save downloaded backup',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
-                enum=Location.list()),
-            OpenApiParameter('cloud_storage_id', description='Storage id',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
-            OpenApiParameter('use_default_location', description='Use the location that was configured in the task to export backup',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False,
-                default=True, deprecated=True),
-        ],
-        responses={
-            '200': OpenApiResponse(description='Download of file started'),
-            '201': OpenApiResponse(description='Output backup file is ready for downloading'),
-            '202': OpenApiResponse(description='Creating a backup file has been started'),
-            '400': OpenApiResponse(description='Backup of a task without data is not allowed'),
-        })
-    @action(methods=['GET'], detail=True, url_path='backup',
-        csrf_workaround_is_needed=csrf_workaround_is_needed_for_backup)
-    def export_backup(self, request, pk=None):
-        # FUTURE-TODO: mark this endpoint as deprecated when new API for result file downloading will be implemented
-        if self.get_object().data is None:
-            return Response(
-                data='Backup of a task without data is not allowed',
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        return self.export_backup_v1(request)
+    @extend_schema(exclude=True)
+    @action(methods=['GET'], detail=True, url_path='backup')
+    def export_backup(self, request: ExtendedRequest, pk: int):
+        return get_410_response_for_export_api("/api/tasks/id/backup/export")
 
     @transaction.atomic
     def perform_update(self, serializer):
@@ -1150,10 +1062,13 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def _append_upload_info_entries(self, client_files: list[dict[str, Any]]):
         # batch version of _maybe_append_upload_info_entry() without optional insertion
         task_data = cast(Data, self._object.data)
-        task_data.client_files.bulk_create([
-            ClientFile(file=self._prepare_upload_info_entry(cf['file'].name), data=task_data)
-            for cf in client_files
-        ])
+        bulk_create(
+            ClientFile,
+            [
+                ClientFile(file=self._prepare_upload_info_entry(cf['file'].name), data=task_data)
+                for cf in client_files
+            ]
+        )
 
     def _sort_uploaded_files(self, uploaded_files: list[str], ordering: list[str]) -> list[str]:
         """
@@ -1205,9 +1120,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return super().append_files(request)
 
     # UploadMixin method
-    def upload_finished(self, request):
+    def upload_finished(self, request: ExtendedRequest):
         @transaction.atomic
-        def _handle_upload_annotations(request):
+        def _handle_upload_annotations(request: ExtendedRequest):
             format_name = request.query_params.get("format", "")
             filename = request.query_params.get("filename", "")
             conv_mask_to_poly = to_bool(request.query_params.get('conv_mask_to_poly', True))
@@ -1226,7 +1141,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return Response(data='No such file were uploaded',
                     status=status.HTTP_400_BAD_REQUEST)
 
-        def _handle_upload_data(request):
+        def _handle_upload_data(request: ExtendedRequest):
             with transaction.atomic():
                 task_data = self._object.data
                 serializer = DataSerializer(task_data, data=request.data)
@@ -1294,7 +1209,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return Response(rq_id_serializer.data, status=status.HTTP_202_ACCEPTED)
 
         @transaction.atomic
-        def _handle_upload_backup(request):
+        def _handle_upload_backup(request: ExtendedRequest):
             filename = request.query_params.get("filename", "")
             if filename:
                 tmp_dir = backup.get_backup_dirname()
@@ -1432,7 +1347,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         })
     @action(detail=True, methods=['OPTIONS', 'POST', 'GET'], url_path=r'data/?$',
         parser_classes=_UPLOAD_PARSER_CLASSES)
-    def data(self, request, pk):
+    def data(self, request: ExtendedRequest, pk: int):
         self._object = self.get_object() # call check_object_permissions as well
         if request.method == 'POST' or request.method == 'OPTIONS':
             with transaction.atomic():
@@ -1465,68 +1380,74 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return data_getter()
 
     @tus_chunk_action(detail=True, suffix_base="data")
-    def append_data_chunk(self, request, pk, file_id):
+    def append_data_chunk(self, request: ExtendedRequest, pk: int, file_id: str):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
 
-    def get_export_callback(self, save_images: bool) -> Callable:
-        return dm.views.export_task_as_dataset if save_images else dm.views.export_task_annotations
-
-    # TODO: mark this endpoint as deprecated when new endpoint for downloading results will be implemented
-    @extend_schema(methods=['GET'], summary='Get task annotations or export them as a dataset in a specific format',
+    @extend_schema(methods=['GET'], summary='Get task annotations',
         description=textwrap.dedent("""\
             Deprecation warning:
 
-            Utilizing this endpoint ot export annotations as a dataset in
-            a specific format will be deprecated in one of the next releases.
+            Utilizing this endpoint to export annotations as a dataset in
+            a specific format is no longer possible.
 
             Consider using new API:
-            - POST /api/tasks/<task_id>/dataset/export?save_images=False to initiate export process
-            - GET /api/requests/<rq_id> to check process status,
-                where rq_id is request id returned on initializing request
+            - `POST /api/tasks/<task_id>/dataset/export?save_images=False` to initiate export process
+            - `GET /api/requests/<rq_id>` to check process status,
+                where `rq_id` is request id returned on initializing request
+            - `GET result_url` to download a prepared file,
+                where `result_url` can be found in the response on checking status request
         """),
         parameters=[
+            # FUTURE-TODO: the following parameters should be removed after a few releases
             OpenApiParameter('format', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
-                description="Desired output format name\nYou can get the list of supported formats at:\n/server/annotation/formats",
+                description="This parameter is no longer supported",
+                deprecated=True
             ),
-            OpenApiParameter('filename', description='Desired output file name',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
-            OpenApiParameter('action', location=OpenApiParameter.QUERY,
-                description='Used to start downloading process locally after annotation file has been created',
-                type=OpenApiTypes.STR, required=False, enum=['download']),
-            OpenApiParameter('location', description='Where need to save downloaded dataset',
+            OpenApiParameter('filename', description='This parameter is no longer supported',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
-                enum=Location.list()),
-            OpenApiParameter('cloud_storage_id', description='Storage id',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
-            OpenApiParameter('use_default_location', description='Use the location that was configured in the task to export annotation',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False,
-                default=True, deprecated=True),
+                deprecated=True
+            ),
+            OpenApiParameter('action', location=OpenApiParameter.QUERY,
+                description='This parameter is no longer supported',
+                type=OpenApiTypes.STR, required=False, enum=['download'],
+                deprecated=True
+            ),
+            OpenApiParameter('location', description='This parameter is no longer supported',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
+                enum=Location.list(),
+                deprecated=True
+            ),
+            OpenApiParameter('cloud_storage_id', description='This parameter is no longer supported',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False,
+                deprecated=True
+            ),
         ],
         responses={
-            '200': OpenApiResponse(PolymorphicProxySerializer(
-                component_name='AnnotationsRead',
-                serializers=[LabeledDataSerializer, OpenApiTypes.BINARY],
-                resource_type_field_name=None
-            ), description='Download of file started'),
-            '201': OpenApiResponse(description='Annotations file is ready to download'),
-            '202': OpenApiResponse(description='Dump of annotations has been started'),
-            '400': OpenApiResponse(description='Exporting without data is not allowed'),
-            '405': OpenApiResponse(description='Format is not available'),
+            '200': OpenApiResponse(LabeledDataSerializer),
+            '400': OpenApiResponse(description="Exporting without data is not allowed"),
+            '410': OpenApiResponse(description="API endpoint no longer handles exporting process"),
         })
     @extend_schema(methods=['PUT'], summary='Replace task annotations / Get annotation import status',
         description=textwrap.dedent("""
-            To check the status of an import request:
+            Utilizing this endpoint to check status of the import process is deprecated
+            in favor of the new requests API:
 
-            After initiating the annotation import, you will receive an rq_id parameter.
-            Make sure to include this parameter as a query parameter in your subsequent
-            PUT /api/tasks/id/annotations requests to track the status of the import.
+            GET /api/requests/<rq_id>, where `rq_id` parameter is returned in the response
+            on initializing request.
         """),
         parameters=[
-            OpenApiParameter('format', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
-                description='Input format name\nYou can get the list of supported formats at:\n/server/annotation/formats'),
-            OpenApiParameter('rq_id', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
-                description='rq id'),
+            # deprecated parameters
+            OpenApiParameter(
+                'format', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
+                description='Input format name\nYou can get the list of supported formats at:\n/server/annotation/formats',
+                deprecated=True,
+            ),
+            OpenApiParameter(
+                'rq_id', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
+                description='rq id',
+                deprecated=True,
+            ),
         ],
         request=PolymorphicProxySerializer('TaskAnnotationsUpdate',
             # TODO: refactor to use required=False when possible
@@ -1541,9 +1462,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @extend_schema(methods=['POST'],
         summary="Import annotations into a task",
         description=textwrap.dedent("""
-            The request POST /api/tasks/id/annotations will initiate the import and will create
-            the rq job on the server in which the import will be carried out.
-            Please, use the PUT /api/tasks/id/annotations endpoint for checking status of the process.
+            The request POST /api/tasks/id/annotations initiates a background process to import annotations into a task.
+            Please, use the GET /api/requests/<rq_id> endpoint for checking status of the process.
+            The `rq_id` parameter can be found in the response on initiating request.
         """),
         parameters=[
             OpenApiParameter('format', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
@@ -1583,19 +1504,21 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '204': OpenApiResponse(description='The annotation has been deleted'),
         })
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH', 'POST', 'OPTIONS'], url_path=r'annotations/?$',
-        serializer_class=None, parser_classes=_UPLOAD_PARSER_CLASSES,
-        csrf_workaround_is_needed=csrf_workaround_is_needed_for_export)
-    def annotations(self, request, pk):
+        serializer_class=None, parser_classes=_UPLOAD_PARSER_CLASSES)
+    def annotations(self, request: ExtendedRequest, pk: int):
         self._object = self.get_object() # force call of check_object_permissions()
         if request.method == 'GET':
-            if self._object.data:
-                return self.export_dataset_v1(
-                    request=request,
-                    save_images=False,
-                    get_data=dm.task.get_task_data,
-                )
-            else:
+            if not self._object.data:
                 return HttpResponseBadRequest("Exporting annotations from a task without data is not allowed")
+
+            if (
+                {"format", "filename", "action", "location", "cloud_storage_id"}
+                & request.query_params.keys()
+            ):
+                return get_410_response_for_export_api("/api/tasks/id/dataset/export?save_images=False")
+
+            data = dm.task.get_task_data(self._object.pk)
+            return Response(data)
 
         elif request.method == 'POST' or request.method == 'OPTIONS':
             # NOTE: initialization process of annotations import
@@ -1609,6 +1532,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             )
         elif request.method == 'PUT':
             format_name = request.query_params.get('format', '')
+            # deprecated logic, will be removed in one of the next releases
             if format_name:
                 # NOTE: continue process of import annotations
                 conv_mask_to_poly = to_bool(request.query_params.get('conv_mask_to_poly', True))
@@ -1646,7 +1570,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 return Response(data)
 
     @tus_chunk_action(detail=True, suffix_base="annotations")
-    def append_annotations_chunk(self, request, pk, file_id):
+    def append_annotations_chunk(self, request: ExtendedRequest, pk: int, file_id: str):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
 
@@ -1678,6 +1602,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def _get_rq_response(queue, job_id):
         queue = django_rq.get_queue(queue)
         job = queue.fetch_job(job_id)
+        rq_job_meta = ImportRQMeta.for_job(job)
         response = {}
         if job is None or job.is_finished:
             response = { "state": "Finished" }
@@ -1691,9 +1616,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             response = { "state": "Failed", "message": parse_exception_message(job.exc_info or "Unknown error") }
         else:
             response = { "state": "Started" }
-            if job.meta.get('status'):
-                response['message'] = job.meta['status']
-            response['progress'] = job.meta.get('task_progress', 0.)
+            if rq_job_meta.status:
+                response['message'] = rq_job_meta.status
+            response['progress'] = rq_job_meta.progress or 0.
 
         return response
 
@@ -1708,7 +1633,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         })
     @action(detail=True, methods=['GET', 'PATCH'], serializer_class=DataMetaReadSerializer,
         url_path='data/meta')
-    def metadata(self, request, pk):
+    def metadata(self, request: ExtendedRequest, pk: int):
         self.get_object() #force to call check_object_permissions
         db_task = models.Task.objects.prefetch_related(
             'segment_set',
@@ -1741,57 +1666,10 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         serializer = DataMetaReadSerializer(db_data)
         return Response(serializer.data)
 
-    @extend_schema(summary='Export task as a dataset in a specific format',
-        description=textwrap.dedent("""\
-            Deprecation warning:
-
-            Utilizing this endpoint to export task dataset in
-            a specific format will be deprecated in one of the next releases.
-
-            Consider using new API:
-            - POST /api/tasks/<task_id>/dataset/export?save_images=True to initiate export process
-            - GET /api/requests/<rq_id> to check process status,
-                where rq_id is request id returned on initializing request
-        """),
-        parameters=[
-            OpenApiParameter('format', location=OpenApiParameter.QUERY,
-                description='Desired output format name\nYou can get the list of supported formats at:\n/server/annotation/formats',
-                type=OpenApiTypes.STR, required=True),
-            OpenApiParameter('filename', description='Desired output file name',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
-            OpenApiParameter('action', location=OpenApiParameter.QUERY,
-                description='Used to start downloading process locally after annotation file has been created',
-                type=OpenApiTypes.STR, required=False, enum=['download']),
-            OpenApiParameter('use_default_location', description='Use the location that was configured in task to export annotations',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False,
-                default=True, deprecated=True),
-            OpenApiParameter('location', description='Where need to save downloaded dataset',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
-                enum=Location.list()),
-            OpenApiParameter('cloud_storage_id', description='Storage id',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
-        ],
-        responses={
-            '200': OpenApiResponse(OpenApiTypes.BINARY, description='Download of file started'),
-            '201': OpenApiResponse(description='Output file is ready for downloading'),
-            '202': OpenApiResponse(description='Exporting has been started'),
-            '400': OpenApiResponse(description='Exporting without data is not allowed'),
-            '405': OpenApiResponse(description='Format is not available'),
-        },
-    )
-    @action(detail=True, methods=['GET'], serializer_class=None,
-        url_path='dataset', csrf_workaround_is_needed=csrf_workaround_is_needed_for_export)
-    def dataset_export(self, request, pk):
-        # FUTURE-TODO: mark this endpoint as deprecated when new API for result file downloading will be implemented
-        self._object = self.get_object() # force call of check_object_permissions()
-
-        if self._object.data:
-            return self.export_dataset_v1(
-                request=request,
-                save_images=True
-            )
-
-        return HttpResponseBadRequest("Exporting a dataset from a task without data is not allowed")
+    @extend_schema(exclude=True)
+    @action(detail=True, methods=['GET'], serializer_class=None, url_path='dataset')
+    def dataset_export(self, request: ExtendedRequest, pk: int):
+        return get_410_response_for_export_api("/api/tasks/id/dataset/export?save_images=True")
 
     @extend_schema(summary='Get a preview image for a task',
         responses={
@@ -1799,7 +1677,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '404': OpenApiResponse(description='Task image preview not found'),
         })
     @action(detail=True, methods=['GET'], url_path='preview')
-    def preview(self, request, pk):
+    def preview(self, request: ExtendedRequest, pk: int):
         self._object = self.get_object() # call check_object_permissions as well
 
         if not self._object.data:
@@ -1821,6 +1699,11 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @extend_schema(
         methods=["PATCH"],
         summary="Allows updating current validation configuration",
+        description=textwrap.dedent("""
+            WARNING: this operation is not protected from race conditions.
+            It's up to the user to ensure no parallel calls to this operation happen.
+            It affects image access, including exports with images, backups, chunk downloading etc.
+        """),
         request=TaskValidationLayoutWriteSerializer,
         responses={
             '200': OpenApiResponse(TaskValidationLayoutReadSerializer),
@@ -1842,7 +1725,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         ])
     @action(detail=True, methods=["GET", "PATCH"], url_path='validation_layout')
     @transaction.atomic
-    def validation_layout(self, request, pk):
+    def validation_layout(self, request: ExtendedRequest, pk: int):
         db_task = cast(models.Task, self.get_object()) # call check_object_permissions as well
 
         validation_layout = getattr(db_task.data, 'validation_layout', None)
@@ -1940,7 +1823,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 )
 class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateModelMixin,
     mixins.RetrieveModelMixin, PartialUpdateModelMixin, mixins.DestroyModelMixin,
-    UploadMixin, DatasetMixin, CsrfWorkaroundMixin
+    UploadMixin, DatasetMixin
 ):
     queryset = Job.objects.select_related(
         'assignee',
@@ -1948,19 +1831,12 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         'segment__task__project',
         'segment__task__annotation_guide',
         'segment__task__project__annotation_guide',
-        'segment__task__source_storage',
-        'segment__task__target_storage',
-    ).prefetch_related(
-        'segment__task__organization',
-        'segment__task__owner',
-    ).annotate(
-        django_models.Count('issues', distinct=True),
-    ).all()
+    )
 
     iam_organization_field = 'segment__task__organization'
     search_fields = ('task_name', 'project_name', 'assignee', 'state', 'stage')
     filter_fields = list(search_fields) + [
-        'id', 'task_id', 'project_id', 'updated_date', 'dimension', 'type'
+        'id', 'task_id', 'project_id', 'updated_date', 'dimension', 'type', 'parent_job_id',
     ]
     simple_filters = list(set(filter_fields) - {'id', 'updated_date'})
     ordering_fields = list(filter_fields)
@@ -1983,6 +1859,12 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         if self.action == 'list':
             perm = JobPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
+
+            queryset = queryset.prefetch_related(
+                "segment__task__source_storage", "segment__task__target_storage"
+            )
+        else:
+            queryset = queryset.with_issue_counts() # optimized in JobReadSerializer
 
         return queryset
 
@@ -2024,7 +1906,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         return self._object.get_tmp_dirname()
 
     # UploadMixin method
-    def upload_finished(self, request):
+    def upload_finished(self, request: ExtendedRequest):
         if self.action == 'annotations':
             format_name = request.query_params.get("format", "")
             filename = request.query_params.get("filename", "")
@@ -2048,55 +1930,55 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
                         status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(methods=['GET'],
-        summary="Get job annotations or export job annotations as a dataset in a specific format",
+        summary="Get job annotations",
         description=textwrap.dedent("""\
-            If format is specified, a ZIP archive will be returned. Otherwise,
-            the annotations will be returned as a JSON document.
-
             Deprecation warning:
 
-            Utilizing this endpoint to export annotations as a dataset in
-            a specific format will be deprecated in one of the next releases.
+            Utilizing this endpoint to export job dataset in a specific format
+            is no longer possible.
 
             Consider using new API:
-            - POST /api/jobs/<job_id>/dataset/export?save_images=False to initiate export process
-            - GET /api/requests/<rq_id> to check process status,
-                where rq_id is request id returned on initializing request
+            - `POST /api/jobs/<job_id>/dataset/export?save_images=True` to initiate export process
+            - `GET /api/requests/<rq_id>` to check process status,
+                where `rq_id` is request id returned on initializing request
+            - `GET result_url` to download a prepared file,
+                where `result_url` can be found in the response on checking status request
         """),
         parameters=[
             OpenApiParameter('format', location=OpenApiParameter.QUERY,
-                description='Desired output format name\nYou can get the list of supported formats at:\n/server/annotation/formats',
-                type=OpenApiTypes.STR, required=False),
-            OpenApiParameter('filename', description='Desired output file name',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
-            OpenApiParameter('action', location=OpenApiParameter.QUERY,
-                description='Used to start downloading process locally after annotation file has been created',
-                type=OpenApiTypes.STR, required=False, enum=['download']),
-            OpenApiParameter('location', description='Where need to save downloaded annotation',
+                description='This parameter is no longer supported',
+                type=OpenApiTypes.STR, required=False,
+                deprecated=True,
+            ),
+            OpenApiParameter('filename', description='This parameter is no longer supported',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
-                enum=Location.list()),
-            OpenApiParameter('cloud_storage_id', description='Storage id',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
-            OpenApiParameter('use_default_location', description='Use the location that was configured in the task to export annotation',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False,
-                default=True, deprecated=True),
+                deprecated=True,
+            ),
+            OpenApiParameter('action', location=OpenApiParameter.QUERY,
+                description='This parameter is no longer supported',
+                type=OpenApiTypes.STR, required=False,
+                deprecated=True,
+            ),
+            OpenApiParameter('location', description='This parameter is no longer supported',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
+                enum=Location.list(),
+                deprecated=True,
+            ),
+            OpenApiParameter('cloud_storage_id', description='This parameter is no longer supported',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False,
+                deprecated=True,
+            ),
         ],
         responses={
-            '200': OpenApiResponse(PolymorphicProxySerializer(
-                component_name='AnnotationsRead',
-                serializers=[LabeledDataSerializer, OpenApiTypes.BINARY],
-                resource_type_field_name=None
-            ), description='Download of file started'),
-            '201': OpenApiResponse(description='Output file is ready for downloading'),
-            '202': OpenApiResponse(description='Exporting has been started'),
-            '405': OpenApiResponse(description='Format is not available'),
+            '200': OpenApiResponse(LabeledDataSerializer),
+            '410': OpenApiResponse(description="API endpoint no longer handles dataset exporting process"),
         })
     @extend_schema(methods=['POST'],
         summary='Import annotations into a job',
         description=textwrap.dedent("""
-            The request POST /api/jobs/id/annotations will initiate the import and will create
-            the rq job on the server in which the import will be carried out.
-            Please, use the PUT /api/jobs/id/annotations endpoint for checking status of the process.
+            The request POST /api/jobs/id/annotations initiates a background process to import annotations into a job.
+            Please, use the GET /api/requests/<rq_id> endpoint for checking status of the process.
+            The `rq_id` parameter can be found in the response on initiating request.
         """),
         parameters=[
             OpenApiParameter('format', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
@@ -2121,27 +2003,34 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     @extend_schema(methods=['PUT'],
                    summary='Replace job annotations / Get annotation import status',
         description=textwrap.dedent("""
-            To check the status of an import request:
-
-            After initiating the annotation import, you will receive an rq_id parameter.
-            Make sure to include this parameter as a query parameter in your subsequent
-            PUT /api/jobs/id/annotations requests to track the status of the import.
+            Utilizing this endpoint to check status of the import process is deprecated
+            in favor of the new requests API:
+            GET /api/requests/<rq_id>, where `rq_id` parameter is returned in the response
+            on initializing request.
         """),
         parameters=[
+
             OpenApiParameter('format', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
-                description='Input format name\nYou can get the list of supported formats at:\n/server/annotation/formats'),
+                description='Input format name\nYou can get the list of supported formats at:\n/server/annotation/formats',
+                deprecated=True,
+            ),
             OpenApiParameter('location', description='where to import the annotation from',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
-                enum=Location.list()),
+                enum=Location.list(),
+                deprecated=True,
+            ),
             OpenApiParameter('cloud_storage_id', description='Storage id',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
-            OpenApiParameter('use_default_location', description='Use the location that was configured in the task to import annotation',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False,
-                default=True, deprecated=True),
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False,
+                deprecated=True,
+            ),
             OpenApiParameter('filename', description='Annotation file name',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
+                deprecated=True,
+            ),
             OpenApiParameter('rq_id', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
-                description='rq id'),
+                description='rq id',
+                deprecated=True,
+            ),
         ],
         request=PolymorphicProxySerializer(
             component_name='JobAnnotationsUpdate',
@@ -2167,17 +2056,19 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             '204': OpenApiResponse(description='The annotation has been deleted'),
         })
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH', 'POST', 'OPTIONS'], url_path=r'annotations/?$',
-        serializer_class=LabeledDataSerializer, parser_classes=_UPLOAD_PARSER_CLASSES,
-        csrf_workaround_is_needed=csrf_workaround_is_needed_for_export)
-    def annotations(self, request, pk):
+        serializer_class=LabeledDataSerializer, parser_classes=_UPLOAD_PARSER_CLASSES)
+    def annotations(self, request: ExtendedRequest, pk: int):
         self._object: models.Job = self.get_object() # force call of check_object_permissions()
         if request.method == 'GET':
-            # FUTURE-TODO: mark as deprecated using this endpoint to export annotations when new API for result file downloading will be implemented
-            return self.export_dataset_v1(
-                request=request,
-                save_images=False,
-                get_data=dm.task.get_job_data,
-            )
+
+            if (
+                {"format", "filename", "location", "action", "cloud_storage_id"}
+                & request.query_params.keys()
+            ):
+                return get_410_response_for_export_api("/api/jobs/id/dataset/export?save_images=False")
+
+            annotations = dm.task.get_job_data(self._object.pk)
+            return Response(annotations)
 
         elif request.method == 'POST' or request.method == 'OPTIONS':
             format_name = request.query_params.get('format', '')
@@ -2192,6 +2083,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         elif request.method == 'PUT':
             format_name = request.query_params.get('format', '')
             if format_name:
+                # deprecated logic, will be removed in one of the next releases
                 conv_mask_to_poly = to_bool(request.query_params.get('conv_mask_to_poly', True))
                 location_conf = get_location_configuration(
                     db_instance=self._object, query_params=request.query_params, field_name=StorageType.SOURCE
@@ -2231,55 +2123,14 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
 
 
     @tus_chunk_action(detail=True, suffix_base="annotations")
-    def append_annotations_chunk(self, request, pk, file_id):
+    def append_annotations_chunk(self, request: ExtendedRequest, pk: int, file_id: str):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
 
-
-    @extend_schema(summary='Export job as a dataset in a specific format',
-        description=textwrap.dedent("""\
-            Deprecation warning:
-                This endpoint will be deprecated in one of the next releases.
-                Consider using new API:
-                - POST /api/jobs/<job_id>/dataset/export?save_images=True to initiate export process
-                - GET /api/requests/<rq_id> to check process status,
-                    where rq_id is request id returned on initializing request
-        """),
-        parameters=[
-            OpenApiParameter('format', location=OpenApiParameter.QUERY,
-                description='Desired output format name\nYou can get the list of supported formats at:\n/server/annotation/formats',
-                type=OpenApiTypes.STR, required=True),
-            OpenApiParameter('filename', description='Desired output file name',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
-            OpenApiParameter('action', location=OpenApiParameter.QUERY,
-                description='Used to start downloading process locally after annotation file has been created',
-                type=OpenApiTypes.STR, required=False, enum=['download']),
-            OpenApiParameter('use_default_location', description='Use the location that was configured in the task to export dataset',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False,
-                default=True, deprecated=True),
-            OpenApiParameter('location', description='Where need to save downloaded dataset',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
-                enum=Location.list()),
-            OpenApiParameter('cloud_storage_id', description='Storage id',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
-        ],
-        responses={
-            '200': OpenApiResponse(OpenApiTypes.BINARY, description='Download of file started'),
-            '201': OpenApiResponse(description='Output file is ready for downloading'),
-            '202': OpenApiResponse(description='Exporting has been started'),
-            '405': OpenApiResponse(description='Format is not available'),
-        },
-    )
-    @action(detail=True, methods=['GET'], serializer_class=None,
-        url_path='dataset', csrf_workaround_is_needed=csrf_workaround_is_needed_for_export)
-    def dataset_export(self, request, pk):
-        # FUTURE-TODO: mark this endpoint as deprecated when new API for result file downloading will be implemented
-        self._object = self.get_object() # force call of check_object_permissions()
-
-        return self.export_dataset_v1(request=request, save_images=True)
-
-    def get_export_callback(self, save_images: bool) -> Callable:
-        return dm.views.export_job_as_dataset if save_images else dm.views.export_job_annotations
+    @extend_schema(exclude=True)
+    @action(detail=True, methods=['GET'], serializer_class=None, url_path='dataset')
+    def dataset_export(self, request: ExtendedRequest, pk: int):
+        return get_410_response_for_export_api("/api/jobs/id/dataset/export?save_images=True")
 
     @extend_schema(summary='Get data of a job',
         parameters=[
@@ -2304,7 +2155,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     @action(detail=True, methods=['GET'],
         simple_filters=[] # type query parameter conflicts with the filter
     )
-    def data(self, request, pk):
+    def data(self, request: ExtendedRequest, pk: int):
         db_job = self.get_object() # call check_object_permissions as well
         data_type = request.query_params.get('type', None)
         data_num = request.query_params.get('number', None)
@@ -2330,7 +2181,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         }, versions=['2.0'])
     @action(detail=True, methods=['GET', 'PATCH'], serializer_class=DataMetaReadSerializer,
         url_path='data/meta')
-    def metadata(self, request, pk):
+    def metadata(self, request: ExtendedRequest, pk: int):
         self.get_object() # force call of check_object_permissions()
 
         db_job = models.Job.objects.select_related(
@@ -2417,7 +2268,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             '200': OpenApiResponse(description='Job image preview'),
         })
     @action(detail=True, methods=['GET'], url_path='preview')
-    def preview(self, request, pk):
+    def preview(self, request: ExtendedRequest, pk: int):
         self._object = self.get_object() # call check_object_permissions as well
 
         data_getter = _JobDataGetter(
@@ -2436,6 +2287,11 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     @extend_schema(
         methods=["PATCH"],
         summary="Allows updating current validation configuration",
+        description=textwrap.dedent("""
+            WARNING: this operation is not protected from race conditions.
+            It's up to the user to ensure no parallel calls to this operation happen.
+            It affects image access, including exports with images, backups, chunk downloading etc.
+        """),
         request=JobValidationLayoutWriteSerializer,
         responses={
             '200': OpenApiResponse(JobValidationLayoutReadSerializer),
@@ -2451,7 +2307,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         ])
     @action(detail=True, methods=["GET", "PATCH"], url_path='validation_layout')
     @transaction.atomic
-    def validation_layout(self, request, pk):
+    def validation_layout(self, request: ExtendedRequest, pk: int):
         self.get_object() # call check_object_permissions as well
 
         db_job = models.Job.objects.prefetch_related(
@@ -2855,7 +2711,7 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 ], resource_type_field_name=None),
         })
     @action(detail=False, methods=['GET'])
-    def self(self, request):
+    def self(self, request: ExtendedRequest):
         """
         Method returns an instance of a user who is currently authenticated
         """
@@ -2938,7 +2794,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             owner=self.request.user,
             organization=self.request.iam_context['organization'])
 
-    def create(self, request, *args, **kwargs):
+    def create(self, request: ExtendedRequest, *args, **kwargs):
         try:
             response = super().create(request, *args, **kwargs)
         except ValidationError as exceptions:
@@ -2969,7 +2825,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         },
     )
     @action(detail=True, methods=['GET'], url_path='content-v2')
-    def content_v2(self, request, pk):
+    def content_v2(self, request: ExtendedRequest, pk: int):
         storage = None
         try:
             db_storage = self.get_object()
@@ -3004,7 +2860,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 content = manifest.emulate_hierarchical_structure(
                     page_size, manifest_prefix=manifest_prefix, prefix=prefix, default_prefix=storage.prefix, start_index=start_index)
             else:
-                content = storage.list_files_on_one_page(prefix, next_token, page_size, _use_sort=True)
+                content = storage.list_files_on_one_page(prefix, next_token=next_token, page_size=page_size, _use_sort=True)
             for i in content['content']:
                 mime_type = get_mime(i['name']) if i['type'] != 'DIR' else 'DIR' # identical to share point
                 if mime_type == 'zip':
@@ -3036,7 +2892,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '404': OpenApiResponse(description='Cloud Storage preview not found'),
         })
     @action(detail=True, methods=['GET'], url_path='preview')
-    def preview(self, request, pk):
+    def preview(self, request: ExtendedRequest, pk: int):
         try:
             db_storage = self.get_object()
             cache = MediaCache()
@@ -3075,7 +2931,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '200': OpenApiResponse(response=OpenApiTypes.STR, description='Cloud Storage status (AVAILABLE | NOT_FOUND | FORBIDDEN)'),
         })
     @action(detail=True, methods=['GET'], url_path='status')
-    def status(self, request, pk):
+    def status(self, request: ExtendedRequest, pk: int):
         try:
             db_storage = self.get_object()
             storage = db_storage_to_storage_instance(db_storage)
@@ -3094,7 +2950,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '200': OpenApiResponse(response=OpenApiTypes.STR, description='Cloud Storage actions (GET | PUT | DELETE)'),
         })
     @action(detail=True, methods=['GET'], url_path='actions')
-    def actions(self, request, pk):
+    def actions(self, request: ExtendedRequest, pk: int):
         '''
         Method return allowed actions for cloud storage. It's required for reading/writing
         '''
@@ -3151,7 +3007,7 @@ class AssetsViewSet(
     search_fields = ()
     ordering = "uuid"
 
-    def check_object_permissions(self, request, obj):
+    def check_object_permissions(self, request: ExtendedRequest, obj):
         super().check_object_permissions(request, obj.guide)
 
     def get_permissions(self):
@@ -3165,7 +3021,7 @@ class AssetsViewSet(
         else:
             return AssetWriteSerializer
 
-    def create(self, request, *args, **kwargs):
+    def create(self, request: ExtendedRequest, *args, **kwargs):
         file = request.data.get('file', None)
         if not file:
             raise ValidationError('Asset file was not provided')
@@ -3207,7 +3063,7 @@ class AssetsViewSet(
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
-    def retrieve(self, request, *args, **kwargs):
+    def retrieve(self, request: ExtendedRequest, *args, **kwargs):
         instance = self.get_object()
         return sendfile(request, os.path.join(settings.ASSETS_ROOT, str(instance.uuid), instance.filename))
 
@@ -3256,7 +3112,7 @@ class AnnotationGuidesViewSet(
     ordering = "-id"
     iam_organization_field = None
 
-    def _update_related_assets(self, request, guide: AnnotationGuide):
+    def _update_related_assets(self, request: ExtendedRequest, guide: AnnotationGuide):
         existing_assets = list(guide.assets.all())
         new_assets = []
 
@@ -3348,18 +3204,27 @@ class AnnotationGuidesViewSet(
         super().perform_destroy(instance)
         target.touch()
 
-def rq_exception_handler(rq_job, exc_type, exc_value, tb):
-    rq_job.meta[RQJobMetaField.FORMATTED_EXCEPTION] = "".join(
+def rq_exception_handler(rq_job: RQJob, exc_type: type[Exception], exc_value: Exception, tb):
+    rq_job_meta = RQMetaWithFailureInfo.for_job(rq_job)
+    rq_job_meta.formatted_exception = "".join(
         traceback.format_exception_only(exc_type, exc_value))
     if rq_job.origin == settings.CVAT_QUEUES.CHUNKS.value:
-        rq_job.meta[RQJobMetaField.EXCEPTION_TYPE] = exc_type
-        rq_job.meta[RQJobMetaField.EXCEPTION_ARGS] = exc_value.args
-    rq_job.save_meta()
+        rq_job_meta.exc_type = exc_type
+        rq_job_meta.exc_args = exc_value.args
+    rq_job_meta.save()
 
     return True
 
-def _import_annotations(request, rq_id_factory, rq_func, db_obj, format_name,
-                        filename=None, location_conf=None, conv_mask_to_poly=True):
+def _import_annotations(
+    request: ExtendedRequest,
+    rq_id_factory: Callable[..., RQId],
+    rq_func: Callable[..., None],
+    db_obj: Task | Job,
+    format_name: str,
+    filename: str = None,
+    location_conf: dict[str, Any] | None = None,
+    conv_mask_to_poly: bool = True,
+):
 
     format_desc = {f.DISPLAY_NAME: f
         for f in dm.views.get_import_formats()}.get(format_name)
@@ -3375,108 +3240,125 @@ def _import_annotations(request, rq_id_factory, rq_func, db_obj, format_name,
         rq_id = rq_id_factory(db_obj.pk).render()
 
     queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
-    rq_job = queue.fetch_job(rq_id)
 
-    if rq_job and rq_id_should_be_checked and not is_rq_job_owner(rq_job, request.user.id):
-        return Response(status=status.HTTP_403_FORBIDDEN)
+    # ensure that there is no race condition when processing parallel requests
+    with get_rq_lock_for_job(queue, rq_id):
+        rq_job = queue.fetch_job(rq_id)
 
-    if rq_job and request.method == 'POST':
-        # If there is a previous job that has not been deleted
-        if rq_job.is_finished or rq_job.is_failed:
-            rq_job.delete()
-            rq_job = queue.fetch_job(rq_id)
-        else:
-            return Response(status=status.HTTP_409_CONFLICT, data='Import job already exists')
+        if rq_job:
+            if rq_id_should_be_checked and not is_rq_job_owner(rq_job, request.user.id):
+                return Response(status=status.HTTP_403_FORBIDDEN)
 
-    if not rq_job:
-        # If filename is specified we consider that file was uploaded via TUS, so it exists in filesystem
-        # Then we dont need to create temporary file
-        # Or filename specify key in cloud storage so we need to download file
-        location = location_conf.get('location') if location_conf else Location.LOCAL
-        db_storage = None
+            if request.method == 'POST':
+                if rq_job.get_status(refresh=False) not in (RQJobStatus.FINISHED, RQJobStatus.FAILED):
+                    return Response(status=status.HTTP_409_CONFLICT, data='Import job already exists')
 
-        if not filename or location == Location.CLOUD_STORAGE:
-            if location != Location.CLOUD_STORAGE:
-                serializer = AnnotationFileSerializer(data=request.data)
-                if serializer.is_valid(raise_exception=True):
-                    anno_file = serializer.validated_data['annotation_file']
+                rq_job.delete()
+                rq_job = None
+
+        if not rq_job:
+            # If filename is specified we consider that file was uploaded via TUS, so it exists in filesystem
+            # Then we dont need to create temporary file
+            # Or filename specify key in cloud storage so we need to download file
+            location = location_conf.get('location') if location_conf else Location.LOCAL
+            db_storage = None
+
+            if not filename or location == Location.CLOUD_STORAGE:
+                if location != Location.CLOUD_STORAGE:
+                    serializer = AnnotationFileSerializer(data=request.data)
+                    if serializer.is_valid(raise_exception=True):
+                        anno_file = serializer.validated_data['annotation_file']
+                        with NamedTemporaryFile(
+                            prefix='cvat_{}'.format(db_obj.pk),
+                            dir=settings.TMP_FILES_ROOT,
+                            delete=False) as tf:
+                            filename = tf.name
+                            for chunk in anno_file.chunks():
+                                tf.write(chunk)
+                else:
+                    assert filename, 'The filename was not specified'
+
+                    try:
+                        storage_id = location_conf['storage_id']
+                    except KeyError:
+                        raise serializers.ValidationError(
+                            'Cloud storage location was selected as the source,'
+                            ' but cloud storage id was not specified')
+                    db_storage = get_cloud_storage_for_import_or_export(
+                        storage_id=storage_id, request=request,
+                        is_default=location_conf['is_default'])
+
+                    key = filename
                     with NamedTemporaryFile(
                         prefix='cvat_{}'.format(db_obj.pk),
                         dir=settings.TMP_FILES_ROOT,
                         delete=False) as tf:
                         filename = tf.name
-                        for chunk in anno_file.chunks():
-                            tf.write(chunk)
-            else:
-                assert filename, 'The filename was not specified'
 
-                try:
-                    storage_id = location_conf['storage_id']
-                except KeyError:
-                    raise serializers.ValidationError(
-                        'Cloud storage location was selected as the source,'
-                        ' but cloud storage id was not specified')
-                db_storage = get_cloud_storage_for_import_or_export(
-                    storage_id=storage_id, request=request,
-                    is_default=location_conf['is_default'])
+            func = import_resource_with_clean_up_after
+            func_args = (rq_func, filename, db_obj.pk, format_name, conv_mask_to_poly)
 
-                key = filename
-                with NamedTemporaryFile(
-                    prefix='cvat_{}'.format(db_obj.pk),
-                    dir=settings.TMP_FILES_ROOT,
-                    delete=False) as tf:
-                    filename = tf.name
+            if location == Location.CLOUD_STORAGE:
+                func_args = (db_storage, key, func) + func_args
+                func = import_resource_from_cloud_storage
 
-        func = import_resource_with_clean_up_after
-        func_args = (rq_func, filename, db_obj.pk, format_name, conv_mask_to_poly)
+            av_scan_paths(filename)
+            user_id = request.user.id
 
-        if location == Location.CLOUD_STORAGE:
-            func_args = (db_storage, key, func) + func_args
-            func = import_resource_from_cloud_storage
+            with get_rq_lock_by_user(queue, user_id):
+                meta = ImportRQMeta.build_for(request=request, db_obj=db_obj, tmp_file=filename)
+                queue.enqueue_call(
+                    func=func,
+                    args=func_args,
+                    job_id=rq_id,
+                    depends_on=define_dependent_job(queue, user_id, rq_id=rq_id),
+                    meta=meta,
+                    result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
+                    failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
+                )
 
-        av_scan_paths(filename)
-        user_id = request.user.id
-
-        with get_rq_lock_by_user(queue, user_id):
-            rq_job = queue.enqueue_call(
-                func=func,
-                args=func_args,
-                job_id=rq_id,
-                depends_on=define_dependent_job(queue, user_id, rq_id=rq_id),
-                meta={
-                    'tmp_file': filename,
-                    **get_rq_job_meta(request=request, db_obj=db_obj),
-                },
-                result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
-                failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
-            )
-
+    # log events after releasing Redis lock
+    if not rq_job:
         handle_dataset_import(db_obj, format_name=format_name, cloud_storage_id=db_storage.id if db_storage else None)
 
         serializer = RqIdSerializer(data={'rq_id': rq_id})
         serializer.is_valid(raise_exception=True)
 
         return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-    else:
-        if rq_job.is_finished:
-            rq_job.delete()
-            return Response(status=status.HTTP_201_CREATED)
-        elif rq_job.is_failed:
-            exc_info = process_failed_job(rq_job)
 
-            import_error_prefix = f'{CvatImportError.__module__}.{CvatImportError.__name__}:'
-            if exc_info.startswith("Traceback") and import_error_prefix in exc_info:
-                exc_message = exc_info.split(import_error_prefix)[-1].strip()
-                return Response(data=exc_message, status=status.HTTP_400_BAD_REQUEST)
-            else:
-                return Response(data=exc_info,
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    # Deprecated logic, /api/requests API should be used instead
+    # https://greenbytes.de/tech/webdav/draft-ietf-httpapi-deprecation-header-latest.html#the-deprecation-http-response-header-field
+    deprecation_timestamp = int(datetime(2025, 2, 14, tzinfo=timezone.utc).timestamp())
+    response_headers  = {
+        "Deprecation": f"@{deprecation_timestamp}"
+    }
 
-    return Response(status=status.HTTP_202_ACCEPTED)
+    rq_job_status = rq_job.get_status(refresh=False)
+    if RQJobStatus.FINISHED == rq_job_status:
+        rq_job.delete()
+        return Response(status=status.HTTP_201_CREATED, headers=response_headers)
+    elif RQJobStatus.FAILED == rq_job_status:
+        exc_info = process_failed_job(rq_job)
+
+        import_error_prefix = f'{CvatImportError.__module__}.{CvatImportError.__name__}:'
+        if exc_info.startswith("Traceback") and import_error_prefix in exc_info:
+            exc_message = exc_info.split(import_error_prefix)[-1].strip()
+            return Response(data=exc_message, status=status.HTTP_400_BAD_REQUEST, headers=response_headers)
+        else:
+            return Response(data=exc_info,
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR, headers=response_headers)
+
+    return Response(status=status.HTTP_202_ACCEPTED, headers=response_headers)
 
 def _import_project_dataset(
-    request, rq_id_factory, rq_func, db_obj, format_name,
-    filename=None, conv_mask_to_poly=True, location_conf=None
+    request: ExtendedRequest,
+    rq_id_factory: Callable[..., RQId],
+    rq_func: Callable[..., None],
+    db_obj: Project,
+    format_name: str,
+    filename: str | None = None,
+    conv_mask_to_poly: bool = True,
+    location_conf: dict[str, Any] | None = None
 ):
     format_desc = {f.DISPLAY_NAME: f
         for f in dm.views.get_import_formats()}.get(format_name)
@@ -3488,15 +3370,22 @@ def _import_project_dataset(
 
     rq_id = rq_id_factory(db_obj.pk).render()
 
-    queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
-    rq_job = queue.fetch_job(rq_id)
+    queue: DjangoRQ = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
 
-    if not rq_job or rq_job.is_finished or rq_job.is_failed:
-        if rq_job and (rq_job.is_finished or rq_job.is_failed):
+    # ensure that there is no race condition when processing parallel requests
+    with get_rq_lock_for_job(queue, rq_id):
+        rq_job = queue.fetch_job(rq_id)
+
+        if rq_job:
+            rq_job_status = rq_job.get_status(refresh=False)
+            if rq_job_status not in (RQJobStatus.FINISHED, RQJobStatus.FAILED):
+                return Response(status=status.HTTP_409_CONFLICT, data='Import job already exists')
+
             # for some reason the previous job has not been deleted
             # (e.g the user closed the browser tab when job has been created
             # but no one requests for checking status were not made)
             rq_job.delete()
+            rq_job = None
 
         location = location_conf.get('location') if location_conf else None
         db_storage = None
@@ -3542,22 +3431,19 @@ def _import_project_dataset(
         user_id = request.user.id
 
         with get_rq_lock_by_user(queue, user_id):
-            rq_job = queue.enqueue_call(
+            meta = ImportRQMeta.build_for(request=request, db_obj=db_obj, tmp_file=filename)
+            queue.enqueue_call(
                 func=func,
                 args=func_args,
                 job_id=rq_id,
-                meta={
-                    'tmp_file': filename,
-                    **get_rq_job_meta(request=request, db_obj=db_obj),
-                },
+                meta=meta,
                 depends_on=define_dependent_job(queue, user_id, rq_id=rq_id),
                 result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
                 failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
             )
 
-        handle_dataset_import(db_obj, format_name=format_name, cloud_storage_id=db_storage.id if db_storage else None)
-    else:
-        return Response(status=status.HTTP_409_CONFLICT, data='Import job already exists')
+
+    handle_dataset_import(db_obj, format_name=format_name, cloud_storage_id=db_storage.id if db_storage else None)
 
     serializer = RqIdSerializer(data={'rq_id': rq_id})
     serializer.is_valid(raise_exception=True)
@@ -3581,7 +3467,6 @@ def _import_project_dataset(
 )
 class RequestViewSet(viewsets.GenericViewSet):
     # FUTURE-TODO: support re-enqueue action
-    # FUTURE-TODO: implement endpoint to download result file
     SUPPORTED_QUEUES = (
         settings.CVAT_QUEUES.IMPORT_DATA.value,
         settings.CVAT_QUEUES.EXPORT_DATA.value,
@@ -3723,7 +3608,7 @@ class RequestViewSet(viewsets.GenericViewSet):
 
     @method_decorator(never_cache)
     @_handle_redis_exceptions
-    def retrieve(self, request: HttpRequest, pk: str):
+    def retrieve(self, request: ExtendedRequest, pk: str):
         job = self._get_rq_job_by_id(pk)
 
         if not job:
@@ -3736,7 +3621,7 @@ class RequestViewSet(viewsets.GenericViewSet):
 
     @method_decorator(never_cache)
     @_handle_redis_exceptions
-    def list(self, request: HttpRequest):
+    def list(self, request: ExtendedRequest):
         user_id = request.user.id
         user_jobs = self._get_rq_jobs(user_id)
 
@@ -3760,7 +3645,7 @@ class RequestViewSet(viewsets.GenericViewSet):
     @method_decorator(never_cache)
     @action(detail=True, methods=['POST'], url_path='cancel')
     @_handle_redis_exceptions
-    def cancel(self, request: HttpRequest, pk: str):
+    def cancel(self, request: ExtendedRequest, pk: str):
         rq_job = self._get_rq_job_by_id(pk)
 
         if not rq_job:

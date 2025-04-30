@@ -18,7 +18,7 @@ import {
     removeObject as removeObjectAction,
 } from 'actions/annotation-actions';
 import {
-    ActiveControl, CombinedState, ColorBy, ShapeType,
+    ActiveControl, CombinedState, ColorBy,
 } from 'reducers';
 import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
@@ -26,11 +26,12 @@ import { getColor } from 'components/annotation-page/standard-workspace/objects-
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import { shift } from 'utils/math';
 import {
-    Label, ObjectState, Attribute, Job,
+    Label, ObjectState, Attribute, Job, ShapeType,
 } from 'cvat-core-wrapper';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { filterApplicableLabels } from 'utils/filter-applicable-labels';
+import { toClipboard } from 'utils/to-clipboard';
 
 interface OwnProps {
     readonly: boolean;
@@ -233,16 +234,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         const search = `frame=${frameNumber}&type=${objectState.objectType}&serverID=${objectState.serverID}`;
         const url = `${origin}${pathname}?${search}`;
 
-        const fallback = (): void => {
-            // eslint-disable-next-line
-            window.prompt('Browser Clipboard API not allowed, please copy manually', url);
-        };
-
-        if (window.isSecureContext) {
-            window.navigator.clipboard.writeText(url).catch(fallback);
-        } else {
-            fallback();
-        }
+        toClipboard(url);
     };
 
     private switchOrientation = (): void => {

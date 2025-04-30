@@ -27,12 +27,11 @@ import lodash, { omit } from 'lodash';
 import { AIToolsIcon } from 'icons';
 import { Canvas, convertShapesForInteractor } from 'cvat-canvas-wrapper';
 import {
-    getCore, Label, MLModel, ObjectState, Job,
-    LabelType,
+    getCore, Label, MLModel, ObjectState, ObjectType, ShapeType, Job,
 } from 'cvat-core-wrapper';
 import openCVWrapper, { MatType } from 'utils/opencv-wrapper/opencv-wrapper';
 import {
-    CombinedState, ActiveControl, ObjectType, ShapeType, ToolsBlockerState,
+    CombinedState, ActiveControl, ToolsBlockerState,
 } from 'reducers';
 import {
     interactWithCanvas,
@@ -156,7 +155,7 @@ interface State {
 
 type InteractorResults = Extract<Awaited<ReturnType<typeof core.lambda.call>>, { mask: number[][] }>;
 type TrackerResults = Extract<Awaited<ReturnType<typeof core.lambda.call>>, { states: any[]; shapes: number[][] }>;
-type DetectedShapes = Extract<Awaited<ReturnType<typeof core.lambda.call>>, { length: number }>;
+type DetectorResults = Extract<Awaited<ReturnType<typeof core.lambda.call>>, { version: number }>;
 
 function trackedRectangleMapper(shape: number[]): number[] {
     return shape.reduce(
@@ -385,7 +384,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         try {
             this.interaction.hideMessage = message.loading({
-                content: `Waiting a response from ${activeInteractor?.name}..`,
+                content: `Waiting for a response from ${activeInteractor?.name}`,
                 duration: 0,
                 className: 'cvat-tracking-notice',
             });
@@ -1197,173 +1196,69 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 dimension={jobInstance.dimension}
                 runInference={async (model: MLModel, body: DetectorRequestBody) => {
                     function loadAttributes(
-                        attributes: { name: string; value: string }[],
-                        label: Label,
+                        attributes: { spec_id: number; value: string }[],
                     ): Record<number, string> {
-                        return attributes.reduce((acc, { name, value }) => {
-                            const attributeSpec = label.attributes.find((_attr) => _attr.name === name);
-
-                            if (!attributeSpec) {
-                                return acc;
-                            }
-
-                            switch (attributeSpec.inputType) {
-                                case 'number': {
-                                    const [min, max, step] = attributeSpec.values;
-                                    if (
-                                        Number.isFinite(+value) &&
-                                        +value >= +min &&
-                                        +value <= +max &&
-                                        !(+value % +step)
-                                    ) {
-                                        return {
-                                            ...acc,
-                                            [attributeSpec.id as number]: `${value}`,
-                                        };
-                                    }
-
-                                    return acc;
-                                }
-                                case 'text': {
-                                    return {
-                                        ...acc,
-                                        [attributeSpec.id as number]: `${value}`,
-                                    };
-                                }
-                                case 'select':
-                                case 'radio': {
-                                    if (attributeSpec.values.includes(value)) {
-                                        return {
-                                            ...acc,
-                                            [attributeSpec.id as number]: value,
-                                        };
-                                    }
-                                    return acc;
-                                }
-                                case 'checkbox':
-                                    return {
-                                        ...acc,
-                                        [attributeSpec.id as number]: `${value}`.toLowerCase() === 'true' ? 'true' : 'false',
-                                    };
-                                default:
-                                    return acc;
-                            }
-                        }, {} as Record<number, string>);
+                        return Object.fromEntries(attributes.map((a) => [a.spec_id, a.value]));
                     }
 
                     try {
                         this.setState({ mode: 'detection', fetching: true });
 
-                        // The function call endpoint doesn't support the cleanup and conv_mask_to_poly parameters.
-                        const { cleanup, conv_mask_to_poly: convMaskToPoly, ...restOfBody } = body;
+                        // The function call endpoint doesn't support the cleanup parameter.
+                        const { cleanup, ...restOfBody } = body;
 
                         const result = await core.lambda.call(jobInstance.taskId, model, {
                             ...restOfBody, frame, job: jobInstance.id,
-                        }) as DetectedShapes;
+                        }) as DetectorResults;
 
-                        const states = result.map(
-                            (data): ObjectState | null => {
-                                const jobLabel = jobInstance.labels
-                                    .find((jLabel: Label): boolean => jLabel.name === data.label);
+                        const tagStates = result.tags.map((tag) => {
+                            const jobLabel = jobInstance.labels
+                                .find((jLabel) => jLabel.id === tag.label_id)!;
 
-                                if (!jobLabel) return null;
+                            return new core.classes.ObjectState({
+                                attributes: loadAttributes(tag.attributes),
+                                frame,
+                                label: jobLabel,
+                                objectType: ObjectType.TAG,
+                                source: core.enums.Source.AUTO,
+                            });
+                        });
 
-                                if (data.type === 'tag') {
-                                    return new core.classes.ObjectState({
+                        const shapeStates = result.shapes.map((shape) => {
+                            const jobLabel = jobInstance.labels
+                                .find((jLabel) => jLabel.id === shape.label_id)!;
+
+                            return new core.classes.ObjectState({
+                                attributes: loadAttributes(shape.attributes),
+                                elements: shape.elements?.map((element) => {
+                                    const jobSublabel = jobLabel.structure!.sublabels
+                                        .find((sublabel) => sublabel.id === element.label_id)!;
+
+                                    return {
+                                        attributes: loadAttributes(element.attributes),
                                         frame,
-                                        label: jobLabel,
-                                        attributes: loadAttributes(data.attributes, jobLabel),
-                                        objectType: ObjectType.TAG,
+                                        label: jobSublabel,
+                                        objectType: ObjectType.SHAPE,
+                                        occluded: element.occluded,
+                                        outside: element.outside,
+                                        points: element.points,
+                                        shapeType: element.type,
                                         source: core.enums.Source.AUTO,
-                                    });
-                                }
+                                    };
+                                }),
+                                frame,
+                                label: jobLabel,
+                                objectType: ObjectType.SHAPE,
+                                occluded: shape.occluded,
+                                points: shape.points,
+                                rotation: shape.rotation,
+                                shapeType: shape.type,
+                                source: core.enums.Source.AUTO,
+                                zOrder: curZOrder,
+                            });
+                        });
 
-                                const objectData = {
-                                    label: jobLabel,
-                                    objectType: ObjectType.SHAPE,
-                                    frame,
-                                    occluded: false,
-                                    rotation: [
-                                        ShapeType.RECTANGLE, ShapeType.ELLIPSE,
-                                    ].includes(data.type) ? (data.rotation || 0) : 0,
-                                    source: core.enums.Source.AUTO,
-                                    attributes: loadAttributes(data.attributes, jobLabel),
-                                    zOrder: curZOrder,
-                                };
-
-                                if (data.type === ShapeType.SKELETON && jobLabel.type === LabelType.SKELETON) {
-                                    // find a center of the skeleton
-                                    // to set this center as outside points position
-                                    const center = data.elements.reduce<[number, number]>((acc, { points }) => {
-                                        if (points) {
-                                            return [acc[0] + points[0], acc[1] + points[1]];
-                                        }
-                                        return acc;
-                                    }, [0, 0]).map((el) => el / (data.elements.length || 1));
-
-                                    const elements = (jobLabel.structure?.sublabels || []).map((sublabel) => {
-                                        const element = data.elements.find((el) => el.label === sublabel.name);
-                                        return {
-                                            label: sublabel,
-                                            objectType: ObjectType.SHAPE,
-                                            shapeType: sublabel.type as any as ShapeType,
-                                            attributes: {},
-                                            frame,
-                                            source: core.enums.Source.AUTO,
-                                            points: [...center],
-                                            occluded: false,
-                                            outside: true,
-                                            ...(element ? {
-                                                attributes: loadAttributes(element.attributes, sublabel),
-                                                points: element.points,
-                                                outside: !!element.outside || false,
-                                            } : {}),
-                                        };
-                                    });
-
-                                    if (elements.every((element) => element.outside)) {
-                                        return null;
-                                    }
-
-                                    return new core.classes.ObjectState({
-                                        ...objectData,
-                                        shapeType: ShapeType.SKELETON,
-                                        points: [],
-                                        elements,
-                                    });
-                                }
-
-                                if (data.type === 'mask' && data.points && convMaskToPoly) {
-                                    return new core.classes.ObjectState({
-                                        ...objectData,
-                                        shapeType: ShapeType.POLYGON,
-                                        points: data.points,
-                                    });
-                                }
-
-                                if (data.type === 'mask') {
-                                    if (data.mask) {
-                                        const [left, top, right, bottom] = data.mask.splice(-4);
-                                        const rle = core.utils.mask2Rle(data.mask);
-                                        rle.push(left, top, right, bottom);
-                                        return new core.classes.ObjectState({
-                                            ...objectData,
-                                            shapeType: data.type,
-                                            points: rle,
-                                        });
-                                    }
-                                    return null;
-                                }
-
-                                return new core.classes.ObjectState({
-                                    ...objectData,
-                                    shapeType: data.type,
-                                    points: data.points,
-                                });
-                            },
-                        ).filter((state: any) => state);
-
-                        createAnnotations(states.filter((state: ObjectState | null) => !!state));
+                        createAnnotations([...tagStates, ...shapeStates]);
                     } catch (error: any) {
                         notification.error({
                             description: <CVATMarkdown>{error.message}</CVATMarkdown>,
