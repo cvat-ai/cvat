@@ -1149,7 +1149,7 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
         )
 
     def match_ellipses(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem):
-        def _ellipse_iou(a: dm.Bbox, b: dm.Bbox, *, img_w: int, img_h: int) -> float:
+        def _ellipse_iou(a: dm.Ellipse, b: dm.Ellipse, *, img_w: int, img_h: int) -> float:
             return segment_iou(self.to_polygon(a), self.to_polygon(b), img_h=img_h, img_w=img_w)
 
         img_h, img_w = item_a.media_as(dm.Image).size
