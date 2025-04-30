@@ -5,16 +5,13 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import Modal from 'antd/lib/modal';
-import Input from 'antd/lib/input';
-import List from 'antd/lib/list';
 import Text from 'antd/lib/typography/Text';
+import AutoComplete from 'antd/lib/auto-complete';
 import _ from 'lodash';
 import { getCore } from 'cvat-core-wrapper';
 import { CombinedState } from 'reducers';
 import { changeFrameAsync, switchShowPallet } from 'actions/annotation-actions';
 import CvatTooltip from 'components/common/cvat-tooltip';
-
-const { Search } = Input;
 
 interface SearchResult {
     number: number;
@@ -68,15 +65,14 @@ function SearchModal(): JSX.Element {
         setSearchResults(searchResult);
     }, SEARCH_DEBOUNCE_TIME);
 
-    const onSearch = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-        const value = event.target.value;
+    const onSearch = useCallback((value: string) => {
         setSearchTerm(value);
         handleSearch(value);
     }, [searchData]);
 
-    const onSelect = useCallback((item: SearchResult) => {
+    const onSelect = useCallback((frameNumber: string) => {
         onCancel();
-        dispatch(changeFrameAsync(item.number));
+        dispatch(changeFrameAsync(+frameNumber));
     }, []);
 
     return (
@@ -89,26 +85,25 @@ function SearchModal(): JSX.Element {
             width={600}
             destroyOnClose
         >
-            <Search
-                placeholder="Search..."
-                onChange={onSearch}
-                value={searchTerm}
-                enterButton
+            <AutoComplete
+                autoFocus
+                defaultValue={searchTerm}
+                placeholder='Type to search'
+                showSearch
+                onSearch={onSearch}
+                options={searchResults.map((item) => ({
+                    value: item.number,
+                    label: (
+                        <CvatTooltip title={item.name} className='cvat-frame-search-item'>
+                            <Text strong className='cvat-frame-search-item-number'>{`#${item.number} `}</Text>
+                            <Text className='cvat-frame-search-item-name'>{item.name}</Text>
+                        </CvatTooltip>
+                    ),
+                }))}
+                onSelect={onSelect}
+                allowClear
+                className='cvat-frame-search-selector'
             />
-            {searchResults.length !== 0 && (
-                <List
-                    dataSource={searchResults}
-                    renderItem={(item) => (
-                        <List.Item onClick={() => onSelect(item)} className='cvat-frame-search-item'>
-                            <CvatTooltip title={item.name}>
-                                <Text strong className='cvat-frame-search-item-number'>{`#${item.number} `}</Text>
-                                <Text className='cvat-frame-search-item-name'>{item.name}</Text>
-                            </CvatTooltip>
-                        </List.Item>
-                    )}
-                    style={{ marginTop: 16 }}
-                />
-            )}
         </Modal>
     );
 };
