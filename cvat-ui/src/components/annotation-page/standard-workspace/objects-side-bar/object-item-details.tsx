@@ -7,9 +7,8 @@ import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import Collapse from 'antd/lib/collapse';
-
-import { SizeType } from 'reducers';
 import InputNumber from 'antd/lib/input-number';
+
 import ItemAttribute from './object-item-attribute';
 
 interface Props {
@@ -23,10 +22,16 @@ interface Props {
     changeSize(sizeType: SizeType, value: number): void;
 }
 
+export enum SizeType {
+    WIDTH = 'width',
+    HEIGHT = 'height',
+    LENGTH = 'length',
+}
+
 export interface SizeParams {
-    w: number;
-    h: number;
-    l: number;
+    width: number;
+    height: number;
+    length: number;
 }
 
 export function attrValuesAreEqual(next: Record<number, string>, prev: Record<number, string>): boolean {
@@ -66,42 +71,20 @@ function ItemAttributesComponent(props: Props): JSX.Element {
                     children: [
                         sizeParams && (
                             <Row key='size' justify='space-around' className='cvat-objects-sidebar-size-params'>
-                                <Col>
-                                    <Text type='secondary'>W:</Text>
-                                    <InputNumber
-                                        value={sizeParams.w || ''}
-                                        onChange={(value) => {
-                                            if (typeof value === 'number') {
-                                                changeSize(SizeType.WIDTH, value);
-                                            }
-                                        }}
-                                        disabled={readonly}
-                                    />
-                                </Col>
-                                <Col>
-                                    <Text type='secondary'>H:</Text>
-                                    <InputNumber
-                                        value={sizeParams.h || ''}
-                                        onChange={(value) => {
-                                            if (typeof value === 'number') {
-                                                changeSize(SizeType.HEIGHT, value);
-                                            }
-                                        }}
-                                        disabled={readonly}
-                                    />
-                                </Col>
-                                <Col>
-                                    <Text type='secondary'>L:</Text>
-                                    <InputNumber
-                                        value={sizeParams.l || ''}
-                                        onChange={(value) => {
-                                            if (typeof value === 'number') {
-                                                changeSize(SizeType.LENGTH, value);
-                                            }
-                                        }}
-                                        disabled={readonly}
-                                    />
-                                </Col>
+                                {Object.keys(sizeParams).map((key) => (
+                                    <Col key={key}>
+                                        <Text type='secondary'>{key.charAt(0).toUpperCase()}:</Text>
+                                        <InputNumber
+                                            value={sizeParams[key as keyof SizeParams] || ''}
+                                            onChange={(value) => {
+                                                if (typeof value === 'number') {
+                                                    changeSize(SizeType[key.toUpperCase() as keyof typeof SizeType], value);
+                                                }
+                                            }}
+                                            disabled={readonly}
+                                        />
+                                    </Col>
+                                ))}
                             </Row>
                         ),
                         ...attributes.map(

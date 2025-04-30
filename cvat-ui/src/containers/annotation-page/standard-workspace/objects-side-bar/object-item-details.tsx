@@ -4,8 +4,8 @@
 
 import React from 'react';
 import { ObjectState, ShapeType } from 'cvat-core-wrapper';
-import { CombinedState, SizeType, Workspace } from 'reducers';
-import ObjectItemDetails from 'components/annotation-page/standard-workspace/objects-side-bar/object-item-details';
+import { CombinedState,Workspace } from 'reducers';
+import ObjectItemDetails, { SizeType } from 'components/annotation-page/standard-workspace/objects-side-bar/object-item-details';
 import { updateAnnotationsAsync, collapseObjectItems } from 'actions/annotation-actions';
 import { connect } from 'react-redux';
 import { ThunkDispatch } from 'utils/redux';
@@ -123,9 +123,9 @@ class ObjectItemDetailsContainer extends React.PureComponent<Props> {
 
             if (state.shapeType === ShapeType.CUBOID && workspace === Workspace.STANDARD3D && state.points) {
                 sizeParams = {
-                    w: parseFloat(state.points[6].toFixed(2)), // X
-                    h: parseFloat(state.points[7].toFixed(2)), // Y
-                    l: parseFloat(state.points[8].toFixed(2)), // Z
+                    width: parseFloat(state.points[6].toFixed(2)), // X
+                    height: parseFloat(state.points[7].toFixed(2)), // Y
+                    length: parseFloat(state.points[8].toFixed(2)), // Z
                 };
             }
             return (
