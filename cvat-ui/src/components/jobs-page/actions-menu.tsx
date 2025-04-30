@@ -4,7 +4,6 @@
 
 import React, { useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useHistory } from 'react-router';
 import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
 
@@ -28,20 +27,9 @@ interface Props {
 function JobActionsComponent(props: Props): JSX.Element {
     const { jobInstance, triggerElement, consensusJobsPresent } = props;
     const dispatch = useDispatch();
-    const history = useHistory();
 
     const pluginActions = usePlugins((state: CombinedState) => state.plugins.components.jobActions.items, props);
     const mergingConsensus = useSelector((state: CombinedState) => state.consensus.actions.merging);
-
-    const onOpenTaskPage = useCallback(() => {
-        history.push(`/tasks/${jobInstance.taskId}`);
-    }, [jobInstance.taskId]);
-
-    const onOpenProjectPage = useCallback(() => {
-        if (jobInstance.projectId) {
-            history.push(`/projects/${jobInstance.projectId}`);
-        }
-    }, [jobInstance.projectId]);
 
     const onOpenBugTracker = useCallback(() => {
         if (jobInstance.bugTracker) {
@@ -102,17 +90,18 @@ function JobActionsComponent(props: Props): JSX.Element {
                 selectable: false,
                 className: 'cvat-job-item-menu',
                 items: JobActionsItems({
+                    jobID: jobInstance.id,
+                    taskID: jobInstance.taskId,
+                    projectID: jobInstance.projectId,
                     isMergingConsensusEnabled: mergingConsensus[makeKey(jobInstance)],
                     pluginActions,
-                    onOpenTaskPage,
-                    onOpenProjectPage: jobInstance.projectId ? onOpenProjectPage : null,
                     onOpenBugTracker: jobInstance.bugTracker ? onOpenBugTracker : null,
                     onImportAnnotations,
                     onExportAnnotations,
                     onMergeConsensusJob: consensusJobsPresent && jobInstance.parentJobId === null ?
                         onMergeConsensusJob : null,
                     onDeleteJob: jobInstance.type === JobType.GROUND_TRUTH ? onDeleteJob : null,
-                }, { ...props, history }),
+                }, props),
             }}
         >
             {triggerElement}

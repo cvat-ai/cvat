@@ -4,7 +4,6 @@
 
 import React, { useCallback } from 'react';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
-import { useHistory } from 'react-router';
 import Modal from 'antd/lib/modal';
 import Dropdown from 'antd/lib/dropdown';
 
@@ -26,7 +25,6 @@ interface Props {
 function TaskActionsComponent(props: Props): JSX.Element {
     const { taskInstance, triggerElement } = props;
     const dispatch = useDispatch();
-    const history = useHistory();
 
     const pluginActions = usePlugins((state: CombinedState) => state.plugins.components.taskActions.items, props);
     const {
@@ -42,16 +40,6 @@ function TaskActionsComponent(props: Props): JSX.Element {
             window.open(taskInstance.bugTracker as string, '_blank', 'noopener noreferrer');
         }
     }, [taskInstance.bugTracker]);
-
-    const onOpenQualityControl = useCallback(() => {
-        history.push(`/tasks/${taskInstance.id}/quality-control`);
-    }, [taskInstance.id]);
-
-    const onOpenConsensusManagement = useCallback(() => {
-        if (taskInstance.consensusEnabled) {
-            history.push(`/tasks/${taskInstance.id}/consensus`);
-        }
-    }, [taskInstance.consensusEnabled, taskInstance.id]);
 
     const onMergeConsensusJobs = useCallback(() => {
         if (taskInstance.consensusEnabled) {
@@ -117,14 +105,14 @@ function TaskActionsComponent(props: Props): JSX.Element {
                 selectable: false,
                 className: 'cvat-actions-menu',
                 items: TaskActionsItems({
+                    taskID: taskInstance.id,
                     isAutomaticAnnotationEnabled: (
                         activeInference &&
                         ![RQStatus.FAILED, RQStatus.FINISHED].includes(activeInference.status)
                     ),
+                    isConsensusEnabled: taskInstance.consensusEnabled,
                     isMergingConsensusEnabled: mergingConsensus[`task_${taskInstance.id}`],
                     pluginActions,
-                    onOpenQualityControl,
-                    onOpenConsensusManagement: taskInstance.consensusEnabled ? onOpenConsensusManagement : null,
                     onMergeConsensusJobs: taskInstance.consensusEnabled ? onMergeConsensusJobs : null,
                     onOpenBugTracker: taskInstance.bugTracker ? onOpenBugTracker : null,
                     onUploadAnnotations,
@@ -133,7 +121,7 @@ function TaskActionsComponent(props: Props): JSX.Element {
                     onRunAutoAnnotation,
                     onMoveTaskToProject: taskInstance.projectId === null ? onMoveTaskToProject : null,
                     onDeleteTask,
-                }, { ...props, history }),
+                }, props),
             }}
         >
             {triggerElement}

@@ -7,6 +7,8 @@ import json
 
 from rest_framework import serializers
 
+from .const import USER_ACTIVITY_SCOPE
+
 
 class EventSerializer(serializers.Serializer):
     scope = serializers.CharField(required=True)
@@ -36,10 +38,6 @@ class ClientEventsSerializer(serializers.Serializer):
                 "load:job",
                 "save:job",
                 "load:workspace",
-                "upload:annotations",  # TODO: remove in next releases
-                "lock:object",  # TODO: remove in next releases
-                "change:attribute",  # TODO: remove in next releases
-                "change:label",  # TODO: remove in next releases
                 "send:exception",
                 "join:objects",
                 "change:frame",
@@ -62,6 +60,7 @@ class ClientEventsSerializer(serializers.Serializer):
                 "debug:info",
                 "run:annotations_action",
                 "click:element",
+                USER_ACTIVITY_SCOPE,
             )
         ),
     }

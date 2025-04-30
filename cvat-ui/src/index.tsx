@@ -17,7 +17,7 @@ import { getUserAgreementsAsync } from 'actions/useragreements-actions';
 import CVATApplication from 'components/cvat-app';
 import PluginsEntrypoint from 'components/plugins-entrypoint';
 import LayoutGrid from 'components/layout-grid/layout-grid';
-import logger, { EventScope } from 'cvat-logger';
+import { logError } from 'cvat-logger';
 import createCVATStore, { getCVATStore } from 'cvat-store';
 import createRootReducer from 'reducers/root-reducer';
 import { activateOrganizationAsync } from 'actions/organization-actions';
@@ -143,42 +143,10 @@ root.render((
     </Provider>
 ));
 
-window.addEventListener('error', (errorEvent: ErrorEvent): boolean => {
-    const {
-        filename, lineno, colno, error,
-    } = errorEvent;
+window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
+    logError(event.reason, false, { type: 'unhandledrejection' });
+});
 
-    if (
-        filename && typeof lineno === 'number' &&
-        typeof colno === 'number' && error
-    ) {
-        // weird react behaviour
-        // it also gets event only in development environment, caught and handled in componentDidCatch
-        // discussion is here https://github.com/facebook/react/issues/10474
-        // and workaround is:
-        if (error.stack && error.stack.indexOf('invokeGuardedCallbackDev') >= 0) {
-            return true;
-        }
-
-        const logPayload = {
-            filename: errorEvent.filename,
-            line: errorEvent.lineno,
-            message: errorEvent.error.message,
-            column: errorEvent.colno,
-            stack: errorEvent.error.stack,
-        };
-
-        const store = getCVATStore();
-        const state: CombinedState = store.getState();
-        const { pathname } = window.location;
-        const re = /\/tasks\/[0-9]+\/jobs\/[0-9]+$/;
-        const { instance: job } = state.annotation.job;
-        if (re.test(pathname) && job) {
-            job.logger.log(EventScope.exception, logPayload);
-        } else {
-            logger.log(EventScope.exception, logPayload);
-        }
-    }
-
-    return false;
+window.addEventListener('error', (errorEvent: ErrorEvent) => {
+    logError(errorEvent.error, false, { type: 'error' });
 });

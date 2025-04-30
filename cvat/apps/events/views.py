@@ -14,6 +14,7 @@ from cvat.apps.events.permissions import EventsPermission
 from cvat.apps.events.serializers import ClientEventsSerializer
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 
+from .const import USER_ACTIVITY_SCOPE
 from .export import export
 from .handlers import handle_client_events_push
 
@@ -37,6 +38,10 @@ class EventsViewSet(viewsets.ViewSet):
 
         handle_client_events_push(request, serializer.validated_data)
         for event in serializer.validated_data["events"]:
+            if event["scope"] == USER_ACTIVITY_SCOPE:
+                # do not record these events, we only need them for correct working time computation
+                continue
+
             message = (
                 JSONRenderer()
                 .render({**event, "timestamp": str(event["timestamp"].timestamp())})

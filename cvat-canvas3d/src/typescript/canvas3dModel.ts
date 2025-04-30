@@ -66,12 +66,19 @@ export enum MouseInteraction {
     HOVER = 'hover',
 }
 
+export interface OrientationVisibility {
+    x: boolean;
+    y: boolean;
+    z: boolean;
+}
+
 export interface ShapeProperties {
     opacity: number;
     outlined: boolean;
     outlineColor: string;
     selectedOpacity: number;
     colorBy: string;
+    orientationVisibility: OrientationVisibility;
 }
 
 export enum UpdateReasons {
@@ -187,6 +194,11 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
                 outlineColor: '#000000',
                 selectedOpacity: 60,
                 colorBy: 'Label',
+                orientationVisibility: {
+                    x: false,
+                    y: false,
+                    z: false,
+                },
             },
             isFrameUpdating: false,
             nextSetupRequest: null,
@@ -396,6 +408,13 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
 
         if (typeof shapeProperties.outlineColor === 'string') {
             this.data.shapeProperties.outlineColor = shapeProperties.outlineColor;
+        }
+
+        if (typeof shapeProperties.orientationVisibility === 'object') {
+            const current = this.data.shapeProperties.orientationVisibility;
+            current.x = !!(shapeProperties.orientationVisibility?.x ?? current.x);
+            current.y = !!(shapeProperties.orientationVisibility?.y ?? current.y);
+            current.z = !!(shapeProperties.orientationVisibility?.z ?? current.z);
         }
 
         this.notify(UpdateReasons.SHAPES_CONFIG_UPDATED);

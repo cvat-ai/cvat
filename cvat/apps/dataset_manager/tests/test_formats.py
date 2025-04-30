@@ -24,6 +24,10 @@ from cvat.apps.dataset_manager.bindings import (
     find_dataset_root,
 )
 from cvat.apps.dataset_manager.task import TaskAnnotation
+from cvat.apps.dataset_manager.tests.utils import (
+    ensure_extractors_efficiency,
+    ensure_streaming_importers,
+)
 from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.apps.engine.models import Task
 from cvat.apps.engine.tests.utils import (
@@ -94,6 +98,7 @@ class _DbTestBase(ApiTestBase):
         return task
 
 
+@ensure_extractors_efficiency
 class TaskExportTest(_DbTestBase):
     def _generate_custom_annotations(self, annotations, task):
         self._put_api_v2_task_id_annotations(task["id"], annotations)
@@ -684,6 +689,7 @@ class FrameMatchingTest(_DbTestBase):
                 self.assertEqual(expected, root)
 
 
+@ensure_streaming_importers
 class TaskAnnotationsImportTest(_DbTestBase):
     def _generate_custom_annotations(self, annotations, task):
         self._put_api_v2_task_id_annotations(task["id"], annotations)

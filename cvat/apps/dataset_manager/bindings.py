@@ -10,7 +10,7 @@ import re
 import sys
 from collections import OrderedDict, defaultdict
 from collections.abc import Iterable, Iterator, Mapping, Sequence
-from functools import reduce
+from functools import partial, reduce
 from operator import add
 from pathlib import Path
 from types import SimpleNamespace
@@ -23,7 +23,7 @@ import defusedxml.ElementTree as ET
 import rq
 from attr import attrib, attrs
 from attrs.converters import to_bool
-from datumaro.components.dataset_base import IDataset, StreamingDatasetBase
+from datumaro.components.dataset_base import IDataset, StreamingDatasetBase, StreamingSubsetBase
 from datumaro.components.format_detection import RejectionReason
 from django.conf import settings
 from django.db.models import Prefetch, QuerySet
@@ -1301,7 +1301,7 @@ class ProjectData(InstanceLabelData):
                 if frame in task_included_frames:
                     get_frame(task_id, frame)
 
-        for task_data in self.task_data:
+        for task_data in self.all_task_data:
             task: Task = task_data.db_instance
 
             anno_manager = AnnotationManager(
@@ -1419,13 +1419,16 @@ class ProjectData(InstanceLabelData):
 
         return task_data
 
+    def _task_data(self, task_id: int) -> TaskData:
+        if task_id in self._tasks_data:
+            return self._tasks_data[task_id]
+        else:
+            return self.init_task_data(task_id)
+
     @property
-    def task_data(self):
+    def all_task_data(self):
         for task_id in self._db_tasks.keys():
-            if task_id in self._tasks_data:
-                yield self._tasks_data[task_id]
-            else:
-                yield self.init_task_data(task_id)
+            yield self._task_data(task_id)
 
     @staticmethod
     def _get_filename(path):
@@ -1458,9 +1461,10 @@ class ProjectData(InstanceLabelData):
         return None
 
     def split_dataset(self, dataset: dm.Dataset):
-        for task_data in self.task_data:
-            if task_data._db_task.id not in self.new_tasks:
+        for task_id in self._db_tasks.keys():
+            if task_id not in self.new_tasks:
                 continue
+            task_data = self._task_data(task_id)
             subset_dataset: dm.Dataset = dataset.subsets()[task_data.db_instance.subset].as_dataset()
             yield subset_dataset, task_data
 
@@ -1595,7 +1599,7 @@ class CVATDataExtractorMixin:
         raise NotImplementedError()
 
     @staticmethod
-    def _load_categories(labels: list):
+    def load_categories(labels: list):
         categories: dict[dm.AnnotationType,
             dm.Categories] = {}
 
@@ -1711,7 +1715,7 @@ class CvatDataExtractorBase(CVATDataExtractorMixin):
             else:
                 dm_media = dm.Image.from_file(**dm_media_args)
 
-        dm_anno = self._read_cvat_anno(frame_data, self._instance_meta['labels'])
+        dm_anno = partial(self._read_cvat_anno, frame_data, self._instance_meta['labels'])
 
         dm_attributes = {'frame': frame_data.frame}
 
@@ -1744,29 +1748,35 @@ class CvatDataExtractorBase(CVATDataExtractorMixin):
         return dm_item
 
 
-class CvatTaskOrJobDataExtractor(dm.SubsetBase, CvatDataExtractorBase):
+class CvatTaskOrJobDataExtractor(StreamingSubsetBase, CvatDataExtractorBase):
     def __init__(self, *args, **kwargs):
         CvatDataExtractorBase.__init__(self, *args, **kwargs)
-        dm.SubsetBase.__init__(
+        StreamingSubsetBase.__init__(
             self,
             media_type=dm.Image if self._dimension == DimensionType.DIM_2D else dm.PointCloud,
             subset=self._instance_meta['subset'],
         )
-        self._categories = self._load_categories(self._instance_meta['labels'])
+        self._categories = self.load_categories(self._instance_meta['labels'])
+
+        self._grouped_by_frame = list(self._instance_data.group_by_frame(include_empty=True))
+
+    @staticmethod
+    def copy_frame_data_with_replaced_lazy_lists(frame_data: CommonData.Frame) -> CommonData.Frame:
+        return frame_data._replace(
+            labeled_shapes=[
+                (
+                    shape._replace(points=shape.points.lazy_copy())
+                    if isinstance(shape.points, LazyList) and not shape.points.is_parsed
+                    else shape
+                )
+                for shape in frame_data.labeled_shapes
+            ]
+        )
 
     def __iter__(self):
-        for frame_data in self._instance_data.group_by_frame(include_empty=True):
+        for frame_data in self._grouped_by_frame:
             # do not keep parsed lazy list data after this iteration
-            frame_data = frame_data._replace(
-                labeled_shapes=[
-                    (
-                        shape._replace(points=shape.points.lazy_copy())
-                        if isinstance(shape.points, LazyList) and not shape.points.is_parsed
-                        else shape
-                    )
-                    for shape in frame_data.labeled_shapes
-                ]
-            )
+            frame_data = self.copy_frame_data_with_replaced_lazy_lists(frame_data)
             yield self._process_one_frame_data(frame_data)
 
     def _read_cvat_anno(self, cvat_frame_anno: CommonData.Frame, labels: list):
@@ -1787,10 +1797,6 @@ class CvatTaskOrJobDataExtractor(dm.SubsetBase, CvatDataExtractorBase):
     def categories(self):
         return self._categories
 
-    @property
-    def is_stream(self) -> bool:
-        return True
-
 
 class CVATProjectDataExtractor(StreamingDatasetBase, CvatDataExtractorBase):
     def __init__(self, *args, **kwargs):
@@ -1808,37 +1814,35 @@ class CVATProjectDataExtractor(StreamingDatasetBase, CvatDataExtractorBase):
             subsets=list(self._frame_data_by_subset.keys()),
             media_type=dm.Image if self._dimension == DimensionType.DIM_2D else dm.PointCloud,
         )
-        self._categories = self._load_categories(self._instance_meta['labels'])
+        self._categories = self.load_categories(self._instance_meta['labels'])
+
+    @staticmethod
+    def copy_frame_data_with_replaced_lazy_lists(frame_data: ProjectData.Frame) -> ProjectData.Frame:
+        return attr.evolve(
+            frame_data,
+            labeled_shapes=[
+                (
+                    attr.evolve(shape, points=shape.points.lazy_copy())
+                    if isinstance(shape.points, LazyList) and not shape.points.is_parsed
+                    else shape
+                )
+                for shape in frame_data.labeled_shapes
+            ],
+        )
 
     def get_subset(self, name) -> IDataset:
-        extractor = self
-
-        class Subset(dm.SubsetBase):
-            def __iter__(self):
-                for frame_data in extractor._frame_data_by_subset[name]:
+        class Subset(StreamingSubsetBase):
+            def __iter__(_):
+                for frame_data in self._frame_data_by_subset[name]:
                     # do not keep parsed lazy list data after this iteration
-                    frame_data = attr.evolve(
-                        frame_data,
-                        labeled_shapes=[
-                            (
-                                attr.evolve(shape, points=shape.points.lazy_copy())
-                                if isinstance(shape.points, LazyList) and not shape.points.is_parsed
-                                else shape
-                            )
-                            for shape in frame_data.labeled_shapes
-                        ],
-                    )
-                    yield extractor._process_one_frame_data(frame_data)
+                    frame_data = self.copy_frame_data_with_replaced_lazy_lists(frame_data)
+                    yield self._process_one_frame_data(frame_data)
 
-            def __len__(self):
-                return len(extractor._frame_data_by_subset[name])
+            def __len__(_):
+                return len(self._frame_data_by_subset[name])
 
-            def categories(self):
-                return extractor.categories()
-
-            @property
-            def is_stream(self) -> bool:
-                return True
+            def categories(_):
+                return self.categories()
 
         return Subset(
             subset=name,
