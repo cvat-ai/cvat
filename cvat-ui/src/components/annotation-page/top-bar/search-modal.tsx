@@ -78,7 +78,7 @@ function SearchFramesModal(): JSX.Element {
     return (
         <Modal
             className='cvat-frame-search-modal'
-            title="Search frames by name"
+            title='Search frames by name'
             open={visible}
             footer={null}
             onCancel={onCancel}
@@ -106,6 +106,6 @@ function SearchFramesModal(): JSX.Element {
             />
         </Modal>
     );
-};
+}
 
 export default React.memo(SearchFramesModal);

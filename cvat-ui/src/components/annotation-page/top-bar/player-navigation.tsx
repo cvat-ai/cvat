@@ -143,7 +143,7 @@ function PlayerNavigation(props: Props): JSX.Element {
         },
     };
 
-    const onSearchIconClick =  useCallback(() => {
+    const onSearchIconClick = useCallback(() => {
         switchShowSearchPallet(true);
     }, [switchShowSearchPallet]);
 
