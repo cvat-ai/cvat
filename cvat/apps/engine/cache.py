@@ -412,7 +412,10 @@ class MediaCache:
             self._make_chunk_key(db_task, chunk_number, quality=quality),
             set_callback,
         )
-        db_task.refresh_from_db(fields=["segment_set"])
+
+        if hasattr(db_task, "segment_set"):
+            # Refresh segments to report actual dates if they were fetched previously
+            db_task.refresh_from_db(fields=["segment_set"])
 
         return self._to_data_with_mime(
             self._validate_cache_item_timestamp(item, db_task.get_chunks_updated_date())
