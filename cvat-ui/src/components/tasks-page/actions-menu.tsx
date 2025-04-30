@@ -4,7 +4,6 @@
 
 import React, { useCallback } from 'react';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
-import { useHistory } from 'react-router';
 import Modal from 'antd/lib/modal';
 import Dropdown from 'antd/lib/dropdown';
 
@@ -26,7 +25,6 @@ interface Props {
 function TaskActionsComponent(props: Props): JSX.Element {
     const { taskInstance, triggerElement } = props;
     const dispatch = useDispatch();
-    const history = useHistory();
 
     const pluginActions = usePlugins((state: CombinedState) => state.plugins.components.taskActions.items, props);
     const {
@@ -123,7 +121,7 @@ function TaskActionsComponent(props: Props): JSX.Element {
                     onRunAutoAnnotation,
                     onMoveTaskToProject: taskInstance.projectId === null ? onMoveTaskToProject : null,
                     onDeleteTask,
-                }, { ...props, history }),
+                }, props),
             }}
         >
             {triggerElement}

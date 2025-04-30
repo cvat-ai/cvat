@@ -4,7 +4,6 @@
 
 import React, { useCallback } from 'react';
 import { useDispatch } from 'react-redux';
-import { useHistory } from 'react-router';
 import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
 
@@ -24,7 +23,6 @@ interface Props {
 function ProjectActionsComponent(props: Props): JSX.Element {
     const { projectInstance, triggerElement } = props;
     const dispatch = useDispatch();
-    const history = useHistory();
 
     const pluginActions = usePlugins((state: CombinedState) => state.plugins.components.projectActions.items, props);
     const onExportDataset = useCallback(() => {
@@ -69,7 +67,7 @@ function ProjectActionsComponent(props: Props): JSX.Element {
                     onImportDataset,
                     onBackupProject,
                     onDeleteProject,
-                }, { ...props, history }),
+                }, props),
             }}
         >
             {triggerElement}
