@@ -532,3 +532,28 @@
         margin: 0;
     }
 }
+
+.cvat-frame-search-modal {
+    cursor: pointer;
+
+    .cvat-frame-search-item {
+        > span {
+            display: flex;
+            justify-content: start;
+            overflow: hidden;
+
+            .cvat-frame-search-item-number {
+                margin-right: $grid-unit-size;
+                white-space: nowrap;
+            }
+
+            .cvat-frame-search-item-name {
+                overflow: hidden;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+                direction: rtl;
+                unicode-bidi: plaintext;
+            }
+        }
+    }
+}
