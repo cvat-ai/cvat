@@ -28,9 +28,7 @@ from attr.converters import to_bool
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.storage import storages
-from django.db import IntegrityError
-from django.db import models as django_models
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models.query import Prefetch
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseGone, HttpResponseNotFound
 from django.utils import timezone
@@ -1831,9 +1829,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
 ):
     queryset = Job.objects.select_related('assignee', 'segment__task__data',
         'segment__task__project', 'segment__task__annotation_guide', 'segment__task__project__annotation_guide',
-    ).annotate(
-        django_models.Count('issues', distinct=True),
-    ).all()
+    )
 
     iam_organization_field = 'segment__task__organization'
     search_fields = ('task_name', 'project_name', 'assignee', 'state', 'stage')
@@ -1862,11 +1858,11 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             perm = JobPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
 
-            visible_tasks_perm = TaskPermission.create_scope_list(self.request)
-            visible_tasks = visible_tasks_perm.filter(Task.objects)
-            queryset = queryset.annotate(
-                user_can_view_task=django_models.Q(segment__task__in=visible_tasks)
+            queryset = queryset.prefetch_related(
+                "segment__task__source_storage", "segment__task__target_storage"
             )
+        else:
+            queryset = queryset.with_issue_counts() # optimized in JobReadSerializer
 
         return queryset
 

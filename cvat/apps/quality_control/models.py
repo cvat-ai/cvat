@@ -8,7 +8,7 @@ from collections.abc import Sequence
 from copy import deepcopy
 from enum import Enum
 from functools import cached_property
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -16,6 +16,9 @@ from django.forms.models import model_to_dict
 
 from cvat.apps.engine.models import Job, JobType, Project, ShapeType, Task, TimestampedModel, User
 from cvat.apps.organizations.models import Organization
+
+if TYPE_CHECKING:
+    from cvat.apps.organizations.models import Organization
 
 
 class AnnotationConflictType(str, Enum):

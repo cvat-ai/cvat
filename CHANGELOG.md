@@ -16,6 +16,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.35.0'></a>
+## \[2.35.0\] - 2025-04-29
+
+### Changed
+
+- Streaming import for YOLO and COCO formats
+  (<https://github.com/cvat-ai/cvat/pull/9265>)
+
+- The `POST /api/lambda/functions/<id>` endpoint now returns the results
+  in the same format as the `GET /api/tasks/<id>/annotations` endpoint
+  when the function is of the `detector` kind
+  (<https://github.com/cvat-ai/cvat/pull/9285>)
+
+### Fixed
+
+- Numeric attribute values returned by Nuclio functions are now checked
+  for being in the acceptable range when running whole-task auto-annotation
+  (<https://github.com/cvat-ai/cvat/pull/9285>)
+
+- With per-frame auto-annotation, numeric attribute range validation now
+  works correctly when the minimum value is not a multiple of the step
+  (<https://github.com/cvat-ai/cvat/pull/9285>)
+
+- Reduced memory consumption for annotation export to CVAT formats
+  (<https://github.com/cvat-ai/cvat/pull/9354>)
+
+- UI crashes when paste cuboids with hold Ctrl key
+  (<https://github.com/cvat-ai/cvat/pull/9367>)
+
+- Fixed service name of utils worker in `docker-compose.external_db.yml`
+  (<https://github.com/cvat-ai/cvat/pull/9352>)
+
+- Slow performance in exports that require CVAT RLE to COCO RLE convertation
+  (<https://github.com/cvat-ai/cvat/pull/9359>)
+
 <a id='changelog-2.34.0'></a>
 ## \[2.34.0\] - 2025-04-17
 

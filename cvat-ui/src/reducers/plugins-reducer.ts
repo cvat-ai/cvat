@@ -39,6 +39,9 @@ const defaultState: PluginsState = {
                 overviewTab: [],
             },
         },
+        analyticsReportPage: {
+            content: [],
+        },
     },
     components: {
         header: {

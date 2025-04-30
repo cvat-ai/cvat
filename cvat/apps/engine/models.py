@@ -14,7 +14,7 @@ from abc import ABCMeta, abstractmethod
 from collections.abc import Collection, Iterable, Sequence
 from enum import Enum
 from functools import cached_property
-from typing import Any, ClassVar, Optional
+from typing import TYPE_CHECKING, Any, ClassVar, Optional
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -32,6 +32,9 @@ from cvat.apps.engine.lazy_list import LazyList
 from cvat.apps.engine.model_utils import MaybeUndefined
 from cvat.apps.engine.utils import parse_specific_attributes, take_by
 from cvat.apps.events.utils import cache_deleted
+
+if TYPE_CHECKING:
+    from cvat.apps.organizations.models import Organization
 
 
 class SafeCharField(models.CharField):
@@ -858,6 +861,9 @@ class JobQuerySet(models.QuerySet):
         ).count() != 0:
             raise TaskGroundTruthJobsLimitError()
 
+    def with_issue_counts(self):
+        return self.annotate(issues__count=models.Count('issues'))
+
 
 
 class Job(TimestampedModel, FileSystemRelatedModel):
@@ -888,6 +894,9 @@ class Job(TimestampedModel, FileSystemRelatedModel):
     user_can_view_task: MaybeUndefined[bool]
     "Can be defined by the fetching queryset to avoid extra IAM checks, e.g. in a list serializer"
 
+    issues__count: MaybeUndefined[int]
+    "Can be defined by the fetching queryset"
+
     def get_target_storage(self) -> Optional[Storage]:
         return self.segment.task.target_storage
 
@@ -899,8 +908,7 @@ class Job(TimestampedModel, FileSystemRelatedModel):
 
     @extend_schema_field(OpenApiTypes.INT)
     def get_project_id(self):
-        project = self.segment.task.project
-        return project.id if project else None
+        return self.segment.task.project_id
 
     @extend_schema_field(OpenApiTypes.INT)
     def get_guide_id(self):
@@ -916,14 +924,14 @@ class Job(TimestampedModel, FileSystemRelatedModel):
         return self.segment.task_id
 
     @property
-    def organization_id(self):
+    def organization_id(self) -> int | None:
         return self.segment.task.organization_id
 
     @property
-    def organization(self):
+    def organization(self) -> Organization:
         return self.segment.task.organization
 
-    def get_organization_slug(self):
+    def get_organization_slug(self) -> str:
         return self.segment.task.organization.slug
 
     def get_bug_tracker(self):

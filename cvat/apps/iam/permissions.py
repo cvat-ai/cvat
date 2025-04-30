@@ -57,9 +57,12 @@ def get_organization(request, obj):
             return None
 
         try:
-            if hasattr(obj, "organization"):
+            # If the object belongs to an organization transitively via the parent object
+            # there might be no organization field, because it has to be defined and implemented
+            # manually
+            try:
                 return obj.organization
-            else:
+            except AttributeError:
                 return Organization.objects.get(id=org_id)
         except Organization.DoesNotExist:
             return None
@@ -84,7 +87,7 @@ def build_iam_context(
         "group_name": request.iam_context["privilege"],
         "org_id": getattr(organization, "id", None),
         "org_slug": getattr(organization, "slug", None),
-        "org_owner_id": getattr(organization, "owner_id", None) if organization else None,
+        "org_owner_id": organization.owner_id if organization else None,
         "org_role": getattr(membership, "role", None),
     }
 
