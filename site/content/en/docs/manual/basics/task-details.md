@@ -16,8 +16,9 @@ The next actions are available on this page:
 1. Change the issue tracker or open it if specified.
 1. Change labels (available only if the task is not related to the project).
 
-    You can add new labels or add attributes for the existing labels in the Raw mode or the Constructor mode.
-    By selecting `Copy` you will copy the labels to the clipboard.
+   You can add new labels or add attributes for the existing labels in the Raw mode or the Constructor mode.
+   By selecting `Copy` you will copy the labels to the clipboard.
+
 1. **Assigned to** — is used to assign a task to a person. Start typing an assignee’s name and/or
     choose the right person out of the dropdown list.
     In the list of users, you will only see the users of the
