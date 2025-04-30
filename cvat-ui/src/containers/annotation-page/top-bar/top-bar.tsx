@@ -24,7 +24,7 @@ import {
     restoreFrameAsync,
     switchNavigationBlocked as switchNavigationBlockedAction,
     setNavigationType as setNavigationTypeAction,
-    switchShowPallet as showSearchPalletAction,
+    switchShowSearchFramesModal as switchShowSearchFramesModalAction,
 } from 'actions/annotation-actions';
 import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-bar';
 import { Canvas } from 'cvat-canvas-wrapper';
@@ -186,7 +186,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(showFiltersAction(true));
         },
         switchShowSearchPallet(visible: boolean): void {
-            dispatch(showSearchPalletAction(visible));
+            dispatch(switchShowSearchFramesModalAction(visible));
         },
         undo(): void {
             dispatch(undoActionAsync());

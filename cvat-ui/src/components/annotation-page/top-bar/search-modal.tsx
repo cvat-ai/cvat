@@ -10,7 +10,7 @@ import AutoComplete from 'antd/lib/auto-complete';
 import _ from 'lodash';
 import { getCore } from 'cvat-core-wrapper';
 import { CombinedState } from 'reducers';
-import { changeFrameAsync, switchShowPallet } from 'actions/annotation-actions';
+import { changeFrameAsync, switchShowSearchFramesModal } from 'actions/annotation-actions';
 import CvatTooltip from 'components/common/cvat-tooltip';
 
 interface SearchResult {
@@ -23,7 +23,7 @@ const cvat = getCore();
 const SEARCH_LIMIT = 25;
 const SEARCH_DEBOUNCE_TIME = 500;
 
-function SearchModal(): JSX.Element {
+function SearchFramesModal(): JSX.Element {
     const dispatch = useDispatch();
     const [searchTerm, setSearchTerm] = useState('');
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -47,7 +47,7 @@ function SearchModal(): JSX.Element {
     }, [jobInstance]);
 
     const onCancel = useCallback(() => {
-        dispatch(switchShowPallet(false));
+        dispatch(switchShowSearchFramesModal(false));
         setSearchTerm('');
         setSearchResults([]);
     }, []);
@@ -108,4 +108,4 @@ function SearchModal(): JSX.Element {
     );
 };
 
-export default React.memo(SearchModal);
+export default React.memo(SearchFramesModal);

@@ -451,7 +451,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.CHANGE_SHOW_SEARCH_PALLET: {
+        case AnnotationActionTypes.CHANGE_SHOW_SEARCH_FRAMES_MODAL: {
             const { visible } = action.payload;
 
             return {
