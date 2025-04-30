@@ -71,6 +71,7 @@ In the **Workspace** tab, you can:
   With this setting, you can choose the default number of points in polygon.
   Works for serverless interactors and OpenCV scissors.
 
-- Seelct **Save** to save settings (settings will be saved on the server and will not change after the page is refreshed).
+- Select **Save** to save settings (settings will be saved on the server and
+will not change after the page is refreshed).
   Select **Cancel** or press `F2` to return to the annotation.
 
