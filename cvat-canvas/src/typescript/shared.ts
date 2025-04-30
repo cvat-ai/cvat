@@ -105,6 +105,16 @@ export function composeShapeDimensions(width: number, height: number, rotation: 
     return text;
 }
 
+export function getRoundedRotation(shape: SVG.Shape, defaultValue: number = 0): number {
+    const rotation = shape.transform().rotation ?? defaultValue;
+    // Due to floating point arithmeic, rotation value may be updated incorrectly
+    // even when no rotation actually happened.
+    // E.g. in one call it may be 16.000000000000014
+    // On the next call it may be 16.00000000000003
+    // As it may lead to other issues, we round this value up to 5 digits after "."
+    return +rotation.toFixed(5);
+}
+
 export function displayShapeSize(shapesContainer: SVG.Container, textContainer: SVG.Container): ShapeSizeElement {
     const shapeSize: ShapeSizeElement = {
         sizeElement: textContainer
@@ -116,7 +126,7 @@ export function displayShapeSize(shapesContainer: SVG.Container, textContainer: 
             .addClass('cvat_canvas_text'),
         update(shape: SVG.Shape): void {
             const rotation = shape.type === 'rect' || shape.type === 'ellipse' ?
-                shape.transform().rotation ?? 0 : null;
+                getRoundedRotation(shape) : null;
             const text = composeShapeDimensions(shape.width(), shape.height(), rotation);
             const [x, y, cx, cy]: number[] = translateToSVG(
                 (textContainer.node as any) as SVGSVGElement,
@@ -131,7 +141,7 @@ export function displayShapeSize(shapesContainer: SVG.Container, textContainer: 
                 .clear()
                 .plain(text)
                 .move(x + consts.TEXT_MARGIN, y + consts.TEXT_MARGIN)
-                .rotate(shape.transform().rotation, cx, cy);
+                .rotate(rotation ?? 0, cx, cy);
         },
         rm(): void {
             if (this.sizeElement) {

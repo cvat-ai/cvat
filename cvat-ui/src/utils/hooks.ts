@@ -6,10 +6,11 @@
 import _ from 'lodash';
 import {
     useRef, useEffect, useState, useCallback,
+    EffectCallback, DependencyList,
 } from 'react';
 import { useSelector } from 'react-redux';
-import { useHistory } from 'react-router';
-import { CombinedState, PluginComponent } from 'reducers';
+import { useHistory, useLocation, useParams } from 'react-router';
+import { CombinedState, PluginComponent, InstanceType } from 'reducers';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { authQuery } from './auth-query';
 import { KeyMap, KeyMapItem } from './mousetrap-react';
@@ -148,4 +149,37 @@ export function useResetShortcutsOnUnmount(componentShortcuts: Record<string, Ke
         }, {});
         registerComponentShortcuts(revertedShortcuts);
     }, []);
+}
+
+export function useUpdateEffect(effect: EffectCallback, deps?: DependencyList): void {
+    const isFirstRender = useRef(true);
+
+    useEffect(() => {
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            return () => {};
+        }
+
+        return effect();
+    }, deps);
+}
+
+export function useInstanceType(): InstanceType {
+    const location = useLocation();
+    const { pathname } = location;
+    if (pathname.includes('projects')) return InstanceType.PROJECT;
+    if (pathname.includes('jobs')) return InstanceType.JOB;
+    return InstanceType.TASK;
+}
+
+export function useInstanceId(type: InstanceType): number {
+    const params = useParams<{
+        pid?: string,
+        jid?: string,
+        tid?: string,
+    }>();
+
+    if (type === InstanceType.PROJECT) return +(params.pid as string);
+    if (type === InstanceType.JOB) return +(params.jid as string);
+    return +(params.tid as string);
 }

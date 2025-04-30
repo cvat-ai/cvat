@@ -194,7 +194,7 @@ description: 'Installing a development environment for different operating syste
     ```
   - If you want to access CVAT from outside of your host:
     ```sh
-    CVAT_UI_HOST='<YOUR_HOST_IP>' yarn run start:cvat-ui
+    CVAT_UI_HOST='<YOUR_HOST_IP>' CVAT_UI_PORT='<YOUR_PORT>' yarn run start:cvat-ui
     ```
 - Open a new terminal window.
 - Run VScode from the virtual environment (run the following command from CVAT root directory):
