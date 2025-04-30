@@ -40,6 +40,7 @@ interface Props {
     backwardShortcut: string;
     navigationType: NavigationType;
     focusFrameInputShortcut: string;
+    searchFrameByNameShortcut: string;
     activeControl: ActiveControl;
     toolsBlockerState: ToolsBlockerState;
     annotationFilters: object[];
@@ -98,6 +99,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         forwardShortcut,
         backwardShortcut,
         focusFrameInputShortcut,
+        searchFrameByNameShortcut,
         activeControl,
         toolsBlockerState,
         annotationFilters,
@@ -169,6 +171,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
             frameDeleted={frameDeleted}
             deleteFrameShortcut={deleteFrameShortcut}
             focusFrameInputShortcut={focusFrameInputShortcut}
+            searchFrameByNameShortcut={searchFrameByNameShortcut}
             inputFrameRef={inputFrameRef}
             keyMap={keyMap}
             workspace={workspace}

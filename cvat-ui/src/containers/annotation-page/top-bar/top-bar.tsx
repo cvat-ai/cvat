@@ -698,6 +698,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 backwardShortcut={normalizedKeyMap.BACKWARD_FRAME}
                 navigationType={navigationType}
                 focusFrameInputShortcut={normalizedKeyMap.FOCUS_INPUT_FRAME}
+                searchFrameByNameShortcut={normalizedKeyMap.SEARCH_FRAME_BY_NAME}
                 annotationFilters={annotationFilters}
                 initialOpenGuide={initialOpenGuide}
                 onUndoClick={this.undo}
