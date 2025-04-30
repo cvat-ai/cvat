@@ -18,9 +18,8 @@ import {
     SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset, SerializedAPISchema,
     SerializedInvitationData, SerializedCloudStorage, SerializedFramesMetaData, SerializedCollection,
     SerializedQualitySettingsData, APIQualitySettingsFilter, SerializedQualityConflictData, APIQualityConflictsFilter,
-    SerializedQualityReportData, APIQualityReportsFilter, SerializedAnalyticsReport, APIAnalyticsReportFilter,
-    SerializedConsensusSettingsData, APIConsensusSettingsFilter,
-    SerializedRequest, SerializedJobValidationLayout, SerializedTaskValidationLayout,
+    SerializedQualityReportData, APIQualityReportsFilter, APIAnalyticsEventsFilter, APIConsensusSettingsFilter,
+    SerializedRequest, SerializedJobValidationLayout, SerializedTaskValidationLayout, SerializedConsensusSettingsData,
 } from './server-response-types';
 import { PaginatedResource, UpdateStatusData } from './core-types';
 import { Request } from './request';
@@ -1097,11 +1096,6 @@ async function restoreProject(storage: Storage, file: File | string): Promise<st
     }
 }
 
-type LongProcessListener<R> = Record<number, {
-    promise: Promise<R>;
-    onUpdate: ((state: string, progress: number, message: string) => void)[];
-}>;
-
 async function createTask(
     taskSpec: Partial<SerializedTask>,
     taskDataSpec: any,
@@ -1675,6 +1669,53 @@ async function saveEvents(events: {
     } catch (errorData) {
         throw generateError(errorData);
     }
+}
+
+const eventsExportRequests: Record<string, { promise: Promise<string> }> = {};
+function exportEvents(params: APIAnalyticsEventsFilter): Promise<string> {
+    const { backendAPI } = config;
+    const key = JSON.stringify(params, Object.keys(params).sort());
+    const existingRequest = eventsExportRequests[key];
+
+    if (existingRequest) {
+        return existingRequest.promise;
+    }
+
+    const promise = new Promise<string>((resolve, reject) => {
+        Axios.get(`${backendAPI}/events`, { params }).then((response) => {
+            const paramsWithQuery = {
+                ...params,
+                query_id: response.data.query_id,
+            };
+
+            const checkCallback = () => {
+                Axios.get(`${backendAPI}/events`, { params: paramsWithQuery }).then((checkResponse) => {
+                    if (checkResponse.status === 202) {
+                        setTimeout(checkCallback, 10000);
+                    } else if (checkResponse.status === 201) {
+                        const paramsObject = new URLSearchParams(paramsWithQuery as any);
+                        paramsObject.set('action', 'download');
+                        resolve(`${backendAPI}/events?${paramsObject.toString()}`);
+                    } else {
+                        reject(new Error(`Unexpected API code received: ${checkResponse.status}`));
+                    }
+                }).catch((error: unknown) => {
+                    reject(error);
+                });
+            };
+
+            setTimeout(checkCallback, 2000);
+        }).catch((error: unknown) => {
+            reject(error);
+        });
+    });
+
+    eventsExportRequests[key] = { promise };
+    promise.finally(() => {
+        delete eventsExportRequests[key];
+    });
+
+    return promise;
 }
 
 async function getLambdaFunctions() {
@@ -2286,24 +2327,6 @@ async function getQualityReports(
     }
 }
 
-async function getAnalyticsReports(
-    filter: APIAnalyticsReportFilter,
-): Promise<SerializedAnalyticsReport> {
-    const { backendAPI } = config;
-
-    try {
-        const response = await Axios.get(`${backendAPI}/analytics/reports`, {
-            params: {
-                ...filter,
-            },
-        });
-
-        return response.data;
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
 async function getRequestsList(): Promise<PaginatedResource<SerializedRequest>> {
     const { backendAPI } = config;
     const params = enableOrganization();
@@ -2353,86 +2376,6 @@ async function cancelRequest(requestID): Promise<void> {
     } catch (errorData) {
         throw generateError(errorData);
     }
-}
-
-const listenToCreateAnalyticsReportCallbacks: {
-    job: LongProcessListener<void>;
-    task: LongProcessListener<void>;
-    project: LongProcessListener<void>;
-} = {
-    job: {},
-    task: {},
-    project: {},
-};
-
-async function calculateAnalyticsReport(
-    body: {
-        job_id?: number;
-        task_id?: number;
-        project_id?: number;
-    },
-    onUpdate: (state: string, progress: number, message: string) => void,
-): Promise<void> {
-    const id = body.job_id || body.task_id || body.project_id;
-    const { backendAPI } = config;
-    const params = enableOrganization();
-    let listenerStorage: LongProcessListener<void> = null;
-
-    if (Number.isInteger(body.job_id)) {
-        listenerStorage = listenToCreateAnalyticsReportCallbacks.job;
-    } else if (Number.isInteger(body.task_id)) {
-        listenerStorage = listenToCreateAnalyticsReportCallbacks.task;
-    } else if (Number.isInteger(body.project_id)) {
-        listenerStorage = listenToCreateAnalyticsReportCallbacks.project;
-    }
-
-    if (listenerStorage[id]) {
-        listenerStorage[id].onUpdate.push(onUpdate);
-        return listenerStorage[id].promise;
-    }
-
-    const promise = new Promise<void>((resolve, reject) => {
-        Axios.post(`${backendAPI}/analytics/reports`, {
-            ...body,
-            ...params,
-        }).then(({ data: { rq_id: rqID } }) => {
-            listenerStorage[id].onUpdate.forEach((_onUpdate) => _onUpdate(RQStatus.QUEUED, 0, 'Analytics report request sent'));
-            const checkStatus = (): void => {
-                Axios.post(`${backendAPI}/analytics/reports`, {
-                    ...body,
-                    ...params,
-                }, { params: { rq_id: rqID } }).then((response) => {
-                    // TODO: rewrite server logic, now it returns 202, 201 codes, but we need RQ statuses and details
-                    // after this patch is merged https://github.com/cvat-ai/cvat/pull/7537
-                    if (response.status === 201) {
-                        listenerStorage[id].onUpdate.forEach((_onUpdate) => _onUpdate(RQStatus.FINISHED, 0, 'Done'));
-                        resolve();
-                        return;
-                    }
-
-                    listenerStorage[id].onUpdate.forEach((_onUpdate) => _onUpdate(RQStatus.QUEUED, 0, 'Analytics report calculation is in progress'));
-                    setTimeout(checkStatus, 10000);
-                }).catch((errorData) => {
-                    reject(generateError(errorData));
-                });
-            };
-
-            setTimeout(checkStatus, 2500);
-        }).catch((errorData) => {
-            reject(generateError(errorData));
-        });
-    });
-
-    listenerStorage[id] = {
-        promise,
-        onUpdate: [onUpdate],
-    };
-
-    promise.finally(() => {
-        delete listenerStorage[id];
-    });
-
-    return promise;
 }
 
 export default Object.freeze({
@@ -2519,6 +2462,7 @@ export default Object.freeze({
 
     events: Object.freeze({
         save: saveEvents,
+        export: exportEvents,
     }),
 
     lambda: Object.freeze({
@@ -2586,10 +2530,6 @@ export default Object.freeze({
     }),
 
     analytics: Object.freeze({
-        performance: Object.freeze({
-            reports: getAnalyticsReports,
-            calculate: calculateAnalyticsReport,
-        }),
         quality: Object.freeze({
             reports: getQualityReports,
             conflicts: getQualityConflicts,
