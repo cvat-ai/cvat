@@ -27,7 +27,7 @@ class ImportQueueJobProcessor(AbstractJobProcessor):
             r"(?P<action>import):(?P<target>(task|project))-(?P<id>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})-(?P<subresource>backup)",
         ):
             if match := re.fullmatch(pattern, job.id):
-                job.id = "&".join([f"{k}={v}" for k, v in match.groupdict()])
+                job.id = "&".join([f"{k}={v}" for k, v in match.groupdict().items()])
                 if func_name == "_create_thread":
                     job.func_name = job.func_name.rsplit(".", maxsplit=1)[0] + "create_thread"
                 elif func_name == "import_resource_from_cloud_storage":
@@ -63,7 +63,7 @@ class ExportQueueJobProcessor(AbstractJobProcessor):
             + r"-in-(?P<format>[\w@]+)-format-by-(?P<user_id>\d+)",
         ):
             if match := re.fullmatch(pattern, job.id):
-                job.id = "&".join([f"{k}={v}" for k, v in match.groupdict()])
+                job.id = "&".join([f"{k}={v}" for k, v in match.groupdict().items()])
                 job.save()
                 return job
 
@@ -76,9 +76,11 @@ class Migration(BaseMigration):
             queue_name=settings.CVAT_QUEUES.IMPORT_DATA.value,
             job_processor=ImportQueueJobProcessor(),
             enqueue_deferred_jobs=True,
+            job_ids_are_changed=True,
         )
         self.migrate_queue_jobs(
             queue_name=settings.CVAT_QUEUES.EXPORT_DATA.value,
             job_processor=ExportQueueJobProcessor(),
             enqueue_deferred_jobs=True,
+            job_ids_are_changed=True,
         )

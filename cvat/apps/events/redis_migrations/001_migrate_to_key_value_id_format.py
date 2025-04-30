@@ -38,4 +38,5 @@ class Migration(BaseMigration):
             queue_name=settings.CVAT_QUEUES.EXPORT_DATA.value,
             job_processor=EventsJobProcessor(),
             enqueue_deferred_jobs=True,
+            job_ids_are_changed=True,
         )

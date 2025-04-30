@@ -7,7 +7,7 @@ from datetime import datetime
 from logging import Logger
 from pathlib import Path
 from types import NoneType
-from typing import Generator, Literal, overload
+from typing import Generator, Literal, cast, overload
 
 import django_rq
 from attrs import define, field, validators
@@ -15,12 +15,13 @@ from redis import Redis
 from rq.job import Job
 from rq.registry import BaseRegistry
 from rq_scheduler.utils import to_unix
-from typing import cast
-
 
 from cvat.apps.engine.log import get_migration_logger
 from cvat.apps.engine.utils import take_by
-from cvat.apps.redis_handler.redis_migrations.utils import force_enqueue_deferred_jobs
+from cvat.apps.redis_handler.redis_migrations.utils import (
+    force_enqueue_deferred_jobs,
+    reset_job_relationships,
+)
 
 QUEUE_OR_REGISTRY_TYPE = django_rq.queues.DjangoRQ | BaseRegistry
 
@@ -70,7 +71,7 @@ class BaseMigration(metaclass=ABCMeta):
         *,
         queue_or_registry: QUEUE_OR_REGISTRY_TYPE,
         job_processor: AbstractJobProcessor,
-        yield_old_job_too: Literal[False] = False,
+        yield_old_job_id_too: Literal[False] = False,
     ) -> Generator[Job, None, None]: ...
 
     @overload
@@ -79,21 +80,24 @@ class BaseMigration(metaclass=ABCMeta):
         *,
         queue_or_registry: QUEUE_OR_REGISTRY_TYPE,
         job_processor: AbstractJobProcessor,
-        yield_old_job_too: Literal[True] = True,
-    ) -> Generator[tuple[Job, Job], None, None]: ...
+        yield_old_job_id_too: Literal[True] = True,
+    ) -> Generator[tuple[Job, str], None, None]: ...
 
     def _migrate_jobs_from_queue_list_or_registry_set(
         self,
         *,
         queue_or_registry: QUEUE_OR_REGISTRY_TYPE,
         job_processor: AbstractJobProcessor,
-        yield_old_job_too: bool = False,
+        yield_old_job_id_too: bool = False,
     ) -> Generator[Job | tuple[Job, Job], None, None]:
         for subset_with_ids in take_by(set(queue_or_registry.get_job_ids()), 1000):
             for idx, job in enumerate(
                 queue_or_registry.job_class.fetch_many(subset_with_ids, connection=self.connection)
             ):
                 if job:
+                    job_id = job.id
+                    reset_job_relationships(job, connection=self.connection, save_to_redis=False)
+
                     try:
                         updated_job = job_processor(
                             job,
@@ -101,8 +105,8 @@ class BaseMigration(metaclass=ABCMeta):
                             logger=self.logger,
                         )
 
-                        if yield_old_job_too:
-                            yield updated_job, job
+                        if yield_old_job_id_too:
+                            yield updated_job, job_id
                         else:
                             yield updated_job
                     except AbstractJobProcessor.JobSkippedError:
@@ -145,7 +149,8 @@ class BaseMigration(metaclass=ABCMeta):
         with queue.connection.pipeline() as pipe:
             # replace the queue LIST key with updated ids
             pipe.delete(queue.key)
-            pipe.rpush(queue.key, *list_with_updated_ids)
+            if list_with_updated_ids:
+                pipe.rpush(queue.key, *list_with_updated_ids)
             pipe.execute()
 
     def _migrate_jobs_from_registry_sorted_set(
@@ -167,16 +172,17 @@ class BaseMigration(metaclass=ABCMeta):
             for key, score in self.connection.zrange(registry.key, 0, -1, withscores=True)
         }
         dict_with_updated_items = {
-            updated_job.id: keys_with_scores[old_job.id]
-            for updated_job, old_job in self._migrate_jobs_from_queue_list_or_registry_set(
-                queue_or_registry=registry, job_processor=job_processor, yield_old_job_too=True
+            updated_job.id: keys_with_scores[old_job_id]
+            for updated_job, old_job_id in self._migrate_jobs_from_queue_list_or_registry_set(
+                queue_or_registry=registry, job_processor=job_processor, yield_old_job_id_too=True
             )
         }
 
         with registry.connection.pipeline() as pipe:
             # replace the registry SORTED SET key with updated id/score pairs
             pipe.delete(registry.key)
-            pipe.zadd(registry.key, dict_with_updated_items)
+            if dict_with_updated_items:
+                pipe.zadd(registry.key, dict_with_updated_items)
             pipe.execute()
 
     def _migrate_jobs_from_scheduler(
@@ -187,7 +193,7 @@ class BaseMigration(metaclass=ABCMeta):
     ) -> None:
         for job, dt in scheduler.get_jobs(with_times=True):
             job = cast(Job, job)
-            # TODO: check
+            # TODO: optimize to not call for each queue??
             job_queue = scheduler.get_queue_for_job(job)
             if job_queue.name != scheduler.queue_name:
                 continue
@@ -225,12 +231,12 @@ class BaseMigration(metaclass=ABCMeta):
         queue: django_rq.queues.DjangoRQ = django_rq.get_queue(
             queue_name, connection=self.connection
         )
+        if enqueue_deferred_jobs:
+            force_enqueue_deferred_jobs(queue)
+
         self._migrate_jobs_from_queue_list(
             queue=queue, job_processor=job_processor, recreate_queue=job_ids_are_changed
         )
-
-        if enqueue_deferred_jobs:
-            force_enqueue_deferred_jobs(queue)
 
         for registry in (
             queue.started_job_registry,

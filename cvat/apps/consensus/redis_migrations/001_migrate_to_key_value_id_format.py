@@ -28,7 +28,7 @@ class JobProcessor(AbstractJobProcessor):
                 job.save()
                 return job
 
-        raise self.InvalidJobIdFormatError()
+        raise self.InvalidJobIdFormatError()  # TODO: make  migration idempotent?
 
 
 class Migration(BaseMigration):
@@ -37,4 +37,5 @@ class Migration(BaseMigration):
             queue_name=settings.CVAT_QUEUES.CONSENSUS.value,
             job_processor=JobProcessor(),
             enqueue_deferred_jobs=True,
+            job_ids_are_changed=True,
         )

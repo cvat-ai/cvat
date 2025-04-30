@@ -37,4 +37,5 @@ class Migration(BaseMigration):
             queue_name=settings.CVAT_QUEUES.QUALITY_REPORTS.value,
             job_processor=QualityJobProcessor(),
             enqueue_deferred_jobs=True,
+            job_ids_are_changed=True,
         )
