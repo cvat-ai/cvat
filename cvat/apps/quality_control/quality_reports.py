@@ -1038,7 +1038,10 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
 
         if angle:
             points = np.reshape(points, (-1, 2))
-            center = (points[0] + points[2]) / 2
+            if isinstance(bbox_ann, dm.Bbox):
+                center = (points[0] + points[2]) / 2
+            else:
+                center = (bbox_ann.c_x, bbox_ann.c_y)
             rel_points = points - center
             cos = np.cos(angle)
             sin = np.sin(angle)
