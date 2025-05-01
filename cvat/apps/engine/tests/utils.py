@@ -458,15 +458,15 @@ def filter_dict(
     return {k: v for k, v in d.items() if (not keep or k in keep) and (not drop or k not in drop)}
 
 
-def freeze_object(obj, ignore_keys=[]) -> frozenset:
+def freeze_object(obj, ignore_keys=None) -> frozenset:
     if isinstance(obj, dict):
         obj = filter_dict(obj, drop=ignore_keys)
         for k, v in obj.items():
             obj[k] = freeze_object(v, ignore_keys)
         return frozenset(obj.items())
     elif isinstance(obj, list):
-        for i in range(len(obj)):
-            obj[i] = freeze_object(obj[i], ignore_keys)
+        for i, elem in enumerate(obj):
+            obj[i] = freeze_object(elem, ignore_keys)
         return frozenset(obj)
     return obj
 
