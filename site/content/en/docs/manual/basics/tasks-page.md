@@ -8,7 +8,7 @@ description: 'Overview of the Tasks page.'
 ![](/images/image006_detrac.jpg)
 
 The **Tasks** page contains elements and each of them relates to a separate task. They are sorted in creation order.
-Each element contains: a task name, preview, progress bar, button `Open`, and menu `Actions`.
+Each element contains: the task name, preview, progress bar, button `Open`, and menu `Actions`.
 Each button is responsible for a menu `Actions` specific function:
 
 - `Export task dataset` — download annotations or annotations and images in a specific format.

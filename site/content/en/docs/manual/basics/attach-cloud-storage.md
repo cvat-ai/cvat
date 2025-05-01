@@ -50,7 +50,7 @@ To create bucket, do the following:
    ![](/images/aws-s3_tutorial_1.jpg)
 
 1. Specify the name and region of the bucket. You can also
-   copy the settings of another bucket by selecting the **Choose bucket** button.
+   copy the settings of another bucket by selecting **Choose bucket**.
 1. Enable **Block all public access**. For access, you will use **access key ID** and **secret access key**.
 1. Select **Create bucket**.
 
@@ -169,14 +169,14 @@ To prepare the manifest file, do the following:
 
    - For read and write permissions when you created the user, run:
 
-   ```bash
-   aws s3 cp <yourfolder>/manifest.jsonl <s3://bucket-name>
-   ```
+      ```bash
+      aws s3 cp <yourfolder>/manifest.jsonl <s3://bucket-name>
+      ```
 
    - For read-only permissions, use the download through the browser,
    select upload, drag the manifest file to the page and select upload.
 
-   ![](/images/aws-s3_tutorial_5.jpg)
+      ![](/images/aws-s3_tutorial_5.jpg)
 
 ### Video tutorial: Add AWS S3 as Cloud Storage in CVAT
 
@@ -287,7 +287,7 @@ Fill in the following fields:
 | **Description**         | (Optional) Add description of storage.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | **Provider**            | From drop-down list select **Google Cloud Storage**.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | **Bucket name**         | Name of the bucket. You can find it on the [storage browser page](https://console.cloud.google.com/storage/browser).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| **Authentication type** | Depends on the bucket setup: <br><li>**Authenticated access**: Select on the **Key file** field and upload key file from computer. <br> **Advanced**: For self-hosted solution, if the key file was not attached, then environment variable `GOOGLE_APPLICATION_CREDENTIALS` that was specified for an environment will be used. For more information, consult [Authenticate to Cloud services using client libraries](https://cloud.google.com/docs/authentication/client-libraries#setting_the_environment_variable).<br><li> **Anonymous access**: for anonymous access. Public access to the bucket must be enabled. |
+| **Authentication type** | Depends on the bucket setup: <br><li>**Authenticated access**: Select **Key file** and upload the key file from computer. <br> **Advanced**: For self-hosted solution, if the key file was not attached, then environment variable `GOOGLE_APPLICATION_CREDENTIALS` that was specified for an environment will be used. For more information, consult [Authenticate to Cloud services using client libraries](https://cloud.google.com/docs/authentication/client-libraries#setting_the_environment_variable).<br><li> **Anonymous access**: for anonymous access. Public access to the bucket must be enabled. |
 | **Prefix**              | (Optional) Used to filter data from the bucket. By setting a default prefix, you ensure that only data from a specific folder in the cloud is used in CVAT. This will affect which files you see when creating a task with cloud data.                                                                                                                                                                                                                                                                                                                                                                           |
 | **Project ID**          | [Project ID](#authenticated-access). <br>For more information, consult [projects page](https://cloud.google.com/resource-manager/docs/creating-managing-projects) and [cloud resource manager page](https://console.cloud.google.com/cloud-resource-manager). <br>**Note:** Project name does not match the project ID.                                                                                                                                                                                                                                                                                                 |
 | **Location**            | (Optional) Choose a region from the list or add a new one. For more information, consult [**Available locations**](https://cloud.google.com/storage/docs/locations#available-locations).                                                                                                                                                                                                                                                                                                                                                                                                                             |

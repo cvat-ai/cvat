@@ -28,7 +28,7 @@ In the upper right corner, there are [sorting][sorting], [quick filters][quick-f
 
 ## Filter
 
-> Applying the filter disables the [quick filter][quick-filters].
+> Applying a filter disables the [quick filter][quick-filters].
 
 The filter works similarly to the filters for annotation,
 you can create rules from [properties](#supported-properties-for-jobs-list), [operators][operators],

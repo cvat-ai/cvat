@@ -11,7 +11,7 @@ CVAT has the following features for automated quality control of annotations:
 - [Review mode for problems found](#how-to-review-problems-found)
 - [Quality analytics](#how-to-check-task-quality-metrics)
 
-In this section, we highlight the key steps only in quality estimation.
+In this section, we highlight only the key steps in quality estimation.
 Consult the detailed guide on quality estimation in CVAT in the
 {{< ilink "/docs/manual/advanced/analytics-and-monitoring/auto-qa" "Advanced section" >}}.
 

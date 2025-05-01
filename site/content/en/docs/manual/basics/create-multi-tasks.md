@@ -18,13 +18,13 @@ Check out:
 
 ## Create multi tasks
 
-To create the multi tasks,:
+To create the multi tasks:
 1. On the **Tasks** page select **+**.
 1. Select **Create multi tasks**.
 
 ![](/images/create_multi_tasks_1.png)
 
-Next, specify the parameters the in task configurator:
+Next, specify the parameters in the task configurator:
 
 ![Multitack configurator](/images/create_multi_tasks_2.png)
 
