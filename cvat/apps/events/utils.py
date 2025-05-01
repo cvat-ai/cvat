@@ -6,7 +6,6 @@ import datetime
 from contextlib import suppress
 from typing import Optional
 
-from dateutil import parser
 from django.db.models import Min
 
 from .cache import clear_cache
@@ -132,10 +131,10 @@ def find_minimal_date_for_filter(
     from cvat.apps.engine.models import Job, Project, Task
     from cvat.apps.organizations.models import Organization
 
-    for id, Class in ((job_id, Job), (task_id, Task), (project_id, Project)):
-        if id:
+    for resource_id, Class in ((job_id, Job), (task_id, Task), (project_id, Project)):
+        if resource_id:
             with suppress(Class.DoesNotExist):
-                return Class.objects.get(pk=int(id)).created_date
+                return Class.objects.get(pk=int(resource_id)).created_date
 
     if org_id:
         with suppress(Organization.DoesNotExist):
