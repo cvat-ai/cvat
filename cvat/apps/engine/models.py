@@ -1323,7 +1323,7 @@ class CloudStorage(TimestampedModel):
 
     @property
     def has_at_least_one_manifest(self) -> bool:
-        return bool(self.manifests.count())
+        return self.manifests.exists()
 
 class Storage(models.Model):
     location = models.CharField(max_length=16, choices=Location.choices(), default=Location.LOCAL)
