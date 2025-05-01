@@ -2755,7 +2755,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
     PartialUpdateModelMixin
 ):
-    queryset = CloudStorageModel.objects.prefetch_related('data', 'owner', 'manifests')
+    queryset = CloudStorageModel.objects
 
     search_fields = ('provider_type', 'name', 'resource',
                     'credentials_type', 'owner', 'description')
@@ -2782,6 +2782,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if self.action == 'list':
             perm = CloudStoragePermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
+            queryset = queryset.prefetch_related('owner', 'manifests')
 
         provider_type = self.request.query_params.get('provider_type', None)
         if provider_type:
