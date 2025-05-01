@@ -156,8 +156,8 @@ To add an attribute:
 1. In the **Attribute values** field, add attribute values. <br>To separate values use **Enter**.
    <br>To delete value, use **Backspace** or click **x** next to the value name.
 1. (Optional) For mutable attributes, select **Mutable**.
-1. (Optional) To set an attribute as default, select it.
-   The default attribute will change color to blue.
+1. (Optional) To set an attribute value as default, select it.
+   The default value will change color to blue.
 
 ![Default attribute](/images/default_attribute.jpg)
 

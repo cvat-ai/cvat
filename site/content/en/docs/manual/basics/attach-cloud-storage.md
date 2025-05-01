@@ -169,14 +169,14 @@ To prepare the manifest file, do the following:
 
    - For read and write permissions when you created the user, run:
 
-      ```bash
-      aws s3 cp <yourfolder>/manifest.jsonl <s3://bucket-name>
-      ```
+   ```bash
+   aws s3 cp <yourfolder>/manifest.jsonl <s3://bucket-name>
+   ```
 
    - For read-only permissions, use the download through the browser,
    select upload, drag the manifest file to the page and select upload.
 
-      ![](/images/aws-s3_tutorial_5.jpg)
+   ![](/images/aws-s3_tutorial_5.jpg)
 
 ### Video tutorial: Add AWS S3 as Cloud Storage in CVAT
 

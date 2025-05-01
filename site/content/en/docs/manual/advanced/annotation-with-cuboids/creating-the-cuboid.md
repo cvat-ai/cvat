@@ -5,7 +5,7 @@ weight: 1
 ---
 
 Before you start, you have to make sure that `Cuboid` is selected
-and choose a drawing method ”from rectangle” or “by 4 points”.
+and choose a drawing method `from rectangle` or `by 4 points`.
 
 ![](/images/image091.jpg)
 
