@@ -64,7 +64,7 @@ To add a 3D shape:
    ![](/images/gif026_carla_town3.gif)
 
 1. Use projections to adjust the cuboid.
-   Select and hold the left mouse button to edit the label shape on the projection.
+   Click and hold the left mouse button to edit the label shape on the projection.
 
    ![](/images/gif027_carla_town3.gif)
 
@@ -96,7 +96,7 @@ To track with cuboids:
 
    ![](/images/gif028_carla_town3.gif)
 
-1. (Optional) To rotate the cuboid, select the middle point
+1. (Optional) To rotate the cuboid, click on the middle point
    and then drag the cuboid up/down or to left/right.
 
    ![](/images/gif029_carla_town3.gif)
