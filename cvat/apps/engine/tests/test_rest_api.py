@@ -5555,7 +5555,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
             )
         return response
 
-    def _check_response(self, response, data, expected_source=None):
+    def _check_response(self, response, data, expected_source=None, shapeOrder=True):
         if not response.status_code in [
             status.HTTP_401_UNAUTHORIZED,
             status.HTTP_403_FORBIDDEN
@@ -5567,9 +5567,9 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                         anns = response.data[key]
                         for ann in anns:
                             self.assertEquals(ann.get('source'), expected_source)
-                    compare_objects(self, data, response.data, ignore_keys=["id", "version", "source"])
+                    compare_objects(self, data, response.data, ignore_keys=["id", "version", "source"], order=shapeOrder)
                 else:
-                    compare_objects(self, data, response.data, ignore_keys=["id", "version"])
+                    compare_objects(self, data, response.data, ignore_keys=["id", "version"], order=shapeOrder)
             except AssertionError as e:
                 print("Objects are not equal:",
                       pformat(data, compact=True),
@@ -6391,19 +6391,26 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                                1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
                     "type": "cuboid",
                     "occluded": False,
+                    "elements": [],
+                    "rotation": 0.0,
+                    "z_order": 0,
+                    "outside":False,
                 },
-                    {
-                        "frame": 0,
-                        "label_id": task["labels"][0]["id"],
-                        "group": 0,
-                        "source": "manual",
-                        "attributes": [],
-                        "points": [23.01, 8.34, -0.76, 0.0, 0.0, 0.0, 1.0, 1.0,
-                                   1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                        "type": "cuboid",
-                        "occluded": False,
-                    }
-                ]
+                {
+                    "frame": 0,
+                    "label_id": task["labels"][0]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [],
+                    "points": [23.01, 8.34, -0.76, 0.0, 0.0, 0.0, 1.0, 1.0,
+                                1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                    "type": "cuboid",
+                    "occluded": False,
+                    "elements": [],
+                    "rotation": 0.0,
+                    "z_order": 0,
+                    "outside": False,
+                }]
                 annotations["shapes"] = velodyne_wo_attrs
             elif annotation_format == "ICDAR Recognition 1.0":
                 tags_with_attrs = [{
@@ -6602,9 +6609,6 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
 
         # Rare and buggy formats that are not crucial for testing
         formats.pop('Market-1501 1.0') # Issue: https://github.com/cvat-ai/datumaro/issues/99
-        formats.pop('Kitti Raw Format 1.0')
-        # can change order of shapes
-        # this format is already checked in test_rest_api_3D.py
 
         for export_format, import_format in formats.items():
             with self.subTest(export_format=export_format,
@@ -6671,7 +6675,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                 self.assertEqual(response.status_code, HTTP_200_OK)
 
                 data["version"] += 2 # upload is delete + put
-                self._check_response(response, data, expected_source='file')
+                self._check_response(response, data, expected_source='file', shapeOrder=False)
 
 
     def _check_dump_content(self, content, task, jobs, data, format_name):
