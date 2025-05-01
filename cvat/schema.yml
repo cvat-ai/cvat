@@ -1154,8 +1154,7 @@ paths:
         schema:
           type: string
           format: date-time
-        description: Filter events after the datetime. If no 'from' or 'to' parameters
-          are passed, the last 30 days will be set.
+        description: UTC start date for events filtration. Default is the minimal time.
       - in: query
         name: job_id
         schema:
@@ -1186,8 +1185,7 @@ paths:
         schema:
           type: string
           format: date-time
-        description: Filter events before the datetime. If no 'from' or 'to' parameters
-          are passed, the last 30 days will be set.
+        description: UTC end date for events filtration. Default is the current time.
       - in: query
         name: user_id
         schema:

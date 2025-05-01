@@ -20,6 +20,8 @@ from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.rq import BaseRQMeta, RQMetaWithFailureInfo
 from cvat.apps.engine.utils import sendfile
 
+from .utils import find_minimal_date_for_filter
+
 slogger = ServerLogManager(__name__)
 
 DEFAULT_CACHE_TTL = timedelta(hours=1)
@@ -35,7 +37,7 @@ def _create_csv(query_params, output_filename, cache_ttl):
         }
 
         query = "SELECT * FROM events"
-        conditions = []
+        conditions = ["source in ('server', 'client')", "scope != 'send:exception'"]
         parameters = {}
 
         if time_filter["from"]:
@@ -106,14 +108,14 @@ def export(request, filter_query, queue_name):
 
     try:
         if query_params["from"]:
-            query_params["from"] = parser.parse(query_params["from"]).timestamp()
+            query_params["from"] = parser.isoparse(query_params["from"])
     except parser.ParserError:
         raise serializers.ValidationError(
             f"Cannot parse 'from' datetime parameter: {query_params['from']}"
         )
     try:
         if query_params["to"]:
-            query_params["to"] = parser.parse(query_params["to"]).timestamp()
+            query_params["to"] = parser.isoparse(query_params["to"])
     except parser.ParserError:
         raise serializers.ValidationError(
             f"Cannot parse 'to' datetime parameter: {query_params['to']}"
@@ -122,10 +124,16 @@ def export(request, filter_query, queue_name):
     if query_params["from"] and query_params["to"] and query_params["from"] > query_params["to"]:
         raise serializers.ValidationError("'from' must be before than 'to'")
 
-    # Set the default time interval to last 30 days
-    if not query_params["from"] and not query_params["to"]:
+    if not query_params["from"]:
+        query_params["from"] = find_minimal_date_for_filter(
+            job_id=query_params["job_id"],
+            task_id=query_params["task_id"],
+            project_id=query_params["project_id"],
+            org_id=query_params["org_id"],
+        )
+
+    if not query_params["to"]:
         query_params["to"] = datetime.now(timezone.utc)
-        query_params["from"] = query_params["to"] - timedelta(days=30)
 
     if action not in (None, "download"):
         raise serializers.ValidationError("Unexpected action specified for the request")
