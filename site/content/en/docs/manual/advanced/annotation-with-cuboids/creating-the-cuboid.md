@@ -11,7 +11,8 @@ and choose a drawing method ”from rectangle” or “by 4 points”.
 
 ### Drawing cuboid by 4 points
 
-Choose a drawing method `by 4 points` and select `Shape` to enter the drawing mode. There are many ways to draw a cuboid.
+Choose a drawing method `by 4 points` and select `Shape` to enter the drawing mode.
+There are many ways to draw a cuboid.
 You can draw the cuboid by placing 4 points, after that the drawing will be completed automatically.
 The first 3 points determine the plane of the cuboid while the last point determines the depth of that plane.
 For the first 3 points, it is recommended to only draw the 2 closest side faces, as well as the top and bottom face.
