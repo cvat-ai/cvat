@@ -92,7 +92,7 @@ You can change the way an object is displayed on a frame (show or hide).
 
 **Tracker switcher **- enable/disable {{< ilink "/docs/manual/advanced/ai-tools#trackers" "tracking" >}} for the object.
 
-![](/images/tracker_switcher.jpg)
+![](/images/tracker_switcher.png)
 
 By clicking on the **Details** button you can collapse or expand the field with all the attributes of the object.
 
