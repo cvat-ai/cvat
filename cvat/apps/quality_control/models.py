@@ -15,7 +15,6 @@ from django.db import models
 from django.forms.models import model_to_dict
 
 from cvat.apps.engine.models import Job, JobType, Project, ShapeType, Task, TimestampedModel, User
-from cvat.apps.organizations.models import Organization
 
 if TYPE_CHECKING:
     from cvat.apps.organizations.models import Organization
