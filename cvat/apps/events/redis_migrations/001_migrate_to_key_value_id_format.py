@@ -10,7 +10,12 @@ from django.conf import settings
 from django.utils import timezone
 
 from cvat.apps.redis_handler.redis_migrations import AbstractJobProcessor, BaseMigration
-from cvat.apps.redis_handler.redis_migrations.utils import get_job_func_name
+from cvat.apps.redis_handler.redis_migrations.utils import (
+    delete_job_from_redis,
+    get_job_func_name,
+    rename_job_result,
+    reset_job_relationships,
+)
 
 
 class EventsJobProcessor(AbstractJobProcessor):
@@ -33,7 +38,13 @@ class EventsJobProcessor(AbstractJobProcessor):
                 raise self.JobSkippedError()
             raise self.InvalidJobIdFormatError()
 
-        job.id = f"action=export&target=events&id={query_id}&user_id={user_id}"
+        reset_job_relationships(job, pipeline=pipeline, save_to_redis=False)
+        delete_job_from_redis(job, pipeline=pipeline)
+
+        updated_job_id = f"action=export&target=events&id={query_id}&user_id={user_id}"
+        rename_job_result(job.id, updated_job_id, pipeline=pipeline)
+
+        job.id = updated_job_id
         job.args = job.args[:-1]  # cache_ttl was dropped
 
         job.meta.update(

@@ -8,7 +8,12 @@ from urllib.parse import quote
 from django.conf import settings
 
 from cvat.apps.redis_handler.redis_migrations import AbstractJobProcessor, BaseMigration
-from cvat.apps.redis_handler.redis_migrations.utils import get_job_func_name
+from cvat.apps.redis_handler.redis_migrations.utils import (
+    delete_job_from_redis,
+    get_job_func_name,
+    rename_job_result,
+    reset_job_relationships,
+)
 
 
 class ImportQueueJobProcessor(AbstractJobProcessor):
@@ -28,7 +33,13 @@ class ImportQueueJobProcessor(AbstractJobProcessor):
             r"(?P<action>import):(?P<target>(task|project))-(?P<id>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})-(?P<subresource>backup)",
         ):
             if match := re.fullmatch(pattern, job.id):
-                job.id = "&".join([f"{k}={v}" for k, v in match.groupdict().items()])
+                reset_job_relationships(job, pipeline=pipeline, save_to_redis=False)
+                delete_job_from_redis(job, pipeline=pipeline)
+
+                updated_job_id = "&".join([f"{k}={v}" for k, v in match.groupdict().items()])
+                rename_job_result(job.id, updated_job_id, pipeline=pipeline)
+
+                job.id = updated_job_id
                 if func_name == "_create_thread":
                     job.func_name = job.func_name.rsplit(".", maxsplit=1)[0] + "create_thread"
                 elif func_name == "import_resource_from_cloud_storage":
@@ -69,7 +80,13 @@ class ExportQueueJobProcessor(AbstractJobProcessor):
             + r"-in-(?P<format>[\w@]+)-format-by-(?P<user_id>\d+)",
         ):
             if match := re.fullmatch(pattern, job.id):
-                job.id = "&".join([f"{k}={v}" for k, v in match.groupdict().items()])
+                reset_job_relationships(job, pipeline=pipeline, save_to_redis=False)
+                delete_job_from_redis(job, pipeline=pipeline)
+
+                updated_job_id = "&".join([f"{k}={v}" for k, v in match.groupdict().items()])
+                rename_job_result(job.id, updated_job_id, pipeline=pipeline)
+
+                job.id = updated_job_id
 
                 if result_url := job.meta.get("result_url"):
                     job.meta["result_url"] = result_url.split("?")[0] + f"?rq_id={quote(job.id)}"

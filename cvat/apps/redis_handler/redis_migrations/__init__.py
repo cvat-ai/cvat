@@ -18,10 +18,7 @@ from rq_scheduler.utils import to_unix
 
 from cvat.apps.engine.log import get_migration_logger
 from cvat.apps.engine.utils import take_by
-from cvat.apps.redis_handler.redis_migrations.utils import (
-    force_enqueue_deferred_jobs,
-    reset_job_relationships,
-)
+from cvat.apps.redis_handler.redis_migrations.utils import force_enqueue_deferred_jobs
 
 QUEUE_OR_REGISTRY_TYPE = django_rq.queues.DjangoRQ | BaseRegistry
 
@@ -106,7 +103,6 @@ class BaseMigration(metaclass=ABCMeta):
                 ):
                     if job:
                         job_id_before_update = job.id
-                        reset_job_relationships(job, pipeline=pipeline, save_to_redis=False)
 
                         try:
                             job_processor(
