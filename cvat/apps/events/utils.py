@@ -152,4 +152,4 @@ def find_minimal_date_for_filter(
                 for date in (created_date, project_created_date, task_created_date)
                 if date is not None
             )
-    return datetime.fromtimestamp(0, datetime.timezone.utc)
+    return datetime.datetime.fromtimestamp(0, datetime.timezone.utc)
