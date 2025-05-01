@@ -289,26 +289,20 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
     };
 
     private readonly moveToPreviousLayer = (): void => {
-        const { objectState, readonly, minZLayer } = this.props;
+        const { objectState, readonly } = this.props;
 
         if (!readonly) {
-            const newZOrder = objectState.zOrder - 1;
-            if (newZOrder <= minZLayer) {
-                objectState.zOrder = newZOrder;
-                this.commit();
-            }
+            objectState.zOrder -= 1;
+            this.commit();
         }
     };
 
     private readonly moveToNextLayer = (): void => {
-        const { objectState, readonly, maxZLayer } = this.props;
+        const { objectState, readonly } = this.props;
 
         if (!readonly) {
-            const newZOrder = objectState.zOrder + 1;
-            if (newZOrder >= maxZLayer) {
-                objectState.zOrder = newZOrder;
-                this.commit();
-            }
+            objectState.zOrder += 1;
+            this.commit();
         }
     };
 

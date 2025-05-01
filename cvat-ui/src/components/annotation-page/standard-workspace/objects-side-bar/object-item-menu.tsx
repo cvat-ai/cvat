@@ -13,6 +13,8 @@ import Icon, {
 
 import {
     BackgroundIcon, ForegroundIcon, ResetPerspectiveIcon, ColorizeIcon, SliceIcon,
+    PreviousLayerIcon,
+    NextLayerIcon,
 } from 'icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { ColorBy } from 'reducers';
@@ -220,7 +222,7 @@ function MoveToPreviousLayerItem(props: Readonly<ItemProps>): JSX.Element {
                 onClick={moveToPreviousLayer}
                 className='cvat-object-item-menu-move-to-previous-layer'
             >
-                <Icon component={BackgroundIcon} />
+                <Icon component={PreviousLayerIcon} />
                 Move to previous layer
             </Button>
         </CVATTooltip>
@@ -237,7 +239,7 @@ function MoveToNextLayerItem(props: Readonly<ItemProps>): JSX.Element {
                 onClick={moveToNextLayer}
                 className='cvat-object-item-menu-move-to-next-layer'
             >
-                <Icon component={ForegroundIcon} />
+                <Icon component={NextLayerIcon} />
                 Move to next layer
             </Button>
         </CVATTooltip>

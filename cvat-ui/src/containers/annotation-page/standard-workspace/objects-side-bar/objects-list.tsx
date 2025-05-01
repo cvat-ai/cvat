@@ -146,13 +146,13 @@ const componentShortcuts = {
     MOVE_TO_PREVIOUS_LAYER: {
         name: 'Move to previous layer',
         description: 'Move the active object one layer backward (decrease z-order value)',
-        sequences: ['u'],
+        sequences: ['[', '{'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     MOVE_TO_NEXT_LAYER: {
         name: 'Move to next layer',
         description: 'Move the active object one layer forward (increase z-order value)',
-        sequences: ['j'],
+        sequences: [']', '}'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     COPY_SHAPE: {
@@ -605,8 +605,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 preventDefault(event);
                 const state = activatedState(true);
                 if (state && !readonly && state.objectType !== ObjectType.TAG) {
-                    const newZOrder = state.zOrder - 1;
-                    state.zOrder = newZOrder;
+                    state.zOrder -= 1;
                     updateAnnotations([state]);
                 }
             },
@@ -614,8 +613,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 preventDefault(event);
                 const state = activatedState(true);
                 if (state && !readonly && state.objectType !== ObjectType.TAG) {
-                    const newZOrder = state.zOrder + 1;
-                    state.zOrder = newZOrder;
+                    state.zOrder += 1;
                     updateAnnotations([state]);
                 }
             },
