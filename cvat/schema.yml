@@ -1154,7 +1154,8 @@ paths:
         schema:
           type: string
           format: date-time
-        description: UTC start date for events filtration. Default is the minimal time.
+        description: UTC start date for events filtration. Default is the minimal
+          time.
       - in: query
         name: job_id
         schema:
