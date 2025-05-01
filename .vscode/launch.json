@@ -400,6 +400,22 @@
             "console": "internalConsole"
         },
         {
+            "name": "server: migrateredis",
+            "type": "debugpy",
+            "request": "launch",
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "python": "${command:python.interpreterPath}",
+            "program": "${workspaceFolder}/manage.py",
+            "args": [
+                "migrateredis"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "console": "internalConsole"
+        },
+        {
             "name": "server: sync periodic jobs",
             "type": "debugpy",
             "request": "launch",
