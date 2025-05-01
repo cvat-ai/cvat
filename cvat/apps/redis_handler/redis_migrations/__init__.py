@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 from abc import ABCMeta, abstractmethod
-from datetime import datetime
 from logging import Logger
 from pathlib import Path
 from types import NoneType
@@ -22,6 +21,7 @@ from cvat.apps.redis_handler.redis_migrations.utils import (
     force_enqueue_deferred_jobs,
     reset_job_relationships,
 )
+from redis.client import Pipeline
 
 QUEUE_OR_REGISTRY_TYPE = django_rq.queues.DjangoRQ | BaseRegistry
 
@@ -41,8 +41,8 @@ class AbstractJobProcessor(metaclass=ABCMeta):
 
     @abstractmethod
     def __call__(
-        self, job: Job, *, logger: Logger, queue_or_registry: QUEUE_OR_REGISTRY_TYPE | None
-    ) -> Job: ...
+        self, job: Job, *, logger: Logger, queue_or_registry: QUEUE_OR_REGISTRY_TYPE | None, pipeline: Pipeline | None = None
+    ) -> None: ...
 
 
 @define
@@ -66,64 +66,70 @@ class BaseMigration(metaclass=ABCMeta):
     def _run(self) -> None: ...
 
     @overload
-    def _migrate_jobs_from_queue_list_or_registry_set(
+    def _iterate_and_migrate_jobs_from_queue_list_or_registry_set(
         self,
         *,
         queue_or_registry: QUEUE_OR_REGISTRY_TYPE,
         job_processor: AbstractJobProcessor,
         yield_old_job_id_too: Literal[False] = False,
-    ) -> Generator[Job, None, None]: ...
+    ) -> Generator[str, None, None]: ...
 
     @overload
-    def _migrate_jobs_from_queue_list_or_registry_set(
+    def _iterate_and_migrate_jobs_from_queue_list_or_registry_set(
         self,
         *,
         queue_or_registry: QUEUE_OR_REGISTRY_TYPE,
         job_processor: AbstractJobProcessor,
         yield_old_job_id_too: Literal[True] = True,
-    ) -> Generator[tuple[Job, str], None, None]: ...
+    ) -> Generator[tuple[str, str], None, None]: ...
 
-    def _migrate_jobs_from_queue_list_or_registry_set(
+    def _iterate_and_migrate_jobs_from_queue_list_or_registry_set(
         self,
         *,
         queue_or_registry: QUEUE_OR_REGISTRY_TYPE,
         job_processor: AbstractJobProcessor,
         yield_old_job_id_too: bool = False,
-    ) -> Generator[Job | tuple[Job, Job], None, None]:
+    ) -> Generator[str | tuple[str, str], None, None]:
         for subset_with_ids in take_by(set(queue_or_registry.get_job_ids()), 1000):
-            for idx, job in enumerate(
-                queue_or_registry.job_class.fetch_many(subset_with_ids, connection=self.connection)
-            ):
-                if job:
-                    job_id = job.id
-                    reset_job_relationships(job, connection=self.connection, save_to_redis=False)
+            results: list[str | tuple[str, str]] = [] # list with job ids or (outdated_job_id, actual_jb_id) pairs
+            with queue_or_registry.connection.pipeline() as pipeline:
+                for idx, job in enumerate(
+                    queue_or_registry.job_class.fetch_many(subset_with_ids, connection=self.connection)
+                ):
+                    if job:
+                        job_id_before_update = job.id
+                        reset_job_relationships(job, pipeline=pipeline, save_to_redis=False)
 
-                    try:
-                        updated_job = job_processor(
-                            job,
-                            queue_or_registry=queue_or_registry,
-                            logger=self.logger,
-                        )
+                        try:
+                            job_processor(
+                                job,
+                                logger=self.logger,
+                                queue_or_registry=queue_or_registry,
+                                pipeline=pipeline,
+                            )
 
-                        if yield_old_job_id_too:
-                            yield updated_job, job_id
-                        else:
-                            yield updated_job
-                    except AbstractJobProcessor.JobSkippedError:
-                        continue
-                    except AbstractJobProcessor.JobDeletionRequiredError:
-                        queue_or_registry.remove(job)  # queue.remove has no "delete_job" argument
-                        job.delete()
-                    except AbstractJobProcessor.InvalidJobIdFormatError:
-                        self.logger.error(
-                            f"Unexpected job id format in the {queue_or_registry.name!r} queue: {job.id}"
-                        )
-                    except AbstractJobProcessor.InvalidJobError:
-                        self.logger.error(
-                            f"Unexpected job in the {queue_or_registry.name!r} queue: {job.id}"
-                        )
-                else:
-                    queue_or_registry.remove(subset_with_ids[idx])
+                            if yield_old_job_id_too:
+                                results.append((job.id, job_id_before_update))
+                            else:
+                                results.append(job.id)
+                        except AbstractJobProcessor.JobSkippedError:
+                            continue
+                        except AbstractJobProcessor.JobDeletionRequiredError:
+                            queue_or_registry.remove(job, pipeline=pipeline)  # queue.remove has no "delete_job" argument
+                            job.delete(pipeline=pipeline)
+                        except AbstractJobProcessor.InvalidJobIdFormatError:
+                            self.logger.error(
+                                f"Unexpected job id format in the {queue_or_registry.name!r} queue: {job.id}"
+                            )
+                        except AbstractJobProcessor.InvalidJobError:
+                            self.logger.error(
+                                f"Unexpected job in the {queue_or_registry.name!r} queue: {job.id}"
+                            )
+                    else:
+                        queue_or_registry.remove(subset_with_ids[idx], pipeline=pipeline)
+
+                pipeline.execute()
+            yield from results
 
     def _migrate_jobs_from_queue_list(
         self,
@@ -133,15 +139,15 @@ class BaseMigration(metaclass=ABCMeta):
         recreate_queue: bool = False,
     ) -> None:
         if not recreate_queue:
-            for _ in self._migrate_jobs_from_queue_list_or_registry_set(
+            for _ in self._iterate_and_migrate_jobs_from_queue_list_or_registry_set(
                 queue_or_registry=queue, job_processor=job_processor
             ):
                 pass
             return
 
         list_with_updated_ids = [
-            j.id
-            for j in self._migrate_jobs_from_queue_list_or_registry_set(
+            job_id
+            for job_id in self._iterate_and_migrate_jobs_from_queue_list_or_registry_set(
                 queue_or_registry=queue, job_processor=job_processor
             )
         ]
@@ -161,7 +167,7 @@ class BaseMigration(metaclass=ABCMeta):
         recreate_registry: bool = False,
     ) -> None:
         if not recreate_registry:
-            for _ in self._migrate_jobs_from_queue_list_or_registry_set(
+            for _ in self._iterate_and_migrate_jobs_from_queue_list_or_registry_set(
                 queue_or_registry=registry, job_processor=job_processor
             ):
                 pass
@@ -172,8 +178,8 @@ class BaseMigration(metaclass=ABCMeta):
             for key, score in self.connection.zrange(registry.key, 0, -1, withscores=True)
         }
         dict_with_updated_items = {
-            updated_job.id: keys_with_scores[old_job_id]
-            for updated_job, old_job_id in self._migrate_jobs_from_queue_list_or_registry_set(
+            updated_job_id: keys_with_scores[old_job_id]
+            for updated_job_id, old_job_id in self._iterate_and_migrate_jobs_from_queue_list_or_registry_set(
                 queue_or_registry=registry, job_processor=job_processor, yield_old_job_id_too=True
             )
         }
@@ -194,17 +200,19 @@ class BaseMigration(metaclass=ABCMeta):
         for job, dt in scheduler.get_jobs(with_times=True):
             job = cast(Job, job)
             # TODO: optimize to not call for each queue??
+            # TODO: use pipelines
             job_queue = scheduler.get_queue_for_job(job)
             if job_queue.name != scheduler.queue_name:
                 continue
 
             try:
-                updated_job = job_processor(
+                job_id_before_update = job.id
+                job_processor(
                     job,
                     logger=self.logger,
                     queue_or_registry=None,
                 )
-                if updated_job.id != job.id:
+                if job.id != job_id_before_update:
                     scheduler.cancel(job)
                     job.delete()  # job.dependents_key and job.dependencies_key are deleted here too
                     scheduler.connection.zadd(scheduler.scheduled_jobs_key, {job.id: to_unix(dt)})

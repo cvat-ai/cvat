@@ -11,7 +11,7 @@ from cvat.apps.redis_handler.redis_migrations.utils import get_job_func_name
 
 
 class JobProcessor(AbstractJobProcessor):
-    def __call__(self, job, *, logger, queue_or_registry):
+    def __call__(self, job, *, logger, queue_or_registry, pipeline):
         if get_job_func_name(job) != "_merge":
             raise self.InvalidJobError()
 
@@ -25,10 +25,15 @@ class JobProcessor(AbstractJobProcessor):
             if match := re.fullmatch(pattern, job.id):
                 matched = match.groupdict()
                 job.id = f"action=merge&target={matched['target']}&target_id={matched['target_id']}"
-                job.save()
-                return job
+                job.save(pipeline=pipeline)
 
-        raise self.InvalidJobIdFormatError()  # TODO: make  migration idempotent?
+        if re.match(
+            r"^action=[a-z]+&target=[a-z]+", job.id
+        ):
+            # make migration idempotent
+            # job has been updated on the previous migration attempt
+            raise self.JobSkippedError()
+        raise self.InvalidJobIdFormatError()
 
 
 class Migration(BaseMigration):

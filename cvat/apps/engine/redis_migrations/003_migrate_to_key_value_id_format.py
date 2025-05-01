@@ -11,7 +11,7 @@ from cvat.apps.redis_handler.redis_migrations.utils import get_job_func_name
 
 
 class ImportQueueJobProcessor(AbstractJobProcessor):
-    def __call__(self, job, *, logger, queue_or_registry):
+    def __call__(self, job, *, logger, queue_or_registry, pipeline):
         func_name = get_job_func_name(job)
 
         if func_name not in (
@@ -35,14 +35,20 @@ class ImportQueueJobProcessor(AbstractJobProcessor):
                     # after: filename, db_storage, key, import_func, ...
                     db_storage, key, _, import_func, filename, rest = job.args
                     job.args = (filename, db_storage, key, import_func, *rest)
-                job.save()
-                return job
+                job.save(pipeline=pipeline)
+
+        if re.match(
+            r"^action=[a-z]+&target=[a-z]+", job.id
+        ):
+            # make migration idempotent
+            # job has been updated on the previous migration attempt
+            raise self.JobSkippedError()
 
         raise self.InvalidJobIdFormatError()
 
 
 class ExportQueueJobProcessor(AbstractJobProcessor):
-    def __call__(self, job, *, logger, queue_or_registry):
+    def __call__(self, job, *, logger, queue_or_registry, pipeline):
         func_name = get_job_func_name(job)
 
         if func_name not in (
@@ -64,8 +70,14 @@ class ExportQueueJobProcessor(AbstractJobProcessor):
         ):
             if match := re.fullmatch(pattern, job.id):
                 job.id = "&".join([f"{k}={v}" for k, v in match.groupdict().items()])
-                job.save()
-                return job
+                job.save(pipeline=pipeline)
+
+        if re.match(
+            r"^action=[a-z]+&target=[a-z]+", job.id
+        ):
+            # make migration idempotent
+            # job has been updated on the previous migration attempt
+            raise self.JobSkippedError()
 
         raise self.InvalidJobIdFormatError()
 

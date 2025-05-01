@@ -11,7 +11,7 @@ from cvat.apps.redis_handler.redis_migrations.utils import get_job_func_name
 
 
 class QualityJobProcessor(AbstractJobProcessor):
-    def __call__(self, job, *, logger, queue_or_registry):
+    def __call__(self, job, *, logger, queue_or_registry, pipeline):
         if get_job_func_name(job) != "_check_task_quality":
             raise self.InvalidJobError()
 
@@ -24,12 +24,16 @@ class QualityJobProcessor(AbstractJobProcessor):
         # quality-check-task-<task_id>-user-<user_id>
         match = re.fullmatch(r"quality-check-task-(?P<task_id>\d+)-user-(?P<user_id>\d+)", job.id)
         if not match:
+            if re.match(
+                r"^action=[a-z]+&target=[a-z]+", job.id
+            ):
+                # make migration idempotent
+                # job has been updated on the previous migration attempt
+                raise self.JobSkippedError()
             raise self.InvalidJobIdFormatError()
 
         job.id = f"action=calculate&target=task&id={match.group('task_id')}&subresource=quality"
-        job.save()
-        return job
-
+        job.save(pipeline=pipeline)
 
 class Migration(BaseMigration):
     def _run(self):
