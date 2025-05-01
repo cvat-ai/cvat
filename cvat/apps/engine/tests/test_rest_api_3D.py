@@ -211,6 +211,7 @@ class _DbTestBase(ExportApiTestBase):
 
 class Task3DTest(_DbTestBase):
     def compare_shapes(self, shapes_orig: list[dict], shapes_imported: list[dict]):
+        self.assertEqual(len(shapes_orig), len(shapes_imported), "Different number of shapes")
         for a, b in zip(shapes_orig, shapes_imported):
             assert a.get('source') in ('manual', None)
             assert b["source"] == "file"
@@ -516,7 +517,6 @@ class Task3DTest(_DbTestBase):
 
                     task_ann_prev.data["shapes"][0].pop("id")
                     task_ann.data["shapes"][0].pop("id")
-                    self.assertEqual(len(task_ann_prev.data["shapes"]), len(task_ann.data["shapes"]))
                     self.compare_shapes(task_ann_prev.data["shapes"], task_ann.data["shapes"])
 
     def test_api_v2_rewrite_annotation(self):
@@ -555,7 +555,6 @@ class Task3DTest(_DbTestBase):
 
                     task_ann_prev.data["shapes"][0].pop("id")
                     task_ann.data["shapes"][0].pop("id")
-                    self.assertEqual(len(task_ann_prev.data["shapes"]), len(task_ann.data["shapes"]))
                     self.compare_shapes(task_ann_prev.data["shapes"], task_ann.data["shapes"])
 
     def test_api_v2_dump_and_upload_empty_annotation(self):

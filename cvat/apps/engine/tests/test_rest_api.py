@@ -71,6 +71,7 @@ from cvat.apps.engine.tests.utils import (
     generate_video_file,
     get_paginated_collection,
 )
+from cvat.apps.quality_control.models import AnnotationType
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 
 from .utils import compare_objects
@@ -5561,7 +5562,8 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
         ]:
             try:
                 if expected_source:
-                    for key in ['shapes', 'tracks', 'tags']:
+                    for _type in set(AnnotationType):
+                        key = f"{_type}s"
                         anns = response.data[key]
                         for ann in anns:
                             self.assertEquals(ann.get('source'), expected_source)
