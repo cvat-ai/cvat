@@ -26,10 +26,9 @@ class JobProcessor(AbstractJobProcessor):
                 matched = match.groupdict()
                 job.id = f"action=merge&target={matched['target']}&target_id={matched['target_id']}"
                 job.save(pipeline=pipeline)
+                return
 
-        if re.match(
-            r"^action=[a-z]+&target=[a-z]+", job.id
-        ):
+        if re.match(r"^action=[a-z]+&target=[a-z]+", job.id):
             # make migration idempotent
             # job has been updated on the previous migration attempt
             raise self.JobSkippedError()

@@ -2,9 +2,12 @@
 #
 # SPDX-License-Identifier: MIT
 import re
+from datetime import datetime
+from urllib.parse import quote
 from uuid import UUID
 
 from django.conf import settings
+from django.utils import timezone
 
 from cvat.apps.redis_handler.redis_migrations import AbstractJobProcessor, BaseMigration
 from cvat.apps.redis_handler.redis_migrations.utils import get_job_func_name
@@ -24,9 +27,7 @@ class EventsJobProcessor(AbstractJobProcessor):
         try:
             query_id = UUID(job.id.split("-by-")[0].split("-", maxsplit=2)[-1])
         except ValueError:
-            if re.match(
-                r"^action=[a-z]+&target=[a-z]+", job.id
-            ):
+            if re.match(r"^action=[a-z]+&target=[a-z]+", job.id):
                 # make migration idempotent
                 # job has been updated on the previous migration attempt
                 raise self.JobSkippedError()
@@ -34,6 +35,14 @@ class EventsJobProcessor(AbstractJobProcessor):
 
         job.id = f"action=export&target=events&id={query_id}&user_id={user_id}"
         job.args = job.args[:-1]  # cache_ttl was dropped
+
+        job.meta.update(
+            {
+                "result_url": f"{settings.CVAT_BASE_URL}/api/events/download?rq_id={quote(job.id)}",
+                "result_filename": f'logs_{datetime.strftime(timezone.now(), "%Y_%m_%d_%H_%M_%S")}.csv',
+            }
+        )
+
         job.save(pipeline=pipeline)
 
 

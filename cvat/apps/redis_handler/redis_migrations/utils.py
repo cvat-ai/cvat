@@ -29,7 +29,8 @@ def force_enqueue_deferred_jobs(queue: DjangoRQ):
 
 
 def reset_job_relationships(job: Job, *, pipeline: Pipeline, save_to_redis: bool = True):
-    for parent_job in job.fetch_dependencies(): # do not pass pipeline since we need result immediately
+    # do not pass pipeline since we need result immediately
+    for parent_job in job.fetch_dependencies():
         if not parent_job:
             continue
 

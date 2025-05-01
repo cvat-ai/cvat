@@ -24,9 +24,7 @@ class QualityJobProcessor(AbstractJobProcessor):
         # quality-check-task-<task_id>-user-<user_id>
         match = re.fullmatch(r"quality-check-task-(?P<task_id>\d+)-user-(?P<user_id>\d+)", job.id)
         if not match:
-            if re.match(
-                r"^action=[a-z]+&target=[a-z]+", job.id
-            ):
+            if re.match(r"^action=[a-z]+&target=[a-z]+", job.id):
                 # make migration idempotent
                 # job has been updated on the previous migration attempt
                 raise self.JobSkippedError()
@@ -34,6 +32,7 @@ class QualityJobProcessor(AbstractJobProcessor):
 
         job.id = f"action=calculate&target=task&id={match.group('task_id')}&subresource=quality"
         job.save(pipeline=pipeline)
+
 
 class Migration(BaseMigration):
     def _run(self):

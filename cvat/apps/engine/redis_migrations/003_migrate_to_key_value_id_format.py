@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import re
+from urllib.parse import quote
 
 from django.conf import settings
 
@@ -36,10 +37,9 @@ class ImportQueueJobProcessor(AbstractJobProcessor):
                     db_storage, key, _, import_func, filename, rest = job.args
                     job.args = (filename, db_storage, key, import_func, *rest)
                 job.save(pipeline=pipeline)
+                return
 
-        if re.match(
-            r"^action=[a-z]+&target=[a-z]+", job.id
-        ):
+        if re.match(r"^action=[a-z]+&target=[a-z]+", job.id):
             # make migration idempotent
             # job has been updated on the previous migration attempt
             raise self.JobSkippedError()
@@ -70,11 +70,14 @@ class ExportQueueJobProcessor(AbstractJobProcessor):
         ):
             if match := re.fullmatch(pattern, job.id):
                 job.id = "&".join([f"{k}={v}" for k, v in match.groupdict().items()])
-                job.save(pipeline=pipeline)
 
-        if re.match(
-            r"^action=[a-z]+&target=[a-z]+", job.id
-        ):
+                if result_url := job.meta.get("result_url"):
+                    job.meta["result_url"] = result_url.split("?")[0] + f"?rq_id={quote(job.id)}"
+
+                job.save(pipeline=pipeline)
+                return
+
+        if re.match(r"^action=[a-z]+&target=[a-z]+", job.id):
             # make migration idempotent
             # job has been updated on the previous migration attempt
             raise self.JobSkippedError()

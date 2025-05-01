@@ -11,6 +11,7 @@ from typing import Generator, Literal, cast, overload
 import django_rq
 from attrs import define, field, validators
 from redis import Redis
+from redis.client import Pipeline
 from rq.job import Job
 from rq.registry import BaseRegistry
 from rq_scheduler.utils import to_unix
@@ -21,7 +22,6 @@ from cvat.apps.redis_handler.redis_migrations.utils import (
     force_enqueue_deferred_jobs,
     reset_job_relationships,
 )
-from redis.client import Pipeline
 
 QUEUE_OR_REGISTRY_TYPE = django_rq.queues.DjangoRQ | BaseRegistry
 
@@ -41,7 +41,12 @@ class AbstractJobProcessor(metaclass=ABCMeta):
 
     @abstractmethod
     def __call__(
-        self, job: Job, *, logger: Logger, queue_or_registry: QUEUE_OR_REGISTRY_TYPE | None, pipeline: Pipeline | None = None
+        self,
+        job: Job,
+        *,
+        logger: Logger,
+        queue_or_registry: QUEUE_OR_REGISTRY_TYPE | None,
+        pipeline: Pipeline | None = None,
     ) -> None: ...
 
 
@@ -91,10 +96,13 @@ class BaseMigration(metaclass=ABCMeta):
         yield_old_job_id_too: bool = False,
     ) -> Generator[str | tuple[str, str], None, None]:
         for subset_with_ids in take_by(set(queue_or_registry.get_job_ids()), 1000):
-            results: list[str | tuple[str, str]] = [] # list with job ids or (outdated_job_id, actual_jb_id) pairs
+            # list with job ids or (outdated_job_id, actual_jb_id) pairs
+            results: list[str | tuple[str, str]] = []
             with queue_or_registry.connection.pipeline() as pipeline:
                 for idx, job in enumerate(
-                    queue_or_registry.job_class.fetch_many(subset_with_ids, connection=self.connection)
+                    queue_or_registry.job_class.fetch_many(
+                        subset_with_ids, connection=self.connection
+                    )
                 ):
                     if job:
                         job_id_before_update = job.id
@@ -115,7 +123,9 @@ class BaseMigration(metaclass=ABCMeta):
                         except AbstractJobProcessor.JobSkippedError:
                             continue
                         except AbstractJobProcessor.JobDeletionRequiredError:
-                            queue_or_registry.remove(job, pipeline=pipeline)  # queue.remove has no "delete_job" argument
+                            queue_or_registry.remove(
+                                job, pipeline=pipeline
+                            )  # queue.remove has no "delete_job" argument
                             job.delete(pipeline=pipeline)
                         except AbstractJobProcessor.InvalidJobIdFormatError:
                             self.logger.error(
