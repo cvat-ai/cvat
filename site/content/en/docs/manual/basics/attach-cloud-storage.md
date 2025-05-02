@@ -174,7 +174,7 @@ To prepare the manifest file, do the following:
      ```
 
    - For read-only permissions, use the download through the browser,
-   select upload, drag the manifest file to the page and select upload.
+     select upload, drag the manifest file to the page and select upload.
 
      ![](/images/aws-s3_tutorial_5.jpg)
 

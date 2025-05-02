@@ -76,7 +76,7 @@ In the **Workspace** tab, you can:
   Works for serverless interactors and OpenCV scissors.
 
 - Select **Save** to save settings (settings will be saved on the server and
-will not change after the page is refreshed).
+  will not change after the page is refreshed).
   Select **Cancel** or press `F2` to return to the annotation.
 
 ## Shortcuts
