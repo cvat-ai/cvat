@@ -53,7 +53,7 @@ def configure_common_arguments(parser: argparse.ArgumentParser) -> None:
                 (default user: %(default)s).""",
     )
     parser.add_argument(
-        "--server-host", type=str, default="localhost", help="host (default: %(default)s)"
+        "--server-host", type=str, default="http://localhost", help="host (default: %(default)s)"
     )
     parser.add_argument(
         "--server-port",
