@@ -30,7 +30,7 @@ On the **Requests** page, requests are displayed as cards. Each card contains th
 The following statuses are used to indicate the state of each request:
 
 | Status        | Description                                                                 |
-| --------------| --------------------------------------------------------------------------- |
+| ------------- | --------------------------------------------------------------------------- |
 | `In Progress` | The requested job is being executed. The progress percentage is shown.      |
 | `Queued`      | The requested job is waiting to be picked up by a worker.                   |
 | `Finished`    | The requested job is finished. Downloading the result is available.         |
