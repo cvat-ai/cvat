@@ -95,16 +95,13 @@ def _create_csv(query_params, output_filename, cache_ttl):
 def export(request, filter_query, queue_name):
     action = request.query_params.get("action", None)
     filename = request.query_params.get("filename", None)
-
-    query_params = {
-        "org_id": filter_query.get("org_id", None),
-        "project_id": filter_query.get("project_id", None),
-        "task_id": filter_query.get("task_id", None),
-        "job_id": filter_query.get("job_id", None),
-        "user_id": filter_query.get("user_id", None),
-        "from": filter_query.get("from", None),
-        "to": filter_query.get("to", None),
-    }
+    resource_filters = ("org_id", "project_id", "task_id", "job_id", "user_id")
+    query_params = { k: filter_query.get(k) for k in resource_filters + ("from", "to") }
+    if not any(map(lambda filter: query_params[filter], resource_filters)):
+        # probably we do not want export all events from clickhouse accidentally
+        raise serializers.ValidationError(
+            f"At least one of filters {resource_filters} must be provided"
+        )
 
     try:
         if query_params["from"]:
