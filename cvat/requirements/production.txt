@@ -12,7 +12,7 @@ coverage==7.2.3
     # via -r cvat/requirements/production.in
 exceptiongroup==1.2.2
     # via anyio
-h11==0.14.0
+h11==0.16.0
     # via uvicorn
 httptools==0.6.4
     # via uvicorn
