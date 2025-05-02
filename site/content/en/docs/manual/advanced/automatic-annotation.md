@@ -16,11 +16,11 @@ CVAT can use models from the following sources:
 
 The following table describes the available options:
 
-|                                             | Self-hosted            | Cloud                                            |
-| ------------------------------------------- | ---------------------- | ------------------------------------------------ |
-| **Price**                                   | Free                   | See [Pricing](https://www.cvat.ai/pricing/cloud) |
-| **Models**                                  | You have to add models | You can use pre-installed models                 |
-| **Hugging Face & Roboflow <br>integration** | Not supported          | Supported                                        |
+|                                             | Self-hosted            | Online                                                 |
+| ------------------------------------------- | ---------------------- | ------------------------------------------------------ |
+| **Price**                                   | Free                   | See [Pricing](https://www.cvat.ai/pricing/cvat-online) |
+| **Models**                                  | You have to add models | You can use pre-installed models                       |
+| **Hugging Face & Roboflow <br>integration** | Not supported          | Supported                                              |
 
 See:
 
