@@ -96,7 +96,8 @@ def export(request, filter_query, queue_name):
     action = request.query_params.get("action", None)
     filename = request.query_params.get("filename", None)
     resource_filters = ("org_id", "project_id", "task_id", "job_id", "user_id")
-    query_params = { k: filter_query.get(k) for k in resource_filters + ("from", "to") }
+    query_params = {k: filter_query.get(k) for k in resource_filters + ("from", "to")}
+
     if not any(map(lambda filter: query_params[filter], resource_filters)):
         # probably we do not want export all events from clickhouse accidentally
         raise serializers.ValidationError(
@@ -121,21 +122,10 @@ def export(request, filter_query, queue_name):
     if query_params["from"] and query_params["to"] and query_params["from"] > query_params["to"]:
         raise serializers.ValidationError("'from' must be before than 'to'")
 
-    if not query_params["from"]:
-        query_params["from"] = find_minimal_date_for_filter(
-            job_id=query_params["job_id"],
-            task_id=query_params["task_id"],
-            project_id=query_params["project_id"],
-            org_id=query_params["org_id"],
-        )
-
-    if not query_params["to"]:
-        query_params["to"] = datetime.now(timezone.utc)
-
     if action not in (None, "download"):
         raise serializers.ValidationError("Unexpected action specified for the request")
 
-    query_id = request.query_params.get("query_id", None) or uuid.uuid4()
+    query_id = request.query_params.get("query_id", uuid.uuid4())
     rq_id = f"export:csv-logs-{query_id}-by-{request.user}"
     response_data = {
         "query_id": query_id,
@@ -163,6 +153,17 @@ def export(request, filter_query, queue_name):
             return Response(exc_info, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         else:
             return Response(data=response_data, status=status.HTTP_202_ACCEPTED)
+
+    if not query_params["from"]:
+        query_params["from"] = find_minimal_date_for_filter(
+            job_id=query_params["job_id"],
+            task_id=query_params["task_id"],
+            project_id=query_params["project_id"],
+            org_id=query_params["org_id"],
+        )
+
+    if not query_params["to"]:
+        query_params["to"] = datetime.now(timezone.utc)
 
     ttl = DEFAULT_CACHE_TTL.total_seconds()
     output_filename = os.path.join(settings.TMP_FILES_ROOT, f"{query_id}.csv")
