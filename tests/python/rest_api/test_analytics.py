@@ -65,8 +65,7 @@ class TestGetAuditEvents:
         return project.id, response.headers.get("X-Request-Id")
 
     @pytest.fixture(autouse=True)
-    def setup(self, find_users):
-        self._user = find_users(username=self._USERNAME)[0]
+    def setup(self, restore_clickhouse_db_per_function, restore_redis_inmem_per_function):
         project_spec = {
             "name": f"Test project created by {self._USERNAME}",
             "labels": [
@@ -203,7 +202,6 @@ class TestGetAuditEvents:
         query_params = {
             "_from": from_datetime.isoformat(),
             "to": to_datetime.isoformat(),
-            "user_id": self._user["id"],
         }
 
         data = self._test_get_audit_logs_as_csv(**query_params)

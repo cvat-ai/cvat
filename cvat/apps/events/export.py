@@ -98,12 +98,6 @@ def export(request, filter_query, queue_name):
     resource_filters = ("org_id", "project_id", "task_id", "job_id", "user_id")
     query_params = {k: filter_query.get(k) for k in resource_filters + ("from", "to")}
 
-    if not any(map(lambda filter: query_params[filter], resource_filters)):
-        # probably we do not want export all events from clickhouse accidentally
-        raise serializers.ValidationError(
-            f"At least one of filters {resource_filters} must be provided"
-        )
-
     try:
         if query_params["from"]:
             query_params["from"] = parser.isoparse(query_params["from"])
