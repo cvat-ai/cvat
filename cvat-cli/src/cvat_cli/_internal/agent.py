@@ -494,11 +494,14 @@ class _Agent:
             self._process_available_ars(category)
 
     def _process_available_ars(self, category) -> None:
-        if self._potential_work_per_category[category]:
+        with self._potential_work_condition:
+            if not self._potential_work_per_category[category]:
+                return
+
             self._potential_work_per_category[category] = False
 
-            while ar_assignment := self._poll_for_ar(category):
-                self._process_ar(ar_assignment)
+        while ar_assignment := self._poll_for_ar(category):
+            self._process_ar(ar_assignment)
 
     def _process_ar(self, ar_assignment: dict) -> None:
         self._client.logger.info("Got annotation request assignment: %r", ar_assignment)
