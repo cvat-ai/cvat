@@ -77,10 +77,10 @@ Use the `task <action>` form instead.
 ### Create
 
 Description of the options you can find in
-{{< ilink "/docs/manual/basics/create_an_annotation_task" "Creating an annotation task" >}} section.
+{{< ilink "/docs/manual/basics/create-annotation-task" "Creating an annotation task" >}} section.
 
 For create a task you need file contain labels in the `json` format, you can create a JSON label specification
-by using the {{< ilink "/docs/manual/basics/create_an_annotation_task#labels" "label constructor" >}}.
+by using the {{< ilink "/docs/manual/basics/create-annotation-task#labels" "label constructor" >}}.
 <details>
 <summary>Example JSON labels file</summary>
 
