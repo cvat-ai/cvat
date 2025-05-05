@@ -353,10 +353,17 @@ class _Agent:
         timeout_multiplier = self._rng.uniform(1 - _JITTER_AMOUNT, 1 + _JITTER_AMOUNT)
 
         with self._potential_work_condition:
-            self._potential_work_condition.wait_for(
+            wait_succeeded = self._potential_work_condition.wait_for(
                 lambda: any(self._potential_work_per_category.values()),
                 timeout=self._polling_interval.total_seconds() * timeout_multiplier,
             )
+
+            if not wait_succeeded:
+                # If we timed out, there is a possibility that the queue watcher is broken or
+                # that it somehow missed an event. Either way, we'll force a poll to make sure
+                # we don't miss anything.
+                for category in self._potential_work_per_category:
+                    self._potential_work_per_category[category] = True
 
     def _dispatch_queue_event(self, event: _Event) -> None:
         if event.type == "newrequest":
