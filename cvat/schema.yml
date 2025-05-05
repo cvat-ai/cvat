@@ -7142,7 +7142,7 @@ components:
       type: object
       description: |-
         Read more about parameters here:
-        https://docs.cvat.ai/docs/manual/basics/create_an_annotation_task/#advanced-configuration
+        https://docs.cvat.ai/docs/manual/basics/create-annotation-task/#advanced-configuration
       properties:
         chunk_size:
           type: integer

@@ -5,7 +5,7 @@ weight: 3
 description: 'How to monitor team activity and performance in CVAT'
 ---
 
-In CVAT Cloud, you can track a variety of metrics
+In CVAT Online, you can track a variety of metrics
 reflecting the team's productivity and the pace of annotation with
 the **Performance** feature.
 
