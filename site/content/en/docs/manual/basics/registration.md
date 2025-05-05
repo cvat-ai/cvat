@@ -2,13 +2,12 @@
 title: 'Registration & Account Access'
 linkTitle: 'Registration & Account Access'
 weight: 1
-description: 'CVAT.ai registration and account access.'
+description: 'CVAT registration and account access.'
 ---
 
-To start to annotate in CVAT.ai, you need to
-create an account or log in to the existing account.
+To start annotating in CVAT, you must create an account or log in to the existing one.
 
-See:
+Check out:
 
 - [User registration](#user-registration)
 - [User registration with social accounts](#user-registration-with-social-accounts)
@@ -16,25 +15,25 @@ See:
 - [Password reset](#password-reset)
 - [Change password](#change-password)
 
-To create account or log in, go to the [CVAT.ai Cloud](https://app.cvat.ai/) login page:
+To create an account or log in, go to the [CVAT Online](https://app.cvat.ai/) login page:
 
 ![](/images/image001.jpg)
 
-> **Note:** By default authentication and registration with
-> Google and GitHub work only for [CVAT.ai Cloud](https://app.cvat.ai/).
+> **Note:** By default, authentication and registration with
+> Google and GitHub work only for [CVAT Online](https://app.cvat.ai/).
 > <br>If you want to use Google and GitHub authentication on a local installation,
-> see {{< ilink "/docs/enterprise/social-accounts-configuration" "Social auth configuration" >}}.
+> consult {{< ilink "/docs/enterprise/social-accounts-configuration" "Social auth configuration" >}}.
 
 ## User registration
 
-To register, do the following:
+To register:
 
-1. Click **Create an account**.
+1. Select **Create an account**.
 
    ![Create account](/images/image002.jpg)
 
-2. Fill in all blank fields, accept terms of use, and
-   click **Create an account**.
+1. Fill in all blank fields, accept terms of use, and
+   select **Create an account**.
 
 ![Account form](/images/image003.jpg)
 
@@ -45,42 +44,41 @@ To register, do the following:
 ## User registration with social accounts
 
 To register with Google or GitHub,
-click the button with the name of the service,
-and follow instructions on the screen.
+select the button with the service name
+and follow the instructions.
 
 ## Account access
 
-To access your account, do the following:
+To access your account:
 
-1. Go to the login page.
-2. Enter username or email. The password field will appear.
-3. Enter the password and click **Next**.
+1. Go to the [login page](https://app.cvat.ai/auth/login).
+1. Enter username or email. The password field will appear.
+1. Enter the password and click **Next**.
 
-To log in with Google or GitHub, click the button with the name of the service.
+To log in with Google or GitHub, select the button with the service name.
 
 ## Password reset
 
-To reset password, do the following:
+To reset password:
 
-1. Go to the [CVAT.ai Cloud](https://app.cvat.ai/) page and click
+1. Go to the [CVAT Online](https://app.cvat.ai/) page and select
    **Forgot password?**
 
    ![Reset password](/images/reset-password.jpg)
 
-2. Enter email you used for registration and click **Send**.
-3. Open email and click on the link from CVAT.
-4. Enter new password in both fields and click **Change password**.
+1. Enter email you used for registration and select **Send**.
+1. Open email and select on the link from CVAT.
+1. Enter new password in both fields and select **Change password**.
 
    ![Reset password](/images/reset-password-01.jpg)
 
 ## Change password
 
-To change password, do the following:
+To change password:
 
 1. Log in to your CVAT account.
-2. In the top right corner, click on the arrow next to
-your nickname.
-3. Select Change password.
-4. Follow instructions on the screen.
+1. In the top right corner, select the username.
+1. Select **Change password**.
+1. Follow the instructions on the screen.
 
    ![Reset password](/images/change_password.jpg)

@@ -11,7 +11,7 @@ from abc import ABCMeta, abstractmethod
 from collections.abc import Sequence
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Optional, TypeVar
 
 from attrs import define, field
 from django.apps import AppConfig
@@ -24,6 +24,11 @@ from cvat.apps.organizations.models import Membership, Organization
 from cvat.utils.http import make_requests_session
 
 from .utils import add_opa_rules_path
+
+if TYPE_CHECKING:
+    from rest_framework.viewsets import ViewSet
+
+    from cvat.apps.engine.types import ExtendedRequest
 
 
 class StrEnum(str, Enum):
@@ -108,6 +113,27 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
     org_role: Optional[str]
     scope: str
     obj: Optional[Any]
+
+    @classmethod
+    @abstractmethod
+    def _get_scopes(cls, request: ExtendedRequest, view: ViewSet, obj: Any) -> list:
+        """Method to override to define scopes based on the request"""
+
+    @classmethod
+    def get_scopes(cls, request: ExtendedRequest, view: ViewSet, obj: Any):
+        # rest_framework.viewsets.ViewSetMixin.initialize_request implementation
+        if view.action is None:
+            view.http_method_not_allowed(request)
+
+        try:
+            scopes = cls._get_scopes(request, view, obj)
+            # prevent code bugs when _get_scope defines scopes "softly"
+            assert all(scopes)
+            return scopes
+        except KeyError:
+            assert (
+                False
+            ), f"Permissions for the ({view.basename}, {view.action}, {request.method}) triplet are not defined"
 
     @classmethod
     @abstractmethod

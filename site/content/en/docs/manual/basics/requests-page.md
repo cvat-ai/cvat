@@ -4,14 +4,14 @@ linkTitle: 'Requests page'
 weight: 7
 ---
 
-The Requests page allows users to track the status of data processing jobs such as exporting annotations
+The **Requests** page allows users to track the status of data processing jobs such as exporting annotations
 or importing datasets. Users can monitor progress, download results, and check for errors if they occur.
 
 ![Requests page](/images/requests_page.png)
 
 ## Requests List
 
-On the Requests page, requests are displayed as cards. Each card contains the following details (if applicable):
+On the **Requests** page, requests are displayed as cards. Each card contains the following details (if applicable):
 - **Operation Name**
 - **Resource Link**
 - **Status of the Request**

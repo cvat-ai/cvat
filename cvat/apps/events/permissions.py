@@ -46,9 +46,9 @@ class EventsPermission(OpenPolicyAgentPermission):
                     filter_params[attr] = str(value)
         return filter_params
 
-    @staticmethod
-    def get_scopes(request, view, obj):
-        Scopes = __class__.Scopes
+    @classmethod
+    def _get_scopes(cls, request, view, obj):
+        Scopes = cls.Scopes
         return [
             {
                 ("create", "POST"): Scopes.SEND_EVENTS,

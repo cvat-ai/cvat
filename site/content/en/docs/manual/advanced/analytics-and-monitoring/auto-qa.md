@@ -72,7 +72,7 @@ Quality estimation is configured on the Task level.
 {{< tabpane text=true >}}
 
 {{%tab header="In a new task" %}}
-1. Go to the {{< ilink "/docs/manual/basics/create_an_annotation_task" "task creation" >}} page
+1. Go to the {{< ilink "/docs/manual/basics/create-annotation-task" "task creation" >}} page
 2. Configure basic and advanced parameters according to your requirements, and attach a dataset to be annotated
 3. Scroll down to the **Quality Control** section below
 4. Select one of the [validation modes](#validation-modes) available
@@ -109,7 +109,7 @@ Quality estimation is configured on the Task level.
   It can be any integer number, the same value will yield the same random selection (given that the
   frame number is unchanged). <br> **Note** that if you want to use a
   custom frame sequence, you can do this using the server API instead,
-  see [Job API create()](https://docs.cvat.ai/docs/api_sdk/sdk/reference/apis/jobs-api/#create).
+  see [Job API create()](/docs/api_sdk/sdk/reference/apis/jobs-api/#create).
 
 4. Click **Submit**.
 
