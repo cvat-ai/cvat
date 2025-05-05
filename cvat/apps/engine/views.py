@@ -2933,7 +2933,8 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 },
                 description='Cloud Storage status'
             ),
-            '404': OpenApiResponse(description='No cloud storage with such id'),
+            '400': OpenApiResponse(description='Outdated bucket configuration'),
+            '404': OpenApiResponse(description='No cloud storage with such an ID'),
         })
     @action(detail=True, methods=['GET'], url_path='status')
     def status(self, request: ExtendedRequest, pk: int):

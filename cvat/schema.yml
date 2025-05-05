@@ -751,6 +751,10 @@ paths:
                 - NOT_FOUND
                 - FORBIDDEN
           description: Cloud Storage status
+        '400':
+          description: Outdated bucket configuration
+        '404':
+          description: No cloud storage with such an ID
   /api/comments:
     get:
       operationId: comments_list
