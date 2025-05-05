@@ -62,7 +62,7 @@ class WebhookReadListSerializer(serializers.ListSerializer):
             # We do it explicitly here and not in the LIST queryset to avoid
             # doing the same DB computations twice - one time for the page retrieval
             # and another one for the COUNT(*) request to get the total count
-            last_delivery_ids = set(
+            last_delivery_ids = (
                 Webhook.objects.filter(id__in=[webhook.id for webhook in page])
                 .annotate(
                     last_delivery_id=models.aggregates.Max("deliveries__id"),
