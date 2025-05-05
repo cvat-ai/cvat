@@ -359,7 +359,7 @@ Quality settings can be set up at the Task or the Project level.
 If a task is not bound to a project, it uses its own quality settings.
 Tasks inside a project can use individual quality settings or inherit settings
 from the project they belong to. Read more about quality settings in projects
-[here](#quality-settings-inside-a-project).
+[here](#project-quality-settings).
 
 To set up quality settings, open the **Quality Settings** tab on the **Quality Control** page
 for a task or project, available in the **Actions** menu.
@@ -422,7 +422,7 @@ Annotation quality settings have the following parameters:
 
 <!--lint enable maximum-line-length-->
 
-### Quality settings inside a project
+### Project quality settings
 
 In CVAT, it is possible to group tasks into projects to share common configurations or establish
 a logical grouping for datasets. In this section, we explain options for quality management
