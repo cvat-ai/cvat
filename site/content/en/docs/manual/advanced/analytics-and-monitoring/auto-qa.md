@@ -370,7 +370,7 @@ There is a number of parameters available for configuration.
 Additional descriptions for settings are available in the **?** marks on the quality settings page.
 Hover the mouse over a **?** mark to display field descriptions.
 
-![Quality settings page](/images/honeypot08.jpg)
+![Quality settings page](/images/quality-settings-overview.jpg)
 
 After the settings are updated, remember to save the values using the **Save** button.
 The updated settings will take effect on the next quality update.
