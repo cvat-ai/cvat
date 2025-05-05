@@ -1,0 +1,189 @@
+metadata:
+  name: panoptic-fpn-R-101-3x
+  namespace: cvat
+  annotations:
+    name: Panoptic FPN R101
+    type: detector
+    spec: |
+      [
+        { "id":   0, "name": "unknow", "type": "polygon" },
+        { "id":   1, "name": "person", "type": "polygon" },
+        { "id":   2, "name": "bicycle", "type": "polygon" },
+        { "id":   3, "name": "car", "type": "polygon" },
+        { "id":   4, "name": "motorcycle", "type": "polygon" },
+        { "id":   5, "name": "airplane", "type": "polygon" },
+        { "id":   6, "name": "bus", "type": "polygon" },
+        { "id":   7, "name": "train", "type": "polygon" },
+        { "id":   8, "name": "truck", "type": "polygon" },
+        { "id":   9, "name": "boat", "type": "polygon" },
+        { "id":  10, "name": "traffic light", "type": "polygon" },
+        { "id":  11, "name": "fire hydrant", "type": "polygon" },
+        { "id":  13, "name": "stop sign", "type": "polygon" },
+        { "id":  14, "name": "parking meter", "type": "polygon" },
+        { "id":  15, "name": "bench", "type": "polygon" },
+        { "id":  16, "name": "bird", "type": "polygon" },
+        { "id":  17, "name": "cat", "type": "polygon" },
+        { "id":  18, "name": "dog", "type": "polygon" },
+        { "id":  19, "name": "horse", "type": "polygon" },
+        { "id":  20, "name": "sheep", "type": "polygon" },
+        { "id":  21, "name": "cow", "type": "polygon" },
+        { "id":  22, "name": "elephant", "type": "polygon" },
+        { "id":  23, "name": "bear", "type": "polygon" },
+        { "id":  24, "name": "zebra", "type": "polygon" },
+        { "id":  25, "name": "giraffe", "type": "polygon" },
+        { "id":  27, "name": "backpack", "type": "polygon" },
+        { "id":  28, "name": "umbrella", "type": "polygon" },
+        { "id":  31, "name": "handbag", "type": "polygon" },
+        { "id":  32, "name": "tie", "type": "polygon" },
+        { "id":  33, "name": "suitcase", "type": "polygon" },
+        { "id":  34, "name": "frisbee", "type": "polygon" },
+        { "id":  35, "name": "skis", "type": "polygon" },
+        { "id":  36, "name": "snowboard", "type": "polygon" },
+        { "id":  37, "name": "sports ball", "type": "polygon" },
+        { "id":  38, "name": "kite", "type": "polygon" },
+        { "id":  39, "name": "baseball bat", "type": "polygon" },
+        { "id":  40, "name": "baseball glove", "type": "polygon" },
+        { "id":  41, "name": "skateboard", "type": "polygon" },
+        { "id":  42, "name": "surfboard", "type": "polygon" },
+        { "id":  43, "name": "tennis racket", "type": "polygon" },
+        { "id":  44, "name": "bottle", "type": "polygon" },
+        { "id":  46, "name": "wine glass", "type": "polygon" },
+        { "id":  47, "name": "cup", "type": "polygon" },
+        { "id":  48, "name": "fork", "type": "polygon" },
+        { "id":  49, "name": "knife", "type": "polygon" },
+        { "id":  50, "name": "spoon", "type": "polygon" },
+        { "id":  51, "name": "bowl", "type": "polygon" },
+        { "id":  52, "name": "banana", "type": "polygon" },
+        { "id":  53, "name": "apple", "type": "polygon" },
+        { "id":  54, "name": "sandwich", "type": "polygon" },
+        { "id":  55, "name": "orange", "type": "polygon" },
+        { "id":  56, "name": "broccoli", "type": "polygon" },
+        { "id":  57, "name": "carrot", "type": "polygon" },
+        { "id":  58, "name": "hot dog", "type": "polygon" },
+        { "id":  59, "name": "pizza", "type": "polygon" },
+        { "id":  60, "name": "donut", "type": "polygon" },
+        { "id":  61, "name": "cake", "type": "polygon" },
+        { "id":  62, "name": "chair", "type": "polygon" },
+        { "id":  63, "name": "couch", "type": "polygon" },
+        { "id":  64, "name": "potted plant", "type": "polygon" },
+        { "id":  65, "name": "bed", "type": "polygon" },
+        { "id":  67, "name": "dining table", "type": "polygon" },
+        { "id":  70, "name": "toilet", "type": "polygon" },
+        { "id":  72, "name": "tv", "type": "polygon" },
+        { "id":  73, "name": "laptop", "type": "polygon" },
+        { "id":  74, "name": "mouse", "type": "polygon" },
+        { "id":  75, "name": "remote", "type": "polygon" },
+        { "id":  76, "name": "keyboard", "type": "polygon" },
+        { "id":  77, "name": "cell phone", "type": "polygon" },
+        { "id":  78, "name": "microwave", "type": "polygon" },
+        { "id":  79, "name": "oven", "type": "polygon" },
+        { "id":  80, "name": "toaster", "type": "polygon" },
+        { "id":  81, "name": "sink", "type": "polygon" },
+        { "id":  82, "name": "refrigerator", "type": "polygon" },
+        { "id":  84, "name": "book", "type": "polygon" },
+        { "id":  85, "name": "clock", "type": "polygon" },
+        { "id":  86, "name": "vase", "type": "polygon" },
+        { "id":  87, "name": "scissors", "type": "polygon" },
+        { "id":  88, "name": "teddy bear", "type": "polygon" },
+        { "id":  89, "name": "hair drier", "type": "polygon" },
+        { "id":  90, "name": "toothbrush", "type": "polygon" },
+        { "id":  92, "name": "banner", "type": "polygon" },
+        { "id":  93, "name": "blanket", "type": "polygon" },
+        { "id":  95, "name": "bridge", "type": "polygon" },
+        { "id": 100, "name": "cardboard", "type": "polygon" },
+        { "id": 107, "name": "counter", "type": "polygon" },
+        { "id": 109, "name": "curtain", "type": "polygon" },
+        { "id": 112, "name": "door-stuff", "type": "polygon" },
+        { "id": 118, "name": "floor-wood", "type": "polygon" },
+        { "id": 119, "name": "flower", "type": "polygon" },
+        { "id": 122, "name": "fruit", "type": "polygon" },
+        { "id": 125, "name": "gravel", "type": "polygon" },
+        { "id": 128, "name": "house", "type": "polygon" },
+        { "id": 130, "name": "light", "type": "polygon" },
+        { "id": 133, "name": "mirror-stuff", "type": "polygon" },
+        { "id": 138, "name": "net", "type": "polygon" },
+        { "id": 141, "name": "pillow", "type": "polygon" },
+        { "id": 144, "name": "platform", "type": "polygon" },
+        { "id": 145, "name": "playingfield", "type": "polygon" },
+        { "id": 147, "name": "railroad", "type": "polygon" },
+        { "id": 148, "name": "river", "type": "polygon" },
+        { "id": 149, "name": "road", "type": "polygon" },
+        { "id": 151, "name": "roof", "type": "polygon" },
+        { "id": 154, "name": "sand", "type": "polygon" },
+        { "id": 155, "name": "sea", "type": "polygon" },
+        { "id": 156, "name": "shelf", "type": "polygon" },
+        { "id": 159, "name": "snow", "type": "polygon" },
+        { "id": 161, "name": "stairs", "type": "polygon" },
+        { "id": 166, "name": "tent", "type": "polygon" },
+        { "id": 168, "name": "towel", "type": "polygon" },
+        { "id": 171, "name": "wall-brick", "type": "polygon" },
+        { "id": 175, "name": "wall-stone", "type": "polygon" },
+        { "id": 176, "name": "wall-tile", "type": "polygon" },
+        { "id": 177, "name": "wall-wood", "type": "polygon" },
+        { "id": 178, "name": "water-other", "type": "polygon" },
+        { "id": 180, "name": "window-blind", "type": "polygon" },
+        { "id": 181, "name": "window-other", "type": "polygon" },
+        { "id": 184, "name": "tree-merged", "type": "polygon" },
+        { "id": 185, "name": "fence-merged", "type": "polygon" },
+        { "id": 186, "name": "ceiling-merged", "type": "polygon" },
+        { "id": 187, "name": "sky-other-merged", "type": "polygon" },
+        { "id": 188, "name": "cabinet-merged", "type": "polygon" },
+        { "id": 189, "name": "table-merged", "type": "polygon" },
+        { "id": 190, "name": "floor-other-merged", "type": "polygon" },
+        { "id": 191, "name": "pavement-merged", "type": "polygon" },
+        { "id": 192, "name": "mountain-merged", "type": "polygon" },
+        { "id": 193, "name": "grass-merged", "type": "polygon" },
+        { "id": 194, "name": "dirt-merged", "type": "polygon" },
+        { "id": 195, "name": "paper-merged", "type": "polygon" },
+        { "id": 196, "name": "food-other-merged", "type": "polygon" },
+        { "id": 197, "name": "building-other-merged", "type": "polygon" },
+        { "id": 198, "name": "rock-merged", "type": "polygon" },
+        { "id": 199, "name": "wall-other-merged", "type": "polygon" },
+        { "id": 200, "name": "rug-merged", "type": "polygon" }
+      ]
+
+spec:
+  description: Panoptic FPN R101 from Detectron2 optimized for GPU
+  runtime: 'python:3.8'
+  handler: main:handler
+  eventTimeout: 30s
+
+  build:
+    image: cvat.pth.facebookresearch.detectron2.panoptic_r101:latest-gpu
+    baseImage: ubuntu:20.04
+
+    directives:
+      preCopy:
+        - kind: ENV
+          value: DEBIAN_FRONTEND=noninteractive
+        - kind: RUN
+          value: apt-get update && apt-get -y install curl git python3 python3-pip
+        - kind: WORKDIR
+          value: /opt/nuclio
+        - kind: RUN
+          value: pip3 install opencv-python-headless numpy torch==1.8.1+cu111 torchvision==0.9.1+cu111 torchaudio==0.8.1 -f https://download.pytorch.org/whl/torch_stable.html
+        - kind: RUN
+          value: pip3 install 'git+https://github.com/facebookresearch/detectron2@ff53992b1985'
+        - kind: RUN
+          value: curl -O https://dl.fbaipublicfiles.com/detectron2/COCO-PanopticSegmentation/panoptic_fpn_R_101_3x/139514519/model_final_cafdb1.pkl
+        - kind: RUN
+          value: ln -s /usr/bin/pip3 /usr/local/bin/pip && ln -s /usr/bin/python3 /usr/bin/python
+
+  triggers:
+    myHttpTrigger:
+      numWorkers: 1
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+
+  resources:
+    limits:
+      nvidia.com/gpu: 1
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume
