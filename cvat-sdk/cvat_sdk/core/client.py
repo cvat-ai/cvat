@@ -77,10 +77,10 @@ class Client:
         config: Optional[Config] = None,
         check_server_version: bool = True,
     ) -> None:
-        url = self._validate_and_prepare_url(url)
-
         self.logger = logger or logging.getLogger(__name__)
         """The root logger"""
+
+        url = self._validate_and_prepare_url(url)
 
         self.config = config or Config()
         """Configuration for this object"""
@@ -132,8 +132,7 @@ class Client:
 
     ALLOWED_SCHEMAS = ("https", "http")
 
-    @classmethod
-    def _validate_and_prepare_url(cls, url: str) -> str:
+    def _validate_and_prepare_url(self, url: str) -> str:
         url_parts = url.split("://", maxsplit=1)
         if len(url_parts) == 2:
             schema, base_url = url_parts
@@ -143,21 +142,20 @@ class Client:
 
         base_url = base_url.rstrip("/")
 
-        if schema and schema not in cls.ALLOWED_SCHEMAS:
+        if schema and schema not in self.ALLOWED_SCHEMAS:
             raise InvalidHostException(
                 f"Invalid url schema '{schema}', expected "
-                f"one of <none>, {', '.join(cls.ALLOWED_SCHEMAS)}"
+                f"one of <none>, {', '.join(self.ALLOWED_SCHEMAS)}"
             )
 
         if not schema:
-            schema = cls._detect_schema(base_url)
+            schema = self._detect_schema(base_url)
             url = f"{schema}://{base_url}"
 
         return url
 
-    @classmethod
-    def _detect_schema(cls, base_url: str) -> str:
-        for schema in cls.ALLOWED_SCHEMAS:
+    def _detect_schema(self, base_url: str) -> str:
+        def attempt(schema: str) -> bool:
             with ApiClient(Configuration(host=f"{schema}://{base_url}")) as api_client:
                 with suppress(urllib3.exceptions.RequestError):
                     (_, response) = api_client.server_api.retrieve_about(
@@ -167,7 +165,22 @@ class Client:
                     if response.status in [200, 401]:
                         # Server versions prior to 2.3.0 respond with unauthorized
                         # 2.3.0 allows unauthorized access
-                        return schema
+                        return True
+            return False
+
+        if attempt("https"):
+            return "https"
+
+        self.logger.warning(
+            "Failed to connect to the server using HTTPS; will attempt HTTP instead"
+        )
+        self.logger.warning(
+            "This fallback will be removed in a future version of the SDK;"
+            " to avoid breakage, explicitly add 'https://' or 'http://' to the URL"
+        )
+
+        if attempt("http"):
+            return "http"
 
         raise InvalidHostException(
             "Failed to detect host schema automatically, please check "
