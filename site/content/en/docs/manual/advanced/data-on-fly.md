@@ -33,7 +33,7 @@ Unfortunately, this method has several drawbacks:
 #### How to use
 
 To enable or disable this feature for a new task, use the
-{{< ilink "/docs/manual/basics/create_an_annotation_task#use-cache" "`Use Cache`" >}}
+{{< ilink "/docs/manual/basics/create-annotation-task#use-cache" "`Use Cache`" >}}
 toggle in the task configuration.
 
 #### Uploading a manifest with data

@@ -22,7 +22,7 @@ See:
 
 ## Single Shape mode annotation interface
 
-A set of controls in the interface of the **Single Shape** annotation mode may vary depends on different settings.
+A set of controls in the interface of the **Single Shape** annotation mode may vary depending on different settings.
 
 Images below displays the complete interface, featuring all available fields;
 as mentioned above, certain fields may be absent depending on the scenario.

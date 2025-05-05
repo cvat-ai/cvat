@@ -4,13 +4,13 @@ linkTitle: 'Jobs page'
 weight: 4
 ---
 
-On the jobs page, users (for example, with the worker role)
+On the **Jobs** page, users (for example, with the worker role)
 can see the jobs that are assigned to them without having access to the task page,
-as well as track progress, sort and apply filters to the job list.
+as well as track progress, sort, and apply filters to the job list.
 
 ![](/images/image243_detrac.jpg)
 
-On the job page there is a list of jobs presented in the form of tiles, where each tile is one job.
+On the page, there is a list of jobs presented in the form of tiles, where each tile is one job.
 Each element contains:
 - job ID
 - dimension `2D` or `3D`
@@ -23,19 +23,19 @@ Each element contains:
 
 > To open the job in a new tab, click on the job by holding `Ctrl`.
 
-In the upper left corner there is a search bar, using which you can find the job by assignee, stage, state, etc.
-In the upper right corner there are [sorting][sorting], [quick filters][quick-filters] and filter.
+In the upper left corner, there is a search bar, using which you can find the job by assignee, stage, state, etc.
+In the upper right corner, there are [sorting][sorting], [quick filters][quick-filters], and filter.
 
 ## Filter
 
-> Applying filter disables the [quick filter][quick-filters].
+> Applying a filter disables the [quick filter][quick-filters].
 
 The filter works similarly to the filters for annotation,
-you can create rules from [properties](#supported-properties-for-jobs-list), [operators][operators]
-and values and group rules into [groups][groups]. For more details, see the [filter section][create-filter].
+you can create rules from [properties](#supported-properties-for-jobs-list), [operators][operators],
+and values and group rules into [groups][groups]. For more details, consult the [filter section][create-filter].
 Learn more about [date and time selection][data-and-time].
 
-For clear all filters press `Clear filters`.
+To clear all filters, select `Clear filters`.
 
 ### Supported properties for jobs list
 
@@ -54,7 +54,7 @@ For clear all filters press `Clear filters`.
 
 [state]: /docs/manual/basics/vocabulary/#state
 [stage]: /docs/manual/basics/vocabulary/#stage
-[create-task]: /docs/manual/basics/create_an_annotation_task
+[create-task]: /docs/manual/basics/create-annotation-task
 [create-filter]: /docs/manual/advanced/filter/#create-a-filter
 [operators]: /docs/manual/advanced/filter/#supported-operators-for-properties
 [groups]: /docs/manual/advanced/filter/#groups

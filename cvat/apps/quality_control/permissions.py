@@ -51,7 +51,7 @@ class QualityReportPermission(OpenPolicyAgentPermission):
 
     @classmethod
     def create(cls, request, view, obj, iam_context):
-        Scopes = __class__.Scopes
+        Scopes = cls.Scopes
 
         permissions = []
         if view.basename == "quality_reports":
@@ -111,9 +111,9 @@ class QualityReportPermission(OpenPolicyAgentPermission):
         super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + "/quality_reports/allow"
 
-    @staticmethod
-    def get_scopes(request, view, obj):
-        Scopes = __class__.Scopes
+    @classmethod
+    def _get_scopes(cls, request, view, obj):
+        Scopes = cls.Scopes
         return [
             {
                 "list": Scopes.LIST,
@@ -200,9 +200,9 @@ class AnnotationConflictPermission(OpenPolicyAgentPermission):
         super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + "/conflicts/allow"
 
-    @staticmethod
-    def get_scopes(request, view, obj):
-        Scopes = __class__.Scopes
+    @classmethod
+    def _get_scopes(cls, request, view, obj):
+        Scopes = cls.Scopes
         return [
             {
                 "list": Scopes.LIST,
@@ -223,7 +223,7 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
 
     @classmethod
     def create(cls, request, view, obj, iam_context):
-        Scopes = __class__.Scopes
+        Scopes = cls.Scopes
 
         permissions = []
         if view.basename == "quality_settings":
@@ -265,9 +265,9 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
         super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + "/quality_settings/allow"
 
-    @staticmethod
-    def get_scopes(request, view, obj):
-        Scopes = __class__.Scopes
+    @classmethod
+    def _get_scopes(cls, request, view, obj):
+        Scopes = cls.Scopes
         return [
             {
                 "list": Scopes.LIST,

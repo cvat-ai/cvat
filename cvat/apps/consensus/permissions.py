@@ -23,7 +23,7 @@ class ConsensusMergePermission(OpenPolicyAgentPermission):
 
     @classmethod
     def create(cls, request: ExtendedRequest, view, obj, iam_context):
-        Scopes = __class__.Scopes
+        Scopes = cls.Scopes
 
         permissions = []
         if view.basename == "consensus_merges":
@@ -75,9 +75,9 @@ class ConsensusMergePermission(OpenPolicyAgentPermission):
         super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + "/consensus_merges/allow"
 
-    @staticmethod
-    def get_scopes(request, view, obj):
-        Scopes = __class__.Scopes
+    @classmethod
+    def _get_scopes(cls, request, view, obj):
+        Scopes = cls.Scopes
         return [
             {
                 "create": Scopes.CREATE,
@@ -136,7 +136,7 @@ class ConsensusSettingPermission(OpenPolicyAgentPermission):
 
     @classmethod
     def create(cls, request, view, obj, iam_context):
-        Scopes = __class__.Scopes
+        Scopes = cls.Scopes
 
         permissions = []
         if view.basename == "consensus_settings":
@@ -182,15 +182,15 @@ class ConsensusSettingPermission(OpenPolicyAgentPermission):
         super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + "/consensus_settings/allow"
 
-    @staticmethod
-    def get_scopes(request, view, obj):
-        Scopes = __class__.Scopes
+    @classmethod
+    def _get_scopes(cls, request, view, obj):
+        Scopes = cls.Scopes
         return [
             {
                 "list": Scopes.LIST,
                 "retrieve": Scopes.VIEW,
                 "partial_update": Scopes.UPDATE,
-            }.get(view.action, None)
+            }[view.action]
         ]
 
     def get_resource(self):

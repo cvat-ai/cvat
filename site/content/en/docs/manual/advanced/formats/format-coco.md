@@ -77,7 +77,7 @@ Upload format: a single unpacked `*.json` or a zip archive with the structure de
    ```
 
 3. Select `val2017.zip` as data
-   (See {{< ilink "/docs/manual/basics/create_an_annotation_task" "Creating an annotation task" >}}
+   (See {{< ilink "/docs/manual/basics/create-annotation-task" "Creating an annotation task" >}}
    guide for details)
 
 4. Unpack `annotations_trainval2017.zip`

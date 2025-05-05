@@ -79,13 +79,13 @@ class RequestPermission(OpenPolicyAgentPermission):
         super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + "/requests/allow"
 
-    @staticmethod
-    def get_scopes(request: ExtendedRequest, view: ViewSet, obj: RQJob | None) -> list[Scopes]:
+    @classmethod
+    def _get_scopes(cls, request: ExtendedRequest, view: ViewSet, obj: RQJob | None) -> list[Scopes]:
         return [
             {
-                ("list", "GET"): __class__.Scopes.LIST,
-                ("retrieve", "GET"): __class__.Scopes.VIEW,
-                ("cancel", "POST"): __class__.Scopes.DELETE,
+                ("list", "GET"): cls.Scopes.LIST,
+                ("retrieve", "GET"): cls.Scopes.VIEW,
+                ("cancel", "POST"): cls.Scopes.DELETE,
             }[(view.action, request.method)]
         ]
 
