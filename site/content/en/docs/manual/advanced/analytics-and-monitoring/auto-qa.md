@@ -13,7 +13,7 @@ and calculates annotation quality based on this comparison.
 > **Note** that quality estimation only supports
 > 2d tasks. It supports all the annotation types except 2d cuboids.
 
-> **Note** that quality estimation is currently available for project, tasks and jobs.
+> **Note** that quality estimation is available for projects, tasks, and jobs.
 
 CVAT has the following features for automated quality control of annotations:
 - Validation set configuration for a task
@@ -68,8 +68,8 @@ Read more about Ground Truth management [here](#ground-truth-job-management).
 
 There are 2 key components related to quality estimation configuration:
 Ground Truth jobs and Quality settings. Ground Truth jobs are configured at the Task level.
-In this section we explain how to set up a Ground Truth job.
-Read more about configuration of quality settings [here](#annotation-quality-settings).
+In this section, we explain how to set up a Ground Truth job.
+Read more about quality settings [here](#annotation-quality-settings).
 
 > A **Ground truth** job is considered **configured**
 > if it is at the **acceptance** stage and in the **completed** state.
@@ -355,8 +355,8 @@ Quality settings provide options to tweak some aspects of annotation comparisons
 quality estimation in general. For instance, you can configure which annotation overlap
 should be considered good enough or how specific annotation types must be compared.
 
-Quality settings can be set up at the Task or at the Project level.
-If a task is not bound to a project, it uses it's own quality settings.
+Quality settings can be set up at the Task or the Project level.
+If a task is not bound to a project, it uses its own quality settings.
 Tasks inside a project can use individual quality settings or inherit settings
 from the project they belong to. Read more about quality settings in projects
 [here](#quality-settings-inside-a-project).
@@ -367,8 +367,7 @@ for a task or project, available in the **Actions** menu.
 ![Quality control button in the task actions menu](/images/quality-control-actions-button.png)
 
 There is a number of parameters available for configuration.
-Additional descriptions for settings are available in the **?** marks on the quality settings page.
-Hover the mouse over a **?** mark to display field descriptions.
+Hover the mouse over a **?** mark to display a description for a setting.
 
 ![Quality settings page](/images/honeypot08.jpg)
 
@@ -426,13 +425,13 @@ Annotation quality settings have the following parameters:
 ### Quality settings inside a project
 
 In CVAT, it is possible to group tasks into projects to share common configurations or establish
-a logical grouping for datasets. In this section we explain options for quality management
+a logical grouping for datasets. In this section, we explain options for quality management
 inside projects.
 
 When tasks are inside a project, it can be convenient to reuse the same quality setup for
 all the project tasks. There is an option to use quality settings from the parent project
 for all or only for specific tasks inside a project. This is controlled by the corresponding
-toggle in the **Quality Settings** page of the task:
+toggle on the **Quality control** page of the task:
 
 ![Task quality settings - inherit project settings](/images/quality-settings-inherit.png)
 
@@ -452,7 +451,7 @@ relevant values.
 
 ### Job filtering
 
-Depending on the situation, you may need or don't need to include specific jobs into
+Depending on the situation, you may need or don't need to include specific jobs in
 the quality report. For example, your workflow may require quality checks only for
 completed jobs or maybe you want to exclude jobs from a specific task from
 a project quality report. There is an option to filter which jobs are included in quality
