@@ -15,6 +15,7 @@ import { importActions } from 'actions/import-actions';
 import { usePrevious } from 'utils/hooks';
 import { ProjectsQuery } from 'reducers';
 import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
+import { useTranslation } from 'react-i18next';
 
 import dimensions from 'utils/dimensions';
 import {
@@ -40,6 +41,7 @@ function TopBarComponent(props: Props): JSX.Element {
     } = props;
     const [visibility, setVisibility] = useState(defaultVisibility);
     const prevImporting = usePrevious(importing);
+    const { t, i18n } = useTranslation('base');
 
     useEffect(() => {
         if (prevImporting && !importing) {
@@ -59,7 +61,7 @@ function TopBarComponent(props: Props): JSX.Element {
                         }}
                         defaultValue={query.search || ''}
                         className='cvat-projects-page-search-bar'
-                        placeholder='Search ...'
+                        placeholder={t('search.Search...')}
                     />
                     <div>
                         <SortingComponent
@@ -69,6 +71,7 @@ function TopBarComponent(props: Props): JSX.Element {
                             )}
                             defaultFields={query.sort?.split(',') || ['-ID']}
                             sortingFields={['ID', 'Assignee', 'Owner', 'Status', 'Name', 'Updated date']}
+                            sortingLabelMap={i18n.getResource(i18n.language, 'base', 'project.fields')}
                             onApplySorting={onApplySorting}
                         />
                         <FilteringComponent
@@ -103,7 +106,7 @@ function TopBarComponent(props: Props): JSX.Element {
                                     onClick={(): void => history.push('/projects/create')}
                                     icon={<PlusOutlined />}
                                 >
-                                    Create a new project
+                                    {t('search.create_new', 'Create a new project', { item: t('Project') })}
                                 </Button>
                                 <Button
                                     className='cvat-import-project-button'
@@ -112,7 +115,7 @@ function TopBarComponent(props: Props): JSX.Element {
                                     icon={importing ? <LoadingOutlined /> : <UploadOutlined />}
                                     onClick={() => dispatch(importActions.openImportBackupModal('project'))}
                                 >
-                                    Create from backup
+                                    {t('search.create_from_backup', 'Create from backup')}
                                 </Button>
                             </div>
                         )}

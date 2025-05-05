@@ -8,6 +8,7 @@ import { connect } from 'react-redux';
 import Title from 'antd/lib/typography/Title';
 import { Row, Col } from 'antd/lib/grid';
 import Layout from 'antd/lib/layout';
+import { useTranslation } from 'react-i18next';
 
 import { CombinedState } from 'reducers';
 import { resetPasswordAsync } from 'actions/auth-actions';
@@ -48,13 +49,14 @@ function ResetPasswordPagePageComponent(props: ResetPasswordConfirmPageComponent
     const { fetching, onResetPasswordConfirm } = props;
 
     const { Content } = Layout;
+    const { t: tPasswordResetConfirm } = useTranslation('auth', { keyPrefix: 'passwordResetConfirm' });
 
     return (
         <Layout>
             <Content>
                 <Row justify='center' align='middle' style={{ height: '100%' }}>
                     <Col {...sizes}>
-                        <Title level={2}> Change password </Title>
+                        <Title level={2}>{tPasswordResetConfirm('Change password')}</Title>
                         <ResetPasswordConfirmForm
                             fetching={fetching}
                             onSubmit={(resetPasswordConfirmData: ResetPasswordConfirmData): void => {

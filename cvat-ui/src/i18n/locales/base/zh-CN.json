@@ -1,0 +1,156 @@
+{
+    "Project": "项目",
+    "Projects": "项目",
+    "Task": "任务",
+    "Tasks": "任务",
+    "Job": "作业",
+    "Jobs": "作业",
+    "Cloud storage": "云存储",
+    "Cloud storages": "云存储",
+    "Requests": "请求",
+    "Models": "模型",
+    "Analytics": "分析",
+    "OK": "好的",
+    "Cancel": "取消",
+    "Next": "下一步",
+    "Close": "关闭",
+    "Yes": "是",
+    "No": "否",
+    "Apply": "应用",
+    "Recent": "近期使用",
+    "Filter": "过滤",
+    "Reset": "重置",
+    "Create": "创建",
+    "Settings": "设置",
+    "About": "关于",
+    "Logout": "登出",
+    "admin page": "管理页面",
+    "logout": "登出",
+    "invitation_other": "邀请",
+    "Connecting": "连接中",
+    "Password": "密码",
+    "First name": "名",
+    "Last name": "姓",
+    "Email": "邮箱",
+    "Username": "用户名",
+    "Send": "发送",
+    "Organization": "组织",
+    "Invitations": "邀请",
+    "Change password": "修改密码",
+    "repository": "代码仓库",
+    "guide": "指南",
+    "Switch locale": "切换语言",
+    "validationPatterns": {
+        "validatePasswordLength": "密码至少需要 8 个字符",
+        "passwordContainsNumericCharacters": "密码必须包含至少 1 个数字",
+        "passwordContainsUpperCaseCharacter": "密码必须包含至少 1 个大写字母",
+        "passwordContainsLowerCaseCharacter": "密码必须包含至少 1 个小写字母",
+        "validateUsernameLength": "用户名至少包含 5 个字符",
+        "validateUsernameCharacters": "只可以使用 (a-z), (A-Z), (0-9), -, _, 这些字符",
+        "validateName": "不合法的名字",
+        "validateAttributeName": "不合法的名字",
+        "validateLabelName": "不合法的名字",
+        "validateAttributeValue": "不合法的属性名",
+        "validateURL": "URL 不合法",
+        "validateOrganizationSlug": "只允许拉丁字母和数字",
+        "validatePhoneNumber": "输入的手机号不正确"
+    },
+    "sort": {
+        "Sort by": "排序",
+        "Descending sort": "降序",
+        "Ascending sort": "增序"
+    },
+    "project": {
+        "fields": {
+            "ID": "ID",
+            "Assignee": "接收者",
+            "Owner": "拥有者",
+            "Status": "状态",
+            "Name": "名称",
+            "Updated date": "更新时间"
+        }
+    },
+    "task": {
+        "fields": {
+            "ID": "ID",
+            "Owner": "拥有者",
+            "Status": "状态",
+            "Assignee": "接收者",
+            "Updated date": "更新时间",
+            "Subset": "子集",
+            "Mode": "模式",
+            "Dimension": "维度",
+            "Project ID": "项目 ID",
+            "Name": "名称",
+            "Project name": "项目名"
+        }
+    },
+    "job": {
+        "fields": {
+            "ID": "ID",
+            "Assignee": "接收者",
+            "Updated date": "更新日期",
+            "Stage": "阶段",
+            "State": "状态",
+            "Task ID": "任务 ID",
+            "Project ID": "项目 ID",
+            "Task name": "任务 name",
+            "Project name": "项目 name"
+        }
+    },
+    "cloudStorage": {
+        "fields": {
+            "ID": "ID",
+            "Provider type": "供方类型",
+            "Updated date": "更新时间",
+            "Display name": "显示名称",
+            "Resource": "资源",
+            "Credentials type": "凭证类型",
+            "Owner": "拥有者",
+            "Description": "描述"
+        }
+    },
+    "filter": {
+        "Clear filters": "清除过滤",
+        "Quick filters": "快速过滤",
+        "quick-filters-keys": {
+            "Assigned to me": "分配给我的",
+            "Owned by me": "我拥有的",
+            "Not completed": "未完成",
+            "AWS storages": "AWS 存储",
+            "Azure storages": "Azure 存储",
+            "Google cloud storages": "Google 云存储"
+        }
+    },
+    "search": {
+        "Search...": "搜索...",
+        "empty": "没有符合你的搜索的结果...",
+        "no_created": "还没有创建{{items}}...",
+        "create": "新建一个",
+        "create_new": "新建{{item}}",
+        "create_new_more": "新建{{items}}",
+        "description": "为了开始标注项目",
+        "no_attached": "还没挂载云存储...",
+        "description_cloud_storage": "为了使用云存储",
+        "attach_new": "挂载新存储",
+        "or try to": " 或者尝试 ",
+        "create_from_backup": "从备份创建"
+    },
+    "modal": {
+        "cannot-connect-server": {
+            "title": "无法连接服务器",
+            "content": "请确认 CVAT 后端和所有必要服务<br/>(数据库, Redis 和 开放策略代理) 正常运行<br/>如果你从 2.2.0 前的版本升级, 可能需要参考 <1>升级指南</1>手动处理"
+        },
+        "unsupported-platform": {
+            "title": "检测到不支持平台",
+            "content": [
+                "你使用的浏览器是 {{name}} {{version}} based on {{engine}}<br/>CVAT 在最新版本 Chrome 和 Firefox 上测试<br/>推荐使用 Chrome (或其他基于 Chromium 浏览器)",
+                "操作系统 {{os}}"
+            ]
+        },
+        "unsupported-features": {
+            "title": "检测到不支持的特性",
+            "content": "'{{name}} v{{version}} 不支持 CVAT 需要的 API<br/>强烈建议升级浏览器"
+        }
+    }
+}

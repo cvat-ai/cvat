@@ -10,6 +10,7 @@ import InputNumber from 'antd/lib/input-number';
 import Text from 'antd/lib/typography/Text';
 import Slider from 'antd/lib/slider';
 import Select from 'antd/lib/select';
+import { useTranslation } from 'react-i18next';
 
 import {
     MAX_ACCURACY,
@@ -76,6 +77,9 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
         onSwitchShowingTagsOnFrame,
     } = props;
 
+    const { t: tSettingsWorkspace } = useTranslation('header', { keyPrefix: 'settings.Workspace' });
+    const { t: tTextSettingsContents } = useTranslation('header', { keyPrefix: 'settings.Workspace.text-settings-contents' });
+
     const minAutoSaveInterval = 1;
     const maxAutoSaveInterval = 60;
     const minAAMMargin = 0;
@@ -94,26 +98,26 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                             onSwitchAutoSave(event.target.checked);
                         }}
                     >
-                        Enable auto save
+                        {tSettingsWorkspace('Enable auto save')}
                     </Checkbox>
                 </Col>
                 <Col className='cvat-workspace-settings-auto-save-interval'>
-                    <Text type='secondary'> Auto save every </Text>
+                    <Text type='secondary'>{tSettingsWorkspace('auto-save-tips.0', 'Auto save every')}</Text>
                     <InputNumber
                         size='small'
                         min={minAutoSaveInterval}
                         max={maxAutoSaveInterval}
                         step={1}
                         value={Math.round(autoSaveInterval / (60 * 1000))}
-                        onChange={(value: number | undefined | string): void => {
-                            if (typeof value !== 'undefined') {
+                        onChange={(value: number | null | string): void => {
+                            if (typeof value === 'number' || typeof value === 'string') {
                                 onChangeAutoSaveInterval(
                                     Math.floor(clamp(+value, minAutoSaveInterval, maxAutoSaveInterval)) * 60 * 1000,
                                 );
                             }
                         }}
                     />
-                    <Text type='secondary'> minutes </Text>
+                    <Text type='secondary'>{tSettingsWorkspace('auto-save-tips.1', 'minutes')}</Text>
                 </Col>
             </Row>
             <Row className='cvat-player-setting'>
@@ -126,11 +130,13 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                                 onSwitchShowingInterpolatedTracks(event.target.checked);
                             }}
                         >
-                            Show all interpolation tracks
+                            {tSettingsWorkspace('show-interpolated', 'Show all interpolation tracks')}
                         </Checkbox>
                     </Row>
                     <Row>
-                        <Text type='secondary'> Show hidden interpolated objects in the side panel</Text>
+                        <Text type='secondary'>
+                            {tSettingsWorkspace('show-interpolated-tips', 'Show hidden interpolated objects in the side panel')}
+                        </Text>
                     </Row>
                 </Col>
             </Row>
@@ -143,18 +149,18 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                             onSwitchShowingObjectsTextAlways(event.target.checked);
                         }}
                     >
-                        Always show object details
+                        {tSettingsWorkspace('show-text-always', 'Always show object details')}
                     </Checkbox>
                 </Col>
                 <Col span={24}>
                     <Text type='secondary'>
-                        Show text for an object on the canvas not only when the object is activated
+                        {tSettingsWorkspace('show-text-always-tips', 'Show text for an object on the canvas not only when the object is activated')}
                     </Text>
                 </Col>
             </Row>
             <Row className='cvat-workspace-settings-text-settings cvat-player-setting'>
                 <Col span={24}>
-                    <Text>Content of a text</Text>
+                    <Text>{tSettingsWorkspace('text-settings-content', 'Content of a text')}</Text>
                 </Col>
                 <Col span={16}>
                     <Select
@@ -163,21 +169,21 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                         value={textContent.split(',').filter((entry: string) => !!entry)}
                         onChange={onChangeTextContent}
                     >
-                        <Select.Option value='id'>ID</Select.Option>
-                        <Select.Option value='label'>Label</Select.Option>
-                        <Select.Option value='attributes'>Attributes</Select.Option>
-                        <Select.Option value='source'>Source</Select.Option>
-                        <Select.Option value='descriptions'>Descriptions</Select.Option>
-                        <Select.Option value='dimensions'>Dimensions</Select.Option>
+                        <Select.Option value='id'>{tTextSettingsContents('ID')}</Select.Option>
+                        <Select.Option value='label'>{tTextSettingsContents('Label')}</Select.Option>
+                        <Select.Option value='attributes'>{tTextSettingsContents('Attributes')}</Select.Option>
+                        <Select.Option value='source'>{tTextSettingsContents('Source')}</Select.Option>
+                        <Select.Option value='descriptions'>{tTextSettingsContents('Descriptions')}</Select.Option>
+                        <Select.Option value='dimensions'>{tTextSettingsContents('Dimensions')}</Select.Option>
                     </Select>
                 </Col>
             </Row>
             <Row className='cvat-workspace-settings-text-settings cvat-player-setting'>
                 <Col span={12}>
-                    <Text>Position of a text</Text>
+                    <Text>{tSettingsWorkspace('text-settings-text-position', 'Position of a text')}</Text>
                 </Col>
                 <Col span={12}>
-                    <Text>Font size of a text</Text>
+                    <Text>{tSettingsWorkspace('text-settings-font-size', 'Font size of a text')}</Text>
                 </Col>
                 <Col span={12}>
                     <Select
@@ -185,14 +191,22 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                         value={textPosition}
                         onChange={onChangeTextPosition}
                     >
-                        <Select.Option value='auto'>Auto</Select.Option>
-                        <Select.Option value='center'>Center</Select.Option>
+                        <Select.Option value='auto'>
+                            {tSettingsWorkspace('text-settings-text-positions.Auto', 'Auto')}
+                        </Select.Option>
+                        <Select.Option value='center'>
+                            {tSettingsWorkspace('text-settings-text-positions.Center', 'Center')}
+                        </Select.Option>
                     </Select>
                 </Col>
                 <Col span={12}>
                     <InputNumber
                         className='cvat-workspace-settings-text-size'
-                        onChange={onChangeTextFontSize}
+                        onChange={(value) => {
+                            if (typeof value === 'number') {
+                                onChangeTextFontSize(value);
+                            }
+                        }}
                         min={8}
                         max={20}
                         value={textFontSize}
@@ -208,12 +222,12 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                             onSwitchAutomaticBordering(event.target.checked);
                         }}
                     >
-                        Automatic bordering
+                        {tSettingsWorkspace('auto-borders', 'Automatic bordering')}
                     </Checkbox>
                 </Col>
                 <Col span={24}>
                     <Text type='secondary'>
-                        Enable automatic bordering for polygons and polylines during drawing/editing
+                        {tSettingsWorkspace('auto-borders-tips', 'Enable automatic bordering for polygons and polylines during drawing/editing')}
                     </Text>
                 </Col>
             </Row>
@@ -226,11 +240,13 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                             onSwitchIntelligentPolygonCrop(event.target.checked);
                         }}
                     >
-                        Intelligent polygon cropping
+                        {tSettingsWorkspace('intelligent-polygon-cropping', 'Intelligent polygon cropping')}
                     </Checkbox>
                 </Col>
                 <Col span={24}>
-                    <Text type='secondary'>Try to crop polygons automatically when editing</Text>
+                    <Text type='secondary'>
+                        {tSettingsWorkspace('intelligent-polygon-cropping-tips', 'Try to crop polygons automatically when editing')}
+                    </Text>
                 </Col>
             </Row>
             <Row className='cvat-workspace-settings-show-frame-tags cvat-player-setting'>
@@ -242,22 +258,24 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                             onSwitchShowingTagsOnFrame(event.target.checked);
                         }}
                     >
-                        Show tags on frame
+                        {tSettingsWorkspace('Show tags on frame')}
                     </Checkbox>
                 </Col>
                 <Col span={24}>
-                    <Text type='secondary'>Show frame tags in the corner of the workspace</Text>
+                    <Text type='secondary'>{tSettingsWorkspace('Show frame tags in the corner of the workspace')}</Text>
                 </Col>
             </Row>
             <Row className='cvat-workspace-settings-aam-zoom-margin cvat-player-setting'>
                 <Col>
-                    <Text className='cvat-text-color'> Attribute annotation mode (AAM) zoom margin </Text>
+                    <Text className='cvat-text-color'>
+                        {tSettingsWorkspace('aam-zoom-margin', 'Attribute annotation mode (AAM) zoom margin')}
+                    </Text>
                     <InputNumber
                         min={minAAMMargin}
                         max={maxAAMMargin}
                         value={aamZoomMargin}
-                        onChange={(value: number | undefined | string): void => {
-                            if (typeof value !== 'undefined') {
+                        onChange={(value: number | null | string): void => {
+                            if (typeof value === 'number' || typeof value === 'string') {
                                 onChangeAAMZoomMargin(Math.floor(clamp(+value, minAAMMargin, maxAAMMargin)));
                             }
                         }}
@@ -266,13 +284,15 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
             </Row>
             <Row className='cvat-workspace-settings-control-points-size cvat-player-setting'>
                 <Col>
-                    <Text className='cvat-text-color'> Control points size </Text>
+                    <Text className='cvat-text-color'>
+                        {tSettingsWorkspace('control-points-size', 'Control points size')}
+                    </Text>
                     <InputNumber
                         min={minControlPointsSize}
                         max={maxControlPointsSize}
                         value={controlPointsSize}
-                        onChange={(value: number | undefined | string): void => {
-                            if (typeof value !== 'undefined') {
+                        onChange={(value: number | null | string): void => {
+                            if (typeof value === 'number' || typeof value === 'string') {
                                 onChangeControlPointsSize(
                                     Math.floor(clamp(+value, minControlPointsSize, maxControlPointsSize)),
                                 );
@@ -283,7 +303,9 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
             </Row>
             <Row className='cvat-workspace-settings-approx-poly-threshold cvat-player-setting'>
                 <Col>
-                    <Text className='cvat-text-color'>Default number of points in polygon approximation</Text>
+                    <Text className='cvat-text-color'>
+                        {tSettingsWorkspace('approx-poly-threshold', 'Default number of points in polygon approximation')}
+                    </Text>
                 </Col>
                 <Col span={7} offset={1}>
                     <Slider
@@ -297,7 +319,9 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                     />
                 </Col>
                 <Col>
-                    <Text type='secondary'>Works for serverless interactors and OpenCV scissors</Text>
+                    <Text type='secondary'>
+                        {tSettingsWorkspace('approx-poly-threshold-tips', 'Works for serverless interactors and OpenCV scissors')}
+                    </Text>
                 </Col>
             </Row>
         </div>
