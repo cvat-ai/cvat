@@ -22,10 +22,17 @@ from .utils import CollectionSimpleFilterTestBase, parse_frame_step
 
 
 class _PermissionTestBase:
-    def create_quality_report(self, user: str, task_id: int):
+    def create_quality_report(
+        self, *, user: str, task_id: Optional[int] = None, project_id: Optional[int] = None
+    ) -> dict:
+        assert task_id is not None or project_id is not None
+
         with make_api_client(user) as api_client:
             (_, response) = api_client.quality_api.create_report(
-                quality_report_create_request=models.QualityReportCreateRequest(task_id=task_id),
+                quality_report_create_request=models.QualityReportCreateRequest(
+                    **{"task_id": task_id} if task_id else {},
+                    **{"project_id": project_id} if project_id else {},
+                ),
                 _parse_response=False,
             )
             assert response.status == HTTPStatus.ACCEPTED
@@ -42,7 +49,7 @@ class _PermissionTestBase:
 
             return json.loads(response.data)
 
-    def create_gt_job(self, user, task_id):
+    def create_gt_job(self, user: str, task_id: int) -> models.IJobRead:
         with make_api_client(user) as api_client:
             (meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
             start_frame = meta.start_frame
