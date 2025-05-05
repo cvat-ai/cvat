@@ -2048,7 +2048,7 @@ class ValidationParamsSerializer(serializers.ModelSerializer):
 class DataSerializer(serializers.ModelSerializer):
     """
     Read more about parameters here:
-    https://docs.cvat.ai/docs/manual/basics/create_an_annotation_task/#advanced-configuration
+    https://docs.cvat.ai/docs/manual/basics/create-annotation-task/#advanced-configuration
     """
 
     image_quality = serializers.IntegerField(min_value=0, max_value=100,

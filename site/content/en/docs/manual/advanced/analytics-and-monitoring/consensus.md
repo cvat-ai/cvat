@@ -91,7 +91,7 @@ Read more about merging [here](#how-to-merge-all-replicas-in-a-task).
 When annotating with consensus, the typical workflow looks this way:
 
 1. Create a task with consensus enabled. Optionally,
-  {{< ilink "/docs/manual/basics/create_an_annotation_task" "configure validation" >}}
+  {{< ilink "/docs/manual/basics/create-annotation-task" "configure validation" >}}
 1. Assign annotators to consensus replicas, wait until all the jobs are completed
 1. Once all replicas in a parent job are completed, merge annotations
 1. Review and resolve problems in the parent jobs
@@ -101,7 +101,7 @@ When annotating with consensus, the typical workflow looks this way:
 Consensus annotation is configured at the Task level. It can only be specified at task creation.
 If you want to enable consensus for one of your existing tasks, you'll need to recreate the task.
 
-1. Go to the {{< ilink "/docs/manual/basics/create_an_annotation_task" "task creation" >}} page
+1. Go to the {{< ilink "/docs/manual/basics/create-annotation-task" "task creation" >}} page
 2. Configure basic and advanced parameters according to your requirements,
   and attach a dataset to be annotated.
 3. To enable consensus for the task, open the **Advanced** section and
