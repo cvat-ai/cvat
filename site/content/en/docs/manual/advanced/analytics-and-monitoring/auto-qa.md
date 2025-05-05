@@ -369,7 +369,7 @@ for a task or project, available in the **Actions** menu.
 There is a number of parameters available for configuration.
 Hover the mouse over a **?** mark to display a description for a setting.
 
-![Quality settings page](/images/quality-settings-overview.jpg)
+![Quality settings page](/images/quality-settings-overview.png)
 
 After the settings are updated, remember to save the values using the **Save** button.
 The updated settings will take effect on the next quality update.
@@ -441,7 +441,7 @@ by clicking the **Force project settings** button.
 
 ![Force projects settings button](/images/quality-settings-force-project-settings-button.png)
 
-By default, new tasks inside a project inherit the project's quality settings.
+By default, new tasks inside a project inherit the quality settings of the project.
 You can freely switch between these 2 modes without losing the individual configuration
 for the task.
 
