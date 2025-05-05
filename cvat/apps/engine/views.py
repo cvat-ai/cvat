@@ -2938,10 +2938,13 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         })
     @action(detail=True, methods=['GET'], url_path='status')
     def status(self, request: ExtendedRequest, pk: int):
-        db_storage = self.get_object()
-        storage = db_storage_to_storage_instance(db_storage)
-        storage_status = storage.get_status()
-        return Response(storage_status)
+        try:
+            db_storage = self.get_object()
+            storage = db_storage_to_storage_instance(db_storage)
+            storage_status = storage.get_status()
+            return Response(storage_status)
+        except serializers.ValidationError as ex:
+            return Response('\n'.join([str(d) for d in ex.detail]), status=ex.status_code)
 
     @extend_schema(summary='Get allowed actions for a cloud storage',
         responses={
