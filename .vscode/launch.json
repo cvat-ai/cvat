@@ -427,8 +427,10 @@
                 "test",
                 "--settings",
                 "cvat.settings.testing",
-                "cvat/apps",
-                "cvat-cli/"
+                "cvat.apps.engine.tests.test_rest_api.TaskAnnotationAPITestCase.test_api_v2_tasks_id_annotations_dump_load_admin",
+                "--failfast"
+                // "cvat/apps",
+                // "cvat-cli/"
             ],
             "django": true,
             "cwd": "${workspaceFolder}",

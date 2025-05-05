@@ -17,6 +17,7 @@ from urllib.parse import urlencode
 import av
 import django_rq
 import numpy as np
+from deepdiff import DeepDiff
 from django.conf import settings
 from django.core.cache import caches
 from django.http.response import HttpResponse
@@ -465,9 +466,9 @@ def freeze_object(obj, ignore_keys=None) -> frozenset:
             obj[k] = freeze_object(v, ignore_keys)
         return frozenset(obj.items())
     elif isinstance(obj, list):
-        for i, elem in enumerate(obj):
-            obj[i] = freeze_object(elem, ignore_keys)
-        return frozenset(obj)
+        for i in range(len(obj)):
+            obj[i] = freeze_object(obj[i], ignore_keys)
+        return tuple(obj)
     return obj
 
 
@@ -502,3 +503,4 @@ def compare_objects(self, obj1, obj2, ignore_keys, fp_tolerance=0.001, current_k
             self.assertAlmostEqual(obj1, obj2, delta=fp_tolerance, msg=current_key)
         else:
             self.assertEqual(obj1, obj2, msg=current_key)
+            # d = DeepDiff(obj1, obj2)

@@ -76,7 +76,7 @@ from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 
 from .utils import compare_objects
 
-#suppress av warnings
+# suppress av warnings
 logging.getLogger('libav').setLevel(logging.ERROR)
 
 def create_db_users(cls):
@@ -6123,6 +6123,10 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                     "points": [1.0, 2.1, 10.6, 53.22],
                     "type": "rectangle",
                     "occluded": False,
+                    "outside": False,
+                    "z_order": 0.0,
+                    "rotation": 0.0,
+                    "elements":[],
                 }]
 
                 rectangle_shapes_with_wider_attrs = [{
@@ -6147,6 +6151,10 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                     "points": [1.0, 2.1, 10.6, 53.22],
                     "type": "rectangle",
                     "occluded": False,
+                    "outside": False,
+                    "z_order": 0.0,
+                    "rotation": 0,
+                    "elements": [],
                 }]
 
                 rectangle_shapes_wo_attrs = [{
@@ -6158,6 +6166,10 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                     "points": [2.0, 2.1, 40, 50.7],
                     "type": "rectangle",
                     "occluded": False,
+                    "outside": False,
+                    "z_order": 0.0,
+                    "rotation": 0.0,
+                    "elements": [],
                 }]
 
                 polygon_shapes_wo_attrs = [{
@@ -6169,37 +6181,51 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                     "points": [2.0, 2.1, 100, 30.22, 40, 77, 1, 3],
                     "type": "polygon",
                     "occluded": False,
+                    "outside": False,
+                    "z_order": 0.0,
+                    "rotation": 0.0,
+                    "elements": []
                 }]
 
-                polygon_shapes_with_attrs = [{
-                    "frame": 2,
-                    "label_id": task["labels"][0]["id"],
-                    "group": 1,
-                    "source": "manual",
-                    "attributes": [
-                        {
-                            "spec_id": task["labels"][0]["attributes"][0]["id"],
-                            "value": task["labels"][0]["attributes"][0]["values"][1]
-                        },
-                        {
-                            "spec_id": task["labels"][0]["attributes"][1]["id"],
-                            "value": task["labels"][0]["attributes"][1]["default_value"]
-                        }
-                    ],
-                    "points": [20.0, 0.1, 10, 3.22, 4, 7, 10, 30, 1, 2, 4.44, 5.55],
-                    "type": "polygon",
-                    "occluded": True,
-                },
-                {
-                    "frame": 2,
-                    "label_id": task["labels"][1]["id"],
-                    "group": 1,
-                    "source": "manual",
-                    "attributes": [],
-                    "points": [4, 7, 10, 30, 4, 5.55],
-                    "type": "polygon",
-                    "occluded": False,
-                }]
+                polygon_shapes_with_attrs = [
+                    {
+                        "frame": 2,
+                        "label_id": task["labels"][0]["id"],
+                        "group": 1,
+                        "source": "manual",
+                        "attributes": [
+                            {
+                                "spec_id": task["labels"][0]["attributes"][0]["id"],
+                                "value": task["labels"][0]["attributes"][0]["values"][1],
+                            },
+                            {
+                                "spec_id": task["labels"][0]["attributes"][1]["id"],
+                                "value": task["labels"][0]["attributes"][1]["default_value"],
+                            },
+                        ],
+                        "points": [20.0, 0.1, 10, 3.22, 4, 7, 10, 30, 1, 2, 4.44, 5.55],
+                        "type": "polygon",
+                        "occluded": True,
+                        "outside": False,
+                        "z_order": 0.0,
+                        "rotation": 0.0,
+                        "elements": [],
+                    },
+                    {
+                        "frame": 2,
+                        "label_id": task["labels"][1]["id"],
+                        "group": 1,
+                        "source": "manual",
+                        "attributes": [],
+                        "points": [4, 7, 10, 30, 4, 5.55],
+                        "type": "polygon",
+                        "occluded": False,
+                        "outside": False,
+                        "z_order": 0.0,
+                        "rotation": 0.0,
+                        "elements": [],
+                    },
+                ]
 
                 points_wo_attrs = [{
                     "frame": 1,
@@ -6210,6 +6236,9 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                     "points": [20.0, 0.1, 10, 3.22, 4, 7, 10, 30, 1, 2],
                     "type": "points",
                     "occluded": False,
+                    "z_order": 0,
+                    "rotation": 0.0,
+                    "outside": False
                 }]
 
                 tags_wo_attrs = [{
@@ -6352,7 +6381,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
 
             elif annotation_format == "KITTI 1.0":
                 annotations["shapes"] = rectangle_shapes_wo_attrs
-                                    # + polygon_shapes_wo_attrs
+                # + polygon_shapes_wo_attrs
                 # polygons get converted to masks, hard to check
                 # KITTI supports only one annotation type at a time
                 # Issue: https://github.com/cvat-ai/datumaro/issues/103
@@ -6610,6 +6639,8 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
         # Rare and buggy formats that are not crucial for testing
         formats.pop('Market-1501 1.0') # Issue: https://github.com/cvat-ai/datumaro/issues/99
 
+        # formats = {'WiderFace 1.0': 'WiderFace 1.0'}
+
         for export_format, import_format in formats.items():
             with self.subTest(export_format=export_format,
                     import_format=import_format):
@@ -6677,7 +6708,6 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                 data["version"] += 2 # upload is delete + put
                 self._check_response(response, data, expected_source='file', shapeOrder=False)
 
-
     def _check_dump_content(self, content, task, jobs, data, format_name):
         def etree_to_dict(t):
             d = {t.tag: {} if t.attrib else None}
@@ -6728,7 +6758,6 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                     self.assertTrue(coco.getAnnIds())
         elif format_name == "Segmentation mask 1.1":
             self.assertTrue(zipfile.is_zipfile(content))
-
 
     def _run_coco_annotation_upload_test(self, user):
         def generate_coco_anno():
