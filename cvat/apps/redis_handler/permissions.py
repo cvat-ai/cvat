@@ -80,7 +80,9 @@ class RequestPermission(OpenPolicyAgentPermission):
         self.url = settings.IAM_OPA_DATA_URL + "/requests/allow"
 
     @classmethod
-    def _get_scopes(cls, request: ExtendedRequest, view: ViewSet, obj: RQJob | None) -> list[Scopes]:
+    def _get_scopes(
+        cls, request: ExtendedRequest, view: ViewSet, obj: RQJob | None
+    ) -> list[Scopes]:
         return [
             {
                 ("list", "GET"): cls.Scopes.LIST,
