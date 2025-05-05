@@ -23,13 +23,14 @@ from azure.storage.blob import BlobServiceClient, ContainerClient, PublicAccess
 from azure.storage.blob._list_blobs_helper import BlobPrefix
 from boto3.s3.transfer import TransferConfig
 from botocore.client import Config
-from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError, EndpointConnectionError
 from botocore.handlers import disable_signing
 from django.conf import settings
 from google.cloud import storage
 from google.cloud.exceptions import Forbidden as GoogleCloudForbidden
 from google.cloud.exceptions import NotFound as GoogleCloudNotFound
 from PIL import Image, ImageFile
+from rest_framework import serializers
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rq import get_current_job
 
@@ -85,6 +86,10 @@ class Status(str, Enum):
     @classmethod
     def choices(cls):
         return tuple((x.value, x.name) for x in cls)
+
+    @classmethod
+    def list(cls):
+        return list(map(lambda x: x.value, cls))
 
     def __str__(self):
         return self.value
@@ -507,6 +512,8 @@ class AWS_S3(_CloudStorage):
                 return Status.FORBIDDEN
             else:
                 return Status.NOT_FOUND
+        except EndpointConnectionError as ex:
+            raise serializers.ValidationError(str(ex) + ". Check that bucket host is reachable and/or region is correct")
 
     def get_file_status(self, key: str, /):
         try:
