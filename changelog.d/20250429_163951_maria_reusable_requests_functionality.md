@@ -18,6 +18,9 @@
 - The `PUT /api/jobs/id/annotations?rq_id=rq_id&format=format` endpoint
   no longer supports process status checking
   (<https://github.com/cvat-ai/cvat/pull/9230>)
+- \[SDK\] `DatasetWriteRequest`, `BackupWriteRequest`, `TaskAnnotationsWriteRequest`,
+  `JobAnnotationsUpdateRequest`, `TaskAnnotationsUpdateRequest` classes were removed
+  (<https://github.com/cvat-ai/cvat/pull/9230>)
 
 ### Deprecated
 
