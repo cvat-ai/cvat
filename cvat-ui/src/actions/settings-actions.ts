@@ -12,8 +12,8 @@ import {
 } from 'reducers';
 import { OrientationVisibility } from 'cvat-canvas3d-wrapper';
 import { ImageFilter, ImageFilterAlias, SerializedImageFilter } from 'utils/image-processing';
-import { conflict, conflictDetector } from 'utils/conflict-detector';
 import GammaCorrection, { GammaFilterOptions } from 'utils/fabric-wrapper/gamma-correciton';
+import { resolveConflicts } from 'utils/conflict-detector';
 import { shortcutsActions } from './shortcuts-actions';
 
 export enum SettingsActionTypes {
@@ -445,20 +445,19 @@ export function restoreSettingsAsync(): ThunkAction {
         } as Pick<SettingsState, 'player' | 'workspace' | 'imageFilters'>;
 
         Object.entries(_.pick(newSettings, ['player', 'workspace'])).forEach(([sectionKey, section]) => {
-            for (const key of Object.keys(section)) {
+            Object.keys(section).forEach((key) => {
                 const settedValue = loadedSettings[sectionKey]?.[key];
                 if (settedValue !== undefined) {
                     Object.defineProperty(newSettings[sectionKey as 'player' | 'workspace'], key, { value: settedValue });
                 }
-            }
+            });
         });
 
         if ('imageFilters' in loadedSettings) {
             loadedSettings.imageFilters.forEach((filter: SerializedImageFilter) => {
                 if (filter.alias === ImageFilterAlias.GAMMA_CORRECTION) {
-                    const modifier = new GammaCorrection(filter.params as GammaFilterOptions);
                     newSettings.imageFilters.push({
-                        modifier,
+                        modifier: new GammaCorrection(filter.params as GammaFilterOptions),
                         alias: ImageFilterAlias.GAMMA_CORRECTION,
                     });
                 }
@@ -469,34 +468,16 @@ export function restoreSettingsAsync(): ThunkAction {
 
         if ('shortcuts' in loadedSettings) {
             const updateKeyMap = structuredClone(shortcuts.keyMap);
-            for (const [key, value] of Object.entries(loadedSettings.shortcuts.keyMap)) {
+
+            Object.entries(loadedSettings.shortcuts.keyMap).forEach(([key, value]) => {
                 if (key in updateKeyMap) {
                     updateKeyMap[key].sequences = (value as { sequences: string[] }).sequences;
                 }
-            }
+            });
 
-            for (const key of Object.keys(updateKeyMap)) {
-                const currValue = {
-                    [key]: { ...updateKeyMap[key] },
-                };
-                const conflictingShortcuts = conflictDetector(currValue, shortcuts.keyMap);
-                if (conflictingShortcuts) {
-                    for (const conflictingShortcut of Object.keys(conflictingShortcuts)) {
-                        for (const sequence of currValue[key].sequences) {
-                            for (const conflictingSequence of conflictingShortcuts[conflictingShortcut].sequences) {
-                                if (conflict(sequence, conflictingSequence)) {
-                                    updateKeyMap[conflictingShortcut].sequences = [
-                                        ...updateKeyMap[conflictingShortcut].sequences.filter(
-                                            (s: string) => s !== conflictingSequence,
-                                        ),
-                                    ];
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            dispatch(shortcutsActions.registerShortcuts(updateKeyMap));
+            const resolvedKeyMap = resolveConflicts(updateKeyMap, shortcuts.keyMap);
+
+            dispatch(shortcutsActions.registerShortcuts(resolvedKeyMap));
         }
     };
 }
