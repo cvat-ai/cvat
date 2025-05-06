@@ -34,7 +34,7 @@ import numpy as np
 import pytest
 from cvat_sdk import exceptions
 from cvat_sdk.api_client import models
-from cvat_sdk.api_client.api_client import ApiClient, ApiException, Endpoint
+from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.api_client.exceptions import ForbiddenException
 from cvat_sdk.core.exceptions import BackgroundRequestException
 from cvat_sdk.core.helpers import get_paginated_collection
