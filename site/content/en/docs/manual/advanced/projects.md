@@ -7,14 +7,14 @@ description: 'Creating and exporting projects in CVAT.'
 
 ## Projects page
 
-On this page you can create a new project, create a project from a backup, and also see the created projects.
+On this page, you can create a new project, create a project from a backup, and also see the created projects.
 
 In the upper left corner there is a search bar, using which you can find the project by project name, assignee etc.
 In the upper right corner there are [sorting][sorting], [quick filters][quick-filters] and filter.
 
 ## Filter
 
-> Applying filter disables the [quick filter][quick-filters].
+> Applying a filter disables the [quick filter][quick-filters].
 
 The filter works similarly to the filters for annotation,
 you can create rules from [properties](#supported-properties-for-projects-list),
@@ -22,7 +22,7 @@ you can create rules from [properties](#supported-properties-for-projects-list),
 For more details, see the [filter section][create-filter].
 Learn more about [date and time selection][data-and-time].
 
-For clear all filters press `Clear filters`.
+To clear all filters, press `Clear filters`.
 
 ### Supported properties for projects list
 
@@ -36,7 +36,7 @@ For clear all filters press `Clear filters`.
 
 ## Create a project
 
-At CVAT, you can create a project containing tasks of the same type.
+In CVAT, you can create a project containing tasks of the same type.
 All tasks related to the project will inherit a list of labels.
 
 To create a project, go to the projects section by clicking on the `Projects` item in the top menu.
@@ -51,12 +51,12 @@ or create a new project by clicking on the `+` button and select `Create New Pro
 You can change: the name of the project, the list of labels
 (which will be used for tasks created as parts of this project) and a skeleton if it's necessary.
 In advanced configuration also you can specify: a link to the issue, source and target storages.
-Learn more about {{< ilink "/docs/manual/basics/create_an_annotation_task#labels" "creating a label list" >}},
+Learn more about {{< ilink "/docs/manual/basics/create-annotation-task#labels" "creating a label list" >}},
 {{< ilink "/docs/manual/advanced/skeletons" "creating the skeleton" >}} and
 {{< ilink "/docs/manual/basics/attach-cloud-storage" "attach cloud storage" >}}.
 
-To save and open project click on `Submit & Open` button. Also you
-can click on `Submit & Continue` button for creating several projects in sequence
+To save and open a project, click on `Submit & Open` button. Also, you
+can click on `Submit & Continue` button to create several projects in sequence.
 
 ![](/images/image191.jpg)
 

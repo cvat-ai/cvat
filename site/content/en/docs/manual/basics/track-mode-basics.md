@@ -4,6 +4,7 @@ linkTitle: 'Track mode'
 weight: 18
 description: 'Usage examples and basic operations available during annotation in track mode.'
 ---
+
 Usage examples:
 
 - Create new annotations for a sequence of frames.
@@ -17,13 +18,13 @@ Usage examples:
 
 1. Creating a track for an object (look at the selected car as an example):
 
-   - Create a `Rectangle` in `Track mode` by clicking on `Track`.
+   - Create a `Rectangle` in `Track mode` by selecting `Track`.
 
      ![](/images/image014.jpg)
 
-   - In `Track mode` the rectangle will be automatically interpolated on the next frames.
+   - In `Track mode`, the rectangle will be automatically interpolated on the next frames.
    - The cyclist starts moving on frame #2270. Let's mark the frame as a key frame.
-     You can press `K` for that or click the `star` button (see the screenshot below).
+     You can press `K` for that or select the `star` button (see the screenshot below).
 
      ![](/images/image016.jpg)
 
@@ -53,12 +54,12 @@ Usage examples:
 
      ![](/images/gif001_detrac.gif)
 
-   - Click `Merge` button or press key `M` and click on any rectangle of the first track
+   - Select `Merge` button or press key `M` and select on any rectangle of the first track
      and on any rectangle of the second track and so on:
 
      ![](/images/image162_detrac.jpg)
 
-   - Click `Merge` button or press `M` to apply changes.
+   - Select `Merge` button or press `M` to apply changes.
 
      ![](/images/image020.jpg)
 
