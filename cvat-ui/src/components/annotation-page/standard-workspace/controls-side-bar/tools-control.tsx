@@ -628,8 +628,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                                     this.setState({
                                                         trackedShapes: filteredStates,
                                                     });
+                                                    fetchAnnotations();
                                                 });
-                                                fetchAnnotations();
                                             }}
                                         />
                                     </CVATTooltip>
@@ -651,8 +651,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                                             },
                                                         ],
                                                     });
+                                                    fetchAnnotations();
                                                 });
-                                                fetchAnnotations();
                                             }}
                                         />
                                     </CVATTooltip>
