@@ -5680,7 +5680,7 @@ class TestImportTaskAnnotations:
         with pytest.raises(BackgroundRequestException) as capture:
             task.import_annotations(format_name, source_archive_path)
 
-        error_message = capture.value.body.decode()
+        error_message = str(capture.value)
 
         if specific_info_included is None:
             assert "Failed to find dataset" in error_message
