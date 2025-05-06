@@ -58,4 +58,4 @@ You can also restore deleted frames in the task.
 
    ![](/images/image248.jpg)
 
-2. Click on the **Restore** icon. The frame will be restored immediately.
+1. Click on the **Restore** icon. The frame will be restored immediately.

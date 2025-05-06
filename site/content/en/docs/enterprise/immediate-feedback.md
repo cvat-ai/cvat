@@ -32,7 +32,7 @@ the parameters any time.
 > in the
 > {{< ilink "/docs/manual/basics/quality-control#how-to-enable-quality-control" "quality overview" >}}
 > section or in the
-{{< ilink "/docs/manual/advanced/analytics-and-monitoring/auto-qa#configuring-quality-estimation" "full guide" >}}.
+> {{< ilink "/docs/manual/advanced/analytics-and-monitoring/auto-qa#configuring-quality-estimation" "full guide" >}}.
 
 1. Open the task **Actions** menu > **Quality control** > **Settings**
 
