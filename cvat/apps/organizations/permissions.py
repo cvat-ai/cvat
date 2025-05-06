@@ -32,9 +32,9 @@ class OrganizationPermission(OpenPolicyAgentPermission):
         super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + "/organizations/allow"
 
-    @staticmethod
-    def get_scopes(request, view, obj):
-        Scopes = __class__.Scopes
+    @classmethod
+    def _get_scopes(cls, request, view, obj):
+        Scopes = cls.Scopes
         return [
             {
                 "list": Scopes.LIST,
@@ -53,7 +53,7 @@ class OrganizationPermission(OpenPolicyAgentPermission):
                 "owner": {"id": self.obj.owner_id},
                 "user": {"role": membership.role if membership else None},
             }
-        elif self.scope.startswith(__class__.Scopes.CREATE.value):
+        elif self.scope.startswith(self.Scopes.CREATE.value):
             return {"id": None, "owner": {"id": self.user_id}, "user": {"role": "owner"}}
         else:
             return None
@@ -86,9 +86,9 @@ class InvitationPermission(OpenPolicyAgentPermission):
         self.role = kwargs.get("role")
         self.url = settings.IAM_OPA_DATA_URL + "/invitations/allow"
 
-    @staticmethod
-    def get_scopes(request, view, obj):
-        Scopes = __class__.Scopes
+    @classmethod
+    def _get_scopes(cls, request, view, obj):
+        Scopes = cls.Scopes
         return [
             {
                 "list": Scopes.LIST,
@@ -113,7 +113,7 @@ class InvitationPermission(OpenPolicyAgentPermission):
                 "role": self.obj.membership.role,
                 "organization": {"id": self.obj.membership.organization_id},
             }
-        elif self.scope.startswith(__class__.Scopes.CREATE.value):
+        elif self.scope.startswith(self.Scopes.CREATE.value):
             data = {
                 "owner": {"id": self.user_id},
                 "invitee": {"id": None},  # unknown yet
@@ -150,9 +150,9 @@ class MembershipPermission(OpenPolicyAgentPermission):
         super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + "/memberships/allow"
 
-    @staticmethod
-    def get_scopes(request, view, obj):
-        Scopes = __class__.Scopes
+    @classmethod
+    def _get_scopes(cls, request, view, obj):
+        Scopes = cls.Scopes
         scopes = []
 
         scope = {
@@ -164,7 +164,7 @@ class MembershipPermission(OpenPolicyAgentPermission):
 
         if scope == Scopes.UPDATE:
             scopes.extend(
-                __class__.get_per_field_update_scopes(
+                cls.get_per_field_update_scopes(
                     request,
                     {
                         "role": Scopes.UPDATE_ROLE,

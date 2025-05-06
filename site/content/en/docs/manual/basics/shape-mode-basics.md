@@ -4,6 +4,7 @@ linkTitle: 'Shape mode'
 weight: 17
 description: 'Usage examples and basic operations available during annotation in shape mode.'
 ---
+
 Usage examples:
 
 - Create new annotations for a set of images.
@@ -20,7 +21,7 @@ Usage examples:
 
 1. Creating a new annotation in `Shape mode`:
 
-   - Create a separate `Rectangle` by clicking on `Shape`.
+   - Create a separate `Rectangle` by selecting `Shape`.
 
      ![](/images/image081.jpg)
 
@@ -32,12 +33,12 @@ Usage examples:
      {{< ilink "/docs/manual/advanced/annotation-with-rectangles" "read here" >}}.
 
    - It is possible to adjust boundaries and location of the rectangle using a mouse.
-     Rectangle's size is shown in the top right corner , you can check it by clicking on any point of the shape.
+     The rectangle's size is shown in the top right corner, you can check it by selecting any point of the shape.
      You can also undo your actions using `Ctrl+Z` and redo them with `Shift+Ctrl+Z` or `Ctrl+Y`.
 
 1. You can see the `Object card` in the objects sidebar or open it by right-clicking on the object.
    You can change the attributes in the details section.
-   You can perform basic operations or delete an object by clicking on the action menu button.
+   You can perform basic operations or delete an object by selecting on the action menu button.
 
    ![](/images/image012.jpg)
 

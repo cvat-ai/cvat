@@ -1546,7 +1546,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Formats with the custom `track_id` attribute should import `outside` track shapes properly (e.g. `COCO`, `COCO Keypoints`, `Datumaro`, `PASCAL VOC`)
+- Formats with the custom `track_id` attribute should import `outside` track shapes properly
+  (e.g. `COCO`, `COCO Keypoints`, `Datumaro`, `PASCAL VOC`)
   (<https://github.com/opencv/cvat/pull/7669>)
 
 - Inefficient resources fetching in admin panel leading to 504 Gateway Timeout
@@ -2611,7 +2612,8 @@ This release has changes only in the Enterprise version.
 
 - Relocated SAM masks decoder to frontend operation.
   (<https://github.com/opencv/cvat/pull/6019>)
-- Switched `person-reidentification-retail-0300` and `faster_rcnn_inception_v2_coco` Nuclio functions with `person-reidentification-retail-0277` and `faster_rcnn_inception_resnet_v2_atrous_coco` respectively.
+- Switched `person-reidentification-retail-0300` and `faster_rcnn_inception_v2_coco` Nuclio functions
+  with `person-reidentification-retail-0277` and `faster_rcnn_inception_resnet_v2_atrous_coco` respectively.
   (<https://github.com/opencv/cvat/pull/6129>)
 - Upgraded OpenVINO-based Nuclio functions to utilize the OpenVINO 2022.3 runtime.
   (<https://github.com/opencv/cvat/pull/6129>)
@@ -2814,7 +2816,10 @@ This release has changes only in the Enterprise version.
   polygon-minus, returning masks from online detectors & interactors)
   (<https://github.com/opencv/cvat/pull/4543>)
 - Added Webhooks (<https://github.com/opencv/cvat/pull/4863>)
-- Authentication with social accounts: Google & GitHub (<https://github.com/opencv/cvat/pull/5147>, <https://github.com/opencv/cvat/pull/5181>, <https://github.com/opencv/cvat/pull/5295>)
+- Authentication with social accounts: Google & GitHub
+  (<https://github.com/opencv/cvat/pull/5147>,
+  <https://github.com/opencv/cvat/pull/5181>,
+  <https://github.com/opencv/cvat/pull/5295>)
 - REST API tests for exporting job datasets & annotations and validating their structure (<https://github.com/opencv/cvat/pull/5160>)
 - Backward propagation on UI (<https://github.com/opencv/cvat/pull/5355>)
 - Keyboard shortcut to delete a frame (Alt + Del) (<https://github.com/opencv/cvat/pull/5369>)
@@ -2824,7 +2829,8 @@ This release has changes only in the Enterprise version.
 
 ### Changed
 
-- `api/docs`, `api/swagger`, `api/schema`, `server/about` endpoints now allow unauthorized access (<https://github.com/opencv/cvat/pull/4928>, <https://github.com/opencv/cvat/pull/4935>)
+- `api/docs`, `api/swagger`, `api/schema`, `server/about` endpoints now allow unauthorized access
+  (<https://github.com/opencv/cvat/pull/4928>, <https://github.com/opencv/cvat/pull/4935>)
 - 3D canvas now can be dragged in IDLE mode (<https://github.com/opencv/cvat/pull/5385>)
 - Datumaro version is upgraded to 0.3 (dev) (<https://github.com/opencv/cvat/pull/4984>)
 - Allowed trailing slashes in the SDK host address (<https://github.com/opencv/cvat/pull/5057>)
@@ -3867,7 +3873,8 @@ This release has changes only in the Enterprise version.
 - Keyboard shortcuts to switch next/previous default shape type (box, polygon etc) (Alt + <, Alt + >) (#316)
 - Converter for VOC now supports interpolation tracks
 - REST API (/api/v1/\*, /api/docs)
-- Semi-automatic semantic segmentation with the [Deep Extreme Cut](http://www.vision.ee.ethz.ch/~cvlsegmentation/dextr/) work
+- Semi-automatic semantic segmentation with the
+  [Deep Extreme Cut](http://www.vision.ee.ethz.ch/~cvlsegmentation/dextr/) work
 
 ### Changed
 
