@@ -57,7 +57,7 @@ Trackable object will be tracked automatically if the previous frame was
 a latest keyframe for the object. More details in the section
 {{< ilink "/docs/manual/advanced/ai-tools#trackers" "trackers" >}}.
 
-![](/images/tracker_indication_detrac.jpg)
+![](/images/tracker_indication_detrac.png)
 
 ---
 
@@ -81,18 +81,18 @@ Related sections:
 ## Dimension
 
 Depends on the task data type that is defined when the
-{{< ilink "/docs/manual/basics/create_an_annotation_task" "task is created" >}}.
+{{< ilink "/docs/manual/basics/create-annotation-task" "task is created" >}}.
 
 ### 2D
 
 The data format of 2d tasks are images and videos.
 Related sections:
-- {{< ilink "/docs/manual/basics/create_an_annotation_task" "Creating an annotation task" >}}
+- {{< ilink "/docs/manual/basics/create-annotation-task" "Creating an annotation task" >}}
 
 ### 3D
 
 The data format of 3d tasks is a cloud of points.
-{{< ilink "/docs/manual/basics/create_an_annotation_task#data-formats-for-a-3d-task" "Data formats for a 3D task" >}}
+{{< ilink "/docs/manual/basics/create-annotation-task#data-formats-for-a-3d-task" "Data formats for a 3D task" >}}
 
 Related sections:
 - {{< ilink "/docs/manual/basics/3d-task-workspace" "3D task workspace" >}}

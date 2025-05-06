@@ -620,8 +620,39 @@ class StorageSerializer(serializers.ModelSerializer):
         model = models.Storage
         fields = ('id', 'location', 'cloud_storage_id')
 
+class JobReadListSerializer(serializers.ListSerializer):
+    def to_representation(self, data):
+        if (request := self.context.get("request")) and isinstance(data, list) and data:
+            # Optimized prefetch only for the current page
+            page: list[models.Job] = data
+
+            # Annotate page objects
+            # We do it explicitly here and not in the LIST queryset to avoid
+            # doing the same DB computations twice - one time for the page retrieval
+            # and another one for the COUNT(*) request to get the total count
+            page_task_ids = set(j.get_task_id() for j in page)
+            visible_tasks_perm = TaskPermission.create_scope_list(request)
+            visible_tasks_queryset = models.Task.objects.filter(id__in=page_task_ids)
+            visible_tasks = set(
+                visible_tasks_perm.filter(visible_tasks_queryset).values_list("id", flat=True)
+            )
+
+            # Fetching it here removes 1 extra join for all jobs in the COUNT(*) request,
+            # limiting in only for the page
+            issue_counts = dict(
+                models.Job.objects.with_issue_counts().filter(
+                    id__in=set(j.id for j in page)
+                ).values_list("id", "issues__count")
+            )
+
+            for job in page:
+                job.user_can_view_task = job.get_task_id() in visible_tasks
+                job.issues__count = issue_counts.get(job.id, 0)
+
+        return super().to_representation(data)
+
 class JobReadSerializer(serializers.ModelSerializer):
-    task_id = serializers.ReadOnlyField(source="segment.task.id")
+    task_id = serializers.ReadOnlyField(source="get_task_id")
     project_id = serializers.ReadOnlyField(source="get_project_id", allow_null=True)
     guide_id = serializers.ReadOnlyField(source="get_guide_id", allow_null=True)
     start_frame = serializers.ReadOnlyField(source="segment.start_frame")
@@ -630,7 +661,7 @@ class JobReadSerializer(serializers.ModelSerializer):
     assignee = BasicUserSerializer(allow_null=True, read_only=True)
     dimension = serializers.CharField(max_length=2, source='segment.task.dimension', read_only=True)
     data_chunk_size = serializers.ReadOnlyField(source='segment.task.data.chunk_size')
-    organization = serializers.ReadOnlyField(source='segment.task.organization.id', allow_null=True)
+    organization = serializers.ReadOnlyField(source='organization_id', allow_null=True)
     data_original_chunk_type = serializers.ReadOnlyField(source='segment.task.data.original_chunk_type')
     data_compressed_chunk_type = serializers.ReadOnlyField(source='segment.task.data.compressed_chunk_type')
     mode = serializers.ReadOnlyField(source='segment.task.mode')
@@ -654,6 +685,7 @@ class JobReadSerializer(serializers.ModelSerializer):
             'consensus_replicas'
         )
         read_only_fields = fields
+        list_serializer_class = JobReadListSerializer
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -667,9 +699,13 @@ class JobReadSerializer(serializers.ModelSerializer):
             data['consensus_replicas'] = 0
 
         if request := self.context.get('request'):
-            perm = TaskPermission.create_scope_view(request, instance.segment.task)
-            result = perm.check_access()
-            if result.allow:
+            can_view_task = getattr(instance, "user_can_view_task", None)
+            if can_view_task is None:
+                perm = TaskPermission.create_scope_view(request, instance.segment.task)
+                result = perm.check_access()
+                can_view_task = result.allow
+
+            if can_view_task:
                 if task_source_storage := instance.get_source_storage():
                     data['source_storage'] = StorageSerializer(task_source_storage).data
                 if task_target_storage := instance.get_target_storage():
@@ -2012,7 +2048,7 @@ class ValidationParamsSerializer(serializers.ModelSerializer):
 class DataSerializer(serializers.ModelSerializer):
     """
     Read more about parameters here:
-    https://docs.cvat.ai/docs/manual/basics/create_an_annotation_task/#advanced-configuration
+    https://docs.cvat.ai/docs/manual/basics/create-annotation-task/#advanced-configuration
     """
 
     image_quality = serializers.IntegerField(min_value=0, max_value=100,

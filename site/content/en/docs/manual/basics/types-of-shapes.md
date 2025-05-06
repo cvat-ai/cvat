@@ -16,7 +16,7 @@ There are several shapes with which you can annotate your images:
 - `Skeleton`
 - `Tag`
 
-And there is how they all look like:
+And there is what they look like:
 
 ![](/images/image038_detrac.jpg 'Rectangle') ![](/images/image033_detrac.jpg 'Polygon')
 

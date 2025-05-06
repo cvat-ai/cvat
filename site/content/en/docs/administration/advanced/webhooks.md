@@ -119,12 +119,12 @@ Webhook payload object for `create:<resource>` events:
 
 <!--lint disable maximum-line-length-->
 
-| Key          | Type      | Description                                                                                                                             |
-| ------------ | --------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `event`      | `string`  | Identifies the event that triggered the webhook, following the `create:<resource>` pattern.                                             |
+| Key          | Type      | Description |
+| ------------ | --------- | ----------- |
+| `event`      | `string`  | Identifies the event that triggered the webhook, following the `create:<resource>` pattern. |
 | `<resource>` | `object`  | Complete information about the created resource. Refer to the [Swagger](#webhooks-with-api-calls) docs for individual resource details. |
-| `webhook_id` | `integer` | The identifier for the webhook that sends the payload.                                                                                   |
-| `sender`     | `object`  | Details about the user that triggered the webhook.                                                                                      |
+| `webhook_id` | `integer` | The identifier for the webhook that sends the payload. |
+| `sender`     | `object`  | Details about the user that triggered the webhook. |
 
 <!--lint enable maximum-line-length-->
 
