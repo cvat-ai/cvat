@@ -10183,8 +10183,6 @@ components:
         rq_id:
           type: string
           description: Request id
-        response_4xx_reason:
-          type: string
       required:
       - rq_id
     RqStatus:
