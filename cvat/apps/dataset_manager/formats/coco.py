@@ -19,12 +19,14 @@ from cvat.apps.dataset_manager.bindings import (
 from cvat.apps.dataset_manager.util import make_zip_archive
 
 from .registry import dm_env, exporter, importer
+from .transformations import EllipsesToMasks
 
 
 @exporter(name="COCO", ext="ZIP", version="1.0")
 def _export(dst_file, temp_dir, instance_data, save_images=False):
     with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
         dataset = StreamDataset.from_extractors(extractor, env=dm_env)
+        dataset.transform(EllipsesToMasks)
         dataset.export(temp_dir, "coco_instances", save_media=save_images, merge_images=False)
 
     make_zip_archive(temp_dir, dst_file)
