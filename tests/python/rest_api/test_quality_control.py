@@ -322,9 +322,9 @@ class TestListQualityReports(_PermissionTestBase):
             assert response.status == HTTPStatus.FORBIDDEN
 
     def test_can_list_quality_reports(self, admin_user, quality_reports):
-        reports = sorted(quality_reports, key=lambda r: -r["id"])[:10]
+        reports = sorted(quality_reports, key=lambda r: -r["id"])
 
-        self._test_list_reports_200(admin_user, order_by="-id", page_size=10, expected_data=reports)
+        self._test_list_reports_200(admin_user, sort="-id", expected_data=reports)
 
     @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize("target", ["project", "task", "job"])
@@ -353,9 +353,11 @@ class TestListQualityReports(_PermissionTestBase):
 
             if target == "job":
                 with make_api_client(admin_user) as api_client:
-                    report = api_client.quality_api.list_reports(
-                        target="job", parent_id=report["id"]
-                    )[1].json()["results"][0]
+                    report = json.loads(
+                        api_client.quality_api.list_reports(target="job", parent_id=report["id"])[
+                            1
+                        ].data
+                    )["results"][0]
                     target_id = report["job_id"]
 
         list_kwargs = {
@@ -397,9 +399,11 @@ class TestListQualityReports(_PermissionTestBase):
 
             if target == "job":
                 with make_api_client(admin_user) as api_client:
-                    report = api_client.quality_api.list_reports(
-                        target="job", parent_id=report["id"]
-                    )[1].json()["results"][0]
+                    report = json.loads(
+                        api_client.quality_api.list_reports(target="job", parent_id=report["id"])[
+                            1
+                        ].data
+                    )["results"][0]
                     target_id = report["job_id"]
 
         list_kwargs = {
@@ -1110,7 +1114,7 @@ class TestSimpleQualityConflictsFilters(CollectionSimpleFilterTestBase):
 
         with make_api_client(non_admin_user) as api_client:
             response = api_client.quality_api.list_reports(
-                **{filter: obj_id}, _parse_response=False, _check_status=False
+                **{filter_name: obj_id}, _parse_response=False, _check_status=False
             )[1]
 
         assert response.status == HTTPStatus.FORBIDDEN
@@ -1199,7 +1203,7 @@ class TestSimpleQualitySettingsFilters(CollectionSimpleFilterTestBase):
 
         with make_api_client(non_admin_user) as api_client:
             response = api_client.quality_api.list_reports(
-                **{filter: obj_id}, _parse_response=False, _check_status=False
+                **{filter_name: obj_id}, _parse_response=False, _check_status=False
             )[1]
 
         assert response.status == HTTPStatus.FORBIDDEN
@@ -2014,20 +2018,27 @@ class TestPostProjectQualityReports(_PermissionTestBase):
         self.create_quality_report(user=admin_user, project_id=project_id)
 
     def test_can_create_project_report_when_there_are_tasks_without_configured_gt(
-        self, admin_user, projects, tasks, labels
+        self, admin_user, projects, tasks, jobs, labels
     ):
         project = next(
             p
             for p in projects
             if p["tasks"]["count"] > 1
             and any(l for l in labels if l.get("project_id") == p["id"])
-            and not any(t["validation_mode"] for t in tasks if t.get("project_id") == p["id"])
+            and any(t["validation_mode"] for t in tasks if t.get("project_id") == p["id"])
         )
         project_id = project["id"]
 
         # Create GT jobs for 1 task in the project
-        task = next(t for t in tasks if t.get("project_id") == project_id)
-        self.create_gt_job(admin_user, task["id"], complete=False)
+        task = next(t for t in tasks if t.get("project_id") == project_id and t["validation_mode"])
+        gt_job = next(j for j in jobs if j["type"] == "ground_truth" and j["task_id"] == task["id"])
+        with make_api_client(admin_user) as api_client:
+            api_client.jobs_api.partial_update(
+                gt_job["id"],
+                patched_job_write_request=models.PatchedJobWriteRequest(
+                    stage="annotation", state="new"
+                ),
+            )
 
         # Create project report
         self.create_quality_report(user=admin_user, project_id=project_id)
