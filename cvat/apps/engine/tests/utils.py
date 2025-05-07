@@ -17,7 +17,6 @@ from urllib.parse import urlencode
 import av
 import django_rq
 import numpy as np
-from deepdiff import DeepDiff
 from django.conf import settings
 from django.core.cache import caches
 from django.http.response import HttpResponse

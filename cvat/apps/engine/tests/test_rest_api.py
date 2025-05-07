@@ -6639,8 +6639,6 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
         # Rare and buggy formats that are not crucial for testing
         formats.pop('Market-1501 1.0') # Issue: https://github.com/cvat-ai/datumaro/issues/99
 
-        # formats = {'WiderFace 1.0': 'WiderFace 1.0'}
-
         for export_format, import_format in formats.items():
             with self.subTest(export_format=export_format,
                     import_format=import_format):
