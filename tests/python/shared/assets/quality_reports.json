@@ -1,8 +1,233 @@
 {
-  "count": 12,
+  "count": 18,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "assignee": null,
+      "created_date": "2025-05-06T16:27:52.046000Z",
+      "gt_last_updated": null,
+      "id": 18,
+      "job_id": null,
+      "parent_id": null,
+      "project_id": 17,
+      "summary": {
+        "accuracy": 0.2727272727272727,
+        "conflict_count": 10,
+        "conflicts_by_type": {
+          "extra_annotation": 1,
+          "low_overlap": 2,
+          "missing_annotation": 7
+        },
+        "ds_count": 8,
+        "error_count": 8,
+        "frame_count": 6,
+        "frame_share": 0.5,
+        "gt_count": 20,
+        "jobs": {
+          "excluded": 0,
+          "included": 3,
+          "not_checkable": 0,
+          "total": 3
+        },
+        "precision": 0.75,
+        "recall": 0.3,
+        "tasks": {
+          "custom": 0,
+          "excluded": 0,
+          "included": 2,
+          "not_configured": 0,
+          "total": 2
+        },
+        "total_count": 22,
+        "total_frames": 12,
+        "valid_count": 6,
+        "validation_frame_share": 0.5,
+        "validation_frames": 6,
+        "warning_count": 2
+      },
+      "target": "project",
+      "target_last_updated": "2025-05-05T15:35:00.542000Z",
+      "task_id": null
+    },
+    {
+      "assignee": null,
+      "created_date": "2025-05-06T16:27:52.036000Z",
+      "gt_last_updated": "2025-05-05T15:38:37.188000Z",
+      "id": 17,
+      "job_id": 57,
+      "parent_id": 15,
+      "project_id": 17,
+      "summary": {
+        "accuracy": 0.25,
+        "conflict_count": 3,
+        "conflicts_by_type": {
+          "extra_annotation": 1,
+          "missing_annotation": 2
+        },
+        "ds_count": 2,
+        "error_count": 3,
+        "frame_count": 2,
+        "frame_share": 0.6666666666666666,
+        "gt_count": 3,
+        "precision": 0.5,
+        "recall": 0.3333333333333333,
+        "total_count": 4,
+        "total_frames": 3,
+        "valid_count": 1,
+        "validation_frame_share": 0.6666666666666666,
+        "validation_frames": 2,
+        "warning_count": 0
+      },
+      "target": "job",
+      "target_last_updated": "2025-05-05T15:35:00.515000Z",
+      "task_id": 33
+    },
+    {
+      "assignee": null,
+      "created_date": "2025-05-06T16:27:52.036000Z",
+      "gt_last_updated": "2025-05-05T15:38:37.188000Z",
+      "id": 16,
+      "job_id": 56,
+      "parent_id": 15,
+      "project_id": 17,
+      "summary": {
+        "accuracy": 0.3333333333333333,
+        "conflict_count": 3,
+        "conflicts_by_type": {
+          "low_overlap": 1,
+          "missing_annotation": 2
+        },
+        "ds_count": 1,
+        "error_count": 2,
+        "frame_count": 2,
+        "frame_share": 0.4,
+        "gt_count": 3,
+        "precision": 1.0,
+        "recall": 0.3333333333333333,
+        "total_count": 3,
+        "total_frames": 5,
+        "valid_count": 1,
+        "validation_frame_share": 0.4,
+        "validation_frames": 2,
+        "warning_count": 1
+      },
+      "target": "job",
+      "target_last_updated": "2025-05-05T15:35:00.493000Z",
+      "task_id": 33
+    },
+    {
+      "assignee": null,
+      "created_date": "2025-05-06T16:27:52.034000Z",
+      "gt_last_updated": "2025-05-05T15:38:37.188000Z",
+      "id": 15,
+      "job_id": null,
+      "parent_id": 18,
+      "project_id": 17,
+      "summary": {
+        "accuracy": 0.2857142857142857,
+        "conflict_count": 6,
+        "conflicts_by_type": {
+          "extra_annotation": 1,
+          "low_overlap": 1,
+          "missing_annotation": 4
+        },
+        "ds_count": 3,
+        "error_count": 5,
+        "frame_count": 4,
+        "frame_share": 0.5,
+        "gt_count": 6,
+        "jobs": {
+          "excluded": 0,
+          "included": 2,
+          "not_checkable": 0,
+          "total": 2
+        },
+        "precision": 0.6666666666666666,
+        "recall": 0.3333333333333333,
+        "total_count": 7,
+        "total_frames": 8,
+        "valid_count": 2,
+        "validation_frame_share": 0.5,
+        "validation_frames": 4,
+        "warning_count": 1
+      },
+      "target": "task",
+      "target_last_updated": "2025-05-05T15:36:34.341000Z",
+      "task_id": 33
+    },
+    {
+      "assignee": null,
+      "created_date": "2025-05-06T16:27:51.967000Z",
+      "gt_last_updated": "2025-05-05T15:38:29.597000Z",
+      "id": 14,
+      "job_id": 54,
+      "parent_id": 13,
+      "project_id": 17,
+      "summary": {
+        "accuracy": 0.25,
+        "conflict_count": 4,
+        "conflicts_by_type": {
+          "low_overlap": 1,
+          "missing_annotation": 3
+        },
+        "ds_count": 1,
+        "error_count": 3,
+        "frame_count": 2,
+        "frame_share": 0.5,
+        "gt_count": 4,
+        "precision": 1.0,
+        "recall": 0.25,
+        "total_count": 4,
+        "total_frames": 4,
+        "valid_count": 1,
+        "validation_frame_share": 0.5,
+        "validation_frames": 2,
+        "warning_count": 1
+      },
+      "target": "job",
+      "target_last_updated": "2025-05-05T15:35:00.294000Z",
+      "task_id": 32
+    },
+    {
+      "assignee": null,
+      "created_date": "2025-05-06T16:27:51.965000Z",
+      "gt_last_updated": "2025-05-05T15:38:29.597000Z",
+      "id": 13,
+      "job_id": null,
+      "parent_id": 18,
+      "project_id": 17,
+      "summary": {
+        "accuracy": 0.25,
+        "conflict_count": 4,
+        "conflicts_by_type": {
+          "low_overlap": 1,
+          "missing_annotation": 3
+        },
+        "ds_count": 1,
+        "error_count": 3,
+        "frame_count": 2,
+        "frame_share": 0.5,
+        "gt_count": 4,
+        "jobs": {
+          "excluded": 0,
+          "included": 1,
+          "not_checkable": 0,
+          "total": 1
+        },
+        "precision": 1.0,
+        "recall": 0.25,
+        "total_count": 4,
+        "total_frames": 4,
+        "valid_count": 1,
+        "validation_frame_share": 0.5,
+        "validation_frames": 2,
+        "warning_count": 1
+      },
+      "target": "task",
+      "target_last_updated": "2025-05-05T15:38:46.662000Z",
+      "task_id": 32
+    },
     {
       "assignee": null,
       "created_date": "2025-03-31T13:38:00.464000Z",
