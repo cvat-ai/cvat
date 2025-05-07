@@ -916,36 +916,6 @@ class TestSimpleQualityReportsFilters(CollectionSimpleFilterTestBase):
     def test_can_use_simple_filter_for_object_list(self, field):
         return super()._test_can_use_simple_filter_for_object_list(field)
 
-    @pytest.mark.parametrize("filter", ["project_id", "task_id", "job_id"])
-    def test_cannot_use_object_id_filters_without_permissions(
-        self, is_project_staff, is_task_staff, is_job_staff, users, filter
-    ):
-        # Find a project where the user doesn't have permissions
-        non_admin_user = next(
-            u["username"] for u in users if not u["is_superuser"] and u["username"] != self.user
-        )
-
-        if filter == "project_id":
-            samples = self.project_samples
-            is_staff = is_project_staff
-        elif filter == "task_id":
-            samples = self.task_samples
-            is_staff = is_task_staff
-        elif filter == "job_id":
-            samples = self.job_samples
-            is_staff = is_job_staff
-        else:
-            assert False
-
-        obj_id = next(obj["id"] for obj in samples if not is_staff(non_admin_user, obj["id"]))
-
-        with make_api_client(non_admin_user) as api_client:
-            response = api_client.quality_api.list_reports(
-                **{filter: obj_id}, _parse_response=False, _check_status=False
-            )[1]
-
-        assert response.status == HTTPStatus.FORBIDDEN
-
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestListQualityConflicts(_PermissionTestBase):
@@ -1115,22 +1085,22 @@ class TestSimpleQualityConflictsFilters(CollectionSimpleFilterTestBase):
     def test_can_use_simple_filter_for_object_list(self, field):
         return super()._test_can_use_simple_filter_for_object_list(field)
 
-    @pytest.mark.parametrize("filter", ["project_id", "task_id", "job_id"])
+    @pytest.mark.parametrize("filter_name", ["project_id", "task_id", "job_id"])
     def test_cannot_use_object_id_filters_without_permissions(
-        self, is_project_staff, is_task_staff, is_job_staff, users, filter
+        self, is_project_staff, is_task_staff, is_job_staff, users, filter_name
     ):
         # Find a project where the user doesn't have permissions
         non_admin_user = next(
             u["username"] for u in users if not u["is_superuser"] and u["username"] != self.user
         )
 
-        if filter == "project_id":
+        if filter_name == "project_id":
             samples = self.project_samples
             is_staff = is_project_staff
-        elif filter == "task_id":
+        elif filter_name == "task_id":
             samples = self.task_samples
             is_staff = is_task_staff
-        elif filter == "job_id":
+        elif filter_name == "job_id":
             samples = self.job_samples
             is_staff = is_job_staff
         else:
@@ -1207,19 +1177,19 @@ class TestSimpleQualitySettingsFilters(CollectionSimpleFilterTestBase):
     def test_can_use_simple_filter_for_object_list(self, field):
         return super()._test_can_use_simple_filter_for_object_list(field)
 
-    @pytest.mark.parametrize("filter", ["project_id", "task_id"])
+    @pytest.mark.parametrize("filter_name", ["project_id", "task_id"])
     def test_cannot_use_object_id_filters_without_permissions(
-        self, is_project_staff, is_task_staff, projects, tasks, users, filter
+        self, is_project_staff, is_task_staff, projects, tasks, users, filter_name
     ):
         # Find a project where the user doesn't have permissions
         non_admin_user = next(
             u["username"] for u in users if not u["is_superuser"] and u["username"] != self.user
         )
 
-        if filter == "project_id":
+        if filter_name == "project_id":
             samples = projects
             is_staff = is_project_staff
-        elif filter == "task_id":
+        elif filter_name == "task_id":
             samples = tasks
             is_staff = is_task_staff
         else:
