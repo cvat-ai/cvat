@@ -769,6 +769,6 @@ if ONE_RUNNING_JOB_IN_QUEUE_PER_USER:
             "queue": CVAT_QUEUES.CLEANING.value,
             "id": "cleanup_deferred_job_registry",
             "func": "cvat.apps.redis_handler.cron.cleanup_deferred_job_registry",
-            "cron_string": "0 0,8,16 * * *",
+            "cron_string": "0 8 * * *",
         }
     )
