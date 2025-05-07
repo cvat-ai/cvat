@@ -24,7 +24,7 @@ In the **Player** tab, you can:
 - `Smooth image` checkbox — smooth image when zoom-in it.
 
   |        _smoothed_         |        _pixelized_         |
-  |---------------------------|----------------------------|
+  | :-----------------------: | :------------------------: |
   | ![](/images/smoothed.jpg) | ![](/images/pixelized.jpg) |
 
 ## Workspace
