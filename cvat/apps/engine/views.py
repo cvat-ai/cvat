@@ -2757,7 +2757,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
     PartialUpdateModelMixin
 ):
-    queryset = CloudStorageModel.objects
+    queryset = CloudStorageModel.objects.all()
 
     search_fields = ('provider_type', 'name', 'resource',
                     'credentials_type', 'owner', 'description')
