@@ -121,12 +121,8 @@ def cancel_job(self: Job, pipeline: Pipeline | None = None, enqueue_dependents: 
 
             # ---block with custom changes---
             # go through all dependencies and remove the current job from dependency's dependents_key
-            for parent_job in self.fetch_dependencies(pipeline=pipe):
-                if not parent_job:
-                    continue
-
-                dependents_key = parent_job.dependents_key
-                pipe.srem(dependents_key, self.id)
+            for dependency in self.fetch_dependencies(pipeline=pipe):
+                pipe.srem(dependency.dependents_key, self.id)
             # ---block with custom changes---
 
             self._remove_from_registries(pipeline=pipe, remove_from_queue=True)
