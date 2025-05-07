@@ -31,8 +31,13 @@ const defaultState: PluginsState = {
             },
         },
         qualityControlPage: {
-            overviewTab: [],
-            allocationTable: [],
+            task: {
+                overviewTab: [],
+                allocationTable: [],
+            },
+            project: {
+                overviewTab: [],
+            },
         },
         analyticsReportPage: {
             content: [],

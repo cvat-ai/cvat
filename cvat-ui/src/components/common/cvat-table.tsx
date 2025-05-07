@@ -59,8 +59,6 @@ function getValueFromDataItem<T>(
     * overall search
     * csv export (column must have dataIndex to be CSV-exportable)
     * show/hide columns
-    Current restrictions:
-    * queryBuilder prop is supposed to be static
 */
 function CVATTable(props: Props): JSX.Element {
     const {
@@ -156,20 +154,18 @@ function CVATTable(props: Props): JSX.Element {
     }, [dataSource, searchDataIndex, filterValue, searchPhrase]);
 
     useEffect(() => {
-        if (!FilteringComponent) {
-            if (queryBuilder?.config && queryBuilder?.memoryKey) {
-                const capacity = queryBuilder?.memoryCapacity ?? 0;
-                setFilteringComponent(
-                    ResourceFilterHOC(
-                        queryBuilder.config,
-                        queryBuilder.memoryKey,
-                        capacity,
-                        queryBuilder.predefinedQueries ?? undefined,
-                    ),
-                );
-            }
+        if (queryBuilder?.config && queryBuilder?.memoryKey) {
+            const capacity = queryBuilder?.memoryCapacity ?? 0;
+            setFilteringComponent(
+                ResourceFilterHOC(
+                    queryBuilder.config,
+                    queryBuilder.memoryKey,
+                    capacity,
+                    queryBuilder.predefinedQueries ?? undefined,
+                ),
+            );
         }
-    }, [queryBuilder, FilteringComponent]);
+    }, [queryBuilder]);
 
     return (
         <div className='cvat-table-wrapper'>

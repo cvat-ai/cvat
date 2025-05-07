@@ -107,7 +107,7 @@ context('Ground truth jobs', () => {
 
     function openManagementTab() {
         cy.clickInTaskMenu('Quality control', true);
-        cy.get('.cvat-task-control-tabs')
+        cy.get('.cvat-quality-control-page-tabs')
             .within(() => {
                 cy.contains('Management').click();
             });

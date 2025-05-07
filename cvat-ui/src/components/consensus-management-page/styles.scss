@@ -16,6 +16,10 @@
     @include cvat-management-page-header;
 }
 
+.cvat-consensus-management-page-tabs {
+    @include cvat-management-page-tabs;
+}
+
 .cvat-consensus-management-page, .cvat-consensus-management-wrapper {
     height: 100%;
 }

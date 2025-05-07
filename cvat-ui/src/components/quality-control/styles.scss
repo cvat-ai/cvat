@@ -13,22 +13,63 @@
     align-items: center;
 }
 
-.cvat-quality-settings-form {
+.cvat-quality-control-settings-tab {
     @extend .cvat-scrollbar;
 
     display: block;
+    height: 100%;
     position: relative;
-    height: calc(100vh - $grid-unit-size * 30);
 
     .cvat-quality-settings-save-btn {
         position: sticky;
         z-index: 1;
-        top: 0;
+        top: $grid-unit-size;
         height: 0;
     }
 
     .ant-divider-horizontal {
         margin: $grid-unit-size 0;
+    }
+
+    .cvat-resource-page-filters {
+        position: relative;
+        width: 70%;
+
+        .cvat-switch-filters-constructor-button {
+            flex-grow: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    }
+
+    .cvat-quality-control-settings-header {
+        display: flex;
+        align-items: center;
+        min-height: $grid-unit-size * 4;
+        margin-bottom: $grid-unit-size * 2;
+
+        button[role='switch'] {
+            margin-right: $grid-unit-size;
+        }
+
+        .ant-alert-warning {
+            width: 90%;
+            display: flex;
+            justify-content: space-between;
+        }
+    }
+
+    .cvat-quality-settings-form-disabled {
+        label, span {
+            opacity: 0.5;
+        }
+    }
+
+    .cvat-quality-settings-form {
+        display: block;
+        position: relative;
+        height: calc(100vh - $grid-unit-size * 30);
     }
 }
 
@@ -50,7 +91,7 @@ $excluded-background: #d9d9d973;
     }
 }
 
-.cvat-open-frame-button {
+.cvat-clamped-text {
     text-align: left;
 
     span {
@@ -62,6 +103,10 @@ $excluded-background: #d9d9d973;
         text-overflow: ellipsis;
         direction: rtl;
     }
+}
+
+.cvat-open-frame-button {
+    @extend .cvat-clamped-text;
 }
 
 .cvat-quality-control-page, .cvat-quality-control-wrapper {
@@ -110,7 +155,7 @@ $excluded-background: #d9d9d973;
     }
 }
 
-.cvat-task-control-tabs {
+.cvat-quality-control-page-tabs {
     @include cvat-management-page-tabs;
 }
 

@@ -768,7 +768,12 @@ export class Task extends Session {
     public readonly sourceStorage: Storage;
     public readonly targetStorage: Storage;
     public readonly organization: number | null;
-    public readonly progress: { count: number; completed: number };
+    public readonly progress: {
+        completedJobs: number,
+        totalJobs: number,
+        validationJobs: number,
+        annotationJobs: number,
+    };
     public readonly jobs: Job[];
     public readonly consensusEnabled: boolean;
 

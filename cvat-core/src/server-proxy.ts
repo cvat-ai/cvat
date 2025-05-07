@@ -712,10 +712,21 @@ async function createProject(projectSpec: SerializedProject): Promise<Serialized
     }
 }
 
-async function getTasks(filter: TasksFilter = {}): Promise<SerializedTask[] & { count: number }> {
+async function getTasks(
+    filter: TasksFilter = {},
+    aggregate?: boolean,
+): Promise<PaginatedResource<SerializedTask>> {
     const { backendAPI } = config;
     let response = null;
     try {
+        if (aggregate) {
+            response = await Axios.get(`${backendAPI}/tasks`, {
+                params: {
+                    ...filter,
+                },
+            });
+        }
+
         if ('id' in filter) {
             response = await Axios.get(`${backendAPI}/tasks/${filter.id}`);
             const results = [response.data];
@@ -723,13 +734,13 @@ async function getTasks(filter: TasksFilter = {}): Promise<SerializedTask[] & { 
                 value: 1,
             });
 
-            return results as SerializedTask[] & { count: number };
+            return results as PaginatedResource<SerializedTask>;
         }
 
         response = await Axios.get(`${backendAPI}/tasks`, {
             params: {
                 ...filter,
-                page_size: 10,
+                page_size: filter.page_size ?? 10,
             },
         });
     } catch (errorData) {
@@ -2220,20 +2231,32 @@ async function createAsset(file: File, guideId: number): Promise<SerializedAsset
 
 async function getQualitySettings(
     filter: APIQualitySettingsFilter,
-): Promise<SerializedQualitySettingsData> {
+    aggregate?: boolean,
+): Promise<PaginatedResource<SerializedQualitySettingsData>> {
     const { backendAPI } = config;
 
+    let response = null;
     try {
-        const response = await Axios.get(`${backendAPI}/quality/settings`, {
-            params: {
-                ...filter,
-            },
-        });
-
-        return response.data.results[0];
+        if (aggregate) {
+            response = {
+                data: await fetchAll(`${backendAPI}/quality/settings`, {
+                    ...filter,
+                    ...enableOrganization(),
+                }),
+            };
+        } else {
+            response = await Axios.get(`${backendAPI}/quality/settings`, {
+                params: {
+                    ...filter,
+                },
+            });
+        }
     } catch (errorData) {
         throw generateError(errorData);
     }
+
+    response.data.results.count = response.data.count;
+    return response.data.results;
 }
 
 async function updateQualitySettings(
@@ -2310,21 +2333,32 @@ async function getQualityConflicts(
 
 async function getQualityReports(
     filter: APIQualityReportsFilter,
+    aggregate?: boolean,
 ): Promise<PaginatedResource<SerializedQualityReportData>> {
     const { backendAPI } = config;
 
+    let response = null;
     try {
-        const response = await Axios.get(`${backendAPI}/quality/reports`, {
-            params: {
-                ...filter,
-            },
-        });
-
-        response.data.results.count = response.data.count;
-        return response.data.results;
+        if (aggregate) {
+            response = {
+                data: await fetchAll(`${backendAPI}/quality/reports`, {
+                    ...filter,
+                    ...enableOrganization(),
+                }),
+            };
+        } else {
+            response = await Axios.get(`${backendAPI}/quality/reports`, {
+                params: {
+                    ...filter,
+                },
+            });
+        }
     } catch (errorData) {
         throw generateError(errorData);
     }
+
+    response.data.results.count = response.data.count;
+    return response.data.results;
 }
 
 async function getRequestsList(): Promise<PaginatedResource<SerializedRequest>> {

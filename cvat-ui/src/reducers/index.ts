@@ -290,24 +290,35 @@ export interface PluginsState {
             };
         };
         qualityControlPage: {
-            overviewTab: ((
-                props: {
-                    task: Task;
-                    qualitySettings: QualitySettings;
-                },
-            ) => JSX.Element)[];
+            task: {
+                overviewTab: ((props: {
+                    instance: Task;
+                    qualitySettings: {
+                        settings: QualitySettings | null;
+                        childrenSettings: QualitySettings[] | null;
+                    };
+                }) => JSX.Element)[];
 
-            allocationTable: ((
-                props: {
-                    task: Task;
-                    gtJobId: number;
-                    gtJobMeta: FramesMetaData;
-                    qualitySettings: QualitySettings;
-                    validationLayout: TaskValidationLayout;
-                    onDeleteFrames: (frames: number[]) => void;
-                    onRestoreFrames: (frames: number[]) => void;
-                },
-            ) => JSX.Element)[];
+                allocationTable: ((
+                    props: {
+                        task: Task;
+                        gtJobId: number;
+                        gtJobMeta: FramesMetaData;
+                        qualitySettings: QualitySettings;
+                        validationLayout: TaskValidationLayout;
+                        onDeleteFrames: (frames: number[]) => void;
+                        onRestoreFrames: (frames: number[]) => void;
+                    }) => JSX.Element)[];
+            }
+            project : {
+                overviewTab: ((props: {
+                    instance: Project;
+                    qualitySettings: {
+                        settings: QualitySettings | null;
+                        childrenSettings: QualitySettings[] | null;
+                    };
+                }) => JSX.Element)[];
+            }
         };
         analyticsReportPage: {
             content: ((

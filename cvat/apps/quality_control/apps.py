@@ -14,5 +14,5 @@ class QualityControlConfig(AppConfig):
 
         load_app_permissions(self)
 
-        # Required to define signals in the application
-        from . import signals  # pylint: disable=unused-import
+        # Define signals, apply schema customizations
+        from . import schema, signals  # pylint: disable=unused-import

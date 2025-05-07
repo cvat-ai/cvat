@@ -261,7 +261,7 @@ function ConsensusManagementPage(): JSX.Element {
                 activeKey={activeTab}
                 defaultActiveKey={DEFAULT_TAB}
                 onChange={onTabKeyChange}
-                className='cvat-task-control-tabs'
+                className='cvat-consensus-management-page-tabs'
                 items={tabsItems}
             />
         );
