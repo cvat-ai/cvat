@@ -5796,7 +5796,7 @@ class TestImportWithComplexFilenames:
 
             cls.data[key] = (task, dataset_file)
 
-    @pytest.mark.skip("Fails sometimes, needs to be fixed")
+    # @pytest.mark.skip("Fails sometimes, needs to be fixed")
     @pytest.mark.parametrize(
         "task_kind, annotation_kind, expect_success",
         [
@@ -5837,10 +5837,10 @@ class TestImportWithComplexFilenames:
                 range(len(self.flat_filenames))
             )
         else:
-            with pytest.raises(exceptions.ApiException) as capture:
+            with pytest.raises(BackgroundRequestException) as capture:
                 task.import_annotations(self.format_name, dataset_file)
 
-            assert b"Could not match item id" in capture.value.body
+            assert "Could not match item id" in str(capture.value)
 
     def delete_annotation_and_import_annotations(
         self, task_id, annotations, format_name, dataset_file

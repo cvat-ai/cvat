@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, Any, Optional
 from PIL import Image
 
 from cvat_sdk.api_client import apis, exceptions, models
+from cvat_sdk.core.exceptions import BackgroundRequestException
 from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.progress import ProgressReporter
 from cvat_sdk.core.proxies.annotations import AnnotationCrudMixin
@@ -156,7 +157,7 @@ class Task(
                     break
 
                 elif status.value == models.RequestStatus.allowed_values[("value",)]["FAILED"]:
-                    raise exceptions.ApiException(status=status, reason=message, http_resp=response)
+                    raise BackgroundRequestException(message)
 
             self.fetch()
 
