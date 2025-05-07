@@ -2286,9 +2286,7 @@ class TaskReadListSerializer(serializers.ListSerializer):
             # doing the same DB computations twice - one time for the page retrieval
             # and another one for the COUNT(*) request to get the total count
             page_task_ids = set(t.id for t in page)
-            job_summary_fields = [
-                m.value for m in models.TaskQuerySet.JobSummaryFields.__members__.values()
-            ]
+            job_summary_fields = [m.value for m in models.TaskQuerySet.JobSummaryFields]
             job_counts = {
                 task["id"]: task
                 for task in models.Task.objects
