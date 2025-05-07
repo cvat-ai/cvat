@@ -22,6 +22,7 @@ from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.dataset_manager.tests.utils import TestDir
 from cvat.apps.engine.media_extractors import ValidateDimension
 from cvat.apps.engine.tests.utils import ExportApiTestBase, ForceLogin, get_paginated_collection
+from cvat.apps.quality_control.models import AnnotationType
 
 from .utils import compare_objects
 
@@ -210,12 +211,25 @@ class _DbTestBase(ExportApiTestBase):
 
 
 class Task3DTest(_DbTestBase):
-    def compare_shapes(self, shapes_orig: list[dict], shapes_imported: list[dict]):
-        self.assertEqual(len(shapes_orig), len(shapes_imported), "Different number of shapes")
-        for a, b in zip(shapes_orig, shapes_imported):
-            assert a.get('source') in ('manual', None)
-            assert b["source"] == "file"
-            compare_objects(self, a, b, ignore_keys=["source"])
+    def compare_annotations(self, annos_orig: list[dict], annos_imported: list[dict]):
+
+        for _type in set(AnnotationType):
+            key = f"{_type}s"
+            anns = annos_imported.data[key]
+            self.assertEqual(
+                len(annos_orig.data[key]),
+                len(annos_imported.data[key]),
+                "Different number of shapes"
+            )
+            for ann in anns:
+                self.assertEquals(ann.get('source'), 'file')
+            # TODO: probably add to compare_objects a dict  with default values for compare-objects?
+            # default_values: dict vs expected_values:dict
+        compare_objects(self,
+                        annos_orig.data, annos_imported.data,
+                        ignore_keys=["source", "id", "version"],
+                        order=False
+        )
 
     @classmethod
     def setUpClass(cls):
@@ -517,7 +531,7 @@ class Task3DTest(_DbTestBase):
 
                     task_ann_prev.data["shapes"][0].pop("id")
                     task_ann.data["shapes"][0].pop("id")
-                    self.compare_shapes(task_ann_prev.data["shapes"], task_ann.data["shapes"])
+                    self.compare_annotations(task_ann_prev, task_ann)
 
     def test_api_v2_rewrite_annotation(self):
         with TestDir() as test_dir:
@@ -555,7 +569,7 @@ class Task3DTest(_DbTestBase):
 
                     task_ann_prev.data["shapes"][0].pop("id")
                     task_ann.data["shapes"][0].pop("id")
-                    self.compare_shapes(task_ann_prev.data["shapes"], task_ann.data["shapes"])
+                    self.compare_annotations(task_ann_prev, task_ann)
 
     def test_api_v2_dump_and_upload_empty_annotation(self):
         with TestDir() as test_dir:
