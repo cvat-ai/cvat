@@ -909,6 +909,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'source_storage',
         'annotation_guide',
     ).prefetch_related(
+        # avoid loading heavy data in select related
+        # this reduces performance of the COUNT request in the list endpoint
         'data__validation_layout',
     )
 
