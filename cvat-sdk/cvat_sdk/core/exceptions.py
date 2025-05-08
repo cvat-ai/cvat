@@ -15,7 +15,7 @@ class IncompatibleVersionException(CvatSdkException):
     """Indicates server and SDK version mismatch"""
 
 
-class BackgroundRequestException(Exception):
+class BackgroundRequestException(CvatSdkException):
     """
     Exception is raised when a background request fails
     """
