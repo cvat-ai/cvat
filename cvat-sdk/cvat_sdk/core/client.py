@@ -229,19 +229,28 @@ class Client:
         rq_id: str,
         *,
         status_check_period: Optional[int] = None,
+        logging_prefix: str | None = None,
     ) -> tuple[models.Request, urllib3.HTTPResponse]:
         if status_check_period is None:
             status_check_period = self.config.status_check_period
 
         while True:
-            sleep(status_check_period)
-
             request, response = self.api_client.requests_api.retrieve(rq_id)
+            status, message = request.status, request.message
 
-            if request.status.value == models.RequestStatus.allowed_values[("value",)]["FINISHED"]:
+            logging_prefix = logging_prefix or f"{request.operation.type} operation"
+            self.logger.info(
+                "%s status: %s (message=%s)",
+                logging_prefix,
+                status,
+                message,
+            )
+            if status.value == models.RequestStatus.allowed_values[("value",)]["FINISHED"]:
                 break
-            elif request.status.value == models.RequestStatus.allowed_values[("value",)]["FAILED"]:
-                raise BackgroundRequestException(request.message)
+            elif status.value == models.RequestStatus.allowed_values[("value",)]["FAILED"]:
+                raise BackgroundRequestException(message)
+
+            sleep(status_check_period)
 
         return request, response
 

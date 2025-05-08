@@ -141,23 +141,11 @@ class Task(
                 status_check_period = self._client.config.status_check_period
 
             self._client.logger.info("Awaiting for task %s creation...", self.id)
-            while True:
-                sleep(status_check_period)
-                request_details, response = self._client.api_client.requests_api.retrieve(rq_id)
-                status, message = request_details.status, request_details.message
-
-                self._client.logger.info(
-                    "Task %s creation status: %s (message=%s)",
-                    self.id,
-                    status,
-                    message,
-                )
-
-                if status.value == models.RequestStatus.allowed_values[("value",)]["FINISHED"]:
-                    break
-
-                elif status.value == models.RequestStatus.allowed_values[("value",)]["FAILED"]:
-                    raise BackgroundRequestException(message)
+            self._client.wait_for_completion(
+                rq_id,
+                status_check_period=status_check_period,
+                logging_prefix=f"Task {self.id} creation",
+            )
 
             self.fetch()
 
