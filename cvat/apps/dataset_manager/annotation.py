@@ -634,8 +634,7 @@ class TrackManager(ObjectManager):
 
             if isinstance(points, np.ndarray):
                 points = points.tolist()
-            else:
-                points = points.copy()
+            points = tuple(points)
 
             if points is not None:
                 copied["points"] = points
@@ -947,7 +946,7 @@ class TrackManager(ObjectManager):
 
             return shapes
 
-        def propagate(shape, end_frame, *, included_frames=None):
+        def propagate(shape: dict, end_frame, *, included_frames=None):
             return [
                 copy_shape(shape, i)
                 for i in range(shape["frame"] + 1, end_frame)
@@ -955,7 +954,7 @@ class TrackManager(ObjectManager):
             ]
 
         shapes = []
-        prev_shape = None
+        prev_shape: Optional[dict] = None
         for shape in sorted(track["shapes"], key=lambda shape: shape["frame"]):
             curr_frame = shape["frame"]
             if curr_frame in deleted_frames:
