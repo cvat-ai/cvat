@@ -6,7 +6,7 @@ description: 'How to manage your subscription'
 ---
 
 This article provides tips on how to effectively manage your
-CVAT subscriptions, including tracking expenses and canceling
+CVAT Online subscriptions, including tracking expenses and canceling
 unnecessary subscriptions, to optimize your finances and save time.
 
 Whether you're a business owner or an individual,
@@ -18,8 +18,8 @@ See:
   - [Monthly plans](#monthly-plans)
   - [Annual plans](#annual-plans)
 - [Billing](#billing)
-  - [How to add VAT/tax and other information to the CVAT.ai invoice before the first payment?](#how-to-add-vattax-and-other-information-to-the-cvatai-invoice-before-the-first-payment)
-  - [How to update VAT/tax information and other details for upcoming invoices from CVAT.ai?](#how-to-update-vattax-information-and-other-details-for-upcoming-invoices-from-cvatai)
+  - [How to add VAT/tax and other information to the CVAT Online invoice before the first payment?](#how-to-add-vattax-and-other-information-to-the-cvat-online-invoice-before-the-first-payment)
+  - [How to update VAT/tax information and other details for upcoming invoices from CVAT Online?](#how-to-update-vattax-information-and-other-details-for-upcoming-invoices-from-cvat-online)
   - [Can a paid invoice be modified?](#can-a-paid-invoice-be-modified)
   - [How can I get a quote before I subscribe? How to add a PO number to my invoices?](#how-can-i-get-a-quote-before-i-subscribe-how-to-add-a-po-number-to-my-invoices)
   - [Can you sign an agreement before I subscribe?](#can-you-sign-an-agreement-before-i-subscribe)
@@ -43,7 +43,7 @@ See:
 
 ## Available paid plans
 
-This section outlines the paid plans available on CVAT.ai.
+This section outlines the paid plans available on CVAT Online.
 
 ### Monthly plans
 
@@ -60,7 +60,7 @@ This section outlines the paid plans available on CVAT.ai.
 
 Whether you're a new user, or have a subscription to **Team** or **Solo** plan, [you can
 subscribe to our annual plan](https://www.cvat.ai/post/cvat-annual-plans)
-and save up to 30% on CVAT.ai usage costs.
+and save up to 30% on CVAT Online usage costs.
 
 The annual subscription offers all the benefits of our paid plans but at
 a more affordable monthly rate.
@@ -78,16 +78,17 @@ and Team plans: monthly and annual.
 For more information,
 see: [Pricing Plans](https://www.cvat.ai/post/new-pricing-plans)
 
-### How to add VAT/tax and other information to the CVAT.ai invoice before the first payment?
+### How to add VAT/tax and other information to the CVAT Online invoice before the first payment?
 
-To ensure VAT (tax) information and other relevant details are included on your CVAT.ai invoices,
+To ensure VAT (tax) information and other relevant details are included on your
+CVAT Online invoices,
 it's important to add this information before making the first payment.
 
 Here’s how you can do it:
 
-1. Sign up for a CVAT.ai account and log in.
+1. Sign up for a CVAT Online account and log in.
 2. (Optional) If you add the VAT/tax number to the organization,
-   first create an [organization](/docs/manual/advanced/organization/) and
+   first create an {{< ilink "/docs/manual/advanced/organization" "organization" >}} and
    switch to an **Organization** account.
 3. Navigate to the top right corner, next to the nickname,
    click on the arrow > upgrade to the plan.
@@ -118,9 +119,9 @@ All information you've added will appear on the billing page and in the invoice.
 ![Stripe Payment Info](/images/sm-profile-upd-inf.png)
 
 By following these steps, you can seamlessly add VAT and other crucial information to your
-invoices, making your financial transactions with CVAT.ai transparent and compliant.
+invoices, making your financial transactions with CVAT Online transparent and compliant.
 
-### How to update VAT/tax information and other details for upcoming invoices from CVAT.ai?
+### How to update VAT/tax information and other details for upcoming invoices from CVAT Online?
 
 In the top right corner, near the nickname, click on the arrow > manage plan.
 
@@ -131,7 +132,8 @@ You will see the Stripe page. Go to the **Billing Information** > **Update Infor
 ### Can a paid invoice be modified?
 
 Once an invoice has been paid, it is not possible to modify it. This restriction is due to the
-limitations of the payment processing platform used, which in the case of CVAT.ai, is [Stripe](https://stripe.com/).
+limitations of the payment processing platform used, which in the case of CVAT Online,
+is [Stripe](https://stripe.com/).
 
 Stripe's policy dictates that revisions to an invoice can only be made before payment.
 For more comprehensive information on this policy, please refer to Stripe's official documentation
@@ -140,7 +142,7 @@ at their website.
 
 ### How can I get a quote before I subscribe? How to add a PO number to my invoices?
 
-If you require a quote from CVAT for payment via bank transfer, certain criteria must be met:
+If you require a quote from CVAT Online for payment via bank transfer, certain criteria must be met:
 
 - The **total subscription cost must be $396 and up per year**.
 - Quotes are available exclusively **for annual subscriptions**.
@@ -177,8 +179,9 @@ To consider your request for a discount, we'd need a few details from you:
 - Your university advisor's contact details.
 - The name and contact information of the dean of your faculty.
 - A brief outline of your project plan. This helps us understand how we might collaborate
-   on a joint marketing statement highlighting your use of CVAT.ai, and how it can benefit your project.
-- We'd also appreciate a positive LinkedIn post about your experience using CVAT, making sure to tag @CVAT.ai.
+   on a joint marketing statement highlighting your use of CVAT Online, and how it can benefit your project.
+- We'd also appreciate a positive LinkedIn post about your experience using CVAT Online,
+   making sure to tag @CVAT.ai.
 
 All these details must be sent to [support@cvat.ai](mailto:support@cvat.ai). Once we have this
 information, we'll gladly offer you a 50% discount for one year.
@@ -212,7 +215,8 @@ In the top right corner, near the nickname, click on the arrow > manage plan > *
 
 > **Solo plan** is **for personal use only**, you cannot add or remove team members.
 
-**Team plan** is for collaboration. To add members to your [Organization](/docs/manual/advanced/organization/),
+**Team plan** is for collaboration. To add members to your
+{{< ilink "/docs/manual/advanced/organization" "Organization" >}},
 go to the **Manage Team plan** > **Update quantity**.
 
 ![Add members](/images/change_members_number_team.gif)
@@ -306,7 +310,7 @@ see [Refund policy](https://www.cvat.ai/refund-policy).
    or use the "Support" option in the app.cvat.ai interface.
 3. Provide your account details and a brief explanation of the reason for the refund:
    - Send us your last invoice.
-   - Send us the username and e-mail address you’ve used to register in CVAT.ai.
+   - Send us the username and e-mail address you’ve used to register in CVAT Online.
 
 Our team will review your request. We may request additional information if needed.
 Once approved, the refund will be processed to your original
@@ -314,7 +318,7 @@ payment method [within 5-10 business days](https://docs.stripe.com/refunds#traci
 
 ## Plan renewal
 
-To renew your CVAT.ai subscription, in the top right corner, near the nickname,
+To renew your CVAT Online subscription, in the top right corner, near the nickname,
 click on the arrow> manage plan > **Renew plan**.
 
 ## Subscription management video tutorial

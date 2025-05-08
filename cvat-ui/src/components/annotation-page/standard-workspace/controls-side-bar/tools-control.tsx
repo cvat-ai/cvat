@@ -628,8 +628,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                                     this.setState({
                                                         trackedShapes: filteredStates,
                                                     });
+                                                    fetchAnnotations();
                                                 });
-                                                fetchAnnotations();
                                             }}
                                         />
                                     </CVATTooltip>
@@ -638,6 +638,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                         <EnvironmentOutlined
                                             onClick={() => {
                                                 objectState.descriptions = [`Trackable (${activeTracker.name})`];
+                                                objectState.keyframe = true;
                                                 objectState.save().then(() => {
                                                     this.setState({
                                                         trackedShapes: [
@@ -650,8 +651,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                                             },
                                                         ],
                                                     });
+                                                    fetchAnnotations();
                                                 });
-                                                fetchAnnotations();
                                             }}
                                         />
                                     </CVATTooltip>

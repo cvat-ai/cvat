@@ -68,6 +68,11 @@ def is_prefetched(queryset: models.QuerySet, field: str) -> bool:
     return field in queryset._prefetch_related_lookups
 
 
+def is_field_cached(instance: models.Model, field: str) -> bool:
+    "Checks if a field is cached in the model instance"
+    return field in instance._state.fields_cache
+
+
 _QuerysetT = TypeVar("_QuerysetT", bound=models.QuerySet)
 
 

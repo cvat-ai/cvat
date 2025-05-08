@@ -24,7 +24,7 @@ from cvat_sdk import make_client, models
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 
 # Create a Client instance bound to a local server and authenticate using basic auth
-with make_client(host="localhost", credentials=('user', 'password')) as client:
+with make_client(host="http://localhost", credentials=('user', 'password')) as client:
     # Let's create a new task.
 
     # Fill in task parameters first.
@@ -108,7 +108,7 @@ You can create and start using a `Client` instance this way:
 ```python
 from cvat_sdk import make_client
 
-with make_client('localhost', port='8080', credentials=('user', 'password')) as client:
+with make_client('http://localhost', port='8080', credentials=('user', 'password')) as client:
     ...
 ```
 
@@ -123,18 +123,16 @@ from cvat_sdk import Config, Client
 config = Config()
 # set up some config fields ...
 
-with Client('localhost:8080', config=config) as client:
+with Client('http://localhost:8080', config=config) as client:
     client.login(('user', 'password'))
     ...
 ```
 
-You can specify server address both with and without the scheme. If the scheme is omitted,
-it will be deduced automatically.
-
-> The checks are performed in the following
-order: `https` (with the default port 8080), `http` (with the default port 80).
-In some cases it may lead to incorrect results - e.g. you have 2 servers running on the
-same host at default ports. In such cases just specify the schema manually: `https://localhost`.
+> **Note**: Historically, the SDK has allowed the URL scheme (`http:` or `https:`)
+> to be omitted, and would attempt to automatically detect the protocol.
+> This behavior is deprecated due to being inherently insecure,
+> and will be removed in a future version.
+> To avoid future breakage, make sure to specify the scheme explicitly.
 
 When the server is located, its version is checked. If an unsupported version is found,
 an error can be raised or suppressed (controlled by `config.allow_unsupported_server`).
