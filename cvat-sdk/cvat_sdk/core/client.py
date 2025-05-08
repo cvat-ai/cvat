@@ -229,7 +229,7 @@ class Client:
         rq_id: str,
         *,
         status_check_period: Optional[int] = None,
-        logging_prefix: str | None = None,
+        log_prefix: Optional[str] = None,
     ) -> tuple[models.Request, urllib3.HTTPResponse]:
         if status_check_period is None:
             status_check_period = self.config.status_check_period
@@ -238,10 +238,10 @@ class Client:
             request, response = self.api_client.requests_api.retrieve(rq_id)
             status, message = request.status, request.message
 
-            logging_prefix = logging_prefix or f"{request.operation.type} operation"
+            log_prefix = log_prefix or f"{request.operation.type} operation"
             self.logger.info(
                 "%s status: %s (message=%s)",
-                logging_prefix,
+                log_prefix,
                 status,
                 message,
             )

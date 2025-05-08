@@ -142,7 +142,7 @@ class Task(
             self._client.wait_for_completion(
                 rq_id,
                 status_check_period=status_check_period,
-                logging_prefix=f"Task {self.id} creation",
+                log_prefix=f"Task {self.id} creation",
             )
 
             self.fetch()
