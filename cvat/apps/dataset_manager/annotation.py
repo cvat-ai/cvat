@@ -634,10 +634,8 @@ class TrackManager(ObjectManager):
 
             if isinstance(points, np.ndarray):
                 points = points.tolist()
-            points = tuple(points)
 
-            if points is not None:
-                copied["points"] = points
+            copied["points"] = tuple(points)
 
             return copied
 
