@@ -6316,8 +6316,11 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                 "YOLO 1.1",
                 "Ultralytics YOLO Detection 1.0",
                 "Ultralytics YOLO Oriented Bounding Boxes 1.0",
+                "CVAT for video 1.1",
+                "CVAT for images 1.1",
+                "Datumaro 1.0"
             ]:
-                annotations["shapes"] = rectangle_shapes_wo_attrs
+                annotations["shapes"] += rectangle_shapes_wo_attrs
 
             elif annotation_format == "Ultralytics YOLO Segmentation 1.0":
                 annotations["shapes"] = polygon_shapes_wo_attrs
@@ -6347,7 +6350,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                                       + polygon_shapes_with_attrs
 
             elif annotation_format == "Datumaro 1.0":
-                annotations["shapes"] = rectangle_shapes_with_attrs \
+                annotations["shapes"] += rectangle_shapes_with_attrs \
                                       + rectangle_shapes_wo_attrs \
                                       + polygon_shapes_wo_attrs \
                                       + polygon_shapes_with_attrs
