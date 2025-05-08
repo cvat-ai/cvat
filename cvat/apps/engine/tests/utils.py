@@ -494,7 +494,7 @@ def check_optional_fields(self: TestCase,
                         expected_values: dict[str, int | float | str]
                         ) -> None | NoReturn:
     for k in optional_values.keys():
-        if not optional_values[k] == obj[k]:
+        if obj.get(k) and not optional_values[k] == obj[k]:
             self.assertEqual(obj[k], expected_values.get(k) or obj[k]) # coalesce
 
 
@@ -503,7 +503,8 @@ def compare_objects(self: TestCase, obj1, obj2, ignore_keys, fp_tolerance=0.001,
     error_msg = "{}{} != {}"
 
     def is_annotation_type(k):
-        return any(_type.startswith(k) for _type in AnnotationType)
+        return any(k.startswith(_type) for _type in [AnnotationType.SHAPE, AnnotationType.TAG])
+        # tracks are shapes, possibly nested
 
     if isinstance(obj1, dict):
         self.assertTrue(isinstance(obj2, dict), error_msg.format(key_info, obj1, obj2))
@@ -514,9 +515,9 @@ def compare_objects(self: TestCase, obj1, obj2, ignore_keys, fp_tolerance=0.001,
                 key = lambda a: (a.get("spec_id") or a["id"])
                 v1.sort(key=key)
                 v2.sort(key=key)
-            elif is_annotation_type(k) and not order:
-                v1 = freeze_object(v1, ignore_keys)
-                v2 = freeze_object(v2, ignore_keys)
+            elif not order and is_annotation_type(k):
+                v1 = frozenset(freeze_object(v1, ignore_keys))
+                v2 = frozenset(freeze_object(v2, ignore_keys))
             compare_objects(self, v1, v2, ignore_keys, current_key=k)
     elif isinstance(obj1, list):
         self.assertTrue(isinstance(obj2, list), error_msg.format(key_info, obj1, obj2))

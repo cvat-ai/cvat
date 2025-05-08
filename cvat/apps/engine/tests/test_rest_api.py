@@ -5575,6 +5575,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                 outside=False,
                 z_order=0,
                 rotation=0,
+                elements=[],
             ) # if omitted, are set by the server
               # https://docs.cvat.ai/docs/api_sdk/sdk/reference/models/labeled-shape/
             _default_values = {
@@ -5594,13 +5595,11 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                 response.data = filter_object(response.data, drop=SHAPE_DEFAULT_VALUES.keys())
                 data = filter_object(data, drop=SHAPE_DEFAULT_VALUES.keys())
                 compare_objects(self, data, response.data, IGNORE_KEYS, order=annoOrder)
-                    # compare_objects(self, data, response.data, ignore_keys=["id", "version", "source"], order=shapeOrder)
-                # else:
             except AssertionError as e:
                 print("Objects are not equal:",
                       pformat(data, compact=True),
                       "!=",
-                      pformat(response.data), sep='\n')
+                      pformat(response.data, compact=True), sep='\n')
                 print(e)
                 raise
 
