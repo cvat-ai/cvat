@@ -11,8 +11,9 @@ from contextlib import contextmanager
 from io import BytesIO
 from pathlib import Path
 from pprint import pformat
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, TypeVar, NoReturn
 from urllib.parse import urlencode
+from unittest import TestCase
 
 import av
 import django_rq
@@ -24,6 +25,7 @@ from PIL import Image
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.test import APITestCase
+from cvat.apps.quality_control.models import AnnotationType
 
 T = TypeVar('T')
 
@@ -458,6 +460,21 @@ def filter_dict(
     return {k: v for k, v in d.items() if (not keep or k in keep) and (not drop or k not in drop)}
 
 
+def filter_object(
+    obj: list | dict, *, keep: Sequence[str] = None, drop: Sequence[str] = None
+) -> list | dict:
+    if isinstance(obj, dict):
+        obj = filter_dict(obj, keep=keep, drop=drop)
+        for k, v in obj.items():
+            obj[k] = filter_object(v, keep=keep, drop=drop)
+        return obj
+    elif isinstance(obj, list):
+        for i, val in enumerate(obj):
+            obj[i] = filter_object(val, keep=keep, drop=drop)
+        return obj
+    return obj
+
+
 def freeze_object(obj, ignore_keys=None) -> frozenset:
     if isinstance(obj, dict):
         obj = filter_dict(obj, drop=ignore_keys)
@@ -465,15 +482,28 @@ def freeze_object(obj, ignore_keys=None) -> frozenset:
             obj[k] = freeze_object(v, ignore_keys)
         return frozenset(obj.items())
     elif isinstance(obj, list):
-        for i in range(len(obj)):
-            obj[i] = freeze_object(obj[i], ignore_keys)
+        for i, val in enumerate(obj):
+            obj[i] = freeze_object(val, ignore_keys)
         return tuple(obj)
     return obj
 
 
-def compare_objects(self, obj1, obj2, ignore_keys, fp_tolerance=0.001, current_key=None, order=True):
+def check_optional_fields(self: TestCase,
+                        obj: dict[str, int | float | str],
+                        optional_values: dict[str, int | float | str],
+                        expected_values: dict[str, int | float | str]
+                        ) -> None | NoReturn:
+    for k in optional_values.keys():
+        if not optional_values[k] == obj[k]:
+            self.assertEqual(obj[k], expected_values.get(k) or obj[k]) # coalesce
+
+
+def compare_objects(self: TestCase, obj1, obj2, ignore_keys, fp_tolerance=0.001, current_key=None, order=True):
     key_info = "{}: ".format(current_key) if current_key else ""
     error_msg = "{}{} != {}"
+
+    def is_annotation_type(k):
+        return any(_type.startswith(k) for _type in AnnotationType)
 
     if isinstance(obj1, dict):
         self.assertTrue(isinstance(obj2, dict), error_msg.format(key_info, obj1, obj2))
@@ -484,7 +514,7 @@ def compare_objects(self, obj1, obj2, ignore_keys, fp_tolerance=0.001, current_k
                 key = lambda a: (a.get("spec_id") or a["id"])
                 v1.sort(key=key)
                 v2.sort(key=key)
-            elif k == "shapes" and not order:
+            elif is_annotation_type(k) and not order:
                 v1 = freeze_object(v1, ignore_keys)
                 v2 = freeze_object(v2, ignore_keys)
             compare_objects(self, v1, v2, ignore_keys, current_key=k)
@@ -502,4 +532,3 @@ def compare_objects(self, obj1, obj2, ignore_keys, fp_tolerance=0.001, current_k
             self.assertAlmostEqual(obj1, obj2, delta=fp_tolerance, msg=current_key)
         else:
             self.assertEqual(obj1, obj2, msg=current_key)
-            # d = DeepDiff(obj1, obj2)

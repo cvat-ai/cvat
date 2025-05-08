@@ -74,7 +74,7 @@ from cvat.apps.engine.tests.utils import (
 from cvat.apps.quality_control.models import AnnotationType
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 
-from .utils import compare_objects
+from .utils import compare_objects, check_optional_fields, filter_object
 
 # suppress av warnings
 logging.getLogger('libav').setLevel(logging.ERROR)
@@ -5555,21 +5555,47 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
             )
         return response
 
-    def _check_response(self, response, data, expected_source=None, shapeOrder=True):
+    def _check_response(self, response, data, expected_source=None, annoOrder=True):
         if not response.status_code in [
             status.HTTP_401_UNAUTHORIZED,
             status.HTTP_403_FORBIDDEN
         ]:
+            IGNORE_KEYS = ["id", "version"]
+            TAG_DEFAULT_VALUES = dict(
+                source='manual',
+                attributes=[],
+            )
+            TRACK_DEFAULT_VALUES = dict(
+                **TAG_DEFAULT_VALUES,
+                # elements=[],
+            )
+            SHAPE_DEFAULT_VALUES = dict(
+                **TRACK_DEFAULT_VALUES,
+                occluded=False,
+                outside=False,
+                z_order=0,
+                rotation=0,
+            ) # if omitted, are set by the server
+              # https://docs.cvat.ai/docs/api_sdk/sdk/reference/models/labeled-shape/
+            _default_values = {
+                AnnotationType.TAG: TAG_DEFAULT_VALUES,
+                AnnotationType.SHAPE: SHAPE_DEFAULT_VALUES,
+                AnnotationType.TRACK: TRACK_DEFAULT_VALUES
+            }
+            expected_values = dict()
+            if expected_source:
+                expected_values['source'] = expected_source
             try:
-                if expected_source:
-                    for _type in set(AnnotationType):
-                        key = f"{_type}s"
-                        anns = response.data[key]
-                        for ann in anns:
-                            self.assertEquals(ann.get('source'), expected_source)
-                    compare_objects(self, data, response.data, ignore_keys=["id", "version", "source"], order=shapeOrder)
-                else:
-                    compare_objects(self, data, response.data, ignore_keys=["id", "version"], order=shapeOrder)
+                for _type in sorted(AnnotationType):
+                    key = f"{_type}s"
+                    anns = response.data[key]
+                    for ann in anns:
+                        check_optional_fields(self, ann, optional_values=_default_values[_type], expected_values=expected_values)
+                response.data = filter_object(response.data, drop=SHAPE_DEFAULT_VALUES.keys())
+                data = filter_object(data, drop=SHAPE_DEFAULT_VALUES.keys())
+                compare_objects(self, data, response.data, IGNORE_KEYS, order=annoOrder)
+                    # compare_objects(self, data, response.data, ignore_keys=["id", "version", "source"], order=shapeOrder)
+                # else:
             except AssertionError as e:
                 print("Objects are not equal:",
                       pformat(data, compact=True),
@@ -6704,7 +6730,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                 self.assertEqual(response.status_code, HTTP_200_OK)
 
                 data["version"] += 2 # upload is delete + put
-                self._check_response(response, data, expected_source='file', shapeOrder=False)
+                self._check_response(response, data, expected_source='file', annoOrder=False)
 
     def _check_dump_content(self, content, task, jobs, data, format_name):
         def etree_to_dict(t):
