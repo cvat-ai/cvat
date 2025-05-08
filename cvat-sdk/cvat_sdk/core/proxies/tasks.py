@@ -12,13 +12,11 @@ import shutil
 from collections.abc import Sequence
 from enum import Enum
 from pathlib import Path
-from time import sleep
 from typing import TYPE_CHECKING, Any, Optional
 
 from PIL import Image
 
 from cvat_sdk.api_client import apis, exceptions, models
-from cvat_sdk.core.exceptions import BackgroundRequestException
 from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.progress import ProgressReporter
 from cvat_sdk.core.proxies.annotations import AnnotationCrudMixin
