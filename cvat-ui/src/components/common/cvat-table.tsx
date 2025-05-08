@@ -93,8 +93,8 @@ function CVATTable(props: Props): JSX.Element {
                 }));
 
             let csv = '';
-            if (dataSource) {
-                const rows = dataSource
+            if (filteredDataSource) {
+                const rows = filteredDataSource
                     .map((dataItem) => header.map(({ dataIndex }) => {
                         const value = getValueFromDataItem<string>(dataItem, dataIndex);
                         if (typeof value === 'string') {
@@ -119,7 +119,7 @@ function CVATTable(props: Props): JSX.Element {
                 a.remove();
             }
         }
-    }, [csvExport?.filename, dataSource, columns]);
+    }, [csvExport?.filename, filteredDataSource, columns]);
 
     useEffect(() => {
         if (columns) {
