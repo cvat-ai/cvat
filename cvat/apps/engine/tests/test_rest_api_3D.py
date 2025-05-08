@@ -223,8 +223,6 @@ class Task3DTest(_DbTestBase):
             )
             for ann in anns:
                 self.assertEquals(ann.get('source'), 'file')
-            # TODO: probably add to compare_objects a dict  with default values for compare-objects?
-            # default_values: dict vs expected_values:dict
         compare_objects(self,
                         annos_orig.data, annos_imported.data,
                         ignore_keys=["source", "id", "version"],

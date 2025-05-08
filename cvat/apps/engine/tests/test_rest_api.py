@@ -74,7 +74,7 @@ from cvat.apps.engine.tests.utils import (
 from cvat.apps.quality_control.models import AnnotationType
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 
-from .utils import compare_objects, check_optional_fields, filter_object
+from .utils import check_optional_fields, compare_objects, filter_object
 
 # suppress av warnings
 logging.getLogger('libav').setLevel(logging.ERROR)

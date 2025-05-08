@@ -11,9 +11,9 @@ from contextlib import contextmanager
 from io import BytesIO
 from pathlib import Path
 from pprint import pformat
-from typing import Any, Callable, TypeVar, NoReturn
-from urllib.parse import urlencode
+from typing import Any, Callable, NoReturn, TypeVar
 from unittest import TestCase
+from urllib.parse import urlencode
 
 import av
 import django_rq
@@ -25,6 +25,7 @@ from PIL import Image
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.test import APITestCase
+
 from cvat.apps.quality_control.models import AnnotationType
 
 T = TypeVar('T')
