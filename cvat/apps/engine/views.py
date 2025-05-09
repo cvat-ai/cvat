@@ -62,6 +62,7 @@ from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine import backup
 from cvat.apps.engine.cache import CvatChunkTimestampMismatchError, LockError, MediaCache
+from cvat.apps.engine.cloud_provider import Status as CloudStorageStatus
 from cvat.apps.engine.cloud_provider import (
     db_storage_to_storage_instance,
     import_resource_from_cloud_storage,
@@ -2932,7 +2933,16 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     @extend_schema(summary='Get the status of a cloud storage',
         responses={
-            '200': OpenApiResponse(response=OpenApiTypes.STR, description='Cloud Storage status (AVAILABLE | NOT_FOUND | FORBIDDEN)'),
+            '200': OpenApiResponse(
+                # https://swagger.io/specification/#appendix-b-data-type-conversion
+                response={
+                    'type': 'string',
+                    'enum': CloudStorageStatus.list(),
+                },
+                description='Cloud Storage status'
+            ),
+            '400': OpenApiResponse(description='Outdated bucket configuration'),
+            '404': OpenApiResponse(description='No cloud storage with such an ID'),
         })
     @action(detail=True, methods=['GET'], url_path='status')
     def status(self, request: ExtendedRequest, pk: int):
@@ -2941,13 +2951,8 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             storage = db_storage_to_storage_instance(db_storage)
             storage_status = storage.get_status()
             return Response(storage_status)
-        except CloudStorageModel.DoesNotExist:
-            message = f"Storage {pk} does not exist"
-            slogger.glob.error(message)
-            return HttpResponseNotFound(message)
-        except Exception as ex:
-            msg = str(ex)
-            return HttpResponseBadRequest(msg)
+        except serializers.ValidationError as ex:
+            return Response('\n'.join([str(d) for d in ex.detail]), status=ex.status_code)
 
     @extend_schema(summary='Get allowed actions for a cloud storage',
         responses={
