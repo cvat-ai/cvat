@@ -952,7 +952,7 @@ class TrackManager(ObjectManager):
             ]
 
         shapes = []
-        prev_shape: Optional[dict] = None
+        prev_shape: dict | None = None
         for shape in sorted(track["shapes"], key=lambda shape: shape["frame"]):
             curr_frame = shape["frame"]
             if curr_frame in deleted_frames:
