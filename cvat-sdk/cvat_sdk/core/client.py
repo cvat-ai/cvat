@@ -21,7 +21,11 @@ import urllib3
 import urllib3.exceptions
 
 from cvat_sdk.api_client import ApiClient, Configuration, exceptions, models
-from cvat_sdk.core.exceptions import IncompatibleVersionException, InvalidHostException
+from cvat_sdk.core.exceptions import (
+    BackgroundRequestException,
+    IncompatibleVersionException,
+    InvalidHostException,
+)
 from cvat_sdk.core.proxies.issues import CommentsRepo, IssuesRepo
 from cvat_sdk.core.proxies.jobs import JobsRepo
 from cvat_sdk.core.proxies.model_proxy import Repo
@@ -225,21 +229,28 @@ class Client:
         rq_id: str,
         *,
         status_check_period: Optional[int] = None,
+        log_prefix: Optional[str] = None,
     ) -> tuple[models.Request, urllib3.HTTPResponse]:
         if status_check_period is None:
             status_check_period = self.config.status_check_period
 
         while True:
-            sleep(status_check_period)
-
             request, response = self.api_client.requests_api.retrieve(rq_id)
+            status, message = request.status, request.message
 
-            if request.status.value == models.RequestStatus.allowed_values[("value",)]["FINISHED"]:
+            log_prefix = log_prefix or f"{request.operation.type} operation"
+            self.logger.info(
+                "%s status: %s (message=%s)",
+                log_prefix,
+                status,
+                message,
+            )
+            if status.value == models.RequestStatus.allowed_values[("value",)]["FINISHED"]:
                 break
-            elif request.status.value == models.RequestStatus.allowed_values[("value",)]["FAILED"]:
-                raise exceptions.ApiException(
-                    status=request.status, reason=request.message, http_resp=response
-                )
+            elif status.value == models.RequestStatus.allowed_values[("value",)]["FAILED"]:
+                raise BackgroundRequestException(message)
+
+            sleep(status_check_period)
 
         return request, response
 

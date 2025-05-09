@@ -446,7 +446,7 @@ class DatasetMixin:
         responses={
             '202': OpenApiResponse(response=RqIdSerializer, description='Exporting has been started'),
             '405': OpenApiResponse(description='Format is not available'),
-            '409': OpenApiResponse(description='Exporting is already in progress'),
+            '409': OpenApiResponse(RqIdSerializer, description='Exporting is already in progress'),
         },
     )
     @action(detail=True, methods=['POST'], serializer_class=None, url_path='dataset/export')
@@ -543,7 +543,7 @@ class BackupMixin:
         responses={
             '202': OpenApiResponse(response=RqIdSerializer, description='Creating a backup file has been started'),
             '400': OpenApiResponse(description='Wrong query parameters were passed'),
-            '409': OpenApiResponse(description='The backup process has already been initiated and is not yet finished'),
+            '409': OpenApiResponse(RqIdSerializer, description='The backup process has already been initiated and is not yet finished'),
         },
     )
     @action(detail=True, methods=['POST'], serializer_class=None, url_path='backup/export')

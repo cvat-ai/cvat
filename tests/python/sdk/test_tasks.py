@@ -12,6 +12,7 @@ from typing import Optional
 import pytest
 from cvat_sdk import Client, models
 from cvat_sdk.api_client import exceptions
+from cvat_sdk.core.exceptions import BackgroundRequestException
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from cvat_sdk.core.proxies.types import Location
 from cvat_sdk.core.uploading import Uploader, _MyTusUploader
@@ -180,7 +181,7 @@ class TestTaskUsecases(TestDatasetExport):
             ],
         }
 
-        with pytest.raises(exceptions.ApiException) as capture:
+        with pytest.raises(BackgroundRequestException) as capture:
             self.client.tasks.create_from_data(
                 spec=task_spec,
                 resource_type=ResourceType.LOCAL,
