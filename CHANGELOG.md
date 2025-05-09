@@ -16,6 +16,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.36.0'></a>
+## \[2.36.0\] - 2025-05-08
+
+### Added
+
+- UI button to export raw resource events on analytics page
+  (<https://github.com/cvat-ai/cvat/pull/9293>)
+
+- Input size controls for cuboids in 3D workspace
+  (<https://github.com/cvat-ai/cvat/pull/9356>)
+
+### Changed
+
+- Export of events using the server endpoint `GET /api/events` ignores `send:exception` scope.
+  (<https://github.com/cvat-ai/cvat/pull/9383>)
+- Updated default value of `from` query parameter in GET `/api/events`.
+  Now it exports all events of the target resource if `from` and `to` are not specified.
+  (<https://github.com/cvat-ai/cvat/pull/9383>)
+- Export table as CSV feature now considers applied filtration on the table
+  (<https://github.com/cvat-ai/cvat/pull/9383>)
+
+- \[CLI\] The default value for `--server-host` is now `http://localhost`
+  (<https://github.com/cvat-ai/cvat/pull/9384>)
+
+### Deprecated
+
+- \[SDK, CLI\] Automatic server URL scheme detection is deprecated.
+  Add `https://` or `http://` to the host explicitly to avoid future breakage
+  (<https://github.com/cvat-ai/cvat/pull/9384>)
+
+### Fixed
+
+- Fixed helm-chart to use selectorLabels template for matchLabels #9358
+  (<https://github.com/cvat-ai/cvat/pull/9358>)
+
+- 500 status code returned when an API method is not allowed
+  (<https://github.com/cvat-ai/cvat/pull/9345>)
+
+- Optimized the `api/jobs/` server endpoint
+  (<https://github.com/cvat-ai/cvat/pull/9275>)
+- Optimized DB requests for server permission checks
+  (<https://github.com/cvat-ai/cvat/pull/9275>)
+
+- \[CLI\] Commands with invalid arguments or `--help` no longer ask for the
+  server password
+  (<https://github.com/cvat-ai/cvat/pull/9375>)
+
+- Improved performance of `GET /api/tasks`, `GET /api/quality/conflicts`
+  and `GET /api/cloudstorages` requests
+  (<https://github.com/cvat-ai/cvat/pull/8275>)
+
+- Improved performance of `GET /api/webhooks` requests
+  (<https://github.com/cvat-ai/cvat/pull/9269>)
+
+- Tracking with the AI model was not starting automatically after being re-enabled
+  (<https://github.com/cvat-ai/cvat/pull/9376>)
+
 <a id='changelog-2.35.0'></a>
 ## \[2.35.0\] - 2025-04-29
 
