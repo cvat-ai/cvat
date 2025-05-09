@@ -5567,7 +5567,6 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
             )
             TRACK_DEFAULT_VALUES = dict(
                 **TAG_DEFAULT_VALUES,
-                # elements=[],
             )
             SHAPE_DEFAULT_VALUES = dict(
                 **TRACK_DEFAULT_VALUES,
