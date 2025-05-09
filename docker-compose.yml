@@ -89,6 +89,7 @@ services:
         condition:
           service_started
     environment:
+      CVAT_HOST: ${CVAT_HOST}
       <<: [*backend-env, *clickhouse-env]
       DJANGO_MODWSGI_EXTRA_ARGS: ''
       ALLOWED_HOSTS: '*'
