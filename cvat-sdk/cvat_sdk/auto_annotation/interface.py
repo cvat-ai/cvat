@@ -4,7 +4,8 @@
 
 import abc
 from collections.abc import Sequence, Set
-from typing import Protocol, TypeAlias, TypeVar
+from enum import IntEnum
+from typing import Literal, Protocol, TypeAlias, TypeVar
 
 import attrs
 import PIL.Image
@@ -241,6 +242,180 @@ class DetectionFunction(AutoAnnotationFunction, Protocol):
         ...
 
 
+class InteractionFunctionContext(metaclass=abc.ABCMeta):
+    """
+    Information that is supplied to an auto-annotation interaction function.
+
+    Currently, this class is empty, but in the future some properties may be added.
+    """
+
+
+class InteractionPrompts(metaclass=abc.ABCMeta):
+    """
+    The prompts that the user has provided in an interaction function call.
+    """
+
+    @property
+    @abc.abstractmethod
+    def pos_points(self) -> Sequence[tuple[float, float]]:
+        """
+        Points that belong to the object(s) of interest, as a sequence of (x, y) tuples.
+        """
+
+    @property
+    @abc.abstractmethod
+    def neg_points(self) -> Sequence[tuple[float, float]]:
+        """
+        Points that do not belong to the object(s) of interest, as a sequence of (x, y) tuples.
+        """
+
+    @property
+    @abc.abstractmethod
+    def bounding_box(self) -> tuple[tuple[float, float], tuple[float, float]] | None:
+        """
+        A box around the object(s) of interest, as a pair of (x, y) tuples
+        representing the top-left and bottom-right corners.
+
+        Equals None if the user has not provided a bounding box.
+        """
+
+
+@attrs.frozen(kw_only=True)
+class InteractionFunctionSpec:
+    """
+    Static information about an auto-annotation interaction function.
+
+    Objects of this class should be treated as immutable;
+    do not modify them or any nested objects after they are created.
+    """
+
+    min_pos_points: int = attrs.field(validator=attrs.validators.ge(0))
+    """
+    The minimum number of positive points that the user must provide when calling the function.
+    """
+
+    min_neg_points: int | None = attrs.field(
+        default=None, validator=attrs.validators.optional(attrs.validators.ge(0))
+    )
+    """
+    The minimum number of negative points that the user must provide when calling the function.
+
+    If set to None, the user is not allowed to provide negative points.
+    """
+
+    min_bounding_boxes: Literal[0] | Literal[1] | None = attrs.field(
+        default=None,
+        validator=attrs.validators.optional(attrs.validators.in_([0, 1])),
+    )
+    """
+    The minimum number of bounding boxes that the user must provide when calling the function.
+    Must be either 0 or 1; or None, which means the user is not allowed to provide a bounding box.
+    """
+
+
+class InteractionResultAttributes(IntEnum):
+    """Attribute spec ID values usable in InteractionResultShape."""
+
+    CONFIDENCE = 0
+    """
+    The confidence level. The corresponding attribute value must be a real number between 0 and 1.
+    """
+
+
+@attrs.frozen(kw_only=True)
+class InteractionResultShape:
+    """
+    A shape that can be returned by an auto-annotation interaction function.
+
+    All attributes have the same meaning as attributes of the same name in the `LabeledShape` model.
+
+    Note that at the moment, the CVAT UI ignores all interaction result shapes
+    with types other than "mask".
+    """
+
+    type: str
+    points: list[float] = attrs.field(converter=list)
+    attributes: list[models.AttributeValRequest] = attrs.field(converter=list, factory=list)
+    """
+    The spec_id values of the attributes in this list must be members
+    of the InteractionResultAttributes enumeration.
+    """
+
+    @attributes.validator
+    def _validate_attributes(
+        self, attribute: attrs.Attribute, value: list[models.AttributeValRequest]
+    ) -> None:
+        for attrval in value:
+            if attrval.spec_id not in InteractionResultAttributes:
+                raise BadFunctionError(
+                    f"{attrval.spec_id} is not one of InteractionResultAttributes members"
+                )
+
+
+_PreprocessedImage = TypeVar("_PreprocessedImage")
+
+
+class InteractionFunction(Protocol[_PreprocessedImage]):
+    """
+    The interface that an auto-annotation interaction function must implement.
+
+    An interaction function is supposed to accept an image and a set of prompts that describe
+    an object (or objects) in that image, detect the object(s) of interest based on these prompts,
+    and return them as a sequence of shape objects.
+
+    The prompts may include points and/or a bounding box. The function may use its spec to declare
+    restrictions on prompts it is willing to accept.
+
+    An interaction function must implement a `detect` method that performs the detection
+    as described above.
+
+    In addition, it may implement a `preprocess_image` method
+    that performs any processing which doesn't depend on the prompts.
+    Any image used with the function will first be passed to `preprocess_image`.
+    When `detect` is called, it will receive this method's output value.
+    To improve performance, an agent may cache the preprocessed image
+    and reuse it for multiple calls to `detect`.
+
+    If a function does not implement `preprocess_image`, then `detect` will receive the original
+    image as a `PIL.Image.Image` object.
+    """
+
+    @property
+    def spec(self) -> InteractionFunctionSpec:
+        """Returns the function's spec."""
+        ...
+
+    def preprocess_image(
+        self, context: InteractionFunctionContext, image: PIL.Image.Image
+    ) -> _PreprocessedImage:
+        """
+        Performs any processing that may be done on the given image independently of the prompts.
+
+        Returns a new object that represents the processing results.
+
+        Note that the resulting object may be reused in multiple calls to `detect`.
+
+        This method is optional to implement.
+        """
+        ...
+
+    def detect(
+        self,
+        context: InteractionFunctionContext,
+        pp_image: _PreprocessedImage,
+        prompts: InteractionPrompts,
+    ) -> list[InteractionResultShape]:
+        """
+        Detects object(s) of interest on the supplied image based on the given prompts,
+        and returns the results as shape objects.
+
+        pp_image will be the result of calling `preprocess_image` on the image,
+        or, if `preprocess_image` is not implemented, that image itself as a `PIL.Image.Image`.
+        The method must not modify this object.
+        """
+        ...
+
+
 @attrs.frozen(kw_only=True)
 class TrackingFunctionSpec:
     """
@@ -298,7 +473,6 @@ class TrackableShape:
     points: list[float] = attrs.field(converter=list)
 
 
-_PreprocessedImage = TypeVar("_PreprocessedImage")
 _TrackingState = TypeVar("_TrackingState")
 
 
