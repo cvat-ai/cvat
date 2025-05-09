@@ -45,6 +45,7 @@ from cvat.apps.engine.models import (
     Project,
     SegmentType,
     ShapeType,
+    SourceType,
     Task,
 )
 from cvat.apps.engine.rq import ImportRQMeta
@@ -2186,7 +2187,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
         dm.AnnotationType.mask: ShapeType.MASK
     }
 
-    sources = {'auto', 'semi-auto', 'manual', 'file', 'consensus'}
+    sources = set(SourceType)
 
     track_formats = [
         'cvat',
@@ -2274,7 +2275,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
 
                     track_id = ann.attributes.pop('track_id', None)
                     source = ann.attributes.pop('source').lower() \
-                        if ann.attributes.get('source', '').lower() in sources else 'manual'
+                        if ann.attributes.get('source', '').lower() in sources else SourceType.FILE
 
                     shape_type = shapes[ann.type]
                     if track_id is None or 'keyframe' not in ann.attributes or dm_dataset.format not in track_formats:
@@ -2288,7 +2289,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                                 element_occluded = element.visibility[0] == dm.Points.Visibility.hidden
                                 element_outside = element.visibility[0] == dm.Points.Visibility.absent
                                 element_source = element.attributes.pop('source').lower() \
-                                    if element.attributes.get('source', '').lower() in sources else 'manual'
+                                    if element.attributes.get('source', '').lower() in sources else SourceType.FILE
                                 elements.append(instance_data.LabeledShape(
                                     type=shapes[element.type],
                                     frame=frame_number,
@@ -2360,7 +2361,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                                     for n, v in element.attributes.items()
                                 ]
                                 element_source = element.attributes.pop('source').lower() \
-                                    if element.attributes.get('source', '').lower() in sources else 'manual'
+                                    if element.attributes.get('source', '').lower() in sources else SourceType.FILE
 
                                 tracks[track_id]['elements'][element.label].shapes.append(instance_data.TrackedShape(
                                     type=shapes[element.type],
@@ -2379,7 +2380,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                         frame=frame_number,
                         label=label_cat.items[ann.label].name,
                         group=group_map.get(ann.group, 0),
-                        source='manual',
+                        source=SourceType.FILE,
                         attributes=attributes,
                     ))
             except Exception as e:
