@@ -5555,7 +5555,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
             )
         return response
 
-    def _check_response(self, response, data, expected_source=None, annoOrder=True):
+    def _check_response(self, response, data, expected_source=None, anno_order=True):
         if not response.status_code in [
             status.HTTP_401_UNAUTHORIZED,
             status.HTTP_403_FORBIDDEN
@@ -5594,7 +5594,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                         check_optional_fields(self, ann, optional_values=_default_values[_type], expected_values=expected_values)
                 response.data = filter_object(response.data, drop=SHAPE_DEFAULT_VALUES.keys())
                 data = filter_object(data, drop=SHAPE_DEFAULT_VALUES.keys())
-                compare_objects(self, data, response.data, IGNORE_KEYS, order=annoOrder)
+                compare_objects(self, data, response.data, IGNORE_KEYS, order=anno_order)
             except AssertionError as e:
                 print("Objects are not equal:",
                       pformat(data, compact=True),
@@ -6732,7 +6732,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                 self.assertEqual(response.status_code, HTTP_200_OK)
 
                 data["version"] += 2 # upload is delete + put
-                self._check_response(response, data, expected_source='file', annoOrder=False)
+                self._check_response(response, data, expected_source='file', anno_order=False)
 
     def _check_dump_content(self, content, task, jobs, data, format_name):
         def etree_to_dict(t):
