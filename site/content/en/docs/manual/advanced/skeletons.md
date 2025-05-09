@@ -79,7 +79,8 @@ To do this, right-click on the skeleton point and select **Configure**:
 ![](/images/image-skeleton-drawn-example.jpg)
 
 In the opened menu, you can change the point setting. It is similar to
-[adding labels and attributes of the regular task](docs/manual/basics/create_an_annotation_task/#create-a-task):
+{{< ilink "/docs/manual/basics/create-annotation-task#create-a-task"
+"adding labels and attributes of the regular task" >}}:
 
 ![](/images/image-skeleton-point-setup.jpg)
 

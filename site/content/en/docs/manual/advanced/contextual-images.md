@@ -129,11 +129,11 @@ small toolbar will appear on the top of the screen, with the following elements:
 
 <!--lint disable maximum-line-length-->
 
-| Element                                        | Description                                                                                                                                                                                                                        |
-| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Element                                        | Description |
+| ---------------------------------------------- | ----------- |
 | ![contex_images_4](/images/context_img_04.jpg) | **Fit views**. Click to restore the layout to its original appearance. <p>If you've expanded any images in the layout, they will returned to their original size. <p>This won't affect the number of context images on the screen. |
-| ![contex_images_5](/images/context_img_05.jpg) | **Add new image**. Click to add context image to the layout.                                                                                                                                                                       |
-| ![contex_images_6](/images/context_img_06.jpg) | **Reload layout**. Click to reload layout to the default view. <p>Note, that this action can change the number of context images resetting them back to three.                                                                      |
+| ![contex_images_5](/images/context_img_05.jpg) | **Add new image**. Click to add context image to the layout. |
+| ![contex_images_6](/images/context_img_06.jpg) | **Reload layout**. Click to reload layout to the default view. <p>Note, that this action can change the number of context images resetting them back to three. |
 
 <!--lint enable maximum-line-length-->
 

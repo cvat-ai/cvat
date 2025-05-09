@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.35.1
+  version: 2.36.1
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -1143,8 +1143,8 @@ paths:
         schema:
           type: string
           format: date-time
-        description: Filter events after the datetime. If no 'from' or 'to' parameters
-          are passed, the last 30 days will be set.
+        description: UTC start date for events filtration. Default is the minimal
+          time.
       - in: query
         name: job_id
         schema:
@@ -1175,8 +1175,7 @@ paths:
         schema:
           type: string
           format: date-time
-        description: Filter events before the datetime. If no 'from' or 'to' parameters
-          are passed, the last 30 days will be set.
+        description: UTC end date for events filtration. Default is the current time.
       - in: query
         name: user_id
         schema:

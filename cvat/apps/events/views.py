@@ -62,14 +62,14 @@ api_filter_parameters = (
         location=OpenApiParameter.QUERY,
         type=OpenApiTypes.DATETIME,
         required=False,
-        description="Filter events after the datetime. If no 'from' or 'to' parameters are passed, the last 30 days will be set.",
+        description="UTC start date for events filtration. Default is the minimal time.",
     ),
     OpenApiParameter(
         "to",
         location=OpenApiParameter.QUERY,
         type=OpenApiTypes.DATETIME,
         required=False,
-        description="Filter events before the datetime. If no 'from' or 'to' parameters are passed, the last 30 days will be set.",
+        description="UTC end date for events filtration. Default is the current time.",
     ),
     OpenApiParameter(
         "filename",

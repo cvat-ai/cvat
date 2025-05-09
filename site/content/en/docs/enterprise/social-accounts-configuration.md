@@ -30,37 +30,37 @@ With more to come soon. Stay tuned!
 To enable authentication, do the following:
 
 1. Log in to the [Google Cloud console](https://console.cloud.google.com/)
-2. [Create a project](https://cloud.google.com/resource-manager/docs/creating-managing-projects),
+1. [Create a project](https://cloud.google.com/resource-manager/docs/creating-managing-projects),
    and go to [APIs & Services](https://console.cloud.google.com/apis/)
-3. On the left menu, select **OAuth consent**, then select
+1. On the left menu, select **OAuth consent**, then select
    **User type** (**Internal** or **External**), and click **Create**.
-4. On the **OAuth consent screen** fill all required fields, and click **Save and Continue**.
-5. On the **Scopes** screen, click **Add or remove scopes** and
+1. On the **OAuth consent screen** fill all required fields, and click **Save and Continue**.
+1. On the **Scopes** screen, click **Add or remove scopes** and
    select `auth/userinfo.email`, `auth/userinfo.profile`, and `openid`.
    Click **Update**, and **Save and Continue**.
    <br>For more information, see [Configure Auth Consent](https://developers.google.com/workspace/guides/configure-oauth-consent).
-6. On the left menu, click **Credentials**, on the top
+1. On the left menu, click **Credentials**, on the top
    menu click **+ Create credentials**, and select **OAuth client ID**.
-7. From the **Application Type** select **Web application** and
+1. From the **Application Type** select **Web application** and
    configure: **Application name**, **Authorized JavaScript origins**, **Authorized redirect URIs**.
    <br> For example, if you plan to deploy CVAT instance on `https://localhost:8080`, add `https://localhost:8080`
    to authorized JS origins and `https://localhost:8080/api/auth/social/goolge/login/callback/` to redirect URIs.
-8. Create configuration file in CVAT:
+1. Create configuration file in CVAT:
 
    1. Create the `auth_config.yml` file with the following content:
 
-   ```yaml
-   ---
-   social_account:
-     enabled: true
-     google:
-       client_id: <some_client_id>
-       client_secret: <some_client_secret>
-   ```
+      ```yaml
+      ---
+      social_account:
+        enabled: true
+        google:
+          client_id: <some_client_id>
+          client_secret: <some_client_secret>
+      ```
 
-   2. Set `AUTH_CONFIG_PATH="<path_to_auth_config>` environment variable.
+   1. Set `AUTH_CONFIG_PATH="<path_to_auth_config>` environment variable.
 
-9. In a terminal, run the following command:
+1. In a terminal, run the following command:
 
    ```bash
    docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.override.yml up -d --build
@@ -71,26 +71,26 @@ To enable authentication, do the following:
 There are 2 basic steps to enable GitHub account authentication.
 
 1. Open the GitHub settings page.
-2. On the left menu, click **<> Developer settings** > **OAuth Apps** > **Register new application**.
+1. On the left menu, click **<> Developer settings** > **OAuth Apps** > **Register new application**.
    <br>For more information, see [Creating an OAuth App](https://docs.github.com/en/developers/apps/building-oauth-apps/creating-an-oauth-app)
-3. Fill in the name field, set the homepage URL (for example: `https://localhost:8080`),
+1. Fill in the name field, set the homepage URL (for example: `https://localhost:8080`),
    and authentication callback URL (for example: `https://localhost:8080/api/auth/social/github/login/callback/`).
-4. Create configuration file in CVAT:
+1. Create configuration file in CVAT:
 
    1. Create the `auth_config.yml` file with the following content:
 
-   ```yaml
-   ---
-   social_account:
-     enabled: true
-     github:
-       client_id: <some_client_id>
-       client_secret: <some_client_secret>
-   ```
+      ```yaml
+      ---
+      social_account:
+        enabled: true
+        github:
+          client_id: <some_client_id>
+          client_secret: <some_client_secret>
+      ```
 
-   2. Set `AUTH_CONFIG_PATH="<path_to_auth_config>` environment variable.
+   1. Set `AUTH_CONFIG_PATH="<path_to_auth_config>` environment variable.
 
-5. In a terminal, run the following command:
+1. In a terminal, run the following command:
 
    ```bash
    docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.override.yml up -d --build

@@ -729,16 +729,16 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 ):
     queryset = Task.objects.select_related(
         'data',
-        'data__validation_layout',
         'assignee',
         'owner',
         'target_storage',
         'source_storage',
         'annotation_guide',
     ).prefetch_related(
-        'segment_set__job_set',
-        'segment_set__job_set__assignee',
-    ).with_job_summary()
+        # avoid loading heavy data in select related
+        # this reduces performance of the COUNT request in the list endpoint
+        'data__validation_layout',
+    )
 
     lookup_fields = {
         'project_name': 'project__name',
@@ -775,8 +775,11 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if self.action == 'list':
             perm = TaskPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
+            # with_job_summary() is optimized in the serializer
         elif self.action == 'preview':
             queryset = Task.objects.select_related('data')
+        else:
+            queryset = queryset.with_job_summary()
 
         return queryset
 
@@ -1531,8 +1534,12 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     mixins.RetrieveModelMixin, PartialUpdateModelMixin, mixins.DestroyModelMixin,
     UploadMixin, DatasetMixin
 ):
-    queryset = Job.objects.select_related('assignee', 'segment__task__data',
-        'segment__task__project', 'segment__task__annotation_guide', 'segment__task__project__annotation_guide',
+    queryset = Job.objects.select_related(
+        'assignee',
+        'segment__task__data',
+        'segment__task__project',
+        'segment__task__annotation_guide',
+        'segment__task__project__annotation_guide',
     )
 
     iam_organization_field = 'segment__task__organization'
@@ -2382,7 +2389,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
     PartialUpdateModelMixin
 ):
-    queryset = CloudStorageModel.objects.prefetch_related('data').all()
+    queryset = CloudStorageModel.objects.all()
 
     search_fields = ('provider_type', 'name', 'resource',
                     'credentials_type', 'owner', 'description')
@@ -2409,6 +2416,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if self.action == 'list':
             perm = CloudStoragePermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
+            queryset = queryset.prefetch_related('owner', 'manifests')
 
         provider_type = self.request.query_params.get('provider_type', None)
         if provider_type:

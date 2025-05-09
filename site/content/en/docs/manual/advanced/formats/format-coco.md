@@ -13,7 +13,7 @@ polygonal image annotations.
 For more information, see:
 
 - [COCO Object Detection site](http://cocodataset.org/#format-data)
-- [Format specification](https://openvinotoolkit.github.io/datumaro/stable/docs/data-formats/formats/coco.html)
+- [Format specification](https://open-edge-platform.github.io/datumaro/stable/docs/data-formats/formats/coco.html)
 - [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/coco_dataset)
 
 ## COCO export
@@ -58,7 +58,7 @@ such as `instances`, `panoptic`, `image_info`, `labels`, `captions`, or `stuff`.
 ## COCO import
 
 Upload format: a single unpacked `*.json` or a zip archive with the structure described above or
-[here](https://openvinotoolkit.github.io/datumaro/latest/docs/data-formats/formats/coco.html#import-coco-dataset)
+[here](https://open-edge-platform.github.io/datumaro/latest/docs/data-formats/formats/coco.html#import-coco-dataset)
 (without images).
 
 - supported annotations: Polygons, Rectangles (if the `segmentation` field is empty)
@@ -66,7 +66,7 @@ Upload format: a single unpacked `*.json` or a zip archive with the structure de
 
 ## How to create a task from MS COCO dataset
 
-1. Download the [MS COCO dataset](https://openvinotoolkit.github.io/datumaro/latest/docs/data-formats/formats/coco.html#import-coco-dataset).
+1. Download the [MS COCO dataset](https://open-edge-platform.github.io/datumaro/latest/docs/data-formats/formats/coco.html#import-coco-dataset).
 
    For example `val images` and `instances` annotations
 

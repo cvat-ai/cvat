@@ -24,6 +24,7 @@ from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import sendfile
 from cvat.apps.engine.view_utils import deprecate_response
 from cvat.apps.events.permissions import EventsPermission
+from cvat.apps.events.utils import find_minimal_date_for_filter
 from cvat.apps.redis_handler.background import AbstractExporter
 
 slogger = ServerLogManager(__name__)
@@ -42,7 +43,7 @@ def _create_csv(query_params: dict, output_filename: str):
         }
 
         query = "SELECT * FROM events"
-        conditions = []
+        conditions = ["source in ('server', 'client')", "scope != 'send:exception'"]
         parameters = {}
 
         if time_filter["from"]:
@@ -122,30 +123,18 @@ class EventsExporter(AbstractExporter):
     def _init_callback_with_params(self):
         self.callback = _create_csv
 
-        query_params = {
-            "org_id": self.filter_query.get("org_id", None),
-            "project_id": self.filter_query.get("project_id", None),
-            "task_id": self.filter_query.get("task_id", None),
-            "job_id": self.filter_query.get("job_id", None),
-            "user_id": self.filter_query.get("user_id", None),
-            "from": self.filter_query.get("from", None),
-            "to": self.filter_query.get("to", None),
-        }
+        resource_filters = ("org_id", "project_id", "task_id", "job_id", "user_id")
+        datetime_filters = ("from", "to")
+        query_params = {k: self.filter_query.get(k) for k in resource_filters + datetime_filters}
 
-        try:
-            if query_params["from"]:
-                query_params["from"] = parser.parse(query_params["from"]).timestamp()
-        except parser.ParserError:
-            raise serializers.ValidationError(
-                f"Cannot parse 'from' datetime parameter: {query_params['from']}"
-            )
-        try:
-            if query_params["to"]:
-                query_params["to"] = parser.parse(query_params["to"]).timestamp()
-        except parser.ParserError:
-            raise serializers.ValidationError(
-                f"Cannot parse 'to' datetime parameter: {query_params['to']}"
-            )
+        for datetime_filter in datetime_filters:
+            if query_params[datetime_filter]:
+                try:
+                    query_params[datetime_filter] = parser.isoparse(query_params[datetime_filter])
+                except parser.ParserError:
+                    raise serializers.ValidationError(
+                        f"Cannot parse {datetime_filter!r} datetime parameter: {query_params[datetime_filter]}"
+                    )
 
         if (
             query_params["from"]
@@ -154,10 +143,16 @@ class EventsExporter(AbstractExporter):
         ):
             raise serializers.ValidationError("'from' must be before than 'to'")
 
-        # Set the default time interval to last 30 days
-        if not query_params["from"] and not query_params["to"]:
+        if not query_params["from"]:
+            query_params["from"] = find_minimal_date_for_filter(
+                job_id=query_params["job_id"],
+                task_id=query_params["task_id"],
+                project_id=query_params["project_id"],
+                org_id=query_params["org_id"],
+            )
+
+        if not query_params["to"]:
             query_params["to"] = datetime.now(timezone.utc)
-            query_params["from"] = query_params["to"] - timedelta(days=30)
 
         output_filename = ExportCacheManager.make_file_path(
             file_type="events", file_id=self.query_id, file_ext="csv"
