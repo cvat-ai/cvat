@@ -38,6 +38,8 @@ import SVGForwardJumpIcon from './assets/forward-jump-icon.svg';
 import SVGLastIcon from './assets/last-icon.svg';
 import SVGFullscreenIcon from './assets/fullscreen-icon.svg';
 import SVGObjectOutsideIcon from './assets/object-outside-icon.svg';
+import SVGPreviousLayerIcon from './assets/previous-layer-icon.svg';
+import SVGNextLayerIcon from './assets/next-layer-icon.svg';
 import SVGBackgroundIcon from './assets/background-icon.svg';
 import SVGForegroundIcon from './assets/foreground-icon.svg';
 import SVGCubeIcon from './assets/cube-icon.svg';
@@ -104,6 +106,8 @@ export const ForwardJumpIcon = React.memo((): JSX.Element => <SVGForwardJumpIcon
 export const LastIcon = React.memo((): JSX.Element => <SVGLastIcon />);
 export const FullscreenIcon = React.memo((): JSX.Element => <SVGFullscreenIcon />);
 export const ObjectOutsideIcon = React.memo((): JSX.Element => <SVGObjectOutsideIcon />);
+export const PreviousLayerIcon = React.memo((): JSX.Element => <SVGPreviousLayerIcon />);
+export const NextLayerIcon = React.memo((): JSX.Element => <SVGNextLayerIcon />);
 export const BackgroundIcon = React.memo((): JSX.Element => <SVGBackgroundIcon />);
 export const ForegroundIcon = React.memo((): JSX.Element => <SVGForegroundIcon />);
 export const CubeIcon = React.memo((): JSX.Element => <SVGCubeIcon />);
