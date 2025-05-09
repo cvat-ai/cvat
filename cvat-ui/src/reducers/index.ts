@@ -823,6 +823,9 @@ export interface AnnotationState {
         visible: boolean;
         data: any;
     };
+    search: {
+        visible: boolean;
+    }
     propagate: {
         visible: boolean;
     };

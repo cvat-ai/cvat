@@ -1,0 +1,111 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+import React, { useCallback, useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import Modal from 'antd/lib/modal';
+import Text from 'antd/lib/typography/Text';
+import AutoComplete from 'antd/lib/auto-complete';
+import _ from 'lodash';
+import { getCore } from 'cvat-core-wrapper';
+import { CombinedState } from 'reducers';
+import { changeFrameAsync, switchShowSearchFramesModal } from 'actions/annotation-actions';
+import CvatTooltip from 'components/common/cvat-tooltip';
+
+interface SearchResult {
+    number: number;
+    name: string;
+}
+
+const cvat = getCore();
+
+const SEARCH_LIMIT = 25;
+const SEARCH_DEBOUNCE_TIME = 500;
+
+function SearchFramesModal(): JSX.Element {
+    const dispatch = useDispatch();
+    const [searchTerm, setSearchTerm] = useState('');
+    const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+    const visible = useSelector((state: CombinedState) => state.annotation.search.visible);
+    const jobInstance = useSelector((state: CombinedState) => state.annotation.job.instance);
+    const frameNumbers = useSelector((state: CombinedState) => state.annotation.job.frameNumbers);
+
+    const [searchData, setSearchData] = useState<SearchResult[]>([]);
+    const getFramesData = async () => {
+        if (jobInstance) {
+            const meta = await cvat.frames.getMeta('job', jobInstance.id);
+            const newSearchData = meta.frames.map((frame: any, idx: number) => ({
+                name: frame.name,
+                number: frameNumbers[idx],
+            }));
+            setSearchData(newSearchData);
+        }
+    };
+    useEffect(() => {
+        getFramesData();
+    }, [jobInstance]);
+
+    const onCancel = useCallback(() => {
+        dispatch(switchShowSearchFramesModal(false));
+        setSearchTerm('');
+        setSearchResults([]);
+    }, []);
+
+    const handleSearch = _.debounce((value: string) => {
+        let count = 0;
+        const searchResult = [];
+        for (const element of searchData) {
+            if (count >= SEARCH_LIMIT) break;
+            if (element.name.toLowerCase().includes(value.toLowerCase())) {
+                count++;
+                searchResult.push(element);
+            }
+        }
+        setSearchResults(searchResult);
+    }, SEARCH_DEBOUNCE_TIME);
+
+    const onSearch = useCallback((value: string) => {
+        setSearchTerm(value);
+        handleSearch(value);
+    }, [searchData]);
+
+    const onSelect = useCallback((frameNumber: string) => {
+        onCancel();
+        dispatch(changeFrameAsync(+frameNumber));
+    }, []);
+
+    return (
+        <Modal
+            className='cvat-frame-search-modal'
+            title='Search frames by name'
+            open={visible}
+            footer={null}
+            onCancel={onCancel}
+            width={600}
+            destroyOnClose
+        >
+            <AutoComplete
+                autoFocus
+                defaultValue={searchTerm}
+                placeholder='Type to search'
+                showSearch
+                onSearch={onSearch}
+                options={searchResults.map((item) => ({
+                    value: item.number,
+                    label: (
+                        <CvatTooltip title={item.name} className='cvat-frame-search-item'>
+                            <Text strong className='cvat-frame-search-item-number'>{`#${item.number} `}</Text>
+                            <Text className='cvat-frame-search-item-name'>{item.name}</Text>
+                        </CvatTooltip>
+                    ),
+                }))}
+                onSelect={onSelect}
+                allowClear
+                className='cvat-frame-search-selector'
+            />
+        </Modal>
+    );
+}
+
+export default React.memo(SearchFramesModal);

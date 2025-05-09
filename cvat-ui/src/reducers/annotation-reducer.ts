@@ -148,6 +148,9 @@ const defaultState: AnnotationState = {
         collecting: false,
         data: null,
     },
+    search: {
+        visible: false,
+    },
     propagate: {
         visible: false,
     },
@@ -445,6 +448,17 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 player: {
                     ...state.player,
                     playing,
+                },
+            };
+        }
+        case AnnotationActionTypes.CHANGE_SHOW_SEARCH_FRAMES_MODAL: {
+            const { visible } = action.payload;
+
+            return {
+                ...state,
+                search: {
+                    ...state.search,
+                    visible,
                 },
             };
         }

@@ -40,6 +40,7 @@ interface Props {
     backwardShortcut: string;
     navigationType: NavigationType;
     focusFrameInputShortcut: string;
+    searchFrameByNameShortcut: string;
     activeControl: ActiveControl;
     toolsBlockerState: ToolsBlockerState;
     annotationFilters: object[];
@@ -70,6 +71,7 @@ interface Props {
     onRestoreFrame(): void;
     switchNavigationBlocked(blocked: boolean): void;
     setNavigationType(navigationType: NavigationType): void;
+    switchShowSearchPallet(visible: boolean): void;
 }
 
 export default function AnnotationTopBarComponent(props: Props): JSX.Element {
@@ -97,6 +99,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         forwardShortcut,
         backwardShortcut,
         focusFrameInputShortcut,
+        searchFrameByNameShortcut,
         activeControl,
         toolsBlockerState,
         annotationFilters,
@@ -127,6 +130,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         onRestoreFrame,
         setNavigationType,
         switchNavigationBlocked,
+        switchShowSearchPallet,
     } = props;
 
     const playerItems: [JSX.Element, number][] = [];
@@ -167,6 +171,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
             frameDeleted={frameDeleted}
             deleteFrameShortcut={deleteFrameShortcut}
             focusFrameInputShortcut={focusFrameInputShortcut}
+            searchFrameByNameShortcut={searchFrameByNameShortcut}
             inputFrameRef={inputFrameRef}
             keyMap={keyMap}
             workspace={workspace}
@@ -177,6 +182,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
             onDeleteFrame={onDeleteFrame}
             onRestoreFrame={onRestoreFrame}
             switchNavigationBlocked={switchNavigationBlocked}
+            switchShowSearchPallet={switchShowSearchPallet}
         />
     ), 10]);
 

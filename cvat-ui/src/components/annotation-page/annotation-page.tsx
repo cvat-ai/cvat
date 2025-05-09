@@ -26,6 +26,7 @@ import { usePrevious } from 'utils/hooks';
 import EventRecorder from 'utils/event-recorder';
 import { readLatestFrame } from 'utils/remember-latest-frame';
 import { EventScope } from 'cvat-core/src/enums';
+import SearchFramesModal from './top-bar/search-modal';
 
 interface Props {
     job: Job | null | undefined;
@@ -157,6 +158,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
             </Layout.Content>
             <FiltersModalComponent />
             <StatisticsModalComponent />
+            <SearchFramesModal />
         </Layout>
     );
 }

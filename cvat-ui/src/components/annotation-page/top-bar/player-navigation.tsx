@@ -8,7 +8,9 @@ import React, {
 } from 'react';
 
 import { Row, Col } from 'antd/lib/grid';
-import Icon, { LinkOutlined, DeleteOutlined, CopyOutlined } from '@ant-design/icons';
+import Icon, {
+    LinkOutlined, DeleteOutlined, CopyOutlined, SearchOutlined,
+} from '@ant-design/icons';
 import Slider from 'antd/lib/slider';
 import InputNumber from 'antd/lib/input-number';
 import Text from 'antd/lib/typography/Text';
@@ -33,6 +35,7 @@ interface Props {
     frameDeleted: boolean;
     deleteFrameShortcut: string;
     focusFrameInputShortcut: string;
+    searchFrameByNameShortcut: string;
     inputFrameRef: React.RefObject<HTMLInputElement>;
     keyMap: KeyMap;
     workspace: Workspace;
@@ -43,6 +46,7 @@ interface Props {
     onDeleteFrame(): void;
     onRestoreFrame(): void;
     switchNavigationBlocked(blocked: boolean): void;
+    switchShowSearchPallet(visible: boolean): void;
 }
 
 const componentShortcuts = {
@@ -59,6 +63,12 @@ const componentShortcuts = {
         displayedSequences: ['~'],
         scope: ShortcutScope.ANNOTATION_PAGE,
     },
+    SEARCH_FRAME_BY_NAME: {
+        name: 'Search frame by name',
+        description: 'Open search frame by name dialog',
+        sequences: ['ctrl+p'],
+        scope: ShortcutScope.ANNOTATION_PAGE,
+    },
 };
 
 registerComponentShortcuts(componentShortcuts);
@@ -73,6 +83,7 @@ function PlayerNavigation(props: Props): JSX.Element {
         frameDeleted,
         deleteFrameShortcut,
         focusFrameInputShortcut,
+        searchFrameByNameShortcut,
         inputFrameRef,
         ranges,
         keyMap,
@@ -84,6 +95,7 @@ function PlayerNavigation(props: Props): JSX.Element {
         onDeleteFrame,
         onRestoreFrame,
         switchNavigationBlocked,
+        switchShowSearchPallet,
     } = props;
 
     const [frameInputValue, setFrameInputValue] = useState<number>(frameNumber);
@@ -125,7 +137,15 @@ function PlayerNavigation(props: Props): JSX.Element {
                 inputFrameRef.current.focus();
             }
         },
+        SEARCH_FRAME_BY_NAME: (event: KeyboardEvent | undefined) => {
+            event?.preventDefault();
+            switchShowSearchPallet(true);
+        },
     };
+
+    const onSearchIconClick = useCallback(() => {
+        switchShowSearchPallet(true);
+    }, [switchShowSearchPallet]);
 
     const deleteFrameIconStyle: CSSProperties = workspace === Workspace.SINGLE_SHAPE ? {
         pointerEvents: 'none',
@@ -189,6 +209,12 @@ function PlayerNavigation(props: Props): JSX.Element {
                         </CVATTooltip>
                     </Col>
                     <Col className='cvat-player-frame-actions' offset={1}>
+                        <CVATTooltip title={`Search frame by name ${searchFrameByNameShortcut}`}>
+                            <SearchOutlined
+                                className='cvat-player-search-frame-name-icon'
+                                onClick={onSearchIconClick}
+                            />
+                        </CVATTooltip>
                         <CVATTooltip title='Copy frame filename'>
                             <CopyOutlined className='cvat-player-copy-frame-name-icon' onClick={onCopyFilenameIconClick} />
                         </CVATTooltip>
