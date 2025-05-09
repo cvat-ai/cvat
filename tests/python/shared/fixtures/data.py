@@ -394,6 +394,7 @@ def test_db(users, users_by_name, memberships):
                 id=user["id"],
                 privilege=group,
                 has_analytics_access=user["has_analytics_access"],
+                is_superuser=user["is_superuser"],
             )
 
     for membership in memberships:
@@ -407,6 +408,7 @@ def test_db(users, users_by_name, memberships):
                 org=membership["organization"],
                 membership_id=membership["id"],
                 has_analytics_access=users_by_name[username]["has_analytics_access"],
+                is_superuser=users_by_name[username]["is_superuser"],
             )
 
     return data

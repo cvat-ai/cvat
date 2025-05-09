@@ -46,7 +46,7 @@ from cvat.apps.engine.models import (
     SourceType,
     Task,
 )
-from cvat.apps.engine.rq import RQId, define_dependent_job
+from cvat.apps.engine.rq import RequestId, define_dependent_job
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import get_rq_lock_by_user, get_rq_lock_for_job
@@ -620,7 +620,9 @@ class LambdaQueue:
         job: Optional[int] = None,
     ) -> LambdaJob:
         queue = self._get_queue()
-        rq_id = RQId(RequestAction.AUTOANNOTATE, RequestTarget.TASK, task).render()
+        rq_id = RequestId(
+            action=RequestAction.AUTOANNOTATE, target=RequestTarget.TASK, target_id=task
+        ).render()
 
         # Ensure that there is no race condition when processing parallel requests.
         # Enqueuing an RQ job with (queue, user) lock  but without (queue, rq_id) lock

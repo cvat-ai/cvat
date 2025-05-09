@@ -3,9 +3,11 @@
 # SPDX-License-Identifier: MIT
 
 import textwrap
+from datetime import datetime
 
 from django.db.models import Q
 from django.http import HttpResponse
+from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
     OpenApiParameter,
@@ -22,8 +24,9 @@ from rq.job import JobStatus as RqJobStatus
 from cvat.apps.engine.mixins import PartialUpdateModelMixin
 from cvat.apps.engine.models import Task
 from cvat.apps.engine.rq import BaseRQMeta
-from cvat.apps.engine.serializers import RqIdSerializer
+from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import get_server_url
+from cvat.apps.engine.view_utils import deprecate_response
 from cvat.apps.quality_control import quality_reports as qc
 from cvat.apps.quality_control.models import (
     AnnotationConflict,
@@ -42,6 +45,7 @@ from cvat.apps.quality_control.serializers import (
     QualityReportSerializer,
     QualitySettingsSerializer,
 )
+from cvat.apps.redis_handler.serializers import RqIdSerializer
 
 
 @extend_schema(tags=["quality"])
@@ -211,6 +215,12 @@ class QualityReportViewSet(
     @extend_schema(
         operation_id="quality_create_report",
         summary="Create a quality report",
+        description=textwrap.dedent(
+            """\
+            Deprecation warning: Utilizing this endpoint to check the computation status is no longer possible.
+            Consider using common requests API: GET /api/requests/<rq_id>
+            """
+        ),
         parameters=[
             OpenApiParameter(
                 CREATE_REPORT_RQ_ID_PARAMETER,
@@ -221,6 +231,7 @@ class QualityReportViewSet(
                     creation status.
                 """
                 ),
+                deprecated=True,
             )
         ],
         request=QualityReportCreateSerializer(required=False),
@@ -244,7 +255,7 @@ class QualityReportViewSet(
             ),
         },
     )
-    def create(self, request, *args, **kwargs):
+    def create(self, request: ExtendedRequest, *args, **kwargs):
         self.check_permissions(request)
 
         rq_id = request.query_params.get(self.CREATE_REPORT_RQ_ID_PARAMETER, None)
@@ -260,22 +271,16 @@ class QualityReportViewSet(
             except Task.DoesNotExist as ex:
                 raise NotFound(f"Task {task_id} does not exist") from ex
 
-            try:
-                rq_id = qc.QualityReportUpdateManager().schedule_custom_quality_check_job(
-                    request=request, task=task, user_id=request.user.id
-                )
-                serializer = RqIdSerializer({"rq_id": rq_id})
-                return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-            except qc.QualityReportUpdateManager.QualityReportsNotAvailable as ex:
-                raise ValidationError(str(ex))
+            manager = qc.QualityReportRQJobManager(request=request, db_instance=task)
+            return manager.enqueue_job()
 
         else:
+            deprecation_date = datetime(2025, 3, 17, tzinfo=timezone.utc)
             serializer = RqIdSerializer(data={"rq_id": rq_id})
             serializer.is_valid(raise_exception=True)
             rq_id = serializer.validated_data["rq_id"]
+            rq_job = qc.QualityReportRQJobManager(request=request).get_job_by_id(rq_id)
 
-            report_manager = qc.QualityReportUpdateManager()
-            rq_job = report_manager.get_quality_check_job(rq_id)
             # FUTURE-TODO: move into permissions
             # and allow not only rq job owner to check the status
             if (
@@ -287,36 +292,60 @@ class QualityReportViewSet(
                 .allow
             ):
                 # We should not provide job existence information to unauthorized users
-                raise NotFound("Unknown request id")
+                response = Response(
+                    "Unknown request id",
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+                deprecate_response(response, deprecation_date=deprecation_date)
+                return response
 
             rq_job_status = rq_job.get_status(refresh=False)
 
             if rq_job_status == RqJobStatus.FAILED:
                 message = str(rq_job.exc_info)
                 rq_job.delete()
-                raise ValidationError(message)
+                response = Response(
+                    message,
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+                deprecate_response(response, deprecation_date=deprecation_date)
+                return response
+
             elif rq_job_status in (
                 RqJobStatus.QUEUED,
                 RqJobStatus.STARTED,
                 RqJobStatus.SCHEDULED,
                 RqJobStatus.DEFERRED,
             ):
-                return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+                response = Response(
+                    serializer.data,
+                    status=status.HTTP_202_ACCEPTED,
+                )
+                deprecate_response(response, deprecation_date=deprecation_date)
+                return response
+
             elif rq_job_status == RqJobStatus.FINISHED:
                 return_value = rq_job.return_value()
                 rq_job.delete()
                 if not return_value:
-                    raise ValidationError("No report has been computed")
+                    response = Response(
+                        "No report has been computed",
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    )
+                    deprecate_response(response, deprecation_date=deprecation_date)
+                    return response
 
                 report = self.get_queryset().get(pk=return_value)
                 report_serializer = QualityReportSerializer(
                     instance=report, context={"request": request}
                 )
-                return Response(
+                response = Response(
                     data=report_serializer.data,
                     status=status.HTTP_201_CREATED,
                     headers=self.get_success_headers(report_serializer.data),
                 )
+                deprecate_response(response, deprecation_date=deprecation_date)
+                return response
 
             raise AssertionError(f"Unexpected rq job '{rq_id}' status '{rq_job_status}'")
 

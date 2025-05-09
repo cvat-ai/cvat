@@ -11,14 +11,17 @@ from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
 from io import StringIO
 from time import sleep
+from typing import Optional
 
 import pytest
+from cvat_sdk.api_client import ApiClient
 from dateutil import parser as datetime_parser
 
-from shared.utils.config import delete_method, make_api_client, server_get
+import shared.utils.s3 as s3
+from shared.utils.config import delete_method, get_method, make_api_client, server_get
 from shared.utils.helpers import generate_image_files
 
-from .utils import create_task
+from .utils import create_task, wait_and_download_v2, wait_background_request
 
 
 class TestGetAnalytics:
@@ -148,27 +151,53 @@ class TestGetAuditEvents:
             assert False, "Could not wait for expected request IDs"
 
     @staticmethod
-    def _export_events(endpoint, *, max_retries: int = 20, interval: float = 0.1, **kwargs):
-        query_id = ""
-        for _ in range(max_retries):
+    def _export_events(
+        api_client: ApiClient,
+        *,
+        api_version: int,
+        max_retries: int = 20,
+        interval: float = 0.1,
+        **kwargs,
+    ) -> Optional[bytes]:
+        if api_version == 1:
+            endpoint = api_client.events_api.list_endpoint
+            query_id = ""
+            for _ in range(max_retries):
+                (_, response) = endpoint.call_with_http_info(
+                    **kwargs, query_id=query_id, _parse_response=False
+                )
+                if response.status == HTTPStatus.CREATED:
+                    break
+                assert response.status == HTTPStatus.ACCEPTED
+                if not query_id:
+                    response_json = json.loads(response.data)
+                    query_id = response_json["query_id"]
+                sleep(interval)
+
+            assert response.status == HTTPStatus.CREATED
+
             (_, response) = endpoint.call_with_http_info(
-                **kwargs, query_id=query_id, _parse_response=False
+                **kwargs, query_id=query_id, action="download", _parse_response=False
             )
-            if response.status == HTTPStatus.CREATED:
-                break
-            assert response.status == HTTPStatus.ACCEPTED
-            if not query_id:
-                response_json = json.loads(response.data)
-                query_id = response_json["query_id"]
-            sleep(interval)
-        assert response.status == HTTPStatus.CREATED
+            assert response.status == HTTPStatus.OK
 
-        (_, response) = endpoint.call_with_http_info(
-            **kwargs, query_id=query_id, action="download", _parse_response=False
+            return response.data
+
+        assert api_version == 2
+
+        request_id, response = api_client.events_api.create_export(**kwargs, _check_status=False)
+        assert response.status == HTTPStatus.ACCEPTED
+
+        if "location" in kwargs and "cloud_storage_id" in kwargs:
+            background_request, response = wait_background_request(
+                api_client, rq_id=request_id.rq_id, max_retries=max_retries, interval=interval
+            )
+            assert background_request.result_url is None
+            return None
+
+        return wait_and_download_v2(
+            api_client, rq_id=request_id.rq_id, max_retries=max_retries, interval=interval
         )
-        assert response.status == HTTPStatus.OK
-
-        return response.data
 
     @staticmethod
     def _csv_to_dict(csv_data):
@@ -190,11 +219,12 @@ class TestGetAuditEvents:
 
         return res
 
-    def _test_get_audit_logs_as_csv(self, **kwargs):
+    def _test_get_audit_logs_as_csv(self, *, api_version: int = 2, **kwargs):
         with make_api_client(self._USERNAME) as api_client:
-            return self._export_events(api_client.events_api.list_endpoint, **kwargs)
+            return self._export_events(api_client, api_version=api_version, **kwargs)
 
-    def test_entry_to_time_interval(self):
+    @pytest.mark.parametrize("api_version", [1, 2])
+    def test_entry_to_time_interval(self, api_version: int):
         now = datetime.now(timezone.utc)
         to_datetime = now
         from_datetime = now - timedelta(minutes=3)
@@ -204,7 +234,7 @@ class TestGetAuditEvents:
             "to": to_datetime.isoformat(),
         }
 
-        data = self._test_get_audit_logs_as_csv(**query_params)
+        data = self._test_get_audit_logs_as_csv(api_version=api_version, **query_params)
         events = self._csv_to_dict(data)
         assert len(events)
 
@@ -212,12 +242,13 @@ class TestGetAuditEvents:
             event_timestamp = datetime_parser.isoparse(event["timestamp"])
             assert from_datetime <= event_timestamp <= to_datetime
 
-    def test_filter_by_project(self):
+    @pytest.mark.parametrize("api_version", [1, 2])
+    def test_filter_by_project(self, api_version: int):
         query_params = {
             "project_id": self.project_id,
         }
 
-        data = self._test_get_audit_logs_as_csv(**query_params)
+        data = self._test_get_audit_logs_as_csv(api_version=api_version, **query_params)
         events = self._csv_to_dict(data)
 
         filtered_events = self._filter_events(events, [("project_id", [str(self.project_id)])])
@@ -229,13 +260,14 @@ class TestGetAuditEvents:
         assert event_count["create:task"] == 2
         assert event_count["create:job"] == 4
 
-    def test_filter_by_task(self):
+    @pytest.mark.parametrize("api_version", [1, 2])
+    def test_filter_by_task(self, api_version: int):
         for task_id in self.task_ids:
             query_params = {
                 "task_id": task_id,
             }
 
-            data = self._test_get_audit_logs_as_csv(**query_params)
+            data = self._test_get_audit_logs_as_csv(api_version=api_version, **query_params)
             events = self._csv_to_dict(data)
 
             filtered_events = self._filter_events(events, [("task_id", [str(task_id)])])
@@ -246,20 +278,22 @@ class TestGetAuditEvents:
             assert event_count["create:task"] == 1
             assert event_count["create:job"] == 2
 
-    def test_filter_by_non_existent_project(self):
+    @pytest.mark.parametrize("api_version", [1, 2])
+    def test_filter_by_non_existent_project(self, api_version: int):
         query_params = {
             "project_id": self.project_id + 100,
         }
 
-        data = self._test_get_audit_logs_as_csv(**query_params)
+        data = self._test_get_audit_logs_as_csv(api_version=api_version, **query_params)
         events = self._csv_to_dict(data)
         assert len(events) == 0
 
-    def test_user_and_request_id_not_empty(self):
+    @pytest.mark.parametrize("api_version", [1, 2])
+    def test_user_and_request_id_not_empty(self, api_version: int):
         query_params = {
             "project_id": self.project_id,
         }
-        data = self._test_get_audit_logs_as_csv(**query_params)
+        data = self._test_get_audit_logs_as_csv(api_version=api_version, **query_params)
         events = self._csv_to_dict(data)
 
         for event in events:
@@ -272,7 +306,8 @@ class TestGetAuditEvents:
             assert request_id
             uuid.UUID(request_id)
 
-    def test_delete_project(self):
+    @pytest.mark.parametrize("api_version", [1, 2])
+    def test_delete_project(self, api_version: int):
         response = delete_method("admin1", f"projects/{self.project_id}")
         assert response.status_code == HTTPStatus.NO_CONTENT
 
@@ -299,7 +334,7 @@ class TestGetAuditEvents:
             "project_id": self.project_id,
         }
 
-        data = self._test_get_audit_logs_as_csv(**query_params)
+        data = self._test_get_audit_logs_as_csv(api_version=api_version, **query_params)
         events = self._csv_to_dict(data)
 
         filtered_events = self._filter_events(events, [("project_id", [str(self.project_id)])])
@@ -310,3 +345,31 @@ class TestGetAuditEvents:
         assert event_count["delete:project"] == 1
         assert event_count["delete:task"] == 2
         assert event_count["delete:job"] == 4
+
+    @pytest.mark.with_external_services
+    @pytest.mark.parametrize("api_version, allowed", [(1, False), (2, True)])
+    @pytest.mark.parametrize("cloud_storage_id", [3])  # import/export bucket
+    def test_export_to_cloud(
+        self, api_version: int, allowed: bool, cloud_storage_id: int, cloud_storages
+    ):
+        query_params = {
+            "api_version": api_version,
+            "location": "cloud_storage",
+            "cloud_storage_id": cloud_storage_id,
+            "filename": "test.csv",
+            "task_id": self.task_ids[0],
+        }
+        if allowed:
+            data = self._test_get_audit_logs_as_csv(**query_params)
+            assert data is None
+            s3_client = s3.make_client(bucket=cloud_storages[cloud_storage_id]["resource"])
+            data = s3_client.download_fileobj(query_params["filename"])
+            events = self._csv_to_dict(data)
+            assert len(events)
+        else:
+            response = get_method(self._USERNAME, "events", **query_params)
+            assert response.status_code == HTTPStatus.BAD_REQUEST
+            assert (
+                response.json()[0]
+                == "This endpoint does not support exporting events to cloud storage"
+            )

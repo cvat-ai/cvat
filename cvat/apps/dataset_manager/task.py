@@ -30,7 +30,7 @@ from cvat.apps.engine import models, serializers
 from cvat.apps.engine.log import DatasetLogManager
 from cvat.apps.engine.model_utils import add_prefetch_fields, bulk_create, get_cached
 from cvat.apps.engine.plugins import plugin_decorator
-from cvat.apps.engine.utils import take_by
+from cvat.apps.engine.utils import av_scan_paths, take_by
 from cvat.apps.events.handlers import handle_annotations_change
 from cvat.apps.profiler import silk_profile
 
@@ -1128,6 +1128,7 @@ def export_task(
 
 @transaction.atomic
 def import_task_annotations(src_file, task_id, format_name, conv_mask_to_poly):
+    av_scan_paths(src_file)
     task = TaskAnnotation(task_id, write_only=True)
 
     importer = make_importer(format_name)
@@ -1140,6 +1141,7 @@ def import_task_annotations(src_file, task_id, format_name, conv_mask_to_poly):
 
 @transaction.atomic
 def import_job_annotations(src_file, job_id, format_name, conv_mask_to_poly):
+    av_scan_paths(src_file)
     job = JobAnnotation(job_id, prefetch_images=True)
 
     importer = make_importer(format_name)
