@@ -6316,9 +6316,6 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                 "YOLO 1.1",
                 "Ultralytics YOLO Detection 1.0",
                 "Ultralytics YOLO Oriented Bounding Boxes 1.0",
-                "CVAT for video 1.1",
-                "CVAT for images 1.1",
-                "Datumaro 1.0"
             ]:
                 annotations["shapes"] += rectangle_shapes_wo_attrs
 
@@ -6581,7 +6578,10 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
 
             elif annotation_format in [
                 "COCO Keypoints 1.0",
-                "Ultralytics YOLO Pose 1.0"
+                "Ultralytics YOLO Pose 1.0",
+                "CVAT for video 1.1",
+                "CVAT for images 1.1",
+                "Datumaro 1.0"
             ]:
                 skeleton_wo_attrs = [
                     {
@@ -6628,7 +6628,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                         ],
                     }
                 ]
-                annotations['shapes'] = skeleton_wo_attrs
+                annotations['shapes'] += skeleton_wo_attrs
             else:
                 raise Exception("Unknown format {}".format(annotation_format))
 
