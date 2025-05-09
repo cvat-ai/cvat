@@ -130,7 +130,7 @@ During the drawing process, you can remove the last point by clicking on it with
 ### Settings
 
 - On how to adjust the polygon,
-  see [Objects sidebar](/docs/manual/basics/CVAT-annotation-Interface/objects-sidebar#appearance).
+  see {{< ilink "/docs/manual/basics/CVAT-annotation-Interface/objects-sidebar#appearance" "Objects sidebar" >}}.
 
 - For more information about polygons in general, see
   {{< ilink "/docs/manual/advanced/annotation-with-polygons" "Annotation with polygons" >}}.
@@ -236,38 +236,42 @@ To annotate with trackers, do the following:
    to move to the next frame.
    <br>All annotated objects will be automatically tracked.
 
-### OpenCV: annotate with trackers
-
-To annotate with trackers, do the following:
-
-1. On the menu toolbar, click **OpenCV**![OpenCV](/images/image201.jpg) and wait for the library to load.
-
-   <br>![](/images/image198.jpg)
-
-2. Go to the **Tracker** tab, select the label, and click **Tracking**.
-
-   <br>![Start tracking an object](/images/image242.jpg)
-
-3. From the **Label** drop-down, select the label for the object.
-4. From **Tracker** drop-down, select tracker.
-5. Click **Track**.
-6. To move to the next frame, on the top menu click the **Next** button (or **F** on the keyboard).
-
-All annotated objects will be automatically tracked when you move to the next frame.
-
 ### When tracking
 
 - To enable/disable tracking, use **Tracker switcher** on the sidebar.
 
-  ![Tracker switcher](/images/tracker_switcher.jpg)
+  ![Tracker switcher](/images/tracker_switcher.png)
 
 - Trackable objects have an indication on canvas with a model name.
 
-  ![Tracker indication](/images/tracker_indication_detrac.jpg)
+  ![Tracker indication](/images/tracker_indication_detrac.png)
 
 - You can follow the tracking by the messages appearing at the top.
 
-  ![Tracker pop-up window](/images/tracker_pop-up_window.jpg)
+  ![Tracker pop-up window](/images/tracker_pop-up_window.png)
+
+### OpenCV: annotate with trackers
+
+To annotate with trackers, do the following:
+
+1. Create basic rectangle shapes or tracks for tracker initialization
+
+2. On the menu toolbar, click **OpenCV**![OpenCV](/images/image201.jpg) and wait for the library to load.
+
+   <br>![](/images/image198.jpg)
+
+3. From **Tracker** drop-down, select tracker and Click **Track**
+
+   <br>![Start tracking an object](/images/tracker_mil_control.png)
+
+4. Annotation actions window will pop-up. Setup `Target frame`
+and `Convert rectangle shapes to tracks` parameters and click `Run`
+
+   > **Note:** Tracking will be applied to all filtered rectangle annotations.
+
+   <br>![Tracker action](/images/tracker_mil_action.png)
+
+All annotated objects will be automatically tracked up until target frame parameter.
 
 ### Trackers models
 

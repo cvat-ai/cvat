@@ -90,7 +90,7 @@ class TorchvisionDetectionFunction:
         ]
 
 # log into the CVAT server
-with make_client(host="localhost", credentials=("user", "password")) as client:
+with make_client(host="http://localhost", credentials=("user", "password")) as client:
     # annotate task 12345 using Faster R-CNN
     cvataa.annotate_task(client, 41617,
         TorchvisionDetectionFunction("fasterrcnn_resnet50_fpn_v2", "DEFAULT", box_score_thresh=0.5),
@@ -144,14 +144,14 @@ and replaces the label IDs in the shape objects with those defined in the datase
 For example, suppose the AA function's spec defines the following labels:
 
 | Name  | ID |
-|-------|----|
-| `bat` |  0 |
-| `rat` |  1 |
+| ----- | -- |
+| `bat` | 0  |
+| `rat` | 1  |
 
 And the dataset defines the following labels:
 
 | Name  | ID  |
-|-------|-----|
+| ----- | --- |
 | `bat` | 100 |
 | `cat` | 101 |
 | `rat` | 102 |
@@ -173,7 +173,7 @@ and sometimes setting some attributes to fixed values.
 The following helpers are available for building specifications:
 
 | Name                      | Model type            | Fixed attributes                                      |
-|---------------------------|-----------------------|-------------------------------------------------------|
+| ------------------------- | --------------------- | ----------------------------------------------------- |
 | `label_spec`              | `PatchedLabelRequest` | -                                                     |
 | `skeleton_label_spec`     | `PatchedLabelRequest` | `type="skeleton"`                                     |
 | `keypoint_spec`           | `SublabelRequest`     | `type="points"`                                       |
@@ -197,7 +197,7 @@ cvataa.number_attribute_spec("size", 1, number_attribute_values(0, 10))
 The following helpers are available for use in `detect`:
 
 | Name        | Model type               | Fixed attributes              |
-|-------------|--------------------------|-------------------------------|
+| ----------- | ------------------------ | ----------------------------- |
 | `shape`     | `LabeledShapeRequest`    | `frame=0`                     |
 | `mask`      | `LabeledShapeRequest`    | `frame=0`, `type="mask"`      |
 | `polygon`   | `LabeledShapeRequest`    | `frame=0`, `type="polygon"`   |

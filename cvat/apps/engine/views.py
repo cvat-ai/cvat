@@ -28,9 +28,7 @@ from attr.converters import to_bool
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.storage import storages
-from django.db import IntegrityError
-from django.db import models as django_models
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models.query import Prefetch
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseGone, HttpResponseNotFound
 from django.utils import timezone
@@ -905,16 +903,16 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 ):
     queryset = Task.objects.select_related(
         'data',
-        'data__validation_layout',
         'assignee',
         'owner',
         'target_storage',
         'source_storage',
         'annotation_guide',
     ).prefetch_related(
-        'segment_set__job_set',
-        'segment_set__job_set__assignee',
-    ).with_job_summary()
+        # avoid loading heavy data in select related
+        # this reduces performance of the COUNT request in the list endpoint
+        'data__validation_layout',
+    )
 
     lookup_fields = {
         'project_name': 'project__name',
@@ -954,8 +952,11 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if self.action == 'list':
             perm = TaskPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
+            # with_job_summary() is optimized in the serializer
         elif self.action == 'preview':
             queryset = Task.objects.select_related('data')
+        else:
+            queryset = queryset.with_job_summary()
 
         return queryset
 
@@ -1827,11 +1828,13 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     mixins.RetrieveModelMixin, PartialUpdateModelMixin, mixins.DestroyModelMixin,
     UploadMixin, DatasetMixin
 ):
-    queryset = Job.objects.select_related('assignee', 'segment__task__data',
-        'segment__task__project', 'segment__task__annotation_guide', 'segment__task__project__annotation_guide',
-    ).annotate(
-        django_models.Count('issues', distinct=True),
-    ).all()
+    queryset = Job.objects.select_related(
+        'assignee',
+        'segment__task__data',
+        'segment__task__project',
+        'segment__task__annotation_guide',
+        'segment__task__project__annotation_guide',
+    )
 
     iam_organization_field = 'segment__task__organization'
     search_fields = ('task_name', 'project_name', 'assignee', 'state', 'stage')
@@ -1859,6 +1862,12 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         if self.action == 'list':
             perm = JobPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
+
+            queryset = queryset.prefetch_related(
+                "segment__task__source_storage", "segment__task__target_storage"
+            )
+        else:
+            queryset = queryset.with_issue_counts() # optimized in JobReadSerializer
 
         return queryset
 
@@ -2748,7 +2757,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
     PartialUpdateModelMixin
 ):
-    queryset = CloudStorageModel.objects.prefetch_related('data').all()
+    queryset = CloudStorageModel.objects.all()
 
     search_fields = ('provider_type', 'name', 'resource',
                     'credentials_type', 'owner', 'description')
@@ -2775,6 +2784,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if self.action == 'list':
             perm = CloudStoragePermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
+            queryset = queryset.prefetch_related('owner', 'manifests')
 
         provider_type = self.request.query_params.get('provider_type', None)
         if provider_type:

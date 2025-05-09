@@ -34,6 +34,9 @@ const defaultState: PluginsState = {
             overviewTab: [],
             allocationTable: [],
         },
+        analyticsReportPage: {
+            content: [],
+        },
     },
     components: {
         header: {
