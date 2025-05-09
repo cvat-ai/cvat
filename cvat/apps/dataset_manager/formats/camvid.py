@@ -10,7 +10,7 @@ from cvat.apps.dataset_manager.bindings import GetCVATDataExtractor, import_dm_a
 from cvat.apps.dataset_manager.util import make_zip_archive
 
 from .registry import dm_env, exporter, importer
-from .transformations import MaskToPolygonTransformation, RotatedBoxesToPolygons
+from .transformations import EllipsesToMasks, MaskToPolygonTransformation, RotatedBoxesToPolygons
 from .utils import make_colormap
 
 
@@ -21,6 +21,7 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
         dataset.transform(RotatedBoxesToPolygons)
         dataset.transform("polygons_to_masks")
         dataset.transform("boxes_to_masks")
+        dataset.transform(EllipsesToMasks)
         dataset.transform("merge_instance_segments")
         label_map = make_colormap(instance_data)
 

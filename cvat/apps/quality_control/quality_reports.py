@@ -169,6 +169,7 @@ class ComparisonParameters(Serializable):
         dm.AnnotationType.polyline,
         dm.AnnotationType.skeleton,
         dm.AnnotationType.label,
+        dm.AnnotationType.ellipse,
     ]
 
     non_groupable_ann_type = dm.AnnotationType.label
@@ -1031,13 +1032,16 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
         )
 
     @staticmethod
-    def to_polygon(bbox_ann: dm.Bbox):
+    def to_polygon(bbox_ann: dm.Bbox | dm.Ellipse):
         points = bbox_ann.as_polygon()
         angle = bbox_ann.attributes.get("rotation", 0) / 180 * math.pi
 
         if angle:
             points = np.reshape(points, (-1, 2))
-            center = (points[0] + points[2]) / 2
+            if isinstance(bbox_ann, dm.Bbox):
+                center = (points[0] + points[2]) / 2
+            else:
+                center = (bbox_ann.c_x, bbox_ann.c_y)
             rel_points = points - center
             cos = np.cos(angle)
             sin = np.sin(angle)
@@ -1070,6 +1074,8 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
             return self.match_skeletons(*args)
         elif t == dm.AnnotationType.polyline:
             return self.match_lines(*args)
+        elif t == dm.AnnotationType.ellipse:
+            return self.match_ellipses(*args)
         # pylint: enable=no-value-for-parameter
         else:
             return None
@@ -1143,6 +1149,18 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
             item_a,
             item_b,
             distance=partial(_bbox_iou, img_h=img_h, img_w=img_w),
+        )
+
+    def match_ellipses(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem):
+        def _ellipse_iou(a: dm.Ellipse, b: dm.Ellipse, *, img_w: int, img_h: int) -> float:
+            return segment_iou(self.to_polygon(a), self.to_polygon(b), img_h=img_h, img_w=img_w)
+
+        img_h, img_w = item_a.media_as(dm.Image).size
+        return self.match_segments(
+            dm.AnnotationType.ellipse,
+            item_a,
+            item_b,
+            distance=partial(_ellipse_iou, img_h=img_h, img_w=img_w),
         )
 
     def match_segmentations(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem):
@@ -1702,6 +1720,7 @@ class _Comparator:
             dm.AnnotationType.polygon,
             dm.AnnotationType.mask,
             dm.AnnotationType.bbox,
+            dm.AnnotationType.ellipse,
         }.intersection(self.included_ann_types)
         anns = sorted(
             [a for a in item.annotations if a.type in spatial_types], key=lambda a: a.z_order
@@ -1709,7 +1728,7 @@ class _Comparator:
 
         segms = []
         for ann in anns:
-            if ann.type == dm.AnnotationType.bbox:
+            if ann.type in (dm.AnnotationType.bbox, dm.AnnotationType.ellipse):
                 segms.append(ann.as_polygon())
             elif ann.type == dm.AnnotationType.polygon:
                 segms.append(ann.points)
