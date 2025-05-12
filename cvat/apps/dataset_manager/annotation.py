@@ -129,7 +129,6 @@ class AnnotationIR:
                 last_key = max(shape['frame'] for shape in track['shapes'])
                 if not scoped_shapes[0]['keyframe']:
                     segment_shapes.insert(0, scoped_shapes[0])
-                assert type(scoped_shapes[-1]['points']) == type(segment_shapes[-1]['points'])
                 if last_key >= stop and scoped_shapes[-1]['points'] != segment_shapes[-1]['points']:
                     segment_shapes.append(scoped_shapes[-1])
                 elif scoped_shapes[-1]['keyframe'] and \
