@@ -2257,7 +2257,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                         points = tuple(MaskConverter.dm_mask_to_cvat_rle(ann))
                     elif ann.type == dm.AnnotationType.ellipse:
                         left, top, right, bottom = ann.points
-                        points = [(left + right) / 2, (top + bottom) / 2, right, top]
+                        points = ((left + right) / 2, (top + bottom) / 2, right, top)
                     elif ann.type != dm.AnnotationType.skeleton:
                         points = tuple(ann.points)
 
