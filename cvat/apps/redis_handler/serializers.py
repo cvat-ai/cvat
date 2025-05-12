@@ -162,7 +162,8 @@ class RequestSerializer(serializers.Serializer):
                 representation["result_url"] = ExportRQMeta.for_job(rq_job).result_url
             else:
                 return_value = rq_job.return_value()
-                if isinstance(return_value, (int, UUID)):
+                # bool class is a subclass of int
+                if isinstance(return_value, (int, UUID)) and not isinstance(return_value, bool):
                     representation["result_id"] = return_value
 
         return representation
