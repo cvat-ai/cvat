@@ -6,7 +6,6 @@
 
 
 
-
 ## Installation
 
 (https://docs.cvat.ai/docs/administration/basics/installation/)
@@ -15,6 +14,7 @@ Pre-requisites:
 
 - Docker
 - Google Chrome
+
 1. `git clone https://github.com/cvat-ai/cvat`
 2. `cd cvat`
 3. Creo archivo **.env** **que va a definir la variable de entorno con la IP del servidor, este archivo se corre cada vez que se levanta el Docker de CVAT, segurando que esa variable de estado siempre esté bien definida:
@@ -36,8 +36,7 @@ Pre-requisites:
     ```
     
     Es importante acá saber que por seguridad, el <YOUR_WEB_PORTAL_PORT> que elijas de manera random en un servidor, no va a estar abierto.
-    
-    4.a. Pedirle al tío que te habilite ese puerto que vos elegiste para que puedas entrar
+    1. Pedirle al tío que te habilite ese puerto que vos elegiste para que puedas entrar
     
 5. Hasta acá es la instalación básica que se puede levantar levantando los contenedores, buildeando porque hicimos cambios en el docker-compose. Hay dos opciones:
     1. Para buildear CVAT pelado sin las AI tools:
@@ -63,7 +62,7 @@ Pre-requisites:
 
 ## Usar AI tools
 
-Ahora, con el comando 5.b. solo buildeamos con las capacidades de tener las AI tools en el Docker pero aún no tenemos nada, estos son los pasos a seguir para eso hay que tener Nuclio. Si lo estás instalando en un servidor donde ya hay un cvat existente, ya va a tener esto, sino, entonces:
+Ahora, con el comando 5.I. solo buildeamos con las capacidades de tener las AI tools en el Docker pero aún no tenemos nada, estos son los pasos a seguir para eso hay que tener Nuclio. Si lo estás instalando en un servidor donde ya hay un cvat existente, ya va a tener esto, sino, entonces:
 
 Instalar Nuclio:
 
@@ -96,6 +95,10 @@ Cada una de estas funciones se crea en un puerto, ese es el puerto del servidor 
     `nuctl get functions`
     
 2. Le pido al tío que abra ese puerto
+
+
+### Modelos preentrenados
+Los modelos preentrenados se pueden descargar del bucket de S3 en el siguiente link: https://us-east-1.console.aws.amazon.com/s3/buckets/anii-anomalias?region=us-east-1&bucketType=general
 
 ## Crear tu propia AI TOOL
 
