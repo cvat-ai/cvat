@@ -347,11 +347,15 @@ class TestGetPostProjectBackup:
         self._test_can_get_project_backup(user["username"], project["id"])
 
     def test_can_get_backup_project_when_some_tasks_have_no_data(self):
-        project = next((p for p in self.projects if 0 < p["tasks"]["count"]))
+        project = next(p for p in self.projects if 0 < p["tasks"]["count"])
 
         # add empty task to project
+        org_id = project["organization"]
         response = post_method(
-            "admin1", "tasks", {"name": "empty_task", "project_id": project["id"]}
+            "admin1",
+            "tasks",
+            {"name": "empty_task", "project_id": project["id"]},
+            **({"org_id": org_id} if org_id else {}),
         )
         assert response.status_code == HTTPStatus.CREATED
 
