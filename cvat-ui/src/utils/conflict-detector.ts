@@ -182,12 +182,14 @@ export function resolveConflicts(
 
     Object.entries(resultMap).forEach(([key, currValue]) => {
         const conflicts = conflictDetector({ [key]: currValue }, shortcutsKeyMap);
-        if (!conflicts?.[key]) return;
+        if (!conflicts) return;
 
-        resultMap[key].sequences = removeConflictingSequences(
-            resultMap[key].sequences,
-            conflicts[key].sequences,
-        );
+        Object.keys(conflicts).forEach((conflictingKey) => {
+            resultMap[conflictingKey].sequences = removeConflictingSequences(
+                resultMap[conflictingKey].sequences,
+                conflicts[conflictingKey].sequences,
+            );
+        });
     });
 
     return resultMap;
