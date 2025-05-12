@@ -104,7 +104,7 @@ To attach to a container, run one of the following tasks:
 - `REST API tests: Attach to RQ low` for the low priority queue worker
 - `REST API tests: Attach to RQ default` for the default priority queue worker
 
-> If you have a custom development environment setup, you need to adjust
+If you have a custom development environment setup, you need to adjust
 host-remote path mappings in the `.vscode/launch.json`:
 ```json
 ...

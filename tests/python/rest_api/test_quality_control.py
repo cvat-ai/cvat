@@ -1489,7 +1489,11 @@ class TestQualityReportMetrics(_PermissionTestBase):
                 new_report_data,
                 old_report_data,
                 ignore_order=True,
-                exclude_paths=["root['created_date']", "root['id']"],
+                exclude_paths=[
+                    "root['created_date']",
+                    "root['id']",
+                    "root['parameters']['included_annotation_types']",
+                ],
             )
             == {}
         )

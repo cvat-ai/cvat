@@ -18,7 +18,7 @@ These shortcuts are organized by scopes. Some are global, meaning they work acro
  in both the Standard Workspace and the Standard 3D Workspace, as these two do not coexist.
 
 | **Scope**                        | **Shortcut Conflicts**                                                          |
-|----------------------------------|---------------------------------------------------------------------------------|
+| -------------------------------- | ------------------------------------------------------------------------------- |
 | **Global**                       | Must be unique across all scopes, as they apply universally.                    |
 | **Annotation Page**              | Must be unique across all scopes, except Labels Editor.                         |
 | **Standard Workspace**           | Must be unique across itself, Annotation Page and Global Scope.                 |
@@ -56,7 +56,8 @@ You can customize shortcuts in CVAT settings.
  to assign to the action. As an example `f3` has been set here for Show Shortcuts along with `f1`:\
 ![](/images/shortcuts05.png)
 
-- Shortcuts can be any combination of modifiers (ctrl, shift or alt) and up to one non-modifier key e.g. `ctrl+shift+f1` etc.\
+- Shortcuts can be any combination of modifiers (ctrl, shift or alt)
+  and up to one non-modifier key e.g. `ctrl+shift+f1` etc.\
 ![](/images/shortcuts06.png)
 
 - If you try to add a shortcut that is already in use, you will get a warning message:\

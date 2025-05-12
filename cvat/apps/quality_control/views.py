@@ -101,7 +101,13 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
             if report_id := self.request.query_params.get("report_id", None):
                 # NOTE: This filter is too complex to be implemented by other means,
                 # it has a dependency on the report type
-                report = get_or_404(QualityReport, report_id)
+                report = get_or_404(
+                    QualityReport.objects.select_related(
+                        "job__segment__task__organization",
+                        "task__organization",
+                    ),
+                    report_id,
+                )
                 self.check_object_permissions(self.request, report)
 
                 if report.target == QualityReportTarget.JOB:

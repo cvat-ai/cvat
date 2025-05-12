@@ -58,19 +58,19 @@ Next, specify the parameters in the task configurator:
 A step-by-step example for creating the multiple tasks:
 
 1. In the **Name** field, enter the `Create_multitask-{{index}}-{{file_name}}`.
-2. Add labels.
-3. Select files. <br>In case there are more than four files,
+1. Add labels.
+1. Select files. <br>In case there are more than four files,
    only the total number of selected files will be displayed:
    ![](/images/create_multi_tasks_3.png)
-4. Select **Submit `N` tasks**
+1. Select **Submit `N` tasks**
 
    ![](/images/create_multi_tasks_4.png)
 
-5. You will see a progress bar that shows the progress of the tasks being created:
+1. You will see a progress bar that shows the progress of the tasks being created:
 
    ![](/images/create_multi_tasks_5.png)
 
-6. Select **Ok**.
+1. Select **Ok**.
 
    ![](/images/create_multi_tasks_6.png)
 
