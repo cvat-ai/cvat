@@ -263,7 +263,7 @@ services:
     container_name: traefik
     restart: always
     ports:
-      - 8080:8080
+      - 9090:8080
       - 8090:8090
     environment:
       CVAT_HOST: ${CVAT_HOST:-localhost}
