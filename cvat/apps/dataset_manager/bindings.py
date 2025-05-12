@@ -51,7 +51,7 @@ from cvat.apps.engine.rq import ImportRQMeta
 
 from ..engine.log import ServerLogManager
 from .annotation import AnnotationIR, AnnotationManager, TrackManager
-from .formats.transformations import EllipsesToMasks, MaskConverter
+from .formats.transformations import MaskConverter
 
 slogger = ServerLogManager(__name__)
 
@@ -1993,7 +1993,7 @@ class CvatToDmAnnotationConverter:
         dm_attr = self._convert_attrs(shape.label, shape.attributes)
         dm_attr['occluded'] = shape.occluded
 
-        if shape.type == ShapeType.RECTANGLE:
+        if shape.type in (ShapeType.RECTANGLE, ShapeType.ELLIPSE):
             dm_attr['rotation'] = shape.rotation
 
         if hasattr(shape, 'track_id'):
@@ -2009,17 +2009,17 @@ class CvatToDmAnnotationConverter:
                 label=dm_label, attributes=dm_attr, group=dm_group,
                 z_order=shape.z_order)
         elif shape.type == ShapeType.ELLIPSE:
-            # TODO: for now Datumaro does not support ellipses
-            # so, we convert an ellipse to RLE mask here
-            # instead of applying transformation in directly in formats
-            anno = EllipsesToMasks.convert_ellipse(SimpleNamespace(**{
-                "points": shape.points,
-                "label": dm_label,
-                "z_order": shape.z_order,
-                "rotation": shape.rotation,
-                "group": dm_group,
-                "attributes": dm_attr,
-            }), self.cvat_frame_anno.height, self.cvat_frame_anno.width)
+            center_x, center_y, right, top = shape.points
+            anno = dm.Ellipse(
+                x1=center_x - (right - center_x),
+                x2=right,
+                y1=top,
+                y2=center_y + (center_y - top),
+                label=dm_label,
+                attributes=dm_attr,
+                group=dm_group,
+                z_order=shape.z_order,
+            )
         elif shape.type == ShapeType.MASK:
             anno = MaskConverter.cvat_rle_to_dm_rle(SimpleNamespace(**{
                 "points": shape.points,
@@ -2183,7 +2183,8 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
         dm.AnnotationType.points: ShapeType.POINTS,
         dm.AnnotationType.cuboid_3d: ShapeType.CUBOID,
         dm.AnnotationType.skeleton: ShapeType.SKELETON,
-        dm.AnnotationType.mask: ShapeType.MASK
+        dm.AnnotationType.mask: ShapeType.MASK,
+        dm.AnnotationType.ellipse: ShapeType.ELLIPSE,
     }
 
     sources = {'auto', 'semi-auto', 'manual', 'file', 'consensus'}
@@ -2254,6 +2255,9 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                         points = (*ann.position, *ann.rotation, *ann.scale, 0, 0, 0, 0, 0, 0, 0)
                     elif ann.type == dm.AnnotationType.mask:
                         points = tuple(MaskConverter.dm_mask_to_cvat_rle(ann))
+                    elif ann.type == dm.AnnotationType.ellipse:
+                        left, top, right, bottom = ann.points
+                        points = ((left + right) / 2, (top + bottom) / 2, right, top)
                     elif ann.type != dm.AnnotationType.skeleton:
                         points = tuple(ann.points)
 

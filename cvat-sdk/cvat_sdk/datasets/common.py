@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import abc
+from enum import Enum, auto
 from typing import Optional
 
 import attrs
@@ -62,3 +63,13 @@ class Sample:
 
     media: MediaElement
     """Media data of the frame."""
+
+
+class MediaDownloadPolicy(Enum):
+    """Defines policies controlling when media data is downloaded."""
+
+    PRELOAD_ALL = auto()
+    """Download and cache all media data when the dataset object is created."""
+
+    FETCH_FRAMES_ON_DEMAND = auto()
+    """Download the media element for each frame whenever MediaElement.load_* is invoked."""
