@@ -404,7 +404,7 @@ class JobPartialUpdateAPITestCase(ApiTestBase):
     def test_api_v2_jobs_id_annotator_partial(self):
         data = {"stage": StageChoice.ANNOTATION}
         response = self._run_api_v2_jobs_id(self.job.id, self.annotator, data)
-        self.assertEquals(response.status_code, status.HTTP_403_FORBIDDEN, response)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN, response)
 
     def test_api_v2_jobs_id_admin_partial(self):
         data = {"assignee": self.user.id}
@@ -414,7 +414,7 @@ class JobPartialUpdateAPITestCase(ApiTestBase):
     def test_api_v2_jobs_id_unknown_field(self):
         data = {"foo": "bar"}
         response = self._run_api_v2_jobs_id(self.job.id, self.admin, data)
-        self.assertEquals(response.status_code, status.HTTP_403_FORBIDDEN, response)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN, response)
 
 class JobUpdateAPITestCase(ApiTestBase):
     def setUp(self):
@@ -437,12 +437,12 @@ class JobUpdateAPITestCase(ApiTestBase):
     def test_api_v2_jobs_id_annotator(self):
         data = {"stage": StageChoice.ANNOTATION}
         response = self._run_api_v2_jobs_id(self.job.id, self.annotator, data)
-        self.assertEquals(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED, response)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED, response)
 
     def test_api_v2_jobs_id_admin(self):
         data = {"assignee_id": self.user.id}
         response = self._run_api_v2_jobs_id(self.job.id, self.owner, data)
-        self.assertEquals(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED, response)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED, response)
 
 class JobDataMetaPartialUpdateAPITestCase(ApiTestBase):
     def setUp(self):
@@ -1179,7 +1179,7 @@ class ProjectPartialUpdateAPITestCase(ApiTestBase):
     def test_api_v2_projects_id_unknown_field(self):
         data = {"foo": "bar"}
         response = self._run_api_v2_projects_id(self.projects[0].id, self.admin, data)
-        self.assertEquals(response.status_code, status.HTTP_403_FORBIDDEN, response)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN, response)
 
 class UpdateLabelsAPITestCase(ApiTestBase):
     def assertLabelsEqual(self, label1, label2):
@@ -2376,7 +2376,7 @@ class TaskPartialUpdateAPITestCase(ApiTestBase):
     def test_api_v2_tasks_id_unknown_field(self):
         data = {"foo": "bar"}
         response = self._run_api_v2_tasks_id(self.tasks[0].id, self.admin, data)
-        self.assertEquals(response.status_code, status.HTTP_403_FORBIDDEN, response)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN, response)
 
 class TaskDataMetaPartialUpdateAPITestCase(ApiTestBase):
     @classmethod
