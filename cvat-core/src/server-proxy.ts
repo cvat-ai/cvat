@@ -204,6 +204,13 @@ function generateError(errorData: AxiosError): ServerError {
             }
 
             if (typeof errorData.response.data === 'object') {
+                if ('rq_id' in errorData.response.data) {
+                    return new ServerError(
+                        `A request with this identifier is already being processed (${errorData.response.data.rq_id})`,
+                        errorData.response.status,
+                    );
+                }
+
                 const generalFields = ['non_field_errors', 'detail', 'message'];
                 const generalFieldsHelpers = {
                     'Invalid token.': 'Not authenticated request, try to login again',
