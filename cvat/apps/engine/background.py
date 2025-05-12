@@ -92,6 +92,7 @@ class ResourceExportManager(ABC):
         rq_job_status = rq_job.get_status(refresh=False)
 
         if rq_job_status in {
+            # FUTURE-TODO: cancelling and re-enqueuing a started job should probably be allowed
             RQJobStatus.STARTED,
             RQJobStatus.QUEUED,
             RQJobStatus.DEFERRED,
