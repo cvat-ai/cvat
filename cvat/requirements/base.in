@@ -38,6 +38,9 @@ natsort==8.0.0
 numpy~=1.22.2
 opencv-python-headless~=4.8
 
+# Partial json reading
+json-stream>=2.0,<3
+
 # The package is used by pyunpack as a command line tool to support multiple
 # archives. Don't use as a python module because it has GPL license.
 patool==1.12

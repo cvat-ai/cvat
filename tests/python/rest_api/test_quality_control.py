@@ -1029,7 +1029,15 @@ class TestPatchSettings(_PermissionTestBase):
             assert response.status == HTTPStatus.OK
 
         if expected_data is not None:
-            assert DeepDiff(expected_data, json.loads(response.data), ignore_order=True) == {}
+            assert (
+                DeepDiff(
+                    expected_data,
+                    json.loads(response.data),
+                    exclude_paths=["root['updated_date']"],
+                    ignore_order=True,
+                )
+                == {}
+            )
 
         return response
 
@@ -1129,7 +1137,13 @@ class TestQualityReportMetrics(_PermissionTestBase):
 
     def test_unmodified_task_produces_the_same_metrics(self, admin_user, quality_reports):
         old_report = max(
-            (r for r in quality_reports if r["task_id"] == self.demo_task_id), key=lambda r: r["id"]
+            (
+                r
+                for r in quality_reports
+                if r["task_id"] == self.demo_task_id
+                if r["target"] == "task"
+            ),
+            key=lambda r: r["id"],
         )
         task_id = old_report["task_id"]
 
@@ -1238,7 +1252,7 @@ class TestQualityReportMetrics(_PermissionTestBase):
         elif parameter == "point_size_base":
             settings[parameter] = next(
                 v
-                for v in models.PointSizeBaseEnum.allowed_values[("value",)].values()
+                for v in models.QualityPointSizeBase.allowed_values[("value",)].values()
                 if v != settings[parameter]
             )
         else:
