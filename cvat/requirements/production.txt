@@ -10,7 +10,7 @@ anyio==4.9.0
     # via watchfiles
 coverage==7.2.3
     # via -r cvat/requirements/production.in
-exceptiongroup==1.2.2
+exceptiongroup==1.3.0
     # via anyio
 h11==0.16.0
     # via uvicorn
