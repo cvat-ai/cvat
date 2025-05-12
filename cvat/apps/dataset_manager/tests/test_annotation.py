@@ -192,7 +192,7 @@ class TrackManagerTest(TestCase):
             "shapes": [
                 {
                     "frame": 0,
-                    "points": (1.0, 2.0, 3.0, 4.0),
+                    "points": [1.0, 2.0, 3.0, 4.0],
                     "rotation": 0,
                     "type": "rectangle",
                     "occluded": False,
@@ -201,7 +201,7 @@ class TrackManagerTest(TestCase):
                 },
                 {
                     "frame": 2,
-                    "points": (3.0, 4.0, 5.0, 6.0),
+                    "points": [3.0, 4.0, 5.0, 6.0],
                     "rotation": 0,
                     "type": "rectangle",
                     "occluded": False,
@@ -210,7 +210,7 @@ class TrackManagerTest(TestCase):
                 },
                 {
                     "frame": 4,
-                    "points": (5.0, 6.0, 7.0, 8.0),
+                    "points": [5.0, 6.0, 7.0, 8.0],
                     "rotation": 0,
                     "type": "rectangle",
                     "occluded": False,
@@ -223,7 +223,7 @@ class TrackManagerTest(TestCase):
         expected_shapes = [
             {
                 "frame": 0,
-                "points": (1.0, 2.0, 3.0, 4.0),
+                "points": [1.0, 2.0, 3.0, 4.0],
                 "rotation": 0,
                 "type": "rectangle",
                 "occluded": False,
@@ -233,7 +233,7 @@ class TrackManagerTest(TestCase):
             },
             {
                 "frame": 1,
-                "points": (2.0, 3.0, 4.0, 5.0),
+                "points": [2.0, 3.0, 4.0, 5.0],
                 "rotation": 0,
                 "type": "rectangle",
                 "occluded": False,
@@ -243,7 +243,7 @@ class TrackManagerTest(TestCase):
             },
             {
                 "frame": 2,
-                "points": (3.0, 4.0, 5.0, 6.0),
+                "points": [3.0, 4.0, 5.0, 6.0],
                 "rotation": 0,
                 "type": "rectangle",
                 "occluded": False,
@@ -253,7 +253,7 @@ class TrackManagerTest(TestCase):
             },
             {
                 "frame": 4,
-                "points": (5.0, 6.0, 7.0, 8.0),
+                "points": [5.0, 6.0, 7.0, 8.0],
                 "rotation": 0,
                 "type": "rectangle",
                 "occluded": False,
@@ -276,7 +276,7 @@ class TrackManagerTest(TestCase):
             "shapes": [
                 {
                     "frame": 0,
-                    "points": (1.0, 2.0, 3.0, 4.0, 5.0, 6.0),
+                    "points": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
                     "type": "polygon",
                     "occluded": False,
                     "outside": False,
@@ -284,7 +284,7 @@ class TrackManagerTest(TestCase):
                 },
                 {
                     "frame": 2,
-                    "points": (3.0, 4.0, 5.0, 6.0, 7.0, 8.0),
+                    "points": [3.0, 4.0, 5.0, 6.0, 7.0, 8.0],
                     "type": "polygon",
                     "occluded": False,
                     "outside": True,
@@ -296,7 +296,7 @@ class TrackManagerTest(TestCase):
         expected_shapes = [
             {
                 "frame": 0,
-                "points": (1.0, 2.0, 3.0, 4.0, 5.0, 6.0),
+                "points": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
                 "type": "polygon",
                 "occluded": False,
                 "outside": False,
@@ -305,7 +305,7 @@ class TrackManagerTest(TestCase):
             },
             {
                 "frame": 1,
-                "points": (2.0, 3.0, 4.0, 5.0, 6.0, 7.0),
+                "points": [2.0, 3.0, 4.0, 5.0, 6.0, 7.0],
                 "type": "polygon",
                 "occluded": False,
                 "outside": False,
@@ -314,7 +314,7 @@ class TrackManagerTest(TestCase):
             },
             {
                 "frame": 2,
-                "points": (3.0, 4.0, 5.0, 6.0, 7.0, 8.0),
+                "points": [3.0, 4.0, 5.0, 6.0, 7.0, 8.0],
                 "type": "polygon",
                 "occluded": False,
                 "outside": True,
@@ -376,7 +376,7 @@ class TrackManagerTest(TestCase):
             "shapes": [
                 {
                     "frame": 0,
-                    "points": (1.0, 2.0, 3.0, 4.0),
+                    "points": [1.0, 2.0, 3.0, 4.0],
                     "rotation": 0,
                     "type": "rectangle",
                     "occluded": False,
@@ -385,7 +385,7 @@ class TrackManagerTest(TestCase):
                 },
                 {
                     "frame": 2,  # deleted in the task
-                    "points": (3.0, 4.0, 5.0, 6.0),
+                    "points": [3.0, 4.0, 5.0, 6.0],
                     "rotation": 0,
                     "type": "rectangle",
                     "occluded": False,
@@ -394,7 +394,7 @@ class TrackManagerTest(TestCase):
                 },
                 {
                     "frame": 4,
-                    "points": (1.0, 2.0, 3.0, 4.0),
+                    "points": [1.0, 2.0, 3.0, 4.0],
                     "rotation": 0,
                     "type": "rectangle",
                     "occluded": False,
@@ -407,7 +407,7 @@ class TrackManagerTest(TestCase):
         expected_shapes = [
             {
                 "frame": 0,
-                "points": (1.0, 2.0, 3.0, 4.0),
+                "points": [1.0, 2.0, 3.0, 4.0],
                 "rotation": 0,
                 "type": "rectangle",
                 "occluded": False,
@@ -417,7 +417,7 @@ class TrackManagerTest(TestCase):
             },
             {
                 "frame": 1,
-                "points": (1.0, 2.0, 3.0, 4.0),
+                "points": [1.0, 2.0, 3.0, 4.0],
                 "rotation": 0,
                 "type": "rectangle",
                 "occluded": False,
@@ -427,7 +427,7 @@ class TrackManagerTest(TestCase):
             },
             {
                 "frame": 3,
-                "points": (1.0, 2.0, 3.0, 4.0),
+                "points": [1.0, 2.0, 3.0, 4.0],
                 "rotation": 0,
                 "type": "rectangle",
                 "occluded": False,
@@ -437,7 +437,7 @@ class TrackManagerTest(TestCase):
             },
             {
                 "frame": 4,
-                "points": (1.0, 2.0, 3.0, 4.0),
+                "points": [1.0, 2.0, 3.0, 4.0],
                 "rotation": 0,
                 "type": "rectangle",
                 "occluded": False,
@@ -464,7 +464,7 @@ class TrackManagerTest(TestCase):
             "shapes": [
                 {
                     "frame": 0,
-                    "points": (1.0, 2.0, 3.0, 4.0),
+                    "points": [1.0, 2.0, 3.0, 4.0],
                     "rotation": 0,
                     "type": "rectangle",
                     "occluded": False,
@@ -473,7 +473,7 @@ class TrackManagerTest(TestCase):
                 },
                 {
                     "frame": 2,
-                    "points": (3.0, 4.0, 5.0, 6.0),
+                    "points": [3.0, 4.0, 5.0, 6.0],
                     "rotation": 0,
                     "type": "rectangle",
                     "occluded": False,
@@ -482,7 +482,7 @@ class TrackManagerTest(TestCase):
                 },
                 {
                     "frame": 4,
-                    "points": (7.0, 8.0, 9.0, 10.0),
+                    "points": [7.0, 8.0, 9.0, 10.0],
                     "rotation": 0,
                     "type": "rectangle",
                     "occluded": False,
@@ -495,7 +495,7 @@ class TrackManagerTest(TestCase):
         all_expected_shapes = [
             {
                 "frame": 0,
-                "points": (1.0, 2.0, 3.0, 4.0),
+                "points": [1.0, 2.0, 3.0, 4.0],
                 "rotation": 0,
                 "type": "rectangle",
                 "occluded": False,
@@ -505,7 +505,7 @@ class TrackManagerTest(TestCase):
             },
             {
                 "frame": 1,
-                "points": (2.0, 3.0, 4.0, 5.0),
+                "points": [2.0, 3.0, 4.0, 5.0],
                 "rotation": 0,
                 "type": "rectangle",
                 "occluded": False,
@@ -515,7 +515,7 @@ class TrackManagerTest(TestCase):
             },
             {
                 "frame": 2,
-                "points": (3.0, 4.0, 5.0, 6.0),
+                "points": [3.0, 4.0, 5.0, 6.0],
                 "rotation": 0,
                 "type": "rectangle",
                 "occluded": False,
@@ -525,7 +525,7 @@ class TrackManagerTest(TestCase):
             },
             {
                 "frame": 3,
-                "points": (5.0, 6.0, 7.0, 8.0),
+                "points": [5.0, 6.0, 7.0, 8.0],
                 "rotation": 0,
                 "type": "rectangle",
                 "occluded": False,
@@ -535,7 +535,7 @@ class TrackManagerTest(TestCase):
             },
             {
                 "frame": 4,
-                "points": (7.0, 8.0, 9.0, 10.0),
+                "points": [7.0, 8.0, 9.0, 10.0],
                 "rotation": 0,
                 "type": "rectangle",
                 "occluded": False,
@@ -570,7 +570,7 @@ class TrackManagerTest(TestCase):
             "shapes": [
                 {
                     "frame": 0,
-                    "points": (1.0, 2.0, 3.0, 4.0),
+                    "points": [1.0, 2.0, 3.0, 4.0],
                     "rotation": 0,
                     "type": "rectangle",
                     "occluded": False,
@@ -579,7 +579,7 @@ class TrackManagerTest(TestCase):
                 },
                 {
                     "frame": 2,  # deleted
-                    "points": (0, 0, 1, 1),
+                    "points": [0, 0, 1, 1],
                     "rotation": 0,
                     "type": "rectangle",
                     "occluded": True,
@@ -588,7 +588,7 @@ class TrackManagerTest(TestCase):
                 },
                 {
                     "frame": 4,
-                    "points": (9.0, 10.0, 11.0, 12.0),
+                    "points": [9.0, 10.0, 11.0, 12.0],
                     "rotation": 0,
                     "type": "rectangle",
                     "occluded": False,
@@ -601,7 +601,7 @@ class TrackManagerTest(TestCase):
         expected_shapes = [
             {
                 "frame": 1,
-                "points": (3.0, 4.0, 5.0, 6.0),
+                "points": [3.0, 4.0, 5.0, 6.0],
                 "rotation": 0.0,
                 "type": "rectangle",
                 "occluded": False,
@@ -611,7 +611,7 @@ class TrackManagerTest(TestCase):
             },
             {
                 "frame": 3,
-                "points": (7.0, 8.0, 9.0, 10.0),
+                "points": [7.0, 8.0, 9.0, 10.0],
                 "rotation": 0.0,
                 "type": "rectangle",
                 "occluded": False,
