@@ -11,7 +11,10 @@ from cvat.apps.dataset_manager.bindings import (
     detect_dataset,
     import_dm_annotations,
 )
-from cvat.apps.dataset_manager.formats.transformations import MaskToPolygonTransformation
+from cvat.apps.dataset_manager.formats.transformations import (
+    EllipsesToMasks,
+    MaskToPolygonTransformation,
+)
 from cvat.apps.dataset_manager.util import make_zip_archive
 
 from .registry import dm_env, exporter, importer
@@ -21,6 +24,7 @@ from .registry import dm_env, exporter, importer
 def _export(dst_file, temp_dir, instance_data, save_images=False):
     with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
         dataset = Dataset.from_extractors(extractor, env=dm_env)
+        dataset.transform(EllipsesToMasks)
         dataset.export(temp_dir, "label_me", save_media=save_images)
 
     make_zip_archive(temp_dir, dst_file)

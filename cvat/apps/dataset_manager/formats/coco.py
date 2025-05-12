@@ -54,6 +54,7 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
 def _export(dst_file, temp_dir, instance_data, save_images=False):
     with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
         dataset = StreamDataset.from_extractors(extractor, env=dm_env)
+        dataset.transform(EllipsesToMasks)
         dataset.export(
             temp_dir, "coco_person_keypoints", save_media=save_images, merge_images=False
         )
