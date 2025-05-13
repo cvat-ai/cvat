@@ -20,21 +20,21 @@ Each button in the action menu is responsible for a specific function:
 This preview will appear when it is impossible to get a real preview (e.g. storage is empty or
 invalid credentials were used).
 
-In the upper left corner there is a search bar,
+In the upper left corner, there is a search bar,
 using which you can find the cloud storage by display name, provider, etc.
-In the upper right corner there are [sorting][sorting], [quick filters][quick-filters] and filter.
+In the upper right corner, there are [sorting][sorting], [quick filters][quick-filters], and filter.
 
 ## Filter
 
-> Applying filter disables the [quick filter][quick-filters].
+> Applying the filter disables the [quick filter][quick-filters].
 
 The filter works similarly to the filters for annotation,
 you can create rules from [properties](#supported-properties-for-jobs-list),
-[operators][operators] and values and group rules into [groups][groups].
-For more details, see the [filter section][create-filter].
+[operators][operators], and values and group rules into [groups][groups].
+For more details, consult the [filter section][create-filter].
 Learn more about [date and time selection][data-and-time].
 
-For clear all filters press `Clear filters`.
+To clear all filters, select `Clear filters`.
 
 ### Supported properties for cloud storages list
 
@@ -47,9 +47,9 @@ For clear all filters press `Clear filters`.
 | `Display name` |                                              | Set when creating cloud storage             |
 | `Description`  |                                              | Description of the cloud storage            |
 | `Owner`        | username                                     | The user who owns the project, task, or job |
-| `Last updated` | last modified date and time (or value range) | The date can be entered in the `dd.MM.yyyy HH:mm` format <br>or by selecting the date in the window that appears <br>when you click on the input field |
+| `Last updated` | last modified date and time (or value range) | The date can be entered in the `dd.MM.yyyy HH:mm` format <br>or by selecting the date in the window that appears <br>when you select the input field |
 
-Click the `+` button to {{< ilink "/docs/manual/basics/attach-cloud-storage" "attach a new cloud storage" >}}.
+Select the `+` button to {{< ilink "/docs/manual/basics/attach-cloud-storage" "attach a new cloud storage" >}}.
 
 [create-filter]: /docs/manual/advanced/filter/#create-a-filter
 [operators]: /docs/manual/advanced/filter/#supported-operators-for-properties

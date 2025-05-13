@@ -38,17 +38,17 @@ class EventsPermission(OpenPolicyAgentPermission):
         filter_params = query_params.copy()
         for query in r:
             for attr, value in query.items():
-                if filter_params.get(attr, value) != value:
+                if str(filter_params.get(attr, value)) != str(value):
                     raise PermissionDenied(
                         f"You don't have permission to view events with {attr}={filter_params.get(attr)}"
                     )
                 else:
-                    filter_params[attr] = value
+                    filter_params[attr] = str(value)
         return filter_params
 
-    @staticmethod
-    def get_scopes(request, view, obj):
-        Scopes = __class__.Scopes
+    @classmethod
+    def _get_scopes(cls, request, view, obj):
+        Scopes = cls.Scopes
         return [
             {
                 ("create", "POST"): Scopes.SEND_EVENTS,

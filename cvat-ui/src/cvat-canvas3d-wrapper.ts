@@ -11,9 +11,10 @@ import {
     ViewsDOM,
     CanvasMode,
 } from 'cvat-canvas3d/src/typescript/canvas3d';
+import { OrientationVisibility } from 'cvat-canvas3d/src/typescript/canvas3dModel';
 
 export {
     Canvas3d, MouseInteraction, ViewType, CameraAction, CanvasMode,
 };
 
-export type { ViewsDOM };
+export type { ViewsDOM, OrientationVisibility };

@@ -12,7 +12,7 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      {{- include "cvat.labels" . | nindent 6 }}
+      {{- include "cvat.selectorLabels" . | nindent 6 }}
       app: cvat-app
       tier: kvrocks
   serviceName: {{ .Release.Name }}-kvrocks

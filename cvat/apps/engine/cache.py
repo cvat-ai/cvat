@@ -53,6 +53,7 @@ from cvat.apps.engine.media_extractors import (
     ZipCompressedChunkWriter,
     load_image,
 )
+from cvat.apps.engine.model_utils import is_field_cached
 from cvat.apps.engine.rq import RQMetaWithFailureInfo
 from cvat.apps.engine.utils import (
     CvatChunkTimestampMismatchError,
@@ -412,7 +413,11 @@ class MediaCache:
             self._make_chunk_key(db_task, chunk_number, quality=quality),
             set_callback,
         )
-        db_task.refresh_from_db(fields=["segment_set"])
+
+        if is_field_cached(db_task, "segment_set"):
+            # Refresh segments to report actual dates if they were fetched previously
+            # Doing so without a check leads to an error if the related object is not prefetched
+            db_task.refresh_from_db(fields=["segment_set"])
 
         return self._to_data_with_mime(
             self._validate_cache_item_timestamp(item, db_task.get_chunks_updated_date())

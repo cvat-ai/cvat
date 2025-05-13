@@ -20,10 +20,12 @@ from rest_framework.response import Response
 from rq.job import JobStatus as RqJobStatus
 
 from cvat.apps.engine.mixins import PartialUpdateModelMixin
-from cvat.apps.engine.models import Task
+from cvat.apps.engine.models import Project, Task
 from cvat.apps.engine.rq import BaseRQMeta
 from cvat.apps.engine.serializers import RqIdSerializer
+from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import get_server_url
+from cvat.apps.engine.view_utils import get_or_404
 from cvat.apps.quality_control import quality_reports as qc
 from cvat.apps.quality_control.models import (
     AnnotationConflict,
@@ -35,11 +37,13 @@ from cvat.apps.quality_control.permissions import (
     AnnotationConflictPermission,
     QualityReportPermission,
     QualitySettingPermission,
+    get_iam_context,
 )
 from cvat.apps.quality_control.serializers import (
     AnnotationConflictSerializer,
     QualityReportCreateSerializer,
     QualityReportSerializer,
+    QualitySettingsParentType,
     QualitySettingsSerializer,
 )
 
@@ -62,34 +66,29 @@ from cvat.apps.quality_control.serializers import (
     ),
 )
 class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
-    queryset = (
-        AnnotationConflict.objects.select_related(
-            "report",
-            "report__parent",
-            "report__job",
-            "report__job__segment",
-            "report__job__segment__task",
-            "report__job__segment__task__organization",
-            "report__task",
-            "report__task__organization",
-        )
-        .prefetch_related(
-            "annotation_ids",
-        )
-        .all()
-    )
+    queryset = AnnotationConflict.objects.prefetch_related("annotation_ids")
 
     iam_organization_field = [
         "report__job__segment__task__organization",
         "report__task__organization",
+        "report__project__organization",
     ]
 
     search_fields = []
-    filter_fields = list(search_fields) + ["id", "frame", "type", "job_id", "task_id", "severity"]
+    filter_fields = list(search_fields) + [
+        "id",
+        "frame",
+        "type",
+        "job_id",
+        "task_id",
+        "project_id",
+        "severity",
+    ]
     simple_filters = set(filter_fields) - {"id"}
     lookup_fields = {
         "job_id": "report__job__id",
-        "task_id": "report__job__segment__task__id",  # task reports do not contain own conflicts
+        "task_id": "report__job__segment__task__id",  # task reports do not have own conflicts
+        "project_id": "report__job__segment__task__project__id",  # project reports do not have own conflicts
     }
     ordering_fields = list(filter_fields)
     ordering = "-id"
@@ -102,19 +101,23 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
             if report_id := self.request.query_params.get("report_id", None):
                 # NOTE: This filter is too complex to be implemented by other means,
                 # it has a dependency on the report type
-                try:
-                    report = QualityReport.objects.get(id=report_id)
-                except QualityReport.DoesNotExist as ex:
-                    raise NotFound(f"Report {report_id} does not exist") from ex
-
+                report = get_or_404(
+                    QualityReport.objects.select_related(
+                        "job__segment__task__organization",
+                        "task__organization",
+                    ),
+                    report_id,
+                )
                 self.check_object_permissions(self.request, report)
 
-                if report.target == QualityReportTarget.TASK:
-                    queryset = queryset.filter(
-                        Q(report=report) | Q(report__parent=report)
-                    ).distinct()
-                elif report.target == QualityReportTarget.JOB:
+                if report.target == QualityReportTarget.JOB:
                     queryset = queryset.filter(report=report)
+                elif report.target == QualityReportTarget.TASK:
+                    # Task reports do not have own conflicts
+                    queryset = queryset.filter(report__parents=report)
+                elif report.target == QualityReportTarget.PROJECT:
+                    # Project reports do not have own conflicts
+                    queryset = queryset.filter(report__parents__parents=report)
                 else:
                     assert False
             else:
@@ -122,6 +125,9 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
                 queryset = perm.filter(queryset)
 
         return queryset
+
+
+REPORT_TARGET_PARAM_NAME = "target"
 
 
 @extend_schema(tags=["quality"])
@@ -134,14 +140,44 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
         },
     ),
     list=extend_schema(
-        summary="List quality reports",
+        summary="Method returns a paginated list of quality reports.",
+        description=textwrap.dedent(
+            """\
+            Please note that children reports are included by default
+            if the "task_id", "project_id" filters are used.
+            If you want to restrict the list of results to a specific report type,
+            use the "{}" parameter.
+
+            The "parent_id" filter includes all the nested reports recursively.
+            For instance, if the "parent_id" is a project report,
+            all the related task and job reports will be returned.
+
+            Please note that a report can be reused in several parent reports,
+            but the "parent_id" field in responses will include only the first parent report id.
+            The "parent_id" filter still returns all the relevant nested reports,
+            even though the response "parent_id" values may be different from the requested one.
+        """
+        ).format(REPORT_TARGET_PARAM_NAME),
         parameters=[
             # These filters are implemented differently from others
             OpenApiParameter(
                 "task_id", type=OpenApiTypes.INT, description="A simple equality filter for task id"
             ),
             OpenApiParameter(
-                "target", type=OpenApiTypes.STR, description="A simple equality filter for target"
+                "project_id",
+                type=OpenApiTypes.INT,
+                description="A simple equality filter for project id",
+            ),
+            OpenApiParameter(
+                "parent_id",
+                type=OpenApiTypes.INT,
+                description="A simple equality filter for parent id",
+            ),
+            OpenApiParameter(
+                REPORT_TARGET_PARAM_NAME,
+                type=OpenApiTypes.STR,
+                description="A simple equality filter for target",
+                enum=[v[0] for v in QualityReportTarget.choices()],
             ),
         ],
         responses={
@@ -155,31 +191,27 @@ class QualityReportViewSet(
     mixins.RetrieveModelMixin,
     mixins.CreateModelMixin,
 ):
-    queryset = QualityReport.objects.prefetch_related(
-        "job",
-        "job__segment",
-        "job__segment__task",
-        "job__segment__task__organization",
-        "task",
-        "task__organization",
-    ).all()
+    queryset = QualityReport.objects.prefetch_related("assignee")
 
-    iam_organization_field = ["job__segment__task__organization", "task__organization"]
+    iam_organization_field = [
+        "job__segment__task__organization",
+        "task__organization",
+        "project__organization",
+    ]
 
     search_fields = []
     filter_fields = list(search_fields) + [
         "id",
         "job_id",
+        "task_id",
+        "project_id",
         "created_date",
         "gt_last_updated",
         "target_last_updated",
-        "parent_id",
     ]
-    simple_filters = list(
-        set(filter_fields) - {"id", "created_date", "gt_last_updated", "target_last_updated"}
-    )
+    simple_filters = ["job_id"]
     ordering_fields = list(filter_fields)
-    ordering = "id"
+    ordering = "-id"
 
     def get_serializer_class(self):
         # a separate method is required for drf-spectacular to work
@@ -189,33 +221,68 @@ class QualityReportViewSet(
         queryset = super().get_queryset()
 
         if self.action == "list":
+            iam_context = None
+
+            # NOTE: the parent_id filter requires a different queryset
+            if parent_id := self.request.query_params.get("parent_id", None):
+                parent_report = get_or_404(QualityReport, parent_id)
+                iam_context = get_iam_context(self.request, parent_report)
+
+                # For m2m relations this is actually "in"
+                queryset = queryset.filter(
+                    Q(parents=parent_report) | Q(parents__parents=parent_report)
+                )
+
             if task_id := self.request.query_params.get("task_id", None):
                 # NOTE: This filter is too complex to be implemented by other means
-                try:
-                    task = Task.objects.get(id=task_id)
-                except Task.DoesNotExist as ex:
-                    raise NotFound(f"Task {task_id} does not exist") from ex
-
+                task = get_or_404(Task, task_id)
                 self.check_object_permissions(self.request, task)
+                iam_context = get_iam_context(self.request, task)
+
+                queryset = queryset.filter(Q(job__segment__task__id=task_id) | Q(task__id=task_id))
+
+            if project_id := self.request.query_params.get("project_id", None):
+                # NOTE: This filter is too complex to be implemented by other means
+                project = get_or_404(Project, project_id)
+                self.check_object_permissions(self.request, project)
+                iam_context = get_iam_context(self.request, project)
 
                 queryset = queryset.filter(
-                    Q(job__segment__task__id=task_id) | Q(task__id=task_id)
-                ).distinct()
-            else:
-                perm = QualityReportPermission.create_scope_list(self.request)
-                queryset = perm.filter(queryset)
+                    Q(job__segment__task__project__id=project_id)
+                    | Q(task__project__id=project_id)
+                    | Q(project__id=project_id)
+                )
 
-            if target := self.request.query_params.get("target", None):
+            perm = QualityReportPermission.create_scope_list(self.request, iam_context=iam_context)
+            queryset = perm.filter(queryset)
+
+            if target := self.request.query_params.get(REPORT_TARGET_PARAM_NAME, None):
                 if target == QualityReportTarget.JOB:
                     queryset = queryset.filter(job__isnull=False)
                 elif target == QualityReportTarget.TASK:
                     queryset = queryset.filter(task__isnull=False)
+                elif target == QualityReportTarget.PROJECT:
+                    queryset = queryset.filter(project__isnull=False)
                 else:
                     raise ValidationError(
-                        "Unexpected 'target' filter value '{}'. Valid values are: {}".format(
-                            target, ", ".join(m[0] for m in QualityReportTarget.choices())
+                        "Unexpected '{}' filter value '{}'. Valid values are: {}".format(
+                            REPORT_TARGET_PARAM_NAME,
+                            target,
+                            ", ".join(m[0] for m in QualityReportTarget.choices()),
                         )
                     )
+
+            queryset = queryset.defer("data")  # heavy field, should be excluded from COUNT(*)
+        else:
+            queryset = queryset.select_related(
+                "job",
+                "job__segment",
+                "job__segment__task",
+                "job__segment__task__project",
+                "task",
+                "task__project",
+                "project",
+            )
 
         return queryset
 
@@ -257,29 +324,29 @@ class QualityReportViewSet(
             ),
         },
     )
-    def create(self, request, *args, **kwargs):
-        self.check_permissions(request)
-
+    def create(self, request: ExtendedRequest, *args, **kwargs):
         rq_id = request.query_params.get(self.CREATE_REPORT_RQ_ID_PARAMETER, None)
 
         if rq_id is None:
             input_serializer = QualityReportCreateSerializer(data=request.data)
             input_serializer.is_valid(raise_exception=True)
 
-            task_id = input_serializer.validated_data["task_id"]
+            if task_id := input_serializer.validated_data.get("task_id"):
+                target = get_or_404(Task, task_id)
+            elif project_id := input_serializer.validated_data.get("project_id"):
+                target = get_or_404(Project, project_id)
+            else:
+                assert False
+
+            report_manager = qc.QualityReportManager()
 
             try:
-                task = Task.objects.get(pk=task_id)
-            except Task.DoesNotExist as ex:
-                raise NotFound(f"Task {task_id} does not exist") from ex
-
-            try:
-                rq_id = qc.QualityReportUpdateManager().schedule_custom_quality_check_job(
-                    request=request, task=task, user_id=request.user.id
+                rq_id = report_manager.schedule_quality_check_job(
+                    target=target, request=request, user_id=request.user.id
                 )
                 serializer = RqIdSerializer({"rq_id": rq_id})
                 return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-            except qc.QualityReportUpdateManager.QualityReportsNotAvailable as ex:
+            except qc.QualityReportManager.QualityReportsNotAvailable as ex:
                 raise ValidationError(str(ex))
 
         else:
@@ -287,7 +354,7 @@ class QualityReportViewSet(
             serializer.is_valid(raise_exception=True)
             rq_id = serializer.validated_data["rq_id"]
 
-            report_manager = qc.QualityReportUpdateManager()
+            report_manager = qc.QualityReportManager()
             rq_job = report_manager.get_quality_check_job(rq_id)
             # FUTURE-TODO: move into permissions
             # and allow not only rq job owner to check the status
@@ -345,10 +412,34 @@ class QualityReportViewSet(
         return HttpResponse(json_report.encode(), content_type="application/json")
 
 
+SETTINGS_PARENT_TYPE_PARAM_NAME = "parent_type"
+
+
 @extend_schema(tags=["quality"])
 @extend_schema_view(
     list=extend_schema(
         summary="List quality settings instances",
+        description=textwrap.dedent(
+            """\
+            Please note that child task settings are included by default
+            if the "project_id" filter is used.
+            If you want to restrict results only to a specific parent type, use the "{}" parameter.
+        """
+        ).format(SETTINGS_PARENT_TYPE_PARAM_NAME),
+        parameters=[
+            # These filters are implemented differently from others
+            OpenApiParameter(
+                "project_id",
+                type=OpenApiTypes.INT,
+                description="A simple equality filter for project id",
+            ),
+            OpenApiParameter(
+                SETTINGS_PARENT_TYPE_PARAM_NAME,
+                type=OpenApiTypes.STR,
+                description="A simple equality filter for parent instance type",
+                enum=[v[0] for v in QualitySettingsParentType.choices()],
+            ),
+        ],
         responses={
             "200": QualitySettingsSerializer(many=True),
         },
@@ -389,14 +480,14 @@ class QualitySettingsViewSet(
     mixins.RetrieveModelMixin,
     PartialUpdateModelMixin,
 ):
-    queryset = QualitySettings.objects.select_related("task", "task__organization").all()
+    queryset = QualitySettings.objects
 
-    iam_organization_field = "task__organization"
+    iam_organization_field = ["task__organization", "project__organization"]
 
     search_fields = []
-    filter_fields = ["id", "task_id"]
-    simple_filters = ["task_id"]
-    ordering_fields = ["id"]
+    filter_fields = ["id", "task_id", "project_id", "inherit", "created_date", "updated_date"]
+    simple_filters = ["task_id", "inherit"]
+    ordering_fields = list(filter_fields)
     ordering = "id"
 
     serializer_class = QualitySettingsSerializer
@@ -405,7 +496,41 @@ class QualitySettingsViewSet(
         queryset = super().get_queryset()
 
         if self.action == "list":
-            permissions = QualitySettingPermission.create_scope_list(self.request)
+            iam_context = None
+
+            if task_id := self.request.query_params.get("task_id", None):
+                # This filter requires extra checks
+                task = get_or_404(Task, task_id)
+                self.check_object_permissions(self.request, task)
+                iam_context = get_iam_context(self.request, task)
+            elif project_id := self.request.query_params.get("project_id", None):
+                # This filter requires extra checks
+                project = get_or_404(Project, project_id)
+                self.check_object_permissions(self.request, project)
+                iam_context = get_iam_context(self.request, project)
+
+                # Include nested settings
+                queryset = queryset.filter(
+                    Q(task__project__id=project_id) | Q(project__id=project_id)
+                )
+
+            if parent_type := self.request.query_params.get(SETTINGS_PARENT_TYPE_PARAM_NAME, None):
+                if parent_type == QualitySettingsParentType.TASK:
+                    queryset = queryset.filter(task__isnull=False)
+                elif parent_type == QualitySettingsParentType.PROJECT:
+                    queryset = queryset.filter(project__isnull=False)
+                else:
+                    raise ValidationError(
+                        "Unexpected '{}' filter value '{}'. Valid values are: {}".format(
+                            SETTINGS_PARENT_TYPE_PARAM_NAME,
+                            parent_type,
+                            ", ".join(m[0] for m in QualitySettingsParentType.choices()),
+                        )
+                    )
+
+            permissions = QualitySettingPermission.create_scope_list(
+                self.request, iam_context=iam_context
+            )
             queryset = permissions.filter(queryset)
 
         return queryset

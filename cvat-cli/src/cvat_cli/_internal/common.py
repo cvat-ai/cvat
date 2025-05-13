@@ -12,7 +12,7 @@ import os
 import sys
 from http.client import HTTPConnection
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 import attrs
 import cvat_sdk.auto_annotation as cvataa
@@ -27,12 +27,20 @@ class CriticalError(Exception):
     pass
 
 
-def get_auth(s):
-    """Parse USER[:PASS] strings and prompt for password if none was
-    supplied."""
+def get_auth_factory(s: str) -> Callable[[str], tuple[str, str]]:
+    """
+    Parse a USER[:PASS] string and return a callable that takes the server URL
+    and returns a (user, pass) tuple for that URL.
+    The callable will prompt the user for the password if none was initially supplied.
+    """
     user, _, password = s.partition(":")
-    password = password or os.environ.get("PASS") or getpass.getpass()
-    return user, password
+    if not password:
+        password = os.environ.get("PASS")
+
+    if password:
+        return lambda _: (user, password)
+    else:
+        return lambda url: (user, getpass.getpass(f"Password for {user} at {url}: "))
 
 
 def configure_common_arguments(parser: argparse.ArgumentParser) -> None:
@@ -45,7 +53,7 @@ def configure_common_arguments(parser: argparse.ArgumentParser) -> None:
 
     parser.add_argument(
         "--auth",
-        type=get_auth,
+        type=get_auth_factory,
         metavar="USER:[PASS]",
         default=getpass.getuser(),
         help="""defaults to the current user and supports the PASS
@@ -53,7 +61,7 @@ def configure_common_arguments(parser: argparse.ArgumentParser) -> None:
                 (default user: %(default)s).""",
     )
     parser.add_argument(
-        "--server-host", type=str, default="localhost", help="host (default: %(default)s)"
+        "--server-host", type=str, default="http://localhost", help="host (default: %(default)s)"
     )
     parser.add_argument(
         "--server-port",
@@ -107,7 +115,7 @@ def build_client(parsed_args: argparse.Namespace, logger: logging.Logger) -> Cli
         check_server_version=False,  # version is checked after auth to support versions < 2.3
     )
 
-    client.login(popattr(parsed_args, "auth"))
+    client.login(popattr(parsed_args, "auth")(client.api_client.configuration.host))
     client.check_server_version(fail_if_unsupported=False)
 
     client.organization_slug = popattr(parsed_args, "organization")
