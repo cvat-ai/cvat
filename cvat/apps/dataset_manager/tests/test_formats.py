@@ -259,7 +259,6 @@ class TaskExportTest(_DbTestBase):
                 {"name": "person"},
             ]
         }
-
         task.update(overrides)
         return self._create_task(task, images)
 
