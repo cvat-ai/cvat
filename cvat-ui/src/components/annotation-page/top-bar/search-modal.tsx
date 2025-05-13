@@ -8,6 +8,8 @@ import Modal from 'antd/lib/modal';
 import Text from 'antd/lib/typography/Text';
 import AutoComplete from 'antd/lib/auto-complete';
 import _ from 'lodash';
+import type { BaseSelectRef } from 'rc-select';
+
 import { getCore } from 'cvat-core-wrapper';
 import { CombinedState } from 'reducers';
 import { changeFrameAsync, switchShowSearchFramesModal } from 'actions/annotation-actions';
@@ -75,6 +77,12 @@ function SearchFramesModal(): JSX.Element {
         dispatch(changeFrameAsync(+frameNumber));
     }, []);
 
+    const autoCompleteRef = useCallback((node: BaseSelectRef | null) => {
+        if (node !== null && visible) {
+            node.focus();
+        }
+    }, [visible]);
+
     return (
         <Modal
             className='cvat-frame-search-modal'
@@ -86,7 +94,7 @@ function SearchFramesModal(): JSX.Element {
             destroyOnClose
         >
             <AutoComplete
-                autoFocus
+                ref={autoCompleteRef}
                 defaultValue={searchTerm}
                 placeholder='Type to search'
                 showSearch
