@@ -203,8 +203,8 @@ class DetectionFunction(Protocol):
         * The label_id attribute must equal one of the label IDs
           in the function spec.
 
-        * There must not be any attributes (attribute support may be added in a
-          future version).
+        * The spec_id attribute of each element of the attributes attribute
+          must equal one of the attribute IDs of the label spec corresponding to label_id.
 
         * The above constraints also apply to each sub-shape (element of a shape),
           except that the label_id of a sub-shape must equal one of the sublabel IDs

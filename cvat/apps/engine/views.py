@@ -778,6 +778,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             # with_job_summary() is optimized in the serializer
         elif self.action == 'preview':
             queryset = Task.objects.select_related('data')
+        elif self.action == 'validation_layout':
+            queryset = Task.objects.select_related('data', 'data__validation_layout')
         else:
             queryset = queryset.with_job_summary()
 

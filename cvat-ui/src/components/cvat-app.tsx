@@ -527,6 +527,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         <Route exact path='/projects/:id' component={ProjectPageComponent} />
                                         <Route exact path='/projects/:id/webhooks' component={WebhooksPage} />
                                         <Route exact path='/projects/:id/guide' component={AnnotationGuidePage} />
+                                        <Route exact path='/projects/:pid/quality-control' component={QualityControlPage} />
                                         <Route exact path='/projects/:pid/analytics' component={AnalyticsReportPage} />
                                         <Route exact path='/tasks' component={TasksPageContainer} />
                                         <Route exact path='/tasks/create' component={CreateTaskPageContainer} />

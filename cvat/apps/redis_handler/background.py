@@ -136,15 +136,17 @@ class AbstractRequestManager(metaclass=ABCMeta):
 
         job_status = job.get_status(refresh=False)
 
-        if job_status in {RQJobStatus.STARTED, RQJobStatus.QUEUED}:
+        if job_status in {
+            RQJobStatus.STARTED,
+            RQJobStatus.QUEUED,
+            RQJobStatus.DEFERRED,
+        }:
             return Response(
-                data="Request is being processed",
+                RqIdSerializer({"rq_id": job.id}).data,
                 status=status.HTTP_409_CONFLICT,
             )
 
-        if job_status == RQJobStatus.DEFERRED:
-            job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
-
+        # RQ jobs can be scheduled only by CVAT internal logic, in that case job has no dependencies
         if job_status == RQJobStatus.SCHEDULED:
             scheduler: DjangoScheduler = django_rq.get_scheduler(queue.name, queue=queue)
             # remove the job id from the set with scheduled keys

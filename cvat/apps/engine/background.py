@@ -15,7 +15,6 @@ from django.db.models import Model
 from rest_framework import serializers
 from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.reverse import reverse
-from rq.job import Job as RQJob
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.formats.registry import EXPORT_FORMATS
@@ -66,13 +65,6 @@ REQUEST_TIMEOUT = 60
 # it's better to return LockNotAvailableError instead of response with 504 status
 LOCK_TTL = REQUEST_TIMEOUT - 5
 LOCK_ACQUIRE_TIMEOUT = LOCK_TTL - 5
-
-
-def cancel_and_delete(rq_job: RQJob) -> None:
-    # In the case the server is configured with ONE_RUNNING_JOB_IN_QUEUE_PER_USER
-    # we have to enqueue dependent jobs after canceling one.
-    rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
-    rq_job.delete()
 
 
 class DatasetExporter(AbstractExporter):

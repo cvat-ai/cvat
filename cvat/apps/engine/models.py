@@ -510,6 +510,8 @@ class Project(TimestampedModel, FileSystemRelatedModel):
     target_storage = models.ForeignKey('Storage', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
 
+    tasks: models.manager.RelatedManager[Task]
+
     def get_labels(self, prefetch=False):
         queryset = self.label_set.filter(parent__isnull=True).select_related('skeleton')
         return queryset.prefetch_related(
