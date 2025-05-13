@@ -137,6 +137,7 @@ class AbstractRequestManager(metaclass=ABCMeta):
         job_status = job.get_status(refresh=False)
 
         if job_status in {
+            # FUTURE-TODO: cancelling and re-enqueuing a started job should probably be allowed
             RQJobStatus.STARTED,
             RQJobStatus.QUEUED,
             RQJobStatus.DEFERRED,
