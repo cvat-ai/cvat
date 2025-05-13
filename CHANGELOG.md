@@ -16,6 +16,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.36.0'></a>
+## \[2.36.0\] - 2025-05-08
+
+### Added
+
+- UI button to export raw resource events on analytics page
+  (<https://github.com/cvat-ai/cvat/pull/9293>)
+
+- Input size controls for cuboids in 3D workspace
+  (<https://github.com/cvat-ai/cvat/pull/9356>)
+
+### Changed
+
+- Export of events using the server endpoint `GET /api/events` ignores `send:exception` scope.
+  (<https://github.com/cvat-ai/cvat/pull/9383>)
+- Updated default value of `from` query parameter in GET `/api/events`.
+  Now it exports all events of the target resource if `from` and `to` are not specified.
+  (<https://github.com/cvat-ai/cvat/pull/9383>)
+- Export table as CSV feature now considers applied filtration on the table
+  (<https://github.com/cvat-ai/cvat/pull/9383>)
+
+- \[CLI\] The default value for `--server-host` is now `http://localhost`
+  (<https://github.com/cvat-ai/cvat/pull/9384>)
+
+### Deprecated
+
+- \[SDK, CLI\] Automatic server URL scheme detection is deprecated.
+  Add `https://` or `http://` to the host explicitly to avoid future breakage
+  (<https://github.com/cvat-ai/cvat/pull/9384>)
+
+### Fixed
+
+- Fixed helm-chart to use selectorLabels template for matchLabels #9358
+  (<https://github.com/cvat-ai/cvat/pull/9358>)
+
+- 500 status code returned when an API method is not allowed
+  (<https://github.com/cvat-ai/cvat/pull/9345>)
+
+- Optimized the `api/jobs/` server endpoint
+  (<https://github.com/cvat-ai/cvat/pull/9275>)
+- Optimized DB requests for server permission checks
+  (<https://github.com/cvat-ai/cvat/pull/9275>)
+
+- \[CLI\] Commands with invalid arguments or `--help` no longer ask for the
+  server password
+  (<https://github.com/cvat-ai/cvat/pull/9375>)
+
+- Improved performance of `GET /api/tasks`, `GET /api/quality/conflicts`
+  and `GET /api/cloudstorages` requests
+  (<https://github.com/cvat-ai/cvat/pull/8275>)
+
+- Improved performance of `GET /api/webhooks` requests
+  (<https://github.com/cvat-ai/cvat/pull/9269>)
+
+- Tracking with the AI model was not starting automatically after being re-enabled
+  (<https://github.com/cvat-ai/cvat/pull/9376>)
+
 <a id='changelog-2.35.0'></a>
 ## \[2.35.0\] - 2025-04-29
 
@@ -1546,7 +1603,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Formats with the custom `track_id` attribute should import `outside` track shapes properly (e.g. `COCO`, `COCO Keypoints`, `Datumaro`, `PASCAL VOC`)
+- Formats with the custom `track_id` attribute should import `outside` track shapes properly
+  (e.g. `COCO`, `COCO Keypoints`, `Datumaro`, `PASCAL VOC`)
   (<https://github.com/opencv/cvat/pull/7669>)
 
 - Inefficient resources fetching in admin panel leading to 504 Gateway Timeout
@@ -2611,7 +2669,8 @@ This release has changes only in the Enterprise version.
 
 - Relocated SAM masks decoder to frontend operation.
   (<https://github.com/opencv/cvat/pull/6019>)
-- Switched `person-reidentification-retail-0300` and `faster_rcnn_inception_v2_coco` Nuclio functions with `person-reidentification-retail-0277` and `faster_rcnn_inception_resnet_v2_atrous_coco` respectively.
+- Switched `person-reidentification-retail-0300` and `faster_rcnn_inception_v2_coco` Nuclio functions
+  with `person-reidentification-retail-0277` and `faster_rcnn_inception_resnet_v2_atrous_coco` respectively.
   (<https://github.com/opencv/cvat/pull/6129>)
 - Upgraded OpenVINO-based Nuclio functions to utilize the OpenVINO 2022.3 runtime.
   (<https://github.com/opencv/cvat/pull/6129>)
@@ -2814,7 +2873,10 @@ This release has changes only in the Enterprise version.
   polygon-minus, returning masks from online detectors & interactors)
   (<https://github.com/opencv/cvat/pull/4543>)
 - Added Webhooks (<https://github.com/opencv/cvat/pull/4863>)
-- Authentication with social accounts: Google & GitHub (<https://github.com/opencv/cvat/pull/5147>, <https://github.com/opencv/cvat/pull/5181>, <https://github.com/opencv/cvat/pull/5295>)
+- Authentication with social accounts: Google & GitHub
+  (<https://github.com/opencv/cvat/pull/5147>,
+  <https://github.com/opencv/cvat/pull/5181>,
+  <https://github.com/opencv/cvat/pull/5295>)
 - REST API tests for exporting job datasets & annotations and validating their structure (<https://github.com/opencv/cvat/pull/5160>)
 - Backward propagation on UI (<https://github.com/opencv/cvat/pull/5355>)
 - Keyboard shortcut to delete a frame (Alt + Del) (<https://github.com/opencv/cvat/pull/5369>)
@@ -2824,7 +2886,8 @@ This release has changes only in the Enterprise version.
 
 ### Changed
 
-- `api/docs`, `api/swagger`, `api/schema`, `server/about` endpoints now allow unauthorized access (<https://github.com/opencv/cvat/pull/4928>, <https://github.com/opencv/cvat/pull/4935>)
+- `api/docs`, `api/swagger`, `api/schema`, `server/about` endpoints now allow unauthorized access
+  (<https://github.com/opencv/cvat/pull/4928>, <https://github.com/opencv/cvat/pull/4935>)
 - 3D canvas now can be dragged in IDLE mode (<https://github.com/opencv/cvat/pull/5385>)
 - Datumaro version is upgraded to 0.3 (dev) (<https://github.com/opencv/cvat/pull/4984>)
 - Allowed trailing slashes in the SDK host address (<https://github.com/opencv/cvat/pull/5057>)
@@ -3867,7 +3930,8 @@ This release has changes only in the Enterprise version.
 - Keyboard shortcuts to switch next/previous default shape type (box, polygon etc) (Alt + <, Alt + >) (#316)
 - Converter for VOC now supports interpolation tracks
 - REST API (/api/v1/\*, /api/docs)
-- Semi-automatic semantic segmentation with the [Deep Extreme Cut](http://www.vision.ee.ethz.ch/~cvlsegmentation/dextr/) work
+- Semi-automatic semantic segmentation with the
+  [Deep Extreme Cut](http://www.vision.ee.ethz.ch/~cvlsegmentation/dextr/) work
 
 ### Changed
 

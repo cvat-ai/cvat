@@ -16,6 +16,7 @@ import { Config } from '@react-awesome-query-builder/antd';
 import jsonLogic from 'json-logic-js';
 
 import { ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
+import CVATTooltip from './cvat-tooltip';
 
 type Props = TableProps & {
     onFilterDataSource?(data: TableProps['dataSource']): void;
@@ -33,6 +34,10 @@ type Props = TableProps & {
     tableTitle?: string;
     searchDataIndex?: (string | string[])[];
 };
+
+function stringifyDataIndex(dataIndex: string | string[]): string {
+    return [dataIndex].flat(Number.MAX_SAFE_INTEGER).join('.');
+}
 
 function getValueFromDataItem<T>(
     dataItem: NonNullable<TableProps['dataSource']>[0],
@@ -52,10 +57,8 @@ function getValueFromDataItem<T>(
     * titles
     * advanced filtration with json query
     * overall search
-    * csv export
+    * csv export (column must have dataIndex to be CSV-exportable)
     * show/hide columns
-    Current restrictions:
-    * queryBuilder prop is supposed to be static
 */
 function CVATTable(props: Props): JSX.Element {
     const {
@@ -76,19 +79,20 @@ function CVATTable(props: Props): JSX.Element {
     const [searchPhrase, setSearchPhrase] = useState<string | null>(null);
     const [visibility, setVisibility] = useState(defaultVisibility);
     const [filteredDataSource, setFilteredDataSource] = useState<typeof dataSource>(dataSource);
-    const [modifiedColumns, setModifiedColumns] = useState<typeof columns>([]);
+    const [modifiedColumns, setModifiedColumns] = useState<NonNullable<typeof columns>>([]);
 
     const downloadCSV = useCallback(() => {
         if (csvExport && columns) {
             // function to export as CSV properly handling commas, line breaks and double quotes in both header/fields
-            const header = columns.map((column: any) => ({
-                title: column.dataIndex ? `${[column.dataIndex as string | string[]].flat().join('.')}` : undefined,
-                dataIndex: (column as any).dataIndex as string | string[],
-            })).filter((column) => !!column.title);
+            const header = columns
+                .filter((column: any) => !!column.dataIndex).map((column: any) => ({
+                    title: stringifyDataIndex(column.dataIndex),
+                    dataIndex: column.dataIndex as string | string[],
+                }));
 
             let csv = '';
-            if (dataSource) {
-                const rows = dataSource
+            if (filteredDataSource) {
+                const rows = filteredDataSource
                     .map((dataItem) => header.map(({ dataIndex }) => {
                         const value = getValueFromDataItem<string>(dataItem, dataIndex);
                         if (typeof value === 'string') {
@@ -113,10 +117,12 @@ function CVATTable(props: Props): JSX.Element {
                 a.remove();
             }
         }
-    }, [csvExport?.filename, dataSource, columns]);
+    }, [csvExport?.filename, filteredDataSource, columns]);
 
     useEffect(() => {
-        setModifiedColumns(columns);
+        if (columns) {
+            setModifiedColumns(columns);
+        }
     }, [columns]);
 
     useEffect(() => {
@@ -148,20 +154,18 @@ function CVATTable(props: Props): JSX.Element {
     }, [dataSource, searchDataIndex, filterValue, searchPhrase]);
 
     useEffect(() => {
-        if (!FilteringComponent) {
-            if (queryBuilder?.config && queryBuilder?.memoryKey) {
-                const capacity = queryBuilder?.memoryCapacity ?? 0;
-                setFilteringComponent(
-                    ResourceFilterHOC(
-                        queryBuilder.config,
-                        queryBuilder.memoryKey,
-                        capacity,
-                        queryBuilder.predefinedQueries ?? undefined,
-                    ),
-                );
-            }
+        if (queryBuilder?.config && queryBuilder?.memoryKey) {
+            const capacity = queryBuilder?.memoryCapacity ?? 0;
+            setFilteringComponent(
+                ResourceFilterHOC(
+                    queryBuilder.config,
+                    queryBuilder.memoryKey,
+                    capacity,
+                    queryBuilder.predefinedQueries ?? undefined,
+                ),
+            );
         }
-    }, [queryBuilder, FilteringComponent]);
+    }, [queryBuilder]);
 
     return (
         <div className='cvat-table-wrapper'>
@@ -183,12 +187,17 @@ function CVATTable(props: Props): JSX.Element {
                 <Col>
                     <Space align='center'>
                         {Array.isArray(searchDataIndex) && !!searchDataIndex.length && (
-                            <Input.Search
-                                className='cvat-table-search-bar'
-                                placeholder='Search ..'
-                                onSearch={setSearchPhrase}
-                                enterButton
-                            />
+                            <CVATTooltip
+                                title={`Search across fields: ${searchDataIndex
+                                    .map((dataIndex) => stringifyDataIndex(dataIndex)).join(', ')}`}
+                            >
+                                <Input.Search
+                                    className='cvat-table-search-bar'
+                                    placeholder='Search ..'
+                                    onSearch={setSearchPhrase}
+                                    enterButton
+                                />
+                            </CVATTooltip>
                         )}
                         <div>
                             { FilteringComponent !== null && (
@@ -218,31 +227,30 @@ function CVATTable(props: Props): JSX.Element {
                             placement='right'
                             trigger={['click']}
                             content={() => {
-                                const items = modifiedColumns?.map((column, idx: number) => {
-                                    const isHidden = column.hidden ?? false;
-                                    return (
-                                        <Checkbox
-                                            onChange={(e: CheckboxChangeEvent) => {
-                                                const newIsHidden = !e.target.checked;
-                                                setModifiedColumns([
-                                                    ...modifiedColumns.slice(0, idx),
-                                                    {
-                                                        ...column,
-                                                        hidden: newIsHidden,
-                                                    },
-                                                    ...modifiedColumns.slice(idx + 1),
-                                                ]);
+                                const items = modifiedColumns.map((column, idx: number) => (
+                                    <Checkbox
+                                        key={idx}
+                                        onChange={(e: CheckboxChangeEvent) => {
+                                            const newIsHidden = !e.target.checked;
+                                            setModifiedColumns([
+                                                ...modifiedColumns.slice(0, idx),
+                                                {
+                                                    ...column,
+                                                    hidden: newIsHidden,
+                                                },
+                                                ...modifiedColumns.slice(idx + 1),
+                                            ]);
 
-                                                if (onChangeColumnVisibility) {
-                                                    onChangeColumnVisibility(idx, newIsHidden);
-                                                }
-                                            }}
-                                            checked={!isHidden}
-                                        >
-                                            {column.title as string}
-                                        </Checkbox>
-                                    );
-                                });
+                                            if (onChangeColumnVisibility) {
+                                                onChangeColumnVisibility(idx, newIsHidden);
+                                            }
+                                        }}
+                                        checked={!(column.hidden ?? false)}
+                                    >
+                                        {typeof column.title === 'function' ?
+                                            column.title({}) : (column.title ?? '')}
+                                    </Checkbox>
+                                ));
 
                                 return (
                                     <div className='cvat-table-columns-settings-menu'>
