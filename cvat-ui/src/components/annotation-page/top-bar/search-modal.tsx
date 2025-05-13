@@ -86,12 +86,17 @@ function SearchFramesModal(): JSX.Element {
     return (
         <Modal
             className='cvat-frame-search-modal'
-            title='Search frames by name'
             open={visible}
             footer={null}
             onCancel={onCancel}
             width={600}
             destroyOnClose
+            closeIcon={null}
+            styles={{
+                mask: {
+                    backgroundColor: 'unset',
+                },
+            }}
         >
             <AutoComplete
                 ref={autoCompleteRef}
