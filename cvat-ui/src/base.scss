@@ -164,6 +164,12 @@ $scroll-breakpoint: 1300px;
                 .ant-table {
                     height: 100%;
                     overflow: auto;
+
+                    &:has(.ant-table-placeholder) {
+                        .ant-table-container, .ant-table-content, table {
+                            height: 100%;
+                        }
+                    }
                 }
             }
         }

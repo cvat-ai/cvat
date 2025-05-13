@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.35.1
+  version: 2.36.1
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -1154,8 +1154,8 @@ paths:
         schema:
           type: string
           format: date-time
-        description: Filter events after the datetime. If no 'from' or 'to' parameters
-          are passed, the last 30 days will be set.
+        description: UTC start date for events filtration. Default is the minimal
+          time.
       - in: query
         name: job_id
         schema:
@@ -1186,8 +1186,7 @@ paths:
         schema:
           type: string
           format: date-time
-        description: Filter events before the datetime. If no 'from' or 'to' parameters
-          are passed, the last 30 days will be set.
+        description: UTC end date for events filtration. Default is the current time.
       - in: query
         name: user_id
         schema:
@@ -2604,6 +2603,10 @@ paths:
         '405':
           description: Format is not available
         '409':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
           description: Exporting is already in progress
   /api/jobs/{id}/preview:
     get:
@@ -3706,6 +3709,10 @@ paths:
         '400':
           description: Wrong query parameters were passed
         '409':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
           description: The backup process has already been initiated and is not yet
             finished
   /api/projects/{id}/dataset/:
@@ -3928,6 +3935,10 @@ paths:
         '405':
           description: Format is not available
         '409':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
           description: Exporting is already in progress
   /api/projects/{id}/preview:
     get:
@@ -5499,6 +5510,10 @@ paths:
         '400':
           description: Wrong query parameters were passed
         '409':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
           description: The backup process has already been initiated and is not yet
             finished
   /api/tasks/{id}/data/:
@@ -5780,6 +5795,10 @@ paths:
         '405':
           description: Format is not available
         '409':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
           description: Exporting is already in progress
   /api/tasks/{id}/preview:
     get:
@@ -7200,7 +7219,7 @@ components:
       type: object
       description: |-
         Read more about parameters here:
-        https://docs.cvat.ai/docs/manual/basics/create_an_annotation_task/#advanced-configuration
+        https://docs.cvat.ai/docs/manual/basics/create-annotation-task/#advanced-configuration
       properties:
         chunk_size:
           type: integer
