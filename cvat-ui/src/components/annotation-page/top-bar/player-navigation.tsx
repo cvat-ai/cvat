@@ -141,8 +141,10 @@ function PlayerNavigation(props: Props): JSX.Element {
             }
         },
         SEARCH_FRAME_BY_NAME: (event: KeyboardEvent | undefined) => {
-            event?.preventDefault();
-            switchShowSearchPallet(true);
+            if (jobInstance.mode === TaskMode.ANNOTATION) {
+                event?.preventDefault();
+                switchShowSearchPallet(true);
+            }
         },
     };
 
