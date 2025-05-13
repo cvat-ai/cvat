@@ -162,6 +162,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
     playerItems.push([(
         <PlayerNavigation
             key='player_navigation'
+            jobInstance={jobInstance}
             startFrame={startFrame}
             stopFrame={stopFrame}
             playing={playing}

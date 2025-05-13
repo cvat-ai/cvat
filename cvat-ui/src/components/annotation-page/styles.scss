@@ -190,7 +190,8 @@
 .cvat-player-frame-url-icon,
 .cvat-player-delete-frame,
 .cvat-player-restore-frame,
-.cvat-player-copy-frame-name-icon {
+.cvat-player-copy-frame-name-icon,
+.cvat-player-search-frame-name-icon {
     opacity: 0.7;
     color: $objects-bar-icons-color;
 
@@ -213,6 +214,10 @@
     width: 5em;
     padding-right: 5px;
     margin-left: 5px;
+}
+
+.cvat-player-actions {
+    margin-left: $grid-unit-size;
 }
 
 .cvat-annotation-header-right-group {

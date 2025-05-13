@@ -16,16 +16,18 @@ import InputNumber from 'antd/lib/input-number';
 import Text from 'antd/lib/typography/Text';
 import Modal from 'antd/lib/modal';
 
+import { Workspace } from 'reducers';
+import { Job, TaskMode } from 'cvat-core-wrapper';
 import { RestoreIcon } from 'icons';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { clamp } from 'utils/math';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
-import { Workspace } from 'reducers';
 import { ShortcutScope } from 'utils/enums';
-import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
 
 interface Props {
+    jobInstance: Job;
     startFrame: number;
     stopFrame: number;
     playing: boolean;
@@ -75,6 +77,7 @@ registerComponentShortcuts(componentShortcuts);
 
 function PlayerNavigation(props: Props): JSX.Element {
     const {
+        jobInstance,
         startFrame,
         stopFrame,
         playing,
@@ -209,12 +212,6 @@ function PlayerNavigation(props: Props): JSX.Element {
                         </CVATTooltip>
                     </Col>
                     <Col className='cvat-player-frame-actions' offset={1}>
-                        <CVATTooltip title={`Search frame by name ${searchFrameByNameShortcut}`}>
-                            <SearchOutlined
-                                className='cvat-player-search-frame-name-icon'
-                                onClick={onSearchIconClick}
-                            />
-                        </CVATTooltip>
                         <CVATTooltip title='Copy frame filename'>
                             <CopyOutlined className='cvat-player-copy-frame-name-icon' onClick={onCopyFilenameIconClick} />
                         </CVATTooltip>
@@ -249,6 +246,18 @@ function PlayerNavigation(props: Props): JSX.Element {
                         }}
                     />
                 </CVATTooltip>
+            </Col>
+            <Col className='cvat-player-actions'>
+                {
+                    jobInstance.mode === TaskMode.ANNOTATION && (
+                        <CVATTooltip title={`Search frame by name ${searchFrameByNameShortcut}`}>
+                            <SearchOutlined
+                                className='cvat-player-search-frame-name-icon'
+                                onClick={onSearchIconClick}
+                            />
+                        </CVATTooltip>
+                    )
+                }
             </Col>
         </>
     );

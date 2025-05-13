@@ -21,7 +21,7 @@ interface SearchResult {
 const cvat = getCore();
 
 const SEARCH_LIMIT = 25;
-const SEARCH_DEBOUNCE_TIME = 500;
+const SEARCH_DEBOUNCE_TIME = 100;
 
 function SearchFramesModal(): JSX.Element {
     const dispatch = useDispatch();
@@ -91,6 +91,7 @@ function SearchFramesModal(): JSX.Element {
                 placeholder='Type to search'
                 showSearch
                 onSearch={onSearch}
+                notFoundContent={searchTerm ? <Text>No frames found</Text> : null}
                 options={searchResults.map((item) => ({
                     value: item.number,
                     label: (
