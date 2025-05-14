@@ -15,6 +15,7 @@ import sysconfig
 import tempfile
 import xml.etree.ElementTree as ET
 import zipfile
+from copy import deepcopy
 from collections import defaultdict
 from contextlib import ExitStack
 from datetime import timedelta
@@ -5560,40 +5561,30 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
             status.HTTP_401_UNAUTHORIZED,
             status.HTTP_403_FORBIDDEN
         ]:
-            IGNORE_KEYS = ["id", "version"]
-            TAG_DEFAULT_VALUES = dict(
-                source='manual',
-                attributes=[],
-            )
-            TRACK_DEFAULT_VALUES = dict(
-                **TAG_DEFAULT_VALUES,
-            )
-            SHAPE_DEFAULT_VALUES = dict(
-                **TRACK_DEFAULT_VALUES,
+            COMMON_DEFAULT_FIELDS = dict(
+                source=expected_source or 'manual',
                 occluded=False,
                 outside=False,
                 z_order=0,
                 rotation=0,
                 elements=[],
+                attributes=[],
             ) # if omitted, are set by the server
               # https://docs.cvat.ai/docs/api_sdk/sdk/reference/models/labeled-shape/
-            _default_values = {
-                AnnotationType.TAG: TAG_DEFAULT_VALUES,
-                AnnotationType.SHAPE: SHAPE_DEFAULT_VALUES,
-                AnnotationType.TRACK: TRACK_DEFAULT_VALUES
-            }
-            expected_values = dict()
-            if expected_source:
-                expected_values['source'] = expected_source
+            COMMON_DEFAULT_KEYS = list(COMMON_DEFAULT_FIELDS.keys())
+            IGNORE_KEYS = ["id", "version"]
+            RESPONSE_KEYS = ['shapes', 'tracks', 'tags']
+            response_defaults = filter_object(
+                deepcopy(response.data),
+                keep=RESPONSE_KEYS + COMMON_DEFAULT_KEYS
+            )
             try:
                 for _type in sorted(AnnotationType):
                     key = f"{_type}s"
-                    anns = response.data[key]
+                    anns = response_defaults[key]
                     for ann in anns:
-                        check_optional_fields(self, ann, optional_values=_default_values[_type], expected_values=expected_values)
-                response.data = filter_object(response.data, drop=SHAPE_DEFAULT_VALUES.keys())
-                data = filter_object(data, drop=SHAPE_DEFAULT_VALUES.keys())
-                compare_objects(self, data, response.data, IGNORE_KEYS, order=anno_order)
+                        check_optional_fields(self, ann, optional_values=COMMON_DEFAULT_FIELDS)
+                compare_objects(self, data, response.data, IGNORE_KEYS + COMMON_DEFAULT_KEYS, order=anno_order)
             except AssertionError as e:
                 print("Objects are not equal:",
                       pformat(data, compact=True),

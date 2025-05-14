@@ -472,6 +472,7 @@ def filter_object(
     elif isinstance(obj, list):
         for i, val in enumerate(obj):
             obj[i] = filter_object(val, keep=keep, drop=drop)
+        obj = list(filter(lambda x: x != dict(), obj))
         return obj
     return obj
 
@@ -492,11 +493,11 @@ def freeze_object(obj, ignore_keys=None) -> frozenset:
 def check_optional_fields(self: TestCase,
                         obj: dict[str, int | float | str],
                         optional_values: dict[str, int | float | str],
-                        expected_values: dict[str, int | float | str]
+                        # expected_values: dict[str, int | float | str]
                         ) -> None | NoReturn:
     for k in optional_values.keys():
-        if obj.get(k) and not optional_values[k] == obj[k]:
-            self.assertEqual(obj[k], expected_values.get(k) or obj[k]) # coalesce
+        # if obj.get(k) and not optional_values[k] == obj[k]:
+        self.assertEqual(obj.get(k, optional_values[k]), optional_values[k]) # coalesce
 
 
 def compare_objects(self: TestCase, obj1, obj2, ignore_keys, fp_tolerance=0.001, current_key=None, order=True):
