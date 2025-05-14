@@ -15,9 +15,9 @@ import sysconfig
 import tempfile
 import xml.etree.ElementTree as ET
 import zipfile
-from copy import deepcopy
 from collections import defaultdict
 from contextlib import ExitStack
+from copy import deepcopy
 from datetime import timedelta
 from enum import Enum
 from glob import glob
