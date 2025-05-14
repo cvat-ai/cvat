@@ -497,7 +497,8 @@ def check_optional_fields(self: TestCase,
                         ) -> None | NoReturn:
     for k in optional_values.keys():
         # if obj.get(k) and not optional_values[k] == obj[k]:
-        self.assertEqual(obj.get(k, optional_values[k]), optional_values[k]) # coalesce
+        self.assertEqual(obj.get(k, optional_values[k]), optional_values[k],
+                         f"key '{k}' has incorrect expected optional value {obj.get(k)} instead of {optional_values[k]}") # coalesce
 
 
 def compare_objects(self: TestCase, obj1, obj2, ignore_keys, fp_tolerance=0.001, current_key=None, order=True):

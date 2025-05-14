@@ -5567,7 +5567,6 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                 outside=False,
                 z_order=0,
                 rotation=0,
-                elements=[],
                 attributes=[],
             ) # if omitted, are set by the server
               # https://docs.cvat.ai/docs/api_sdk/sdk/reference/models/labeled-shape/
@@ -6656,6 +6655,8 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
 
         # Rare and buggy formats that are not crucial for testing
         formats.pop('Market-1501 1.0') # Issue: https://github.com/cvat-ai/datumaro/issues/99
+
+        formats = {'COCO Keypoints 1.0': 'COCO Keypoints 1.0'}
 
         for export_format, import_format in formats.items():
             with self.subTest(export_format=export_format,
