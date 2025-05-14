@@ -10,7 +10,6 @@ import AutoComplete from 'antd/lib/auto-complete';
 import _ from 'lodash';
 import type { BaseSelectRef } from 'rc-select';
 
-import { getCore } from 'cvat-core-wrapper';
 import { CombinedState } from 'reducers';
 import { changeFrameAsync, switchShowSearchFramesModal } from 'actions/annotation-actions';
 import CvatTooltip from 'components/common/cvat-tooltip';
@@ -20,8 +19,6 @@ interface SearchResult {
     name: string;
 }
 
-const cvat = getCore();
-
 const SEARCH_LIMIT = 25;
 const SEARCH_DEBOUNCE_TIME = 100;
 
@@ -30,23 +27,19 @@ function SearchFramesModal(): JSX.Element {
     const [searchTerm, setSearchTerm] = useState('');
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
     const visible = useSelector((state: CombinedState) => state.annotation.search.visible);
-    const jobInstance = useSelector((state: CombinedState) => state.annotation.job.instance);
+    const meta = useSelector((state: CombinedState) => state.annotation.job.meta);
     const frameNumbers = useSelector((state: CombinedState) => state.annotation.job.frameNumbers);
 
     const [searchData, setSearchData] = useState<SearchResult[]>([]);
-    const getFramesData = async () => {
-        if (jobInstance) {
-            const meta = await cvat.frames.getMeta('job', jobInstance.id);
+    useEffect(() => {
+        if (meta) {
             const newSearchData = meta.frames.map((frame: any, idx: number) => ({
                 name: frame.name,
                 number: frameNumbers[idx],
             }));
             setSearchData(newSearchData);
         }
-    };
-    useEffect(() => {
-        getFramesData();
-    }, [jobInstance]);
+    }, [meta]);
 
     const onCancel = useCallback(() => {
         dispatch(switchShowSearchFramesModal(false));

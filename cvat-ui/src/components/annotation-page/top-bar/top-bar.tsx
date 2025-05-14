@@ -45,6 +45,7 @@ interface Props {
     toolsBlockerState: ToolsBlockerState;
     annotationFilters: object[];
     initialOpenGuide: boolean;
+    showSearchFrameByName: boolean;
     keyMap: KeyMap;
     jobInstance: Job;
     ranges: string;
@@ -131,6 +132,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         setNavigationType,
         switchNavigationBlocked,
         switchShowSearchPallet,
+        showSearchFrameByName,
     } = props;
 
     const playerItems: [JSX.Element, number][] = [];
@@ -162,7 +164,6 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
     playerItems.push([(
         <PlayerNavigation
             key='player_navigation'
-            jobInstance={jobInstance}
             startFrame={startFrame}
             stopFrame={stopFrame}
             playing={playing}
@@ -184,6 +185,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
             onRestoreFrame={onRestoreFrame}
             switchNavigationBlocked={switchNavigationBlocked}
             switchShowSearchPallet={switchShowSearchPallet}
+            showSearchFrameByName={showSearchFrameByName}
         />
     ), 10]);
 

@@ -17,7 +17,6 @@ import Text from 'antd/lib/typography/Text';
 import Modal from 'antd/lib/modal';
 
 import { Workspace } from 'reducers';
-import { Job, TaskMode } from 'cvat-core-wrapper';
 import { RestoreIcon } from 'icons';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import CVATTooltip from 'components/common/cvat-tooltip';
@@ -27,7 +26,6 @@ import { ShortcutScope } from 'utils/enums';
 import { subKeyMap } from 'utils/component-subkeymap';
 
 interface Props {
-    jobInstance: Job;
     startFrame: number;
     stopFrame: number;
     playing: boolean;
@@ -38,6 +36,7 @@ interface Props {
     deleteFrameShortcut: string;
     focusFrameInputShortcut: string;
     searchFrameByNameShortcut: string;
+    showSearchFrameByName: boolean;
     inputFrameRef: React.RefObject<HTMLInputElement>;
     keyMap: KeyMap;
     workspace: Workspace;
@@ -68,7 +67,7 @@ const componentShortcuts = {
     SEARCH_FRAME_BY_NAME: {
         name: 'Search frame by name',
         description: 'Open search frame by name dialog',
-        sequences: ['ctrl+p'],
+        sequences: [''],
         scope: ShortcutScope.ANNOTATION_PAGE,
     },
 };
@@ -77,7 +76,6 @@ registerComponentShortcuts(componentShortcuts);
 
 function PlayerNavigation(props: Props): JSX.Element {
     const {
-        jobInstance,
         startFrame,
         stopFrame,
         playing,
@@ -99,6 +97,7 @@ function PlayerNavigation(props: Props): JSX.Element {
         onRestoreFrame,
         switchNavigationBlocked,
         switchShowSearchPallet,
+        showSearchFrameByName,
     } = props;
 
     const [frameInputValue, setFrameInputValue] = useState<number>(frameNumber);
@@ -141,7 +140,7 @@ function PlayerNavigation(props: Props): JSX.Element {
             }
         },
         SEARCH_FRAME_BY_NAME: (event: KeyboardEvent | undefined) => {
-            if (jobInstance.mode === TaskMode.ANNOTATION) {
+            if (showSearchFrameByName) {
                 event?.preventDefault();
                 switchShowSearchPallet(true);
             }
@@ -251,7 +250,7 @@ function PlayerNavigation(props: Props): JSX.Element {
             </Col>
             <Col className='cvat-player-actions'>
                 {
-                    jobInstance.mode === TaskMode.ANNOTATION && (
+                    showSearchFrameByName && (
                         <CVATTooltip title={`Search frame by name ${searchFrameByNameShortcut}`}>
                             <SearchOutlined
                                 className='cvat-player-search-frame-name-icon'

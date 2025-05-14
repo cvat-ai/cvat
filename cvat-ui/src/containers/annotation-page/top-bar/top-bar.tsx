@@ -29,7 +29,7 @@ import {
 import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-bar';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
-import { Job } from 'cvat-core-wrapper';
+import { FramesMetaData, Job } from 'cvat-core-wrapper';
 import {
     CombinedState,
     FrameSpeed,
@@ -73,6 +73,7 @@ interface StateToProps {
     annotationFilters: object[];
     initialOpenGuide: boolean;
     navigationType: NavigationType;
+    showSearchFrameByName: boolean;
 }
 
 interface DispatchToProps {
@@ -121,7 +122,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 history,
                 filters: annotationFilters,
             },
-            job: { instance: jobInstance, queryParameters: { initialOpenGuide } },
+            job: { instance: jobInstance, queryParameters: { initialOpenGuide }, meta },
             canvas: { ready: canvasIsReady, instance: canvasInstance, activeControl },
             workspace,
         },
@@ -135,6 +136,14 @@ function mapStateToProps(state: CombinedState): StateToProps {
         },
         shortcuts: { keyMap, normalizedKeyMap },
     } = state;
+
+    let showSearchFrameByName = false;
+    if (meta?.frames && meta.frames.length > 0) {
+        const firstName = meta.frames[0].name;
+        showSearchFrameByName = !meta.frames.every(
+            (frame: FramesMetaData['frames'][number]) => frame.name === firstName,
+        );
+    }
 
     return {
         frameIsDeleted,
@@ -164,6 +173,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         annotationFilters,
         initialOpenGuide,
         navigationType,
+        showSearchFrameByName,
     };
 }
 
@@ -649,6 +659,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             switchNavigationBlocked,
             setNavigationType,
             switchShowSearchPallet,
+            showSearchFrameByName,
         } = this.props;
 
         return (
@@ -672,6 +683,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 onRestoreFrame={this.onRestoreFrame}
                 changeWorkspace={this.changeWorkspace}
                 switchShowSearchPallet={switchShowSearchPallet}
+                showSearchFrameByName={showSearchFrameByName}
                 switchNavigationBlocked={switchNavigationBlocked}
                 keyMap={keyMap}
                 workspace={workspace}
