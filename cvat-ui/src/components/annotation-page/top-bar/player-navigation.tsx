@@ -67,7 +67,7 @@ const componentShortcuts = {
     SEARCH_FRAME_BY_NAME: {
         name: 'Search frame by name',
         description: 'Open search frame by name dialog',
-        sequences: [''],
+        sequences: [],
         scope: ShortcutScope.ANNOTATION_PAGE,
     },
 };
