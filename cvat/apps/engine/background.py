@@ -91,15 +91,18 @@ class ResourceExportManager(ABC):
 
         rq_job_status = rq_job.get_status(refresh=False)
 
-        if rq_job_status in {RQJobStatus.STARTED, RQJobStatus.QUEUED}:
+        if rq_job_status in {
+            # FUTURE-TODO: cancelling and re-enqueuing a started job should probably be allowed
+            RQJobStatus.STARTED,
+            RQJobStatus.QUEUED,
+            RQJobStatus.DEFERRED,
+        }:
             return Response(
-                data="Export request is being processed",
+                RqIdSerializer({"rq_id": rq_job.id}).data,
                 status=status.HTTP_409_CONFLICT,
             )
 
-        if rq_job_status == RQJobStatus.DEFERRED:
-            rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
-
+        # RQ jobs can be scheduled only by CVAT internal logic, in that case job has no dependencies
         if rq_job_status == RQJobStatus.SCHEDULED:
             scheduler: DjangoScheduler = django_rq.get_scheduler(queue.name, queue=queue)
             # remove the job id from the set with scheduled keys
@@ -222,13 +225,6 @@ class ResourceExportManager(ABC):
                     attachment=True,
                     attachment_filename=rq_job_meta.result_filename,
                 )
-
-
-def cancel_and_delete(rq_job: RQJob) -> None:
-    # In the case the server is configured with ONE_RUNNING_JOB_IN_QUEUE_PER_USER
-    # we have to enqueue dependent jobs after canceling one.
-    rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
-    rq_job.delete()
 
 
 class DatasetExportManager(ResourceExportManager):
