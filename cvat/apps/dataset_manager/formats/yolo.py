@@ -60,11 +60,14 @@ def _import_common(
 ):
     Archive(src_file.name).extractall(temp_dir)
 
+    detected_sources = dm_env.make_importer(format_name)(temp_dir)
+
     image_info = {}
     extractor = dm_env.extractors.get(format_name)
     frames = [
-        extractor.name_from_path(osp.relpath(p, temp_dir))
-        for p in glob(osp.join(temp_dir, "**", "*.txt"), recursive=True)
+        extractor.name_from_path(osp.relpath(p, folder))
+        for folder in set(osp.dirname(source["url"]) for source in detected_sources)
+        for p in glob(osp.join(folder, "**", "*.txt"), recursive=True)
     ]
     root_hint = find_dataset_root([DatasetItem(id=frame) for frame in frames], instance_data)
     for frame in frames:
