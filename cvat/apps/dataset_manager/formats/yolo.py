@@ -60,6 +60,8 @@ def _import_common(
 ):
     Archive(src_file.name).extractall(temp_dir)
 
+    detect_dataset(temp_dir, format_name=format_name, importer=dm_env.importers.get(format_name))
+
     detected_sources = dm_env.make_importer(format_name)(temp_dir)
 
     image_info = {}
@@ -80,7 +82,6 @@ def _import_common(
         if frame_info is not None:
             image_info[frame] = (frame_info["height"], frame_info["width"])
 
-    detect_dataset(temp_dir, format_name=format_name, importer=dm_env.importers.get(format_name))
     dataset = StreamDataset.import_from(
         temp_dir, format_name, env=dm_env, image_info=image_info, **(import_kwargs or {})
     )
