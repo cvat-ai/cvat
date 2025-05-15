@@ -16,6 +16,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.37.0'></a>
+## \[2.37.0\] - 2025-05-15
+
+### Added
+
+- Annotation quality checks for projects
+  (<https://github.com/opencv/cvat/pull/9116>)
+
+- \[CLI\] Agents are now able to handle interactive detection requests
+  (<https://github.com/cvat-ai/cvat/pull/9371>)
+
+- \[SDK\] `BackgroundRequestException` which is now raised instead of `ApiException`
+  when a background request (e.g., exporting a dataset or creating a task) fails
+  (<https://github.com/cvat-ai/cvat/pull/9297>)
+
+- Datumaro format now supports ellipses
+  (<https://github.com/cvat-ai/cvat/pull/9372>)
+
+- Frame search by filename
+  (<https://github.com/cvat-ai/cvat/pull/9378>)
+
+### Changed
+
+- Requests that initiate background processes (e.g. exporting datasets) now return a request ID
+  too when a 409 status is returned
+  (<https://github.com/cvat-ai/cvat/pull/9297>)
+
+### Deprecated
+
+- \[Server API\] `GET api/quality/reports` and `GET api/quality/reports/{id}/` responses:
+  - `frame_count` - deprecated in favor of the new `validation_frames` field,
+  - `frame_share` - deprecated in favor of the new `validation_frame_share` field
+  (<https://github.com/opencv/cvat/pull/9116>)
+
+### Fixed
+
+- Optimized `GET api/quality/reports/`, `GET api/quality/conflicts/` requests,
+  permission checks in `api/quality/*` endpoints
+  (<https://github.com/opencv/cvat/pull/9116>)
+
+- Do not require COCO annotations to have fields which are not necessary for import
+  (<https://github.com/cvat-ai/cvat/pull/9387>)
+
+- `redis.exceptions.ResponseError: wrong number of arguments for 'watch' command` exception that
+  could be raised inside a worker when enqueuing jobs that depend on a running job
+  (<https://github.com/cvat-ai/cvat/pull/9297>)
+
+- Fixed issue on track interpolation: 'tuple' object has no attribute 'copy'
+  (<https://github.com/cvat-ai/cvat/pull/9403>)
+
+- \[SDK\] Fixed outdated note about attributes in the docstring of
+  `DetectionFunction.detect`
+  (<https://github.com/cvat-ai/cvat/pull/9412>)
+
+- When no shortcuts were assigned, the tooltip displayed empty brackets
+  (<https://github.com/cvat-ai/cvat/pull/9378>)
+
 <a id='changelog-2.36.0'></a>
 ## \[2.36.0\] - 2025-05-08
 
