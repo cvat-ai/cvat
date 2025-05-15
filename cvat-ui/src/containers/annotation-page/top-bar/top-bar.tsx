@@ -24,11 +24,12 @@ import {
     restoreFrameAsync,
     switchNavigationBlocked as switchNavigationBlockedAction,
     setNavigationType as setNavigationTypeAction,
+    switchShowSearchFramesModal as switchShowSearchFramesModalAction,
 } from 'actions/annotation-actions';
 import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-bar';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
-import { Job } from 'cvat-core-wrapper';
+import { FramesMetaData, Job } from 'cvat-core-wrapper';
 import {
     CombinedState,
     FrameSpeed,
@@ -72,11 +73,13 @@ interface StateToProps {
     annotationFilters: object[];
     initialOpenGuide: boolean;
     navigationType: NavigationType;
+    showSearchFrameByName: boolean;
 }
 
 interface DispatchToProps {
     onChangeFrame(frame: number, fillBuffer?: boolean, frameStep?: number): void;
     onSwitchPlay(playing: boolean): void;
+    switchShowSearchPallet(visible: boolean): void;
     onSaveAnnotation(): void;
     showStatistics(sessionInstance: Job): void;
     showFilters(): void;
@@ -119,7 +122,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 history,
                 filters: annotationFilters,
             },
-            job: { instance: jobInstance, queryParameters: { initialOpenGuide } },
+            job: { instance: jobInstance, queryParameters: { initialOpenGuide }, meta },
             canvas: { ready: canvasIsReady, instance: canvasInstance, activeControl },
             workspace,
         },
@@ -133,6 +136,14 @@ function mapStateToProps(state: CombinedState): StateToProps {
         },
         shortcuts: { keyMap, normalizedKeyMap },
     } = state;
+
+    let showSearchFrameByName = false;
+    if (meta?.frames && meta.frames.length > 0) {
+        const firstName = meta.frames[0].name;
+        showSearchFrameByName = !meta.frames.every(
+            (frame: FramesMetaData['frames'][number]) => frame.name === firstName,
+        );
+    }
 
     return {
         frameIsDeleted,
@@ -162,6 +173,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         annotationFilters,
         initialOpenGuide,
         navigationType,
+        showSearchFrameByName,
     };
 }
 
@@ -182,6 +194,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         showFilters(): void {
             dispatch(showFiltersAction(true));
+        },
+        switchShowSearchPallet(visible: boolean): void {
+            dispatch(switchShowSearchFramesModalAction(visible));
         },
         undo(): void {
             dispatch(undoActionAsync());
@@ -643,6 +658,8 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             navigationType,
             switchNavigationBlocked,
             setNavigationType,
+            switchShowSearchPallet,
+            showSearchFrameByName,
         } = this.props;
 
         return (
@@ -665,6 +682,8 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 onDeleteFrame={this.onDeleteFrame}
                 onRestoreFrame={this.onRestoreFrame}
                 changeWorkspace={this.changeWorkspace}
+                switchShowSearchPallet={switchShowSearchPallet}
+                showSearchFrameByName={showSearchFrameByName}
                 switchNavigationBlocked={switchNavigationBlocked}
                 keyMap={keyMap}
                 workspace={workspace}
@@ -691,6 +710,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 backwardShortcut={normalizedKeyMap.BACKWARD_FRAME}
                 navigationType={navigationType}
                 focusFrameInputShortcut={normalizedKeyMap.FOCUS_INPUT_FRAME}
+                searchFrameByNameShortcut={normalizedKeyMap.SEARCH_FRAME_BY_NAME}
                 annotationFilters={annotationFilters}
                 initialOpenGuide={initialOpenGuide}
                 onUndoClick={this.undo}
