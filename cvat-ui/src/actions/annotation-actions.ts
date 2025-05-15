@@ -146,6 +146,7 @@ export enum AnnotationActionTypes {
     UNDO_ACTION_FAILED = 'UNDO_ACTION_FAILED',
     REDO_ACTION_FAILED = 'REDO_ACTION_FAILED',
     CHANGE_ANNOTATIONS_FILTERS = 'CHANGE_ANNOTATIONS_FILTERS',
+    CHANGE_SHOW_SEARCH_FRAMES_MODAL = 'CHANGE_SHOW_SEARCH_FRAMES_MODAL',
     FETCH_ANNOTATIONS_SUCCESS = 'FETCH_ANNOTATIONS_SUCCESS',
     FETCH_ANNOTATIONS_FAILED = 'FETCH_ANNOTATIONS_FAILED',
     ROTATE_FRAME = 'ROTATE_FRAME',
@@ -585,6 +586,15 @@ export function switchPlay(playing: boolean): AnyAction {
         type: AnnotationActionTypes.SWITCH_PLAY,
         payload: {
             playing,
+        },
+    };
+}
+
+export function switchShowSearchFramesModal(visible: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.CHANGE_SHOW_SEARCH_FRAMES_MODAL,
+        payload: {
+            visible,
         },
     };
 }
