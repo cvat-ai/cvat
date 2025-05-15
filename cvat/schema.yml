@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.36.0
+  version: 2.37.0
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -2603,6 +2603,10 @@ paths:
         '405':
           description: Format is not available
         '409':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
           description: Exporting is already in progress
   /api/jobs/{id}/preview:
     get:
@@ -3705,6 +3709,10 @@ paths:
         '400':
           description: Wrong query parameters were passed
         '409':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
           description: The backup process has already been initiated and is not yet
             finished
   /api/projects/{id}/dataset/:
@@ -3927,6 +3935,10 @@ paths:
         '405':
           description: Format is not available
         '409':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
           description: Exporting is already in progress
   /api/projects/{id}/preview:
     get:
@@ -4056,7 +4068,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['id', 'frame', 'type', 'job_id', 'task_id', 'severity'].
+           Available filter_fields: ['id', 'frame', 'type', 'job_id', 'task_id', 'project_id', 'severity'].
         schema:
           type: string
       - name: frame
@@ -4091,6 +4103,11 @@ paths:
         description: Number of results to return per page.
         schema:
           type: integer
+      - name: project_id
+        in: query
+        description: A simple equality filter for the project_id field
+        schema:
+          type: integer
       - in: query
         name: report_id
         schema:
@@ -4108,7 +4125,7 @@ paths:
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''id'', ''frame'', ''type'', ''job_id'', ''task_id'', ''severity'']'
+          [''id'', ''frame'', ''type'', ''job_id'', ''task_id'', ''project_id'', ''severity'']'
         schema:
           type: string
       - name: task_id
@@ -4148,7 +4165,21 @@ paths:
   /api/quality/reports:
     get:
       operationId: quality_list_reports
-      summary: List quality reports
+      description: |
+        Please note that children reports are included by default
+        if the "task_id", "project_id" filters are used.
+        If you want to restrict the list of results to a specific report type,
+        use the "target" parameter.
+
+        The "parent_id" filter includes all the nested reports recursively.
+        For instance, if the "parent_id" is a project report,
+        all the related task and job reports will be returned.
+
+        Please note that a report can be reused in several parent reports,
+        but the "parent_id" field in responses will include only the first parent report id.
+        The "parent_id" filter still returns all the relevant nested reports,
+        even though the response "parent_id" values may be different from the requested one.
+      summary: Method returns a paginated list of quality reports.
       parameters:
       - name: X-Organization
         in: header
@@ -4168,7 +4199,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['id', 'job_id', 'created_date', 'gt_last_updated', 'target_last_updated', 'parent_id'].
+           Available filter_fields: ['id', 'job_id', 'task_id', 'project_id', 'created_date', 'gt_last_updated', 'target_last_updated'].
         schema:
           type: string
       - name: job_id
@@ -4198,23 +4229,32 @@ paths:
         description: Number of results to return per page.
         schema:
           type: integer
-      - name: parent_id
-        in: query
-        description: A simple equality filter for the parent_id field
+      - in: query
+        name: parent_id
         schema:
           type: integer
+        description: A simple equality filter for parent id
+      - in: query
+        name: project_id
+        schema:
+          type: integer
+        description: A simple equality filter for project id
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''id'', ''job_id'', ''created_date'', ''gt_last_updated'', ''target_last_updated'',
-          ''parent_id'']'
+          [''id'', ''job_id'', ''task_id'', ''project_id'', ''created_date'', ''gt_last_updated'',
+          ''target_last_updated'']'
         schema:
           type: string
       - in: query
         name: target
         schema:
           type: string
+          enum:
+          - job
+          - project
+          - task
         description: A simple equality filter for target
       - in: query
         name: task_id
@@ -4334,6 +4374,10 @@ paths:
   /api/quality/settings:
     get:
       operationId: quality_list_settings
+      description: |
+        Please note that child task settings are included by default
+        if the "project_id" filter is used.
+        If you want to restrict results only to a specific parent type, use the "parent_type" parameter.
       summary: List quality settings instances
       parameters:
       - name: X-Organization
@@ -4354,9 +4398,14 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['id', 'task_id'].
+           Available filter_fields: ['id', 'task_id', 'project_id', 'inherit', 'created_date', 'updated_date'].
         schema:
           type: string
+      - name: inherit
+        in: query
+        description: A simple equality filter for the inherit field
+        schema:
+          type: boolean
       - name: org
         in: query
         description: Organization unique slug
@@ -4379,11 +4428,24 @@ paths:
         description: Number of results to return per page.
         schema:
           type: integer
+      - in: query
+        name: parent_type
+        schema:
+          type: string
+          enum:
+          - project
+          - task
+        description: A simple equality filter for parent instance type
+      - in: query
+        name: project_id
+        schema:
+          type: integer
+        description: A simple equality filter for project id
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''id'']'
+          [''id'', ''task_id'', ''project_id'', ''inherit'', ''created_date'', ''updated_date'']'
         schema:
           type: string
       - name: task_id
@@ -5448,6 +5510,10 @@ paths:
         '400':
           description: Wrong query parameters were passed
         '409':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
           description: The backup process has already been initiated and is not yet
             finished
   /api/tasks/{id}/data/:
@@ -5729,6 +5795,10 @@ paths:
         '405':
           description: Format is not available
         '409':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
           description: Exporting is already in progress
   /api/tasks/{id}/preview:
     get:
@@ -6585,7 +6655,7 @@ components:
           readOnly: true
         type:
           allOf:
-          - $ref: '#/components/schemas/AnnotationConflictTypeEnum'
+          - $ref: '#/components/schemas/AnnotationConflictType'
           readOnly: true
         annotation_ids:
           type: array
@@ -6596,11 +6666,29 @@ components:
           readOnly: true
         severity:
           allOf:
-          - $ref: '#/components/schemas/SeverityEnum'
+          - $ref: '#/components/schemas/AnnotationConflictSeverity'
           readOnly: true
       required:
       - annotation_ids
-    AnnotationConflictTypeEnum:
+    AnnotationConflictAnnotationType:
+      enum:
+      - tag
+      - shape
+      - track
+      type: string
+      description: |-
+        * `tag` - TAG
+        * `shape` - SHAPE
+        * `track` - TRACK
+    AnnotationConflictSeverity:
+      enum:
+      - warning
+      - error
+      type: string
+      description: |-
+        * `warning` - WARNING
+        * `error` - ERROR
+    AnnotationConflictType:
       enum:
       - missing_annotation
       - extra_annotation
@@ -6675,7 +6763,7 @@ components:
           readOnly: true
         type:
           allOf:
-          - $ref: '#/components/schemas/AnnotationIdTypeEnum'
+          - $ref: '#/components/schemas/AnnotationConflictAnnotationType'
           readOnly: true
         shape_type:
           readOnly: true
@@ -6683,16 +6771,6 @@ components:
           oneOf:
           - $ref: '#/components/schemas/ShapeType'
           - $ref: '#/components/schemas/NullEnum'
-    AnnotationIdTypeEnum:
-      enum:
-      - tag
-      - shape
-      - track
-      type: string
-      description: |-
-        * `tag` - TAG
-        * `shape` - SHAPE
-        * `track` - TRACK
     AssetRead:
       type: object
       properties:
@@ -9339,9 +9417,20 @@ components:
     PatchedQualitySettingsRequest:
       type: object
       properties:
+        job_filter:
+          type: string
+          description: |
+            A JSON-based logic expression used to filter jobs for quality validation.
+            The filter supports various terms to specify conditions on job: ['assignee', 'id', 'stage', 'state', 'task_id', 'task_name', 'type']
+          maxLength: 1024
+        inherit:
+          type: boolean
+          description: |
+            Allow using project settings when computing task quality.
+            Only applicable to task quality settings inside projects
         target_metric:
           allOf:
-          - $ref: '#/components/schemas/TargetMetricEnum'
+          - $ref: '#/components/schemas/QualityTargetMetric'
           description: |-
             The primary metric used for quality estimation
 
@@ -9368,12 +9457,14 @@ components:
           format: double
           maximum: 1
           minimum: 0
+          default: 0.4
           description: Used for distinction between matched / unmatched shapes
         oks_sigma:
           type: number
           format: double
           maximum: 1
           minimum: 0
+          default: 0.09
           description: |
             Like IoU threshold, but for points.
             The percent of the bbox side, used as the radius of the circle around the GT point,
@@ -9382,7 +9473,8 @@ components:
             Read more: https://cocodataset.org/#keypoints-eval
         point_size_base:
           allOf:
-          - $ref: '#/components/schemas/PointSizeBaseEnum'
+          - $ref: '#/components/schemas/QualityPointSizeBase'
+          default: group_bbox_size
           description: |-
             When comparing point annotations (including both separate points and point groups),
             the OKS sigma parameter defines matching area for each GT point based to the
@@ -9403,6 +9495,7 @@ components:
           format: double
           maximum: 1
           minimum: 0
+          default: 0.01
           description: |
             Thickness of polylines, relatively to the (image area) ^ 0.5.
             The distance to the boundary around the GT line,
@@ -9412,33 +9505,39 @@ components:
           format: double
           maximum: 1
           minimum: 0
+          default: 0.8
           description: |
             Used for distinction between strong / weak (low_overlap) matches
         compare_line_orientation:
           type: boolean
+          default: true
           description: Enables or disables polyline orientation comparison
         line_orientation_threshold:
           type: number
           format: double
           maximum: 1
           minimum: 0
+          default: 0.1
           description: |
             The minimal gain in the GT IoU between the given and reversed line directions
             to consider the line inverted.
             Only used when the 'compare_line_orientation' parameter is true
         compare_groups:
           type: boolean
+          default: true
           description: Enables or disables annotation group checks
         group_match_threshold:
           type: number
           format: double
           maximum: 1
           minimum: 0
+          default: 0.5
           description: |
             Minimal IoU for groups to be considered matching.
             Only used when the 'compare_groups' parameter is true
         check_covered_annotations:
           type: boolean
+          default: true
           description: |
             Check for partially-covered annotations, useful in segmentation tasks
         object_visibility_threshold:
@@ -9446,16 +9545,19 @@ components:
           format: double
           maximum: 1
           minimum: 0
+          default: 0.05
           description: |
             Minimal visible area percent of the spatial annotations (polygons, masks)
             for reporting covered annotations.
             Only used when the 'object_visibility_threshold' parameter is true
         panoptic_comparison:
           type: boolean
+          default: true
           description: |
             Use only the visible part of the masks and polygons in comparisons
         compare_attributes:
           type: boolean
+          default: true
           description: Enables or disables annotation attribute comparison
         empty_is_annotated:
           type: boolean
@@ -9609,14 +9711,6 @@ components:
       - GIT_INTEGRATION
       - MODELS
       - PREDICT
-    PointSizeBaseEnum:
-      enum:
-      - image_size
-      - group_bbox_size
-      type: string
-      description: |-
-        * `image_size` - IMAGE_SIZE
-        * `group_bbox_size` - GROUP_BBOX_SIZE
     ProjectFileRequest:
       type: object
       properties:
@@ -9748,6 +9842,14 @@ components:
         * `AZURE_CONTAINER` - AZURE_CONTAINER
         * `GOOGLE_DRIVE` - GOOGLE_DRIVE
         * `GOOGLE_CLOUD_STORAGE` - GOOGLE_CLOUD_STORAGE
+    QualityPointSizeBase:
+      enum:
+      - image_size
+      - group_bbox_size
+      type: string
+      description: |-
+        * `image_size` - IMAGE_SIZE
+        * `group_bbox_size` - GROUP_BBOX_SIZE
     QualityReport:
       type: object
       properties:
@@ -9760,12 +9862,16 @@ components:
           readOnly: true
         task_id:
           type: integer
-          nullable: true
           readOnly: true
+          nullable: true
+        project_id:
+          type: integer
+          readOnly: true
+          nullable: true
         parent_id:
           type: integer
-          nullable: true
           readOnly: true
+          nullable: true
         target:
           $ref: '#/components/schemas/QualityReportTarget'
         summary:
@@ -9782,6 +9888,7 @@ components:
           type: string
           format: date-time
           readOnly: true
+          nullable: true
         assignee:
           allOf:
           - $ref: '#/components/schemas/BasicUser'
@@ -9796,12 +9903,44 @@ components:
         task_id:
           type: integer
           writeOnly: true
+        project_id:
+          type: integer
+          writeOnly: true
+    QualityReportJobsSummary:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Non-GT jobs in included tasks
+        excluded:
+          type: integer
+          description: Jobs excluded by filters
+        not_checkable:
+          type: integer
+          description: Included jobs without validation frames
+        included:
+          type: integer
+          description: Included job count = total - excluded
+      required:
+      - excluded
+      - included
+      - not_checkable
+      - total
     QualityReportSummary:
       type: object
       properties:
+        total_frames:
+          type: integer
         frame_count:
           type: integer
+          description: Deprecated. Use 'validation_frames' instead
+        validation_frames:
+          type: integer
         frame_share:
+          type: number
+          format: double
+          description: Deprecated. Use 'validation_frame_share' instead
+        validation_frame_share:
           type: number
           format: double
         conflict_count:
@@ -9831,28 +9970,63 @@ components:
         recall:
           type: number
           format: double
+        tasks:
+          allOf:
+          - $ref: '#/components/schemas/QualityReportTasksSummary'
+          description: Included only in project reports
+        jobs:
+          allOf:
+          - $ref: '#/components/schemas/QualityReportJobsSummary'
+          description: Included only in task and project reports
       required:
       - accuracy
       - conflict_count
       - conflicts_by_type
       - ds_count
       - error_count
-      - frame_count
-      - frame_share
       - gt_count
       - precision
       - recall
       - total_count
+      - total_frames
       - valid_count
+      - validation_frame_share
+      - validation_frames
       - warning_count
     QualityReportTarget:
       enum:
       - job
       - task
+      - project
       type: string
       description: |-
         * `job` - JOB
         * `task` - TASK
+        * `project` - PROJECT
+    QualityReportTasksSummary:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total task count
+        custom:
+          type: integer
+          description: Tasks with individual settings
+        not_configured:
+          type: integer
+          description: Tasks with validation not configured
+        excluded:
+          type: integer
+          description: Tasks excluded by filters
+        included:
+          type: integer
+          description: Included task count = total - custom - non_configured - excluded
+      required:
+      - custom
+      - excluded
+      - included
+      - not_configured
+      - total
     QualitySettings:
       type: object
       properties:
@@ -9861,10 +10035,24 @@ components:
           readOnly: true
         task_id:
           type: integer
-          readOnly: true
+          nullable: true
+        project_id:
+          type: integer
+          nullable: true
+        job_filter:
+          type: string
+          description: |
+            A JSON-based logic expression used to filter jobs for quality validation.
+            The filter supports various terms to specify conditions on job: ['assignee', 'id', 'stage', 'state', 'task_id', 'task_name', 'type']
+          maxLength: 1024
+        inherit:
+          type: boolean
+          description: |
+            Allow using project settings when computing task quality.
+            Only applicable to task quality settings inside projects
         target_metric:
           allOf:
-          - $ref: '#/components/schemas/TargetMetricEnum'
+          - $ref: '#/components/schemas/QualityTargetMetric'
           description: |-
             The primary metric used for quality estimation
 
@@ -9891,12 +10079,14 @@ components:
           format: double
           maximum: 1
           minimum: 0
+          default: 0.4
           description: Used for distinction between matched / unmatched shapes
         oks_sigma:
           type: number
           format: double
           maximum: 1
           minimum: 0
+          default: 0.09
           description: |
             Like IoU threshold, but for points.
             The percent of the bbox side, used as the radius of the circle around the GT point,
@@ -9905,7 +10095,8 @@ components:
             Read more: https://cocodataset.org/#keypoints-eval
         point_size_base:
           allOf:
-          - $ref: '#/components/schemas/PointSizeBaseEnum'
+          - $ref: '#/components/schemas/QualityPointSizeBase'
+          default: group_bbox_size
           description: |-
             When comparing point annotations (including both separate points and point groups),
             the OKS sigma parameter defines matching area for each GT point based to the
@@ -9926,6 +10117,7 @@ components:
           format: double
           maximum: 1
           minimum: 0
+          default: 0.01
           description: |
             Thickness of polylines, relatively to the (image area) ^ 0.5.
             The distance to the boundary around the GT line,
@@ -9935,33 +10127,39 @@ components:
           format: double
           maximum: 1
           minimum: 0
+          default: 0.8
           description: |
             Used for distinction between strong / weak (low_overlap) matches
         compare_line_orientation:
           type: boolean
+          default: true
           description: Enables or disables polyline orientation comparison
         line_orientation_threshold:
           type: number
           format: double
           maximum: 1
           minimum: 0
+          default: 0.1
           description: |
             The minimal gain in the GT IoU between the given and reversed line directions
             to consider the line inverted.
             Only used when the 'compare_line_orientation' parameter is true
         compare_groups:
           type: boolean
+          default: true
           description: Enables or disables annotation group checks
         group_match_threshold:
           type: number
           format: double
           maximum: 1
           minimum: 0
+          default: 0.5
           description: |
             Minimal IoU for groups to be considered matching.
             Only used when the 'compare_groups' parameter is true
         check_covered_annotations:
           type: boolean
+          default: true
           description: |
             Check for partially-covered annotations, useful in segmentation tasks
         object_visibility_threshold:
@@ -9969,16 +10167,19 @@ components:
           format: double
           maximum: 1
           minimum: 0
+          default: 0.05
           description: |
             Minimal visible area percent of the spatial annotations (polygons, masks)
             for reporting covered annotations.
             Only used when the 'object_visibility_threshold' parameter is true
         panoptic_comparison:
           type: boolean
+          default: true
           description: |
             Use only the visible part of the masks and polygons in comparisons
         compare_attributes:
           type: boolean
+          default: true
           description: Enables or disables annotation attribute comparison
         empty_is_annotated:
           type: boolean
@@ -9988,6 +10189,24 @@ components:
             accuracy in cases there are no annotations. If disabled, frames without annotations
             are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.
             This will also add virtual annotations to empty frames in the comparison results.
+        created_date:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_date:
+          type: string
+          format: date-time
+          readOnly: true
+    QualityTargetMetric:
+      enum:
+      - accuracy
+      - precision
+      - recall
+      type: string
+      description: |-
+        * `accuracy` - ACCURACY
+        * `precision` - PRECISION
+        * `recall` - RECALL
     RegisterSerializerEx:
       type: object
       properties:
@@ -10191,14 +10410,6 @@ components:
         * `Started` - Started
         * `Finished` - Finished
         * `Failed` - Failed
-    SeverityEnum:
-      enum:
-      - warning
-      - error
-      type: string
-      description: |-
-        * `warning` - WARNING
-        * `error` - ERROR
     ShapeType:
       enum:
       - rectangle
@@ -10534,16 +10745,6 @@ components:
           type: boolean
       required:
       - name
-    TargetMetricEnum:
-      enum:
-      - accuracy
-      - precision
-      - recall
-      type: string
-      description: |-
-        * `accuracy` - ACCURACY
-        * `precision` - PRECISION
-        * `recall` - RECALL
     TaskAnnotationsUpdateRequest:
       oneOf:
       - $ref: '#/components/schemas/LabeledDataRequest'
