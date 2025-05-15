@@ -738,7 +738,7 @@ export class Job extends Session {
         return result;
     }
 
-    async mergeConsensusJobs(): Promise<void> {
+    async mergeConsensusJobs(): Promise<string> {
         const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.mergeConsensusJobs);
         return result;
     }
@@ -1209,7 +1209,7 @@ export class Task extends Session {
         return result;
     }
 
-    async mergeConsensusJobs(): Promise<void> {
+    async mergeConsensusJobs(): Promise<string> {
         const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.mergeConsensusJobs);
         return result;
     }
