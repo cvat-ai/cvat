@@ -1,0 +1,3 @@
+serverless/pytorch/anomalib/cfa
+serverless/pytorch/anomalib/uflow
+serverless/pytorch/anomalib/patchcore
