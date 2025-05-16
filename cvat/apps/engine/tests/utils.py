@@ -486,6 +486,21 @@ def check_optional_fields(self: TestCase,
             f"key {k!s} has incorrect actual optional value {left!s} instead of expected {right!s}")
 
 
+def filter_object(
+    obj: list | dict, *, keep: Sequence[str] = None, drop: Sequence[str] = None
+) -> list | dict:
+    if isinstance(obj, dict):
+        obj = filter_dict(obj, keep=keep, drop=drop)
+        for k, v in obj.items():
+            obj[k] = filter_object(v, keep=keep, drop=drop)
+        return obj
+    elif isinstance(obj, list):
+        for i, val in enumerate(obj):
+            obj[i] = filter_object(val, keep=keep, drop=drop)
+        return obj
+    return obj
+
+
 def compare_objects(self: TestCase, obj1, obj2, ignore_keys, fp_tolerance=0.001, current_key=None, order=True):
     key_info = "{}: ".format(current_key) if current_key else ""
     error_msg = "{}{} != {}"

@@ -17,6 +17,7 @@ import xml.etree.ElementTree as ET
 import zipfile
 from collections import defaultdict
 from contextlib import ExitStack
+from copy import deepcopy
 from datetime import timedelta
 from enum import Enum
 from glob import glob
@@ -24,7 +25,7 @@ from io import BytesIO, IOBase
 from itertools import product
 from pprint import pformat
 from time import sleep
-from typing import BinaryIO
+from typing import BinaryIO, NoReturn
 from unittest import mock
 
 import av
@@ -5569,28 +5570,38 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                 attributes=[],
             ) # if omitted, are set by the server
               # https://docs.cvat.ai/docs/api_sdk/sdk/reference/models/labeled-shape/
+              # elements are handled separately
             COMMON_DEFAULT_KEYS = list(COMMON_DEFAULT_FIELDS.keys())
-            ignore_keys = ["id", "version"]
+            ignore_keys = ["id", "version", "elements"]
             RESPONSE_KEYS = ['shapes', 'tracks', 'tags']
+
+            def _get_elements(data) -> dict[str, list[list[dict]]]:
+                return {
+                    'shape_elements': [shape.get('elements', []) for shape in data['shapes']],
+                    'track_elements': [track.get('elements', []) for track in data['tracks']]
+                }
+            def compare_elements(self, data, response) -> None | NoReturn:
+                response_elements = _get_elements(response.data)
+                for elements in response_elements.values():
+                    for elem in elements:
+                        for ann in elem:
+                            check_optional_fields(self, ann, COMMON_DEFAULT_FIELDS)
+                response_elements = filter_object(response_elements, drop=COMMON_DEFAULT_KEYS)
+                data_elements = _get_elements(data)
+                data_elements = filter_object(data_elements, drop=COMMON_DEFAULT_KEYS)
+                compare_objects(self, data_elements, response_elements, ignore_keys + COMMON_DEFAULT_KEYS)
+
+            _data = deepcopy(data)
+            _response = deepcopy(response)
             try:
-                # check optional fields in response
+                compare_elements(self, _data, _response)
+                _data = filter_object(_data, drop=['elements'])
+                _response.data = filter_object(_response.data, drop=['elements'])
                 for key in RESPONSE_KEYS:
-                    anns = response.data[key]
+                    anns = _response.data[key]
                     for ann in anns:
                         check_optional_fields(self, ann, optional_values=COMMON_DEFAULT_FIELDS)
-
-                # check optional fields inside track and shape elements
-                # drop them from final diffing if empty or absent
-                def _check_anns_elements_optional_fields(anns):
-                    for ann in anns:
-                        if ann.get('elements'):
-                            for i, elem in enumerate(ann['elements']):
-                                check_optional_fields(self, elem, COMMON_DEFAULT_FIELDS)
-                                ann.pop('elements', None)
-                _check_anns_elements_optional_fields(response.data['tracks'])
-                _check_anns_elements_optional_fields(response.data['shapes'])
-                ignore_keys += ['elements']
-                compare_objects(self, data, response.data, ignore_keys + COMMON_DEFAULT_KEYS, order=anno_order)
+                compare_objects(self, _data, _response.data, ignore_keys + COMMON_DEFAULT_KEYS, order=anno_order)
             except AssertionError as e:
                 print("Objects are not equal:",
                       pformat(data, compact=True),
