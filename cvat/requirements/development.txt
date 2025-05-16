@@ -20,5 +20,5 @@ snakeviz==2.1.0
     # via -r cvat/requirements/development.in
 tomli==2.2.1
     # via autopep8
-tornado==6.4.2
+tornado==6.5
     # via snakeviz

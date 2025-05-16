@@ -440,16 +440,35 @@ class TaskDumpUploadTest(_DbTestBase):
                             task_id = task["id"]
                             url = self._generate_url_upload_tasks_annotations(task_id, upload_format_name)
 
-                            with open(file_zip_name, 'rb') as binary_file:
-                                response = self._put_request(
-                                    url,
-                                    user,
-                                    data={"annotation_file": binary_file},
-                                    format="multipart",
-                                )
-                                self.assertEqual(response.status_code, edata['accept code'])
-                                response = self._put_request(url, user)
-                                self.assertEqual(response.status_code, edata['create code'])
+                            for repack_with_folder in [False, True]:
+                                with self.subTest(repack_with_folder=repack_with_folder):
+                                    if repack_with_folder:
+                                        if upload_format_name in [
+                                            "Open Images V6 1.0", "Cityscapes 1.0", "ICDAR Segmentation 1.0",
+                                            "ICDAR Localization 1.0", "Market-1501 1.0", "VGGFace2 1.0", "ImageNet 1.0",
+                                        ]:
+                                            self.skipTest("Format is fail")
+                                        file_to_send = osp.join(test_dir, f'repacked_{osp.basename(file_zip_name)}')
+                                        with zipfile.ZipFile(file_zip_name, 'r') as old_zip:
+                                            with zipfile.ZipFile(file_to_send, 'w') as new_zip:
+                                                for item in old_zip.infolist():
+                                                    new_zip.writestr(
+                                                        osp.join("folder", item.filename),
+                                                        old_zip.read(item.filename),
+                                                    )
+                                    else:
+                                        file_to_send = file_zip_name
+
+                                    with open(file_to_send, 'rb') as binary_file:
+                                        response = self._put_request(
+                                            url,
+                                            user,
+                                            data={"annotation_file": binary_file},
+                                            format="multipart",
+                                        )
+                                        self.assertEqual(response.status_code, edata['accept code'])
+                                        response = self._put_request(url, user)
+                                        self.assertEqual(response.status_code, edata['create code'])
 
     def test_api_v2_dump_annotations_with_objects_type_is_track(self):
         test_name = self._testMethodName
