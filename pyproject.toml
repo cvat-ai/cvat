@@ -12,6 +12,9 @@ extend_skip=[
     "cvat/apps/dataset_manager/formats/registry.py",
 ]
 
+[tool.ipdb]
+context = 5
+
 [tool.black]
 line-length = 100
 target-version = ['py39']
