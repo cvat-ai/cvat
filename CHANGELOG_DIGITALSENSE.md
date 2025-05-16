@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GLASS model for MVTec leather [PR #1]
 - CFA model and anomalib forked repo [PR #2]
 - Uflow [PR #3]
+- Patchcore [PR #4]
 
 ### Changed
 - N/A
