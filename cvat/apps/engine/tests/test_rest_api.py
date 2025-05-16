@@ -72,7 +72,6 @@ from cvat.apps.engine.tests.utils import (
     generate_video_file,
     get_paginated_collection,
 )
-from cvat.apps.quality_control.models import AnnotationType
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 
 from .utils import check_optional_fields, compare_objects, filter_object
