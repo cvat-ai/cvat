@@ -185,8 +185,10 @@ context('Customizable Shortcuts', () => {
             cy.contains('Shortcuts').click();
             cy.get('.cvat-shortcuts-settings-collapse').should('exist').and('be.visible');
             cy.get('.cvat-shortcuts-settings-label').first().click();
-            cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select .ant-select-selection-overflow-item').first().contains('f2');
-            cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select .ant-select-selection-overflow-item').eq(1).should('not.have.text');
+            cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select')
+                .first().find('span.ant-select-selection-item').should('have.text', 'f2');
+            cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select')
+                .eq(1).find('span.ant-select-selection-item').should('not.exist');
             cy.get('.cvat-shortcuts-settings-restore').click();
             cy.get('.cvat-shortcuts-settings-restore-modal .ant-btn-primary').click();
         });
