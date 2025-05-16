@@ -5571,19 +5571,32 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
             ) # if omitted, are set by the server
               # https://docs.cvat.ai/docs/api_sdk/sdk/reference/models/labeled-shape/
             COMMON_DEFAULT_KEYS = list(COMMON_DEFAULT_FIELDS.keys())
-            IGNORE_KEYS = ["id", "version"]
+            ignore_keys = ["id", "version"]
             RESPONSE_KEYS = ['shapes', 'tracks', 'tags']
-            response_defaults = filter_object(
-                deepcopy(response.data),
-                keep=RESPONSE_KEYS + COMMON_DEFAULT_KEYS
-            )
             try:
-                for _type in sorted(AnnotationType):
-                    key = f"{_type}s"
-                    anns = response_defaults[key]
+                # check optional fields in response
+                for key in RESPONSE_KEYS:
+                    anns = response.data[key]
                     for ann in anns:
                         check_optional_fields(self, ann, optional_values=COMMON_DEFAULT_FIELDS)
-                compare_objects(self, data, response.data, IGNORE_KEYS + COMMON_DEFAULT_KEYS, order=anno_order)
+
+                # check optional fields inside track and shape elements
+                # drop them from final diffing if empty or absent
+                for track in response.data['tracks']:
+                    for i, elem in enumerate(track.get('elements', [])):
+                        check_optional_fields(self, elem, COMMON_DEFAULT_FIELDS)
+                        track['elements'][i] = filter_object(elem, drop=COMMON_DEFAULT_KEYS)
+                    else:
+                        track.pop('elements', None)
+                        ignore_keys += ['elements']
+                for shape in response.data['shapes']:
+                    for i, elem in enumerate(shape.get('elements', [])):
+                        check_optional_fields(self, elem, COMMON_DEFAULT_FIELDS)
+                        shape['elements'][i] = filter_object(elem, drop=COMMON_DEFAULT_KEYS)
+                    else:
+                        shape.pop('elements', None)
+                        ignore_keys += ['elements']
+                compare_objects(self, data, response.data, ignore_keys + COMMON_DEFAULT_KEYS, order=anno_order)
             except AssertionError as e:
                 print("Objects are not equal:",
                       pformat(data, compact=True),
@@ -6655,8 +6668,6 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
 
         # Rare and buggy formats that are not crucial for testing
         formats.pop('Market-1501 1.0') # Issue: https://github.com/cvat-ai/datumaro/issues/99
-
-        formats = {'COCO Keypoints 1.0': 'COCO Keypoints 1.0'}
 
         for export_format, import_format in formats.items():
             with self.subTest(export_format=export_format,

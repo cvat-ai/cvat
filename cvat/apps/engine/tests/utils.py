@@ -509,7 +509,7 @@ def compare_objects(self: TestCase, obj1, obj2, ignore_keys, fp_tolerance=0.001,
     error_msg = "{}{} != {}"
 
     def is_annotation_type(k):
-        return any(k.startswith(_type) for _type in [AnnotationType.SHAPE, AnnotationType.TAG])
+        return k in {'shapes', 'tags'}
         # tracks are shapes, possibly nested
 
     if isinstance(obj1, dict):
