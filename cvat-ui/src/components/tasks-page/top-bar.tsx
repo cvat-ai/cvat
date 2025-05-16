@@ -12,19 +12,30 @@ import Popover from 'antd/lib/popover';
 import { LoadingOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
+import DatePicker from 'antd/lib/date-picker';
+import type { RangePickerProps } from 'antd/lib/date-picker';
 import { importActions } from 'actions/import-actions';
 import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
 import { TasksQuery } from 'reducers';
 import { usePrevious } from 'utils/hooks';
 import { MultiPlusIcon } from 'icons';
 import dimensions from 'utils/dimensions';
+import type { Dayjs } from 'dayjs';
 import CvatDropdownMenuPaper from 'components/common/cvat-dropdown-menu-paper';
 import {
-    localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
+    localStorageRecentKeyword,
+    localStorageRecentCapacity,
+    predefinedFilterValues,
+    config,
 } from './tasks-filter-configuration';
 
+const { RangePicker } = DatePicker;
+
 const FilteringComponent = ResourceFilterHOC(
-    config, localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues,
+    config,
+    localStorageRecentKeyword,
+    localStorageRecentCapacity,
+    predefinedFilterValues,
 );
 
 interface VisibleTopBarProps {
@@ -37,10 +48,9 @@ interface VisibleTopBarProps {
 
 export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element {
     const dispatch = useDispatch();
-    const {
-        importing, query, onApplyFilter, onApplySorting, onApplySearch,
-    } = props;
+    const { importing, query, onApplyFilter, onApplySorting, onApplySearch } = props;
     const [visibility, setVisibility] = useState(defaultVisibility);
+    const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null] | null>(null);
     const history = useHistory();
     const prevImporting = usePrevious(importing);
 
@@ -49,6 +59,24 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
             onApplyFilter(query.filter);
         }
     }, [importing]);
+
+    const handleDateRangeChange: RangePickerProps['onChange'] = (dates) => {
+        setDateRange(dates);
+        if (dates && dates[0] && dates[1]) {
+            const startDate = dates[0].format('YYYY-MM-DD');
+            const endDate = dates[1].format('YYYY-MM-DD');
+
+            // Create a filter for the date range
+            const dateFilter = JSON.stringify({
+                and: [{ '=': [{ var: 'created_from' }, startDate] }, { '=': [{ var: 'created_to' }, endDate] }],
+            });
+
+            onApplyFilter(dateFilter);
+        } else if (dates === null) {
+            // Clear the date filter
+            onApplyFilter(query.filter && query.filter !== '{}' ? query.filter : null);
+        }
+    };
 
     return (
         <Row className='cvat-tasks-page-top-bar' justify='center' align='middle'>
@@ -66,29 +94,58 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                     <div>
                         <SortingComponent
                             visible={visibility.sorting}
-                            onVisibleChange={(visible: boolean) => (
+                            onVisibleChange={(visible: boolean) =>
                                 setVisibility({ ...defaultVisibility, sorting: visible })
-                            )}
+                            }
                             defaultFields={query.sort?.split(',') || ['-ID']}
-                            sortingFields={['ID', 'Owner', 'Status', 'Assignee', 'Updated date', 'Subset', 'Mode', 'Dimension', 'Project ID', 'Name', 'Project name']}
+                            sortingFields={[
+                                'ID',
+                                'Owner',
+                                'Status',
+                                'Assignee',
+                                'Updated date',
+                                'Subset',
+                                'Mode',
+                                'Dimension',
+                                'Project ID',
+                                'Name',
+                                'Project name',
+                            ]}
                             onApplySorting={onApplySorting}
                         />
+                    </div>
+                    <div>
                         <FilteringComponent
                             value={query.filter}
                             predefinedVisible={visibility.predefined}
                             builderVisible={visibility.builder}
                             recentVisible={visibility.recent}
-                            onPredefinedVisibleChange={(visible: boolean) => (
+                            onPredefinedVisibleChange={(visible: boolean) =>
                                 setVisibility({ ...defaultVisibility, predefined: visible })
-                            )}
-                            onBuilderVisibleChange={(visible: boolean) => (
+                            }
+                            onBuilderVisibleChange={(visible: boolean) =>
                                 setVisibility({ ...defaultVisibility, builder: visible })
-                            )}
-                            onRecentVisibleChange={(visible: boolean) => (
+                            }
+                            onRecentVisibleChange={(visible: boolean) =>
                                 setVisibility({ ...defaultVisibility, builder: visibility.builder, recent: visible })
-                            )}
+                            }
                             onApplyFilter={onApplyFilter}
                         />
+                    </div>
+                    <div>
+                        <Popover
+                            content={
+                                <div className='cvat-tasks-date-range-picker'>
+                                    <RangePicker onChange={handleDateRangeChange} value={dateRange} />
+                                </div>
+                            }
+                            title='Select date range'
+                            trigger='click'
+                        >
+                            <Button type='default' className='cvat-tasks-date-range-button'>
+                                Filter by date
+                            </Button>
+                        </Popover>
                     </div>
                 </div>
                 <div>
@@ -96,7 +153,7 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                         trigger={['click']}
                         destroyTooltipOnHide
                         overlayInnerStyle={{ padding: 0 }}
-                        content={(
+                        content={
                             <CvatDropdownMenuPaper>
                                 <Button
                                     className='cvat-create-task-button'
@@ -110,7 +167,11 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                                     className='cvat-create-multi-tasks-button'
                                     type='primary'
                                     onClick={(): void => history.push('/tasks/create?many=true')}
-                                    icon={<span className='anticon'><MultiPlusIcon /></span>}
+                                    icon={
+                                        <span className='anticon'>
+                                            <MultiPlusIcon />
+                                        </span>
+                                    }
                                 >
                                     Create multi tasks
                                 </Button>
@@ -124,7 +185,7 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                                     Create from backup
                                 </Button>
                             </CvatDropdownMenuPaper>
-                        )}
+                        }
                     >
                         <Button type='primary' className='cvat-create-task-dropdown' icon={<PlusOutlined />} />
                     </Popover>

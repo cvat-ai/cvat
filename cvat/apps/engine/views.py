@@ -920,19 +920,22 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'assignee': 'assignee__username',
         'tracker_link': 'bug_tracker',
         'validation_mode': 'data__validation_layout__mode',
+        'created_from': 'created_date__gte',
+        'created_to': 'created_date__lte',
     }
     search_fields = (
         'project_name', 'name', 'owner', 'status', 'assignee',
         'subset', 'mode', 'dimension', 'tracker_link', 'validation_mode'
     )
-    filter_fields = list(search_fields) + ['id', 'project_id', 'updated_date']
+    filter_fields = list(search_fields) + ['id', 'project_id', 'updated_date', 'created_date', 'created_from', 'created_to']
     filter_description = textwrap.dedent("""
 
         There are few examples for complex filtering tasks:\n
             - Get all tasks from 1,2,3 projects - { "and" : [{ "in" : [{ "var" : "project_id" }, [1, 2, 3]]}]}\n
             - Get all completed tasks from 1 project - { "and": [{ "==": [{ "var" : "status" }, "completed"]}, { "==" : [{ "var" : "project_id"}, 1]}]}\n
+            - Get all tasks created between two dates - { "and": [{ ">=": [{ "var": "created_date" }, "2023-01-01"]}, { "<=" : [{ "var" : "created_date"}, "2023-12-31"]}]}\n
     """)
-    simple_filters = list(search_fields) + ['project_id']
+    simple_filters = list(search_fields) + ['project_id', 'created_from', 'created_to']
     ordering_fields = list(filter_fields)
     ordering = "-id"
     iam_organization_field = 'organization'
