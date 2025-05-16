@@ -26,8 +26,6 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.test import APITestCase
 
-from cvat.apps.quality_control.models import AnnotationType
-
 T = TypeVar('T')
 
 

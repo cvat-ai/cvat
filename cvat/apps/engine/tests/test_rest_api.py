@@ -17,7 +17,6 @@ import xml.etree.ElementTree as ET
 import zipfile
 from collections import defaultdict
 from contextlib import ExitStack
-from copy import deepcopy
 from datetime import timedelta
 from enum import Enum
 from glob import glob
@@ -5582,20 +5581,15 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
 
                 # check optional fields inside track and shape elements
                 # drop them from final diffing if empty or absent
-                for track in response.data['tracks']:
-                    for i, elem in enumerate(track.get('elements', [])):
-                        check_optional_fields(self, elem, COMMON_DEFAULT_FIELDS)
-                        track['elements'][i] = filter_object(elem, drop=COMMON_DEFAULT_KEYS)
-                    else:
-                        track.pop('elements', None)
-                        ignore_keys += ['elements']
-                for shape in response.data['shapes']:
-                    for i, elem in enumerate(shape.get('elements', [])):
-                        check_optional_fields(self, elem, COMMON_DEFAULT_FIELDS)
-                        shape['elements'][i] = filter_object(elem, drop=COMMON_DEFAULT_KEYS)
-                    else:
-                        shape.pop('elements', None)
-                        ignore_keys += ['elements']
+                def _check_anns_elements_optional_fields(anns):
+                    for ann in anns:
+                        if ann.get('elements'):
+                            for i, elem in enumerate(ann['elements']):
+                                check_optional_fields(self, elem, COMMON_DEFAULT_FIELDS)
+                                ann.pop('elements', None)
+                _check_anns_elements_optional_fields(response.data['tracks'])
+                _check_anns_elements_optional_fields(response.data['shapes'])
+                ignore_keys += ['elements']
                 compare_objects(self, data, response.data, ignore_keys + COMMON_DEFAULT_KEYS, order=anno_order)
             except AssertionError as e:
                 print("Objects are not equal:",
