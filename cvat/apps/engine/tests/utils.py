@@ -524,7 +524,8 @@ def compare_objects(self: TestCase, obj1, obj2, ignore_keys, fp_tolerance=0.001,
             elif not order and is_annotation_type(k):
                 v1 = frozenset(freeze_object(v1, ignore_keys))
                 v2 = frozenset(freeze_object(v2, ignore_keys))
-            compare_objects(self, v1, v2, ignore_keys, current_key=k)
+            compare_objects(self, v1, v2, ignore_keys, current_key=k,
+                fp_tolerance=fp_tolerance, order=order)
     elif isinstance(obj1, list):
         self.assertTrue(isinstance(obj2, list), error_msg.format(key_info, obj1, obj2))
         self.assertEqual(
@@ -533,7 +534,8 @@ def compare_objects(self: TestCase, obj1, obj2, ignore_keys, fp_tolerance=0.001,
             error_msg.format(key_info, pformat(obj1, compact=True), pformat(obj2)),
         )
         for v1, v2 in zip(obj1, obj2):
-            compare_objects(self, v1, v2, ignore_keys, current_key=current_key)
+            compare_objects(self, v1, v2, ignore_keys, current_key=current_key,
+                            fp_tolerance=fp_tolerance, order=order)
     else:
         if isinstance(obj1, float) or isinstance(obj2, float):
             self.assertAlmostEqual(obj1, obj2, delta=fp_tolerance, msg=current_key)
