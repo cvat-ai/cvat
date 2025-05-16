@@ -493,12 +493,15 @@ def freeze_object(obj, ignore_keys=None) -> frozenset:
 def check_optional_fields(self: TestCase,
                         obj: dict[str, int | float | str],
                         optional_values: dict[str, int | float | str],
-                        # expected_values: dict[str, int | float | str]
                         ) -> None | NoReturn:
     for k in optional_values.keys():
-        # if obj.get(k) and not optional_values[k] == obj[k]:
-        self.assertEqual(obj.get(k, optional_values[k]), optional_values[k],
-                         f"key '{k}' has incorrect expected optional value {obj.get(k)} instead of {optional_values[k]}") # coalesce
+        right = obj.get(k)
+        left = right if right is not None else optional_values[k] # accounting for bool fields
+        if right is None:
+            right = optional_values[k]
+        self.assertEqual(
+            left, right,
+            f"key {k!s} has incorrect actual optional value {left!s} instead of expected {right!s}")
 
 
 def compare_objects(self: TestCase, obj1, obj2, ignore_keys, fp_tolerance=0.001, current_key=None, order=True):
