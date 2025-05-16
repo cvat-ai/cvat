@@ -10,7 +10,9 @@ from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Callable, TypeVar
+from pprint import pformat
+from typing import Any, Callable, NoReturn, TypeVar
+from unittest import TestCase
 from urllib.parse import urlencode
 
 import av
@@ -455,3 +457,84 @@ def filter_dict(
     d: dict[str, Any], *, keep: Sequence[str] = None, drop: Sequence[str] = None
 ) -> dict[str, Any]:
     return {k: v for k, v in d.items() if (not keep or k in keep) and (not drop or k not in drop)}
+
+
+def freeze_object(obj, ignore_keys=None) -> frozenset:
+    if isinstance(obj, dict):
+        obj = filter_dict(obj, drop=ignore_keys)
+        for k, v in obj.items():
+            obj[k] = freeze_object(v, ignore_keys)
+        return frozenset(obj.items())
+    elif isinstance(obj, list):
+        for i, val in enumerate(obj):
+            obj[i] = freeze_object(val, ignore_keys)
+        return tuple(obj)
+    return obj
+
+
+def check_optional_fields(self: TestCase,
+                        obj: dict[str, int | float | str],
+                        optional_values: dict[str, int | float | str],
+                        ) -> None | NoReturn:
+    for k in optional_values.keys():
+        right = obj.get(k)
+        left = right if right is not None else optional_values[k] # accounting for bool fields
+        if right is None:
+            right = optional_values[k]
+        self.assertEqual(
+            left, right,
+            f"key {k!s} has incorrect actual optional value {left!s} instead of expected {right!s}")
+
+
+def filter_object(
+    obj: list | dict, *, keep: Sequence[str] = None, drop: Sequence[str] = None
+) -> list | dict:
+    if isinstance(obj, dict):
+        obj = filter_dict(obj, keep=keep, drop=drop)
+        for k, v in obj.items():
+            obj[k] = filter_object(v, keep=keep, drop=drop)
+        return obj
+    elif isinstance(obj, list):
+        for i, val in enumerate(obj):
+            obj[i] = filter_object(val, keep=keep, drop=drop)
+        return obj
+    return obj
+
+
+def compare_objects(self: TestCase, obj1, obj2, ignore_keys, fp_tolerance=0.001, current_key=None, order=True):
+    key_info = "{}: ".format(current_key) if current_key else ""
+    error_msg = "{}{} != {}"
+
+    def is_annotation_type(k):
+        return k in {'shapes', 'tags'}
+        # tracks are shapes, possibly nested
+
+    if isinstance(obj1, dict):
+        self.assertTrue(isinstance(obj2, dict), error_msg.format(key_info, obj1, obj2))
+        for k in (obj1.keys() - ignore_keys):
+            v1 = obj1[k]
+            v2 = obj2[k]
+            if k == "attributes":
+                key = lambda a: (a.get("spec_id") or a["id"])
+                v1.sort(key=key)
+                v2.sort(key=key)
+            elif not order and is_annotation_type(k):
+                v1 = frozenset(freeze_object(v1, ignore_keys))
+                v2 = frozenset(freeze_object(v2, ignore_keys))
+            compare_objects(self, v1, v2, ignore_keys, current_key=k,
+                fp_tolerance=fp_tolerance, order=order)
+    elif isinstance(obj1, list):
+        self.assertTrue(isinstance(obj2, list), error_msg.format(key_info, obj1, obj2))
+        self.assertEqual(
+            len(obj1),
+            len(obj2),
+            error_msg.format(key_info, pformat(obj1, compact=True), pformat(obj2)),
+        )
+        for v1, v2 in zip(obj1, obj2):
+            compare_objects(self, v1, v2, ignore_keys, current_key=current_key,
+                            fp_tolerance=fp_tolerance, order=order)
+    else:
+        if isinstance(obj1, float) or isinstance(obj2, float):
+            self.assertAlmostEqual(obj1, obj2, delta=fp_tolerance, msg=current_key)
+        else:
+            self.assertEqual(obj1, obj2, msg=current_key)

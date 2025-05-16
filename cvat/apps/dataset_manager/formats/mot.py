@@ -8,6 +8,7 @@ from pyunpack import Archive
 
 from cvat.apps.dataset_manager.bindings import GetCVATDataExtractor, detect_dataset
 from cvat.apps.dataset_manager.util import make_zip_archive
+from cvat.apps.engine.models import SourceType
 
 from .registry import dm_env, exporter, importer
 
@@ -15,6 +16,7 @@ from .registry import dm_env, exporter, importer
 def _import_to_task(dataset, instance_data):
     tracks = {}
     label_cat = dataset.categories()[dm.AnnotationType.label]
+    import_source = SourceType.FILE.value
 
     for item in dataset:
         # NOTE: MOT frames start from 1
@@ -43,7 +45,7 @@ def _import_to_task(dataset, instance_data):
                         group=0,
                         frame=frame_number,
                         attributes=attributes,
-                        source="manual",
+                        source=import_source,
                     )
                 )
                 continue
@@ -57,13 +59,13 @@ def _import_to_task(dataset, instance_data):
                 z_order=ann.z_order,
                 frame=frame_number,
                 attributes=attributes,
-                source="manual",
+                source=import_source,
             )
 
             # build trajectories as lists of shapes in track dict
             if track_id not in tracks:
                 tracks[track_id] = instance_data.Track(
-                    label_cat.items[ann.label].name, 0, "manual", []
+                    label_cat.items[ann.label].name, 0, import_source, []
                 )
             tracks[track_id].shapes.append(shape)
 
