@@ -225,6 +225,8 @@ jobs:
 
       - name: Install Allure CLI (.deb)
         run: |
+          sudo apt-get update
+          sudo apt-get install -y default-jre-headless
           wget https://github.com/allure-framework/allure2/releases/download/2.34.0/allure_2.34.0-1_all.deb
           sudo dpkg -i allure_2.34.0-1_all.deb
 
