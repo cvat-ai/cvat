@@ -46,6 +46,10 @@ quality = 75
 anchor = "smart"
 
 [[menu.main]]
+    name = "About"
+    weight = 40
+    url = "https://www.cvat.ai/about"
+[[menu.main]]
     name = "Try it now"
     weight = 50
     url = "https://app.cvat.ai"
@@ -147,7 +151,7 @@ sidebar_search_disable = true
 #  Set to false if you don't want to display a logo (/assets/icons/logo.svg) in the top nav bar
 navbar_logo = true
 # Set to true to disable the About link in the site footer
-footer_about_disable = false
+footer_about_disable = true
 
 # Adds a H2 section titled "Feedback" to the bottom of each doc. The responses are sent to Google Analytics as events.
 # This feature depends on [services.googleAnalytics] and will be disabled if "services.googleAnalytics.id" is not set.

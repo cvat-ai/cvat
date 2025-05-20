@@ -428,12 +428,31 @@ class TaskDumpUploadTest(_DbTestBase):
 
                             expected_4xx_status_code = None if user else status.HTTP_401_UNAUTHORIZED
 
-                            with open(file_zip_name, 'rb') as binary_file:
-                                self._import_task_annotations(
-                                    user, task_id, binary_file,
-                                    query_params={"format": upload_format_name},
-                                    expected_4xx_status_code=expected_4xx_status_code
-                                )
+                            for repack_with_folder in [False, True]:
+                                with self.subTest(repack_with_folder=repack_with_folder):
+                                    if repack_with_folder:
+                                        if upload_format_name in [
+                                            "Open Images V6 1.0", "Cityscapes 1.0", "ICDAR Segmentation 1.0",
+                                            "ICDAR Localization 1.0", "Market-1501 1.0", "VGGFace2 1.0", "ImageNet 1.0",
+                                        ]:
+                                            self.skipTest("Format is fail")
+                                        file_to_send = osp.join(test_dir, f'repacked_{osp.basename(file_zip_name)}')
+                                        with zipfile.ZipFile(file_zip_name, 'r') as old_zip:
+                                            with zipfile.ZipFile(file_to_send, 'w') as new_zip:
+                                                for item in old_zip.infolist():
+                                                    new_zip.writestr(
+                                                        osp.join("folder", item.filename),
+                                                        old_zip.read(item.filename),
+                                                    )
+                                    else:
+                                        file_to_send = file_zip_name
+
+                                    with open(file_to_send, 'rb') as binary_file:
+                                        self._import_task_annotations(
+                                            user, task_id, binary_file,
+                                            query_params={"format": upload_format_name},
+                                            expected_4xx_status_code=expected_4xx_status_code
+                                        )
 
     def test_api_v2_dump_annotations_with_objects_type_is_track(self):
         test_name = self._testMethodName
