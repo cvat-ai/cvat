@@ -209,60 +209,7 @@ jobs:
         with:
           name: allure-results-rest-api
           path: tests/python/allure-results
-  generate_report:
-    name: Generate Allure Report and Upload to S3
-    needs: rest_api_testing
-    if: always()
-    runs-on: ubuntu-latest
 
-    permissions:
-      id-token: write
-      contents: read
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install Allure CLI (.deb)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y default-jre-headless
-          wget https://github.com/allure-framework/allure2/releases/download/2.34.0/allure_2.34.0-1_all.deb
-          sudo dpkg -i allure_2.34.0-1_all.deb
-
-      - name: AWS cli setup
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-west-1
-
-      - name: Set a timestamp
-        id: timestampid
-        run: echo "timestamp=$(date --utc +%Y%m%d_%H%M%SZ)" >> "$GITHUB_OUTPUT"
-
-      - name: Download Allure results from artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: allure-results*
-          merge-multiple: true
-          path: merged-allure-results
-
-      - name: Download previous history from S3
-        run: aws s3 cp s3://cvat-allure-reports/history/ ./merged-allure-results/history --recursive || echo "No history found"
-
-      - name: Generate Allure Report
-        run: allure generate ./merged-allure-results --clean -o allure-report
-
-      - name: Backup updated history to S3
-        run: aws s3 cp ./allure-report/history s3://cvat-allure-reports/history/ --recursive
-
-      - name: Deploy report to S3 (timestamped folder)
-        run: aws s3 cp ./allure-report s3://cvat-allure-reports/report/${{ steps.timestampid.outputs.timestamp }}/ --recursive
-
-      - name: Write report URL to summary
-        run: |
-          echo "### 🧪 [Allure Report](http://cvat-allure-reports.s3-website.eu-west-1.amazonaws.com/report/${{ steps.timestampid.outputs.timestamp }}/index.html)" >> $GITHUB_STEP_SUMMARY
   # unit_testing:
   #   needs: build
   #   runs-on: ubuntu-latest
@@ -324,123 +271,131 @@ jobs:
   #         name: unit_tests_container_logs
   #         path: "${{ github.workspace }}/unit_testing"
 
-  # e2e_testing:
-  #   needs: build
-  #   runs-on: ubuntu-latest
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       specs: ['actions_tasks', 'actions_tasks2', 'actions_tasks3',
-  #               'actions_objects', 'actions_objects2', 'actions_users',
-  #               'actions_projects_models', 'canvas3d_functionality', 'canvas3d_functionality_2',
-  #               'issues_prs', 'issues_prs2', 'features']
-  #   steps:
-  #     - uses: actions/checkout@v4
+  e2e_testing:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        specs: ['actions_tasks', 'actions_tasks2', 'actions_tasks3',
+                'actions_objects', 'actions_objects2', 'actions_users',
+                'actions_projects_models', 'canvas3d_functionality', 'canvas3d_functionality_2',
+                'issues_prs', 'issues_prs2', 'features']
+    steps:
+      - uses: actions/checkout@v4
 
-  #     - uses: actions/setup-node@v4
-  #       with:
-  #           node-version: '22.x'
+      - uses: actions/setup-node@v4
+        with:
+            node-version: '22.x'
 
-  #     - name: Download CVAT server image
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: cvat_server
-  #         path: /tmp/cvat_server/
+      - name: Download CVAT server image
+        uses: actions/download-artifact@v4
+        with:
+          name: cvat_server
+          path: /tmp/cvat_server/
 
-  #     - name: Download CVAT UI image
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: cvat_ui
-  #         path: /tmp/cvat_ui/
+      - name: Download CVAT UI image
+        uses: actions/download-artifact@v4
+        with:
+          name: cvat_ui
+          path: /tmp/cvat_ui/
 
-  #     - name: Load Docker images
-  #       run: |
-  #         docker load --input /tmp/cvat_server/image.tar
-  #         docker load --input /tmp/cvat_ui/image.tar
-  #         docker image ls -a
+      - name: Load Docker images
+        run: |
+          docker load --input /tmp/cvat_server/image.tar
+          docker load --input /tmp/cvat_ui/image.tar
+          docker image ls -a
 
-  #     - name: Run CVAT instance
-  #       run: |
-  #         docker compose \
-  #           -f docker-compose.yml \
-  #           -f docker-compose.dev.yml \
-  #           -f components/serverless/docker-compose.serverless.yml \
-  #           -f tests/docker-compose.minio.yml \
-  #           -f tests/docker-compose.file_share.yml up -d
+      - name: Run CVAT instance
+        run: |
+          docker compose \
+            -f docker-compose.yml \
+            -f docker-compose.dev.yml \
+            -f components/serverless/docker-compose.serverless.yml \
+            -f tests/docker-compose.minio.yml \
+            -f tests/docker-compose.file_share.yml up -d
 
-  #     - name: Waiting for server
-  #       env:
-  #         API_ABOUT_PAGE: "localhost:8080/api/server/about"
-  #       run: |
-  #         max_tries=60
-  #         status_code=$(curl -s -o /tmp/server_response -w "%{http_code}" ${API_ABOUT_PAGE})
-  #         while [[  $status_code != "200" && max_tries -gt 0 ]]
-  #         do
-  #           echo Number of attempts left: $max_tries
-  #           echo Status code of response: $status_code
+      - name: Waiting for server
+        env:
+          API_ABOUT_PAGE: "localhost:8080/api/server/about"
+        run: |
+          max_tries=60
+          status_code=$(curl -s -o /tmp/server_response -w "%{http_code}" ${API_ABOUT_PAGE})
+          while [[  $status_code != "200" && max_tries -gt 0 ]]
+          do
+            echo Number of attempts left: $max_tries
+            echo Status code of response: $status_code
 
-  #           sleep 5
-  #           status_code=$(curl -s -o /tmp/server_response -w "%{http_code}" ${API_ABOUT_PAGE})
-  #           (( max_tries-- ))
-  #         done
+            sleep 5
+            status_code=$(curl -s -o /tmp/server_response -w "%{http_code}" ${API_ABOUT_PAGE})
+            (( max_tries-- ))
+          done
 
-  #     - name: Run E2E tests
-  #       env:
-  #         DJANGO_SU_NAME: 'admin'
-  #         DJANGO_SU_EMAIL: 'admin@localhost.company'
-  #         DJANGO_SU_PASSWORD: '12qwaszx'
-  #       run: |
-  #         docker exec -i cvat_server /bin/bash -c "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
-  #         cd ./tests
-  #         yarn --frozen-lockfile
+      - name: Run E2E tests
+        env:
+          DJANGO_SU_NAME: 'admin'
+          DJANGO_SU_EMAIL: 'admin@localhost.company'
+          DJANGO_SU_PASSWORD: '12qwaszx'
+        run: |
+          docker exec -i cvat_server /bin/bash -c "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
+          cd ./tests
+          yarn --frozen-lockfile
 
-  #         if [[ ${{ matrix.specs }} == canvas3d_* ]]; then
-  #           npx cypress run \
-  #             --headed \
-  #             --browser chrome \
-  #             --config-file cypress_canvas3d.config.js \
-  #             --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
-  #         else
-  #           npx cypress run \
-  #             --browser chrome \
-  #             --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
-  #         fi
-  #         mv coverage/coverage-final.json coverage/${{ matrix.specs }}_coverage.json
+          if [[ ${{ matrix.specs }} == canvas3d_* ]]; then
+            npx cypress run \
+              --headed \
+              --browser chrome \
+              --config-file cypress_canvas3d.config.js \
+              --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
+          else
+            npx cypress run \
+              --browser chrome \
+              --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
+          fi
+          mv coverage/coverage-final.json coverage/${{ matrix.specs }}_coverage.json
 
-  #     - name: Uploading code coverage results as an artifact
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: coverage_results_e2e_${{ matrix.specs }}
-  #         path: |
-  #           tests/coverage/${{ matrix.specs }}_coverage.json
+      - name: Uploading code coverage results as an artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage_results_e2e_${{ matrix.specs }}
+          path: |
+            tests/coverage/${{ matrix.specs }}_coverage.json
 
-  #     - name: Creating a log file from "cvat" container logs
-  #       if: failure()
-  #       run: |
-  #           docker logs cvat_server > ${{ github.workspace }}/tests/cvat_${{ matrix.specs }}.log
-  #           docker logs cvat_worker_export > ${{ github.workspace }}/tests/cvat_worker_export_${{ matrix.specs }}.log
-  #           docker logs cvat_worker_import > ${{ github.workspace }}/tests/cvat_worker_import_${{ matrix.specs }}.log
+      - name: Creating a log file from "cvat" container logs
+        if: failure()
+        run: |
+            docker logs cvat_server > ${{ github.workspace }}/tests/cvat_${{ matrix.specs }}.log
+            docker logs cvat_worker_export > ${{ github.workspace }}/tests/cvat_worker_export_${{ matrix.specs }}.log
+            docker logs cvat_worker_import > ${{ github.workspace }}/tests/cvat_worker_import_${{ matrix.specs }}.log
 
-  #     - name: Uploading "cvat" container logs as an artifact
-  #       if: failure()
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: e2e_container_logs_${{ matrix.specs }}
-  #         path: ${{ github.workspace }}/tests/cvat_${{ matrix.specs }}.log
+      - name: Uploading "cvat" container logs as an artifact
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e_container_logs_${{ matrix.specs }}
+          path: ${{ github.workspace }}/tests/cvat_${{ matrix.specs }}.log
 
-  #     - name: Uploading cypress screenshots as an artifact
-  #       if: failure()
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: cypress_screenshots_${{ matrix.specs }}
-  #         path: ${{ github.workspace }}/tests/cypress/screenshots
+      - name: Uploading cypress screenshots as an artifact
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress_screenshots_${{ matrix.specs }}
+          path: ${{ github.workspace }}/tests/cypress/screenshots
 
-  #     - name: Uploading cypress videos as an artifact
-  #       if: failure()
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: cypress_videos_${{ matrix.specs }}
-  #         path: ${{ github.workspace }}/tests/cypress/videos
+      - name: Uploading cypress videos as an artifact
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress_videos_${{ matrix.specs }}
+          path: ${{ github.workspace }}/tests/cypress/videos
+
+      - name: Upload Allure results as an artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-e2e-${{ matrix.specs }}
+          path: allure-results-e2e
+          retention-days: 10
 
   # helm_rest_api_testing:
   #   needs: build
@@ -581,6 +536,61 @@ jobs:
 
   #         docker tag "cvat/ui:${CVAT_VERSION}" "${UI_IMAGE_REPO}:dev"
   #         docker push "${UI_IMAGE_REPO}:dev"
+
+    generate_report:
+    name: Generate Allure Report and Upload to S3
+    needs: [rest_api_testing, e2e_testing]
+    if: always()
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Allure CLI (.deb)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y default-jre-headless
+          wget https://github.com/allure-framework/allure2/releases/download/2.34.0/allure_2.34.0-1_all.deb
+          sudo dpkg -i allure_2.34.0-1_all.deb
+
+      - name: AWS cli setup
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-1
+
+      - name: Set a timestamp
+        id: timestampid
+        run: echo "timestamp=$(date --utc +%Y%m%d_%H%M%SZ)" >> "$GITHUB_OUTPUT"
+
+      - name: Download Allure results from artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: allure-results*
+          merge-multiple: true
+          path: merged-allure-results
+
+      - name: Download previous history from S3
+        run: aws s3 cp s3://cvat-allure-reports/history/ ./merged-allure-results/history --recursive || echo "No history found"
+
+      - name: Generate Allure Report
+        run: allure generate ./merged-allure-results --clean -o allure-report
+
+      - name: Backup updated history to S3
+        run: aws s3 cp ./allure-report/history s3://cvat-allure-reports/history/ --recursive
+
+      - name: Deploy report to S3 (timestamped folder)
+        run: aws s3 cp ./allure-report s3://cvat-allure-reports/report/${{ steps.timestampid.outputs.timestamp }}/ --recursive
+
+      - name: Write report URL to summary
+        run: |
+          echo "### 🧪 [Allure Report](http://cvat-allure-reports.s3-website.eu-west-1.amazonaws.com/report/${{ steps.timestampid.outputs.timestamp }}/index.html)" >> $GITHUB_STEP_SUMMARY
 
   # codecov:
   #   runs-on: ubuntu-latest
