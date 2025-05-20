@@ -20,10 +20,10 @@ env:
 
 jobs:
   search_cache:
-#    if: |
-#      github.event.pull_request.draft == false &&
-#      !startsWith(github.event.pull_request.title, '[WIP]') &&
-#      !startsWith(github.event.pull_request.title, '[Dependent]')
+    if: |
+      github.event.pull_request.draft == false &&
+      !startsWith(github.event.pull_request.title, '[WIP]') &&
+      !startsWith(github.event.pull_request.title, '[Dependent]')
     uses: ./.github/workflows/search-cache.yml
 
   build:
