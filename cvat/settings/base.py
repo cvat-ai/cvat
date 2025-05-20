@@ -295,10 +295,14 @@ RQ_QUEUES = {
     CVAT_QUEUES.IMPORT_DATA.value: {
         **REDIS_INMEM_SETTINGS,
         "DEFAULT_TIMEOUT": "4h",
+        # custom fields
+        "PARSED_JOB_ID_CLASS": "cvat.apps.engine.rq.ImportRequestId",
     },
     CVAT_QUEUES.EXPORT_DATA.value: {
         **REDIS_INMEM_SETTINGS,
         "DEFAULT_TIMEOUT": "4h",
+        # custom fields
+        "PARSED_JOB_ID_CLASS": "cvat.apps.engine.rq.ExportRequestId",
     },
     CVAT_QUEUES.AUTO_ANNOTATION.value: {
         **REDIS_INMEM_SETTINGS,
@@ -315,6 +319,8 @@ RQ_QUEUES = {
     CVAT_QUEUES.QUALITY_REPORTS.value: {
         **REDIS_INMEM_SETTINGS,
         "DEFAULT_TIMEOUT": "1h",
+        # custom fields
+        "PARSED_JOB_ID_CLASS": "cvat.apps.quality_control.rq.QualityRequestId",
     },
     CVAT_QUEUES.CLEANING.value: {
         **REDIS_INMEM_SETTINGS,
@@ -327,6 +333,8 @@ RQ_QUEUES = {
     CVAT_QUEUES.CONSENSUS.value: {
         **REDIS_INMEM_SETTINGS,
         "DEFAULT_TIMEOUT": "1h",
+        # custom fields
+        "PARSED_JOB_ID_CLASS": "cvat.apps.consensus.rq.ConsensusRequestId",
     },
 }
 
@@ -664,7 +672,7 @@ SPECTACULAR_SETTINGS = {
         "SortingMethod": "cvat.apps.engine.models.SortingMethod",
         "WebhookType": "cvat.apps.webhooks.models.WebhookTypeChoice",
         "WebhookContentType": "cvat.apps.webhooks.models.WebhookContentTypeChoice",
-        "RequestStatus": "cvat.apps.engine.models.RequestStatus",
+        "RequestStatus": "cvat.apps.redis_handler.serializers.RequestStatus",
         "ValidationMode": "cvat.apps.engine.models.ValidationMode",
         "FrameSelectionMethod": "cvat.apps.engine.models.JobFrameSelectionMethod",
         "AnnotationConflictType": "cvat.apps.quality_control.models.AnnotationConflictType",

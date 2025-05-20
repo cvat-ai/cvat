@@ -43,6 +43,7 @@ from .utils import (
     export_dataset,
     export_project_backup,
     export_project_dataset,
+    import_project_backup,
 )
 
 
@@ -393,15 +394,7 @@ class TestGetPostProjectBackup:
         tmp_file = io.BytesIO(backup)
         tmp_file.name = "dataset.zip"
 
-        import_data = {
-            "project_file": tmp_file,
-        }
-
-        with make_api_client(admin_user) as api_client:
-            (_, response) = api_client.projects_api.create_backup(
-                backup_write_request=deepcopy(import_data), _content_type="multipart/form-data"
-            )
-            assert response.status == HTTPStatus.ACCEPTED
+        import_project_backup(admin_user, tmp_file)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -634,7 +627,7 @@ class TestImportExportDatasetProject:
             (_, response) = api_client.projects_api.create_dataset(
                 id=project_id,
                 format=format_name,
-                dataset_write_request=deepcopy(data),
+                dataset_file_request={"dataset_file": data},
                 _content_type="multipart/form-data",
             )
             assert response.status == HTTPStatus.ACCEPTED
@@ -674,11 +667,7 @@ class TestImportExportDatasetProject:
         tmp_file = io.BytesIO(dataset)
         tmp_file.name = "dataset.zip"
 
-        import_data = {
-            "dataset_file": tmp_file,
-        }
-
-        self._test_import_project(admin_user, project_id, "CVAT 1.1", import_data)
+        self._test_import_project(admin_user, project_id, "CVAT 1.1", tmp_file)
 
     @pytest.mark.parametrize(
         "export_format, import_format",
@@ -716,11 +705,8 @@ class TestImportExportDatasetProject:
 
         tmp_file = io.BytesIO(dataset)
         tmp_file.name = "dataset.zip"
-        import_data = {
-            "dataset_file": tmp_file,
-        }
 
-        self._test_import_project(admin_user, project_id, import_format, import_data)
+        self._test_import_project(admin_user, project_id, import_format, tmp_file)
 
     @pytest.mark.parametrize("format_name", ("Datumaro 1.0", "ImageNet 1.0", "PASCAL VOC 1.1"))
     def test_can_import_export_dataset_with_some_format(self, format_name: str):
@@ -739,11 +725,7 @@ class TestImportExportDatasetProject:
         tmp_file = io.BytesIO(dataset)
         tmp_file.name = "dataset.zip"
 
-        import_data = {
-            "dataset_file": tmp_file,
-        }
-
-        self._test_import_project(username, project_id, format_name, import_data)
+        self._test_import_project(username, project_id, format_name, tmp_file)
 
     @pytest.mark.parametrize("username, pid", [("admin1", 8)])
     @pytest.mark.parametrize(
@@ -805,11 +787,7 @@ class TestImportExportDatasetProject:
         tmp_file = io.BytesIO(dataset)
         tmp_file.name = "dataset.zip"
 
-        import_data = {
-            "dataset_file": tmp_file,
-        }
-
-        self._test_import_project(username, project_id, "CVAT 1.1", import_data)
+        self._test_import_project(username, project_id, "CVAT 1.1", tmp_file)
 
         response = get_method(username, f"tasks", project_id=project_id)
         assert response.status_code == HTTPStatus.OK
@@ -919,11 +897,7 @@ class TestImportExportDatasetProject:
 
         with io.BytesIO(dataset) as tmp_file:
             tmp_file.name = "dataset.zip"
-            import_data = {
-                "dataset_file": tmp_file,
-            }
-
-            self._test_import_project(admin_user, project_id, "CVAT 1.1", import_data)
+            self._test_import_project(admin_user, project_id, "CVAT 1.1", tmp_file)
 
     @pytest.mark.parametrize(
         "dimension, format_name",
@@ -976,14 +950,12 @@ class TestImportExportDatasetProject:
                 )
             )
 
-            import_data = {"dataset_file": dataset_file}
-
             with pytest.raises(exceptions.ApiException, match="Dataset file should be zip archive"):
                 self._test_import_project(
                     admin_user,
                     project.id,
                     format_name=format_name,
-                    data=import_data,
+                    data=dataset_file,
                 )
 
     @pytest.mark.parametrize(
