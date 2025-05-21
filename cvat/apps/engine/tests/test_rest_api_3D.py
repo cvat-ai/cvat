@@ -22,9 +22,8 @@ from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.dataset_manager.tests.utils import TestDir
 from cvat.apps.engine.media_extractors import ValidateDimension
 from cvat.apps.engine.tests.utils import ExportApiTestBase, ForceLogin, get_paginated_collection
-from cvat.apps.quality_control.models import AnnotationType
 
-from .utils import compare_objects
+from .utils import check_annotation_response
 
 CREATE_ACTION = "create"
 UPDATE_ACTION = "update"
@@ -211,24 +210,6 @@ class _DbTestBase(ExportApiTestBase):
 
 
 class Task3DTest(_DbTestBase):
-    def compare_annotations(self, annos_orig: list[dict], annos_imported: list[dict]):
-
-        for _type in set(AnnotationType):
-            key = f"{_type}s"
-            anns = annos_imported.data[key]
-            self.assertEqual(
-                len(annos_orig.data[key]),
-                len(annos_imported.data[key]),
-                "Different number of shapes"
-            )
-            for ann in anns:
-                self.assertEquals(ann.get('source'), 'file')
-        compare_objects(self,
-                        annos_orig.data, annos_imported.data,
-                        ignore_keys=["source", "id", "version"],
-                        order=False
-        )
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -529,7 +510,7 @@ class Task3DTest(_DbTestBase):
 
                     task_ann_prev.data["shapes"][0].pop("id")
                     task_ann.data["shapes"][0].pop("id")
-                    self.compare_annotations(task_ann_prev, task_ann)
+                    check_annotation_response(self, task_ann_prev, task_ann.data)
 
     def test_api_v2_rewrite_annotation(self):
         with TestDir() as test_dir:
@@ -567,7 +548,7 @@ class Task3DTest(_DbTestBase):
 
                     task_ann_prev.data["shapes"][0].pop("id")
                     task_ann.data["shapes"][0].pop("id")
-                    self.compare_annotations(task_ann_prev, task_ann)
+                    check_annotation_response(self, task_ann_prev, task_ann.data)
 
     def test_api_v2_dump_and_upload_empty_annotation(self):
         with TestDir() as test_dir:

@@ -17,7 +17,6 @@ import xml.etree.ElementTree as ET
 import zipfile
 from collections import defaultdict
 from contextlib import ExitStack
-from copy import deepcopy
 from datetime import timedelta
 from enum import Enum
 from glob import glob
@@ -25,7 +24,7 @@ from io import BytesIO, IOBase
 from itertools import product
 from pprint import pformat
 from time import sleep
-from typing import BinaryIO, NoReturn
+from typing import BinaryIO
 from unittest import mock
 
 import av
@@ -74,7 +73,7 @@ from cvat.apps.engine.tests.utils import (
 )
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 
-from .utils import check_optional_fields, compare_objects, filter_object
+from .utils import compare_objects, check_annotation_response
 
 # suppress av warnings
 logging.getLogger('libav').setLevel(logging.ERROR)
@@ -5078,10 +5077,10 @@ class JobAnnotationAPITestCase(ApiTestBase):
 
         return response
 
-    def _check_response(self, response, data):
+    def _check_response(self, response, data, expected_source=None):
         if not response.status_code in [
             status.HTTP_403_FORBIDDEN, status.HTTP_401_UNAUTHORIZED]:
-            compare_objects(self, data, response.data, ignore_keys=["id", "version"])
+            check_annotation_response(self, response, data, expected_source)
 
     def _run_api_v2_jobs_id_annotations(self, owner, assignee, annotator):
         task, jobs = self._create_task(owner, assignee)
@@ -5554,60 +5553,6 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                 path="/api/server/annotation/formats"
             )
         return response
-
-    def _check_response(self, response, data, expected_source=None, anno_order=True):
-        if not response.status_code in [
-            status.HTTP_401_UNAUTHORIZED,
-            status.HTTP_403_FORBIDDEN
-        ]:
-            COMMON_DEFAULT_FIELDS = dict(
-                source=expected_source or 'manual',
-                occluded=False,
-                outside=False,
-                z_order=0,
-                rotation=0,
-                attributes=[],
-            ) # if omitted, are set by the server
-              # https://docs.cvat.ai/docs/api_sdk/sdk/reference/models/labeled-shape/
-              # elements are handled separately
-            COMMON_DEFAULT_KEYS = list(COMMON_DEFAULT_FIELDS.keys())
-            ignore_keys = ["id", "version", "elements"]
-            RESPONSE_KEYS = ['shapes', 'tracks', 'tags']
-
-            def _get_elements(data) -> dict[str, list[list[dict]]]:
-                return {
-                    'shape_elements': [shape.get('elements', []) for shape in data['shapes']],
-                    'track_elements': [track.get('elements', []) for track in data['tracks']]
-                }
-            def compare_elements(self, data, response) -> None | NoReturn:
-                response_elements = _get_elements(response.data)
-                for elements in response_elements.values():
-                    for elem in elements:
-                        for ann in elem:
-                            check_optional_fields(self, ann, COMMON_DEFAULT_FIELDS)
-                response_elements = filter_object(response_elements, drop=COMMON_DEFAULT_KEYS)
-                data_elements = _get_elements(data)
-                data_elements = filter_object(data_elements, drop=COMMON_DEFAULT_KEYS)
-                compare_objects(self, data_elements, response_elements, ignore_keys + COMMON_DEFAULT_KEYS)
-
-            _data = deepcopy(data)
-            _response = deepcopy(response)
-            try:
-                compare_elements(self, _data, _response)
-                _data = filter_object(_data, drop=['elements'])
-                _response.data = filter_object(_response.data, drop=['elements'])
-                for key in RESPONSE_KEYS:
-                    anns = _response.data[key]
-                    for ann in anns:
-                        check_optional_fields(self, ann, optional_values=COMMON_DEFAULT_FIELDS)
-                compare_objects(self, _data, _response.data, ignore_keys + COMMON_DEFAULT_KEYS, order=anno_order)
-            except AssertionError as e:
-                print("Objects are not equal:",
-                      pformat(data, compact=True),
-                      "!=",
-                      pformat(response.data, compact=True), sep='\n')
-                print(e)
-                raise
 
     def _run_api_v2_tasks_id_annotations(self, owner, assignee):
         task, _ = self._create_task(owner, assignee)
@@ -6686,7 +6631,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
 
                 self.assertEqual(response.status_code, HTTP_200_OK,
                     pformat(response.data))
-                self._check_response(response, data, expected_source='manual')
+                check_annotation_response(self, response, data, expected_source='manual')
 
                 # 3. download annotation
                 if not export_formats[export_format]['enabled']:
@@ -6738,7 +6683,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                 self.assertEqual(response.status_code, HTTP_200_OK)
 
                 data["version"] += 2 # upload is delete + put
-                self._check_response(response, data, expected_source='file', anno_order=False)
+                check_annotation_response(self, response, data, expected_source='file')
 
     def _check_dump_content(self, content, task, jobs, data, format_name):
         def etree_to_dict(t):

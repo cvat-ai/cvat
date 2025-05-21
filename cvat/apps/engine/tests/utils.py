@@ -11,7 +11,7 @@ from contextlib import contextmanager
 from io import BytesIO
 from pathlib import Path
 from pprint import pformat
-from typing import Any, Callable, NoReturn, TypeVar
+from typing import Any, Callable, NoReturn, TypeVar, Collection
 from unittest import TestCase
 from urllib.parse import urlencode
 
@@ -25,6 +25,9 @@ from PIL import Image
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.test import APITestCase
+from scipy.optimize import linear_sum_assignment
+
+from ._types import OrderStrategy, always_check_order
 
 T = TypeVar('T')
 
@@ -501,40 +504,172 @@ def filter_object(
     return obj
 
 
-def compare_objects(self: TestCase, obj1, obj2, ignore_keys, fp_tolerance=0.001, current_key=None, order=True):
-    key_info = "{}: ".format(current_key) if current_key else ""
-    error_msg = "{}{} != {}"
+def _match_lists(
+    a_objs: list[Any],
+    b_objs: list[Any],
+    *,
+    distance: Callable[[Any, Any], bool],
+) -> tuple[list[tuple[Any, Any]], list[Any], list[Any]] | NoReturn:
+    """
+    Matches two lists of objects using a distance function.
+    The distance function should return True if the objects are equal, and False otherwise.
 
-    def is_annotation_type(k):
-        return k in {'shapes', 'tags'}
-        # tracks are shapes, possibly nested
+    Returns: (matches, a_unmatched, b_unmatched)
+    """
+
+    if len(a_objs) != len(b_objs):
+        raise ValueError("The number of objects in the lists should be equal")
+
+    distances = np.asarray([1 - int(distance(a, b)) for a in a_objs for b in b_objs])
+    distances = distances.reshape((len(a_objs), len(b_objs)))
+
+    # O(n^3) complexity or better
+    a_matches, b_matches = linear_sum_assignment(distances)
+
+    matches = []
+    a_unmatched = []
+    b_unmatched = []
+
+    for a_idx, b_idx in zip(a_matches, b_matches):
+        dist = distances[a_idx, b_idx]
+        if dist == 1:
+            if a_idx < len(a_objs):
+                a_unmatched.append(a_objs[a_idx])
+            if b_idx < len(b_objs):
+                b_unmatched.append(b_objs[b_idx])
+        else:
+            matches.append((a_objs[a_idx], b_objs[b_idx]))
+
+    return matches, a_unmatched, b_unmatched
+
+
+def _format_key(key: list[str]) -> str:
+    return ".".join([] + key) or ""
+
+
+def compare_objects(
+    self: TestCase,
+    obj1: Any,
+    obj2: Any,
+    ignore_keys: Collection[str],
+    *,
+    fp_tolerance: float = 0.001,
+    current_key: list[str] | str | None = None,
+    check_order: OrderStrategy = always_check_order,
+) -> bool | NoReturn:
+    if isinstance(current_key, str):
+        current_key = [current_key]
+    elif not current_key:
+        current_key = []
+
+    key_info = f"{_format_key(current_key)}: "
+    error_msg = "{}{} != {}"
 
     if isinstance(obj1, dict):
         self.assertTrue(isinstance(obj2, dict), error_msg.format(key_info, obj1, obj2))
-        for k in (obj1.keys() - ignore_keys):
-            v1 = obj1[k]
-            v2 = obj2[k]
-            if k == "attributes":
-                key = lambda a: (a.get("spec_id") or a["id"])
-                v1.sort(key=key)
-                v2.sort(key=key)
-            elif not order and is_annotation_type(k):
-                v1 = frozenset(freeze_object(v1, ignore_keys))
-                v2 = frozenset(freeze_object(v2, ignore_keys))
-            compare_objects(self, v1, v2, ignore_keys, current_key=k,
-                fp_tolerance=fp_tolerance, order=order)
+        for k in (obj1.keys() | obj2.keys()) - set(ignore_keys):
+            compare_objects(
+                self,
+                obj1[k],
+                obj2[k],
+                ignore_keys,
+                current_key=current_key + [k],
+                fp_tolerance=fp_tolerance,
+                check_order=check_order,
+            )
     elif isinstance(obj1, list):
         self.assertTrue(isinstance(obj2, list), error_msg.format(key_info, obj1, obj2))
         self.assertEqual(
             len(obj1),
             len(obj2),
-            error_msg.format(key_info, pformat(obj1, compact=True), pformat(obj2)),
+            error_msg.format(key_info, pformat(obj1, compact=True), pformat(obj2, compact=True)),
         )
-        for v1, v2 in zip(obj1, obj2):
-            compare_objects(self, v1, v2, ignore_keys, current_key=current_key,
-                            fp_tolerance=fp_tolerance, order=order)
-    else:
-        if isinstance(obj1, float) or isinstance(obj2, float):
-            self.assertAlmostEqual(obj1, obj2, delta=fp_tolerance, msg=current_key)
+
+        if check_order(current_key):
+            for v1, v2 in zip(obj1, obj2):
+                compare_objects(
+                    self,
+                    v1,
+                    v2,
+                    ignore_keys,
+                    current_key=current_key,
+                    fp_tolerance=fp_tolerance,
+                    check_order=check_order,
+                )
         else:
-            self.assertEqual(obj1, obj2, msg=current_key)
+
+            def _compare(a, b) -> bool:
+                try:
+                    compare_objects(
+                        self,
+                        a,
+                        b,
+                        ignore_keys,
+                        current_key=current_key,
+                        fp_tolerance=fp_tolerance,
+                        check_order=check_order,
+                    )
+                    return True
+                except AssertionError:
+                    return False
+
+            _, a_unmatched, b_unmatched = _match_lists(obj1, obj2, distance=_compare)
+
+            if a_unmatched or b_unmatched:
+                self.fail(
+                    "Failed to match lists. "
+                    + error_msg.format(
+                        key_info, pformat(obj1, compact=True), pformat(obj2, compact=True)
+                    )
+                )
+
+    elif isinstance(obj1, float) or isinstance(obj2, float):
+        self.assertAlmostEqual(obj1, obj2, delta=fp_tolerance, msg=current_key)
+    else:
+        self.assertEqual(obj1, obj2, msg=current_key)
+
+
+def check_annotation_response(self: TestCase, response, data, expected_source=None) -> None | NoReturn:
+            COMMON_DEFAULT_FIELDS = dict(
+                source=expected_source or 'manual',
+                occluded=False,
+                outside=False,
+                z_order=0,
+                rotation=0,
+                attributes=[],
+                elements=[],
+            ) # if omitted, are set by the server
+              # https://docs.cvat.ai/docs/api_sdk/sdk/reference/models/labeled-shape/
+              # elements are handled separately
+            COMMON_DEFAULT_KEYS = list(COMMON_DEFAULT_FIELDS.keys())
+            ignore_keys = ["id", "version"]
+
+            def _check_order_in_annotations(key_path: str) -> bool:
+                return 'shapes.points' in key_path
+
+            def compare_elements(self, data, response_data) -> None | NoReturn:
+                def _get_elements(data) -> dict[str, list[list[dict]]]:
+                    return {
+                        'shape_elements': [shape.get('elements', []) for shape in data['shapes']],
+                        'track_elements': [track.get('elements', []) for track in data['tracks']]
+                    }
+                response_elements = _get_elements(response_data)
+                for elements in response_elements.values():
+                    for elem in elements:
+                        for ann in elem:
+                            check_optional_fields(self, ann, COMMON_DEFAULT_FIELDS)
+                response_elements = _get_elements(response_data)
+                data_elements = _get_elements(data)
+                compare_objects(self, data_elements, response_elements, ignore_keys + COMMON_DEFAULT_KEYS, check_order=_check_order_in_annotations)
+
+            try:
+                check_optional_fields(self, response.data, COMMON_DEFAULT_FIELDS)
+                compare_elements(self, data, response.data)
+                compare_objects(self, data, response.data, ignore_keys + COMMON_DEFAULT_KEYS, check_order=_check_order_in_annotations)
+            except AssertionError as e:
+                print("Objects are not equal:",
+                      pformat(data, compact=True),
+                      "!=",
+                      pformat(response.data, compact=True), sep='\n')
+                print(e)
+                raise
