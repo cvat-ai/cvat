@@ -1,3 +1,7 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React, { useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import Text from 'antd/lib/typography/Text';

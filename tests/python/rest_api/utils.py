@@ -7,6 +7,7 @@ from abc import ABCMeta, abstractmethod
 from collections.abc import Hashable, Iterator, Sequence
 from copy import deepcopy
 from http import HTTPStatus
+from io import BytesIO
 from time import sleep
 from typing import Any, Callable, Iterable, Optional, TypeVar, Union
 
@@ -19,8 +20,9 @@ from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.api_client.exceptions import ForbiddenException
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
+from urllib3 import HTTPResponse
 
-from shared.utils.config import make_api_client
+from shared.utils.config import USER_PASS, make_api_client, post_method
 
 
 def initialize_export(endpoint: Endpoint, *, expect_forbidden: bool = False, **kwargs) -> str:
@@ -41,14 +43,13 @@ def initialize_export(endpoint: Endpoint, *, expect_forbidden: bool = False, **k
     return rq_id
 
 
-def wait_and_download_v2(
+def wait_background_request(
     api_client: ApiClient,
     rq_id: str,
     *,
     max_retries: int = 50,
     interval: float = 0.1,
-    download_result: bool = True,
-) -> Optional[bytes]:
+) -> tuple[models.Request, HTTPResponse]:
     for _ in range(max_retries):
         (background_request, response) = api_client.requests_api.retrieve(rq_id)
         assert response.status == HTTPStatus.OK
@@ -56,28 +57,34 @@ def wait_and_download_v2(
             background_request.status.value
             == models.RequestStatus.allowed_values[("value",)]["FINISHED"]
         ):
-            break
+            return background_request, response
         sleep(interval)
-    else:
-        assert False, (
-            f"Export process was not finished within allowed time ({interval * max_retries}, sec). "
-            + f"Last status was: {background_request.status.value}"
-        )
 
-    if not download_result:
-        return None
+    assert False, (
+        f"Export process was not finished within allowed time ({interval * max_retries}, sec). "
+        + f"Last status was: {background_request.status.value}"
+    )
 
-    # return downloaded file in case of local downloading or None otherwise
-    if background_request.result_url:
-        response = requests.get(
-            background_request.result_url,
-            auth=(api_client.configuration.username, api_client.configuration.password),
-        )
-        assert response.status_code == HTTPStatus.OK, f"Status: {response.status_code}"
 
-        return response.content
+def wait_and_download_v2(
+    api_client: ApiClient,
+    rq_id: str,
+    *,
+    max_retries: int = 50,
+    interval: float = 0.1,
+) -> bytes:
+    background_request, _ = wait_background_request(
+        api_client, rq_id, max_retries=max_retries, interval=interval
+    )
 
-    return None
+    # return downloaded file in case of local downloading
+    assert background_request.result_url
+    response = requests.get(
+        background_request.result_url,
+        auth=(api_client.configuration.username, api_client.configuration.password),
+    )
+    assert response.status_code == HTTPStatus.OK, f"Status: {response.status_code}"
+    return response.content
 
 
 def export_v2(
@@ -89,7 +96,7 @@ def export_v2(
     wait_result: bool = True,
     download_result: bool = True,
     **kwargs,
-) -> Optional[bytes]:
+) -> Union[bytes, str]:
     """Export datasets|annotations|backups using the second version of export API
 
     Args:
@@ -101,22 +108,27 @@ def export_v2(
 
     Returns:
         bytes: The content of the file if downloaded locally.
-        None: If `wait_result` or `download_result` were False or the file is downloaded to cloud storage.
+        str: If `wait_result` or `download_result` were False.
     """
     # initialize background process and ensure that the first request returns 403 code if request should be forbidden
     rq_id = initialize_export(endpoint, expect_forbidden=expect_forbidden, **kwargs)
 
     if not wait_result:
-        return None
+        return rq_id
 
     # check status of background process
-    return wait_and_download_v2(
-        endpoint.api_client,
-        rq_id,
-        max_retries=max_retries,
-        interval=interval,
-        download_result=download_result,
+    if download_result:
+        return wait_and_download_v2(
+            endpoint.api_client,
+            rq_id,
+            max_retries=max_retries,
+            interval=interval,
+        )
+
+    background_request, _ = wait_background_request(
+        endpoint.api_client, rq_id, max_retries=max_retries, interval=interval
     )
+    return background_request.id
 
 
 def export_dataset(
@@ -184,7 +196,7 @@ def import_resource(
     expect_forbidden: bool = False,
     wait_result: bool = True,
     **kwargs,
-) -> None:
+) -> Optional[models.Request]:
     # initialize background process and ensure that the first request returns 403 code if request should be forbidden
     (_, response) = endpoint.call_with_http_info(
         **kwargs,
@@ -220,6 +232,7 @@ def import_resource(
             f"Import process was not finished within allowed time ({interval * max_retries}, sec). "
             + f"Last status was: {background_request.status.value}"
         )
+    return background_request
 
 
 def import_backup(
@@ -228,19 +241,50 @@ def import_backup(
     max_retries: int = 50,
     interval: float = 0.1,
     **kwargs,
-) -> None:
+):
     endpoint = api.create_backup_endpoint
     return import_resource(endpoint, max_retries=max_retries, interval=interval, **kwargs)
 
 
-def import_project_backup(username: str, data: dict, **kwargs) -> None:
+def import_project_backup(username: str, file_content: BytesIO, **kwargs):
     with make_api_client(username) as api_client:
-        return import_backup(api_client.projects_api, project_file_request=deepcopy(data), **kwargs)
+        return import_backup(
+            api_client.projects_api, project_file_request={"project_file": file_content}, **kwargs
+        )
 
 
-def import_task_backup(username: str, data: dict, **kwargs) -> None:
+def import_task_backup(username: str, file_content: BytesIO, **kwargs):
     with make_api_client(username) as api_client:
-        return import_backup(api_client.tasks_api, task_file_request=deepcopy(data), **kwargs)
+        return import_backup(
+            api_client.tasks_api, task_file_request={"task_file": file_content}, **kwargs
+        )
+
+
+def import_project_dataset(username: str, file_content: BytesIO, **kwargs):
+    with make_api_client(username) as api_client:
+        return import_resource(
+            api_client.projects_api.create_dataset_endpoint,
+            dataset_file_request={"dataset_file": file_content},
+            **kwargs,
+        )
+
+
+def import_task_annotations(username: str, file_content: BytesIO, **kwargs):
+    with make_api_client(username) as api_client:
+        return import_resource(
+            api_client.tasks_api.create_annotations_endpoint,
+            annotation_file_request={"annotation_file": file_content},
+            **kwargs,
+        )
+
+
+def import_job_annotations(username: str, file_content: BytesIO, **kwargs):
+    with make_api_client(username) as api_client:
+        return import_resource(
+            api_client.jobs_api.create_annotations_endpoint,
+            annotation_file_request={"annotation_file": file_content},
+            **kwargs,
+        )
 
 
 FieldPath = Sequence[Union[str, Callable]]
@@ -467,3 +511,35 @@ def unique(
     it: Union[Iterator[_T], Iterable[_T]], *, key: Callable[[_T], Hashable] = None
 ) -> Iterable[_T]:
     return {key(v): v for v in it}.values()
+
+
+def register_new_user(username: str) -> dict[str, Any]:
+    response = post_method(
+        "admin1",
+        "auth/register",
+        data={
+            "username": username,
+            "password1": USER_PASS,
+            "password2": USER_PASS,
+            "email": f"{username}@email.com",
+        },
+    )
+
+    assert response.status_code == HTTPStatus.CREATED
+    return response.json()
+
+
+def invite_user_to_org(
+    user_email: str,
+    org_id: int,
+    role: str,
+):
+    with make_api_client("admin1") as api_client:
+        invitation, _ = api_client.invitations_api.create(
+            models.InvitationWriteRequest(
+                role=role,
+                email=user_email,
+            ),
+            org_id=org_id,
+        )
+        return invitation

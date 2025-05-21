@@ -10,7 +10,7 @@ import {
     Webhook, MLModel, Organization, Job, Task, Project, Label, User,
     QualityConflict, FramesMetaData, RQStatus, Event, Invitation, SerializedAPISchema,
     Request, JobValidationLayout, QualitySettings, TaskValidationLayout, ObjectState,
-    ConsensusSettings, AboutData,
+    ConsensusSettings, AboutData, ShapeType, ObjectType,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
@@ -290,21 +290,43 @@ export interface PluginsState {
             };
         };
         qualityControlPage: {
-            overviewTab: ((props: {
-                task: Task;
-                qualitySettings: QualitySettings;
-            }) => JSX.Element)[];
-
-            allocationTable: ((
-                props: {
-                    task: Task;
-                    gtJobId: number;
-                    gtJobMeta: FramesMetaData;
-                    qualitySettings: QualitySettings;
-                    validationLayout: TaskValidationLayout;
-                    onDeleteFrames: (frames: number[]) => void;
-                    onRestoreFrames: (frames: number[]) => void;
+            task: {
+                overviewTab: ((props: {
+                    instance: Task;
+                    qualitySettings: {
+                        settings: QualitySettings | null;
+                        childrenSettings: QualitySettings[] | null;
+                    };
                 }) => JSX.Element)[];
+
+                allocationTable: ((
+                    props: {
+                        task: Task;
+                        gtJobId: number;
+                        gtJobMeta: FramesMetaData;
+                        qualitySettings: QualitySettings;
+                        validationLayout: TaskValidationLayout;
+                        onDeleteFrames: (frames: number[]) => void;
+                        onRestoreFrames: (frames: number[]) => void;
+                    }) => JSX.Element)[];
+            }
+            project : {
+                overviewTab: ((props: {
+                    instance: Project;
+                    qualitySettings: {
+                        settings: QualitySettings | null;
+                        childrenSettings: QualitySettings[] | null;
+                    };
+                }) => JSX.Element)[];
+            }
+        };
+        analyticsReportPage: {
+            content: ((
+                props: {
+                    resource: Project | Task | Job;
+                    timePeriod: { startDate: string; endDate: string; } | null;
+                },
+            ) => JSX.Element)[];
         };
     },
     components: {
@@ -812,6 +834,9 @@ export interface AnnotationState {
         visible: boolean;
         data: any;
     };
+    search: {
+        visible: boolean;
+    }
     propagate: {
         visible: boolean;
     };

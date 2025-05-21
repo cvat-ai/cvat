@@ -30,7 +30,7 @@ Before uploading the archive to CVAT, do the following:
    as the primary image to which it should be linked.
 3. Place the contextual image(s) within the subfolder created in step 2.
 4. Add folder to the archive.
-5. {{< ilink "/docs/manual/basics/create_an_annotation_task#create-a-task" "Create task" >}}.
+5. {{< ilink "/docs/manual/basics/create-annotation-task#create-a-task" "Create task" >}}.
 
 ## Data format
 
@@ -112,7 +112,7 @@ Example file structure for 2D and 3D tasks:
 a .pcd file with the same name is considered to be a context image.
 
 For more general information about 3D data formats,
-see {{< ilink "/docs/manual/basics/create_an_annotation_task#data-formats-for-a-3d-task" "3D data formats" >}}.
+see {{< ilink "/docs/manual/basics/create-annotation-task#data-formats-for-a-3d-task" "3D data formats" >}}.
 
 ## Contextual images
 
@@ -129,11 +129,11 @@ small toolbar will appear on the top of the screen, with the following elements:
 
 <!--lint disable maximum-line-length-->
 
-| Element                                        | Description                                                                                                                                                                                                                        |
-| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Element                                        | Description |
+| ---------------------------------------------- | ----------- |
 | ![contex_images_4](/images/context_img_04.jpg) | **Fit views**. Click to restore the layout to its original appearance. <p>If you've expanded any images in the layout, they will returned to their original size. <p>This won't affect the number of context images on the screen. |
-| ![contex_images_5](/images/context_img_05.jpg) | **Add new image**. Click to add context image to the layout.                                                                                                                                                                       |
-| ![contex_images_6](/images/context_img_06.jpg) | **Reload layout**. Click to reload layout to the default view. <p>Note, that this action can change the number of context images resetting them back to three.                                                                      |
+| ![contex_images_5](/images/context_img_05.jpg) | **Add new image**. Click to add context image to the layout. |
+| ![contex_images_6](/images/context_img_06.jpg) | **Reload layout**. Click to reload layout to the default view. <p>Note, that this action can change the number of context images resetting them back to three. |
 
 <!--lint enable maximum-line-length-->
 

@@ -41,4 +41,4 @@ Simply drag the faces to move them independently from the rest of the cuboid.
 You can also use cuboids in track mode, similar to rectangles in track mode
 ({{< ilink "/docs/manual/basics/track-mode-basics" "basics" >}} and
 {{< ilink "/docs/manual/advanced/track-mode-advanced" "advanced" >}}) or
-{{< ilink "/docs/manual/advanced/annotation-with-polygons/track-mode-with-polygons" "Track mode with polygons" >}}
+{{< ilink "/docs/manual/advanced/annotation-with-polygons/track-mode-with-polygons" "Track mode with polygons" >}}.

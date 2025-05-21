@@ -91,7 +91,7 @@ Read more about merging [here](#how-to-merge-all-replicas-in-a-task).
 When annotating with consensus, the typical workflow looks this way:
 
 1. Create a task with consensus enabled. Optionally,
-  {{< ilink "/docs/manual/basics/create_an_annotation_task" "configure validation" >}}
+  {{< ilink "/docs/manual/basics/create-annotation-task" "configure validation" >}}
 1. Assign annotators to consensus replicas, wait until all the jobs are completed
 1. Once all replicas in a parent job are completed, merge annotations
 1. Review and resolve problems in the parent jobs
@@ -101,15 +101,15 @@ When annotating with consensus, the typical workflow looks this way:
 Consensus annotation is configured at the Task level. It can only be specified at task creation.
 If you want to enable consensus for one of your existing tasks, you'll need to recreate the task.
 
-1. Go to the {{< ilink "/docs/manual/basics/create_an_annotation_task" "task creation" >}} page
-2. Configure basic and advanced parameters according to your requirements,
+1. Go to the {{< ilink "/docs/manual/basics/create-annotation-task" "task creation" >}} page
+1. Configure basic and advanced parameters according to your requirements,
   and attach a dataset to be annotated.
-3. To enable consensus for the task, open the **Advanced** section and
+1. To enable consensus for the task, open the **Advanced** section and
   set **Consensus Replicas** to a value greater than 1.
 
   ![Consensus replicas parameter image](/images/consensus-replicas-task-parameter.png)
 
-4. Create the task and open the task page
+1. Create the task and open the task page
 
 If a task has consensus enabled, you'll see the **Consensus** tag in the task summary.
 Existing **Consensus replica** jobs will be displayed in the job list under their parent
@@ -142,11 +142,11 @@ the next merging and avoid losing the reviewed annotations.
 ### How to merge all replicas in a task
 
 1. Open the task **Actions** menu
-2. Click **Merge consensus jobs**
+1. Click **Merge consensus jobs**
 
   ![Task actions menu](/images/consensus-merge-task-jobs-button.png)
 
-3. Click **Merge** in the dialog window
+1. Click **Merge** in the dialog window
 
   ![Consensus merge dialog](/images/consensus-merge-task-dialog.png)
 
@@ -156,11 +156,11 @@ the next merging and avoid losing the reviewed annotations.
 ### How to merge replicas in a specific parent job
 
 1. Open the job **Actions** menu
-2. Click **Merge consensus job**
+1. Click **Merge consensus job**
 
   ![Job actions menu](/images/consensus-merge-job-actions.png)
 
-3. Click **Merge** in the dialog window
+1. Click **Merge** in the dialog window
 
   ![Consensus merge dialog](/images/consensus-merge-job-dialog.png)
 

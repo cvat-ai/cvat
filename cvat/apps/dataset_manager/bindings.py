@@ -14,7 +14,7 @@ from functools import partial, reduce
 from operator import add
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any, Callable, Dict, Literal, NamedTuple, Optional, Union
+from typing import Any, Callable, Literal, NamedTuple, Optional, Union
 
 import attr
 import datumaro as dm
@@ -23,7 +23,6 @@ import defusedxml.ElementTree as ET
 import rq
 from attr import attrib, attrs
 from attrs.converters import to_bool
-from datumaro.components.dataset_base import IDataset, StreamingDatasetBase, StreamingSubsetBase
 from datumaro.components.format_detection import RejectionReason
 from django.conf import settings
 from django.db.models import Prefetch, QuerySet
@@ -51,7 +50,7 @@ from cvat.apps.engine.rq import ImportRQMeta
 
 from ..engine.log import ServerLogManager
 from .annotation import AnnotationIR, AnnotationManager, TrackManager
-from .formats.transformations import EllipsesToMasks, MaskConverter
+from .formats.transformations import MaskConverter
 
 slogger = ServerLogManager(__name__)
 
@@ -1748,10 +1747,10 @@ class CvatDataExtractorBase(CVATDataExtractorMixin):
         return dm_item
 
 
-class CvatTaskOrJobDataExtractor(StreamingSubsetBase, CvatDataExtractorBase):
+class CvatTaskOrJobDataExtractor(dm.SubsetBase, CvatDataExtractorBase):
     def __init__(self, *args, **kwargs):
         CvatDataExtractorBase.__init__(self, *args, **kwargs)
-        StreamingSubsetBase.__init__(
+        dm.SubsetBase.__init__(
             self,
             media_type=dm.Image if self._dimension == DimensionType.DIM_2D else dm.PointCloud,
             subset=self._instance_meta['subset'],
@@ -1760,19 +1759,23 @@ class CvatTaskOrJobDataExtractor(StreamingSubsetBase, CvatDataExtractorBase):
 
         self._grouped_by_frame = list(self._instance_data.group_by_frame(include_empty=True))
 
+    @staticmethod
+    def copy_frame_data_with_replaced_lazy_lists(frame_data: CommonData.Frame) -> CommonData.Frame:
+        return frame_data._replace(
+            labeled_shapes=[
+                (
+                    shape._replace(points=shape.points.lazy_copy())
+                    if isinstance(shape.points, LazyList) and not shape.points.is_parsed
+                    else shape
+                )
+                for shape in frame_data.labeled_shapes
+            ]
+        )
+
     def __iter__(self):
         for frame_data in self._grouped_by_frame:
             # do not keep parsed lazy list data after this iteration
-            frame_data = frame_data._replace(
-                labeled_shapes=[
-                    (
-                        shape._replace(points=shape.points.lazy_copy())
-                        if isinstance(shape.points, LazyList) and not shape.points.is_parsed
-                        else shape
-                    )
-                    for shape in frame_data.labeled_shapes
-                ]
-            )
+            frame_data = self.copy_frame_data_with_replaced_lazy_lists(frame_data)
             yield self._process_one_frame_data(frame_data)
 
     def _read_cvat_anno(self, cvat_frame_anno: CommonData.Frame, labels: list):
@@ -1793,56 +1796,51 @@ class CvatTaskOrJobDataExtractor(StreamingSubsetBase, CvatDataExtractorBase):
     def categories(self):
         return self._categories
 
+    @property
+    def is_stream(self) -> bool:
+        return True
 
-class CVATProjectDataExtractor(StreamingDatasetBase, CvatDataExtractorBase):
+
+class CVATProjectDataExtractor(dm.DatasetBase, CvatDataExtractorBase):
     def __init__(self, *args, **kwargs):
         CvatDataExtractorBase.__init__(self, *args, **kwargs)
 
-        self._frame_data_by_subset: Dict[str, list[ProjectData.Frame]] = {}
-        for frame_data in self._instance_data.group_by_frame(include_empty=True):
-            if frame_data.subset not in self._frame_data_by_subset:
-                self._frame_data_by_subset[frame_data.subset] = []
-            self._frame_data_by_subset[frame_data.subset].append(frame_data)
+        self._grouped_by_frame = list(self._instance_data.group_by_frame(include_empty=True))
 
-        StreamingDatasetBase.__init__(
+        dm.DatasetBase.__init__(
             self,
-            length=sum(len(v) for v in self._frame_data_by_subset.values()),
-            subsets=list(self._frame_data_by_subset.keys()),
+            length=len(self._grouped_by_frame),
+            subsets=list(set(frame_data.subset for frame_data in self._grouped_by_frame)),
             media_type=dm.Image if self._dimension == DimensionType.DIM_2D else dm.PointCloud,
         )
         self._categories = self.load_categories(self._instance_meta['labels'])
 
-    def get_subset(self, name) -> IDataset:
-        class Subset(StreamingSubsetBase):
-            def __iter__(_):
-                for frame_data in self._frame_data_by_subset[name]:
-                    # do not keep parsed lazy list data after this iteration
-                    frame_data = attr.evolve(
-                        frame_data,
-                        labeled_shapes=[
-                            (
-                                attr.evolve(shape, points=shape.points.lazy_copy())
-                                if isinstance(shape.points, LazyList) and not shape.points.is_parsed
-                                else shape
-                            )
-                            for shape in frame_data.labeled_shapes
-                        ],
-                    )
-                    yield self._process_one_frame_data(frame_data)
-
-            def __len__(_):
-                return len(self._frame_data_by_subset[name])
-
-            def categories(_):
-                return self.categories()
-
-        return Subset(
-            subset=name,
-            media_type=dm.Image if self._dimension == DimensionType.DIM_2D else dm.PointCloud,
+    @staticmethod
+    def copy_frame_data_with_replaced_lazy_lists(frame_data: ProjectData.Frame) -> ProjectData.Frame:
+        return attr.evolve(
+            frame_data,
+            labeled_shapes=[
+                (
+                    attr.evolve(shape, points=shape.points.lazy_copy())
+                    if isinstance(shape.points, LazyList) and not shape.points.is_parsed
+                    else shape
+                )
+                for shape in frame_data.labeled_shapes
+            ],
         )
+
+    def __iter__(self):
+        for frame_data in self._grouped_by_frame:
+            # do not keep parsed lazy list data after this iteration
+            frame_data = self.copy_frame_data_with_replaced_lazy_lists(frame_data)
+            yield self._process_one_frame_data(frame_data)
 
     def categories(self):
         return self._categories
+
+    @property
+    def is_stream(self) -> bool:
+        return True
 
 
 def GetCVATDataExtractor(
@@ -1985,7 +1983,7 @@ class CvatToDmAnnotationConverter:
         dm_attr = self._convert_attrs(shape.label, shape.attributes)
         dm_attr['occluded'] = shape.occluded
 
-        if shape.type == ShapeType.RECTANGLE:
+        if shape.type in (ShapeType.RECTANGLE, ShapeType.ELLIPSE):
             dm_attr['rotation'] = shape.rotation
 
         if hasattr(shape, 'track_id'):
@@ -2001,17 +1999,17 @@ class CvatToDmAnnotationConverter:
                 label=dm_label, attributes=dm_attr, group=dm_group,
                 z_order=shape.z_order)
         elif shape.type == ShapeType.ELLIPSE:
-            # TODO: for now Datumaro does not support ellipses
-            # so, we convert an ellipse to RLE mask here
-            # instead of applying transformation in directly in formats
-            anno = EllipsesToMasks.convert_ellipse(SimpleNamespace(**{
-                "points": shape.points,
-                "label": dm_label,
-                "z_order": shape.z_order,
-                "rotation": shape.rotation,
-                "group": dm_group,
-                "attributes": dm_attr,
-            }), self.cvat_frame_anno.height, self.cvat_frame_anno.width)
+            center_x, center_y, right, top = shape.points
+            anno = dm.Ellipse(
+                x1=center_x - (right - center_x),
+                x2=right,
+                y1=top,
+                y2=center_y + (center_y - top),
+                label=dm_label,
+                attributes=dm_attr,
+                group=dm_group,
+                z_order=shape.z_order,
+            )
         elif shape.type == ShapeType.MASK:
             anno = MaskConverter.cvat_rle_to_dm_rle(SimpleNamespace(**{
                 "points": shape.points,
@@ -2175,7 +2173,8 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
         dm.AnnotationType.points: ShapeType.POINTS,
         dm.AnnotationType.cuboid_3d: ShapeType.CUBOID,
         dm.AnnotationType.skeleton: ShapeType.SKELETON,
-        dm.AnnotationType.mask: ShapeType.MASK
+        dm.AnnotationType.mask: ShapeType.MASK,
+        dm.AnnotationType.ellipse: ShapeType.ELLIPSE,
     }
 
     sources = {'auto', 'semi-auto', 'manual', 'file', 'consensus'}
@@ -2246,6 +2245,9 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                         points = (*ann.position, *ann.rotation, *ann.scale, 0, 0, 0, 0, 0, 0, 0)
                     elif ann.type == dm.AnnotationType.mask:
                         points = tuple(MaskConverter.dm_mask_to_cvat_rle(ann))
+                    elif ann.type == dm.AnnotationType.ellipse:
+                        left, top, right, bottom = ann.points
+                        points = ((left + right) / 2, (top + bottom) / 2, right, top)
                     elif ann.type != dm.AnnotationType.skeleton:
                         points = tuple(ann.points)
 
