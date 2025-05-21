@@ -12,5 +12,3 @@ lupa==2.4
     # via fakeredis
 sortedcontainers==2.4.0
     # via fakeredis
-ipdb==0.13.13
-    # a nicer debugger with --pdb
