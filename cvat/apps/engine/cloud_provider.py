@@ -38,6 +38,7 @@ from cvat.apps.engine.models import CloudProviderChoice, CredentialsTypeChoice
 from cvat.apps.engine.rq import ExportRQMeta
 from cvat.apps.engine.utils import get_cpu_number, take_by
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS
+from cvat import settings
 
 
 class NamedBytesIO(BytesIO):
@@ -960,7 +961,10 @@ class Credentials:
         elif self.credentials_type == CredentialsTypeChoice.CONNECTION_STRING:
             self.connection_string = credentials.get('value')
         elif self.credentials_type == CredentialsTypeChoice.ENV_CREDS:
-            slogger.glob.debug('Credentials set to be pulled from environment.')
+            if settings.ALLOW_CLOUD_STORAGE_ENV_CREDS:
+                slogger.glob.debug('Credentials set to be pulled from environment.')
+            else:
+                raise ValidationError('Credentials type {} is not allowed in this environment'.format(self.credentials_type))
         else:
             raise NotImplementedError('Found {} not supported credentials type'.format(self.credentials_type))
 
