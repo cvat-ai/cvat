@@ -786,3 +786,5 @@ if ONE_RUNNING_JOB_IN_QUEUE_PER_USER:
             "cron_string": "0 8 * * *",
         }
     )
+
+ALLOW_CLOUD_STORAGE_ENV_CREDS = os.environ.get("ALLOW_CLOUD_STORAGE_ENV_CREDS", False)
