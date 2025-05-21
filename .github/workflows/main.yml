@@ -537,7 +537,7 @@ jobs:
   #         docker tag "cvat/ui:${CVAT_VERSION}" "${UI_IMAGE_REPO}:dev"
   #         docker push "${UI_IMAGE_REPO}:dev"
 
-    generate_report:
+  generate_report:
     name: Generate Allure Report and Upload to S3
     needs: [rest_api_testing, e2e_testing]
     if: always()
