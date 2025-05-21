@@ -103,7 +103,8 @@ services:
       traefik.http.services.cvat.loadbalancer.server.port: "8080"
       traefik.http.routers.cvat.rule:
         Host(`${CVAT_HOST:-localhost}`) &&
-        PathPrefix(`/api/`, `/static/`, `/admin`, `/documentation/`, `/django-rq`)
+        (PathPrefix(`/api/`) || PathPrefix(`/static/`) || PathPrefix(`/admin`)
+          || PathPrefix(`/django-rq`))
       traefik.http.routers.cvat.entrypoints: web
     volumes:
       - cvat_data:/home/django/data
@@ -114,8 +115,8 @@ services:
         aliases:
           - cvat-server
 
-  cvat_utils:
-    container_name: cvat_utils
+  cvat_worker_utils:
+    container_name: cvat_worker_utils
     image: cvat/server:${CVAT_VERSION:-dev}
     restart: always
     depends_on: *backend-deps
@@ -123,7 +124,7 @@ services:
       <<: *backend-env
       CVAT_REDIS_INMEM_PASSWORD: ''
       NUMPROCS: 1
-    command: run utils
+    command: run worker notifications cleaning
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -139,7 +140,7 @@ services:
     environment:
       <<: *backend-env
       NUMPROCS: 2
-    command: run worker.import
+    command: run worker import
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -155,7 +156,7 @@ services:
     environment:
       <<: [*backend-env, *clickhouse-env]
       NUMPROCS: 2
-    command: run worker.export
+    command: run worker export
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -171,7 +172,7 @@ services:
     environment:
       <<: *backend-env
       NUMPROCS: 1
-    command: run worker.annotation
+    command: run worker annotation
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -187,7 +188,7 @@ services:
     environment:
       <<: *backend-env
       NUMPROCS: 1
-    command: run worker.webhooks
+    command: run worker webhooks
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -203,23 +204,7 @@ services:
     environment:
       <<: *backend-env
       NUMPROCS: 1
-    command: run worker.quality_reports
-    volumes:
-      - cvat_data:/home/django/data
-      - cvat_keys:/home/django/keys
-      - cvat_logs:/home/django/logs
-    networks:
-      - cvat
-
-  cvat_worker_analytics_reports:
-    container_name: cvat_worker_analytics_reports
-    image: cvat/server:${CVAT_VERSION:-dev}
-    restart: always
-    depends_on: *backend-deps
-    environment:
-      <<: [*backend-env, *clickhouse-env]
-      NUMPROCS: 2
-    command: run worker.analytics_reports
+    command: run worker quality_reports
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -235,7 +220,7 @@ services:
     environment:
       <<: *backend-env
       NUMPROCS: 2
-    command: run worker.chunks
+    command: run worker chunks
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -251,7 +236,7 @@ services:
     environment:
       <<: *backend-env
       NUMPROCS: 1
-    command: run worker.consensus
+    command: run worker consensus
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -274,7 +259,7 @@ services:
       - cvat
 
   traefik:
-    image: traefik:v2.10
+    image: traefik:v3.3
     container_name: traefik
     restart: always
     ports:
@@ -286,11 +271,19 @@ services:
       DJANGO_LOG_VIEWER_PORT: 3000
 
       TRAEFIK_ACCESSLOG_FORMAT: json
-      # We ought to restrict which fields get logged, so as to avoid redundant information,
-      # but it doesn't work when configuring with environment variables:
-      # <https://github.com/traefik/traefik/issues/9755>.
-      # And we want to use environment variables to allow individual settings to be
-      # overridden by other Compose files.
+      TRAEFIK_ACCESSLOG_FIELDS_DEFAULTMODE: drop
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_ClientHost: keep
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_DownstreamContentSize: keep
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_DownstreamStatus: keep
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_Duration: keep
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_RequestHost: keep
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_RequestMethod: keep
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_RequestPath: keep
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_RequestPort: keep
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_RequestProtocol: keep
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_RouterName: keep
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_StartUTC: keep
+
       TRAEFIK_LOG_FORMAT: json
       TRAEFIK_ENTRYPOINTS_web_ADDRESS: :8080
       TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT: "false"

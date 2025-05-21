@@ -85,9 +85,8 @@ $scroll-breakpoint: 1300px;
 }
 
 @mixin cvat-management-page-header {
-    position: absolute;
+    flex-shrink: 0;
     height: $grid-unit-size * 3;
-    padding: 0 $grid-unit-size * 4;
     margin: $grid-unit-size * 2 0;
 
     h4 {
@@ -101,6 +100,7 @@ $scroll-breakpoint: 1300px;
     flex-direction: column;
     background: white;
     border-radius: $grid-unit-size;
+    padding: 0 $grid-unit-size * 4;
 
     @media screen and (min-width: $scroll-breakpoint) {
         height: 100%;
@@ -120,10 +120,8 @@ $scroll-breakpoint: 1300px;
 @mixin cvat-management-page-tabs {
     overflow: hidden;
     flex-grow: 1;
-    padding: 0 $grid-unit-size * 5 $grid-unit-size * 2 $grid-unit-size * 5;
     margin-left: -$grid-unit-size;
     margin-right: -$grid-unit-size;
-    margin-top: $grid-unit-size * 7;
 
     .ant-table-pagination.ant-pagination {
         margin-bottom: 0;
@@ -133,7 +131,47 @@ $scroll-breakpoint: 1300px;
         margin-inline-end: 0;
     }
 
-    .ant-tabs-content-holder, .ant-tabs-content, .ant-tabs-tabpane {
+    .ant-tabs-content, .ant-tabs-tabpane {
         height: 100%;
+    }
+}
+
+@mixin cvat-table-dynamic-size {
+    display: flex;
+    flex-grow: 1;
+    overflow: hidden;
+
+    .ant-table-wrapper {
+        flex-grow: 1;
+        overflow: hidden;
+
+        .ant-spin-nested-loading {
+            height: 100%;
+            width: 100%;
+
+            .ant-spin-container {
+                display: flex;
+                flex-direction: column;
+                height: 100%;
+
+                &:has(.ant-pagination) {
+                    .ant-table {
+                        flex-grow: 1;
+                        height: calc(100% - $grid-unit-size);
+                    }
+                }
+
+                .ant-table {
+                    height: 100%;
+                    overflow: auto;
+
+                    &:has(.ant-table-placeholder) {
+                        .ant-table-container, .ant-table-content, table {
+                            height: 100%;
+                        }
+                    }
+                }
+            }
+        }
     }
 }

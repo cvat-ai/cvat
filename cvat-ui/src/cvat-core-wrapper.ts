@@ -15,20 +15,20 @@ import {
 } from 'cvat-core/src/labels';
 import {
     SerializedAttribute, SerializedLabel, SerializedAPISchema,
-    OrganizationMembersFilter,
+    OrganizationMembersFilter, AnalyticsEventsFilter,
 } from 'cvat-core/src/server-response-types';
 import { UpdateStatusData } from 'cvat-core/src/core-types';
 import { Job, Task } from 'cvat-core/src/session';
 import Project from 'cvat-core/src/project';
 import QualityReport, { QualitySummary } from 'cvat-core/src/quality-report';
 import QualityConflict, { AnnotationConflict, ConflictSeverity } from 'cvat-core/src/quality-conflict';
-import QualitySettings, { TargetMetric } from 'cvat-core/src/quality-settings';
+import QualitySettings, { TargetMetric, QualitySettingsSaveFields } from 'cvat-core/src/quality-settings';
 import ConsensusSettings from 'cvat-core/src/consensus-settings';
 import { FramesMetaData, FrameData } from 'cvat-core/src/frames';
 import { ServerError, RequestError } from 'cvat-core/src/exceptions';
 import {
     ShapeType, ObjectType, LabelType, ModelKind, ModelProviders,
-    DimensionType, JobType, Source,
+    DimensionType, JobType, Source, MembershipRole,
     JobStage, JobState, RQStatus, StorageLocation,
 } from 'cvat-core/src/enums';
 import { Storage, StorageData } from 'cvat-core/src/storage';
@@ -38,7 +38,6 @@ import User from 'cvat-core/src/user';
 import Organization, { Membership, Invitation } from 'cvat-core/src/organization';
 import AnnotationGuide from 'cvat-core/src/guide';
 import { JobValidationLayout, TaskValidationLayout } from 'cvat-core/src/validation-layout';
-import AnalyticsReport, { AnalyticsEntryViewType, AnalyticsEntry } from 'cvat-core/src/analytics-report';
 import { Dumper } from 'cvat-core/src/annotation-formats';
 import { Event } from 'cvat-core/src/event';
 import { APIWrapperEnterOptions } from 'cvat-core/src/plugins';
@@ -105,9 +104,6 @@ export {
     AnnotationConflict,
     ConflictSeverity,
     FramesMetaData,
-    AnalyticsReport,
-    AnalyticsEntry,
-    AnalyticsEntryViewType,
     ServerError,
     RequestError,
     Event,
@@ -117,6 +113,7 @@ export {
     JobValidationLayout,
     TaskValidationLayout,
     StorageLocation,
+    MembershipRole,
     AboutData,
 };
 
@@ -132,4 +129,6 @@ export type {
     RequestOperation,
     UpdateStatusData,
     OrganizationMembersFilter,
+    QualitySettingsSaveFields,
+    AnalyticsEventsFilter,
 };

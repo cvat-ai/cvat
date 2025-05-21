@@ -446,9 +446,7 @@ jobs:
 
       - name: Install test requirements
         run: |
-          pip3 install --user cvat-sdk/
-          pip3 install --user cvat-cli/
-          pip3 install --user -r tests/python/requirements.txt
+          pip3 install --user cvat-sdk/ cvat-cli/ -r tests/python/requirements.txt
 
       - name: Wait for CVAT to be ready
         run: |
@@ -474,9 +472,7 @@ jobs:
         run: |
           mkdir ${LOGS_DIR}
           kubectl logs $(kubectl get pods -l component=server -o 'jsonpath={.items[0].metadata.name}') >${LOGS_DIR}/cvat_server.log
-          kubectl logs $(kubectl get pods -l component=worker-import -o 'jsonpath={.items[0].metadata.name}') >${LOGS_DIR}/cvat_worker_import.log
-          kubectl logs $(kubectl get pods -l component=worker-export -o 'jsonpath={.items[0].metadata.name}') >${LOGS_DIR}/cvat_worker_export.log
-          kubectl logs $(kubectl get pods -l component=worker-webhooks -o 'jsonpath={.items[0].metadata.name}') >${LOGS_DIR}/cvat_worker_webhooks.log
+          kubectl logs $(kubectl get pods -l component=worker-utils -o 'jsonpath={.items[0].metadata.name}') >${LOGS_DIR}/cvat_workers.log
           kubectl logs $(kubectl get pods -l app.kubernetes.io/name=traefik -o 'jsonpath={.items[0].metadata.name}') >${LOGS_DIR}/traefik.log
 
       - name: Uploading "cvat" container logs as an artifact

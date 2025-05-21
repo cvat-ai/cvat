@@ -11,7 +11,7 @@ from contextlib import contextmanager
 from io import BytesIO
 from pathlib import Path
 from typing import Any, Callable, TypeVar
-from urllib.parse import quote
+from urllib.parse import urlencode
 
 import av
 import django_rq
@@ -128,9 +128,9 @@ class ApiTestBase(APITestCase):
         super().setUp()
         self.client = self.client_class()
 
-    def _get_request(self, path: str, user: str, *, data: dict[str, Any] | None = None) -> Response:
+    def _get_request(self, path: str, user: str, *, query_params: dict[str, Any] | None = None) -> Response:
         with ForceLogin(user, self.client):
-            response = self.client.get(path, data=data)
+            response = self.client.get(path, data=query_params)
         return response
 
     def _delete_request(self, path: str, user: str):
@@ -138,14 +138,39 @@ class ApiTestBase(APITestCase):
             response = self.client.delete(path)
         return response
 
-    def _post_request(self, path: str, user: str, *, data: dict[str, Any] | None = None):
+    def _post_request(
+        self,
+        path: str,
+        user: str,
+        *,
+        format: str = "json",  # pylint: disable=redefined-builtin
+        query_params: dict[str, Any] = None,
+        data: dict[str, Any] | None = None
+    ):
+        if query_params:
+            # Note: once we upgrade to Django 5.1+, this should be changed to pass query_params
+            # directly to self.client.
+            assert "?" not in path
+            path += "?" + urlencode(query_params)
         with ForceLogin(user, self.client):
-            response = self.client.post(path, data=data)
+            response = self.client.post(path, data=data, format=format)
         return response
 
-    def _put_request(self, url: str, user: str, *, data: dict[str, Any] | None = None):
+    def _patch_request(self, path: str, user: str, *, data: dict[str, Any] | None = None):
         with ForceLogin(user, self.client):
-            response = self.client.put(url, data=data)
+            response = self.client.patch(path, data=data, format="json")
+        return response
+
+    def _put_request(
+        self,
+        url: str,
+        user: str,
+        *,
+        format: str = "json",  # pylint: disable=redefined-builtin
+        data: dict[str, Any] | None = None,
+    ):
+        with ForceLogin(user, self.client):
+            response = self.client.put(url, data=data, format=format)
         return response
 
     def _check_request_status(
@@ -164,9 +189,84 @@ class ApiTestBase(APITestCase):
         assert request_status == "finished", f"The last request status was {request_status}"
         return response
 
-    def _query_params_to_str(self, **params: dict[str, Any]) -> str:
-        return "?" + "&".join([f"{k}={quote(str(v))}"for k, v in params.items()])
+class ImportApiTestBase(ApiTestBase):
+    def _import(
+        self,
+        user: str,
+        api_path: str,
+        file_content: BytesIO,
+        *,
+        through_field: str,
+        query_params: dict[str, Any] | None = None,
+        expected_4xx_status_code: int | None = None,
+    ):
+        response = self._post_request(
+            api_path, user,
+            data={through_field: file_content},
+            format="multipart",
+            query_params=query_params,
+        )
+        self.assertEqual(response.status_code, expected_4xx_status_code or status.HTTP_202_ACCEPTED)
 
+        if not expected_4xx_status_code:
+            rq_id = response.json().get("rq_id")
+            assert rq_id, "The rq_id param was not found in the server response"
+            response = self._check_request_status(user, rq_id)
+
+        return response
+
+    def _import_project_dataset(
+        self, user: str, projetc_id: int, file_content: BytesIO, query_params: str = None,
+        expected_4xx_status_code: int | None = None
+    ):
+        return self._import(
+            user, f"/api/projects/{projetc_id}/dataset", file_content, through_field="dataset_file",
+            query_params=query_params, expected_4xx_status_code=expected_4xx_status_code
+        )
+
+    def _import_task_annotations(
+        self, user: str, task_id: int, file_content: BytesIO, query_params: str = None,
+        expected_4xx_status_code: int | None = None
+    ):
+        return self._import(
+            user, f"/api/tasks/{task_id}/annotations", file_content, through_field="annotation_file",
+            query_params=query_params, expected_4xx_status_code=expected_4xx_status_code
+        )
+
+    def _import_job_annotations(
+        self, user: str, job_id: int, file_content: BytesIO, query_params: str = None,
+        expected_4xx_status_code: int | None = None
+    ):
+        return self._import(
+            user, f"/api/jobs/{job_id}/annotations", file_content, through_field="annotation_file",
+            query_params=query_params, expected_4xx_status_code=expected_4xx_status_code
+        )
+
+    def _import_project_backup(
+        self, user: str, file_content: BytesIO, query_params: str = None,
+        expected_4xx_status_code: int | None = None
+    ) -> int | None:
+        response = self._import(
+            user, "/api/projects/backup", file_content, through_field="project_file",
+            query_params=query_params, expected_4xx_status_code=expected_4xx_status_code
+        )
+        if expected_4xx_status_code:
+            return None
+
+        return response.json()["result_id"]
+
+    def _import_task_backup(
+        self, user: str, file_content: BytesIO, query_params: str = None,
+        expected_4xx_status_code: int | None = None
+    ) -> int | None:
+        response = self._import(
+            user, "/api/tasks/backup", file_content, through_field="task_file",
+            query_params=query_params, expected_4xx_status_code=expected_4xx_status_code
+        )
+        if expected_4xx_status_code:
+            return None
+
+        return response.json()["result_id"]
 
 class ExportApiTestBase(ApiTestBase):
     def _export(
@@ -179,16 +279,13 @@ class ExportApiTestBase(ApiTestBase):
         file_path: str | None = None,
         expected_4xx_status_code: int | None = None,
     ):
-        if query_params:
-            api_path += self._query_params_to_str(**query_params)
-
-        response = self._post_request(api_path, user)
+        response = self._post_request(api_path, user, query_params=query_params)
         self.assertEqual(response.status_code, expected_4xx_status_code or status.HTTP_202_ACCEPTED)
 
         rq_id = response.json().get("rq_id")
         if expected_4xx_status_code:
             # export task by admin to get real rq_id
-            response = self._post_request(api_path, self.admin)
+            response = self._post_request(api_path, self.admin, query_params=query_params)
             self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
             rq_id = response.json().get("rq_id")
 

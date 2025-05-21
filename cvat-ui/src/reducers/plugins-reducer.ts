@@ -31,8 +31,16 @@ const defaultState: PluginsState = {
             },
         },
         qualityControlPage: {
-            overviewTab: [],
-            allocationTable: [],
+            task: {
+                overviewTab: [],
+                allocationTable: [],
+            },
+            project: {
+                overviewTab: [],
+            },
+        },
+        analyticsReportPage: {
+            content: [],
         },
     },
     components: {
@@ -60,11 +68,12 @@ const defaultState: PluginsState = {
             },
         },
         projectActions: {
-            // not used
             items: [],
         },
         taskActions: {
-            // not used
+            items: [],
+        },
+        jobActions: {
             items: [],
         },
         taskItem: {

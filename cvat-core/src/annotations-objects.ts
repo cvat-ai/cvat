@@ -521,7 +521,7 @@ export class Shape extends Drawn {
     ) {
         super(data, clientID, color, injection);
         this.points = data.points;
-        this.rotation = data.rotation || 0;
+        this.rotation = +(data.rotation ?? 0).toFixed(5);
         this.occluded = data.occluded || false;
         this.outside = data.outside || false;
         this.zOrder = data.z_order;

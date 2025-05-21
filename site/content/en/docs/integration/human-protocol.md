@@ -17,7 +17,7 @@ for your projects, check out these articles:
 <!--lint disable maximum-line-length-->
 
 - [CVAT.ai & HUMAN Protocol: A New Dawn in Visual Data Annotation](https://www.cvat.ai/post/cvat-ai-human-protocol-a-new-dawn-in-visual-data-annotation)
-- [Mastering Image Annotation Crowdsourcing for Computer Vision with CVAT.ai and HUMAN Protocol](https://www.cvat.ai/post/mastering-image-annotation-crowdsourcing-for-computer-vision-with-cvat-ai-and-human-protocol)
+- [Mastering Image Annotation Crowdsourcing for Computer Vision with CVAT.ai and HUMAN Protocol](https://www.cvat.ai/post/crowdsourcing-annotation-cvat-human-protocol)
 - [Crowdsourcing Annotation with CVAT and Human Protocol: Real Data Experiment Showed Amazing Results](https://www.cvat.ai/post/crowdsource-annotations-with-cvat-and-human-protocol)
 <!--lint enable maximum-line-length-->
 

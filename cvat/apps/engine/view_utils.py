@@ -4,17 +4,22 @@
 
 # NOTE: importing in the utils.py header leads to circular importing
 
-from typing import Optional
+import textwrap
+from datetime import datetime
+from typing import Any, Optional
 
-from django.db.models.query import QuerySet
+from django.db.models import Manager, QuerySet
+from django.http import HttpResponseGone
 from django.http.response import HttpResponse
 from drf_spectacular.utils import extend_schema
 from rest_framework.decorators import action
+from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from rest_framework.serializers import Serializer
 from rest_framework.viewsets import GenericViewSet
 
 from cvat.apps.engine.mixins import UploadMixin
+from cvat.apps.engine.model_utils import _ModelT
 from cvat.apps.engine.parsers import TusUploadParser
 from cvat.apps.engine.types import ExtendedRequest
 
@@ -92,3 +97,44 @@ def tus_chunk_action(*, detail: bool, suffix_base: str):
         return f
 
     return decorator
+
+def get_410_response_for_export_api(path: str) -> HttpResponseGone:
+    return HttpResponseGone(textwrap.dedent(f"""\
+        This endpoint is no longer supported.
+        To initiate the export process, use POST {path}.
+        To check the process status, use GET /api/requests/rq_id,
+        where rq_id is obtained from the response of the previous request.
+        To download the prepared file, use the result_url obtained from the response of the previous request.
+    """))
+
+def get_410_response_when_checking_process_status(process_type: str, /) -> HttpResponseGone:
+    return HttpResponseGone(textwrap.dedent(f"""\
+        This endpoint no longer supports checking the status of the {process_type} process.
+        The common requests API should be used instead: GET /api/requests/rq_id,
+        where rq_id is obtained from the response of the initializing request.
+    """))
+
+def deprecate_response(response: Response, *, deprecation_date: datetime) -> None:
+    # https://www.rfc-editor.org/rfc/rfc9745
+    deprecation_timestamp = int(deprecation_date.timestamp())
+    response.headers["Deprecation"] = f"@{deprecation_timestamp}"
+
+def get_or_404(
+    queryset: type[_ModelT] | QuerySet[_ModelT] | Manager[_ModelT],
+    pk: Any,
+) -> _ModelT:
+    """
+    A simpler version of django.shortcuts.get_object_or_404()
+    Produces a better error message.
+    """
+
+    if hasattr(queryset, "_default_manager"):
+        queryset = queryset._default_manager.all()
+
+    model_type = queryset.model
+
+    try:
+        return queryset.get(pk=pk)
+    except model_type.DoesNotExist as ex:
+        readable_model_name = queryset.model._meta.verbose_name.capitalize()
+        raise NotFound(f"{readable_model_name} {pk} does not exist") from ex

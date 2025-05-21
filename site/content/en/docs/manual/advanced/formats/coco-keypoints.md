@@ -13,8 +13,8 @@ This specialized format is used with a variety of state-of-the-art models focuse
 For more information, see:
 
 - [COCO Keypoint site](https://cocodataset.org/#keypoints-2020)
-- [Format specification](https://openvinotoolkit.github.io/datumaro/latest/docs/data-formats/formats/coco.html)
-- [Example of the archive](https://openvinotoolkit.github.io/datumaro/latest/docs/data-formats/formats/coco.html#import-coco-dataset)
+- [Format specification](https://open-edge-platform.github.io/datumaro/latest/docs/data-formats/formats/coco.html)
+- [Example of the archive](https://open-edge-platform.github.io/datumaro/latest/docs/data-formats/formats/coco.html#import-coco-dataset)
 
 ## COCO Keypoints export
 
@@ -47,14 +47,14 @@ archive.zip/
 ## COCO import
 
 Uploaded file: a single unpacked `*.json` or a zip archive with the structure described
-[here](https://openvinotoolkit.github.io/datumaro/latest/docs/data-formats/formats/coco.html#import-coco-dataset)
+[here](https://open-edge-platform.github.io/datumaro/latest/docs/data-formats/formats/coco.html#import-coco-dataset)
 (without images).
 
 - supported annotations: Skeletons
 
 `person_keypoints`,
 
-Support for COCO tasks via Datumaro is described [here](https://openvinotoolkit.github.io/datumaro/latest/docs/data-formats/formats/coco.html#export-to-other-formats)
+Support for COCO tasks via Datumaro is described [here](https://open-edge-platform.github.io/datumaro/latest/docs/data-formats/formats/coco.html#export-to-other-formats)
 For example, [support for COCO keypoints over Datumaro](https://github.com/openvinotoolkit/cvat/issues/2910#issuecomment-726077582):
 
 1. Install [Datumaro](https://github.com/openvinotoolkit/datumaro)

@@ -24,6 +24,10 @@ from cvat.apps.dataset_manager.bindings import (
     find_dataset_root,
 )
 from cvat.apps.dataset_manager.task import TaskAnnotation
+from cvat.apps.dataset_manager.tests.utils import (
+    ensure_extractors_efficiency,
+    ensure_streaming_importers,
+)
 from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.apps.engine.models import Task
 from cvat.apps.engine.tests.utils import (
@@ -94,6 +98,7 @@ class _DbTestBase(ApiTestBase):
         return task
 
 
+@ensure_extractors_efficiency
 class TaskExportTest(_DbTestBase):
     def _generate_custom_annotations(self, annotations, task):
         self._put_api_v2_task_id_annotations(task["id"], annotations)
@@ -348,18 +353,18 @@ class TaskExportTest(_DbTestBase):
                 self.assertTrue(len(f.read()) != 0)
 
         for f in dm.views.get_export_formats():
-            if not f.ENABLED:
-                self.skipTest("Format is disabled")
-
             format_name = f.DISPLAY_NAME
-            if format_name == "VGGFace2 1.0":
-                self.skipTest("Format is disabled")
 
+            images = self._generate_task_images(3)
+            task = self._generate_task(images)
+            self._generate_annotations(task)
             for save_images in { True, False }:
-                images = self._generate_task_images(3)
-                task = self._generate_task(images)
-                self._generate_annotations(task)
                 with self.subTest(format=format_name, save_images=save_images):
+                    if not f.ENABLED:
+                        self.skipTest("Format is disabled")
+                    if format_name == "VGGFace2 1.0":
+                        self.skipTest("Format is disabled")
+
                     self._test_export(check, task,
                         format_name, save_images=save_images)
 
@@ -684,6 +689,7 @@ class FrameMatchingTest(_DbTestBase):
                 self.assertEqual(expected, root)
 
 
+@ensure_streaming_importers
 class TaskAnnotationsImportTest(_DbTestBase):
     def _generate_custom_annotations(self, annotations, task):
         self._put_api_v2_task_id_annotations(task["id"], annotations)

@@ -114,6 +114,7 @@ const HEALTH_CHECK_PERIOD = 3000; // ms
 const HEALTH_CHECK_REQUEST_TIMEOUT = 15000; // ms
 
 const CONTROLS_LOGS_INTERVAL = 90000; // 1.5 min in ms
+const ACTIVITY_EVENTS_INTERVAL_MS = 60000;
 
 const RESET_NOTIFICATIONS_PATHS = {
     from: [
@@ -146,6 +147,12 @@ const PAID_PLACEHOLDER_CONFIG = {
         'The Quality Control feature enables effortless evaluation of annotation quality by creating' +
         ' a Ground Truth job that works as benchmark. CVAT automatically compares all task-related jobs' +
         ' to this benchmark, calculating annotation precision to ensure high-quality results.',
+        analyticsReport:
+        'The Analytics Report feature provides comprehensive insights into your resource, including key metrics like' +
+        ' object statistics, working time, and annotation speed. It allows you to filter data by time period,' +
+        ' subresource, or user, offering a clear view of performance trends. Additionally, it presents historical' +
+        ' job data within the resource, along with detailed charts to visualize the information.' +
+        ' This feature is perfect for those seeking in-depth analysis and better resource management.',
     },
 };
 
@@ -182,6 +189,7 @@ export default {
     CANVAS_WORKSPACE_PADDING,
     CANVAS_WORKSPACE_DEFAULT_CONTEXT_HEIGHT,
     CONTROLS_LOGS_INTERVAL,
+    ACTIVITY_EVENTS_INTERVAL_MS,
     RESET_NOTIFICATIONS_PATHS,
     BUCKET_CONTENT_KEY,
     NUMERIC_VALUE_CLAMP_THRESHOLD,

@@ -19,8 +19,12 @@ class Undefined:
 
 MaybeUndefined = Union[_T, Undefined]
 """
-The reverse side of one-to-one relationship.
-May be undefined in the object, should be accessed via getattr().
+Can be used to annotate dynamic class members that may be undefined in the object.
+Such fields should typically be accessed via hasattr() and getattr().
+
+Common use cases:
+- the reverse side of one-to-one relationship
+- extra annotations from a model queryset
 """
 
 
@@ -62,6 +66,11 @@ def bulk_create(
 def is_prefetched(queryset: models.QuerySet, field: str) -> bool:
     "Checks if a field is being prefetched in the queryset"
     return field in queryset._prefetch_related_lookups
+
+
+def is_field_cached(instance: models.Model, field: str) -> bool:
+    "Checks if a field is cached in the model instance"
+    return field in instance._state.fields_cache
 
 
 _QuerysetT = TypeVar("_QuerysetT", bound=models.QuerySet)
