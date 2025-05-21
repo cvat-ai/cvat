@@ -197,7 +197,8 @@ postgresql:
   secret:
     password: cvat_postgresql
 ```
-In example above corresponding secret will be created automatically, but if you want to use existing secret change `secret.create` to `false` and set `name` of existing secret:
+In example above corresponding secret will be created automatically,
+but if you want to use existing secret change `secret.create` to `false` and set `name` of existing secret:
 ```yml
 postgresql:
   enabled: false

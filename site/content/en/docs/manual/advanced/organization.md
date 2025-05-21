@@ -52,7 +52,7 @@ To create an organization, do the following:
 | Field            | Description                                                         |
 | ---------------- | ------------------------------------------------------------------- |
 | **Short name**   | A name of the organization that will be displayed in the CVAT menu. |
-| **Full Name**    | Optional. Full name of the organization.                            |
+| **Full name**    | Optional. Full name of the organization.                            |
 | **Description**  | Optional. Description of organization.                              |
 | **Email**        | Optional. Your email.                                               |
 | **Phone number** | Optional. Your phone number.                                        |
@@ -145,7 +145,7 @@ To invite members to **Organization** do the following:
 
    ![](/images/org_invite_form.png)
 
-3. Click **Ok**.
+3. Click **OK**.
 4. The person being invited will receive an email with the link.
 
    ![](/images/invitation_to_org.png)

@@ -7,7 +7,7 @@ from collections.abc import Iterable
 from copy import deepcopy
 from functools import partial
 from http import HTTPStatus
-from itertools import groupby
+from itertools import groupby, product
 from typing import Any, Callable, Optional
 
 import pytest
@@ -18,7 +18,13 @@ from deepdiff import DeepDiff
 
 from shared.utils.config import make_api_client
 
-from .utils import CollectionSimpleFilterTestBase, parse_frame_step
+from .utils import (
+    CollectionSimpleFilterTestBase,
+    invite_user_to_org,
+    parse_frame_step,
+    register_new_user,
+    wait_background_request,
+)
 
 
 class _PermissionTestBase:
@@ -31,14 +37,14 @@ class _PermissionTestBase:
             assert response.status == HTTPStatus.ACCEPTED
             rq_id = json.loads(response.data)["rq_id"]
 
-            while True:
-                (_, response) = api_client.quality_api.create_report(
-                    rq_id=rq_id, _parse_response=False
-                )
-                assert response.status in [HTTPStatus.CREATED, HTTPStatus.ACCEPTED]
+            background_request, _ = wait_background_request(api_client, rq_id)
+            assert (
+                background_request.status.value
+                == models.RequestStatus.allowed_values[("value",)]["FINISHED"]
+            )
+            report_id = background_request.result_id
 
-                if response.status == HTTPStatus.CREATED:
-                    break
+            _, response = api_client.quality_api.retrieve_report(report_id, _parse_response=False)
 
             return json.loads(response.data)
 
@@ -59,7 +65,7 @@ class _PermissionTestBase:
             (labels, _) = api_client.labels_api.list(task_id=task_id)
             api_client.jobs_api.update_annotations(
                 job.id,
-                job_annotations_update_request=dict(
+                labeled_data_request=dict(
                     shapes=[
                         dict(
                             frame=start_frame,
@@ -169,6 +175,7 @@ class _PermissionTestBase:
             ("worker", False, False),
         ],
     )
+    _default_org_roles = ("owner", "maintainer", "supervisor", "worker")
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -581,28 +588,63 @@ class TestPostQualityReports(_PermissionTestBase):
 
             return rq_id
 
-    # only rq job owner or admin now has the right to check status of report creation
-    def _test_check_status_of_report_creation_by_non_rq_job_owner(
+    # users with task:view rights can check status of report creation
+    def _test_check_status_of_report_creation(
         self,
         rq_id: str,
         *,
         task_staff: str,
         another_user: str,
+        another_user_status: int = HTTPStatus.FORBIDDEN,
     ):
         with make_api_client(another_user) as api_client:
-            (_, response) = api_client.quality_api.create_report(
-                rq_id=rq_id, _parse_response=False, _check_status=False
+            (_, response) = api_client.requests_api.retrieve(
+                rq_id, _parse_response=False, _check_status=False
             )
-            assert response.status == HTTPStatus.NOT_FOUND
-            assert json.loads(response.data)["detail"] == "Unknown request id"
+            assert response.status == another_user_status
 
         with make_api_client(task_staff) as api_client:
-            (_, response) = api_client.quality_api.create_report(
-                rq_id=rq_id, _parse_response=False, _check_status=False
-            )
-            assert response.status in {HTTPStatus.ACCEPTED, HTTPStatus.CREATED}
+            wait_background_request(api_client, rq_id)
 
-    def test_non_rq_job_owner_cannot_check_status_of_report_creation_in_sandbox(
+    @pytest.mark.parametrize(
+        "role",
+        # owner and maintainer have rights even without being assigned to a task
+        ("supervisor", "worker"),
+    )
+    def test_task_assignee_can_check_status_of_report_creation_in_org(
+        self,
+        find_org_task_without_gt: Callable[[bool, str], tuple[dict[str, Any], dict[str, Any]]],
+        role: str,
+        admin_user: str,
+    ):
+        task, another_user = find_org_task_without_gt(is_staff=False, user_org_role=role)
+        self.create_gt_job(admin_user, task["id"])
+
+        task_owner = task["owner"]
+
+        rq_id = self._initialize_report_creation(task_id=task["id"], user=task_owner["username"])
+        self._test_check_status_of_report_creation(
+            rq_id,
+            task_staff=task_owner["username"],
+            another_user=another_user["username"],
+        )
+
+        with make_api_client(task_owner["username"]) as api_client:
+            api_client.tasks_api.partial_update(
+                task["id"],
+                patched_task_write_request=models.PatchedTaskWriteRequest(
+                    assignee_id=another_user["id"]
+                ),
+            )
+
+        self._test_check_status_of_report_creation(
+            rq_id,
+            task_staff=task_owner["username"],
+            another_user=another_user["username"],
+            another_user_status=HTTPStatus.OK,
+        )
+
+    def test_user_without_rights_cannot_check_status_of_report_creation_in_sandbox(
         self,
         find_sandbox_task_without_gt: Callable[[bool], tuple[dict[str, Any], dict[str, Any]]],
         admin_user: str,
@@ -619,36 +661,45 @@ class TestPostQualityReports(_PermissionTestBase):
                 u["id"] != task_staff["id"]
                 and not u["is_superuser"]
                 and u["id"] != task["owner"]["id"]
+                and u["id"] != (task["assignee"] or {}).get("id")
             )
         )
         rq_id = self._initialize_report_creation(task["id"], task_staff["username"])
-        self._test_check_status_of_report_creation_by_non_rq_job_owner(
+        self._test_check_status_of_report_creation(
             rq_id, task_staff=task_staff["username"], another_user=another_user["username"]
         )
 
-    @pytest.mark.parametrize("role", ("owner", "maintainer", "supervisor", "worker"))
-    def test_non_rq_job_owner_cannot_check_status_of_report_creation_in_org(
+    @pytest.mark.parametrize(
+        "same_org, role",
+        [
+            pair
+            for pair in product([True, False], _PermissionTestBase._default_org_roles)
+            if not (pair[0] and pair[1] in ["owner", "maintainer"])
+        ],
+    )
+    def test_user_without_rights_cannot_check_status_of_report_creation_in_org(
         self,
+        same_org: bool,
         role: str,
         admin_user: str,
         find_org_task_without_gt: Callable[[bool, str], tuple[dict[str, Any], dict[str, Any]]],
-        find_users: Callable[..., list[dict[str, Any]]],
+        organizations,
     ):
         task, task_staff = find_org_task_without_gt(is_staff=True, user_org_role="supervisor")
 
         self.create_gt_job(admin_user, task["id"])
 
-        another_user = next(
-            u
-            for u in find_users(role=role, org=task["organization"])
-            if (
-                u["id"] != task_staff["id"]
-                and not u["is_superuser"]
-                and u["id"] != task["owner"]["id"]
-            )
+        # create another user that passes the requirements
+        another_user = register_new_user(f"{same_org}{role}")
+        org_id = (
+            task["organization"]
+            if same_org
+            else next(o for o in organizations if o["id"] != task["organization"])["id"]
         )
+        invite_user_to_org(another_user["email"], org_id, role)
+
         rq_id = self._initialize_report_creation(task["id"], task_staff["username"])
-        self._test_check_status_of_report_creation_by_non_rq_job_owner(
+        self._test_check_status_of_report_creation(
             rq_id, task_staff=task_staff["username"], another_user=another_user["username"]
         )
 
@@ -682,8 +733,7 @@ class TestPostQualityReports(_PermissionTestBase):
         rq_id = self._initialize_report_creation(task["id"], task_staff["username"])
 
         with make_api_client(admin["username"]) as api_client:
-            (_, response) = api_client.quality_api.create_report(rq_id=rq_id, _parse_response=False)
-            assert response.status in {HTTPStatus.ACCEPTED, HTTPStatus.CREATED}
+            wait_background_request(api_client, rq_id)
 
 
 class TestSimpleQualityReportsFilters(CollectionSimpleFilterTestBase):
@@ -1029,7 +1079,15 @@ class TestPatchSettings(_PermissionTestBase):
             assert response.status == HTTPStatus.OK
 
         if expected_data is not None:
-            assert DeepDiff(expected_data, json.loads(response.data), ignore_order=True) == {}
+            assert (
+                DeepDiff(
+                    expected_data,
+                    json.loads(response.data),
+                    exclude_paths=["root['updated_date']"],
+                    ignore_order=True,
+                )
+                == {}
+            )
 
         return response
 
@@ -1129,7 +1187,13 @@ class TestQualityReportMetrics(_PermissionTestBase):
 
     def test_unmodified_task_produces_the_same_metrics(self, admin_user, quality_reports):
         old_report = max(
-            (r for r in quality_reports if r["task_id"] == self.demo_task_id), key=lambda r: r["id"]
+            (
+                r
+                for r in quality_reports
+                if r["task_id"] == self.demo_task_id
+                if r["target"] == "task"
+            ),
+            key=lambda r: r["id"],
         )
         task_id = old_report["task_id"]
 
@@ -1153,7 +1217,11 @@ class TestQualityReportMetrics(_PermissionTestBase):
                 new_report_data,
                 old_report_data,
                 ignore_order=True,
-                exclude_paths=["root['created_date']", "root['id']"],
+                exclude_paths=[
+                    "root['created_date']",
+                    "root['id']",
+                    "root['parameters']['included_annotation_types']",
+                ],
             )
             == {}
         )
@@ -1234,7 +1302,7 @@ class TestQualityReportMetrics(_PermissionTestBase):
         elif parameter == "point_size_base":
             settings[parameter] = next(
                 v
-                for v in models.PointSizeBaseEnum.allowed_values[("value",)].values()
+                for v in models.QualityPointSizeBase.allowed_values[("value",)].values()
                 if v != settings[parameter]
             )
         else:
@@ -1308,7 +1376,7 @@ class TestQualityReportMetrics(_PermissionTestBase):
             new_label_id = new_label_obj.results[0].id
             api_client.tasks_api.update_annotations(
                 task_id,
-                task_annotations_update_request={
+                labeled_data_request={
                     "shapes": [
                         models.LabeledShapeRequest(
                             type="rectangle",
@@ -1518,12 +1586,10 @@ class TestQualityReportMetrics(_PermissionTestBase):
                 ]
             }
 
-            api_client.jobs_api.update_annotations(
-                gt_job.id, job_annotations_update_request=gt_annotations
-            )
+            api_client.jobs_api.update_annotations(gt_job.id, labeled_data_request=gt_annotations)
 
             api_client.tasks_api.update_annotations(
-                task_id, task_annotations_update_request=normal_annotations
+                task_id, labeled_data_request=normal_annotations
             )
 
             api_client.jobs_api.partial_update(

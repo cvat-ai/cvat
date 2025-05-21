@@ -13,7 +13,7 @@ polygonal image annotations.
 For more information, see:
 
 - [COCO Object Detection site](http://cocodataset.org/#format-data)
-- [Format specification](https://openvinotoolkit.github.io/datumaro/stable/docs/data-formats/formats/coco.html)
+- [Format specification](https://open-edge-platform.github.io/datumaro/stable/docs/data-formats/formats/coco.html)
 - [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/coco_dataset)
 
 ## COCO export
@@ -58,15 +58,17 @@ such as `instances`, `panoptic`, `image_info`, `labels`, `captions`, or `stuff`.
 ## COCO import
 
 Upload format: a single unpacked `*.json` or a zip archive with the structure described above or
-[here](https://openvinotoolkit.github.io/datumaro/latest/docs/data-formats/formats/coco.html#import-coco-dataset)
+[here](https://open-edge-platform.github.io/datumaro/latest/docs/data-formats/formats/coco.html#import-coco-dataset)
 (without images).
+> Note, that even though `licenses` and `info` fields are required according to format specifications,
+> CVAT does not require them to import annotations.
 
 - supported annotations: Polygons, Rectangles (if the `segmentation` field is empty)
 - supported tasks: `instances`, `person_keypoints` (only segmentations will be imported), `panoptic`
 
 ## How to create a task from MS COCO dataset
 
-1. Download the [MS COCO dataset](https://openvinotoolkit.github.io/datumaro/latest/docs/data-formats/formats/coco.html#import-coco-dataset).
+1. Download the [MS COCO dataset](https://open-edge-platform.github.io/datumaro/latest/docs/data-formats/formats/coco.html#import-coco-dataset).
 
    For example `val images` and `instances` annotations
 
@@ -77,7 +79,7 @@ Upload format: a single unpacked `*.json` or a zip archive with the structure de
    ```
 
 3. Select `val2017.zip` as data
-   (See {{< ilink "/docs/manual/basics/create_an_annotation_task" "Creating an annotation task" >}}
+   (See {{< ilink "/docs/manual/basics/create-annotation-task" "Creating an annotation task" >}}
    guide for details)
 
 4. Unpack `annotations_trainval2017.zip`

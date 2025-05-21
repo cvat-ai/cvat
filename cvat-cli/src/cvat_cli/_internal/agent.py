@@ -13,7 +13,7 @@ import secrets
 import shutil
 import tempfile
 import threading
-from collections.abc import Iterator
+from collections.abc import Generator, Iterator, Sequence
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional, Union
@@ -28,6 +28,7 @@ from cvat_sdk.auto_annotation.driver import (
     _DetectionFunctionContextImpl,
     _SpecNameMapping,
 )
+from cvat_sdk.datasets.caching import make_cache_manager
 from cvat_sdk.exceptions import ApiException
 
 from .common import CriticalError, FunctionLoader
@@ -38,6 +39,9 @@ if TYPE_CHECKING:
 FUNCTION_PROVIDER_NATIVE = "native"
 FUNCTION_KIND_DETECTOR = "detector"
 REQUEST_CATEGORY_BATCH = "batch"
+REQUEST_CATEGORY_INTERACTIVE = "interactive"
+
+REQUEST_CATEGORIES_WITH_DECREASING_PRIORITY = (REQUEST_CATEGORY_INTERACTIVE, REQUEST_CATEGORY_BATCH)
 
 _POLLING_INTERVAL_MEAN_FREQUENT = timedelta(seconds=60)
 _POLLING_INTERVAL_MEAN_RARE = timedelta(minutes=10)
@@ -108,6 +112,73 @@ class _NewReconnectionDelay:
     delay: timedelta
 
 
+class _TaskCacheLimiter:
+    """
+    This class deletes least-recently used tasks from the dataset cache,
+    so that at any time the cache contains at most _MAX_TASKS_WITH_CHUNKS
+    tasks with downloaded chunks, and at most _MAX_TASKS_WITHOUT_CHUNKS without.
+
+    This helps manage disk usage, since agents may run indefinitely, and
+    we don't want the dataset cache to keep growing.
+    """
+
+    _MAX_TASKS_WITH_CHUNKS = 1
+    _MAX_TASKS_WITHOUT_CHUNKS = 10
+
+    def __init__(self, client: Client) -> None:
+        self._client = client
+        self._cache_manager = make_cache_manager(client, cvatds.UpdatePolicy.IF_MISSING_OR_STALE)
+
+        self._cached_with_chunks_task_ids = []
+        self._cached_without_chunks_task_ids = []
+
+        self._task_ids_in_use = set()
+
+    @contextlib.contextmanager
+    def using_cache_for_task(
+        self, task_id: int, *, with_chunks: bool
+    ) -> Generator[None, None, None]:
+        if task_id in self._task_ids_in_use:
+            # If with_chunks is True, we would have to ensure that task_id is returned to the
+            # "with chunks" list after it leaves _task_ids_in_use, regardless of the value of
+            # with_chunks in the call that initially put it in. That would be tricky to implement,
+            # and we don't have a use case for it, so just ban it.
+            assert not with_chunks
+            yield
+            return
+
+        if task_id in self._cached_with_chunks_task_ids:
+            # If the task already had cached chunks, we have to return it back to
+            # _cached_with_chunks_task_ids in the end.
+            with_chunks = True
+
+            self._cached_with_chunks_task_ids.remove(task_id)
+        elif task_id in self._cached_without_chunks_task_ids:
+            self._cached_without_chunks_task_ids.remove(task_id)
+
+        self._task_ids_in_use.add(task_id)
+
+        if with_chunks:
+            cached_task_ids = self._cached_with_chunks_task_ids
+            max_cached_tasks = self._MAX_TASKS_WITH_CHUNKS
+        else:
+            cached_task_ids = self._cached_without_chunks_task_ids
+            max_cached_tasks = self._MAX_TASKS_WITHOUT_CHUNKS
+
+        if len(cached_task_ids) + len(self._task_ids_in_use) > max_cached_tasks:
+            self._delete_task_cache(cached_task_ids.pop(0))
+
+        try:
+            yield
+        finally:
+            self._task_ids_in_use.remove(task_id)
+            cached_task_ids.append(task_id)
+
+    def _delete_task_cache(self, task_id: int) -> None:
+        self._client.logger.info("Deleting task %d from the cache to make room...", task_id)
+        shutil.rmtree(self._cache_manager.task_dir(task_id), ignore_errors=True)
+
+
 def _parse_event_stream(
     stream: SupportsReadline[bytes],
 ) -> Iterator[Union[_Event, _NewReconnectionDelay]]:
@@ -152,6 +223,10 @@ def _parse_event_stream(
                 yield _NewReconnectionDelay(timedelta(milliseconds=int(field_value)))
 
 
+class _BadArError(Exception):
+    pass
+
+
 class _Agent:
     def __init__(self, client: Client, executor: _RecoverableExecutor, function_id: int):
         self._rng = random.Random()  # nosec
@@ -176,14 +251,16 @@ class _Agent:
         self._agent_id = secrets.token_hex(16)
         self._client.logger.info("Agent starting with ID %r", self._agent_id)
 
-        self._cached_task_id = None
+        self._task_cache_limiter = _TaskCacheLimiter(client)
 
         self._queue_watch_response = None
         self._queue_watch_response_lock = threading.Lock()
         self._queue_watcher_should_stop = threading.Event()
 
         self._potential_work_condition = threading.Condition(threading.Lock())
-        self._batch_request_might_be_available = False
+        self._potential_work_per_category = {
+            category: True for category in REQUEST_CATEGORIES_WITH_DECREASING_PRIORITY
+        }
 
         self._polling_interval = _POLLING_INTERVAL_MEAN_FREQUENT
 
@@ -276,12 +353,17 @@ class _Agent:
         timeout_multiplier = self._rng.uniform(1 - _JITTER_AMOUNT, 1 + _JITTER_AMOUNT)
 
         with self._potential_work_condition:
-            self._potential_work_condition.wait_for(
-                lambda: self._batch_request_might_be_available,
+            wait_succeeded = self._potential_work_condition.wait_for(
+                lambda: any(self._potential_work_per_category.values()),
                 timeout=self._polling_interval.total_seconds() * timeout_multiplier,
             )
 
-            self._batch_request_might_be_available = False
+            if not wait_succeeded:
+                # If we timed out, there is a possibility that the queue watcher is broken or
+                # that it somehow missed an event. Either way, we'll force a poll to make sure
+                # we don't miss anything.
+                for category in self._potential_work_per_category:
+                    self._potential_work_per_category[category] = True
 
     def _dispatch_queue_event(self, event: _Event) -> None:
         if event.type == "newrequest":
@@ -289,9 +371,12 @@ class _Agent:
             request_category = event_data_object["request_category"]
 
             with self._potential_work_condition:
-                if request_category == REQUEST_CATEGORY_BATCH:
-                    self._client.logger.info("Received notification about a new batch request")
-                    self._batch_request_might_be_available = True
+                if request_category in self._potential_work_per_category:
+                    self._client.logger.info(
+                        "Received notification about a new request of category %r",
+                        request_category,
+                    )
+                    self._potential_work_per_category[request_category] = True
                     self._potential_work_condition.notify()
                 else:
                     self._client.logger.warning(
@@ -361,7 +446,8 @@ class _Agent:
                 # If the function did get deleted, the main thread will get a 404 and quit.
                 # Otherwise, we'll just reconnect again.
                 with self._potential_work_condition:
-                    self._batch_request_might_be_available = True
+                    for category in self._potential_work_per_category:
+                        self._potential_work_per_category[category] = True
                     self._potential_work_condition.notify()
 
                 self._client.logger.warning("Event stream ended; will reconnect")
@@ -382,8 +468,7 @@ class _Agent:
 
     def run(self, *, burst: bool) -> None:
         if burst:
-            while ar_assignment := self._poll_for_ar():
-                self._process_ar(ar_assignment)
+            self._process_all_available_ars()
             self._client.logger.info("No annotation requests left in queue; exiting.")
         else:
             watcher = threading.Thread(name="Queue Watcher", target=self._watch_queue)
@@ -391,10 +476,8 @@ class _Agent:
 
             try:
                 while True:
-                    if ar_assignment := self._poll_for_ar():
-                        self._process_ar(ar_assignment)
-                    else:
-                        self._wait_between_polls()
+                    self._process_all_available_ars()
+                    self._wait_between_polls()
             finally:
                 self._queue_watcher_should_stop.set()
 
@@ -412,6 +495,20 @@ class _Agent:
                             self._queue_watch_response.shutdown()
 
                 watcher.join()
+
+    def _process_all_available_ars(self):
+        for category in REQUEST_CATEGORIES_WITH_DECREASING_PRIORITY:
+            self._process_available_ars(category)
+
+    def _process_available_ars(self, category) -> None:
+        with self._potential_work_condition:
+            if not self._potential_work_per_category[category]:
+                return
+
+            self._potential_work_per_category[category] = False
+
+        while ar_assignment := self._poll_for_ar(category):
+            self._process_ar(ar_assignment)
 
     def _process_ar(self, ar_assignment: dict) -> None:
         self._client.logger.info("Got annotation request assignment: %r", ar_assignment)
@@ -453,6 +550,8 @@ class _Agent:
                 error_message = "Failed to make an HTTP request"
             elif isinstance(ex, cvataa.BadFunctionError):
                 error_message = "Underlying function returned incorrect result: " + str(ex)
+            elif isinstance(ex, _BadArError):
+                error_message = "Invalid annotation request: " + str(ex)
             elif isinstance(ex, concurrent.futures.BrokenExecutor):
                 error_message = "Worker process crashed"
 
@@ -471,15 +570,17 @@ class _Agent:
             else:
                 self._client.logger.info("AR %r failed", ar_id)
 
-    def _poll_for_ar(self) -> Optional[dict]:
+    def _poll_for_ar(self, category: str) -> Optional[dict]:
         while True:
-            self._client.logger.info("Trying to acquire an annotation request...")
+            self._client.logger.info(
+                "Trying to acquire an annotation request of category %r...", category
+            )
             try:
                 _, response = self._client.api_client.call_api(
                     "/api/functions/queues/{queue_id}/requests/acquire",
                     "POST",
                     path_params={"queue_id": f"function:{self._function_id}"},
-                    body={"agent_id": self._agent_id, "request_category": REQUEST_CATEGORY_BATCH},
+                    body={"agent_id": self._agent_id, "request_category": category},
                 )
                 break
             except (urllib3.exceptions.HTTPError, ApiException) as ex:
@@ -496,27 +597,20 @@ class _Agent:
     def _calculate_result_for_detection_ar(
         self, ar_id: str, ar_params
     ) -> models.PatchedLabeledDataRequest:
-        if ar_params["type"] != "annotate_task":
-            raise RuntimeError(f"Unsupported AR type: {ar_params['type']!r}")
+        if ar_params["type"] == "annotate_task":
+            with self._task_cache_limiter.using_cache_for_task(ar_params["task"], with_chunks=True):
+                return self._calculate_result_for_annotate_task_ar(ar_id, ar_params)
+        elif ar_params["type"] == "annotate_frame":
+            with self._task_cache_limiter.using_cache_for_task(
+                ar_params["task"], with_chunks=False
+            ):
+                return self._calculate_result_for_annotate_frame_ar(ar_id, ar_params)
+        else:
+            raise _BadArError(f"unsupported type: {ar_params['type']!r}")
 
-        if ar_params["task"] != self._cached_task_id:
-            # To avoid uncontrolled disk usage,
-            # we'll only keep one task in the cache at a time.
-            self._client.logger.info("Switched to a new task; clearing the cache...")
-            if self._client.config.cache_dir.exists():
-                shutil.rmtree(self._client.config.cache_dir)
-
-        ds = cvatds.TaskDataset(self._client, ar_params["task"], load_annotations=False)
-
-        self._cached_task_id = ar_params["task"]
-
-        # Fetching the dataset might take a while, so do a progress update to let the server
-        # know we're still alive.
-        self._update_ar(ar_id, 0)
-        last_update_timestamp = datetime.now(tz=timezone.utc)
-
-        conv_mask_to_poly = ar_params["conv_mask_to_poly"]
-
+    def _create_annotation_mapper_for_detection_ar(
+        self, ar_params: dict, ds_labels: Sequence[models.ILabel]
+    ) -> _AnnotationMapper:
         spec_nm = _SpecNameMapping.from_api(
             {
                 k: models.LabelMappingEntryRequest._from_openapi_data(**v)
@@ -524,23 +618,40 @@ class _Agent:
             }
         )
 
-        mapper = _AnnotationMapper(
+        return _AnnotationMapper(
             self._client.logger,
             self._function_spec.labels,
-            ds.labels,
+            ds_labels,
             allow_unmatched_labels=False,
             spec_nm=spec_nm,
-            conv_mask_to_poly=conv_mask_to_poly,
+            conv_mask_to_poly=ar_params["conv_mask_to_poly"],
         )
+
+    def _create_detection_function_context(
+        self, ar_params: dict, frame_name: str
+    ) -> cvataa.DetectionFunctionContext:
+        return _DetectionFunctionContextImpl(
+            frame_name=frame_name,
+            conf_threshold=ar_params["threshold"],
+            conv_mask_to_poly=ar_params["conv_mask_to_poly"],
+        )
+
+    def _calculate_result_for_annotate_task_ar(
+        self, ar_id: str, ar_params
+    ) -> models.PatchedLabeledDataRequest:
+        ds = cvatds.TaskDataset(self._client, ar_params["task"], load_annotations=False)
+
+        # Fetching the dataset might take a while, so do a progress update to let the server
+        # know we're still alive.
+        self._update_ar(ar_id, 0)
+        last_update_timestamp = datetime.now(tz=timezone.utc)
+
+        mapper = self._create_annotation_mapper_for_detection_ar(ar_params, ds.labels)
 
         all_annotations = models.PatchedLabeledDataRequest(shapes=[])
 
         for sample_index, sample in enumerate(ds.samples):
-            context = _DetectionFunctionContextImpl(
-                frame_name=sample.frame_name,
-                conf_threshold=ar_params["threshold"],
-                conv_mask_to_poly=conv_mask_to_poly,
-            )
+            context = self._create_detection_function_context(ar_params, sample.frame_name)
             shapes = self._executor.result(
                 self._executor.submit(_worker_job_detect, context, sample.media.load_image())
             )
@@ -554,7 +665,42 @@ class _Agent:
                 self._update_ar(ar_id, (sample_index + 1) / len(ds.samples))
                 last_update_timestamp = current_timestamp
 
+            # Interactive requests are time sensitive, so if there are any,
+            # we have to put the current AR on hold and process them ASAP.
+            self._process_available_ars(REQUEST_CATEGORY_INTERACTIVE)
+
         return all_annotations
+
+    def _calculate_result_for_annotate_frame_ar(
+        self, ar_id: str, ar_params
+    ) -> models.PatchedLabeledDataRequest:
+        frame_index = ar_params["frame"]
+
+        ds = cvatds.TaskDataset(
+            self._client,
+            ar_params["task"],
+            load_annotations=False,
+            media_download_policy=cvatds.MediaDownloadPolicy.FETCH_FRAMES_ON_DEMAND,
+        )
+
+        # Since ds.samples excludes deleted frames, we can't just do sample = ds.samples[frame_index].
+        # Once we drop Python 3.9, we can change this to use bisect instead of the linear search.
+        for sample in ds.samples:
+            if sample.frame_index == frame_index:
+                break
+        else:
+            raise _BadArError(f"Frame with index {frame_index} does not exist in the task")
+
+        mapper = self._create_annotation_mapper_for_detection_ar(ar_params, ds.labels)
+
+        context = self._create_detection_function_context(ar_params, sample.frame_name)
+
+        shapes = self._executor.result(
+            self._executor.submit(_worker_job_detect, context, sample.media.load_image())
+        )
+
+        mapper.validate_and_remap(shapes, frame_index)
+        return models.PatchedLabeledDataRequest(shapes=shapes)
 
     def _update_ar(self, ar_id: str, progress: float) -> None:
         self._client.logger.info("Updating AR %r progress to %.2f%%", ar_id, progress * 100)

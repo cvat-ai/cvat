@@ -11,7 +11,7 @@ from abc import ABCMeta, abstractmethod
 from collections.abc import Sequence
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Optional, TypeVar
 
 from attrs import define, field
 from django.apps import AppConfig
@@ -24,6 +24,11 @@ from cvat.apps.organizations.models import Membership, Organization
 from cvat.utils.http import make_requests_session
 
 from .utils import add_opa_rules_path
+
+if TYPE_CHECKING:
+    from rest_framework.viewsets import ViewSet
+
+    from cvat.apps.engine.types import ExtendedRequest
 
 
 class StrEnum(str, Enum):
@@ -44,7 +49,7 @@ def get_organization(request, obj):
 
     if obj:
         try:
-            organization_id = getattr(obj, "organization_id")
+            org_id = obj.organization_id
         except AttributeError as exc:
             # Skip initialization of organization for those objects that don't related with organization
             view = request.parser_context.get("view")
@@ -53,8 +58,17 @@ def get_organization(request, obj):
 
             raise exc
 
+        if not org_id:
+            return None
+
         try:
-            return Organization.objects.select_related("owner").get(id=organization_id)
+            # If the object belongs to an organization transitively via the parent object
+            # there might be no organization field, because it has to be defined and implemented
+            # manually
+            try:
+                return obj.organization
+            except AttributeError:
+                return Organization.objects.get(id=org_id)
         except Organization.DoesNotExist:
             return None
 
@@ -78,7 +92,7 @@ def build_iam_context(
         "group_name": request.iam_context["privilege"],
         "org_id": getattr(organization, "id", None),
         "org_slug": getattr(organization, "slug", None),
-        "org_owner_id": getattr(organization.owner, "id", None) if organization else None,
+        "org_owner_id": organization.owner_id if organization else None,
         "org_role": getattr(membership, "role", None),
     }
 
@@ -99,6 +113,27 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
     org_role: Optional[str]
     scope: str
     obj: Optional[Any]
+
+    @classmethod
+    @abstractmethod
+    def _get_scopes(cls, request: ExtendedRequest, view: ViewSet, obj: Any) -> list:
+        """Method to override to define scopes based on the request"""
+
+    @classmethod
+    def get_scopes(cls, request: ExtendedRequest, view: ViewSet, obj: Any):
+        # rest_framework.viewsets.ViewSetMixin.initialize_request implementation
+        if view.action is None:
+            view.http_method_not_allowed(request)
+
+        try:
+            scopes = cls._get_scopes(request, view, obj)
+            # prevent code bugs when _get_scope defines scopes "softly"
+            assert all(scopes)
+            return scopes
+        except KeyError:
+            assert (
+                False
+            ), f"Permissions for the ({view.basename}, {view.action}, {request.method}) triplet are not defined"
 
     @classmethod
     @abstractmethod

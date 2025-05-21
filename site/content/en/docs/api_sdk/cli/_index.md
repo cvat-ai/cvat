@@ -77,10 +77,10 @@ Use the `task <action>` form instead.
 ### Create
 
 Description of the options you can find in
-{{< ilink "/docs/manual/basics/create_an_annotation_task" "Creating an annotation task" >}} section.
+{{< ilink "/docs/manual/basics/create-annotation-task" "Creating an annotation task" >}} section.
 
 For create a task you need file contain labels in the `json` format, you can create a JSON label specification
-by using the {{< ilink "/docs/manual/basics/create_an_annotation_task#labels" "label constructor" >}}.
+by using the {{< ilink "/docs/manual/basics/create-annotation-task#labels" "label constructor" >}}.
 <details>
 <summary>Example JSON labels file</summary>
 
@@ -99,15 +99,15 @@ by using the {{< ilink "/docs/manual/basics/create_an_annotation_task#labels" "l
 </details>
 <br>
 
-- Create a task named "new task" on the default server "localhost:8080", labels from the file "labels.json"
+- Create a task named "new task" on the default server `http://localhost`, labels from the file "labels.json"
   and local images "file1.jpg" and "file2.jpg", the task will be created as current user:
   ```bash
   cvat-cli task create "new task" --labels labels.json local file1.jpg file2.jpg
   ```
-- Create a task named "task 1" on the server "example.com" labels from the file "labels.json"
+- Create a task named "task 1" on the server `https://example.com` labels from the file "labels.json"
   and local image "image1.jpg", the task will be created as user "user-1":
   ```bash
-  cvat-cli --server-host example.com --auth user-1 task create "task 1" \
+  cvat-cli --server-host https://example.com --auth user-1 task create "task 1" \
   --labels labels.json local image1.jpg
   ```
 - Create a task named "task 1" on the default server, with labels from "labels.json"
@@ -294,7 +294,7 @@ While creating a project, you may optionally define its labels.
 The `project create` command accepts labels in the same format as the `task create` command;
 see that command's examples for more information.
 
-- Create a project named "new project" on the default server "localhost:8080",
+- Create a project named "new project" on the default server `http://localhost`,
   with labels from the file "labels.json":
   ```bash
   cvat-cli project create "new project" --labels labels.json
