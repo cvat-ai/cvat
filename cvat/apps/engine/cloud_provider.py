@@ -38,7 +38,7 @@ from cvat.apps.engine.models import CloudProviderChoice, CredentialsTypeChoice
 from cvat.apps.engine.rq import ExportRQMeta
 from cvat.apps.engine.utils import get_cpu_number, take_by
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS
-from cvat import settings
+from cvat import settings as cvat_settings
 
 
 class NamedBytesIO(BytesIO):
