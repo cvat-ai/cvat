@@ -64,12 +64,7 @@ from cvat.apps.engine.frame_provider import (
 from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.mixins import BackupMixin, DatasetMixin, PartialUpdateModelMixin, UploadMixin
 from cvat.apps.engine.model_utils import bulk_create
-from cvat.apps.engine.models import (
-    AnnotationGuide,
-    Asset,
-    ClientFile,
-    CloudProviderChoice,
-)
+from cvat.apps.engine.models import AnnotationGuide, Asset, ClientFile, CloudProviderChoice
 from cvat.apps.engine.models import CloudStorage as CloudStorageModel
 from cvat.apps.engine.models import (
     Comment,
