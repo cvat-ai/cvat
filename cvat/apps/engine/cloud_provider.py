@@ -33,11 +33,11 @@ from PIL import Image, ImageFile
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rq import get_current_job
 
-from cvat import settings as cvat_settings
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import CloudProviderChoice, CredentialsTypeChoice
 from cvat.apps.engine.rq import ExportRQMeta
 from cvat.apps.engine.utils import get_cpu_number, take_by
+from cvat.settings import ALLOW_CLOUD_STORAGE_ENV_CREDS
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS
 
 
@@ -961,7 +961,7 @@ class Credentials:
         elif self.credentials_type == CredentialsTypeChoice.CONNECTION_STRING:
             self.connection_string = credentials.get('value')
         elif self.credentials_type == CredentialsTypeChoice.ENV_CREDS:
-            if settings.ALLOW_CLOUD_STORAGE_ENV_CREDS:
+            if ALLOW_CLOUD_STORAGE_ENV_CREDS:
                 slogger.glob.debug('Credentials set to be pulled from environment.')
             else:
                 raise ValidationError('Credentials type {} is not allowed in this environment'.format(self.credentials_type))
