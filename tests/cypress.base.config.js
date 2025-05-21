@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 // eslint-disable-next-line import/no-unresolved
-const allureCypress = require('allure-cypress/reporter');
+import { allureCypress } from 'allure-cypress/reporter';
 
 const plugins = require('./cypress/plugins/index');
 
