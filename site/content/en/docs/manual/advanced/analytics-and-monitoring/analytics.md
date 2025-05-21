@@ -158,11 +158,12 @@ You can filter the events by date range:
 If the date filter is empty, the **Events** tab shows the metrics and events
 for the lifetime of the project, task, or job.
 
-To reset the date range, select ![Clear filter button](/images/analytics/clear-filter-button.png) button in the date picker.
+To reset the date range, select ![Clear filter button](/images/analytics/clear-filter-button.png)
+button in the date picker.
 
 You can also filter the table entries by values in **Task name**, **Assignee**, **Stage**, **State**, **User** columns:
 1. In the search box, enter the value or part of the value to find
-1. Select ![Search button](/images/analytics/search-button.png) button or press *Enter*
+1. Select ![Search button](/images/analytics/search-button.png) button or press _Enter_
 
 The events table columns:
 
