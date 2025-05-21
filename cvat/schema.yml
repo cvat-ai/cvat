@@ -452,7 +452,7 @@ paths:
                   manifests:
                   - manifest.jsonl
                 summary: Create AWS S3 cloud storage with credentials
-              CreateAWSS3CloudStorageFromEnvCreds:
+              CreateAWSS3CloudStoragePullingCredentialsFromEnvironment:
                 value:
                   provider_type: AWS_S3_BUCKET
                   resource: somebucket
@@ -460,8 +460,8 @@ paths:
                   credentials_type: ENV_CREDS
                   manifests:
                   - manifest.jsonl
-                summary: Create AWS S3 cloud storage by pulling creds from environment
-              CreateAWSS3CloudStoragePublicBucket:
+                summary: Create AWS S3 cloud storage pulling credentials from environment
+              CreateAWSS3CloudStorageToPublicBucketWithoutCredentials:
                 value:
                   provider_type: AWS_S3_BUCKET
                   resource: somebucket
@@ -469,7 +469,7 @@ paths:
                   credentials_type: ANONYMOUS_ACCESS
                   manifests:
                   - manifest.jsonl
-                summary: Create AWS S3 cloud storage without credentials to access public bucket
+                summary: Create AWS S3 cloud storage to public bucket without credentials
               CreateAzureCloudStorage:
                 value:
                   provider_type: AZURE_CONTAINER
@@ -565,7 +565,7 @@ paths:
                   manifests:
                   - manifest.jsonl
                 summary: Create AWS S3 cloud storage with credentials
-              CreateAWSS3CloudStorageFromEnvCreds:
+              CreateAWSS3CloudStoragePullingCredentialsFromEnvironment:
                 value:
                   provider_type: AWS_S3_BUCKET
                   resource: somebucket
@@ -573,8 +573,8 @@ paths:
                   credentials_type: ENV_CREDS
                   manifests:
                   - manifest.jsonl
-                summary: Create AWS S3 cloud storage by pulling creds from environment
-              CreateAWSS3CloudStoragePublicBucket:
+                summary: Create AWS S3 cloud storage pulling credentials from environment
+              CreateAWSS3CloudStorageToPublicBucketWithoutCredentials:
                 value:
                   provider_type: AWS_S3_BUCKET
                   resource: somebucket
@@ -582,7 +582,7 @@ paths:
                   credentials_type: ANONYMOUS_ACCESS
                   manifests:
                   - manifest.jsonl
-                summary: Create AWS S3 cloud storage without credentials to access public bucket
+                summary: Create AWS S3 cloud storage to public bucket without credentials
               CreateAzureCloudStorage:
                 value:
                   provider_type: AZURE_CONTAINER
