@@ -250,11 +250,16 @@ class TestPostCloudStorage:
 
         self._test_can_create(username, spec)
 
-    def test_env_credentials_fallback(self, users, monkeypatch):
+    def test_env_credentials(self, users, monkeypatch):
         username = [u for u in users if "user" in u["groups"]][0]["username"]
 
         spec = deepcopy(self._SPEC)
         # completely remove credentials, these should then be pulled from environment
+        spec.update(
+            {
+                "credentials_type": "ENV_CREDS",
+            }
+        )
         spec.pop("key", None)
         spec.pop("secret_key", None)
 

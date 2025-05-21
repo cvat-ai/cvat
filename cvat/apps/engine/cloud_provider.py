@@ -942,6 +942,7 @@ class Credentials:
             CredentialsTypeChoice.KEY_FILE_PATH: self.key_file_path,
             CredentialsTypeChoice.ANONYMOUS_ACCESS: "" if not self.account_name else self.account_name,
             CredentialsTypeChoice.CONNECTION_STRING: self.connection_string,
+            CredentialsTypeChoice.ENV_CREDS: None,
         }
         return converted_credentials[self.credentials_type]
 
@@ -958,6 +959,11 @@ class Credentials:
             self.key_file_path = credentials.get('value')
         elif self.credentials_type == CredentialsTypeChoice.CONNECTION_STRING:
             self.connection_string = credentials.get('value')
+        elif self.credentials_type == CredentialsTypeChoice.ENV_CREDS:
+            if settings.ALLOW_CLOUD_STORAGE_ENV_CREDS:
+                slogger.glob.debug('Credentials set to be pulled from environment.')
+            else:
+                raise ValidationError('Credentials type {} is not allowed in this environment'.format(self.credentials_type))
         else:
             raise NotImplementedError('Found {} not supported credentials type'.format(self.credentials_type))
 
