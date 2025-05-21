@@ -108,14 +108,14 @@ Learn [how to work with tables](#working-with-tables).
 
 You can also filter the table entries by values in the **Label name** column:
 1. In the search box, enter the value or part of the value to find
-1. Select ![Search button](/images/analytics/search-button.png) button or press *Enter*
+1. Select ![Search button](/images/analytics/search-button.png) button or press _Enter_
 
 The table in the **Detection** tab contains the columns:
 
 <!--lint disable maximum-line-length-->
 
 | **Column name** | **Content** |
-|-----------------|-------------|
+| --------------- | ----------- |
 | **Label ID** | The ID of the label. |
 | **Label name** | The name of the label. |
 | Columns with {{< ilink "/docs/manual/basics/types-of-shapes" "label types names">}} | The number of objects with the corresponding label type. By default, the columns with zero values are hidden. |
@@ -129,7 +129,7 @@ The table in the **Tracking** tab contains the columns:
 <!--lint disable maximum-line-length-->
 
 | **Column name** | **Content** |
-|-----------------|-------------|
+| --------------- | ----------- |
 | **Label ID** | The ID of the label. |
 | **Label name** | The name of the label. |
 | Columns with {{< ilink "/docs/manual/basics/types-of-shapes" "label type names">}} | The number of objects with the corresponding label type. By default, the columns with zero values are hidden. |
@@ -169,7 +169,7 @@ The events table columns:
 <!--lint disable maximum-line-length-->
 
 | **Column name** | **Content** |
-|-----------------|-------------|
+| --------------- | ----------- |
 | **Task ID** | The ID of the task. If the task exists (the **Exists** column has the value `true`), you can select the value to open the task. |
 | **Task name** | The task name. By default, the column is hidden. Select the value to open the task. |
 | **Job ID** | The ID of the job. If the job exists (the **Exists** column has the value `true`), you can select the value to open the job. |
@@ -201,9 +201,9 @@ For tables in the **Annotations** and **Events** tabs, you can:
    article.
 1. Reset all applied filters: select **Clear filters**.
 1. Manage the table columns:
-  1. Select ![Menu button](/images/analytics/menu-button-vertical.png) above the right side of the table.
-  1. Select the checkboxes for the columns to display them in the table,
-     or unselect them to hide the corresponding columns.
+   1. Select ![Menu button](/images/analytics/menu-button-vertical.png) above the right side of the table.
+   1. Select the checkboxes for the columns to display them in the table,
+      or unselect them to hide the corresponding columns.
 1. Sort the table entries by column values. Select the column name to apply sorting.
    The arrows near the column name indicate the applied sorting order. The arrow up indicates
    ascending order, the arrow down indicates descending order.
