@@ -11,7 +11,7 @@ from contextlib import contextmanager
 from io import BytesIO
 from pathlib import Path
 from pprint import pformat
-from typing import Any, Callable, NoReturn, TypeVar, Collection
+from typing import Any, Callable, Collection, NoReturn, TypeVar
 from unittest import TestCase
 from urllib.parse import urlencode
 
@@ -29,7 +29,7 @@ from scipy.optimize import linear_sum_assignment
 
 from ._types import OrderStrategy, always_check_order
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 @contextmanager
@@ -50,7 +50,7 @@ class ForceLogin:
 
     def __enter__(self):
         if self.user:
-            self.client.force_login(self.user, backend='django.contrib.auth.backends.ModelBackend')
+            self.client.force_login(self.user, backend="django.contrib.auth.backends.ModelBackend")
 
         return self
 
@@ -78,8 +78,8 @@ def clear_rq_jobs():
 
         # Remove orphaned jobs that can't be normally reported by DjangoRQ
         # https://github.com/rq/django-rq/issues/73
-        for key in queue.connection.keys('rq:job:*'):
-            job_id = key.decode().split('rq:job:', maxsplit=1)[1]
+        for key in queue.connection.keys("rq:job:*"):
+            job_id = key.decode().split("rq:job:", maxsplit=1)[1]
             job = queue.fetch_job(job_id)
             if not job:
                 # The job can belong to a different queue, using the same connection
@@ -133,7 +133,9 @@ class ApiTestBase(APITestCase):
         super().setUp()
         self.client = self.client_class()
 
-    def _get_request(self, path: str, user: str, *, query_params: dict[str, Any] | None = None) -> Response:
+    def _get_request(
+        self, path: str, user: str, *, query_params: dict[str, Any] | None = None
+    ) -> Response:
         with ForceLogin(user, self.client):
             response = self.client.get(path, data=query_params)
         return response
@@ -150,7 +152,7 @@ class ApiTestBase(APITestCase):
         *,
         format: str = "json",  # pylint: disable=redefined-builtin
         query_params: dict[str, Any] = None,
-        data: dict[str, Any] | None = None
+        data: dict[str, Any] | None = None,
     ):
         if query_params:
             # Note: once we upgrade to Django 5.1+, this should be changed to pass query_params
@@ -218,7 +220,9 @@ class ExportApiTestBase(ApiTestBase):
 
         assert rq_id, "The rq_id param was not found in the server response"
 
-        response = self._check_request_status(user, rq_id, expected_4xx_status_code=expected_4xx_status_code)
+        response = self._check_request_status(
+            user, rq_id, expected_4xx_status_code=expected_4xx_status_code
+        )
 
         if not download_locally:
             return response
@@ -250,10 +254,12 @@ class ExportApiTestBase(ApiTestBase):
         expected_4xx_status_code: int | None = None,
     ):
         return self._export(
-            user, f"/api/tasks/{task_id}/backup/export",
+            user,
+            f"/api/tasks/{task_id}/backup/export",
             query_params=query_params,
-            download_locally=download_locally, file_path=file_path,
-            expected_4xx_status_code=expected_4xx_status_code
+            download_locally=download_locally,
+            file_path=file_path,
+            expected_4xx_status_code=expected_4xx_status_code,
         )
 
     def _export_project_backup(
@@ -267,11 +273,12 @@ class ExportApiTestBase(ApiTestBase):
         expected_4xx_status_code: int | None = None,
     ):
         return self._export(
-            user, f"/api/projects/{project_id}/backup/export",
+            user,
+            f"/api/projects/{project_id}/backup/export",
             query_params=query_params,
             download_locally=download_locally,
             file_path=file_path,
-            expected_4xx_status_code=expected_4xx_status_code
+            expected_4xx_status_code=expected_4xx_status_code,
         )
 
     def _export_project_dataset(
@@ -287,11 +294,12 @@ class ExportApiTestBase(ApiTestBase):
         query_params["save_images"] = True
 
         return self._export(
-            user, f"/api/projects/{project_id}/dataset/export",
+            user,
+            f"/api/projects/{project_id}/dataset/export",
             query_params=query_params,
             download_locally=download_locally,
             file_path=file_path,
-            expected_4xx_status_code=expected_4xx_status_code
+            expected_4xx_status_code=expected_4xx_status_code,
         )
 
     def _export_project_annotations(
@@ -307,11 +315,12 @@ class ExportApiTestBase(ApiTestBase):
         query_params["save_images"] = False
 
         return self._export(
-            user, f"/api/projects/{project_id}/dataset/export",
+            user,
+            f"/api/projects/{project_id}/dataset/export",
             query_params=query_params,
             download_locally=download_locally,
             file_path=file_path,
-            expected_4xx_status_code=expected_4xx_status_code
+            expected_4xx_status_code=expected_4xx_status_code,
         )
 
     def _export_task_dataset(
@@ -327,11 +336,12 @@ class ExportApiTestBase(ApiTestBase):
         query_params["save_images"] = True
 
         return self._export(
-            user, f"/api/tasks/{task_id}/dataset/export",
+            user,
+            f"/api/tasks/{task_id}/dataset/export",
             query_params=query_params,
             download_locally=download_locally,
             file_path=file_path,
-            expected_4xx_status_code=expected_4xx_status_code
+            expected_4xx_status_code=expected_4xx_status_code,
         )
 
     def _export_task_annotations(
@@ -347,11 +357,12 @@ class ExportApiTestBase(ApiTestBase):
         query_params["save_images"] = False
 
         return self._export(
-            user, f"/api/tasks/{task_id}/dataset/export",
+            user,
+            f"/api/tasks/{task_id}/dataset/export",
             query_params=query_params,
             download_locally=download_locally,
             file_path=file_path,
-            expected_4xx_status_code=expected_4xx_status_code
+            expected_4xx_status_code=expected_4xx_status_code,
         )
 
     def _export_job_dataset(
@@ -367,11 +378,12 @@ class ExportApiTestBase(ApiTestBase):
         query_params["save_images"] = True
 
         return self._export(
-            user, f"/api/jobs/{job_id}/dataset/export",
+            user,
+            f"/api/jobs/{job_id}/dataset/export",
             query_params=query_params,
             download_locally=download_locally,
             file_path=file_path,
-            expected_4xx_status_code=expected_4xx_status_code
+            expected_4xx_status_code=expected_4xx_status_code,
         )
 
     def _export_job_annotations(
@@ -387,35 +399,40 @@ class ExportApiTestBase(ApiTestBase):
         query_params["save_images"] = False
 
         return self._export(
-            user, f"/api/jobs/{job_id}/dataset/export",
+            user,
+            f"/api/jobs/{job_id}/dataset/export",
             query_params=query_params,
             download_locally=download_locally,
             file_path=file_path,
-            expected_4xx_status_code=expected_4xx_status_code
+            expected_4xx_status_code=expected_4xx_status_code,
         )
 
+
 def generate_image_file(filename, size=(100, 100)):
-    assert os.path.splitext(filename)[-1].lower() in ['', '.jpg', '.jpeg'], \
-        "This function supports only jpeg images. Please add the .jpg extension to the file name"
+    assert os.path.splitext(filename)[-1].lower() in [
+        "",
+        ".jpg",
+        ".jpeg",
+    ], "This function supports only jpeg images. Please add the .jpg extension to the file name"
 
     f = BytesIO()
-    image = Image.new('RGB', size=size)
-    image.save(f, 'jpeg')
+    image = Image.new("RGB", size=size)
+    image.save(f, "jpeg")
     f.name = filename
     f.seek(0)
     return f
 
 
-def generate_video_file(filename, width=1920, height=1080, duration=1, fps=25, codec_name='mpeg4'):
+def generate_video_file(filename, width=1920, height=1080, duration=1, fps=25, codec_name="mpeg4"):
     f = BytesIO()
     total_frames = duration * fps
     file_ext = os.path.splitext(filename)[1][1:]
-    container = av.open(f, mode='w', format=file_ext)
+    container = av.open(f, mode="w", format=file_ext)
 
     stream = container.add_stream(codec_name=codec_name, rate=fps)
     stream.width = width
     stream.height = height
-    stream.pix_fmt = 'yuv420p'
+    stream.pix_fmt = "yuv420p"
 
     for frame_i in range(total_frames):
         img = np.empty((stream.width, stream.height, 3))
@@ -426,7 +443,7 @@ def generate_video_file(filename, width=1920, height=1080, duration=1, fps=25, c
         img = np.round(255 * img).astype(np.uint8)
         img = np.clip(img, 0, 255)
 
-        frame = av.VideoFrame.from_ndarray(img, format='rgb24')
+        frame = av.VideoFrame.from_ndarray(img, format="rgb24")
         for packet in stream.encode(frame):
             container.mux(packet)
 
@@ -441,16 +458,15 @@ def generate_video_file(filename, width=1920, height=1080, duration=1, fps=25, c
 
     return [(width, height)] * total_frames, f
 
-def get_paginated_collection(
-    request_chunk_callback: Callable[[int], HttpResponse]
-) -> Iterator[T]:
+
+def get_paginated_collection(request_chunk_callback: Callable[[int], HttpResponse]) -> Iterator[T]:
     values = []
 
     for page in itertools.count(start=1):
         response = request_chunk_callback(page)
         data = response.json()
         values.extend(data["results"])
-        if not data.get('next'):
+        if not data.get("next"):
             break
 
     return values
@@ -475,18 +491,21 @@ def freeze_object(obj, ignore_keys=None) -> frozenset:
     return obj
 
 
-def check_optional_fields(self: TestCase,
-                        obj: dict[str, int | float | str],
-                        optional_values: dict[str, int | float | str],
-                        ) -> None | NoReturn:
+def check_optional_fields(
+    self: TestCase,
+    obj: dict[str, int | float | str],
+    optional_values: dict[str, int | float | str],
+) -> None | NoReturn:
     for k in optional_values.keys():
         right = obj.get(k)
-        left = right if right is not None else optional_values[k] # accounting for bool fields
+        left = right if right is not None else optional_values[k]  # accounting for bool fields
         if right is None:
             right = optional_values[k]
         self.assertEqual(
-            left, right,
-            f"key {k!s} has incorrect actual optional value {left!s} instead of expected {right!s}")
+            left,
+            right,
+            f"key {k!s} has incorrect actual optional value {left!s} instead of expected {right!s}",
+        )
 
 
 def filter_object(
@@ -629,47 +648,65 @@ def compare_objects(
         self.assertEqual(obj1, obj2, msg=current_key)
 
 
-def check_annotation_response(self: TestCase, response, data, expected_source=None) -> None | NoReturn:
-            COMMON_DEFAULT_FIELDS = dict(
-                source=expected_source or 'manual',
-                occluded=False,
-                outside=False,
-                z_order=0,
-                rotation=0,
-                attributes=[],
-                elements=[],
-            ) # if omitted, are set by the server
-              # https://docs.cvat.ai/docs/api_sdk/sdk/reference/models/labeled-shape/
-              # elements are handled separately
-            COMMON_DEFAULT_KEYS = list(COMMON_DEFAULT_FIELDS.keys())
-            ignore_keys = ["id", "version"]
+def check_annotation_response(
+    self: TestCase, response, data, expected_source=None
+) -> None | NoReturn:
+    COMMON_DEFAULT_FIELDS = dict(
+        source=expected_source or "manual",
+        occluded=False,
+        outside=False,
+        z_order=0,
+        rotation=0,
+        attributes=[],
+        elements=[],
+    )  # if omitted, are set by the server
+    # https://docs.cvat.ai/docs/api_sdk/sdk/reference/models/labeled-shape/
+    # elements are handled separately
+    COMMON_DEFAULT_KEYS = list(COMMON_DEFAULT_FIELDS.keys())
+    ignore_keys = ["id", "version"]
 
-            def _check_order_in_annotations(key_path: str) -> bool:
-                return 'shapes.points' in key_path
+    def _check_order_in_annotations(key_path: str) -> bool:
+        return "shapes.points" in key_path
 
-            def compare_elements(self, data, response_data) -> None | NoReturn:
-                def _get_elements(data) -> dict[str, list[list[dict]]]:
-                    return {
-                        'shape_elements': [shape.get('elements', []) for shape in data['shapes']],
-                        'track_elements': [track.get('elements', []) for track in data['tracks']]
-                    }
-                response_elements = _get_elements(response_data)
-                for elements in response_elements.values():
-                    for elem in elements:
-                        for ann in elem:
-                            check_optional_fields(self, ann, COMMON_DEFAULT_FIELDS)
-                response_elements = _get_elements(response_data)
-                data_elements = _get_elements(data)
-                compare_objects(self, data_elements, response_elements, ignore_keys + COMMON_DEFAULT_KEYS, check_order=_check_order_in_annotations)
+    def compare_elements(self, data, response_data) -> None | NoReturn:
+        def _get_elements(data) -> dict[str, list[list[dict]]]:
+            return {
+                "shape_elements": [shape.get("elements", []) for shape in data["shapes"]],
+                "track_elements": [track.get("elements", []) for track in data["tracks"]],
+            }
 
-            try:
-                check_optional_fields(self, response.data, COMMON_DEFAULT_FIELDS)
-                compare_elements(self, data, response.data)
-                compare_objects(self, data, response.data, ignore_keys + COMMON_DEFAULT_KEYS, check_order=_check_order_in_annotations)
-            except AssertionError as e:
-                print("Objects are not equal:",
-                      pformat(data, compact=True),
-                      "!=",
-                      pformat(response.data, compact=True), sep='\n')
-                print(e)
-                raise
+        response_elements = _get_elements(response_data)
+        for elements in response_elements.values():
+            for elem in elements:
+                for ann in elem:
+                    check_optional_fields(self, ann, COMMON_DEFAULT_FIELDS)
+        response_elements = _get_elements(response_data)
+        data_elements = _get_elements(data)
+        compare_objects(
+            self,
+            data_elements,
+            response_elements,
+            ignore_keys + COMMON_DEFAULT_KEYS,
+            check_order=_check_order_in_annotations,
+        )
+
+    try:
+        check_optional_fields(self, response.data, COMMON_DEFAULT_FIELDS)
+        compare_elements(self, data, response.data)
+        compare_objects(
+            self,
+            data,
+            response.data,
+            ignore_keys + COMMON_DEFAULT_KEYS,
+            check_order=_check_order_in_annotations,
+        )
+    except AssertionError as e:
+        print(
+            "Objects are not equal:",
+            pformat(data, compact=True),
+            "!=",
+            pformat(response.data, compact=True),
+            sep="\n",
+        )
+        print(e)
+        raise

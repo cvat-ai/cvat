@@ -73,7 +73,7 @@ from cvat.apps.engine.tests.utils import (
 )
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 
-from .utils import compare_objects, check_annotation_response
+from .utils import check_annotation_response, compare_objects
 
 # suppress av warnings
 logging.getLogger('libav').setLevel(logging.ERROR)
