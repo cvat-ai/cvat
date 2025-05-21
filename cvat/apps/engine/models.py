@@ -1226,6 +1226,7 @@ class CredentialsTypeChoice(str, Enum):
     KEY_FILE_PATH = 'KEY_FILE_PATH'
     ANONYMOUS_ACCESS = 'ANONYMOUS_ACCESS'
     CONNECTION_STRING = 'CONNECTION_STRING'
+    ENV_CREDS = 'ENV_CREDS'
 
     @classmethod
     def choices(cls):
