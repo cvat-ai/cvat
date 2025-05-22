@@ -2,7 +2,7 @@
 title: 'Analytics'
 linkTitle: 'Analytics'
 weight: 3
-# description: 'Analytics in CVAT'
+description: 'Learn how to access and analyze detailed data and metrics in CVAT Online and Enterprise.'
 ---
 
 CVAT provides analytics data for projects, tasks, and jobs to help
