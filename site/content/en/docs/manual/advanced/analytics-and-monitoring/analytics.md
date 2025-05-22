@@ -9,14 +9,14 @@ CVAT provides analytics data for projects, tasks, and jobs to help
 you to track annotation progress and performance metrics at every level.
 Analytics support a wide range of use cases, including:
 
-- Defining the working time a user spent on a job during a specific period
-- Tracking time spent in each job stage
-- Calculating the total number of ground truth objects in a project
-- Determining the number of ground truth images in a project
-- Checking interpolation rates to assess annotator efficiency
-- Identifying how many objects of a specific label were annotated in a resource
-- Calculating the average annotation speed of a user in a project or task
-- Analyzing how many objects or images were present in removed resources
+- Defining the working time a user spent on a job during a specific period.
+- Tracking time spent in each job stage.
+- Calculating the total number of ground truth objects in a project.
+- Determining the number of ground truth images in a project.
+- Checking interpolation rates to assess annotator efficiency.
+- Identifying how many objects of a specific label were annotated in a resource.
+- Calculating the average annotation speed of a user in a project or task.
+- Analyzing how many objects or images were present in removed resources.
 
 Analytics is a paid feature available in CVAT Online (paid tiers) and CVAT Enterprise.
 
@@ -55,7 +55,7 @@ To open analytics:
 {{% tab header="For a job" %}}
 
 1. Open **Jobs**.
-1. Open the job menu using ![Open menu](/images/openmenu.jpg).
+1. Open the job menu using ![Open menu](/images/openmenu.jpg) button.
 1. Select **View analytics**.
 
 {{% /tab %}}
@@ -64,7 +64,7 @@ To open analytics:
 
 ## Analytics page
 
-The **Analytics** page displays the data relevant to the specific project, task, or job.
+The **Analytics** page displays the data relevant to the specific resource (project, task, or job).
 Use the link in the page title to return to the corresponding project, task, or job.
 
 Analytics data is not fetched automatically. When you first open the **Analytics** page, it will be empty.
@@ -75,10 +75,10 @@ Once the data is fetched and displayed on the page, you can check its relevance 
 To update the data, select ![Fetch analytics button](/images/analytics/fetch-data-button.svg) button.
 
 The **Analytics** page includes:
-- [**Summary**](#summary-tab) tab
-- [**Annotations**](#annotations-tab) tab
-- [**Events**](#events) tab
-- Date filter
+- [**Summary**](#summary-tab) tab.
+- [**Annotations**](#annotations-tab) tab.
+- [**Events**](#events) tab.
+- Date filter.
 - **Export events** button.
 
 > **Note**: The date filter is applied only to the [**Events**](#events-tab) tab.
@@ -86,12 +86,12 @@ The **Analytics** page includes:
 The **Summary** tab provides a statistics overview, while the **Annotations** and **Events** tabs
 contain the detailed data in table form.
 
-To download a CSV file with the extended and detailed event data, select the **Export events** button.
+To download a CSV file with all event data, select the **Export events** button.
 
 ### Summary tab
 
 The **Summary** tab displays the quantitative metrics:
-- **Objects diff**: Difference between created and deleted objects..
+- **Objects diff**: Difference between created and deleted objects.
 - **Total working time** : Total hours spent across all users, based on annotation-related events.
 - **Avg. annotation speed**: Average number of objects annotated per hour.
 
@@ -101,15 +101,15 @@ for annotation distribution by labels and types. Hover over a chart or diagram t
 ### Annotations tab
 
 The **Annotations** tab shows annotation statistics for:
-- {{< ilink "/docs/manual/basics/shape-mode-basics" "Shape mode">}} (the **Detections** tab)
+- {{< ilink "/docs/manual/basics/shape-mode-basics" "Shape mode">}} (the **Detections** tab).
 - {{< ilink "/docs/manual/basics/track-mode-basics" "Track mode">}} (the **Tracking** tab).
 
 Each tab includes a filterable, customizable table
 (learn [how to work with tables](#working-with-tables)).
 
 You can filter entries by the **Label name** column:
-1. In the search box, enter the value or part of the value to find
-1. Select ![Search button](/images/analytics/search-button.svg) button or press _Enter_
+1. In the search box, enter the value or part of the value to find.
+1. Select ![Search button](/images/analytics/search-button.svg) button or press _Enter_.
 
 The **Detection** tab table contains the columns:
 
@@ -150,6 +150,7 @@ The **Events** tab displays the following metrics (respecting the date filter):
 - **Avg. annotation speed**: : Average number of objects annotated per hour
   (same as in **Summary** tab).
 
+The **Events** tab table contains the aggregated events for the selected resource.
 
 You can filter the events by date range:
 1. Select the date filter near the page title.
@@ -162,8 +163,10 @@ To reset the date range, select ![Clear filter button](/images/analytics/clear-f
 button in the date filter.
 
 You can also filter the table entries by values in **Task name**, **Assignee**, **Stage**, **State**, **User** columns:
-1. In the search box, enter the value or part of the value to find
-1. Select ![Search button](/images/analytics/search-button.svg) button or press _Enter_
+1. In the search box, enter the value or part of the value to find.
+1. Select ![Search button](/images/analytics/search-button.svg) button or press _Enter_.
+
+Other common operations with tables are described in the [**Working with tables**](#working-with-tables) paragraph.
 
 The events table columns:
 
@@ -197,14 +200,13 @@ The tables in the **Annotations** and **Events** tabs support:
 1. Exporting the data: select ![Export button](/images/analytics/export-button.svg) button.
    > **Note:** the applied filters and visible columns do not affect the file with exported data.
    > It always contains the complete table with all columns and rows.
-1. Filtering entries by a custom rule: select **Filter**, and set criteria for the filtering.
+1. Filtering entries by a custom rule: select **Filter**, and set filtering criteria.
    To learn more about how to set a filter, refer to the **{{< ilink "/docs/manual/advanced/filter" "Filter" >}}**
    article.
 1. Clearing filters: select **Clear filters**.
 1. Customizing columns:
    1. Select ![Menu button](/images/analytics/menu-button-vertical.svg) above the right side of the table.
-   1. Select the checkboxes for the columns to display them in the table,
-      or unselect them to hide the corresponding columns.
+   1. Toggle the checkboxes for the columns to display or hide them in the table.
 1. Sorting entries: select the column name to apply sorting.
    The arrows near the column name indicate the applied sorting order. The arrow up indicates
    ascending order, the arrow down indicates descending order.
