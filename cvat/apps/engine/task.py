@@ -784,7 +784,7 @@ def create_thread(
     raw_data_dir = db_data.get_upload_dirname()
     if os.path.exists(raw_data_dir):
         size_or_error = get_paths_sizes([raw_data_dir])[raw_data_dir]
-        if type(size_or_error) is not int:
+        if not isinstance(size_or_error, int):
             slogger.glob.warning(size_or_error, exc_info=True)
         else:
             db_data.content_size = size_or_error

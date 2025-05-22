@@ -37,7 +37,6 @@ from drf_spectacular.utils import (
     extend_schema,
     extend_schema_view,
 )
-from PIL import Image
 from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, NotFound, PermissionDenied, ValidationError

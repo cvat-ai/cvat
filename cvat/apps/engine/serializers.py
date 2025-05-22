@@ -3537,7 +3537,7 @@ class AssetWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
         try:
             size_or_error = get_paths_sizes([filename])[filename]
-            if type(size_or_error) is not int:
+            if not isinstance(size_or_error, int):
                 raise size_or_error
             serializer = AssetWriteSerializer(data=data)
             serializer.is_valid(raise_exception=True)

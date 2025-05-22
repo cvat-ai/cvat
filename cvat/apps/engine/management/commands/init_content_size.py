@@ -2,10 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
-import subprocess
-from typing import Union
-
 from django.core.management.base import BaseCommand
 
 from cvat.apps.engine.models import Asset, Data
@@ -32,7 +28,7 @@ class Command(BaseCommand):
                     paths = [get_directory_path(db_object) for db_object in db_objects]
                     sizes = get_paths_sizes(paths)
                     for i, path in enumerate(paths):
-                        if type(sizes[path]) is int:
+                        if isinstance(sizes[path], int):
                             db_objects[i].content_size = sizes[path]
                         else:
                             self.stderr.write(f"Failed to get size of {path}: {str(sizes[path])}")
