@@ -3513,7 +3513,6 @@ class AssetWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         data = {
             "uuid": str(uuid.uuid4()),
             "filename": basename if isinstance(bytes_or_file, bytes) else bytes_or_file.name,
-            "guide_id": guide_id,
         }
 
         dirname = os.path.join(settings.ASSETS_ROOT, data["uuid"])
@@ -3539,7 +3538,7 @@ class AssetWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             size_or_error = get_paths_sizes([filename])[filename]
             if not isinstance(size_or_error, int):
                 raise size_or_error
-            serializer = AssetWriteSerializer(data=data)
+            serializer = AssetWriteSerializer(data=data | {"guide_id": guide_id})
             serializer.is_valid(raise_exception=True)
             serializer.save(content_size=size_or_error, owner=owner)
             return serializer
