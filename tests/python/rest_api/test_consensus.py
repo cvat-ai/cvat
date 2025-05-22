@@ -6,6 +6,7 @@ import json
 from copy import deepcopy
 from functools import partial
 from http import HTTPStatus
+from itertools import product
 from typing import Any, Dict, Optional, Tuple
 
 import pytest
@@ -17,7 +18,13 @@ from deepdiff import DeepDiff
 
 from shared.utils.config import make_api_client
 
-from .utils import CollectionSimpleFilterTestBase, compare_annotations
+from .utils import (
+    CollectionSimpleFilterTestBase,
+    compare_annotations,
+    invite_user_to_org,
+    register_new_user,
+    wait_background_request,
+)
 
 
 class _PermissionTestBase:
@@ -49,16 +56,13 @@ class _PermissionTestBase:
                 return response
             assert response.status == HTTPStatus.ACCEPTED
 
-            rq_id = json.loads(response.data)["rq_id"]
-
-            while wait_result:
-                (_, response) = api_client.consensus_api.create_merge(
-                    rq_id=rq_id, _parse_response=False
+            if wait_result:
+                rq_id = json.loads(response.data)["rq_id"]
+                background_request, _ = wait_background_request(api_client, rq_id)
+                assert (
+                    background_request.status.value
+                    == models.RequestStatus.allowed_values[("value",)]["FINISHED"]
                 )
-                assert response.status in [HTTPStatus.CREATED, HTTPStatus.ACCEPTED]
-
-                if response.status == HTTPStatus.CREATED:
-                    break
 
             return response
 
@@ -194,14 +198,14 @@ class TestPostConsensusMerge(_PermissionTestBase):
     def test_can_merge_task_with_consensus_jobs(self, admin_user, tasks):
         task_id = next(t["id"] for t in tasks if t["consensus_enabled"])
 
-        assert self.merge(user=admin_user, task_id=task_id).status == HTTPStatus.CREATED
+        self.merge(user=admin_user, task_id=task_id)
 
     def test_can_merge_consensus_job(self, admin_user, jobs):
         job_id = next(
             j["id"] for j in jobs if j["type"] == "annotation" and j["consensus_replicas"] > 0
         )
 
-        assert self.merge(user=admin_user, job_id=job_id).status == HTTPStatus.CREATED
+        self.merge(user=admin_user, job_id=job_id)
 
     def test_cannot_merge_task_without_consensus_jobs(self, admin_user, tasks):
         task_id = next(t["id"] for t in tasks if not t["consensus_enabled"])
@@ -280,70 +284,111 @@ class TestPostConsensusMerge(_PermissionTestBase):
         else:
             self._test_merge_403(user["username"], task_id=task["id"])
 
-    # only rq job owner or admin now has the right to check status of report creation
-    def _test_check_merge_status_by_non_rq_job_owner(
+    # users with task:view rights can check status of report creation
+    def _test_check_merge_status(
         self,
         rq_id: str,
         *,
         staff_user: str,
-        other_user: str,
+        another_user: str,
+        another_user_status: int = HTTPStatus.FORBIDDEN,
     ):
-        with make_api_client(other_user) as api_client:
-            (_, response) = api_client.consensus_api.create_merge(
-                rq_id=rq_id, _parse_response=False, _check_status=False
+        with make_api_client(another_user) as api_client:
+            (_, response) = api_client.requests_api.retrieve(
+                rq_id, _parse_response=False, _check_status=False
             )
-            assert response.status == HTTPStatus.NOT_FOUND
-            assert json.loads(response.data)["detail"] == "Unknown request id"
+            assert response.status == another_user_status
 
         with make_api_client(staff_user) as api_client:
-            (_, response) = api_client.consensus_api.create_merge(
-                rq_id=rq_id, _parse_response=False, _check_status=False
-            )
-            assert response.status in {HTTPStatus.ACCEPTED, HTTPStatus.CREATED}
+            wait_background_request(api_client, rq_id)
 
-    def test_non_rq_job_owner_cannot_check_status_of_merge_in_sandbox(
+    def test_user_without_rights_cannot_check_status_of_merge_in_sandbox(
         self,
         find_sandbox_task_with_consensus,
         users,
     ):
         task, task_staff = find_sandbox_task_with_consensus(is_staff=True)
 
-        other_user = next(
+        another_user = next(
             u
             for u in users
             if (
                 u["id"] != task_staff["id"]
                 and not u["is_superuser"]
                 and u["id"] != task["owner"]["id"]
+                and u["id"] != (task["assignee"] or {}).get("id")
             )
         )
 
         rq_id = self.request_merge(task_id=task["id"], user=task_staff["username"])
-        self._test_check_merge_status_by_non_rq_job_owner(
-            rq_id, staff_user=task_staff["username"], other_user=other_user["username"]
+        self._test_check_merge_status(
+            rq_id, staff_user=task_staff["username"], another_user=another_user["username"]
         )
 
-    @pytest.mark.parametrize("role", _PermissionTestBase._default_org_roles)
-    def test_non_rq_job_owner_cannot_check_status_of_merge_in_org(
+    @pytest.mark.parametrize(
+        "same_org, role",
+        [
+            pair
+            for pair in product([True, False], _PermissionTestBase._default_org_roles)
+            if not (pair[0] and pair[1] in ["owner", "maintainer"])
+        ],
+    )
+    def test_user_without_rights_cannot_check_status_of_merge_in_org(
         self,
         find_org_task_with_consensus,
-        find_users,
+        same_org: bool,
         role: str,
+        organizations,
     ):
         task, task_staff = find_org_task_with_consensus(is_staff=True, user_org_role="supervisor")
 
-        other_user = next(
-            u
-            for u in find_users(role=role, org=task["organization"])
-            if (
-                u["id"] != task_staff["id"]
-                and not u["is_superuser"]
-                and u["id"] != task["owner"]["id"]
-            )
+        # create a new user that passes the requirements
+        another_user = register_new_user(f"{same_org}{role}")
+        org_id = (
+            task["organization"]
+            if same_org
+            else next(o for o in organizations if o["id"] != task["organization"])["id"]
         )
+        invite_user_to_org(another_user["email"], org_id, role)
+
         rq_id = self.request_merge(task_id=task["id"], user=task_staff["username"])
-        self._test_check_merge_status_by_non_rq_job_owner(
-            rq_id, staff_user=task_staff["username"], other_user=other_user["username"]
+        self._test_check_merge_status(
+            rq_id, staff_user=task_staff["username"], another_user=another_user["username"]
+        )
+
+    @pytest.mark.parametrize(
+        "role",
+        # owner and maintainer have rights even without being assigned to a task
+        ("supervisor", "worker"),
+    )
+    def test_task_assignee_can_check_status_of_merge_in_org(
+        self,
+        find_org_task_with_consensus,
+        role: str,
+    ):
+        task, another_user = find_org_task_with_consensus(is_staff=False, user_org_role=role)
+        task_owner = task["owner"]
+
+        rq_id = self.request_merge(task_id=task["id"], user=task_owner["username"])
+        self._test_check_merge_status(
+            rq_id,
+            staff_user=task_owner["username"],
+            another_user=another_user["username"],
+        )
+
+        with make_api_client(task_owner["username"]) as api_client:
+            api_client.tasks_api.partial_update(
+                task["id"],
+                patched_task_write_request=models.PatchedTaskWriteRequest(
+                    assignee_id=another_user["id"]
+                ),
+            )
+
+        self._test_check_merge_status(
+            rq_id,
+            staff_user=task_owner["username"],
+            another_user=another_user["username"],
+            another_user_status=HTTPStatus.OK,
         )
 
     @pytest.mark.parametrize("is_sandbox", (True, False))
@@ -373,10 +418,7 @@ class TestPostConsensusMerge(_PermissionTestBase):
         rq_id = self.request_merge(task_id=task["id"], user=task_staff["username"])
 
         with make_api_client(admin["username"]) as api_client:
-            (_, response) = api_client.consensus_api.create_merge(
-                rq_id=rq_id, _parse_response=False
-            )
-            assert response.status in {HTTPStatus.ACCEPTED, HTTPStatus.CREATED}
+            wait_background_request(api_client, rq_id)
 
 
 class TestSimpleConsensusSettingsFilters(CollectionSimpleFilterTestBase):
@@ -667,13 +709,11 @@ class TestMerging(_PermissionTestBase):
 
             api_client.jobs_api.update_annotations(
                 replicas[0]["id"],
-                job_annotations_update_request=models.JobAnnotationsUpdateRequest(shapes=[bbox1]),
+                labeled_data_request=models.LabeledDataRequest(shapes=[bbox1]),
             )
             api_client.jobs_api.update_annotations(
                 replicas[1]["id"],
-                job_annotations_update_request=models.JobAnnotationsUpdateRequest(
-                    shapes=[bbox1, bbox2]
-                ),
+                labeled_data_request=models.LabeledDataRequest(shapes=[bbox1, bbox2]),
             )
 
             self.merge(job_id=parent_job["id"], user=admin_user)
