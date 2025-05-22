@@ -394,7 +394,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: allure-results-e2e-${{ matrix.specs }}
-          path: allure-results-e2e
+          path: tests/allure-results-e2e
           retention-days: 10
 
   # helm_rest_api_testing:
