@@ -3538,7 +3538,7 @@ class AssetWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
         try:
             av_scan_paths(dirname)
-            size_or_error = get_paths_sizes([filename])[filename]
+            size_or_error = get_paths_sizes([dirname])[dirname]
             if not isinstance(size_or_error, int):
                 raise size_or_error
             serializer = AssetWriteSerializer(data=data | {"guide_id": guide_id})
