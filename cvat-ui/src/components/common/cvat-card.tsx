@@ -41,7 +41,7 @@ function CardComponent(props: Props): JSX.Element {
                                 </Text>
                                 {
                                     tooltip && (
-                                        <CVATTooltip title={tooltip} className='cvat-card-tooltip' overlayStyle={{ maxWidth: '500px' }}>
+                                        <CVATTooltip title={tooltip} className='cvat-card-tooltip' overlayStyle={{ maxWidth: '800px' }}>
                                             <QuestionCircleOutlined
                                                 style={{ opacity: 0.5 }}
                                             />

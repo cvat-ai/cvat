@@ -24,7 +24,7 @@ from cvat.apps.dataset_manager.bindings import (
 from cvat.apps.dataset_manager.util import make_zip_archive
 
 from .registry import dm_env, exporter, importer
-from .transformations import SetKeyframeForEveryTrackShape
+from .transformations import EllipsesToMasks, SetKeyframeForEveryTrackShape
 
 
 def _export_common(
@@ -60,11 +60,16 @@ def _import_common(
 ):
     Archive(src_file.name).extractall(temp_dir)
 
+    detect_dataset(temp_dir, format_name=format_name, importer=dm_env.importers.get(format_name))
+
+    detected_sources = dm_env.make_importer(format_name)(temp_dir)
+
     image_info = {}
     extractor = dm_env.extractors.get(format_name)
     frames = [
-        extractor.name_from_path(osp.relpath(p, temp_dir))
-        for p in glob(osp.join(temp_dir, "**", "*.txt"), recursive=True)
+        extractor.name_from_path(osp.relpath(p, folder))
+        for folder in set(osp.dirname(source["url"]) for source in detected_sources)
+        for p in glob(osp.join(folder, "**", "*.txt"), recursive=True)
     ]
     root_hint = find_dataset_root([DatasetItem(id=frame) for frame in frames], instance_data)
     for frame in frames:
@@ -77,7 +82,6 @@ def _import_common(
         if frame_info is not None:
             image_info[frame] = (frame_info["height"], frame_info["width"])
 
-    detect_dataset(temp_dir, format_name=format_name, importer=dm_env.importers.get(format_name))
     dataset = StreamDataset.import_from(
         temp_dir, format_name, env=dm_env, image_info=image_info, **(import_kwargs or {})
     )
@@ -111,6 +115,7 @@ def _export_yolo_ultralytics_oriented_boxes(*args, **kwargs):
 def _export_yolo_ultralytics_segmentation(dst_file, temp_dir, instance_data, *, save_images=False):
     with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
         dataset = StreamDataset.from_extractors(extractor, env=dm_env)
+        dataset.transform(EllipsesToMasks)
         dataset = dataset.transform("masks_to_polygons")
         dataset.export(temp_dir, "yolo_ultralytics_segmentation", save_media=save_images)
 

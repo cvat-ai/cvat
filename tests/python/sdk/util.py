@@ -33,8 +33,6 @@ def generate_coco_anno(image_path: str, image_width: int, image_height: int) -> 
         textwrap.dedent(
             """
     {
-        "licenses": [],
-        "info": {},
         "categories": [
             {
                 "id": 1,
