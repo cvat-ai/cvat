@@ -95,7 +95,8 @@ The **Summary** tab displays the quantitative metrics:
 - **Total working time** : Total hours spent across all users, based on annotation-related events.
 - **Avg. annotation speed**: Average number of objects annotated per hour.
 
-The **Summary** tab includes charts for object statistics, annotation speed, and diagrams for annotation distribution by labels and types. Hover over a chart or diagram to display tooltips.
+The **Summary** tab includes charts for object statistics, annotation speed, and diagrams
+for annotation distribution by labels and types. Hover over a chart or diagram to display tooltips.
 
 ### Annotations tab
 
