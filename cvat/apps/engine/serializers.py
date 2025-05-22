@@ -43,6 +43,7 @@ from cvat.apps.engine.permissions import TaskPermission
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
 from cvat.apps.engine.utils import (
     CvatChunkTimestampMismatchError,
+    av_scan_paths,
     build_field_filter_params,
     format_list,
     get_list_view_name,
@@ -3536,6 +3537,7 @@ class AssetWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                         destination.write(chunk)
 
         try:
+            av_scan_paths(dirname)
             size_or_error = get_paths_sizes([filename])[filename]
             if not isinstance(size_or_error, int):
                 raise size_or_error
