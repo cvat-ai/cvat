@@ -367,8 +367,7 @@ def get_paths_sizes(paths: List[str]) -> Dict[str, int | ValueError | RuntimeErr
 
     for chunk in take_by(paths, chunk_size):
         # the function must not be called with uncontrolled input
-        # nosec B603
-        result = subprocess.run(
+        result = subprocess.run( # nosec
             ["du", "-s"] + chunk,
             capture_output=True,
             text=True,
