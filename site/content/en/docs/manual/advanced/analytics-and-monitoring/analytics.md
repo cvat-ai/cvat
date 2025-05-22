@@ -5,29 +5,29 @@ weight: 3
 # description: 'Analytics in CVAT'
 ---
 
-CVAT provides analytics data for projects, tasks, and jobs.
-You can use analytics to track annotation progress and statistics for a project
-as a whole or individual tasks and jobs. Analytics can help you perform tasks such as:
+CVAT provides analytics data for projects, tasks, and jobs to help
+you to track annotation progress and performance metrics at every level.
+Analytics support a wide range of use cases, including:
 
-- Define the working time a user spent on a job during a specific period
-- Track time spent in each job stage
-- Calculate the total number of ground truth objects in a project
-- Determine the number of ground truth images in a project
-- Check interpolation rates to assess annotator efficiency
-- Identify how many objects of a specific label were annotated in a resource
-- Calculate the average annotation speed of a user in a project or task
-- Analyze how many objects or images were present in removed resources
+- Defining the working time a user spent on a job during a specific period
+- Tracking time spent in each job stage
+- Calculating the total number of ground truth objects in a project
+- Determining the number of ground truth images in a project
+- Checking interpolation rates to assess annotator efficiency
+- Identifying how many objects of a specific label were annotated in a resource
+- Calculating the average annotation speed of a user in a project or task
+- Analyzing how many objects or images were present in removed resources
 
-Analytics is a paid feature available on CVAT Online paid tiers and for CVAT Enterprise users.
+Analytics is a paid feature available in CVAT Online (paid tiers) and CVAT Enterprise.
 
-For personal workspaces, analytics are available only to workspace owners.
-Within an organization, access to analytics depends on the user's
-{{< ilink "/docs/manual/advanced/user-roles#organization-roles-in-cvat" "organization role">}}:
+In personal workspaces, analytics are available only to the workspace owner.
+In organizations, access depends on the user's
+{{< ilink "/docs/manual/advanced/user-roles#organization-roles-in-cvat" "organizational role">}}:
 
-- **Owners** and **Maintainers** can access full analytics for any project, task, or job.
-- **Supervisors**
-- **Workers** can access analytics only for the tasks and jobs they are assigned to.
-
+- **Owners** and **Maintainers**: Full access to all analytics.
+- **Supervisors**: Access only to analytics for visible projects, tasks, and jobs.
+- **Workers**: Access only to analytics for tasks and jobs assigned to them.
+  Workers cannot update the analytics data.
 
 ## Access
 
@@ -37,26 +37,26 @@ To open analytics:
 
 {{% tab header="For a project" %}}
 
-1. Open **Projects**
-1. In the project list, open the project menu using ![Open menu](/images/openmenu.jpg)
-   or open a project and select **Actions**
-1. Select **View analytics**
+1. Open **Projects**.
+1. Open the project menu using ![Open menu](/images/openmenu.jpg)
+   or open a project and select **Actions**.
+1. Select **View analytics**.
 
 {{% /tab %}}
 
 {{% tab header="For a task" %}}
 
-1. Open **Tasks**
-1. In the task list, open **Actions** menu for a task. Or open a task and select **Actions**
-1. Select **View analytics**
+1. Open **Tasks**.
+1. Open the **Actions** menu for a task, or open a task and select **Actions**.
+1. Select **View analytics**.
 
 {{% /tab %}}
 
 {{% tab header="For a job" %}}
 
-1. Open **Jobs**
-1. In the jobs list, open the job menu using ![Open menu](/images/openmenu.jpg)
-1. Select **View analytics**
+1. Open **Jobs**.
+1. Open the job menu using ![Open menu](/images/openmenu.jpg).
+1. Select **View analytics**.
 
 {{% /tab %}}
 
@@ -67,50 +67,50 @@ To open analytics:
 The **Analytics** page displays the data relevant to the specific project, task, or job.
 Use the link in the page title to return to the corresponding project, task, or job.
 
-Analytics data is fetched only manually, so when you open the **Analytics** page for
-the first time, it is empty. To fetch and display the analytical data, select the **Request**
-button.
+Analytics data is not fetched automatically. When you first open the **Analytics** page, it will be empty.
+To fetch and display the analytical data, select the **Request** button.
 
 Once the data is fetched and displayed on the page, you can check its relevance under the page title.
 
 To update the data, select ![Fetch analytics button](/images/analytics/fetch-data-button.png) button.
 
-The **Analytics** page contains [**Summary**](#summary-tab),
-[**Annotations**](#annotations-tab), [**Events**](#events) tabs, the date filter, and the
-**Export events** button.
+The **Analytics** page includes:
+- [**Summary**](#summary-tab) tab
+- [**Annotations**](#annotations-tab) tab
+- [**Events**](#events) tab
+- Date filter
+- **Export events** button.
+
+> **Note**: The date filter is applied only to the [**Events**](#events-tab) tab.
 
 The **Summary** tab provides a statistics overview, while the **Annotations** and **Events** tabs
 contain the detailed data in table form.
-
-> **Note**: The date filter is applied only to the [**Events**](#events-tab) tab.
 
 To download a CSV file with the extended and detailed event data, select the **Export events** button.
 
 ### Summary tab
 
 The **Summary** tab displays the quantitative metrics:
-- **Objects diff** is the difference between the created and deleted objects in the project, task, or job.
-- **Total working time** is the hours spent on the project, task, or job across all users.
-  The time is calculated based on the project events, such as creating annotations, and so on.
-- **Avg. annotation speed** is the average number of objects annotated per hour.
+- **Objects diff**: Difference between created and deleted objects..
+- **Total working time** : Total hours spent across all users, based on annotation-related events.
+- **Avg. annotation speed**: Average number of objects annotated per hour.
 
-The **Summary** tab also shows graphs for the objects summary and the annotation speed, and the diagrams for
-the annotation distribution by labels and types. Hover over a graph or a diagram to display the tooltip.
+The **Summary** tab includes charts for object statistics, annotation speed, and diagrams for annotation distribution by labels and types. Hover over a chart or diagram to display tooltips.
 
 ### Annotations tab
 
-The **Annotations** tab contains the data for annotations made in the
-{{< ilink "/docs/manual/basics/shape-mode-basics" "shape mode">}} (the **Detections** tab)
-and in the {{< ilink "/docs/manual/basics/track-mode-basics" "track mode">}} (the **Tracking** tab).
+The **Annotations** tab shows annotation statistics for:
+- {{< ilink "/docs/manual/basics/shape-mode-basics" "Shape mode">}} (the **Detections** tab)
+- {{< ilink "/docs/manual/basics/track-mode-basics" "Track mode">}} (the **Tracking** tab).
 
-Both the **Detection** and **Tracking** tabs contain adjustable tables.
-Learn [how to work with tables](#working-with-tables).
+Each tab includes a filterable, customizable table
+(learn [how to work with tables](#working-with-tables)).
 
-You can also filter the table entries by values in the **Label name** column:
+You can filter entries by the **Label name** column:
 1. In the search box, enter the value or part of the value to find
 1. Select ![Search button](/images/analytics/search-button.png) button or press _Enter_
 
-The table in the **Detection** tab contains the columns:
+The **Detection** tab table contains the columns:
 
 <!--lint disable maximum-line-length-->
 
@@ -118,13 +118,13 @@ The table in the **Detection** tab contains the columns:
 | --------------- | ----------- |
 | **Label ID** | The ID of the label. |
 | **Label name** | The name of the label. |
-| Columns with {{< ilink "/docs/manual/basics/types-of-shapes" "label types names">}} | The number of objects with the corresponding label type. By default, the columns with zero values are hidden. |
+| Columns with {{< ilink "/docs/manual/basics/types-of-shapes" "label types names">}} | The number of objects per label type. By default, the columns with zero values are hidden. |
 | **Total shapes** | The total number of all label shapes. |
 
 
 <!--lint enable maximum-line-length-->
 
-The table in the **Tracking** tab contains the columns:
+The **Tracking** tab tzble contains the columns:
 
 <!--lint disable maximum-line-length-->
 
@@ -132,7 +132,7 @@ The table in the **Tracking** tab contains the columns:
 | --------------- | ----------- |
 | **Label ID** | The ID of the label. |
 | **Label name** | The name of the label. |
-| Columns with {{< ilink "/docs/manual/basics/types-of-shapes" "label type names">}} | The number of objects with the corresponding label type. By default, the columns with zero values are hidden. |
+| Columns with {{< ilink "/docs/manual/basics/types-of-shapes" "label type names">}} | The number of objects per label type. By default, the columns with zero values are hidden. |
 | **Keyframes** | The number of the label keyframes. |
 | **Interpolated** | The number of {{< ilink "/docs/manual/basics/vocabulary#interpolation" "interpolated frames" >}} with the label. |
 | **Tracks** | The number of the label {{< ilink "/docs/manual/basics/vocabulary#track" "tracks" >}}. |
@@ -143,23 +143,22 @@ The table in the **Tracking** tab contains the columns:
 ### Events tab
 
 The **Events** tab displays the following metrics (respecting the date filter):
-- **Total objects** is the total number of objects in the project jobs.
-- **Total images** is the total number of images in the project jobs.
-- **Total working time** is the hours spent on the project across all users.
-    This is the same metric as on the **Summary** tab.
-- **Avg. annotation speed** is the average number of the project objects annotated per hour.
-    This is the same metric as on the **Summary** tab.
+- **Total objects**: Total number of objects in project jobs.
+- **Total images**: Total number of images in project jobs.
+- **Total working time**: Total user time spent (same as in **Summary** tab).
+- **Avg. annotation speed**: : Average number of objects annotated per hour
+  (same as in **Summary** tab).
+
 
 You can filter the events by date range:
-1. Select the date picker near the page title
-1. In the calendar, select the first and the last day of the date range.
-   Or enter the dates manually in the format `YYYY-MM-DD`.
+1. Select the date filter near the page title.
+1. Select the first and last dates or enter them in `YYYY-MM-DD` format.
 
 If the date filter is empty, the **Events** tab shows the metrics and events
 for the lifetime of the project, task, or job.
 
 To reset the date range, select ![Clear filter button](/images/analytics/clear-filter-button.png)
-button in the date picker.
+button in the date filter.
 
 You can also filter the table entries by values in **Task name**, **Assignee**, **Stage**, **State**, **User** columns:
 1. In the search box, enter the value or part of the value to find
@@ -179,12 +178,12 @@ The events table columns:
 | **Exists** | Indicates if both the job (**Job ID**) and the task (**Task ID** / **Task name**) exist at the last data fetch. |
 | **Objects** | The total number of existing objects on the job (**Job ID**) frames |
 | **Assignee** | The job (**Job ID**) assignee. |
-| **Stage** | The stage of the job (**Job ID**). |
-| **State** | The state of the job (**Job ID**). |
+| **Stage** | The stage of the job (**Job ID**) when the event occurred. |
+| **State** | The state of the job (**Job ID**) when the event occurred. |
 | **User** | The name of the user who triggered the event |
-| **Working time** | Displays the total time spent during the event (in seconds?). By default, the column is hidden. |
-| **Start UTC time** | The Coordinated Universal Time (UTC) at which the event was started. |
-| **End UTC time** | The Coordinated Universal Time (UTC) at which the event was finished. By default, the column is hidden. |
+| **Working time** | Displays the total time in hpurs spent during the events. By default, the column is hidden. |
+| **Start UTC time** | UTC time when the event started. |
+| **End UTC time** | UTC time when the event finished. By default, the column is hidden. |
 | **Created objects** | The total number of created objects. By default, the column is hidden. |
 | **Updated objects** | The total number of updated objects. By default, the column is hidden. |
 | **Deleted objects** | The total number of deleted objects. By default, the column is hidden. |
@@ -193,19 +192,19 @@ The events table columns:
 
 ## Working with tables
 
-For tables in the **Annotations** and **Events** tabs, you can:
-1. Export the data: select ![Export button](/images/analytics/export-button.png) button.
+The tables in the **Annotations** and **Events** tabs support:
+1. Exporting the data: select ![Export button](/images/analytics/export-button.png) button.
    > **Note:** the applied filters and visible columns do not affect the file with exported data.
    > It always contains the complete table with all columns and rows.
-1. Filter the table entries by a custom rule, select **Filter**, and set criteria for the filtering.
+1. Filtering entries by a custom rule: select **Filter**, and set criteria for the filtering.
    To learn more about how to set a filter, refer to the **{{< ilink "/docs/manual/advanced/filter" "Filter" >}}**
    article.
-1. Reset all applied filters: select **Clear filters**.
-1. Manage the table columns:
+1. Clearing filters: select **Clear filters**.
+1. Customizing columns:
    1. Select ![Menu button](/images/analytics/menu-button-vertical.png) above the right side of the table.
    1. Select the checkboxes for the columns to display them in the table,
       or unselect them to hide the corresponding columns.
-1. Sort the table entries by column values. Select the column name to apply sorting.
+1. Sorting entries: select the column name to apply sorting.
    The arrows near the column name indicate the applied sorting order. The arrow up indicates
    ascending order, the arrow down indicates descending order.
    You can sort the entries by one column only.
