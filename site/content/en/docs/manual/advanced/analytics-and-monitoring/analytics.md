@@ -72,7 +72,7 @@ To fetch and display the analytical data, select the **Request** button.
 
 Once the data is fetched and displayed on the page, you can check its relevance under the page title.
 
-To update the data, select ![Fetch analytics button](/images/analytics/fetch-data-button.png) button.
+To update the data, select ![Fetch analytics button](/images/analytics/fetch-data-button.svg) button.
 
 The **Analytics** page includes:
 - [**Summary**](#summary-tab) tab
@@ -108,7 +108,7 @@ Each tab includes a filterable, customizable table
 
 You can filter entries by the **Label name** column:
 1. In the search box, enter the value or part of the value to find
-1. Select ![Search button](/images/analytics/search-button.png) button or press _Enter_
+1. Select ![Search button](/images/analytics/search-button.svg) button or press _Enter_
 
 The **Detection** tab table contains the columns:
 
@@ -157,12 +157,12 @@ You can filter the events by date range:
 If the date filter is empty, the **Events** tab shows the metrics and events
 for the lifetime of the project, task, or job.
 
-To reset the date range, select ![Clear filter button](/images/analytics/clear-filter-button.png)
+To reset the date range, select ![Clear filter button](/images/analytics/clear-filter-button.svg)
 button in the date filter.
 
 You can also filter the table entries by values in **Task name**, **Assignee**, **Stage**, **State**, **User** columns:
 1. In the search box, enter the value or part of the value to find
-1. Select ![Search button](/images/analytics/search-button.png) button or press _Enter_
+1. Select ![Search button](/images/analytics/search-button.svg) button or press _Enter_
 
 The events table columns:
 
@@ -193,7 +193,7 @@ The events table columns:
 ## Working with tables
 
 The tables in the **Annotations** and **Events** tabs support:
-1. Exporting the data: select ![Export button](/images/analytics/export-button.png) button.
+1. Exporting the data: select ![Export button](/images/analytics/export-button.svg) button.
    > **Note:** the applied filters and visible columns do not affect the file with exported data.
    > It always contains the complete table with all columns and rows.
 1. Filtering entries by a custom rule: select **Filter**, and set criteria for the filtering.
@@ -201,7 +201,7 @@ The tables in the **Annotations** and **Events** tabs support:
    article.
 1. Clearing filters: select **Clear filters**.
 1. Customizing columns:
-   1. Select ![Menu button](/images/analytics/menu-button-vertical.png) above the right side of the table.
+   1. Select ![Menu button](/images/analytics/menu-button-vertical.svg) above the right side of the table.
    1. Select the checkboxes for the columns to display them in the table,
       or unselect them to hide the corresponding columns.
 1. Sorting entries: select the column name to apply sorting.
