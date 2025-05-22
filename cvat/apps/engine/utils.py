@@ -20,7 +20,7 @@ from contextlib import nullcontext, suppress
 from itertools import islice
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import Any, Callable, Optional, TypeVar, Union
+from typing import Any, Callable, Dict, List, Optional, TypeVar, Union
 
 import cv2 as cv
 from attr.converters import to_bool
@@ -336,6 +336,7 @@ def directory_tree(path, max_depth=None) -> str:
             tree += f"{indent}-{file}\n"
     return tree
 
+
 def is_dataset_export(request: ExtendedRequest) -> bool:
     return to_bool(request.query_params.get('save_images', False))
 
@@ -355,6 +356,34 @@ def take_by(iterable: Iterable[_T], chunk_size: int) -> Generator[list[_T], None
             break
 
         yield batch
+
+
+def get_paths_sizes(paths: List[str]) -> Dict[str, int | ValueError | RuntimeError]:
+    if not paths:
+        return {}
+
+    chunk_size = 100
+    sizes: Dict[str, int] = {}
+
+    for chunk in take_by(paths, chunk_size):
+        result = subprocess.run(
+            ["du", "-s"] + chunk,
+            capture_output=True,
+            text=True,
+        )
+
+        for line in result.stdout.strip().splitlines():
+            try:
+                size_str, path = line.strip().split(maxsplit=1)
+                sizes[path] = int(size_str)
+            except ValueError as e:
+                sizes[path] = e
+
+    for path in paths:
+        if path not in sizes:
+            sizes[path] = RuntimeError(f"Path {path} not found in du output")
+
+    return sizes
 
 
 FORMATTED_LIST_DISPLAY_THRESHOLD = 10
@@ -408,3 +437,4 @@ def defaultdict_to_regular(d):
     if isinstance(d, defaultdict):
         d = {k: defaultdict_to_regular(v) for k, v in d.items()}
     return d
+

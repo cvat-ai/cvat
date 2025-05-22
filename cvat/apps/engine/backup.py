@@ -114,7 +114,7 @@ def _read_annotation_guide(zip_object, guide_filename, assets_dirname):
 
     return None, []
 
-def _import_annotation_guide(guide_data, assets):
+def _import_annotation_guide(owner, guide_data, assets):
     guide_serializer = AnnotationGuideWriteSerializer(data=guide_data)
     markdown = guide_data['markdown']
     if guide_serializer.is_valid(raise_exception=True):
@@ -122,18 +122,13 @@ def _import_annotation_guide(guide_data, assets):
 
     for asset in assets:
         name, data = asset
-        basename = os.path.basename(name)
-        asset_serializer = AssetWriteSerializer(data={
-            'filename': basename,
-            'guide_id': guide_serializer.instance.id,
-        })
-        if asset_serializer.is_valid(raise_exception=True):
-            asset_serializer.save()
-            markdown = markdown.replace(f'{name}', f'/api/assets/{asset_serializer.instance.pk}')
-            path = os.path.join(settings.ASSETS_ROOT, str(asset_serializer.instance.uuid))
-            os.makedirs(path)
-            with open(os.path.join(path, basename), 'wb') as destination:
-                destination.write(data)
+        asset_serializer = AssetWriteSerializer.write_asset(
+            owner,
+            guide_serializer.instance.id,
+            data,
+            os.path.basename(name)
+        )
+        markdown = markdown.replace(f'{name}', f'/api/assets/{asset_serializer.instance.pk}')
 
     guide_serializer.instance.markdown = markdown
     guide_serializer.instance.save()
@@ -934,7 +929,11 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
     def _import_annotation_guide(self):
         if self._annotation_guide:
             markdown = self._annotation_guide.decode()
-            _import_annotation_guide({ 'markdown': markdown, 'task_id': self._db_task.id }, self._assets)
+            _import_annotation_guide(
+                self._db_task.owner,
+                { 'markdown': markdown, 'task_id': self._db_task.id },
+                self._assets
+            )
 
     def import_task(self):
         self._import_task()
@@ -1069,7 +1068,11 @@ class ProjectImporter(_ImporterBase, _ProjectBackupBase):
     def _import_annotation_guide(self):
         if self._annotation_guide:
             markdown = self._annotation_guide.decode()
-            _import_annotation_guide({ 'markdown': markdown, 'project_id': self._db_project.id }, self._assets)
+            _import_annotation_guide(
+                self._db_project.owner,
+                { 'markdown': markdown, 'project_id': self._db_project.id },
+                self._assets
+            )
 
     def import_project(self):
         self._import_project()

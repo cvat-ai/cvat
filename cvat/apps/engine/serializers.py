@@ -10,6 +10,7 @@ import re
 import shutil
 import string
 import textwrap
+import uuid
 import warnings
 from collections import OrderedDict
 from collections.abc import Iterable, Sequence
@@ -22,11 +23,13 @@ from typing import Any, Optional, Union
 import django_rq
 from django.conf import settings
 from django.contrib.auth.models import Group, User
+from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
 from django.db.models import Prefetch, prefetch_related_objects
 from django.utils import timezone
 from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
 from numpy import random
+from PIL import Image
 from rest_framework import exceptions, serializers
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
@@ -42,6 +45,7 @@ from cvat.apps.engine.utils import (
     build_field_filter_params,
     format_list,
     get_list_view_name,
+    get_paths_sizes,
     grouped,
     parse_specific_attributes,
     reverse,
@@ -3498,6 +3502,51 @@ class AssetWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     uuid = serializers.CharField(required=False)
     filename = serializers.CharField(required=True, max_length=MAX_FILENAME_LENGTH)
     guide_id = serializers.IntegerField(required=True)
+
+    @staticmethod
+    def write_asset(
+        owner: User,
+        guide_id: int,
+        bytes_or_file: bytes | UploadedFile,
+        basename: Optional[str] = None
+    ) -> AssetWriteSerializer:
+        data = {
+            "uuid": str(uuid.uuid4()),
+            "filename": basename if isinstance(bytes_or_file, bytes) else bytes_or_file.name,
+            "guide_id": guide_id,
+        }
+
+        dirname = os.path.join(settings.ASSETS_ROOT, data["uuid"])
+        filename = os.path.join(dirname, data["filename"])
+        os.makedirs(dirname)
+
+        if isinstance(bytes_or_file, bytes):
+            with open(filename, 'wb') as destination:
+                destination.write(bytes_or_file)
+        else:
+            if bytes_or_file.content_type in ("image/jpeg", "image/png"):
+                image = Image.open(bytes_or_file)
+                if any(map(lambda x: x > settings.ASSET_MAX_IMAGE_SIZE, image.size)):
+                    scale_factor = settings.ASSET_MAX_IMAGE_SIZE / max(image.size)
+                    image = image.resize((map(lambda x: int(x * scale_factor), image.size)))
+                image.save(filename)
+            else:
+                with open(filename, "wb") as destination:
+                    for chunk in bytes_or_file.chunks():
+                        destination.write(chunk)
+
+        try:
+            size_or_error = get_paths_sizes([filename])[filename]
+            if type(size_or_error) is not int:
+                raise size_or_error
+            serializer = AssetWriteSerializer(data=data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(content_size=size_or_error, owner=owner)
+            return serializer
+        except:
+            os.remove(filename)
+            os.rmdir(dirname)
+            raise
 
     class Meta:
         model = models.Asset

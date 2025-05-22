@@ -2660,46 +2660,24 @@ class AssetsViewSet(
             return AssetWriteSerializer
 
     def create(self, request: ExtendedRequest, *args, **kwargs):
-        file = request.data.get('file', None)
+        file = request.data.get("file", None)
         if not file:
-            raise ValidationError('Asset file was not provided')
+            raise ValidationError("Asset file was not provided")
 
         if file.size / (1024 * 1024) > settings.ASSET_MAX_SIZE_MB:
-            raise ValidationError(f'Maximum size of asset is {settings.ASSET_MAX_SIZE_MB} MB')
+            raise ValidationError(f"Maximum size of asset is {settings.ASSET_MAX_SIZE_MB} MB")
 
         if file.content_type not in settings.ASSET_SUPPORTED_TYPES:
-            raise ValidationError(f'File is not supported as an asset. Supported are {settings.ASSET_SUPPORTED_TYPES}')
+            raise ValidationError(f"File is not supported as an asset. Supported are {settings.ASSET_SUPPORTED_TYPES}")
 
-        guide_id = request.data.get('guide_id')
-        db_guide = AnnotationGuide.objects.prefetch_related('assets').get(pk=guide_id)
+        guide_id = request.data.get("guide_id")
+        db_guide = AnnotationGuide.objects.prefetch_related("assets").get(pk=guide_id)
         if db_guide.assets.count() >= settings.ASSET_MAX_COUNT_PER_GUIDE:
-            raise ValidationError(f'Maximum number of assets per guide reached')
+            raise ValidationError(f"Maximum number of assets per guide reached")
 
-        serializer = self.get_serializer(data={
-            'filename': file.name,
-            'guide_id': guide_id,
-        })
-
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        path = os.path.join(settings.ASSETS_ROOT, str(serializer.instance.uuid))
-        os.makedirs(path)
-        if file.content_type in ('image/jpeg', 'image/png'):
-            image = Image.open(file)
-            if any(map(lambda x: x > settings.ASSET_MAX_IMAGE_SIZE, image.size)):
-                scale_factor = settings.ASSET_MAX_IMAGE_SIZE / max(image.size)
-                image = image.resize((map(lambda x: int(x * scale_factor), image.size)))
-            image.save(os.path.join(path, file.name))
-        else:
-            with open(os.path.join(path, file.name), 'wb+') as destination:
-                for chunk in file.chunks():
-                    destination.write(chunk)
-
+        serializer = AssetWriteSerializer.write_asset(self.request.user, guide_id, file)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-
-    def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
 
     def retrieve(self, request: ExtendedRequest, *args, **kwargs):
         instance = self.get_object()
