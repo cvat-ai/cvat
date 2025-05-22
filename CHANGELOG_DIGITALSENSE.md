@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Patchcore [PR #4]
 - Models on startup [PR #5]
 Created startup.sh file which builds CVAT container and all nuclio functions listed in serverless/cpu_functions.txt andserverless/gpu_functions.txt. Created deploy_array_cpu.sh and deploy_array_gpu.sh bash files that serve the same purpose as orignal deploy_array_{}.sh but take as argument a .txt file with all function paths.
-- Folder Mounting [PR #7]
+- Folder Mounting [PR #8]
 Created docker-compose.override.yml file, in this case to mount folders o cvat
 
 ### Changed
