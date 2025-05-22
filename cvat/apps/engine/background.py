@@ -2,46 +2,62 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os.path as osp
-from abc import ABC, abstractmethod
+from abc import abstractmethod
+from dataclasses import asdict as dataclass_asdict
 from dataclasses import dataclass
-from datetime import datetime
-from typing import Any, ClassVar, Optional, Union
-from urllib.parse import quote
+from pathlib import Path
+from tempfile import NamedTemporaryFile
+from uuid import uuid4
 
-import django_rq
+from attrs.converters import to_bool
 from django.conf import settings
-from django.http.response import HttpResponseBadRequest
-from django_rq.queues import DjangoRQ, DjangoScheduler
-from rest_framework import serializers, status
-from rest_framework.response import Response
+from django.db.models import Model
+from rest_framework import serializers
+from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.reverse import reverse
-from rq.job import Job as RQJob
-from rq.job import JobStatus as RQJobStatus
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.formats.registry import EXPORT_FORMATS
-from cvat.apps.dataset_manager.util import get_export_cache_lock
-from cvat.apps.dataset_manager.views import get_export_cache_ttl, get_export_callback
-from cvat.apps.engine import models
-from cvat.apps.engine.backup import ProjectExporter, TaskExporter, create_backup
-from cvat.apps.engine.cloud_provider import export_resource_to_cloud_storage
-from cvat.apps.engine.location import StorageType, get_location_configuration
+from cvat.apps.dataset_manager.util import TmpDirManager
+from cvat.apps.dataset_manager.views import get_export_callback
+from cvat.apps.engine.backup import (
+    ProjectExporter,
+    TaskExporter,
+    create_backup,
+    import_project,
+    import_task,
+)
+from cvat.apps.engine.cloud_provider import import_resource_from_cloud_storage
+from cvat.apps.engine.location import LocationConfig, StorageType, get_location_configuration
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.models import Location, RequestAction, RequestSubresource, RequestTarget, Task
+from cvat.apps.engine.models import (
+    Data,
+    Job,
+    Location,
+    Project,
+    RequestAction,
+    RequestSubresource,
+    RequestTarget,
+    Task,
+)
 from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
-from cvat.apps.engine.rq import ExportRQMeta, RQId, define_dependent_job
-from cvat.apps.engine.serializers import RqIdSerializer
+from cvat.apps.engine.rq import ExportRequestId, ImportRequestId
+from cvat.apps.engine.serializers import (
+    AnnotationFileSerializer,
+    DatasetFileSerializer,
+    ProjectFileSerializer,
+    TaskFileSerializer,
+)
+from cvat.apps.engine.task import create_thread as create_task
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import (
     build_annotations_file_name,
     build_backup_file_name,
-    get_rq_lock_by_user,
-    get_rq_lock_for_job,
+    import_resource_with_clean_up_after,
     is_dataset_export,
-    sendfile,
 )
-from cvat.apps.events.handlers import handle_dataset_export
+from cvat.apps.events.handlers import handle_dataset_export, handle_dataset_import
+from cvat.apps.redis_handler.background import AbstractExporter, AbstractRequestManager
 
 slogger = ServerLogManager(__name__)
 
@@ -51,267 +67,73 @@ LOCK_TTL = REQUEST_TIMEOUT - 5
 LOCK_ACQUIRE_TIMEOUT = LOCK_TTL - 5
 
 
-class ResourceExportManager(ABC):
-    QUEUE_NAME = settings.CVAT_QUEUES.EXPORT_DATA.value
-    SUPPORTED_RESOURCES: ClassVar[set[RequestSubresource]]
-    SUPPORTED_SUBRESOURCES: ClassVar[set[RequestSubresource]]
-
-    def __init__(
-        self,
-        db_instance: Union[models.Project, models.Task, models.Job],
-        request: ExtendedRequest,
-    ) -> None:
-        """
-        Args:
-            db_instance (Union[models.Project, models.Task, models.Job]): Model instance
-            request (ExtendedRequest): Incoming HTTP request
-        """
-        self.db_instance = db_instance
-        self.request = request
-        self.resource = db_instance.__class__.__name__.lower()
-        if self.resource not in self.SUPPORTED_RESOURCES:
-            raise ValueError("Unexpected type of db_instance: {}".format(type(db_instance)))
-
-    ### Initialization logic ###
-
-    @abstractmethod
-    def initialize_export_args(self) -> None: ...
-
-    @abstractmethod
-    def validate_export_args(self) -> Response | None: ...
-
-    @abstractmethod
-    def build_rq_id(self) -> str: ...
-
-    def handle_existing_rq_job(
-        self, rq_job: Optional[RQJob], queue: DjangoRQ
-    ) -> Optional[Response]:
-        if not rq_job:
-            return None
-
-        rq_job_status = rq_job.get_status(refresh=False)
-
-        if rq_job_status in {RQJobStatus.STARTED, RQJobStatus.QUEUED}:
-            return Response(
-                data="Export request is being processed",
-                status=status.HTTP_409_CONFLICT,
-            )
-
-        if rq_job_status == RQJobStatus.DEFERRED:
-            rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
-
-        if rq_job_status == RQJobStatus.SCHEDULED:
-            scheduler: DjangoScheduler = django_rq.get_scheduler(queue.name, queue=queue)
-            # remove the job id from the set with scheduled keys
-            scheduler.cancel(rq_job)
-            rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
-
-        rq_job.delete()
-        return None
-
-    @abstractmethod
-    def get_download_api_endpoint_view_name(self) -> str: ...
-
-    def make_result_url(self, *, rq_id: str) -> str:
-        view_name = self.get_download_api_endpoint_view_name()
-        result_url = reverse(view_name, args=[self.db_instance.pk], request=self.request)
-
-        return result_url + f"?rq_id={quote(rq_id)}"
-
-    def get_updated_date_timestamp(self) -> str:
-        # use only updated_date for the related resource, don't check children objects
-        # because every child update should touch the updated_date of the parent resource
-        return datetime.strftime(self.db_instance.updated_date, "%Y_%m_%d_%H_%M_%S")
-
-    @abstractmethod
-    def get_result_filename(self) -> str: ...
-
-    @abstractmethod
-    def send_events(self) -> None: ...
-
-    @abstractmethod
-    def setup_background_job(self, queue: DjangoRQ, rq_id: str) -> None: ...
-
-    def export(self) -> Response:
-        self.initialize_export_args()
-
-        if invalid_response := self.validate_export_args():
-            return invalid_response
-
-        queue: DjangoRQ = django_rq.get_queue(self.QUEUE_NAME)
-        rq_id = self.build_rq_id()
-
-        # ensure that there is no race condition when processing parallel requests
-        with get_rq_lock_for_job(queue, rq_id):
-            rq_job = queue.fetch_job(rq_id)
-            if response := self.handle_existing_rq_job(rq_job, queue):
-                return response
-            self.setup_background_job(queue, rq_id)
-
-        self.send_events()
-
-        serializer = RqIdSerializer({"rq_id": rq_id})
-        return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-
-    ### Logic related to prepared file downloading ###
-
-    def validate_rq_id(self, rq_id: str) -> None:
-        parsed_rq_id = RQId.parse(rq_id)
-
-        if (
-            parsed_rq_id.action != RequestAction.EXPORT
-            or parsed_rq_id.target != RequestTarget(self.resource)
-            or parsed_rq_id.identifier != self.db_instance.pk
-            or parsed_rq_id.subresource not in self.SUPPORTED_SUBRESOURCES
-        ):
-            raise ValueError("The provided request id does not match exported target or resource")
-
-    def download_file(self) -> Response:
-        queue: DjangoRQ = django_rq.get_queue(self.QUEUE_NAME)
-        rq_id = self.request.query_params.get("rq_id")
-
-        if not rq_id:
-            return HttpResponseBadRequest("Missing request id in the query parameters")
-
-        try:
-            self.validate_rq_id(rq_id)
-        except ValueError:
-            return HttpResponseBadRequest("Invalid export request id")
-
-        # ensure that there is no race condition when processing parallel requests
-        with get_rq_lock_for_job(queue, rq_id):
-            rq_job = queue.fetch_job(rq_id)
-
-            if not rq_job:
-                return HttpResponseBadRequest("Unknown export request id")
-
-            # define status once to avoid refreshing it on each check
-            # FUTURE-TODO: get_status will raise InvalidJobOperation exception instead of returning None in one of the next releases
-            rq_job_status = rq_job.get_status(refresh=False)
-
-            if rq_job_status != RQJobStatus.FINISHED:
-                return HttpResponseBadRequest("The export process is not finished")
-
-            rq_job_meta = ExportRQMeta.for_job(rq_job)
-            file_path = rq_job.return_value()
-
-            if not file_path:
-                return (
-                    Response(
-                        "A result for exporting job was not found for finished RQ job",
-                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    )
-                    if rq_job_meta.result_url  # user tries to download a final file locally while the export is made to cloud storage
-                    else HttpResponseBadRequest(
-                        "The export process has no result file to be downloaded locally"
-                    )
-                )
-
-            with get_export_cache_lock(
-                file_path, ttl=LOCK_TTL, acquire_timeout=LOCK_ACQUIRE_TIMEOUT
-            ):
-                if not osp.exists(file_path):
-                    return Response(
-                        "The exported file has expired, please retry exporting",
-                        status=status.HTTP_404_NOT_FOUND,
-                    )
-
-                return sendfile(
-                    self.request,
-                    file_path,
-                    attachment=True,
-                    attachment_filename=rq_job_meta.result_filename,
-                )
-
-
-def cancel_and_delete(rq_job: RQJob) -> None:
-    # In the case the server is configured with ONE_RUNNING_JOB_IN_QUEUE_PER_USER
-    # we have to enqueue dependent jobs after canceling one.
-    rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
-    rq_job.delete()
-
-
-class DatasetExportManager(ResourceExportManager):
-    SUPPORTED_RESOURCES = {RequestTarget.PROJECT, RequestTarget.TASK, RequestTarget.JOB}
-    SUPPORTED_SUBRESOURCES = {RequestSubresource.DATASET, RequestSubresource.ANNOTATIONS}
+class DatasetExporter(AbstractExporter):
+    SUPPORTED_TARGETS = {RequestTarget.PROJECT, RequestTarget.TASK, RequestTarget.JOB}
 
     @dataclass
-    class ExportArgs:
+    class ExportArgs(AbstractExporter.ExportArgs):
         format: str
-        filename: str
         save_images: bool
-        location_config: dict[str, Any]
 
-        @property
-        def location(self) -> Location:
-            return self.location_config["location"]
-
-    def initialize_export_args(self) -> None:
+    def init_request_args(self) -> None:
+        super().init_request_args()
         save_images = is_dataset_export(self.request)
-        self.export_callback = get_export_callback(self.db_instance, save_images=save_images)
-
         format_name = self.request.query_params.get("format", "")
-        filename = self.request.query_params.get("filename", "")
 
-        try:
-            location_config = get_location_configuration(
-                db_instance=self.db_instance,
-                query_params=self.request.query_params,
-                field_name=StorageType.TARGET,
-            )
-        except ValueError as ex:
-            raise serializers.ValidationError(str(ex)) from ex
-
-        location = location_config["location"]
-
-        if location not in Location.list():
-            raise serializers.ValidationError(
-                f"Unexpected location {location} specified for the request"
-            )
-
-        self.export_args = self.ExportArgs(
+        self.export_args: DatasetExporter.ExportArgs = self.ExportArgs(
+            **self.export_args.to_dict(),
             format=format_name,
-            filename=filename,
             save_images=save_images,
-            location_config=location_config,
         )
 
-    def validate_export_args(self):
+    def validate_request(self):
+        super().validate_request()
+
         format_desc = {f.DISPLAY_NAME: f for f in dm.views.get_export_formats()}.get(
             self.export_args.format
         )
         if format_desc is None:
             raise serializers.ValidationError("Unknown format specified for the request")
         elif not format_desc.ENABLED:
-            return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+            raise MethodNotAllowed(self.request.method, detail="Format is disabled")
 
-    def build_rq_id(self):
-        return RQId(
-            RequestAction.EXPORT,
-            RequestTarget(self.resource),
-            self.db_instance.pk,
+    def build_request_id(self):
+        return ExportRequestId(
+            action=RequestAction.EXPORT,
+            target=RequestTarget(self.target),
+            target_id=self.db_instance.pk,
+            user_id=self.user_id,
             subresource=(
                 RequestSubresource.DATASET
                 if self.export_args.save_images
                 else RequestSubresource.ANNOTATIONS
             ),
             format=self.export_args.format,
-            user_id=self.request.user.id,
         ).render()
 
-    def send_events(self):
-        handle_dataset_export(
-            self.db_instance,
-            format_name=self.export_args.format,
-            cloud_storage_id=self.export_args.location_config.get("storage_id"),
-            save_images=self.export_args.save_images,
+    def validate_request_id(self, request_id, /) -> None:
+        # FUTURE-TODO: optimize, request_id is parsed 2 times (first one when checking permissions)
+        parsed_request_id: ExportRequestId = ExportRequestId.parse_and_validate_queue(
+            request_id, expected_queue=self.QUEUE_NAME, try_legacy_format=True
         )
 
-    def setup_background_job(
-        self,
-        queue: DjangoRQ,
-        rq_id: str,
-    ) -> None:
+        if (
+            parsed_request_id.action != RequestAction.EXPORT
+            or parsed_request_id.target != RequestTarget(self.target)
+            or parsed_request_id.target_id != self.db_instance.pk
+            or parsed_request_id.subresource
+            not in {RequestSubresource.DATASET, RequestSubresource.ANNOTATIONS}
+        ):
+            raise ValueError(
+                "The provided request id does not match exported target or subresource"
+            )
+
+    def _init_callback_with_params(self):
+        self.callback = get_export_callback(
+            self.db_instance, save_images=self.export_args.save_images
+        )
+        self.callback_args = (self.db_instance.pk, self.export_args.format)
+
         try:
             if self.request.scheme:
                 server_address = self.request.scheme + "://"
@@ -319,68 +141,27 @@ class DatasetExportManager(ResourceExportManager):
         except Exception:
             server_address = None
 
-        cache_ttl = get_export_cache_ttl(self.db_instance)
+        self.callback_kwargs = {
+            "server_url": server_address,
+        }
 
-        user_id = self.request.user.id
-
-        func = self.export_callback
-        func_args = (self.db_instance.id, self.export_args.format)
-        result_url = None
-
-        if self.export_args.location == Location.CLOUD_STORAGE:
-            try:
-                storage_id = self.export_args.location_config["storage_id"]
-            except KeyError:
-                raise serializers.ValidationError(
-                    "Cloud storage location was selected as the destination,"
-                    " but cloud storage id was not specified"
-                )
-
-            db_storage = get_cloud_storage_for_import_or_export(
-                storage_id=storage_id,
-                request=self.request,
-                is_default=self.export_args.location_config["is_default"],
-            )
-
-            func = export_resource_to_cloud_storage
-            func_args = (
-                db_storage,
-                self.export_callback,
-            ) + func_args
-        else:
-            db_storage = None
-            result_url = self.make_result_url(rq_id=rq_id)
-
-        with get_rq_lock_by_user(queue, user_id):
-            result_filename = self.get_result_filename()
-            meta = ExportRQMeta.build_for(
-                request=self.request,
-                db_obj=self.db_instance,
-                result_url=result_url,
-                result_filename=result_filename,
-            )
-            queue.enqueue_call(
-                func=func,
-                args=func_args,
-                kwargs={
-                    "server_url": server_address,
-                },
-                job_id=rq_id,
-                meta=meta,
-                depends_on=define_dependent_job(queue, user_id, rq_id=rq_id),
-                result_ttl=cache_ttl.total_seconds(),
-                failure_ttl=cache_ttl.total_seconds(),
-            )
+    def finalize_request(self):
+        handle_dataset_export(
+            self.db_instance,
+            format_name=self.export_args.format,
+            cloud_storage_id=self.export_args.location_config.cloud_storage_id,
+            save_images=self.export_args.save_images,
+        )
 
     def get_result_filename(self) -> str:
         filename = self.export_args.filename
 
         if not filename:
-            instance_timestamp = self.get_updated_date_timestamp()
+            timestamp = self.get_file_timestamp()
             filename = build_annotations_file_name(
-                class_name=self.resource,
-                identifier=self.db_instance.id,
-                timestamp=instance_timestamp,
+                class_name=self.target,
+                identifier=self.db_instance.pk,
+                timestamp=timestamp,
                 format_name=self.export_args.format,
                 is_annotation_file=not self.export_args.save_images,
                 extension=(EXPORT_FORMATS[self.export_args.format].EXT).lower(),
@@ -388,68 +169,40 @@ class DatasetExportManager(ResourceExportManager):
 
         return filename
 
-    def get_download_api_endpoint_view_name(self) -> str:
-        return f"{self.resource}-download-dataset"
-
-
-class BackupExportManager(ResourceExportManager):
-    SUPPORTED_RESOURCES = {RequestTarget.PROJECT, RequestTarget.TASK}
-    SUPPORTED_SUBRESOURCES = {RequestSubresource.BACKUP}
-
-    @dataclass
-    class ExportArgs:
-        filename: str
-        location_config: dict[str, Any]
-
-        @property
-        def location(self) -> Location:
-            return self.location_config["location"]
-
-    def initialize_export_args(self) -> None:
-        self.export_callback = create_backup
-        filename = self.request.query_params.get("filename", "")
-
-        location_config = get_location_configuration(
-            db_instance=self.db_instance,
-            query_params=self.request.query_params,
-            field_name=StorageType.TARGET,
+    def get_result_endpoint_url(self) -> str:
+        return reverse(
+            f"{self.target}-download-dataset", args=[self.db_instance.pk], request=self.request
         )
-        self.export_args = self.ExportArgs(filename, location_config)
 
-    def validate_export_args(self):
-        return
 
-    def get_result_filename(self) -> str:
-        filename = self.export_args.filename
+class BackupExporter(AbstractExporter):
+    SUPPORTED_TARGETS = {RequestTarget.PROJECT, RequestTarget.TASK}
 
-        if not filename:
-            instance_timestamp = self.get_updated_date_timestamp()
+    def validate_request(self):
+        super().validate_request()
 
-            filename = build_backup_file_name(
-                class_name=self.resource,
-                identifier=self.db_instance.name,
-                timestamp=instance_timestamp,
+        # do not add this check when a project is backed up, as empty tasks are skipped
+        if isinstance(self.db_instance, Task) and not self.db_instance.data:
+            raise serializers.ValidationError("Backup of a task without data is not allowed")
+
+    def validate_request_id(self, request_id, /) -> None:
+        # FUTURE-TODO: optimize, request_id is parsed 2 times (first one when checking permissions)
+        parsed_request_id: ExportRequestId = ExportRequestId.parse_and_validate_queue(
+            request_id, expected_queue=self.QUEUE_NAME, try_legacy_format=True
+        )
+
+        if (
+            parsed_request_id.action != RequestAction.EXPORT
+            or parsed_request_id.target != RequestTarget(self.target)
+            or parsed_request_id.target_id != self.db_instance.pk
+            or parsed_request_id.subresource != RequestSubresource.BACKUP
+        ):
+            raise ValueError(
+                "The provided request id does not match exported target or subresource"
             )
 
-        return filename
-
-    def build_rq_id(self):
-        return RQId(
-            RequestAction.EXPORT,
-            RequestTarget(self.resource),
-            self.db_instance.pk,
-            subresource=RequestSubresource.BACKUP,
-            user_id=self.request.user.id,
-        ).render()
-
-    # FUTURE-TODO: move into ResourceExportManager
-    def setup_background_job(
-        self,
-        queue: DjangoRQ,
-        rq_id: str,
-    ) -> None:
-        cache_ttl = get_export_cache_ttl(self.db_instance)
-        user_id = self.request.user.id
+    def _init_callback_with_params(self):
+        self.callback = create_backup
 
         if isinstance(self.db_instance, Task):
             logger = slogger.task[self.db_instance.pk]
@@ -458,60 +211,326 @@ class BackupExportManager(ResourceExportManager):
             logger = slogger.project[self.db_instance.pk]
             Exporter = ProjectExporter
 
-        func = self.export_callback
-        func_args = (
-            self.db_instance.id,
+        self.callback_args = (
+            self.db_instance.pk,
             Exporter,
             logger,
-            cache_ttl,
+            self.job_result_ttl,
         )
-        result_url = None
 
-        if self.export_args.location == Location.CLOUD_STORAGE:
-            try:
-                storage_id = self.export_args.location_config["storage_id"]
-            except KeyError:
-                raise serializers.ValidationError(
-                    "Cloud storage location was selected as the destination,"
-                    " but cloud storage id was not specified"
-                )
+    def get_result_filename(self):
+        filename = self.export_args.filename
 
-            db_storage = get_cloud_storage_for_import_or_export(
-                storage_id=storage_id,
-                request=self.request,
-                is_default=self.export_args.location_config["is_default"],
+        if not filename:
+            instance_timestamp = self.get_file_timestamp()
+
+            filename = build_backup_file_name(
+                class_name=self.target,
+                identifier=self.db_instance.name,
+                timestamp=instance_timestamp,
             )
 
-            func = export_resource_to_cloud_storage
-            func_args = (
-                db_storage,
-                self.export_callback,
-            ) + func_args
-        else:
-            result_url = self.make_result_url(rq_id=rq_id)
+        return filename
 
-        with get_rq_lock_by_user(queue, user_id):
-            result_filename = self.get_result_filename()
-            meta = ExportRQMeta.build_for(
-                request=self.request,
-                db_obj=self.db_instance,
-                result_url=result_url,
-                result_filename=result_filename,
-            )
+    def build_request_id(self):
+        return ExportRequestId(
+            action=RequestAction.EXPORT,
+            target=RequestTarget(self.target),
+            target_id=self.db_instance.pk,
+            user_id=self.user_id,
+            subresource=RequestSubresource.BACKUP,
+        ).render()
 
-            queue.enqueue_call(
-                func=func,
-                args=func_args,
-                job_id=rq_id,
-                meta=meta,
-                depends_on=define_dependent_job(queue, user_id, rq_id=rq_id),
-                result_ttl=cache_ttl.total_seconds(),
-                failure_ttl=cache_ttl.total_seconds(),
-            )
+    def get_result_endpoint_url(self) -> str:
+        return reverse(
+            f"{self.target}-download-backup", args=[self.db_instance.pk], request=self.request
+        )
 
-    def get_download_api_endpoint_view_name(self) -> str:
-        return f"{self.resource}-download-backup"
-
-    def send_events(self):
+    def finalize_request(self):
         # FUTURE-TODO: send events to event store
         pass
+
+
+class ResourceImporter(AbstractRequestManager):
+    QUEUE_NAME = settings.CVAT_QUEUES.IMPORT_DATA.value
+
+    @dataclass
+    class ImportArgs:
+        location_config: LocationConfig
+        file_path: str | None
+
+        def to_dict(self):
+            return dataclass_asdict(self)
+
+    import_args: ImportArgs | None
+
+    def __init__(self, *, request: ExtendedRequest, db_instance: Model | None, tmp_dir: Path):
+        super().__init__(request=request, db_instance=db_instance)
+        self.tmp_dir = tmp_dir
+
+    @property
+    def job_result_ttl(self):
+        return int(settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds())
+
+    @property
+    def job_failed_ttl(self):
+        return int(settings.IMPORT_CACHE_FAILED_TTL.total_seconds())
+
+    def init_request_args(self):
+        file_path: str | None = None
+
+        try:
+            location_config = get_location_configuration(
+                db_instance=self.db_instance,
+                query_params=self.request.query_params,
+                field_name=StorageType.SOURCE,
+            )
+        except ValueError as ex:
+            raise serializers.ValidationError(str(ex)) from ex
+
+        if filename := self.request.query_params.get("filename"):
+            file_path = (
+                str(self.tmp_dir / filename)
+                if location_config.location != Location.CLOUD_STORAGE
+                else filename
+            )
+
+        self.import_args = ResourceImporter.ImportArgs(
+            location_config=location_config,
+            file_path=file_path,
+        )
+
+    def validate_request(self):
+        super().validate_request()
+
+        if (
+            self.import_args.location_config.location == Location.CLOUD_STORAGE
+            and not self.import_args.file_path
+        ):
+            raise serializers.ValidationError("The filename was not specified")
+
+    def _handle_cloud_storage_file_upload(self):
+        storage_id = self.import_args.location_config.cloud_storage_id
+        db_storage = get_cloud_storage_for_import_or_export(
+            storage_id=storage_id,
+            request=self.request,
+            is_default=self.import_args.location_config.is_default,
+        )
+
+        key = self.import_args.file_path
+        with NamedTemporaryFile(prefix="cvat_", dir=TmpDirManager.TMP_ROOT, delete=False) as tf:
+            self.import_args.file_path = tf.name
+        return db_storage, key
+
+    @abstractmethod
+    def _get_payload_file(self): ...
+
+    def _handle_non_tus_file_upload(self):
+        payload_file = self._get_payload_file()
+
+        with NamedTemporaryFile(prefix="cvat_", dir=TmpDirManager.TMP_ROOT, delete=False) as tf:
+            self.import_args.file_path = tf.name
+            for chunk in payload_file.chunks():
+                tf.write(chunk)
+
+    @abstractmethod
+    def _init_callback_with_params(self): ...
+
+    def init_callback_with_params(self):
+        # Note: self.import_args is changed here
+        if self.import_args.location_config.location == Location.CLOUD_STORAGE:
+            db_storage, key = self._handle_cloud_storage_file_upload()
+        elif not self.import_args.file_path:
+            self._handle_non_tus_file_upload()
+
+        self._init_callback_with_params()
+
+        # redefine here callback and callback args in order to:
+        # - (optional) download file from cloud storage
+        # - remove uploaded file at the end
+        if self.import_args.location_config.location == Location.CLOUD_STORAGE:
+            self.callback_args = (
+                self.callback_args[0],
+                db_storage,
+                key,
+                self.callback,
+                *self.callback_args[1:],
+            )
+            self.callback = import_resource_from_cloud_storage
+
+        self.callback_args = (self.callback, *self.callback_args)
+        self.callback = import_resource_with_clean_up_after
+
+
+class DatasetImporter(ResourceImporter):
+    SUPPORTED_TARGETS = {RequestTarget.PROJECT, RequestTarget.TASK, RequestTarget.JOB}
+
+    @dataclass
+    class ImportArgs(ResourceImporter.ImportArgs):
+        format: str
+        conv_mask_to_poly: bool
+
+    def __init__(
+        self,
+        *,
+        request: ExtendedRequest,
+        db_instance: Project | Task | Job,
+    ):
+        super().__init__(
+            request=request, db_instance=db_instance, tmp_dir=Path(db_instance.get_tmp_dirname())
+        )
+
+    def init_request_args(self) -> None:
+        super().init_request_args()
+        format_name = self.request.query_params.get("format", "")
+        conv_mask_to_poly = to_bool(self.request.query_params.get("conv_mask_to_poly", True))
+
+        self.import_args: DatasetImporter.ImportArgs = self.ImportArgs(
+            **self.import_args.to_dict(),
+            format=format_name,
+            conv_mask_to_poly=conv_mask_to_poly,
+        )
+
+    def _get_payload_file(self):
+        # Common serializer is not used to not break API
+        if isinstance(self.db_instance, Project):
+            serializer_class = DatasetFileSerializer
+            file_field = "dataset_file"
+        else:
+            serializer_class = AnnotationFileSerializer
+            file_field = "annotation_file"
+
+        file_serializer = serializer_class(data=self.request.data)
+        file_serializer.is_valid(raise_exception=True)
+        return file_serializer.validated_data[file_field]
+
+    def _init_callback_with_params(self):
+        if isinstance(self.db_instance, Project):
+            self.callback = dm.project.import_dataset_as_project
+        elif isinstance(self.db_instance, Task):
+            self.callback = dm.task.import_task_annotations
+        else:
+            assert isinstance(self.db_instance, Job)
+            self.callback = dm.task.import_job_annotations
+
+        self.callback_args = (
+            self.import_args.file_path,
+            self.db_instance.pk,
+            self.import_args.format,
+            self.import_args.conv_mask_to_poly,
+        )
+
+    def validate_request(self):
+        super().validate_request()
+
+        format_desc = {f.DISPLAY_NAME: f for f in dm.views.get_import_formats()}.get(
+            self.import_args.format
+        )
+        if format_desc is None:
+            raise serializers.ValidationError(f"Unknown input format {self.import_args.format!r}")
+        elif not format_desc.ENABLED:
+            raise MethodNotAllowed(self.request.method, detail="Format is disabled")
+
+    def build_request_id(self):
+        return ImportRequestId(
+            action=RequestAction.IMPORT,
+            target=RequestTarget(self.target),
+            target_id=self.db_instance.pk,
+            subresource=(
+                RequestSubresource.DATASET
+                if isinstance(self.db_instance, Project)
+                else RequestSubresource.ANNOTATIONS
+            ),
+        ).render()
+
+    def finalize_request(self):
+        handle_dataset_import(
+            self.db_instance,
+            format_name=self.import_args.format,
+            cloud_storage_id=self.import_args.location_config.cloud_storage_id,
+        )
+
+
+class BackupImporter(ResourceImporter):
+    SUPPORTED_TARGETS = {RequestTarget.PROJECT, RequestTarget.TASK}
+
+    @dataclass
+    class ImportArgs(ResourceImporter.ImportArgs):
+        org_id: int | None
+
+    def __init__(
+        self,
+        *,
+        request: ExtendedRequest,
+        target: RequestTarget,
+    ):
+        super().__init__(request=request, db_instance=None, tmp_dir=Path(TmpDirManager.TMP_ROOT))
+        assert target in self.SUPPORTED_TARGETS, f"Unsupported target: {target}"
+        self.target = target
+
+    def init_request_args(self) -> None:
+        super().init_request_args()
+
+        self.import_args: BackupImporter.ImportArgs = self.ImportArgs(
+            **self.import_args.to_dict(),
+            org_id=getattr(self.request.iam_context["organization"], "id", None),
+        )
+
+    def build_request_id(self):
+        return ImportRequestId(
+            action=RequestAction.IMPORT,
+            target=self.target,
+            id=uuid4(),
+            subresource=RequestSubresource.BACKUP,
+        ).render()
+
+    def _get_payload_file(self):
+        # Common serializer is not used to not break API
+        if self.target == RequestTarget.PROJECT:
+            serializer_class = ProjectFileSerializer
+            file_field = "project_file"
+        else:
+            serializer_class = TaskFileSerializer
+            file_field = "task_file"
+
+        file_serializer = serializer_class(data=self.request.data)
+        file_serializer.is_valid(raise_exception=True)
+        return file_serializer.validated_data[file_field]
+
+    def _init_callback_with_params(self):
+        self.callback = import_project if self.target == RequestTarget.PROJECT else import_task
+        self.callback_args = (self.import_args.file_path, self.user_id, self.import_args.org_id)
+
+    def finalize_request(self):
+        # FUTURE-TODO: send logs to event store
+        pass
+
+
+class TaskCreator(AbstractRequestManager):
+    QUEUE_NAME = settings.CVAT_QUEUES.IMPORT_DATA.value
+    SUPPORTED_TARGETS = {RequestTarget.TASK}
+
+    def __init__(
+        self,
+        *,
+        request: ExtendedRequest,
+        db_instance: Task,
+        db_data: Data,
+    ):
+        super().__init__(request=request, db_instance=db_instance)
+        self.db_data = db_data
+
+    @property
+    def job_failure_ttl(self):
+        return int(settings.IMPORT_CACHE_FAILED_TTL.total_seconds())
+
+    def build_request_id(self):
+        return ImportRequestId(
+            action=RequestAction.CREATE,
+            target=RequestTarget.TASK,
+            target_id=self.db_instance.pk,
+        ).render()
+
+    def init_callback_with_params(self):
+        self.callback = create_task
+        self.callback_args = (self.db_instance.pk, self.db_data)

@@ -510,6 +510,8 @@ class Project(TimestampedModel, FileSystemRelatedModel):
     target_storage = models.ForeignKey('Storage', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
 
+    tasks: models.manager.RelatedManager[Task]
+
     def get_labels(self, prefetch=False):
         queryset = self.label_set.filter(parent__isnull=True).select_related('skeleton')
         return queryset.prefetch_related(
@@ -550,22 +552,28 @@ class Project(TimestampedModel, FileSystemRelatedModel):
         return self.name
 
 class TaskQuerySet(models.QuerySet):
+    class JobSummaryFields(str, Enum):
+        total_jobs_count = "total_jobs_count"
+        completed_jobs_count = "completed_jobs_count"
+        validation_jobs_count = "validation_jobs_count"
+
     def with_job_summary(self):
-        return self.prefetch_related(
-            'segment_set__job_set',
-        ).annotate(
-            total_jobs_count=models.Count('segment__job', distinct=True),
-            completed_jobs_count=models.Count(
-                'segment__job',
-                filter=models.Q(segment__job__state=StateChoice.COMPLETED.value) &
-                       models.Q(segment__job__stage=StageChoice.ACCEPTANCE.value),
-                distinct=True,
-            ),
-            validation_jobs_count=models.Count(
-                'segment__job',
-                filter=models.Q(segment__job__stage=StageChoice.VALIDATION.value),
-                distinct=True,
-            )
+        Fields = self.JobSummaryFields
+        return self.annotate(
+            **{
+                Fields.total_jobs_count.value: models.Count('segment__job', distinct=True),
+                Fields.completed_jobs_count.value: models.Count(
+                    'segment__job',
+                    filter=models.Q(segment__job__state=StateChoice.COMPLETED.value) &
+                        models.Q(segment__job__stage=StageChoice.ACCEPTANCE.value),
+                    distinct=True,
+                ),
+                Fields.validation_jobs_count.value: models.Count(
+                    'segment__job',
+                    filter=models.Q(segment__job__stage=StageChoice.VALIDATION.value),
+                    distinct=True,
+                ),
+            }
         )
 
 class Task(TimestampedModel, FileSystemRelatedModel):
@@ -1275,6 +1283,10 @@ class Location(str, Enum):
     def list(cls):
         return [i.value for i in cls]
 
+    @classmethod
+    def _missing_(cls, value):
+        raise ValueError(f"The specified location {value!r} is not supported")
+
 class CloudStorage(TimestampedModel):
     # restrictions:
     # AWS bucket name, Azure container name - 63, Google bucket name - 63 without dots and 222 with dots
@@ -1317,7 +1329,7 @@ class CloudStorage(TimestampedModel):
 
     @property
     def has_at_least_one_manifest(self) -> bool:
-        return bool(self.manifests.count())
+        return self.manifests.exists()
 
 class Storage(models.Model):
     location = models.CharField(max_length=16, choices=Location.choices(), default=Location.LOCAL)
@@ -1360,12 +1372,6 @@ class Asset(models.Model):
 
     def get_asset_dir(self):
         return os.path.join(settings.ASSETS_ROOT, str(self.uuid))
-
-class RequestStatus(TextChoices):
-    QUEUED = "queued"
-    STARTED = "started"
-    FAILED = "failed"
-    FINISHED = "finished"
 
 class RequestAction(TextChoices):
     AUTOANNOTATE = "autoannotate"

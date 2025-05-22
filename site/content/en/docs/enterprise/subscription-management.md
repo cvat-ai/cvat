@@ -88,7 +88,7 @@ Here’s how you can do it:
 
 1. Sign up for a CVAT Online account and log in.
 2. (Optional) If you add the VAT/tax number to the organization,
-   first create an [organization](/docs/manual/advanced/organization/) and
+   first create an {{< ilink "/docs/manual/advanced/organization" "organization" >}} and
    switch to an **Organization** account.
 3. Navigate to the top right corner, next to the nickname,
    click on the arrow > upgrade to the plan.
@@ -215,7 +215,8 @@ In the top right corner, near the nickname, click on the arrow > manage plan > *
 
 > **Solo plan** is **for personal use only**, you cannot add or remove team members.
 
-**Team plan** is for collaboration. To add members to your [Organization](/docs/manual/advanced/organization/),
+**Team plan** is for collaboration. To add members to your
+{{< ilink "/docs/manual/advanced/organization" "Organization" >}},
 go to the **Manage Team plan** > **Update quantity**.
 
 ![Add members](/images/change_members_number_team.gif)

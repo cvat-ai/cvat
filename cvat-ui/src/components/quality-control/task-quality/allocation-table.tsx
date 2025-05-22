@@ -202,7 +202,7 @@ function AllocationTable(props: Readonly<Props>): JSX.Element | null {
 
 function AllocationTableWrap(props: Readonly<Props>): JSX.Element {
     const overrides = useSelector(
-        (state: CombinedState) => state.plugins.overridableComponents.qualityControlPage.allocationTable,
+        (state: CombinedState) => state.plugins.overridableComponents.qualityControlPage.task.allocationTable,
     );
 
     if (overrides.length) {

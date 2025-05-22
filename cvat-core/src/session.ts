@@ -738,7 +738,7 @@ export class Job extends Session {
         return result;
     }
 
-    async mergeConsensusJobs(): Promise<void> {
+    async mergeConsensusJobs(): Promise<string> {
         const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.mergeConsensusJobs);
         return result;
     }
@@ -768,7 +768,12 @@ export class Task extends Session {
     public readonly sourceStorage: Storage;
     public readonly targetStorage: Storage;
     public readonly organization: number | null;
-    public readonly progress: { count: number; completed: number };
+    public readonly progress: {
+        completedJobs: number,
+        totalJobs: number,
+        validationJobs: number,
+        annotationJobs: number,
+    };
     public readonly jobs: Job[];
     public readonly consensusEnabled: boolean;
 
@@ -1204,7 +1209,7 @@ export class Task extends Session {
         return result;
     }
 
-    async mergeConsensusJobs(): Promise<void> {
+    async mergeConsensusJobs(): Promise<string> {
         const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.mergeConsensusJobs);
         return result;
     }

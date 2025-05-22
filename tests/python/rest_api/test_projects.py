@@ -43,6 +43,7 @@ from .utils import (
     export_dataset,
     export_project_backup,
     export_project_dataset,
+    import_project_backup,
 )
 
 
@@ -346,11 +347,15 @@ class TestGetPostProjectBackup:
         self._test_can_get_project_backup(user["username"], project["id"])
 
     def test_can_get_backup_project_when_some_tasks_have_no_data(self):
-        project = next((p for p in self.projects if 0 < p["tasks"]["count"]))
+        project = next(p for p in self.projects if 0 < p["tasks"]["count"])
 
         # add empty task to project
+        org_id = project["organization"]
         response = post_method(
-            "admin1", "tasks", {"name": "empty_task", "project_id": project["id"]}
+            "admin1",
+            "tasks",
+            {"name": "empty_task", "project_id": project["id"]},
+            **({"org_id": org_id} if org_id else {}),
         )
         assert response.status_code == HTTPStatus.CREATED
 
@@ -389,15 +394,7 @@ class TestGetPostProjectBackup:
         tmp_file = io.BytesIO(backup)
         tmp_file.name = "dataset.zip"
 
-        import_data = {
-            "project_file": tmp_file,
-        }
-
-        with make_api_client(admin_user) as api_client:
-            (_, response) = api_client.projects_api.create_backup(
-                backup_write_request=deepcopy(import_data), _content_type="multipart/form-data"
-            )
-            assert response.status == HTTPStatus.ACCEPTED
+        import_project_backup(admin_user, tmp_file)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -630,7 +627,7 @@ class TestImportExportDatasetProject:
             (_, response) = api_client.projects_api.create_dataset(
                 id=project_id,
                 format=format_name,
-                dataset_write_request=deepcopy(data),
+                dataset_file_request={"dataset_file": data},
                 _content_type="multipart/form-data",
             )
             assert response.status == HTTPStatus.ACCEPTED
@@ -670,11 +667,7 @@ class TestImportExportDatasetProject:
         tmp_file = io.BytesIO(dataset)
         tmp_file.name = "dataset.zip"
 
-        import_data = {
-            "dataset_file": tmp_file,
-        }
-
-        self._test_import_project(admin_user, project_id, "CVAT 1.1", import_data)
+        self._test_import_project(admin_user, project_id, "CVAT 1.1", tmp_file)
 
     @pytest.mark.parametrize(
         "export_format, import_format",
@@ -712,11 +705,8 @@ class TestImportExportDatasetProject:
 
         tmp_file = io.BytesIO(dataset)
         tmp_file.name = "dataset.zip"
-        import_data = {
-            "dataset_file": tmp_file,
-        }
 
-        self._test_import_project(admin_user, project_id, import_format, import_data)
+        self._test_import_project(admin_user, project_id, import_format, tmp_file)
 
     @pytest.mark.parametrize("format_name", ("Datumaro 1.0", "ImageNet 1.0", "PASCAL VOC 1.1"))
     def test_can_import_export_dataset_with_some_format(self, format_name: str):
@@ -735,11 +725,7 @@ class TestImportExportDatasetProject:
         tmp_file = io.BytesIO(dataset)
         tmp_file.name = "dataset.zip"
 
-        import_data = {
-            "dataset_file": tmp_file,
-        }
-
-        self._test_import_project(username, project_id, format_name, import_data)
+        self._test_import_project(username, project_id, format_name, tmp_file)
 
     @pytest.mark.parametrize("username, pid", [("admin1", 8)])
     @pytest.mark.parametrize(
@@ -801,11 +787,7 @@ class TestImportExportDatasetProject:
         tmp_file = io.BytesIO(dataset)
         tmp_file.name = "dataset.zip"
 
-        import_data = {
-            "dataset_file": tmp_file,
-        }
-
-        self._test_import_project(username, project_id, "CVAT 1.1", import_data)
+        self._test_import_project(username, project_id, "CVAT 1.1", tmp_file)
 
         response = get_method(username, f"tasks", project_id=project_id)
         assert response.status_code == HTTPStatus.OK
@@ -915,11 +897,7 @@ class TestImportExportDatasetProject:
 
         with io.BytesIO(dataset) as tmp_file:
             tmp_file.name = "dataset.zip"
-            import_data = {
-                "dataset_file": tmp_file,
-            }
-
-            self._test_import_project(admin_user, project_id, "CVAT 1.1", import_data)
+            self._test_import_project(admin_user, project_id, "CVAT 1.1", tmp_file)
 
     @pytest.mark.parametrize(
         "dimension, format_name",
@@ -972,14 +950,12 @@ class TestImportExportDatasetProject:
                 )
             )
 
-            import_data = {"dataset_file": dataset_file}
-
             with pytest.raises(exceptions.ApiException, match="Dataset file should be zip archive"):
                 self._test_import_project(
                     admin_user,
                     project.id,
                     format_name=format_name,
-                    data=import_data,
+                    data=dataset_file,
                 )
 
     @pytest.mark.parametrize(

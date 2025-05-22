@@ -59,8 +59,6 @@ function getValueFromDataItem<T>(
     * overall search
     * csv export (column must have dataIndex to be CSV-exportable)
     * show/hide columns
-    Current restrictions:
-    * queryBuilder prop is supposed to be static
 */
 function CVATTable(props: Props): JSX.Element {
     const {
@@ -93,8 +91,8 @@ function CVATTable(props: Props): JSX.Element {
                 }));
 
             let csv = '';
-            if (dataSource) {
-                const rows = dataSource
+            if (filteredDataSource) {
+                const rows = filteredDataSource
                     .map((dataItem) => header.map(({ dataIndex }) => {
                         const value = getValueFromDataItem<string>(dataItem, dataIndex);
                         if (typeof value === 'string') {
@@ -119,7 +117,7 @@ function CVATTable(props: Props): JSX.Element {
                 a.remove();
             }
         }
-    }, [csvExport?.filename, dataSource, columns]);
+    }, [csvExport?.filename, filteredDataSource, columns]);
 
     useEffect(() => {
         if (columns) {
@@ -156,20 +154,18 @@ function CVATTable(props: Props): JSX.Element {
     }, [dataSource, searchDataIndex, filterValue, searchPhrase]);
 
     useEffect(() => {
-        if (!FilteringComponent) {
-            if (queryBuilder?.config && queryBuilder?.memoryKey) {
-                const capacity = queryBuilder?.memoryCapacity ?? 0;
-                setFilteringComponent(
-                    ResourceFilterHOC(
-                        queryBuilder.config,
-                        queryBuilder.memoryKey,
-                        capacity,
-                        queryBuilder.predefinedQueries ?? undefined,
-                    ),
-                );
-            }
+        if (queryBuilder?.config && queryBuilder?.memoryKey) {
+            const capacity = queryBuilder?.memoryCapacity ?? 0;
+            setFilteringComponent(
+                ResourceFilterHOC(
+                    queryBuilder.config,
+                    queryBuilder.memoryKey,
+                    capacity,
+                    queryBuilder.predefinedQueries ?? undefined,
+                ),
+            );
         }
-    }, [queryBuilder, FilteringComponent]);
+    }, [queryBuilder]);
 
     return (
         <div className='cvat-table-wrapper'>
