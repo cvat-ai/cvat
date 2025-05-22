@@ -80,7 +80,9 @@ def _import_common(
         except Exception:  # nosec
             pass
         if frame_info is not None:
-            image_info[frame] = (frame_info["height"], frame_info["width"])
+            ext = osp.splitext(frame_info["path"])[1]
+            image_info_key = f"{frame}{ext}"
+            image_info[image_info_key] = (frame_info["height"], frame_info["width"])
 
     dataset = StreamDataset.import_from(
         temp_dir, format_name, env=dm_env, image_info=image_info, **(import_kwargs or {})
