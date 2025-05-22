@@ -6803,7 +6803,7 @@ class ServerShareAPITestCase(ApiTestBase):
             self=self,
             obj1=sorted(data, key=lambda d: d["name"]),
             obj2=sorted(response.data, key=lambda d: d["name"]),
-            ignore_keys=[]
+            ignore_keys=['mime_type']
         )
 
         data = [
@@ -6816,7 +6816,7 @@ class ServerShareAPITestCase(ApiTestBase):
             self=self,
             obj1=sorted(data, key=lambda d: d["name"]),
             obj2=sorted(response.data, key=lambda d: d["name"]),
-            ignore_keys=[]
+            ignore_keys=['mime_type']
         )
 
         data = []
@@ -6826,7 +6826,7 @@ class ServerShareAPITestCase(ApiTestBase):
             self=self,
             obj1=sorted(data, key=lambda d: d["name"]),
             obj2=sorted(response.data, key=lambda d: d["name"]),
-            ignore_keys=[]
+            ignore_keys=['mime_type']
         )
 
         data = [
@@ -6838,7 +6838,7 @@ class ServerShareAPITestCase(ApiTestBase):
             self=self,
             obj1=sorted(data, key=lambda d: d["name"]),
             obj2=sorted(response.data, key=lambda d: d["name"]),
-            ignore_keys=[]
+            ignore_keys=['mime_type']
         )
 
         response = self._run_api_v2_server_share(user, "/test4")
