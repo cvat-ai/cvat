@@ -574,7 +574,7 @@ def annotate_task(
 
     if clear_existing:
         client.tasks.api.update_annotations(
-            task_id, task_annotations_update_request=models.LabeledDataRequest(shapes=shapes)
+            task_id, labeled_data_request=models.LabeledDataRequest(shapes=shapes)
         )
     else:
         client.tasks.api.partial_update_annotations(

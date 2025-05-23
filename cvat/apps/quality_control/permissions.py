@@ -26,6 +26,7 @@ class QualityReportPermission(OpenPolicyAgentPermission):
         LIST = "list"
         CREATE = "create"
         VIEW = "view"
+        # FUTURE-TODO: deprecated scope, should be removed when related API is removed
         VIEW_STATUS = "view:status"
 
     @classmethod
@@ -62,6 +63,7 @@ class QualityReportPermission(OpenPolicyAgentPermission):
                 elif scope == Scopes.CREATE:
                     # POST /api/quality/reports is used to initiate report creation
                     # and to check the process status
+                    # FUTURE-TODO: delete after several releases
                     rq_id = request.query_params.get("rq_id")
 
                     if rq_id is not None:

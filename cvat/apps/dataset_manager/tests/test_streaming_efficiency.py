@@ -8,12 +8,7 @@ import numpy as np
 from datumaro import AnnotationType, Bbox, LabelCategories
 from datumaro.components import media
 from datumaro.components.dataset import StreamDataset
-from datumaro.components.dataset_base import (
-    CategoriesInfo,
-    DatasetItem,
-    StreamingDatasetBase,
-    StreamingSubsetBase,
-)
+from datumaro.components.dataset_base import CategoriesInfo, DatasetBase, DatasetItem
 from django.contrib.auth.models import Group, User
 from rest_framework import status
 from rq.job import Job as RQJob
@@ -214,7 +209,7 @@ class TestImporters(ApiTestBase):
                 image.save(image_path)
                 dataset_items[subset].append((item_id, image_path))
 
-        class DummyStreamingExtractor(StreamingDatasetBase):
+        class DummyStreamingExtractor(DatasetBase):
             def __init__(self):
                 super().__init__(subsets=subsets)
                 self.ann_init_count = 0
@@ -224,24 +219,22 @@ class TestImporters(ApiTestBase):
                 self.ann_init_count += 1
                 return [Bbox(x=5, y=5, w=2, h=2, label=1)]
 
-            def get_subset(self, name: str) -> StreamingSubsetBase:
-                class _SubsetExtractor(StreamingSubsetBase):
-                    def __iter__(_):
-                        for item_id, image_path in dataset_items[name]:
-                            yield DatasetItem(
-                                id=item_id,
-                                subset=name,
-                                media=media.Image.from_file(image_path),
-                                annotations=self._gen_anns,
-                            )
-
-                    def categories(_):
-                        return self.categories()
-
-                return _SubsetExtractor()
+            def __iter__(self):
+                for name in subsets:
+                    for item_id, image_path in dataset_items[name]:
+                        yield DatasetItem(
+                            id=item_id,
+                            subset=name,
+                            media=media.Image.from_file(image_path),
+                            annotations=self._gen_anns,
+                        )
 
             def categories(self) -> CategoriesInfo:
                 return {AnnotationType.label: LabelCategories.from_iterable(["a", "b", "c"])}
+
+            @property
+            def is_stream(self) -> bool:
+                return True
 
         return DummyStreamingExtractor()
 

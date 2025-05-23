@@ -11,24 +11,21 @@ from drf_spectacular.utils import (
     extend_schema,
     extend_schema_view,
 )
-from rest_framework import mixins, status, viewsets
-from rest_framework.exceptions import NotFound, ValidationError
-from rest_framework.response import Response
-from rq.job import JobStatus as RqJobStatus
+from rest_framework import mixins, viewsets
+from rest_framework.exceptions import NotFound
 
 from cvat.apps.consensus import merging_manager as merging
 from cvat.apps.consensus.models import ConsensusSettings
-from cvat.apps.consensus.permissions import ConsensusMergePermission, ConsensusSettingPermission
+from cvat.apps.consensus.permissions import ConsensusSettingPermission
 from cvat.apps.consensus.serializers import (
     ConsensusMergeCreateSerializer,
     ConsensusSettingsSerializer,
 )
 from cvat.apps.engine.mixins import PartialUpdateModelMixin
 from cvat.apps.engine.models import Job, Task
-from cvat.apps.engine.rq import BaseRQMeta
-from cvat.apps.engine.serializers import RqIdSerializer
 from cvat.apps.engine.types import ExtendedRequest
-from cvat.apps.engine.utils import process_failed_job
+from cvat.apps.engine.view_utils import get_410_response_when_checking_process_status
+from cvat.apps.redis_handler.serializers import RqIdSerializer
 
 
 @extend_schema(tags=["consensus"])
@@ -38,31 +35,15 @@ class ConsensusMergesViewSet(viewsets.GenericViewSet):
     @extend_schema(
         operation_id="consensus_create_merge",
         summary="Create a consensus merge",
-        parameters=[
-            OpenApiParameter(
-                CREATE_MERGE_RQ_ID_PARAMETER,
-                type=str,
-                description=textwrap.dedent(
-                    """\
-                    The consensus merge request id. Can be specified to check operation status.
-                """
-                ),
-            )
-        ],
-        request=ConsensusMergeCreateSerializer(required=False),
+        request=ConsensusMergeCreateSerializer,
         responses={
-            "201": None,
             "202": OpenApiResponse(
                 RqIdSerializer,
                 description=textwrap.dedent(
                     """\
                     A consensus merge request has been enqueued, the request id is returned.
-                    The request status can be checked at this endpoint by passing the {}
-                    as the query parameter. If the request id is specified, this response
-                    means the consensus merge request is queued or is being processed.
-                """.format(
-                        CREATE_MERGE_RQ_ID_PARAMETER
-                    )
+                    The request status can be checked by using common requests API: GET /api/requests/<rq_id>
+                """
                 ),
             ),
             "400": OpenApiResponse(
@@ -73,72 +54,27 @@ class ConsensusMergesViewSet(viewsets.GenericViewSet):
     def create(self, request: ExtendedRequest, *args, **kwargs):
         rq_id = request.query_params.get(self.CREATE_MERGE_RQ_ID_PARAMETER, None)
 
-        if rq_id is None:
-            input_serializer = ConsensusMergeCreateSerializer(data=request.data)
-            input_serializer.is_valid(raise_exception=True)
+        if rq_id:
+            return get_410_response_when_checking_process_status("merge")
 
-            task_id = input_serializer.validated_data.get("task_id", None)
-            job_id = input_serializer.validated_data.get("job_id", None)
-            if task_id:
-                try:
-                    instance = Task.objects.get(pk=task_id)
-                except Task.DoesNotExist as ex:
-                    raise NotFound(f"Task {task_id} does not exist") from ex
-            elif job_id:
-                try:
-                    instance = Job.objects.select_related("segment").get(pk=job_id)
-                except Job.DoesNotExist as ex:
-                    raise NotFound(f"Jobs {job_id} do not exist") from ex
+        input_serializer = ConsensusMergeCreateSerializer(data=request.data)
+        input_serializer.is_valid(raise_exception=True)
 
+        task_id = input_serializer.validated_data.get("task_id", None)
+        job_id = input_serializer.validated_data.get("job_id", None)
+        if task_id:
             try:
-                manager = merging.MergingManager()
-                rq_id = manager.schedule_merge(instance, request=request)
-                serializer = RqIdSerializer({"rq_id": rq_id})
-                return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-            except merging.MergingNotAvailable as ex:
-                raise ValidationError(str(ex))
-        else:
-            serializer = RqIdSerializer(data={"rq_id": rq_id})
-            serializer.is_valid(raise_exception=True)
-            rq_id = serializer.validated_data["rq_id"]
+                instance = Task.objects.get(pk=task_id)
+            except Task.DoesNotExist as ex:
+                raise NotFound(f"Task {task_id} does not exist") from ex
+        elif job_id:
+            try:
+                instance = Job.objects.select_related("segment").get(pk=job_id)
+            except Job.DoesNotExist as ex:
+                raise NotFound(f"Jobs {job_id} do not exist") from ex
 
-            manager = merging.MergingManager()
-            rq_job = manager.get_job(rq_id)
-            if (
-                not rq_job
-                or not ConsensusMergePermission.create_scope_check_status(
-                    request, rq_job_owner_id=BaseRQMeta.for_job(rq_job).user.id
-                )
-                .check_access()
-                .allow
-            ):
-                # We should not provide job existence information to unauthorized users
-                raise NotFound("Unknown request id")
-
-            rq_job_status = rq_job.get_status(refresh=False)
-            if rq_job_status == RqJobStatus.FAILED:
-                exc_info = process_failed_job(rq_job)
-
-                exc_name_pattern = f"{merging.MergingNotAvailable.__name__}: "
-                if (exc_pos := exc_info.find(exc_name_pattern)) != -1:
-                    return Response(
-                        data=exc_info[exc_pos + len(exc_name_pattern) :].strip(),
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-
-                return Response(data=str(exc_info), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            elif rq_job_status in (
-                RqJobStatus.QUEUED,
-                RqJobStatus.STARTED,
-                RqJobStatus.SCHEDULED,
-                RqJobStatus.DEFERRED,
-            ):
-                return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-            elif rq_job_status == RqJobStatus.FINISHED:
-                rq_job.delete()
-                return Response(status=status.HTTP_201_CREATED)
-
-            raise AssertionError(f"Unexpected rq job '{rq_id}' status '{rq_job_status}'")
+        manager = merging.MergingManager(request=request, db_instance=instance)
+        return manager.enqueue_job()
 
 
 @extend_schema(tags=["consensus"])
