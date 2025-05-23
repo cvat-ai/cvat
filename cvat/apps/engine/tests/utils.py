@@ -11,7 +11,7 @@ from contextlib import contextmanager
 from io import BytesIO
 from pathlib import Path
 from pprint import pformat
-from typing import Any, Callable, Collection, NoReturn, Protocol, TypeVar
+from typing import Any, Callable, Collection, NoReturn, Protocol, Sequence, TypeVar
 from unittest import TestCase
 from urllib.parse import urlencode
 
