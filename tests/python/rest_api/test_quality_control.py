@@ -1957,24 +1957,16 @@ class TestQualityReportMetrics(_PermissionTestBase):
         task_weights = {
             r["task_id"]: 1 / r["summary"]["validation_frame_share"] for r in task_reports
         }
+        summary = project_report["summary"]
         for confusion_field in ["valid_count", "total_count", "ds_count", "gt_count"]:
-            assert project_report["summary"][confusion_field] == sum(
+            assert summary[confusion_field] == sum(
                 math.ceil(r["summary"][confusion_field] * task_weights[r["task_id"]])
                 for r in task_reports
             )
 
-        assert (
-            project_report["summary"]["accuracy"]
-            == project_report["summary"]["valid_count"] / project_report["summary"]["total_count"]
-        )
-        assert (
-            project_report["summary"]["precision"]
-            == project_report["summary"]["valid_count"] / project_report["summary"]["ds_count"]
-        )
-        assert (
-            project_report["summary"]["recall"]
-            == project_report["summary"]["valid_count"] / project_report["summary"]["gt_count"]
-        )
+        assert summary["accuracy"] == summary["valid_count"] / summary["total_count"]
+        assert summary["precision"] == summary["valid_count"] / summary["ds_count"]
+        assert summary["recall"] == summary["valid_count"] / summary["gt_count"]
 
         # other summary fields are simply aggregated
         for summary_field in [
@@ -1984,9 +1976,7 @@ class TestQualityReportMetrics(_PermissionTestBase):
             "total_frames",
             "validation_frames",
         ]:
-            assert project_report["summary"][summary_field] == sum(
-                r["summary"][summary_field] for r in task_reports
-            )
+            assert summary[summary_field] == sum(r["summary"][summary_field] for r in task_reports)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -2053,7 +2043,11 @@ class TestPostProjectQualityReports(_PermissionTestBase):
         project = next(p for p in projects if p["tasks"]["count"] == 0)
         project_id = project["id"]
 
-        self.create_quality_report(user=admin_user, project_id=project_id)
+        report = self.create_quality_report(user=admin_user, project_id=project_id)
+
+        assert report["project_id"] == project_id
+        assert report["summary"]["total_count"] == 0
+        assert report["summary"]["tasks"]["total"] == 0
 
     def test_can_create_project_report_when_there_are_tasks_without_validation(
         self, admin_user, projects, tasks, labels
