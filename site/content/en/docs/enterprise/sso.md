@@ -7,7 +7,6 @@ description: 'SSO for a Self-Hosted solution'
 
 > **Note:** This is a paid feature available only for the [Enterprise clients](https://www.cvat.ai/pricing/on-prem).
 
-
 CVAT supports authentication through both OpenID Connect (OIDC) and Security Assertion Markup Language (SAML) protocols.
 To configure SSO, complete the following 2 main steps:
 1. Configure the Identity Provider (IdP) — set up an application on your IdP platform.
@@ -19,74 +18,75 @@ Choose your provider and follow the detailed setup instructions:
 - [Auth0](#auth0)
 - [keycloak](#keycloak)
 
-## Configuration on CVAT side
+## Configuring SSO in CVAT
 
-CVAT introduces configuration file that is used to store integrations with Identity Providers.
-In some cases it can be required to define which Identity Provider shoul be used to authenticate a user.
-To do that, a `selection_mode` setting can be used. There are 2 possible IdP selection schemas:
-`email_address` (default) and `lowest_weight`.
-In case of the first option chosen, the selection of the Identity Provider will be performed by matching the user's email and the company's domain. The second option means that the Identity Provider with the lowest weight will be selected.
+CVAT supports integration with external Identity Providers (IdPs) using a dedicated configuration file.
+This file allows you to define how users are authenticated and which providers are available for login.
 
-To integrate a new Identity Provider with CVAT, you need to add the appropriate configuration to the config file.
-IdP configuration depends on which authentication protocol is used, but contains several common settings:
+### Identity Provider Selection
 
-- `id` (*required*) - Identity Provider ID, should be unique for all providers and be URL-safe as it's used as a path parameter in URLs.
-- `name` (*required*) - name of an Identity Provider.
-- `protocol` (*optional*) - what authentication protocol IdP is based on (`OIDC`|`SAML`). When it is not defined - `OIDC` is implied.
-- `email_domain` (*optional*) - company domain name, should be specified if `email_address` selection schema is used.
-- `weight`(*optional*) - provider weight, can be specified if the `lowest_weight` selection schema is used.
-  If this parameter is missed, the default weight (10) is used.
+In some cases, it's necessary to determine which IdP should be used for authenticating a given user.
+CVAT provides a `selection_mode` setting for this purpose. There are 2 available modes:
+- `email_address` (default): Selects the IdP based on the domain of the user’s email address.
+- `lowest_weight`: Automatically selects the IdP with the lowest assigned weight.
 
-Besides that, each IdP configuration must include protocol-specific parameters.
+### IdP Configuration Structure
 
+To integrate an Identity Provider, you must define its configuration block under the `identity_providers` section
+in the CVAT config file. Each provider's configuration includes both general and protocol-specific settings.
+
+| Key            | Required   | Description |
+| -------------- | ---------- | ----------- |
+| `id`           | *required* | A unique, URL-safe identifier for the IdP. Used in callback URLs. |
+| `name`         | *required* | A human-readable name for the IdP. |
+| `protocol`     | *required* | Authentication protocol (`OIDC`/`SAML`). |
+| `email_domain` | *optional* | Company email domain (used with `email_address` selection mode). |
+| `weight`       | *optional* | Determines priority (used with `lowest_weight` selection mode). Default is 10. |
+
+Additionally, each IdP configuration must include several protocol-specific parameters:
 {{< tabpane text=true >}}
-  {{% tab header="OIDC" %}}
-  In the case of OIDC IdPs integration, each configuration can consist of the following parameters:
-   - `client_id` and `client_secret` (*required*) - these values can be obtained from the configuration page of the specific provider.
-   - `server_url` (*required*): this URL will be used to obtain OpenID Configuration Metadata from the Identity provider.
+  {{% tab header="OpenID Connect" %}}
+  - `client_id` and `client_secret` (*required*) - these values can be obtained from the configuration page of the specific provider.
+  - `server_url` (*required*): URL is used to obtain IdP OpenID Configuration Metadata.
+    __NOTE__: How to check `server_url` correctness: server_url + `/.well-known/openid-configuration` API should exist
+    and return [OpenID Provider Metadata](https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderMetadata).
+    Generally, each authentication platform provides a list of all endpoints. Need to find the corresponding endpoint
+    and select the part in front of `/.well-known/openid-configuration`. For example, in the case of integrating
+    an OIDC Microsoft Entry ID application, don't forget to specify the second version of API
+    (`https://login.microsoftonline.com/<tenant_id>/v2.0`).
+  - `token_auth_method` (*optional*) - token endpoint authentication method which can be one of
+    `client_secret_basic`, `client_secret_post`. If this field is omitted, a method from
+    the server's token auth methods list will be used.
 
-   __NOTE__: How to check `server_url` correctness: server_url + `/.well-known/openid-configuration` should exist
-      and return [OpenID Provider Metadata](https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderMetadata).
-      Generally, each authentication platform provides a list of all endpoints. Need to find the corresponding endpoint and select the part in front of `/.well-known/openid-configuration`. For example, in the case of integrating an OIDC Microsoft Entry ID application, don't forget to specify the second version of API (`https://login.microsoftonline.com/<tenant_id>/v2.0`).
-
-   - `token_auth_method` (*optional*) - token endpoint authentication method which can be one of
-         `client_secret_basic`, `client_secret_post`. If this field is omitted, a method from
-         the server's token auth methods list will be used.
-
-  To enable Proof Key for Code Exchange (PKCE) you need to set the `enable_pkce` option in the general SSO configuration:
-
-   ```yaml
-   ---
-   sso:
-   enabled: true
-   enable_pkce: true
-   ...
-   ```
+  __NOTE__: There is a global setting that applies to all configured OIDC-based Identity Providers: `enable_pkce`. This option controls whether `Proof Key for Code Exchange` (PKCE) is enabled for the authentication flow.
+  ```yaml
+  ---
+  sso:
+  enable_pkce: true
+  ...
+  ```
   {{% /tab %}}
   {{% tab header="SAML" %}}
-  When integrating with SAML IdPs, each configuration must consist of the following parameters:
    - `entity_id` (*required*) - IdP entity ID, should be equal to the corresponding setting on the IdP configuration page.
-   - `metadata_url` (*optional*) - SAML metadata URL, could be found on the IdP configuration page.
-   - `x509_cert` (*optional*) - SAML certificate, could be found on the configuration page of the specific IdP. If the `metadata_url` is not specified, this parameter is **required**.
-   - `sso_url` (*optional*) - SAML endpoint for the Single Sign-On service.
-   Can be found on the IdP configuration page. If the `metadata_url` is not specified, this parameter is **required**.
-   - `attribute_mapping` (*required*) - mapping for users' attributes.
+   - `metadata_url` (*optional*) - SAML metadata URL. This can typically be found on the IdP configuration page.
+   - `x509_cert` (*optional*) - The SAML X.509 certificate. Also could be found in the IdP’s configuration.
+     __NOTE__: If the `metadata_url` is not specified, this parameter becomes **required**.
+   - `sso_url` (*optional*) - SAML endpoint for the Single Sign-On service. Also could be found in the IdP’s configuration.
+     __NOTE__: If the `metadata_url` is not specified, this parameter becomes **required**.
+   - `attribute_mapping` (*required*) - A mapping for users' attributes.
   {{% /tab %}}
 {{< /tabpane >}}
 
-
-Here are simple examples of a file with IdP configurations for both protocols:
-
-
+Below are simple examples of SSO configuration file for both protocols:
 {{< tabpane text=true >}}
   {{% tab header="Integrate OIDC-based IdP" %}}
    ```yaml
    ---
    sso:
    enabled: true
-   selection_mode: <email_address|lowest_weight>
+   selection_mode: email_address
    identity_providers:
-    - id: identity-provider
+    - id: oidc-idp
       protocol: OIDC
       name: Example OIDC-based IdP
       server_url: https://example.com
@@ -102,7 +102,7 @@ Here are simple examples of a file with IdP configurations for both protocols:
    enabled: true
    selection_mode: email_address
    identity_providers:
-    - id: identity-provider
+    - id: saml-idp
       protocol: SAML
       name: Example SMAL-based IdP
       entity_id: <idp-entity-id>
@@ -120,22 +120,20 @@ Here are simple examples of a file with IdP configurations for both protocols:
   {{% /tab %}}
 {{< /tabpane >}}
 
-
-More information about OIDC-based IdP configuration expected by Django Allauth can be found [here](https://docs.allauth.org/en/latest/socialaccount/providers/openid_connect.html).
-More information about SAML-based IdP configuration expected by Django Allauth can be found [here](https://docs.allauth.org/en/latest/socialaccount/providers/saml.html).
-
-
 Once the configuration file is updated, several environment variables must be exported before running CVAT:
-  ```bash
-  export AUTH_CONFIG_PATH="<path_to_auth_config>"
-  export CVAT_HOST="<cvat_host>"
-  # cvat_port is optional
-  export CVAT_BASE_URL="<http|https>://${CVAT_HOST}:<cvat_port>"
-  ```
+```bash
+export AUTH_CONFIG_PATH="<path_to_auth_config>"
+export CVAT_HOST="<cvat_host>"
+# cvat_port is optional
+export CVAT_BASE_URL="<http|https>://${CVAT_HOST}:<cvat_port>"
+```
 
 Start the CVAT enterprise instance as usual.
 That's it! On the CVAT login page, you should now see the option `Continue with SSO`.
 ![](/images/sso_enabled.png)
+
+More information about OIDC-based and SAML-based IdP configuration expected by Django Allauth can be found [here](https://docs.allauth.org/en/latest/socialaccount/providers/openid_connect.html) and [here](https://docs.allauth.org/en/latest/socialaccount/providers/saml.html) respectively.
+
 
 ## Platform specific IdP configuration
 ### Microsoft Entra ID
