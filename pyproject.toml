@@ -24,23 +24,17 @@ extend-exclude = """
         |project.py
         |serializers.py
         |task.py
-        |util.py
-        |views.py
     )
     |engine/(
         admin.py
         |backup.py
         |cloud_provider.py
-        |filters.py
         |media_extractors.py
         |mixins.py
         |models.py
-        |parsers.py
         |permissions.py
         |serializers.py
         |task.py
-        |utils.py
-        |view_utils.py
         |views.py
     )
 )
