@@ -504,7 +504,7 @@ class Task3DTest(_DbTestBase):
 
                     task_ann_prev.data["shapes"][0].pop("id")
                     task_ann.data["shapes"][0].pop("id")
-                    check_annotation_response(self, task_ann_prev, task_ann.data)
+                    check_annotation_response(self, task_ann, task_ann_prev.data, expected_values={'source': 'file'})
 
     def test_api_v2_rewrite_annotation(self):
         with TestDir() as test_dir:
@@ -542,7 +542,7 @@ class Task3DTest(_DbTestBase):
 
                     task_ann_prev.data["shapes"][0].pop("id")
                     task_ann.data["shapes"][0].pop("id")
-                    check_annotation_response(self, task_ann_prev, task_ann.data)
+                    check_annotation_response(self, task_ann, task_ann_prev.data, expected_values={'source': 'file'})
 
     def test_api_v2_dump_and_upload_empty_annotation(self):
         with TestDir() as test_dir:

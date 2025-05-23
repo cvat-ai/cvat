@@ -8,6 +8,7 @@ import os
 import shutil
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
+from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
 from pprint import pformat
@@ -560,18 +561,21 @@ def filter_dict(
 
 def check_optional_fields(
     self: TestCase,
-    obj: dict[str, int | float | str],
+    obj1: dict[str, int | float | str],
+    obj2: dict[str, int | float | str],
     optional_values: dict[str, int | float | str],
+    *,
+    expected_values: dict[str, int | float | str] | None = None
 ) -> None | NoReturn:
     for k in optional_values.keys():
-        right = obj.get(k)
-        left = right if right is not None else optional_values[k]  # accounting for bool fields
-        if right is None:
-            right = optional_values[k]
+        actual = obj1.get(k, optional_values[k])
+        expected = obj2.get(k, optional_values[k])
+        if isinstance(expected_values, dict):
+            expected = expected_values.get(k, expected)
         self.assertEqual(
-            left,
-            right,
-            f"key {k!s} has incorrect actual optional value {left!s} instead of expected {right!s}",
+            actual,
+            expected,
+            f"key '{k}' has incorrect actual optional value '{actual}' instead of expected '{expected}'",
         )
 
 
@@ -718,65 +722,68 @@ def compare_objects(
 def check_annotation_response(
     self: TestCase, response: dict, data: dict,
     *,
-    expected_source: str | None = None,
+    expected_values: dict | None = None,
     ignore_keys: Sequence[str] = ("id", "version")
 ) -> None | NoReturn:
     OPTIONAL_FIELDS = dict(
-        source=expected_source or "manual",
+        source="manual",
         occluded=False,
         outside=False,
         z_order=0,
         rotation=0,
         attributes=[],
-        elements=[],
     )  # if omitted, are set by the server
     # https://docs.cvat.ai/docs/api_sdk/sdk/reference/models/labeled-shape/
     # elements are handled separately
 
     OPTIONAL_FIELDS_KEYS = list(OPTIONAL_FIELDS.keys())
     ignore_keys = list(ignore_keys)
+    data = deepcopy(data)
 
     def _check_order_in_annotations(key_path: list[str]) -> bool:
         return "points" in key_path
 
-    def compare_elements(self, data: dict[str, Any], response_data: dict[str, Any]) -> None | NoReturn:
-        def _get_elements(data: dict[str, Any]) -> dict[str, list[list[dict]]]:
-            return {
-                "shape_elements": [shape.get("elements", []) for shape in data["shapes"]],
-                "track_elements": [track.get("elements", []) for track in data["tracks"]],
-            }
+    def _check_annos_optional_fields(self, annos1: list[dict], annos2: list[dict]) -> None | NoReturn:
+        for anno1, anno2 in zip(annos1, annos2):
+            check_optional_fields(self, anno1, anno2, OPTIONAL_FIELDS, expected_values=expected_values)
 
-        response_elements = _get_elements(response_data)
-        for elements in response_elements.values():
-            for elem in elements:
-                for ann in elem:
-                    check_optional_fields(self, ann, OPTIONAL_FIELDS)
-        response_elements = _get_elements(response_data)
-        data_elements = _get_elements(data)
+    def check_elements(self) -> None | NoReturn:
+        response_elements = {
+            "shape_elements": [shape.pop("elements", []) for shape in response.data["shapes"]],
+            "track_elements": [track.pop("elements", []) for track in response.data["tracks"]],
+        }
+        data_elements = {
+            "shape_elements": [shape.pop("elements", []) for shape in data["shapes"]],
+            "track_elements": [track.pop("elements", []) for track in data["tracks"]],
+        }
+        for element_list1, element_list2 in zip(response_elements.values(), data_elements.values()):
+            for elements1, elements2 in zip(element_list1, element_list2):
+                _check_annos_optional_fields(self, elements1, elements2)
         compare_objects(
             self,
-            data_elements,
             response_elements,
+            data_elements,
             ignore_keys + OPTIONAL_FIELDS_KEYS,
             check_order=_check_order_in_annotations,
         )
 
     try:
-        check_optional_fields(self, response.data, OPTIONAL_FIELDS)
-        compare_elements(self, data, response.data)
+        check_elements(self)
+        for anno_type in ('shapes', 'tracks', 'tags'):
+            _check_annos_optional_fields(self, response.data[anno_type], data[anno_type])
         compare_objects(
             self,
-            data,
             response.data,
+            data,
             ignore_keys + OPTIONAL_FIELDS_KEYS,
             check_order=_check_order_in_annotations,
         )
     except AssertionError as e:
         print(
             "Objects are not equal:",
-            pformat(data, compact=True),
-            "!=",
             pformat(response.data, compact=True),
+            "!=",
+            pformat(data, compact=True),
             sep="\n",
         )
         print(e)

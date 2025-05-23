@@ -5039,10 +5039,12 @@ class JobAnnotationAPITestCase(ApiTestBase):
 
         return response
 
-    def _check_response(self, response, data, expected_source=None):
+    def _check_response(self, response, data):
         if not response.status_code in [
-            status.HTTP_403_FORBIDDEN, status.HTTP_401_UNAUTHORIZED]:
-            check_annotation_response(self, response, data, expected_source=expected_source)
+            status.HTTP_403_FORBIDDEN,
+            status.HTTP_401_UNAUTHORIZED
+        ]:
+            check_annotation_response(self, response, data)
 
     def _run_api_v2_jobs_id_annotations(self, owner, assignee, annotator):
         task, jobs = self._create_task(owner, assignee)
@@ -6579,7 +6581,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
 
                 self.assertEqual(response.status_code, HTTP_200_OK,
                     pformat(response.data))
-                check_annotation_response(self, response, data, expected_source='manual')
+                check_annotation_response(self, response, data)
 
                 # 3. download annotation
                 if not export_formats[export_format]['enabled']:
@@ -6622,7 +6624,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                 self.assertEqual(response.status_code, HTTP_200_OK)
 
                 data["version"] += 2 # upload is delete + put
-                check_annotation_response(self, response, data, expected_source='file')
+                check_annotation_response(self, response, data, expected_values={'source': 'file'})
 
     def _check_dump_content(self, content, task, jobs, data, format_name):
         def etree_to_dict(t):
