@@ -11,7 +11,7 @@ from contextlib import contextmanager
 from io import BytesIO
 from pathlib import Path
 from pprint import pformat
-from typing import Any, Callable, Collection, NoReturn, TypeVar
+from typing import Any, Callable, Collection, NoReturn, TypeVar, Protocol
 from unittest import TestCase
 from urllib.parse import urlencode
 
@@ -27,9 +27,11 @@ from rest_framework.response import Response
 from rest_framework.test import APITestCase
 from scipy.optimize import linear_sum_assignment
 
-from ._types import OrderStrategy, always_check_order
-
 T = TypeVar("T")
+
+
+class OrderStrategy(Protocol):
+    def __call__(self, key_path: list[str]) -> bool: ...
 
 
 @contextmanager
@@ -652,7 +654,7 @@ def compare_objects(
     *,
     fp_tolerance: float = 0.001,
     current_key: list[str] | str | None = None,
-    check_order: OrderStrategy = always_check_order,
+    check_order: bool | OrderStrategy = True,
 ) -> bool | NoReturn:
     if isinstance(current_key, str):
         current_key = [current_key]
@@ -682,7 +684,7 @@ def compare_objects(
             error_msg.format(key_info, pformat(obj1, compact=True), pformat(obj2, compact=True)),
         )
 
-        if check_order(current_key):
+        if check_order == True or check_order(current_key):
             for v1, v2 in zip(obj1, obj2):
                 compare_objects(
                     self,
@@ -727,9 +729,12 @@ def compare_objects(
 
 
 def check_annotation_response(
-    self: TestCase, response, data, expected_source=None
+    self: TestCase, response: dict, data: dict,
+    *,
+    expected_source: str | None = None,
+    ignore_keys: list[str] = ["id", "version"]
 ) -> None | NoReturn:
-    COMMON_DEFAULT_FIELDS = dict(
+    OPTIONAL_FIELDS = dict(
         source=expected_source or "manual",
         occluded=False,
         outside=False,
@@ -740,14 +745,14 @@ def check_annotation_response(
     )  # if omitted, are set by the server
     # https://docs.cvat.ai/docs/api_sdk/sdk/reference/models/labeled-shape/
     # elements are handled separately
-    COMMON_DEFAULT_KEYS = list(COMMON_DEFAULT_FIELDS.keys())
-    ignore_keys = ["id", "version"]
 
-    def _check_order_in_annotations(key_path: str) -> bool:
-        return "shapes.points" in key_path
+    OPTIONAL_FIELDS_KEYS = list(OPTIONAL_FIELDS.keys())
 
-    def compare_elements(self, data, response_data) -> None | NoReturn:
-        def _get_elements(data) -> dict[str, list[list[dict]]]:
+    def _check_order_in_annotations(key_path: list[str]) -> bool:
+        return "points" in key_path
+
+    def compare_elements(self, data: dict[str, Any], response_data: dict[str, Any]) -> None | NoReturn:
+        def _get_elements(data: dict[str, Any]) -> dict[str, list[list[dict]]]:
             return {
                 "shape_elements": [shape.get("elements", []) for shape in data["shapes"]],
                 "track_elements": [track.get("elements", []) for track in data["tracks"]],
@@ -757,25 +762,25 @@ def check_annotation_response(
         for elements in response_elements.values():
             for elem in elements:
                 for ann in elem:
-                    check_optional_fields(self, ann, COMMON_DEFAULT_FIELDS)
+                    check_optional_fields(self, ann, OPTIONAL_FIELDS)
         response_elements = _get_elements(response_data)
         data_elements = _get_elements(data)
         compare_objects(
             self,
             data_elements,
             response_elements,
-            ignore_keys + COMMON_DEFAULT_KEYS,
+            ignore_keys + OPTIONAL_FIELDS_KEYS,
             check_order=_check_order_in_annotations,
         )
 
     try:
-        check_optional_fields(self, response.data, COMMON_DEFAULT_FIELDS)
+        check_optional_fields(self, response.data, OPTIONAL_FIELDS)
         compare_elements(self, data, response.data)
         compare_objects(
             self,
             data,
             response.data,
-            ignore_keys + COMMON_DEFAULT_KEYS,
+            ignore_keys + OPTIONAL_FIELDS_KEYS,
             check_order=_check_order_in_annotations,
         )
     except AssertionError as e:

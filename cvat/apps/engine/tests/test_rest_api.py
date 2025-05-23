@@ -5042,7 +5042,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
     def _check_response(self, response, data, expected_source=None):
         if not response.status_code in [
             status.HTTP_403_FORBIDDEN, status.HTTP_401_UNAUTHORIZED]:
-            check_annotation_response(self, response, data, expected_source)
+            check_annotation_response(self, response, data, expected_source=expected_source)
 
     def _run_api_v2_jobs_id_annotations(self, owner, assignee, annotator):
         task, jobs = self._create_task(owner, assignee)
