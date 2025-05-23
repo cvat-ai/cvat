@@ -3526,9 +3526,9 @@ class AssetWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         try:
             if asset_file.content_type in ("image/jpeg", "image/png"):
                 image = Image.open(asset_file)
-                if any(map(lambda x: x > settings.ASSET_MAX_IMAGE_SIZE, image.size)):
+                if any(x > settings.ASSET_MAX_IMAGE_SIZE for x in image.size):
                     scale_factor = settings.ASSET_MAX_IMAGE_SIZE / max(image.size)
-                    image = image.resize((map(lambda x: int(x * scale_factor), image.size)))
+                    image = image.resize(int(x * scale_factor) for x in image.size)
                 image.save(filename)
             else:
                 with open(filename, "wb") as destination:

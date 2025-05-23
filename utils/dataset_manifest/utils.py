@@ -59,7 +59,7 @@ def _list_and_join(root):
 
 
 def _prepare_context_list(files, base_dir):
-    return sorted(map(lambda x: os.path.relpath(x, base_dir), filter(is_image, files)))
+    return sorted(os.path.relpath(x, base_dir) for x in filter(is_image, files))
 
 
 # Expected 2D format is:

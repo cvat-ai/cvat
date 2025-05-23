@@ -121,7 +121,7 @@ class ExportFileType(str, Enum):
 
     @classmethod
     def values(cls) -> list[str]:
-        return list(map(lambda x: x.value, cls))
+        return [x.value for x in cls]
 
     def __str__(self):
         return self.value
@@ -133,7 +133,7 @@ class InstanceType(str, Enum):
 
     @classmethod
     def values(cls) -> list[str]:
-        return list(map(lambda x: x.value, cls))
+        return [x.value for x in cls]
 
     def __str__(self):
         return self.value

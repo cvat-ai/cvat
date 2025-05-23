@@ -101,7 +101,7 @@ def _read_annotation_guide(zip_object, guide_filename, assets_dirname):
     if guide_filename in files:
         annotation_guide = io.BytesIO(zip_object.read(guide_filename))
         assets = filter(lambda x: x.startswith(f'{assets_dirname}/'), files)
-        assets = list(map(lambda x: (x, zip_object.read(x)), assets))
+        assets = [(x, zip_object.read(x)) for x in assets]
 
         if len(assets) > settings.ASSET_MAX_COUNT_PER_GUIDE:
             raise ValidationError(f'Maximum number of assets per guide reached')
