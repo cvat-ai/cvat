@@ -130,7 +130,7 @@ export CVAT_BASE_URL="<http|https>://${CVAT_HOST}:<cvat_port>"
 
 Start the CVAT enterprise instance as usual.
 That's it! On the CVAT login page, you should now see the option `Continue with SSO`.
-![](/images/sso_enabled.png)
+![](/images/sso_enabled.jpeg)
 
 More information about OIDC-based and SAML-based IdP configuration expected by Django Allauth can be found [here](https://docs.allauth.org/en/latest/socialaccount/providers/openid_connect.html) and [here](https://docs.allauth.org/en/latest/socialaccount/providers/saml.html) respectively.
 
@@ -151,14 +151,12 @@ To start, log into your [Microsoft Azure Portal](https://portal.azure.com/#home)
 1. Enter application name
 1. Select `Supported account types` based on your needs
 1. Add `Redirect URI`: choose `Web` platform and set `<schema:cvat_domain>/api/auth/oidc/azure-oidc/login/callback/` to the value field
+  ![](/images/azure_oidc_1.jpeg)
 1. Click on the`Register` button
-
-// screenshot here
-
 
 {{% alert title="Note" color="primary" %}}
 More information on how to configure an OIDC-based application on the Azure platform can be
-found [here]().
+found [here](https://learn.microsoft.com/en-us/power-pages/security/authentication/openid-settings#create-an-app-registration-in-azure).
 {{% /alert %}}
 
 You’ve now created an app, but one more step is needed to finalize the configuration.
@@ -166,14 +164,15 @@ You’ve now created an app, but one more step is needed to finalize the configu
 ##### **Step 2: Configure credentials**
 
 1. Navigate to the `Overview` tab of your newly created application.
+   ![](/images/azure_oidc_2.jpeg)
 1. In the `Client credentials` section, click the `Add a certificate or secret` link. This will take you to the `Certificates & secrets` page.
 1. Click `+ New client secret`.
 1. In the popup form, enter a description and select an expiration period, then click `Add`.
+   ![](/images/azure_oidc_3.jpeg)
 
 The newly created secret will appear in the list.
 Make sure to copy the value now — you won’t be able to see it again later.
-
-// screenshots here
+![](/images/azure_oidc_4.jpeg)
 
 ##### **Step 3: Configure CVAT**
 
@@ -210,7 +209,7 @@ Follow these steps to configure an application on the `Azure` platform:
 To start, log into your [Microsoft Azure Portal](https://portal.azure.com/#home). Once you're in:
 1. Navigate to the  `Microsoft Entra ID` service -> `Enterprise applications` section in the menu on the left.
 1. Click `+ New application` and enter a name for the application in the popup window, then click `Create`.
-   // screenshot here
+   ![](/images/azure_saml_1.jpeg)
 
 You’ve now created an app, but a few more steps are needed to finalize the configuration.
 
@@ -218,23 +217,24 @@ You’ve now created an app, but a few more steps are needed to finalize the con
 
 1. Navigate to the `Single sign-on` section in the menu on the left
 1. Choose the SAML protocol as the single sign on method
-   // screenshot here
+   ![](/images/azure_saml_2.jpeg)
 1. Edit `Basic SAML Configuration`:
    - `Identifier (Entity ID)`: `<schema:cvat_domain>/api/auth/saml/azure-saml/metadata/`
    - `Reply URL (Assertion Consumer Service URL)`: `<schema:cvat_domain>/api/auth/saml/azure-saml/acs/`
+    ![](/images/azure_saml_3.jpeg)
    - Save changes
 1. Edit `Attributes & Claims`
    1. Add a new `uid` claim:
-      - Name: `uid`
-      - Namespace: `http://schemas.xmlsoap.org/ws/2005/05/identity/claims`
-      - Source: `attribute`
-      - Source attribute: `user.objectid`
+     - Name: `uid`
+     - Namespace: `http://schemas.xmlsoap.org/ws/2005/05/identity/claims`
+     - Source: `attribute`
+     - Source attribute: `user.objectid`
+      ![](/images/azure_saml_4.jpeg)
 
 {{% alert title="Note" color="primary" %}}
 More information on how to configure an application on Azure platform can be
-found [here]().
+found [here](https://learn.microsoft.com/en-us/entra/identity/enterprise-apps/add-application-portal-setup-sso).
 {{% /alert %}}
-
 
 ##### **Step 3: Assign users and groups**
 
@@ -246,7 +246,6 @@ To grant access:
 1. Confirm selection.
 
 The selected users or groups will now appear in the assignment list.
-// screenshot here
 
 That's it, now we can move on to the configuration in CVAT.
 
@@ -278,9 +277,9 @@ sso:
 ```
 {{< alert title="Tip" >}}
 Actual `Microsoft Entra Identifier` and `App Federation Metadata Url` values may be found on the `Single sign-on` tab of the created application
-{{< /alert >}}
 
-// screenshot here
+![](/images/azure_saml_5.jpeg)
+{{< /alert >}}
 
 After running CVAT with updated config file, users will be able to authenticate using configured Identity Provider.
 
@@ -296,11 +295,12 @@ To start, log into your [Okta admin dashboard](https://login.okta.com/). Once yo
 1. Navigate to the `Applications` section in the menu on the left.
 1. Clink on the `Create App integration` button.
 1. Select `OIDC - OpenID Connect` as a sign-in method and `Web Application` type.
-  // okta_oidc_1 screenshot here
+  ![](/images/okta_oidc_1.jpeg)
 1. Fill the form with the following content:
-  - `App integration name`: enter a name for the application
-  - `Sign-in redirect URIs`: `<schema:cvat_domain>/api/auth/oidc/okta-oidc/login/callback/`
-  - Select option in the `Controlled access` to match your requirements. In this example we'll use `Skip group assignment for now`.
+   - `App integration name`: enter a name for the application
+   - `Sign-in redirect URIs`: `<schema:cvat_domain>/api/auth/oidc/okta-oidc/login/callback/`
+   - Select option in the `Controlled access` to match your requirements. In this example we'll use `Skip group assignment for now`.
+   ![](/images/okta_oidc_2.jpeg)
 
 {{% alert title="Note" color="primary" %}}
 More information on how to configure an OIDC-based application on the Okta platform can be
@@ -318,7 +318,7 @@ To grant access:
 1. Identify the users or groups you want to assign, then click `assign`.
 
 The selected users or groups will now appear in the assignment list.
-// screenshot here
+![](/images/okta_oidc_3.jpeg)
 
 ##### **Step 3: Configure CVAT**
 
@@ -340,6 +340,7 @@ sso:
 
 {{< alert title="Tip" >}}
 Actual `Client ID` and `Client secret` key values may be found on the `General` tab of the created application
+![](/images/okta_oidc_4.jpeg)
 {{< /alert >}}
 
 After running CVAT with updated config file, users will be able to authenticate using configured Identity Provider.
@@ -355,21 +356,26 @@ To start, log into your [Okta admin dashboard](https://login.okta.com/). Once yo
 1. Navigate to the `Applications` section in the menu on the left.
 1. Clink on the `Create App integration` button.
 1. Select `SAML 2.0` as a sign-in method, then click `Next`.
+   ![](/images/okta_saml_1.jpeg)
 1. Fill the form with general setting and go to the next configuration step.
 1. On the `Configure SAML` form set the following fields:
    - `Single sign-on URL`: <schema:cvat_domain>/api/auth/saml/okta-saml/acs/
    - `Audience URI (SP Entity ID`: <schema:cvat_domain>/api/auth/saml/okta-saml/metadata/
+   ![](/images/okta_saml_2.jpeg)
 1. Define attribute statements that will be shared with CVAT.
-  In our example we will use the `Basic` attribute name format and set the mapping as showed below:
+   In our example we will use the `Basic` attribute name format and set the mapping as showed below:
    - `firstName`: `user.firstName`
    - `lastName`: `user.lastName`
    - `username`: `user.login`
    - `email`: `user.email`
    - `uid`: `user.getInternalProperty("id")`
-  // screenshot here
-  {{% alert title="Tip" %}}
-  If attribute mapping needs to be adapted, follow the official [documentation](https://help.okta.com/oie/en-us/content/topics/apps/define-attribute-statements.htm) on how to configure `Attribute Statements`
-  {{% /alert %}}
+
+   ![](/images/okta_saml_3.jpeg)
+   {{% alert title="Tip" %}}
+   If attribute mapping needs to be adapted, follow the official
+   [documentation](https://help.okta.com/oie/en-us/content/topics/apps/define-attribute-statements.htm)
+   on how to configure `Attribute Statements`
+   {{% /alert %}}
 1. Navigate to the next configuration step and fill the `Feedback` form.
 
 You’ve now created an app, but a few more steps are needed to finalize the configuration.
@@ -388,6 +394,7 @@ There is an option to include email verification claim on sign-in step:
    - Select default user profile from the list (`User (default)`)
    - Click `+ Add Attribute`
    - Fill out the form with your desired values, making sure to select the `boolean` data type
+   ![](/images/okta_saml_4.jpeg)
    - Click `Save`
 1. Update people profiles:
    - Navigate to the `People` section in the menu on the left
@@ -421,6 +428,7 @@ sso:
 
 {{< alert title="Tip" >}}
 `Metadata URL` and `Issuer` values may be found on the `Sign On` tab of the application setting
+![](/images/okta_saml_5.jpeg)
 {{< /alert >}}
 
 After running CVAT with updated config file, users will be able to authenticate using configured Identity Provider.
