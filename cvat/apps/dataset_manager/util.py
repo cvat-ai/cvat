@@ -247,15 +247,13 @@ class ExportCacheManager:
         file_type = ExportFileType.DATASET if save_images else ExportFileType.ANNOTATIONS
 
         normalized_format_name = make_file_name(to_snake_case(format_name))
-        filename = cls.FILE_NAME_TEMPLATE_WITH_INSTANCE.format_map(
-            {
-                "instance_type": instance_type,
-                "instance_id": instance_id,
-                "file_type": file_type,
-                "instance_timestamp": instance_timestamp,
-                "optional_suffix": cls.SPLITTER + normalized_format_name,
-                "file_ext": file_ext,
-            }
+        filename = cls.FILE_NAME_TEMPLATE_WITH_INSTANCE.format(
+            instance_type=instance_type,
+            instance_id=instance_id,
+            file_type=file_type,
+            instance_timestamp=instance_timestamp,
+            optional_suffix=cls.SPLITTER + normalized_format_name,
+            file_ext=file_ext,
         )
 
         return osp.join(cls.ROOT, filename)
@@ -269,15 +267,13 @@ class ExportCacheManager:
         instance_timestamp: float,
     ) -> str:
         instance_type = InstanceType(instance_type.lower())
-        filename = cls.FILE_NAME_TEMPLATE_WITH_INSTANCE.format_map(
-            {
-                "instance_type": instance_type,
-                "instance_id": instance_id,
-                "file_type": ExportFileType.BACKUP,
-                "instance_timestamp": instance_timestamp,
-                "optional_suffix": "",
-                "file_ext": "zip",
-            }
+        filename = cls.FILE_NAME_TEMPLATE_WITH_INSTANCE.format(
+            instance_type=instance_type,
+            instance_id=instance_id,
+            file_type=ExportFileType.BACKUP,
+            instance_timestamp=instance_timestamp,
+            optional_suffix="",
+            file_ext="zip",
         )
         return osp.join(cls.ROOT, filename)
 
@@ -289,11 +285,12 @@ class ExportCacheManager:
         file_id: UUID,
         file_ext: str,
     ) -> str:
-        filename = cls.FILE_NAME_TEMPLATE_WITHOUT_INSTANCE.format_map({
-            "file_type": ExportFileType(file_type), # convert here to be sure only expected types are used
-            "file_id": file_id,
-            "file_ext": file_ext,
-        })
+        filename = cls.FILE_NAME_TEMPLATE_WITHOUT_INSTANCE.format(
+            # convert here to be sure only expected types are used
+            file_type=ExportFileType(file_type),
+            file_id=file_id,
+            file_ext=file_ext,
+        )
         return osp.join(cls.ROOT, filename)
 
     @classmethod

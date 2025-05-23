@@ -1089,8 +1089,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             the `GET /api/requests/<rq_id>`, where **rq_id** is request ID returned for this request.
 
             Once data is attached to a task, it cannot be detached or replaced.
-        """.format_map(
-            {'upload_file_order_field': _UPLOAD_FILE_ORDER_FIELD}
+        """.format(
+            upload_file_order_field=_UPLOAD_FILE_ORDER_FIELD
         )),
         # TODO: add a tutorial on this endpoint in the REST API docs
         request=DataSerializer(required=False),
