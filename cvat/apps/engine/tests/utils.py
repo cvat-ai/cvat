@@ -11,7 +11,7 @@ from contextlib import contextmanager
 from io import BytesIO
 from pathlib import Path
 from pprint import pformat
-from typing import Any, Callable, Collection, NoReturn, TypeVar, Protocol
+from typing import Any, Callable, Collection, NoReturn, Protocol, TypeVar
 from unittest import TestCase
 from urllib.parse import urlencode
 
@@ -684,7 +684,7 @@ def compare_objects(
             error_msg.format(key_info, pformat(obj1, compact=True), pformat(obj2, compact=True)),
         )
 
-        if check_order == True or check_order(current_key):
+        if check_order is True or check_order(current_key):
             for v1, v2 in zip(obj1, obj2):
                 compare_objects(
                     self,
@@ -732,7 +732,7 @@ def check_annotation_response(
     self: TestCase, response: dict, data: dict,
     *,
     expected_source: str | None = None,
-    ignore_keys: list[str] = ["id", "version"]
+    ignore_keys: Sequence[str] = ("id", "version")
 ) -> None | NoReturn:
     OPTIONAL_FIELDS = dict(
         source=expected_source or "manual",
@@ -747,6 +747,7 @@ def check_annotation_response(
     # elements are handled separately
 
     OPTIONAL_FIELDS_KEYS = list(OPTIONAL_FIELDS.keys())
+    ignore_keys = list(ignore_keys)
 
     def _check_order_in_annotations(key_path: list[str]) -> bool:
         return "points" in key_path
