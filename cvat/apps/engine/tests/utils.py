@@ -11,7 +11,7 @@ from contextlib import contextmanager
 from io import BytesIO
 from pathlib import Path
 from pprint import pformat
-from typing import Any, Callable, Collection, NoReturn, TypeVar, Protocol
+from typing import Any, Callable, Collection, NoReturn, Protocol, TypeVar
 from unittest import TestCase
 from urllib.parse import urlencode
 
@@ -198,6 +198,7 @@ class ApiTestBase(APITestCase):
         assert request_status == "finished", f"The last request status was {request_status}"
         return response
 
+
 class ImportApiTestBase(ApiTestBase):
     def _import(
         self,
@@ -210,7 +211,8 @@ class ImportApiTestBase(ApiTestBase):
         expected_4xx_status_code: int | None = None,
     ):
         response = self._post_request(
-            api_path, user,
+            api_path,
+            user,
             data={through_field: file_content},
             format="multipart",
             query_params=query_params,
@@ -225,39 +227,70 @@ class ImportApiTestBase(ApiTestBase):
         return response
 
     def _import_project_dataset(
-        self, user: str, projetc_id: int, file_content: BytesIO, query_params: str = None,
-        expected_4xx_status_code: int | None = None
+        self,
+        user: str,
+        projetc_id: int,
+        file_content: BytesIO,
+        query_params: str = None,
+        expected_4xx_status_code: int | None = None,
     ):
         return self._import(
-            user, f"/api/projects/{projetc_id}/dataset", file_content, through_field="dataset_file",
-            query_params=query_params, expected_4xx_status_code=expected_4xx_status_code
+            user,
+            f"/api/projects/{projetc_id}/dataset",
+            file_content,
+            through_field="dataset_file",
+            query_params=query_params,
+            expected_4xx_status_code=expected_4xx_status_code,
         )
 
     def _import_task_annotations(
-        self, user: str, task_id: int, file_content: BytesIO, query_params: str = None,
-        expected_4xx_status_code: int | None = None
+        self,
+        user: str,
+        task_id: int,
+        file_content: BytesIO,
+        query_params: str = None,
+        expected_4xx_status_code: int | None = None,
     ):
         return self._import(
-            user, f"/api/tasks/{task_id}/annotations", file_content, through_field="annotation_file",
-            query_params=query_params, expected_4xx_status_code=expected_4xx_status_code
+            user,
+            f"/api/tasks/{task_id}/annotations",
+            file_content,
+            through_field="annotation_file",
+            query_params=query_params,
+            expected_4xx_status_code=expected_4xx_status_code,
         )
 
     def _import_job_annotations(
-        self, user: str, job_id: int, file_content: BytesIO, query_params: str = None,
-        expected_4xx_status_code: int | None = None
+        self,
+        user: str,
+        job_id: int,
+        file_content: BytesIO,
+        query_params: str = None,
+        expected_4xx_status_code: int | None = None,
     ):
         return self._import(
-            user, f"/api/jobs/{job_id}/annotations", file_content, through_field="annotation_file",
-            query_params=query_params, expected_4xx_status_code=expected_4xx_status_code
+            user,
+            f"/api/jobs/{job_id}/annotations",
+            file_content,
+            through_field="annotation_file",
+            query_params=query_params,
+            expected_4xx_status_code=expected_4xx_status_code,
         )
 
     def _import_project_backup(
-        self, user: str, file_content: BytesIO, query_params: str = None,
-        expected_4xx_status_code: int | None = None
+        self,
+        user: str,
+        file_content: BytesIO,
+        query_params: str = None,
+        expected_4xx_status_code: int | None = None,
     ) -> int | None:
         response = self._import(
-            user, "/api/projects/backup", file_content, through_field="project_file",
-            query_params=query_params, expected_4xx_status_code=expected_4xx_status_code
+            user,
+            "/api/projects/backup",
+            file_content,
+            through_field="project_file",
+            query_params=query_params,
+            expected_4xx_status_code=expected_4xx_status_code,
         )
         if expected_4xx_status_code:
             return None
@@ -265,17 +298,25 @@ class ImportApiTestBase(ApiTestBase):
         return response.json()["result_id"]
 
     def _import_task_backup(
-        self, user: str, file_content: BytesIO, query_params: str = None,
-        expected_4xx_status_code: int | None = None
+        self,
+        user: str,
+        file_content: BytesIO,
+        query_params: str = None,
+        expected_4xx_status_code: int | None = None,
     ) -> int | None:
         response = self._import(
-            user, "/api/tasks/backup", file_content, through_field="task_file",
-            query_params=query_params, expected_4xx_status_code=expected_4xx_status_code
+            user,
+            "/api/tasks/backup",
+            file_content,
+            through_field="task_file",
+            query_params=query_params,
+            expected_4xx_status_code=expected_4xx_status_code,
         )
         if expected_4xx_status_code:
             return None
 
         return response.json()["result_id"]
+
 
 class ExportApiTestBase(ApiTestBase):
     def _export(
@@ -729,10 +770,12 @@ def compare_objects(
 
 
 def check_annotation_response(
-    self: TestCase, response: dict, data: dict,
+    self: TestCase,
+    response: dict,
+    data: dict,
     *,
     expected_source: str | None = None,
-    ignore_keys: list[str] = ["id", "version"]
+    ignore_keys: list[str] = ["id", "version"],
 ) -> None | NoReturn:
     OPTIONAL_FIELDS = dict(
         source=expected_source or "manual",
@@ -751,7 +794,9 @@ def check_annotation_response(
     def _check_order_in_annotations(key_path: list[str]) -> bool:
         return "points" in key_path
 
-    def compare_elements(self, data: dict[str, Any], response_data: dict[str, Any]) -> None | NoReturn:
+    def compare_elements(
+        self, data: dict[str, Any], response_data: dict[str, Any]
+    ) -> None | NoReturn:
         def _get_elements(data: dict[str, Any]) -> dict[str, list[list[dict]]]:
             return {
                 "shape_elements": [shape.get("elements", []) for shape in data["shapes"]],
