@@ -41,7 +41,6 @@ extend-exclude = """
         |permissions.py
         |serializers.py
         |task.py
-        |tests/
         |utils.py
         |view_utils.py
         |views.py
