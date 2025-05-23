@@ -790,6 +790,7 @@ def check_annotation_response(
     # elements are handled separately
 
     OPTIONAL_FIELDS_KEYS = list(OPTIONAL_FIELDS.keys())
+    ignore_keys = list(ignore_keys)
 
     def _check_order_in_annotations(key_path: list[str]) -> bool:
         return "points" in key_path
