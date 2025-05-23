@@ -24,7 +24,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.test import APITestCase
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 @contextmanager
@@ -45,7 +45,7 @@ class ForceLogin:
 
     def __enter__(self):
         if self.user:
-            self.client.force_login(self.user, backend='django.contrib.auth.backends.ModelBackend')
+            self.client.force_login(self.user, backend="django.contrib.auth.backends.ModelBackend")
 
         return self
 
@@ -73,8 +73,8 @@ def clear_rq_jobs():
 
         # Remove orphaned jobs that can't be normally reported by DjangoRQ
         # https://github.com/rq/django-rq/issues/73
-        for key in queue.connection.keys('rq:job:*'):
-            job_id = key.decode().split('rq:job:', maxsplit=1)[1]
+        for key in queue.connection.keys("rq:job:*"):
+            job_id = key.decode().split("rq:job:", maxsplit=1)[1]
             job = queue.fetch_job(job_id)
             if not job:
                 # The job can belong to a different queue, using the same connection
@@ -128,7 +128,9 @@ class ApiTestBase(APITestCase):
         super().setUp()
         self.client = self.client_class()
 
-    def _get_request(self, path: str, user: str, *, query_params: dict[str, Any] | None = None) -> Response:
+    def _get_request(
+        self, path: str, user: str, *, query_params: dict[str, Any] | None = None
+    ) -> Response:
         with ForceLogin(user, self.client):
             response = self.client.get(path, data=query_params)
         return response
@@ -145,7 +147,7 @@ class ApiTestBase(APITestCase):
         *,
         format: str = "json",  # pylint: disable=redefined-builtin
         query_params: dict[str, Any] = None,
-        data: dict[str, Any] | None = None
+        data: dict[str, Any] | None = None,
     ):
         if query_params:
             # Note: once we upgrade to Django 5.1+, this should be changed to pass query_params
@@ -189,6 +191,7 @@ class ApiTestBase(APITestCase):
         assert request_status == "finished", f"The last request status was {request_status}"
         return response
 
+
 class ImportApiTestBase(ApiTestBase):
     def _import(
         self,
@@ -201,7 +204,8 @@ class ImportApiTestBase(ApiTestBase):
         expected_4xx_status_code: int | None = None,
     ):
         response = self._post_request(
-            api_path, user,
+            api_path,
+            user,
             data={through_field: file_content},
             format="multipart",
             query_params=query_params,
@@ -216,39 +220,70 @@ class ImportApiTestBase(ApiTestBase):
         return response
 
     def _import_project_dataset(
-        self, user: str, projetc_id: int, file_content: BytesIO, query_params: str = None,
-        expected_4xx_status_code: int | None = None
+        self,
+        user: str,
+        projetc_id: int,
+        file_content: BytesIO,
+        query_params: str = None,
+        expected_4xx_status_code: int | None = None,
     ):
         return self._import(
-            user, f"/api/projects/{projetc_id}/dataset", file_content, through_field="dataset_file",
-            query_params=query_params, expected_4xx_status_code=expected_4xx_status_code
+            user,
+            f"/api/projects/{projetc_id}/dataset",
+            file_content,
+            through_field="dataset_file",
+            query_params=query_params,
+            expected_4xx_status_code=expected_4xx_status_code,
         )
 
     def _import_task_annotations(
-        self, user: str, task_id: int, file_content: BytesIO, query_params: str = None,
-        expected_4xx_status_code: int | None = None
+        self,
+        user: str,
+        task_id: int,
+        file_content: BytesIO,
+        query_params: str = None,
+        expected_4xx_status_code: int | None = None,
     ):
         return self._import(
-            user, f"/api/tasks/{task_id}/annotations", file_content, through_field="annotation_file",
-            query_params=query_params, expected_4xx_status_code=expected_4xx_status_code
+            user,
+            f"/api/tasks/{task_id}/annotations",
+            file_content,
+            through_field="annotation_file",
+            query_params=query_params,
+            expected_4xx_status_code=expected_4xx_status_code,
         )
 
     def _import_job_annotations(
-        self, user: str, job_id: int, file_content: BytesIO, query_params: str = None,
-        expected_4xx_status_code: int | None = None
+        self,
+        user: str,
+        job_id: int,
+        file_content: BytesIO,
+        query_params: str = None,
+        expected_4xx_status_code: int | None = None,
     ):
         return self._import(
-            user, f"/api/jobs/{job_id}/annotations", file_content, through_field="annotation_file",
-            query_params=query_params, expected_4xx_status_code=expected_4xx_status_code
+            user,
+            f"/api/jobs/{job_id}/annotations",
+            file_content,
+            through_field="annotation_file",
+            query_params=query_params,
+            expected_4xx_status_code=expected_4xx_status_code,
         )
 
     def _import_project_backup(
-        self, user: str, file_content: BytesIO, query_params: str = None,
-        expected_4xx_status_code: int | None = None
+        self,
+        user: str,
+        file_content: BytesIO,
+        query_params: str = None,
+        expected_4xx_status_code: int | None = None,
     ) -> int | None:
         response = self._import(
-            user, "/api/projects/backup", file_content, through_field="project_file",
-            query_params=query_params, expected_4xx_status_code=expected_4xx_status_code
+            user,
+            "/api/projects/backup",
+            file_content,
+            through_field="project_file",
+            query_params=query_params,
+            expected_4xx_status_code=expected_4xx_status_code,
         )
         if expected_4xx_status_code:
             return None
@@ -256,17 +291,25 @@ class ImportApiTestBase(ApiTestBase):
         return response.json()["result_id"]
 
     def _import_task_backup(
-        self, user: str, file_content: BytesIO, query_params: str = None,
-        expected_4xx_status_code: int | None = None
+        self,
+        user: str,
+        file_content: BytesIO,
+        query_params: str = None,
+        expected_4xx_status_code: int | None = None,
     ) -> int | None:
         response = self._import(
-            user, "/api/tasks/backup", file_content, through_field="task_file",
-            query_params=query_params, expected_4xx_status_code=expected_4xx_status_code
+            user,
+            "/api/tasks/backup",
+            file_content,
+            through_field="task_file",
+            query_params=query_params,
+            expected_4xx_status_code=expected_4xx_status_code,
         )
         if expected_4xx_status_code:
             return None
 
         return response.json()["result_id"]
+
 
 class ExportApiTestBase(ApiTestBase):
     def _export(
@@ -291,7 +334,9 @@ class ExportApiTestBase(ApiTestBase):
 
         assert rq_id, "The rq_id param was not found in the server response"
 
-        response = self._check_request_status(user, rq_id, expected_4xx_status_code=expected_4xx_status_code)
+        response = self._check_request_status(
+            user, rq_id, expected_4xx_status_code=expected_4xx_status_code
+        )
 
         if not download_locally:
             return response
@@ -323,10 +368,12 @@ class ExportApiTestBase(ApiTestBase):
         expected_4xx_status_code: int | None = None,
     ):
         return self._export(
-            user, f"/api/tasks/{task_id}/backup/export",
+            user,
+            f"/api/tasks/{task_id}/backup/export",
             query_params=query_params,
-            download_locally=download_locally, file_path=file_path,
-            expected_4xx_status_code=expected_4xx_status_code
+            download_locally=download_locally,
+            file_path=file_path,
+            expected_4xx_status_code=expected_4xx_status_code,
         )
 
     def _export_project_backup(
@@ -340,11 +387,12 @@ class ExportApiTestBase(ApiTestBase):
         expected_4xx_status_code: int | None = None,
     ):
         return self._export(
-            user, f"/api/projects/{project_id}/backup/export",
+            user,
+            f"/api/projects/{project_id}/backup/export",
             query_params=query_params,
             download_locally=download_locally,
             file_path=file_path,
-            expected_4xx_status_code=expected_4xx_status_code
+            expected_4xx_status_code=expected_4xx_status_code,
         )
 
     def _export_project_dataset(
@@ -360,11 +408,12 @@ class ExportApiTestBase(ApiTestBase):
         query_params["save_images"] = True
 
         return self._export(
-            user, f"/api/projects/{project_id}/dataset/export",
+            user,
+            f"/api/projects/{project_id}/dataset/export",
             query_params=query_params,
             download_locally=download_locally,
             file_path=file_path,
-            expected_4xx_status_code=expected_4xx_status_code
+            expected_4xx_status_code=expected_4xx_status_code,
         )
 
     def _export_project_annotations(
@@ -380,11 +429,12 @@ class ExportApiTestBase(ApiTestBase):
         query_params["save_images"] = False
 
         return self._export(
-            user, f"/api/projects/{project_id}/dataset/export",
+            user,
+            f"/api/projects/{project_id}/dataset/export",
             query_params=query_params,
             download_locally=download_locally,
             file_path=file_path,
-            expected_4xx_status_code=expected_4xx_status_code
+            expected_4xx_status_code=expected_4xx_status_code,
         )
 
     def _export_task_dataset(
@@ -400,11 +450,12 @@ class ExportApiTestBase(ApiTestBase):
         query_params["save_images"] = True
 
         return self._export(
-            user, f"/api/tasks/{task_id}/dataset/export",
+            user,
+            f"/api/tasks/{task_id}/dataset/export",
             query_params=query_params,
             download_locally=download_locally,
             file_path=file_path,
-            expected_4xx_status_code=expected_4xx_status_code
+            expected_4xx_status_code=expected_4xx_status_code,
         )
 
     def _export_task_annotations(
@@ -420,11 +471,12 @@ class ExportApiTestBase(ApiTestBase):
         query_params["save_images"] = False
 
         return self._export(
-            user, f"/api/tasks/{task_id}/dataset/export",
+            user,
+            f"/api/tasks/{task_id}/dataset/export",
             query_params=query_params,
             download_locally=download_locally,
             file_path=file_path,
-            expected_4xx_status_code=expected_4xx_status_code
+            expected_4xx_status_code=expected_4xx_status_code,
         )
 
     def _export_job_dataset(
@@ -440,11 +492,12 @@ class ExportApiTestBase(ApiTestBase):
         query_params["save_images"] = True
 
         return self._export(
-            user, f"/api/jobs/{job_id}/dataset/export",
+            user,
+            f"/api/jobs/{job_id}/dataset/export",
             query_params=query_params,
             download_locally=download_locally,
             file_path=file_path,
-            expected_4xx_status_code=expected_4xx_status_code
+            expected_4xx_status_code=expected_4xx_status_code,
         )
 
     def _export_job_annotations(
@@ -460,35 +513,40 @@ class ExportApiTestBase(ApiTestBase):
         query_params["save_images"] = False
 
         return self._export(
-            user, f"/api/jobs/{job_id}/dataset/export",
+            user,
+            f"/api/jobs/{job_id}/dataset/export",
             query_params=query_params,
             download_locally=download_locally,
             file_path=file_path,
-            expected_4xx_status_code=expected_4xx_status_code
+            expected_4xx_status_code=expected_4xx_status_code,
         )
 
+
 def generate_image_file(filename, size=(100, 100)):
-    assert os.path.splitext(filename)[-1].lower() in ['', '.jpg', '.jpeg'], \
-        "This function supports only jpeg images. Please add the .jpg extension to the file name"
+    assert os.path.splitext(filename)[-1].lower() in [
+        "",
+        ".jpg",
+        ".jpeg",
+    ], "This function supports only jpeg images. Please add the .jpg extension to the file name"
 
     f = BytesIO()
-    image = Image.new('RGB', size=size)
-    image.save(f, 'jpeg')
+    image = Image.new("RGB", size=size)
+    image.save(f, "jpeg")
     f.name = filename
     f.seek(0)
     return f
 
 
-def generate_video_file(filename, width=1920, height=1080, duration=1, fps=25, codec_name='mpeg4'):
+def generate_video_file(filename, width=1920, height=1080, duration=1, fps=25, codec_name="mpeg4"):
     f = BytesIO()
     total_frames = duration * fps
     file_ext = os.path.splitext(filename)[1][1:]
-    container = av.open(f, mode='w', format=file_ext)
+    container = av.open(f, mode="w", format=file_ext)
 
     stream = container.add_stream(codec_name=codec_name, rate=fps)
     stream.width = width
     stream.height = height
-    stream.pix_fmt = 'yuv420p'
+    stream.pix_fmt = "yuv420p"
 
     for frame_i in range(total_frames):
         img = np.empty((stream.width, stream.height, 3))
@@ -499,7 +557,7 @@ def generate_video_file(filename, width=1920, height=1080, duration=1, fps=25, c
         img = np.round(255 * img).astype(np.uint8)
         img = np.clip(img, 0, 255)
 
-        frame = av.VideoFrame.from_ndarray(img, format='rgb24')
+        frame = av.VideoFrame.from_ndarray(img, format="rgb24")
         for packet in stream.encode(frame):
             container.mux(packet)
 
@@ -514,16 +572,15 @@ def generate_video_file(filename, width=1920, height=1080, duration=1, fps=25, c
 
     return [(width, height)] * total_frames, f
 
-def get_paginated_collection(
-    request_chunk_callback: Callable[[int], HttpResponse]
-) -> Iterator[T]:
+
+def get_paginated_collection(request_chunk_callback: Callable[[int], HttpResponse]) -> Iterator[T]:
     values = []
 
     for page in itertools.count(start=1):
         response = request_chunk_callback(page)
         data = response.json()
         values.extend(data["results"])
-        if not data.get('next'):
+        if not data.get("next"):
             break
 
     return values
