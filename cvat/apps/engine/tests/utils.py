@@ -558,19 +558,6 @@ def filter_dict(
     return {k: v for k, v in d.items() if (not keep or k in keep) and (not drop or k not in drop)}
 
 
-def freeze_object(obj, ignore_keys=None) -> frozenset:
-    if isinstance(obj, dict):
-        obj = filter_dict(obj, drop=ignore_keys)
-        for k, v in obj.items():
-            obj[k] = freeze_object(v, ignore_keys)
-        return frozenset(obj.items())
-    elif isinstance(obj, list):
-        for i, val in enumerate(obj):
-            obj[i] = freeze_object(val, ignore_keys)
-        return tuple(obj)
-    return obj
-
-
 def check_optional_fields(
     self: TestCase,
     obj: dict[str, int | float | str],
