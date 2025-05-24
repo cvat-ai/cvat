@@ -359,8 +359,8 @@ To start, log into your [Okta admin dashboard](https://login.okta.com/). Once yo
    ![](/images/okta_saml_1.jpeg)
 1. Fill the form with general setting and go to the next configuration step.
 1. On the `Configure SAML` form set the following fields:
-   - `Single sign-on URL`: <schema:cvat_domain>/api/auth/saml/okta-saml/acs/
-   - `Audience URI (SP Entity ID`: <schema:cvat_domain>/api/auth/saml/okta-saml/metadata/
+   - `Single sign-on URL`:` <schema:cvat_domain>/api/auth/saml/okta-saml/acs/`
+   - `Audience URI (SP Entity ID`: `<schema:cvat_domain>/api/auth/saml/okta-saml/metadata/`
    ![](/images/okta_saml_2.jpeg)
 1. Define attribute statements that will be shared with CVAT.
    In our example we will use the `Basic` attribute name format and set the mapping as showed below:
@@ -445,6 +445,8 @@ To start, log into your [Auth0 dashboard](https://manage.auth0.com/dashboard). O
 1. Navigate to the `Applications` section in the menu on the left, click `+ Create Application`.
 1. Enter a name for the application and choose the `Regular Web Applications` type, then click `Create`.
 
+![](/images/auth0_oidc_1.jpeg)
+
 You’ve now created an app, but a one more step is needed to finalize the configuration.
 
 ##### **Step 2: Configure an created application**
@@ -452,6 +454,8 @@ You’ve now created an app, but a one more step is needed to finalize the confi
 1. In the `Settings` tab of your new application, scroll down to the `Application URIs` section.
 1. Add `<schema:cvat_domain>/api/auth/oidc/auth0-oidc/login/callback/` to the `Allowed Callback URLs`.
 1. Save changes.
+
+![](/images/auth0_oidc_2.jpeg)
 
 That's it, now we can move on to the configuration in CVAT.
 
@@ -476,8 +480,8 @@ sso:
 
 {{< alert title="Tip" >}}
 `Client ID`, `Client Secret` and `Domain` can be found in the `Basic Information` section of application settings
+![](/images/auth0_oidc_3.jpeg)
 {{< /alert >}}
-// screenwhot here
 
 After running CVAT with updated config file, users will be able to authenticate using configured Identity Provider.
 
@@ -493,6 +497,8 @@ To start, log into your [Auth0 dashboard](https://manage.auth0.com/dashboard). O
 1. Navigate to the `Applications` section in the menu on the left, click `+ Create Application`.
 1. Enter a name for the application and choose the `Regular Web Applications` type, then click `Create`.
 
+![](/images/auth0_saml_1.jpeg)
+
 You’ve now created an app, but a few more steps are needed to finalize the configuration.
 
 ##### **Step 2: Configure an created application**
@@ -503,27 +509,30 @@ found [here](https://auth0.com/docs/authenticate/single-sign-on/outbound-single-
 {{% /alert %}}
 
 1. Navigate to the `Addons` tab of the created application and click on the `SAML2 WEB APP` button.
-1. Navigate to the `Settings` tab in the popup window
-1. Set the `Application Callback URL` to `<schema:cvat_domain>/api/auth/saml/auth0-saml/acs/`
-1. Then, in the `Settings` field, enter a JSON object like the following:
-  ```json
-  {
-    "audience": "<schema:cvat_domain>/api/auth/saml/auth0-saml/metadata/",
-    "recipient": "<schema:cvat_domain>/api/auth/saml/auth0-saml/acs/",
-    "destination": "<schema:cvat_domain>/api/auth/saml/auth0-saml/acs/",
-    "mappings": {
-      "user_id": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier",
-      "email": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress",
-      "nickname": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/username",
-      "given_name": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname",
-      "family_name": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname",
-      "email_verified": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailverified"
-    },
-    "createUpnClaim": false,
-    "passthroughClaimsWithNoMapping": false,
-    "mapIdentities": false
-  }
-  ```
+   ![](/images/auth0_saml_2.jpeg)
+1. Open the `Settings` tab in the popup window and set the following configuration:
+   ![](/images/auth0_saml_3.jpeg)
+
+   - `Application Callback URL`: `<schema:cvat_domain>/api/auth/saml/auth0-saml/acs/`
+   - `Settings`: enter a JSON object like the following:
+      ```json
+      {
+        "audience": "<schema:cvat_domain>/api/auth/saml/auth0-saml/metadata/",
+        "recipient": "<schema:cvat_domain>/api/auth/saml/auth0-saml/acs/",
+        "destination": "<schema:cvat_domain>/api/auth/saml/auth0-saml/acs/",
+        "mappings": {
+          "user_id": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier",
+          "email": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress",
+          "nickname": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/username",
+          "given_name": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname",
+          "family_name": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname",
+          "email_verified": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailverified"
+        },
+        "createUpnClaim": false,
+        "passthroughClaimsWithNoMapping": false,
+        "mapIdentities": false
+      }
+      ```
 1. Scroll down and click `Enable`
 
 That's it, now we can move on to the configuration in CVAT.
@@ -556,16 +565,14 @@ sso:
 ```
 {{< alert title="Tip" >}}
 Actual `Metadata URL` and `Issuer` values may be found on the `Usage` tab of the `SAML2 Web App` plugin
+![](/images/auth0_saml_4.jpeg)
 {{< /alert >}}
-
-// screenshot here
 
 After running CVAT with updated config file, users will be able to authenticate using configured Identity Provider.
 
-
 ### Keycloak
 
-To configure SSO with Keycloak in terms of Keycloak we need to create a `client`.
+To configure SSO in terms of Keycloak we need to create a `client`.
 
 #### OpenID Connect
 Follow these steps to do that:
@@ -573,20 +580,21 @@ Follow these steps to do that:
 ##### **Step 1: Register an OIDC-based Client**
 
 To start, go to the Keycloak service (by default it is listening for http and https requests
-using the ports 8080 and 8443, respectively) and log into your account. Once you're in:
+using the ports 8080 and 8443, respectively) and log into your admin account. Once you're in:
 
 1. Under desired `realm` navigate to the `Clients` section and click `create client`.
 1. Fill out the general client settings:
+   ![](/images/keycloak_oidc_1.jpeg)
    - `Client type`: OpenID Connect
-   - `Client ID`: enter client identifier, in this example it is `keycloak-oidc`
-   - Enter a name for the client, e.g. OIDC client
-   // ![](/images/keycloak_oidc_1.png)
+   - `Client ID`: enter client identifier
+   - Enter a name for the client, e.g. OIDC-based client
 1. On the next step enable the `Client authentication` toggle.
-   // ![](/images/keycloak_oidc_2.png)
+   ![](/images/keycloak_oidc_2.jpeg)
 1. In the `Login settings` section, provide the following values:
-   - `Home URL`: <schema:cvat_domain>
-   - `Valid redirect URIs`: <schema:cvat_domain>/api/auth/oidc/keycloak-oidc/login/callback/
-   // ![](/images/keycloak_oidc_3.png)
+   ![](/images/keycloak_oidc_3.jpeg)
+   - `Home URL`: `<schema:cvat_domain>`
+   - `Valid redirect URIs`: `<schema:cvat_domain>/api/auth/oidc/keycloak-oidc/login/callback/`
+   - `Web origins`: `<schema:cvat_domain>`
 
 That's it, now we can move on to the configuration in CVAT.
 
@@ -610,8 +618,8 @@ sso:
 
 {{< alert title="Tip" >}}
 Actual `Client Secret`value can be found on the `Credentials` tab of the created OIDC client
+![](/images/keycloak_oidc_4.jpeg)
 {{< /alert >}}
-// screenshot here
 After running CVAT with updated config file, users will be able to authenticate using configured Identity Provider.
 
 #### SAML
@@ -622,17 +630,18 @@ Follow these steps to configure a client:
 ##### **Step 1: Register a SAML-based Client**
 
 To start, go to the Keycloak service (by default it is listening for http and https requests
-using the ports 8080 and 8443, respectively) and log into your account. Once you're in:
+using the ports 8080 and 8443, respectively) and log into your admin account. Once you're in:
 
 1. Under desired `realm` navigate to the `Clients` section and click `create client`.
 1. Fill out the general client settings:
+   ![](/images/keycloak_saml_1.jpeg)
    - `Client type`: SAML
    - Set the `Clint ID` the URL: `<schema:cvat_domain>/api/auth/saml/keycloak-saml/metadata/`
    - Enter a name for the client, e.g. SAML client
-1. n the `Login settings` section, provide the following values:
-   - `Home  URL`: <schema:cvat_domain>
-   - `Valid redirect URIs`: <schema:cvat_domain>/api/auth/saml/keycloak-saml/acs/
-   // TODO: - `Master SAML Processing URL`: <schema:cvat_domain>/api/auth/saml/keycloak-saml/acs/
+1. In the `Login settings` section, provide the following values:
+   ![](/images/keycloak_saml_2.jpeg)
+   - `Home  URL`: `<schema:cvat_domain>`
+   - `Valid redirect URIs`: `<schema:cvat_domain>/api/auth/saml/keycloak-saml/acs/`
 
 You’ve now created an app, but a few more steps are needed to finalize the configuration.
 
@@ -645,30 +654,35 @@ found [here]().
 
 1. Navigate to the general settings of the created client, scroll down to the `SAML capabilities` section.
 1. Update the following parameters:
-   - `Name ID format`: email (TODO: probably need to keep it undefined, other providers work)
+   <!-- (TODO: probably need to keep it undefined, other providers work) -->
+   - `Name ID format`: email
    - `Force name ID format`: `On`
 1. Navigate to the `Keys` tab and enable the `Client signature required` toggle.
 1. Configure attributes & claims:
    1. Navigate to the `Client scopes` tab on the created client -> dedicated scopes for the client.
       You will see that there is no configured mappers.
-      // screenshot here
+      ![](/images/keycloak_saml_3.jpeg)
    1. Set up mappers for the following attributes:
       - uid
       - first_name
       - last_name
       - username
       - email
-      // screenshot here with all mappers configured
+
       For attributes like `email`, `first name`, and `last name`, you can either
-         - Use the predefined mappers, or
-         // screenshot here
-         - Follow the manual configuration steps to create them yourself.
-      To configure other mappers click `Configure a new mapper` if it is a first mapper or `Add mapper` -> `By configuration` and then select `User Property`.
+        - Use the predefined mappers, or
+          ![](/images/keycloak_saml_4.jpeg)
+        - Follow the manual configuration steps to create them yourself.
+
+      To configure other mappers click `Configure a new mapper` if it is a first mapper or `Add mapper`
+      -> `By configuration` and then select `User Property`.
+
       For instance, to configure a mapper for the `username` attribute, fill in the form as it is done below:
-        - `Name`: username
-        - `Property`: username
-        - `SAML Attribute Name`: usernameAttribute
-        // screenshot here
+      ![](/images/keycloak_saml_5.jpeg)
+
+      - `Name`: username
+      - `Property`: username
+      - `SAML Attribute Name`: usernameAttribute
 
 That's it, now we can move on to the configuration in CVAT.
 
@@ -698,7 +712,7 @@ sso:
       email_domain: <company_email_domain>
 ```
 {{< alert title="Tip" >}}
-`Metadata URL`: could be found in the `Realm settings` on the `General` tab
+Actual `Metadata URL` may be found in the `Realm settings` on the `General` tab
+![](/images/keycloak_saml_6.jpeg)
 {{< /alert >}}
-// screenshot here
 After running CVAT with updated config file, users will be able to authenticate using configured Identity Provider.
