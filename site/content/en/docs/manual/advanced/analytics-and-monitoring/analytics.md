@@ -46,15 +46,31 @@ To open analytics:
 
 {{% tab header="For a task" %}}
 
+You can open analytics for a task using the **Tasks** or **Projects** pages.
+To open a task analytics on the **Tasks** page:
 1. Open **Tasks**.
 1. Open the **Actions** menu for a task, or open a task and select **Actions**.
+1. Select **View analytics**.
+
+To open a task analytics from a project:
+1. Open **Projects**
+1. Open a project
+1. Open the **Actions** menu for a task.
 1. Select **View analytics**.
 
 {{% /tab %}}
 
 {{% tab header="For a job" %}}
 
+You can open analytics for a job using the **Jobs** or **Tasks** pages.
+To open a job analytics on the **Jobs** page:
 1. Open **Jobs**.
+1. Open the job menu using ![Open menu](/images/openmenu.jpg) button.
+1. Select **View analytics**.
+
+To open a job analytics from a task:
+1. Open **Tasks**.
+1. Open a task.
 1. Open the job menu using ![Open menu](/images/openmenu.jpg) button.
 1. Select **View analytics**.
 
@@ -70,6 +86,9 @@ Use the link in the page title to return to the corresponding project, task, or 
 Analytics data is not fetched automatically. When you first open the **Analytics** page, it will be empty.
 To fetch and display the analytical data, select the **Request** button.
 
+> **Note**: The analytical data is fetched for all resource children.
+> So, when you request data for a task, the data for all task jobs is also fetched.
+
 Once the data is fetched and displayed on the page, you can check its relevance under the page title.
 
 To update the data, select ![Fetch analytics button](/images/analytics/fetch-data-button.svg) button.
@@ -81,7 +100,8 @@ The **Analytics** page includes:
 - Date filter.
 - **Export events** button.
 
-> **Note**: The date filter is applied only to the [**Events**](#events-tab) tab.
+> **Note**: The date filter is applied to the [**Summary**](#summary-tab)
+  and [**Events**](#events-tab) tabs.
 
 The **Summary** tab provides a statistics overview, while the **Annotations** and **Events** tabs
 contain the detailed data in table form.
@@ -91,9 +111,13 @@ To download a CSV file with all event data, select the **Export events** button.
 ### Summary tab
 
 The **Summary** tab displays the quantitative metrics:
-- **Objects diff**: Difference between created and deleted objects.
-- **Total working time** : Total hours spent across all users, based on annotation-related events.
+- **Objects diff**: Difference between created and deleted objects in the selected time period.
+  The value may be negative, if the number of the deleted objects exceeds the number of the
+  created objects during the selected time period.
+- **Total working time**: Total hours spent across all users, based on annotation-related events.
 - **Avg. annotation speed**: Average number of objects annotated per hour.
+  The value may be negative, if the number of the deleted objects exceeds the number of the
+  created objects during the selected time period.
 
 The **Summary** tab includes charts for object statistics, annotation speed, and diagrams
 for annotation distribution by labels and types. Hover over a chart or diagram to display tooltips.
@@ -107,7 +131,7 @@ The **Annotations** tab shows annotation statistics for:
 Each tab includes a filterable, customizable table
 (learn [how to work with tables](#working-with-tables)).
 
-You can filter entries by the **Label name** column:
+You can search entries by the **Label name** column:
 1. In the search box, enter the value or part of the value to find.
 1. Select ![Search button](/images/analytics/search-button.svg) button or press _Enter_.
 
@@ -143,12 +167,13 @@ The **Tracking** tab tzble contains the columns:
 
 ### Events tab
 
-The **Events** tab displays the following metrics (respecting the date filter):
-- **Total objects**: Total number of objects in project jobs.
-- **Total images**: Total number of images in project jobs.
-- **Total working time**: Total user time spent (same as in **Summary** tab).
-- **Avg. annotation speed**: : Average number of objects annotated per hour
-  (same as in **Summary** tab).
+The **Events** tab displays the following metrics:
+- **Total objects**: Total number of objects in the filtered jobs.
+- **Total images**: Total number of images in the filtered jobs.
+- **Total working time**: Total user time spent.
+- **Avg. annotation speed**: : Average number of objects annotated per hour.
+
+> **Note**: All metrics are recalculated when you apply the date or table filter.
 
 The **Events** tab table contains the aggregated events for the selected resource.
 
@@ -162,7 +187,7 @@ for the lifetime of the project, task, or job.
 To reset the date range, select ![Clear filter button](/images/analytics/clear-filter-button.svg)
 button in the date filter.
 
-You can also filter the table entries by values in **Task name**, **Assignee**, **Stage**, **State**, **User** columns:
+You can search the table entries by values in **Task name**, **Assignee**, **Stage**, **State**, **User** columns:
 1. In the search box, enter the value or part of the value to find.
 1. Select ![Search button](/images/analytics/search-button.svg) button or press _Enter_.
 
@@ -177,15 +202,15 @@ The events table columns:
 | **Task ID** | The ID of the task. If the task exists (the **Exists** column has the value `true`), you can select the value to open the task. |
 | **Task name** | The task name. By default, the column is hidden. Select the value to open the task. |
 | **Job ID** | The ID of the job. If the job exists (the **Exists** column has the value `true`), you can select the value to open the job. |
-| **Type** | The task (**Task ID**) type |
+| **Type** | The job (**Job ID**) type. Possible values: `Annotation`, `Ground truth`, `Consensus replica`. |
 | **Frame Count** | The total number of frames in the job (**Job ID**) |
-| **Exists** | Indicates if both the job (**Job ID**) and the task (**Task ID** / **Task name**) exist at the last data fetch. |
+| **Exists** | Indicates if the job (**Job ID**) existed at the last data fetch. |
 | **Objects** | The total number of existing objects on the job (**Job ID**) frames |
-| **Assignee** | The job (**Job ID**) assignee. |
+| **Assignee** | The job (**Job ID**) assignee when the event occurred. |
 | **Stage** | The stage of the job (**Job ID**) when the event occurred. |
 | **State** | The state of the job (**Job ID**) when the event occurred. |
 | **User** | The name of the user who triggered the event |
-| **Working time** | Displays the total time in hpurs spent during the events. By default, the column is hidden. |
+| **Working time** | Displays the total time in milliseconds spent during the events. By default, the column is hidden. |
 | **Start UTC time** | UTC time when the event started. |
 | **End UTC time** | UTC time when the event finished. By default, the column is hidden. |
 | **Created objects** | The total number of created objects. By default, the column is hidden. |
@@ -198,7 +223,7 @@ The events table columns:
 
 The tables in the **Annotations** and **Events** tabs support:
 1. Exporting the data: select ![Export button](/images/analytics/export-button.svg) button.
-   > **Note:** the applied filters and visible columns do not affect the file with exported data.
+   > **Note:** visible columns do not affect the file with exported data.
    > It always contains the complete table with all columns and rows.
 1. Filtering entries by a custom rule: select **Filter**, and set filtering criteria.
    To learn more about how to set a filter, refer to the **{{< ilink "/docs/manual/advanced/filter" "Filter" >}}**
