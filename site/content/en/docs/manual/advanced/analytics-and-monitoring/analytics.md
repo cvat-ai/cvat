@@ -101,7 +101,7 @@ The **Analytics** page includes:
 - **Export events** button.
 
 > **Note**: The date filter is applied to the [**Summary**](#summary-tab)
-  and [**Events**](#events-tab) tabs.
+> and [**Events**](#events-tab) tabs.
 
 The **Summary** tab provides a statistics overview, while the **Annotations** and **Events** tabs
 contain the detailed data in table form.
