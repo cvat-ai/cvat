@@ -37,44 +37,48 @@ in the CVAT config file. Each provider's configuration includes both general and
 
 | Key            | Required   | Description |
 | -------------- | ---------- | ----------- |
-| `id`           | *required* | A unique, URL-safe identifier for the IdP. Used in callback URLs. |
-| `name`         | *required* | A human-readable name for the IdP. |
-| `protocol`     | *required* | Authentication protocol (`OIDC`/`SAML`). |
-| `email_domain` | *optional* | Company email domain (used with `email_address` selection mode). |
-| `weight`       | *optional* | Determines priority (used with `lowest_weight` selection mode). Default is 10. |
+| `id`           | _required_ | A unique, URL-safe identifier for the IdP. Used in callback URLs. |
+| `name`         | _required_ | A human-readable name for the IdP. |
+| `protocol`     | _required_ | Authentication protocol (`OIDC`/`SAML`). |
+| `email_domain` | _optional_ | Company email domain (used with `email_address` selection mode). |
+| `weight`       | _optional_ | Determines priority (used with `lowest_weight` selection mode). Default is 10. |
 
 Additionally, each IdP configuration must include several protocol-specific parameters:
 {{< tabpane text=true >}}
-  {{% tab header="OpenID Connect" %}}
-  - `client_id` and `client_secret` (*required*) - these values can be obtained from the configuration page of the specific provider.
-  - `server_url` (*required*): URL is used to obtain IdP OpenID Configuration Metadata.
-    __NOTE__: How to check `server_url` correctness: server_url + `/.well-known/openid-configuration` API should exist
-    and return [OpenID Provider Metadata](https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderMetadata).
-    Generally, each authentication platform provides a list of all endpoints. Need to find the corresponding endpoint
-    and select the part in front of `/.well-known/openid-configuration`. For example, in the case of integrating
-    an OIDC Microsoft Entry ID application, don't forget to specify the second version of API
-    (`https://login.microsoftonline.com/<tenant_id>/v2.0`).
-  - `token_auth_method` (*optional*) - token endpoint authentication method which can be one of
-    `client_secret_basic`, `client_secret_post`. If this field is omitted, a method from
-    the server's token auth methods list will be used.
+{{% tab header="OpenID Connect" %}}
+- `client_id` and `client_secret` (_required_) - these values can be obtained
+  from the configuration page of the specific provider.
+- `server_url` (_required_): URL is used to obtain IdP OpenID Configuration Metadata.
 
-  __NOTE__: There is a global setting that applies to all configured OIDC-based Identity Providers: `enable_pkce`. This option controls whether `Proof Key for Code Exchange` (PKCE) is enabled for the authentication flow.
-  ```yaml
-  ---
-  sso:
-  enable_pkce: true
-  ...
-  ```
-  {{% /tab %}}
-  {{% tab header="SAML" %}}
-   - `entity_id` (*required*) - IdP entity ID, should be equal to the corresponding setting on the IdP configuration page.
-   - `metadata_url` (*optional*) - SAML metadata URL. This can typically be found on the IdP configuration page.
-   - `x509_cert` (*optional*) - The SAML X.509 certificate. Also could be found in the IdP’s configuration.
-     __NOTE__: If the `metadata_url` is not specified, this parameter becomes **required**.
-   - `sso_url` (*optional*) - SAML endpoint for the Single Sign-On service. Also could be found in the IdP’s configuration.
-     __NOTE__: If the `metadata_url` is not specified, this parameter becomes **required**.
-   - `attribute_mapping` (*required*) - A mapping for users' attributes.
-  {{% /tab %}}
+  **NOTE**: How to check `server_url` correctness: server_url + `/.well-known/openid-configuration` API should exist
+  and return [OpenID Provider Metadata](https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderMetadata).
+  Generally, each authentication platform provides a list of all endpoints. Need to find the corresponding endpoint
+  and select the part in front of `/.well-known/openid-configuration`. For example, in the case of integrating
+  an OIDC Microsoft Entry ID application, don't forget to specify the second version of API
+  (`https://login.microsoftonline.com/<tenant_id>/v2.0`).
+- `token_auth_method` (_optional_) - token endpoint authentication method which can be one of
+  `client_secret_basic`, `client_secret_post`. If this field is omitted, a method from
+  the server's token auth methods list will be used.
+
+**NOTE**: There is a global setting that applies to all configured OIDC-based Identity Providers:
+`enable_pkce`. This option controls whether `Proof Key for Code Exchange` (PKCE) is enabled for
+the authentication flow.
+```yaml
+---
+sso:
+enable_pkce: true
+...
+```
+{{% /tab %}}
+{{% tab header="SAML" %}}
+- `entity_id` (_required_) - IdP entity ID, should be equal to the corresponding setting on the IdP configuration page.
+- `metadata_url` (_optional_) - SAML metadata URL. This can typically be found on the IdP configuration page.
+- `x509_cert` (_optional_) - The SAML X.509 certificate. Also could be found in the IdP’s configuration.
+   If the `metadata_url` is not specified, this parameter becomes **required**.
+- `sso_url` (_optional_) - SAML endpoint for the Single Sign-On service. Also could be found in the IdP’s configuration.
+  If the `metadata_url` is not specified, this parameter becomes **required**.
+- `attribute_mapping` (_required_) - A mapping for users' attributes.
+{{% /tab %}}
 {{< /tabpane >}}
 
 Below are simple examples of SSO configuration file for both protocols:
@@ -88,7 +92,7 @@ Below are simple examples of SSO configuration file for both protocols:
    identity_providers:
     - id: oidc-idp
       protocol: OIDC
-      name: Example OIDC-based IdP
+      name: OIDC-based IdP
       server_url: https://example.com
       client_id: xxx
       client_secret: xxx
@@ -104,10 +108,16 @@ Below are simple examples of SSO configuration file for both protocols:
    identity_providers:
     - id: saml-idp
       protocol: SAML
-      name: Example SMAL-based IdP
+      name: SMAL-based IdP
       entity_id: <idp-entity-id>
       email_domain: example.com
+      # specify metadata_url or sso_url and x509_cert
       metadata_url: http://example.com/path/to/saml/metadata/
+      sso_url: <Login URL>
+      x509_cert: |
+        -----BEGIN CERTIFICATE-----
+        certificate content
+        -----END CERTIFICATE-----
 
       attribute_mapping:
         uid: ...
@@ -132,7 +142,9 @@ Start the CVAT enterprise instance as usual.
 That's it! On the CVAT login page, you should now see the option `Continue with SSO`.
 ![](/images/sso_enabled.jpeg)
 
-More information about OIDC-based and SAML-based IdP configuration expected by Django Allauth can be found [here](https://docs.allauth.org/en/latest/socialaccount/providers/openid_connect.html) and [here](https://docs.allauth.org/en/latest/socialaccount/providers/saml.html) respectively.
+More information about OIDC-based and SAML-based IdP configuration expected by Django Allauth
+can be found [here](https://docs.allauth.org/en/latest/socialaccount/providers/openid_connect.html)
+and [here](https://docs.allauth.org/en/latest/socialaccount/providers/saml.html) respectively.
 
 
 ## Platform specific IdP configuration
@@ -150,13 +162,14 @@ To start, log into your [Microsoft Azure Portal](https://portal.azure.com/#home)
 1. Clink on the `+ New registration` button.
 1. Enter application name
 1. Select `Supported account types` based on your needs
-1. Add `Redirect URI`: choose `Web` platform and set `<schema:cvat_domain>/api/auth/oidc/azure-oidc/login/callback/` to the value field
+1. Add `Redirect URI`: choose `Web` platform and set `<schema:cvat_domain>/api/auth/oidc/azure-oidc/login/callback/`
+   to the value field
   ![](/images/azure_oidc_1.jpeg)
 1. Click on the`Register` button
 
 {{% alert title="Note" color="primary" %}}
-More information on how to configure an OIDC-based application on the Azure platform can be
-found [here](https://learn.microsoft.com/en-us/power-pages/security/authentication/openid-settings#create-an-app-registration-in-azure).
+More information on how to configure an OIDC-based application on the Azure platform can be found
+[here](https://learn.microsoft.com/en-us/power-pages/security/authentication/openid-settings#create-an-app-registration-in-azure).
 {{% /alert %}}
 
 You’ve now created an app, but one more step is needed to finalize the configuration.
@@ -165,7 +178,8 @@ You’ve now created an app, but one more step is needed to finalize the configu
 
 1. Navigate to the `Overview` tab of your newly created application.
    ![](/images/azure_oidc_2.jpeg)
-1. In the `Client credentials` section, click the `Add a certificate or secret` link. This will take you to the `Certificates & secrets` page.
+1. In the `Client credentials` section, click the `Add a certificate or secret` link.
+   This will take you to the `Certificates & secrets` page.
 1. Click `+ New client secret`.
 1. In the popup form, enter a description and select an expiration period, then click `Add`.
    ![](/images/azure_oidc_3.jpeg)
@@ -225,11 +239,11 @@ You’ve now created an app, but a few more steps are needed to finalize the con
    - Save changes
 1. Edit `Attributes & Claims`
    1. Add a new `uid` claim:
-     - Name: `uid`
-     - Namespace: `http://schemas.xmlsoap.org/ws/2005/05/identity/claims`
-     - Source: `attribute`
-     - Source attribute: `user.objectid`
-      ![](/images/azure_saml_4.jpeg)
+      - Name: `uid`
+      - Namespace: `http://schemas.xmlsoap.org/ws/2005/05/identity/claims`
+      - Source: `attribute`
+      - Source attribute: `user.objectid`
+        ![](/images/azure_saml_4.jpeg)
 
 {{% alert title="Note" color="primary" %}}
 More information on how to configure an application on Azure platform can be
@@ -276,7 +290,8 @@ sso:
 
 ```
 {{< alert title="Tip" >}}
-Actual `Microsoft Entra Identifier` and `App Federation Metadata Url` values may be found on the `Single sign-on` tab of the created application
+Actual `Microsoft Entra Identifier` and `App Federation Metadata Url` values may be found
+on the `Single sign-on` tab of the created application
 
 ![](/images/azure_saml_5.jpeg)
 {{< /alert >}}
@@ -382,8 +397,9 @@ You’ve now created an app, but a few more steps are needed to finalize the con
 
 ##### **Step 2: Simplify login process**
 
-If CVAT is configured to require email verification, it expects the Identity Provider to include the `email_verified` claim.
-However, Okta does not send this claim by default. As a result, users will receive a confirmation email with a verification link.
+If CVAT is configured to require email verification, it expects the Identity Provider to include
+the `email_verified` claim. However, Okta does not send this claim by default. As a result, users
+will receive a confirmation email with a verification link.
 
 There is an option to include email verification claim on sign-in step:
 1. Add one more mapping `emailVerified` -> `user.emailVerified` on SAML-based application configuration step:
@@ -515,24 +531,24 @@ found [here](https://auth0.com/docs/authenticate/single-sign-on/outbound-single-
 
    - `Application Callback URL`: `<schema:cvat_domain>/api/auth/saml/auth0-saml/acs/`
    - `Settings`: enter a JSON object like the following:
-      ```json
-      {
-        "audience": "<schema:cvat_domain>/api/auth/saml/auth0-saml/metadata/",
-        "recipient": "<schema:cvat_domain>/api/auth/saml/auth0-saml/acs/",
-        "destination": "<schema:cvat_domain>/api/auth/saml/auth0-saml/acs/",
-        "mappings": {
-          "user_id": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier",
-          "email": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress",
-          "nickname": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/username",
-          "given_name": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname",
-          "family_name": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname",
-          "email_verified": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailverified"
-        },
-        "createUpnClaim": false,
-        "passthroughClaimsWithNoMapping": false,
-        "mapIdentities": false
-      }
-      ```
+   ```json
+   {
+     "audience": "<schema:cvat_domain>/api/auth/saml/auth0-saml/metadata/",
+     "recipient": "<schema:cvat_domain>/api/auth/saml/auth0-saml/acs/",
+     "destination": "<schema:cvat_domain>/api/auth/saml/auth0-saml/acs/",
+     "mappings": {
+       "user_id": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier",
+       "email": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress",
+       "nickname": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/username",
+       "given_name": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname",
+       "family_name": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname",
+       "email_verified": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailverified"
+     },
+     "createUpnClaim": false,
+     "passthroughClaimsWithNoMapping": false,
+     "mapIdentities": false
+   }
+   ```
 1. Scroll down and click `Enable`
 
 That's it, now we can move on to the configuration in CVAT.
@@ -670,9 +686,9 @@ found [here]().
       - email
 
       For attributes like `email`, `first name`, and `last name`, you can either
-        - Use the predefined mappers, or
-          ![](/images/keycloak_saml_4.jpeg)
-        - Follow the manual configuration steps to create them yourself.
+      - Use the predefined mappers
+        ![](/images/keycloak_saml_4.jpeg)
+      - Or follow the manual configuration steps to create them yourself.
 
       To configure other mappers click `Configure a new mapper` if it is a first mapper or `Add mapper`
       -> `By configuration` and then select `User Property`.
