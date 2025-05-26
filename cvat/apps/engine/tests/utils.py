@@ -559,41 +559,6 @@ def filter_dict(
     return {k: v for k, v in d.items() if (not keep or k in keep) and (not drop or k not in drop)}
 
 
-def check_optional_fields(
-    self: TestCase,
-    obj1: dict[str, int | float | str],
-    obj2: dict[str, int | float | str],
-    optional_values: dict[str, int | float | str],
-    *,
-    expected_values: dict[str, int | float | str] | None = None
-) -> None | NoReturn:
-    for k in optional_values.keys():
-        actual = obj1.get(k, optional_values[k])
-        expected = obj2.get(k, optional_values[k])
-        if isinstance(expected_values, dict):
-            expected = expected_values.get(k, expected)
-        self.assertEqual(
-            actual,
-            expected,
-            f"key '{k}' has incorrect actual optional value '{actual}' instead of expected '{expected}'",
-        )
-
-
-def filter_object(
-    obj: list | dict, *, keep: Sequence[str] = None, drop: Sequence[str] = None
-) -> list | dict:
-    if isinstance(obj, dict):
-        obj = filter_dict(obj, keep=keep, drop=drop)
-        for k, v in obj.items():
-            obj[k] = filter_object(v, keep=keep, drop=drop)
-        return obj
-    elif isinstance(obj, list):
-        for i, val in enumerate(obj):
-            obj[i] = filter_object(val, keep=keep, drop=drop)
-        return obj
-    return obj
-
-
 def _match_lists(
     a_objs: list[Any],
     b_objs: list[Any],
