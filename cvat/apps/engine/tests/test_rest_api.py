@@ -77,7 +77,8 @@ from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 from .utils import check_annotation_response, compare_objects
 
 # suppress av warnings
-logging.getLogger('libav').setLevel(logging.ERROR)
+logging.getLogger("libav").setLevel(logging.ERROR)
+
 
 def create_db_users(cls):
     (group_admin, _) = Group.objects.get_or_create(name="admin")
@@ -5248,7 +5249,6 @@ class TaskDataAPITestCase(ApiTestBase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-
 class JobAnnotationAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
@@ -5312,47 +5312,51 @@ class JobAnnotationAPITestCase(ApiTestBase):
             ],
         }
         if annotation_format == "Market-1501 1.0":
-            data["labels"] = [{
-                "name": "market-1501",
-                "attributes": [
-                    {
-                        "name": "query",
-                        "mutable": False,
-                        "input_type": "select",
-                        "values": ["True", "False"]
-                    },
-                    {
-                        "name": "camera_id",
-                        "mutable": False,
-                        "input_type": "number",
-                        "values": ["0", "1", "2", "3", "4", "5"]
-                    },
-                    {
-                        "name": "person_id",
-                        "mutable": False,
-                        "input_type": "number",
-                        "values": ["1", "2", "3"]
-                    },
-                ]
-            }]
-        elif annotation_format in ["ICDAR Recognition 1.0",
-                "ICDAR Localization 1.0"]:
-            data["labels"] = [{
-                "name": "icdar",
-                "attributes": [
-                    {
-                        "name": "text",
-                        "mutable": False,
-                        "input_type": "text",
-                        "values": ["word_1", "word_2", "word_3"]
-                    },
-                ]
-            }]
-        elif annotation_format in ['Datumaro 3D 1.0', 'Kitti Raw Format 1.0', 'Sly Point Cloud Format 1.0']:
-            data["labels"] = [{
-                "name": "car"},
-                {"name": "bus"}
+            data["labels"] = [
+                {
+                    "name": "market-1501",
+                    "attributes": [
+                        {
+                            "name": "query",
+                            "mutable": False,
+                            "input_type": "select",
+                            "values": ["True", "False"],
+                        },
+                        {
+                            "name": "camera_id",
+                            "mutable": False,
+                            "input_type": "number",
+                            "values": ["0", "1", "2", "3", "4", "5"],
+                        },
+                        {
+                            "name": "person_id",
+                            "mutable": False,
+                            "input_type": "number",
+                            "values": ["1", "2", "3"],
+                        },
+                    ],
+                }
             ]
+        elif annotation_format in ["ICDAR Recognition 1.0", "ICDAR Localization 1.0"]:
+            data["labels"] = [
+                {
+                    "name": "icdar",
+                    "attributes": [
+                        {
+                            "name": "text",
+                            "mutable": False,
+                            "input_type": "text",
+                            "values": ["word_1", "word_2", "word_3"],
+                        },
+                    ],
+                }
+            ]
+        elif annotation_format in [
+            "Datumaro 3D 1.0",
+            "Kitti Raw Format 1.0",
+            "Sly Point Cloud Format 1.0",
+        ]:
+            data["labels"] = [{"name": "car"}, {"name": "bus"}]
         elif annotation_format in ["ICDAR Recognition 1.0", "ICDAR Localization 1.0"]:
             data["labels"] = [
                 {
@@ -5371,39 +5375,38 @@ class JobAnnotationAPITestCase(ApiTestBase):
             data["labels"] = [{"name": "car"}, {"name": "bus"}]
             dimension = DimensionType.DIM_3D
         elif annotation_format == "ICDAR Segmentation 1.0":
-            data["labels"] = [{
-                "name": "icdar",
-                "attributes": [
-                    {
-                        "name": "text",
-                        "mutable": False,
-                        "input_type": "text",
-                        "values": ["word_1", "word_2", "word_3"]
-                    },
-                    {
-                        "name": "index",
-                        "mutable": False,
-                        "input_type": "number",
-                        "values": ["0", "1", "2"]
-                    },
-                    {
-                        "name": "color",
-                        "mutable": False,
-                        "input_type": "text",
-                        "values": ["100 110 240", "10 15 20", "120 128 64"]
-                    },
-                    {
-                        "name": "center",
-                        "mutable": False,
-                        "input_type": "text",
-                        "values": ["1 2", "2 4", "10 45"]
-                    },
-                ]
-            }]
-        elif annotation_format in [
-            "COCO Keypoints 1.0",
-            "Ultralytics YOLO Pose 1.0"
-        ]:
+            data["labels"] = [
+                {
+                    "name": "icdar",
+                    "attributes": [
+                        {
+                            "name": "text",
+                            "mutable": False,
+                            "input_type": "text",
+                            "values": ["word_1", "word_2", "word_3"],
+                        },
+                        {
+                            "name": "index",
+                            "mutable": False,
+                            "input_type": "number",
+                            "values": ["0", "1", "2"],
+                        },
+                        {
+                            "name": "color",
+                            "mutable": False,
+                            "input_type": "text",
+                            "values": ["100 110 240", "10 15 20", "120 128 64"],
+                        },
+                        {
+                            "name": "center",
+                            "mutable": False,
+                            "input_type": "text",
+                            "values": ["1 2", "2 4", "10 45"],
+                        },
+                    ],
+                }
+            ]
+        elif annotation_format in ["COCO Keypoints 1.0", "Ultralytics YOLO Pose 1.0"]:
             data["labels"] = [
                 {
                     "name": "skel",
@@ -5421,7 +5424,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     '<circle r="1.5" stroke="black" fill="#b3b3b3" cx="22.61705780029297" cy="25.75250816345215" '
                     'stroke-width="0.1" data-type="element node" data-element-id="1" data-node-id="1" data-label-name="1">'
                     '</circle><circle r="1.5" stroke="black" fill="#b3b3b3" cx="36.329429626464844" cy="45.98662185668945" '
-                    'stroke-width="0.1" data-type="element node" data-element-id="2" data-node-id="2" data-label-name="2"></circle>'
+                    'stroke-width="0.1" data-type="element node" data-element-id="2" data-node-id="2" data-label-name="2"></circle>',
                 }
             ]
         elif annotation_format == "Cityscapes 1.0":
@@ -5431,17 +5434,13 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     "color": "#00AFF0",
                     "attributes": [],
                 },
-                {
-                    "name": "background",
-                    "color": "#000000",
-                    "attributes": []
-                }
+                {"name": "background", "color": "#000000", "attributes": []},
             ]
 
         with ForceLogin(owner, self.client):
-            response = self.client.post('/api/tasks', data=data, format="json")
-            self.assertEqual(response.status_code, status.HTTP_201_CREATED,
-                f"Reason:\n{pformat(response.data)}"
+            response = self.client.post("/api/tasks", data=data, format="json")
+            self.assertEqual(
+                response.status_code, status.HTTP_201_CREATED, f"Reason:\n{pformat(response.data)}"
             )
             tid = response.data["id"]
 
@@ -5547,10 +5546,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
         return response
 
     def _check_response(self, response, data):
-        if not response.status_code in [
-            status.HTTP_403_FORBIDDEN,
-            status.HTTP_401_UNAUTHORIZED
-        ]:
+        if not response.status_code in [status.HTTP_403_FORBIDDEN, status.HTTP_401_UNAUTHORIZED]:
             check_annotation_response(self, response, data)
 
     def _run_api_v2_jobs_id_annotations(self, owner, assignee, annotator):
@@ -6370,213 +6366,239 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
             HTTP_204_NO_CONTENT = status.HTTP_401_UNAUTHORIZED
 
         def _get_initial_annotation(annotation_format):
-            if annotation_format not in ["Market-1501 1.0", "ICDAR Recognition 1.0",
-                                         "ICDAR Localization 1.0", "ICDAR Segmentation 1.0",
-                                         'Kitti Raw Format 1.0', 'Sly Point Cloud Format 1.0',
-                                         'Datumaro 3D 1.0',
-                                         'COCO Keypoints 1.0', 'Ultralytics YOLO Pose 1.0',
-                                         'Cityscapes 1.0']:
-                rectangle_tracks_with_attrs = [{
-                    "frame": 0,
-                    "label_id": task["labels"][0]["id"],
-                    "group": 0,
-                    "source": "manual",
-                    "attributes": [
-                        {
-                            "spec_id": task["labels"][0]["attributes"][0]["id"],
-                            "value": task["labels"][0]["attributes"][0]["values"][0]
-                        },
-                    ],
-                    "shapes": [
-                        {
-                            "frame": 0,
-                            "points": [1.0, 2.1, 50.1, 30.22],
-                            "type": "rectangle",
-                            "occluded": False,
-                            "outside": False,
-                            "attributes": [
-                                {
-                                    "spec_id": task["labels"][0]["attributes"][1]["id"],
-                                    "value": task["labels"][0]["attributes"][1]["default_value"]
-                                }
-                            ]
-                        },
-                        {
-                            "frame": 1,
-                            "points": [2.0, 2.1, 77.2, 36.22],
-                            "type": "rectangle",
-                            "occluded": True,
-                            "outside": False,
-                            "attributes": [
-                                {
-                                    "spec_id": task["labels"][0]["attributes"][1]["id"],
-                                    "value": task["labels"][0]["attributes"][1]["default_value"]
-                                }
-                            ]
-                        },
-                        {
-                            "frame": 2,
-                            "points": [2.0, 2.1, 77.2, 36.22],
-                            "type": "rectangle",
-                            "occluded": True,
-                            "outside": True,
-                            "attributes": [
-                                {
-                                    "spec_id": task["labels"][0]["attributes"][1]["id"],
-                                    "value": task["labels"][0]["attributes"][1]["default_value"]
-                                }
-                            ]
-                        },
-                    ]
-                }]
-                rectangle_tracks_wo_attrs = [{
-                    "frame": 0,
-                    "label_id": task["labels"][1]["id"],
-                    "group": 0,
-                    "source": "manual",
-                    "attributes": [],
-                    "shapes": [
-                        {
-                            "frame": 0,
-                            "attributes": [],
-                            "points": [1.0, 2.1, 50.2, 36.6],
-                            "type": "rectangle",
-                            "occluded": False,
-                            "outside": False,
-                        },
-                        {
-                            "frame": 1,
-                            "attributes": [],
-                            "points": [1.0, 2.1, 51, 36.6],
-                            "type": "rectangle",
-                            "occluded": False,
-                            "outside": False
-                        },
-                        {
-                            "frame": 2,
-                            "attributes": [],
-                            "points": [1.0, 2.1, 51, 36.6],
-                            "type": "rectangle",
-                            "occluded": False,
-                            "outside": True,
-                        }
-                    ]
-                }]
-                polygon_tracks_wo_attrs = [{
-                    "frame": 0,
-                    "label_id": task["labels"][1]["id"],
-                    "group": 0,
-                    "source": "manual",
-                    "attributes": [],
-                    "shapes": [
-                        {
-                            "frame": 0,
-                            "attributes": [],
-                            "points": [1.0, 2.1, 50.2, 36.6, 7.0, 10.0],
-                            "type": "polygon",
-                            "occluded": False,
-                            "outside": False,
-                        },
-                        {
-                            "frame": 1,
-                            "attributes": [],
-                            "points": [1.0, 2.1, 51, 36.6, 8.0, 11.0],
-                            "type": "polygon",
-                            "occluded": False,
-                            "outside": True
-                        },
-                        {
-                            "frame": 2,
-                            "attributes": [],
-                            "points": [1.0, 2.1, 51, 36.6, 14.0, 15.0],
-                            "type": "polygon",
-                            "occluded": False,
-                            "outside": False,
-                        }
-                    ]
-                }]
+            if annotation_format not in [
+                "Market-1501 1.0",
+                "ICDAR Recognition 1.0",
+                "ICDAR Localization 1.0",
+                "ICDAR Segmentation 1.0",
+                "Kitti Raw Format 1.0",
+                "Sly Point Cloud Format 1.0",
+                "Datumaro 3D 1.0",
+                "COCO Keypoints 1.0",
+                "Ultralytics YOLO Pose 1.0",
+                "Cityscapes 1.0",
+            ]:
+                rectangle_tracks_with_attrs = [
+                    {
+                        "frame": 0,
+                        "label_id": task["labels"][0]["id"],
+                        "group": 0,
+                        "source": "manual",
+                        "attributes": [
+                            {
+                                "spec_id": task["labels"][0]["attributes"][0]["id"],
+                                "value": task["labels"][0]["attributes"][0]["values"][0],
+                            },
+                        ],
+                        "shapes": [
+                            {
+                                "frame": 0,
+                                "points": [1.0, 2.1, 50.1, 30.22],
+                                "type": "rectangle",
+                                "occluded": False,
+                                "outside": False,
+                                "attributes": [
+                                    {
+                                        "spec_id": task["labels"][0]["attributes"][1]["id"],
+                                        "value": task["labels"][0]["attributes"][1][
+                                            "default_value"
+                                        ],
+                                    }
+                                ],
+                            },
+                            {
+                                "frame": 1,
+                                "points": [2.0, 2.1, 77.2, 36.22],
+                                "type": "rectangle",
+                                "occluded": True,
+                                "outside": False,
+                                "attributes": [
+                                    {
+                                        "spec_id": task["labels"][0]["attributes"][1]["id"],
+                                        "value": task["labels"][0]["attributes"][1][
+                                            "default_value"
+                                        ],
+                                    }
+                                ],
+                            },
+                            {
+                                "frame": 2,
+                                "points": [2.0, 2.1, 77.2, 36.22],
+                                "type": "rectangle",
+                                "occluded": True,
+                                "outside": True,
+                                "attributes": [
+                                    {
+                                        "spec_id": task["labels"][0]["attributes"][1]["id"],
+                                        "value": task["labels"][0]["attributes"][1][
+                                            "default_value"
+                                        ],
+                                    }
+                                ],
+                            },
+                        ],
+                    }
+                ]
+                rectangle_tracks_wo_attrs = [
+                    {
+                        "frame": 0,
+                        "label_id": task["labels"][1]["id"],
+                        "group": 0,
+                        "source": "manual",
+                        "attributes": [],
+                        "shapes": [
+                            {
+                                "frame": 0,
+                                "attributes": [],
+                                "points": [1.0, 2.1, 50.2, 36.6],
+                                "type": "rectangle",
+                                "occluded": False,
+                                "outside": False,
+                            },
+                            {
+                                "frame": 1,
+                                "attributes": [],
+                                "points": [1.0, 2.1, 51, 36.6],
+                                "type": "rectangle",
+                                "occluded": False,
+                                "outside": False,
+                            },
+                            {
+                                "frame": 2,
+                                "attributes": [],
+                                "points": [1.0, 2.1, 51, 36.6],
+                                "type": "rectangle",
+                                "occluded": False,
+                                "outside": True,
+                            },
+                        ],
+                    }
+                ]
+                polygon_tracks_wo_attrs = [
+                    {
+                        "frame": 0,
+                        "label_id": task["labels"][1]["id"],
+                        "group": 0,
+                        "source": "manual",
+                        "attributes": [],
+                        "shapes": [
+                            {
+                                "frame": 0,
+                                "attributes": [],
+                                "points": [1.0, 2.1, 50.2, 36.6, 7.0, 10.0],
+                                "type": "polygon",
+                                "occluded": False,
+                                "outside": False,
+                            },
+                            {
+                                "frame": 1,
+                                "attributes": [],
+                                "points": [1.0, 2.1, 51, 36.6, 8.0, 11.0],
+                                "type": "polygon",
+                                "occluded": False,
+                                "outside": True,
+                            },
+                            {
+                                "frame": 2,
+                                "attributes": [],
+                                "points": [1.0, 2.1, 51, 36.6, 14.0, 15.0],
+                                "type": "polygon",
+                                "occluded": False,
+                                "outside": False,
+                            },
+                        ],
+                    }
+                ]
 
-                rectangle_shapes_with_attrs = [{
-                    "frame": 0,
-                    "label_id": task["labels"][0]["id"],
-                    "group": 0,
-                    "source": "manual",
-                    "attributes": [
-                        {
-                            "spec_id": task["labels"][0]["attributes"][0]["id"],
-                            "value": task["labels"][0]["attributes"][0]["values"][0]
-                        },
-                        {
-                            "spec_id": task["labels"][0]["attributes"][1]["id"],
-                            "value": task["labels"][0]["attributes"][1]["default_value"]
-                        }
-                    ],
-                    "points": [1.0, 2.1, 10.6, 53.22],
-                    "type": "rectangle",
-                    "occluded": False,
-                    "outside": False,
-                    "z_order": 0.0,
-                    "rotation": 0.0,
-                    "elements":[],
-                }]
+                rectangle_shapes_with_attrs = [
+                    {
+                        "frame": 0,
+                        "label_id": task["labels"][0]["id"],
+                        "group": 0,
+                        "source": "manual",
+                        "attributes": [
+                            {
+                                "spec_id": task["labels"][0]["attributes"][0]["id"],
+                                "value": task["labels"][0]["attributes"][0]["values"][0],
+                            },
+                            {
+                                "spec_id": task["labels"][0]["attributes"][1]["id"],
+                                "value": task["labels"][0]["attributes"][1]["default_value"],
+                            },
+                        ],
+                        "points": [1.0, 2.1, 10.6, 53.22],
+                        "type": "rectangle",
+                        "occluded": False,
+                        "outside": False,
+                        "z_order": 0.0,
+                        "rotation": 0.0,
+                        "elements": [],
+                    }
+                ]
 
-                rectangle_shapes_with_wider_attrs = [{
-                    "frame": 0,
-                    "label_id": task["labels"][2]["id"],
-                    "group": 0,
-                    "source": "manual",
-                    "attributes": [
-                        {
-                            "spec_id": task["labels"][2]["attributes"][0]["id"],
-                            "value": task["labels"][2]["attributes"][0]["default_value"]
-                        },
-                        {
-                            "spec_id": task["labels"][2]["attributes"][1]["id"],
-                            "value": task["labels"][2]["attributes"][1]["values"][1]
-                        },
-                        {
-                            "spec_id": task["labels"][2]["attributes"][2]["id"],
-                            "value": task["labels"][2]["attributes"][2]["default_value"]
-                        }
-                    ],
-                    "points": [1.0, 2.1, 10.6, 53.22],
-                    "type": "rectangle",
-                    "occluded": False,
-                    "outside": False,
-                    "z_order": 0.0,
-                    "rotation": 0,
-                    "elements": [],
-                }]
+                rectangle_shapes_with_wider_attrs = [
+                    {
+                        "frame": 0,
+                        "label_id": task["labels"][2]["id"],
+                        "group": 0,
+                        "source": "manual",
+                        "attributes": [
+                            {
+                                "spec_id": task["labels"][2]["attributes"][0]["id"],
+                                "value": task["labels"][2]["attributes"][0]["default_value"],
+                            },
+                            {
+                                "spec_id": task["labels"][2]["attributes"][1]["id"],
+                                "value": task["labels"][2]["attributes"][1]["values"][1],
+                            },
+                            {
+                                "spec_id": task["labels"][2]["attributes"][2]["id"],
+                                "value": task["labels"][2]["attributes"][2]["default_value"],
+                            },
+                        ],
+                        "points": [1.0, 2.1, 10.6, 53.22],
+                        "type": "rectangle",
+                        "occluded": False,
+                        "outside": False,
+                        "z_order": 0.0,
+                        "rotation": 0,
+                        "elements": [],
+                    }
+                ]
 
-                rectangle_shapes_wo_attrs = [{
-                    "frame": 1,
-                    "label_id": task["labels"][1]["id"],
-                    "group": 0,
-                    "source": "manual",
-                    "attributes": [],
-                    "points": [2.0, 2.1, 40, 50.7],
-                    "type": "rectangle",
-                    "occluded": False,
-                    "outside": False,
-                    "z_order": 0.0,
-                    "rotation": 0.0,
-                    "elements": [],
-                }]
+                rectangle_shapes_wo_attrs = [
+                    {
+                        "frame": 1,
+                        "label_id": task["labels"][1]["id"],
+                        "group": 0,
+                        "source": "manual",
+                        "attributes": [],
+                        "points": [2.0, 2.1, 40, 50.7],
+                        "type": "rectangle",
+                        "occluded": False,
+                        "outside": False,
+                        "z_order": 0.0,
+                        "rotation": 0.0,
+                        "elements": [],
+                    }
+                ]
 
-                polygon_shapes_wo_attrs = [{
-                    "frame": 1,
-                    "label_id": task["labels"][1]["id"],
-                    "group": 0,
-                    "source": "manual",
-                    "attributes": [],
-                    "points": [2.0, 2.1, 100, 30.22, 40, 77, 1, 3],
-                    "type": "polygon",
-                    "occluded": False,
-                    "outside": False,
-                    "z_order": 0.0,
-                    "rotation": 0.0,
-                    "elements": []
-                }]
+                polygon_shapes_wo_attrs = [
+                    {
+                        "frame": 1,
+                        "label_id": task["labels"][1]["id"],
+                        "group": 0,
+                        "source": "manual",
+                        "attributes": [],
+                        "points": [2.0, 2.1, 100, 30.22, 40, 77, 1, 3],
+                        "type": "polygon",
+                        "occluded": False,
+                        "outside": False,
+                        "z_order": 0.0,
+                        "rotation": 0.0,
+                        "elements": [],
+                    }
+                ]
 
                 polygon_shapes_with_attrs = [
                     {
@@ -6618,43 +6640,49 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                     },
                 ]
 
-                points_wo_attrs = [{
-                    "frame": 1,
-                    "label_id": task["labels"][1]["id"],
-                    "group": 0,
-                    "source": "manual",
-                    "attributes": [],
-                    "points": [20.0, 0.1, 10, 3.22, 4, 7, 10, 30, 1, 2],
-                    "type": "points",
-                    "occluded": False,
-                    "z_order": 0,
-                    "rotation": 0.0,
-                    "outside": False
-                }]
+                points_wo_attrs = [
+                    {
+                        "frame": 1,
+                        "label_id": task["labels"][1]["id"],
+                        "group": 0,
+                        "source": "manual",
+                        "attributes": [],
+                        "points": [20.0, 0.1, 10, 3.22, 4, 7, 10, 30, 1, 2],
+                        "type": "points",
+                        "occluded": False,
+                        "z_order": 0,
+                        "rotation": 0.0,
+                        "outside": False,
+                    }
+                ]
 
-                tags_wo_attrs = [{
-                    "frame": 2,
-                    "label_id": task["labels"][1]["id"],
-                    "group": 0,
-                    "source": "manual",
-                    "attributes": [],
-                }]
-                tags_with_attrs = [{
-                    "frame": 1,
-                    "label_id": task["labels"][0]["id"],
-                    "group": 0,
-                    "source": "manual",
-                    "attributes": [
-                        {
-                            "spec_id": task["labels"][0]["attributes"][0]["id"],
-                            "value": task["labels"][0]["attributes"][0]["values"][1]
-                        },
-                        {
-                            "spec_id": task["labels"][0]["attributes"][1]["id"],
-                            "value": task["labels"][0]["attributes"][1]["default_value"]
-                        }
-                    ],
-                }]
+                tags_wo_attrs = [
+                    {
+                        "frame": 2,
+                        "label_id": task["labels"][1]["id"],
+                        "group": 0,
+                        "source": "manual",
+                        "attributes": [],
+                    }
+                ]
+                tags_with_attrs = [
+                    {
+                        "frame": 1,
+                        "label_id": task["labels"][0]["id"],
+                        "group": 0,
+                        "source": "manual",
+                        "attributes": [
+                            {
+                                "spec_id": task["labels"][0]["attributes"][0]["id"],
+                                "value": task["labels"][0]["attributes"][0]["values"][1],
+                            },
+                            {
+                                "spec_id": task["labels"][0]["attributes"][1]["id"],
+                                "value": task["labels"][0]["attributes"][1]["default_value"],
+                            },
+                        ],
+                    }
+                ]
 
             annotations = {
                 "version": 0,
@@ -6699,10 +6727,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                 annotations["shapes"] = rectangle_shapes_wo_attrs + polygon_shapes_wo_attrs
                 annotations["tracks"] = rectangle_tracks_wo_attrs
 
-            elif annotation_format in [
-                "MOT 1.1",
-                "Ultralytics YOLO Detection Track 1.0"
-            ]:
+            elif annotation_format in ["MOT 1.1", "Ultralytics YOLO Detection Track 1.0"]:
                 annotations["shapes"] = rectangle_shapes_wo_attrs
                 annotations["tracks"] = rectangle_tracks_wo_attrs
 
@@ -6718,16 +6743,15 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                 )
 
             elif annotation_format == "Datumaro 1.0":
-                annotations["shapes"] += rectangle_shapes_with_attrs \
-                                      + rectangle_shapes_wo_attrs \
-                                      + polygon_shapes_wo_attrs \
-                                      + polygon_shapes_with_attrs
+                annotations["shapes"] += (
+                    rectangle_shapes_with_attrs
+                    + rectangle_shapes_wo_attrs
+                    + polygon_shapes_wo_attrs
+                    + polygon_shapes_with_attrs
+                )
                 annotations["tags"] = tags_with_attrs + tags_wo_attrs
 
-            elif annotation_format in [
-                "ImageNet 1.0",
-                "Ultralytics YOLO Classification 1.0"
-            ]:
+            elif annotation_format in ["ImageNet 1.0", "Ultralytics YOLO Classification 1.0"]:
                 annotations["tags"] = tags_wo_attrs
 
             elif annotation_format == "CamVid 1.0":
@@ -6741,32 +6765,34 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                 annotations["tags"] = tags_wo_attrs
                 annotations["shapes"] = points_wo_attrs + rectangle_shapes_wo_attrs
             elif annotation_format == "Cityscapes 1.0":
-                background_polygon_wo_attrs = [{
-                    "frame": 1,
-                    "label_id": task["labels"][0]["id"],
-                    "group": 0,
-                    "source": "manual",
-                    "attributes": [],
-                    "points": [4, 4, 5, 91, 96, 93, 97, 4],
-                    "type": "polygon",
-                    "occluded": False,
-                }]
-                object_polygon_wo_attrs = [{
-                    "frame": 1,
-                    "label_id": task["labels"][1]["id"],
-                    "group": 0,
-                    "source": "manual",
-                    "attributes": [],
-                    "points": [14, 14, 15, 85, 88, 87, 90, 13],
-                    "type": "polygon",
-                    "occluded": False,
-                }]
-                annotations["shapes"] = background_polygon_wo_attrs \
-                                      + object_polygon_wo_attrs
+                background_polygon_wo_attrs = [
+                    {
+                        "frame": 1,
+                        "label_id": task["labels"][0]["id"],
+                        "group": 0,
+                        "source": "manual",
+                        "attributes": [],
+                        "points": [4, 4, 5, 91, 96, 93, 97, 4],
+                        "type": "polygon",
+                        "occluded": False,
+                    }
+                ]
+                object_polygon_wo_attrs = [
+                    {
+                        "frame": 1,
+                        "label_id": task["labels"][1]["id"],
+                        "group": 0,
+                        "source": "manual",
+                        "attributes": [],
+                        "points": [14, 14, 15, 85, 88, 87, 90, 13],
+                        "type": "polygon",
+                        "occluded": False,
+                    }
+                ]
+                annotations["shapes"] = background_polygon_wo_attrs + object_polygon_wo_attrs
             elif annotation_format == "Open Images V6 1.0":
                 annotations["tags"] = tags_wo_attrs
-                annotations["shapes"] = rectangle_shapes_wo_attrs \
-                                    #   + polygon_shapes_wo_attrs
+                annotations["shapes"] = rectangle_shapes_wo_attrs  #   + polygon_shapes_wo_attrs
                 # polygons get converted to masks, hard to check
 
             elif annotation_format == "LFW 1.0":
@@ -6804,38 +6830,75 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                     }
                 ]
                 annotations["tags"] = tags_with_attrs
-            elif annotation_format in ['Kitti Raw Format 1.0',
-                    'Sly Point Cloud Format 1.0', 'Datumaro 3D 1.0']:
-                velodyne_wo_attrs = [{
-                    "frame": 0,
-                    "label_id": task["labels"][0]["id"],
-                    "group": 0,
-                    "source": "manual",
-                    "attributes": [],
-                    "points": [-3.62, 7.95, -1.03, 0.0, 0.0, 0.0, 1.0, 1.0,
-                               1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                    "type": "cuboid",
-                    "occluded": False,
-                    "elements": [],
-                    "rotation": 0.0,
-                    "z_order": 0,
-                    "outside":False,
-                },
-                {
-                    "frame": 0,
-                    "label_id": task["labels"][0]["id"],
-                    "group": 0,
-                    "source": "manual",
-                    "attributes": [],
-                    "points": [23.01, 8.34, -0.76, 0.0, 0.0, 0.0, 1.0, 1.0,
-                                1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                    "type": "cuboid",
-                    "occluded": False,
-                    "elements": [],
-                    "rotation": 0.0,
-                    "z_order": 0,
-                    "outside": False,
-                }]
+            elif annotation_format in [
+                "Kitti Raw Format 1.0",
+                "Sly Point Cloud Format 1.0",
+                "Datumaro 3D 1.0",
+            ]:
+                velodyne_wo_attrs = [
+                    {
+                        "frame": 0,
+                        "label_id": task["labels"][0]["id"],
+                        "group": 0,
+                        "source": "manual",
+                        "attributes": [],
+                        "points": [
+                            -3.62,
+                            7.95,
+                            -1.03,
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0,
+                            1.0,
+                            1.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                        ],
+                        "type": "cuboid",
+                        "occluded": False,
+                        "elements": [],
+                        "rotation": 0.0,
+                        "z_order": 0,
+                        "outside": False,
+                    },
+                    {
+                        "frame": 0,
+                        "label_id": task["labels"][0]["id"],
+                        "group": 0,
+                        "source": "manual",
+                        "attributes": [],
+                        "points": [
+                            23.01,
+                            8.34,
+                            -0.76,
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0,
+                            1.0,
+                            1.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                        ],
+                        "type": "cuboid",
+                        "occluded": False,
+                        "elements": [],
+                        "rotation": 0.0,
+                        "z_order": 0,
+                        "outside": False,
+                    },
+                ]
                 annotations["shapes"] = velodyne_wo_attrs
             elif annotation_format == "ICDAR Recognition 1.0":
                 tags_with_attrs = [
@@ -6960,12 +7023,12 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                 "Ultralytics YOLO Pose 1.0",
                 "CVAT for video 1.1",
                 "CVAT for images 1.1",
-                "Datumaro 1.0"
+                "Datumaro 1.0",
             ]:
                 skeleton_wo_attrs = [
                     {
                         "type": "skeleton",
-                        "label_id": task["labels"][0]['id'],
+                        "label_id": task["labels"][0]["id"],
                         "points": [],
                         "rotation": 0.0,
                         "outside": False,
@@ -6985,7 +7048,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                                 "points": [20.0, 0.1],
                                 # "id": 10,
                                 "frame": 0,
-                                "label_id": task["labels"][0]['sublabels'][0]['id'],
+                                "label_id": task["labels"][0]["sublabels"][0]["id"],
                                 "group": 0,
                                 "source": "manual",
                                 "attributes": [],
@@ -6999,7 +7062,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                                 "points": [10, 3.22],
                                 # "id": 11,
                                 "frame": 0,
-                                "label_id": task["labels"][0]['sublabels'][1]['id'],
+                                "label_id": task["labels"][0]["sublabels"][1]["id"],
                                 "group": 0,
                                 "source": "manual",
                                 "attributes": [],
@@ -7007,7 +7070,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         ],
                     }
                 ]
-                annotations['shapes'] += skeleton_wo_attrs
+                annotations["shapes"] += skeleton_wo_attrs
             else:
                 raise Exception("Unknown format {}".format(annotation_format))
 
@@ -7047,7 +7110,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
             )
 
         # Rare and buggy formats that are not crucial for testing
-        formats.pop('Market-1501 1.0') # Issue: https://github.com/cvat-ai/datumaro/issues/99
+        formats.pop("Market-1501 1.0")  # Issue: https://github.com/cvat-ai/datumaro/issues/99
 
         for export_format, import_format in formats.items():
             with self.subTest(export_format=export_format, import_format=import_format):
@@ -7059,8 +7122,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                 response = self._put_api_v2_tasks_id_annotations(task["id"], owner, data)
                 data["version"] += 1
 
-                self.assertEqual(response.status_code, HTTP_200_OK,
-                    pformat(response.data))
+                self.assertEqual(response.status_code, HTTP_200_OK, pformat(response.data))
                 check_annotation_response(self, response, data)
 
                 # 3. download annotation
@@ -7075,7 +7137,9 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                     continue
 
                 response: FileResponse = self._export_task_annotations(
-                    owner, task["id"], query_params={"format": export_format},
+                    owner,
+                    task["id"],
+                    query_params={"format": export_format},
                 )
 
                 # 4. check downloaded data
@@ -7098,15 +7162,19 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                 )
 
                 # 7. check annotation
-                if export_format in {"Segmentation mask 1.1", "MOTS PNG 1.0",
-                        "CamVid 1.0", "ICDAR Segmentation 1.0",
-                        "Cityscapes 1.0"}:
-                    continue # can't really predict the result to check
+                if export_format in {
+                    "Segmentation mask 1.1",
+                    "MOTS PNG 1.0",
+                    "CamVid 1.0",
+                    "ICDAR Segmentation 1.0",
+                    "Cityscapes 1.0",
+                }:
+                    continue  # can't really predict the result to check
                 response = self._get_api_v2_tasks_id_annotations(task["id"], owner)
                 self.assertEqual(response.status_code, HTTP_200_OK)
 
-                data["version"] += 2 # upload is delete + put
-                check_annotation_response(self, response, data, expected_values={'source': 'file'})
+                data["version"] += 2  # upload is delete + put
+                check_annotation_response(self, response, data, expected_values={"source": "file"})
 
     def _check_dump_content(self, content, task, jobs, data, format_name):
         def etree_to_dict(t):
@@ -7289,7 +7357,7 @@ class ServerShareAPITestCase(ApiTestBase):
             self=self,
             obj1=sorted(data, key=lambda d: d["name"]),
             obj2=sorted(response.data, key=lambda d: d["name"]),
-            ignore_keys=['mime_type']
+            ignore_keys=["mime_type"],
         )
 
         data = [
@@ -7302,7 +7370,7 @@ class ServerShareAPITestCase(ApiTestBase):
             self=self,
             obj1=sorted(data, key=lambda d: d["name"]),
             obj2=sorted(response.data, key=lambda d: d["name"]),
-            ignore_keys=['mime_type']
+            ignore_keys=["mime_type"],
         )
 
         data = []
@@ -7312,7 +7380,7 @@ class ServerShareAPITestCase(ApiTestBase):
             self=self,
             obj1=sorted(data, key=lambda d: d["name"]),
             obj2=sorted(response.data, key=lambda d: d["name"]),
-            ignore_keys=['mime_type']
+            ignore_keys=["mime_type"],
         )
 
         data = [
@@ -7324,7 +7392,7 @@ class ServerShareAPITestCase(ApiTestBase):
             self=self,
             obj1=sorted(data, key=lambda d: d["name"]),
             obj2=sorted(response.data, key=lambda d: d["name"]),
-            ignore_keys=['mime_type']
+            ignore_keys=["mime_type"],
         )
 
         response = self._run_api_v2_server_share(user, "/test4")
