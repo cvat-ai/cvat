@@ -2677,7 +2677,14 @@ class AssetsViewSet(
         if db_guide.assets.count() >= settings.ASSET_MAX_COUNT_PER_GUIDE:
             raise ValidationError(f"Maximum number of assets per guide reached")
 
-        serializer = AssetWriteSerializer.write_asset(self.request.user, guide_id, file)
+        serializer = AssetWriteSerializer(data={
+            "asset_file": file,
+            "guide_id": db_guide.id,
+            "owner_id": self.request.user.id,
+        })
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 

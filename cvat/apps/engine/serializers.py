@@ -3500,28 +3500,20 @@ class AssetReadSerializer(WriteOnceMixin, serializers.ModelSerializer):
         read_only_fields = fields
 
 class AssetWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
-    uuid = serializers.CharField(required=False)
-    filename = serializers.CharField(required=True, max_length=MAX_FILENAME_LENGTH)
+    uuid = serializers.CharField(required=False, default=lambda: str(uuid.uuid4()))
+    asset_file = serializers.FileField(required=True, write_only=True, allow_empty_file=False, max_length=MAX_FILENAME_LENGTH)
+    owner_id = serializers.IntegerField(required=True)
     guide_id = serializers.IntegerField(required=True)
 
-    @staticmethod
-    def write_asset(
-        owner: User,
-        guide_id: int,
-        asset_file: UploadedFile,
-    ) -> AssetWriteSerializer:
-        data = {
-            "uuid": str(uuid.uuid4()),
-            "filename": asset_file.name,
-        }
-
-        dirname = os.path.join(settings.ASSETS_ROOT, data["uuid"])
-        filename = os.path.join(dirname, data["filename"])
-        serializer = AssetWriteSerializer(data=data | {"guide_id": guide_id})
-        serializer.is_valid(raise_exception=True)
+    def create(self, validated_data):
+        asset_file = validated_data.pop("asset_file")
+        asset_uuid = validated_data.get("uuid")
+        dirname = os.path.join(settings.ASSETS_ROOT, asset_uuid)
+        basename = asset_file.name
+        filename = os.path.join(dirname, basename)
+        os.makedirs(dirname)
 
         try:
-            os.makedirs(dirname)
             if asset_file.content_type in ("image/jpeg", "image/png"):
                 image = Image.open(asset_file)
                 if any(map(lambda x: x > settings.ASSET_MAX_IMAGE_SIZE, image.size)):
@@ -3538,17 +3530,23 @@ class AssetWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             if not isinstance(size_or_error, int):
                 raise size_or_error
 
-            serializer.save(content_size=size_or_error, owner=owner)
-            return serializer
-        except:
-            os.remove(filename)
+            return models.Asset.objects.create(
+                **validated_data,
+                filename=basename,
+                content_size=size_or_error,
+            )
+        except Exception:
+            if os.path.exists(filename):
+                os.remove(filename)
+
             os.rmdir(dirname)
             raise
 
     class Meta:
         model = models.Asset
-        fields = ('uuid', 'filename', 'created_date', 'guide_id', )
-        write_once_fields = ('uuid', 'filename', 'created_date', 'guide_id', )
+        fields = ("uuid", "owner_id", "guide_id", "asset_file", )
+        write_once_fields = ("uuid", "owner_id", "guide_id", )
+
 
 class AnnotationGuideReadSerializer(WriteOnceMixin, serializers.ModelSerializer):
     class Meta:

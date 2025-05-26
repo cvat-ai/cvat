@@ -123,15 +123,18 @@ def _import_annotation_guide(owner, guide_data, assets):
 
     for asset in assets:
         name, data = asset
-        asset_serializer = AssetWriteSerializer.write_asset(
-            owner,
-            guide_serializer.instance.id,
-            SimpleUploadedFile(
+        asset_serializer = AssetWriteSerializer(data={
+            "asset_file": SimpleUploadedFile(
                 os.path.basename(name),
                 data,
                 mimetypes.guess_type(name)[0]
             ),
-        )
+            "guide_id": guide_serializer.instance.id,
+            "owner_id": owner.id,
+        })
+
+        asset_serializer.is_valid(raise_exception=True)
+        asset_serializer.save()
         markdown = markdown.replace(f'{name}', f'/api/assets/{asset_serializer.instance.pk}')
 
     guide_serializer.instance.markdown = markdown
