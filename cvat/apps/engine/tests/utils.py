@@ -8,9 +8,12 @@ import os
 import shutil
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
+from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Callable, TypeVar
+from pprint import pformat
+from typing import Any, Callable, Collection, NoReturn, Protocol, TypeVar
+from unittest import TestCase
 from urllib.parse import urlencode
 
 import av
@@ -23,8 +26,13 @@ from PIL import Image
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.test import APITestCase
+from scipy.optimize import linear_sum_assignment
 
 T = TypeVar("T")
+
+
+class OrderStrategy(Protocol):
+    def __call__(self, key_path: list[str]) -> bool: ...
 
 
 @contextmanager
@@ -589,4 +597,235 @@ def get_paginated_collection(request_chunk_callback: Callable[[int], HttpRespons
 def filter_dict(
     d: dict[str, Any], *, keep: Sequence[str] = None, drop: Sequence[str] = None
 ) -> dict[str, Any]:
-    return {k: v for k, v in d.items() if (not keep or k in keep) and (not drop or k not in drop)}
+    return {
+        k: v
+        for k, v in d.items()
+        if (keep is None or k in keep) and (drop is None or k not in drop)
+    }
+
+
+def _match_lists(
+    a_objs: list[Any],
+    b_objs: list[Any],
+    *,
+    distance: Callable[[Any, Any], bool],
+) -> tuple[list[tuple[Any, Any]], list[Any], list[Any]] | NoReturn:
+    """
+    Matches two lists of objects using a distance function.
+    The distance function should return True if the objects are equal, and False otherwise.
+
+    Returns: (matches, a_unmatched, b_unmatched)
+    """
+
+    if len(a_objs) != len(b_objs):
+        raise ValueError("The number of objects in the lists should be equal")
+
+    distances = np.asarray([1 - int(distance(a, b)) for a in a_objs for b in b_objs])
+    distances = distances.reshape((len(a_objs), len(b_objs)))
+
+    # O(n^3) complexity or better
+    a_matches, b_matches = linear_sum_assignment(distances)
+
+    matches = []
+    a_unmatched = []
+    b_unmatched = []
+
+    for a_idx, b_idx in zip(a_matches, b_matches):
+        dist = distances[a_idx, b_idx]
+        if dist == 1:
+            if a_idx < len(a_objs):
+                a_unmatched.append(a_objs[a_idx])
+            if b_idx < len(b_objs):
+                b_unmatched.append(b_objs[b_idx])
+        else:
+            matches.append((a_objs[a_idx], b_objs[b_idx]))
+
+    return matches, a_unmatched, b_unmatched
+
+
+def _format_key(key: list[str]) -> str:
+    return ".".join([] + key) or ""
+
+
+def compare_objects(
+    self: TestCase,
+    obj1: Any,
+    obj2: Any,
+    ignore_keys: Collection[str],
+    *,
+    defaults: dict[str, Any] | Callable[[list[str]], dict | None] | None = None,
+    fp_tolerance: float = 0.001,
+    current_key: list[str] | str | None = None,
+    check_order: bool | OrderStrategy = True,
+) -> bool | NoReturn:
+    if isinstance(current_key, str):
+        current_key = [current_key]
+    elif not current_key:
+        current_key = []
+
+    key_info = f"{_format_key(current_key)}: "
+    error_msg = "{}{} != {}"
+
+    if isinstance(obj1, dict):
+        self.assertTrue(isinstance(obj2, dict), error_msg.format(key_info, obj1, obj2))
+
+        current_key_defaults = {}
+        if defaults and isinstance(defaults, dict):
+            current_key_defaults = defaults
+        elif defaults and callable(defaults):
+            current_key_defaults = defaults(current_key) or {}
+
+        keys_to_check = (obj1.keys() | obj2.keys() | current_key_defaults.keys()) - set(ignore_keys)
+        for k in keys_to_check:
+            compare_objects(
+                self,
+                obj1[k] if not k in current_key_defaults else obj1.get(k, current_key_defaults[k]),
+                obj2[k] if not k in current_key_defaults else obj2.get(k, current_key_defaults[k]),
+                ignore_keys,
+                defaults=defaults,
+                current_key=current_key + [k],
+                fp_tolerance=fp_tolerance,
+                check_order=check_order,
+            )
+    elif isinstance(obj1, list):
+        self.assertTrue(isinstance(obj2, list), error_msg.format(key_info, obj1, obj2))
+        self.assertEqual(
+            len(obj1),
+            len(obj2),
+            error_msg.format(key_info, pformat(obj1, compact=True), pformat(obj2, compact=True)),
+        )
+
+        if check_order is True or check_order(current_key):
+            for v1, v2 in zip(obj1, obj2):
+                compare_objects(
+                    self,
+                    v1,
+                    v2,
+                    ignore_keys,
+                    defaults=defaults,
+                    current_key=current_key,
+                    fp_tolerance=fp_tolerance,
+                    check_order=check_order,
+                )
+        else:
+
+            def _compare(a, b) -> bool:
+                try:
+                    compare_objects(
+                        self,
+                        a,
+                        b,
+                        ignore_keys,
+                        defaults=defaults,
+                        current_key=current_key,
+                        fp_tolerance=fp_tolerance,
+                        check_order=check_order,
+                    )
+                    return True
+                except AssertionError:
+                    return False
+
+            _, a_unmatched, b_unmatched = _match_lists(obj1, obj2, distance=_compare)
+
+            if a_unmatched or b_unmatched:
+                self.fail(
+                    "Failed to match lists. "
+                    + error_msg.format(
+                        key_info, pformat(obj1, compact=True), pformat(obj2, compact=True)
+                    )
+                )
+
+    elif isinstance(obj1, float) or isinstance(obj2, float):
+        self.assertAlmostEqual(obj1, obj2, delta=fp_tolerance, msg=current_key)
+    else:
+        self.assertEqual(obj1, obj2, msg=current_key)
+
+
+def check_annotation_response(
+    self: TestCase,
+    response: dict,
+    data: dict,
+    *,
+    expected_values: dict | None = None,
+    ignore_keys: Sequence[str] = frozenset(("id", "version")),
+) -> None | NoReturn:
+    optional_fields = dict(
+        source="manual",
+        occluded=False,
+        outside=False,
+        z_order=0,
+        rotation=0,
+        attributes=[],
+        elements=[],
+    )   # if omitted, are set by the server
+        # https://docs.cvat.ai/docs/api_sdk/sdk/reference/models/labeled-shape/
+
+    if expected_values is not None:
+        optional_fields['source'] = expected_values.get('source') or optional_fields['source']
+        # the only field with a variable default
+
+        def put_expected_values(v: Any) -> Any:
+            if isinstance(v, dict):
+                v.update(filter_dict(expected_values, keep=v.keys() & expected_values.keys()))
+
+                for k, vv in v.items():
+                    v[k] = put_expected_values(vv)
+            if isinstance(v, list):
+                v = [put_expected_values(item) for item in v]
+            if isinstance(v, tuple):
+                v = tuple(put_expected_values(item) for item in v)
+
+            return v
+
+        data = put_expected_values(deepcopy(data))
+
+    def _check_order_in_annotations(key_path: list[str]) -> bool:
+        return "points" in key_path
+
+    def _key_defaults(key_path: list[str]) -> dict | None:
+        if key_path and key_path[-1] == "tags":
+            return filter_dict(optional_fields, keep=["source", "attributes"])
+        if key_path and key_path[-1] == "shapes":
+            return filter_dict(
+                optional_fields,
+                keep=[
+                    "occluded",
+                    "outside",
+                    "z_order",
+                    "rotation",
+                    "source",
+                    "attributes",
+                    "elements",
+                ],
+            )
+        if key_path and key_path[-1] == "tracks":
+            return filter_dict(optional_fields, keep=["source",
+             "attributes", "elements"])
+        if key_path and _format_key(key_path).endswith("tracks.elements"):
+            return filter_dict(optional_fields, keep=["source", "attributes"])
+        if key_path and _format_key(key_path).endswith("tracks.elements.shapes"):
+            return filter_dict(
+                optional_fields, keep=["occluded", "outside", "z_order", "rotation", "attributes"]
+            )
+
+        return None
+
+    try:
+        compare_objects(
+            self,
+            response.data,
+            data,
+            ignore_keys=ignore_keys,
+            defaults=_key_defaults,
+            check_order=_check_order_in_annotations,
+        )
+    except AssertionError as e:
+        print(
+            "Objects are not equal:",
+            pformat(response.data, compact=True),
+            "!=",
+            pformat(data, compact=True),
+            sep="\n",
+        )
+        print(e)
+        raise

@@ -2691,7 +2691,7 @@ class AssetsViewSet(
             image = Image.open(file)
             if any(map(lambda x: x > settings.ASSET_MAX_IMAGE_SIZE, image.size)):
                 scale_factor = settings.ASSET_MAX_IMAGE_SIZE / max(image.size)
-                image = image.resize((map(lambda x: int(x * scale_factor), image.size)))
+                image = image.resize(map(lambda x: int(x * scale_factor), image.size))
             image.save(os.path.join(path, file.name))
         else:
             with open(os.path.join(path, file.name), 'wb+') as destination:
