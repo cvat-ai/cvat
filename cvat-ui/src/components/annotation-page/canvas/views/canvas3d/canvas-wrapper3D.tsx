@@ -652,11 +652,8 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
         });
 
         const views = canvasInstance.html() as any;
-        if (views.perspective && views.perspective.scene) {
-            const pointCloud = views.perspective.scene.children[0];
-            if (pointCloud && pointCloud.material) {
-                pointCloud.material.size = pointSize;
-            }
+        if (views.perspective?.scene?.children[0]?.material) {
+            views.perspective.scene.children[0].material.size = pointSize;
         }
     };
 
