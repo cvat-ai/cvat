@@ -10,6 +10,7 @@ import logging
 import os
 import platform
 import re
+import stat
 import subprocess
 import sys
 import traceback
@@ -358,32 +359,26 @@ def take_by(iterable: Iterable[_T], chunk_size: int) -> Generator[list[_T], None
         yield batch
 
 
-def get_paths_sizes(paths: list[str]) -> dict[str, int | ValueError | RuntimeError]:
-    if not paths:
-        return {}
-
-    chunk_size = 100
-    sizes: dict[str, int] = {}
-
-    for chunk in take_by(paths, chunk_size):
-        # the function must not be called with uncontrolled input
-        result = subprocess.run( # nosec
-            ["du", "-s"] + chunk,
-            capture_output=True,
-            text=True,
-        )
-
-        for line in result.stdout.strip().splitlines():
-            try:
-                size_str, path = line.strip().split(maxsplit=1)
-                sizes[path] = int(size_str)
-            except ValueError as e:
-                sizes[path] = e
-
+def get_paths_sizes(paths: list[str]) -> dict[str, int | OSError | ValueError]:
+    sizes: dict[str, int | Exception] = {}
     for path in paths:
-        if path not in sizes:
-            sizes[path] = RuntimeError(f"Path {path} not found in du output")
+        try:
+            stats = os.lstat(path)
+        except (OSError, ValueError) as ex:
+            sizes[path] = ex
 
+        if stat.S_ISDIR(stats.st_mode):
+            try:
+                total_size = 0
+                for root, _, files in os.walk(path):
+                    for name in files:
+                        file_path = os.path.join(root, name)
+                        total_size += os.lstat(file_path).st_size
+                sizes[path] = total_size
+            except (OSError, ValueError) as ex:
+                sizes[path] = ex
+        else:
+            sizes[path] = stats.st_size
     return sizes
 
 
