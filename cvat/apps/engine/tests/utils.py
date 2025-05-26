@@ -556,7 +556,11 @@ def get_paginated_collection(request_chunk_callback: Callable[[int], HttpRespons
 def filter_dict(
     d: dict[str, Any], *, keep: Sequence[str] = None, drop: Sequence[str] = None
 ) -> dict[str, Any]:
-    return {k: v for k, v in d.items() if (not keep or k in keep) and (not drop or k not in drop)}
+    return {
+        k: v
+        for k, v in d.items()
+        if (keep is None or k in keep) and (drop is None or k not in drop)
+    }
 
 
 def _match_lists(
@@ -724,10 +728,7 @@ def check_annotation_response(
                 v.update(filter_dict(expected_values, keep=v.keys() & expected_values.keys()))
 
                 for k, vv in v.items():
-                    if k != 'attributes':
-                        v[k] = put_expected_values(vv)
-                        # Attributes don't have optional fields with default values
-                        # https://docs.cvat.ai/docs/api_sdk/sdk/reference/models/attribute/
+                    v[k] = put_expected_values(vv)
             if isinstance(v, list):
                 v = [put_expected_values(item) for item in v]
             if isinstance(v, tuple):
@@ -741,8 +742,6 @@ def check_annotation_response(
         return "points" in key_path
 
     def _key_defaults(key_path: list[str]) -> dict | None:
-        if key_path == []:
-            return filter_dict(optional_fields, keep=["source"])
         if key_path and key_path[-1] == "tags":
             return filter_dict(optional_fields, keep=["source", "attributes"])
         if key_path and key_path[-1] == "shapes":
