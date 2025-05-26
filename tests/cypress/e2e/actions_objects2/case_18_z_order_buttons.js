@@ -3,8 +3,6 @@ import { taskName, labelName } from '../../support/const';
 
 describe('Z-order button actions', () => {
     const performZOrderAction = (actionSelector, expectedZOrder) => {
-        cy.wait(500);
-
         cy.get('#cvat-objects-sidebar-state-item-1', { timeout: 3000 })
             .find('.cvat-object-item-menu-button')
             .click();
