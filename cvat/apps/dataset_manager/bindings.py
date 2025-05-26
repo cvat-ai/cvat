@@ -1090,10 +1090,8 @@ class ProjectData(InstanceLabelData):
 
     def _init_tasks(self):
         self._db_tasks: OrderedDict[int, Task] = OrderedDict(
-            (
-                (db_task.id, db_task)
-                for db_task in self._db_project.tasks.exclude(data=None).order_by("subset","id").all()
-            )
+            (db_task.id, db_task)
+            for db_task in self._db_project.tasks.exclude(data=None).order_by("subset","id").all()
         )
 
         subsets = set()

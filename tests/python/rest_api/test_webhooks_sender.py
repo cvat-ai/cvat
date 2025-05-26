@@ -280,17 +280,15 @@ class TestWebhookIntersection:
 class TestWebhookTaskEvents:
     def test_webhook_update_task_assignee(self, users, tasks):
         task_id, project_id = next(
-            (
-                (task["id"], task["project_id"])
-                for task in tasks
-                if task["project_id"] is not None
-                and task["organization"] is None
-                and task["assignee"] is not None
-            )
+            (task["id"], task["project_id"])
+            for task in tasks
+            if task["project_id"] is not None
+            and task["organization"] is None
+            and task["assignee"] is not None
         )
 
         assignee_id = next(
-            (user["id"] for user in users if user["id"] != tasks[task_id]["assignee"]["id"])
+            user["id"] for user in users if user["id"] != tasks[task_id]["assignee"]["id"]
         )
 
         webhook_id = create_webhook(["update:task"], "project", project_id=project_id)["id"]
@@ -363,11 +361,9 @@ class TestWebhookTaskEvents:
 class TestWebhookJobEvents:
     def test_webhook_update_job_assignee(self, jobs, tasks, users):
         job = next(
-            (
-                job
-                for job in jobs
-                if job["assignee"] is None and tasks[job["task_id"]]["organization"] is not None
-            )
+            job
+            for job in jobs
+            if job["assignee"] is None and tasks[job["task_id"]]["organization"] is not None
         )
 
         org_id = tasks[job["task_id"]]["organization"]
@@ -386,7 +382,7 @@ class TestWebhookJobEvents:
 
     def test_webhook_update_job_stage(self, jobs, tasks):
         stages = {"annotation", "validation", "acceptance"}
-        job = next((job for job in jobs if tasks[job["task_id"]]["organization"] is not None))
+        job = next(job for job in jobs if tasks[job["task_id"]]["organization"] is not None)
 
         org_id = tasks[job["task_id"]]["organization"]
 
@@ -404,12 +400,9 @@ class TestWebhookJobEvents:
     def test_webhook_update_job_state(self, jobs, tasks):
         states = {"new", "in progress", "rejected", "completed"}
         job = next(
-            (
-                job
-                for job in jobs
-                if tasks[job["task_id"]]["organization"] is not None
-                and job["state"] == "in progress"
-            )
+            job
+            for job in jobs
+            if tasks[job["task_id"]]["organization"] is not None and job["state"] == "in progress"
         )
 
         org_id = tasks[job["task_id"]]["organization"]
@@ -430,11 +423,9 @@ class TestWebhookJobEvents:
 class TestWebhookIssueEvents:
     def test_webhook_update_issue_resolved(self, issues, jobs, tasks):
         issue = next(
-            (
-                issue
-                for issue in issues
-                if tasks[jobs[issue["job"]]["task_id"]]["organization"] is not None
-            )
+            issue
+            for issue in issues
+            if tasks[jobs[issue["job"]]["task_id"]]["organization"] is not None
         )
 
         org_id = tasks[jobs[issue["job"]]["task_id"]]["organization"]
@@ -453,11 +444,9 @@ class TestWebhookIssueEvents:
 
     def test_webhook_update_issue_position(self, issues, jobs, tasks):
         issue = next(
-            (
-                issue
-                for issue in issues
-                if tasks[jobs[issue["job"]]["task_id"]]["organization"] is not None
-            )
+            issue
+            for issue in issues
+            if tasks[jobs[issue["job"]]["task_id"]]["organization"] is not None
         )
 
         org_id = tasks[jobs[issue["job"]]["task_id"]]["organization"]
@@ -476,9 +465,7 @@ class TestWebhookIssueEvents:
 
     def test_webhook_create_and_delete_issue(self, organizations, jobs, tasks):
         org_id = list(organizations)[0]["id"]
-        job_id = next(
-            (job["id"] for job in jobs if tasks[job["task_id"]]["organization"] == org_id)
-        )
+        job_id = next(job["id"] for job in jobs if tasks[job["task_id"]]["organization"] == org_id)
         events = ["create:issue", "delete:issue"]
 
         webhook = create_webhook(events, "organization", org_id=org_id)
@@ -527,9 +514,7 @@ class TestWebhookMembershipEvents:
     def test_webhook_update_membership_role(self, memberships):
         roles = {"worker", "supervisor", "maintainer"}
 
-        membership = next(
-            (membership for membership in memberships if membership["role"] != "owner")
-        )
+        membership = next(membership for membership in memberships if membership["role"] != "owner")
         org_id = membership["organization"]
 
         webhook_id = create_webhook(["update:membership"], "organization", org_id=org_id)["id"]
@@ -547,9 +532,7 @@ class TestWebhookMembershipEvents:
         assert payload["membership"]["role"] == patch_data["role"]
 
     def test_webhook_delete_membership(self, memberships):
-        membership = next(
-            (membership for membership in memberships if membership["role"] != "owner")
-        )
+        membership = next(membership for membership in memberships if membership["role"] != "owner")
         org_id = membership["organization"]
 
         webhook_id = create_webhook(["delete:membership"], "organization", org_id=org_id)["id"]
@@ -624,11 +607,9 @@ class TestWebhookCommentEvents:
 
     def test_webhook_create_and_delete_comment(self, issues, jobs, tasks):
         issue = next(
-            (
-                issue
-                for issue in issues
-                if tasks[jobs[issue["job"]]["task_id"]]["organization"] is not None
-            )
+            issue
+            for issue in issues
+            if tasks[jobs[issue["job"]]["task_id"]]["organization"] is not None
         )
 
         org_id = tasks[jobs[issue["job"]]["task_id"]]["organization"]

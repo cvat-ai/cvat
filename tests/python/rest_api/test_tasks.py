@@ -5319,14 +5319,12 @@ class TestPatchTask:
         find_users,
     ):
         username, task_id = next(
-            (
-                (user["username"], task["id"])
-                for user in find_users(role=role, exclude_privilege="admin")
-                for task in tasks
-                if task["organization"] == user["org"]
-                and not task["project_id"]
-                and task["owner"]["id"] != user["id"]
-            )
+            (user["username"], task["id"])
+            for user in find_users(role=role, exclude_privilege="admin")
+            for task in tasks
+            if task["organization"] == user["org"]
+            and not task["project_id"]
+            and task["owner"]["id"] != user["id"]
         )
 
         self._test_patch_linked_storage(

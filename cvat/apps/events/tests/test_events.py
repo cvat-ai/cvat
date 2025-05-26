@@ -46,7 +46,7 @@ class WorkingTimeTestCase(unittest.TestCase):
             data_copy["events"] = [event]
             event_working_time = compute_working_time_per_ids(data_copy)
             for working_time in event_working_time.values():
-                working_times.append((working_time["value"] // WORKING_TIME_RESOLUTION))
+                working_times.append(working_time["value"] // WORKING_TIME_RESOLUTION)
             if data_copy["previous_event"] and is_contained(event, data_copy["previous_event"]):
                 continue
             data_copy["previous_event"] = event

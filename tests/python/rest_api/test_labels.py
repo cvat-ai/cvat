@@ -680,11 +680,9 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
     def test_can_patch_attribute_name(self, source: str, admin_user: str):
         source_key = self._get_source_info(source).label_source_key
         label = next(
-            (
-                l
-                for l in self.labels
-                if l.get(source_key) and not l["has_parent"] and l.get("attributes")
-            )
+            l
+            for l in self.labels
+            if l.get(source_key) and not l["has_parent"] and l.get("attributes")
         )
 
         attributes = deepcopy(label["attributes"])

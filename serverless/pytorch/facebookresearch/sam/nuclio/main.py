@@ -23,7 +23,7 @@ def handler(context, event):
     features = context.user_data.model.handle(image)
 
     return context.Response(body=json.dumps({
-            'blob': base64.b64encode((features.cpu().numpy() if features.is_cuda else features.numpy())).decode(),
+            'blob': base64.b64encode(features.cpu().numpy() if features.is_cuda else features.numpy()).decode(),
         }),
         headers={},
         content_type='application/json',
