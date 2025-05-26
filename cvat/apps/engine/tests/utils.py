@@ -665,7 +665,8 @@ def compare_objects(
         elif defaults and callable(defaults):
             current_key_defaults = defaults(current_key) or {}
 
-        for k in (obj1.keys() | obj2.keys() | current_key_defaults.keys()) - set(ignore_keys):
+        keys_to_check = (obj1.keys() | obj2.keys() | current_key_defaults.keys()) - set(ignore_keys)
+        for k in keys_to_check:
             compare_objects(
                 self,
                 obj1[k] if not k in current_key_defaults else obj1.get(k, current_key_defaults[k]),
@@ -738,7 +739,7 @@ def check_annotation_response(
     expected_values: dict | None = None,
     ignore_keys: Sequence[str] = frozenset(("id", "version")),
 ) -> None | NoReturn:
-    OPTIONAL_FIELDS = dict(
+    optional_fields = dict(
         source="manual",
         occluded=False,
         outside=False,
@@ -746,17 +747,22 @@ def check_annotation_response(
         rotation=0,
         attributes=[],
         elements=[],
-    )  # if omitted, are set by the server
-    # https://docs.cvat.ai/docs/api_sdk/sdk/reference/models/labeled-shape/
+    )   # if omitted, are set by the server
+        # https://docs.cvat.ai/docs/api_sdk/sdk/reference/models/labeled-shape/
 
     if expected_values is not None:
+        optional_fields['source'] = expected_values.get('source') or optional_fields['source']
+        # the only field with a variable default
 
         def put_expected_values(v: Any) -> Any:
             if isinstance(v, dict):
                 v.update(filter_dict(expected_values, keep=v.keys() & expected_values.keys()))
 
                 for k, vv in v.items():
-                    v[k] = put_expected_values(vv)
+                    if k != 'attributes':
+                        v[k] = put_expected_values(vv)
+                        # Attributes don't have optional fields with default values
+                        # https://docs.cvat.ai/docs/api_sdk/sdk/reference/models/attribute/
             if isinstance(v, list):
                 v = [put_expected_values(item) for item in v]
             if isinstance(v, tuple):
@@ -770,11 +776,13 @@ def check_annotation_response(
         return "points" in key_path
 
     def _key_defaults(key_path: list[str]) -> dict | None:
+        if key_path == []:
+            return filter_dict(optional_fields, keep=["source"])
         if key_path and key_path[-1] == "tags":
-            return filter_dict(OPTIONAL_FIELDS, keep=["group", "source", "attributes"])
+            return filter_dict(optional_fields, keep=["group", "source", "attributes"])
         if key_path and key_path[-1] == "shapes":
             return filter_dict(
-                OPTIONAL_FIELDS,
+                optional_fields,
                 keep=[
                     "occluded",
                     "outside",
@@ -787,12 +795,13 @@ def check_annotation_response(
                 ],
             )
         if key_path and key_path[-1] == "tracks":
-            return filter_dict(OPTIONAL_FIELDS, keep=["group", "source", "attributes", "elements"])
+            return filter_dict(optional_fields, keep=["group", "source",
+             "attributes", "elements"])
         if key_path and _format_key(key_path).endswith("tracks.elements"):
-            return filter_dict(OPTIONAL_FIELDS, keep=["group", "source", "attributes"])
+            return filter_dict(optional_fields, keep=["group", "source", "attributes"])
         if key_path and _format_key(key_path).endswith("tracks.elements.shapes"):
             return filter_dict(
-                OPTIONAL_FIELDS, keep=["occluded", "outside", "z_order", "rotation", "attributes"]
+                optional_fields, keep=["occluded", "outside", "z_order", "rotation", "attributes"]
             )
 
         return None
