@@ -19,7 +19,7 @@ objects (polygons and masks) to track them forward for a specified number of fra
 > **Note**: This feature is not available in the community CVAT version.
 
 > **Note**: This feature requires the enhanced actions UI plugin, which is enabled by default.
-Usually, no additional steps are necessary on this.
+> Usually, no additional steps are necessary on this.
 
 ### Docker
 

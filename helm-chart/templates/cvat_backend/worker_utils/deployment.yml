@@ -23,10 +23,7 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      {{- include "cvat.labels" . | nindent 6 }}
-      {{- with merge $localValues.labels .Values.cvat.backend.labels }}
-      {{- toYaml . | nindent 6 }}
-      {{- end }}
+      {{- include "cvat.selectorLabels" . | nindent 6 }}
       app: cvat-app
       tier: backend
       component: worker-utils

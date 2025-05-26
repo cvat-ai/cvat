@@ -5,7 +5,7 @@ weight: 18
 description: 'This section explains how to delete and restore a frame from a task.'
 ---
 
-# Delete frame
+## Delete frame
 
 You can delete the current frame from a task.
 This frame will not be presented either in the UI or in the exported annotation.
@@ -27,7 +27,7 @@ Thus, it is possible to mark corrupted frames that are not subject to annotation
    - Add keyframes at the edges of the deleted interval for the interpolation to look correct;
    - Move the keyframe start or end keyframe to the correct side of the deleted interval.
 
-# Configure deleted frames visibility and navigation
+## Configure deleted frames visibility and navigation
 
 If you need to enable showing the deleted frames, you can do it in the settings.
 
@@ -49,7 +49,7 @@ If you need to enable showing the deleted frames, you can do it in the settings.
 
 1. Navigation with step will not count deleted frames.
 
-# Restore deleted frame
+## Restore deleted frame
 
 You can also restore deleted frames in the task.
 
@@ -58,4 +58,4 @@ You can also restore deleted frames in the task.
 
    ![](/images/image248.jpg)
 
-2. Click on the **Restore** icon. The frame will be restored immediately.
+1. Click on the **Restore** icon. The frame will be restored immediately.

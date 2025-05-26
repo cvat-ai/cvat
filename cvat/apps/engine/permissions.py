@@ -12,9 +12,8 @@ from typing import TYPE_CHECKING, Any, Optional, Union, cast
 from django.conf import settings
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied, ValidationError
-from rq.job import Job as RQJob
 
-from cvat.apps.engine.rq import RQId, is_rq_job_owner
+from cvat.apps.engine.rq import ExportRequestId
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import is_dataset_export
 from cvat.apps.iam.permissions import (
@@ -48,16 +47,19 @@ def _get_key(d: dict[str, Any], key_path: Union[str, Sequence[str]]) -> Optional
     return d
 
 class DownloadExportedExtension:
-    rq_job_id: RQId | None
+    rq_job_id: ExportRequestId | None
 
     class Scopes(StrEnum):
         DOWNLOAD_EXPORTED_FILE = 'download:exported_file'
 
     @staticmethod
     def extend_params_with_rq_job_details(*, request: ExtendedRequest, params: dict[str, Any]) -> None:
+        # prevent importing from partially initialized module
+        from cvat.apps.redis_handler.background import AbstractExporter
+
         if rq_id := request.query_params.get("rq_id"):
             try:
-                params["rq_job_id"] = RQId.parse(rq_id)
+                params["rq_job_id"] = ExportRequestId.parse_and_validate_queue(rq_id, expected_queue=AbstractExporter.QUEUE_NAME, try_legacy_format=True)
                 return
             except Exception:
                 raise ValidationError("Unexpected request id format")
@@ -508,7 +510,7 @@ class TaskPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
     def create_scope_view(cls, request: ExtendedRequest, task: int | Task, iam_context: dict[str, Any] | None = None):
         if isinstance(task, int):
             try:
-                task = Task.objects.get(id=task)
+                task = Task.objects.select_related("organization").get(id=task)
             except Task.DoesNotExist as ex:
                 raise ValidationError(str(ex))
 
@@ -1250,41 +1252,6 @@ class GuideAssetPermission(OpenPolicyAgentPermission):
             'retrieve': Scopes.VIEW,
         }[view.action]]
 
-
-class RequestPermission(OpenPolicyAgentPermission):
-    class Scopes(StrEnum):
-        LIST = 'list'
-        VIEW = 'view'
-        CANCEL = 'cancel'
-
-    @classmethod
-    def create(cls, request: ExtendedRequest, view: ViewSet, obj: RQJob | None, iam_context: dict) -> list[OpenPolicyAgentPermission]:
-        permissions = []
-        if view.basename == 'request':
-            for scope in cls.get_scopes(request, view, obj):
-                if scope != cls.Scopes.LIST:
-                    user_id = request.user.id
-                    if not is_rq_job_owner(obj, user_id):
-                        raise PermissionDenied('You don\'t have permission to perform this action')
-
-        return permissions
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.url = settings.IAM_OPA_DATA_URL + '/requests/allow'
-
-    @classmethod
-    def _get_scopes(cls, request: ExtendedRequest, view: ViewSet, obj: RQJob | None) -> list[Scopes]:
-        Scopes = cls.Scopes
-        return [{
-            ('list', 'GET'): Scopes.LIST,
-            ('retrieve', 'GET'): Scopes.VIEW,
-            ('cancel', 'POST'): Scopes.CANCEL,
-        }[(view.action, request.method)]]
-
-
-    def get_resource(self):
-        return None
 
 def get_cloud_storage_for_import_or_export(
     storage_id: int, *, request: ExtendedRequest, is_default: bool = False

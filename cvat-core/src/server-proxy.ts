@@ -204,6 +204,13 @@ function generateError(errorData: AxiosError): ServerError {
             }
 
             if (typeof errorData.response.data === 'object') {
+                if ('rq_id' in errorData.response.data) {
+                    return new ServerError(
+                        `A request with this identifier is already being processed (${errorData.response.data.rq_id})`,
+                        errorData.response.status,
+                    );
+                }
+
                 const generalFields = ['non_field_errors', 'detail', 'message'];
                 const generalFieldsHelpers = {
                     'Invalid token.': 'Not authenticated request, try to login again',
@@ -611,6 +618,57 @@ const defaultRequestConfig = {
     fetchAll: false,
 };
 
+async function getRequestsList(): Promise<PaginatedResource<SerializedRequest>> {
+    const { backendAPI } = config;
+    const params = enableOrganization();
+
+    try {
+        const response = await fetchAll(`${backendAPI}/requests`, params);
+
+        return response.results;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+// Temporary solution for server availability problems
+const retryTimeouts = [5000, 10000, 15000];
+async function getRequestStatus(rqID: string): Promise<SerializedRequest> {
+    const { backendAPI } = config;
+    let retryCount = 0;
+    let lastError = null;
+
+    while (retryCount < 3) {
+        try {
+            const response = await Axios.get(`${backendAPI}/requests/${rqID}`);
+
+            return response.data;
+        } catch (errorData) {
+            lastError = generateError(errorData);
+            const { response } = errorData;
+            if (response && [502, 503, 504].includes(response.status)) {
+                const timeout = retryTimeouts[retryCount];
+                await new Promise((resolve) => { setTimeout(resolve, timeout); });
+                retryCount++;
+            } else {
+                throw generateError(errorData);
+            }
+        }
+    }
+
+    throw lastError;
+}
+
+async function cancelRequest(requestID): Promise<void> {
+    const { backendAPI } = config;
+
+    try {
+        await Axios.post(`${backendAPI}/requests/${requestID}/cancel`);
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
 async function serverRequest(
     url: string, data: object,
     requestConfig: ServerRequestConfig = defaultRequestConfig,
@@ -712,10 +770,21 @@ async function createProject(projectSpec: SerializedProject): Promise<Serialized
     }
 }
 
-async function getTasks(filter: TasksFilter = {}): Promise<SerializedTask[] & { count: number }> {
+async function getTasks(
+    filter: TasksFilter = {},
+    aggregate?: boolean,
+): Promise<PaginatedResource<SerializedTask>> {
     const { backendAPI } = config;
     let response = null;
     try {
+        if (aggregate) {
+            response = await Axios.get(`${backendAPI}/tasks`, {
+                params: {
+                    ...filter,
+                },
+            });
+        }
+
         if ('id' in filter) {
             response = await Axios.get(`${backendAPI}/tasks/${filter.id}`);
             const results = [response.data];
@@ -723,13 +792,13 @@ async function getTasks(filter: TasksFilter = {}): Promise<SerializedTask[] & { 
                 value: 1,
             });
 
-            return results as SerializedTask[] & { count: number };
+            return results as PaginatedResource<SerializedTask>;
         }
 
         response = await Axios.get(`${backendAPI}/tasks`, {
             params: {
                 ...filter,
-                page_size: 10,
+                page_size: filter.page_size ?? 10,
             },
         });
     } catch (errorData) {
@@ -767,30 +836,19 @@ async function deleteTask(id: number, organizationID: string | null = null): Pro
     }
 }
 
-async function mergeConsensusJobs(id: number, instanceType: string): Promise<void> {
+async function mergeConsensusJobs(id: number, instanceType: string): Promise<string> {
     const { backendAPI } = config;
     const url = `${backendAPI}/consensus/merges`;
-    const params = {
-        rq_id: null,
-    };
-    const requestBody = {
-        task_id: undefined,
-        job_id: undefined,
-    };
+    const requestBody = (instanceType === 'task') ? { task_id: id } : { job_id: id };
 
-    if (instanceType === 'task') requestBody.task_id = id;
-    else requestBody.job_id = id;
-
-    return new Promise<void>((resolve, reject) => {
+    return new Promise<string>((resolve, reject) => {
         async function request() {
             try {
-                const response = await Axios.post(url, requestBody, { params });
-                params.rq_id = response.data.rq_id;
+                const response = await Axios.post(url, requestBody);
+                const rqID = response.data.rq_id;
                 const { status } = response;
                 if (status === 202) {
-                    setTimeout(request, 3000);
-                } else if (status === 201) {
-                    resolve();
+                    resolve(rqID);
                 } else {
                     reject(generateError(response));
                 }
@@ -2220,20 +2278,32 @@ async function createAsset(file: File, guideId: number): Promise<SerializedAsset
 
 async function getQualitySettings(
     filter: APIQualitySettingsFilter,
-): Promise<SerializedQualitySettingsData> {
+    aggregate?: boolean,
+): Promise<PaginatedResource<SerializedQualitySettingsData>> {
     const { backendAPI } = config;
 
+    let response = null;
     try {
-        const response = await Axios.get(`${backendAPI}/quality/settings`, {
-            params: {
-                ...filter,
-            },
-        });
-
-        return response.data.results[0];
+        if (aggregate) {
+            response = {
+                data: await fetchAll(`${backendAPI}/quality/settings`, {
+                    ...filter,
+                    ...enableOrganization(),
+                }),
+            };
+        } else {
+            response = await Axios.get(`${backendAPI}/quality/settings`, {
+                params: {
+                    ...filter,
+                },
+            });
+        }
     } catch (errorData) {
         throw generateError(errorData);
     }
+
+    response.data.results.count = response.data.count;
+    return response.data.results;
 }
 
 async function updateQualitySettings(
@@ -2310,72 +2380,32 @@ async function getQualityConflicts(
 
 async function getQualityReports(
     filter: APIQualityReportsFilter,
+    aggregate?: boolean,
 ): Promise<PaginatedResource<SerializedQualityReportData>> {
     const { backendAPI } = config;
 
+    let response = null;
     try {
-        const response = await Axios.get(`${backendAPI}/quality/reports`, {
-            params: {
-                ...filter,
-            },
-        });
-
-        response.data.results.count = response.data.count;
-        return response.data.results;
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
-async function getRequestsList(): Promise<PaginatedResource<SerializedRequest>> {
-    const { backendAPI } = config;
-    const params = enableOrganization();
-
-    try {
-        const response = await fetchAll(`${backendAPI}/requests`, params);
-
-        return response.results;
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
-// Temporary solution for server availability problems
-const retryTimeouts = [5000, 10000, 15000];
-async function getRequestStatus(rqID: string): Promise<SerializedRequest> {
-    const { backendAPI } = config;
-    let retryCount = 0;
-    let lastError = null;
-
-    while (retryCount < 3) {
-        try {
-            const response = await Axios.get(`${backendAPI}/requests/${rqID}`);
-
-            return response.data;
-        } catch (errorData) {
-            lastError = generateError(errorData);
-            const { response } = errorData;
-            if (response && [502, 503, 504].includes(response.status)) {
-                const timeout = retryTimeouts[retryCount];
-                await new Promise((resolve) => { setTimeout(resolve, timeout); });
-                retryCount++;
-            } else {
-                throw generateError(errorData);
-            }
+        if (aggregate) {
+            response = {
+                data: await fetchAll(`${backendAPI}/quality/reports`, {
+                    ...filter,
+                    ...enableOrganization(),
+                }),
+            };
+        } else {
+            response = await Axios.get(`${backendAPI}/quality/reports`, {
+                params: {
+                    ...filter,
+                },
+            });
         }
-    }
-
-    throw lastError;
-}
-
-async function cancelRequest(requestID): Promise<void> {
-    const { backendAPI } = config;
-
-    try {
-        await Axios.post(`${backendAPI}/requests/${requestID}/cancel`);
     } catch (errorData) {
         throw generateError(errorData);
     }
+
+    response.data.results.count = response.data.count;
+    return response.data.results;
 }
 
 export default Object.freeze({
