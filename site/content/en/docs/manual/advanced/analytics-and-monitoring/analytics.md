@@ -176,6 +176,15 @@ The **Events** tab displays the following metrics:
 > **Note**: All metrics are recalculated when you apply the date or table filter.
 
 The **Events** tab table contains the aggregated events for the selected resource.
+Each event is defined by a unique status signature, which is a combination of the
+job’s assignee, stage, state, and the user who performed the action.
+As long as this status signature stays the same, all events are combined into one row.
+For example, if the same user creates two objects in the same job,
+the **Events** table will display one event that includes both actions.
+
+However, if the job’s status signature changes (for example, due to an action
+performed by a different user) the analytics register a new event. As a result,
+actions that might otherwise be aggregated are instead recorded as separate events in the table.
 
 You can filter the events by date range:
 1. Select the date filter near the page title.
@@ -209,7 +218,7 @@ The events table columns:
 | **Assignee** | The job (**Job ID**) assignee when the event occurred. |
 | **Stage** | The stage of the job (**Job ID**) when the event occurred. |
 | **State** | The state of the job (**Job ID**) when the event occurred. |
-| **User** | The name of the user who triggered the event |
+| **User** | The name of the user who triggered the event. |
 | **Working time** | Displays the total time in milliseconds spent during the events. By default, the column is hidden. |
 | **Start UTC time** | UTC time when the event started. |
 | **End UTC time** | UTC time when the event finished. By default, the column is hidden. |
