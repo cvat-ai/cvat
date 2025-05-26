@@ -24,23 +24,14 @@ class Command(BaseCommand):
             for db_objects in take_by(
                 get_queryset().filter(content_size=None).iterator(), batch_size
             ):
-                try:
-                    db_objects = list(db_objects)
-                    if not db_objects:
-                        self.stdout.write(f"Finished for {Model.__name__}")
+                paths = [get_directory_path(db_object) for db_object in db_objects]
+                sizes = get_paths_sizes(paths)
+                for i, path in enumerate(paths):
+                    if isinstance(sizes[path], int):
+                        db_objects[i].content_size = sizes[path]
                     else:
-                        paths = [get_directory_path(db_object) for db_object in db_objects]
-                        sizes = get_paths_sizes(paths)
-                        for i, path in enumerate(paths):
-                            if isinstance(sizes[path], int):
-                                db_objects[i].content_size = sizes[path]
-                            else:
-                                self.stderr.write(
-                                    f"Failed to get size of {path}: {str(sizes[path])}"
-                                )
-                        Model.objects.bulk_update(db_objects, ["content_size"])
-                        total += len(db_objects)
-                        self.stdout.write(f"\tProcessed {total} objects")
-                except Exception as ex:
-                    self.stderr.write(f"Error occured during batch processing: {ex}")
-                    sys.exit(1)
+                        self.stderr.write(f"Failed to get size of {path}: {str(sizes[path])}")
+                Model.objects.bulk_update(db_objects, ["content_size"])
+                total += len(db_objects)
+                self.stdout.write(f"\tProcessed {total} objects")
+            self.stdout.write(f"Finished for {Model.__name__}")

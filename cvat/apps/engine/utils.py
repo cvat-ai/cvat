@@ -20,7 +20,7 @@ from contextlib import nullcontext, suppress
 from itertools import islice
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, TypeVar, Union
+from typing import Any, Callable, Optional, TypeVar, Union
 
 import cv2 as cv
 from attr.converters import to_bool
@@ -358,12 +358,12 @@ def take_by(iterable: Iterable[_T], chunk_size: int) -> Generator[list[_T], None
         yield batch
 
 
-def get_paths_sizes(paths: List[str]) -> Dict[str, int | ValueError | RuntimeError]:
+def get_paths_sizes(paths: list[str]) -> dict[str, int | ValueError | RuntimeError]:
     if not paths:
         return {}
 
     chunk_size = 100
-    sizes: Dict[str, int] = {}
+    sizes: dict[str, int] = {}
 
     for chunk in take_by(paths, chunk_size):
         # the function must not be called with uncontrolled input

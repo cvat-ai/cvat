@@ -3509,40 +3509,36 @@ class AssetWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     def write_asset(
         owner: User,
         guide_id: int,
-        bytes_or_file: bytes | UploadedFile,
-        basename: Optional[str] = None
+        asset_file: UploadedFile,
     ) -> AssetWriteSerializer:
         data = {
             "uuid": str(uuid.uuid4()),
-            "filename": get_valid_filename(basename if isinstance(bytes_or_file, bytes) else bytes_or_file.name)
+            "filename": asset_file.name,
         }
 
         dirname = os.path.join(settings.ASSETS_ROOT, data["uuid"])
         filename = os.path.join(dirname, data["filename"])
-        os.makedirs(dirname)
+        serializer = AssetWriteSerializer(data=data | {"guide_id": guide_id})
+        serializer.is_valid(raise_exception=True)
 
-        if isinstance(bytes_or_file, bytes):
-            with open(filename, 'wb') as destination:
-                destination.write(bytes_or_file)
-        else:
-            if bytes_or_file.content_type in ("image/jpeg", "image/png"):
-                image = Image.open(bytes_or_file)
+        try:
+            os.makedirs(dirname)
+            if asset_file.content_type in ("image/jpeg", "image/png"):
+                image = Image.open(asset_file)
                 if any(map(lambda x: x > settings.ASSET_MAX_IMAGE_SIZE, image.size)):
                     scale_factor = settings.ASSET_MAX_IMAGE_SIZE / max(image.size)
                     image = image.resize((map(lambda x: int(x * scale_factor), image.size)))
                 image.save(filename)
             else:
                 with open(filename, "wb") as destination:
-                    for chunk in bytes_or_file.chunks():
+                    for chunk in asset_file.chunks():
                         destination.write(chunk)
 
-        try:
             av_scan_paths(dirname)
             size_or_error = get_paths_sizes([dirname])[dirname]
             if not isinstance(size_or_error, int):
                 raise size_or_error
-            serializer = AssetWriteSerializer(data=data | {"guide_id": guide_id})
-            serializer.is_valid(raise_exception=True)
+
             serializer.save(content_size=size_or_error, owner=owner)
             return serializer
         except:

@@ -21,6 +21,7 @@ from zipfile import ZipFile
 import rapidjson
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
@@ -125,8 +126,11 @@ def _import_annotation_guide(owner, guide_data, assets):
         asset_serializer = AssetWriteSerializer.write_asset(
             owner,
             guide_serializer.instance.id,
-            data,
-            os.path.basename(name)
+            SimpleUploadedFile(
+                os.path.basename(name),
+                data,
+                mimetypes.guess_type(name)[0]
+            ),
         )
         markdown = markdown.replace(f'{name}', f'/api/assets/{asset_serializer.instance.pk}')
 
