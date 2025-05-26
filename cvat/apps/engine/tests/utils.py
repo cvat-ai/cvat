@@ -643,6 +643,7 @@ def compare_objects(
     obj2: Any,
     ignore_keys: Collection[str],
     *,
+    defaults: dict[str, Any] | Callable[[list[str]], dict | None] | None = None,
     fp_tolerance: float = 0.001,
     current_key: list[str] | str | None = None,
     check_order: bool | OrderStrategy = True,
@@ -657,12 +658,20 @@ def compare_objects(
 
     if isinstance(obj1, dict):
         self.assertTrue(isinstance(obj2, dict), error_msg.format(key_info, obj1, obj2))
-        for k in (obj1.keys() | obj2.keys()) - set(ignore_keys):
+
+        current_key_defaults = {}
+        if defaults and isinstance(defaults, dict):
+            current_key_defaults = defaults
+        elif defaults and callable(defaults):
+            current_key_defaults = defaults(current_key) or {}
+
+        for k in (obj1.keys() | obj2.keys() | current_key_defaults.keys()) - set(ignore_keys):
             compare_objects(
                 self,
-                obj1[k],
-                obj2[k],
+                obj1[k] if not k in current_key_defaults else obj1.get(k, current_key_defaults[k]),
+                obj2[k] if not k in current_key_defaults else obj2.get(k, current_key_defaults[k]),
                 ignore_keys,
+                defaults=defaults,
                 current_key=current_key + [k],
                 fp_tolerance=fp_tolerance,
                 check_order=check_order,
@@ -682,6 +691,7 @@ def compare_objects(
                     v1,
                     v2,
                     ignore_keys,
+                    defaults=defaults,
                     current_key=current_key,
                     fp_tolerance=fp_tolerance,
                     check_order=check_order,
@@ -695,6 +705,7 @@ def compare_objects(
                         a,
                         b,
                         ignore_keys,
+                        defaults=defaults,
                         current_key=current_key,
                         fp_tolerance=fp_tolerance,
                         check_order=check_order,
@@ -720,10 +731,12 @@ def compare_objects(
 
 
 def check_annotation_response(
-    self: TestCase, response: dict, data: dict,
+    self: TestCase,
+    response: dict,
+    data: dict,
     *,
     expected_values: dict | None = None,
-    ignore_keys: Sequence[str] = ("id", "version")
+    ignore_keys: Sequence[str] = frozenset(("id", "version")),
 ) -> None | NoReturn:
     OPTIONAL_FIELDS = dict(
         source="manual",
@@ -732,50 +745,65 @@ def check_annotation_response(
         z_order=0,
         rotation=0,
         attributes=[],
+        elements=[],
     )  # if omitted, are set by the server
     # https://docs.cvat.ai/docs/api_sdk/sdk/reference/models/labeled-shape/
-    # elements are handled separately
 
-    OPTIONAL_FIELDS_KEYS = list(OPTIONAL_FIELDS.keys())
-    ignore_keys = list(ignore_keys)
-    data = deepcopy(data)
+    if expected_values is not None:
+
+        def put_expected_values(v: Any) -> Any:
+            if isinstance(v, dict):
+                v.update(filter_dict(expected_values, keep=v.keys() & expected_values.keys()))
+
+                for k, vv in v.items():
+                    v[k] = put_expected_values(vv)
+            if isinstance(v, list):
+                v = [put_expected_values(item) for item in v]
+            if isinstance(v, tuple):
+                v = tuple(put_expected_values(item) for item in v)
+
+            return v
+
+        data = put_expected_values(deepcopy(data))
 
     def _check_order_in_annotations(key_path: list[str]) -> bool:
         return "points" in key_path
 
-    def _check_annos_optional_fields(self, annos1: list[dict], annos2: list[dict]) -> None | NoReturn:
-        for anno1, anno2 in zip(annos1, annos2):
-            check_optional_fields(self, anno1, anno2, OPTIONAL_FIELDS, expected_values=expected_values)
+    def _key_defaults(key_path: list[str]) -> dict | None:
+        if key_path and key_path[-1] == "tags":
+            return filter_dict(OPTIONAL_FIELDS, keep=["group", "source", "attributes"])
+        if key_path and key_path[-1] == "shapes":
+            return filter_dict(
+                OPTIONAL_FIELDS,
+                keep=[
+                    "occluded",
+                    "outside",
+                    "z_order",
+                    "rotation",
+                    "group",
+                    "source",
+                    "attributes",
+                    "elements",
+                ],
+            )
+        if key_path and key_path[-1] == "tracks":
+            return filter_dict(OPTIONAL_FIELDS, keep=["group", "source", "attributes", "elements"])
+        if key_path and _format_key(key_path).endswith("tracks.elements"):
+            return filter_dict(OPTIONAL_FIELDS, keep=["group", "source", "attributes"])
+        if key_path and _format_key(key_path).endswith("tracks.elements.shapes"):
+            return filter_dict(
+                OPTIONAL_FIELDS, keep=["occluded", "outside", "z_order", "rotation", "attributes"]
+            )
 
-    def check_elements(self) -> None | NoReturn:
-        response_elements = {
-            "shape_elements": [shape.pop("elements", []) for shape in response.data["shapes"]],
-            "track_elements": [track.pop("elements", []) for track in response.data["tracks"]],
-        }
-        data_elements = {
-            "shape_elements": [shape.pop("elements", []) for shape in data["shapes"]],
-            "track_elements": [track.pop("elements", []) for track in data["tracks"]],
-        }
-        for element_list1, element_list2 in zip(response_elements.values(), data_elements.values()):
-            for elements1, elements2 in zip(element_list1, element_list2):
-                _check_annos_optional_fields(self, elements1, elements2)
-        compare_objects(
-            self,
-            response_elements,
-            data_elements,
-            ignore_keys + OPTIONAL_FIELDS_KEYS,
-            check_order=_check_order_in_annotations,
-        )
+        return None
 
     try:
-        check_elements(self)
-        for anno_type in ('shapes', 'tracks', 'tags'):
-            _check_annos_optional_fields(self, response.data[anno_type], data[anno_type])
         compare_objects(
             self,
             response.data,
             data,
-            ignore_keys + OPTIONAL_FIELDS_KEYS,
+            ignore_keys=ignore_keys,
+            defaults=_key_defaults,
             check_order=_check_order_in_annotations,
         )
     except AssertionError as e:
