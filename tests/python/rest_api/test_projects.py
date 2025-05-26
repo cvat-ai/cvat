@@ -111,13 +111,11 @@ class TestGetProjects:
         self, projects, is_project_staff, find_users, role
     ):
         user, pid = next(
-            (
-                (user, project["id"])
-                for user in find_users(role=role, exclude_privilege="admin")
-                for project in projects
-                if project["organization"] == user["org"]
-                and not is_project_staff(user["id"], project["id"])
-            )
+            (user, project["id"])
+            for user in find_users(role=role, exclude_privilege="admin")
+            for project in projects
+            if project["organization"] == user["org"]
+            and not is_project_staff(user["id"], project["id"])
         )
 
         self._test_response_403(user["username"], pid)
@@ -127,13 +125,11 @@ class TestGetProjects:
         self, find_users, projects, is_project_staff, role
     ):
         user, pid = next(
-            (
-                (user, project["id"])
-                for user in find_users(role=role, exclude_privilege="admin")
-                for project in projects
-                if project["organization"] == user["org"]
-                and not is_project_staff(user["id"], project["id"])
-            )
+            (user, project["id"])
+            for user in find_users(role=role, exclude_privilege="admin")
+            for project in projects
+            if project["organization"] == user["org"]
+            and not is_project_staff(user["id"], project["id"])
         )
 
         self._test_response_200(user["username"], pid)
@@ -143,13 +139,11 @@ class TestGetProjects:
         self, projects, find_users, is_project_staff, role
     ):
         user, pid = next(
-            (
-                (user, project["id"])
-                for user in find_users(role=role, exclude_privilege="admin")
-                for project in projects
-                if project["organization"] == user["org"]
-                and is_project_staff(user["id"], project["id"])
-            )
+            (user, project["id"])
+            for user in find_users(role=role, exclude_privilege="admin")
+            for project in projects
+            if project["organization"] == user["org"]
+            and is_project_staff(user["id"], project["id"])
         )
 
         self._test_response_200(user["username"], pid)
@@ -384,7 +378,7 @@ class TestGetPostProjectBackup:
         self._test_can_get_project_backup("admin1", project["id"])
 
     def test_can_get_backup_for_empty_project(self):
-        empty_project = next((p for p in self.projects if 0 == p["tasks"]["count"]))
+        empty_project = next(p for p in self.projects if 0 == p["tasks"]["count"])
         self._test_can_get_project_backup("admin1", empty_project["id"])
 
     def test_admin_can_get_project_backup_and_create_project_by_backup(self, admin_user: str):
@@ -1354,13 +1348,11 @@ class TestGetProjectPreview:
         self, projects, is_project_staff, find_users, role
     ):
         user, pid = next(
-            (
-                (user, project["id"])
-                for user in find_users(role=role, exclude_privilege="admin")
-                for project in projects
-                if project["organization"] == user["org"]
-                and not is_project_staff(user["id"], project["id"])
-            )
+            (user, project["id"])
+            for user in find_users(role=role, exclude_privilege="admin")
+            for project in projects
+            if project["organization"] == user["org"]
+            and not is_project_staff(user["id"], project["id"])
         )
 
         self._test_response_403(user["username"], pid)
@@ -1370,14 +1362,12 @@ class TestGetProjectPreview:
         self, find_users, projects, is_project_staff, role
     ):
         user, pid = next(
-            (
-                (user, project["id"])
-                for user in find_users(role=role, exclude_privilege="admin")
-                for project in projects
-                if project["organization"] == user["org"]
-                and not is_project_staff(user["id"], project["id"])
-                and project["tasks"]["count"] > 0
-            )
+            (user, project["id"])
+            for user in find_users(role=role, exclude_privilege="admin")
+            for project in projects
+            if project["organization"] == user["org"]
+            and not is_project_staff(user["id"], project["id"])
+            and project["tasks"]["count"] > 0
         )
 
         self._test_response_200(user["username"], pid)
