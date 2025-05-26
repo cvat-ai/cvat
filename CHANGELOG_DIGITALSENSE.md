@@ -20,6 +20,8 @@ Created startup.sh file which builds CVAT container and all nuclio functions lis
 Created script to upload data to cvat via the CVAT API
 - Folder Mounting [PR #8]
 Created docker-compose.override.yml file, in this case to mount folders o cvat
+    [PR #9]
+    Modified startup.sh to support docker-compose.override.yml file
 
 ### Changed
 - N/A
