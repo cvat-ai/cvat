@@ -27,7 +27,6 @@ from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
 from django.db.models import Prefetch, prefetch_related_objects
 from django.utils import timezone
-from django.utils.text import get_valid_filename
 from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
 from numpy import random
 from PIL import Image
