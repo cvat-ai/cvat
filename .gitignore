@@ -9,7 +9,6 @@
 /profiles
 
 # Ignore temporary files
-docker-compose.override.yml
 __pycache__
 *.pyc
 ._*

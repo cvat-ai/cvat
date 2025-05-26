@@ -16,15 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Patchcore [PR #4]
 - Models on startup [PR #5]
 Created startup.sh file which builds CVAT container and all nuclio functions listed in serverless/cpu_functions.txt andserverless/gpu_functions.txt. Created deploy_array_cpu.sh and deploy_array_gpu.sh bash files that serve the same purpose as orignal deploy_array_{}.sh but take as argument a .txt file with all function paths.
-- API data upload [PR #7]
-Created script to upload data to cvat via the CVAT API
-- Folder Mounting [PR #8]
-Created docker-compose.override.yml file, in this case to mount folders o cvat
-    [PR #9]
-    Modified startup.sh to support docker-compose.override.yml file
+- Created script to upload data to cvat via the CVAT API [PR #7]
+- Created docker-compose.override.yml file, in this case to mount folders on cvat [PR #8]
+- Add ports for default tracking models TransT and SiamMask [PR #10]
 
 ### Changed
-- N/A
+- Modified startup.sh to support docker-compose.override.yml file [PR #9]
 
 ### Deprecated
 - N/A
