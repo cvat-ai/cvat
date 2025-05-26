@@ -7,8 +7,8 @@ from typing import Optional, Union, cast
 
 from django.conf import settings
 
-from cvat.apps.engine.models import Project, Task
-from cvat.apps.engine.permissions import ProjectPermission, TaskPermission
+from cvat.apps.engine.models import Job, Project, Task
+from cvat.apps.engine.permissions import JobPermission, ProjectPermission, TaskPermission
 from cvat.apps.engine.view_utils import get_or_404
 from cvat.apps.iam.permissions import OpenPolicyAgentPermission, StrEnum, get_iam_context
 
@@ -40,22 +40,10 @@ class QualityReportPermission(OpenPolicyAgentPermission):
         if isinstance(report, int):
             report = get_or_404(QualityReport, report)
 
-        # Access rights are the same as in the owning object
-        # This component doesn't define its own rules in this case
-        if task := report.get_task():
-            return TaskPermission.create_scope_view(
-                request,
-                task=task,
-                iam_context=iam_context,
-            )
-        elif project := report.project:
-            return ProjectPermission.create_scope_view(
-                request,
-                project=project,
-                iam_context=iam_context,
-            )
-        else:
-            assert False
+        if not iam_context and request:
+            iam_context = get_iam_context(request, None)
+
+        return cls(**iam_context, scope=cls.Scopes.VIEW, obj=report)
 
     @classmethod
     def create(cls, request, view, obj, iam_context):
@@ -66,6 +54,8 @@ class QualityReportPermission(OpenPolicyAgentPermission):
             for scope in cls.get_scopes(request, view, obj):
                 if scope == Scopes.VIEW:
                     permissions.append(cls.create_scope_view(request, obj, iam_context=iam_context))
+                elif scope == Scopes.LIST and isinstance(obj, Job):
+                    permissions.append(JobPermission.create_scope_view(request, obj))
                 elif scope == Scopes.LIST and isinstance(obj, Task):
                     permissions.append(TaskPermission.create_scope_view(request, obj))
                 elif scope == Scopes.LIST and isinstance(obj, Project):

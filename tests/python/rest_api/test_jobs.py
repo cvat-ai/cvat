@@ -1469,25 +1469,21 @@ class TestJobDataset:
 
     def test_non_admin_can_export_dataset(self, users, jobs_with_shapes):
         job, username = next(
-            (
-                (job, self.tasks[job["task_id"]]["owner"]["username"])
-                for job in jobs_with_shapes
-                if "admin" not in users[self.tasks[job["task_id"]]["owner"]["id"]]["groups"]
-                and self.tasks[job["task_id"]]["target_storage"] is None
-                and self.tasks[job["task_id"]]["organization"] is None
-            )
+            (job, self.tasks[job["task_id"]]["owner"]["username"])
+            for job in jobs_with_shapes
+            if "admin" not in users[self.tasks[job["task_id"]]["owner"]["id"]]["groups"]
+            and self.tasks[job["task_id"]]["target_storage"] is None
+            and self.tasks[job["task_id"]]["organization"] is None
         )
         self._test_export_dataset(username, job["id"])
 
     def test_non_admin_can_export_annotations(self, users, jobs_with_shapes):
         job, username = next(
-            (
-                (job, self.tasks[job["task_id"]]["owner"]["username"])
-                for job in jobs_with_shapes
-                if "admin" not in users[self.tasks[job["task_id"]]["owner"]["id"]]["groups"]
-                and self.tasks[job["task_id"]]["target_storage"] is None
-                and self.tasks[job["task_id"]]["organization"] is None
-            )
+            (job, self.tasks[job["task_id"]]["owner"]["username"])
+            for job in jobs_with_shapes
+            if "admin" not in users[self.tasks[job["task_id"]]["owner"]["id"]]["groups"]
+            and self.tasks[job["task_id"]]["target_storage"] is None
+            and self.tasks[job["task_id"]]["organization"] is None
         )
 
         self._test_export_annotations(username, job["id"])

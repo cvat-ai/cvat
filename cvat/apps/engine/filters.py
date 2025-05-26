@@ -344,9 +344,9 @@ class SimpleFilter(DjangoFilterBackend):
             parameter = {
                 'name': field_name,
                 'in': 'query',
-                'description': force_str(self.filter_desc.format_map({
-                    'field_name': filter_.label if filter_.label is not None else field_name
-                })),
+                'description': force_str(self.filter_desc.format(
+                    field_name=filter_.label if filter_.label is not None else field_name
+                )),
                 'schema': parameter_schema,
             }
             if filter_.extra and 'choices' in filter_.extra:
@@ -402,9 +402,9 @@ class NonModelSimpleFilter(SimpleFilter, _NestedAttributeHandler):
                 parameter = {
                     'name': filter_name,
                     'in': 'query',
-                    'description': force_str(self.filter_desc.format_map({
-                        'field_name': filter_name
-                    })),
+                    'description': force_str(self.filter_desc.format(
+                        field_name=filter_name
+                    )),
                     'schema': {
                         'type': filter_type
                     },

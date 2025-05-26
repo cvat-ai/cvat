@@ -2582,7 +2582,7 @@ class DatasetComparator:
 
 class QualityReportRQJobManager(AbstractRequestManager):
     QUEUE_NAME = settings.CVAT_QUEUES.QUALITY_REPORTS.value
-    SUPPORTED_TARGETS: ClassVar[set[RequestTarget]] = {RequestTarget.TASK}
+    SUPPORTED_TARGETS: ClassVar[set[RequestTarget]] = {RequestTarget.TASK, RequestTarget.PROJECT}
 
     @property
     def job_result_ttl(self):
