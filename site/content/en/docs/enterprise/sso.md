@@ -14,7 +14,7 @@ To configure SSO, complete the following 2 main steps:
 
 If the application is already configured, refer to the [Configuring SSO in CVAT](#configuring-sso-in-cvat) section.
 Otherwise, you may follow one of the detailed platform-specific guides to set up such an application:
-- [Microsoft Entra ID](#microsoft-entra-id)
+- [Microsoft Azure](#microsoft-azure)
 - [Okta](#okta)
 - [Auth0](#auth0)
 - [keycloak](#keycloak)
@@ -63,7 +63,7 @@ Additionally, each IdP configuration must include several protocol-specific para
 
 **NOTE**: There is a global setting that applies to all configured OIDC-based Identity Providers:
 `enable_pkce`. This option controls whether `Proof Key for Code Exchange` (PKCE) is enabled for
-the authentication flow.
+the authentication flow (disabled by default).
 ```yaml
 ---
 sso:
@@ -112,7 +112,7 @@ Below are simple examples of SSO configuration file for both protocols:
       name: SMAL-based IdP
       entity_id: <idp-entity-id>
       email_domain: example.com
-      # specify metadata_url or sso_url and x509_cert
+      # specify only metadata_url or sso_url and x509_cert
       metadata_url: http://example.com/path/to/saml/metadata/
       sso_url: <Login URL>
       x509_cert: |
@@ -141,6 +141,7 @@ export CVAT_BASE_URL="<http|https>://${CVAT_HOST}:<cvat_port>"
 
 Start the CVAT enterprise instance as usual.
 That's it! On the CVAT login page, you should now see the option `Continue with SSO`.
+
 ![](/images/sso_enabled.jpeg)
 
 More information about OIDC-based and SAML-based IdP configuration expected by Django Allauth
@@ -149,10 +150,10 @@ and [here](https://docs.allauth.org/en/latest/socialaccount/providers/saml.html)
 
 
 ## Platform specific IdP configuration
-### Microsoft Entra ID
+### Microsoft Azure
 
 #### OpenId Connect
-Follow these steps to configure an application on the `Azure` platform:
+Follow these steps to configure an application on the `Microsoft Azure` platform:
 
 ##### **Step 1: Register an OIDC-based Application**
 
@@ -214,7 +215,7 @@ After running CVAT with updated config file, users will be able to authenticate 
 
 #### SAML
 
-Follow these steps to configure an application on the `Azure` platform:
+Follow these steps to configure an application on the `Microsoft Azure` platform:
 
 ##### **Step 1: Register an SAML-based Application**
 
