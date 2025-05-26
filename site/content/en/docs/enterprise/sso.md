@@ -658,7 +658,6 @@ You’ve now created an app, but a few more steps are needed to finalize the con
 
 1. Navigate to the general settings of the created client, scroll down to the `SAML capabilities` section.
 1. Update the following parameters:
-   <!-- (TODO: probably need to keep it undefined, other providers work) -->
    - `Name ID format`: email
    - `Force name ID format`: `On`
 1. Navigate to the `Keys` tab and enable the `Client signature required` toggle.
