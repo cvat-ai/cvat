@@ -744,7 +744,7 @@ def check_annotation_response(
         if key_path == []:
             return filter_dict(optional_fields, keep=["source"])
         if key_path and key_path[-1] == "tags":
-            return filter_dict(optional_fields, keep=["group", "source", "attributes"])
+            return filter_dict(optional_fields, keep=["source", "attributes"])
         if key_path and key_path[-1] == "shapes":
             return filter_dict(
                 optional_fields,
@@ -753,17 +753,16 @@ def check_annotation_response(
                     "outside",
                     "z_order",
                     "rotation",
-                    "group",
                     "source",
                     "attributes",
                     "elements",
                 ],
             )
         if key_path and key_path[-1] == "tracks":
-            return filter_dict(optional_fields, keep=["group", "source",
+            return filter_dict(optional_fields, keep=["source",
              "attributes", "elements"])
         if key_path and _format_key(key_path).endswith("tracks.elements"):
-            return filter_dict(optional_fields, keep=["group", "source", "attributes"])
+            return filter_dict(optional_fields, keep=["source", "attributes"])
         if key_path and _format_key(key_path).endswith("tracks.elements.shapes"):
             return filter_dict(
                 optional_fields, keep=["occluded", "outside", "z_order", "rotation", "attributes"]
