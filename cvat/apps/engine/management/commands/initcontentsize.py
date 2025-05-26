@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import sys
-
 from django.core.management.base import BaseCommand
 
 from cvat.apps.engine.models import Asset, Data
