@@ -3505,6 +3505,11 @@ class AssetWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     owner_id = serializers.IntegerField(required=True)
     guide_id = serializers.IntegerField(required=True)
 
+    def validate_asset_file(self, value):
+        if not isinstance(value, UploadedFile):
+            raise serializers.ValidationError("Invalid asset_file type. Expected an UploadedFile instance.")
+        return value
+
     def create(self, validated_data):
         asset_file = validated_data.pop("asset_file")
         asset_uuid = validated_data.get("uuid")
