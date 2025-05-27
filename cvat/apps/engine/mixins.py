@@ -9,6 +9,7 @@ import base64
 import json
 import os
 import os.path
+import shutil
 from functools import cached_property
 from pathlib import Path
 from textwrap import dedent
@@ -17,7 +18,6 @@ from typing import Any, ClassVar
 from unittest import mock
 from urllib.parse import urljoin
 from uuid import UUID, uuid4
-import shutil
 
 import attrs
 import django_rq
@@ -28,11 +28,11 @@ from rest_framework import mixins, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from cvat.apps.dataset_manager.util import TmpDirManager
 from cvat.apps.engine.background import BackupExporter, DatasetExporter
 from cvat.apps.engine.handlers import clear_import_cache
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import Location
-from cvat.apps.dataset_manager.util import TmpDirManager
 from cvat.apps.engine.serializers import DataSerializer
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.redis_handler.serializers import RqIdSerializer
