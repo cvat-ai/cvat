@@ -10,6 +10,7 @@ from functools import reduce
 from textwrap import dedent
 from typing import Any, Optional
 
+from django.db import models
 from django.db.models import Q
 from django.db.models.query import QuerySet
 from django.utils.encoding import force_str
@@ -307,6 +308,24 @@ class SimpleFilter(DjangoFilterBackend):
             class Meta(MetaBase): # pylint: disable=useless-object-inheritance
                 model = queryset.model
                 fields = list(lookup_fields.values())
+                filter_overrides = {
+                    # By default, ForeignKey fields correspond to ModelChoiceFilter.
+                    # The problem with that is that when DRF renders the browsable API,
+                    # it generates a filter form with a widget for every filter,
+                    # which for a ModelChoiceFilter is a dropdown with all possible values.
+                    # These values are determined by the filter's queryset,
+                    # which defaults to <Model>.objects.all().
+                    # As a result, the form leaks the string representation of every object
+                    # of the referenced model to all users who can view it.
+                    # To prevent that, we override the filter class,
+                    # so that a simple numeric input widget is used instead.
+                    models.ForeignKey: {"filter_class": djf.NumberFilter},
+                    # ManyToManyField corresponds to ModelMultipleChoiceFilter,
+                    # which exhibits the same problem.
+                    # There's no "NumberMultipleChoiceFilter" we could use,
+                    # so we just disable automatic filter generation for such fields.
+                    models.ManyToManyField: {"filter_class": None},
+                }
 
         return AutoFilterSet
 
