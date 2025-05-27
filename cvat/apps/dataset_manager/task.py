@@ -937,8 +937,8 @@ class TaskAnnotation:
         self.reset()
 
         for db_job in self.db_jobs.select_for_update():
-            if db_job.type == models.JobType.GROUND_TRUTH and not (
-                self.db_task.data.validation_mode == models.ValidationMode.GT_POOL
+            if db_job.type == models.JobType.GROUND_TRUTH and (
+                self.db_task.data.validation_mode != models.ValidationMode.GT_POOL
             ):
                 continue
 
