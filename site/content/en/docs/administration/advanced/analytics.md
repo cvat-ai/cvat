@@ -233,7 +233,7 @@ For example, to fetch all events associated with a specific job,
 the following `curl` command can be used:
 
 ```bash
-curl --user 'user:pass' -X POST https://app.cvat.ai/api/events?job_id=123
+curl --user 'user:pass' -X POST https://app.cvat.ai/api/events/export
 ```
 
 In the response, you will receive a query ID:
