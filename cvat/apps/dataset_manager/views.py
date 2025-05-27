@@ -59,7 +59,10 @@ EXPORT_CACHE_LOCK_TTL = timedelta(seconds=settings.EXPORT_CACHE_LOCK_TTL)
 EXPORT_LOCKED_RETRY_INTERVAL = timedelta(seconds=settings.EXPORT_LOCKED_RETRY_INTERVAL)
 
 
-def get_export_cache_ttl(db_instance: str | Project | Task | Job) -> timedelta:
+def get_export_cache_ttl(db_instance: str | Project | Task | Job | None = None) -> timedelta:
+    if not db_instance:
+        return DEFAULT_CACHE_TTL
+
     if isinstance(db_instance, (Project, Task, Job)):
         db_instance = db_instance.__class__.__name__
 

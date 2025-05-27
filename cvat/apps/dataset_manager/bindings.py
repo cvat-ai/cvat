@@ -14,7 +14,7 @@ from functools import partial, reduce
 from operator import add
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any, Callable, Dict, Literal, NamedTuple, Optional, Union
+from typing import Any, Callable, Literal, NamedTuple, Optional, Union
 
 import attr
 import datumaro as dm
@@ -23,7 +23,6 @@ import defusedxml.ElementTree as ET
 import rq
 from attr import attrib, attrs
 from attrs.converters import to_bool
-from datumaro.components.dataset_base import IDataset, StreamingDatasetBase, StreamingSubsetBase
 from datumaro.components.format_detection import RejectionReason
 from django.conf import settings
 from django.db.models import Prefetch, QuerySet
@@ -45,6 +44,7 @@ from cvat.apps.engine.models import (
     Project,
     SegmentType,
     ShapeType,
+    SourceType,
     Task,
 )
 from cvat.apps.engine.rq import ImportRQMeta
@@ -1090,10 +1090,8 @@ class ProjectData(InstanceLabelData):
 
     def _init_tasks(self):
         self._db_tasks: OrderedDict[int, Task] = OrderedDict(
-            (
-                (db_task.id, db_task)
-                for db_task in self._db_project.tasks.exclude(data=None).order_by("subset","id").all()
-            )
+            (db_task.id, db_task)
+            for db_task in self._db_project.tasks.exclude(data=None).order_by("subset","id").all()
         )
 
         subsets = set()
@@ -1748,10 +1746,10 @@ class CvatDataExtractorBase(CVATDataExtractorMixin):
         return dm_item
 
 
-class CvatTaskOrJobDataExtractor(StreamingSubsetBase, CvatDataExtractorBase):
+class CvatTaskOrJobDataExtractor(dm.SubsetBase, CvatDataExtractorBase):
     def __init__(self, *args, **kwargs):
         CvatDataExtractorBase.__init__(self, *args, **kwargs)
-        StreamingSubsetBase.__init__(
+        dm.SubsetBase.__init__(
             self,
             media_type=dm.Image if self._dimension == DimensionType.DIM_2D else dm.PointCloud,
             subset=self._instance_meta['subset'],
@@ -1797,21 +1795,21 @@ class CvatTaskOrJobDataExtractor(StreamingSubsetBase, CvatDataExtractorBase):
     def categories(self):
         return self._categories
 
+    @property
+    def is_stream(self) -> bool:
+        return True
 
-class CVATProjectDataExtractor(StreamingDatasetBase, CvatDataExtractorBase):
+
+class CVATProjectDataExtractor(dm.DatasetBase, CvatDataExtractorBase):
     def __init__(self, *args, **kwargs):
         CvatDataExtractorBase.__init__(self, *args, **kwargs)
 
-        self._frame_data_by_subset: Dict[str, list[ProjectData.Frame]] = {}
-        for frame_data in self._instance_data.group_by_frame(include_empty=True):
-            if frame_data.subset not in self._frame_data_by_subset:
-                self._frame_data_by_subset[frame_data.subset] = []
-            self._frame_data_by_subset[frame_data.subset].append(frame_data)
+        self._grouped_by_frame = list(self._instance_data.group_by_frame(include_empty=True))
 
-        StreamingDatasetBase.__init__(
+        dm.DatasetBase.__init__(
             self,
-            length=sum(len(v) for v in self._frame_data_by_subset.values()),
-            subsets=list(self._frame_data_by_subset.keys()),
+            length=len(self._grouped_by_frame),
+            subsets=list(set(frame_data.subset for frame_data in self._grouped_by_frame)),
             media_type=dm.Image if self._dimension == DimensionType.DIM_2D else dm.PointCloud,
         )
         self._categories = self.load_categories(self._instance_meta['labels'])
@@ -1830,27 +1828,18 @@ class CVATProjectDataExtractor(StreamingDatasetBase, CvatDataExtractorBase):
             ],
         )
 
-    def get_subset(self, name) -> IDataset:
-        class Subset(StreamingSubsetBase):
-            def __iter__(_):
-                for frame_data in self._frame_data_by_subset[name]:
-                    # do not keep parsed lazy list data after this iteration
-                    frame_data = self.copy_frame_data_with_replaced_lazy_lists(frame_data)
-                    yield self._process_one_frame_data(frame_data)
-
-            def __len__(_):
-                return len(self._frame_data_by_subset[name])
-
-            def categories(_):
-                return self.categories()
-
-        return Subset(
-            subset=name,
-            media_type=dm.Image if self._dimension == DimensionType.DIM_2D else dm.PointCloud,
-        )
+    def __iter__(self):
+        for frame_data in self._grouped_by_frame:
+            # do not keep parsed lazy list data after this iteration
+            frame_data = self.copy_frame_data_with_replaced_lazy_lists(frame_data)
+            yield self._process_one_frame_data(frame_data)
 
     def categories(self):
         return self._categories
+
+    @property
+    def is_stream(self) -> bool:
+        return True
 
 
 def GetCVATDataExtractor(
@@ -2187,7 +2176,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
         dm.AnnotationType.ellipse: ShapeType.ELLIPSE,
     }
 
-    sources = {'auto', 'semi-auto', 'manual', 'file', 'consensus'}
+    sources = set(SourceType)
 
     track_formats = [
         'cvat',
@@ -2278,7 +2267,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
 
                     track_id = ann.attributes.pop('track_id', None)
                     source = ann.attributes.pop('source').lower() \
-                        if ann.attributes.get('source', '').lower() in sources else 'manual'
+                        if ann.attributes.get('source', '').lower() in sources else SourceType.FILE
 
                     shape_type = shapes[ann.type]
                     if track_id is None or 'keyframe' not in ann.attributes or dm_dataset.format not in track_formats:
@@ -2292,7 +2281,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                                 element_occluded = element.visibility[0] == dm.Points.Visibility.hidden
                                 element_outside = element.visibility[0] == dm.Points.Visibility.absent
                                 element_source = element.attributes.pop('source').lower() \
-                                    if element.attributes.get('source', '').lower() in sources else 'manual'
+                                    if element.attributes.get('source', '').lower() in sources else SourceType.FILE
                                 elements.append(instance_data.LabeledShape(
                                     type=shapes[element.type],
                                     frame=frame_number,
@@ -2364,7 +2353,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                                     for n, v in element.attributes.items()
                                 ]
                                 element_source = element.attributes.pop('source').lower() \
-                                    if element.attributes.get('source', '').lower() in sources else 'manual'
+                                    if element.attributes.get('source', '').lower() in sources else SourceType.FILE
 
                                 tracks[track_id]['elements'][element.label].shapes.append(instance_data.TrackedShape(
                                     type=shapes[element.type],
@@ -2383,7 +2372,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                         frame=frame_number,
                         label=label_cat.items[ann.label].name,
                         group=group_map.get(ann.group, 0),
-                        source='manual',
+                        source=SourceType.FILE,
                         attributes=attributes,
                     ))
             except Exception as e:

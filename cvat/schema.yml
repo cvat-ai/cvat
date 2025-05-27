@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.37.0
+  version: 2.38.0
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -22,11 +22,8 @@ paths:
         content:
           multipart/form-data:
             schema:
-              type: object
-              properties:
-                file:
-                  type: string
-                  format: binary
+              $ref: '#/components/schemas/AssetWriteRequest'
+        required: true
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -964,13 +961,6 @@ paths:
     post:
       operationId: consensus_create_merge
       summary: Create a consensus merge
-      parameters:
-      - in: query
-        name: rq_id
-        schema:
-          type: string
-        description: |
-          The consensus merge request id. Can be specified to check operation status.
       tags:
       - consensus
       requestBody:
@@ -985,8 +975,6 @@ paths:
       - signatureAuth: []
       - basicAuth: []
       responses:
-        '201':
-          description: No response body
         '202':
           content:
             application/vnd.cvat+json:
@@ -994,9 +982,7 @@ paths:
                 $ref: '#/components/schemas/RqId'
           description: |
             A consensus merge request has been enqueued, the request id is returned.
-            The request status can be checked at this endpoint by passing the rq_id
-            as the query parameter. If the request id is specified, this response
-            means the consensus merge request is queued or is being processed.
+            The request status can be checked by using common requests API: GET /api/requests/<rq_id>
         '400':
           description: Invalid or failed request, check the response data for details
   /api/consensus/settings:
@@ -1200,6 +1186,7 @@ paths:
         tokenAuth: []
       - signatureAuth: []
       - basicAuth: []
+      deprecated: true
       responses:
         '200':
           description: Download of file started
@@ -1247,6 +1234,82 @@ paths:
             application/vnd.cvat+json:
               schema:
                 $ref: '#/components/schemas/ClientEvents'
+          description: ''
+  /api/events/export:
+    post:
+      operationId: events_create_export
+      summary: Initiate a process to export events
+      parameters:
+      - in: query
+        name: cloud_storage_id
+        schema:
+          type: integer
+        description: Storage id
+      - in: query
+        name: filename
+        schema:
+          type: string
+        description: Desired output file name
+      - in: query
+        name: from
+        schema:
+          type: string
+          format: date-time
+        description: UTC start date for events filtration. Default is the minimal
+          time.
+      - in: query
+        name: job_id
+        schema:
+          type: integer
+        description: Filter events by job ID
+      - in: query
+        name: location
+        schema:
+          type: string
+          enum:
+          - cloud_storage
+          - local
+        description: Where need to save events file
+      - in: query
+        name: org_id
+        schema:
+          type: integer
+        description: Filter events by organization ID
+      - in: query
+        name: project_id
+        schema:
+          type: integer
+        description: Filter events by project ID
+      - in: query
+        name: task_id
+        schema:
+          type: integer
+        description: Filter events by task ID
+      - in: query
+        name: to
+        schema:
+          type: string
+          format: date-time
+        description: UTC end date for events filtration. Default is the current time.
+      - in: query
+        name: user_id
+        schema:
+          type: integer
+        description: Filter events by user ID
+      tags:
+      - events
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '202':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
           description: ''
   /api/guides:
     post:
@@ -2293,66 +2356,24 @@ paths:
           description: Format is not available
     put:
       operationId: jobs_update_annotations
-      description: |2
-
-        Utilizing this endpoint to check status of the import process is deprecated
-        in favor of the new requests API:
-        GET /api/requests/<rq_id>, where `rq_id` parameter is returned in the response
-        on initializing request.
-      summary: Replace job annotations / Get annotation import status
+      summary: Replace job annotations
       parameters:
-      - in: query
-        name: cloud_storage_id
-        schema:
-          type: integer
-        description: Storage id
-        deprecated: true
-      - in: query
-        name: filename
-        schema:
-          type: string
-        description: Annotation file name
-        deprecated: true
-      - in: query
-        name: format
-        schema:
-          type: string
-        description: |-
-          Input format name
-          You can get the list of supported formats at:
-          /server/annotation/formats
-        deprecated: true
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this job.
         required: true
-      - in: query
-        name: location
-        schema:
-          type: string
-          enum:
-          - cloud_storage
-          - local
-        description: where to import the annotation from
-        deprecated: true
-      - in: query
-        name: rq_id
-        schema:
-          type: string
-        description: rq id
-        deprecated: true
       tags:
       - jobs
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/JobAnnotationsUpdateRequest'
+              $ref: '#/components/schemas/LabeledDataRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/JobAnnotationsUpdateRequest'
+              $ref: '#/components/schemas/LabeledDataRequest'
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -2360,12 +2381,8 @@ paths:
       - signatureAuth: []
       - basicAuth: []
       responses:
-        '201':
-          description: Import has finished
-        '202':
-          description: Import is in progress
-        '405':
-          description: Format is not available
+        '200':
+          description: Annotations have been replaced
     patch:
       operationId: jobs_partial_update_annotations
       summary: Update job annotations
@@ -3716,83 +3733,6 @@ paths:
           description: The backup process has already been initiated and is not yet
             finished
   /api/projects/{id}/dataset/:
-    get:
-      operationId: projects_retrieve_dataset
-      description: |2
-
-        Utilizing this endpoint to check the status of the process
-        of importing a project dataset from a file is deprecated.
-        In addition, this endpoint no longer handles the project dataset export process.
-
-        Consider using new API:
-        - `POST /api/projects/<project_id>/dataset/export/?save_images=True` to initiate export process
-        - `GET /api/requests/<rq_id>` to check process status
-        - `GET result_url` to download a prepared file
-
-        Where:
-        - `rq_id` can be found in the response on initializing request
-        - `result_url` can be found in the response on checking status request
-      summary: Check dataset import status
-      parameters:
-      - in: query
-        name: action
-        schema:
-          type: string
-          enum:
-          - import_status
-        description: Used to check the import status
-        deprecated: true
-      - in: query
-        name: cloud_storage_id
-        schema:
-          type: integer
-        description: This parameter is no longer supported
-        deprecated: true
-      - in: query
-        name: filename
-        schema:
-          type: string
-        description: This parameter is no longer supported
-        deprecated: true
-      - in: query
-        name: format
-        schema:
-          type: string
-        description: This parameter is no longer supported
-        deprecated: true
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this project.
-        required: true
-      - in: query
-        name: location
-        schema:
-          type: string
-          enum:
-          - cloud_storage
-          - local
-        description: This parameter is no longer supported
-        deprecated: true
-      - in: query
-        name: rq_id
-        schema:
-          type: string
-        description: This parameter is no longer supported
-        required: true
-      tags:
-      - projects
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      deprecated: true
-      responses:
-        '410':
-          description: API endpoint no longer supports exporting datasets
     post:
       operationId: projects_create_dataset
       description: |2
@@ -3834,24 +3774,16 @@ paths:
           - cloud_storage
           - local
         description: Where to import the dataset from
-      - in: query
-        name: use_default_location
-        schema:
-          type: boolean
-          default: true
-        description: Use the location that was configured in the project to import
-          annotations
-        deprecated: true
       tags:
       - projects
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/DatasetWriteRequest'
+              $ref: '#/components/schemas/DatasetFileRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/DatasetWriteRequest'
+              $ref: '#/components/schemas/DatasetFileRequest'
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -3971,14 +3903,14 @@ paths:
 
         The backup import process is as follows:
 
-        The first request POST /api/projects/backup will initiate file upload and will create
-        the rq job on the server in which the process of a project creating from an uploaded backup
-        will be carried out.
+        The first request POST /api/projects/backup schedules a background job on the server
+        in which the process of creating a project from the uploaded backup is carried out.
 
-        After initiating the backup upload, you will receive an rq_id parameter.
-        Make sure to include this parameter as a query parameter in your subsequent requests
-        to track the status of the project creation.
-        Once the project has been successfully created, the server will return the id of the newly created project.
+        To check the status of the import process, use GET /api/requests/rq_id,
+        where rq_id is the request ID obtained from the response to the previous request.
+
+        Once the import completes successfully, the response will contain the ID
+        of the newly created project in the result_id field.
       summary: Recreate a project from a backup
       parameters:
       - in: header
@@ -4015,21 +3947,16 @@ paths:
         schema:
           type: integer
         description: Organization identifier
-      - in: query
-        name: rq_id
-        schema:
-          type: string
-        description: rq id
       tags:
       - projects
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BackupWriteRequest'
+              $ref: '#/components/schemas/ProjectFileRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/BackupWriteRequest'
+              $ref: '#/components/schemas/ProjectFileRequest'
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -4037,14 +3964,12 @@ paths:
       - signatureAuth: []
       - basicAuth: []
       responses:
-        '201':
-          description: The project has been imported
         '202':
           content:
             application/vnd.cvat+json:
               schema:
                 $ref: '#/components/schemas/RqId'
-          description: Importing a backup file has been started
+          description: Import of the backup file has started
   /api/quality/conflicts:
     get:
       operationId: quality_list_conflicts
@@ -4278,6 +4203,9 @@ paths:
           description: ''
     post:
       operationId: quality_create_report
+      description: |
+        Deprecation warning: Utilizing this endpoint to check the computation status is no longer possible.
+        Consider using common requests API: GET /api/requests/<rq_id>
       summary: Create a quality report
       parameters:
       - in: query
@@ -4287,6 +4215,7 @@ paths:
         description: |
           The report creation request id. Can be specified to check the report
           creation status.
+        deprecated: true
       tags:
       - quality
       requestBody:
@@ -4534,11 +4463,6 @@ paths:
         description: A simple equality filter for the action field
         schema:
           type: string
-          enum:
-          - autoannotate
-          - create
-          - import
-          - export
       - name: filter
         required: false
         in: query
@@ -4605,19 +4529,11 @@ paths:
         description: A simple equality filter for the subresource field
         schema:
           type: string
-          enum:
-          - annotations
-          - dataset
-          - backup
       - name: target
         in: query
         description: A simple equality filter for the target field
         schema:
           type: string
-          enum:
-          - project
-          - task
-          - job
       - name: task_id
         in: query
         description: A simple equality filter for the task_id field
@@ -5192,61 +5108,14 @@ paths:
   /api/tasks/{id}/annotations/:
     get:
       operationId: tasks_retrieve_annotations
-      description: |
-        Deprecation warning:
-
-        Utilizing this endpoint to export annotations as a dataset in
-        a specific format is no longer possible.
-
-        Consider using new API:
-        - `POST /api/tasks/<task_id>/dataset/export?save_images=False` to initiate export process
-        - `GET /api/requests/<rq_id>` to check process status,
-            where `rq_id` is request id returned on initializing request
-        - `GET result_url` to download a prepared file,
-            where `result_url` can be found in the response on checking status request
       summary: Get task annotations
       parameters:
-      - in: query
-        name: action
-        schema:
-          type: string
-          enum:
-          - download
-        description: This parameter is no longer supported
-        deprecated: true
-      - in: query
-        name: cloud_storage_id
-        schema:
-          type: integer
-        description: This parameter is no longer supported
-        deprecated: true
-      - in: query
-        name: filename
-        schema:
-          type: string
-        description: This parameter is no longer supported
-        deprecated: true
-      - in: query
-        name: format
-        schema:
-          type: string
-        description: This parameter is no longer supported
-        deprecated: true
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this task.
         required: true
-      - in: query
-        name: location
-        schema:
-          type: string
-          enum:
-          - cloud_storage
-          - local
-        description: This parameter is no longer supported
-        deprecated: true
       tags:
       - tasks
       security:
@@ -5320,10 +5189,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TaskAnnotationsWriteRequest'
+              $ref: '#/components/schemas/AnnotationFileRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/TaskAnnotationsWriteRequest'
+              $ref: '#/components/schemas/AnnotationFileRequest'
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -5343,46 +5212,24 @@ paths:
           description: Format is not available
     put:
       operationId: tasks_update_annotations
-      description: |2
-
-        Utilizing this endpoint to check status of the import process is deprecated
-        in favor of the new requests API:
-
-        GET /api/requests/<rq_id>, where `rq_id` parameter is returned in the response
-        on initializing request.
-      summary: Replace task annotations / Get annotation import status
+      summary: Replace task annotations
       parameters:
-      - in: query
-        name: format
-        schema:
-          type: string
-        description: |-
-          Input format name
-          You can get the list of supported formats at:
-          /server/annotation/formats
-        deprecated: true
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this task.
         required: true
-      - in: query
-        name: rq_id
-        schema:
-          type: string
-        description: rq id
-        deprecated: true
       tags:
       - tasks
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TaskAnnotationsUpdateRequest'
+              $ref: '#/components/schemas/LabeledDataRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/TaskAnnotationsUpdateRequest'
+              $ref: '#/components/schemas/LabeledDataRequest'
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -5390,12 +5237,8 @@ paths:
       - signatureAuth: []
       - basicAuth: []
       responses:
-        '201':
-          description: Import has finished
-        '202':
-          description: Import is in progress
-        '405':
-          description: Format is not available
+        '200':
+          description: Annotations have been replaced
     patch:
       operationId: tasks_partial_update_annotations
       summary: Update task annotations
@@ -5946,14 +5789,14 @@ paths:
 
         The backup import process is as follows:
 
-        The first request POST /api/tasks/backup will initiate file upload and will create
-        the rq job on the server in which the process of a task creating from an uploaded backup
-        will be carried out.
+        The first request POST /api/tasks/backup creates a background job on the server
+        in which the process of a task creating from an uploaded backup is carried out.
 
-        After initiating the backup upload, you will receive an rq_id parameter.
-        Make sure to include this parameter as a query parameter in your subsequent requests
-        to track the status of the task creation.
-        Once the task has been successfully created, the server will return the id of the newly created task.
+        To check the status of the import process, use GET /api/requests/rq_id,
+        where rq_id is the request ID obtained from the response to the previous request.
+
+        Once the import completes successfully, the response will contain the ID
+        of the newly created task in the result_id field.
       summary: Recreate a task from a backup
       parameters:
       - in: header
@@ -5990,11 +5833,6 @@ paths:
         schema:
           type: integer
         description: Organization identifier
-      - in: query
-        name: rq_id
-        schema:
-          type: string
-        description: rq id
       tags:
       - tasks
       requestBody:
@@ -6012,14 +5850,12 @@ paths:
       - signatureAuth: []
       - basicAuth: []
       responses:
-        '201':
-          description: The task has been imported
         '202':
           content:
             application/vnd.cvat+json:
               schema:
                 $ref: '#/components/schemas/RqId'
-          description: Importing a backup file has been started
+          description: Import of the backup file has started
   /api/users:
     get:
       operationId: users_list
@@ -6792,6 +6628,18 @@ components:
           readOnly: true
       required:
       - filename
+    AssetWriteRequest:
+      type: object
+      properties:
+        guide_id:
+          type: integer
+        file:
+          type: string
+          format: binary
+          writeOnly: true
+      required:
+      - file
+      - guide_id
     Attribute:
       type: object
       properties:
@@ -6865,10 +6713,6 @@ components:
       required:
       - spec_id
       - value
-    BackupWriteRequest:
-      oneOf:
-      - $ref: '#/components/schemas/ProjectFileRequest'
-      nullable: true
     BasicOrganization:
       type: object
       properties:
@@ -7441,10 +7285,6 @@ components:
       required:
       - exporters
       - importers
-    DatasetWriteRequest:
-      oneOf:
-      - $ref: '#/components/schemas/DatasetFileRequest'
-      nullable: true
     Event:
       type: object
       properties:
@@ -7912,10 +7752,6 @@ components:
         count:
           type: integer
           readOnly: true
-    JobAnnotationsUpdateRequest:
-      oneOf:
-      - $ref: '#/components/schemas/LabeledDataRequest'
-      - $ref: '#/components/schemas/AnnotationFileRequest'
     JobRead:
       type: object
       properties:
@@ -10316,7 +10152,7 @@ components:
         type:
           type: string
         target:
-          $ref: '#/components/schemas/RequestDataOperationTargetEnum'
+          type: string
         project_id:
           type: integer
           nullable: true
@@ -10335,16 +10171,6 @@ components:
       required:
       - target
       - type
-    RequestDataOperationTargetEnum:
-      enum:
-      - project
-      - task
-      - job
-      type: string
-      description: |-
-        * `project` - Project
-        * `task` - Task
-        * `job` - Job
     RequestStatus:
       enum:
       - queued
@@ -10745,15 +10571,6 @@ components:
           type: boolean
       required:
       - name
-    TaskAnnotationsUpdateRequest:
-      oneOf:
-      - $ref: '#/components/schemas/LabeledDataRequest'
-      - $ref: '#/components/schemas/AnnotationFileRequest'
-      nullable: true
-    TaskAnnotationsWriteRequest:
-      oneOf:
-      - $ref: '#/components/schemas/AnnotationFileRequest'
-      nullable: true
     TaskFileRequest:
       type: object
       properties:

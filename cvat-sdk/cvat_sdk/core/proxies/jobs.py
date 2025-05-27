@@ -42,7 +42,6 @@ class Job(
     ExportDatasetMixin,
 ):
     _model_partial_update_arg = "patched_job_write_request"
-    _put_annotations_data_param = "job_annotations_update_request"
 
     def import_annotations(
         self,

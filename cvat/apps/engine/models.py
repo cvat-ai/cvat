@@ -291,6 +291,7 @@ class ValidationLayout(models.Model):
 class Data(models.Model):
     MANIFEST_FILENAME: ClassVar[str] = 'manifest.jsonl'
 
+    content_size = models.PositiveBigIntegerField(null=True)
     chunk_size = models.PositiveIntegerField(null=True)
     size = models.PositiveIntegerField(default=0)
     image_quality = models.PositiveSmallIntegerField(default=50)
@@ -1102,6 +1103,7 @@ class SourceType(str, Enum):
     SEMI_AUTO = 'semi-auto'
     MANUAL = 'manual'
     FILE = 'file'
+    CONSENSUS = 'consensus'
 
     @classmethod
     def choices(cls):
@@ -1283,6 +1285,10 @@ class Location(str, Enum):
     def list(cls):
         return [i.value for i in cls]
 
+    @classmethod
+    def _missing_(cls, value):
+        raise ValueError(f"The specified location {value!r} is not supported")
+
 class CloudStorage(TimestampedModel):
     # restrictions:
     # AWS bucket name, Azure container name - 63, Google bucket name - 63 without dots and 222 with dots
@@ -1361,6 +1367,7 @@ class Asset(models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
     owner = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="assets")
     guide = models.ForeignKey(AnnotationGuide, on_delete=models.CASCADE, related_name="assets")
+    content_size = models.PositiveBigIntegerField(null=True)
 
     @property
     def organization_id(self):
@@ -1368,12 +1375,6 @@ class Asset(models.Model):
 
     def get_asset_dir(self):
         return os.path.join(settings.ASSETS_ROOT, str(self.uuid))
-
-class RequestStatus(TextChoices):
-    QUEUED = "queued"
-    STARTED = "started"
-    FAILED = "failed"
-    FINISHED = "finished"
 
 class RequestAction(TextChoices):
     AUTOANNOTATE = "autoannotate"
