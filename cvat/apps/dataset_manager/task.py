@@ -942,12 +942,12 @@ class TaskAnnotation:
             ):
                 continue
 
-            gt_annotation = JobAnnotation(db_job.id, db_job=db_job)
-            gt_annotation.init_from_db()
-            if gt_annotation.ir_data.version > self.ir_data.version:
-                self.ir_data.version = gt_annotation.ir_data.version
+            annotation = JobAnnotation(db_job.id, db_job=db_job)
+            annotation.init_from_db()
+            if annotation.ir_data.version > self.ir_data.version:
+                self.ir_data.version = annotation.ir_data.version
 
-            self._merge_data(gt_annotation.ir_data, start_frame=db_job.segment.start_frame)
+            self._merge_data(annotation.ir_data, start_frame=db_job.segment.start_frame)
 
     def export(
         self,
