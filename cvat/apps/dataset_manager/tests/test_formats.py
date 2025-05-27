@@ -448,10 +448,7 @@ class TaskExportTest(_DbTestBase):
         images = self._generate_task_images(3)
         images["frame_filter"] = "step=2"
         task = self._generate_task(images)
-        task_data = TaskData(
-            AnnotationIR("2d"),
-            Task.objects.get(pk=task["id"]),
-        )
+        task_data = TaskData(AnnotationIR("2d"), Task.objects.get(pk=task["id"]))
 
         with self.assertRaisesRegex(ValueError, r"Unknown"):
             task_data.rel_frame_id(1)  # the task has only 0 and 2 frames
