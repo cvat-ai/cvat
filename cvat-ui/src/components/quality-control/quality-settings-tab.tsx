@@ -43,7 +43,7 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
     const onSave = useCallback(async () => {
         if (settings) {
             const values = await form.validateFields();
-            const fields = {
+            const fields: QualitySettingsSaveFields = {
                 targetMetric: values.targetMetric,
                 targetMetricThreshold: values.targetMetricThreshold / 100,
                 maxValidationsPerJob: values.maxValidationsPerJob,
@@ -55,7 +55,7 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
                 pointSizeBase: values.pointSizeBase,
                 lineThickness: values.lineThickness / 100,
                 lineOrientationThreshold: values.lineOrientationThreshold / 100,
-                orientedLines: values.orientedLines,
+                compareLineOrientation: values.compareLineOrientation,
                 compareGroups: values.compareGroups,
                 groupMatchThreshold: values.groupMatchThreshold / 100,
                 checkCoveredAnnotations: values.checkCoveredAnnotations,
