@@ -5,7 +5,7 @@
 from django.core.management.base import BaseCommand
 
 from cvat.apps.engine.models import Asset, Data
-from cvat.apps.engine.utils import get_paths_sizes, take_by
+from cvat.apps.engine.utils import get_path_size, take_by
 
 
 class Command(BaseCommand):
@@ -22,13 +22,12 @@ class Command(BaseCommand):
             for db_objects in take_by(
                 get_queryset().filter(content_size=None).iterator(), batch_size
             ):
-                paths = [get_directory_path(db_object) for db_object in db_objects]
-                sizes = get_paths_sizes(paths)
-                for i, path in enumerate(paths):
-                    if isinstance(sizes[path], int):
-                        db_objects[i].content_size = sizes[path]
-                    else:
-                        self.stderr.write(f"Failed to get size of {path}: {str(sizes[path])}")
+                for db_object in db_objects:
+                    try:
+                        path = get_directory_path(db_object)
+                        db_object.content_size = get_path_size(path)
+                    except Exception as e:
+                        self.stderr.write(f"Failed to get size of {path}: {str(e)}")
                 Model.objects.bulk_update(db_objects, ["content_size"])
                 total += len(db_objects)
                 self.stdout.write(f"\tProcessed {total} objects")

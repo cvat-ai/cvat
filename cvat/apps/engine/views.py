@@ -2662,23 +2662,13 @@ class AssetsViewSet(
             return AssetWriteSerializer
 
     def create(self, request: ExtendedRequest, *args, **kwargs):
-        file = request.data.get("file", None)
-        if not file:
-            raise ValidationError("Asset file was not provided")
-
-        if file.size / (1024 * 1024) > settings.ASSET_MAX_SIZE_MB:
-            raise ValidationError(f"Maximum size of asset is {settings.ASSET_MAX_SIZE_MB} MB")
-
-        if file.content_type not in settings.ASSET_SUPPORTED_TYPES:
-            raise ValidationError(f"File is not supported as an asset. Supported are {settings.ASSET_SUPPORTED_TYPES}")
-
         guide_id = request.data.get("guide_id")
         db_guide = AnnotationGuide.objects.prefetch_related("assets").get(pk=guide_id)
         if db_guide.assets.count() >= settings.ASSET_MAX_COUNT_PER_GUIDE:
             raise ValidationError(f"Maximum number of assets per guide reached")
 
         serializer = AssetWriteSerializer(data={
-            "asset_file": file,
+            "file": request.data.get("file"),
             "guide_id": db_guide.id,
             "owner_id": self.request.user.id,
         })

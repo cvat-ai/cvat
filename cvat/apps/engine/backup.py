@@ -124,7 +124,7 @@ def _import_annotation_guide(owner, guide_data, assets):
     for asset in assets:
         name, data = asset
         asset_serializer = AssetWriteSerializer(data={
-            "asset_file": SimpleUploadedFile(
+            "file": SimpleUploadedFile(
                 os.path.basename(name),
                 data,
                 mimetypes.guess_type(name)[0]

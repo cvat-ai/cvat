@@ -359,27 +359,16 @@ def take_by(iterable: Iterable[_T], chunk_size: int) -> Generator[list[_T], None
         yield batch
 
 
-def get_paths_sizes(paths: list[str]) -> dict[str, int | OSError | ValueError]:
-    sizes: dict[str, int | Exception] = {}
-    for path in paths:
-        try:
-            stats = os.lstat(path)
-        except (OSError, ValueError) as ex:
-            sizes[path] = ex
-
-        if stat.S_ISDIR(stats.st_mode):
-            try:
-                total_size = 0
-                for root, _, files in os.walk(path):
-                    for name in files:
-                        file_path = os.path.join(root, name)
-                        total_size += os.lstat(file_path).st_size
-                sizes[path] = total_size
-            except (OSError, ValueError) as ex:
-                sizes[path] = ex
-        else:
-            sizes[path] = stats.st_size
-    return sizes
+def get_path_size(path: str) -> int:
+    stats = os.lstat(path)
+    if stat.S_ISDIR(stats.st_mode):
+        total_size = 0
+        for root, _, files in os.walk(path):
+            for name in files:
+                file_path = os.path.join(root, name)
+                total_size += os.lstat(file_path).st_size
+        return total_size
+    return stats.st_size
 
 
 FORMATTED_LIST_DISPLAY_THRESHOLD = 10

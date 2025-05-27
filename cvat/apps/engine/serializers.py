@@ -46,7 +46,7 @@ from cvat.apps.engine.utils import (
     build_field_filter_params,
     format_list,
     get_list_view_name,
-    get_paths_sizes,
+    get_path_size,
     grouped,
     parse_specific_attributes,
     reverse,
@@ -3501,17 +3501,24 @@ class AssetReadSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
 class AssetWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     uuid = serializers.CharField(required=False, default=lambda: str(uuid.uuid4()))
-    asset_file = serializers.FileField(required=True, write_only=True, allow_empty_file=False, max_length=MAX_FILENAME_LENGTH)
+    file = serializers.FileField(required=True, write_only=True, allow_empty_file=False, max_length=MAX_FILENAME_LENGTH)
     owner_id = serializers.IntegerField(required=True)
     guide_id = serializers.IntegerField(required=True)
 
-    def validate_asset_file(self, value):
+    def validate_file(self, value):
         if not isinstance(value, UploadedFile):
             raise serializers.ValidationError("Invalid asset_file type. Expected an UploadedFile instance.")
+
+        if value.size / (1024 * 1024) > settings.ASSET_MAX_SIZE_MB:
+            raise serializers.ValidationError(f"Maximum size of asset is {settings.ASSET_MAX_SIZE_MB} MB")
+
+        if value.content_type not in settings.ASSET_SUPPORTED_TYPES:
+            raise serializers.ValidationError(f"File is not supported as an asset. Supported are {settings.ASSET_SUPPORTED_TYPES}")
+
         return value
 
     def create(self, validated_data):
-        asset_file = validated_data.pop("asset_file")
+        asset_file = validated_data.pop("file")
         asset_uuid = validated_data.get("uuid")
         dirname = os.path.join(settings.ASSETS_ROOT, asset_uuid)
         basename = asset_file.name
@@ -3531,14 +3538,10 @@ class AssetWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                         destination.write(chunk)
 
             av_scan_paths(dirname)
-            size_or_error = get_paths_sizes([dirname])[dirname]
-            if not isinstance(size_or_error, int):
-                raise size_or_error
-
             return models.Asset.objects.create(
                 **validated_data,
                 filename=basename,
-                content_size=size_or_error,
+                content_size=get_path_size(dirname),
             )
         except Exception:
             if os.path.exists(filename):
@@ -3549,7 +3552,7 @@ class AssetWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
     class Meta:
         model = models.Asset
-        fields = ("uuid", "owner_id", "guide_id", "asset_file", )
+        fields = ("uuid", "owner_id", "guide_id", "file", )
         write_once_fields = ("uuid", "owner_id", "guide_id", )
 
 
