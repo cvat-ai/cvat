@@ -133,15 +133,20 @@ Extra options:
 # Server unit tests
 
 **Initial steps**
-1. Install necessary Python dependencies:
+1. If you run unit tests on Linux, ensure that `poppler-utils` and `unrar` are installed on your system
+   ```
+   sudo apt-get update
+   sudo apt-get install -y poppler-utils unrar
+   ```
+2. Install necessary Python dependencies:
    ```
    pip install -r cvat/requirements/testing.txt
    ```
-1. Build CVAT server image
+3. Build CVAT server image
    ```
    docker compose -f docker-compose.yml -f docker-compose.dev.yml build cvat_server
    ```
-1. Run cvat_opa container
+4. Run cvat_opa container
    ```
    docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d cvat_opa
    ```
@@ -156,7 +161,6 @@ If you want to get a code coverage report, run the next command:
    ```
    coverage run manage.py test --settings cvat.settings.testing cvat/apps -v 2
    ```
-If you plan to run unit tests on Linux, ensure that `poppler-utils` and `unrar` are installed on your system
 
 **Debugging**
 1. Run `server: tests` debug task in VSCode
