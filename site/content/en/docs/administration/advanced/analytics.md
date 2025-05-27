@@ -215,14 +215,14 @@ the payload field.
 
 The `/api/events/export` endpoint allows the fetching of
 event data with filtering parameters such as
-`org_id`, `project_id`, `task_id`, `job_id`, `user_id`, `cloud_storage_id`,
-`filename` (locally or on the cloud storage), `location`.
+`org_id`, `project_id`, `task_id`, `job_id`, and `user_id`.
 <!-- Need to change the link in Swagger API documentation. -->
 For more details,
 see [Swagger API Documentation](https://app.cvat.ai/api/swagger/#/events/events_list).
 
-To upload the CSV file to a cloud storage, you can use the `/api/events/export` endpoint
-with `cloud_storage_id` and `location=cloud_storage` parameters, for example:
+To save the CSV file with the event data to cloud storage, you can use the
+`/api/events/export` endpoint with `cloud_storage_id` and `location=cloud_storage` parameters,
+for example:
 
 ```bash
 curl -X POST -u user:password "https://app.cvat.ai/api/events/export?cloud_storage_id=your_cloud_storage_id&location=cloud_storage"
@@ -255,9 +255,7 @@ from the previous response:
 curl -u user:password -o path/to/file.csv result_url
 ```
 
-This will download and save the file to `path/to/file.csv` on your local machine.
-
-<!--lint enable maximum-line-length-->
+This command will download and save the CSV file to `path/to/file.csv` on your local machine.
 
 ## Dashboards
 
