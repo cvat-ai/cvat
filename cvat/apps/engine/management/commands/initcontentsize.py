@@ -2,9 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-import sys
-
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 
 from cvat.apps.engine.models import Asset, Data
 from cvat.apps.engine.utils import get_path_size, take_by
@@ -37,4 +35,5 @@ class Command(BaseCommand):
                 self.stdout.write(f"\tProcessed {total} objects")
             self.stdout.write(f"Finished for {Model.__name__}")
 
-        sys.exit(1 if is_failed else 0)
+        if is_failed:
+            raise CommandError("At least one size could not be determined")

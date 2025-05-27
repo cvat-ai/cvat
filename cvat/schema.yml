@@ -20,9 +20,6 @@ paths:
       - assets
       requestBody:
         content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AssetWriteRequest'
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/AssetWriteRequest'

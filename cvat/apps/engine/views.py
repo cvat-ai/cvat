@@ -2633,7 +2633,7 @@ class AssetsViewSet(
     queryset = Asset.objects.select_related(
         'owner', 'guide', 'guide__project', 'guide__task', 'guide__project__organization', 'guide__task__organization',
     ).all()
-    parser_classes = api_settings.DEFAULT_PARSER_CLASSES + [MultiPartParser]
+    parser_classes = [MultiPartParser]
     search_fields = ()
     ordering = "uuid"
 
