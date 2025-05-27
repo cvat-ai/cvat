@@ -28,6 +28,8 @@ from cvat.apps.engine.tests.utils import (
     get_paginated_collection,
 )
 
+from .utils import check_annotation_response
+
 CREATE_ACTION = "create"
 UPDATE_ACTION = "update"
 DELETE_ACTION = "delete"
@@ -502,8 +504,7 @@ class Task3DTest(_DbTestBase):
 
                     task_ann_prev.data["shapes"][0].pop("id")
                     task_ann.data["shapes"][0].pop("id")
-                    self.assertEqual(len(task_ann_prev.data["shapes"]), len(task_ann.data["shapes"]))
-                    self.assertEqual(task_ann_prev.data["shapes"], task_ann.data["shapes"])
+                    check_annotation_response(self, task_ann, task_ann_prev.data, expected_values={'source': 'file'})
 
     def test_api_v2_rewrite_annotation(self):
         with TestDir() as test_dir:
@@ -541,8 +542,7 @@ class Task3DTest(_DbTestBase):
 
                     task_ann_prev.data["shapes"][0].pop("id")
                     task_ann.data["shapes"][0].pop("id")
-                    self.assertEqual(len(task_ann_prev.data["shapes"]), len(task_ann.data["shapes"]))
-                    self.assertEqual(task_ann_prev.data["shapes"], task_ann.data["shapes"])
+                    check_annotation_response(self, task_ann, task_ann_prev.data, expected_values={'source': 'file'})
 
     def test_api_v2_dump_and_upload_empty_annotation(self):
         with TestDir() as test_dir:
@@ -669,4 +669,3 @@ class Task3DTest(_DbTestBase):
                                     f, task_ann_prev.data, format_name, related_files=False
                                 )
                         self.assertEqual(osp.exists(file_name), edata['file_exists'])
-
