@@ -149,7 +149,7 @@ The **Detection** tab table contains the columns:
 
 <!--lint enable maximum-line-length-->
 
-The **Tracking** tab tzble contains the columns:
+The **Tracking** tab table contains the columns:
 
 <!--lint disable maximum-line-length-->
 

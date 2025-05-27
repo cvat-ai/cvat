@@ -37,7 +37,6 @@ from drf_spectacular.utils import (
     extend_schema,
     extend_schema_view,
 )
-from PIL import Image
 from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, NotFound, PermissionDenied, ValidationError
@@ -2612,17 +2611,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 @extend_schema_view(
     create=extend_schema(
         summary='Create an asset',
-        request={
-            'multipart/form-data': {
-                'type': 'object',
-                'properties': {
-                    'file': {
-                        'type': 'string',
-                        'format': 'binary'
-                    }
-                }
-            }
-        },
+        request=AssetWriteSerializer,
         responses={
             '201': AssetReadSerializer,
         }),
@@ -2644,7 +2633,7 @@ class AssetsViewSet(
     queryset = Asset.objects.select_related(
         'owner', 'guide', 'guide__project', 'guide__task', 'guide__project__organization', 'guide__task__organization',
     ).all()
-    parser_classes=_UPLOAD_PARSER_CLASSES
+    parser_classes = [MultiPartParser]
     search_fields = ()
     ordering = "uuid"
 
@@ -2663,46 +2652,21 @@ class AssetsViewSet(
             return AssetWriteSerializer
 
     def create(self, request: ExtendedRequest, *args, **kwargs):
-        file = request.data.get('file', None)
-        if not file:
-            raise ValidationError('Asset file was not provided')
-
-        if file.size / (1024 * 1024) > settings.ASSET_MAX_SIZE_MB:
-            raise ValidationError(f'Maximum size of asset is {settings.ASSET_MAX_SIZE_MB} MB')
-
-        if file.content_type not in settings.ASSET_SUPPORTED_TYPES:
-            raise ValidationError(f'File is not supported as an asset. Supported are {settings.ASSET_SUPPORTED_TYPES}')
-
-        guide_id = request.data.get('guide_id')
-        db_guide = AnnotationGuide.objects.prefetch_related('assets').get(pk=guide_id)
-        if db_guide.assets.count() >= settings.ASSET_MAX_COUNT_PER_GUIDE:
-            raise ValidationError(f'Maximum number of assets per guide reached')
-
-        serializer = self.get_serializer(data={
-            'filename': file.name,
-            'guide_id': guide_id,
-        })
-
+        serializer = AssetWriteSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        path = os.path.join(settings.ASSETS_ROOT, str(serializer.instance.uuid))
-        os.makedirs(path)
-        if file.content_type in ('image/jpeg', 'image/png'):
-            image = Image.open(file)
-            if any(map(lambda x: x > settings.ASSET_MAX_IMAGE_SIZE, image.size)):
-                scale_factor = settings.ASSET_MAX_IMAGE_SIZE / max(image.size)
-                image = image.resize(map(lambda x: int(x * scale_factor), image.size))
-            image.save(os.path.join(path, file.name))
-        else:
-            with open(os.path.join(path, file.name), 'wb+') as destination:
-                for chunk in file.chunks():
-                    destination.write(chunk)
 
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        db_guide = AnnotationGuide.objects.prefetch_related("assets").get(pk=serializer.validated_data['guide_id'])
+        if db_guide.assets.count() >= settings.ASSET_MAX_COUNT_PER_GUIDE:
+            raise ValidationError(f"Maximum number of assets per guide reached")
 
-    def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
+        return Response(
+            AssetReadSerializer(
+                instance=serializer.instance,
+                context={ "request": self.request }
+            ).data,
+            status=status.HTTP_201_CREATED,
+        )
 
     def retrieve(self, request: ExtendedRequest, *args, **kwargs):
         instance = self.get_object()
