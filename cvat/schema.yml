@@ -6631,6 +6631,18 @@ components:
           readOnly: true
       required:
       - filename
+    AssetWriteRequest:
+      type: object
+      properties:
+        guide_id:
+          type: integer
+        file:
+          type: string
+          format: binary
+          writeOnly: true
+      required:
+      - file
+      - guide_id
     Attribute:
       type: object
       properties:
