@@ -2611,17 +2611,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 @extend_schema_view(
     create=extend_schema(
         summary='Create an asset',
-        request={
-            'multipart/form-data': {
-                'type': 'object',
-                'properties': {
-                    'file': {
-                        'type': 'string',
-                        'format': 'binary'
-                    }
-                }
-            }
-        },
+        request=AssetWriteSerializer,
         responses={
             '201': AssetReadSerializer,
         }),
@@ -2643,7 +2633,7 @@ class AssetsViewSet(
     queryset = Asset.objects.select_related(
         'owner', 'guide', 'guide__project', 'guide__task', 'guide__project__organization', 'guide__task__organization',
     ).all()
-    parser_classes=_UPLOAD_PARSER_CLASSES
+    parser_classes = api_settings.DEFAULT_PARSER_CLASSES + [MultiPartParser]
     search_fields = ()
     ordering = "uuid"
 
@@ -2662,21 +2652,21 @@ class AssetsViewSet(
             return AssetWriteSerializer
 
     def create(self, request: ExtendedRequest, *args, **kwargs):
-        guide_id = request.data.get("guide_id")
-        db_guide = AnnotationGuide.objects.prefetch_related("assets").get(pk=guide_id)
+        serializer = AssetWriteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        db_guide = AnnotationGuide.objects.prefetch_related("assets").get(pk=serializer.validated_data['guide_id'])
         if db_guide.assets.count() >= settings.ASSET_MAX_COUNT_PER_GUIDE:
             raise ValidationError(f"Maximum number of assets per guide reached")
 
-        serializer = AssetWriteSerializer(data={
-            "file": request.data.get("file"),
-            "guide_id": db_guide.id,
-            "owner_id": self.request.user.id,
-        })
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        serializer.save(owner=self.request.user)
+        return Response(
+            AssetReadSerializer(
+                instance=serializer.instance,
+                context={ "request": self.request }
+            ).data,
+            status=status.HTTP_201_CREATED,
+        )
 
     def retrieve(self, request: ExtendedRequest, *args, **kwargs):
         instance = self.get_object()

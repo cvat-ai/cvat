@@ -130,11 +130,10 @@ def _import_annotation_guide(owner, guide_data, assets):
                 mimetypes.guess_type(name)[0]
             ),
             "guide_id": guide_serializer.instance.id,
-            "owner_id": owner.id,
         })
 
         asset_serializer.is_valid(raise_exception=True)
-        asset_serializer.save()
+        asset_serializer.save(owner=owner)
         markdown = markdown.replace(f'{name}', f'/api/assets/{asset_serializer.instance.pk}')
 
     guide_serializer.instance.markdown = markdown

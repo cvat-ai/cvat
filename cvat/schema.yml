@@ -20,13 +20,13 @@ paths:
       - assets
       requestBody:
         content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetWriteRequest'
           multipart/form-data:
             schema:
-              type: object
-              properties:
-                file:
-                  type: string
-                  format: binary
+              $ref: '#/components/schemas/AssetWriteRequest'
+        required: true
       security:
       - sessionAuth: []
         csrfAuth: []

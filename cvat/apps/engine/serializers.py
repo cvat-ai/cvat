@@ -3500,9 +3500,7 @@ class AssetReadSerializer(WriteOnceMixin, serializers.ModelSerializer):
         read_only_fields = fields
 
 class AssetWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
-    uuid = serializers.CharField(required=False, default=lambda: str(uuid.uuid4()))
     file = serializers.FileField(required=True, write_only=True, allow_empty_file=False, max_length=MAX_FILENAME_LENGTH)
-    owner_id = serializers.IntegerField(required=True)
     guide_id = serializers.IntegerField(required=True)
 
     def validate_file(self, value):
@@ -3519,7 +3517,7 @@ class AssetWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
     def create(self, validated_data):
         asset_file = validated_data.pop("file")
-        asset_uuid = validated_data.get("uuid")
+        asset_uuid = str(uuid.uuid4())
         dirname = os.path.join(settings.ASSETS_ROOT, asset_uuid)
         basename = asset_file.name
         filename = os.path.join(dirname, basename)
@@ -3540,6 +3538,7 @@ class AssetWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             av_scan_paths(dirname)
             return models.Asset.objects.create(
                 **validated_data,
+                uuid=asset_uuid,
                 filename=basename,
                 content_size=get_path_size(dirname),
             )
@@ -3552,8 +3551,8 @@ class AssetWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
     class Meta:
         model = models.Asset
-        fields = ("uuid", "owner_id", "guide_id", "file", )
-        write_once_fields = ("uuid", "owner_id", "guide_id", )
+        fields = ("guide_id", "file", )
+        write_once_fields = ("guide_id", )
 
 
 class AnnotationGuideReadSerializer(WriteOnceMixin, serializers.ModelSerializer):

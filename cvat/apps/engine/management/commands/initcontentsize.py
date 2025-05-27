@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+import sys
+
 from django.core.management.base import BaseCommand
 
 from cvat.apps.engine.models import Asset, Data
@@ -13,6 +15,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         batch_size = 1000
+        is_failed = False
         for Model, get_directory_path, get_queryset in [
             (Asset, lambda asset: asset.get_asset_dir(), lambda: Asset.objects),
             (Data, lambda data: data.get_upload_dirname(), lambda: Data.objects.exclude(size=0)),
@@ -27,8 +30,11 @@ class Command(BaseCommand):
                         path = get_directory_path(db_object)
                         db_object.content_size = get_path_size(path)
                     except Exception as e:
+                        is_failed = True
                         self.stderr.write(f"Failed to get size of {path}: {str(e)}")
                 Model.objects.bulk_update(db_objects, ["content_size"])
                 total += len(db_objects)
                 self.stdout.write(f"\tProcessed {total} objects")
             self.stdout.write(f"Finished for {Model.__name__}")
+
+        sys.exit(1 if is_failed else 0)
