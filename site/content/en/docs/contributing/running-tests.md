@@ -138,15 +138,15 @@ Extra options:
    sudo apt-get update
    sudo apt-get install -y poppler-utils unrar
    ```
-2. Install necessary Python dependencies:
+1. Install necessary Python dependencies:
    ```
    pip install -r cvat/requirements/testing.txt
    ```
-3. Build CVAT server image
+1. Build CVAT server image
    ```
    docker compose -f docker-compose.yml -f docker-compose.dev.yml build cvat_server
    ```
-4. Run cvat_opa container
+1. Run cvat_opa container
    ```
    docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d cvat_opa
    ```
