@@ -217,6 +217,7 @@ class IFrameProvider(metaclass=ABCMeta):
 class TaskFrameProvider(IFrameProvider):
     def __init__(self, db_task: models.Task) -> None:
         self._db_task = db_task
+        self._segment_frame_provider_cache = {}
 
     def validate_frame_number(self, frame_number: int) -> int:
         if frame_number not in range(0, self._db_task.data.size):
@@ -436,7 +437,18 @@ class TaskFrameProvider(IFrameProvider):
         return segment
 
     def _get_segment_frame_provider(self, frame_number: int) -> SegmentFrameProvider:
-        return SegmentFrameProvider(self._get_segment(self.validate_frame_number(frame_number)))
+        segment = self._get_segment(self.validate_frame_number(frame_number))
+
+        provider = self._segment_frame_provider_cache.get(segment.id)
+        if not provider:
+            provider = SegmentFrameProvider(segment)
+
+            # A simple last result cache for iteration use cases (e.g. dataset export).
+            # Avoid storing many providers in memory, each holds open chunks
+            self._segment_frame_provider_cache.clear()
+            self._segment_frame_provider_cache[segment.id] = provider
+
+        return provider
 
 
 class SegmentFrameProvider(IFrameProvider):
