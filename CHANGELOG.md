@@ -16,6 +16,83 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.38.0'></a>
+## \[2.38.0\] - 2025-05-27
+
+### Added
+
+- Set `file` as default source of annotations imported from files
+  (<https://github.com/cvat-ai/cvat/pull/9346>)
+
+- CVAT measures the size of data, uploaded by users, like images, videos and different guide assets.
+  Newly created resources will be measured automatically.
+  For existing resources, please, run `python manage.py initcontentsize`.
+  (<https://github.com/cvat-ai/cvat/pull/9448>)
+
+### Changed
+
+- Cache files with exported events now are stored in `/data/cache/export/` instead of
+  `/data/tmp/`. These files are periodically deleted by the
+  `cleanup_export_cache_directory` cron job
+  (<https://github.com/cvat-ai/cvat/pull/9230>)
+
+### Deprecated
+
+- The `GET /api/events` endpoint is deprecated in favor of the `POST /api/events/export`,
+  `GET /api/requests/rq_id`, and `GET result_url`, where `result_url` is obtained from
+  background request details
+  (<https://github.com/cvat-ai/cvat/pull/9230>)
+- The `POST /api/quality/reports/rq_id=rq_id` is deprecated in favor of
+  `GET /api/requests/rq_id`
+  (<https://github.com/cvat-ai/cvat/pull/9230>)
+
+### Removed
+
+- The `POST /api/consensus/merges?rq_id=rq_id` endpoint no longer supports
+  process status checking
+  (<https://github.com/cvat-ai/cvat/pull/9230>)
+- The `GET /api/projects/id/dataset?action=import_status` endpoint no longer
+  supports process status checking
+  (<https://github.com/cvat-ai/cvat/pull/9230>)
+- The `POST /api/projects/backup?rq_id=rq_id` endpoint no longer supports
+  process status checking
+  (<https://github.com/cvat-ai/cvat/pull/9230>)
+- The `POST /api/tasks/backup?rq_id=rq_id` endpoint no longer supports
+  process status checking
+  (<https://github.com/cvat-ai/cvat/pull/9230>)
+- The `PUT /api/tasks/id/annotations?rq_id=rq_id&format=format` endpoint
+  no longer supports process status checking
+  (<https://github.com/cvat-ai/cvat/pull/9230>)
+- The `PUT /api/jobs/id/annotations?rq_id=rq_id&format=format` endpoint
+  no longer supports process status checking
+  (<https://github.com/cvat-ai/cvat/pull/9230>)
+- \[SDK\] `DatasetWriteRequest`, `BackupWriteRequest`, `TaskAnnotationsWriteRequest`,
+  `JobAnnotationsUpdateRequest`, `TaskAnnotationsUpdateRequest` classes were removed
+  (<https://github.com/cvat-ai/cvat/pull/9230>)
+
+### Fixed
+
+- YOLO formats can now be imported from archives where dataset is located in a folder
+  (<https://github.com/cvat-ai/cvat/pull/9423>)
+
+- Quality setting `Check orientation` was not updated after save
+  (<https://github.com/cvat-ai/cvat/pull/9443>)
+
+- Only first 10 tasks were shown on project quality page
+  (<https://github.com/cvat-ai/cvat/pull/9443>)
+
+- When restoring a task or a project from backup, 'owner' field for assets has empty value
+  (<https://github.com/cvat-ai/cvat/pull/9448>)
+
+- Ultralytics YOLO format could not import annotations
+  if no image info was provided in the dataset
+  (<https://github.com/cvat-ai/cvat/pull/9454>)
+
+### Security
+
+- Fixed disclosure of certain resource names and IDs via the browsable API
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-7484-2gfm-852p>)
+
 <a id='changelog-2.37.0'></a>
 ## \[2.37.0\] - 2025-05-15
 
