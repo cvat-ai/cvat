@@ -211,14 +211,21 @@ generated on the server in addition to the **Task** object.
 All events associated with this operation will have the same `request_id` in
 the payload field.
 
-### Fetching event data as CSV from the `/api/events` endpoint
+### Fetching event data as CSV
 
 <!--lint disable maximum-line-length-->
 
-The `/api/events` endpoint allows the fetching of
+<!-- Change the endpoint to /api/events/export -->
+<!-- change the type of request to POST (check code examples)-->
+
+<!-- Add information on how to check the export process: /api/requests/{id} > https://app.cvat.ai/api/swagger/#/requests/requests_retrieve -->
+<!-- To get the file (locally), use GET request with the URL from the previous request response (result_url) -->
+<!-- Cloud storage  -->
+
+The `/api/events/export` endpoint allows the fetching of
 event data with filtering parameters such as
 `org_id`, `project_id`, `task_id`, `job_id`, and `user_id`.
-
+<!-- Need to change the link in Swagger API documentation. -->
 For more details,
 see [Swagger API Documentation](https://app.cvat.ai/api/swagger/#/events/events_list).
 
@@ -226,7 +233,7 @@ For example, to fetch all events associated with a specific job,
 the following `curl` command can be used:
 
 ```bash
-curl --user 'user:pass' https://app.cvat.ai/api/events?job_id=123
+curl --user 'user:pass' -X POST https://app.cvat.ai/api/events?job_id=123
 ```
 
 In the response, you will receive a query ID:
@@ -237,10 +244,10 @@ In the response, you will receive a query ID:
 
 As this process may take some time to complete,
 the status of the request can be checked by
-adding the query parameter `query_id` to the request:
+adding the query parameter `query_id` to the [`/api/requests/{id}`](https://app.cvat.ai/api/swagger/#/requests/requests_retrieve) request:
 
 ```bash
-curl -I --user 'user:pass' https://app.cvat.ai/api/events?job_id=123&query_id=150cac1f-09f1-4d73-b6a5-5f47aa5d0031
+curl -I --user 'user:pass' https://app.cvat.ai/api/requests/150cac1f-09f1-4d73-b6a5-5f47aa5d0031
 ```
 
 Upon successful creation, the server will return a `201 Created` status:
@@ -257,14 +264,15 @@ x-frame-options: DENY
 x-request-id: 4631f5fa-a4f0-42a8-b77b-7426fc298a85
 ```
 
-The CSV file can be downloaded by
-adding the `action=download` query parameter to the request:
+The CSV file can be downloaded by the GET request with `result_url` parameter
+from the response to the `/api/requests/{id}` request:
 
 ```bash
-curl --user 'user:pass' https://app.cvat.ai/api/events?job_id=123&query_id=150cac1f-09f1-4d73-b6a5-5f47aa5d0031&action=download > /tmp/events.csv
+curl --user 'user:pass' -o filename.csv result_url
+
 ```
 
-This will download and save the file to `/tmp/events.csv`
+This will download and save the file to `filename.csv`
 on your local machine.
 
 <!--lint enable maximum-line-length-->
