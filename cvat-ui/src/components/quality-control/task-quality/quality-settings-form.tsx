@@ -51,7 +51,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
 
         lineThickness: settings.lineThickness * 100,
         lineOrientationThreshold: settings.lineOrientationThreshold * 100,
-        orientedLines: settings.orientedLines,
+        compareLineOrientation: settings.compareLineOrientation,
 
         compareGroups: settings.compareGroups,
         groupMatchThreshold: settings.groupMatchThreshold * 100,
@@ -376,7 +376,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
             <Row>
                 <Col span={12}>
                     <Form.Item
-                        name='orientedLines'
+                        name='compareLineOrientation'
                         rules={[{ required: true, message: 'This field is required' }]}
                         valuePropName='checked'
                     >
