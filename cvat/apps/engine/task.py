@@ -47,7 +47,7 @@ from cvat.apps.engine.media_extractors import (
 from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.rq import ImportRQMeta
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
-from cvat.apps.engine.utils import av_scan_paths, format_list, take_by
+from cvat.apps.engine.utils import av_scan_paths, format_list, get_path_size, take_by
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS, make_requests_session
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, is_manifest
 from utils.dataset_manifest.core import VideoManifestValidator, is_dataset_manifest
@@ -778,6 +778,16 @@ def create_thread(
                 _create_task_manifest_from_cloud_data(db_data.cloud_storage, sorted_media, manifest)
 
     av_scan_paths(upload_dir)
+
+    # If something was uploaded to the raw directory, update content_size in the Data model
+    # raw_data_dir and upload_dir are not always the same
+    raw_data_dir = db_data.get_upload_dirname()
+    if os.path.exists(raw_data_dir):
+        try:
+            db_data.content_size = get_path_size(raw_data_dir)
+            db_data.save()
+        except Exception:
+            slogger.glob.warning(f"Could not calculate raw data size for created task #{db_task.id}", exc_info=True)
 
     update_status('Media files are being extracted...')
 
