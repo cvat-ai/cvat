@@ -309,11 +309,9 @@ class TestGetRequests:
     @pytest.mark.parametrize("save_images", (True, False))
     def test_owner_can_retrieve_request(self, format_name: str, save_images: bool, projects):
         project = next(
-            (
-                p
-                for p in projects
-                if p["owner"] and (p["target_storage"] or {}).get("location") == "local"
-            )
+            p
+            for p in projects
+            if p["owner"] and (p["target_storage"] or {}).get("location") == "local"
         )
         owner = project["owner"]
 
@@ -349,11 +347,9 @@ class TestGetRequests:
 
     def test_non_owner_cannot_retrieve_request(self, find_users, projects):
         project = next(
-            (
-                p
-                for p in projects
-                if p["owner"] and (p["target_storage"] or {}).get("location") == "local"
-            )
+            p
+            for p in projects
+            if p["owner"] and (p["target_storage"] or {}).get("location") == "local"
         )
         owner = project["owner"]
         malefactor = find_users(exclude_username=owner["username"])[0]

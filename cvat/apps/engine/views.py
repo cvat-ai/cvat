@@ -64,9 +64,12 @@ from cvat.apps.engine.frame_provider import (
 from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.mixins import BackupMixin, DatasetMixin, PartialUpdateModelMixin, UploadMixin
 from cvat.apps.engine.model_utils import bulk_create
-from cvat.apps.engine.models import AnnotationGuide, Asset, ClientFile, CloudProviderChoice
-from cvat.apps.engine.models import CloudStorage as CloudStorageModel
 from cvat.apps.engine.models import (
+    AnnotationGuide,
+    Asset,
+    ClientFile,
+    CloudProviderChoice,
+    CloudStorage,
     Comment,
     Data,
     Issue,
@@ -1086,8 +1089,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             the `GET /api/requests/<rq_id>`, where **rq_id** is request ID returned for this request.
 
             Once data is attached to a task, it cannot be detached or replaced.
-        """.format_map(
-            {'upload_file_order_field': _UPLOAD_FILE_ORDER_FIELD}
+        """.format(
+            upload_file_order_field=_UPLOAD_FILE_ORDER_FIELD
         )),
         # TODO: add a tutorial on this endpoint in the REST API docs
         request=DataSerializer(required=False),
@@ -2391,7 +2394,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
     PartialUpdateModelMixin
 ):
-    queryset = CloudStorageModel.objects.all()
+    queryset = CloudStorage.objects.all()
 
     search_fields = ('provider_type', 'name', 'resource',
                     'credentials_type', 'owner', 'description')
@@ -2509,7 +2512,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             content = serializer.data
             return Response(data=content)
 
-        except CloudStorageModel.DoesNotExist:
+        except CloudStorage.DoesNotExist:
             message = f"Storage {pk} does not exist"
             slogger.glob.error(message)
             return HttpResponseNotFound(message)
@@ -2545,7 +2548,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
             preview, mime = cache.get_or_set_cloud_preview(db_storage)
             return HttpResponse(preview.getvalue(), mime)
-        except CloudStorageModel.DoesNotExist:
+        except CloudStorage.DoesNotExist:
             message = f"Storage {pk} does not exist"
             slogger.glob.error(message)
             return HttpResponseNotFound(message)
@@ -2575,7 +2578,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             storage = db_storage_to_storage_instance(db_storage)
             storage_status = storage.get_status()
             return Response(storage_status)
-        except CloudStorageModel.DoesNotExist:
+        except CloudStorage.DoesNotExist:
             message = f"Storage {pk} does not exist"
             slogger.glob.error(message)
             return HttpResponseNotFound(message)
@@ -2597,7 +2600,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             storage = db_storage_to_storage_instance(db_storage)
             actions = storage.supported_actions
             return Response(actions, content_type="text/plain")
-        except CloudStorageModel.DoesNotExist:
+        except CloudStorage.DoesNotExist:
             message = f"Storage {pk} does not exist"
             slogger.glob.error(message)
             return HttpResponseNotFound(message)
@@ -2688,7 +2691,7 @@ class AssetsViewSet(
             image = Image.open(file)
             if any(map(lambda x: x > settings.ASSET_MAX_IMAGE_SIZE, image.size)):
                 scale_factor = settings.ASSET_MAX_IMAGE_SIZE / max(image.size)
-                image = image.resize((map(lambda x: int(x * scale_factor), image.size)))
+                image = image.resize(map(lambda x: int(x * scale_factor), image.size))
             image.save(os.path.join(path, file.name))
         else:
             with open(os.path.join(path, file.name), 'wb+') as destination:
