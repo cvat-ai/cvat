@@ -21,14 +21,21 @@ from rest_framework import status
 from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.dataset_manager.tests.utils import TestDir
 from cvat.apps.engine.media_extractors import ValidateDimension
-from cvat.apps.engine.tests.utils import ExportApiTestBase, ForceLogin, get_paginated_collection
+from cvat.apps.engine.tests.utils import (
+    ExportApiTestBase,
+    ForceLogin,
+    ImportApiTestBase,
+    get_paginated_collection,
+)
+
+from .utils import check_annotation_response
 
 CREATE_ACTION = "create"
 UPDATE_ACTION = "update"
 DELETE_ACTION = "delete"
 
 
-class _DbTestBase(ExportApiTestBase):
+class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
     @classmethod
     def setUpTestData(cls):
         cls.create_db_users()
@@ -135,18 +142,6 @@ class _DbTestBase(ExportApiTestBase):
                 self.client.get("/api/jobs?task_id={}&page={}".format(task_id, page))
             )
         return values
-
-    def _upload_file(self, url, data, user):
-        response = self._put_request(url, user, data={"annotation_file": data}, format="multipart")
-        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-        response = self._put_request(url, user)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-    def _generate_url_upload_tasks_annotations(self, task_id, upload_format_name):
-        return f"/api/tasks/{task_id}/annotations?format={upload_format_name}"
-
-    def _generate_url_upload_job_annotations(self, job_id, upload_format_name):
-        return f"/api/jobs/{job_id}/annotations?format={upload_format_name}"
 
     def _remove_annotations(self, tid):
         response = self._delete_request(f"/api/tasks/{tid}/annotations", self.admin)
@@ -499,17 +494,17 @@ class Task3DTest(_DbTestBase):
                 self._remove_annotations(task_id)
                 with self.subTest(format=f"{format_name}_upload"):
                     file_name = osp.join(test_dir, f"{format_name}_admin.zip")
-                    url = self._generate_url_upload_tasks_annotations(task_id, format_name)
 
                     with open(file_name, 'rb') as binary_file:
-                        self._upload_file(url, binary_file, self.admin)
+                        self._import_task_annotations(
+                            self.admin, task["id"], binary_file, query_params={"format": format_name}
+                        )
                     task_ann = TaskAnnotation(task_id)
                     task_ann.init_from_db()
 
                     task_ann_prev.data["shapes"][0].pop("id")
                     task_ann.data["shapes"][0].pop("id")
-                    self.assertEqual(len(task_ann_prev.data["shapes"]), len(task_ann.data["shapes"]))
-                    self.assertEqual(task_ann_prev.data["shapes"], task_ann.data["shapes"])
+                    check_annotation_response(self, task_ann, task_ann_prev.data, expected_values={'source': 'file'})
 
     def test_api_v2_rewrite_annotation(self):
         with TestDir() as test_dir:
@@ -538,17 +533,16 @@ class Task3DTest(_DbTestBase):
                     self.assertEqual(response.status_code, status.HTTP_200_OK)
 
                     file_name = osp.join(test_dir, f"{format_name}.zip")
-                    url = self._generate_url_upload_tasks_annotations(task_id, format_name)
-
                     with open(file_name, 'rb') as binary_file:
-                        self._upload_file(url, binary_file, self.admin)
+                        self._import_task_annotations(
+                            self.admin, task["id"], binary_file, query_params={"format": format_name}
+                        )
                     task_ann = TaskAnnotation(task_id)
                     task_ann.init_from_db()
 
                     task_ann_prev.data["shapes"][0].pop("id")
                     task_ann.data["shapes"][0].pop("id")
-                    self.assertEqual(len(task_ann_prev.data["shapes"]), len(task_ann.data["shapes"]))
-                    self.assertEqual(task_ann_prev.data["shapes"], task_ann.data["shapes"])
+                    check_annotation_response(self, task_ann, task_ann_prev.data, expected_values={'source': 'file'})
 
     def test_api_v2_dump_and_upload_empty_annotation(self):
         with TestDir() as test_dir:
@@ -568,10 +562,11 @@ class Task3DTest(_DbTestBase):
                     self.assertTrue(osp.exists(file_name))
 
                     file_name = osp.join(test_dir, f"{format_name}.zip")
-                    url = self._generate_url_upload_tasks_annotations(task_id, format_name)
 
                     with open(file_name, 'rb') as binary_file:
-                        self._upload_file(url, binary_file, self.admin)
+                        self._import_task_annotations(
+                            self.admin, task_id, binary_file, query_params={"format": format_name}
+                        )
 
                     task_ann = TaskAnnotation(task_id)
                     task_ann.init_from_db()
@@ -631,10 +626,11 @@ class Task3DTest(_DbTestBase):
                 self._remove_annotations(task_id)
                 with self.subTest(format=f"{format_name}_upload"):
                     file_name = osp.join(test_dir, f"{format_name}.zip")
-                    url = self._generate_url_upload_tasks_annotations(task_id, format_name)
 
                     with open(file_name, 'rb') as binary_file:
-                        self._upload_file(url, binary_file, self.admin)
+                        self._import_task_annotations(
+                            self.admin, task_id, binary_file, query_params={"format": format_name}
+                        )
                     task_ann = TaskAnnotation(task_id)
                     task_ann.init_from_db()
 
@@ -673,4 +669,3 @@ class Task3DTest(_DbTestBase):
                                     f, task_ann_prev.data, format_name, related_files=False
                                 )
                         self.assertEqual(osp.exists(file_name), edata['file_exists'])
-

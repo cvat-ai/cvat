@@ -22,6 +22,7 @@ from enum import Enum
 from glob import glob
 from io import BytesIO, IOBase
 from itertools import product
+from pprint import pformat
 from time import sleep
 from typing import BinaryIO
 from unittest import mock
@@ -31,7 +32,7 @@ import django_rq
 import numpy as np
 from django.conf import settings
 from django.contrib.auth.models import Group, User
-from django.http import HttpResponse
+from django.http import FileResponse, HttpResponse
 from django.test import override_settings
 from pdf2image import convert_from_bytes
 from PIL import Image
@@ -66,13 +67,16 @@ from cvat.apps.engine.tests.utils import (
     ApiTestBase,
     ExportApiTestBase,
     ForceLogin,
+    ImportApiTestBase,
     generate_image_file,
     generate_video_file,
     get_paginated_collection,
 )
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 
-#suppress av warnings
+from .utils import check_annotation_response, compare_objects
+
+# suppress av warnings
 logging.getLogger('libav').setLevel(logging.ERROR)
 
 def create_db_users(cls):
@@ -1322,7 +1326,7 @@ class ProjectListOfTasksAPITestCase(ApiTestBase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-class ProjectBackupAPITestCase(ExportApiTestBase):
+class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -1620,12 +1624,6 @@ class ProjectBackupAPITestCase(ExportApiTestBase):
         cls._create_tasks(db_project)
         cls.projects.append(db_project)
 
-    def _run_api_v2_projects_import(self, user, data):
-        with ForceLogin(user, self.client):
-            response = self.client.post('/api/projects/backup', data=data, format="multipart")
-
-        return response
-
     def _run_api_v2_projects_id(self, pid, user):
         with ForceLogin(user, self.client):
             response = self.client.get('/api/projects/{}'.format(pid), format="json")
@@ -1654,18 +1652,13 @@ class ProjectBackupAPITestCase(ExportApiTestBase):
                 self.assertTrue(response.streaming)
                 content = io.BytesIO(b"".join(response.streaming_content))
                 content.seek(0)
+                content.name = "file.zip"
 
-                uploaded_data = {
-                    "project_file": content,
-                }
-                response = self._run_api_v2_projects_import(user, uploaded_data)
-                self.assertEqual(response.status_code, expected_4xx_status_code or status.HTTP_202_ACCEPTED)
-                if response.status_code == status.HTTP_202_ACCEPTED:
-                    rq_id = response.data["rq_id"]
-                    response = self._run_api_v2_projects_import(user, {"rq_id": rq_id})
-                    self.assertEqual(response.status_code, expected_4xx_status_code or status.HTTP_201_CREATED)
+                created_project_id = self._import_project_backup(user, content, expected_4xx_status_code=expected_4xx_status_code)
+
+                if not expected_4xx_status_code:
                     original_project = self._run_api_v2_projects_id(pid, user)
-                    imported_project = self._run_api_v2_projects_id(response.data["id"], user)
+                    imported_project = self._run_api_v2_projects_id(created_project_id, user)
                     compare_objects(
                         self=self,
                         obj1=original_project,
@@ -1882,7 +1875,7 @@ class ProjectExportAPITestCase(ExportApiTestBase):
         self._check_xml(pid, user, 3)
 
 
-class ProjectImportExportAPITestCase(ExportApiTestBase):
+class ProjectImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
     def setUp(self) -> None:
         super().setUp()
         self.tasks = []
@@ -1999,16 +1992,6 @@ class ProjectImportExportAPITestCase(ExportApiTestBase):
             for data in project_data:
                 _create_project(data)
 
-    def _run_api_v2_projects_id_dataset_import(self, pid, user, data, f):
-        with ForceLogin(user, self.client):
-            response = self.client.post("/api/projects/{}/dataset?format={}".format(pid, f),  data=data, format="multipart")
-        return response
-
-    def _run_api_v2_projects_id_dataset_import_status(self, pid, user, rq_id):
-        with ForceLogin(user, self.client):
-            response = self.client.get("/api/projects/{}/dataset?action=import_status&rq_id={}".format(pid, rq_id), format="json")
-        return response
-
     def test_api_v2_projects_id_export_import(self):
         self._create_projects()
         self._create_tasks()
@@ -2025,16 +2008,8 @@ class ProjectImportExportAPITestCase(ExportApiTestBase):
         tmp_file.write(b"".join(response.streaming_content))
         tmp_file.seek(0)
 
-        import_data = {
-            "dataset_file": tmp_file,
-        }
+        self._import_project_dataset(self.owner, pid_import, tmp_file, query_params={"format": "CVAT 1.1"})
 
-        response = self._run_api_v2_projects_id_dataset_import(pid_import, self.owner, import_data, "CVAT 1.1")
-        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-
-        rq_id = response.data.get('rq_id')
-        response = self._run_api_v2_projects_id_dataset_import_status(pid_import, self.owner, rq_id)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def tearDown(self):
         for task in self.tasks:
@@ -2797,7 +2772,7 @@ class TaskCreateAPITestCase(ApiTestBase):
         }
         self._check_api_v2_tasks(None, data)
 
-class TaskImportExportAPITestCase(ExportApiTestBase):
+class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
     def setUp(self):
         super().setUp()
         self.tasks = []
@@ -3110,11 +3085,6 @@ class TaskImportExportAPITestCase(ExportApiTestBase):
                 for media in self.media_data:
                     _create_task(data, media)
 
-    def _run_api_v2_tasks_id_import(self, user, data):
-        with ForceLogin(user, self.client):
-            response = self.client.post('/api/tasks/backup', data=data, format="multipart")
-
-        return response
 
     def _run_api_v2_tasks_id(self, tid, user):
         with ForceLogin(user, self.client):
@@ -3140,18 +3110,13 @@ class TaskImportExportAPITestCase(ExportApiTestBase):
                 self.assertTrue(response.streaming)
                 content = io.BytesIO(b"".join(response.streaming_content))
                 content.seek(0)
+                content.name = "file.zip"
 
-                uploaded_data = {
-                    "task_file": content,
-                }
-                response = self._run_api_v2_tasks_id_import(user, uploaded_data)
-                self.assertEqual(response.status_code, expected_4xx_status_code or status.HTTP_202_ACCEPTED)
+                created_task_id = self._import_task_backup(user, content, expected_4xx_status_code=expected_4xx_status_code)
+
                 if user is not self.somebody and user is not self.user and user is not self.annotator:
-                    rq_id = response.data["rq_id"]
-                    response = self._run_api_v2_tasks_id_import(user, {"rq_id": rq_id})
-                    self.assertEqual(response.status_code, expected_4xx_status_code or status.HTTP_201_CREATED)
                     original_task = self._run_api_v2_tasks_id(tid, user)
-                    imported_task = self._run_api_v2_tasks_id(response.data["id"], user)
+                    imported_task = self._run_api_v2_tasks_id(created_task_id, user)
                     compare_objects(
                         self=self,
                         obj1=original_task,
@@ -4802,35 +4767,6 @@ class TaskDataAPITestCase(ApiTestBase):
         response = self._create_task(None, data)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-def compare_objects(self, obj1, obj2, ignore_keys, fp_tolerance=.001,
-        current_key=None):
-    key_info = "{}: ".format(current_key) if current_key else ""
-
-    if isinstance(obj1, dict):
-        self.assertTrue(isinstance(obj2, dict),
-            "{}{} != {}".format(key_info, obj1, obj2))
-        for k, v1 in obj1.items():
-            if k in ignore_keys:
-                continue
-            v2 = obj2[k]
-            if k == 'attributes':
-                key = lambda a: a['spec_id'] if 'spec_id' in a else a['id']
-                v1.sort(key=key)
-                v2.sort(key=key)
-            compare_objects(self, v1, v2, ignore_keys, current_key=k)
-    elif isinstance(obj1, list):
-        self.assertTrue(isinstance(obj2, list),
-            "{}{} != {}".format(key_info, obj1, obj2))
-        self.assertEqual(len(obj1), len(obj2),
-            "{}{} != {}".format(key_info, obj1, obj2))
-        for v1, v2 in zip(obj1, obj2):
-            compare_objects(self, v1, v2, ignore_keys, current_key=current_key)
-    else:
-        if isinstance(obj1, float) or isinstance(obj2, float):
-            self.assertAlmostEqual(obj1, obj2, delta=fp_tolerance,
-                msg=current_key)
-        else:
-            self.assertEqual(obj1, obj2, msg=current_key)
 
 class JobAnnotationAPITestCase(ApiTestBase):
     @classmethod
@@ -4931,7 +4867,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     },
                 ]
             }]
-        elif annotation_format in ['Kitti Raw Format 1.0', 'Sly Point Cloud Format 1.0']:
+        elif annotation_format in ['Datumaro 3D 1.0', 'Kitti Raw Format 1.0', 'Sly Point Cloud Format 1.0']:
             data["labels"] = [{
                 "name": "car"},
                 {"name": "bus"}
@@ -4967,10 +4903,49 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     },
                 ]
             }]
+        elif annotation_format in [
+            "COCO Keypoints 1.0",
+            "Ultralytics YOLO Pose 1.0"
+        ]:
+            data["labels"] = [
+                {
+                    "name": "skel",
+                    "color": "#5c5eba",
+                    "attributes": [],
+                    "type": "skeleton",
+                    "sublabels": [
+                        {"name": "1", "color": "#d12345", "attributes": [], "type": "points"},
+                        {"name": "2", "color": "#350dea", "attributes": [], "type": "points"},
+                    ],
+                    "svg": '<line x1="36.329429626464844" y1="45.98662185668945" x2="59.07190704345703" y2="23.076923370361328" '
+                    'stroke="black" data-type="edge" data-node-from="2" stroke-width="0.5" data-node-to="3"></line>'
+                    '<line x1="22.61705780029297" y1="25.75250816345215" x2="36.329429626464844" y2="45.98662185668945" '
+                    'stroke="black" data-type="edge" data-node-from="1" stroke-width="0.5" data-node-to="2"></line>'
+                    '<circle r="1.5" stroke="black" fill="#b3b3b3" cx="22.61705780029297" cy="25.75250816345215" '
+                    'stroke-width="0.1" data-type="element node" data-element-id="1" data-node-id="1" data-label-name="1">'
+                    '</circle><circle r="1.5" stroke="black" fill="#b3b3b3" cx="36.329429626464844" cy="45.98662185668945" '
+                    'stroke-width="0.1" data-type="element node" data-element-id="2" data-node-id="2" data-label-name="2"></circle>'
+                }
+            ]
+        elif annotation_format == "Cityscapes 1.0":
+            data["labels"] = [
+                {
+                    "name": "car",
+                    "color": "#00AFF0",
+                    "attributes": [],
+                },
+                {
+                    "name": "background",
+                    "color": "#000000",
+                    "attributes": []
+                }
+            ]
 
         with ForceLogin(owner, self.client):
             response = self.client.post('/api/tasks', data=data, format="json")
-            assert response.status_code == status.HTTP_201_CREATED
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED,
+                f"Reason:\n{pformat(response.data)}"
+            )
             tid = response.data["id"]
 
             images = {
@@ -5066,8 +5041,10 @@ class JobAnnotationAPITestCase(ApiTestBase):
 
     def _check_response(self, response, data):
         if not response.status_code in [
-            status.HTTP_403_FORBIDDEN, status.HTTP_401_UNAUTHORIZED]:
-            compare_objects(self, data, response.data, ignore_keys=["id", "version"])
+            status.HTTP_403_FORBIDDEN,
+            status.HTTP_401_UNAUTHORIZED
+        ]:
+            check_annotation_response(self, response, data)
 
     def _run_api_v2_jobs_id_annotations(self, owner, assignee, annotator):
         task, jobs = self._create_task(owner, assignee)
@@ -5495,7 +5472,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
     def test_api_v2_jobs_id_annotations_no_auth(self):
         self._run_api_v2_jobs_id_annotations(self.user, self.user, None)
 
-class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
+class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotationAPITestCase):
     def _put_api_v2_tasks_id_annotations(self, pk, user, data):
         with ForceLogin(user, self.client):
             response = self.client.put("/api/tasks/{}/annotations".format(pk),
@@ -5524,32 +5501,12 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
 
         return response
 
-    def _upload_api_v2_tasks_id_annotations(self, pk, user, data, query_params=""):
-        with ForceLogin(user, self.client):
-            response = self.client.put(
-                path="/api/tasks/{0}/annotations?{1}".format(pk, query_params),
-                data=data,
-                format="multipart",
-                )
-
-        return response
-
     def _get_formats(self, user):
         with ForceLogin(user, self.client):
             response = self.client.get(
                 path="/api/server/annotation/formats"
             )
         return response
-
-    def _check_response(self, response, data):
-        if not response.status_code in [
-            status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN]:
-            try:
-                compare_objects(self, data, response.data, ignore_keys=["id", "version"])
-            except AssertionError as e:
-                print("Objects are not equal: ", data, response.data)
-                print(e)
-                raise
 
     def _run_api_v2_tasks_id_annotations(self, owner, assignee):
         task, _ = self._create_task(owner, assignee)
@@ -5943,19 +5900,17 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
         if owner:
             HTTP_200_OK = status.HTTP_200_OK
             HTTP_204_NO_CONTENT = status.HTTP_204_NO_CONTENT
-            HTTP_202_ACCEPTED = status.HTTP_202_ACCEPTED
-            HTTP_201_CREATED = status.HTTP_201_CREATED
         else:
             HTTP_200_OK = status.HTTP_401_UNAUTHORIZED
             HTTP_204_NO_CONTENT = status.HTTP_401_UNAUTHORIZED
-            HTTP_202_ACCEPTED = status.HTTP_401_UNAUTHORIZED
-            HTTP_201_CREATED = status.HTTP_401_UNAUTHORIZED
 
         def _get_initial_annotation(annotation_format):
             if annotation_format not in ["Market-1501 1.0", "ICDAR Recognition 1.0",
                                          "ICDAR Localization 1.0", "ICDAR Segmentation 1.0",
                                          'Kitti Raw Format 1.0', 'Sly Point Cloud Format 1.0',
-                                         'Datumaro 3D 1.0']:
+                                         'Datumaro 3D 1.0',
+                                         'COCO Keypoints 1.0', 'Ultralytics YOLO Pose 1.0',
+                                         'Cityscapes 1.0']:
                 rectangle_tracks_with_attrs = [{
                     "frame": 0,
                     "label_id": task["labels"][0]["id"],
@@ -6094,6 +6049,10 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                     "points": [1.0, 2.1, 10.6, 53.22],
                     "type": "rectangle",
                     "occluded": False,
+                    "outside": False,
+                    "z_order": 0.0,
+                    "rotation": 0.0,
+                    "elements":[],
                 }]
 
                 rectangle_shapes_with_wider_attrs = [{
@@ -6118,6 +6077,10 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                     "points": [1.0, 2.1, 10.6, 53.22],
                     "type": "rectangle",
                     "occluded": False,
+                    "outside": False,
+                    "z_order": 0.0,
+                    "rotation": 0,
+                    "elements": [],
                 }]
 
                 rectangle_shapes_wo_attrs = [{
@@ -6129,6 +6092,10 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                     "points": [2.0, 2.1, 40, 50.7],
                     "type": "rectangle",
                     "occluded": False,
+                    "outside": False,
+                    "z_order": 0.0,
+                    "rotation": 0.0,
+                    "elements": [],
                 }]
 
                 polygon_shapes_wo_attrs = [{
@@ -6140,37 +6107,51 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                     "points": [2.0, 2.1, 100, 30.22, 40, 77, 1, 3],
                     "type": "polygon",
                     "occluded": False,
+                    "outside": False,
+                    "z_order": 0.0,
+                    "rotation": 0.0,
+                    "elements": []
                 }]
 
-                polygon_shapes_with_attrs = [{
-                    "frame": 2,
-                    "label_id": task["labels"][0]["id"],
-                    "group": 1,
-                    "source": "manual",
-                    "attributes": [
-                        {
-                            "spec_id": task["labels"][0]["attributes"][0]["id"],
-                            "value": task["labels"][0]["attributes"][0]["values"][1]
-                        },
-                        {
-                            "spec_id": task["labels"][0]["attributes"][1]["id"],
-                            "value": task["labels"][0]["attributes"][1]["default_value"]
-                        }
-                    ],
-                    "points": [20.0, 0.1, 10, 3.22, 4, 7, 10, 30, 1, 2, 4.44, 5.55],
-                    "type": "polygon",
-                    "occluded": True,
-                },
-                {
-                    "frame": 2,
-                    "label_id": task["labels"][1]["id"],
-                    "group": 1,
-                    "source": "manual",
-                    "attributes": [],
-                    "points": [4, 7, 10, 30, 4, 5.55],
-                    "type": "polygon",
-                    "occluded": False,
-                }]
+                polygon_shapes_with_attrs = [
+                    {
+                        "frame": 2,
+                        "label_id": task["labels"][0]["id"],
+                        "group": 1,
+                        "source": "manual",
+                        "attributes": [
+                            {
+                                "spec_id": task["labels"][0]["attributes"][0]["id"],
+                                "value": task["labels"][0]["attributes"][0]["values"][1],
+                            },
+                            {
+                                "spec_id": task["labels"][0]["attributes"][1]["id"],
+                                "value": task["labels"][0]["attributes"][1]["default_value"],
+                            },
+                        ],
+                        "points": [20.0, 0.1, 10, 3.22, 4, 7, 10, 30, 1, 2, 4.44, 5.55],
+                        "type": "polygon",
+                        "occluded": True,
+                        "outside": False,
+                        "z_order": 0.0,
+                        "rotation": 0.0,
+                        "elements": [],
+                    },
+                    {
+                        "frame": 2,
+                        "label_id": task["labels"][1]["id"],
+                        "group": 1,
+                        "source": "manual",
+                        "attributes": [],
+                        "points": [4, 7, 10, 30, 4, 5.55],
+                        "type": "polygon",
+                        "occluded": False,
+                        "outside": False,
+                        "z_order": 0.0,
+                        "rotation": 0.0,
+                        "elements": [],
+                    },
+                ]
 
                 points_wo_attrs = [{
                     "frame": 1,
@@ -6181,6 +6162,9 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                     "points": [20.0, 0.1, 10, 3.22, 4, 7, 10, 30, 1, 2],
                     "type": "points",
                     "occluded": False,
+                    "z_order": 0,
+                    "rotation": 0.0,
+                    "outside": False
                 }]
 
                 tags_wo_attrs = [{
@@ -6193,7 +6177,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                 tags_with_attrs = [{
                     "frame": 1,
                     "label_id": task["labels"][0]["id"],
-                    "group": 3,
+                    "group": 0,
                     "source": "manual",
                     "attributes": [
                         {
@@ -6229,14 +6213,12 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                 annotations["shapes"] = rectangle_shapes_wo_attrs
                 annotations["tags"] = tags_wo_attrs
 
-            elif annotation_format == "YOLO 1.1":
-                annotations["shapes"] = rectangle_shapes_wo_attrs
-
-            elif annotation_format == "Ultralytics YOLO Detection 1.0":
-                annotations["shapes"] = rectangle_shapes_wo_attrs
-
-            elif annotation_format == "Ultralytics YOLO Oriented Bounding Boxes 1.0":
-                annotations["shapes"] = rectangle_shapes_wo_attrs
+            elif annotation_format in [
+                "YOLO 1.1",
+                "Ultralytics YOLO Detection 1.0",
+                "Ultralytics YOLO Oriented Bounding Boxes 1.0",
+            ]:
+                annotations["shapes"] += rectangle_shapes_wo_attrs
 
             elif annotation_format == "Ultralytics YOLO Segmentation 1.0":
                 annotations["shapes"] = polygon_shapes_wo_attrs
@@ -6244,15 +6226,15 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
             elif annotation_format == "COCO 1.0":
                 annotations["shapes"] = polygon_shapes_wo_attrs
 
-            elif annotation_format == "COCO Keypoints 1.0":
-                annotations["shapes"] = points_wo_attrs
-
             elif annotation_format == "Segmentation mask 1.1":
                 annotations["shapes"] = rectangle_shapes_wo_attrs \
                                       + polygon_shapes_wo_attrs
                 annotations["tracks"] = rectangle_tracks_wo_attrs
 
-            elif annotation_format == "MOT 1.1":
+            elif annotation_format in [
+                "MOT 1.1",
+                "Ultralytics YOLO Detection Track 1.0"
+            ]:
                 annotations["shapes"] = rectangle_shapes_wo_attrs
                 annotations["tracks"] = rectangle_tracks_wo_attrs
 
@@ -6266,13 +6248,16 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                                       + polygon_shapes_with_attrs
 
             elif annotation_format == "Datumaro 1.0":
-                annotations["shapes"] = rectangle_shapes_with_attrs \
+                annotations["shapes"] += rectangle_shapes_with_attrs \
                                       + rectangle_shapes_wo_attrs \
                                       + polygon_shapes_wo_attrs \
                                       + polygon_shapes_with_attrs
                 annotations["tags"] = tags_with_attrs + tags_wo_attrs
 
-            elif annotation_format == "ImageNet 1.0":
+            elif annotation_format in [
+                "ImageNet 1.0",
+                "Ultralytics YOLO Classification 1.0"
+            ]:
                 annotations["tags"] = tags_wo_attrs
 
             elif annotation_format == "CamVid 1.0":
@@ -6288,20 +6273,44 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                 annotations["shapes"] = points_wo_attrs \
                                       + rectangle_shapes_wo_attrs
             elif annotation_format == "Cityscapes 1.0":
-                annotations["shapes"] = points_wo_attrs \
-                                      + rectangle_shapes_wo_attrs
+                background_polygon_wo_attrs = [{
+                    "frame": 1,
+                    "label_id": task["labels"][0]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [],
+                    "points": [4, 4, 5, 91, 96, 93, 97, 4],
+                    "type": "polygon",
+                    "occluded": False,
+                }]
+                object_polygon_wo_attrs = [{
+                    "frame": 1,
+                    "label_id": task["labels"][1]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [],
+                    "points": [14, 14, 15, 85, 88, 87, 90, 13],
+                    "type": "polygon",
+                    "occluded": False,
+                }]
+                annotations["shapes"] = background_polygon_wo_attrs \
+                                      + object_polygon_wo_attrs
             elif annotation_format == "Open Images V6 1.0":
                 annotations["tags"] = tags_wo_attrs
                 annotations["shapes"] = rectangle_shapes_wo_attrs \
-                                      + polygon_shapes_wo_attrs
+                                    #   + polygon_shapes_wo_attrs
+                # polygons get converted to masks, hard to check
 
             elif annotation_format == "LFW 1.0":
-                annotations["shapes"] = points_wo_attrs \
-                                      + tags_wo_attrs
+                annotations["shapes"] = points_wo_attrs
+                annotations["tags"] = tags_wo_attrs
 
             elif annotation_format == "KITTI 1.0":
-                annotations["shapes"] = rectangle_shapes_wo_attrs \
-                                            + polygon_shapes_wo_attrs
+                annotations["shapes"] = rectangle_shapes_wo_attrs
+                # + polygon_shapes_wo_attrs
+                # polygons get converted to masks, hard to check
+                # KITTI supports only one annotation type at a time
+                # Issue: https://github.com/cvat-ai/datumaro/issues/103
 
             elif annotation_format == "Market-1501 1.0":
                 tags_with_attrs = [{
@@ -6332,25 +6341,31 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                     "label_id": task["labels"][0]["id"],
                     "group": 0,
                     "source": "manual",
-                    "attributes": [
-                    ],
+                    "attributes": [],
                     "points": [-3.62, 7.95, -1.03, 0.0, 0.0, 0.0, 1.0, 1.0,
                                1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                    "type": "cuboid_3d",
+                    "type": "cuboid",
                     "occluded": False,
+                    "elements": [],
+                    "rotation": 0.0,
+                    "z_order": 0,
+                    "outside":False,
                 },
-                    {
-                        "frame": 0,
-                        "label_id": task["labels"][0]["id"],
-                        "group": 0,
-                        "source": "manual",
-                        "attributes": [],
-                        "points": [23.01, 8.34, -0.76, 0.0, 0.0, 0.0, 1.0, 1.0,
-                                   1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                        "type": "cuboid_3d",
-                        "occluded": False,
-                    }
-                ]
+                {
+                    "frame": 0,
+                    "label_id": task["labels"][0]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [],
+                    "points": [23.01, 8.34, -0.76, 0.0, 0.0, 0.0, 1.0, 1.0,
+                                1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                    "type": "cuboid",
+                    "occluded": False,
+                    "elements": [],
+                    "rotation": 0.0,
+                    "z_order": 0,
+                    "outside": False,
+                }]
                 annotations["shapes"] = velodyne_wo_attrs
             elif annotation_format == "ICDAR Recognition 1.0":
                 tags_with_attrs = [{
@@ -6462,6 +6477,59 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                 annotations["shapes"] = rectangle_shapes_with_attrs \
                                       + polygon_shapes_with_attrs
 
+            elif annotation_format in [
+                "COCO Keypoints 1.0",
+                "Ultralytics YOLO Pose 1.0",
+                "CVAT for video 1.1",
+                "CVAT for images 1.1",
+                "Datumaro 1.0"
+            ]:
+                skeleton_wo_attrs = [
+                    {
+                        "type": "skeleton",
+                        "label_id": task["labels"][0]['id'],
+                        "points": [],
+                        "rotation": 0.0,
+                        "outside": False,
+                        "z_order": 0,
+                        "occluded": False,
+                        "group": 0,
+                        "frame": 0,
+                        "source": "manual",
+                        "attributes": [],
+                        "elements": [
+                            {
+                                "type": "points",
+                                "occluded": False,
+                                "outside": False,
+                                "z_order": 0,
+                                "rotation": 0,
+                                "points": [20.0, 0.1],
+                                # "id": 10,
+                                "frame": 0,
+                                "label_id": task["labels"][0]['sublabels'][0]['id'],
+                                "group": 0,
+                                "source": "manual",
+                                "attributes": [],
+                            },
+                            {
+                                "type": "points",
+                                "occluded": False,
+                                "outside": False,
+                                "z_order": 0,
+                                "rotation": 0,
+                                "points": [10, 3.22],
+                                # "id": 11,
+                                "frame": 0,
+                                "label_id": task["labels"][0]['sublabels'][1]['id'],
+                                "group": 0,
+                                "source": "manual",
+                                "attributes": [],
+                            },
+                        ],
+                    }
+                ]
+                annotations['shapes'] += skeleton_wo_attrs
             else:
                 raise Exception("Unknown format {}".format(annotation_format))
 
@@ -6497,6 +6565,9 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
             print("The following export formats have no pair:",
                 set(export_formats) - set(import_formats))
 
+        # Rare and buggy formats that are not crucial for testing
+        formats.pop('Market-1501 1.0') # Issue: https://github.com/cvat-ai/datumaro/issues/99
+
         for export_format, import_format in formats.items():
             with self.subTest(export_format=export_format,
                     import_format=import_format):
@@ -6508,8 +6579,9 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                 response = self._put_api_v2_tasks_id_annotations(task["id"], owner, data)
                 data["version"] += 1
 
-                self.assertEqual(response.status_code, HTTP_200_OK)
-                self._check_response(response, data)
+                self.assertEqual(response.status_code, HTTP_200_OK,
+                    pformat(response.data))
+                check_annotation_response(self, response, data)
 
                 # 3. download annotation
                 if not export_formats[export_format]['enabled']:
@@ -6520,7 +6592,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                     )
                     continue
 
-                response = self._export_task_annotations(
+                response: FileResponse = self._export_task_annotations(
                     owner, task["id"], query_params={"format": export_format},
                 )
 
@@ -6539,30 +6611,21 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                 if not import_format:
                     continue
 
-                uploaded_data = {
-                    "annotation_file": content,
-                }
-                response = self._upload_api_v2_tasks_id_annotations(
-                    task["id"], owner, uploaded_data,
-                    "format={}".format(import_format))
-                self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
-
-                response = self._upload_api_v2_tasks_id_annotations(
-                    task["id"], owner, {},
-                    "format={}".format(import_format))
-                self.assertEqual(response.status_code, HTTP_201_CREATED)
+                self._import_task_annotations(
+                    owner, task["id"], content, query_params={"format": import_format}
+                )
 
                 # 7. check annotation
                 if export_format in {"Segmentation mask 1.1", "MOTS PNG 1.0",
-                        "CamVid 1.0", "ICDAR Segmentation 1.0"}:
+                        "CamVid 1.0", "ICDAR Segmentation 1.0",
+                        "Cityscapes 1.0"}:
                     continue # can't really predict the result to check
                 response = self._get_api_v2_tasks_id_annotations(task["id"], owner)
                 self.assertEqual(response.status_code, HTTP_200_OK)
 
                 data["version"] += 2 # upload is delete + put
-                self._check_response(response, data)
+                check_annotation_response(self, response, data, expected_values={'source': 'file'})
 
-                break
     def _check_dump_content(self, content, task, jobs, data, format_name):
         def etree_to_dict(t):
             d = {t.tag: {} if t.attrib else None}
@@ -6613,7 +6676,6 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
                     self.assertTrue(coco.getAnnIds())
         elif format_name == "Segmentation mask 1.1":
             self.assertTrue(zipfile.is_zipfile(content))
-
 
     def _run_coco_annotation_upload_test(self, user):
         def generate_coco_anno():
@@ -6667,18 +6729,9 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
         content = io.BytesIO(generate_coco_anno())
         content.seek(0)
 
-        format_name = "COCO 1.0"
-        uploaded_data = {
-            "annotation_file": content,
-        }
-        response = self._upload_api_v2_tasks_id_annotations(
-            task["id"], user, uploaded_data,
-            "format={}".format(format_name))
-        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-
-        response = self._upload_api_v2_tasks_id_annotations(
-            task["id"], user, {}, "format={}".format(format_name))
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self._import_task_annotations(
+            user, task["id"], content, query_params={"format": "COCO 1.0"}
+        )
 
         response = self._get_api_v2_tasks_id_annotations(task["id"], user)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -6752,7 +6805,7 @@ class ServerShareAPITestCase(ApiTestBase):
             self=self,
             obj1=sorted(data, key=lambda d: d["name"]),
             obj2=sorted(response.data, key=lambda d: d["name"]),
-            ignore_keys=[]
+            ignore_keys=['mime_type']
         )
 
         data = [
@@ -6765,7 +6818,7 @@ class ServerShareAPITestCase(ApiTestBase):
             self=self,
             obj1=sorted(data, key=lambda d: d["name"]),
             obj2=sorted(response.data, key=lambda d: d["name"]),
-            ignore_keys=[]
+            ignore_keys=['mime_type']
         )
 
         data = []
@@ -6775,7 +6828,7 @@ class ServerShareAPITestCase(ApiTestBase):
             self=self,
             obj1=sorted(data, key=lambda d: d["name"]),
             obj2=sorted(response.data, key=lambda d: d["name"]),
-            ignore_keys=[]
+            ignore_keys=['mime_type']
         )
 
         data = [
@@ -6787,7 +6840,7 @@ class ServerShareAPITestCase(ApiTestBase):
             self=self,
             obj1=sorted(data, key=lambda d: d["name"]),
             obj2=sorted(response.data, key=lambda d: d["name"]),
-            ignore_keys=[]
+            ignore_keys=['mime_type']
         )
 
         response = self._run_api_v2_server_share(user, "/test4")
