@@ -213,67 +213,49 @@ the payload field.
 
 ### Fetching event data as CSV
 
-<!--lint disable maximum-line-length-->
-
-<!-- Change the endpoint to /api/events/export -->
-<!-- change the type of request to POST (check code examples)-->
-
-<!-- Add information on how to check the export process: /api/requests/{id} > https://app.cvat.ai/api/swagger/#/requests/requests_retrieve -->
-<!-- To get the file (locally), use GET request with the URL from the previous request response (result_url) -->
-<!-- Cloud storage  -->
-
 The `/api/events/export` endpoint allows the fetching of
 event data with filtering parameters such as
-`org_id`, `project_id`, `task_id`, `job_id`, and `user_id`.
+`org_id`, `project_id`, `task_id`, `job_id`, `user_id`, `cloud_storage_id`,
+`filename` (locally or on the cloud storage), `location`.
 <!-- Need to change the link in Swagger API documentation. -->
 For more details,
 see [Swagger API Documentation](https://app.cvat.ai/api/swagger/#/events/events_list).
 
-For example, to fetch all events associated with a specific job,
-the following `curl` command can be used:
+To upload the CSV file to a cloud storage, you can use the `/api/events/export` endpoint
+with `cloud_storage_id` and `location=cloud_storage` parameters, for example:
 
 ```bash
-curl --user 'user:pass' -X POST https://app.cvat.ai/api/events/export
+curl -X POST -u user:password "https://app.cvat.ai/api/events/export?cloud_storage_id=your_cloud_storage_id&location=cloud_storage"
 ```
 
-In the response, you will receive a query ID:
+To download the event data locally, you should fetch all events associated with a specific resource,
+for example:
 
-```json
-{ "query_id": "150cac1f-09f1-4d73-b6a5-5f47aa5d0031" }
+```bash
+curl -X POST -u 'user:pass' https://app.cvat.ai/api/events/export?job_id=123
 ```
 
-As this process may take some time to complete,
+In the response, you will receive a request ID (`rq_id`).
+
+As this export process may take some time to complete,
 the status of the request can be checked by
-adding the query parameter `query_id` to the [`/api/requests/{id}`](https://app.cvat.ai/api/swagger/#/requests/requests_retrieve) request:
+sending a GET request with the `rq_id` to the
+[`/api/requests/{id}`](https://app.cvat.ai/api/swagger/#/requests/requests_retrieve) endpoint:
 
 ```bash
-curl -I --user 'user:pass' https://app.cvat.ai/api/requests/150cac1f-09f1-4d73-b6a5-5f47aa5d0031
+curl -I --user 'user:pass' https://app.cvat.ai/api/requests/rq_id
 ```
 
-Upon successful creation, the server will return a `201 Created` status:
+Upon successful creation, the server will return an object with `"status":"finished"`.
 
-```
-HTTP/2 201
-allow: GET, POST, HEAD, OPTIONS
-date: Tue, 16 May 2023 13:38:42 GMT
-referrer-policy: same-origin
-server: Apache
-vary: Accept,Origin,Cookie
-x-content-type-options: nosniff
-x-frame-options: DENY
-x-request-id: 4631f5fa-a4f0-42a8-b77b-7426fc298a85
-```
-
-The CSV file can be downloaded by the GET request with `result_url` parameter
-from the response to the `/api/requests/{id}` request:
+The CSV file can be downloaded locally by the GET request with `result_url` parameter
+from the previous response:
 
 ```bash
-curl --user 'user:pass' -o filename.csv result_url
-
+curl -u user:password -o path/to/file.csv result_url
 ```
 
-This will download and save the file to `filename.csv`
-on your local machine.
+This will download and save the file to `path/to/file.csv` on your local machine.
 
 <!--lint enable maximum-line-length-->
 

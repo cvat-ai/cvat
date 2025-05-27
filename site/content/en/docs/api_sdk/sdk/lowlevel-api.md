@@ -453,7 +453,6 @@ behavior, it is recommended to specify `_parse_response=False` in the request pa
 In this case, SDK will not try to parse models from responses, and the response data
 can be fetched directly from the response:
 
-
 ```python
 import json
 from http import HTTPStatus
