@@ -156,6 +156,7 @@ If you want to get a code coverage report, run the next command:
    ```
    coverage run manage.py test --settings cvat.settings.testing cvat/apps -v 2
    ```
+If you plan to run unit tests on Linux, ensure that `poppler-utils` and `unrar` are installed on your system
 
 **Debugging**
 1. Run `server: tests` debug task in VSCode
