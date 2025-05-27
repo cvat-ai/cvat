@@ -18,7 +18,7 @@ from rest_framework.response import Response
 from rest_framework.serializers import Serializer
 from rest_framework.viewsets import GenericViewSet
 
-from cvat.apps.engine.mixins import UploadMixin
+from cvat.apps.engine.mixins import TusFile
 from cvat.apps.engine.model_utils import _ModelT
 from cvat.apps.engine.parsers import TusUploadParser
 from cvat.apps.engine.types import ExtendedRequest
@@ -81,7 +81,7 @@ def list_action(serializer_class: type[Serializer], **kwargs):
 def tus_chunk_action(*, detail: bool, suffix_base: str):
     def decorator(f):
         f = action(detail=detail, methods=['HEAD', 'PATCH'],
-            url_path=f'{suffix_base}/{UploadMixin.file_id_regex}',
+            url_path=f'{suffix_base}/{TusFile.FileID.REGEX}',
             parser_classes=[TusUploadParser],
             serializer_class=None,
         )(f)
