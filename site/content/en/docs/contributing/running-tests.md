@@ -133,7 +133,7 @@ Extra options:
 # Server unit tests
 
 **Initial steps**
-1. If you run unit tests on Linux, ensure that `poppler-utils` and `unrar` are installed on your system
+1. If you run unit tests on Linux, ensure that `poppler-utils` and `unrar` are installed on your system:
    ```
    sudo apt-get update
    sudo apt-get install -y poppler-utils unrar
