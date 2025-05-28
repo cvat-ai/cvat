@@ -88,7 +88,7 @@ def fill_task_meta_data_forward(apps, schema_editor):
 
             video = ""
             for root, _, files in os.walk(_get_upload_dirname(db_task)):
-                fullnames = map(lambda f: os.path.join(root, f), files)
+                fullnames = (os.path.join(root, f) for f in files)
                 videos = list(filter(lambda x: get_mime(x) == "video", fullnames))
                 if len(videos):
                     video = videos[0]
@@ -107,7 +107,7 @@ def fill_task_meta_data_forward(apps, schema_editor):
         else:
             filenames = []
             for root, _, files in os.walk(_get_upload_dirname(db_task)):
-                fullnames = map(lambda f: os.path.join(root, f), files)
+                fullnames = (os.path.join(root, f) for f in files)
                 images = filter(lambda x: get_mime(x) == "image", fullnames)
                 filenames.extend(images)
             filenames.sort()
