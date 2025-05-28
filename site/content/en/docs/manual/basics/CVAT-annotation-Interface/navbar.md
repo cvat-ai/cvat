@@ -8,7 +8,7 @@ description: 'Features navigation arrows to switch between frames, provides acce
 The navigation panel and drop-down **Menu**, allow you to switch
 between frames, change the annotation mode, save your work, and more.
 
-![CVAT Navbar](/images/image035.png)
+![CVAT Navbar](/images/cvat_job_menu.png)
 
 See:
 
@@ -69,6 +69,7 @@ with detailed descriptions provided in the table below.
 | **Go back**/**Go next**<br><br>![Go back and go forth controls](/images/go_back_next.png) | Navigate to the neighboring frames. <br><br>Shortcuts:<br><li> **D** — previous frame. <li>**F** — next frame.<br><br>**Go back**/**Go next** buttons are customizable: <br><br>![](/images/go_back_custom.png)<br><br>To customize, right-click on the button and select one of three options (left to right): <ol><li>The default setting moves to the next or previous frame (step size is 1 frame).</li><li>Move to the next or previous frame that contains objects (e.g., filtered). For more information, refer to {{< ilink "/docs/manual/advanced/filter" "Filters" >}}.</li><li>Move to the next or previous frame without annotations. Use this option to quickly locate missed frames.</li></ol>. |
 | **Play**/**Pause**<br><br>![Play and pause](/images/image041.jpg) | Switch between playing and pausing the sequence of frames or set of images. <br>Shortcut: **Space**. <br>To adjust the playback speed, go to **Nickname** > **Settings** > **Player Speed**. |
 | **Go to the specific frame**<br><br>![Go to the specific frame](/images/image060.jpg) | Enter the number of the frame you want to go to and press **Enter**. |
+| **Search frame by filename**<br><br>![Search frame by filename](/images/navigation_search_icon.png) | Click to open the search pop-up. Type a frame filename to search for it within the job. Select the filename and press **Enter** to navigate to the selected frame. |
 | **Copy frame name**<br><br>![Copy frame name](/images/navigation_icons_copy_filename.png) | Click to copy frame name to the clipboard. |
 | **Copy frame link**<br><br>![Delete frame](/images/navigation_icons_copy_link.png) | Click to copy link to the frame. |
 | **Delete frame**<br><br>![Delete frame](/images/navigation_icons_delete_frame.png) | Click to delete or restore current frame. |
