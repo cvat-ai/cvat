@@ -24,8 +24,6 @@ extend-exclude = """
         |project.py
         |serializers.py
         |task.py
-        |tests/test_formats.py
-        |tests/test_rest_api_formats.py
         |util.py
         |views.py
     )
@@ -41,7 +39,6 @@ extend-exclude = """
         |permissions.py
         |serializers.py
         |task.py
-        |tests/
         |utils.py
         |view_utils.py
         |views.py
