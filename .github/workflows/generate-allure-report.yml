@@ -37,7 +37,7 @@ jobs:
       - name: Set a timestamp
         id: timestampid
         run: |
-          echo "timestamp=${{ github.event.head_commit.timestamp }}" >> "$GITHUB_OUTPUT"
+          echo "timestamp=$(date --utc +%Y%m%d_%H%M%SZ)" >> "$GITHUB_OUTPUT"
 
       - name: Download Allure results from artifacts
         uses: actions/download-artifact@v4
