@@ -44,7 +44,9 @@ def _import(src_file: BinaryIO, temp_dir, instance_data, load_data_callback=None
         tmp_src_file_link = Path(temp_dir) / "annotations" / "default.json"
         tmp_src_file_link.parent.mkdir()
         tmp_src_file_link.symlink_to(src_file.name)
-        dataset = StreamDataset.import_from(str(tmp_src_file_link.absolute()), "datumaro", env=dm_env)
+        dataset = StreamDataset.import_from(
+            str(tmp_src_file_link.absolute()), "datumaro", env=dm_env
+        )
 
     if load_data_callback is not None:
         load_data_callback(dataset, instance_data)
@@ -76,7 +78,9 @@ def _import(src_file: BinaryIO, temp_dir, instance_data, load_data_callback=None
         tmp_src_file_link = Path(temp_dir) / "annotations" / "default.json"
         tmp_src_file_link.parent.mkdir()
         tmp_src_file_link.symlink_to(src_file.name)
-        dataset = StreamDataset.import_from(str(tmp_src_file_link.absolute()), "datumaro", env=dm_env)
+        dataset = StreamDataset.import_from(
+            str(tmp_src_file_link.absolute()), "datumaro", env=dm_env
+        )
 
     if load_data_callback is not None:
         load_data_callback(dataset, instance_data)
