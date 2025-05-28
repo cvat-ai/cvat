@@ -47,16 +47,16 @@ jobs:
           path: merged-allure-results
 
       - name: Download previous history from S3
-        run: aws s3 cp ${{ env.S3_BUCKET }}/history/ ./merged-allure-results/history --recursive || echo "No history found"
+        run: aws s3 cp s3://${{ env.S3_BUCKET }}/history/ ./merged-allure-results/history --recursive || echo "No history found"
 
       - name: Generate Allure Report
         run: allure generate ./merged-allure-results --clean -o allure-report
 
       - name: Backup updated history to S3
-        run: aws s3 cp ./allure-report/history ${{ env.S3_BUCKET }}/history/ --recursive
+        run: aws s3 cp ./allure-report/history s3://${{ env.S3_BUCKET }}/history/ --recursive
 
       - name: Deploy report to S3 (timestamped folder)
-        run: aws s3 cp ./allure-report ${{ env.S3_BUCKET }}/report/${{ steps.timestampid.outputs.timestamp }}/ --recursive
+        run: aws s3 cp ./allure-report s3://${{ env.S3_BUCKET }}/report/${{ steps.timestampid.outputs.timestamp }}/ --recursive
 
       - name: Write report URL to summary
         run: |
