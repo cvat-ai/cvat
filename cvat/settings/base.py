@@ -741,7 +741,15 @@ SMOKESCREEN_ENABLED = True
 # By default, email backend is django.core.mail.backends.smtp.EmailBackend
 # But it won't work without additional configuration, so we set it to None
 # to check configuration and throw ImproperlyConfigured if thats a case
-EMAIL_BACKEND = None
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = os.getenv('EMAIL_PORT', 587)
+EMAIL_FROM = os.getenv('EMAIL_FROM', 'noreply@digitalsense.ai')
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', True)
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'sara.silva@digitalsense.ai')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', 'wnqqfmjwepwbvprt')
 
 ONE_RUNNING_JOB_IN_QUEUE_PER_USER = to_bool(os.getenv("ONE_RUNNING_JOB_IN_QUEUE_PER_USER", False))
 

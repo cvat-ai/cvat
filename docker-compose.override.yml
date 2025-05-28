@@ -19,5 +19,5 @@ volumes:
   cvat_share:
     driver_opts:
       type: none
-      device: /data/projects/sienz/datasets_clearml/
+      device: /data/projects/sienz
       o: bind
