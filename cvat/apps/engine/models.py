@@ -69,7 +69,7 @@ class StatusChoice(str, Enum):
 
     @classmethod
     def list(cls):
-        return list(map(lambda x: x.value, cls))
+        return [x.value for x in cls]
 
     def __str__(self):
         return self.value
@@ -92,7 +92,7 @@ class LabelType(str, Enum):
 
     @classmethod
     def list(cls):
-        return list(map(lambda x: x.value, cls))
+        return [x.value for x in cls]
 
     def __str__(self):
         return self.value
@@ -1239,7 +1239,7 @@ class CloudProviderChoice(str, Enum):
 
     @classmethod
     def list(cls):
-        return list(map(lambda x: x.value, cls))
+        return [x.value for x in cls]
 
     def __str__(self):
         return self.value
@@ -1258,7 +1258,7 @@ class CredentialsTypeChoice(str, Enum):
 
     @classmethod
     def list(cls):
-        return list(map(lambda x: x.value, cls))
+        return [x.value for x in cls]
 
     def __str__(self):
         return self.value

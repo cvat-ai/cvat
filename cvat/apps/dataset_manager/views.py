@@ -146,10 +146,9 @@ def export(
         # The situation is considered rare, so no locking is used.
         instance_update_time = timezone.localtime(db_instance.updated_date)
         if isinstance(db_instance, Project):
-            tasks_update = list(map(
-                lambda db_task: timezone.localtime(db_task.updated_date),
-                db_instance.tasks.all()
-            ))
+            tasks_update = [
+                timezone.localtime(db_task.updated_date) for db_task in db_instance.tasks.all()
+            ]
             instance_update_time = max(tasks_update + [instance_update_time])
 
         output_path = ExportCacheManager.make_dataset_file_path(

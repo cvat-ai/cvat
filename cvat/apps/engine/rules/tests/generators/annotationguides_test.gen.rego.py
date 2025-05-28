@@ -157,10 +157,8 @@ def _get_name(prefix, **kwargs):
                 name += _get_name(prefix, **v)
         else:
             name += "".join(
-                map(
-                    lambda c: c if c.isalnum() else {"@": "_IN_"}.get(c, "_"),
-                    f"{prefix}_{str(v).upper()}",
-                )
+                c if c.isalnum() else {"@": "_IN_"}.get(c, "_")
+                for c in f"{prefix}_{str(v).upper()}"
             )
 
     return name
