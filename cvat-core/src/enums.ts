@@ -233,6 +233,7 @@ export enum SortingMethod {
 export enum StorageLocation {
     LOCAL = 'local',
     CLOUD_STORAGE = 'cloud_storage',
+    SHARE = 'share',
 }
 
 export enum WebhookSourceType {

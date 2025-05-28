@@ -776,6 +776,7 @@ export class Task extends Session {
     };
     public readonly jobs: Job[];
     public readonly consensusEnabled: boolean;
+    public readonly dataStorage: Storage;
 
     public readonly startFrame: number;
     public readonly stopFrame: number;
@@ -825,6 +826,7 @@ export class Task extends Session {
             progress: undefined,
             labels: undefined,
             jobs: undefined,
+            data_storage: undefined,
 
             start_frame: undefined,
             stop_frame: undefined,
@@ -883,6 +885,11 @@ export class Task extends Session {
         data.target_storage = new Storage({
             location: initialData.target_storage?.location || StorageLocation.LOCAL,
             cloudStorageId: initialData.target_storage?.cloud_storage_id,
+        });
+
+        data.data_storage = new Storage({
+            location: initialData.data_storage?.location || StorageLocation.LOCAL,
+            cloudStorageId: initialData.data_storage?.cloud_storage_id,
         });
 
         if (Array.isArray(initialData.jobs)) {
@@ -1166,6 +1173,9 @@ export class Task extends Session {
                 },
                 targetStorage: {
                     get: () => data.target_storage,
+                },
+                dataStorage: {
+                    get: () => data.data_storage,
                 },
                 progress: {
                     get: () => data.progress,

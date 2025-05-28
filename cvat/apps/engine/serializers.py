@@ -2296,6 +2296,17 @@ class TaskReadListSerializer(serializers.ListSerializer):
 
         return super().to_representation(data)
 
+
+class TaskDataStorageReadSerializer(serializers.ModelSerializer):
+    cloud_storage_id = serializers.IntegerField(required=False, allow_null=True)
+    location = serializers.CharField(source='storage', required=False)
+
+    class Meta:
+        model = models.Data
+        fields = ('id', 'location', 'cloud_storage_id')
+        read_only_fields = fields
+
+
 class TaskReadSerializer(serializers.ModelSerializer):
     data_chunk_size = serializers.ReadOnlyField(source='data.chunk_size', required=False)
     data_compressed_chunk_type = serializers.ReadOnlyField(source='data.compressed_chunk_type', required=False)
@@ -2319,6 +2330,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
     consensus_enabled = serializers.BooleanField(
         source='get_consensus_enabled', required=False, read_only=True
     )
+    data_storage = TaskDataStorageReadSerializer(source='data', required=False)
 
     class Meta:
         model = models.Task
@@ -2327,7 +2339,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
             'status', 'data_chunk_size', 'data_compressed_chunk_type', 'guide_id',
             'data_original_chunk_type', 'size', 'image_quality', 'data', 'dimension',
             'subset', 'organization', 'target_storage', 'source_storage', 'jobs', 'labels',
-            'assignee_updated_date', 'validation_mode', 'consensus_enabled',
+            'assignee_updated_date', 'validation_mode', 'consensus_enabled', 'data_storage',
         )
         read_only_fields = fields
         extra_kwargs = {
