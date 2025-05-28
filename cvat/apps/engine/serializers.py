@@ -10,6 +10,7 @@ import re
 import shutil
 import string
 import textwrap
+import uuid
 import warnings
 from collections import OrderedDict
 from collections.abc import Iterable, Sequence
@@ -22,11 +23,13 @@ from typing import Any, Optional, Union
 import django_rq
 from django.conf import settings
 from django.contrib.auth.models import Group, User
+from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
 from django.db.models import Prefetch, prefetch_related_objects
 from django.utils import timezone
 from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
 from numpy import random
+from PIL import Image
 from rest_framework import exceptions, serializers
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
@@ -39,9 +42,11 @@ from cvat.apps.engine.permissions import TaskPermission
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
 from cvat.apps.engine.utils import (
     CvatChunkTimestampMismatchError,
+    av_scan_paths,
     build_field_filter_params,
     format_list,
     get_list_view_name,
+    get_path_size,
     grouped,
     parse_specific_attributes,
     reverse,
@@ -3495,14 +3500,60 @@ class AssetReadSerializer(WriteOnceMixin, serializers.ModelSerializer):
         read_only_fields = fields
 
 class AssetWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
-    uuid = serializers.CharField(required=False)
-    filename = serializers.CharField(required=True, max_length=MAX_FILENAME_LENGTH)
+    file = serializers.FileField(required=True, write_only=True, allow_empty_file=False, max_length=MAX_FILENAME_LENGTH)
     guide_id = serializers.IntegerField(required=True)
+
+    def validate_file(self, value):
+        if not isinstance(value, UploadedFile):
+            raise serializers.ValidationError("Invalid asset_file type. Expected an UploadedFile instance.")
+
+        if value.size / (1024 * 1024) > settings.ASSET_MAX_SIZE_MB:
+            raise serializers.ValidationError(f"Maximum size of asset is {settings.ASSET_MAX_SIZE_MB} MB")
+
+        if value.content_type not in settings.ASSET_SUPPORTED_TYPES:
+            raise serializers.ValidationError(f"File is not supported as an asset. Supported are {settings.ASSET_SUPPORTED_TYPES}")
+
+        return value
+
+    def create(self, validated_data):
+        asset_file = validated_data.pop("file")
+        asset_uuid = str(uuid.uuid4())
+        dirname = os.path.join(settings.ASSETS_ROOT, asset_uuid)
+        basename = asset_file.name
+        filename = os.path.join(dirname, basename)
+        os.makedirs(dirname)
+
+        try:
+            if asset_file.content_type in ("image/jpeg", "image/png"):
+                image = Image.open(asset_file)
+                if any(map(lambda x: x > settings.ASSET_MAX_IMAGE_SIZE, image.size)):
+                    scale_factor = settings.ASSET_MAX_IMAGE_SIZE / max(image.size)
+                    image = image.resize((map(lambda x: int(x * scale_factor), image.size)))
+                image.save(filename)
+            else:
+                with open(filename, "wb") as destination:
+                    for chunk in asset_file.chunks():
+                        destination.write(chunk)
+
+            av_scan_paths(dirname)
+            return models.Asset.objects.create(
+                **validated_data,
+                uuid=asset_uuid,
+                filename=basename,
+                content_size=get_path_size(dirname),
+            )
+        except Exception:
+            if os.path.exists(filename):
+                os.remove(filename)
+
+            os.rmdir(dirname)
+            raise
 
     class Meta:
         model = models.Asset
-        fields = ('uuid', 'filename', 'created_date', 'guide_id', )
-        write_once_fields = ('uuid', 'filename', 'created_date', 'guide_id', )
+        fields = ("guide_id", "file", )
+        write_once_fields = ("guide_id", )
+
 
 class AnnotationGuideReadSerializer(WriteOnceMixin, serializers.ModelSerializer):
     class Meta:

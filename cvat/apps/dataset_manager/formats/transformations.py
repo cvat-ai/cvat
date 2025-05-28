@@ -20,7 +20,7 @@ class RotatedBoxesToPolygons(dm.ItemTransform):
         ry = cy + math.sin(angle) * (x - cx) + math.cos(angle) * (y - cy)
         return rx, ry
 
-    def transform_item(self, item):
+    def _convert_annotations(self, item: dm.DatasetItem) -> list[dm.Annotation]:
         annotations = item.annotations[:]
         anns = [
             p for p in annotations if p.type == dm.AnnotationType.bbox and p.attributes["rotation"]
@@ -48,8 +48,10 @@ class RotatedBoxesToPolygons(dm.ItemTransform):
                     z_order=ann.z_order,
                 )
             )
+        return annotations
 
-        return item.wrap(annotations=annotations)
+    def transform_item(self, item):
+        return item.wrap(annotations=lambda: self._convert_annotations(item))
 
 
 class MaskConverter:

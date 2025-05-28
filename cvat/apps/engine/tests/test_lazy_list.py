@@ -5,7 +5,7 @@ from typing import TypeVar
 
 from cvat.apps.engine.lazy_list import LazyList
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class SliceGetter:
@@ -27,11 +27,16 @@ class TestLazyList(unittest.TestCase):
         self.assertEqual(len(self.lazy_list), 15)
 
     def test_repr(self):
-        self.assertEqual(repr(self.lazy_list), "LazyList([... + 1,2,,3,4,5,6,7,8,9,10,11,12,,13,14,15', (0.00% parsed))")
+        self.assertEqual(
+            repr(self.lazy_list),
+            "LazyList([... + 1,2,,3,4,5,6,7,8,9,10,11,12,,13,14,15', (0.00% parsed))",
+        )
         next(iter(self.lazy_list))  # Trigger parsing of the first element
         self.assertIn("1... + 2,,3,4", repr(self.lazy_list))
         list(self.lazy_list)
-        self.assertEqual(repr(self.lazy_list), "LazyList([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])")
+        self.assertEqual(
+            repr(self.lazy_list), "LazyList([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])"
+        )
 
     def test_deepcopy(self):
         copied_list = copy.deepcopy(self.lazy_list)
@@ -103,21 +108,49 @@ class TestLazyList(unittest.TestCase):
         self.assertIn(2, self.lazy_list)
 
     def test_reversed(self):
-        self.assertEqual(list(reversed(self.lazy_list)), [15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1])
+        self.assertEqual(
+            list(reversed(self.lazy_list)), [15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
+        )
 
     def test_mul(self):
-        self.assertEqual(self.lazy_list * 2, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
+        self.assertEqual(
+            self.lazy_list * 2,
+            # fmt: off
+            [
+                1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+                1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+            ],
+            # fmt: on
+        )
 
     def test_rmul(self):
-        self.assertEqual(2 * self.lazy_list, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
+        self.assertEqual(
+            2 * self.lazy_list,
+            # fmt: off
+            [
+                1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+                1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+            ],
+            # fmt: on
+        )
 
     def test_imul(self):
         self.lazy_list *= 2
-        self.assertEqual(self.lazy_list, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
+        self.assertEqual(
+            self.lazy_list,
+            # fmt: off
+            [
+                1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+                1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+            ],
+            # fmt: on
+        )
 
     def test_extend(self):
         self.lazy_list.extend([16, 17])
-        self.assertEqual(self.lazy_list, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17])
+        self.assertEqual(
+            self.lazy_list, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+        )
 
     def test_add(self):
         new_list = self.lazy_list + [16, 17]
@@ -128,7 +161,9 @@ class TestLazyList(unittest.TestCase):
 
     def test_iadd(self):
         self.lazy_list += [16, 17]
-        self.assertEqual(self.lazy_list, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17])
+        self.assertEqual(
+            self.lazy_list, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+        )
 
     def test_gt(self):
         self.assertTrue(self.lazy_list > [1, 2, 3])
