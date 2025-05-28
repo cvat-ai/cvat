@@ -291,6 +291,7 @@ class ValidationLayout(models.Model):
 class Data(models.Model):
     MANIFEST_FILENAME: ClassVar[str] = 'manifest.jsonl'
 
+    content_size = models.PositiveBigIntegerField(null=True)
     chunk_size = models.PositiveIntegerField(null=True)
     size = models.PositiveIntegerField(default=0)
     image_quality = models.PositiveSmallIntegerField(default=50)
@@ -1102,6 +1103,7 @@ class SourceType(str, Enum):
     SEMI_AUTO = 'semi-auto'
     MANUAL = 'manual'
     FILE = 'file'
+    CONSENSUS = 'consensus'
 
     @classmethod
     def choices(cls):
@@ -1365,6 +1367,7 @@ class Asset(models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
     owner = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="assets")
     guide = models.ForeignKey(AnnotationGuide, on_delete=models.CASCADE, related_name="assets")
+    content_size = models.PositiveBigIntegerField(null=True)
 
     @property
     def organization_id(self):

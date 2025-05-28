@@ -10,6 +10,7 @@ import logging
 import os
 import platform
 import re
+import stat
 import subprocess
 import sys
 import traceback
@@ -336,6 +337,7 @@ def directory_tree(path, max_depth=None) -> str:
             tree += f"{indent}-{file}\n"
     return tree
 
+
 def is_dataset_export(request: ExtendedRequest) -> bool:
     return to_bool(request.query_params.get('save_images', False))
 
@@ -355,6 +357,18 @@ def take_by(iterable: Iterable[_T], chunk_size: int) -> Generator[list[_T], None
             break
 
         yield batch
+
+
+def get_path_size(path: str) -> int:
+    stats = os.lstat(path)
+    if stat.S_ISDIR(stats.st_mode):
+        total_size = 0
+        for root, _, files in os.walk(path):
+            for name in files:
+                file_path = os.path.join(root, name)
+                total_size += os.lstat(file_path).st_size
+        return total_size
+    return stats.st_size
 
 
 FORMATTED_LIST_DISPLAY_THRESHOLD = 10
@@ -408,3 +422,4 @@ def defaultdict_to_regular(d):
     if isinstance(d, defaultdict):
         d = {k: defaultdict_to_regular(v) for k, v in d.items()}
     return d
+
