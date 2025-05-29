@@ -405,23 +405,23 @@ To save the updated configuration, do the following:
 
 1. **Update Configuration**: Start by making your desired changes in the query.
 
-2. **Apply Changes**: Once you've made your changes,
+1. **Apply Changes**: Once you've made your changes,
    click the **Apply** button to ensure the changes are implemented.
 
    ![Apply changes](/images/apply.jpg)
 
-3. **Save Configuration**: To save your applied changes, on the top of the dashboard,
+1. **Save Configuration**: To save your applied changes, on the top of the dashboard,
    click the **Save** button.
 
    ![Apply changes](/images/save_results.jpg)
 
-4. **Replace Configuration File**: After saving, replace the existing
+1. **Replace Configuration File**: After saving, replace the existing
    Grafana dashboard configuration file is located at
    `components/analytics/grafana/dashboards` with the new JSON configuration file.
 
    ![Apply changes](/images/save_json.jpg)
 
-5. **Restart Grafana Service**: To ensure, that all changes take effect,
+1. **Restart Grafana Service**: To ensure, that all changes take effect,
    restart the Grafana service. If you're using Docker Compose,
    execute the following command: `docker compose restart cvat_grafana`.
 
