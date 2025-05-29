@@ -34,6 +34,13 @@ class TusTooLargeFileError(Exception):
     pass
 
 
+class TusChunk:
+    def __init__(self, request: ExtendedRequest):
+        self.offset = int(request.META.get("HTTP_UPLOAD_OFFSET", 0))
+        self.size = int(request.META.get("CONTENT_LENGTH", settings.TUS_DEFAULT_CHUNK_SIZE))
+        self.content = request.body
+
+
 @attrs.define()
 class TusFile:
     @attrs.define(kw_only=True)
@@ -57,7 +64,6 @@ class TusFile:
             validator=attrs.validators.instance_of((str, NoneType)),
             default=None,
         )
-
         filename: str | None = attrs.field(
             validator=attrs.validators.instance_of((str, NoneType)),
             default=None,
@@ -69,6 +75,7 @@ class TusFile:
 
         @classmethod
         def from_request(cls, request: ExtendedRequest, /) -> TusFile.TusMeta:
+            # Header details: https://tus.io/protocols/resumable-upload#upload-metadata
             metadata = {"file_size": int(request.META.get("HTTP_UPLOAD_LENGTH", "0"))}
 
             if message_id := request.META.get("HTTP_MESSAGE_ID"):
@@ -83,7 +90,6 @@ class TusFile:
                     metadata[splitted_metadata[0]] = ""
 
             keys_to_keep = attrs.fields_dict(cls).keys()
-
             return cls(**{k: v for k, v in metadata.items() if k in keys_to_keep})
 
     @attrs.frozen(kw_only=True, slots=False)
@@ -106,7 +112,7 @@ class TusFile:
         @classmethod
         def parse(cls, file_id: str):
             user_id, uuid = file_id.split(cls.SEPARATOR, maxsplit=1)
-            return cls(user_id=int(user_id), uuid=UUID(uuid))
+            return cls(user_id=user_id, uuid=uuid)
 
     @attrs.define()
     class TusMetaFile:
@@ -233,23 +239,24 @@ class TusFile:
         if not self.exists(with_meta=with_meta):
             raise TusFileNotFoundError
 
-    @staticmethod
+    @classmethod
     def create_file(
+        cls,
         *,
         metadata: TusFile.TusMeta,
         upload_dir: Path,
         user_id: int,
     ) -> TusFile:
-        file_id = TusFile.FileID(user_id=user_id)
+        file_id = cls.FileID(user_id=user_id)
         assert metadata.offset == 0
 
-        meta_file = TusFile.TusMetaFile(
-            path=upload_dir / (file_id.as_str + TusFile.TusMetaFile.SUFFIX),
+        meta_file = cls.TusMetaFile(
+            path=upload_dir / (file_id.as_str + cls.TusMetaFile.SUFFIX),
             meta=metadata,
         )
         meta_file.dump()
 
-        tus_file = TusFile(
+        tus_file = cls(
             file_id,
             upload_dir=upload_dir,
             meta_file=meta_file,
@@ -257,11 +264,3 @@ class TusFile:
         tus_file.init_file()
 
         return tus_file
-
-
-class TusChunk:
-    def __init__(self, request: ExtendedRequest):
-        self.META = request.META
-        self.offset = int(request.META.get("HTTP_UPLOAD_OFFSET", 0))
-        self.size = int(request.META.get("CONTENT_LENGTH", settings.TUS_DEFAULT_CHUNK_SIZE))
-        self.content = request.body
