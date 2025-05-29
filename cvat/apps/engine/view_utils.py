@@ -85,7 +85,7 @@ def tus_chunk_action(*, detail: bool, suffix_base: str):
         f = action(
             detail=detail,
             methods=["HEAD", "PATCH"],
-            url_path=f'{suffix_base}/{TusFile.FileID.REGEX}',
+            url_path=f"{suffix_base}/{TusFile.FileID.REGEX}",
             parser_classes=[TusUploadParser],
             serializer_class=None,
         )(f)
