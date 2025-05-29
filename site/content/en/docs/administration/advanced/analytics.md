@@ -211,14 +211,38 @@ generated on the server in addition to the **Task** object.
 All events associated with this operation will have the same `request_id` in
 the payload field.
 
-### Fetching event data as CSV
+### Export event data
 
-The `/api/events/export` endpoint allows the fetching of
-event data with filtering parameters such as
-`org_id`, `project_id`, `task_id`, `job_id`, and `user_id`.
-<!-- Need to change the link in Swagger API documentation. -->
-For more details,
-see [Swagger API Documentation](https://app.cvat.ai/api/swagger/#/events/events_list).
+You can export the event data as a CSV file locally and to cloud storage.
+
+To export the data locally:
+1. Initiate the export process by sending a `POST` request to `/api/events/export` endpoint.
+   The endpoint accepts several query parameters to filter events:
+   `org_id`, `project_id`, `task_id`, `job_id`, `user_id`, `to` and `from`.
+   For more details, see
+   [Swagger API Documentation](https://app.cvat.ai/api/swagger/#/events/events_create_export).
+   For example:
+
+   ```bash
+   curl -X POST -u 'user:pass' https://app.cvat.ai/api/events/export?job_id=123
+   ```
+
+1. (Optional) You can check the status of the export process by sending a GET request with the `rq_id` to the
+   [`/api/requests/{id}`](https://app.cvat.ai/api/swagger/#/requests/requests_retrieve) endpoint:
+
+   ```bash
+   curl -I --user 'user:pass' https://app.cvat.ai/api/requests/rq_id
+   ```
+
+   Once the export process finishes, the request returns an object with `"status": "finished"` and `"result_url": "URL"`.
+
+1. Download the event data file locally using `result_url`:
+   ```bash
+   curl -u user:password -o path/to/file.csv result_url
+   ```
+
+   This command will download and save the CSV file to `path/to/file.csv` on your local machine.
+
 
 To save the CSV file with the event data to cloud storage, you can use the
 `/api/events/export` endpoint with `cloud_storage_id` and `location=cloud_storage` parameters,
@@ -227,35 +251,6 @@ for example:
 ```bash
 curl -X POST -u user:password "https://app.cvat.ai/api/events/export?cloud_storage_id=your_cloud_storage_id&location=cloud_storage"
 ```
-
-To download the event data locally, you should fetch all events associated with a specific resource,
-for example:
-
-```bash
-curl -X POST -u 'user:pass' https://app.cvat.ai/api/events/export?job_id=123
-```
-
-In the response, you will receive a request ID (`rq_id`).
-
-As this export process may take some time to complete,
-the status of the request can be checked by
-sending a GET request with the `rq_id` to the
-[`/api/requests/{id}`](https://app.cvat.ai/api/swagger/#/requests/requests_retrieve) endpoint:
-
-```bash
-curl -I --user 'user:pass' https://app.cvat.ai/api/requests/rq_id
-```
-
-Upon successful creation, the server will return an object with `"status":"finished"`.
-
-The CSV file can be downloaded locally by the GET request with `result_url` parameter
-from the previous response:
-
-```bash
-curl -u user:password -o path/to/file.csv result_url
-```
-
-This command will download and save the CSV file to `path/to/file.csv` on your local machine.
 
 ## Dashboards
 
