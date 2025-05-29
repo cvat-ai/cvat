@@ -1532,8 +1532,7 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
             assert response.status_code == status.HTTP_200_OK, response.status_code
             response_json = response.json()
             status_code, msg = response_json["status"], response_json["message"]
-            assert status_code == "finished",\
-                f"{status_code=}\n" + f"{msg=}"
+            assert status_code == "finished", f"{status_code=}\n" + f"{msg=}"
 
             response = cls.client.get("/api/tasks/{}".format(tid))
             data_id = response.data["data"]
@@ -2004,8 +2003,7 @@ class ProjectImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
             assert response.status_code == status.HTTP_200_OK, response.status_code
             response_json = response.json()
             status_code, msg = response_json["status"], response_json["message"]
-            assert status_code == "finished",\
-                f"{status_code=}\n" + f"{msg=}"
+            assert status_code == "finished", f"{status_code=}\n" + f"{msg=}"
 
             response = self.client.get("/api/tasks/{}".format(tid))
             data_id = response.data["data"]
@@ -3159,8 +3157,7 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
             assert response.status_code == status.HTTP_200_OK, response.status_code
             response_json = response.json()
             status_code, msg = response_json["status"], response_json["message"]
-            assert status == "finished",\
-                f"{status_code=}\n" + f"{msg=}"
+            assert status == "finished", f"{status_code=}\n" + f"{msg=}"
 
             response = self.client.get("/api/tasks/{}".format(tid))
             data_id = response.data["data"]
