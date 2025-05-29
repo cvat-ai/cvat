@@ -1893,3 +1893,5 @@ Cypress.Commands.add('mergeConsensusJob', (jobID, status = 202) => {
 
     cy.wait('@mergeJob').its('response.statusCode').should('eq', status);
 });
+
+Cypress.Commands.add('getFrameFilename', () => cy.get('.cvat-player-filename-wrapper').invoke('text'));
