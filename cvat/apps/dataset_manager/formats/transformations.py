@@ -31,10 +31,8 @@ class RotatedBoxesToPolygons(dm.ItemTransform):
             [cx, cy] = [(x0 + (x1 - x0) / 2), (y0 + (y1 - y0) / 2)]
             anno_points = list(
                 chain.from_iterable(
-                    map(
-                        lambda p: self._rotate_point(p, rotation, cx, cy),
-                        [(x0, y0), (x1, y0), (x1, y1), (x0, y1)],
-                    )
+                    self._rotate_point(p, rotation, cx, cy)
+                    for p in [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
                 )
             )
 

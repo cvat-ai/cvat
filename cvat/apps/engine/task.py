@@ -630,12 +630,10 @@ def create_thread(
                         # cloud_storage_manifest_prefix is a dirname of manifest, it doesn't end with a slash
                         directory = directory[len(cloud_storage_manifest_prefix) + 1:]
                     additional_files.extend(
-                        list(
-                            map(
-                                lambda x: x[1].full_name,
-                                filter(lambda x: x[1].full_name.startswith(directory), cloud_storage_manifest)
-                            )
-                        ) if directory else [x[1].full_name for x in cloud_storage_manifest]
+                        [
+                            x[1].full_name
+                            for x in filter(lambda x: x[1].full_name.startswith(directory), cloud_storage_manifest)
+                        ] if directory else [x[1].full_name for x in cloud_storage_manifest]
                     )
                 if cloud_storage_manifest_prefix:
                     additional_files = [os.path.join(cloud_storage_manifest_prefix, f) for f in additional_files]
