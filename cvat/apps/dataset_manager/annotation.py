@@ -699,13 +699,13 @@ class TrackManager(ObjectManager):
         def interpolate_position(left_position, right_position, offset):
             def to_array(points):
                 return np.asarray(
-                    list(map(lambda point: [point["x"], point["y"]], points))
+                    [[point["x"], point["y"]] for point in points]
                 ).flatten()
 
             def to_points(array):
-                return list(map(
-                    lambda point: {"x": point[0], "y": point[1]}, np.asarray(array).reshape(-1, 2)
-                ))
+                return [
+                    {"x": point[0], "y": point[1]} for point in np.asarray(array).reshape(-1, 2)
+                ]
 
             def curve_length(points):
                 length = 0
@@ -991,7 +991,7 @@ class TrackManager(ObjectManager):
 
                 # Propagate attributes
                 for attr in prev_shape["attributes"]:
-                    if attr["spec_id"] not in map(lambda el: el["spec_id"], shape["attributes"]):
+                    if attr["spec_id"] not in (el["spec_id"] for el in shape["attributes"]):
                         shape["attributes"].append(faster_deepcopy(attr))
 
                 if not prev_shape["outside"] or include_outside:

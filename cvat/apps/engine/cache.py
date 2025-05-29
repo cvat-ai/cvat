@@ -942,7 +942,7 @@ class MediaCache:
             return zip_buffer, ""
 
         with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
-            common_path = os.path.commonpath(list(map(lambda x: str(x.path), related_images)))
+            common_path = os.path.commonpath([str(x.path) for x in related_images])
             for related_image in related_images:
                 path = os.path.realpath(str(related_image.path))
                 name = os.path.relpath(str(related_image.path), common_path)
