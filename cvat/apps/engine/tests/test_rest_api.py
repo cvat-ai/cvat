@@ -1531,8 +1531,8 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
             response = cls.client.get(f"/api/requests/{rq_id}")
             assert response.status_code == status.HTTP_200_OK, response.status_code
             response_json = response.json()
-            status_code, msg = response_json["status"], response_json["message"]
-            assert status_code == "finished", f"{status_code=}\n" + f"{msg=}"
+            rqjob_status, msg = response_json["status"], response_json["message"]
+            assert rqjob_status == "finished", f"{rqjob_status=}\n" + f"{msg=}"
 
             response = cls.client.get("/api/tasks/{}".format(tid))
             data_id = response.data["data"]
@@ -2002,8 +2002,8 @@ class ProjectImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
             response = self.client.get(f"/api/requests/{rq_id}")
             assert response.status_code == status.HTTP_200_OK, response.status_code
             response_json = response.json()
-            status_code, msg = response_json["status"], response_json["message"]
-            assert status_code == "finished", f"{status_code=}\n" + f"{msg=}"
+            rqjob_status, msg = response_json["status"], response_json["message"]
+            assert rqjob_status == "finished", f"{rqjob_status=}\n" + f"{msg=}"
 
             response = self.client.get("/api/tasks/{}".format(tid))
             data_id = response.data["data"]
@@ -3156,8 +3156,8 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
             response = self.client.get(f"/api/requests/{rq_id}")
             assert response.status_code == status.HTTP_200_OK, response.status_code
             response_json = response.json()
-            status_code, msg = response_json["status"], response_json["message"]
-            assert status == "finished", f"{status_code=}\n" + f"{msg=}"
+            rqjob_status, msg = response_json["status"], response_json["message"]
+            assert rqjob_status == "finished", f"{rqjob_status=}\n" + f"{msg=}"
 
             response = self.client.get("/api/tasks/{}".format(tid))
             data_id = response.data["data"]
