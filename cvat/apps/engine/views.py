@@ -777,7 +777,14 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         if self.action == 'list':
             perm = TaskPermission.create_scope_list(self.request)
+
             queryset = perm.filter(queryset)
+
+            # queryset = queryset.only("pk").select_related(None).prefetch_related(None)
+            # from cvat.apps.engine.model_utils import filter_with_union
+            # q_expr = perm.make_filter_query()
+            # queryset = filter_with_union(queryset, q_expr)
+
             # with_job_summary() is optimized in the serializer
         elif self.action == 'preview':
             queryset = Task.objects.select_related('data')
@@ -1570,6 +1577,11 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         if self.action == 'list':
             perm = JobPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
+
+            # queryset = queryset.only("pk").select_related(None).prefetch_related(None)
+            # from cvat.apps.engine.model_utils import filter_with_union
+            # q_expr = perm.make_filter_query()
+            # queryset = filter_with_union(queryset, q_expr)
 
             queryset = queryset.prefetch_related(
                 "segment__task__source_storage", "segment__task__target_storage"

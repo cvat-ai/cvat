@@ -1310,18 +1310,14 @@ class RequestViewSet(viewsets.ViewSet):
 
     @return_response()
     def list(self, request):
-        queryset = Task.objects.select_related(
-            "assignee",
-            "owner",
-            "organization",
-        ).prefetch_related(
-            "project__owner",
-            "project__assignee",
-            "project__organization",
-        )
+        queryset = Task.objects
 
         perm = LambdaPermission.create_scope_list(request)
-        queryset = perm.filter(queryset)
+
+        from cvat.apps.engine.model_utils import filter_with_union
+        q_expr = perm.make_filter_query()
+        queryset = filter_with_union(queryset, q_expr)
+
         task_ids = set(queryset.values_list("id", flat=True))
 
         queue = LambdaQueue()

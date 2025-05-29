@@ -618,16 +618,29 @@ class JobReadListSerializer(serializers.ListSerializer):
             # Optimized prefetch only for the current page
             page: list[models.Job] = data
 
+            # page_ids = set(j.id for j in page)
+            # page = list(
+            #     models.Job.objects.select_related(
+            #         'assignee',
+            #         'segment__task__data',
+            #         'segment__task__project',
+            #         'segment__task__annotation_guide',
+            #         'segment__task__project__annotation_guide',
+            #         "segment__task__source_storage",
+            #         "segment__task__target_storage"
+            #     ).filter(id__in=page_ids).all()
+            # )
+
             # Annotate page objects
             # We do it explicitly here and not in the LIST queryset to avoid
             # doing the same DB computations twice - one time for the page retrieval
             # and another one for the COUNT(*) request to get the total count
             page_task_ids = set(j.get_task_id() for j in page)
+
             visible_tasks_perm = TaskPermission.create_scope_list(request)
             visible_tasks_queryset = models.Task.objects.filter(id__in=page_task_ids)
-            visible_tasks = set(
-                visible_tasks_perm.filter(visible_tasks_queryset).values_list("id", flat=True)
-            )
+            visible_tasks_queryset = visible_tasks_perm.filter(visible_tasks_queryset)
+            visible_tasks = set(visible_tasks_queryset.values_list("id", flat=True))
 
             # Fetching it here removes 1 extra join for all jobs in the COUNT(*) request,
             # limiting in only for the page
@@ -640,6 +653,8 @@ class JobReadListSerializer(serializers.ListSerializer):
             for job in page:
                 job.user_can_view_task = job.get_task_id() in visible_tasks
                 job.issues__count = issue_counts.get(job.id, 0)
+
+            # data = page
 
         return super().to_representation(data)
 
@@ -2275,6 +2290,17 @@ class TaskReadListSerializer(serializers.ListSerializer):
             # doing the same DB computations twice - one time for the page retrieval
             # and another one for the COUNT(*) request to get the total count
             page_task_ids = set(t.id for t in page)
+            # page = list(
+            #     models.Task.objects.select_related(
+            #         'data',
+            #         'data__validation_layout',
+            #         'assignee',
+            #         'owner',
+            #         'target_storage',
+            #         'source_storage',
+            #         'annotation_guide',
+            #     ).filter(id__in=page_task_ids).all()
+            # )
             job_summary_fields = [m.value for m in models.TaskQuerySet.JobSummaryFields]
             job_counts = {
                 task["id"]: task
@@ -2288,6 +2314,8 @@ class TaskReadListSerializer(serializers.ListSerializer):
                 task_job_summary = job_counts.get(task.id)
                 for k in job_summary_fields:
                     setattr(task, k, task_job_summary[k])
+
+            # data = page
 
         return super().to_representation(data)
 
