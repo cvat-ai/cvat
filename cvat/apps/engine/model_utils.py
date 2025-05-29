@@ -117,62 +117,81 @@ def _is_simple_term(term: models.Q | Any) -> bool:
 
 def _to_dnf_q(q: models.Q) -> models.Q:
     # Expand all ORs nested in ANDs in the expression
-    current_args = []
-    q_stack = [q]
-    while q_stack:
-        current_term = q_stack.pop()
+    checked_stack = []
+    unchecked_stack = [q]
+    while unchecked_stack:
+        current_term = unchecked_stack.pop()
 
-        if _is_terminal(current_term):
-            current_args.append(current_term)
-        else:
-            if current_term.connector not in (models.Q.AND, models.Q.OR):
-                raise NotImplementedError(f"unexpected term '{current_term}'")
+        if _is_terminal(current_term) or _is_simple_term(current_term):
+            checked_stack.append(current_term)
+            continue
 
-            if len(current_args) == len(current_term.children):
-                nested_or = next(
-                    (
-                        c
-                        for c in current_args
-                        if isinstance(c, models.Q) and c.connector == models.Q.OR
-                    ),
-                    None,
-                )
-                if nested_or:
-                    other_args = [c for c in current_args if c is not nested_or]
-                    if current_term.connector == models.Q.AND:
-                        # expand ORs nested in the current AND,
-                        # replace the current AND
-                        q_stack.append(
-                            models.Q(
-                                [
-                                    models.Q(*(other_args + [c]), _connector=models.Q.AND)
-                                    for c in nested_or.children
-                                ],
-                                _connector=models.Q.OR,
-                            )
-                        )
+        if current_term.connector not in (models.Q.AND, models.Q.OR):
+            raise NotImplementedError(f"unexpected term '{current_term}'")
 
-                        # check what we've got now on the next iteration
-                        current_args = []
+        checked_stack_offset = 1 + len(current_term.children)
+        if (
+            len(checked_stack) >= checked_stack_offset
+            and checked_stack[-checked_stack_offset] == current_term
+        ):
+            # We've already checked all the children of the current term to have no nested ORs.
+            # Need to check if we have a direct nested OR in the current term
+            # and expand it if needed (one at a time).
 
-                    elif current_term.connector == models.Q.OR:
-                        # simplify, expand ORs nested in the current OR
-                        current_args = other_args + nested_or.children
-                        q_stack.append(models.Q(*current_args, _connector=models.Q.OR))
-                else:
-                    current_args = [models.Q(*current_args, _connector=current_term.connector)]
+            current_args = checked_stack[-checked_stack_offset + 1 :]
 
-            # elif _is_simple_term(current_term):
-            #     current_args.append(current_term)
+            # Remove the current args from the checked stack
+            for _ in range(len(current_args)):
+                checked_stack.pop()
+
+            nested_or = next(
+                (c for c in current_args if isinstance(c, models.Q) and c.connector == models.Q.OR),
+                None,
+            )
+            if nested_or:
+                checked_stack.pop()  # remove the current term, it will be replaced
+
+                other_args = [c for c in current_args if c is not nested_or]
+                if current_term.connector == models.Q.AND:
+                    # Expand ORs nested in the current AND,
+                    # replace the current AND with an OR
+                    # e.g. (a AND (b OR c OR d)) -> (a AND b) OR (a AND c) OR (a AND d)
+                    updated_term = models.Q(
+                        *[
+                            models.Q(*([c] + other_args), _connector=models.Q.AND)
+                            for c in nested_or.children
+                        ],
+                        _connector=models.Q.OR,
+                    )
+
+                elif current_term.connector == models.Q.OR:
+                    # Simplify, expand ORs nested in the current OR
+                    updated_term = models.Q(
+                        *(other_args + nested_or.children), _connector=models.Q.OR
+                    )
+
+                    # Optimization: don't need to check the children subtrees again
+                    # still need to check for other direct nested ORs
+                    checked_stack.append(updated_term)
+                    checked_stack.extend(updated_term.children)
+
+                # Check what we've got now on the next iteration,
+                # we may have other nested ORs in the current term
+                unchecked_stack.append(updated_term)
             else:
-                # Go deeper into the tree and check the children to have nested ORs
-                q_stack.append(current_term)
-                q_stack.extend(current_term.children)
+                pass  # the current term is on the top of the checked stack
+        else:
+            # We haven't checked this term to be a DNF, so check it
+            unchecked_stack.append(current_term)
+            unchecked_stack.extend(current_term.children[::-1])
 
-    if len(current_args) == 1 and (term := current_args[0]) and not _is_terminal(term):
-        dnf_q = current_args[0]
+            # Save the current term to be able to locate the beginning of the args
+            checked_stack.append(current_term)
+
+    if len(checked_stack) == 1 and (term := checked_stack[0]) and not _is_terminal(term):
+        dnf_q = checked_stack[0]
     else:
-        dnf_q = models.Q(*current_args, _connector=models.Q.OR)
+        dnf_q = models.Q(*checked_stack, _connector=models.Q.OR)
 
     return dnf_q
 
