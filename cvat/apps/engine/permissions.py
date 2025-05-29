@@ -275,10 +275,6 @@ class ProjectPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
                     assignee_id=assignee_id, **scope_params)
                 permissions.append(self)
 
-            if view.action == 'tasks':
-                perm = TaskPermission.create_scope_list(request, iam_context)
-                permissions.append(perm)
-
             owner = request.data.get('owner_id') or request.data.get('owner')
             if owner:
                 perm = UserPermission.create_scope_view(iam_context, owner)
@@ -316,7 +312,6 @@ class ProjectPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
             ('destroy', 'DELETE'): Scopes.DELETE,
             ('partial_update', 'PATCH'): Scopes.UPDATE,
             ('retrieve', 'GET'): Scopes.VIEW,
-            ('tasks', 'GET'): Scopes.VIEW,
             ('dataset', 'POST'): Scopes.IMPORT_DATASET,
             ('append_dataset_chunk', 'HEAD'): Scopes.IMPORT_DATASET,
             ('append_dataset_chunk', 'PATCH'): Scopes.IMPORT_DATASET,
@@ -472,10 +467,6 @@ class TaskPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
                 self = cls.create_base_perm(request, view, scope, iam_context, obj, **params)
                 permissions.append(self)
 
-            if view.action == 'jobs':
-                perm = JobPermission.create_scope_list(request, iam_context)
-                permissions.append(perm)
-
             if owner:
                 perm = UserPermission.create_scope_view(iam_context, owner)
                 permissions.append(perm)
@@ -548,7 +539,6 @@ class TaskPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
             ('data', 'POST'): Scopes.UPLOAD_DATA,
             ('append_data_chunk', 'PATCH'): Scopes.UPLOAD_DATA,
             ('append_data_chunk', 'HEAD'): Scopes.UPLOAD_DATA,
-            ('jobs', 'GET'): Scopes.VIEW,
             ('import_backup', 'POST'): Scopes.IMPORT_BACKUP,
             ('append_backup_chunk', 'PATCH'): Scopes.IMPORT_BACKUP,
             ('append_backup_chunk', 'HEAD'): Scopes.IMPORT_BACKUP,
