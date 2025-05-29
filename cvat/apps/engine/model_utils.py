@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from typing import Sequence, TypeVar, Union
+from typing import Any, Sequence, TypeVar, Union
 
 from django.conf import settings
 from django.db import models
@@ -102,3 +102,101 @@ def get_cached(queryset: _QuerysetT, pk: int) -> _ModelT:
         result = queryset.get(id=pk)
 
     return result
+
+
+def _is_terminal(term: models.Q | Any) -> bool:
+    return not isinstance(term, models.Q)
+
+
+def _is_simple_term(term: models.Q | Any) -> bool:
+    return _is_terminal(term) or (
+        term.connector in (models.Q.AND, models.Q.OR)
+        and all(_is_terminal(c) for c in term.children)
+    )
+
+
+def _to_dnf_q(q: models.Q) -> models.Q:
+    # Expand all ORs nested in ANDs in the expression
+    current_args = []
+    q_stack = [q]
+    while q_stack:
+        current_term = q_stack.pop()
+
+        if _is_terminal(current_term):
+            current_args.append(current_term)
+        else:
+            if current_term.connector not in (models.Q.AND, models.Q.OR):
+                raise NotImplementedError(f"unexpected term '{current_term}'")
+
+            if len(current_args) == len(current_term.children):
+                nested_or = next(
+                    (
+                        c
+                        for c in current_args
+                        if isinstance(c, models.Q) and c.connector == models.Q.OR
+                    ),
+                    None,
+                )
+                if nested_or:
+                    other_args = [c for c in current_args if c is not nested_or]
+                    if current_term.connector == models.Q.AND:
+                        # expand ORs nested in the current AND,
+                        # replace the current AND
+                        q_stack.append(
+                            models.Q(
+                                [
+                                    models.Q(*(other_args + [c]), _connector=models.Q.AND)
+                                    for c in nested_or.children
+                                ],
+                                _connector=models.Q.OR,
+                            )
+                        )
+
+                        # check what we've got now on the next iteration
+                        current_args = []
+
+                    elif current_term.connector == models.Q.OR:
+                        # simplify, expand ORs nested in the current OR
+                        current_args = other_args + nested_or.children
+                        q_stack.append(models.Q(*current_args, _connector=models.Q.OR))
+                else:
+                    current_args = [models.Q(*current_args, _connector=current_term.connector)]
+
+            # elif _is_simple_term(current_term):
+            #     current_args.append(current_term)
+            else:
+                # Go deeper into the tree and check the children to have nested ORs
+                q_stack.append(current_term)
+                q_stack.extend(current_term.children)
+
+    if len(current_args) == 1 and (term := current_args[0]) and not _is_terminal(term):
+        dnf_q = current_args[0]
+    else:
+        dnf_q = models.Q(*current_args, _connector=models.Q.OR)
+
+    return dnf_q
+
+
+def filter_with_union(queryset: _QuerysetT, q_expr: models.Q) -> _QuerysetT:
+    """
+    Applies a Q-expression filter with ORs into a query with UNIONs.
+    This is needed to avoid the ORs in the queryset filter,
+    because they result in bad performance in Postgres.
+    """
+
+    q_expr_dnf = _to_dnf_q(q_expr)
+
+    if not isinstance(q_expr_dnf, models.Q) or (
+        q_expr_dnf.connector == models.Q.AND
+        or q_expr_dnf.connector == models.Q.OR
+        and len(q_expr_dnf.children) == 1
+    ):
+        # A trivial case, can use this expr directly
+        queryset = queryset.filter(q_expr_dnf)
+    else:
+        qs2 = queryset.filter(q_expr_dnf.children[0])
+        qs2 = qs2.union(*[queryset.filter(term) for term in q_expr_dnf.children[1:]])
+
+        queryset = qs2
+
+    return queryset
