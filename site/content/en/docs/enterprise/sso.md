@@ -5,7 +5,7 @@ weight: 3
 description: 'SSO for a Self-Hosted solution'
 ---
 
-> **Note:** This is a paid feature available only for the [Enterprise clients](https://www.cvat.ai/pricing/on-prem).
+> **Note:** This is a paid feature available only to [Enterprise clients](https://www.cvat.ai/pricing/on-prem).
 
 CVAT supports authentication through both OpenID Connect (OIDC) and Security Assertion Markup Language (SAML) protocols.
 To configure SSO, complete the following 2 main steps:
@@ -42,22 +42,22 @@ in the CVAT config file. Each provider's configuration includes both general and
 | `name`         | _required_ | A human-readable name for the IdP. |
 | `protocol`     | _required_ | Authentication protocol (`OIDC`/`SAML`). |
 | `email_domain` | _optional_ | Company email domain (used with `email_address` selection mode). |
-| `weight`       | _optional_ | Determines priority (used with `lowest_weight` selection mode). Default is 10. |
+| `weight`       | _optional_ | Determines priority (used with `lowest_weight` selection mode). The default is 10. |
 
 Additionally, each IdP configuration must include several protocol-specific parameters:
 {{< tabpane text=true >}}
 {{% tab header="OpenID Connect" %}}
-- `client_id` and `client_secret` (_required_) - these values can be obtained
+- `client_id` and `client_secret` (_required_): These values can be obtained
   from the configuration page of the specific provider.
 - `server_url` (_required_): URL is used to obtain IdP OpenID Configuration Metadata.
 
   **NOTE**: How to check `server_url` correctness: server_url + `/.well-known/openid-configuration` API should exist
   and return [OpenID Provider Metadata](https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderMetadata).
-  Generally, each authentication platform provides a list of all endpoints. Need to find the corresponding endpoint
+  Generally, each authentication platform provides a list of all endpoints. You need to find the corresponding endpoint
   and select the part in front of `/.well-known/openid-configuration`. For example, in the case of integrating
   an OIDC Microsoft Entry ID application, don't forget to specify the second version of API
   (`https://login.microsoftonline.com/<tenant_id>/v2.0`).
-- `token_auth_method` (_optional_) - token endpoint authentication method which can be one of
+- `token_auth_method` (_optional_): Token endpoint authentication method which can be one of
   `client_secret_basic`, `client_secret_post`. If this field is omitted, a method from
   the server's token auth methods list will be used.
 
@@ -67,66 +67,66 @@ the authentication flow (disabled by default).
 ```yaml
 ---
 sso:
-enable_pkce: true
+  enable_pkce: true
 ...
 ```
 {{% /tab %}}
 {{% tab header="SAML" %}}
-- `entity_id` (_required_) - IdP entity ID, should be equal to the corresponding setting on the IdP configuration page.
-- `metadata_url` (_optional_) - SAML metadata URL. This can typically be found on the IdP configuration page.
-- `x509_cert` (_optional_) - The SAML X.509 certificate. Also could be found in the IdP’s configuration.
+- `entity_id` (_required_): IdP entity ID, should be equal to the corresponding setting in the IdP configuration.
+- `metadata_url` (_optional_): SAML metadata URL. This can typically be found on the IdP configuration page.
+- `x509_cert` (_optional_): The SAML X.509 certificate. Also could be found in the IdP’s configuration.
    If the `metadata_url` is not specified, this parameter becomes **required**.
-- `sso_url` (_optional_) - SAML endpoint for the Single Sign-On service. Also could be found in the IdP’s configuration.
+- `sso_url` (_optional_): SAML endpoint for the Single Sign-On service. Also could be found in the IdP’s configuration.
   If the `metadata_url` is not specified, this parameter becomes **required**.
-- `attribute_mapping` (_required_) - A mapping for users' attributes.
+- `attribute_mapping` (_required_): A mapping for users' attributes.
 {{% /tab %}}
 {{< /tabpane >}}
 
-Below are simple examples of SSO configuration file for both protocols:
+Below are examples of SSO configuration file for both protocols:
 {{< tabpane text=true >}}
   {{% tab header="Integrate OIDC-based IdP" %}}
    ```yaml
    ---
    sso:
-   enabled: true
-   selection_mode: email_address
-   identity_providers:
-    - id: oidc-idp
-      protocol: OIDC
-      name: OIDC-based IdP
-      server_url: https://example.com
-      client_id: xxx
-      client_secret: xxx
-      email_domain: example.com
+     enabled: true
+     selection_mode: email_address
+     identity_providers:
+       - id: oidc-idp
+         protocol: OIDC
+         name: OIDC-based IdP
+         server_url: https://example.com
+         client_id: xxx
+         client_secret: xxx
+         email_domain: example.com
    ```
   {{% /tab %}}
   {{% tab header="Integrate SAML-based IdP" %}}
   ```yaml
    ---
    sso:
-   enabled: true
-   selection_mode: email_address
-   identity_providers:
-    - id: saml-idp
-      protocol: SAML
-      name: SMAL-based IdP
-      entity_id: <idp-entity-id>
-      email_domain: example.com
-      # specify only metadata_url or sso_url and x509_cert
-      metadata_url: http://example.com/path/to/saml/metadata/
-      sso_url: <Login URL>
-      x509_cert: |
-        -----BEGIN CERTIFICATE-----
-        certificate content
-        -----END CERTIFICATE-----
+     enabled: true
+     selection_mode: email_address
+     identity_providers:
+       - id: saml-idp
+         protocol: SAML
+         name: SAML-based IdP
+         entity_id: <idp-entity-id>
+         email_domain: example.com
+         # specify only metadata_url or sso_url and x509_cert
+         metadata_url: http://example.com/path/to/saml/metadata/
+         sso_url: <Login URL>
+         x509_cert: |
+           -----BEGIN CERTIFICATE-----
+           certificate content
+           -----END CERTIFICATE-----
 
-      attribute_mapping:
-        uid: ...
-        email_verified: ...
-        email: ...
-        last_name: ...
-        first_name: ...
-        username: ...
+         attribute_mapping:
+           uid: ...
+           email_verified: ...
+           email: ...
+           last_name: ...
+           first_name: ...
+           username: ...
    ```
   {{% /tab %}}
 {{< /tabpane >}}
@@ -139,8 +139,8 @@ export CVAT_HOST="<cvat_host>"
 export CVAT_BASE_URL="<http|https>://${CVAT_HOST}:<cvat_port>"
 ```
 
-Start the CVAT enterprise instance as usual.
-That's it! On the CVAT login page, you should now see the option `Continue with SSO`.
+Start the CVAT Enterprise instance as usual.
+That's it! The CVAT login page now should have the `Continue with SSO` option.
 
 ![](/images/sso_enabled.jpeg)
 
@@ -159,13 +159,13 @@ Follow these steps to configure an application on the `Microsoft Azure` platform
 
 To start, log into your [Microsoft Azure Portal](https://portal.azure.com/#home). Once you're in:
 1. Navigate to the  `Microsoft Entra ID` service -> `App registrations` section in the menu on the left.
-1. Clink on the `+ New registration` button.
-1. Enter application name
-1. Select `Supported account types` based on your needs
+1. Click on the `+ New registration` button.
+1. Enter application name.
+1. Select `Supported account types` based on your needs.
 1. Add `Redirect URI`: choose `Web` platform and set `<scheme:cvat_domain>/api/auth/oidc/<idp-id:azure-oidc>/login/callback/`
-   to the value field
+   to the value field.
   ![](/images/azure_oidc_1.jpeg)
-1. Click on the`Register` button
+1. Click on the`Register` button.
 
 {{% alert title="Note" color="primary" %}}
 More information on how to configure an OIDC-based application on the Azure platform can be found
@@ -197,13 +197,13 @@ sso:
   enabled: true
   selection_mode: email_address
   identity_providers:
-   - id: <idp-id:azure-oidc>
-    protocol: OIDC
-    name: Azure OIDC-based IdP
-    server_url: https://<Directory (tenant) ID>/v2.0/
-    client_id: <Secret ID>
-    client_secret: <Secret Value>
-    email_domain: <company_email_domain>
+    - id: <idp-id:azure-oidc>
+      protocol: OIDC
+      name: Azure OIDC-based IdP
+      server_url: https://<Directory (tenant) ID>/v2.0/
+      client_id: <Secret ID>
+      client_secret: <Secret Value>
+      email_domain: <company_email_domain>
 ```
 
 {{< alert title="Tip" >}}
@@ -226,23 +226,22 @@ To start, log into your [Microsoft Azure Portal](https://portal.azure.com/#home)
 
 You’ve now created an app, but a few more steps are needed to finalize the configuration.
 
-##### **Step 2: Configure an created application**
+##### **Step 2: Configure a created application**
 
-1. Navigate to the `Single sign-on` section in the menu on the left
-1. Choose the SAML protocol as the single sign on method
+1. Navigate to the `Single sign-on` section in the menu on the left.
+1. Choose the SAML protocol as the single sign on method.
    ![](/images/azure_saml_2.jpeg)
 1. Edit `Basic SAML Configuration`:
    - `Identifier (Entity ID)`: `<scheme:cvat_domain>/api/auth/saml/<idp-id:azure-saml>/metadata/`
    - `Reply URL (Assertion Consumer Service URL)`: `<scheme:cvat_domain>/api/auth/saml/<idp-id:azure-saml>/acs/`
     ![](/images/azure_saml_3.jpeg)
    - Save changes
-1. Edit `Attributes & Claims`
-   1. Add a new `uid` claim:
-      - Name: `uid`
-      - Namespace: `http://schemas.xmlsoap.org/ws/2005/05/identity/claims`
-      - Source: `attribute`
-      - Source attribute: `user.objectid`
-        ![](/images/azure_saml_4.jpeg)
+1. Edit `Attributes & Claims` by adding a new `uid` claim:
+   - Name: `uid`
+   - Namespace: `http://schemas.xmlsoap.org/ws/2005/05/identity/claims`
+   - Source: `attribute`
+   - Source attribute: `user.objectid`
+      ![](/images/azure_saml_4.jpeg)
 
 {{% alert title="Note" color="primary" %}}
 More information on how to configure an application on Azure platform can be
@@ -271,21 +270,21 @@ sso:
   enabled: true
   selection_mode: email_address
   identity_providers:
-  - id: <idp-id:azure-saml>
-    protocol: SAML
-    name: Azure SAML-based IdP
-    entity_id: <Microsoft Entra Identifier> (https://sts.windows.net/<tenantId>/)
-    metadata_url: <App Federation Metadata Url>
+    - id: <idp-id:azure-saml>
+      protocol: SAML
+      name: Azure SAML-based IdP
+      entity_id: <Microsoft Entra Identifier> (https://sts.windows.net/<tenantId>/)
+      metadata_url: <App Federation Metadata Url>
 
-    attribute_mapping:
-      uid: http://schemas.xmlsoap.org/ws/2005/05/identity/claims/uid
-      username: http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier
-      email: http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress
-      first_name: http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname
-      last_name: http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname
-      # email_verified: it is not possible to configure SAML-based application to send this claim to the SP
+      attribute_mapping:
+        uid: http://schemas.xmlsoap.org/ws/2005/05/identity/claims/uid
+        username: http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier
+        email: http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress
+        first_name: http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname
+        last_name: http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname
+        # email_verified: it is not possible to configure SAML-based application to send this claim to the SP
 
-    email_domain: <company_email_domain>
+      email_domain: <company_email_domain>
 
 ```
 {{< alert title="Tip" >}}
@@ -305,7 +304,7 @@ Follow these steps to configure an application on the `Okta` platform:
 
 To start, log into your [Okta admin dashboard](https://login.okta.com/). Once you're in:
 1. Navigate to the `Applications` section in the menu on the left.
-1. Clink on the `Create App integration` button.
+1. Click on the `Create App integration` button.
 1. Select `OIDC - OpenID Connect` as a sign-in method and `Web Application` type.
   ![](/images/okta_oidc_1.jpeg)
 1. Fill the form with the following content:
@@ -341,13 +340,13 @@ sso:
   enabled: true
   selection_mode: email_address
   identity_providers:
-   - id: <idp-id:okta-oidc>
-    protocol: OIDC
-    name: Okta OIDC-based IdP
-    server_url: https://<okta_domain>/
-    client_id: <client_id>
-    client_secret: <client_secret>
-    email_domain: <company_email_domain>
+    - id: <idp-id:okta-oidc>
+      protocol: OIDC
+      name: Okta OIDC-based IdP
+      server_url: https://<okta_domain>/
+      client_id: <client_id>
+      client_secret: <client_secret>
+      email_domain: <company_email_domain>
 ```
 
 {{< alert title="Tip" >}}
@@ -364,16 +363,16 @@ Follow these steps to configure an application on the `Okta` platform:
 
 To start, log into your [Okta admin dashboard](https://login.okta.com/). Once you're in:
 1. Navigate to the `Applications` section in the menu on the left.
-1. Clink on the `Create App integration` button.
+1. Click on the `Create App integration` button.
 1. Select `SAML 2.0` as a sign-in method, then click `Next`.
    ![](/images/okta_saml_1.jpeg)
-1. Fill the form with general setting and go to the next configuration step.
+1. Fill the form with the general settings and go to the next configuration step.
 1. On the `Configure SAML` form set the following fields:
    - `Single sign-on URL`:` <scheme:cvat_domain>/api/auth/saml/<idp-id:okta-saml>/acs/`
    - `Audience URI (SP Entity ID`: `<scheme:cvat_domain>/api/auth/saml/<idp-id:okta-saml>/metadata/`
    ![](/images/okta_saml_2.jpeg)
 1. Define attribute statements that will be shared with CVAT.
-   In our example we will use the `Basic` attribute name format and set the mapping as showed below:
+   In our example we will use the `Basic` attribute name format and set the mapping as shown below:
    - `firstName`: `user.firstName`
    - `lastName`: `user.lastName`
    - `username`: `user.login`
@@ -396,10 +395,10 @@ If CVAT is configured to require email verification, it expects the Identity Pro
 the `email_verified` claim. However, Okta does not send this claim by default. As a result, users
 will receive a confirmation email with a verification link.
 
-There is an option to include email verification claim on sign-in step:
+There is an option to include email verification claim on the sign-in step:
 1. Add one more mapping `emailVerified` -> `user.emailVerified` on SAML-based application configuration step:
-   1. Navigate to the `SAML Settings` on the `General` tab and click `Edit`
-   1. Add one more attribute mapping as it was describe on app configuration step
+   1. Navigate to the `SAML Settings` on the `General` tab and click `Edit`.
+   1. Add one more attribute mapping as it was described on the app configuration step.
 1. Add custom user attribute `emailVerified`:
    - Navigate to the `Directory` section in the menu on the left -> `Profile Editor` item
    - Select default user profile from the list (`User (default)`)
@@ -407,7 +406,7 @@ There is an option to include email verification claim on sign-in step:
    - Fill out the form with your desired values, making sure to select the `boolean` data type
    ![](/images/okta_saml_4.jpeg)
    - Click `Save`
-1. Update people profiles:
+1. Update user profiles:
    - Navigate to the `People` section in the menu on the left
    - Set the value for the recently created attribute for each person
 
@@ -420,21 +419,21 @@ sso:
   enabled: true
   selection_mode: email_address
   identity_providers:
-  - id: <idp-id:okta-saml>
-    protocol: SAML
-    name: Okta SAML-based Identity Provider
-    entity_id: <Issuer>
-    metadata_url: <Metadata URL>
+    - id: <idp-id:okta-saml>
+      protocol: SAML
+      name: Okta SAML-based Identity Provider
+      entity_id: <Issuer>
+      metadata_url: <Metadata URL>
 
-    attribute_mapping:
-      uid: uid
-      username: username
-      email: email
-      first_name: firstName
-      last_name: lastName
-      email_verified: emailVerified # if configured
+      attribute_mapping:
+        uid: uid
+        username: username
+        email: email
+        first_name: firstName
+        last_name: lastName
+        email_verified: emailVerified # if configured
 
-    email_domain: <company_email_domain>
+      email_domain: <company_email_domain>
 ```
 
 {{< alert title="Tip" >}}
@@ -460,7 +459,7 @@ To start, log into your [Auth0 dashboard](https://manage.auth0.com/dashboard). O
 
 You’ve now created an app, but a one more step is needed to finalize the configuration.
 
-##### **Step 2: Configure an created application**
+##### **Step 2: Configure a created application**
 
 1. In the `Settings` tab of your new application, scroll down to the `Application URIs` section.
 1. Add `<scheme:cvat_domain>/api/auth/oidc/<idp-id:auth0-oidc>/login/callback/` to the `Allowed Callback URLs`.
@@ -479,13 +478,13 @@ sso:
   enabled: true
   selection_mode: email_address
   identity_providers:
-   - id: <idp-id:auth0-oidc>
-    protocol: OIDC
-    name: Auth0 OIDC-based IdP
-    server_url: https://<auth0_domain>/
-    client_id: <client_id>
-    client_secret: <client_secret>
-    email_domain: <company_email_domain>
+    - id: <idp-id:auth0-oidc>
+      protocol: OIDC
+      name: Auth0 OIDC-based IdP
+      server_url: https://<auth0_domain>/
+      client_id: <client_id>
+      client_secret: <client_secret>
+      email_domain: <company_email_domain>
 ```
 
 
@@ -511,7 +510,7 @@ To start, log into your [Auth0 dashboard](https://manage.auth0.com/dashboard). O
 
 You’ve now created an app, but a few more steps are needed to finalize the configuration.
 
-##### **Step 2: Configure an created application**
+##### **Step 2: Configure a created application**
 
 1. Navigate to the `Addons` tab of the created application and click on the `SAML2 WEB APP` button.
    ![](/images/auth0_saml_2.jpeg)
@@ -538,7 +537,7 @@ You’ve now created an app, but a few more steps are needed to finalize the con
      "mapIdentities": false
    }
    ```
-1. Scroll down and click `Enable`
+1. Scroll down and click `Enable`.
 
 {{% alert title="Note" color="primary" %}}
 More information on how to configure an application on Auth0 platform can be
@@ -556,21 +555,21 @@ sso:
   enabled: true
   selection_mode: email_address
   identity_providers:
-  - id: <idp-id:auth0-saml>
-    protocol: SAML
-    name: Auth0 SAML-based IdP
-    entity_id: <Issuer>
-    metadata_url: <Metadata URL>
+    - id: <idp-id:auth0-saml>
+      protocol: SAML
+      name: Auth0 SAML-based IdP
+      entity_id: <Issuer>
+      metadata_url: <Metadata URL>
 
-    attribute_mapping:
-      uid: http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier
-      username: http://schemas.xmlsoap.org/ws/2005/05/identity/claims/username
-      email: http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress
-      first_name: http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname
-      last_name: http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname
-      email_verified: http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailverified
+      attribute_mapping:
+        uid: http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier
+        username: http://schemas.xmlsoap.org/ws/2005/05/identity/claims/username
+        email: http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress
+        first_name: http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname
+        last_name: http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname
+        email_verified: http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailverified
 
-    email_domain: <company_email_domain>
+      email_domain: <company_email_domain>
 
 ```
 {{< alert title="Tip" >}}
@@ -589,16 +588,16 @@ Follow these steps to do that:
 
 ##### **Step 1: Register an OIDC-based Client**
 
-To start, go to the Keycloak service (by default it is listening for http and https requests
+To start, go to the Keycloak service (by default it is listening for HTTP and HTTPS requests
 using the ports 8080 and 8443, respectively) and log into your admin account. Once you're in:
 
-1. Under desired `realm` navigate to the `Clients` section and click `create client`.
+1. Under the desired `realm` navigate to the `Clients` section and click `create client`.
 1. Fill out the general client settings:
    ![](/images/keycloak_oidc_1.jpeg)
    - `Client type`: OpenID Connect
    - `Client ID`: enter client identifier
    - Enter a name for the client, e.g. OIDC-based client
-1. On the next step enable the `Client authentication` toggle.
+1. In the next step, enable the `Client authentication` toggle.
    ![](/images/keycloak_oidc_2.jpeg)
 1. In the `Login settings` section, provide the following values:
    ![](/images/keycloak_oidc_3.jpeg)
@@ -638,10 +637,10 @@ Follow these steps to configure a client:
 
 ##### **Step 1: Register a SAML-based Client**
 
-To start, go to the Keycloak service (by default it is listening for http and https requests
+To start, go to the Keycloak service (by default it is listening for HTTP and HTTPS requests
 using the ports 8080 and 8443, respectively) and log into your admin account. Once you're in:
 
-1. Under desired `realm` navigate to the `Clients` section and click `create client`.
+1. Under the desired `realm` navigate to the `Clients` section and click `create client`.
 1. Fill out the general client settings:
    ![](/images/keycloak_saml_1.jpeg)
    - `Client type`: SAML
