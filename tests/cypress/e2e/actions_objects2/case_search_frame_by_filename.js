@@ -18,11 +18,11 @@ context('Search frame by filename', () => {
     // const fileIndices = [...Array(imagesCount).keys()];
     // const expectedFilenames = fileIndices.map((val) => `${taskName}_${val}`);
 
-    // function checkSearchResultsLength(input, expectedCount) {
-    //     cy.get('cvat-frame-search-modal').find('input').type(input); // -> 50
-    //     cy.get('cvat-frame-search-item').should('be.visible')
-    //         .and('have.length', expectedCount);
-    // } // TODO: check filenames in search results
+    function checkSearchResultsLength(input, expectedCount) {
+        cy.get('cvat-frame-search-modal').find('input').type(input); // -> 50
+        cy.get('cvat-frame-search-item').should('be.visible')
+            .and('have.length', expectedCount);
+    } // TODO: check filenames in search results
 
     before(() => {
         cy.openTaskJob(taskName);
@@ -34,6 +34,32 @@ context('Search frame by filename', () => {
             cy.get('cvat-frame-search-modal').should('be.visible')
                 .its('input').should('be.visible');
             cy.get('ant-select-dropdown').should('exist').and('be.hidden');
+        });
+        it('search for present frames, should be found', () => {
+            const expectedCount = 5;
+            cy.get('cvat-frame-search-modal').find('input').type(0); // -> 10, 20, 30, 40, 50 TODO: check filenames
+            cy.get('ant-select-dropdown').should('be.visible').within(() => {
+                cy.get('cvat-frame-search-item').should('have.length', expectedCount);
+            });
+
+            // After clearing the input, modal should stay
+            cy.get('cvat-frame-search-modal').find('input').clear();
+            cy.get('cvat-frame-search-modal').should('be.visible')
+                .its('input').should('be.visible');
+        });
+
+        it("negative search, modal shows 'No frames found", () => {
+            cy.get('cvat-frame-search-modal').find('input').type('N');
+            cy.contains('No frames found');
+            cy.get('cvat-frame-search-modal').find('input').clear();
+        });
+
+        it('with more context, search results should change dynamically', () => {
+            checkSearchResultsLength(50, 1); // -> 5, 15, 25, 35, 45, 50
+            checkSearchResultsLength('{backspace}', 1); // -> 50
+            cy.get('cvat-frame-search-modal').find('input').type('{backspace}');
+            // cy.get('cvat-frame-search-item').should('have.length', 1);
+            cy.get('cvat-frame-search-item').should('have.length', 6);
         });
     });
 });
