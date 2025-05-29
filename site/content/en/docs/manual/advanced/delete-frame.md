@@ -45,7 +45,7 @@ If you need to enable showing the deleted frames, you can do it in the settings.
 1. There are ways to navigate through deleted frames without enabling this option:
 
    - Go to the frame via direct navigation methods: navigation slider or frame input field,
-   - Go to the frame via the direct link.
+   - Go to the frame via the direct link, e.g. `/api/tasks/{id}/jobs/{id}?frame={frame_id}`
 
 1. Navigation with step will not count deleted frames.
 
