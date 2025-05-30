@@ -63,7 +63,7 @@ To use CVAT within your organization, please follow these steps:
     see {{< ilink "/docs/manual/advanced/analytics-and-monitoring/manual-qa" "**Manual QA and Review**" >}}
 16. Check issues and if there is a need for additional improvement, reassign jobs to
     either the Validator or Annotator.
-17. (Optional) Check {{< ilink "/docs/manual/advanced/analytics-and-monitoring/analytics-in-cloud" "**Analytics**" >}}.
+17. (Optional) Check {{< ilink "/docs/manual/advanced/analytics-and-monitoring/analytics" "**Analytics**" >}}.
 18. {{< ilink "/docs/manual/advanced/formats" "**Export Data**" >}}.
 
 ## Complete Workflow Guide video tutorial

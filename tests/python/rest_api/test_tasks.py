@@ -1721,7 +1721,7 @@ class TestPostTaskData:
 
             # check sequence of frames
             (data_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
-            assert expected_result == list(map(lambda x: x.name, data_meta.frames))
+            assert expected_result == [x.name for x in data_meta.frames]
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(
@@ -2131,15 +2131,15 @@ class TestPostTaskData:
 
     @parametrize(
         "frame_selection_method, method_params, per_job_count_param",
-        map(
-            lambda e: (*e[0], e[1]),
-            product(
+        (
+            (*e[0], e[1])
+            for e in product(
                 [
                     *tuple(product(["random_uniform"], [{"frame_count"}, {"frame_share"}])),
                     ("manual", {}),
                 ],
                 ["frames_per_job_count", "frames_per_job_share"],
-            ),
+            )
         ),
     )
     def test_can_create_task_with_honeypots(
@@ -5319,14 +5319,12 @@ class TestPatchTask:
         find_users,
     ):
         username, task_id = next(
-            (
-                (user["username"], task["id"])
-                for user in find_users(role=role, exclude_privilege="admin")
-                for task in tasks
-                if task["organization"] == user["org"]
-                and not task["project_id"]
-                and task["owner"]["id"] != user["id"]
-            )
+            (user["username"], task["id"])
+            for user in find_users(role=role, exclude_privilege="admin")
+            for task in tasks
+            if task["organization"] == user["org"]
+            and not task["project_id"]
+            and task["owner"]["id"] != user["id"]
         )
 
         self._test_patch_linked_storage(
