@@ -221,7 +221,7 @@
 
     .ant-input-number-input {
         box-sizing: content-box;
-        width: var(--input-width, 6ch);
+        width: var(--frame-input-width, 6ch);
         min-width: 6ch;
         max-width: 10ch;
     }
