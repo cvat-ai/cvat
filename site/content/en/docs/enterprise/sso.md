@@ -7,7 +7,9 @@ description: 'SSO for a Self-Hosted solution'
 
 > **Note:** This is a paid feature available only to [Enterprise clients](https://www.cvat.ai/pricing/on-prem).
 
-CVAT supports authentication through both OpenID Connect (OIDC) and Security Assertion Markup Language (SAML) protocols.
+CVAT supports Single Sign-On (SSO) using both OpenID Connect (OIDC) and Security Assertion Markup Language (SAML)
+protocols.
+
 To configure SSO, complete the following 2 main steps:
 1. Configure the Identity Provider (IdP) — set up an application on your IdP platform.
 1. Update the CVAT configuration — provide the necessary identity provider settings in the CVAT configuration file.
@@ -19,141 +21,11 @@ Otherwise, you may follow one of the detailed platform-specific guides to set up
 - [Auth0](#auth0)
 - [keycloak](#keycloak)
 
-## Configuring SSO in CVAT
-
-CVAT supports integration with external Identity Providers (IdPs) using a dedicated configuration file.
-This file allows you to define how users are authenticated and which providers are available for login.
-
-### Identity Provider Selection
-
-In some cases, it's necessary to determine which IdP should be used for authenticating a given user.
-CVAT provides a `selection_mode` setting for this purpose. There are 2 available modes:
-- `email_address` (default): Selects the IdP based on the domain of the user’s email address.
-- `lowest_weight`: Automatically selects the IdP with the lowest assigned weight.
-
-### IdP Configuration Structure
-
-To integrate an Identity Provider, you must define its configuration block under the `identity_providers` section
-in the CVAT config file. Each provider's configuration includes both general and protocol-specific settings.
-
-| Key            | Required   | Description |
-| -------------- | ---------- | ----------- |
-| `id`           | _required_ | A unique, URL-safe identifier for the IdP. Used in callback URLs. |
-| `name`         | _required_ | A human-readable name for the IdP. |
-| `protocol`     | _required_ | Authentication protocol (`OIDC`/`SAML`). |
-| `email_domain` | _optional_ | Company email domain (used with `email_address` selection mode). |
-| `weight`       | _optional_ | Determines priority (used with `lowest_weight` selection mode). The default is 10. |
-
-Additionally, each IdP configuration must include several protocol-specific parameters:
-{{< tabpane text=true >}}
-{{% tab header="OpenID Connect" %}}
-- `client_id` and `client_secret` (_required_): These values can be obtained
-  from the configuration page of the specific provider.
-- `server_url` (_required_): URL is used to obtain IdP OpenID Configuration Metadata.
-
-  **NOTE**: How to check `server_url` correctness: server_url + `/.well-known/openid-configuration` API should exist
-  and return [OpenID Provider Metadata](https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderMetadata).
-  Generally, each authentication platform provides a list of all endpoints. You need to find the corresponding endpoint
-  and select the part in front of `/.well-known/openid-configuration`. For example, in the case of integrating
-  an OIDC Microsoft Entry ID application, don't forget to specify the second version of API
-  (`https://login.microsoftonline.com/<tenant_id>/v2.0`).
-- `token_auth_method` (_optional_): Token endpoint authentication method which can be one of
-  `client_secret_basic`, `client_secret_post`. If this field is omitted, a method from
-  the server's token auth methods list will be used.
-
-**NOTE**: There is a global setting that applies to all configured OIDC-based Identity Providers:
-`enable_pkce`. This option controls whether `Proof Key for Code Exchange` (PKCE) is enabled for
-the authentication flow (disabled by default).
-```yaml
----
-sso:
-  enable_pkce: true
-...
-```
-{{% /tab %}}
-{{% tab header="SAML" %}}
-- `entity_id` (_required_): IdP entity ID, should be equal to the corresponding setting in the IdP configuration.
-- `metadata_url` (_optional_): SAML metadata URL. This can typically be found on the IdP configuration page.
-- `x509_cert` (_optional_): The SAML X.509 certificate. Also could be found in the IdP’s configuration.
-   If the `metadata_url` is not specified, this parameter becomes **required**.
-- `sso_url` (_optional_): SAML endpoint for the Single Sign-On service. Also could be found in the IdP’s configuration.
-  If the `metadata_url` is not specified, this parameter becomes **required**.
-- `attribute_mapping` (_required_): A mapping for users' attributes.
-{{% /tab %}}
-{{< /tabpane >}}
-
-Below are examples of SSO configuration file for both protocols:
-{{< tabpane text=true >}}
-  {{% tab header="Integrate OIDC-based IdP" %}}
-   ```yaml
-   ---
-   sso:
-     enabled: true
-     selection_mode: email_address
-     identity_providers:
-       - id: oidc-idp
-         protocol: OIDC
-         name: OIDC-based IdP
-         server_url: https://example.com
-         client_id: xxx
-         client_secret: xxx
-         email_domain: example.com
-   ```
-  {{% /tab %}}
-  {{% tab header="Integrate SAML-based IdP" %}}
-  ```yaml
-   ---
-   sso:
-     enabled: true
-     selection_mode: email_address
-     identity_providers:
-       - id: saml-idp
-         protocol: SAML
-         name: SAML-based IdP
-         entity_id: <idp-entity-id>
-         email_domain: example.com
-         # specify only metadata_url or sso_url and x509_cert
-         metadata_url: http://example.com/path/to/saml/metadata/
-         sso_url: <Login URL>
-         x509_cert: |
-           -----BEGIN CERTIFICATE-----
-           certificate content
-           -----END CERTIFICATE-----
-
-         attribute_mapping:
-           uid: ...
-           email_verified: ...
-           email: ...
-           last_name: ...
-           first_name: ...
-           username: ...
-   ```
-  {{% /tab %}}
-{{< /tabpane >}}
-
-Once the configuration file is updated, several environment variables must be exported before running CVAT:
-```bash
-export AUTH_CONFIG_PATH="<path_to_auth_config>"
-export CVAT_HOST="<cvat_host>"
-# cvat_port is optional
-export CVAT_BASE_URL="<http|https>://${CVAT_HOST}:<cvat_port>"
-```
-
-Start the CVAT Enterprise instance as usual.
-That's it! The CVAT login page now should have the `Continue with SSO` option.
-
-![](/images/sso_enabled.jpeg)
-
-More information about OIDC-based and SAML-based IdP configuration expected by Django Allauth
-can be found [here](https://docs.allauth.org/en/latest/socialaccount/providers/openid_connect.html)
-and [here](https://docs.allauth.org/en/latest/socialaccount/providers/saml.html) respectively.
-
-
 ## Platform specific IdP configuration
 ### Microsoft Azure
 
 #### OpenId Connect
-Follow these steps to configure an application on the `Microsoft Azure` platform:
+Follow these steps to configure an application on the `Microsoft Azure` platform and integrate it with CVAT:
 
 ##### **Step 1: Register an OIDC-based Application**
 
@@ -164,7 +36,9 @@ To start, log into your [Microsoft Azure Portal](https://portal.azure.com/#home)
 1. Select `Supported account types` based on your needs.
 1. Add `Redirect URI`: choose `Web` platform and set `<scheme:cvat_domain>/api/auth/oidc/<idp-id:azure-oidc>/login/callback/`
    to the value field.
-  ![](/images/azure_oidc_1.jpeg)
+
+   ![](/images/azure_oidc_1.jpeg)
+
 1. Click on the`Register` button.
 
 {{% alert title="Note" color="primary" %}}
@@ -211,11 +85,12 @@ Actual `Secret ID` and `Secret Value` values may be found on `Certificates & sec
 while `Directory (tenant) ID` - on the `Overview` tab.
 {{< /alert >}}
 
-After running CVAT with updated config file, users will be able to authenticate using configured Identity Provider.
+You can now proceed to [start CVAT](#start-cvat).
+For additional CVAT configuration details, refer to [Configuring SSO in CVAT](#configuring-sso-in-cvat).
 
 #### SAML
 
-Follow these steps to configure an application on the `Microsoft Azure` platform:
+Follow these steps to configure an application on the `Microsoft Azure` platform and integrate it with CVAT:
 
 ##### **Step 1: Register an SAML-based Application**
 
@@ -294,11 +169,12 @@ on the `Single sign-on` tab of the created application
 ![](/images/azure_saml_5.jpeg)
 {{< /alert >}}
 
-After running CVAT with updated config file, users will be able to authenticate using configured Identity Provider.
+You can now proceed to [start CVAT](#start-cvat).
+For additional CVAT configuration details, refer to [Configuring SSO in CVAT](#configuring-sso-in-cvat).
 
 ### Okta
 #### OpenId Connect
-Follow these steps to configure an application on the `Okta` platform:
+Follow these steps to configure an application on the `Okta` platform and integrate it with CVAT:
 
 ##### **Step 1: Register an OIDC-based Application**
 
@@ -311,6 +187,7 @@ To start, log into your [Okta admin dashboard](https://login.okta.com/). Once yo
    - `App integration name`: enter a name for the application
    - `Sign-in redirect URIs`: `<scheme:cvat_domain>/api/auth/oidc/<idp-id:okta-oidc>/login/callback/`
    - Select option in the `Controlled access` to match your requirements. In this example we'll use `Skip group assignment for now`.
+
    ![](/images/okta_oidc_2.jpeg)
 
 {{% alert title="Note" color="primary" %}}
@@ -354,10 +231,11 @@ Actual `Client ID` and `Client secret` key values may be found on the `General` 
 ![](/images/okta_oidc_4.jpeg)
 {{< /alert >}}
 
-After running CVAT with updated config file, users will be able to authenticate using configured Identity Provider.
+You can now proceed to [start CVAT](#start-cvat).
+For additional CVAT configuration details, refer to [Configuring SSO in CVAT](#configuring-sso-in-cvat).
 
 #### SAML
-Follow these steps to configure an application on the `Okta` platform:
+Follow these steps to configure an application on the `Okta` platform and integrate it with CVAT:
 
 ##### **Step 1: Register an SAML-based Application**
 
@@ -391,9 +269,9 @@ You’ve now created an app, but a few more steps are needed to finalize the con
 
 ##### **Step 2: Simplify login process**
 
-If CVAT is configured to require email verification, it expects the Identity Provider to include
-the `email_verified` claim. However, Okta does not send this claim by default. As a result, users
-will receive a confirmation email with a verification link.
+If CVAT is configured to require [email verification](/docs/administration/basics/installation/#email-verification),
+it expects the Identity Provider to include the `email_verified` claim. However, Okta does not send this claim
+by default. As a result, users will receive a confirmation email with a verification link.
 
 There is an option to include email verification claim on the sign-in step:
 1. Add one more mapping `emailVerified` -> `user.emailVerified` on SAML-based application configuration step:
@@ -441,12 +319,13 @@ sso:
 ![](/images/okta_saml_5.jpeg)
 {{< /alert >}}
 
-After running CVAT with updated config file, users will be able to authenticate using configured Identity Provider.
+You can now proceed to [start CVAT](#start-cvat).
+For additional CVAT configuration details, refer to [Configuring SSO in CVAT](#configuring-sso-in-cvat).
 
 ### Auth0
 #### OpenID connect
 
-Follow these steps to configure an application in the `Auth0` platform:
+Follow these steps to configure an application in the `Auth0` platform and integrate it with CVAT:
 
 ##### **Step 1: Register an OIDC-based Application**
 
@@ -493,11 +372,12 @@ sso:
 ![](/images/auth0_oidc_3.jpeg)
 {{< /alert >}}
 
-After running CVAT with updated config file, users will be able to authenticate using configured Identity Provider.
+You can now proceed to [start CVAT](#start-cvat).
+For additional CVAT configuration details, refer to [Configuring SSO in CVAT](#configuring-sso-in-cvat).
 
 #### SAML
 
-Follow these steps to configure an application in the `Auth0` platform:
+Follow these steps to configure an application in the `Auth0` platform and integrate it with CVAT:
 
 ##### **Step 1: Register an SAML-based Application**
 
@@ -572,12 +452,14 @@ sso:
       email_domain: <company_email_domain>
 
 ```
+
 {{< alert title="Tip" >}}
 Actual `Metadata URL` and `Issuer` values may be found on the `Usage` tab of the `SAML2 Web App` plugin
 ![](/images/auth0_saml_4.jpeg)
 {{< /alert >}}
 
-After running CVAT with updated config file, users will be able to authenticate using configured Identity Provider.
+You can now proceed to [start CVAT](#start-cvat).
+For additional CVAT configuration details, refer to [Configuring SSO in CVAT](#configuring-sso-in-cvat).
 
 ### Keycloak
 
@@ -629,7 +511,9 @@ sso:
 Actual `Client Secret`value can be found on the `Credentials` tab of the created OIDC client
 ![](/images/keycloak_oidc_4.jpeg)
 {{< /alert >}}
-After running CVAT with updated config file, users will be able to authenticate using configured Identity Provider.
+
+You can now proceed to [start CVAT](#start-cvat).
+For additional CVAT configuration details, refer to [Configuring SSO in CVAT](#configuring-sso-in-cvat).
 
 #### SAML
 
@@ -717,4 +601,141 @@ sso:
 Actual `Metadata URL` may be found in the `Realm settings` on the `General` tab
 ![](/images/keycloak_saml_6.jpeg)
 {{< /alert >}}
-After running CVAT with updated config file, users will be able to authenticate using configured Identity Provider.
+
+You can now proceed to [start CVAT](#start-cvat).
+For additional CVAT configuration details, refer to [Configuring SSO in CVAT](#configuring-sso-in-cvat).
+
+## Configuring SSO in CVAT
+
+CVAT provides a dedicated configuration file to customize the login and registration flow.
+The [`sso`](#sso-settings) section of this file specifies which external Identity Provider (IdP)
+integrations are enabled. To set up SSO, you typically create a custom YAML configuration file
+(e.g., `auth_config.yml`) and supply its path when [starting](#start-cvat) CVAT.
+
+### SSO settings
+
+| Setting          | Description |
+| ---------------- | ----------- |
+| `enabled`        | Enables or disables Single Sign-On (SSO) functionality. |
+| `selection_mode` | Defines how the Identity Provider (IdP) is selected for authenticating a given user.<br>Available modes:<br><ul><li>`email_address` (default): Selects the IdP based on the domain of the user’s email address.</li><li>`lowest_weight`: Selects the IdP with the lowest configured weight.</li></ul> |
+| `enable_pkce`    | Controls whether `Proof Key for Code Exchange` (PKCE) is enabled for the authentication flow (disabled by default). <br>This setting applies to all configured OIDC-based Identity Providers |
+
+```yaml
+---
+sso:
+  enabled: true|false
+  selection_mode: email_address|lowest_weight
+  enable_pkce: true|false
+  ...
+```
+
+### IdP Configuration Structure
+
+To integrate an Identity Provider, you must define its configuration block under the `identity_providers` section
+in the CVAT config file. Each provider's configuration includes both general and protocol-specific settings.
+
+| Setting        | Required   | Description |
+| -------------- | ---------- | ----------- |
+| `id`           | _required_ | A unique, URL-safe identifier for the IdP. Used in callback URLs. |
+| `name`         | _required_ | A human-readable name for the IdP. |
+| `protocol`     | _required_ | Authentication protocol (`OIDC`/`SAML`). |
+| `email_domain` | _optional_ | Company email domain (used with `email_address` selection mode). |
+| `weight`       | _optional_ | Determines priority (used with `lowest_weight` selection mode). The default is 10. |
+
+Additionally, each IdP configuration must include several protocol-specific parameters:
+{{< tabpane text=true >}}
+{{% tab header="OpenID Connect" %}}
+- `client_id` and `client_secret` (_required_): These values can be obtained
+  from the configuration page of the specific provider.
+- `server_url` (_required_): URL is used to obtain IdP OpenID Configuration Metadata.
+
+  **NOTE**: How to check `server_url` correctness: server_url + `/.well-known/openid-configuration` API should exist
+  and return [OpenID Provider Metadata](https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderMetadata).
+  Generally, each authentication platform provides a list of all endpoints. You need to find the corresponding endpoint
+  and select the part in front of `/.well-known/openid-configuration`. For example, in the case of integrating
+  an OIDC Microsoft Entry ID application, don't forget to specify the second version of API
+  (`https://login.microsoftonline.com/<tenant_id>/v2.0`).
+- `token_auth_method` (_optional_): Token endpoint authentication method which can be one of
+  `client_secret_basic`, `client_secret_post`. If this field is omitted, a method from
+  the server's token auth methods list will be used.
+{{% /tab %}}
+{{% tab header="SAML" %}}
+- `entity_id` (_required_): IdP entity ID, should be equal to the corresponding setting in the IdP configuration.
+- `metadata_url` (_optional_): SAML metadata URL. This can typically be found on the IdP configuration page.
+- `x509_cert` (_optional_): The SAML X.509 certificate. Also could be found in the IdP’s configuration.
+   If the `metadata_url` is not specified, this parameter becomes **required**.
+- `sso_url` (_optional_): SAML endpoint for the Single Sign-On service. Also could be found in the IdP’s configuration.
+  If the `metadata_url` is not specified, this parameter becomes **required**.
+- `attribute_mapping` (_required_): A mapping between user account attributes and attributes sent by
+  the Identity Provider.
+{{% /tab %}}
+{{< /tabpane >}}
+
+Below are examples of SSO configuration file for both protocols:
+{{< tabpane text=true >}}
+  {{% tab header="Integrate OIDC-based IdP" %}}
+   ```yaml
+   ---
+   sso:
+     enabled: true
+     selection_mode: email_address
+     identity_providers:
+       - id: oidc-idp
+         protocol: OIDC
+         name: OIDC-based IdP
+         server_url: https://example.com
+         client_id: xxx
+         client_secret: xxx
+         email_domain: example.com
+   ```
+  {{% /tab %}}
+  {{% tab header="Integrate SAML-based IdP" %}}
+  ```yaml
+   ---
+   sso:
+     enabled: true
+     selection_mode: lowest_weight
+     identity_providers:
+       - id: saml-idp
+         protocol: SAML
+         name: SAML-based IdP
+         entity_id: <idp-entity-id>
+         weight: 1
+         # specify only metadata_url or sso_url and x509_cert
+         metadata_url: http://example.com/path/to/saml/metadata/
+         sso_url: <Login URL>
+         x509_cert: |
+           -----BEGIN CERTIFICATE-----
+           certificate content
+           -----END CERTIFICATE-----
+
+         attribute_mapping:
+           uid: ...
+           email_verified: ...
+           email: ...
+           last_name: ...
+           first_name: ...
+           username: ...
+   ```
+  {{% /tab %}}
+{{< /tabpane >}}
+
+More information about OIDC-based and SAML-based IdP configuration expected by Django Allauth
+can be found [here](https://docs.allauth.org/en/latest/socialaccount/providers/openid_connect.html)
+and [here](https://docs.allauth.org/en/latest/socialaccount/providers/saml.html) respectively.
+
+### Start CVAT
+
+Once the configuration file is created, several environment variables must be exported before running CVAT:
+```bash
+export AUTH_CONFIG_PATH="<path_to_auth_config>"
+export CVAT_HOST="<cvat_host>"
+# cvat_port is optional
+export CVAT_BASE_URL="<http|https>://${CVAT_HOST}:<cvat_port>"
+```
+
+Start the CVAT Enterprise instance as usual.
+That's it! The CVAT login page now should have the `Continue with SSO` option,
+allowing users to authenticate using the configured Identity Provider.
+
+![](/images/sso_enabled.jpeg)
