@@ -1530,7 +1530,9 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
 
             response = cls.client.get(f"/api/requests/{rq_id}")
             assert response.status_code == status.HTTP_200_OK, response.status_code
-            assert response.json()["status"] == "finished", response.json().get("status")
+            response_json = response.json()
+            rqjob_status, msg = response_json["status"], response_json["message"]
+            assert rqjob_status == "finished", f"{rqjob_status=}\n{msg=}"
 
             response = cls.client.get("/api/tasks/{}".format(tid))
             data_id = response.data["data"]
@@ -1999,7 +2001,9 @@ class ProjectImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
 
             response = self.client.get(f"/api/requests/{rq_id}")
             assert response.status_code == status.HTTP_200_OK, response.status_code
-            assert response.json()["status"] == "finished", response.json().get("status")
+            response_json = response.json()
+            rqjob_status, msg = response_json["status"], response_json["message"]
+            assert rqjob_status == "finished", f"{rqjob_status=}\n{msg=}"
 
             response = self.client.get("/api/tasks/{}".format(tid))
             data_id = response.data["data"]
@@ -3146,12 +3150,14 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
                 if isinstance(media, io.BytesIO):
                     media.seek(0)
             response = self.client.post("/api/tasks/{}/data".format(tid), data=media_data)
-            assert response.status_code == status.HTTP_202_ACCEPTED
+            assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
             rq_id = response.json()["rq_id"]
 
             response = self.client.get(f"/api/requests/{rq_id}")
             assert response.status_code == status.HTTP_200_OK, response.status_code
-            assert response.json()["status"] == "finished", response.json().get("status")
+            response_json = response.json()
+            rqjob_status, msg = response_json["status"], response_json["message"]
+            assert rqjob_status == "finished", f"{rqjob_status=}\n{msg=}"
 
             response = self.client.get("/api/tasks/{}".format(tid))
             data_id = response.data["data"]
@@ -5063,7 +5069,7 @@ class TaskDataAPITestCase(ApiTestBase):
 
         def _send_data_and_fail(*args, **kwargs):
             response = _send_data(*args, **kwargs)
-            assert response.status_code == status.HTTP_400_BAD_REQUEST
+            assert response.status_code == status.HTTP_400_BAD_REQUEST, response.status_code
             raise Exception(response.data)
 
         filenames = [
@@ -5475,7 +5481,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
                 }
 
             response = self.client.post("/api/tasks/{}/data".format(tid), data=images)
-            assert response.status_code == status.HTTP_202_ACCEPTED
+            assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
 
             response = self.client.get("/api/tasks/{}".format(tid))
             task = response.data
