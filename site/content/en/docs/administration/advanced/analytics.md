@@ -227,7 +227,7 @@ To export the data locally:
    curl -X POST -u 'user:pass' https://app.cvat.ai/api/events/export?job_id=123
    ```
 
-1. (Optional) You can check the status of the export process by sending a GET request with the `rq_id` to the
+1. You can check the status of the export process by sending a GET request with the `rq_id` to the
    [`/api/requests/{id}`](https://app.cvat.ai/api/swagger/#/requests/requests_retrieve) endpoint:
 
    ```bash
