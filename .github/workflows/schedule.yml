@@ -311,7 +311,6 @@ jobs:
   generate_report:
     name: Generate Allure Report and Upload to S3
     needs: [unit_testing, e2e_testing]
-    # if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
     if: always()
 
     uses: ./.github/workflows/generate-allure-report.yml
