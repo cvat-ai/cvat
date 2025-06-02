@@ -8,6 +8,7 @@ from __future__ import annotations
 import io
 import itertools
 import math
+import sys
 from abc import ABCMeta, abstractmethod
 from bisect import bisect
 from collections import OrderedDict
@@ -436,16 +437,27 @@ class TaskFrameProvider(IFrameProvider):
 
         return segment
 
+    def unload(self):
+        self._clear_segment_frame_provider_cache()
+
+    def _clear_segment_frame_provider_cache(self):
+        while self._segment_frame_provider_cache:
+            cached_provider = self._segment_frame_provider_cache.popitem()[1]
+            if sys.getrefcount(cached_provider) == 2:
+                # The provider is not used anywhere else, we can release the resources.
+                # Otherwise, it must be unloaded by the caller holding a reference or
+                # by the garbage collector at some point later.
+                cached_provider.unload()
+
     def _get_segment_frame_provider(self, frame_number: int) -> SegmentFrameProvider:
         segment = self._get_segment(self.validate_frame_number(frame_number))
 
         provider = self._segment_frame_provider_cache.get(segment.id)
         if not provider:
-            provider = SegmentFrameProvider(segment)
-
             # A simple last result cache for iteration use cases (e.g. dataset export).
             # Avoid storing many providers in memory, each holds open chunks
-            self._segment_frame_provider_cache.clear()
+            self._clear_segment_frame_provider_cache()
+            provider = SegmentFrameProvider(segment)
             self._segment_frame_provider_cache[segment.id] = provider
 
         return provider
