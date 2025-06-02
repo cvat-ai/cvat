@@ -49,7 +49,7 @@ from cvat.apps.engine.models import (
 from cvat.apps.engine.rq import RequestId, define_dependent_job
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.engine.types import ExtendedRequest
-from cvat.apps.engine.utils import get_rq_lock_by_user, get_rq_lock_for_job
+from cvat.apps.engine.utils import get_rq_lock_by_user, get_rq_lock_for_job, take_by
 from cvat.apps.events.handlers import handle_function_call
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.lambda_manager.models import FunctionKind
@@ -1312,16 +1312,20 @@ class RequestViewSet(viewsets.ViewSet):
     def list(self, request):
         queryset = Task.objects
 
-        perm = LambdaPermission.create_scope_list(request)
-
-        from cvat.apps.engine.model_utils import filter_with_union
-        q_expr = perm.make_filter_query()
-        queryset = filter_with_union(queryset, q_expr)
-
-        task_ids = set(queryset.values_list("id", flat=True))
-
         queue = LambdaQueue()
-        rq_jobs = [job.to_dict() for job in queue.get_jobs() if job.get_task() in task_ids]
+        queued_jobs = queue.get_jobs()
+        queued_task_ids = set(job.get_task() for job in queued_jobs if job.get_task())
+        visible_task_ids = set()
+        if queued_task_ids:
+            perm = LambdaPermission.create_scope_list(request)
+
+            queryset = perm.filter(queryset).values_list("id", flat=True)
+
+            # Avoid big DB requests
+            for queued_task_ids_chunk in take_by(sorted(queued_task_ids), 1000):
+                visible_task_ids.update(queryset.filter(id__in=queued_task_ids_chunk))
+
+        rq_jobs = [job.to_dict() for job in queued_jobs if job.get_task() in visible_task_ids]
 
         response_serializer = FunctionCallSerializer(rq_jobs, many=True)
         return response_serializer.data
