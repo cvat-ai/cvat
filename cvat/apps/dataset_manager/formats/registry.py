@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 from datumaro.components.project import Environment
-from cvat.apps.engine.models import DimensionType
 
+from cvat.apps.engine.models import DimensionType
 
 dm_env = Environment()
 
@@ -127,24 +127,24 @@ def make_exporter(name):
 
 
 # pylint: disable=unused-import
+import cvat.apps.dataset_manager.formats.camvid
+import cvat.apps.dataset_manager.formats.cityscapes
 import cvat.apps.dataset_manager.formats.coco
 import cvat.apps.dataset_manager.formats.cvat
 import cvat.apps.dataset_manager.formats.datumaro
+import cvat.apps.dataset_manager.formats.icdar
+import cvat.apps.dataset_manager.formats.imagenet
+import cvat.apps.dataset_manager.formats.kitti
 import cvat.apps.dataset_manager.formats.labelme
+import cvat.apps.dataset_manager.formats.lfw
+import cvat.apps.dataset_manager.formats.market1501
 import cvat.apps.dataset_manager.formats.mask
 import cvat.apps.dataset_manager.formats.mot
 import cvat.apps.dataset_manager.formats.mots
-import cvat.apps.dataset_manager.formats.pascal_voc
-import cvat.apps.dataset_manager.formats.yolo
-import cvat.apps.dataset_manager.formats.imagenet
-import cvat.apps.dataset_manager.formats.camvid
-import cvat.apps.dataset_manager.formats.widerface
-import cvat.apps.dataset_manager.formats.vggface2
-import cvat.apps.dataset_manager.formats.market1501
-import cvat.apps.dataset_manager.formats.icdar
-import cvat.apps.dataset_manager.formats.velodynepoint
-import cvat.apps.dataset_manager.formats.pointcloud
-import cvat.apps.dataset_manager.formats.kitti
-import cvat.apps.dataset_manager.formats.lfw
-import cvat.apps.dataset_manager.formats.cityscapes
 import cvat.apps.dataset_manager.formats.openimages
+import cvat.apps.dataset_manager.formats.pascal_voc
+import cvat.apps.dataset_manager.formats.pointcloud
+import cvat.apps.dataset_manager.formats.velodynepoint
+import cvat.apps.dataset_manager.formats.vggface2
+import cvat.apps.dataset_manager.formats.widerface
+import cvat.apps.dataset_manager.formats.yolo
