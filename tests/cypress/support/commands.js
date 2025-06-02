@@ -302,7 +302,7 @@ Cypress.Commands.add('headlessLogin', ({
     ));
 });
 
-Cypress.Commands.add('headlessCreateObjects', (objects, jobID) => {
+Cypress.Commands.add('headlessCreateObjects', (objects, jobId) => {
     const convertShape = ($win, job) => (shape) => ({
         frame: shape.frame,
         type: shape.type,
@@ -346,7 +346,7 @@ Cypress.Commands.add('headlessCreateObjects', (objects, jobID) => {
     });
 
     cy.window().then(async ($win) => {
-        const job = (await $win.cvat.jobs.get({ jobID }))[0];
+        const job = (await $win.cvat.jobs.get({ jobId }))[0];
         await job.annotations.clear({ reload: true });
 
         const shapes = objects.filter((object) => object.objectType === 'shape').map(convertShape($win, job));
@@ -364,10 +364,10 @@ Cypress.Commands.add('headlessCreateObjects', (objects, jobID) => {
     });
 });
 
-Cypress.Commands.add('headlessRestoreAllFrames', (jobID) => {
-    cy.intercept('PATCH', `/api/jobs/${jobID}/data/meta**`).as('patchMeta');
+Cypress.Commands.add('headlessRestoreAllFrames', (jobId) => {
+    cy.intercept('PATCH', `/api/jobs/${jobId}/data/meta**`).as('patchMeta');
     cy.window().then(async ($win) => {
-        await $win.cvat.server.request(`/api/jobs/${jobID}/data/meta`, {
+        await $win.cvat.server.request(`/api/jobs/${jobId}/data/meta`, {
             method: 'PATCH',
             data: { deleted_frames: [] },
         });
@@ -395,7 +395,7 @@ Cypress.Commands.add('headlessCreateTask', (taskSpec, dataSpec, extras) => {
         }
 
         const result = await task.save(extras || {});
-        return cy.wrap({ taskID: result.id, jobIDs: result.jobs.map((job) => job.id) });
+        return cy.wrap({ taskId: result.id, jobIds: result.jobs.map((job) => job.id) });
     });
 });
 
@@ -406,19 +406,19 @@ Cypress.Commands.add('headlessCreateProject', (projectSpec) => {
         });
 
         const result = await project.save();
-        return cy.wrap({ projectID: result.id });
+        return cy.wrap({ projectId: result.id });
     });
 });
 
-Cypress.Commands.add('headlessDeleteProject', (projectID) => {
+Cypress.Commands.add('headlessDeleteProject', (projectId) => {
     cy.window()
-        .then(($win) => cy.wrap($win.cvat.projects.get({ id: projectID })))
+        .then(($win) => cy.wrap($win.cvat.projects.get({ id: projectId })))
         .then(([project]) => cy.wrap(project.delete()));
 });
 
-Cypress.Commands.add('headlessDeleteTask', (taskID) => {
+Cypress.Commands.add('headlessDeleteTask', (taskId) => {
     cy.window().then(async ($win) => {
-        const [task] = await $win.cvat.tasks.get({ id: taskID });
+        const [task] = await $win.cvat.tasks.get({ id: taskId });
         await task.delete();
     });
 });
@@ -461,7 +461,7 @@ Cypress.Commands.add('headlessCreateJob', (jobSpec) => {
         const job = new $win.cvat.classes.Job(data);
 
         const result = await job.save(data);
-        return cy.wrap({ jobID: result.id });
+        return cy.wrap({ jobId: result.id });
     });
 });
 
@@ -475,9 +475,9 @@ Cypress.Commands.add('headlessUpdateTask', (taskId, callback) => {
     ));
 });
 
-Cypress.Commands.add('headlessUpdateJob', (jobID, updateJobParameters) => {
+Cypress.Commands.add('headlessUpdateJob', (jobId, updateJobParameters) => {
     cy.window().then(async ($win) => (
-        cy.wrap($win.cvat.jobs.get({ jobID }))
+        cy.wrap($win.cvat.jobs.get({ jobId }))
             .then(([job]) => cy.wrap(job.save(updateJobParameters)))
     ));
 });
@@ -499,7 +499,7 @@ Cypress.Commands.add('saveJob', (method = 'PATCH', status = 200, as = 'saveJob')
     cy.wait(`@${as}`).its('response.statusCode').should('equal', status);
 });
 
-Cypress.Commands.add('getJobIDFromIdx', (jobIdx) => {
+Cypress.Commands.add('getJobIdFromIdx', (jobIdx) => {
     const jobsKey = [];
     cy.document().then((doc) => {
         const jobs = Array.from(doc.querySelectorAll('.cvat-job-item'));
@@ -511,10 +511,10 @@ Cypress.Commands.add('getJobIDFromIdx', (jobIdx) => {
     });
 });
 
-Cypress.Commands.add('openJobFromJobsPage', (jobID) => {
+Cypress.Commands.add('openJobFromJobsPage', (jobId) => {
     cy.get('.cvat-header-jobs-button').click();
     cy.get('.cvat-jobs-page').should('exist').and('be.visible');
-    cy.get('.cvat-job-page-list-item-id').contains(`ID: ${jobID}`)
+    cy.get('.cvat-job-page-list-item-id').contains(`Id: ${jobId}`)
         .prev()
         .should('not.have.class', 'cvat-job-item-loading-preview')
         .click();
@@ -523,8 +523,8 @@ Cypress.Commands.add('openJobFromJobsPage', (jobID) => {
 
 Cypress.Commands.add('openJob', (jobIdx = 0, removeAnnotations = true, expectedFail = false) => {
     cy.get('.cvat-task-job-list').should('exist');
-    cy.getJobIDFromIdx(jobIdx).then((jobID) => {
-        cy.get('.cvat-job-item').contains('a', `Job #${jobID}`).click();
+    cy.getJobIdFromIdx(jobIdx).then((jobId) => {
+        cy.get('.cvat-job-item').contains('a', `Job #${jobId}`).click();
     });
     cy.url().should('include', '/jobs');
     if (expectedFail) {
@@ -558,9 +558,9 @@ Cypress.Commands.add('pressSplitControl', () => {
     });
 });
 
-Cypress.Commands.add('openTaskJob', (taskName, jobID = 0, removeAnnotations = true, expectedFail = false) => {
+Cypress.Commands.add('openTaskJob', (taskName, jobId = 0, removeAnnotations = true, expectedFail = false) => {
     cy.openTask(taskName);
-    cy.openJob(jobID, removeAnnotations, expectedFail);
+    cy.openJob(jobId, removeAnnotations, expectedFail);
 });
 
 Cypress.Commands.add('interactControlButton', (objectType) => {
@@ -1305,9 +1305,9 @@ Cypress.Commands.add('updateJobStateOnAnnotationView', (choice) => {
     cy.get('.cvat-spinner').should('not.exist');
 });
 
-Cypress.Commands.add('setJobState', (jobID, state) => {
+Cypress.Commands.add('setJobState', (jobId, state) => {
     cy.get('.cvat-task-job-list')
-        .contains('a', `Job #${jobID}`)
+        .contains('a', `Job #${jobId}`)
         .parents('.cvat-job-item')
         .find('.cvat-job-item-state').click();
     cy.get('.cvat-job-item-state-dropdown')
@@ -1319,9 +1319,9 @@ Cypress.Commands.add('setJobState', (jobID, state) => {
     cy.get('.cvat-spinner').should('not.exist');
 });
 
-Cypress.Commands.add('setJobStage', (jobID, stage) => {
+Cypress.Commands.add('setJobStage', (jobId, stage) => {
     cy.get('.cvat-task-job-list')
-        .contains('a', `Job #${jobID}`)
+        .contains('a', `Job #${jobId}`)
         .parents('.cvat-job-item')
         .find('.cvat-job-item-stage').click();
     cy.get('.cvat-job-item-stage-dropdown')
@@ -1497,8 +1497,8 @@ Cypress.Commands.add('shapeRotate', (shape, expectedRotateDeg, pressShift = fals
         cy.get('#root').trigger('mousemove', x + 20, y);
         cy.get(shape).should('have.attr', 'transform');
         cy.document().then((doc) => {
-            const modShapeIDString = shape.substring(1); // Remove "#" from the shape id string
-            const shapeTranformMatrix = decomposeMatrix(doc.getElementById(modShapeIDString).getCTM());
+            const modShapeIdString = shape.substring(1); // Remove "#" from the shape id string
+            const shapeTranformMatrix = decomposeMatrix(doc.getElementById(modShapeIdString).getCTM());
             cy.get('#cvat_canvas_text_content').should('contain.text', `${shapeTranformMatrix}°`);
             expect(`${shapeTranformMatrix}°`).to.be.equal(`${expectedRotateDeg}°`);
         });
@@ -1598,8 +1598,8 @@ Cypress.Commands.add('createJob', (options = {
     cy.url().should('match', /\/tasks\/\d+\/jobs\/\d+/);
 });
 
-Cypress.Commands.add('deleteJob', (jobID) => {
-    cy.get('.cvat-job-item').contains('a', `Job #${jobID}`)
+Cypress.Commands.add('deleteJob', (jobId) => {
+    cy.get('.cvat-job-item').contains('a', `Job #${jobId}`)
         .parents('.cvat-job-item')
         .find('.cvat-job-item-more-button')
         .click();
@@ -1609,11 +1609,11 @@ Cypress.Commands.add('deleteJob', (jobID) => {
             cy.contains('[role="menuitem"]', 'Delete').click();
         });
     cy.get('.cvat-modal-confirm-delete-job')
-        .should('contain', `The job ${jobID} will be deleted`)
+        .should('contain', `The job ${jobId} will be deleted`)
         .within(() => {
             cy.contains('button', 'Delete').click();
         });
-    cy.get('.cvat-job-item').contains('a', `Job #${jobID}`)
+    cy.get('.cvat-job-item').contains('a', `Job #${jobId}`)
         .parents('.cvat-job-item')
         .should('have.css', 'opacity', '0.5');
 });
@@ -1879,11 +1879,11 @@ Cypress.Commands.add('mergeConsensusTask', (status = 202) => {
     cy.wait('@mergeTask').its('response.statusCode').should('eq', status);
 });
 
-Cypress.Commands.add('mergeConsensusJob', (jobID, status = 202) => {
+Cypress.Commands.add('mergeConsensusJob', (jobId, status = 202) => {
     cy.intercept('POST', '/api/consensus/merges**').as('mergeJob');
     cy.get('.cvat-job-item')
         .filter(':has(.cvat-tag-consensus)')
-        .filter(`:contains("Job #${jobID}")`)
+        .filter(`:contains("Job #${jobId}")`)
         .find('.anticon-more').first().click();
 
     cy.get('.ant-dropdown-menu').contains('li', 'Merge consensus job').click();
