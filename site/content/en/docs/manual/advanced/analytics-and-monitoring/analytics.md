@@ -90,7 +90,8 @@ To fetch and display the analytical data, select the **Request** button.
 > So, when you request data for a task, the data for all task jobs is also fetched.
 
 Once the data is fetched and displayed on the page, you can check its relevance under the page title.
-A warning icon ![Warning icon](/images/warning-icon.svg) indicates that the resource was updated after the last analytics update.
+A warning icon ![Warning icon](/images/warning-icon.svg) indicates
+that the resource was updated after the last analytics update.
 
 To update the data, select ![Fetch analytics button](/images/fetch-data-button.svg) button.
 
