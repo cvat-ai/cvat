@@ -784,7 +784,7 @@ export class Task extends Session {
     public readonly useZipChunks: boolean;
     public readonly useCache: boolean;
     public readonly copyData: boolean;
-    public readonly cloudStorageId: number;
+    public cloudStorageId: number;
     public readonly sortingMethod: string;
 
     public readonly validationMode: string | null;
@@ -1161,6 +1161,14 @@ export class Task extends Session {
                 },
                 cloudStorageId: {
                     get: () => data.cloud_storage_id,
+                    set: (cloudStorageId) => {
+                        if (!Number.isInteger(cloudStorageId) || cloudStorageId <= 0) {
+                            throw new ArgumentError('Value must be a positive integer');
+                        }
+
+                        updateTrigger.update('cloudStorageId');
+                        data.cloud_storage_id = cloudStorageId;
+                    },
                 },
                 sortingMethod: {
                     get: () => data.sorting_method,

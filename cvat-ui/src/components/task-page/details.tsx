@@ -199,13 +199,13 @@ class DetailsComponent extends React.PureComponent<Props, State> {
         );
     }
 
-    private renderDataStorageField(): JSX.Element {
-        const { task: taskInstance } = this.props;
+    private renderDataStorageField(): JSX.Element | null {
+        const { task: taskInstance, onUpdateTask } = this.props;
 
         console.log('FOOOOOOO: ', taskInstance);
 
         if (taskInstance.dataStorage.location !== StorageLocation.CLOUD_STORAGE) {
-            return '';
+            return null;
         }
         return (
             <Row justify='space-between' align='middle'>
@@ -213,7 +213,8 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                     <CloudStorageEditor
                         instance={taskInstance}
                         onChange={(cloudStorage) => {
-                            console.log('FOOOOOO new cloud storage', cloudStorage);
+                            taskInstance.cloudStorageId = cloudStorage.id;
+                            onUpdateTask(taskInstance);
                         }}
                     />
                 </Col>

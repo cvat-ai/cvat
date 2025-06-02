@@ -2364,6 +2364,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     project_id = serializers.IntegerField(required=False, allow_null=True)
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
+    cloud_storage_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     consensus_replicas = serializers.IntegerField(
         required=False, default=0, min_value=0,
         help_text=textwrap.dedent("""\
@@ -2377,7 +2378,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         fields = (
             'url', 'id', 'name', 'project_id', 'owner_id', 'assignee_id',
             'bug_tracker', 'overlap', 'segment_size', 'labels', 'subset',
-            'target_storage', 'source_storage', 'consensus_replicas',
+            'target_storage', 'source_storage', 'consensus_replicas', 'cloud_storage_id',
         )
         write_once_fields = ('overlap', 'segment_size', 'consensus_replicas')
 
@@ -2443,7 +2444,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
     # pylint: disable=no-self-use
     @transaction.atomic
-    def update(self, instance, validated_data):
+    def update(self, instance: models.Task, validated_data):
         instance.name = validated_data.get('name', instance.name)
         instance.owner_id = validated_data.get('owner_id', instance.owner_id)
         instance.bug_tracker = validated_data.get('bug_tracker', instance.bug_tracker)
@@ -2515,6 +2516,11 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
         # update source and target storages
         _update_related_storages(instance, validated_data)
+
+        # update data cloud storage
+        if new_data_cloud_storage_id := validated_data.get('cloud_storage_id'):
+            instance.data.cloud_storage_id = new_data_cloud_storage_id
+            instance.data.save()
 
         instance.save()
 

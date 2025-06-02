@@ -678,6 +678,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 const taskData = {
                     ...this._updateTrigger.getUpdated(this, {
                         bugTracker: 'bug_tracker',
+                        cloudStorageId: 'cloud_storage_id',
                         projectId: 'project_id',
                         assignee: 'assignee_id',
                     }),
@@ -748,6 +749,10 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
 
             if (this.sourceStorage) {
                 taskSpec.source_storage = this.sourceStorage.toJSON();
+            }
+
+            if (typeof this.cloudStorageId !== 'undefined') {
+                taskSpec.cloud_storage_id = this.cloudStorageId;
             }
 
             if (fields.consensus_replicas) {
