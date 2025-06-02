@@ -21,7 +21,7 @@ def encode_mask(bitmap: ArrayLike, /, bbox: Optional[Sequence[float]] = None) ->
     bbox, if specified, must have the form [x1, y1, x2, y2],
     where (0, 0) <= (x1, y1) < (x2, y2) <= (W, H).
     The encoded mask will be limited to points between (x1, y1) and (x2, y2).
-    If bbox is None, all points of the bitmap will be considered.
+    If bbox is None, the encoded mask will include all non-zero points of the bitmap.
     """
 
     bitmap = np.asanyarray(bitmap)
