@@ -4,8 +4,10 @@ linkTitle: 'Requests page'
 weight: 7
 ---
 
-The **Requests** page allows users to track the status of data processing jobs such as exporting annotations
-or importing datasets. Users can monitor progress, download results, and check for errors if they occur.
+The **Requests** page allows users to track the status of data processing jobs (such as exporting annotations
+or importing datasets) and most of the background processes (such as task creation, quality calculation,
+report preparation with analytics, merge consensus jobs).
+Users can monitor progress, download results, and check for errors if they occur.
 
 ![Requests page](/images/requests_page.png)
 

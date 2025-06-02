@@ -1,6 +1,11 @@
 // Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
+
+// eslint-disable-next-line import/no-unresolved
+const reporter = require('allure-cypress/reporter');
+
+const { allureCypress } = reporter;
 const plugins = require('./cypress/plugins/index');
 
 const baseUrl = 'http://localhost:8080';
@@ -20,6 +25,9 @@ module.exports = {
     },
     e2e: {
         setupNodeEvents(on, config) {
+            allureCypress(on, config, {
+                resultsDir: 'allure-results-e2e',
+            });
             return plugins(on, config);
         },
         testIsolation: false,
