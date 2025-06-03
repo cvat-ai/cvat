@@ -42,7 +42,9 @@ context('Search frame by filename', () => {
         it('search icon is visible, opens modal on click', () => {
             cy.get('.cvat-player-search-frame-name-icon').should('be.visible').click();
             cy.get('.cvat-frame-search-modal').should('be.visible')
-                .find('input').should('be.visible');
+                .find('input')
+                .should('be.visible')
+                .should('be.focused');
         });
 
         describe('With more context, search results should change dynamically', () => {
