@@ -413,9 +413,9 @@ class TaskFrameProvider(IFrameProvider):
 
         abs_frame_number = self.get_abs_frame_number(validated_frame_number)
 
-        # For some reason, task's prefetch cache doesn't get populated after the following
+        # Task's prefetch cache doesn't get populated after the following
         # call to task.segment_set.all() and the result traversal, resulting in extra requests.
-        # Prefetch segments explicitly to fix this
+        # Prefetch segments explicitly to fix this.
         prefetch_related_objects([self._db_task], "segment_set")
 
         segment = next(
