@@ -46,7 +46,7 @@ or negative points (for some models):
 - **Positive points** define the area in which the object is located.
 - **Negative points** define the area in which the object is not located.
 
-![](/images/image188_detrac.jpg)
+![Positive and negative points example](/images/image188_detrac.jpg)
 
 ### AI tools: annotate with interactors
 
@@ -56,7 +56,7 @@ To annotate with interactors, do the following:
 2. From the **Label** drop-down, select a label for the polygon.
 3. From the **Interactor** drop-down, select a model (see [Interactors models](#interactors-models)).
    <br>Click the **Question mark** to see information about each model:
-   <br>![](/images/image114_detrac.jpg)
+   <br>![Model information tooltip](/images/image114_detrac.jpg)
 4. (Optional) If the model returns masks, and you need to
    convert masks to polygons, use the **Convert masks to polygons** toggle.
 5. Click **Interact**.
@@ -88,7 +88,7 @@ you can edit it like a polygon.
 You can change the number of points in the
 polygon with the slider:
 
-![](/images/image224.jpg)
+![Slider for point number in polygon](/images/image224.jpg)
 
 ### AI tools: delete points
 
@@ -104,16 +104,16 @@ To use **Intelligent scissors**, do the following:
 
 1. On the menu toolbar, click **OpenCV**![OpenCV](/images/image201.jpg) and wait for the library to load.
 
-   <br>![](/images/image198.jpg)
+   <br>![Loading OpenCV](/images/image198.jpg)
 
 2. Go to the **Drawing** tab, select the label, and click on the **Intelligent scissors** button.
 
-   ![](/images/image199.jpg)
+   ![Selecting Intelligent scissors instrument](/images/image199.jpg)
 
 3. Add the first point on the boundary of the allocated object. <br> You will see a line repeating the outline of the object.
 4. Add the second point, so that the previous point is within the restrictive threshold.
    <br>After that a line repeating the object boundary will be automatically created between the points.
-   ![](/images/image200_detrac.jpg)
+   ![Points and lines created by intelligent scissors](/images/image200_detrac.jpg)
 5. To finish placing points, on the top menu click **Done** (or **N** on the keyboard).
 
 As a result, a polygon will be created.
@@ -121,7 +121,7 @@ As a result, a polygon will be created.
 You can change the number of points in the
 polygon with the slider:
 
-![](/images/image224.jpg)
+![Slider for point number in polygon](/images/image224.jpg)
 
 To increase or lower the action threshold, hold **Ctrl** and scroll the mouse wheel.
 
@@ -141,12 +141,12 @@ During the drawing process, you can remove the last point by clicking on it with
 
 | Model                                                     | Tool     | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Example                                           |
 | --------------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| Segment Anything Model (SAM)                              | AI Tools | The Segment Anything Model (SAM) produces high <br> quality object masks, and it can be used to generate <br> masks for all objects in an image. It has been trained <br>on a dataset of 11 million images and <br>1.1 billion masks, and has strong zero-shot performance on a variety of segmentation tasks. <br><br>For more information, see: <li>[GitHub: Segment Anything](https://github.com/facebookresearch/segment-anything) <li>[Site: Segment Anything](https://segment-anything.com/)<li>[Paper: Segment Anything](https://ai.facebook.com/research/publications/segment-anything/)               | ![](/images/interactors_SAM.gif)                  |
-| Deep extreme <br>cut (DEXTR)                              | AI Tool  | This is an optimized version of the original model, <br>introduced at the end of 2017. It uses the <br>information about extreme points of an object <br>to get its mask. The mask is then converted to a polygon. <br>For now this is the fastest interactor on the CPU. <br><br>For more information, see: <li>[GitHub: DEXTR-PyTorch](https://github.com/scaelles/DEXTR-PyTorch) <li>[Site: DEXTR-PyTorch](https://cvlsegmentation.github.io/dextr)<li>[Paper: DEXTR-PyTorch](https://arxiv.org/pdf/1711.09081.pdf)                                                                                         | ![](/images/dextr_example.gif)                    |
-| Feature backpropagating <br>refinement <br>scheme (f-BRS) | AI Tool  | The model allows to get a mask for an <br>object using positive points (should be <br>left-clicked on the foreground), <br>and negative points (should be right-clicked <br>on the background, if necessary). <br>It is recommended to run the model on GPU, <br>if possible. <br><br>For more information, see: <li>[GitHub: f-BRS](https://github.com/saic-vul/fbrs_interactive_segmentation) <li>[Paper: f-BRS](https://arxiv.org/pdf/2001.10331.pdf)                                                                                                                                                       | ![](/images/fbrs_example.gif)                     |
-| High Resolution <br>Net (HRNet)                           | AI Tool  | The model allows to get a mask for <br>an object using positive points (should <br>be left-clicked on the foreground), <br> and negative points (should be <br>right-clicked on the background, <br> if necessary). <br>It is recommended to run the model on GPU, <br>if possible. <br><br>For more information, see: <li>[GitHub: HRNet](https://github.com/saic-vul/ritm_interactive_segmentation) <li>[Paper: HRNet](https://arxiv.org/pdf/2102.06583.pdf)                                                                                                                                                 | ![](/images/hrnet_example.gif)                    |
-| Inside-Outside-Guidance<br>(IOG)                          | AI Tool  | The model uses a bounding box and <br>inside/outside points to create a mask. <br>First of all, you need to create a bounding<br> box, wrapping the object. <br>Then you need to use positive <br>and negative points to say the <br>model where is <br>a foreground, and where is a background.<br>Negative points are optional. <br><br>For more information, see: <li>[GitHub: IOG](https://github.com/shiyinzhang/Inside-Outside-Guidance) <li>[Paper: IOG](https://openaccess.thecvf.com/content_CVPR_2020/papers/Zhang_Interactive_Object_Segmentation_With_Inside-Outside_Guidance_CVPR_2020_paper.pdf) | ![](/images/iog_example.gif)                      |
-| Intelligent scissors                                      | OpenCV   | Intelligent scissors is a CV method of creating <br>a polygon by placing points with the automatic <br>drawing of a line between them. The distance<br> between the adjacent points is limited by <br>the threshold of action, displayed as a <br>red square that is tied to the cursor. <br><br> For more information, see: <li>[Site: Intelligent Scissors Specification](https://docs.opencv.org/4.x/df/d6b/classcv_1_1segmentation_1_1IntelligentScissorsMB.html)                                                                                                                                          | ![int scissors](/images/intelligent_scissors.gif) |
+| Segment Anything Model (SAM)                              | AI Tools | The Segment Anything Model (SAM) produces high <br> quality object masks, and it can be used to generate <br> masks for all objects in an image. It has been trained <br>on a dataset of 11 million images and <br>1.1 billion masks, and has strong zero-shot performance on a variety of segmentation tasks. <br><br>For more information, see: <li>[GitHub: Segment Anything](https://github.com/facebookresearch/segment-anything) <li>[Site: Segment Anything](https://segment-anything.com/)<li>[Paper: Segment Anything](https://ai.facebook.com/research/publications/segment-anything/)               | ![Segment Anything Model example](/images/interactors_SAM.gif) |
+| Deep extreme <br>cut (DEXTR)                              | AI Tool  | This is an optimized version of the original model, <br>introduced at the end of 2017. It uses the <br>information about extreme points of an object <br>to get its mask. The mask is then converted to a polygon. <br>For now this is the fastest interactor on the CPU. <br><br>For more information, see: <li>[GitHub: DEXTR-PyTorch](https://github.com/scaelles/DEXTR-PyTorch) <li>[Site: DEXTR-PyTorch](https://cvlsegmentation.github.io/dextr)<li>[Paper: DEXTR-PyTorch](https://arxiv.org/pdf/1711.09081.pdf)                                                                                         | ![Deep extreme cut example](/images/dextr_example.gif) |
+| Feature backpropagating <br>refinement <br>scheme (f-BRS) | AI Tool  | The model allows to get a mask for an <br>object using positive points (should be <br>left-clicked on the foreground), <br>and negative points (should be right-clicked <br>on the background, if necessary). <br>It is recommended to run the model on GPU, <br>if possible. <br><br>For more information, see: <li>[GitHub: f-BRS](https://github.com/saic-vul/fbrs_interactive_segmentation) <li>[Paper: f-BRS](https://arxiv.org/pdf/2001.10331.pdf)                                                                                                                                                       | ![Feature backpropagating refinement scheme example](/images/fbrs_example.gif) |
+| High Resolution <br>Net (HRNet)                           | AI Tool  | The model allows to get a mask for <br>an object using positive points (should <br>be left-clicked on the foreground), <br> and negative points (should be <br>right-clicked on the background, <br> if necessary). <br>It is recommended to run the model on GPU, <br>if possible. <br><br>For more information, see: <li>[GitHub: HRNet](https://github.com/saic-vul/ritm_interactive_segmentation) <li>[Paper: HRNet](https://arxiv.org/pdf/2102.06583.pdf)                                                                                                                                                 | ![High Resolution Net Example](/images/hrnet_example.gif) |
+| Inside-Outside-Guidance<br>(IOG)                          | AI Tool  | The model uses a bounding box and <br>inside/outside points to create a mask. <br>First of all, you need to create a bounding<br> box, wrapping the object. <br>Then you need to use positive <br>and negative points to say the <br>model where is <br>a foreground, and where is a background.<br>Negative points are optional. <br><br>For more information, see: <li>[GitHub: IOG](https://github.com/shiyinzhang/Inside-Outside-Guidance) <li>[Paper: IOG](https://openaccess.thecvf.com/content_CVPR_2020/papers/Zhang_Interactive_Object_Segmentation_With_Inside-Outside_Guidance_CVPR_2020_paper.pdf) | ![Inside-Outside-Guidance Example](/images/iog_example.gif) |
+| Intelligent scissors                                      | OpenCV   | Intelligent scissors is a CV method of creating <br>a polygon by placing points with the automatic <br>drawing of a line between them. The distance<br> between the adjacent points is limited by <br>the threshold of action, displayed as a <br>red square that is tied to the cursor. <br><br> For more information, see: <li>[Site: Intelligent Scissors Specification](https://docs.opencv.org/4.x/df/d6b/classcv_1_1segmentation_1_1IntelligentScissorsMB.html)                                                                                                                                          | ![Intelligent scissors](/images/intelligent_scissors.gif) |
 
 <!--lint enable maximum-line-length-->
 
@@ -185,7 +185,7 @@ To annotate with detectors, do the following:
 3. From the left drop-down select the DL model label, from the right drop-down
    select the matching label of your task.
 
-   ![](/images/detectors_tab.png)
+   ![Detectors tab](/images/detectors_tab.png)
 
 4. (Optional) If the model returns masks, and you
    need to convert masks to polygons, use the **Convert masks to polygons** toggle.
@@ -258,7 +258,7 @@ To annotate with trackers, do the following:
 
 2. On the menu toolbar, click **OpenCV**![OpenCV](/images/image201.jpg) and wait for the library to load.
 
-   <br>![](/images/image198.jpg)
+   <br>![Loading OpenCV](/images/image198.jpg)
 
 3. From **Tracker** drop-down, select tracker and Click **Track**
 
@@ -300,7 +300,7 @@ To improve the contrast of the image, do the following:
 
 1. In the **OpenCV** menu, go to the **Image** tab.
 2. Click on **Histogram equalization** button.
-   <br>![](/images/image221.jpg)
+   <br>![Histogram equalization button](/images/image221.jpg)
 
 **Histogram equalization** will improve
 contrast on current and following
@@ -308,6 +308,6 @@ frames.
 
 Example of the result:
 
-![](/images/image222.jpg)
+![Histogram equalization example](/images/image222.jpg)
 
 To disable **Histogram equalization**, click on the button again.

@@ -12,12 +12,12 @@ Shapes that were created in the track mode, have extra navigation buttons.
 
 - These buttons help to jump to the previous/next keyframe.
 
-  ![](/images/image056.jpg)
+  ![Previous and next keyframe buttons](/images/image056.jpg)
 
 - The button helps to jump to the initial frame and to the last keyframe.
 
-  ![](/images/image057.jpg)
+  ![Initial and last frame buttons](/images/image057.jpg)
 
 You can use the `Split` function to split one track into two tracks:
 
-![](/images/gif010_detrac.gif)
+![Splitting track example](/images/gif010_detrac.gif)

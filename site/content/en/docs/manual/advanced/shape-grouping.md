@@ -22,9 +22,9 @@ You have to switch `Color By Group` checkbox for that.
 
 Shapes that don't have `group_id`, will be highlighted in white.
 
-![](/images/image078_detrac.jpg)
+![Grouped shapes example](/images/image078_detrac.jpg)
 
-![](/images/image077_detrac.jpg)
+![Example with grouped and non-grouped shapes](/images/image077_detrac.jpg)
 
 ## Shapes grouping video tutorial
 

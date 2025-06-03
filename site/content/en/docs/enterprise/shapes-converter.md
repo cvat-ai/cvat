@@ -24,11 +24,11 @@ and then select **Run actions**.
 
 > Note: All **Shapes converter** functions work in alignment with set up filter.
 
-![](/images/run-actions-menu.jpg)
+![Run actions menu](/images/run-actions-menu.jpg)
 
 You will see the following dialog:
 
-![](/images/shapes-converter-dialog.jpg)
+![Shape converter dialog](/images/shapes-converter-dialog.jpg)
 
 With the following fields:
 
@@ -62,11 +62,11 @@ To convert shapes, do the following:
 
 1. Annotate your dataset.
 
-   ![](/images/shapes-converter-annotated-dataset.jpg)
+   ![Annotate dataset](/images/shapes-converter-annotated-dataset.jpg)
 
 2. Set up {{< ilink "/docs/manual/advanced/filter" "filters" >}}.
 
-   ![](/images/shapes-converter-setup-filter.png)
+   ![Setting up filters for shapes converter](/images/shapes-converter-setup-filter.png)
 
 3. From the burger menu, select **Run actions**.
 4. Choose the action you need from the **Select action** drop-down list.
@@ -75,7 +75,7 @@ To convert shapes, do the following:
 6. (Optional) Select an option from **Or choose one of the predefined options** to apply the action.
 7. Click **Run**. <br> A progress bar will appear. You may abort the process by clicking **Cancel** until the process commits modified objects at the end of pipeline.
 
-   ![](/images/shapes-coverter-action-run.jpg)
+   ![Running shapes converter](/images/shapes-coverter-action-run.jpg)
 
 > **Note:** Once the action is applied, it cannot be undone.
 
