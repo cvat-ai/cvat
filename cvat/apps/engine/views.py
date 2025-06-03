@@ -135,6 +135,7 @@ from cvat.apps.engine.serializers import (
     TaskWriteSerializer,
     UserSerializer,
 )
+from cvat.apps.engine.tus import TusFile
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import parse_exception_message, sendfile
 from cvat.apps.engine.view_utils import (
@@ -932,7 +933,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         response = super().init_tus_upload(request)
 
         if self._is_data_uploading() and response.status_code == status.HTTP_201_CREATED:
-            self._maybe_append_upload_info_entry(self._get_metadata(request)['filename'])
+            self._maybe_append_upload_info_entry(TusFile.TusMeta.from_request(request).filename)
 
         return response
 

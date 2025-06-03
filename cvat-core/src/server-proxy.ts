@@ -978,11 +978,11 @@ async function importDataset(
                 params,
                 headers: { 'Upload-Start': true },
             });
-        await chunkUpload(file as File, uploadConfig);
+        const { filename } = await chunkUpload(file as File, uploadConfig);
         const response = await Axios.post(url,
             new FormData(),
             {
-                params,
+                params: { ...params, filename },
                 headers: { 'Upload-Finish': true },
             });
         return response.data.rq_id;
@@ -1701,11 +1701,11 @@ async function uploadAnnotations(
                 params,
                 headers: { 'Upload-Start': true },
             });
-        await chunkUpload(file as File, uploadConfig);
+        const { filename } = await chunkUpload(file as File, uploadConfig);
         const response = await Axios.post(url,
             new FormData(),
             {
-                params,
+                params: { ...params, filename },
                 headers: { 'Upload-Finish': true },
             });
         return response.data.rq_id;
