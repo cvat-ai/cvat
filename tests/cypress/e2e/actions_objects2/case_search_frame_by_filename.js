@@ -4,14 +4,6 @@
 
 /// <reference types="cypress" />
 
-// Cypress.automation('remote:debugger:protocol', {
-//     command: 'Browser.grantPermissions',
-//     params: {
-//         permissions: ['clipboardReadWrite', 'clipboardSanitizedWrite'],
-//         origin: window.location.origin,
-//     },
-// });
-
 context('Search frame by filename', () => {
     const taskName = 'Search frame by filename';
     const labelName = 'search_frame_label';
@@ -54,7 +46,7 @@ context('Search frame by filename', () => {
         cy.headlessDeleteTask(taskId);
     });
     describe('Open frame search modal, try to find frames', { keystrokeDelay: 50 }, () => {
-        it('looking glass icon is visible, opens modal on click', () => {
+        it('search icon is visible, opens modal on click', () => {
             cy.get('.cvat-player-search-frame-name-icon').should('be.visible').click();
             cy.get('.cvat-frame-search-modal').should('be.visible')
                 .find('input').should('be.visible');
