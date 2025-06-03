@@ -39,7 +39,7 @@ To start, log into your [Microsoft Azure Portal](https://portal.azure.com/#home)
 
    ![](/images/azure_oidc_1.jpeg)
 
-1. Click on the`Register` button.
+1. Click on the `Register` button.
 
 {{% alert title="Note" color="primary" %}}
 More information on how to configure an OIDC-based application on the Azure platform can be found
@@ -104,7 +104,7 @@ You’ve created an app, now you should finalize its configuration and assign us
 ##### **Step 2: Configure a created application**
 
 1. Navigate to the `Single sign-on` section in the menu on the left.
-1. Choose the SAML protocol as the single sign on method.
+1. Choose the SAML protocol as the single sign-on method.
    ![](/images/azure_saml_2.jpeg)
 1. Edit `Basic SAML Configuration`:
    - `Identifier (Entity ID)`: `<scheme:cvat_domain>/api/auth/saml/<idp-id:azure-saml>/metadata/`
@@ -186,7 +186,7 @@ To start, log into your [Okta admin dashboard](https://login.okta.com/). Once yo
 1. Fill the form with the following content:
    - `App integration name`: enter a name for the application
    - `Sign-in redirect URIs`: `<scheme:cvat_domain>/api/auth/oidc/<idp-id:okta-oidc>/login/callback/`
-   - Select option in the `Controlled access` to match your requirements. In this example we'll use `Skip group assignment for now`.
+   - Select option in the `Controlled access` to match your requirements. In this example, we'll use `Skip group assignment for now`.
 
    ![](/images/okta_oidc_2.jpeg)
 
@@ -265,7 +265,7 @@ To start, log into your [Okta admin dashboard](https://login.okta.com/). Once yo
    {{% /alert %}}
 1. Navigate to the next configuration step and fill the `Feedback` form.
 
-You’ve created and configured the app. You can now either complete an optional step to simplify login process
+You’ve created and configured the app. You can now either complete an optional step to simplify the login process
 in CVAT or proceed directly to the [CVAT configuration step](#step-3-configure-cvat-2).
 
 ##### **Step 2: Simplify login process**
@@ -277,10 +277,10 @@ by default. As a result, users will receive a confirmation email with a verifica
 There is an option to include email verification claim on the sign-in step:
 1. Add one more mapping `emailVerified` -> `user.emailVerified` on SAML-based application configuration step:
    1. Navigate to the `SAML Settings` on the `General` tab and click `Edit`.
-   1. Add one more attribute mapping as it was described on the app configuration step.
+   1. Add one more attribute mapping as it was described in the app configuration step.
 1. Add custom user attribute `emailVerified`:
    - Navigate to the `Directory` section in the menu on the left -> `Profile Editor` item
-   - Select default user profile from the list (`User (default)`)
+   - Select the default user profile from the list (`User (default)`)
    - Click `+ Add Attribute`
    - Fill out the form with your desired values, making sure to select the `boolean` data type
    ![](/images/okta_saml_4.jpeg)
