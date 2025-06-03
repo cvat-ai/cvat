@@ -24,7 +24,7 @@ Cypress.Commands.add('collectGroupId', () => {
     });
 });
 
-Cypress.Commands.add('collectRuled', () => {
+Cypress.Commands.add('collectRuleId', () => {
     const ruleDataId = [];
     cy.get('.rule').then(($rule) => {
         for (let i = 0; i < $rule.length; i++) {
