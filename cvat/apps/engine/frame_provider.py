@@ -441,13 +441,7 @@ class TaskFrameProvider(IFrameProvider):
         self._clear_segment_frame_provider_cache()
 
     def _clear_segment_frame_provider_cache(self):
-        while self._segment_frame_provider_cache:
-            cached_provider = self._segment_frame_provider_cache.popitem()[1]
-            if sys.getrefcount(cached_provider) == 2:
-                # The provider is not used anywhere else, we can release the resources.
-                # Otherwise, it must be unloaded by the caller holding a reference or
-                # by the garbage collector at some point later.
-                cached_provider.unload()
+        self._segment_frame_provider_cache.clear()
 
     def _get_segment_frame_provider(self, frame_number: int) -> SegmentFrameProvider:
         segment = self._get_segment(self.validate_frame_number(frame_number))
