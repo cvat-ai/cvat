@@ -46,7 +46,7 @@ More information on how to configure an OIDC-based application on the Azure plat
 [here](https://learn.microsoft.com/en-us/power-pages/security/authentication/openid-settings#create-an-app-registration-in-azure).
 {{% /alert %}}
 
-You’ve now created an app, but one more step is needed to finalize the configuration.
+You’ve created an app, now you should configure the credentials for it.
 
 ##### **Step 2: Configure credentials**
 
@@ -99,7 +99,7 @@ To start, log into your [Microsoft Azure Portal](https://portal.azure.com/#home)
 1. Click `+ New application` and enter a name for the application in the popup window, then click `Create`.
    ![](/images/azure_saml_1.jpeg)
 
-You’ve now created an app, but a few more steps are needed to finalize the configuration.
+You’ve created an app, now you should finalize its configuration and assign users or groups.
 
 ##### **Step 2: Configure a created application**
 
@@ -195,7 +195,7 @@ More information on how to configure an OIDC-based application on the Okta platf
 found [here](https://help.okta.com/en-us/content/topics/apps/apps_app_integration_wizard_oidc.htm).
 {{% /alert %}}
 
-You’ve now created an app, but one more step is needed to finalize the configuration.
+You’ve created and configured the app, now you should assign users or groups to the application.
 
 ##### **Step 2: Assign users or groups**
 
@@ -265,7 +265,8 @@ To start, log into your [Okta admin dashboard](https://login.okta.com/). Once yo
    {{% /alert %}}
 1. Navigate to the next configuration step and fill the `Feedback` form.
 
-You’ve now created an app, but a few more steps are needed to finalize the configuration.
+You’ve created and configured the app. You can now either complete an optional step to simplify login process
+in CVAT or proceed directly to the [CVAT configuration step](#step-3-configure-cvat-2).
 
 ##### **Step 2: Simplify login process**
 
@@ -336,7 +337,7 @@ To start, log into your [Auth0 dashboard](https://manage.auth0.com/dashboard). O
 
 ![](/images/auth0_oidc_1.jpeg)
 
-You’ve now created an app, but a one more step is needed to finalize the configuration.
+You’ve created an app, now you should finalize its configuration.
 
 ##### **Step 2: Configure a created application**
 
@@ -388,7 +389,7 @@ To start, log into your [Auth0 dashboard](https://manage.auth0.com/dashboard). O
 
 ![](/images/auth0_saml_1.jpeg)
 
-You’ve now created an app, but a few more steps are needed to finalize the configuration.
+You’ve created an app, now you should finalize its configuration.
 
 ##### **Step 2: Configure a created application**
 
@@ -535,7 +536,7 @@ using the ports 8080 and 8443, respectively) and log into your admin account. On
    - `Home  URL`: `<scheme:cvat_domain>`
    - `Valid redirect URIs`: `<scheme:cvat_domain>/api/auth/saml/<idp-id:keycloak-saml>/acs/`
 
-You’ve now created an app, but a few more steps are needed to finalize the configuration.
+You’ve created a client, now you should finalize its configuration.
 
 ##### **Step 2: Configure a created client**
 
@@ -710,12 +711,12 @@ Below are examples of SSO configuration file for both protocols:
            -----END CERTIFICATE-----
 
          attribute_mapping:
-           uid: ...
-           email_verified: ...
-           email: ...
-           last_name: ...
-           first_name: ...
-           username: ...
+           uid: uidAttribute
+           email_verified: emailVerifiedAttribute
+           email: emailAttribute
+           last_name: lastNameAttribute
+           first_name: firstNameAttribute
+           username: usernameAttribute
    ```
   {{% /tab %}}
 {{< /tabpane >}}
@@ -726,6 +727,10 @@ and [here](https://docs.allauth.org/en/latest/socialaccount/providers/saml.html)
 
 ### Start CVAT
 
+{{< alert title="Restart required" color="warning" >}}
+If CVAT is already running, don’t forget to restart the containers to apply the SSO configuration
+{{< /alert >}}
+
 Once the configuration file is created, several environment variables must be exported before running CVAT:
 ```bash
 export AUTH_CONFIG_PATH="<path_to_auth_config>"
@@ -735,6 +740,7 @@ export CVAT_BASE_URL="<http|https>://${CVAT_HOST}:<cvat_port>"
 ```
 
 Start the CVAT Enterprise instance as usual.
+
 That's it! The CVAT login page now should have the `Continue with SSO` option,
 allowing users to authenticate using the configured Identity Provider.
 
