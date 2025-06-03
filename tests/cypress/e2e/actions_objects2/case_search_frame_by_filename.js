@@ -53,7 +53,7 @@ context('Search frame by filename', () => {
     after(() => {
         cy.headlessDeleteTask(taskId);
     });
-    describe('Open frame search modal, try to find frames', () => {
+    describe('Open frame search modal, try to find frames', { keystrokeDelay: 50 }, () => {
         it('looking glass icon is visible, opens modal on click', () => {
             cy.get('.cvat-player-search-frame-name-icon').should('be.visible').click();
             cy.get('.cvat-frame-search-modal').should('be.visible')
@@ -73,7 +73,6 @@ context('Search frame by filename', () => {
 
             it(`type ${input2}, search ${input1 + input2}`, () => {
                 const expectedFilenames = filenamesThatContain(input1 + input2);
-                cy.task('log', expectedFilenames);
 
                 cy.get('.cvat-frame-search-modal').find('input').type(input2); // 12
                 cy.get('.cvat-frame-search-item').should('have.length', expectedFilenames.length);

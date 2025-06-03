@@ -1902,13 +1902,9 @@ Cypress.Commands.add('checkFrameSearchResults', (expectedResults, allNames) => {
         const actualIndicesWrapped = [];
         const actualNamesWrapped = [];
         return cy.get('.ant-select-dropdown').should('be.visible').then(() => {
-            // cy.wait(100);
-            // because of debounce, there is no other option
-            // the dropdown gets rendered faster than the debounce ends
             for (let i = 0; i !== expectedCount + 1; i++) {
                 cy.realPress('ArrowDown');
                 cy.get('.ant-select-item-option-active').invoke('text').then((text) => {
-                    cy.task('log', text);
                     const split = text.split(' ');
                     assert(split.length === 2);
                     const [frameIdRaw, frameFilename] = split;
