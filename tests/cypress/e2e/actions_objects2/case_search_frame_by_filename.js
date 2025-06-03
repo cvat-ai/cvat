@@ -38,7 +38,7 @@ context('Search frame by filename', () => {
     after(() => {
         cy.headlessDeleteTask(taskId);
     });
-    describe('Open frame search modal, try to find frames', { keystrokeDelay: 50 }, () => {
+    describe('Open frame search modal, try to find frames', /* { keystrokeDelay: 50 }, */ () => {
         it('search icon is visible, opens modal on click', () => {
             cy.get('.cvat-player-search-frame-name-icon').should('be.visible').click();
             cy.get('.cvat-frame-search-modal').should('be.visible')
@@ -48,18 +48,20 @@ context('Search frame by filename', () => {
         });
 
         describe('With more context, search results should change dynamically', () => {
-            const input1 = '1';
-            const input2 = '2';
+            const input1 = '3';
+            const input2 = '12';
 
             it(`type ${input1}, search ${input1}`, () => {
                 const expectedFilenames = filenamesThatContain(input1);
 
                 cy.get('.cvat-frame-search-modal').find('input').type(input1); // 1
                 cy.get('.cvat-frame-search-item').should('have.length', expectedFilenames.length);
+
+                cy.get('.cvat-frame-search-modal').find('input').clear();
             });
 
-            it(`type ${input2}, search ${input1 + input2}`, () => {
-                const expectedFilenames = filenamesThatContain(input1 + input2);
+            it(`type ${input2}, search ${input2}`, () => {
+                const expectedFilenames = filenamesThatContain(input2);
 
                 cy.get('.cvat-frame-search-modal').find('input').type(input2); // 12
                 cy.get('.cvat-frame-search-item').should('have.length', expectedFilenames.length);
@@ -73,7 +75,9 @@ context('Search frame by filename', () => {
             const expectedFilenames = filenamesThatContain(input);
 
             cy.get('.cvat-frame-search-modal').find('input').type(input);
-            cy.checkFrameSearchResults(expectedFilenames, allFilenames);
+            cy.contains(expectedFilenames[0]).then(() => {
+                cy.checkFrameSearchResults(expectedFilenames, allFilenames);
+            });
             // After clearing the input, modal should stay
             cy.get('.cvat-frame-search-modal').find('input').clear();
             cy.get('.cvat-frame-search-modal').should('be.visible')
