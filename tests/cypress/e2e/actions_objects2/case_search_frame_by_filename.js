@@ -4,6 +4,8 @@
 
 /// <reference types="cypress" />
 
+import { defaultTaskSpec } from '../../support/default-specs';
+
 context('Search frame by filename', () => {
     const taskName = 'Search frame by filename';
     const labelName = 'search_frame_label';
@@ -25,19 +27,10 @@ context('Search frame by filename', () => {
     before(() => {
         cy.visit('/auth/login');
         cy.headlessLogin();
-        cy.headlessCreateTask({
-            labels: [{ name: labelName, attributes: [], type: 'any' }],
-            name: taskName,
-            project_id: null,
-            source_storage: { location: 'local' },
-            target_storage: { location: 'local' },
-        }, {
-            server_files: serverFiles,
-            image_quality: 70,
-            use_zip_chunks: true,
-            use_cache: true,
-            sorting_method: 'lexicographical',
-        }).then(({ taskID: tid, jobIDs: [jid] }) => {
+        const { taskSpec, dataSpec, extras } = defaultTaskSpec({
+            taskName, serverFiles, labelName,
+        });
+        cy.headlessCreateTask(taskSpec, dataSpec, extras).then(({ taskID: tid, jobIDs: [jid] }) => {
             [taskId, jobId] = [tid, jid];
             cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
         });
