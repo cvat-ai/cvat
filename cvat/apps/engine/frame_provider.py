@@ -8,7 +8,6 @@ from __future__ import annotations
 import io
 import itertools
 import math
-import sys
 from abc import ABCMeta, abstractmethod
 from bisect import bisect
 from collections import OrderedDict
