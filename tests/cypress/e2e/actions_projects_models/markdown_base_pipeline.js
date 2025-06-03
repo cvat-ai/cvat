@@ -32,11 +32,11 @@ context('Basic markdown pipeline', () => {
             password: 'UfdU21!dds',
         },
     };
-    let projectID = null;
-    let taskID = null;
-    let jobID = null;
-    let guideID = null;
-    let assetID = null;
+    let projectId = null;
+    let taskId = null;
+    let jobId = null;
+    let guideId = null;
+    let assetId = null;
 
     before(() => {
         cy.headlessLogout();
@@ -53,12 +53,12 @@ context('Basic markdown pipeline', () => {
             labels: projectLabels,
             name: projectName,
         }).then((response) => {
-            projectID = response.projectID;
+            projectId = response.projectId;
 
             cy.headlessCreateTask({
                 labels: [],
                 name: taskName,
-                project_id: projectID,
+                project_id: projectId,
                 source_storage: { location: 'local' },
                 target_storage: { location: 'local' },
             }, {
@@ -68,13 +68,13 @@ context('Basic markdown pipeline', () => {
                 use_cache: true,
                 sorting_method: 'lexicographical',
             }).then((taskResponse) => {
-                taskID = taskResponse.taskID;
-                [jobID] = taskResponse.jobIDs;
+                taskId = taskResponse.taskId;
+                [jobId] = taskResponse.jobIds;
 
-                cy.visit(`/tasks/${taskID}`);
+                cy.visit(`/tasks/${taskId}`);
                 cy.get('.cvat-task-details').should('exist').and('be.visible');
                 cy.assignTaskToUser(additionalUsers.taskAssignee.username);
-                cy.assignJobToUser(jobID, additionalUsers.jobAssignee.username);
+                cy.assignJobToUser(jobId, additionalUsers.jobAssignee.username);
             });
         });
     });
@@ -93,7 +93,7 @@ context('Basic markdown pipeline', () => {
 
     describe('Markdown text can be bounded to the project', () => {
         function openProject() {
-            cy.visit(`/projects/${projectID}`);
+            cy.visit(`/projects/${projectId}`);
             cy.get('.cvat-project-details').should('exist').and('be.visible');
         }
 
@@ -102,11 +102,11 @@ context('Basic markdown pipeline', () => {
             cy.url().should('to.match', /\/projects\/\d+\/guide/);
             cy.get('.cvat-guide-page-editor-wrapper').should('exist').and('be.visible');
             cy.get('.cvat-spinner-container').should('not.exist').then(() => {
-                if (guideID === null) {
+                if (guideId === null) {
                     cy.intercept('GET', '/api/projects/**').as('getProjects');
                     cy.window().then(async ($win) => {
-                        $win.cvat.projects.get({ id: projectID }).then(([project]) => {
-                            guideID = project.guideId;
+                        $win.cvat.projects.get({ id: projectId }).then(([project]) => {
+                            guideId = project.guideId;
                         });
                     });
                     cy.wait('@getProjects').its('response.statusCode').should('equal', 200);
@@ -148,10 +148,10 @@ context('Basic markdown pipeline', () => {
                     return fetch(base64);
                 }).then((res) => res.blob()).then((blob) => (
                     $win.cvat.assets.create(
-                        new $win.File([blob], 'file.jpg', { type: 'image/jpeg' }), guideID,
+                        new $win.File([blob], 'file.jpg', { type: 'image/jpeg' }), guideId,
                     )
                 )).then(({ uuid }) => {
-                    assetID = uuid;
+                    assetId = uuid;
                     setupGuide(`Plain text with a picture\n![image](/api/assets/${uuid})`);
                 });
             });
@@ -165,8 +165,8 @@ context('Basic markdown pipeline', () => {
     describe('Staff can see markdown', () => {
         function checkGuideAndAssetAvailableOnAnnotationView() {
             // when open job for the first time, guide is opened automatically
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
-            cy.intercept('GET', `/api/assets/${assetID}**`).as('assetGet');
+            cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
+            cy.intercept('GET', `/api/assets/${assetId}**`).as('assetGet');
             cy.get('.cvat-annotation-view-markdown-guide-modal button').contains('OK').click();
             cy.wait('@assetGet');
 
@@ -178,7 +178,7 @@ context('Basic markdown pipeline', () => {
             cy.get('.cvat-annotation-view-markdown-guide-modal button').contains('OK').click();
 
             // when there is a request to open in a link, the guide is opened automatically
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}?openGuide`);
+            cy.visit(`/tasks/${taskId}/jobs/${jobId}?openGuide`);
             cy.get('.cvat-annotation-header-guide-button').should('not.exist');
             cy.get('.cvat-annotation-view-markdown-guide-modal button').contains('OK').click();
         }
@@ -210,12 +210,12 @@ context('Basic markdown pipeline', () => {
             cy.login(additionalUsers.notAssignee.username, additionalUsers.notAssignee.password);
             cy.request({
                 method: 'GET',
-                url: `/api/guides/${guideID}`,
+                url: `/api/guides/${guideId}`,
                 failOnStatusCode: false,
             }).its('status').should('equal', 403);
             cy.request({
                 method: 'GET',
-                url: `/api/assets/${assetID}`,
+                url: `/api/assets/${assetId}`,
                 failOnStatusCode: false,
             }).its('status').should('equal', 403);
         });

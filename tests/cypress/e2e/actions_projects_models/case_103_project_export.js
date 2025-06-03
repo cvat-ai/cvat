@@ -8,13 +8,13 @@
 import { projectName, labelName } from '../../support/const_project';
 
 context('Export project dataset.', { browser: '!firefox' }, () => {
-    const caseID = 103;
+    const caseId = 103;
     const task = {
-        name: `Case ${caseID}`,
+        name: `Case ${caseId}`,
         label: 'Tree',
         attrName: 'Kind',
         attrValue: 'Oak',
-        nameSecond: `Case ${caseID} second`,
+        nameSecond: `Case ${caseId} second`,
         labelSecond: 'Car',
         attrNameSecons: 'Color',
         attrValueSecond: 'Red',
@@ -88,7 +88,7 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
         });
     });
 
-    describe(`Testing "Case ${caseID}"`, () => {
+    describe(`Testing "Case ${caseId}"`, () => {
         it('Export project dataset. Annotation.', () => {
             cy.goToProjectsList();
             const exportAnnotation = {

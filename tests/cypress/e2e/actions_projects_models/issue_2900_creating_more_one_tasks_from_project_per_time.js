@@ -8,7 +8,7 @@
 import { projectName, labelName } from '../../support/const_project';
 
 context('Create more than one task per time when create from project.', () => {
-    const issueID = 2900;
+    const issueId = 2900;
     const taskName = {
         firstTask: `First task for ${projectName}`,
         secondTask: `Second task for ${projectName}`,
@@ -46,7 +46,7 @@ context('Create more than one task per time when create from project.', () => {
         cy.openProject(projectName);
     });
 
-    describe(`Testing "Issue ${issueID}"`, () => {
+    describe(`Testing "Issue ${issueId}"`, () => {
         it('Create more than one task per time from project.', () => {
             cy.get('.cvat-create-task-dropdown').click();
             cy.get('.cvat-create-task-button').click();

@@ -7,8 +7,8 @@
 context('Count total annotation, issues and labels', () => {
     const taskName = 'Count objects';
 
-    let taskID = null;
-    let jobID = null;
+    let taskId = null;
+    let jobId = null;
 
     const createRectangleShape2Points = {
         points: 'By 2 Points',
@@ -38,10 +38,10 @@ context('Count total annotation, issues and labels', () => {
             use_cache: true,
             sorting_method: 'lexicographical',
         }).then((response) => {
-            taskID = response.taskID;
-            [jobID] = response.jobIDs;
-            cy.intercept('GET', `/tasks/${taskID}/jobs/${jobID}`).as('visitAnnotationView');
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            taskId = response.taskId;
+            [jobId] = response.jobIds;
+            cy.intercept('GET', `/tasks/${taskId}/jobs/${jobId}`).as('visitAnnotationView');
+            cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
             cy.wait('@visitAnnotationView');
             cy.get('.cvat-canvas-container').should('exist').and('be.visible');
         });
@@ -53,7 +53,7 @@ context('Count total annotation, issues and labels', () => {
             const authKey = response.body.key;
             cy.request({
                 method: 'DELETE',
-                url: `/api/tasks/${taskID}`,
+                url: `/api/tasks/${taskId}`,
                 headers: {
                     Authorization: `Token ${authKey}`,
                 },

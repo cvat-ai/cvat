@@ -7,8 +7,8 @@
 import { projectName, labelName } from '../../support/const_project';
 
 context('Delete a label from a project.', () => {
-    const caseID = 57;
-    const taskName = `Task case ${caseID}`;
+    const caseId = 57;
+    const taskName = `Task case ${caseId}`;
     const attrName = `Attr for ${labelName}`;
     const textDefaultValue = 'Some value for type Text';
     const imagesCount = 1;
@@ -26,14 +26,14 @@ context('Delete a label from a project.', () => {
     const forProject = true;
     const attachToProject = false;
     const multiAttrParams = false;
-    let projectID = '';
+    let projectId = null;
 
-    function getProjectID() {
+    function getProjectId() {
         cy.contains('.cvat-project-name', projectName)
             .parents('.cvat-project-details')
             .should('have.attr', 'data-cvat-project-id')
-            .then(($projectID) => {
-                projectID = $projectID;
+            .then(($projectId) => {
+                projectId = $projectId;
             });
     }
 
@@ -45,10 +45,10 @@ context('Delete a label from a project.', () => {
 
     after(() => {
         cy.goToProjectsList();
-        cy.deleteProject(projectName, projectID);
+        cy.deleteProject(projectName, projectId);
     });
 
-    describe(`Testing "Case ${caseID}"`, () => {
+    describe(`Testing "Case ${caseId}"`, () => {
         it('Create a task from project.', () => {
             cy.createAnnotationTask(
                 taskName,
@@ -66,7 +66,7 @@ context('Delete a label from a project.', () => {
 
         it('Delete a label from project.', () => {
             cy.openProject(projectName);
-            getProjectID(projectName);
+            getProjectId(projectName);
             cy.deleteLabel(labelName);
         });
 

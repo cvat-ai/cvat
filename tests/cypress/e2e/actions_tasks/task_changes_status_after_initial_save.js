@@ -18,8 +18,8 @@ context('Task status updated after initial save.', () => {
         secondY: 450,
     };
 
-    let taskID = null;
-    let jobID = null;
+    let taskId = null;
+    let jobId = null;
     const serverFiles = ['images/image_1.jpg'];
 
     before(() => {
@@ -40,28 +40,28 @@ context('Task status updated after initial save.', () => {
             use_cache: true,
             sorting_method: 'lexicographical',
         }).then((response) => {
-            taskID = response.taskID;
-            [jobID] = response.jobIDs;
+            taskId = response.taskId;
+            [jobId] = response.jobIds;
         });
     });
 
     after(() => {
-        if (taskID) {
-            cy.headlessDeleteTask(taskID);
+        if (taskId) {
+            cy.headlessDeleteTask(taskId);
         }
     });
 
     describe(`Testing "${labelName}"`, () => {
         it('State of the created task should be "new".', () => {
-            cy.intercept('GET', `/tasks/${taskID}`).as('visitTaskPage');
-            cy.visit(`/tasks/${taskID}`);
+            cy.intercept('GET', `/tasks/${taskId}`).as('visitTaskPage');
+            cy.visit(`/tasks/${taskId}`);
             cy.wait('@visitTaskPage');
             cy.get('.cvat-job-item .cvat-job-item-state .ant-select-selection-item').invoke('text').should('equal', 'new');
         });
 
         it('Create object, save annotation, state should be "in progress"', () => {
-            cy.intercept('GET', `/tasks/${taskID}/jobs/${jobID}`).as('visitAnnotationView');
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.intercept('GET', `/tasks/${taskId}/jobs/${jobId}`).as('visitAnnotationView');
+            cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
             cy.wait('@visitAnnotationView');
             cy.get('.cvat-canvas-container').should('exist').and('be.visible');
             cy.createRectangle(rectangleData);
