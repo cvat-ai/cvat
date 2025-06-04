@@ -21,6 +21,7 @@ import av
 import cv2
 import numpy as np
 from django.conf import settings
+from django.db.models import prefetch_related_objects
 from PIL import Image
 from rest_framework.exceptions import ValidationError
 
@@ -216,6 +217,7 @@ class IFrameProvider(metaclass=ABCMeta):
 class TaskFrameProvider(IFrameProvider):
     def __init__(self, db_task: models.Task) -> None:
         self._db_task = db_task
+        self._segment_frame_provider_cache = {}
 
     def validate_frame_number(self, frame_number: int) -> int:
         if frame_number not in range(0, self._db_task.data.size):
@@ -410,6 +412,11 @@ class TaskFrameProvider(IFrameProvider):
 
         abs_frame_number = self.get_abs_frame_number(validated_frame_number)
 
+        # Task's prefetch cache doesn't get populated after the following
+        # call to task.segment_set.all() and the result traversal, resulting in extra requests.
+        # Prefetch segments explicitly to fix this.
+        prefetch_related_objects([self._db_task], "segment_set")
+
         segment = next(
             (
                 s
@@ -429,8 +436,24 @@ class TaskFrameProvider(IFrameProvider):
 
         return segment
 
+    def unload(self):
+        self._clear_segment_frame_provider_cache()
+
+    def _clear_segment_frame_provider_cache(self):
+        self._segment_frame_provider_cache.clear()
+
     def _get_segment_frame_provider(self, frame_number: int) -> SegmentFrameProvider:
-        return SegmentFrameProvider(self._get_segment(self.validate_frame_number(frame_number)))
+        segment = self._get_segment(self.validate_frame_number(frame_number))
+
+        provider = self._segment_frame_provider_cache.get(segment.id)
+        if not provider:
+            # A simple last result cache for iteration use cases (e.g. dataset export).
+            # Avoid storing many providers in memory, each holds open chunks
+            self._clear_segment_frame_provider_cache()
+            provider = SegmentFrameProvider(segment)
+            self._segment_frame_provider_cache[segment.id] = provider
+
+        return provider
 
 
 class SegmentFrameProvider(IFrameProvider):
