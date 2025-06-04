@@ -42,10 +42,10 @@ If you need to enable showing the deleted frames, you can do it in the settings.
 1. Then you will be able to navigate through deleted frames.
    But annotation tools will be unavailable. Deleted frames differ in the corresponding overlay.
 
-1. There are view ways to navigate through deleted frames without enabling this option:
+1. There are ways to navigate through deleted frames without enabling this option:
 
    - Go to the frame via direct navigation methods: navigation slider or frame input field,
-   - Go to the frame via the direct link.
+   - Go to the frame via the direct link, for example: `/api/tasks/{id}/jobs/{id}?frame={frame_id}`.
 
 1. Navigation with step will not count deleted frames.
 

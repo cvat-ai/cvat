@@ -174,7 +174,7 @@ jobs:
         env:
           COVERAGE_PROCESS_START: ".coveragerc"
         run: |
-          pytest tests/python/ --cov --cov-report=json
+          pytest tests/python/ --cov --cov-report=json --alluredir=tests/python/allure-results
           ONE_RUNNING_JOB_IN_QUEUE_PER_USER="true" pytest tests/python/rest_api/test_queues.py --cov --cov-report=json
           CVAT_ALLOW_STATIC_CACHE="true" pytest -k "TestTaskData" tests/python --cov --cov-report=json
           for COVERAGE_FILE in `find -name "coverage*.json" -type f -printf "%f\n"`; do mv ${COVERAGE_FILE} "${COVERAGE_FILE%%.*}_0.json"; done
@@ -203,6 +203,12 @@ jobs:
         with:
           name: rest_api_container_logs
           path: "${{ github.workspace }}/rest_api_testing"
+      - name: Upload allure results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-rest-api
+          path: tests/python/allure-results
 
   unit_testing:
     needs: build
@@ -383,6 +389,13 @@ jobs:
           name: cypress_videos_${{ matrix.specs }}
           path: ${{ github.workspace }}/tests/cypress/videos
 
+      - name: Upload Allure results as an artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-e2e-${{ matrix.specs }}
+          path: tests/allure-results-e2e
+
   helm_rest_api_testing:
     needs: build
     runs-on: ubuntu-latest
@@ -522,6 +535,14 @@ jobs:
 
           docker tag "cvat/ui:${CVAT_VERSION}" "${UI_IMAGE_REPO}:dev"
           docker push "${UI_IMAGE_REPO}:dev"
+
+  generate_report:
+    name: Generate Allure Report and Upload to S3
+    needs: [rest_api_testing, e2e_testing]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    uses: ./.github/workflows/generate-allure-report.yml
+    secrets:
+      AWS_ALLURE_REPORTS_ROLE: ${{ secrets.AWS_ALLURE_REPORTS_ROLE }}
 
   codecov:
     runs-on: ubuntu-latest
