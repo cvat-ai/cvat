@@ -180,7 +180,6 @@ class TmpDirManager:
         *,
         prefix: str | None = None,
         suffix: str | None = None,
-        ignore_cleanup_errors: bool | None = None,
     ) -> Generator[str, Any, Any]:
         """
         The method allows to create a temporary directory and
@@ -190,7 +189,7 @@ class TmpDirManager:
         for k, v in {
             "prefix": prefix,
             "suffix": suffix,
-            "ignore_cleanup_errors": ignore_cleanup_errors,
+            "ignore_cleanup_errors": True,
         }.items():
             if v is not None:
                 params[k] = v
