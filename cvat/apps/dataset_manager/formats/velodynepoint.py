@@ -4,6 +4,8 @@
 # SPDX-License-Identifier: MIT
 
 import zipfile
+from pathlib import Path
+from typing import BinaryIO
 
 from datumaro.components.dataset import Dataset
 from datumaro.components.transformer import ItemTransform
@@ -43,8 +45,8 @@ def _export_images(dst_file, temp_dir, task_data, save_images=False):
     make_zip_archive(temp_dir, dst_file)
 
 
-@importer(name="Kitti Raw Format", ext="ZIP", version="1.0", dimension=DimensionType.DIM_3D)
-def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
+@importer(name="Kitti Raw Format", ext="ZIP, XML", version="1.0", dimension=DimensionType.DIM_3D)
+def _import(src_file: BinaryIO, temp_dir, instance_data, load_data_callback=None, **kwargs):
     if zipfile.is_zipfile(src_file):
         zipfile.ZipFile(src_file).extractall(temp_dir)
         detect_dataset(
@@ -52,7 +54,10 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
         )
         dataset = Dataset.import_from(temp_dir, "kitti_raw", env=dm_env)
     else:
-        dataset = Dataset.import_from(src_file.name, "kitti_raw", env=dm_env)
+        tmp_src_file_link = Path(temp_dir) / "tracklet_labels.xml"
+        tmp_src_file_link.symlink_to(src_file.name)
+        dataset = Dataset.import_from(str(tmp_src_file_link.absolute()), "kitti_raw", env=dm_env)
+
     if load_data_callback is not None:
         load_data_callback(dataset, instance_data)
     import_dm_annotations(dataset, instance_data)

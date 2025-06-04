@@ -4,6 +4,8 @@
 # SPDX-License-Identifier: MIT
 
 import zipfile
+from pathlib import Path
+from typing import BinaryIO
 
 from datumaro.components.dataset import StreamDataset
 
@@ -29,7 +31,7 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
 
 
 @importer(name="Datumaro", ext="JSON, ZIP", version="1.0")
-def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
+def _import(src_file: BinaryIO, temp_dir, instance_data, load_data_callback=None, **kwargs):
     if zipfile.is_zipfile(src_file):
         zipfile.ZipFile(src_file).extractall(temp_dir)
 
@@ -39,7 +41,12 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
         if load_data_callback:
             raise NoMediaInAnnotationFileError()
 
-        dataset = StreamDataset.import_from(src_file.name, "datumaro", env=dm_env)
+        tmp_src_file_link = Path(temp_dir) / "annotations" / "default.json"
+        tmp_src_file_link.parent.mkdir()
+        tmp_src_file_link.symlink_to(src_file.name)
+        dataset = StreamDataset.import_from(
+            str(tmp_src_file_link.absolute()), "datumaro", env=dm_env
+        )
 
     if load_data_callback is not None:
         load_data_callback(dataset, instance_data)
@@ -58,7 +65,7 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
 
 
 @importer(name="Datumaro 3D", ext="JSON, ZIP", version="1.0", dimension=DimensionType.DIM_3D)
-def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
+def _import(src_file: BinaryIO, temp_dir, instance_data, load_data_callback=None, **kwargs):
     if zipfile.is_zipfile(src_file):
         zipfile.ZipFile(src_file).extractall(temp_dir)
 
@@ -68,7 +75,12 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
         if load_data_callback:
             raise NoMediaInAnnotationFileError()
 
-        dataset = StreamDataset.import_from(src_file.name, "datumaro", env=dm_env)
+        tmp_src_file_link = Path(temp_dir) / "annotations" / "default.json"
+        tmp_src_file_link.parent.mkdir()
+        tmp_src_file_link.symlink_to(src_file.name)
+        dataset = StreamDataset.import_from(
+            str(tmp_src_file_link.absolute()), "datumaro", env=dm_env
+        )
 
     if load_data_callback is not None:
         load_data_callback(dataset, instance_data)
