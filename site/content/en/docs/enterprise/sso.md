@@ -24,10 +24,10 @@ Otherwise, you may follow one of the detailed platform-specific guides to set up
 ## Platform specific IdP configuration
 ### Microsoft Azure
 
-#### OpenId Connect
+#### OpenID Connect
 Follow these steps to configure an application on the `Microsoft Azure` platform and integrate it with CVAT:
 
-##### **Step 1: Register an OIDC-based Application**
+##### **Step 1: Register an OIDC-based application**
 
 To start, log into your [Microsoft Azure Portal](https://portal.azure.com/#home). Once you're in:
 1. Navigate to the  `Microsoft Entra ID` service -> `App registrations` section in the menu on the left.
@@ -37,7 +37,7 @@ To start, log into your [Microsoft Azure Portal](https://portal.azure.com/#home)
 1. Add `Redirect URI`: choose `Web` platform and set `<scheme:cvat_domain>/api/auth/oidc/<idp-id:azure-oidc>/login/callback/`
    to the value field.
 
-   ![](/images/azure_oidc_1.jpeg)
+   ![Azure portal screen showing a completed registration form for creating an OIDC-based application](/images/azure_oidc_1.jpeg)
 
 1. Click on the `Register` button.
 
@@ -51,16 +51,16 @@ You’ve created an app, now you should configure the credentials for it.
 ##### **Step 2: Configure credentials**
 
 1. Navigate to the `Overview` tab of your newly created application.
-   ![](/images/azure_oidc_2.jpeg)
+   ![Azure portal screen showing an overview tab of the created OIDC-based application](/images/azure_oidc_2.jpeg)
 1. In the `Client credentials` section, click the `Add a certificate or secret` link.
    This will take you to the `Certificates & secrets` page.
 1. Click `+ New client secret`.
 1. In the popup form, enter a description and select an expiration period, then click `Add`.
-   ![](/images/azure_oidc_3.jpeg)
+   ![Azure portal screen showing client secret creation form](/images/azure_oidc_3.jpeg)
 
 The newly created secret will appear in the list.
 Make sure to copy the value now — you won’t be able to see it again later.
-![](/images/azure_oidc_4.jpeg)
+![Azure portal screen showing the Certificates & secrets tab with a newly added client secret](/images/azure_oidc_4.jpeg)
 
 ##### **Step 3: Configure CVAT**
 
@@ -92,12 +92,12 @@ For additional CVAT configuration details, refer to [Configuring SSO in CVAT](#c
 
 Follow these steps to configure an application on the `Microsoft Azure` platform and integrate it with CVAT:
 
-##### **Step 1: Register an SAML-based Application**
+##### **Step 1: Register an SAML-based application**
 
 To start, log into your [Microsoft Azure Portal](https://portal.azure.com/#home). Once you're in:
 1. Navigate to the  `Microsoft Entra ID` service -> `Enterprise applications` section in the menu on the left.
 1. Click `+ New application` and enter a name for the application in the popup window, then click `Create`.
-   ![](/images/azure_saml_1.jpeg)
+   ![Azure portal screen showing a completed form for an enterprise application](/images/azure_saml_1.jpeg)
 
 You’ve created an app, now you should finalize its configuration and assign users or groups.
 
@@ -105,18 +105,18 @@ You’ve created an app, now you should finalize its configuration and assign us
 
 1. Navigate to the `Single sign-on` section in the menu on the left.
 1. Choose the SAML protocol as the single sign-on method.
-   ![](/images/azure_saml_2.jpeg)
+   ![Azure portal screen where SAML is selected as the Single sign-on method for the application being configured](/images/azure_saml_2.jpeg)
 1. Edit `Basic SAML Configuration`:
    - `Identifier (Entity ID)`: `<scheme:cvat_domain>/api/auth/saml/<idp-id:azure-saml>/metadata/`
    - `Reply URL (Assertion Consumer Service URL)`: `<scheme:cvat_domain>/api/auth/saml/<idp-id:azure-saml>/acs/`
-    ![](/images/azure_saml_3.jpeg)
+    ![Azure portal screen with basic SAML-based application settings filled in](/images/azure_saml_3.jpeg)
    - Save changes
 1. Edit `Attributes & Claims` by adding a new `uid` claim:
    - Name: `uid`
    - Namespace: `http://schemas.xmlsoap.org/ws/2005/05/identity/claims`
    - Source: `attribute`
    - Source attribute: `user.objectid`
-      ![](/images/azure_saml_4.jpeg)
+      ![Azure portal screen showing the filled-in form for creating a new uid claim](/images/azure_saml_4.jpeg)
 
 {{% alert title="Note" color="primary" %}}
 More information on how to configure an application on Azure platform can be
@@ -166,29 +166,29 @@ sso:
 Actual `Microsoft Entra Identifier` and `App Federation Metadata Url` values may be found
 on the `Single sign-on` tab of the created application
 
-![](/images/azure_saml_5.jpeg)
+![Azure portal screen displaying SAML-based application values required for CVAT integration](/images/azure_saml_5.jpeg)
 {{< /alert >}}
 
 You can now proceed to [start CVAT](#start-cvat).
 For additional CVAT configuration details, refer to [Configuring SSO in CVAT](#configuring-sso-in-cvat).
 
 ### Okta
-#### OpenId Connect
+#### OpenID Connect
 Follow these steps to configure an application on the `Okta` platform and integrate it with CVAT:
 
-##### **Step 1: Register an OIDC-based Application**
+##### **Step 1: Register an OIDC-based application**
 
 To start, log into your [Okta admin dashboard](https://login.okta.com/). Once you're in:
 1. Navigate to the `Applications` section in the menu on the left.
 1. Click on the `Create App integration` button.
 1. Select `OIDC - OpenID Connect` as a sign-in method and `Web Application` type.
-  ![](/images/okta_oidc_1.jpeg)
+  ![Okta admin dashboard screen showing the initial form to create a new app integration with the OIDC sign-in method and Web application type](/images/okta_oidc_1.jpeg)
 1. Fill the form with the following content:
    - `App integration name`: enter a name for the application
    - `Sign-in redirect URIs`: `<scheme:cvat_domain>/api/auth/oidc/<idp-id:okta-oidc>/login/callback/`
    - Select option in the `Controlled access` to match your requirements. In this example, we'll use `Skip group assignment for now`.
 
-   ![](/images/okta_oidc_2.jpeg)
+   ![Okta admin dashboard screen showing a completed registration form to create an OIDC-based app integration](/images/okta_oidc_2.jpeg)
 
 {{% alert title="Note" color="primary" %}}
 More information on how to configure an OIDC-based application on the Okta platform can be
@@ -206,7 +206,7 @@ To grant access:
 1. Identify the users or groups you want to assign, then click `assign`.
 
 The selected users or groups will now appear in the assignment list.
-![](/images/okta_oidc_3.jpeg)
+![Okta admin dashboard screen showing a user being added to the list with users and groups assigned to the OIDC-based application](/images/okta_oidc_3.jpeg)
 
 ##### **Step 3: Configure CVAT**
 
@@ -228,7 +228,7 @@ sso:
 
 {{< alert title="Tip" >}}
 Actual `Client ID` and `Client secret` key values may be found on the `General` tab of the created application
-![](/images/okta_oidc_4.jpeg)
+![Okta admin dashboard screen showing Client Credentials for the created OIDC-based application](/images/okta_oidc_4.jpeg)
 {{< /alert >}}
 
 You can now proceed to [start CVAT](#start-cvat).
@@ -237,18 +237,18 @@ For additional CVAT configuration details, refer to [Configuring SSO in CVAT](#c
 #### SAML
 Follow these steps to configure an application on the `Okta` platform and integrate it with CVAT:
 
-##### **Step 1: Register an SAML-based Application**
+##### **Step 1: Register an SAML-based application**
 
 To start, log into your [Okta admin dashboard](https://login.okta.com/). Once you're in:
 1. Navigate to the `Applications` section in the menu on the left.
 1. Click on the `Create App integration` button.
 1. Select `SAML 2.0` as a sign-in method, then click `Next`.
-   ![](/images/okta_saml_1.jpeg)
+   ![Okta admin dashboard screen showing the initial form to create a new app integration with SAML sign-in method](/images/okta_saml_1.jpeg)
 1. Fill the form with the general settings and go to the next configuration step.
 1. On the `Configure SAML` form set the following fields:
    - `Single sign-on URL`:` <scheme:cvat_domain>/api/auth/saml/<idp-id:okta-saml>/acs/`
    - `Audience URI (SP Entity ID`: `<scheme:cvat_domain>/api/auth/saml/<idp-id:okta-saml>/metadata/`
-   ![](/images/okta_saml_2.jpeg)
+   ![Okta admin dashboard screen showing a completed registration form to create an SAML-based app integration](/images/okta_saml_2.jpeg)
 1. Define attribute statements that will be shared with CVAT.
    In our example we will use the `Basic` attribute name format and set the mapping as shown below:
    - `firstName`: `user.firstName`
@@ -257,7 +257,7 @@ To start, log into your [Okta admin dashboard](https://login.okta.com/). Once yo
    - `email`: `user.email`
    - `uid`: `user.getInternalProperty("id")`
 
-   ![](/images/okta_saml_3.jpeg)
+   ![Okta admin dashboard screen with attribute statements configuration for the SAML-based application being created](/images/okta_saml_3.jpeg)
    {{% alert title="Tip" %}}
    If attribute mapping needs to be adapted, follow the official
    [documentation](https://help.okta.com/oie/en-us/content/topics/apps/define-attribute-statements.htm)
@@ -283,7 +283,7 @@ There is an option to include email verification claim on the sign-in step:
    - Select the default user profile from the list (`User (default)`)
    - Click `+ Add Attribute`
    - Fill out the form with your desired values, making sure to select the `boolean` data type
-   ![](/images/okta_saml_4.jpeg)
+   ![Okta admin dashboard screen showing the filled-in form to add a new emailVerified attribute](/images/okta_saml_4.jpeg)
    - Click `Save`
 1. Update user profiles:
    - Navigate to the `People` section in the menu on the left
@@ -317,25 +317,25 @@ sso:
 
 {{< alert title="Tip" >}}
 `Metadata URL` and `Issuer` values may be found on the `Sign On` tab of the application setting
-![](/images/okta_saml_5.jpeg)
+![Okta admin dashboard screen showing metadata details for the created SAML-based application](/images/okta_saml_5.jpeg)
 {{< /alert >}}
 
 You can now proceed to [start CVAT](#start-cvat).
 For additional CVAT configuration details, refer to [Configuring SSO in CVAT](#configuring-sso-in-cvat).
 
 ### Auth0
-#### OpenID connect
+#### OpenID Connect
 
 Follow these steps to configure an application in the `Auth0` platform and integrate it with CVAT:
 
-##### **Step 1: Register an OIDC-based Application**
+##### **Step 1: Register an OIDC-based application**
 
 To start, log into your [Auth0 dashboard](https://manage.auth0.com/dashboard). Once you're in:
 
 1. Navigate to the `Applications` section in the menu on the left, click `+ Create Application`.
 1. Enter a name for the application and choose the `Regular Web Applications` type, then click `Create`.
 
-![](/images/auth0_oidc_1.jpeg)
+![Auth0 dashboard screen showing a completed form for creating an OIDC-based application](/images/auth0_oidc_1.jpeg)
 
 You’ve created an app, now you should finalize its configuration.
 
@@ -345,7 +345,7 @@ You’ve created an app, now you should finalize its configuration.
 1. Add `<scheme:cvat_domain>/api/auth/oidc/<idp-id:auth0-oidc>/login/callback/` to the `Allowed Callback URLs`.
 1. Save changes.
 
-![](/images/auth0_oidc_2.jpeg)
+![Auth0 dashboard screen showing Allowed Callback URLs configuring for the created OIDC-based application](/images/auth0_oidc_2.jpeg)
 
 That's it, now we can move on to the configuration in CVAT.
 
@@ -370,7 +370,7 @@ sso:
 
 {{< alert title="Tip" >}}
 `Client ID`, `Client Secret` and `Domain` can be found in the `Basic Information` section of application settings
-![](/images/auth0_oidc_3.jpeg)
+![Auth0 dashboard screen showing the section with the basic information for the created OIDC-based application](/images/auth0_oidc_3.jpeg)
 {{< /alert >}}
 
 You can now proceed to [start CVAT](#start-cvat).
@@ -380,23 +380,23 @@ For additional CVAT configuration details, refer to [Configuring SSO in CVAT](#c
 
 Follow these steps to configure an application in the `Auth0` platform and integrate it with CVAT:
 
-##### **Step 1: Register an SAML-based Application**
+##### **Step 1: Register an SAML-based application**
 
 To start, log into your [Auth0 dashboard](https://manage.auth0.com/dashboard). Once you're in:
 
 1. Navigate to the `Applications` section in the menu on the left, click `+ Create Application`.
 1. Enter a name for the application and choose the `Regular Web Applications` type, then click `Create`.
 
-![](/images/auth0_saml_1.jpeg)
+![Auth0 dashboard screen showing a completed form for creating a SAML-based application](/images/auth0_saml_1.jpeg)
 
 You’ve created an app, now you should finalize its configuration.
 
 ##### **Step 2: Configure a created application**
 
 1. Navigate to the `Addons` tab of the created application and click on the `SAML2 WEB APP` button.
-   ![](/images/auth0_saml_2.jpeg)
+   ![Auth0 dashboard screen showing SAML2 WEB APP plugin on the Addons tab for the created SAML-based application](/images/auth0_saml_2.jpeg)
 1. Open the `Settings` tab in the popup window and set the following configuration:
-   ![](/images/auth0_saml_3.jpeg)
+   ![Auth0 dashboard screen showing SAML2 WEB APP plugin configuring by adding Application Callback URL and SAML-specific settings](/images/auth0_saml_3.jpeg)
 
    - `Application Callback URL`: `<scheme:cvat_domain>/api/auth/saml/<idp-id:auth0-saml>/acs/`
    - `Settings`: enter a JSON object like the following:
@@ -456,7 +456,7 @@ sso:
 
 {{< alert title="Tip" >}}
 Actual `Metadata URL` and `Issuer` values may be found on the `Usage` tab of the `SAML2 Web App` plugin
-![](/images/auth0_saml_4.jpeg)
+![Auth0 dashboard screen showing SAML configuration parameters for the created SAML-based application](/images/auth0_saml_4.jpeg)
 {{< /alert >}}
 
 You can now proceed to [start CVAT](#start-cvat).
@@ -469,21 +469,21 @@ To configure SSO in terms of Keycloak we need to create a `client`.
 #### OpenID Connect
 Follow these steps to do that:
 
-##### **Step 1: Register an OIDC-based Client**
+##### **Step 1: Register an OIDC-based client**
 
 To start, go to the Keycloak service (by default it is listening for HTTP and HTTPS requests
 using the ports 8080 and 8443, respectively) and log into your admin account. Once you're in:
 
 1. Under the desired `realm` navigate to the `Clients` section and click `create client`.
 1. Fill out the general client settings:
-   ![](/images/keycloak_oidc_1.jpeg)
+   ![Keycloak admin console screen showing a completed form with general settings for creating an OIDC-based client](/images/keycloak_oidc_1.jpeg)
    - `Client type`: OpenID Connect
    - `Client ID`: enter client identifier
    - Enter a name for the client, e.g. OIDC-based client
 1. In the next step, enable the `Client authentication` toggle.
-   ![](/images/keycloak_oidc_2.jpeg)
+   ![Keycloak admin console screen showing the client authentication option being enabled for the OIDC-based client being created](/images/keycloak_oidc_2.jpeg)
 1. In the `Login settings` section, provide the following values:
-   ![](/images/keycloak_oidc_3.jpeg)
+   ![Keycloak admin console screen showing a completed form with login settings for the OIDC-based client being created](/images/keycloak_oidc_3.jpeg)
    - `Home URL`: `<scheme:cvat_domain>`
    - `Valid redirect URIs`: `<scheme:cvat_domain>/api/auth/oidc/<idp-id:keycloak-oidc>/login/callback/`
    - `Web origins`: `<scheme:cvat_domain>`
@@ -509,8 +509,8 @@ sso:
 ```
 
 {{< alert title="Tip" >}}
-Actual `Client Secret`value can be found on the `Credentials` tab of the created OIDC client
-![](/images/keycloak_oidc_4.jpeg)
+Actual `Client Secret` value can be found on the `Credentials` tab of the created OIDC client
+![Keycloak admin console screen showing the Credentials tab for the created OIDC-based client](/images/keycloak_oidc_4.jpeg)
 {{< /alert >}}
 
 You can now proceed to [start CVAT](#start-cvat).
@@ -520,19 +520,19 @@ For additional CVAT configuration details, refer to [Configuring SSO in CVAT](#c
 
 Follow these steps to configure a client:
 
-##### **Step 1: Register a SAML-based Client**
+##### **Step 1: Register a SAML-based client**
 
 To start, go to the Keycloak service (by default it is listening for HTTP and HTTPS requests
 using the ports 8080 and 8443, respectively) and log into your admin account. Once you're in:
 
 1. Under the desired `realm` navigate to the `Clients` section and click `create client`.
 1. Fill out the general client settings:
-   ![](/images/keycloak_saml_1.jpeg)
+   ![Keycloak admin console screen showing a completed form with general settings for creating a SAML-based client](/images/keycloak_saml_1.jpeg)
    - `Client type`: SAML
    - Set the `Clint ID` the URL: `<scheme:cvat_domain>/api/auth/saml/<idp-id:keycloak-saml>/metadata/`
    - Enter a name for the client, e.g. SAML client
 1. In the `Login settings` section, provide the following values:
-   ![](/images/keycloak_saml_2.jpeg)
+   ![Keycloak admin console screen showing a completed form with login settings for the SAML-based client being created](/images/keycloak_saml_2.jpeg)
    - `Home  URL`: `<scheme:cvat_domain>`
    - `Valid redirect URIs`: `<scheme:cvat_domain>/api/auth/saml/<idp-id:keycloak-saml>/acs/`
 
@@ -548,7 +548,7 @@ You’ve created a client, now you should finalize its configuration.
 1. Configure attributes & claims:
    1. Navigate to the `Client scopes` tab on the created client -> dedicated scopes for the client.
       You will see that there is no configured mappers.
-      ![](/images/keycloak_saml_3.jpeg)
+      ![Keycloak admin screen showing that no mappers are configured yet for the created SAML-based client](/images/keycloak_saml_3.jpeg)
    1. Set up mappers for the following attributes:
       - uid
       - first_name
@@ -558,14 +558,14 @@ You’ve created a client, now you should finalize its configuration.
 
       For attributes like `email`, `first name`, and `last name`, you can either
       - Use the predefined mappers
-        ![](/images/keycloak_saml_4.jpeg)
+        ![Keycloak admin screen showing a table of predefined mappers to be added to the created SAML-based client](/images/keycloak_saml_4.jpeg)
       - Or follow the manual configuration steps to create them yourself.
 
       To configure other mappers click `Configure a new mapper` if it is a first mapper or `Add mapper`
       -> `By configuration` and then select `User Property`.
 
       For instance, to configure a mapper for the `username` attribute, fill in the form as it is done below:
-      ![](/images/keycloak_saml_5.jpeg)
+      ![Keycloak admin screen showing a completed form for creating a mapper for the username attribute in a SAML-based client](/images/keycloak_saml_5.jpeg)
 
       - `Name`: username
       - `Property`: username
@@ -600,7 +600,7 @@ sso:
 ```
 {{< alert title="Tip" >}}
 Actual `Metadata URL` may be found in the `Realm settings` on the `General` tab
-![](/images/keycloak_saml_6.jpeg)
+![Keycloak admin screen showing the General tab of the realm with highlighted SAML Metadata URL](/images/keycloak_saml_6.jpeg)
 {{< /alert >}}
 
 You can now proceed to [start CVAT](#start-cvat).
@@ -744,4 +744,4 @@ Start the CVAT Enterprise instance as usual.
 That's it! The CVAT login page now should have the `Continue with SSO` option,
 allowing users to authenticate using the configured Identity Provider.
 
-![](/images/sso_enabled.jpeg)
+![Screenshot showing CVAT login page with SSO enabled](/images/sso_enabled.jpeg)
