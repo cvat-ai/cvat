@@ -26,4 +26,4 @@ You can use linear interpolation for points to annotate a moving object:
 
 1. This way you'll get linear interpolation using the `Points`.
 
-   ![Linear interpolarization example](/images/gif013_detrac.gif)
+   ![Linear interpolation example](/images/gif013_detrac.gif)

@@ -24,7 +24,7 @@ Polygons in the track mode allow you to mark moving objects more accurately othe
    (in this example, the top of the left mirror). The direction must also match (in this example, clockwise).
    After creating the polygon, press `N` and the intermediate frames will be interpolated automatically.
 
-   ![Creating keyframe for interpolarization](/images/image185_detrac.jpg)
+   ![Creating keyframe for interpolation](/images/image185_detrac.jpg)
 
 1. If you need to change the starting point, right-click on the desired point and select `Set starting point`.
    To change the direction, right-click on the desired point and select switch orientation.

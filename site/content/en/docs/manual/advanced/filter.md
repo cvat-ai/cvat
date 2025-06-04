@@ -62,7 +62,7 @@ The `Add rule` button adds a rule for objects display. A rule may use the follow
 
 `Any in`; `Not in` - these operators allow you to set multiple values in one rule;
 
-![Example of any in filter](/images/image203.jpg)
+![Example of "any in" filter](/images/image203.jpg)
 
 `Is empty`; `is not empty` – these operators don't require to input a value.
 

@@ -379,7 +379,7 @@ You need to upload data for annotation and the `manifest.jsonl` file.
    > Note: If images are in folder, specify folder in the **Advanced settings** > **Upload to folder**.
 1. Select **Upload**.
 
-![Oploading data in Microsoft Azure](/images/azure_blob_container_tutorial9.jpg)
+![Uploading data in Microsoft Azure](/images/azure_blob_container_tutorial9.jpg)
 
 ### SAS token and connection string
 

@@ -7,7 +7,7 @@ description: 'Usage examples and basic operations available in attribute annotat
 - In this mode, you can edit attributes with fast navigation between objects and frames using a keyboard.
   Open the drop-down list in the top panel and select **Attribute annotation**.
 
-  ![Attribute Annptation mode](/images/image023_affectnet.jpg)
+  ![Attribute annotation mode](/images/image023_affectnet.jpg)
 
 - In this mode, objects panel change to a special panel:
 

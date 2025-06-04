@@ -55,7 +55,7 @@ Label colors are also displayed in the annotation window on the right panel,
 where you can show or hide specific labels
 (only the presented labels are displayed):
 
-  ![Label colors in annatation window](/images/label_panel_anno_window.jpg)
+  ![Label colors in annotation window](/images/label_panel_anno_window.jpg)
 
 A background class can be:
 - A default class, which is implicitly-added, of black color (RGB 0, 0, 0)

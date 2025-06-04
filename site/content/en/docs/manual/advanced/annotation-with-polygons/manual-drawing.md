@@ -8,7 +8,7 @@ It is used for semantic / instance segmentation.
 
 Before starting, you need to select `Polygon` on the controls sidebar and choose the correct Label.
 
-![Selecting plygon instrument](/images/image084.jpg)
+![Selecting polygon instrument](/images/image084.jpg)
 
 - Click `Shape` to enter drawing mode.
   There are two ways to draw a polygon: either create points by clicking or

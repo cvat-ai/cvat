@@ -18,7 +18,7 @@ the outline of polygons existing in the annotation.
 - Points of other shapes will be highlighted, which means that the polygon can be attached to them.
 - Define the part of the polygon path that you want to repeat.
 
-  ![Defining ploygon part for repetition](/images/image157_mapillary_vistas.jpg)
+  ![Defining polygon part for repetition](/images/image157_mapillary_vistas.jpg)
 
 - Click on the first point of the contour part.
 

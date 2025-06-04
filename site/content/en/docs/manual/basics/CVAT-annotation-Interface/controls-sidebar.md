@@ -34,7 +34,7 @@ description: 'Offers tools for navigating within the image, annotation tools, an
 |![AI Tools icon](/images/image189.jpg)|`AI Tools`|{{< ilink "/docs/manual/advanced/ai-tools" "AI Tools" >}}|
 |![OpenCV icon](/images/image201.jpg)|`OpenCV`|{{< ilink "/docs/manual/advanced/ai-tools" "OpenCV" >}}|
 |![Rectangle icon](/images/image167.jpg)|`Rectangle`|{{< ilink "/docs/manual/basics/shape-mode-basics" "Shape mode" >}}; {{< ilink "/docs/manual/basics/track-mode-basics" "Track mode" >}};<br/> {{< ilink "/docs/manual/advanced/annotation-with-rectangles" "Drawing by 4 points" >}}|
-|![Plygon icon](/images/image168.jpg)|`Polygon`|{{< ilink "/docs/manual/advanced/annotation-with-polygons" "Annotation with polygons" >}}; {{< ilink "/docs/manual/advanced/annotation-with-polygons/track-mode-with-polygons" "Track mode with polygons" >}}|
+|![Polygon icon](/images/image168.jpg)|`Polygon`|{{< ilink "/docs/manual/advanced/annotation-with-polygons" "Annotation with polygons" >}}; {{< ilink "/docs/manual/advanced/annotation-with-polygons/track-mode-with-polygons" "Track mode with polygons" >}}|
 |![Polyline icon](/images/image169.jpg)|`Polyline`|{{< ilink "/docs/manual/advanced/annotation-with-polylines" "Annotation with polylines" >}}|
 |![Points icon](/images/image170.jpg)|`Points`|{{< ilink "/docs/manual/advanced/annotation-with-points" "Annotation with points" >}}|
 |![Ellipses icon](/images/image241.jpg)|`Ellipses`|{{< ilink "/docs/manual/advanced/annotation-with-ellipses" "Annotation with ellipses" >}}|
@@ -54,7 +54,7 @@ description: 'Offers tools for navigating within the image, annotation tools, an
 |![Group shapes icon](/images/image173.jpg)|`Group Shapes` (`G`) - starts/stops the grouping shapes mode.|{{< ilink "/docs/manual/advanced/shape-grouping" "Shape grouping" >}}|
 |![Split icon](/images/image174.jpg)|`Split` - splits a track. |{{< ilink "/docs/manual/advanced/track-mode-advanced" "Track mode (advanced)" >}}|
 |![Join labels icon](/images/join-masks-icon.jpg)|Joins multiple labels into one |{{< ilink "/docs/manual/advanced/slice-and-join#joining-cvat-labels" "**Joining mask tool**" >}}|
-|![slice label icon](/images/slicing-tool-icon.jpg)|Slices one label into several.|{{< ilink "/docs/manual/advanced/slice-and-join#slicing-cvat-labels" "**Slice mask/polygon**" >}}|
+|![Slice label icon](/images/slicing-tool-icon.jpg)|Slices one label into several.|{{< ilink "/docs/manual/advanced/slice-and-join#slicing-cvat-labels" "**Slice mask/polygon**" >}}|
 
 ---
 
@@ -62,7 +62,7 @@ description: 'Offers tools for navigating within the image, annotation tools, an
 
 Switching between user interface modes.
 
-![Switching user interface modes image](/images/image145.jpg)
+![Switching user interface modes](/images/image145.jpg)
 
 1. Use arrows below to move to the next/previous frame.
    Use the scroll bar slider to scroll through frames.
