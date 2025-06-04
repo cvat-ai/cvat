@@ -172,6 +172,7 @@ class TmpDirManager:
     SPLITTER = "-"
     TMP_ROOT = settings.TMP_FILES_ROOT
     TMP_FILE_OR_DIR_RETENTION_DAYS = settings.TMP_FILE_OR_DIR_RETENTION_DAYS
+    IGNORE_CLEANUP_ERRORS = settings.IGNORE_TMP_FOLDER_CLEANUP_ERRORS
 
     @classmethod
     @contextmanager
@@ -189,7 +190,7 @@ class TmpDirManager:
         for k, v in {
             "prefix": prefix,
             "suffix": suffix,
-            "ignore_cleanup_errors": True,
+            "ignore_cleanup_errors": cls.IGNORE_CLEANUP_ERRORS,
         }.items():
             if v is not None:
                 params[k] = v

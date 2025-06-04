@@ -55,6 +55,7 @@ os.makedirs(CLOUD_STORAGE_ROOT, exist_ok=True)
 
 TMP_FILES_ROOT = os.path.join(DATA_ROOT, "tmp")
 os.makedirs(TMP_FILES_ROOT, exist_ok=True)
+IGNORE_TMP_FOLDER_CLEANUP_ERRORS = False
 
 # To avoid ERROR django.security.SuspiciousFileOperation:
 # The joined path (...) is located outside of the base path component
