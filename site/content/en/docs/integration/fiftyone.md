@@ -23,4 +23,4 @@ All of the following label types are supported, for both image and video dataset
 - Scalar fields
 - Semantic segmentation
 
-![FiftyOne user interface](/images/image264.jpg)
+![FiftyOne user interface with images for annotation and labels](/images/image264.jpg)

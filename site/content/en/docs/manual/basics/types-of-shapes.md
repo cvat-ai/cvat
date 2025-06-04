@@ -18,14 +18,14 @@ There are several shapes with which you can annotate your images:
 
 And there is what they look like:
 
-![Rectangle](/images/image038_detrac.jpg 'Rectangle') ![Polygon](/images/image033_detrac.jpg 'Polygon')
+![Example of an annotation with "Rectangle" shape](/images/image038_detrac.jpg 'Rectangle') ![Example of an annotation with "Polygon" shape](/images/image033_detrac.jpg 'Polygon')
 
-![Polyline](/images/image009_mapillary_vistas.jpg 'Polyline') ![Points](/images/image010_affectnet.jpg 'Points')
+![Example of an annotation with "Polyline" shape](/images/image009_mapillary_vistas.jpg 'Polyline') ![Example of an annotation with "Points" shape](/images/image010_affectnet.jpg 'Points')
 
-![Ellipse](/images/image240_mapillary_vistas.jpg 'Ellipse') ![Cuboid](/images/image015_detrac.jpg 'Cuboid')
+![Example of an annotation with "Ellipse" shape](/images/image240_mapillary_vistas.jpg 'Ellipse') ![Example of an annotation with "Cuboid" shape](/images/image015_detrac.jpg 'Cuboid')
 
-![Cuboid in 3d task](/images/image218_carla_town3.jpg 'Cuboid in 3d task') ![Skeleton](/images/image_skeleton_sample.jpg 'Skeleton')
+![Example of a cuboid in 3d task](/images/image218_carla_town3.jpg 'Cuboid in 3d task') ![Example of an annotation with "Skeleton" shape](/images/image_skeleton_sample.jpg 'Skeleton')
 
-![Tag](/images/image135.jpg 'Tag')
+![Example of a tag in interface](/images/image135.jpg 'Tag')
 
 `Tag` - has no shape in the workspace, but is displayed in objects sidebar.

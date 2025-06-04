@@ -62,7 +62,7 @@ description: 'Offers tools for navigating within the image, annotation tools, an
 
 Switching between user interface modes.
 
-![Switching user interface modes](/images/image145.jpg)
+![Part of user interface with open menu for switching interface modes](/images/image145.jpg)
 
 1. Use arrows below to move to the next/previous frame.
    Use the scroll bar slider to scroll through frames.
@@ -75,11 +75,11 @@ Switching between user interface modes.
    If the `Mouse Wheel` is pressed, then all annotated objects are ignored. Otherwise the
    a highlighted bounding box will be moved instead of the image itself.
 
-   ![Selecting move image button](/images/image136.jpg)
+   ![Part of user interface with highlighted "Move the image" button](/images/image136.jpg)
 
 1. You can use the button on the sidebar controls to zoom on a region of interest.
    Use the button `Fit the image` to fit the image in the workspace.
    You can also use the mouse wheel to scale the image
    (the image will be zoomed relatively to your current cursor position).
 
-   ![Selecting fit image button](/images/image137.jpg)
+   ![Part of user interface with highlighted buttons for fitting the image and selecting region](/images/image137.jpg)

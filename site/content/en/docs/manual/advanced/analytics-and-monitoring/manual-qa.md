@@ -148,7 +148,7 @@ comments section.
 
 The created issue will appear on the **Objects** sidebar, in the **Issues** tab.
 
-![Issues tab example](/images/image196_detrac.jpg)
+![Example of "Issues" tab with highlighted buttons and issue list](/images/image196_detrac.jpg)
 
 It has has the following elements:
 
@@ -168,14 +168,14 @@ It has has the following elements:
 In the workspace, you can click on the issue, and add a
 comment on the issue, remove (**Remove**) it, or resolve (**Resolve**) it.
 
-![Issue settings](/images/image232.jpg)
+![Example of "Issue" window with its settings](/images/image232.jpg)
 
 To reopen the resolved issue, click **Reopen**.
 
 You can easily access multiple issues created in one
 location by hovering over an issue and scrolling the mouse wheel.
 
-![Scrolling issues example](/images/issues_scroll.gif)
+![Example of Scrolling by issues created in one location in interface](/images/issues_scroll.gif)
 
 ### Issues comments
 

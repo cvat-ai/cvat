@@ -22,4 +22,4 @@ To edit a polygon you have to click on it while holding `Shift`, it will open th
 
 - You can press `Esc` to cancel editing.
 
-  ![Canceling editing example](/images/gif007_mapillary_vistas.gif)
+  ![Example of editing a polygon shape and canceling editing](/images/gif007_mapillary_vistas.gif)

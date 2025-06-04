@@ -45,4 +45,4 @@ task and **Overlap Size** and **Segment Size** parameters. To improve
 UX, only the first chunk of several frames will be loaded and you will be able
 to annotate the first images. Other frames will be loaded in the background.
 
-![Task frames](/images/task-details-2.png)
+![Example of user interface with task frames](/images/task-details-2.png)
