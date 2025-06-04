@@ -90,6 +90,7 @@ context('Search frame by filename', () => {
                 cy.get('.cvat-frame-search-item').should('have.length', expectedFilenames.length);
 
                 cy.get('.cvat-frame-search-modal').find('input').clear();
+                cy.get('.cvat-frame-search-modal').should('contain', 'Type to search');
             });
 
             it(`type ${input2}, search ${input2}`, () => {
@@ -99,6 +100,7 @@ context('Search frame by filename', () => {
                 cy.get('.cvat-frame-search-item').should('have.length', expectedFilenames.length);
 
                 cy.get('.cvat-frame-search-modal').find('input').clear();
+                cy.get('.cvat-frame-search-modal').should('contain', 'Type to search');
             });
         });
 
@@ -106,7 +108,8 @@ context('Search frame by filename', () => {
             const input = '0';
             const expectedFilenames = filenamesThatContain(input);
 
-            cy.get('.cvat-frame-search-modal').find('input').type(input);
+            cy.get('.cvat-frame-search-modal').find('input')
+                .should('be.focused').type(input);
             cy.contains(expectedFilenames[0]).then(() => {
                 checkFrameSearchResults(expectedFilenames, allFilenames);
             });
