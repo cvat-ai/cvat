@@ -16,6 +16,7 @@
 [![server pulls][docker-server-pulls-img]][docker-server-image-url]
 [![ui pulls][docker-ui-pulls-img]][docker-ui-image-url]
 [![DOI][doi-img]][doi-url]
+[![Status][status-img]][status-url]
 
 CVAT is an interactive video and image annotation
 tool for computer vision. It is used by tens of thousands of users and
@@ -274,3 +275,5 @@ questions and get our support.
 [doi-url]: https://zenodo.org/badge/latestdoi/139156354
 [discord-img]: https://img.shields.io/discord/1000789942802337834?label=discord
 [discord-url]: https://discord.gg/fNR3eXfk6C
+[status-img]: https://uptime.betterstack.com/status-badges/v2/monitor/1yl3h.svg
+[status-url]: https://status.cvat.ai
