@@ -29,7 +29,7 @@ context('Search frame by filename', () => {
             const actualIndicesWrapped = [];
             const actualNamesWrapped = [];
             return cy.get('.ant-select-dropdown').should('be.visible').then(() => {
-                for (let i = 0; i !== expectedCount + 1; i++) {
+                for (let i = 0; i <= expectedCount; i++) {
                     cy.realPress('ArrowDown');
                     cy.get('.ant-select-item-option-active').invoke('text').then((text) => {
                         const split = text.split(' ');
@@ -70,7 +70,7 @@ context('Search frame by filename', () => {
     after(() => {
         cy.headlessDeleteTask(taskId);
     });
-    describe('Open frame search modal, try to find frames', /* { keystrokeDelay: 50 }, */ () => {
+    describe('Open frame search modal, try to find frames', () => {
         it('search icon is visible, opens modal on click', () => {
             cy.get('.cvat-player-search-frame-name-icon').should('be.visible').click();
             cy.get('.cvat-frame-search-modal').should('be.visible')
@@ -86,7 +86,7 @@ context('Search frame by filename', () => {
             it(`type ${input1}, search ${input1}`, () => {
                 const expectedFilenames = filenamesThatContain(input1);
 
-                cy.get('.cvat-frame-search-modal').find('input').type(input1); // 1
+                cy.get('.cvat-frame-search-modal').find('input').type(input1);
                 cy.get('.cvat-frame-search-item').should('have.length', expectedFilenames.length);
 
                 cy.get('.cvat-frame-search-modal').find('input').clear();
@@ -96,7 +96,7 @@ context('Search frame by filename', () => {
             it(`type ${input2}, search ${input2}`, () => {
                 const expectedFilenames = filenamesThatContain(input2);
 
-                cy.get('.cvat-frame-search-modal').find('input').type(input2); // 12
+                cy.get('.cvat-frame-search-modal').find('input').type(input2);
                 cy.get('.cvat-frame-search-item').should('have.length', expectedFilenames.length);
 
                 cy.get('.cvat-frame-search-modal').find('input').clear();
