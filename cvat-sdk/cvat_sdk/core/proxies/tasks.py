@@ -326,7 +326,6 @@ class TasksRepo(
     # This is a backwards compatibility wrapper to support calls which pass
     # the task_ids parameter by keyword (the base class implementation is generic,
     # so it doesn't support this).
-    # pylint: disable-next=arguments-differ
     def remove_by_ids(self, task_ids: Sequence[int]) -> None:
         """
         Delete a list of tasks, ignoring those which don't exist.

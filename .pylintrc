@@ -47,7 +47,8 @@ ignore=CVS
 # Add files or directories matching the regex patterns to the ignore-list. The
 # regex matches against paths and can be in Posix or Windows format.
 ignore-paths=
-      cvat-sdk\\cvat_sdk\\api_client|cvat-sdk/cvat_sdk/api_client
+      cvat-sdk/cvat_sdk/api_client|cvat-sdk/build|node_modules
+
 
 # Files or directories matching the regex patterns are skipped. The regex
 # matches against base names, not paths. The default value ignores Emacs file
@@ -83,7 +84,7 @@ persistent=yes
 
 # Minimum Python version to use for version dependent checks. Will default to
 # the version used to run pylint.
-py-version=3.7
+py-version=3.9
 
 # Discover python modules and packages in the file system subtree.
 recursive=no
@@ -173,7 +174,7 @@ disable=raw-checker-failed,
         unexpected-line-ending-format,
         unnecessary-lambda-assignment,
         unnecessary-direct-lambda-call,
-        unneeded-not,
+        unnecessary-negation,
         consider-iterating-dictionary,
         consider-using-dict-items,
         use-maxsplit-arg,
@@ -207,6 +208,7 @@ disable=raw-checker-failed,
         too-many-return-statements,
         too-many-branches,
         too-many-arguments,
+        too-many-positional-arguments,
         too-many-locals,
         too-many-statements,
         too-many-boolean-expressions,
@@ -271,6 +273,7 @@ disable=raw-checker-failed,
         unbalanced-tuple-unpacking,
         cell-var-from-loop,
         possibly-unused-variable,
+        possibly-used-before-assignment,
         self-cls-assignment,
         using-f-string-in-unsupported-version,
         using-final-decorator-in-unsupported-version,
@@ -282,7 +285,8 @@ disable=raw-checker-failed,
         inconsistent-quotes,
         redundant-u-string-prefix,
         fixme,
-        broad-except,
+        broad-exception-caught,
+        broad-exception-raised,
         try-except-raise,
         raise-missing-from,
         raising-format-tuple,
@@ -295,7 +299,7 @@ disable=raw-checker-failed,
         protected-access,
         abstract-method,
         super-init-not-called,
-        useless-super-delegation,
+        useless-parent-delegation,
         invalid-overridden-method,
         arguments-renamed,
         unused-private-member,
@@ -388,7 +392,7 @@ disable=raw-checker-failed,
         unsupported-assignment-operation,
         unsupported-delete-operation,
         invalid-metaclass,
-        unhashable-dict-key,
+        unhashable-member,
         dict-iter-missing-items,
         await-outside-async,
         not-an-iterable,
@@ -486,7 +490,7 @@ enable=singleton-comparison,
        too-few-format-args,
        bad-except-order,
        raising-bad-type,
-       bad-exception-context,
+       bad-exception-cause,
        misplaced-bare-raise,
        raising-non-exception,
        notimplemented-raised,
@@ -838,7 +842,7 @@ min-similarity-lines=4
 [EXCEPTIONS]
 
 # Exceptions that will emit a warning when caught.
-overgeneral-exceptions=Exception
+overgeneral-exceptions=builtins.Exception
 
 
 [IMPORTS]

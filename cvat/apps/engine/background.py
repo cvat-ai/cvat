@@ -135,9 +135,7 @@ class DatasetExporter(AbstractExporter):
         self.callback_args = (self.db_instance.pk, self.export_args.format)
 
         try:
-            if self.request.scheme:
-                server_address = self.request.scheme + "://"
-            server_address += self.request.get_host()
+            server_address = self.request.scheme + "://" + self.request.get_host()
         except Exception:
             server_address = None
 
