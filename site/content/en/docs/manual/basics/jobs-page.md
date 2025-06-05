@@ -8,7 +8,7 @@ On the **Jobs** page, users (for example, with the worker role)
 can see the jobs that are assigned to them without having access to the task page,
 as well as track progress, sort, and apply filters to the job list.
 
-![](/images/image243_detrac.jpg)
+![Jobs page example](/images/image243_detrac.jpg)
 
 On the page, there is a list of jobs presented in the form of tiles, where each tile is one job.
 Each element contains:

@@ -25,13 +25,13 @@ In the **Player** tab, you can:
 
   |        _smoothed_         |        _pixelized_         |
   | :-----------------------: | :------------------------: |
-  | ![](/images/smoothed.jpg) | ![](/images/pixelized.jpg) |
+  | ![Example of an image with "Smooth image" setting applied](/images/smoothed.jpg) | ![Example of an image without "Smooth image" setting applied](/images/pixelized.jpg) |
 
 ## Workspace
 
 In the **Workspace** tab, you can:
 
-![](/images/image155.jpg)
+!["Workspace" tab opened in "Settings"](/images/image155.jpg)
 
 - `Enable auto save` checkbox — turned off by default.
 - `Auto save interval (min)` input box — 15 minutes by default.
@@ -39,7 +39,7 @@ In the **Workspace** tab, you can:
   side panel for every interpolated object (turned off by default).
 - `Always show object details` - show text for an object on the canvas not only when the object is activated:
 
-  ![](/images/image152_detrac.jpg)
+  ![Two images displaying the effects of applied and disabled "Always show objects details" setting](/images/image152_detrac.jpg)
 
 - `Content of a text` - setup of the composition of the object details:
   - `ID` - object identifier.

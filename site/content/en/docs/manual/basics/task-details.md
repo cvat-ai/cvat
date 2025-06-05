@@ -8,7 +8,7 @@ description: 'Overview of the Task details page.'
 Task details is a task page that contains a preview, a progress bar,
 the details of the task (specified when the task was created), and the **Jobs** section.
 
-![](/images/task-details-1.png)
+![Task details page example](/images/task-details-1.png)
 
 The next actions are available on this page:
 1. Change the task’s title.
@@ -45,4 +45,4 @@ task and **Overlap Size** and **Segment Size** parameters. To improve
 UX, only the first chunk of several frames will be loaded and you will be able
 to annotate the first images. Other frames will be loaded in the background.
 
-![](/images/task-details-2.png)
+![Example of user interface with task frames](/images/task-details-2.png)

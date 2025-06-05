@@ -18,8 +18,8 @@ To edit a polygon you have to click on it while holding `Shift`, it will open th
   disable `Intelligent polygon cropping` in the settings.
   In this case after closing the polygon, you can select the part of the polygon you want to leave.
 
-  ![](/images/image209.jpg)
+  ![Setting for Intelligent polygon cropping](/images/image209.jpg)
 
 - You can press `Esc` to cancel editing.
 
-  ![](/images/gif007_mapillary_vistas.gif)
+  ![Example of editing a polygon shape and canceling editing](/images/gif007_mapillary_vistas.gif)

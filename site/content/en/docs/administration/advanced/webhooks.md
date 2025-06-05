@@ -64,7 +64,7 @@ To create a webhook for **Organization**, do the following:
 2. Go to the **Organization** > **Settings** > **Actions** > **Setup Webhooks**.
 3. In the top right corner click **+**
 
-  ![](/images/create_organization_webhook.gif)
+  ![Creating an organization webhook via the interface](/images/create_organization_webhook.gif)
 
 4. Fill in the **[Setup webhook](#webhooks-forms)** form and click **Submit**.
 

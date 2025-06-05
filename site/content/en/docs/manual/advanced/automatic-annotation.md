@@ -36,7 +36,7 @@ To start automatic annotation, do the following:
 1. On the top menu, click **Tasks**.
 1. Find the task you want to annotate and click **Action** > **Automatic annotation**.
 
-   ![](/images/image119_detrac.jpg)
+   ![Task with opened "Actions" menu](/images/image119_detrac.jpg)
 
 1. In the Automatic annotation dialog, from the drop-down list, select a [model](#models).
 1. [Match the labels](#labels-matching) of the model and the task.
@@ -45,7 +45,7 @@ To start automatic annotation, do the following:
 1. (Optional) You can specify a **Threshold** for the model.
     If not provided, the default value from the model settings will be used.
 
-   ![](/images/running_automatic_annotation.png)
+   ![Automatic annotation window displaying the selected YOLOv3 model and parameters](/images/running_automatic_annotation.png)
 
 1. Click **Annotate**.
 
