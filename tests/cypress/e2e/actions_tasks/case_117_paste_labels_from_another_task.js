@@ -7,13 +7,13 @@
 
 // The test is disabled for Firefox because the "Cypress Real Events" plugin work only in the chromium-based browser.
 context('Paste labels from one task to another.', { browser: '!firefox' }, () => {
-    const caseID = '117';
+    const caseId = '117';
     const task = {
-        name: `Case ${caseID}`,
+        name: `Case ${caseId}`,
         label: 'Tree',
         attrName: 'Kind',
         attrValue: 'Oak',
-        nameSecond: `Case ${caseID} second`,
+        nameSecond: `Case ${caseId} second`,
         labelSecond: 'Car',
         attrNameSecond: 'Color',
         attrValueSecond: 'Red',
@@ -50,7 +50,7 @@ context('Paste labels from one task to another.', { browser: '!firefox' }, () =>
         });
     });
 
-    describe(`Testing "Case ${caseID}"`, () => {
+    describe(`Testing "Case ${caseId}"`, () => {
         it('Copying a label from a task via the raw editor.', () => {
             cy.openTask(task.name);
             cy.contains('[role="tab"]', 'Raw').click();

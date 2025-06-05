@@ -16,8 +16,8 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
     const serverFiles = ['images/image_1.jpg', 'images/image_2.jpg', 'images/image_3.jpg'];
     const frameCount = serverFiles.length;
 
-    let taskID = null;
-    let jobID = null;
+    let taskId = null;
+    let jobId = null;
 
     const rectangleShape = [
         { x: 300, y: 100 },
@@ -78,7 +78,7 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
     }
 
     function openJob(params) {
-        cy.visit(`/tasks/${taskID}/jobs/${jobID}`, {
+        cy.visit(`/tasks/${taskId}/jobs/${jobId}`, {
             qs: {
                 defaultWorkspace: 'single_shape',
                 ...params,
@@ -91,7 +91,7 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
     function drawObject(creatorFunction) {
         checkSingleShapeModeOpened();
 
-        cy.intercept('PATCH', `/api/jobs/${jobID}/**`).as('submitJob');
+        cy.intercept('PATCH', `/api/jobs/${jobId}/**`).as('submitJob');
         for (let frame = 0; frame < frameCount; frame++) {
             checkFrameNum(frame);
             creatorFunction();
@@ -138,10 +138,10 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
             use_cache: true,
             sorting_method: 'lexicographical',
         }).then((response) => {
-            taskID = response.taskID;
-            [jobID] = response.jobIDs;
+            taskId = response.taskId;
+            [jobId] = response.jobIds;
         }).then(() => {
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
             cy.get('.cvat-canvas-container').should('exist').and('be.visible');
         });
     });
@@ -152,7 +152,7 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
             const authKey = response.body.key;
             cy.request({
                 method: 'DELETE',
-                url: `/api/tasks/${taskID}`,
+                url: `/api/tasks/${taskId}`,
                 headers: {
                     Authorization: `Token ${authKey}`,
                 },
