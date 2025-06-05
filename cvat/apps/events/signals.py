@@ -57,7 +57,7 @@ def resource_update(sender, *, instance, update_fields, **kwargs):
         return
 
     scope = event_scope("update", resource_name)
-    if scope not in map(lambda a: a[0], EventScopeChoice.choices()):
+    if scope not in (a[0] for a in EventScopeChoice.choices()):
         return
 
     handle_update(scope=scope, instance=instance, old_instance=old_instance, **kwargs)
@@ -82,7 +82,7 @@ def resource_create(sender, instance, created, **kwargs):
     resource_name = instance.__class__.__name__.lower()
 
     scope = event_scope("create", resource_name)
-    if scope not in map(lambda a: a[0], EventScopeChoice.choices()):
+    if scope not in (a[0] for a in EventScopeChoice.choices()):
         return
 
     handle_create(scope=scope, instance=instance, **kwargs)
@@ -103,7 +103,7 @@ def resource_create(sender, instance, created, **kwargs):
 def resource_delete(sender, instance, **kwargs):
     resource_name = instance.__class__.__name__.lower()
     scope = event_scope("delete", resource_name)
-    if scope not in map(lambda a: a[0], EventScopeChoice.choices()):
+    if scope not in (a[0] for a in EventScopeChoice.choices()):
         return
 
     handle_delete(scope=scope, instance=instance, **kwargs)

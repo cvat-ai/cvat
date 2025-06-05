@@ -4,6 +4,8 @@
 # SPDX-License-Identifier: MIT
 
 import zipfile
+from pathlib import Path
+from typing import BinaryIO
 
 from datumaro.components.annotation import AnnotationType
 from datumaro.components.dataset import StreamDataset
@@ -33,7 +35,7 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
 
 
 @importer(name="COCO", ext="JSON, ZIP", version="1.0")
-def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
+def _import(src_file: BinaryIO, temp_dir, instance_data, load_data_callback=None, **kwargs):
     if zipfile.is_zipfile(src_file):
         zipfile.ZipFile(src_file).extractall(temp_dir)
         # We use coco importer because it gives better error message
@@ -46,7 +48,12 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
         if load_data_callback:
             raise NoMediaInAnnotationFileError()
 
-        dataset = StreamDataset.import_from(src_file.name, "coco_instances", env=dm_env)
+        tmp_src_file_link = Path(temp_dir) / "annotations" / "default.json"
+        tmp_src_file_link.parent.mkdir()
+        tmp_src_file_link.symlink_to(src_file.name)
+        dataset = StreamDataset.import_from(
+            str(tmp_src_file_link.absolute()), "coco_instances", env=dm_env
+        )
         import_dm_annotations(dataset, instance_data)
 
 
@@ -89,6 +96,11 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
         if load_data_callback:
             raise NoMediaInAnnotationFileError()
 
-        dataset = StreamDataset.import_from(src_file.name, "coco_person_keypoints", env=dm_env)
+        tmp_src_file_link = Path(temp_dir) / "annotations" / "default.json"
+        tmp_src_file_link.parent.mkdir()
+        tmp_src_file_link.symlink_to(src_file.name)
+        dataset = StreamDataset.import_from(
+            str(tmp_src_file_link.absolute()), "coco_person_keypoints", env=dm_env
+        )
         dataset = dataset.transform(RemoveBboxAnnotations)
         import_dm_annotations(dataset, instance_data)

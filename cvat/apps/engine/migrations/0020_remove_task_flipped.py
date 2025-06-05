@@ -22,7 +22,7 @@ def make_image_meta_cache(db_task):
         else:
             filenames = []
             for root, _, files in os.walk(db_task.get_upload_dirname()):
-                fullnames = map(lambda f: os.path.join(root, f), files)
+                fullnames = (os.path.join(root, f) for f in files)
                 images = filter(lambda x: get_mime(x) == "image", fullnames)
                 filenames.extend(images)
             filenames.sort()

@@ -16,7 +16,7 @@ class Command(BaseCommand):
         is_failed = False
         for Model, get_directory_path, get_queryset in [
             (Asset, lambda asset: asset.get_asset_dir(), lambda: Asset.objects),
-            (Data, lambda data: data.get_upload_dirname(), lambda: Data.objects.exclude(size=0)),
+            (Data, lambda data: data.get_upload_dirname(), lambda: Data.objects),
         ]:
             total = 0
             self.stdout.write(f"Started for {Model.__name__}")
