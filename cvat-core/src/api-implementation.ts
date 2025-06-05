@@ -239,6 +239,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
     ): ReturnType<CVATCore['tasks']['get']> => {
         checkFilter(filter, {
             page: isInteger,
+            pageSize: isInteger,
             projectId: isInteger,
             id: isInteger,
             sort: isString,
@@ -246,23 +247,10 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
             filter: isString,
             ordering: isString,
         });
+        console.log('searchParams1', filter);
 
         checkExclusiveFields(filter, ['id'], ['page']);
-        const searchParams = {};
-        for (const key of Object.keys(filter)) {
-            if (['page', 'id', 'sort', 'search', 'filter', 'ordering'].includes(key)) {
-                searchParams[key] = filter[key];
-            }
-        }
-
-        if ('projectId' in filter) {
-            if (searchParams.filter) {
-                const parsed = JSON.parse(searchParams.filter);
-                searchParams.filter = JSON.stringify({ and: [parsed, { '==': [{ var: 'project_id' }, filter.projectId] }] });
-            } else {
-                searchParams.filter = JSON.stringify({ and: [{ '==': [{ var: 'project_id' }, filter.projectId] }] });
-            }
-        }
+        const searchParams = filterFieldsToSnakeCase(filter, ['projectId']);
 
         const tasksData = await serverProxy.tasks.get(searchParams, aggregate);
         const tasks = await Promise.all(tasksData.map(async (taskItem) => {
