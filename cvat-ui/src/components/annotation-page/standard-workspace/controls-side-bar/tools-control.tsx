@@ -28,6 +28,7 @@ import { AIToolsIcon } from 'icons';
 import { Canvas, convertShapesForInteractor } from 'cvat-canvas-wrapper';
 import {
     getCore, Label, MLModel, ObjectState, ObjectType, ShapeType, Job,
+    MinimalShape, InteractorResults, TrackerResults,
 } from 'cvat-core-wrapper';
 import openCVWrapper, { MatType } from 'utils/opencv-wrapper/opencv-wrapper';
 import {
@@ -153,26 +154,27 @@ interface State {
     portals: React.ReactPortal[];
 }
 
-type InteractorResults = Extract<Awaited<ReturnType<typeof core.lambda.call>>, { mask: number[][] }>;
-type TrackerResults = Extract<Awaited<ReturnType<typeof core.lambda.call>>, { states: any[]; shapes: number[][] }>;
 type DetectorResults = Extract<Awaited<ReturnType<typeof core.lambda.call>>, { version: number }>;
 
-function trackedRectangleMapper(shape: number[]): number[] {
-    return shape.reduce(
-        (acc: number[], value: number, index: number): number[] => {
-            if (index % 2) {
+function trackedRectangleMapper(shape: MinimalShape): MinimalShape {
+    return {
+        type: ShapeType.RECTANGLE,
+        points: shape.points.reduce(
+            (acc: number[], value: number, index: number): number[] => {
+                if (index % 2) {
                 // y
-                acc[1] = Math.min(acc[1], value);
-                acc[3] = Math.max(acc[3], value);
-            } else {
+                    acc[1] = Math.min(acc[1], value);
+                    acc[3] = Math.max(acc[3], value);
+                } else {
                 // x
-                acc[0] = Math.min(acc[0], value);
-                acc[2] = Math.max(acc[2], value);
-            }
-            return acc;
-        },
-        [Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER],
-    );
+                    acc[0] = Math.min(acc[0], value);
+                    acc[2] = Math.max(acc[2], value);
+                }
+                return acc;
+            },
+            [Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER],
+        ),
+    };
 }
 
 function registerPlugin(): (callback: null | (() => void)) => void {
@@ -686,11 +688,11 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             stateful: Map<string | number, {
                 clientIDs: number[];
                 states: any[];
-                shapes: number[][];
+                shapes: MinimalShape[];
             }>;
             stateless: Map<string | number, {
                 clientIDs: number[];
-                shapes: number[][];
+                shapes: MinimalShape[];
             }>;
         };
 
@@ -727,7 +729,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                 states: [],
                             };
                             container.clientIDs.push(clientID);
-                            container.shapes.push(points);
+                            container.shapes.push({ type: clientState.shapeType, points });
                             container.states.push(serverlessState);
                             acc.stateful.set(trackerModel.id, container);
                         } else {
@@ -736,7 +738,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                 shapes: [],
                             };
                             container.clientIDs.push(clientID);
-                            container.shapes.push(points);
+                            container.shapes.push({ type: clientState.shapeType, points });
                             acc.stateless.set(trackerModel.id, container);
                         }
                     }
@@ -836,10 +838,10 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             const [trackedShape] = trackedShapes.filter(
                                 (_trackedShape: TrackedShape) => _trackedShape.clientID === clientID,
                             );
-                            objectState.points = shape;
+                            objectState.points = shape.points;
                             objectState.save().then(() => {
                                 trackedShape.serverlessState = state;
-                                trackedShape.shapePoints = shape;
+                                trackedShape.shapePoints = shape.points;
                             });
                         }
                     } catch (error: any) {

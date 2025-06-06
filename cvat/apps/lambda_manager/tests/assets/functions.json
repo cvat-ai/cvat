@@ -90,6 +90,25 @@
         "httpPort": 49158
       }
     },
+    "test-tracker-with-supported-shape-types": {
+      "metadata": {
+        "name": "test-tracker-with-supported-shape-types",
+        "annotations": {
+          "framework": "pytorch",
+          "name": "SiamMask",
+          "spec": "",
+          "type": "tracker",
+          "supported_shape_types": "polygon, rectangle"
+        }
+      },
+      "spec": {
+        "description": ""
+      },
+      "status": {
+        "state": "ready",
+        "httpPort": 49159
+      }
+    },
     "test-model-has-state-building": {
       "metadata": {
         "name": "test-model-has-state-building",
