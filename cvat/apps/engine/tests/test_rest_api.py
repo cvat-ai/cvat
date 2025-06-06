@@ -1705,6 +1705,24 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
 
         return sorted(response.data["results"], key=lambda task: task["name"])
 
+    def _compare_tasks(self, original_task, imported_task):
+        compare_objects(
+            self=self,
+            obj1=original_task,
+            obj2=imported_task,
+            ignore_keys=(
+                "id",
+                "url",
+                "created_date",
+                "updated_date",
+                "username",
+                "project_id",
+                "data",
+                # backup does not store overlap explicitly
+                "overlap",
+            ),
+        )
+
     def _run_api_v2_projects_id_export_import(self, user):
         for project in self.projects:
             expected_4xx_status_code = None
@@ -1754,22 +1772,7 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
                     original_tasks = self._get_tasks_for_project(user, original_project["id"])
                     imported_tasks = self._get_tasks_for_project(user, imported_project["id"])
                     for original_task, imported_task in zip(original_tasks, imported_tasks):
-                        compare_objects(
-                            self=self,
-                            obj1=original_task,
-                            obj2=imported_task,
-                            ignore_keys=(
-                                "id",
-                                "url",
-                                "created_date",
-                                "updated_date",
-                                "username",
-                                "project_id",
-                                "data",
-                                # backup does not store overlap explicitly
-                                "overlap",
-                            ),
-                        )
+                        self._compare_tasks(original_task, imported_task)
 
     def test_api_v2_projects_id_export_admin(self):
         self._run_api_v2_projects_id_export_import(self.admin)
@@ -1784,30 +1787,9 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
         self._run_api_v2_projects_id_export_import(None)
 
 
-@override_settings(MEDIA_CACHE_ALLOW_STATIC_CACHE=False)
-class ProjectCloudBackupAPINoStaticChunksTestCase(ProjectBackupAPITestCase):
+class _CloudStorageTestBase(ApiTestBase):
     @classmethod
-    def setUpTestData(cls):
-        create_db_users(cls)
-        cls.client = APIClient()
-        cls._create_cloud_storage()
-        cls._create_media()
-        cls._create_projects()
-
-    @classmethod
-    def _create_cloud_storage(cls):
-        data = {
-            "provider_type": "AWS_S3_BUCKET",
-            "resource": "test",
-            "display_name": "Bucket",
-            "credentials_type": "KEY_SECRET_KEY_PAIR",
-            "key": "minio_access_key",
-            "secret_key": "minio_secret_key",
-            "specific_attributes": "endpoint_url=http://minio:9000",
-            "description": "Some description",
-            "manifests": [],
-        }
-
+    def _start_aws_patch(cls):
         class MockAWS(AWS_S3):
             _files = {}
 
@@ -1827,10 +1809,28 @@ class ProjectCloudBackupAPINoStaticChunksTestCase(ProjectBackupAPITestCase):
             def _download_fileobj_to_stream(self, key: str, stream: BinaryIO, /):
                 stream.write(self._files[key])
 
-        cls.mock_aws = MockAWS
+        cls._aws_patch = mock.patch("cvat.apps.engine.cloud_provider.AWS_S3", MockAWS)
+        cls._aws_patch.start()
 
-        cls.aws_patch = mock.patch("cvat.apps.engine.cloud_provider.AWS_S3", MockAWS)
-        cls.aws_patch.start()
+        return MockAWS
+
+    @classmethod
+    def _stop_aws_patch(cls):
+        cls._aws_patch.stop()
+
+    @classmethod
+    def _create_cloud_storage(cls):
+        data = {
+            "provider_type": "AWS_S3_BUCKET",
+            "resource": "test",
+            "display_name": "Bucket",
+            "credentials_type": "KEY_SECRET_KEY_PAIR",
+            "key": "minio_access_key",
+            "secret_key": "minio_secret_key",
+            "specific_attributes": "endpoint_url=http://minio:9000",
+            "description": "Some description",
+            "manifests": [],
+        }
 
         with ForceLogin(cls.owner, cls.client):
             response = cls.client.post("/api/cloudstorages", data=data, format="json")
@@ -1838,12 +1838,47 @@ class ProjectCloudBackupAPINoStaticChunksTestCase(ProjectBackupAPITestCase):
                 response.status_code,
                 response.content,
             )
-            cls.cloud_storage_id = response.json()["id"]
+            return response.json()["id"]
+
+
+@override_settings(MEDIA_CACHE_ALLOW_STATIC_CACHE=False)
+class ProjectCloudBackupAPINoStaticChunksTestCase(ProjectBackupAPITestCase, _CloudStorageTestBase):
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+        cls.client = APIClient()
+        cls.mock_aws = cls._start_aws_patch()
+        cls.cloud_storage_id = cls._create_cloud_storage()
+        cls._create_media()
+        cls._create_projects()
 
     @classmethod
     def tearDownClass(cls):
-        cls.aws_patch.stop()
+        cls._stop_aws_patch()
         super().tearDownClass()
+
+    def _compare_tasks(self, original_task, imported_task):
+        assert imported_task["data_storage"] == {
+            "location": "local",
+            "cloud_storage_id": None,
+        }
+        compare_objects(
+            self=self,
+            obj1=original_task,
+            obj2=imported_task,
+            ignore_keys=(
+                "id",
+                "url",
+                "created_date",
+                "updated_date",
+                "username",
+                "project_id",
+                "data",
+                "data_storage",
+                # backup does not store overlap explicitly
+                "overlap",
+            ),
+        )
 
     @classmethod
     def _create_media(cls):
@@ -7592,3 +7627,5 @@ class TaskAnnotation2DContext(ApiTestBase):
                 "/api/tasks/%s/data" % task_id, self.admin, query_params=query_params
             )
             self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
