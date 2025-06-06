@@ -77,6 +77,21 @@ export const config: Partial<Config> = {
             type: 'datetime',
             operators: ['between', 'greater', 'greater_or_equal', 'less', 'less_or_equal'],
         },
+        created_date: {
+            label: 'Created date',
+            type: 'datetime',
+            operators: ['between', 'greater', 'greater_or_equal', 'less', 'less_or_equal'],
+        },
+        created_from: {
+            label: 'Created from',
+            type: 'datetime',
+            operators: ['equal'],
+        },
+        created_to: {
+            label: 'Created to',
+            type: 'datetime',
+            operators: ['equal'],
+        },
         id: {
             label: 'ID',
             type: 'number',
