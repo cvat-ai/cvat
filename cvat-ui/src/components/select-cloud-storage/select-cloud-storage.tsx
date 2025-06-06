@@ -96,7 +96,7 @@ function SelectCloudStorage(props: Props): JSX.Element {
         >
             <AutoComplete
                 onBlur={onBlur}
-                value={searchPhrase || cloudStorage.displayName}
+                value={searchPhrase}
                 placeholder='Search...'
                 showSearch
                 onSearch={(phrase: string) => {

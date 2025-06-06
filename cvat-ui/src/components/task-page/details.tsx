@@ -12,7 +12,7 @@ import Title from 'antd/lib/typography/Title';
 import moment from 'moment';
 
 import {
-    User, getCore, Project, Task, StorageLocation,
+    User, getCore, Project, Task, StorageLocation, Storage,
 } from 'cvat-core-wrapper';
 import AutomaticAnnotationProgress from 'components/tasks-page/automatic-annotation-progress';
 import MdGuideControl from 'components/md-guide/md-guide-control';
@@ -202,8 +202,6 @@ class DetailsComponent extends React.PureComponent<Props, State> {
     private renderDataStorageField(): JSX.Element | null {
         const { task: taskInstance, onUpdateTask } = this.props;
 
-        console.log('FOOOOOOO: ', taskInstance);
-
         if (taskInstance.dataStorage.location !== StorageLocation.CLOUD_STORAGE) {
             return null;
         }
@@ -213,7 +211,10 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                     <CloudStorageEditor
                         instance={taskInstance}
                         onChange={(cloudStorage) => {
-                            taskInstance.cloudStorageId = cloudStorage.id;
+                            taskInstance.dataStorage = new Storage({
+                                location: taskInstance.dataStorage.location,
+                                cloudStorageId: cloudStorage.id,
+                            });
                             onUpdateTask(taskInstance);
                         }}
                     />

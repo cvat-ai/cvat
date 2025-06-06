@@ -2297,14 +2297,14 @@ class TaskReadListSerializer(serializers.ListSerializer):
         return super().to_representation(data)
 
 
-class TaskDataStorageReadSerializer(serializers.ModelSerializer):
+class TaskDataStorageSerializer(serializers.ModelSerializer):
     cloud_storage_id = serializers.IntegerField(required=False, allow_null=True)
     location = serializers.CharField(source='storage', required=False)
 
     class Meta:
         model = models.Data
         fields = ('id', 'location', 'cloud_storage_id')
-        read_only_fields = fields
+        read_only_fields = ('id', 'location',)
 
 
 class TaskReadSerializer(serializers.ModelSerializer):
@@ -2330,7 +2330,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
     consensus_enabled = serializers.BooleanField(
         source='get_consensus_enabled', required=False, read_only=True
     )
-    data_storage = TaskDataStorageReadSerializer(source='data', required=False)
+    data_storage = TaskDataStorageSerializer(source='data', required=False)
 
     class Meta:
         model = models.Task
@@ -2364,7 +2364,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     project_id = serializers.IntegerField(required=False, allow_null=True)
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
-    cloud_storage_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+    data_storage = TaskDataStorageSerializer(required=False, allow_null=True)
     consensus_replicas = serializers.IntegerField(
         required=False, default=0, min_value=0,
         help_text=textwrap.dedent("""\
@@ -2378,7 +2378,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         fields = (
             'url', 'id', 'name', 'project_id', 'owner_id', 'assignee_id',
             'bug_tracker', 'overlap', 'segment_size', 'labels', 'subset',
-            'target_storage', 'source_storage', 'consensus_replicas', 'cloud_storage_id',
+            'target_storage', 'source_storage', 'consensus_replicas', 'data_storage',
         )
         write_once_fields = ('overlap', 'segment_size', 'consensus_replicas')
 
@@ -2517,10 +2517,8 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         # update source and target storages
         _update_related_storages(instance, validated_data)
 
-        # update data cloud storage
-        if new_data_cloud_storage_id := validated_data.get('cloud_storage_id'):
-            instance.data.cloud_storage_id = new_data_cloud_storage_id
-            instance.data.save()
+        # update data storage
+        _update_data_storage(instance, validated_data)
 
         instance.save()
 
@@ -3433,12 +3431,52 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         read_only_fields = ('path',)
 
 
+def _validate_storage_conf(
+    new_conf: dict,
+    storage_type: str,
+    old_location: str,
+):
+    new_cloud_storage_id = new_conf.get('cloud_storage_id')
+    new_location = new_conf.get('location')
+
+    if new_cloud_storage_id:
+        if new_location and new_location != models.Location.CLOUD_STORAGE:
+            raise serializers.ValidationError(
+                f"It is not allowed to specify '{new_location}' location together with cloud storage id"
+            )
+        elif (
+            not new_location
+            and old_location != models.Location.CLOUD_STORAGE
+        ):
+            raise serializers.ValidationError(
+                f"The configuration of {storage_type} is not full"
+            )
+
+        if not models.CloudStorage.objects.filter(id=new_cloud_storage_id).exists():
+            raise serializers.ValidationError(
+                f"The specified cloud storage {new_cloud_storage_id} does not exist."
+            )
+    else:
+        if new_location == models.Location.CLOUD_STORAGE:
+            raise serializers.ValidationError(
+                "Cloud storage was selected as location but its id was not specified"
+            )
+        elif (
+            not new_location
+            and old_location == models.Location.CLOUD_STORAGE
+            and "cloud_storage_id" in new_conf
+        ):
+            raise serializers.ValidationError(
+                "It is not allowed to reset a cloud storage id without explicitly resetting a location"
+            )
+
+
 def _update_related_storages(
     instance: Union[models.Project, models.Task],
     validated_data: dict[str, Any],
 ) -> None:
     for storage_type in ('source_storage', 'target_storage'):
-        new_conf = validated_data.pop(storage_type, None)
+        new_conf: dict | None = validated_data.pop(storage_type, None)
 
         if not new_conf:
             continue
@@ -3449,36 +3487,7 @@ def _update_related_storages(
         # storage_instance maybe None
         storage_instance = getattr(instance, storage_type)
 
-        if new_cloud_storage_id:
-            if new_location and new_location != models.Location.CLOUD_STORAGE:
-                raise serializers.ValidationError(
-                    f"It is not allowed to specify '{new_location}' location together with cloud storage id"
-                )
-            elif (
-                not new_location
-                and getattr(storage_instance, "location", None) != models.Location.CLOUD_STORAGE
-            ):
-                raise serializers.ValidationError(
-                    f"The configuration of {storage_type} is not full"
-                )
-
-            if not models.CloudStorage.objects.filter(id=new_cloud_storage_id).exists():
-                raise serializers.ValidationError(
-                    f"The specified cloud storage {new_cloud_storage_id} does not exist."
-                )
-        else:
-            if new_location == models.Location.CLOUD_STORAGE:
-                raise serializers.ValidationError(
-                    "Cloud storage was selected as location but its id was not specified"
-                )
-            elif (
-                not new_location
-                and getattr(storage_instance, "location", None) == models.Location.CLOUD_STORAGE
-                and "cloud_storage_id" in new_conf
-            ):
-                raise serializers.ValidationError(
-                    "It is not allowed to reset a cloud storage id without explicitly resetting a location"
-                )
+        _validate_storage_conf(new_conf, storage_type, getattr(storage_instance, "location", None))
 
         if not storage_instance:
             storage_instance = models.Storage(**new_conf)
@@ -3489,6 +3498,24 @@ def _update_related_storages(
         storage_instance.location = new_location or storage_instance.location
         storage_instance.cloud_storage_id = new_cloud_storage_id
         storage_instance.save()
+
+
+def _update_data_storage(
+    instance: Union[models.Project, models.Task],
+    validated_data: dict[str, Any],
+) -> None:
+    storage_type = 'data_storage'
+    new_conf: dict | None = validated_data.pop(storage_type, None)
+
+    if not new_conf:
+        return
+
+    _validate_storage_conf(new_conf, storage_type, old_location=instance.data.storage)
+
+    instance.data.storage = new_conf.get('location') or instance.data.storage
+    instance.data.cloud_storage_id = new_conf.get('cloud_storage_id')
+    instance.data.save()
+
 
 def _configure_related_storages(validated_data: dict[str, Any]) -> dict[str, Optional[models.Storage]]:
     storages = {

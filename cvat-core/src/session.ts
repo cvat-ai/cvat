@@ -751,6 +751,7 @@ export class Task extends Session {
     public bugTracker: string;
     public subset: string;
     public labels: Label[];
+    public dataStorage: Storage;
     public readonly guideId: number | null;
     public readonly id: number;
     public readonly status: TaskStatus;
@@ -776,7 +777,6 @@ export class Task extends Session {
     };
     public readonly jobs: Job[];
     public readonly consensusEnabled: boolean;
-    public readonly dataStorage: Storage;
 
     public readonly startFrame: number;
     public readonly stopFrame: number;
@@ -784,7 +784,7 @@ export class Task extends Session {
     public readonly useZipChunks: boolean;
     public readonly useCache: boolean;
     public readonly copyData: boolean;
-    public cloudStorageId: number;
+    public readonly cloudStorageId: number;
     public readonly sortingMethod: string;
 
     public readonly validationMode: string | null;
@@ -1161,14 +1161,6 @@ export class Task extends Session {
                 },
                 cloudStorageId: {
                     get: () => data.cloud_storage_id,
-                    set: (cloudStorageId) => {
-                        if (!Number.isInteger(cloudStorageId) || cloudStorageId <= 0) {
-                            throw new ArgumentError('Value must be a positive integer');
-                        }
-
-                        updateTrigger.update('cloudStorageId');
-                        data.cloud_storage_id = cloudStorageId;
-                    },
                 },
                 sortingMethod: {
                     get: () => data.sorting_method,
@@ -1184,6 +1176,10 @@ export class Task extends Session {
                 },
                 dataStorage: {
                     get: () => data.data_storage,
+                    set: (dataStorage) => {
+                        updateTrigger.update('dataStorage');
+                        data.data_storage = dataStorage;
+                    },
                 },
                 progress: {
                     get: () => data.progress,
