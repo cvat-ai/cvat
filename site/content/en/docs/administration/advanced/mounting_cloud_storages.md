@@ -2,16 +2,16 @@
 title: 'Mounting cloud storage'
 linkTitle: 'Mounting cloud storage'
 weight: 30
-description: 'Instructions on how to mount AWS S3 bucket, Microsoft Azure container or Google Drive as a filesystem.'
+description: 'Instructions on how to mount an Amazon S3 bucket, Microsoft Azure Blob Storage container or Google Drive as a filesystem.'
 ---
 
 <!--lint disable heading-style-->
 
-## AWS S3 bucket as filesystem
+## Amazon S3 bucket as filesystem
 
-### <a name="aws_s3_ubuntu_2004">Ubuntu 20.04</a>
+### <a name="amazon_s3_ubuntu_2004">Ubuntu 20.04</a>
 
-#### <a name="aws_s3_mount">Mount</a>
+#### <a name="amazon_s3_mount">Mount</a>
 
 1. Install s3fs:
 
@@ -35,13 +35,13 @@ description: 'Instructions on how to mount AWS S3 bucket, Microsoft Azure contai
 
 For more details see [here](https://github.com/s3fs-fuse/s3fs-fuse).
 
-#### <a name="aws_s3_automatically_mount">Automatically mount</a>
+#### <a name="amazon_s3_automatically_mount">Automatically mount</a>
 
 Follow the first 3 mounting steps above.
 
-##### <a name="aws_s3_using_fstab">Using fstab</a>
+##### <a name="amazon_s3_using_fstab">Using fstab</a>
 
-1. Create a bash script named aws_s3_fuse(e.g in /usr/bin, as root) with this content
+1. Create a bash script named `amazon_s3_fuse` (e.g in /usr/bin, as root) with this content
    (replace `user_name` on whose behalf the disk will be mounted, `backet_name`, `mount_point`, `/path/to/.passwd-s3fs`):
 
    ```bash
@@ -53,23 +53,23 @@ Follow the first 3 mounting steps above.
 1. Give it the execution permission:
 
    ```bash
-   sudo chmod +x /usr/bin/aws_s3_fuse
+   sudo chmod +x /usr/bin/amazon_s3_fuse
    ```
 
 1. Edit `/etc/fstab` adding a line like this, replace `mount_point`):
 
    ```bash
-   /absolute/path/to/aws_s3_fuse  <mount_point>     fuse    allow_other,user,_netdev     0       0
+   /absolute/path/to/amazon_s3_fuse  <mount_point>     fuse    allow_other,user,_netdev     0       0
    ```
 
-##### <a name="aws_s3_using_systemd">Using systemd</a>
+##### <a name="amazon_s3_using_systemd">Using systemd</a>
 
 1. Create unit file `sudo nano /etc/systemd/system/s3fs.service`
    (replace `user_name`, `bucket_name`, `mount_point`, `/path/to/.passwd-s3fs`):
 
    ```bash
    [Unit]
-   Description=FUSE filesystem over AWS S3 bucket
+   Description=FUSE filesystem over Amazon S3 bucket
    After=network.target
 
    [Service]
@@ -93,7 +93,7 @@ Follow the first 3 mounting steps above.
    sudo systemctl start s3fs.service
    ```
 
-#### <a name="aws_s3_check">Check</a>
+#### <a name="amazon_s3_check">Check</a>
 
 A file `/etc/mtab` contains records of currently mounted filesystems.
 
@@ -101,20 +101,20 @@ A file `/etc/mtab` contains records of currently mounted filesystems.
 cat /etc/mtab | grep 's3fs'
 ```
 
-#### <a name="aws_s3_unmount_filesystem">Unmount filesystem</a>
+#### <a name="amazon_s3_unmount_filesystem">Unmount filesystem</a>
 
 ```bash
 fusermount -u <mount_point>
 ```
 
-If you used [systemd](#aws_s3_using_systemd) to mount a bucket:
+If you used [systemd](#amazon_s3_using_systemd) to mount a bucket:
 
 ```bash
 sudo systemctl stop s3fs.service
 sudo systemctl disable s3fs.service
 ```
 
-## Microsoft Azure container as filesystem
+## Microsoft Azure Blob Storage container as filesystem
 
 ### <a name="azure_ubuntu_2004">Ubuntu 20.04</a>
 
@@ -216,7 +216,7 @@ Follow the first 7 mounting steps above.
 
    ```bash
    [Unit]
-   Description=FUSE filesystem over Azure container
+   Description=FUSE filesystem over Azure Blob Storage container
    After=network.target
 
    [Service]
