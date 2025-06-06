@@ -7629,3 +7629,157 @@ class TaskAnnotation2DContext(ApiTestBase):
             self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
+class TaskChangeCloudStorageTestCase(_CloudStorageTestBase):
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+        cls.client = APIClient()
+        cls.mock_aws = cls._start_aws_patch()
+        cls.cloud_storage_id_1 = cls._create_cloud_storage()
+        cls.cloud_storage_id_2 = cls._create_cloud_storage()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._stop_aws_patch()
+        super().tearDownClass()
+
+    def _create_cloud_task(self):
+        data = {
+            "name": "my cloud task #1",
+            "owner_id": self.owner.id,
+            "overlap": 0,
+            "segment_size": 100,
+            "labels": [{"name": "person"}],
+        }
+
+        for file in [
+            generate_random_image_file("test_1.jpg")[1],
+            generate_random_image_file("test_2.jpg")[1],
+        ]:
+            self.mock_aws.create_file(file.name, file.getvalue())
+
+        image_data = {
+            "server_files[0]": "test_1.jpg",
+            "server_files[1]": "test_2.jpg",
+            "image_quality": 75,
+            "cloud_storage_id": self.cloud_storage_id_1,
+            "storage": StorageChoice.CLOUD_STORAGE,
+        }
+        return self._create_task(data, image_data)
+
+    def _create_local_task(self):
+        data = {
+            "name": "my local task #1",
+            "owner_id": self.owner.id,
+            "overlap": 0,
+            "segment_size": 100,
+            "labels": [{"name": "person"}],
+        }
+
+        image_data = {
+            "client_files[0]": generate_random_image_file("test_1.jpg")[1],
+            "client_files[1]": generate_random_image_file("test_2.jpg")[1],
+            "client_files[2]": generate_random_image_file("test_3.jpg")[1],
+            "image_quality": 75,
+        }
+        return self._create_task(data, image_data)
+
+    def _create_task(self, data, image_data):
+        with ForceLogin(self.owner, self.client):
+            response = self.client.post("/api/tasks", data=data, format="json")
+            assert response.status_code == status.HTTP_201_CREATED, response.status_code
+            tid = response.data["id"]
+
+            response = self.client.post("/api/tasks/%s/data" % tid, data=image_data)
+            assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
+
+            response = self.client.get("/api/tasks/%s" % tid)
+            task = response.data
+
+        return task
+
+    def test_can_change_cloud_storage(self):
+        task = self._create_cloud_task()
+        task_id = task["id"]
+        assert task["data_storage"] == {
+            "location": "cloud_storage",
+            "cloud_storage_id": self.cloud_storage_id_1,
+        }
+
+        data = {
+            "data_storage": {
+                "location": "cloud_storage",
+                "cloud_storage_id": self.cloud_storage_id_2,
+            },
+        }
+        with ForceLogin(self.owner, self.client):
+            response = self.client.patch(f"/api/tasks/{task_id}", data=data, format="json")
+            assert response.status_code == status.HTTP_200_OK, (
+                response.status_code,
+                response.content,
+            )
+
+            response = self.client.get(f"/api/tasks/{task_id}")
+            updated_task = response.data
+
+        assert updated_task["data_storage"] == {
+            "location": "cloud_storage",
+            "cloud_storage_id": self.cloud_storage_id_2,
+        }
+        # making sure nothing else changed
+        compare_objects(
+            self=self,
+            obj1=task,
+            obj2=updated_task,
+            ignore_keys=("updated_date", "data_storage"),
+        )
+
+    def test_can_not_change_to_not_existing_cloud_storage(self):
+        task = self._create_cloud_task()
+        task_id = task["id"]
+
+        data = {
+            "data_storage": {
+                "location": "cloud_storage",
+                "cloud_storage_id": 99999,
+            },
+        }
+        with ForceLogin(self.owner, self.client):
+            response = self.client.patch(f"/api/tasks/{task_id}", data=data, format="json")
+            assert response.status_code == status.HTTP_400_BAD_REQUEST, (
+                response.status_code,
+                response.content,
+            )
+
+    def test_can_not_move_cloud_task_to_local_storage(self):
+        task = self._create_cloud_task()
+        task_id = task["id"]
+
+        data = {
+            "data_storage": {
+                "location": "local",
+            },
+        }
+        with ForceLogin(self.owner, self.client):
+            response = self.client.patch(f"/api/tasks/{task_id}", data=data, format="json")
+            assert response.status_code == status.HTTP_400_BAD_REQUEST, (
+                response.status_code,
+                response.content,
+            )
+
+    def test_can_not_move_local_task_to_cloud_storage(self):
+        task = self._create_local_task()
+        task_id = task["id"]
+
+        data = {
+            "data_storage": {
+                "location": "cloud_storage",
+                "cloud_storage_id": self.cloud_storage_id_2,
+            },
+        }
+        with ForceLogin(self.owner, self.client):
+            response = self.client.patch(f"/api/tasks/{task_id}", data=data, format="json")
+            assert response.status_code == status.HTTP_400_BAD_REQUEST, (
+                response.status_code,
+                response.content,
+            )

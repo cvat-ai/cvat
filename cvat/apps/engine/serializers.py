@@ -3432,14 +3432,12 @@ class RelatedFileSerializer(serializers.ModelSerializer):
 
 
 def _validate_storage_conf(
-    new_conf: dict,
+    new_location: str | None,
+    new_cloud_storage_id: int | None,
     storage_type: str,
     old_location: str,
 ):
-    new_cloud_storage_id = new_conf.get('cloud_storage_id')
-    new_location = new_conf.get('location')
-
-    if new_cloud_storage_id:
+    if new_cloud_storage_id is not None:
         if new_location and new_location != models.Location.CLOUD_STORAGE:
             raise serializers.ValidationError(
                 f"It is not allowed to specify '{new_location}' location together with cloud storage id"
@@ -3464,7 +3462,7 @@ def _validate_storage_conf(
         elif (
             not new_location
             and old_location == models.Location.CLOUD_STORAGE
-            and "cloud_storage_id" in new_conf
+            and new_cloud_storage_id is not None
         ):
             raise serializers.ValidationError(
                 "It is not allowed to reset a cloud storage id without explicitly resetting a location"
@@ -3487,7 +3485,7 @@ def _update_related_storages(
         # storage_instance maybe None
         storage_instance = getattr(instance, storage_type)
 
-        _validate_storage_conf(new_conf, storage_type, getattr(storage_instance, "location", None))
+        _validate_storage_conf(new_location, new_cloud_storage_id, storage_type, old_location=getattr(storage_instance, "location", None))
 
         if not storage_instance:
             storage_instance = models.Storage(**new_conf)
@@ -3510,10 +3508,19 @@ def _update_data_storage(
     if not new_conf:
         return
 
-    _validate_storage_conf(new_conf, storage_type, old_location=instance.data.storage)
+    new_location = new_conf.get('storage')
+    new_cloud_storage_id = new_conf.get('cloud_storage_id')
 
-    instance.data.storage = new_conf.get('location') or instance.data.storage
-    instance.data.cloud_storage_id = new_conf.get('cloud_storage_id')
+    _validate_storage_conf(new_location, new_cloud_storage_id, storage_type, old_location=instance.data.storage)
+
+    if not new_location == instance.data.storage == models.StorageChoice.CLOUD_STORAGE:
+        raise serializers.ValidationError(
+            "For the data storage, "
+            "only the change from cloud storage to another cloud storage is implemented."
+        )
+
+    instance.data.storage = new_location or instance.data.storage
+    instance.data.cloud_storage_id = new_cloud_storage_id
     instance.data.save()
 
 
