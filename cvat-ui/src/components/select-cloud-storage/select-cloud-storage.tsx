@@ -21,7 +21,7 @@ export interface Props {
     onSelectCloudStorage: (cloudStorageId: number | null) => void;
 }
 
-export async function searchCloudStorages(filter: Record<string, string>): Promise<CloudStorage[]> {
+async function searchCloudStorages(filter: Record<string, string>): Promise<CloudStorage[]> {
     try {
         const data = await getCore().cloudStorages.get(filter);
         return data;

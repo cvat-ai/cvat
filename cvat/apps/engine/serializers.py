@@ -2303,8 +2303,8 @@ class TaskDataStorageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Data
-        fields = ('id', 'location', 'cloud_storage_id')
-        read_only_fields = ('id', 'location',)
+        fields = ('location', 'cloud_storage_id')
+        read_only_fields = fields
 
 
 class TaskReadSerializer(serializers.ModelSerializer):

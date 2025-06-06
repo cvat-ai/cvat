@@ -3,12 +3,14 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useEffect, useState } from 'react';
+import notification from 'antd/lib/notification';
 import { Row, Col } from 'antd/lib/grid';
 import { CloudStorage } from 'reducers';
 import { AzureProvider, GoogleCloudProvider, S3Provider } from 'icons';
 import { ProviderType } from 'utils/enums';
 import Text from 'antd/lib/typography/Text';
-import SelectCloudStorage, { searchCloudStorages } from 'components/select-cloud-storage/select-cloud-storage';
+import SelectCloudStorage from 'components/select-cloud-storage/select-cloud-storage';
+import { getCore } from 'cvat-core-wrapper';
 
 interface Props {
     instance: any;
@@ -27,6 +29,21 @@ function renderCloudStorageName(cloudStorage: CloudStorage): JSX.Element {
     );
 }
 
+async function getCloudStorageById(id: number): Promise<CloudStorage | null> {
+    try {
+        const data = await getCore().cloudStorages.get({ id });
+        if (data.length === 1) {
+            return data[0];
+        }
+    } catch (error) {
+        notification.error({
+            message: 'Could not fetch a cloud storage',
+            description: error.toString(),
+        });
+    }
+    return null;
+}
+
 export default function CloudStorageEditorComponent(props: Props): JSX.Element {
     const { instance, onChange } = props;
 
@@ -36,10 +53,8 @@ export default function CloudStorageEditorComponent(props: Props): JSX.Element {
     const [searchPhrase, setSearchPhrase] = useState('');
 
     useEffect(() => {
-        searchCloudStorages({}).then((data) => {
-            const cs = data.find((storage) => storage.id === instance.dataStorage.cloudStorageId);
-            console.log('FOOOOOO cseditor effect 2', cs);
-            setCloudStorage(cs);
+        getCloudStorageById(instance.dataStorage.cloudStorageId).then((_cloudStorage) => {
+            setCloudStorage(_cloudStorage);
             setCloudStorageLoaded(true);
         });
     }, []);
