@@ -64,6 +64,7 @@ from cvat.apps.engine.serializers import (
 from cvat.apps.engine.task import JobFileMapping
 from cvat.apps.engine.task import create_thread as create_task
 from cvat.apps.engine.utils import av_scan_paths
+from utils.dataset_manifest import ImageManifestManager
 
 slogger = ServerLogManager(__name__)
 
@@ -366,6 +367,9 @@ class _ExporterBase(metaclass=ABCMeta):
             raise ValidationError(f'Such a {cls.ModelClass.__name__.lower()} does not exist')
 
 
+LIGHT_WEIGHT_BACKUP = False
+
+
 class TaskExporter(_ExporterBase, _TaskBackupBase):
     ModelClass: ClassVar[models.Task] = models.Task
 
@@ -424,19 +428,22 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             assert self._db_task.dimension != models.DimensionType.DIM_3D, "Cloud storage cannot contain 3d images"
             assert not hasattr(self._db_data, 'video'), "Only images can be stored in cloud storage"
             assert self._db_data.related_files.count() == 0, "No related images can be stored in cloud storage"
-            media_files = [im.path for im in self._db_data.images.all()]
-            cloud_storage_instance = db_storage_to_storage_instance(self._db_data.cloud_storage)
-            with tempfile.TemporaryDirectory() as tmp_dir:
-                cloud_storage_instance.bulk_download_to_dir(files=media_files, upload_dir=tmp_dir)
-                self._write_files(
-                    source_dir=tmp_dir,
-                    zip_object=zip_object,
-                    files=[
-                        os.path.join(tmp_dir, file)
-                        for file in media_files
-                    ],
-                    target_dir=target_data_dir,
-                )
+
+            if not LIGHT_WEIGHT_BACKUP: # heavy backup
+                media_files = [im.path for im in self._db_data.images.all()]
+                cloud_storage_instance = db_storage_to_storage_instance(self._db_data.cloud_storage)
+                with tempfile.TemporaryDirectory() as tmp_dir:
+                    cloud_storage_instance.bulk_download_to_dir(files=media_files, upload_dir=tmp_dir)
+                    self._write_files(
+                        source_dir=tmp_dir,
+                        zip_object=zip_object,
+                        files=[
+                            os.path.join(tmp_dir, file)
+                            for file in media_files
+                        ],
+                        target_dir=target_data_dir,
+                    )
+
             self._write_files(
                 source_dir=self._db_data.get_upload_dirname(),
                 zip_object=zip_object,
@@ -556,7 +563,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 ]
                 data['validation_layout'] = validation_params
 
-            if self._db_data.storage == StorageChoice.CLOUD_STORAGE:
+            if not LIGHT_WEIGHT_BACKUP and self._db_data.storage == StorageChoice.CLOUD_STORAGE:
                 data["storage"] = StorageChoice.LOCAL
 
             return self._prepare_data_meta(data)
@@ -887,13 +894,19 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         if validation_params:
             data['validation_params'] = validation_params
 
+        if data["storage"] == StorageChoice.CLOUD_STORAGE:
+            if data['client_files'] != [self.MEDIA_MANIFEST_FILENAME]:
+                raise ValidationError(f"Expected {self.MEDIA_MANIFEST_FILENAME} in backup files")
+
+            manifest = ImageManifestManager(os.path.join(self._db_task.data.get_upload_dirname(), self.MEDIA_MANIFEST_FILENAME))
+            data['server_files'] = list(manifest.data)
+
         create_task(self._db_task.pk, data.copy(), is_backup_restore=True)
         self._db_task.refresh_from_db()
         db_data.refresh_from_db()
 
         db_data.deleted_frames = data_serializer.initial_data.get('deleted_frames', [])
-        db_data.storage = StorageChoice.LOCAL
-        db_data.save(update_fields=['storage', 'deleted_frames'])
+        db_data.save(update_fields=['deleted_frames'])
 
         if not validation_params:
             # In backups created before addition of GT pools there was no validation_layout field
