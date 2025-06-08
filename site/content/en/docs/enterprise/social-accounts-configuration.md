@@ -168,4 +168,4 @@ Once the configuration file is updated, several environment variables must be ex
 
 Start the CVAT enterprise instance as usual.
 That's it! On the CVAT login page, you should now see the option `Continue with Amazon Cognito`.
-![CVAT login page with social account authorization option](/images/login_page_with_amazon_cognito.png)
+![CVAT login page with social account authentication option](/images/login_page_with_amazon_cognito.png)

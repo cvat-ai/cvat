@@ -20,4 +20,4 @@ Shapes that were created in the track mode, have extra navigation buttons.
 
 You can use the `Split` function to split one track into two tracks:
 
-![Example of an annotation with splitted tracks](/images/gif010_detrac.gif)
+![Example of an annotation with split tracks](/images/gif010_detrac.gif)

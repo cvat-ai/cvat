@@ -113,7 +113,7 @@ To use **Intelligent scissors**, do the following:
 3. Add the first point on the boundary of the allocated object. <br> You will see a line repeating the outline of the object.
 4. Add the second point, so that the previous point is within the restrictive threshold.
    <br>After that a line repeating the object boundary will be automatically created between the points.
-   ![Scheme with points and lines created by intelligent scissors](/images/image200_detrac.jpg)
+   ![Diagram with points and lines created by intelligent scissors](/images/image200_detrac.jpg)
 5. To finish placing points, on the top menu click **Done** (or **N** on the keyboard).
 
 As a result, a polygon will be created.
@@ -308,6 +308,6 @@ frames.
 
 Example of the result:
 
-![Example of original image and image with applied histogram equalization and ](/images/image222.jpg)
+![Example of original image and image with applied histogram equalization](/images/image222.jpg)
 
 To disable **Histogram equalization**, click on the button again.

@@ -72,7 +72,7 @@ To add a 3D shape:
 
 1. (Optional) Move one of the four points to change the size of the cuboid.
 
-   ![Example of a cuboid size change using cuboids points](/images/gif028_carla_town3.gif)
+   ![Example of a cuboid size change using cuboid points](/images/gif028_carla_town3.gif)
 
 1. (Optional) To rotate the cuboid, select the middle point
    and then drag the cuboid up/down or to left/right.

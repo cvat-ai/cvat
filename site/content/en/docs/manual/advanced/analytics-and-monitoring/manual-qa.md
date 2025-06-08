@@ -60,7 +60,7 @@ To assign a reviewer to the job, do the following:
 To report an issue, do the following:
 
 1. Log in to the reviewer's account.
-2. On the **Controls** sidebar, click **Open and issue** (![Open and issue button](/images/image195.jpg)).
+2. On the **Controls** sidebar, click **Open and issue** (![Open an issue button](/images/image195.jpg)).
 3. Click on the area of the frame where the issue is occurring,
    and the **Issue report popup** will appear.
 
@@ -175,7 +175,7 @@ To reopen the resolved issue, click **Reopen**.
 You can easily access multiple issues created in one
 location by hovering over an issue and scrolling the mouse wheel.
 
-![Example of Scrolling by issues created in one location in interface](/images/issues_scroll.gif)
+![Example of scrolling by issues created in one location in interface](/images/issues_scroll.gif)
 
 ### Issues comments
 

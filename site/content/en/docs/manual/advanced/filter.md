@@ -22,7 +22,7 @@ To apply filters you need to click on the button on the top panel.
 
 It will open a window for filter input. Here you will find two buttons: `Add rule` and `Add group`.
 
-![Filter window with hightlighted "Add rule" and "Add group" buttons](/images/image202.jpg)
+![Filter window with highlighted "Add rule" and "Add group" buttons](/images/image202.jpg)
 
 ### Rules
 

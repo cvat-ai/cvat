@@ -10,7 +10,7 @@ You can use linear interpolation for points to annotate a moving object:
 1. Linear interpolation works only with one point, so you need to set `Number of points` to 1.
 1. After that select the `Track`.
 
-   ![Highlighted "Point" button with open "Draw new points" window](/images/image122.jpg)
+   ![Highlighted "Points" button with open "Draw new points" window](/images/image122.jpg)
 
 1. Click `Track` to enter the drawing mode left-click to create a point
    and after that shape will be automatically completed.

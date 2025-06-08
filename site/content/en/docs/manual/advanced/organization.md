@@ -115,7 +115,7 @@ Invite members form is available from [Organization page](#organization-page).
 
 It has the following fields:
 
-![Window interface for inviting users to organization](/images/invite_org_members.png)
+![Form for inviting users to organization](/images/invite_org_members.png)
 
 <!--lint disable maximum-line-length-->
 

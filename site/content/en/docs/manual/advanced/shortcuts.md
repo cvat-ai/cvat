@@ -58,7 +58,7 @@ You can customize shortcuts in CVAT settings.
 
 - Shortcuts can be any combination of modifiers (ctrl, shift or alt)
   and up to one non-modifier key e.g. `ctrl+shift+f1` etc.\
-![Example of adding a shortcut using keys](/images/shortcuts06.png)
+![Example of adding a shortcut](/images/shortcuts06.png)
 
 - If you try to add a shortcut that is already in use, you will get a warning message:\
 ![Conflicting shortcuts window](/images/shortcuts07.png)

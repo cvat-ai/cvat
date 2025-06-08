@@ -139,7 +139,7 @@ To annotate with **Skeleton**, do the following
 
 1. Open job.
 2. On the tools panel select **Draw new skeleton**.
-3. Select **Track** or **Shape** to annotate
+3. Select **Track** to annotate with tracking or **Shape** to annotate
    without tracking.
 
    ![Highlighted "Skeleton" button with "Draw new skeleton" window](/images/image-draw-new-skeleton.jpg)

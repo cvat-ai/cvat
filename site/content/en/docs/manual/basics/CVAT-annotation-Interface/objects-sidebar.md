@@ -78,7 +78,7 @@ A shape can be **Occluded**. Shortcut: **Q**. Such shapes have dashed boundaries
 
 ![Objects sidebar with highlighted button for occluding shape](/images/image048.jpg)
 
-![Example of an annotation with an accluded shape](/images/image049_detrac.jpg)
+![Example of an annotation with an occluded shape](/images/image049_detrac.jpg)
 
 You can change the way an object is displayed on a frame (show or hide).
 
@@ -86,15 +86,15 @@ You can change the way an object is displayed on a frame (show or hide).
 
 **Switch pinned property** - when enabled, a shape cannot be moved by dragging or dropping.
 
-![bjects sidebar with highlighted button for pinning object](/images/image052.jpg)
+![Objects sidebar with highlighted button for pinning object](/images/image052.jpg)
 
 **Tracker switcher** - enable/disable {{< ilink "/docs/manual/advanced/ai-tools#trackers" "tracking" >}} for the object.
 
-![bjects sidebar with highlighted button for tracking](/images/tracker_switcher.png)
+![Objects sidebar with highlighted button for tracking](/images/tracker_switcher.png)
 
 By clicking on the **Details** button you can collapse or expand the field with all the attributes of the object.
 
-![bjects sidebar with opened menu for object attributes](/images/image154.jpg)
+![Objects sidebar with opened menu for object attributes](/images/image154.jpg)
 
 ---
 

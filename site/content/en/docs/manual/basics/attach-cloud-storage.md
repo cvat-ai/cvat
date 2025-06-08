@@ -71,7 +71,7 @@ You need to upload data for annotation and the `manifest.jsonl` file.
 
 1. Drag the manifest file and image folder on the page and select **Upload**:
 
-![Uploading data to AWS-S3](/images/aws-s3_tutorial_1.gif)
+![Uploading data to AWS S3](/images/aws-s3_tutorial_1.gif)
 
 ### Access permissions
 

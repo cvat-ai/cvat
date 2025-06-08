@@ -24,7 +24,7 @@ And there is what they look like:
 
 ![Example of an annotation with "Ellipse" shape](/images/image240_mapillary_vistas.jpg 'Ellipse') ![Example of an annotation with "Cuboid" shape](/images/image015_detrac.jpg 'Cuboid')
 
-![Example of a cuboid in 3d task](/images/image218_carla_town3.jpg 'Cuboid in 3d task') ![Example of an annotation with "Skeleton" shape](/images/image_skeleton_sample.jpg 'Skeleton')
+![Example of a cuboid in 3D task](/images/image218_carla_town3.jpg 'Cuboid in 3D task') ![Example of an annotation with "Skeleton" shape](/images/image_skeleton_sample.jpg 'Skeleton')
 
 ![Example of a tag in interface](/images/image135.jpg 'Tag')
 
