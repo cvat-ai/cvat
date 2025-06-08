@@ -123,10 +123,11 @@ export const exportBackupAsync = (
     targetStorage: Storage,
     useDefaultSetting: boolean,
     fileName: string,
+    makeLightWeightBackup: boolean,
 ): ThunkAction => async (dispatch) => {
     const instanceType = getInstanceType(instance) as 'project' | 'task';
     try {
-        const rqID = await instance.backup(targetStorage, useDefaultSetting, fileName);
+        const rqID = await instance.backup(targetStorage, useDefaultSetting, fileName, makeLightWeightBackup);
         if (rqID) {
             await core.requests.listen(rqID, {
                 callback: (updatedRequest) => updateRequestProgress(updatedRequest, dispatch),

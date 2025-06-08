@@ -367,13 +367,10 @@ class _ExporterBase(metaclass=ABCMeta):
             raise ValidationError(f'Such a {cls.ModelClass.__name__.lower()} does not exist')
 
 
-LIGHT_WEIGHT_BACKUP = False
-
-
 class TaskExporter(_ExporterBase, _TaskBackupBase):
     ModelClass: ClassVar[models.Task] = models.Task
 
-    def __init__(self, pk, version=Version.V1):
+    def __init__(self, pk, version=Version.V1, *, make_lightweight_backup: bool = True):
         super().__init__(logger=slogger.task[pk])
 
         self._db_task: models.Task = (
@@ -389,6 +386,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         db_labels = (self._db_task.project if self._db_task.project_id else self._db_task).label_set.all().prefetch_related(
             'attributespec_set')
         self._label_mapping = _get_label_mapping(db_labels)
+        self._make_lightweight_backup = make_lightweight_backup
 
     def _write_annotation_guide(self, zip_object, target_dir=None):
         annotation_guide = self._db_task.annotation_guide if hasattr(self._db_task, 'annotation_guide') else None
@@ -429,7 +427,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             assert not hasattr(self._db_data, 'video'), "Only images can be stored in cloud storage"
             assert self._db_data.related_files.count() == 0, "No related images can be stored in cloud storage"
 
-            if not LIGHT_WEIGHT_BACKUP: # heavy backup
+            if not self._make_lightweight_backup:
                 media_files = [im.path for im in self._db_data.images.all()]
                 cloud_storage_instance = db_storage_to_storage_instance(self._db_data.cloud_storage)
                 with tempfile.TemporaryDirectory() as tmp_dir:
@@ -563,7 +561,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 ]
                 data['validation_layout'] = validation_params
 
-            if not LIGHT_WEIGHT_BACKUP and self._db_data.storage == StorageChoice.CLOUD_STORAGE:
+            if not self._make_lightweight_backup and self._db_data.storage == StorageChoice.CLOUD_STORAGE:
                 data["storage"] = StorageChoice.LOCAL
 
             return self._prepare_data_meta(data)
@@ -984,13 +982,14 @@ class _ProjectBackupBase(_BackupBase):
 class ProjectExporter(_ExporterBase, _ProjectBackupBase):
     ModelClass: ClassVar[models.Project] = models.Project
 
-    def __init__(self, pk, version=Version.V1):
+    def __init__(self, pk, version=Version.V1, *, make_lightweight_backup: bool = True):
         super().__init__(logger=slogger.project[pk])
         self._db_project = self.ModelClass.objects.prefetch_related('tasks', 'annotation_guide__assets').select_related('annotation_guide').get(pk=pk)
         self._version = version
 
         db_labels = self._db_project.label_set.all().prefetch_related('attributespec_set')
         self._label_mapping = _get_label_mapping(db_labels)
+        self._make_lightweight_backup = make_lightweight_backup
 
     def _write_annotation_guide(self, zip_object, target_dir=None):
         annotation_guide = self._db_project.annotation_guide if hasattr(self._db_project, 'annotation_guide') else None
@@ -999,7 +998,11 @@ class ProjectExporter(_ExporterBase, _ProjectBackupBase):
     def _write_tasks(self, zip_object):
         for idx, db_task in enumerate(self._db_project.tasks.all().order_by('id')):
             if db_task.data is not None:
-                TaskExporter(db_task.id, self._version).export_to(zip_object, self.TASKNAME_TEMPLATE.format(idx))
+                TaskExporter(
+                    db_task.id,
+                    self._version,
+                    make_lightweight_backup=self._make_lightweight_backup,
+                ).export_to(zip_object, self.TASKNAME_TEMPLATE.format(idx))
 
     def _write_manifest(self, zip_object):
         def serialize_project():
@@ -1113,6 +1116,7 @@ def create_backup(
     Exporter: Type[ProjectExporter | TaskExporter],
     logger: Logger,
     cache_ttl: timedelta,
+    make_lightweight_backup: bool,
 ):
     db_instance = Exporter.get_object(instance_id)
     instance_type = db_instance.__class__.__name__
@@ -1138,7 +1142,7 @@ def create_backup(
 
         with TmpDirManager.get_tmp_directory_for_export(instance_type=instance_type) as tmp_dir:
             temp_file = os.path.join(tmp_dir, 'dump')
-            exporter = Exporter(db_instance.id)
+            exporter = Exporter(db_instance.id, make_lightweight_backup=make_lightweight_backup)
             exporter.export_to(temp_file)
 
             with get_export_cache_lock(

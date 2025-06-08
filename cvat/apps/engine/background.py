@@ -216,6 +216,7 @@ class BackupExporter(AbstractExporter):
             Exporter,
             logger,
             self.job_result_ttl,
+            self.request.query_params.get("make_lightweight_backup", True),
         )
 
     def get_result_filename(self):

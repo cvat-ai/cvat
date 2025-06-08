@@ -1228,13 +1228,19 @@ export class Task extends Session {
         return result;
     }
 
-    async backup(targetStorage: Storage, useDefaultSettings: boolean, fileName?: string): Promise<string | void> {
+    async backup(
+        targetStorage: Storage,
+        useDefaultSettings: boolean,
+        fileName?: string,
+        makeLightWeightBackup: bool,
+    ): Promise<string | void> {
         const result = await PluginRegistry.apiWrapper.call(
             this,
             Task.prototype.backup,
             targetStorage,
             useDefaultSettings,
             fileName,
+            makeLightWeightBackup,
         );
         return result;
     }

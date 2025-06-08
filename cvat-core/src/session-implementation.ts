@@ -849,8 +849,15 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             targetStorage: Parameters<typeof TaskClass.prototype.backup>[0],
             useDefaultSettings: Parameters<typeof TaskClass.prototype.backup>[1],
             fileName: Parameters<typeof TaskClass.prototype.backup>[2],
+            makeLightWeightBackup: Parameters<typeof TaskClass.prototype.backup>[3],
         ): ReturnType<typeof TaskClass.prototype.backup> {
-            const rqID = await serverProxy.tasks.backup(this.id, targetStorage, useDefaultSettings, fileName);
+            const rqID = await serverProxy.tasks.backup(
+                this.id,
+                targetStorage,
+                useDefaultSettings,
+                fileName,
+                makeLightWeightBackup,
+            );
             return rqID;
         },
     });
