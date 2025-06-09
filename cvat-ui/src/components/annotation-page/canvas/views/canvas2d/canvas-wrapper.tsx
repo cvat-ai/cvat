@@ -363,9 +363,26 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 
 type Props = StateToProps & DispatchToProps;
 
+function translateToSVG(svgElement: SVGSVGElement, [clientX, clientY]: [number, number]): [number, number] {
+    const pt = svgElement.createSVGPoint();
+    pt.x = clientX;
+    pt.y = clientY;
+
+    const svgPoint = pt.matrixTransform(svgElement.getScreenCTM()?.inverse());
+    return [svgPoint.x, svgPoint.y];
+}
+
 class CanvasWrapperComponent extends React.PureComponent<Props> {
     private debouncedUpdate = debounce(this.updateCanvas.bind(this), 250, { leading: true });
     private canvasTipsRef = React.createRef<CanvasTipsComponent>();
+    private coordOverlayRef = React.createRef<HTMLDivElement>();
+
+    constructor(props: Props) {
+        super(props);
+        this.state = {
+            imageCoords: null,
+        };
+    }
 
     public componentDidMount(): void {
         const {
@@ -394,6 +411,23 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         // But we do not have another way because cvat-canvas returns regular DOM element
         const [wrapper] = window.document.getElementsByClassName('cvat-canvas-container');
         wrapper.appendChild(canvasInstance.html());
+
+        canvasInstance.html().addEventListener('mousemove', (e: MouseEvent) => {
+            const svg = document.getElementById('cvat_canvas_content') as SVGSVGElement;
+
+            const [svgX, svgY] = translateToSVG(svg, [e.clientX, e.clientY]);
+
+            // Final image coordinates (based on canvas geometry offset)
+            const imageX = svgX - canvasInstance.geometry.offset;
+            const imageY = svgY - canvasInstance.geometry.offset;
+            // console.log('1 - Raw image coords:', imageX, imageY);
+            // console.log('2 - Raw image coords:', imageX.toFixed(2), imageY.toFixed(2));
+            // console.log('3 - Type of imageX:', typeof imageX);
+
+            this.setState({
+                imageCoords: { x: imageX, y: imageY },
+            });
+        });
 
         canvasInstance.configure({
             forceDisableEditing: workspace === Workspace.REVIEW,
@@ -1096,6 +1130,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element {
+        const { imageCoords } = this.state;
         const {
             maxZLayer,
             curZLayer,
@@ -1148,8 +1183,34 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                         overflow: 'hidden',
                         width: '100%',
                         height: '100%',
+                        position: 'relative',
                     }}
-                />
+                >
+                    {imageCoords && (
+                        <div
+                            ref={this.coordOverlayRef}
+                            style={{
+                                position: 'absolute',
+                                top: 10,
+                                left: 10,
+                                backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                                color: 'white',
+                                padding: '4px 8px',
+                                borderRadius: '4px',
+                                fontSize: 12,
+                                fontFamily: 'monospace',
+                                zIndex: 1000,
+                            }}
+                        >
+                            x:
+                            {imageCoords.x.toFixed(2)}
+                            ,
+                            y:
+                            {imageCoords.y.toFixed(2)}
+                        </div>
+                    )}
+
+                </div>
 
                 <Popover
                     destroyTooltipOnHide
