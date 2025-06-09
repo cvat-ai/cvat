@@ -1,0 +1,150 @@
+<style>
+#cookieConsentBanner {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: #222;
+  color: #fff;
+  padding: 1em 2em;
+  z-index: 9999;
+  justify-content: space-between;
+  align-items: center;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+#cookieConsentBanner p {
+  flex: 1 1 300px;
+  min-width: 200px;
+  margin-right: 1em;
+  display: flex;
+  align-items: center;
+  word-break: break-word;
+}
+
+#cookieConsentBanner .button-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
+  margin-left: 1em;
+}
+
+#cookieConsentBanner button {
+  background: #4caf50;
+  color: #fff;
+  border: none;
+  padding: 0.5em 1.5em;
+  cursor: pointer;
+  border-radius: 4px;
+  margin: 0;
+  min-width: 100px;
+  font-size: 1em;
+  transition: background 0.2s;
+}
+
+#cookieConsentBanner button.reject {
+  background: #f44336;
+}
+
+@media (max-width: 900px) {
+  #cookieConsentBanner span {
+    flex-direction: column;
+    margin-bottom: 0.75em;
+    margin-right: 0;
+    justify-content: flex-start;
+  }
+
+  #cookieConsentBanner p {
+    flex-direction: column;
+    margin-bottom: 0.75em;
+    margin-right: 0;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 600px) {
+  #cookieConsentBanner {
+    display: flex;
+    flex-direction: column;
+    padding: 0.75em;
+    font-size: 0.9em;
+    height: auto;
+    box-sizing: border-box;
+    gap: 0;
+  }
+
+  #cookieConsentBanner p {
+    display: block;
+    width: 100%;
+    margin: 0;
+    text-align: left;
+    line-height: 1.3;
+    padding: 0;
+    font-size: 0.95em;
+  }
+
+  #cookieConsentBanner .button-group {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    margin: 0;
+    gap: 0.5em;
+  }
+
+  #cookieConsentBanner button {
+    flex: 1 1 48%;
+    margin: 0;
+    padding: 0.6em 1em;
+  }
+}
+</style>
+<div id="cookieConsentBanner">
+  <p>
+    We use cookies to improve functionality and analyze traffic; select "Accept" to consent or "Reject" to use only essential cookies.
+  </p>
+  <div class="button-group">
+    <button onclick="acceptCookies()">Accept</button>
+    <button class="reject" onclick="rejectCookies()">Reject</button>
+  </div>
+</div>
+<script>
+function injectGAScript() {
+  if (document.getElementById('ga-script')) return;
+  var s = document.createElement('script');
+  s.id = 'ga-script';
+  s.async = true;
+  s.src = 'https://www.googletagmanager.com/gtag/js?id=G-GVSBK1DNK5';
+  document.head.appendChild(s);
+
+  var inline = document.createElement('script');
+  inline.innerHTML = `
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-GVSBK1DNK5');
+  `;
+  document.head.appendChild(inline);
+}
+
+function acceptCookies() {
+  localStorage.setItem('cookieConsent', 'true');
+  document.getElementById('cookieConsentBanner').style.display = 'none';
+  injectGAScript();
+}
+
+function rejectCookies() {
+  localStorage.setItem('cookieConsent', 'rejected');
+  document.getElementById('cookieConsentBanner').style.display = 'none';
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+  var consent = localStorage.getItem('cookieConsent');
+  if (!consent) {
+    document.getElementById('cookieConsentBanner').style.display = 'flex';
+  } else if (consent === 'true') {
+    injectGAScript();
+  }
+});
+</script>
