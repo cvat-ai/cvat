@@ -13,7 +13,7 @@ This can be used to backup a task or project on your PC or to transfer to anothe
 
 To backup a task or project, open the action menu and select `Backup Task` or `Backup Project`.
 
-![](/images/image219.jpg)
+![Opened project menu with highlighted "Backup project" option](/images/image219.jpg)
 
 You can backup a project or a task locally on your PC or using an
 {{< ilink "/docs/manual/basics/attach-cloud-storage" "attached cloud storage" >}}.
@@ -22,7 +22,7 @@ You can backup a project or a task locally on your PC or using an
 will be given by the mask `project_<project_name>_backup_<date>_<time>.zip` for the projects
 and `task_<task_name>_backup_<date>_<time>.zip` for the tasks.
 
-![](/images/image253.jpg)
+!["Export project" window with backup parameters](/images/image253.jpg)
 
 If you want to save a backup to a specific
 {{< ilink "/docs/manual/basics/attach-cloud-storage" "attached cloud storage" >}},
@@ -51,7 +51,7 @@ in the `Target storage` and select this storage in the list of the attached clou
 To create a task or project from a backup, go to the tasks or projects page,
 click the `Create from backup` button and select the archive you need.
 
-![](/images/image220.jpg)
+![Task list with opened menu and highlighted "Create from backup" option](/images/image220.jpg)
 
 As a result, you'll get a task containing data, parameters, and annotations of
 the previously exported task.

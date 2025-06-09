@@ -60,7 +60,7 @@ To assign a reviewer to the job, do the following:
 To report an issue, do the following:
 
 1. Log in to the reviewer's account.
-2. On the **Controls** sidebar, click **Open and issue** (![](/images/image195.jpg)).
+2. On the **Controls** sidebar, click **Open and issue** (![Open an issue button](/images/image195.jpg)).
 3. Click on the area of the frame where the issue is occurring,
    and the **Issue report popup** will appear.
 
@@ -148,7 +148,7 @@ comments section.
 
 The created issue will appear on the **Objects** sidebar, in the **Issues** tab.
 
-![](/images/image196_detrac.jpg)
+![Example of "Issues" tab with highlighted buttons and issue list](/images/image196_detrac.jpg)
 
 It has has the following elements:
 
@@ -168,14 +168,14 @@ It has has the following elements:
 In the workspace, you can click on the issue, and add a
 comment on the issue, remove (**Remove**) it, or resolve (**Resolve**) it.
 
-![](/images/image232.jpg)
+![Example of "Issue" window with its settings](/images/image232.jpg)
 
 To reopen the resolved issue, click **Reopen**.
 
 You can easily access multiple issues created in one
 location by hovering over an issue and scrolling the mouse wheel.
 
-![](/images/issues_scroll.gif)
+![Example of scrolling by issues created in one location in interface](/images/issues_scroll.gif)
 
 ### Issues comments
 
@@ -183,7 +183,7 @@ You can add as many comments as needed to the issue.
 
 In the Objects toolbar, only the first and last comments will be displayed
 
-![](/images/issue_comments.png)
+![Issue comment example](/images/issue_comments.png)
 
 You can copy and paste comments text.
 
