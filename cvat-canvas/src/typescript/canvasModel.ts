@@ -454,14 +454,14 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     public zoom(x: number, y: number, deltaY: number): void {
         const basicZoomCoef = 6 / 5; // historical value
-        // the higher value, means smoother the zooming
-        // we need trade-off between speed and smoothness
-        const zoomSmoother = 8;
+        // less value of adjust coef, means zoomin/zoomout smoother
+        // we need a trade-off between speed and smoothness, value 1 / 8 is good enough
+        const adjustCoef = 1 / 8;
         const oldScale: number = this.data.scale;
-        let scaleFactor = basicZoomCoef ** (-deltaY / zoomSmoother);
+        let scaleFactor = basicZoomCoef ** (-deltaY * adjustCoef);
 
         if (!this.data.configuration.adaptiveZoom) {
-            // old alogithm, just multiply to 6/5 or 5/6
+            // old alogithm, just multiplies to 6/5 or 5/6
             scaleFactor = basicZoomCoef ** (Math.sign(-deltaY));
         }
         const newScale: number = oldScale * scaleFactor;
