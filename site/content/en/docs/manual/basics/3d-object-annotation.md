@@ -28,7 +28,7 @@ For information on the available tools, consult
 
 You can navigate, using the mouse, or navigation keys:
 
-![](/images/image216_carla_town3.jpg)
+![Navigation keys used in 3D annotation](/images/image216_carla_town3.jpg)
 
 You can also use keyboard shortcuts to navigate:
 
@@ -58,26 +58,26 @@ To add a 3D shape:
 1. On the objects pane, select **Draw new cuboid** >
    select the label from the drop-down list > **Shape**.
 
-   ![](/images/image217.jpg)
+   ![Opened "Draw new cuboid" window](/images/image217.jpg)
 
 1. The cursor will be followed by a cuboid.
    Place the cuboid on the 3D scene.
 
-   ![](/images/gif026_carla_town3.gif)
+   ![Example of placing cuboid on a 3D scene](/images/gif026_carla_town3.gif)
 
 1. Use projections to adjust the cuboid.
    Click and hold the left mouse button to edit the label shape on the projection.
 
-   ![](/images/gif027_carla_town3.gif)
+   ![Example of a cuboid adjustment with projections](/images/gif027_carla_town3.gif)
 
 1. (Optional) Move one of the four points to change the size of the cuboid.
 
-   ![](/images/gif028_carla_town3.gif)
+   ![Example of a cuboid size change using cuboid points](/images/gif028_carla_town3.gif)
 
 1. (Optional) To rotate the cuboid, select the middle point
    and then drag the cuboid up/down or to left/right.
 
-   ![](/images/gif029_carla_town3.gif)
+   ![Example of a cuboid rotation using cuboid middle point](/images/gif029_carla_town3.gif)
 
 ### Tracking with cuboids
 
@@ -92,16 +92,16 @@ To track with cuboids:
 1. Use projections to adjust the cuboid.
    Select and hold the left mouse button to edit the label shape on the projection.
 
-   ![](/images/gif027_carla_town3.gif)
+   ![Adjusting cuboid](/images/gif027_carla_town3.gif)
 
 1. (Optional) Move one of the four points to change the size of the cuboid.
 
-   ![](/images/gif028_carla_town3.gif)
+   ![Moving cuboid](/images/gif028_carla_town3.gif)
 
 1. (Optional) To rotate the cuboid, click on the middle point
    and then drag the cuboid up/down or to left/right.
 
-   ![](/images/gif029_carla_town3.gif)
+   ![Rotating cuboid](/images/gif029_carla_town3.gif)
 
 1. Move several frames forward. You will see the cuboid you've added in frame 1.
    Adjust it, if needed.

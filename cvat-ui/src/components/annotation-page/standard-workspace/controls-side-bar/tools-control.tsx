@@ -682,21 +682,16 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         let withServerRequest = false;
 
         type AccumulatorType = {
-            statefull: {
-                [index: string]: {
-                    // tracker id
-                    clientIDs: number[];
-                    states: any[];
-                    shapes: number[][];
-                };
-            };
-            stateless: {
-                [index: string]: {
-                    // tracker id
-                    clientIDs: number[];
-                    shapes: number[][];
-                };
-            };
+            // These maps are indexed by tracker ID.
+            stateful: Map<string | number, {
+                clientIDs: number[];
+                states: any[];
+                shapes: number[][];
+            }>;
+            stateless: Map<string | number, {
+                clientIDs: number[];
+                shapes: number[][];
+            }>;
         };
 
         if (prevProps.frame !== frame && trackedShapes.length) {
@@ -726,7 +721,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             points.length === shapePoints.length &&
                             points.every((coord: number, i: number) => coord === shapePoints[i]);
                         if (stateIsRelevant) {
-                            const container = acc.statefull[trackerModel.id] || {
+                            const container = acc.stateful.get(trackerModel.id) ?? {
                                 clientIDs: [],
                                 shapes: [],
                                 states: [],
@@ -734,23 +729,23 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             container.clientIDs.push(clientID);
                             container.shapes.push(points);
                             container.states.push(serverlessState);
-                            acc.statefull[trackerModel.id] = container;
+                            acc.stateful.set(trackerModel.id, container);
                         } else {
-                            const container = acc.stateless[trackerModel.id] || {
+                            const container = acc.stateless.get(trackerModel.id) ?? {
                                 clientIDs: [],
                                 shapes: [],
                             };
                             container.clientIDs.push(clientID);
                             container.shapes.push(points);
-                            acc.stateless[trackerModel.id] = container;
+                            acc.stateless.set(trackerModel.id, container);
                         }
                     }
 
                     return acc;
                 },
                 {
-                    statefull: {},
-                    stateless: {},
+                    stateful: new Map(),
+                    stateless: new Map(),
                 },
             );
 
@@ -759,7 +754,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     switchNavigationBlocked(true);
                 }
                 // 3. get relevant state for the second group
-                for (const trackerID of Object.keys(trackingData.stateless)) {
+                for (const [trackerID, trackableObjects] of trackingData.stateless) {
                     let hideMessage = null;
                     try {
                         const [tracker] = trackers.filter((_tracker: MLModel) => _tracker.id === trackerID);
@@ -767,7 +762,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             throw new Error(`Suitable tracker with ID ${trackerID} not found in tracker list`);
                         }
 
-                        const trackableObjects = trackingData.stateless[trackerID];
                         const numOfObjects = trackableObjects.clientIDs.length;
                         hideMessage = message.loading({
                             content: `${tracker.name}: states are being initialized for ${numOfObjects} ${
@@ -784,17 +778,17 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         }) as TrackerResults;
 
                         const { states: serverlessStates } = response;
-                        const statefullContainer = trackingData.statefull[trackerID] || {
+                        const statefulContainer = trackingData.stateful.get(trackerID) ?? {
                             clientIDs: [],
                             shapes: [],
                             states: [],
                         };
 
-                        Array.prototype.push.apply(statefullContainer.clientIDs, trackableObjects.clientIDs);
-                        Array.prototype.push.apply(statefullContainer.shapes, trackableObjects.shapes);
-                        Array.prototype.push.apply(statefullContainer.states, serverlessStates);
-                        trackingData.statefull[trackerID] = statefullContainer;
-                        delete trackingData.stateless[trackerID];
+                        Array.prototype.push.apply(statefulContainer.clientIDs, trackableObjects.clientIDs);
+                        Array.prototype.push.apply(statefulContainer.shapes, trackableObjects.shapes);
+                        Array.prototype.push.apply(statefulContainer.states, serverlessStates);
+                        trackingData.stateful.set(trackerID, statefulContainer);
+                        trackingData.stateless.delete(trackerID);
                     } catch (error: any) {
                         notification.error({
                             message: 'Tracker initialization error',
@@ -806,7 +800,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     }
                 }
 
-                for (const trackerID of Object.keys(trackingData.statefull)) {
+                for (const [trackerID, trackableObjects] of trackingData.stateful) {
                     // 4. run tracking for all the objects
                     let hideMessage = null;
                     try {
@@ -815,7 +809,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             throw new Error(`Suitable tracker with ID ${trackerID} not found in tracker list`);
                         }
 
-                        const trackableObjects = trackingData.statefull[trackerID];
                         const numOfObjects = trackableObjects.clientIDs.length;
                         hideMessage = message.loading({
                             content: `${tracker.name}: ${numOfObjects} ${

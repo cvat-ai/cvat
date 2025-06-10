@@ -13,11 +13,11 @@ Occlusion is an attribute used if an object is occluded by another object or
 isn't fully visible on the frame. Use `Q` shortcut to set the property
 quickly.
 
-![](/images/image065.jpg)
+![Objects sidebar with highlighted button for occluding objects](/images/image065.jpg)
 
 Example: the three cars on the figure below should be labeled as **occluded**.
 
-![](/images/image054_mapillary_vistas.jpg)
+![Example of an occluded object on an annotation](/images/image054_mapillary_vistas.jpg)
 
 If a frame contains too many objects and it is difficult to annotate them
 due to many shapes placed mostly in the same place, it makes sense
@@ -25,4 +25,4 @@ to lock them. Shapes for locked objects are transparent, and it is easy to
 annotate new objects. Besides, you can't change previously annotated objects
 by accident. Shortcut: `L`.
 
-![](/images/image066.jpg)
+![Objects sidebar with highlighted button for locking objects](/images/image066.jpg)

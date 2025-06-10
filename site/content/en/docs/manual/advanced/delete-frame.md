@@ -16,7 +16,7 @@ Thus, it is possible to mark corrupted frames that are not subject to annotation
    > **Note:** When you delete with the shortcut,
    > the frame will be deleted immediately without additional confirmation.
 
-   ![](/images/image245.jpg)
+   ![Part of annotation interface with highlighted "Delete frame" button](/images/image245.jpg)
 
 1. After that you will be asked to confirm frame deleting.
    > **Note:** all annotations from that frame will be deleted, unsaved annotations
@@ -33,11 +33,11 @@ If you need to enable showing the deleted frames, you can do it in the settings.
 
 1. Go to the settings and chose **Player** settings.
 
-   ![](/images/image246.jpg)
+   !["Player" tab opened in "Settings" with highlighted "Show deleted frames" option](/images/image246.jpg)
 
 1. Click on the **Show deleted frames** checkbox. And close the settings dialog.
 
-   ![](/images/image247.jpg)
+   ![Example of a deleted frame appearance with "Show deleted frames" option enabled](/images/image247.jpg)
 
 1. Then you will be able to navigate through deleted frames.
    But annotation tools will be unavailable. Deleted frames differ in the corresponding overlay.
@@ -56,6 +56,6 @@ You can also restore deleted frames in the task.
 1. Turn on deleted frames visibility, as it was told in the previous part,
    and go to the deleted frame you want to restore.
 
-   ![](/images/image248.jpg)
+   ![Part of annotation interface with highlighted "Restore frame" button](/images/image248.jpg)
 
 1. Click on the **Restore** icon. The frame will be restored immediately.
