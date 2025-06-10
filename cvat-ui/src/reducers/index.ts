@@ -901,6 +901,7 @@ export interface WorkspaceSettingsState {
     autoSaveInterval: number; // in ms
     aamZoomMargin: number;
     automaticBordering: boolean;
+    adaptiveZoom: boolean;
     showObjectsTextAlways: boolean;
     showAllInterpolationTracks: boolean;
     intelligentPolygonCrop: boolean;
