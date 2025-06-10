@@ -20,13 +20,14 @@ export default function ProjectListComponent(): JSX.Element {
     const projects = useSelector((state: CombinedState) => state.projects.current);
     const gettingQuery = useSelector((state: CombinedState) => state.projects.gettingQuery);
     const tasksQuery = useSelector((state: CombinedState) => state.projects.tasksGettingQuery);
-    const { page } = gettingQuery;
+    const { page, pageSize } = gettingQuery;
 
-    const changePage = useCallback((p: number) => {
+    const changePage = useCallback((_page: number, _pageSize: number) => {
         dispatch(
             getProjectsAsync({
                 ...gettingQuery,
-                page: p,
+                page: _page,
+                pageSize: _pageSize,
             }, tasksQuery),
         );
     }, [gettingQuery]);
@@ -65,11 +66,12 @@ export default function ProjectListComponent(): JSX.Element {
                     <Pagination
                         className='cvat-projects-pagination'
                         onChange={changePage}
-                        showSizeChanger={false}
                         total={projectsCount}
-                        pageSize={12}
+                        pageSize={pageSize}
+                        pageSizeOptions={[12, 24, 48, 96]}
                         current={page}
                         showQuickJumper
+                        showSizeChanger
                     />
                 </Col>
             </Row>

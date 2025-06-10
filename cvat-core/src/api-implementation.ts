@@ -282,18 +282,14 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         checkFilter(filter, {
             id: isInteger,
             page: isInteger,
+            pageSize: isInteger,
             search: isString,
             sort: isString,
             filter: isString,
         });
 
         checkExclusiveFields(filter, ['id'], ['page']);
-        const searchParams = {};
-        for (const key of Object.keys(filter)) {
-            if (['page', 'id', 'sort', 'search', 'filter'].includes(key)) {
-                searchParams[key] = filter[key];
-            }
-        }
+        const searchParams = fieldsToSnakeCase(filter);
 
         const projectsData = await serverProxy.projects.get(searchParams);
         const projects = await Promise.all(projectsData.map(async (projectItem) => {

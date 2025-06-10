@@ -725,7 +725,6 @@ async function getProjects(filter: ProjectsFilter = {}): Promise<SerializedProje
         response = await Axios.get(`${backendAPI}/projects`, {
             params: {
                 ...filter,
-                page_size: 12,
             },
         });
     } catch (errorData) {

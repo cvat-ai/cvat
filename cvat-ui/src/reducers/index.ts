@@ -27,6 +27,7 @@ export interface AuthState {
 
 export interface ProjectsQuery {
     page: number;
+    pageSize: number;
     id: number | null;
     search: string | null;
     filter: string | null;
