@@ -35,6 +35,9 @@ function JobsPageComponent(): JSX.Element {
         if (key === 'page') {
             updatedQuery.page = updatedQuery.page ? +updatedQuery.page : 1;
         }
+        if (key === 'pageSize') {
+            updatedQuery.pageSize = updatedQuery.pageSize ? +updatedQuery.pageSize : 12;
+        }
     }
 
     useEffect(() => {
@@ -59,17 +62,19 @@ function JobsPageComponent(): JSX.Element {
                 <Col md={22} lg={18} xl={16} xxl={16}>
                     <Pagination
                         className='cvat-jobs-page-pagination'
-                        onChange={(page: number) => {
+                        onChange={(page: number, pageSize: number) => {
                             dispatch(getJobsAsync({
                                 ...query,
                                 page,
+                                pageSize,
                             }));
                         }}
-                        showSizeChanger={false}
                         total={count}
-                        pageSize={12}
+                        pageSizeOptions={[12, 24, 48, 96]}
                         current={query.page}
+                        pageSize={query.pageSize}
                         showQuickJumper
+                        showSizeChanger
                     />
                 </Col>
             </Row>

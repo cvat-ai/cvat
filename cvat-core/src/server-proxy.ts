@@ -1317,7 +1317,6 @@ async function getJobs(
             response = await Axios.get(`${backendAPI}/jobs`, {
                 params: {
                     ...filter,
-                    page_size: 12,
                 },
             });
         }

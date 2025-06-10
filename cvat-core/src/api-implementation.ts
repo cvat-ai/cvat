@@ -194,6 +194,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
     ): ReturnType<CVATCore['jobs']['get']> => {
         checkFilter(query, {
             page: isInteger,
+            pageSize: isInteger,
             filter: isString,
             sort: isString,
             search: isString,

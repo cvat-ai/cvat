@@ -80,6 +80,7 @@ export interface TasksQuery {
 
 export interface JobsQuery {
     page: number;
+    pageSize: number;
     sort: string | null;
     search: string | null;
     filter: string | null;
