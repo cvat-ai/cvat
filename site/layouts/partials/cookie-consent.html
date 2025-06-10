@@ -184,7 +184,7 @@ window.addEventListener('DOMContentLoaded', function() {
     var banner = document.getElementById('cookieConsentBanner');
     if (banner && banner.style.display === 'flex') {
       var devIndicator = document.createElement('div');
-      devIndicator.style.cssText = 'font-size: 0.8em; color: #ffeb3b; margin-top: 0.5em;';
+      devIndicator.style.cssText = 'font-size: 0.8em; color: #ffeb3b; margin-bottom: 1em; order: -1;';
       devIndicator.textContent = '🔧 Development mode: Analytics will be disabled';
       banner.appendChild(devIndicator);
     }
