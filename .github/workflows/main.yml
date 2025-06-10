@@ -539,7 +539,7 @@ jobs:
   generate_report:
     name: Generate Allure Report and Upload to S3
     needs: [rest_api_testing, e2e_testing]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    # if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
     uses: ./.github/workflows/generate-allure-report.yml
     secrets:
       AWS_ALLURE_REPORTS_ROLE: ${{ secrets.AWS_ALLURE_REPORTS_ROLE }}
