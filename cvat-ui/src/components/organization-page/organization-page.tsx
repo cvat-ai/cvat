@@ -55,6 +55,14 @@ function OrganizationPage(): JSX.Element | null {
         }
     }, [query, organization]);
 
+    const changePage = useCallback((page: number, pageSize: number) => {
+        setQuery({
+            ...query,
+            page,
+            pageSize,
+        });
+    }, [query]);
+
     useEffect(() => {
         fetchMembersCallback();
     }, [query, organization]);
@@ -103,18 +111,7 @@ function OrganizationPage(): JSX.Element | null {
                         userInstance={user}
                         pageSize={query.pageSize}
                         pageNumber={query.page}
-                        setPageNumber={(page: number) => {
-                            setQuery({
-                                ...query,
-                                page,
-                            });
-                        }}
-                        setPageSize={(pageSize: number) => {
-                            setQuery({
-                                ...query,
-                                pageSize,
-                            });
-                        }}
+                        onPageChange={changePage}
                         fetchMembers={fetchMembersCallback}
                     />
                 </>
