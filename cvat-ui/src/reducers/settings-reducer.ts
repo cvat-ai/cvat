@@ -33,6 +33,7 @@ const defaultState: SettingsState = {
         autoSaveInterval: 15 * 60 * 1000,
         aamZoomMargin: 100,
         automaticBordering: false,
+        adaptiveZoom: true,
         showObjectsTextAlways: false,
         showAllInterpolationTracks: false,
         intelligentPolygonCrop: true,
@@ -341,6 +342,15 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 workspace: {
                     ...state.workspace,
                     automaticBordering: action.payload.automaticBordering,
+                },
+            };
+        }
+        case SettingsActionTypes.SWITCH_ADAPTIVE_ZOOM: {
+            return {
+                ...state,
+                workspace: {
+                    ...state.workspace,
+                    adaptiveZoom: action.payload.adaptiveZoom,
                 },
             };
         }
