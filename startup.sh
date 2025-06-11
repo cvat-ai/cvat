@@ -7,6 +7,7 @@ echo "📦 Starting CVAT and Nuclio containers..."
 docker compose -f docker-compose.yml \
   -f docker-compose.override.yml \
   -f components/serverless/docker-compose.serverless.yml \
+  -f tests/docker-compose.email.yml \
   up -d --build
 
 echo "⏳ Waiting for Nuclio Dashboard to be ready..."
