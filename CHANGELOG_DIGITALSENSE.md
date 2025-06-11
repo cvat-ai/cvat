@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Changed
 - Modified startup.sh to support docker-compose.override.yml file [PR #9]
-- Modified serverless/pyrotch/anomalib to support having one image for all anomalib functions [PR #12]
+- Modified serverless/pyrotch/anomalib to support having one image for all anomalib functions [PR #13]
 
 ## [1.0.0] - 2025-05-12
 
