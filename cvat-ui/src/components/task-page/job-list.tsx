@@ -32,7 +32,6 @@ interface Props {
     onJobUpdate(job: Job, data: Parameters<Job['save']>[0]): void;
 }
 
-const PAGE_SIZE = 10;
 function setUpJobsList(jobs: Job[], query: JobsQuery): Job[] {
     let result = jobs;
 
@@ -77,6 +76,7 @@ function JobListComponent(props: Props): JSX.Element {
     const queryParams = new URLSearchParams(history.location.search);
     const updatedQuery: JobsQuery = {
         page: 1,
+        pageSize: 10,
         sort: null,
         search: null,
         filter: null,
@@ -85,6 +85,9 @@ function JobListComponent(props: Props): JSX.Element {
         (updatedQuery as Indexable)[key] = queryParams.get(key) || null;
         if (key === 'page') {
             updatedQuery.page = updatedQuery.page ? +updatedQuery.page : 1;
+        }
+        if (key === 'pageSize') {
+            updatedQuery.pageSize = updatedQuery.pageSize ? +updatedQuery.pageSize : 10;
         }
     }
 
@@ -126,7 +129,7 @@ function JobListComponent(props: Props): JSX.Element {
     const [query, setQuery] = useState<JobsQuery>(updatedQuery);
     const filteredJobs = setUpJobsList(jobs, query);
     const jobViews = filteredJobs
-        .slice((query.page - 1) * PAGE_SIZE, query.page * PAGE_SIZE)
+        .slice((query.page - 1) * query.pageSize, query.page * query.pageSize)
         .map((job: Job) => (
             <JobItem
                 key={job.id}
@@ -210,17 +213,18 @@ function JobListComponent(props: Props): JSX.Element {
                             <Col>
                                 <Pagination
                                     className='cvat-tasks-pagination'
-                                    onChange={(page: number) => {
+                                    onChange={(page: number, pageSize: number) => {
                                         setQuery({
                                             ...query,
                                             page,
+                                            pageSize,
                                         });
                                     }}
-                                    showSizeChanger={false}
                                     total={filteredJobs.length}
-                                    pageSize={PAGE_SIZE}
+                                    pageSize={query.pageSize}
                                     current={query.page}
                                     showQuickJumper
+                                    showSizeChanger
                                 />
                             </Col>
                         </Row>
