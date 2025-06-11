@@ -70,12 +70,12 @@ export interface ProjectsState {
 
 export interface TasksQuery {
     page: number;
+    pageSize: number;
     id: number | null;
     search: string | null;
     filter: string | null;
     sort: string | null;
     projectId: number | null;
-    pageSize: number;
 }
 
 export interface JobsQuery {
