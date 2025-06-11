@@ -1023,6 +1023,7 @@ export interface InvitationsState {
 
 export interface RequestsQuery {
     page: number;
+    pageSize: number;
 }
 
 export interface RequestsState {

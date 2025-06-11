@@ -12,7 +12,7 @@ import Spin from 'antd/lib/spin';
 
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import EmptyListComponent from './empty-list';
-import RequestsList, { PAGE_SIZE } from './requests-list';
+import RequestsList from './requests-list';
 
 export default function RequestsPageComponent(): JSX.Element {
     const history = useHistory();
@@ -26,6 +26,9 @@ export default function RequestsPageComponent(): JSX.Element {
         if (key === 'page') {
             updatedQuery.page = updatedQuery.page ? +updatedQuery.page : 1;
         }
+        if (key === 'pageSize') {
+            updatedQuery.pageSize = updatedQuery.pageSize ? +updatedQuery.pageSize : 10;
+        }
     }
 
     useEffect(() => {
@@ -34,7 +37,7 @@ export default function RequestsPageComponent(): JSX.Element {
         });
     }, [query]);
 
-    const pageOutOfBounds = updatedQuery.page ? updatedQuery.page > Math.ceil(count / PAGE_SIZE) : false;
+    const pageOutOfBounds = updatedQuery.page ? updatedQuery.page > Math.ceil(count / query.pageSize) : false;
     const content = (count && !pageOutOfBounds) ? (
         <RequestsList query={updatedQuery} count={count} />
     ) : <EmptyListComponent />;

@@ -16,28 +16,26 @@ import moment from 'moment';
 import dimensions from 'utils/dimensions';
 import RequestCard from './request-card';
 
-export const PAGE_SIZE = 10;
-
 interface Props {
     query: RequestsQuery;
     count: number;
 }
 
-function setUpRequestsList(requests: Request[], newPage: number): Request[] {
+function setUpRequestsList(requests: Request[], newPage: number, pageSize: number): Request[] {
     const displayRequests = [...requests];
     displayRequests.sort((a, b) => moment(b.createdDate).valueOf() - moment(a.createdDate).valueOf());
-    return displayRequests.slice((newPage - 1) * PAGE_SIZE, newPage * PAGE_SIZE);
+    return displayRequests.slice((newPage - 1) * pageSize, newPage * pageSize);
 }
 
 function RequestsList(props: Props): JSX.Element {
     const dispatch = useDispatch();
     const { query, count } = props;
-    const { page } = query;
+    const { page, pageSize } = query;
     const { requests, disabled } = useSelector((state: CombinedState) => ({
         requests: state.requests.requests, disabled: state.requests.disabled,
     }), shallowEqual);
 
-    const requestViews = setUpRequestsList(Object.values(requests), page)
+    const requestViews = setUpRequestsList(Object.values(requests), page, pageSize)
         .map((request: Request): JSX.Element => (
             <RequestCard
                 request={request}
@@ -57,14 +55,18 @@ function RequestsList(props: Props): JSX.Element {
             <Row justify='center' align='middle'>
                 <Pagination
                     className='cvat-tasks-pagination'
-                    onChange={(newPage: number) => {
-                        dispatch(requestsActions.getRequests({ ...query, page: newPage }, false));
+                    onChange={(newPage: number, newPageSize: number) => {
+                        dispatch(requestsActions.getRequests({
+                            ...query,
+                            page: newPage,
+                            pageSize: newPageSize,
+                        }, false));
                     }}
-                    showSizeChanger={false}
                     total={count}
                     current={page}
-                    pageSize={PAGE_SIZE}
+                    pageSize={pageSize}
                     showQuickJumper
+                    showSizeChanger
                 />
             </Row>
         </>
