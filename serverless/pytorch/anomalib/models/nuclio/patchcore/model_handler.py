@@ -7,7 +7,7 @@ import torch
 
 from anomalib.data import PredictDataset
 from anomalib.engine import Engine
-from anomalib.models import Cfa
+from anomalib.models import Patchcore
 import torch
 import cv2 as cv
 from PIL import Image
@@ -27,9 +27,9 @@ def to_cvat_mask(box: list, mask):
 class ModelHandler:
     def __init__(self):
         # Setup device
-        self.model = Cfa()
+        self.model = Patchcore()
         self.engine = Engine()
-        self.ckpt_path = "model.ckpt"
+        self.ckpt_path = "patchcore/model.ckpt"
 
     def resize_mask(self, mask, image):
         target_size = image.size
@@ -86,7 +86,7 @@ class ModelHandler:
 
         return results
 
-# os.chdir("/home/ssilva/Documents/cvat/serverless/pytorch/anomalib/cfa/nuclio/")
+# os.chdir("/home/ssilva/Documents/cvat/serverless/pytorch/anomalib/patchcore/nuclio/")
 # model_handler = ModelHandler()
 # image = Image.open("debug_images/000.png")
 # result = model_handler.infer(image)

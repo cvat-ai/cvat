@@ -1,8 +1,8 @@
 metadata:
-  name: patchcore
+  name: cfa
   namespace: cvat
   annotations:
-    name: patchcore
+    name: cfa
     type: detector
     spec: |
       [
@@ -10,13 +10,13 @@ metadata:
       ]
 
 spec:
-  description: patchcore from Anomalib
+  description: cfa from Anomalib
   runtime: 'python:3.11'
-  handler: main:handler
+  handler: cfa.main:handler
   eventTimeout: 3000s
 
   build:
-    image: cvat.pth.anomalib.patchcore
+    image: cvat.pth.anomalib_aux.models
     baseImage: anomalib-base:ubuntu22.04  # Base with proper GL libraries
 
     directives:
@@ -36,7 +36,7 @@ spec:
       workerAvailabilityTimeoutMilliseconds: 300000
       attributes:
         maxRequestBodySize: 33554432 # 32MB
-        port: 32757
+        port: 32756
 
   platform:
     attributes:

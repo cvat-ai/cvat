@@ -1,8 +1,8 @@
 metadata:
-  name: cfa
+  name: patchcore
   namespace: cvat
   annotations:
-    name: cfa
+    name: patchcore
     type: detector
     spec: |
       [
@@ -10,13 +10,13 @@ metadata:
       ]
 
 spec:
-  description: cfa from Anomalib
+  description: patchcore Anomalib
   runtime: 'python:3.11'
-  handler: main:handler
+  handler: patchcore.main:handler
   eventTimeout: 3000s
 
   build:
-    image: cvat.pth.anomalib.cfa
+    image: cvat.pth.anomalib_aux.models
     baseImage: anomalib-base:ubuntu22.04  # Base with proper GL libraries
 
     directives:
@@ -28,6 +28,7 @@ spec:
         - kind: WORKDIR
           value: /opt/nuclio
 
+
   triggers:
     myHttpTrigger:
       numWorkers: 2
@@ -35,7 +36,7 @@ spec:
       workerAvailabilityTimeoutMilliseconds: 300000
       attributes:
         maxRequestBodySize: 33554432 # 32MB
-        port: 32756
+        port: 32757
 
   platform:
     attributes:
@@ -43,4 +44,3 @@ spec:
         name: always
         maximumRetryCount: 3
       mountMode: volume
-

@@ -29,7 +29,7 @@ class ModelHandler:
         # Setup device
         self.model = Uflow()
         self.engine = Engine()
-        self.ckpt_path = "model.ckpt"
+        self.ckpt_path = "uflow/model.ckpt"
 
     def resize_mask(self, mask, image):
         target_size = image.size
