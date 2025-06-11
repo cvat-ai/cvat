@@ -201,6 +201,7 @@ export interface FormatsState {
 
 export interface CloudStoragesQuery {
     page: number;
+    pageSize: number;
     id: number | null;
     search: string | null;
     sort: string | null;

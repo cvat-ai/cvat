@@ -1900,7 +1900,6 @@ async function getCloudStorages(filter = {}): Promise<SerializedCloudStorage[] &
         response = await Axios.get(`${backendAPI}/cloudstorages`, {
             params: {
                 ...filter,
-                page_size: 12,
             },
         });
         return Object.assign(response.data.results, { count: response.data.count });

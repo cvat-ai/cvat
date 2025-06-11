@@ -248,7 +248,6 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
             filter: isString,
             ordering: isString,
         });
-        console.log('searchParams1', filter);
 
         checkExclusiveFields(filter, ['id'], ['page']);
         const searchParams = filterFieldsToSnakeCase(filter, ['projectId']);
@@ -312,6 +311,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
     implementationMixin(cvat.cloudStorages.get, async (filter) => {
         checkFilter(filter, {
             page: isInteger,
+            pageSize: isInteger,
             filter: isString,
             sort: isString,
             id: isInteger,
@@ -319,12 +319,8 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         });
 
         checkExclusiveFields(filter, ['id', 'search'], ['page']);
-        const searchParams = {};
-        for (const key of Object.keys(filter)) {
-            if (['page', 'filter', 'sort', 'id', 'search'].includes(key)) {
-                searchParams[key] = filter[key];
-            }
-        }
+        const searchParams = fieldsToSnakeCase(filter);
+
         const cloudStoragesData = await serverProxy.cloudStorages.get(searchParams);
         const cloudStorages = cloudStoragesData.map((cloudStorage) => new CloudStorage(cloudStorage));
         Object.assign(cloudStorages, { count: cloudStoragesData.count });
