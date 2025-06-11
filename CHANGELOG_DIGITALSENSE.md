@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Changed
 - Modified startup.sh to support docker-compose.override.yml file [PR #9]
+- Modified email configuration to support sending email invitations and email confirmation on sign up [PR # 11]
 
 ## [1.0.0] - 2025-05-12
 
