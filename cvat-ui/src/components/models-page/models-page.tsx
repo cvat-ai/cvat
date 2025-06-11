@@ -13,7 +13,7 @@ import Spin from 'antd/lib/spin';
 import notification from 'antd/lib/notification';
 
 import { CombinedState, Indexable } from 'reducers';
-import DeployedModelsList, { PAGE_SIZE } from './deployed-models-list';
+import DeployedModelsList from './deployed-models-list';
 import EmptyListComponent from './empty-list';
 import TopBar from './top-bar';
 
@@ -31,6 +31,9 @@ function ModelsPageComponent(): JSX.Element {
         if (key === 'page') {
             updatedQuery.page = updatedQuery.page ? +updatedQuery.page : 1;
         }
+        if (key === 'pageSize') {
+            updatedQuery.pageSize = updatedQuery.pageSize ? +updatedQuery.pageSize : 12;
+        }
     }
     useEffect(() => {
         history.replace({
@@ -38,7 +41,7 @@ function ModelsPageComponent(): JSX.Element {
         });
     }, [query]);
 
-    const pageOutOfBounds = totalCount && updatedQuery.page > Math.ceil(totalCount / PAGE_SIZE);
+    const pageOutOfBounds = totalCount && updatedQuery.page > Math.ceil(totalCount / query.pageSize);
     useEffect(() => {
         dispatch(getModelsAsync(updatedQuery));
         if (pageOutOfBounds) {
