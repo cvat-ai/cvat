@@ -33,6 +33,7 @@ import {
     readPointsFromShape, setupSkeletonEdges, makeSVGFromTemplate,
     imageDataToDataURL, expandChannels, stringifyPoints, zipChannels,
     composeShapeDimensions, getRoundedRotation,
+    clamp,
 } from './shared';
 import {
     CanvasModel, Geometry, UpdateReasons, FrameZoom, ActiveElement,
@@ -1735,8 +1736,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             // clamp too high values to avoid strong zooming
             // high values are usually applicable to mice
             // 8 is a good experimental value to avoid strong zooming
-            const MAX_DELTA_Y = 8;
-            deltaY = Math.abs(deltaY) > MAX_DELTA_Y ? MAX_DELTA_Y * Math.sign(deltaY) : deltaY;
+            const LIMIT_DELTA_Y = 8;
+            deltaY = clamp(deltaY, -LIMIT_DELTA_Y, LIMIT_DELTA_Y);
 
             const { offset } = this.controller.geometry;
             const point = translateToSVG(this.content, [event.clientX, event.clientY]);
