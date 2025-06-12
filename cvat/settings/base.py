@@ -572,6 +572,11 @@ CVAT_CHUNK_CACHE_TTL = 3600 * 24  # 1 day
 # Sets the timeout for the expiration of preview image in redis_ondisk
 CVAT_PREVIEW_CACHE_TTL = 3600 * 24 * 7  # 7 days
 
+# Kvrocs limits the item size to 512 MB, which results “Connection reset” exception.
+# Let's check the data size and raise an understandable exception instead of the redis-py exception
+# Sets the maximum size in bytes of a data chunk item stored on redis_ondisk
+CVAT_CACHE_ITEM_MAX_SIZE = 500 * 1024 * 1024
+
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
