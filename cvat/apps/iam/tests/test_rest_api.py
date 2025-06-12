@@ -111,7 +111,7 @@ class UserRegisterAPITestCase(APITestCase):
     @override_settings(
         ACCOUNT_EMAIL_REQUIRED=True,
         ACCOUNT_EMAIL_VERIFICATION="mandatory",
-        EMAIL_BACKEND="django.core.mail.backends.console.EmailBackend",
+        EMAIL_BACKEND="django.core.mail.backends.smtp.EmailBackend",
         ROOT_URLCONF=__name__,
     )
     def test_register_account_with_email_verification_mandatory(self):
