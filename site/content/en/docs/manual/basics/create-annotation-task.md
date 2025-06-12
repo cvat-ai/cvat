@@ -188,7 +188,7 @@ It is useful when you need to copy labels from one independent task to another.
 > Removing any "id" properties will lead to losing existing annotations.
 > **This property will be removed automatically from any text you insert to this field**.
 
-![](/images/image126.jpg)
+!["Raw" tab in task creation window showing labels in JSON format](/images/image126.jpg)
 
 Raw presents label data in _.json_ format with an option of editing and copying labels as text.
 The **Done** button applies the changes and the **Reset** button cancels the changes.
@@ -247,7 +247,7 @@ To create a 3D task, you must prepare an archive with one of the following direc
 Use advanced configuration to set additional parameters for the task
 and customize it to meet specific needs or requirements.
 
-![](/images/image128.jpg)
+![Advanced configuration section opened in task creation window](/images/image128.jpg)
 
 The following parameters are available:
 

@@ -480,6 +480,7 @@ os.makedirs(CLOUD_STORAGE_ROOT, exist_ok=True)
 
 TMP_FILES_ROOT = os.path.join(DATA_ROOT, "tmp")
 os.makedirs(TMP_FILES_ROOT, exist_ok=True)
+IGNORE_TMP_FOLDER_CLEANUP_ERRORS = True
 
 # logging is known to be unreliable with RQ when using async transports
 vector_log_handler = os.getenv("VECTOR_EVENT_HANDLER", "AsynchronousLogstashHandler")

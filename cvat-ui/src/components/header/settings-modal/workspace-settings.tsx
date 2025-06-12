@@ -24,6 +24,7 @@ interface Props {
     showAllInterpolationTracks: boolean;
     showObjectsTextAlways: boolean;
     automaticBordering: boolean;
+    adaptiveZoom: boolean;
     intelligentPolygonCrop: boolean;
     defaultApproxPolyAccuracy: number;
     textFontSize: number;
@@ -38,6 +39,7 @@ interface Props {
     onSwitchShowingInterpolatedTracks(enabled: boolean): void;
     onSwitchShowingObjectsTextAlways(enabled: boolean): void;
     onSwitchAutomaticBordering(enabled: boolean): void;
+    onSwitchAdaptiveZoom(enabled: boolean): void;
     onSwitchIntelligentPolygonCrop(enabled: boolean): void;
     onChangeTextFontSize(fontSize: number): void;
     onChangeControlPointsSize(pointsSize: number): void;
@@ -54,6 +56,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
         showAllInterpolationTracks,
         showObjectsTextAlways,
         automaticBordering,
+        adaptiveZoom,
         intelligentPolygonCrop,
         defaultApproxPolyAccuracy,
         textFontSize,
@@ -67,6 +70,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
         onSwitchShowingInterpolatedTracks,
         onSwitchShowingObjectsTextAlways,
         onSwitchAutomaticBordering,
+        onSwitchAdaptiveZoom,
         onSwitchIntelligentPolygonCrop,
         onChangeDefaultApproxPolyAccuracy,
         onChangeTextFontSize,
@@ -214,6 +218,24 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                 <Col span={24}>
                     <Text type='secondary'>
                         Enable automatic bordering for polygons and polylines during drawing/editing
+                    </Text>
+                </Col>
+            </Row>
+            <Row className='cvat-workspace-settings-adaptive-zoom cvat-player-setting'>
+                <Col span={24}>
+                    <Checkbox
+                        className='cvat-text-color'
+                        checked={adaptiveZoom}
+                        onChange={(event: CheckboxChangeEvent): void => {
+                            onSwitchAdaptiveZoom(event.target.checked);
+                        }}
+                    >
+                        Adaptive zoom algorithm
+                    </Checkbox>
+                </Col>
+                <Col span={24}>
+                    <Text type='secondary'>
+                        Enable smoother version of zooming, compatible with a trackpad and pinch gestures
                     </Text>
                 </Col>
             </Row>
