@@ -236,11 +236,14 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     public constructor(props: Props) {
         super(props);
+
+        const supportedTrackers = this.getSupportedTrackers();
+
         this.state = {
             convertMasksToPolygons: false,
             startInteractingWithBox: false,
             activeInteractor: props.interactors.length ? props.interactors[0] : null,
-            activeTracker: props.trackers.length ? props.trackers[0] : null,
+            activeTracker: supportedTrackers.length ? supportedTrackers[0] : null,
             activeLabelID: props.labels.length ? props.labels[0].id as number : null,
             approxPolyAccuracy: props.defaultApproxPolyAccuracy,
             trackedShapes: [],
@@ -348,6 +351,11 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         onRemoveAnnotations(null);
         canvasInstance.html().removeEventListener('canvas.interacted', this.interactionListener);
         canvasInstance.html().removeEventListener('canvas.canceled', this.cancelListener);
+    }
+
+    private getSupportedTrackers(): MLModel[] {
+        const { trackers } = this.props;
+        return trackers.filter((tracker: MLModel) => tracker.supportedShapeTypes!.includes(ShapeType.RECTANGLE));
     }
 
     private contextmenuDisabler = (e: MouseEvent): void => {
@@ -974,11 +982,13 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     private renderTrackerBlock(): JSX.Element {
         const {
-            trackers, canvasInstance, jobInstance, frame, onInteractionStart,
+            canvasInstance, jobInstance, frame, onInteractionStart,
         } = this.props;
         const { activeTracker, activeLabelID, fetching } = this.state;
 
-        if (!trackers.length) {
+        const supportedTrackers = this.getSupportedTrackers();
+
+        if (!supportedTrackers.length) {
             return (
                 <Row justify='center' align='middle' style={{ marginTop: '5px' }}>
                     <Col>
@@ -1001,10 +1011,10 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     <Col span={24}>
                         <Select
                             style={{ width: '100%' }}
-                            defaultValue={trackers[0].name}
+                            defaultValue={supportedTrackers[0].name}
                             onChange={this.setActiveTracker}
                         >
-                            {trackers.map(
+                            {supportedTrackers.map(
                                 (tracker: MLModel): JSX.Element => (
                                     <Select.Option value={tracker.id} title={tracker.description} key={tracker.id}>
                                         {tracker.name}

@@ -7,7 +7,7 @@ import { omit } from 'lodash';
 import { BoundariesActions, BoundariesActionTypes } from 'actions/boundaries-actions';
 import { ModelsActionTypes, ModelsActions } from 'actions/models-actions';
 import { AuthActionTypes, AuthActions } from 'actions/auth-actions';
-import { MLModel, ModelKind, ShapeType } from 'cvat-core-wrapper';
+import { MLModel, ModelKind } from 'cvat-core-wrapper';
 import { ModelsState } from '.';
 
 const defaultState: ModelsState = {
@@ -55,8 +55,7 @@ export default function (state = defaultState, action: ModelsActions | AuthActio
                     model.kind === ModelKind.DETECTOR
                 )),
                 trackers: action.payload.models.filter((model: MLModel) => (
-                    model.kind === ModelKind.TRACKER &&
-                        model.supportedShapeTypes.includes(ShapeType.RECTANGLE)
+                    model.kind === ModelKind.TRACKER
                 )),
                 reid: action.payload.models.filter((model: MLModel) => (
                     model.kind === ModelKind.REID
