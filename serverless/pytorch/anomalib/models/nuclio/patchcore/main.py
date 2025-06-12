@@ -2,7 +2,7 @@ import json
 import base64
 from PIL import Image
 import io
-from model_handler import ModelHandler
+from patchcore.model_handler import ModelHandler
 import torch
 import os
 
@@ -47,24 +47,4 @@ def handler(context, event):
             status_code=500
         )
 
-    # data = event.body
-    # buf = io.BytesIO(base64.b64decode(data["image"]))
-    # image = Image.open(buf)
-
-    # mask = context.user_data.model.infer(image)
-
-    # print('So far so good! Inference was completed.')
-
-    # result = {
-    #         "confidence": None,
-    #         "label": 0,
-    #         "mask": mask.tolist(),
-    #         "type": "mask",
-    #     }
-
-    # return context.Response(body=json.dumps(result),
-    #     headers={},
-    #     content_type='application/json',
-    #     status_code=200
-    # )
 

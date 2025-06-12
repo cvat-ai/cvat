@@ -2,7 +2,7 @@ metadata:
   name: uflow
   namespace: cvat
   annotations:
-    name: UFlow
+    name: uflow
     type: detector
     spec: |
       [
@@ -10,13 +10,13 @@ metadata:
       ]
 
 spec:
-  description: UFlow from Anomalib
+  description: uflow from Anomalib
   runtime: 'python:3.11'
-  handler: main:handler
+  handler: uflow.main:handler
   eventTimeout: 3000s
 
   build:
-    image: cvat.pth.anomalib.uflow
+    image: cvat.pth.anomalib_aux.models
     baseImage: anomalib-base:ubuntu22.04  # Base with proper GL libraries
 
     directives:
