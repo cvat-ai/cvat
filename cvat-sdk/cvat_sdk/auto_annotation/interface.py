@@ -15,6 +15,22 @@ from ..attributes import attribute_value_validator
 from .exceptions import BadFunctionError
 
 
+class AutoAnnotationFunction(Protocol):
+    """
+    The base interface for all auto-annotation function interfaces.
+    """
+
+    @property
+    def spec(self) -> object:
+        """
+        Returns the function's spec.
+
+        In each specific auto-annotation function interface,
+        this will be overridden to return a specific spec type.
+        """
+        ...
+
+
 @attrs.frozen(kw_only=True)
 class DetectionFunctionSpec:
     """
@@ -157,7 +173,7 @@ class DetectionFunctionContext(metaclass=abc.ABCMeta):
         """
 
 
-class DetectionFunction(Protocol):
+class DetectionFunction(AutoAnnotationFunction, Protocol):
     """
     The interface that an auto-annotation detection function must implement.
 
