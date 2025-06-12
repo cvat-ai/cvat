@@ -5,6 +5,7 @@
 from .driver import annotate_task
 from .exceptions import BadFunctionError
 from .interface import (
+    AutoAnnotationFunction,
     DetectionFunction,
     DetectionFunctionContext,
     DetectionFunctionSpec,
@@ -26,6 +27,7 @@ from .interface import (
 )
 
 __all__ = [
+    "AutoAnnotationFunction",
     "annotate_task",
     "attribute_spec",
     "BadFunctionError",
