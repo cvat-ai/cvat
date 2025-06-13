@@ -134,13 +134,25 @@ const componentShortcuts = {
     TO_BACKGROUND: {
         name: 'To background',
         description: 'Put an active object "farther" from the user (decrease z axis value)',
-        sequences: ['-', '_'],
+        sequences: ['-'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     TO_FOREGROUND: {
         name: 'To foreground',
         description: 'Put an active object "closer" to the user (increase z axis value)',
-        sequences: ['+', '='],
+        sequences: ['='],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    MOVE_TO_PREVIOUS_LAYER: {
+        name: 'Move to previous layer',
+        description: 'Move the active object one layer backward (decrease z-order value)',
+        sequences: ['_'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    MOVE_TO_NEXT_LAYER: {
+        name: 'Move to next layer',
+        description: 'Move the active object one layer forward (increase z-order value)',
+        sequences: ['+'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     COPY_SHAPE: {
@@ -586,6 +598,22 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 const state = activatedState(true);
                 if (state && !readonly && state.objectType !== ObjectType.TAG) {
                     state.zOrder = maxZLayer + 1;
+                    updateAnnotations([state]);
+                }
+            },
+            MOVE_TO_PREVIOUS_LAYER: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                const state = activatedState(true);
+                if (state && !readonly && state.objectType !== ObjectType.TAG) {
+                    state.zOrder -= 1;
+                    updateAnnotations([state]);
+                }
+            },
+            MOVE_TO_NEXT_LAYER: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                const state = activatedState(true);
+                if (state && !readonly && state.objectType !== ObjectType.TAG) {
+                    state.zOrder += 1;
                     updateAnnotations([state]);
                 }
             },
