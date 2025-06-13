@@ -25,13 +25,13 @@ context('Test annotations saving works correctly', () => {
         ],
     };
 
-    let taskID = null;
-    let jobID = null;
+    let taskId = null;
+    let jobId = null;
 
-    function useShortcut(clientID, shortcut) {
+    function useShortcut(clientId, shortcut) {
         cy.get('body').click();
-        cy.get(`#cvat-objects-sidebar-state-item-${clientID}`).trigger('mouseover');
-        cy.get(`#cvat-objects-sidebar-state-item-${clientID}`).should('have.class', 'cvat-objects-sidebar-state-active-item');
+        cy.get(`#cvat-objects-sidebar-state-item-${clientId}`).trigger('mouseover');
+        cy.get(`#cvat-objects-sidebar-state-item-${clientId}`).should('have.class', 'cvat-objects-sidebar-state-active-item');
         cy.get('body').type(shortcut);
         cy.hideTooltips();
     }
@@ -48,13 +48,13 @@ context('Test annotations saving works correctly', () => {
         cy.contains('button', 'Submit & Continue').click();
         cy.wait('@createTaskRequest').then((interception) => {
             expect(interception.response.statusCode).to.equal(201);
-            taskID = interception.response.body.id;
+            taskId = interception.response.body.id;
         });
         cy.wait('@getJobsRequest').then((interception) => {
             expect(interception.response.statusCode).to.equal(200);
-            jobID = interception.response.body.results[0].id;
+            jobId = interception.response.body.results[0].id;
 
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
             cy.get('.cvat-canvas-container').should('exist').and('be.visible');
         });
     });
@@ -160,9 +160,9 @@ context('Test annotations saving works correctly', () => {
             let deleteCounter = 0;
             let updateCounter = 0;
 
-            cy.intercept('PATCH', `/api/jobs/${jobID}/annotations**action=create**`, () => createCounter++).as('createJobAnnotations');
-            cy.intercept('PATCH', `/api/jobs/${jobID}/annotations**action=delete`, () => deleteCounter++).as('deleteJobAnnotations');
-            cy.intercept('PATCH', `/api/jobs/${jobID}/annotations**action=update`, () => updateCounter++).as('updateJobAnnotations');
+            cy.intercept('PATCH', `/api/jobs/${jobId}/annotations**action=create**`, () => createCounter++).as('createJobAnnotations');
+            cy.intercept('PATCH', `/api/jobs/${jobId}/annotations**action=delete`, () => deleteCounter++).as('deleteJobAnnotations');
+            cy.intercept('PATCH', `/api/jobs/${jobId}/annotations**action=update`, () => updateCounter++).as('updateJobAnnotations');
 
             cy.saveJob();
             cy.wait('@createJobAnnotations').then((interception) => {
@@ -173,8 +173,8 @@ context('Test annotations saving works correctly', () => {
             });
             cy.saveJob();
 
-            for (const clientID of [1, 2, 3, 4, 5, 6, 7, 13]) {
-                useShortcut(clientID, 'q');
+            for (const clientId of [1, 2, 3, 4, 5, 6, 7, 13]) {
+                useShortcut(clientId, 'q');
             }
 
             cy.saveJob();
@@ -186,9 +186,9 @@ context('Test annotations saving works correctly', () => {
             });
             cy.saveJob();
 
-            for (const clientID of [1, 2, 3, 4, 5, 6, 7, 13, 19]) {
-                useShortcut(clientID, '{shift}{del}');
-                cy.get(`#cvat-objects-sidebar-state-item-${clientID}`).should('not.exist');
+            for (const clientId of [1, 2, 3, 4, 5, 6, 7, 13, 19]) {
+                useShortcut(clientId, '{shift}{del}');
+                cy.get(`#cvat-objects-sidebar-state-item-${clientId}`).should('not.exist');
             }
 
             cy.saveJob();
@@ -212,7 +212,7 @@ context('Test annotations saving works correctly', () => {
             const authKey = response.body.key;
             cy.request({
                 method: 'DELETE',
-                url: `/api/tasks/${taskID}`,
+                url: `/api/tasks/${taskId}`,
                 headers: {
                     Authorization: `Token ${authKey}`,
                 },

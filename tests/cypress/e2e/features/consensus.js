@@ -32,10 +32,10 @@ context('Basic manipulations with consensus job replicas', () => {
 
     describe('Consensus job creation', () => {
         const maxReplicas = 10;
-        let consensusTaskID = null;
+        let consensusTaskId = null;
         before(() => {
-            cy.headlessCreateTask(taskSpec, dataSpec, extras).then(({ taskID }) => {
-                consensusTaskID = taskID;
+            cy.headlessCreateTask(taskSpec, dataSpec, extras).then(({ taskId }) => {
+                consensusTaskId = taskId;
             });
             cy.get('.cvat-create-task-dropdown').click();
             cy.get('.cvat-create-task-button').should('be.visible').click();
@@ -83,12 +83,12 @@ context('Basic manipulations with consensus job replicas', () => {
                 });
         });
         after(() => {
-            cy.headlessDeleteTask(consensusTaskID);
+            cy.headlessDeleteTask(consensusTaskId);
         });
     });
 
     describe('Cosensus jobs merging', () => {
-        let consensusTaskID = null;
+        let consensusTaskId = null;
         const baseShape = {
             objectType: 'shape',
             labelName,
@@ -97,11 +97,11 @@ context('Basic manipulations with consensus job replicas', () => {
             points: [250, 64, 491, 228],
             occluded: false,
         };
-        const jobIDs = [];
+        const jobIds = [];
 
         before(() => {
-            cy.headlessCreateTask(taskSpec, dataSpec, extras).then(({ taskID }) => {
-                consensusTaskID = taskID;
+            cy.headlessCreateTask(taskSpec, dataSpec, extras).then(({ taskId }) => {
+                consensusTaskId = taskId;
             });
             cy.goToTaskList();
             cy.openTask(taskName);
@@ -116,14 +116,14 @@ context('Basic manipulations with consensus job replicas', () => {
                 return +(jobItemText.substring(start, stop).split('#')[1]);
             }
             cy.get('.cvat-job-item').each(([$el], i) => {
-                const jobID = parseJobId($el);
-                jobIDs.push(jobID);
-                expect(jobID).equals(jobIDs[0] + i);
+                const jobId = parseJobId($el);
+                jobIds.push(jobId);
+                expect(jobId).equals(jobIds[0] + i);
             });
 
             // Merge one consensus job
             cy.then(() => {
-                cy.mergeConsensusJob(jobIDs[0], 400);
+                cy.mergeConsensusJob(jobIds[0], 400);
             });
             cy.get('.cvat-notification-notice-consensus-merge-task-failed')
                 .should('be.visible')
@@ -184,24 +184,24 @@ context('Basic manipulations with consensus job replicas', () => {
         it('Create annotations and check that job replicas merge correctly', () => {
             // Create annotations for job replicas
             const delta = 50;
-            const [consensusJobID, ...replicaJobIDs] = jobIDs;
+            const [consensusJobId, ...replicaJobIds] = jobIds;
             for (let i = 0, shape = baseShape; i < replicas; i++) {
-                cy.headlessCreateObjects([shape], jobIDs[i]); // only 'in progress' jobs can be merged
-                cy.headlessUpdateJob(replicaJobIDs[i], { state: 'in progress' });
+                cy.headlessCreateObjects([shape], jobIds[i]); // only 'in progress' jobs can be merged
+                cy.headlessUpdateJob(replicaJobIds[i], { state: 'in progress' });
                 const points = translatePoints(shape.points, delta, 'x');
                 shape = { ...shape, points };
             }
             // Merging of consensus job should go without errors in network and UI
-            cy.mergeConsensusJob(consensusJobID);
+            cy.mergeConsensusJob(consensusJobId);
             cy.get('.cvat-notification-notice-consensus-merge-job-failed').should('not.exist');
             cy.get('.ant-notification-notice-message')
                 .should('be.visible')
                 .invoke('text')
-                .should('eq', `Consensus job #${consensusJobID} has been merged`);
+                .should('eq', `Consensus job #${consensusJobId} has been merged`);
             cy.closeNotification('.ant-notification-notice-closable');
 
             // Shapes in consensus job and a job replica in the middle should be equal
-            const middle = Math.floor(jobIDs.length / 2);
+            const middle = Math.floor(jobIds.length / 2);
             const consensusRect = {};
             cy.openJob(0, false).then(() => {
                 cy.get('.cvat_canvas_shape').trigger('mousemove');
@@ -222,7 +222,7 @@ context('Basic manipulations with consensus job replicas', () => {
                 .find('.cvat-job-item-state').first()
                 .invoke('text')
                 .should('eq', 'completed');
-            cy.contains('.cvat-job-item', `Job #${jobIDs[middle]}`).scrollIntoView();
+            cy.contains('.cvat-job-item', `Job #${jobIds[middle]}`).scrollIntoView();
             cy.openJob(middle, false).then(() => {
                 cy.get('.cvat_canvas_shape').then(($el) => {
                     expect($el.attr('x')).to.equal(consensusRect.x);
@@ -233,7 +233,7 @@ context('Basic manipulations with consensus job replicas', () => {
             });
         });
         after(() => {
-            cy.headlessDeleteTask(consensusTaskID);
+            cy.headlessDeleteTask(consensusTaskId);
         });
     });
 });
