@@ -9250,6 +9250,10 @@ components:
           allOf:
           - $ref: '#/components/schemas/StorageRequest'
           writeOnly: true
+        organization_id:
+          type: integer
+          writeOnly: true
+          nullable: true
     PatchedQualitySettingsRequest:
       type: object
       properties:
@@ -9466,6 +9470,10 @@ components:
           allOf:
           - $ref: '#/components/schemas/StorageRequest'
           nullable: true
+        organization_id:
+          type: integer
+          writeOnly: true
+          nullable: true
     PatchedUserRequest:
       type: object
       properties:
@@ -9607,6 +9615,11 @@ components:
           nullable: true
           maxLength: 16
         organization:
+          type: integer
+          readOnly: true
+          nullable: true
+          deprecated: true
+        organization_id:
           type: integer
           readOnly: true
           nullable: true
@@ -10663,10 +10676,15 @@ components:
         subset:
           type: string
           readOnly: true
+        organization_id:
+          type: integer
+          readOnly: true
+          nullable: true
         organization:
           type: integer
           readOnly: true
           nullable: true
+          deprecated: true
         target_storage:
           allOf:
           - $ref: '#/components/schemas/Storage'

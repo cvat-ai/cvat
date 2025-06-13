@@ -18,7 +18,7 @@ from contextlib import closing
 from copy import copy
 from inspect import isclass
 from tempfile import NamedTemporaryFile
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, cast
 
 import django_rq
 from django.conf import settings
@@ -40,6 +40,7 @@ from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.permissions import TaskPermission
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
+from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import (
     CvatChunkTimestampMismatchError,
     av_scan_paths,
@@ -52,6 +53,7 @@ from cvat.apps.engine.utils import (
     reverse,
     take_by,
 )
+from cvat.apps.organizations.models import Organization
 from utils.dataset_manifest import ImageManifestManager
 
 slogger = ServerLogManager(__name__)
@@ -2296,6 +2298,7 @@ class TaskReadListSerializer(serializers.ListSerializer):
 
         return super().to_representation(data)
 
+@extend_schema_serializer(deprecate_fields=["organization"])
 class TaskReadSerializer(serializers.ModelSerializer):
     data_chunk_size = serializers.ReadOnlyField(source='data.chunk_size', required=False)
     data_compressed_chunk_type = serializers.ReadOnlyField(source='data.compressed_chunk_type', required=False)
@@ -2307,6 +2310,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
     assignee = BasicUserSerializer(allow_null=True, required=False)
     project_id = serializers.IntegerField(required=False, allow_null=True)
     guide_id = serializers.IntegerField(source='annotation_guide.id', required=False, allow_null=True)
+    organization_id = serializers.IntegerField(source='organization.id', required=False, read_only=True, allow_null=True)
     dimension = serializers.CharField(allow_blank=True, required=False)
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
@@ -2326,7 +2330,9 @@ class TaskReadSerializer(serializers.ModelSerializer):
             'bug_tracker', 'created_date', 'updated_date', 'overlap', 'segment_size',
             'status', 'data_chunk_size', 'data_compressed_chunk_type', 'guide_id',
             'data_original_chunk_type', 'size', 'image_quality', 'data', 'dimension',
-            'subset', 'organization', 'target_storage', 'source_storage', 'jobs', 'labels',
+            'subset', 'organization_id',
+            'organization', # deprecated field
+            'target_storage', 'source_storage', 'jobs', 'labels',
             'assignee_updated_date', 'validation_mode', 'consensus_enabled',
         )
         read_only_fields = fields
@@ -2350,6 +2356,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     project_id = serializers.IntegerField(required=False, allow_null=True)
+    organization_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
     consensus_replicas = serializers.IntegerField(
@@ -2366,8 +2373,17 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             'url', 'id', 'name', 'project_id', 'owner_id', 'assignee_id',
             'bug_tracker', 'overlap', 'segment_size', 'labels', 'subset',
             'target_storage', 'source_storage', 'consensus_replicas',
+            'organization_id',
         )
         write_once_fields = ('overlap', 'segment_size', 'consensus_replicas')
+        update_only_fields = ('organization_id',)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if getattr(self.context.get('view'), 'action', '') == 'create':
+            for field in self.Meta.update_only_fields:
+                self.fields.pop(field)
 
     def to_representation(self, instance):
         serializer = TaskReadSerializer(instance, context=self.context)
@@ -2401,7 +2417,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 raise serializers.ValidationError(f'The specified project #{project_id} does not exist.')
 
             if project.organization != validated_data.get('organization'):
-                raise serializers.ValidationError(f'The task and its project should be in the same organization.')
+                raise serializers.ValidationError('The task and its project should be in the same organization.')
 
         labels = validated_data.pop('label_set', [])
 
@@ -2431,7 +2447,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
     # pylint: disable=no-self-use
     @transaction.atomic
-    def update(self, instance, validated_data):
+    def update(self, instance: models.Task, validated_data: dict):
         instance.name = validated_data.get('name', instance.name)
         instance.owner_id = validated_data.get('owner_id', instance.owner_id)
         instance.bug_tracker = validated_data.get('bug_tracker', instance.bug_tracker)
@@ -2504,6 +2520,25 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         # update source and target storages
         _update_related_storages(instance, validated_data)
 
+        if (
+            "organization_id" in validated_data
+            and (organization_id := validated_data["organization_id"]) != instance.organization_id
+        ):
+            # TODO: prohibit changing other fields (except source/target storage)
+            if organization_id is not None:
+                if not Organization.objects.filter(pk=organization_id).exists():
+                    raise serializers.ValidationError("Invalid organization id")
+
+                request = cast(ExtendedRequest, self.context['request'])
+                cur_user_id = request.user.id
+                if instance.owner_id != cur_user_id:
+                    instance.owner_id = cur_user_id
+
+                if instance.assignee_id is not None:
+                    instance.assignee_id = None # TODO: assignee update date
+
+            instance.organization_id = organization_id
+
         instance.save()
 
         if 'label_set' in validated_data and not instance.project_id:
@@ -2517,6 +2552,20 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         ).update(updated_date=instance.updated_date)
 
     def validate(self, attrs):
+        if "organization_id" in attrs.keys() and self.instance:
+            if "project_id" in attrs.keys():
+                raise serializers.ValidationError("A task cannot be moved into a project and into an organization at the same time")
+
+            if self.instance.project_id:
+                raise serializers.ValidationError("Only top-level resources can be moved between workspaces")
+
+            if (
+                self.instance.data.cloud_storage_id
+                or self.instance.source_storage.cloud_storage_id
+                or self.instance.target_storage.cloud_storage_id
+            ):
+                raise NotImplementedError()
+
         # When moving task labels can be mapped to one, but when not names must be unique
         if 'project_id' in attrs.keys() and self.instance is not None:
             project_id = attrs.get('project_id')
@@ -2567,10 +2616,12 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
         return attrs
 
+@extend_schema_serializer(deprecate_fields=["organization"])
 class ProjectReadSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(allow_null=True, required=False, read_only=True)
     assignee = BasicUserSerializer(allow_null=True, required=False, read_only=True)
     guide_id = serializers.IntegerField(source='annotation_guide.id', required=False, allow_null=True)
+    organization_id = serializers.IntegerField(source='organization.id', required=False, read_only=True, allow_null=True)
     task_subsets = serializers.ListField(child=serializers.CharField(), required=False, read_only=True)
     dimension = serializers.CharField(max_length=16, required=False, read_only=True, allow_null=True)
     target_storage = StorageSerializer(required=False, allow_null=True, read_only=True)
@@ -2581,8 +2632,9 @@ class ProjectReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Project
         fields = ('url', 'id', 'name', 'owner', 'assignee', 'guide_id',
-            'bug_tracker', 'task_subsets', 'created_date', 'updated_date', 'status',
-            'dimension', 'organization', 'target_storage', 'source_storage',
+            'bug_tracker', 'task_subsets', 'created_date', 'updated_date', 'status', 'dimension',
+            'organization', # deprecated field
+            'organization_id', 'target_storage', 'source_storage',
             'tasks', 'labels', 'assignee_updated_date'
         )
         read_only_fields = fields
@@ -2604,6 +2656,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
     labels = LabelSerializer(write_only=True, many=True, source='label_set', partial=True, default=[])
     owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+    organization_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
 
     target_storage = StorageSerializer(write_only=True, required=False)
     source_storage = StorageSerializer(write_only=True, required=False)
@@ -2611,8 +2664,16 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Project
         fields = ('name', 'labels', 'owner_id', 'assignee_id', 'bug_tracker',
-            'target_storage', 'source_storage',
+            'target_storage', 'source_storage', 'organization_id'
         )
+        update_only_fields = ('organization_id',)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if not self.partial:
+            for field in self.Meta.update_only_fields:
+                self.fields.pop(field)
 
     def to_representation(self, instance):
         serializer = ProjectReadSerializer(instance, context=self.context)
@@ -2648,7 +2709,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
 
     # pylint: disable=no-self-use
     @transaction.atomic
-    def update(self, instance, validated_data):
+    def update(self, instance: models.Project, validated_data: dict):
         instance.name = validated_data.get('name', instance.name)
         instance.owner_id = validated_data.get('owner_id', instance.owner_id)
         instance.bug_tracker = validated_data.get('bug_tracker', instance.bug_tracker)
@@ -2665,6 +2726,30 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
 
         # update source and target storages
         _update_related_storages(instance, validated_data)
+
+        if (
+            "organization_id" in validated_data
+            and (organization_id := validated_data["organization_id"]) != instance.organization_id
+        ):
+            if (self.instance.source_storage.cloud_storage_id or self.instance.target_storage.cloud_storage_id):
+                raise NotImplementedError()
+
+            request = cast(ExtendedRequest, self.context['request'])
+            cur_user_id = request.user.id
+
+            # TODO: prohibit changing other fields (except source/target storage)
+            if organization_id is not None:
+                if not Organization.objects.filter(pk=organization_id).exists():
+                    raise serializers.ValidationError("Invalid organization id")
+
+                if instance.owner_id != cur_user_id:
+                    instance.owner_id = cur_user_id
+
+                if instance.assignee_id is not None:
+                    instance.assignee_id = None
+
+            instance.organization_id = organization_id
+            instance.tasks.update(organization_id=organization_id, assignee_id=None, owner_id=cur_user_id)
 
         instance.save()
 
