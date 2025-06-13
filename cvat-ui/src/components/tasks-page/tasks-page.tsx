@@ -43,6 +43,9 @@ function TasksPageComponent(props: Props): JSX.Element {
         if (key === 'page') {
             updatedQuery.page = updatedQuery.page ? +updatedQuery.page : 1;
         }
+        if (key === 'pageSize') {
+            updatedQuery.pageSize = updatedQuery.pageSize ? +updatedQuery.pageSize : 10;
+        }
     }
 
     useEffect(() => {
@@ -67,17 +70,18 @@ function TasksPageComponent(props: Props): JSX.Element {
                 <Col md={22} lg={18} xl={16} xxl={14}>
                     <Pagination
                         className='cvat-tasks-pagination'
-                        onChange={(page: number) => {
+                        onChange={(page: number, pageSize: number) => {
                             dispatch(getTasksAsync({
                                 ...query,
                                 page,
+                                pageSize,
                             }));
                         }}
-                        showSizeChanger={false}
                         total={count}
-                        pageSize={10}
+                        pageSize={query.pageSize}
                         current={query.page}
                         showQuickJumper
+                        showSizeChanger
                     />
                 </Col>
             </Row>

@@ -73,6 +73,9 @@ export default function ProjectPageComponent(): JSX.Element {
         if (key === 'page') {
             updatedQuery.page = updatedQuery.page ? +updatedQuery.page : 1;
         }
+        if (key === 'pageSize') {
+            updatedQuery.pageSize = updatedQuery.pageSize ? +updatedQuery.pageSize : 10;
+        }
     }
 
     useEffect(() => {
@@ -152,18 +155,19 @@ export default function ProjectPageComponent(): JSX.Element {
                 <Col md={22} lg={18} xl={16} xxl={14}>
                     <Pagination
                         className='cvat-project-tasks-pagination'
-                        onChange={(page: number) => {
+                        onChange={(page: number, pageSize: number) => {
                             dispatch(getProjectTasksAsync({
                                 ...tasksQuery,
                                 projectId: id,
                                 page,
+                                pageSize,
                             }));
                         }}
-                        showSizeChanger={false}
                         total={tasksCount}
-                        pageSize={10}
+                        pageSize={tasksQuery.pageSize}
                         current={tasksQuery.page}
                         showQuickJumper
+                        showSizeChanger
                     />
                 </Col>
             </Row>

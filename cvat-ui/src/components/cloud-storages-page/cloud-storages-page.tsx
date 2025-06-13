@@ -34,6 +34,9 @@ export default function StoragesPageComponent(): JSX.Element {
         if (key === 'page') {
             updatedQuery.page = updatedQuery.page ? +updatedQuery.page : 1;
         }
+        if (key === 'pageSize') {
+            updatedQuery.pageSize = updatedQuery.pageSize ? +updatedQuery.pageSize : 12;
+        }
     }
 
     useEffect(() => {
@@ -51,9 +54,9 @@ export default function StoragesPageComponent(): JSX.Element {
     }, [query]);
 
     const onChangePage = useCallback(
-        (page: number) => {
-            if (!fetching && page !== query.page) {
-                dispatch(getCloudStoragesAsync({ ...query, page }));
+        (page: number, pageSize: number) => {
+            if (!fetching) {
+                dispatch(getCloudStoragesAsync({ ...query, page, pageSize }));
             }
         },
         [query],
@@ -65,6 +68,7 @@ export default function StoragesPageComponent(): JSX.Element {
         <CloudStoragesListComponent
             totalCount={totalCount}
             page={query.page}
+            pageSize={query.pageSize}
             storages={current}
             onChangePage={onChangePage}
         />

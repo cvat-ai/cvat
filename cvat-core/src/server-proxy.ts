@@ -725,7 +725,6 @@ async function getProjects(filter: ProjectsFilter = {}): Promise<SerializedProje
         response = await Axios.get(`${backendAPI}/projects`, {
             params: {
                 ...filter,
-                page_size: 12,
             },
         });
     } catch (errorData) {
@@ -1318,7 +1317,6 @@ async function getJobs(
             response = await Axios.get(`${backendAPI}/jobs`, {
                 params: {
                     ...filter,
-                    page_size: 12,
                 },
             });
         }
@@ -1902,7 +1900,6 @@ async function getCloudStorages(filter = {}): Promise<SerializedCloudStorage[] &
         response = await Axios.get(`${backendAPI}/cloudstorages`, {
             params: {
                 ...filter,
-                page_size: 12,
             },
         });
         return Object.assign(response.data.results, { count: response.data.count });

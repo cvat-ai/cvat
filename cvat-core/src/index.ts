@@ -104,6 +104,7 @@ export default interface CVATCore {
     tasks: {
         get: (filter: {
             page?: number;
+            pageSize?: number;
             projectId?: number;
             id?: number;
             sort?: string;
@@ -117,6 +118,7 @@ export default interface CVATCore {
             filter: {
                 id?: number;
                 page?: number;
+                pageSize?: number;
                 search?: string;
                 sort?: string;
                 filter?: string;

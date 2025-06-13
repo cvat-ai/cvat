@@ -15,6 +15,7 @@ const defaultState: RequestsState = {
     disabled: {},
     query: {
         page: 1,
+        pageSize: 10,
     },
 };
 

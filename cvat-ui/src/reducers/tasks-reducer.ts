@@ -29,6 +29,7 @@ const defaultState: TasksState = {
         filter: null,
         sort: null,
         projectId: null,
+        pageSize: 10,
     },
     activities: {
         deletes: {},
