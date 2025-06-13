@@ -4,7 +4,7 @@ pytest==6.2.5
 pytest-cases==3.8.6
 pytest-timeout==2.1.0
 pytest-cov==4.1.0
-requests==2.32.2
+requests==2.32.4
 deepdiff==7.0.1
 boto3==1.35.95
 Pillow==10.3.0
