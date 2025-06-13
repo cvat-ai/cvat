@@ -69,6 +69,8 @@ slogger = ServerLogManager(__name__)
 DataWithMime = tuple[io.BytesIO, str]
 _CacheItem = tuple[io.BytesIO, str, int, Union[datetime, None]]
 
+class CacheTooLargeDataError(Exception):
+    pass
 
 def enqueue_create_chunk_job(
     queue: rq.Queue,
@@ -239,7 +241,7 @@ class MediaCache:
             else:
                 item_size = cls._get_cache_item_size(item)
                 if item_size > cls._CACHE_ITEM_MAX_SIZE:
-                    raise Exception(
+                    raise CacheTooLargeDataError(
                         f"Chunk data size {item_size} exceeds the maximum allowed size "
                         f"{cls._CACHE_ITEM_MAX_SIZE}."
                     )
