@@ -175,7 +175,6 @@ class MediaCache:
     _QUEUE_JOB_PREFIX_TASK = "chunks:prepare-item-"
     _CACHE_NAME = "media"
     _PREVIEW_TTL = settings.CVAT_PREVIEW_CACHE_TTL
-    _CACHE_ITEM_MAX_SIZE = settings.CVAT_CACHE_ITEM_MAX_SIZE
 
     @staticmethod
     def _cache():
@@ -242,10 +241,10 @@ class MediaCache:
                 item = cached_item
             else:
                 item_size = cls._get_cache_item_size(item)
-                if item_size > cls._CACHE_ITEM_MAX_SIZE:
+                if item_size > settings.CVAT_CACHE_ITEM_MAX_SIZE:
                     raise CacheTooLargeDataError(
                         f"Chunk data size {item_size} exceeds the maximum allowed size "
-                        f"{cls._CACHE_ITEM_MAX_SIZE}."
+                        f"{settings.CVAT_CACHE_ITEM_MAX_SIZE}."
                     )
                 cache.set(key, item, timeout=cache_item_ttl or cache.default_timeout)
 
