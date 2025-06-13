@@ -93,6 +93,7 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
                             className='cvat-projects-project-item-title'
                             aria-hidden
                         >
+                            <Text strong type='secondary' className='cvat-item-project-id'>{`#${instance.id}: `}</Text>
                             {instance.name}
                         </Text>
                     )}
