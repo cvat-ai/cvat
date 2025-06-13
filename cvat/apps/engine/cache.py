@@ -69,8 +69,10 @@ slogger = ServerLogManager(__name__)
 DataWithMime = tuple[io.BytesIO, str]
 _CacheItem = tuple[io.BytesIO, str, int, Union[datetime, None]]
 
+
 class CacheTooLargeDataError(Exception):
     pass
+
 
 def enqueue_create_chunk_job(
     queue: rq.Queue,
