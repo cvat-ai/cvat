@@ -114,7 +114,7 @@ class UploadMixin:
         if request.method == 'OPTIONS':
             return self._tus_response(status=status.HTTP_204_NO_CONTENT)
 
-        upload_dir = Path(self.get_upload_dir())
+        upload_dir = self.get_upload_dir()
 
         try:
             metadata = TusFile.TusMeta.from_request(request)
@@ -156,24 +156,6 @@ class UploadMixin:
         if 'HTTP_X_FORWARDED_HOST' not in request.META:
             location = request.META.get('HTTP_ORIGIN') + request.META.get('PATH_INFO')
 
-        # FUTURE-TODO: migrate to common TMP cache where files
-        # are deleted automatically by a periodic background job
-        if self.action in ("annotations", "dataset") and str(upload_dir) != TmpDirManager.TMP_ROOT:
-            scheduler = django_rq.get_scheduler(settings.CVAT_QUEUES.CLEANING.value)
-            file_path = upload_dir / (
-                tus_file.filename if replaceable_result_file else tus_file.file_id.as_str
-            )
-            cleaning_job = scheduler.enqueue_in(time_delta=settings.IMPORT_CACHE_CLEAN_DELAY,
-                func=clear_import_cache,
-                path=file_path,
-                creation_time=file_path.stat().st_ctime
-            )
-            slogger.glob.info(
-                f'The cleaning job {cleaning_job.id} is queued.'
-                f'The check that the file {file_path} is deleted will be carried out after '
-                f'{settings.IMPORT_CACHE_CLEAN_DELAY}.'
-            )
-
         return self._tus_response(
             status=status.HTTP_201_CREATED,
             extra_headers={
@@ -183,7 +165,7 @@ class UploadMixin:
         )
 
     def append_tus_chunk(self, request: ExtendedRequest, file_id: str):
-        tus_file = TusFile(file_id, upload_dir=Path(self.get_upload_dir()))
+        tus_file = TusFile(file_id, upload_dir=self.get_upload_dir())
         tus_file.meta_file.init_from_file()
 
         try:
@@ -232,8 +214,8 @@ class UploadMixin:
         if not file_path.resolve().is_relative_to(upload_dir):
             raise UploadedFileError
 
-    def get_upload_dir(self) -> str:
-        return self._object.data.get_upload_dirname()
+    def get_upload_dir(self):
+        return Path(TmpDirManager.TMP_ROOT)
 
     def _get_request_client_files(self, request: ExtendedRequest):
         serializer = DataSerializer(self._object, data=request.data)
@@ -252,7 +234,7 @@ class UploadMixin:
             for client_file in client_files:
                 filename = client_file['file'].name
                 try:
-                    self.validate_uploaded_file_name(filename=filename, upload_dir=Path(upload_dir))
+                    self.validate_uploaded_file_name(filename=filename, upload_dir=upload_dir)
                 except UploadedFileError:
                     return Response(
                         status=status.HTTP_400_BAD_REQUEST,
@@ -260,7 +242,7 @@ class UploadMixin:
                         content_type="text/plain"
                     )
 
-                with open(os.path.join(upload_dir, filename), 'ab+') as destination:
+                with open(upload_dir / filename, 'ab+') as destination:
                     shutil.copyfileobj(client_file['file'], destination)
 
         return Response(status=status.HTTP_200_OK)
