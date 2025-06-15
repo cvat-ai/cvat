@@ -375,7 +375,7 @@ function translateToSVG(svgElement: SVGSVGElement, [clientX, clientY]: [number, 
 class CanvasWrapperComponent extends React.PureComponent<Props> {
     private debouncedUpdate = debounce(this.updateCanvas.bind(this), 250, { leading: true });
     private canvasTipsRef = React.createRef<CanvasTipsComponent>();
-    private coordOverlayRef = React.createRef<HTMLDivElement>();
+    private readonly coordOverlayRef = React.createRef<HTMLDivElement>();
 
     constructor(props: Props) {
         super(props);
@@ -420,9 +420,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             // Final image coordinates (based on canvas geometry offset)
             const imageX = svgX - canvasInstance.geometry.offset;
             const imageY = svgY - canvasInstance.geometry.offset;
-            // console.log('1 - Raw image coords:', imageX, imageY);
-            // console.log('2 - Raw image coords:', imageX.toFixed(2), imageY.toFixed(2));
-            // console.log('3 - Type of imageX:', typeof imageX);
 
             this.setState({
                 imageCoords: { x: imageX, y: imageY },
