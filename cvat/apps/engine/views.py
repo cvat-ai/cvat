@@ -51,7 +51,12 @@ import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine import backup
 from cvat.apps.engine.background import BackupImporter, DatasetImporter, TaskCreator
-from cvat.apps.engine.cache import CvatChunkTimestampMismatchError, LockError, MediaCache
+from cvat.apps.engine.cache import (
+    CacheTooLargeDataError,
+    CvatChunkTimestampMismatchError,
+    LockError,
+    MediaCache,
+)
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.engine.frame_provider import (
     DataWithMeta,
@@ -576,6 +581,11 @@ class _DataGetter(metaclass=ABCMeta):
                 status=status.HTTP_429_TOO_MANY_REQUESTS,
                 headers={'Retry-After': _RETRY_AFTER_TIMEOUT},
             )
+        except CacheTooLargeDataError as ex:
+            return Response(
+                data=str(ex),
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
     @abstractmethod
     def _get_chunk_response_headers(self, chunk_data: DataWithMeta) -> dict[str, str]: ...
@@ -678,6 +688,11 @@ class _JobDataGetter(_DataGetter):
                 return Response(
                     status=status.HTTP_429_TOO_MANY_REQUESTS,
                     headers={'Retry-After': _RETRY_AFTER_TIMEOUT},
+                )
+            except CacheTooLargeDataError as ex:
+                return Response(
+                    data=str(ex),
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
         else:
             return super().__call__()
