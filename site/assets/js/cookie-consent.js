@@ -2,34 +2,31 @@
  * Cookie Consent Banner JavaScript
  * Copyright (C) 2024 CVAT.ai Corporation
  * SPDX-License-Identifier: MIT
+ *
+ * Note: Banner visibility is controlled by Hugo production mode.
+ * This script only loads in production environments.
  */
 
 (function() {
     'use strict';
 
     /**
-     * Check if the current environment is local development
-     * @returns {boolean} True if running in local development environment
+     * Simple check for localhost/development to prevent analytics pollution
+     * @returns {boolean} True if running on localhost or with custom port
      */
-    function isLocalDevelopment() {
-        // Check for common local development indicators
-        return location.hostname === 'localhost' ||
+    function isLocalhost() {
+        return location.hostname.includes('localhost') ||
                location.hostname === '127.0.0.1' ||
-               location.hostname === '0.0.0.0' ||
-               location.hostname.startsWith('192.168.') ||
-               location.hostname.startsWith('10.') ||
-               location.hostname.includes('.local') ||
-               location.port !== '' ||
-               location.protocol === 'file:';
+               location.port !== '';
     }
 
     /**
      * Inject Google Analytics script into the page
      */
     function injectGAScript() {
-        // Prevent analytics injection in local development
-        if (isLocalDevelopment()) {
-            console.log('Analytics disabled for local development');
+        // Defense in depth: prevent analytics on localhost even in production builds
+        if (isLocalhost()) {
+            console.log('Analytics disabled for localhost');
             return;
         }
 
@@ -55,14 +52,6 @@
      * Handle cookie acceptance
      */
     window.acceptCookies = function() {
-        // Prevent analytics in local development even if user accepts
-        if (isLocalDevelopment()) {
-            localStorage.setItem('cookieConsent', 'true-dev');
-            document.getElementById('cookieConsentBanner').style.display = 'none';
-            console.log('Cookies accepted for development environment (analytics disabled)');
-            return;
-        }
-
         localStorage.setItem('cookieConsent', 'true');
         document.getElementById('cookieConsentBanner').style.display = 'none';
         injectGAScript();
@@ -85,20 +74,9 @@
         // Show banner if no consent given yet
         if (!consent) {
             document.getElementById('cookieConsentBanner').style.display = 'flex';
-        } else if (consent === 'true' && !isLocalDevelopment()) {
-            // Only inject analytics if not in local development
+        } else if (consent === 'true') {
+            // Load analytics if user previously consented
             injectGAScript();
-        }
-
-        // Add development environment indicator
-        if (isLocalDevelopment()) {
-            var banner = document.getElementById('cookieConsentBanner');
-            if (banner && banner.style.display === 'flex') {
-                var devIndicator = document.createElement('div');
-                devIndicator.style.cssText = 'font-size: 0.8em; color: #ffeb3b; margin-bottom: 1em; order: -1;';
-                devIndicator.textContent = '🔧 Development mode: Analytics will be disabled';
-                banner.appendChild(devIndicator);
-            }
         }
     }
 

@@ -1,6 +1,7 @@
 {{/* Cookie Consent Banner */}}
+{{/* Only show in production to avoid analytics pollution during development */}}
 {{/* Styles are imported via _custom.scss */}}
-{{/* JavaScript functionality is loaded via cookie-consent.js */}}
+{{ if hugo.IsProduction -}}
 <div id="cookieConsentBanner">
   <p>
     We use cookies to improve functionality and analyze traffic. Select "Accept" to consent or "Reject" to use only essential cookies.
@@ -11,11 +12,10 @@
   </div>
 </div>
 
-{{/* Load cookie consent JavaScript */}}
+{{/* Load cookie consent JavaScript only in production */}}
 {{ $jsCookieConsent := resources.Get "js/cookie-consent.js" -}}
-{{ if hugo.IsProduction -}}
-  {{ $jsCookieConsent = $jsCookieConsent | minify | fingerprint -}}
-{{ end -}}
+{{ $jsCookieConsent = $jsCookieConsent | minify | fingerprint -}}
 <script defer src="{{ $jsCookieConsent.RelPermalink }}" {{ with $jsCookieConsent.Data.Integrity -}}
   integrity="{{ . }}" {{ end -}}
   crossorigin="anonymous"></script>
+{{ end -}}
