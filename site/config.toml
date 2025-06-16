@@ -86,6 +86,11 @@ weight = 1
 
 # Everything below this are Site Params
 
+# Hugo security configuration
+[security]
+  [security.funcs]
+    getenv = ["^HUGO_", "^GA_TRACKING_ID$"]
+
 # Comment out if you don't want the "print entire section" link enabled.
 [outputs]
 section = ["HTML", "print"]
@@ -93,6 +98,10 @@ section = ["HTML", "print"]
 [params]
 cvat_ai_terms_of_use = "https://www.cvat.ai/terms-of-use"
 cvat_ai_privacy_notice = "https://www.cvat.ai/privacy"
+
+# Google Analytics configuration
+# GA_TRACKING_ID environment variable takes precedence
+ga_tracking_id = "UA-000000000-0"  # Test tracking ID for local development
 
 # First one is picked as the Twitter card image if not set on page.
 # images = ["images/project-illustration.png"]

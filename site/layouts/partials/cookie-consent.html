@@ -1,8 +1,9 @@
 {{/* Cookie Consent Banner */}}
-{{/* Only show in production to avoid analytics pollution during development */}}
+{{/* Only show in production and if GA tracking ID is configured */}}
 {{/* Styles are imported via _custom.scss */}}
-{{ if hugo.IsProduction -}}
-<div id="#cookie-consent-banner">
+{{ $gaTrackingId := getenv "GA_TRACKING_ID" | default .Site.Params.ga_tracking_id -}}
+{{ if and hugo.IsProduction $gaTrackingId -}}
+<div id="cookie-consent-banner">
   <p>
     We use cookies to improve functionality and analyze traffic. You can change your preference at any time using the "Cookie Settings" link in the footer.
   </p>
@@ -11,6 +12,11 @@
     <button class="reject" onclick="rejectCookies()">Reject</button>
   </div>
 </div>
+
+{{/* Pass GA tracking ID to JavaScript */}}
+<script>
+window.GA_TRACKING_ID = '{{ $gaTrackingId }}';
+</script>
 
 {{/* Load cookie consent JavaScript only in production */}}
 {{ $jsCookieConsent := resources.Get "js/cookie-consent.js" -}}

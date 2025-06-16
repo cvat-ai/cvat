@@ -1,6 +1,6 @@
 /**
  * Cookie Consent Banner JavaScript
- * Copyright (C) 2024 CVAT.ai Corporation
+ * Copyright (C) 2025 CVAT.ai Corporation
  * SPDX-License-Identifier: MIT
  *
  * Note: Banner visibility is controlled by Hugo production mode.
@@ -30,20 +30,26 @@
             return;
         }
 
+        // Check if GA tracking ID is available
+        if (!window.GA_TRACKING_ID) {
+            console.log('GA tracking ID not configured');
+            return;
+        }
+
         if (document.getElementById('ga-script')) return;
 
         // Load the external Google Analytics script
         var s = document.createElement('script');
         s.id = 'ga-script';
         s.async = true;
-        s.src = 'https://www.googletagmanager.com/gtag/js?id=G-GVSBK1DNK5';
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=' + window.GA_TRACKING_ID;
         document.head.appendChild(s);
 
         // Initialize Google Analytics directly
         window.dataLayer = window.dataLayer || [];
         window.gtag = function() { dataLayer.push(arguments); };
         window.gtag('js', new Date());
-        window.gtag('config', 'G-GVSBK1DNK5');
+        window.gtag('config', window.GA_TRACKING_ID);
     }
 
     /**
@@ -89,7 +95,7 @@
     window.acceptCookies = function() {
         var previousConsent = localStorage.getItem('cookieConsent');
         localStorage.setItem('cookieConsent', 'true');
-        document.getElementById('cookieConsentBanner').style.display = 'none';
+        document.getElementById('cookie-consent-banner').style.display = 'none';
 
         // Only inject GA if not already injected or if this is a fresh consent
         if (previousConsent !== 'true') {
@@ -103,7 +109,7 @@
     window.rejectCookies = function() {
         var previousConsent = localStorage.getItem('cookieConsent');
         localStorage.setItem('cookieConsent', 'rejected');
-        document.getElementById('cookieConsentBanner').style.display = 'none';
+        document.getElementById('cookie-consent-banner').style.display = 'none';
 
         // If user previously accepted but now rejects, clear analytics cookies
         if (previousConsent === 'true') {
@@ -115,7 +121,7 @@
      * Show cookie settings banner (called from footer link)
      */
     window.showCookieSettings = function() {
-        document.getElementById('cookieConsentBanner').style.display = 'flex';
+        document.getElementById('cookie-consent-banner').style.display = 'flex';
     };
 
     /**
@@ -126,7 +132,7 @@
 
         // Show banner if no consent given yet
         if (!consent) {
-            document.getElementById('cookieConsentBanner').style.display = 'flex';
+            document.getElementById('cookie-consent-banner').style.display = 'flex';
         } else if (consent === 'true') {
             // Load analytics if user previously consented
             injectGAScript();
