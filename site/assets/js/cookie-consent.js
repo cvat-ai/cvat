@@ -32,20 +32,18 @@
 
         if (document.getElementById('ga-script')) return;
 
+        // Load the external Google Analytics script
         var s = document.createElement('script');
         s.id = 'ga-script';
         s.async = true;
         s.src = 'https://www.googletagmanager.com/gtag/js?id=G-GVSBK1DNK5';
         document.head.appendChild(s);
 
-        var inline = document.createElement('script');
-        inline.innerHTML = `
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-GVSBK1DNK5');
-        `;
-        document.head.appendChild(inline);
+        // Initialize Google Analytics directly
+        window.dataLayer = window.dataLayer || [];
+        window.gtag = function() { dataLayer.push(arguments); };
+        window.gtag('js', new Date());
+        window.gtag('config', 'G-GVSBK1DNK5');
     }
 
     /**
