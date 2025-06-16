@@ -35,7 +35,13 @@ class ModelHandler:
         target_size = image.size
         return cv.resize(mask, target_size, interpolation=cv.INTER_NEAREST)
 
-    def infer(self, image):
+    def infer(self, image, ckpt_path=None):
+
+        if ckpt_path is not None:
+            self.ckpt_path = ckpt_path
+            print(f'Using checkpoint path: {self.ckpt_path}')
+        else:
+            print('No checkpoint path provided, using default.')
 
         images = [image]
 
