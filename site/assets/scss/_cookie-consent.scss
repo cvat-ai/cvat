@@ -2,9 +2,12 @@
 //
 // SPDX-License-Identifier: MIT
 
+/* doesn't work in hugo */
+/* stylelint-disable media-feature-range-notation */
+
 /* Cookie Consent Banner Styles */
 
-#cookieConsentBanner {
+#cookie-consent-banner {
   display: none;
   position: fixed;
   bottom: 0;
@@ -16,8 +19,7 @@
   z-index: 9999;
   justify-content: space-between;
   align-items: center;
-  flex-direction: row;
-  flex-wrap: wrap;
+  flex-flow: row wrap;
 
   p {
     flex: 1 1 300px;
@@ -53,6 +55,7 @@
   }
 
   // Tablet responsive styles
+  /* stylelint-disable media-feature-range-notation */
   @media (max-width: 900px) {
     p {
       flex-direction: column;
