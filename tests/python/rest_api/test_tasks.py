@@ -1004,6 +1004,7 @@ class TestGetTaskDataset:
 @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_after_class")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
+@pytest.mark.slow
 class TestPostTaskData:
     _USERNAME = "admin1"
 
@@ -3331,6 +3332,7 @@ class _TestTasksBase:
 @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_after_class")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
+@pytest.mark.slow
 class TestTaskData(_TestTasksBase):
     @parametrize("task_spec, task_id", _TestTasksBase._all_task_cases)
     def test_can_get_task_meta(self, task_spec: _TaskSpec, task_id: int):
