@@ -1723,6 +1723,13 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
             ),
         )
 
+    def _export_backup(self, user, pid, expected_4xx_status_code=None):
+        return self._export_project_backup(
+            user,
+            pid,
+            expected_4xx_status_code=expected_4xx_status_code,
+        )
+
     def _run_api_v2_projects_id_export_import(self, user):
         for project in self.projects:
             expected_4xx_status_code = None
@@ -1733,7 +1740,7 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
                 expected_4xx_status_code = status.HTTP_403_FORBIDDEN
 
             pid = project.id
-            response = self._export_project_backup(
+            response = self._export_backup(
                 user, pid, expected_4xx_status_code=expected_4xx_status_code
             )
 
@@ -1843,6 +1850,8 @@ class _CloudStorageTestBase(ApiTestBase):
 
 @override_settings(MEDIA_CACHE_ALLOW_STATIC_CACHE=False)
 class ProjectCloudBackupAPINoStaticChunksTestCase(ProjectBackupAPITestCase, _CloudStorageTestBase):
+    MAKE_LIGHTWEIGHT_BACKUP = False
+
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -1858,8 +1867,11 @@ class ProjectCloudBackupAPINoStaticChunksTestCase(ProjectBackupAPITestCase, _Clo
         super().tearDownClass()
 
     def _compare_tasks(self, original_task, imported_task):
+        expected_location = "local"
+        if self.MAKE_LIGHTWEIGHT_BACKUP:
+            expected_location = original_task["data_storage"]["location"]
         assert imported_task["data_storage"] == {
-            "location": "local",
+            "location": expected_location,
             "cloud_storage_id": None,
         }
         compare_objects(
@@ -1927,10 +1939,24 @@ class ProjectCloudBackupAPINoStaticChunksTestCase(ProjectBackupAPITestCase, _Clo
             ]
         )
 
+    def _export_backup(self, user, pid, expected_4xx_status_code=None):
+        query_params = None
+        if not self.MAKE_LIGHTWEIGHT_BACKUP:
+            query_params = {"make_lightweight_backup": self.MAKE_LIGHTWEIGHT_BACKUP}
+        return self._export_project_backup(
+            user,
+            pid,
+            expected_4xx_status_code=expected_4xx_status_code,
+            query_params=query_params,
+        )
 
 @override_settings(MEDIA_CACHE_ALLOW_STATIC_CACHE=True)
 class ProjectCloudBackupAPIStaticChunksTestCase(ProjectCloudBackupAPINoStaticChunksTestCase):
     pass
+
+
+class ProjectCloudBackupLightWeightTestCase(ProjectCloudBackupAPINoStaticChunksTestCase):
+    MAKE_LIGHTWEIGHT_BACKUP = True
 
 
 class ProjectExportAPITestCase(ExportApiTestBase):
