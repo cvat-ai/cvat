@@ -1950,6 +1950,7 @@ class ProjectCloudBackupAPINoStaticChunksTestCase(ProjectBackupAPITestCase, _Clo
             query_params=query_params,
         )
 
+
 @override_settings(MEDIA_CACHE_ALLOW_STATIC_CACHE=True)
 class ProjectCloudBackupAPIStaticChunksTestCase(ProjectCloudBackupAPINoStaticChunksTestCase):
     pass
