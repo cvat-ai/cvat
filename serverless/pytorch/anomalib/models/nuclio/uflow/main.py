@@ -27,11 +27,15 @@ def handler(context, event):
 
     try:
         data = event.body
+
+        keyword = data.get("keyword", None)
+        print(f"ckpt_Path: {keyword}")
+
         buf = io.BytesIO(base64.b64decode(data["image"]))
         image = Image.open(buf)
         context.logger.info("Image loaded successfully")
 
-        result = context.user_data.model.infer(image)
+        result = context.user_data.model.infer(image, ckpt_path=keyword)
 
         return context.Response(body=json.dumps(result),
             headers={},
