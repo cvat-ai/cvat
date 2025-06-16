@@ -9,6 +9,7 @@ import { Row, Col } from 'antd/lib/grid';
 import Select from 'antd/lib/select';
 import Text from 'antd/lib/typography/Text';
 import InputNumber from 'antd/lib/input-number';
+import Input from 'antd/lib/input';
 import Button from 'antd/lib/button';
 import Switch from 'antd/lib/switch';
 import Tag from 'antd/lib/tag';
@@ -75,6 +76,8 @@ function DetectorRunner(props: Props): JSX.Element {
     const [detectorThreshold, setDetectorThreshold] = useState<number | null>(null);
     const [modelLabels, setModelLabels] = useState<LabelInterface[]>([]);
     const [taskLabels, setTaskLabels] = useState<LabelInterface[]>([]);
+
+    const [customWord, setCustomWord] = useState<string>('');
 
     const model = models.find((_model): boolean => _model.id === modelID);
     const isDetector = model?.kind === ModelKind.DETECTOR;
@@ -203,6 +206,25 @@ function DetectorRunner(props: Props): JSX.Element {
                     </Row>
                 </div>
             )}
+            {isDetector && (
+                <div className='cvat-detector-runner-threshold-wrapper'>
+                    <Row align='middle' justify='start'>
+                        <Col>
+                            <Input
+                                placeholder='Enter checkpoint path'
+                                value={customWord}
+                                onChange={(e) => setCustomWord(e.target.value)}
+                            />
+                        </Col>
+                        <Col>
+                            <Text>Checkpoint path</Text>
+                            <CVATTooltip title='A custom checkpoint path you want to pass to the model backend'>
+                                <QuestionCircleOutlined className='cvat-info-circle-icon' />
+                            </CVATTooltip>
+                        </Col>
+                    </Row>
+                </div>
+            )}
             {isReId ? (
                 <div>
                     <Row align='middle' justify='start'>
@@ -261,6 +283,7 @@ function DetectorRunner(props: Props): JSX.Element {
                                     cleanup,
                                     conv_mask_to_poly: convertMasksToPolygons,
                                     ...(detectorThreshold !== null ? { threshold: detectorThreshold } : {}),
+                                    ...(customWord ? { keyword: customWord } : {}),
                                 });
                             } else if (model.kind === ModelKind.REID) {
                                 runInference(model, { threshold, max_distance: distance });
