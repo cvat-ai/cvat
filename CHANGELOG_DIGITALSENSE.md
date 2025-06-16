@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Modified startup.sh to support docker-compose.override.yml file [PR #9]
 - - Modified email configuration to support sending email invitations and email confirmation on sign up [PR # 12]
 - Modified serverless/pyrotch/anomalib to support having one image for all anomalib functions [PR #14]
+- Modified UI, backend and function containers to use inference checkpoints from anywhere in /data directory [PR #15]
 
 =======
 
