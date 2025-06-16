@@ -6739,6 +6739,8 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                 )
 
             elif annotation_format == "CVAT for images 1.1":
+                # https://github.com/pylint-dev/pylint/issues/10195
+                # pylint: disable=used-before-assignment
                 annotations["shapes"] = (
                     rectangle_shapes_with_attrs
                     + rectangle_shapes_wo_attrs
@@ -6746,6 +6748,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                     + polygon_shapes_with_attrs
                 )
                 annotations["tags"] = tags_with_attrs + tags_wo_attrs
+                # pylint: enable=used-before-assignment
 
             elif annotation_format == "PASCAL VOC 1.1":
                 annotations["shapes"] = rectangle_shapes_wo_attrs

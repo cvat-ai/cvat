@@ -2722,7 +2722,6 @@ class AnnotationGuidesViewSet(
         existing_assets = list(guide.assets.all())
         new_assets = []
 
-        # pylint: disable=anomalous-backslash-in-string
         pattern = re.compile(r'\(/api/assets/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\)')
         results = set(re.findall(pattern, guide.markdown))
 
