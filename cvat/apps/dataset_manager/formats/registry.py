@@ -39,7 +39,6 @@ def _wrap_format(
     elif inspect.isfunction(f_or_cls):
 
         class wrapper(klass):
-            # pylint: disable=arguments-differ
             def __call__(self, *args, **kwargs):
                 f_or_cls(*args, **kwargs)
 

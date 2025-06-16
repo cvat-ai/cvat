@@ -43,7 +43,7 @@ To create a project, go to the projects section by clicking on the `Projects` it
 On the projects page, you can see a list of projects, use a search,
 or create a new project by clicking on the `+` button and select `Create New Project`.
 
-![](/images/image190.jpg)
+!["Projects" page with highlighted menu for project creation](/images/image190.jpg)
 
 > Note that the project will be created in the organization that you selected at the time of creation.
 > Read more about {{< ilink "/docs/manual/advanced/organization" "organizations" >}}.
@@ -58,11 +58,11 @@ Learn more about {{< ilink "/docs/manual/basics/create-annotation-task#labels" "
 To save and open a project, click on `Submit & Open` button. Also, you
 can click on `Submit & Continue` button to create several projects in sequence.
 
-![](/images/image191.jpg)
+!["Create a new project" window with options and parameters](/images/image191.jpg)
 
 Once created, the project will appear on the projects page. To open a project, just click on it.
 
-![](/images/image192_mapillary_vistas.jpg)
+![Example of a project page with project details and highlighted interface elements](/images/image192_mapillary_vistas.jpg)
 
 Here you can do the following:
 
