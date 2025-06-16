@@ -1125,7 +1125,8 @@ def create_backup(
     output_path = ExportCacheManager.make_backup_file_path(
         instance_id=db_instance.id,
         instance_type=instance_type,
-        instance_timestamp=instance_timestamp
+        instance_timestamp=instance_timestamp,
+        full_fledged_backup=not make_lightweight_backup,
     )
 
     try:

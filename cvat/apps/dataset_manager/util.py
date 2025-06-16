@@ -272,6 +272,7 @@ class ExportCacheManager:
         instance_type: str,
         instance_id: int,
         instance_timestamp: float,
+        full_fledged_backup: bool,
     ) -> str:
         instance_type = InstanceType(instance_type.lower())
         filename = cls.FILE_NAME_TEMPLATE_WITH_INSTANCE.format(
@@ -279,7 +280,7 @@ class ExportCacheManager:
             instance_id=instance_id,
             file_type=ExportFileType.BACKUP,
             instance_timestamp=instance_timestamp,
-            optional_suffix="",
+            optional_suffix="_ff" if full_fledged_backup else "",
             file_ext="zip",
         )
         return osp.join(cls.ROOT, filename)
