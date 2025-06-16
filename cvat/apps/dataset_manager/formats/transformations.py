@@ -5,6 +5,7 @@
 
 import math
 from itertools import chain
+from typing import Optional
 
 import cv2
 import datumaro as dm
@@ -19,7 +20,7 @@ class RotatedBoxesToPolygons(dm.ItemTransform):
         ry = cy + math.sin(angle) * (x - cx) + math.cos(angle) * (y - cy)
         return rx, ry
 
-    def transform_item(self, item):
+    def _convert_annotations(self, item: dm.DatasetItem) -> list[dm.Annotation]:
         annotations = item.annotations[:]
         anns = [
             p for p in annotations if p.type == dm.AnnotationType.bbox and p.attributes["rotation"]
@@ -30,10 +31,8 @@ class RotatedBoxesToPolygons(dm.ItemTransform):
             [cx, cy] = [(x0 + (x1 - x0) / 2), (y0 + (y1 - y0) / 2)]
             anno_points = list(
                 chain.from_iterable(
-                    map(
-                        lambda p: self._rotate_point(p, rotation, cx, cy),
-                        [(x0, y0), (x1, y0), (x1, y1), (x0, y1)],
-                    )
+                    self._rotate_point(p, rotation, cx, cy)
+                    for p in [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
                 )
             )
 
@@ -47,8 +46,10 @@ class RotatedBoxesToPolygons(dm.ItemTransform):
                     z_order=ann.z_order,
                 )
             )
+        return annotations
 
-        return item.wrap(annotations=annotations)
+    def transform_item(self, item):
+        return item.wrap(annotations=lambda: self._convert_annotations(item))
 
 
 class MaskConverter:
@@ -120,15 +121,15 @@ class MaskConverter:
         return cvat_rle
 
 
-class EllipsesToMasks:
+class EllipsesToMasks(dm.ItemTransform):
     @staticmethod
-    def _convert(ellipse, img_h, img_w):
-        cx, cy, rightX, topY = ellipse.points
+    def _convert(ellipse: dm.Ellipse, img_h, img_w):
+        cx, cy, rightX, topY = ellipse.c_x, ellipse.c_y, ellipse.x2, ellipse.y1
         rx = rightX - cx
         ry = cy - topY
         center = (round(cx), round(cy))
         axis = (round(rx), round(ry))
-        angle = ellipse.rotation
+        angle = ellipse.attributes.get("rotation", 0)
         mat = np.zeros((img_h, img_w), dtype=np.uint8)
 
         # TODO: has bad performance for big masks, try to find a better solution
@@ -138,7 +139,7 @@ class EllipsesToMasks:
         return rle
 
     @staticmethod
-    def convert_ellipse(ellipse, img_h, img_w):
+    def convert_ellipse(ellipse: dm.Ellipse, img_h, img_w):
         def _lazy_convert():
             return EllipsesToMasks._convert(ellipse, img_h, img_w)
 
@@ -149,6 +150,25 @@ class EllipsesToMasks:
             attributes=ellipse.attributes,
             group=ellipse.group,
         )
+
+    @staticmethod
+    def _convert_annotations(item: dm.DatasetItem) -> list[dm.Annotation]:
+        if not isinstance(item.media, dm.Image):
+            raise Exception("Image info is required for this transform")
+
+        img_h, img_w = item.media_as(dm.Image).size
+
+        return [
+            (
+                EllipsesToMasks.convert_ellipse(ann, img_h, img_w)
+                if isinstance(ann, dm.Ellipse)
+                else ann
+            )
+            for ann in item.annotations
+        ]
+
+    def transform_item(self, item: dm.DatasetItem) -> Optional[dm.DatasetItem]:
+        return item.wrap(annotations=lambda: self._convert_annotations(item))
 
 
 class MaskToPolygonTransformation:

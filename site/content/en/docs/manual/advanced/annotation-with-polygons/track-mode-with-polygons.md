@@ -10,7 +10,7 @@ Polygons in the track mode allow you to mark moving objects more accurately othe
 
 1. To create a polygon in the track mode, click the `Track` button.
 
-   ![](/images/image184.jpg)
+   ![Open "Draw new polygon" window with highlighted "Track" button](/images/image184.jpg)
 
 1. Create a polygon the same way as in the case of
    {{< ilink "/docs/manual/advanced/annotation-with-polygons" "Annotation with polygons" >}}.
@@ -24,12 +24,12 @@ Polygons in the track mode allow you to mark moving objects more accurately othe
    (in this example, the top of the left mirror). The direction must also match (in this example, clockwise).
    After creating the polygon, press `N` and the intermediate frames will be interpolated automatically.
 
-   ![](/images/image185_detrac.jpg)
+   ![Several images demonstrating creation of a keyframe for interpolation](/images/image185_detrac.jpg)
 
 1. If you need to change the starting point, right-click on the desired point and select `Set starting point`.
    To change the direction, right-click on the desired point and select switch orientation.
 
-   ![](/images/image186_detrac.jpg)
+   ![Part of annotation with open menu for a point and highlighted "Set starting point"](/images/image186_detrac.jpg)
 
 There is no need to redraw the polygon every time using `Shift+N`,
 instead you can simply move the points or edit a part of the polygon by pressing `Shift+Click`.

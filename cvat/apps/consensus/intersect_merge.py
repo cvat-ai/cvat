@@ -99,6 +99,8 @@ class IntersectMerge(datumaro.components.merge.intersect_merge.IntersectMerge):
                 return _make(PointsMerger, **kwargs)
             elif t is dm.AnnotationType.skeleton:
                 return _make(SkeletonMerger, **kwargs)
+            elif t is dm.AnnotationType.ellipse:
+                return _make(EllipseMerger, **kwargs)
             else:
                 raise AssertionError(f"Annotation type {t} is not supported")
 
@@ -351,6 +353,13 @@ class LineMatcher(ShapeMatcher):
 
 
 @attrs.define(kw_only=True, slots=False)
+class EllipseMatcher(ShapeMatcher):
+    def match_annotations_between_two_items(self, item_a, item_b):
+        matches, _, _, _, distances = self._comparator.match_ellipses(item_a, item_b)
+        return matches, distances
+
+
+@attrs.define(kw_only=True, slots=False)
 class AnnotationMerger(AnnotationMatcher, metaclass=ABCMeta):
     @abstractmethod
     def merge_clusters(
@@ -430,7 +439,7 @@ class ShapeMerger(AnnotationMerger, ShapeMatcher):
         for s in cluster:
             if isinstance(s, (dm.Points, dm.PolyLine)):
                 s = self._comparator.to_polygon(dm.Bbox(*s.get_bbox()))
-            elif isinstance(s, dm.Bbox):
+            elif isinstance(s, (dm.Bbox, dm.Ellipse)):
                 s = self._comparator.to_polygon(s)
             dist.append(
                 segment_iou(self._comparator.to_polygon(mbbox), s, img_h=img_h, img_w=img_w)
@@ -483,6 +492,11 @@ class PointsMerger(ShapeMerger, PointsMatcher):
 
 @attrs.define(kw_only=True, slots=False)
 class LineMerger(ShapeMerger, LineMatcher):
+    pass
+
+
+@attrs.define(kw_only=True, slots=False)
+class EllipseMerger(ShapeMerger, EllipseMatcher):
     pass
 
 

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useState } from 'react';
 import { QuestionCircleOutlined } from '@ant-design/icons/lib/icons';
 import Text from 'antd/lib/typography/Text';
 import InputNumber from 'antd/lib/input-number';
@@ -10,20 +10,30 @@ import { Col, Row } from 'antd/lib/grid';
 import Divider from 'antd/lib/divider';
 import Form, { FormInstance } from 'antd/lib/form';
 import Checkbox from 'antd/lib/checkbox/Checkbox';
-import Button from 'antd/lib/button';
 import Select from 'antd/lib/select';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { QualitySettings, TargetMetric } from 'cvat-core-wrapper';
 import { PointSizeBase } from 'cvat-core/src/quality-settings';
+import { defaultVisibility, ResourceFilterHOC } from 'components/resource-sorting-filtering';
+import {
+    localStorageRecentKeyword, localStorageRecentCapacity, config,
+} from './jobs-filter-configuration';
 
 interface Props {
     form: FormInstance;
     settings: QualitySettings;
+    disabled: boolean;
     onSave: () => void;
 }
 
+const FilteringComponent = ResourceFilterHOC(
+    config, localStorageRecentKeyword, localStorageRecentCapacity,
+);
+
 export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element | null {
-    const { form, settings, onSave } = props;
+    const { form, settings, disabled } = props;
+
+    const [visibility, setVisibility] = useState(defaultVisibility);
 
     const initialValues = {
         targetMetric: settings.targetMetric,
@@ -41,7 +51,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
 
         lineThickness: settings.lineThickness * 100,
         lineOrientationThreshold: settings.lineOrientationThreshold * 100,
-        orientedLines: settings.orientedLines,
+        compareLineOrientation: settings.compareLineOrientation,
 
         compareGroups: settings.compareGroups,
         groupMatchThreshold: settings.groupMatchThreshold * 100,
@@ -49,6 +59,8 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
         checkCoveredAnnotations: settings.checkCoveredAnnotations,
         objectVisibilityThreshold: settings.objectVisibilityThreshold * 100,
         panopticComparison: settings.panopticComparison,
+
+        jobFilter: settings.jobFilter,
     };
 
     const targetMetricDescription = `${settings.descriptions.targetMetric
@@ -82,6 +94,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
             {makeTooltipFragment('Target metric threshold', settings.descriptions.targetMetricThreshold)}
             {makeTooltipFragment('Compare attributes', settings.descriptions.compareAttributes)}
             {makeTooltipFragment('Empty frames are annotated', settings.descriptions.emptyIsAnnotated)}
+            {makeTooltipFragment('Job selection filter', settings.descriptions.jobFilter)}
         </>,
     );
 
@@ -131,16 +144,10 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
         <Form
             form={form}
             layout='vertical'
-            className='cvat-quality-settings-form'
+            className={`cvat-quality-settings-form ${disabled ? 'cvat-quality-settings-form-disabled' : ''}`}
             initialValues={initialValues}
+            disabled={disabled}
         >
-            <Row justify='end' className='cvat-quality-settings-save-btn'>
-                <Col>
-                    <Button onClick={onSave} type='primary'>
-                        Save
-                    </Button>
-                </Col>
-            </Row>
             <Row className='cvat-quality-settings-title'>
                 <Text strong>
                     General
@@ -205,6 +212,31 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                         <Checkbox>
                             <Text className='cvat-text-color'>Empty frames are annotated</Text>
                         </Checkbox>
+                    </Form.Item>
+                </Col>
+            </Row>
+            <Row>
+                <Col span={12}>
+                    <Form.Item
+                        name='jobFilter'
+                        label='Job selection filter'
+                        trigger='onApplyFilter'
+                    >
+                        {/* value and onApplyFilter will be automatically provided by Form.Item */}
+                        <FilteringComponent
+                            predefinedVisible={visibility.predefined}
+                            builderVisible={visibility.builder}
+                            recentVisible={visibility.recent}
+                            onPredefinedVisibleChange={(visible: boolean) => (
+                                setVisibility({ ...defaultVisibility, predefined: visible })
+                            )}
+                            onBuilderVisibleChange={(visible: boolean) => (
+                                setVisibility({ ...defaultVisibility, builder: visible })
+                            )}
+                            onRecentVisibleChange={(visible: boolean) => (
+                                setVisibility({ ...defaultVisibility, builder: visibility.builder, recent: visible })
+                            )}
+                        />
                     </Form.Item>
                 </Col>
             </Row>
@@ -344,7 +376,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
             <Row>
                 <Col span={12}>
                     <Form.Item
-                        name='orientedLines'
+                        name='compareLineOrientation'
                         rules={[{ required: true, message: 'This field is required' }]}
                         valuePropName='checked'
                     >

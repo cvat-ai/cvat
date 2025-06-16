@@ -12,7 +12,7 @@ azure-storage-blob==12.13.0
 boto3~=1.37
 clickhouse-connect==0.6.8
 coreapi==2.3.3
-datumaro @ git+https://github.com/cvat-ai/datumaro.git@4f6748e4f9eac038453e8f03344cdd9c73b00bc4
+datumaro @ git+https://github.com/cvat-ai/datumaro.git@bdf703d0f6eac472aa94da18b8feca9678671151
 dj-pagination==2.5.0
 # Despite direct indication allauth in requirements we should keep 'with_social' for dj-rest-auth
 # to avoid possible further versions conflicts (we use registration functionality)
@@ -37,6 +37,9 @@ lxml>=5.2.1,<6
 natsort==8.0.0
 numpy~=1.22.2
 opencv-python-headless~=4.8
+
+# Partial json reading
+json-stream>=2.0,<3
 
 # The package is used by pyunpack as a command line tool to support multiple
 # archives. Don't use as a python module because it has GPL license.

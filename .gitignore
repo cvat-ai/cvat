@@ -63,3 +63,7 @@ cvat-ui/dist
 
 # produced by cvat/apps/iam/rules/tests/generate_tests.py
 /cvat/apps/*/rules/*_test.gen.rego
+
+# produced by allure report
+/**/allure-report*
+/**/allure-results*

@@ -1,8 +1,39 @@
 {
-  "count": 15,
+  "count": 16,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "assignee": null,
+      "assignee_updated_date": null,
+      "bug_tracker": "",
+      "created_date": "2025-05-05T15:35:00.036000Z",
+      "dimension": "2d",
+      "guide_id": null,
+      "id": 17,
+      "labels": {
+        "url": "http://localhost:8080/api/labels?project_id=17"
+      },
+      "name": "project 4",
+      "organization": 2,
+      "owner": {
+        "first_name": "User",
+        "id": 3,
+        "last_name": "Second",
+        "url": "http://localhost:8080/api/users/3",
+        "username": "user2"
+      },
+      "source_storage": null,
+      "status": "annotation",
+      "target_storage": null,
+      "task_subsets": [],
+      "tasks": {
+        "count": 2,
+        "url": "http://localhost:8080/api/tasks?project_id=17"
+      },
+      "updated_date": "2025-05-05T15:35:00.542000Z",
+      "url": "http://localhost:8080/api/projects/17"
+    },
     {
       "assignee": {
         "first_name": "User",

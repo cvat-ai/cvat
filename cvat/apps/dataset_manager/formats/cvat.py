@@ -496,7 +496,7 @@ class CvatExtractor(DatasetBase):
         )
 
         common_attrs = ["occluded"]
-        if "interpolation" in map(lambda t: t["mode"], tasks_info.values()):
+        if "interpolation" in (t["mode"] for t in tasks_info.values()):
             common_attrs.append("keyframe")
             common_attrs.append("outside")
             common_attrs.append("track_id")

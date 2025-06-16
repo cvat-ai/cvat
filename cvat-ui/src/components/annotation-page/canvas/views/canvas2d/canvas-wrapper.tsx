@@ -110,6 +110,7 @@ interface StateToProps {
     maxZLayer: number;
     curZLayer: number;
     automaticBordering: boolean;
+    adaptiveZoom: boolean;
     intelligentPolygonCrop: boolean;
     switchableAutomaticBordering: boolean;
     keyMap: KeyMap;
@@ -190,6 +191,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 showAllInterpolationTracks,
                 showTagsOnFrame,
                 automaticBordering,
+                adaptiveZoom,
                 intelligentPolygonCrop,
                 textFontSize,
                 controlPointsSize,
@@ -246,6 +248,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         minZLayer,
         maxZLayer,
         automaticBordering,
+        adaptiveZoom,
         intelligentPolygonCrop,
         workspace,
         keyMap,
@@ -367,6 +370,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     public componentDidMount(): void {
         const {
             automaticBordering,
+            adaptiveZoom,
             intelligentPolygonCrop,
             showObjectsTextAlways,
             workspace,
@@ -396,6 +400,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             undefinedAttrValue: config.UNDEFINED_ATTRIBUTE_VALUE,
             displayAllText: showObjectsTextAlways,
             autoborders: automaticBordering,
+            adaptiveZoom,
             showProjections,
             showConflicts: showGroundTruth,
             intelligentPolygonCrop,
@@ -444,6 +449,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             textContent,
             showAllInterpolationTracks,
             automaticBordering,
+            adaptiveZoom,
             intelligentPolygonCrop,
             showProjections,
             colorBy,
@@ -457,6 +463,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         if (
             prevProps.showObjectsTextAlways !== showObjectsTextAlways ||
             prevProps.automaticBordering !== automaticBordering ||
+            prevProps.adaptiveZoom !== adaptiveZoom ||
             prevProps.showProjections !== showProjections ||
             prevProps.intelligentPolygonCrop !== intelligentPolygonCrop ||
             prevProps.opacity !== opacity ||
@@ -476,6 +483,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                 undefinedAttrValue: config.UNDEFINED_ATTRIBUTE_VALUE,
                 displayAllText: showObjectsTextAlways,
                 autoborders: automaticBordering,
+                adaptiveZoom,
                 showProjections,
                 intelligentPolygonCrop,
                 selectedShapeOpacity: selectedOpacity,

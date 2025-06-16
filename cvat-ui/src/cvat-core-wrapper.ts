@@ -22,7 +22,7 @@ import { Job, Task } from 'cvat-core/src/session';
 import Project from 'cvat-core/src/project';
 import QualityReport, { QualitySummary } from 'cvat-core/src/quality-report';
 import QualityConflict, { AnnotationConflict, ConflictSeverity } from 'cvat-core/src/quality-conflict';
-import QualitySettings, { TargetMetric } from 'cvat-core/src/quality-settings';
+import QualitySettings, { TargetMetric, QualitySettingsSaveFields } from 'cvat-core/src/quality-settings';
 import ConsensusSettings from 'cvat-core/src/consensus-settings';
 import { FramesMetaData, FrameData } from 'cvat-core/src/frames';
 import { ServerError, RequestError } from 'cvat-core/src/exceptions';
@@ -46,6 +46,7 @@ import { BaseCollectionAction } from 'cvat-core/src/annotations-actions/base-col
 import { ActionParameterType, BaseAction } from 'cvat-core/src/annotations-actions/base-action';
 import { Request, RequestOperation } from 'cvat-core/src/request';
 import AboutData from 'cvat-core/src/about';
+import { MinimalShape, TrackerResults, InteractorResults } from 'cvat-core/src/lambda-manager';
 
 const cvat: CVATCore = _cvat;
 
@@ -129,5 +130,9 @@ export type {
     RequestOperation,
     UpdateStatusData,
     OrganizationMembersFilter,
+    QualitySettingsSaveFields,
     AnalyticsEventsFilter,
+    MinimalShape,
+    InteractorResults,
+    TrackerResults,
 };

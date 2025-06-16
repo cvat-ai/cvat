@@ -34,8 +34,9 @@ import numpy as np
 import pytest
 from cvat_sdk import exceptions
 from cvat_sdk.api_client import models
-from cvat_sdk.api_client.api_client import ApiClient, ApiException, Endpoint
+from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.api_client.exceptions import ForbiddenException
+from cvat_sdk.core.exceptions import BackgroundRequestException
 from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.progress import NullProgressReporter
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
@@ -1720,7 +1721,7 @@ class TestPostTaskData:
 
             # check sequence of frames
             (data_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
-            assert expected_result == list(map(lambda x: x.name, data_meta.frames))
+            assert expected_result == [x.name for x in data_meta.frames]
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(
@@ -2130,15 +2131,15 @@ class TestPostTaskData:
 
     @parametrize(
         "frame_selection_method, method_params, per_job_count_param",
-        map(
-            lambda e: (*e[0], e[1]),
-            product(
+        (
+            (*e[0], e[1])
+            for e in product(
                 [
                     *tuple(product(["random_uniform"], [{"frame_count"}, {"frame_share"}])),
                     ("manual", {}),
                 ],
                 ["frames_per_job_count", "frames_per_job_share"],
-            ),
+            )
         ),
     )
     def test_can_create_task_with_honeypots(
@@ -4113,11 +4114,10 @@ class TestTaskBackups:
     def test_cannot_export_backup_for_task_without_data(self, tasks):
         task_id = next(t for t in tasks if t["jobs"]["count"] == 0)["id"]
 
-        with pytest.raises(ApiException) as exc:
+        with pytest.raises(exceptions.ApiException) as capture:
             self._test_can_export_backup(task_id)
 
-            assert exc.status == HTTPStatus.BAD_REQUEST
-            assert "Backup of a task without data is not allowed" == exc.body.encode()
+        assert "Backup of a task without data is not allowed" in str(capture.value.body)
 
     @pytest.mark.with_external_services
     def test_can_export_and_import_backup_task_with_cloud_storage(self, tasks):
@@ -5317,14 +5317,12 @@ class TestPatchTask:
         find_users,
     ):
         username, task_id = next(
-            (
-                (user["username"], task["id"])
-                for user in find_users(role=role, exclude_privilege="admin")
-                for task in tasks
-                if task["organization"] == user["org"]
-                and not task["project_id"]
-                and task["owner"]["id"] != user["id"]
-            )
+            (user["username"], task["id"])
+            for user in find_users(role=role, exclude_privilege="admin")
+            for task in tasks
+            if task["organization"] == user["org"]
+            and not task["project_id"]
+            and task["owner"]["id"] != user["id"]
         )
 
         self._test_patch_linked_storage(
@@ -5675,10 +5673,10 @@ class TestImportTaskAnnotations:
 
         task = self.client.tasks.retrieve(task_id)
 
-        with pytest.raises(exceptions.ApiException) as capture:
+        with pytest.raises(BackgroundRequestException) as capture:
             task.import_annotations(format_name, source_archive_path)
 
-        error_message = capture.value.body.decode()
+        error_message = str(capture.value)
 
         if specific_info_included is None:
             assert "Failed to find dataset" in error_message
@@ -5835,10 +5833,10 @@ class TestImportWithComplexFilenames:
                 range(len(self.flat_filenames))
             )
         else:
-            with pytest.raises(exceptions.ApiException) as capture:
+            with pytest.raises(BackgroundRequestException) as capture:
                 task.import_annotations(self.format_name, dataset_file)
 
-            assert b"Could not match item id" in capture.value.body
+            assert "Could not match item id" in str(capture.value)
 
     def delete_annotation_and_import_annotations(
         self, task_id, annotations, format_name, dataset_file
