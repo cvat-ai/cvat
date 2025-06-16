@@ -681,8 +681,7 @@ class MediaCache:
             else:
                 reader = VideoReader([source_path], allow_threading=False)
 
-                for frame_tuple in reader.iterate_frames(frame_filter=frame_ids):
-                    yield frame_tuple
+                yield from reader.iterate_frames(frame_filter=frame_ids)
         else:
             yield from MediaCache._read_raw_images(db_task, frame_ids, manifest_path=manifest_path)
 

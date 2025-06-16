@@ -15,6 +15,22 @@ from ..attributes import attribute_value_validator
 from .exceptions import BadFunctionError
 
 
+class AutoAnnotationFunction(Protocol):
+    """
+    The base interface for all auto-annotation function interfaces.
+    """
+
+    @property
+    def spec(self) -> object:
+        """
+        Returns the function's spec.
+
+        In each specific auto-annotation function interface,
+        this will be overridden to return a specific spec type.
+        """
+        ...
+
+
 @attrs.frozen(kw_only=True)
 class DetectionFunctionSpec:
     """
@@ -157,7 +173,7 @@ class DetectionFunctionContext(metaclass=abc.ABCMeta):
         """
 
 
-class DetectionFunction(Protocol):
+class DetectionFunction(AutoAnnotationFunction, Protocol):
     """
     The interface that an auto-annotation detection function must implement.
 
@@ -229,9 +245,12 @@ def label_spec(name: str, id: int, **kwargs) -> models.PatchedLabelRequest:
     return models.PatchedLabelRequest(name=name, id=id, **kwargs)
 
 
-# pylint: disable-next=redefined-builtin
 def skeleton_label_spec(
-    name: str, id: int, sublabels: Sequence[models.SublabelRequest], **kwargs
+    name: str,
+    # pylint: disable-next=redefined-builtin
+    id: int,
+    sublabels: Sequence[models.SublabelRequest],
+    **kwargs,
 ) -> models.PatchedLabelRequest:
     """Helper factory function for PatchedLabelRequest with type="skeleton"."""
     return label_spec(name, id, type="skeleton", sublabels=sublabels, **kwargs)
