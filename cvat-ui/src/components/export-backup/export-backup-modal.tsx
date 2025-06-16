@@ -11,6 +11,7 @@ import Notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
 import Input from 'antd/lib/input';
 import Form from 'antd/lib/form';
+import Space from 'antd/lib/space';
 import Switch from 'antd/lib/switch';
 import { CombinedState } from 'reducers';
 import { exportActions, exportBackupAsync } from 'actions/export-actions';
@@ -156,14 +157,15 @@ function ExportBackupModal(): JSX.Element {
                     onChangeLocationValue={(value: StorageLocation) => setStorageLocation(value)}
                 />
                 <Form.Item
-                    label='Make light-weight backup'
-                    name='makeLightWeightBackup'
-                    valuePropName='checked'
                     className='cvat-settings-switch'
                 >
-                    <Switch
-                        onChange={setMakeLightWeightBackup}
-                    />
+                    <Space>
+                        <Switch
+                            checked={makeLightWeightBackup}
+                            onChange={setMakeLightWeightBackup}
+                        />
+                        <Text strong>Make light-weight backup</Text>
+                    </Space>
                 </Form.Item>
             </Form>
         </Modal>
