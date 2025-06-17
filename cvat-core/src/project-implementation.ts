@@ -140,14 +140,14 @@ export default function implementProject(Project: typeof ProjectClass): typeof P
             targetStorage: Parameters<typeof ProjectClass.prototype.backup>[0],
             useDefaultSettings: Parameters<typeof ProjectClass.prototype.backup>[1],
             fileName: Parameters<typeof ProjectClass.prototype.backup>[2],
-            makeLightWeightBackup: Parameters<typeof ProjectClass.prototype.backup>[3],
+            lightweight: Parameters<typeof ProjectClass.prototype.backup>[3],
         ): ReturnType<typeof ProjectClass.prototype.backup> {
             const rqID = await serverProxy.projects.backup(
                 this.id,
                 targetStorage,
                 useDefaultSettings,
                 fileName,
-                makeLightWeightBackup,
+                lightweight,
             );
             return rqID;
         },

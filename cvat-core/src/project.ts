@@ -239,7 +239,7 @@ export default class Project {
         targetStorage: Storage,
         useDefaultSettings: boolean,
         fileName?: string,
-        makeLightWeightBackup: bool,
+        lightweight: bool,
     ): Promise<string | void> {
         const result = await PluginRegistry.apiWrapper.call(
             this,
@@ -247,7 +247,7 @@ export default class Project {
             targetStorage,
             useDefaultSettings,
             fileName,
-            makeLightWeightBackup,
+            lightweight,
         );
         return result;
     }

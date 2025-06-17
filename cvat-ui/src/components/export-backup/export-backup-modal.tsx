@@ -28,7 +28,7 @@ type FormValues = {
     customName: string | undefined;
     targetStorage: StorageData;
     useProjectTargetStorage: boolean;
-    makeLightWeightBackup: boolean;
+    lightweight: boolean;
 };
 
 const initialValues: FormValues = {
@@ -38,7 +38,7 @@ const initialValues: FormValues = {
         cloudStorageId: undefined,
     },
     useProjectTargetStorage: true,
-    makeLightWeightBackup: true,
+    lightweight: true,
 };
 
 function ExportBackupModal(): JSX.Element {
@@ -51,7 +51,7 @@ function ExportBackupModal(): JSX.Element {
     const [defaultStorageLocation, setDefaultStorageLocation] = useState(StorageLocation.LOCAL);
     const [defaultStorageCloudId, setDefaultStorageCloudId] = useState<number | null>(null);
     const [helpMessage, setHelpMessage] = useState('');
-    const [makeLightWeightBackup, setMakeLightWeightBackup] = useState(true);
+    const [lightweight, setLightweight] = useState(true);
 
     const instanceT = useSelector((state: CombinedState) => state.export.instanceType);
     const instance = useSelector((state: CombinedState) => {
@@ -86,7 +86,7 @@ function ExportBackupModal(): JSX.Element {
     const closeModal = (): void => {
         setUseDefaultStorage(true);
         setStorageLocation(StorageLocation.LOCAL);
-        setMakeLightWeightBackup(true);
+        setLightweight(true);
         form.resetFields();
         dispatch(exportActions.closeExportBackupModal(instance));
     };
@@ -106,7 +106,7 @@ function ExportBackupModal(): JSX.Element {
                     }),
                     useDefaultStorage,
                     values.customName ? `${values.customName}.zip` : undefined,
-                    makeLightWeightBackup,
+                    lightweight,
                 ),
             );
             closeModal();
@@ -120,7 +120,7 @@ function ExportBackupModal(): JSX.Element {
                 className: 'cvat-notification-notice-export-backup-start',
             });
         },
-        [instance, useDefaultStorage, defaultStorageLocation, defaultStorageCloudId, makeLightWeightBackup],
+        [instance, useDefaultStorage, defaultStorageLocation, defaultStorageCloudId, lightweight],
     );
 
     return (
@@ -161,8 +161,8 @@ function ExportBackupModal(): JSX.Element {
                 >
                     <Space>
                         <Switch
-                            checked={makeLightWeightBackup}
-                            onChange={setMakeLightWeightBackup}
+                            checked={lightweight}
+                            onChange={setLightweight}
                         />
                         <Text strong>Make light-weight backup</Text>
                     </Space>

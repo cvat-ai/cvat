@@ -3701,6 +3701,11 @@ paths:
         description: A unique integer value identifying this project.
         required: true
       - in: query
+        name: lightweight
+        schema:
+          type: boolean
+        description: Make lightweight backup for cloud based tasks
+      - in: query
         name: location
         schema:
           type: string
@@ -3708,11 +3713,6 @@ paths:
           - cloud_storage
           - local
         description: Where need to save downloaded backup
-      - in: query
-        name: make_lightweight_backup
-        schema:
-          type: boolean
-        description: Make lightweight backup for cloud based tasks
       tags:
       - projects
       security:
@@ -5333,6 +5333,11 @@ paths:
         description: A unique integer value identifying this task.
         required: true
       - in: query
+        name: lightweight
+        schema:
+          type: boolean
+        description: Make lightweight backup for cloud based tasks
+      - in: query
         name: location
         schema:
           type: string
@@ -5340,11 +5345,6 @@ paths:
           - cloud_storage
           - local
         description: Where need to save downloaded backup
-      - in: query
-        name: make_lightweight_backup
-        schema:
-          type: boolean
-        description: Make lightweight backup for cloud based tasks
       tags:
       - tasks
       security:

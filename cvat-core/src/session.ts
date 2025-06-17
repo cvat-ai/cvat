@@ -1232,7 +1232,7 @@ export class Task extends Session {
         targetStorage: Storage,
         useDefaultSettings: boolean,
         fileName?: string,
-        makeLightWeightBackup: bool,
+        lightweight: bool,
     ): Promise<string | void> {
         const result = await PluginRegistry.apiWrapper.call(
             this,
@@ -1240,7 +1240,7 @@ export class Task extends Session {
             targetStorage,
             useDefaultSettings,
             fileName,
-            makeLightWeightBackup,
+            lightweight,
         );
         return result;
     }
