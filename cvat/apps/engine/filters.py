@@ -20,7 +20,6 @@ from django_filters import filters as djf
 from django_filters.filterset import BaseFilterSet
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
-from rest_framework.compat import coreapi, coreschema
 from rest_framework.exceptions import ValidationError
 
 from cvat.apps.engine.types import ExtendedRequest
@@ -44,26 +43,7 @@ class SearchFilter(filters.SearchFilter):
         return get_lookup_fields(view, search_fields).values()
 
     def get_schema_fields(self, view):
-        assert coreapi is not None, "coreapi must be installed to use `get_schema_fields()`"
-        assert coreschema is not None, "coreschema must be installed to use `get_schema_fields()`"
-
-        search_fields = getattr(view, "search_fields", [])
-        full_description = self.search_description + f" Available search_fields: {search_fields}"
-
-        return (
-            [
-                coreapi.Field(
-                    name=self.search_param,
-                    required=False,
-                    location="query",
-                    schema=coreschema.String(
-                        title=force_str(self.search_title), description=force_str(full_description)
-                    ),
-                )
-            ]
-            if search_fields
-            else []
-        )
+        raise NotImplementedError("coreapi is not supported")
 
     def get_schema_operation_parameters(self, view):
         search_fields = getattr(view, "search_fields", [])
@@ -108,29 +88,7 @@ class OrderingFilter(filters.OrderingFilter):
         return get_lookup_fields(view, ordering_fields)
 
     def get_schema_fields(self, view):
-        assert coreapi is not None, "coreapi must be installed to use `get_schema_fields()`"
-        assert coreschema is not None, "coreschema must be installed to use `get_schema_fields()`"
-
-        ordering_fields = getattr(view, "ordering_fields", [])
-        full_description = (
-            self.ordering_description + f" Available ordering_fields: {ordering_fields}"
-        )
-
-        return (
-            [
-                coreapi.Field(
-                    name=self.ordering_param,
-                    required=False,
-                    location="query",
-                    schema=coreschema.String(
-                        title=force_str(self.ordering_title),
-                        description=force_str(full_description),
-                    ),
-                )
-            ]
-            if ordering_fields
-            else []
-        )
+        raise NotImplementedError("coreapi is not supported")
 
     def get_schema_operation_parameters(self, view):
         ordering_fields = getattr(view, "ordering_fields", [])
@@ -232,31 +190,7 @@ class JsonLogicFilter(filters.BaseFilterBackend):
         return queryset
 
     def get_schema_fields(self, view):
-        assert coreapi is not None, "coreapi must be installed to use `get_schema_fields()`"
-        assert coreschema is not None, "coreschema must be installed to use `get_schema_fields()`"
-
-        filter_fields = getattr(view, "filter_fields", [])
-        filter_description = getattr(view, "filter_description", "")
-        full_description = (
-            self.filter_description
-            + f" Available filter_fields: {filter_fields}."
-            + filter_description
-        )
-
-        return (
-            [
-                coreapi.Field(
-                    name=self.filter_param,
-                    required=False,
-                    location="query",
-                    schema=coreschema.String(
-                        title=force_str(self.filter_title), description=force_str(full_description)
-                    ),
-                )
-            ]
-            if filter_fields
-            else []
-        )
+        raise NotImplementedError("coreapi is not supported")
 
     def get_schema_operation_parameters(self, view):
         filter_fields = getattr(view, "filter_fields", [])
