@@ -63,11 +63,8 @@ services:
 
   cvat_redis_ondisk:
     container_name: cvat_redis_ondisk
-    image: apache/kvrocks:2.7.0
+    image: apache/kvrocks:2.12.1
     restart: always
-    command: [
-      "--dir", "/var/lib/kvrocks/data"
-    ]
     # The kvrocks image a) has a healthcheck command, and b) has a root process
     # that doesn't reap children, so it's susceptible to the problem described here:
     # <https://stackoverflow.com/a/77109064>. Kvrocks also uses a tiny timeout for
@@ -75,9 +72,12 @@ services:
     # Use a separate init process as a workaround.
     init: true
     volumes:
-      - cvat_cache_db:/var/lib/kvrocks/data
+      - cvat_cache_db:/var/lib/kvrocks
     networks:
       - cvat
+    command: [
+      "--compact-cron", "0 3 * * *",
+      ]
 
   cvat_server:
     container_name: cvat_server
