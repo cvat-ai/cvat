@@ -3041,7 +3041,7 @@ class ProjectQualityCalculator:
         }
 
         task_quality_reports: dict[int, models.QualityReport] = {}
-        for task in configured_tasks:
+        for task in configured_tasks.values():
             latest_task_quality_report_id = getattr(task, "latest_quality_report_id", None)
             latest_task_quality_report = latest_quality_reports.get(latest_task_quality_report_id)
             if not latest_task_quality_report:
