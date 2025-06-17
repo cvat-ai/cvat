@@ -1734,7 +1734,7 @@ class CvatDataExtractorBase(CVATDataExtractorMixin):
 
         return dm_item
 
-    def _read_cvat_anno(self, cvat_frame_anno: CommonData.Frame, labels: list):
+    def _read_cvat_anno(self, cvat_frame_anno: CommonData.Frame | ProjectData.Frame, labels: list):
         categories = self.categories()
         label_cat = categories[dm.AnnotationType.label]
         def map_label(name, parent=''): return label_cat.find(name, parent)[0]
