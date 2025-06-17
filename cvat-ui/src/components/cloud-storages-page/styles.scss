@@ -6,11 +6,7 @@
 @import 'base';
 
 .cvat-cloud-storages-page {
-    padding-top: $grid-unit-size * 2;
-    padding-bottom: $grid-unit-size;
-    height: 100%;
-    width: 100%;
-    overflow: auto;
+    @include cvat-resource-page;
 
     .ant-spin {
         position: absolute;
@@ -61,6 +57,8 @@
 .cvat-cloud-storages-list {
     display: flex;
     flex-wrap: wrap;
+    height: 100%;
+    overflow-y: auto;
 
     > div {
         width: 100%;
