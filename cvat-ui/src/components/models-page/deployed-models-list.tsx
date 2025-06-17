@@ -74,7 +74,7 @@ export default function DeployedModelsListComponent(props: Props): JSX.Element {
             </Row>
             <Row justify='center' align='middle'>
                 <Pagination
-                    className='cvat-tasks-pagination'
+                    className='cvat-models-pagination'
                     onChange={(newPage: number, newPageSize: number) => {
                         dispatch(getModelsAsync({
                             ...query,
