@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback } from 'react';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import Modal from 'antd/lib/modal';
 import Dropdown from 'antd/lib/dropdown';
@@ -40,12 +40,6 @@ function TaskActionsComponent(props: Props): JSX.Element {
         editField,
         startEditField,
     } = useDropdownEditField();
-
-    useEffect(() => {
-        if (editField) {
-            setDropdownOpen(true);
-        }
-    }, [editField]);
 
     const onOpenBugTracker = useCallback(() => {
         if (taskInstance.bugTracker) {
@@ -119,8 +113,10 @@ function TaskActionsComponent(props: Props): JSX.Element {
             destroyPopupOnHide
             trigger={['click']}
             open={dropdownOpen}
-            onOpenChange={(visible) => {
-                setDropdownOpen(visible);
+            onOpenChange={(open, { source }) => {
+                if (source === 'trigger') {
+                    setDropdownOpen(open);
+                }
             }}
             menu={{
                 selectable: false,
@@ -147,6 +143,11 @@ function TaskActionsComponent(props: Props): JSX.Element {
                     onDeleteTask,
                     onUpdateTaskAssignee,
                 }, props),
+                onClick: ({ key }) => {
+                    if (!key.startsWith('edit') && !key.endsWith('selector')) {
+                        setDropdownOpen(false);
+                    }
+                },
             }}
         >
             {triggerElement}
