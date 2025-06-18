@@ -680,6 +680,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                         bugTracker: 'bug_tracker',
                         projectId: 'project_id',
                         assignee: 'assignee_id',
+                        organizationId: 'organization_id',
                     }),
                 };
 
@@ -752,6 +753,9 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
 
             if (fields.consensus_replicas) {
                 taskSpec.consensus_replicas = fields.consensus_replicas;
+            }
+            if (typeof this.organizationId !== 'undefined') {
+                taskSpec.organization_id = this.organizationId;
             }
 
             const taskDataSpec = {

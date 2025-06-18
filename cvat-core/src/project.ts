@@ -17,11 +17,11 @@ import AnnotationGuide from './guide';
 export default class Project {
     public readonly id: number;
     public name: string;
+    public organizationId: number | null;
     public assignee: User;
     public bugTracker: string;
     public readonly status: ProjectStatus;
     public readonly guideId: number | null;
-    public readonly organization: string | null;
     public readonly owner: User;
     public readonly createdDate: string;
     public readonly updatedDate: string;
@@ -57,7 +57,7 @@ export default class Project {
             status: undefined,
             assignee: undefined,
             guide_id: undefined,
-            organization: undefined,
+            organization_id: undefined,
             owner: undefined,
             bug_tracker: undefined,
             created_date: undefined,
@@ -129,8 +129,16 @@ export default class Project {
                 guideId: {
                     get: () => data.guide_id,
                 },
-                organization: {
-                    get: () => data.organization,
+                organizationId: {
+                    get: () => data.organization_id,
+                    set: (organizationId) => {
+                        if ((Number.isInteger(organizationId) && organizationId > 0) || organizationId === null) {
+                            updateTrigger.update('organizationId');
+                            data.organization_id = organizationId;
+                        } else {
+                            throw new ArgumentError('Value must be a positive integer or null');
+                        }
+                    },
                 },
                 bugTracker: {
                     get: () => data.bug_tracker,

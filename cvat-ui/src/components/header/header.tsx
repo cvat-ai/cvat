@@ -46,7 +46,7 @@ import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
 import { subKeyMap } from 'utils/component-subkeymap';
 import SettingsModal from './settings-modal/settings-modal';
-import OrganizationsSearch from './organizations-search';
+import OrganizationSelector from '../selectors/organization-selector';
 
 interface StateToProps {
     user: any;
@@ -173,13 +173,22 @@ function HeaderComponent(props: Props): JSX.Element {
     const isMounted = useIsMounted();
     const [listFetching, setListFetching] = useState(false);
     const [organizationsList, setOrganizationList] = useState<Organization[] | null>(null);
+    const [hasMore, setHasMore] = useState(false);
 
-    const searchCallback = useCallback((search?: string): Promise<Organization[]> => new Promise((resolve, reject) => {
-        const promise = core.organizations.get(search ? { search } : {});
+    const searchCallback = useCallback((
+        search?: string,
+        page: number = 1,
+    ): Promise<{ organizations: Organization[]; hasNextPage: boolean }> => new Promise((resolve, reject) => {
+        const listOrgsFilter = {
+            page,
+            page_size: 12,
+            ...(search ? { search } : {}),
+        };
+        const promise = core.organizations.get(listOrgsFilter, true);
 
         setListFetching(true);
-        promise.then((organizations: Organization[]) => {
-            resolve(organizations);
+        promise.then((result: { organizations: Organization[]; hasNextPage: boolean }) => {
+            resolve(result);
         }).catch((error: unknown) => {
             reject(error);
         }).finally(() => {
@@ -190,9 +199,13 @@ function HeaderComponent(props: Props): JSX.Element {
     }), []);
 
     useEffect(() => {
-        searchCallback().then((organizations: Organization[]) => {
+        searchCallback().then((
+            { organizations, hasNextPage }: { organizations: Organization[]; hasNextPage: boolean },
+        ) => {
             if (isMounted()) {
                 setOrganizationList(organizations);
+                console.log('Has more? (parent component)', hasNextPage);
+                setHasMore(hasNextPage);
             }
         }).catch((error: unknown) => {
             setOrganizationList([]);
@@ -291,8 +304,10 @@ function HeaderComponent(props: Props): JSX.Element {
         }
     };
 
-    const setNewOrganization = (organization: any): void => {
-        if (!currentOrganization || currentOrganization.slug !== organization.slug) {
+    const setNewOrganization = (organization: Organization | null): void => {
+        if (currentOrganization && !organization) {
+            resetOrganization();
+        } else if (organization && (!currentOrganization || currentOrganization.slug !== organization.slug)) {
             localStorage.setItem('currentOrganization', organization.slug);
             if (/\d+/.test(window.location.pathname)) {
                 // a resource is opened (task/job/etc.)
@@ -354,9 +369,10 @@ function HeaderComponent(props: Props): JSX.Element {
                             style: { display: 'none' },
                         },
                         content: (
-                            <OrganizationsSearch
+                            <OrganizationSelector
+                                sandboxAllowed={Boolean(localStorage.getItem('currentOrganization'))}
                                 defaultOrganizationList={organizationsList}
-                                resetOrganization={resetOrganization}
+                                defaultHasMore={hasMore}
                                 searchOrganizations={searchCallback}
                                 setNewOrganization={setNewOrganization}
                             />

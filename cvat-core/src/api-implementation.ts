@@ -346,15 +346,23 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         return cloudStorages;
     });
 
-    implementationMixin(cvat.organizations.get, async (filter) => {
+    implementationMixin(cvat.organizations.get, async (filter, withHasNextPage = false) => {
         checkFilter(filter, {
             search: isString,
             filter: isString,
+            page: isInteger,
+            page_size: isInteger,
         });
 
-        const organizationsData = await serverProxy.organizations.get(filter);
-        const organizations = organizationsData.map((organizationData) => new Organization(organizationData));
-        return organizations;
+        const organizationsData = await serverProxy.organizations.get(filter, withHasNextPage);
+        if (withHasNextPage) {
+            return {
+                organizations: organizationsData.results.map((organizationData) => new Organization(organizationData)),
+                hasNextPage: !!organizationsData.next,
+            };
+        }
+
+        return organizationsData.map((organizationData) => new Organization(organizationData));
     });
     implementationMixin(cvat.organizations.activate, (organization) => {
         checkObjectType('organization', organization, null, Organization);

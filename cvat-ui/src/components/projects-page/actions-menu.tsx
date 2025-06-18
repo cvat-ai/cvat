@@ -14,6 +14,7 @@ import { deleteProjectAsync } from 'actions/projects-actions';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
 import ProjectActionsItems from './actions-menu-items';
+import OrganizationSelector from '../selectors/organization-selector';
 
 interface Props {
     projectInstance: Project;
@@ -53,6 +54,51 @@ function ProjectActionsComponent(props: Props): JSX.Element {
         });
     }, [projectInstance]);
 
+    // TODO: update menu item after Kirill's PR is merged
+    const onTransferProjectBetweenWorkspaces = useCallback(() => {
+        const isOrgWorkspace = Boolean(localStorage.getItem('currentOrganization'));
+
+        // TODO: extract into a separate component to reduce code duplication?
+        const selectWorkspaceModal = Modal.confirm({
+            title: 'Select an organization',
+            okButtonProps: {
+                style: { display: 'none' },
+            },
+            content: (
+                <OrganizationSelector
+                    sandboxAllowed={isOrgWorkspace}
+                    setNewOrganization={(dstWorkspace) => {
+                        projectInstance.organizationId = (dstWorkspace) ? dstWorkspace.id : null;
+                        selectWorkspaceModal.destroy();
+                        if (isOrgWorkspace) {
+                            Modal.confirm({
+                                title: `Other organization members will lose access to the project #${
+                                    projectInstance.id
+                                }.`,
+                                content: (
+                                    `You are going to move a project to the ${
+                                        (dstWorkspace) ? `${dstWorkspace.slug} organization` : 'Personal sandbox'
+                                    }. Continue?`
+                                ),
+                                className: 'cvat-modal-confirm-project-transfer-between-workspaces',
+                                onOk: () => {
+                                    projectInstance.save();
+                                },
+                                okButtonProps: {
+                                    type: 'primary',
+                                    danger: true,
+                                },
+                                okText: 'Move anyway',
+                            });
+                        } else {
+                            projectInstance.save();
+                        }
+                    }}
+                />
+            ),
+        });
+    }, [projectInstance]);
+
     return (
         <Dropdown
             destroyPopupOnHide
@@ -67,6 +113,7 @@ function ProjectActionsComponent(props: Props): JSX.Element {
                     onImportDataset,
                     onBackupProject,
                     onDeleteProject,
+                    onTransferProjectBetweenWorkspaces,
                 }, props),
             }}
         >

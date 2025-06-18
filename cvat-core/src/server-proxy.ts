@@ -1956,7 +1956,7 @@ async function deleteCloudStorage(id) {
     }
 }
 
-async function getOrganizations(filter) {
+async function getOrganizations(filter, raw = false) {
     const { backendAPI } = config;
 
     let response = null;
@@ -1970,7 +1970,7 @@ async function getOrganizations(filter) {
         throw generateError(errorData);
     }
 
-    return response.data.results;
+    return (raw) ? response.data : response.data.results;
 }
 
 async function createOrganization(data: SerializedOrganization): Promise<SerializedOrganization> {

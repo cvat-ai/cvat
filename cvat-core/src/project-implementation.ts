@@ -20,6 +20,7 @@ export default function implementProject(Project: typeof ProjectClass): typeof P
                 const projectData = this._updateTrigger.getUpdated(this, {
                     bugTracker: 'bug_tracker',
                     assignee: 'assignee_id',
+                    organizationId: 'organization_id',
                 });
 
                 if (projectData.assignee_id) {
