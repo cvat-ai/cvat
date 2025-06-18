@@ -66,7 +66,7 @@ function ProjectActionsComponent(props: Props): JSX.Element {
             },
             content: (
                 <OrganizationSelector
-                    sandboxAllowed={isOrgWorkspace}
+                    showSandboxOption={isOrgWorkspace}
                     setNewOrganization={(dstWorkspace) => {
                         projectInstance.organizationId = (dstWorkspace) ? dstWorkspace.id : null;
                         selectWorkspaceModal.destroy();

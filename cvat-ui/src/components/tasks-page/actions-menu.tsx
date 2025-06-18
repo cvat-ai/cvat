@@ -111,7 +111,7 @@ function TaskActionsComponent(props: Props): JSX.Element {
             },
             content: (
                 <OrganizationSelector
-                    sandboxAllowed={isOrgWorkspace}
+                    showSandboxOption={isOrgWorkspace}
                     setNewOrganization={(dstWorkspace) => {
                         taskInstance.organizationId = (dstWorkspace) ? dstWorkspace.id : null;
                         selectWorkspaceModal.destroy();

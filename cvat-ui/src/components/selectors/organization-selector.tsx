@@ -16,14 +16,14 @@ const core = getCore();
 function OrganizationSelector(props: {
     defaultOrganizationList?: Organization[];
     defaultHasMore?: boolean;
-    sandboxAllowed?: boolean;
+    showSandboxOption?: boolean;
     searchOrganizations?: (search?: string, page?: number) => (
         Promise<{ organizations: Organization[]; hasNextPage: boolean }>
     );
     setNewOrganization: (org: Organization | null) => void;
 }): JSX.Element {
     const {
-        defaultOrganizationList, defaultHasMore, sandboxAllowed, searchOrganizations, setNewOrganization,
+        defaultOrganizationList, defaultHasMore, showSandboxOption, searchOrganizations, setNewOrganization,
     } = props;
     const [searchPhrase, setSearchPhrase] = useState('');
     // TODO: fetch the first page when default list is not provided
@@ -125,7 +125,7 @@ function OrganizationSelector(props: {
             onSearch={_.debounce(setSearchPhrase, 500)}
             options={[
                 ...(
-                    (sandboxAllowed) ? [{
+                    (showSandboxOption) ? [{
                         value: '',
                         label: 'Personal workspace',
                     }] : []

@@ -370,7 +370,7 @@ function HeaderComponent(props: Props): JSX.Element {
                         },
                         content: (
                             <OrganizationSelector
-                                sandboxAllowed={Boolean(localStorage.getItem('currentOrganization'))}
+                                showSandboxOption={Boolean(localStorage.getItem('currentOrganization'))}
                                 defaultOrganizationList={organizationsList}
                                 defaultHasMore={hasMore}
                                 searchOrganizations={searchCallback}
