@@ -30,6 +30,9 @@ export enum TasksActionTypes {
     GET_TASK_PREVIEW_SUCCESS = 'GET_TASK_PREVIEW_SUCCESS',
     GET_TASK_PREVIEW_FAILED = 'GET_TASK_PREVIEW_FAILED',
     UPDATE_TASK_IN_STATE = 'UPDATE_TASK_IN_STATE',
+    UPDATE_TASK = 'UPDATE_TASK',
+    UPDATE_TASK_SUCCESS = 'UPDATE_TASK_SUCCESS',
+    UPDATE_TASK_FAILED = 'UPDATE_TASK_FAILED',
 }
 
 function getTasks(query: Partial<TasksQuery>, updateQuery: boolean, fetchingTimestamp: number): AnyAction {
@@ -313,6 +316,38 @@ ThunkAction {
             return savedTask;
         } catch (error) {
             dispatch(createTaskFailed(error));
+            throw error;
+        }
+    };
+}
+
+function updateTask(): AnyAction {
+    return {
+        type: TasksActionTypes.UPDATE_TASK,
+    };
+}
+
+function updateTaskFailed(taskID: number, error: any): AnyAction {
+    return {
+        type: TasksActionTypes.UPDATE_TASK_FAILED,
+        payload: {
+            taskID,
+            error,
+        },
+    };
+}
+
+export function updateTaskAsync(
+    taskInstance: Task,
+    fields: Parameters<Task['save']>[0],
+): ThunkAction<Promise<void>> {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
+        try {
+            dispatch(updateTask());
+            const updated = await taskInstance.save(fields);
+            dispatch(updateTaskInState(updated));
+        } catch (error) {
+            dispatch(updateTaskFailed(taskInstance.id, error));
             throw error;
         }
     };

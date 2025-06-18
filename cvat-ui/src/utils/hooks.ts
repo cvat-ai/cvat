@@ -205,3 +205,17 @@ export function useInstanceId(type: InstanceType): number {
     if (type === InstanceType.JOB) return +(params.jid as string);
     return +(params.tid as string);
 }
+
+export type DropdownEditField = {
+    editField: string | null;
+    startEditField: (key: string) => void;
+};
+
+export function useDropdownEditField(): DropdownEditField {
+    const [editField, setEditField] = useState<string | null>(null);
+    const startEditField = useCallback((field: string) => setEditField(field), []);
+    return {
+        editField,
+        startEditField,
+    };
+}

@@ -72,6 +72,7 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                     }
                     return taskInstance;
                 }),
+                fetching: false,
             };
         }
         case TasksActionTypes.GET_TASKS_FAILED:
@@ -192,6 +193,18 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                         initialized: true,
                     },
                 },
+            };
+        }
+        case TasksActionTypes.UPDATE_TASK: {
+            return {
+                ...state,
+                fetching: true,
+            };
+        }
+        case TasksActionTypes.UPDATE_TASK_FAILED: {
+            return {
+                ...state,
+                fetching: false,
             };
         }
         default:

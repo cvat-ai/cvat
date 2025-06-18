@@ -7,9 +7,15 @@ import { Link } from 'react-router-dom';
 import { LoadingOutlined } from '@ant-design/icons';
 import { MenuProps } from 'antd/lib/menu';
 import { usePlugins } from 'utils/hooks';
+import UserSelector from 'components/task-page/user-selector';
+import { User } from 'cvat-core-wrapper';
 
 interface MenuItemsData {
+    editField: string | null;
+    startEditField: (key: string) => void;
+
     taskID: number;
+    assignee: User | null;
     isAutomaticAnnotationEnabled: boolean;
     isConsensusEnabled: boolean;
     isMergingConsensusEnabled: boolean;
@@ -22,11 +28,15 @@ interface MenuItemsData {
     onRunAutoAnnotation: (() => void) | null;
     onMoveTaskToProject: (() => void) | null;
     onDeleteTask: () => void;
+    onUpdateTaskAssignee: (assignee: User | null) => void;
 }
 
 export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuProps: unknown): MenuProps['items'] {
     const {
+        editField,
+        startEditField,
         taskID,
+        assignee,
         pluginActions,
         isAutomaticAnnotationEnabled,
         isConsensusEnabled,
@@ -39,7 +49,20 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
         onRunAutoAnnotation,
         onMoveTaskToProject,
         onDeleteTask,
+        onUpdateTaskAssignee,
     } = menuItemsData;
+
+    const fieldSelectors = {
+        assignee: (
+            <UserSelector
+                value={assignee}
+                onSelect={(value: User | null): void => {
+                    if (assignee?.id === value?.id) return;
+                    onUpdateTaskAssignee(value);
+                }}
+            />
+        ),
+    };
 
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
 
@@ -75,6 +98,12 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
         onClick: onBackupTask,
         label: 'Backup Task',
     }, 40]);
+
+    menuItems.push([{
+        key: 'edit_assignee',
+        onClick: () => startEditField('assignee'),
+        label: 'Assignee',
+    }, 45]);
 
     menuItems.push([{
         key: 'view-analytics',
@@ -124,6 +153,13 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
             return [menuItem, weight] as [NonNullable<MenuProps['items']>[0], number];
         }),
     );
+
+    if (editField) {
+        return [{
+            key: `${editField}-selector`,
+            label: fieldSelectors[editField],
+        }];
+    }
 
     return menuItems.sort((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1]).map((menuItem) => menuItem[0]);
 }
