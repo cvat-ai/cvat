@@ -2525,21 +2525,29 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             and (organization_id := validated_data["organization_id"]) != instance.organization_id
         ):
             # TODO: prohibit changing other fields (except source/target storage)
-            if organization_id is not None:
-                if not Organization.objects.filter(pk=organization_id).exists():
-                    raise serializers.ValidationError("Invalid organization id")
+            if organization_id is not None and not Organization.objects.filter(pk=organization_id).exists():
+                raise serializers.ValidationError("Invalid organization id")
 
-                request = cast(ExtendedRequest, self.context['request'])
-                cur_user_id = request.user.id
-                if instance.owner_id != cur_user_id:
-                    instance.owner_id = cur_user_id
+            request = cast(ExtendedRequest, self.context['request'])
+            cur_user_id = request.user.id
+            if instance.owner_id != cur_user_id:
+                instance.owner_id = cur_user_id
 
-                if instance.assignee_id is not None:
-                    instance.assignee_id = None # TODO: assignee update date
+            assignee_updated_date = timezone.now()
+
+            if instance.assignee_id is not None:
+                instance.update_assignee(updated_date=assignee_updated_date, save=False)
+
+            assigned_jobs_qs = models.Job.objects.filter(
+                segment__task__id=instance.pk,
+                assignee__isnull=False
+            )
+            if assigned_jobs_qs.exists():
+                assigned_jobs_qs.update(assignee=None, assignee_updated_date=assignee_updated_date)
 
             instance.organization_id = organization_id
 
-        instance.save()
+        instance.save() # TODO: update_fields
 
         if 'label_set' in validated_data and not instance.project_id:
             self.update_child_objects_on_labels_update(instance)
@@ -2561,8 +2569,8 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
             if (
                 self.instance.data.cloud_storage_id
-                or self.instance.source_storage.cloud_storage_id
-                or self.instance.target_storage.cloud_storage_id
+                or (self.instance.source_storage and self.instance.source_storage.cloud_storage_id)
+                or (self.instance.target_storage and self.instance.target_storage.cloud_storage_id)
             ):
                 raise NotImplementedError()
 
@@ -2734,22 +2742,34 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
             if (self.instance.source_storage.cloud_storage_id or self.instance.target_storage.cloud_storage_id):
                 raise NotImplementedError()
 
+            # TODO: prohibit changing other fields (except source/target storage)
+            if organization_id is not None and not Organization.objects.filter(pk=organization_id).exists():
+                raise serializers.ValidationError("Invalid organization id")
+
             request = cast(ExtendedRequest, self.context['request'])
             cur_user_id = request.user.id
 
-            # TODO: prohibit changing other fields (except source/target storage)
-            if organization_id is not None:
-                if not Organization.objects.filter(pk=organization_id).exists():
-                    raise serializers.ValidationError("Invalid organization id")
+            if instance.owner_id != cur_user_id:
+                instance.owner_id = cur_user_id
 
-                if instance.owner_id != cur_user_id:
-                    instance.owner_id = cur_user_id
+            assignee_updated_date = timezone.now()
 
-                if instance.assignee_id is not None:
-                    instance.assignee_id = None
+            if instance.assignee_id is not None:
+                instance.update_assignee(updated_date=assignee_updated_date, save=False)
 
             instance.organization_id = organization_id
-            instance.tasks.update(organization_id=organization_id, assignee_id=None, owner_id=cur_user_id)
+            instance.tasks.update(
+                organization_id=organization_id,
+                owner_id=cur_user_id,
+                assignee_id=None,
+                assignee_updated_date=assignee_updated_date
+            )
+
+            if (assigned_jobs_qs := models.Job.objects.filter(
+                segment__task__project__id=instance.pk,
+                assignee__isnull=False
+            )).exists():
+                assigned_jobs_qs.update(assignee=None, assignee_updated_date=assignee_updated_date)
 
         instance.save()
 

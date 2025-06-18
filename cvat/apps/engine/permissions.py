@@ -19,6 +19,7 @@ from cvat.apps.engine.utils import is_dataset_export
 from cvat.apps.iam.permissions import (
     OpenPolicyAgentPermission,
     StrEnum,
+    build_iam_context,
     get_iam_context,
     get_membership,
 )
@@ -279,8 +280,8 @@ class ProjectPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
                         raise ValidationError("Invalid org id")
                     dst_iam_context = get_iam_context(request, dst_org)
                 else:
-                    # TODO: prohibit here using org_id/org_slug query params or X-Organization header
-                    dst_iam_context = get_iam_context(request, None)
+                    # do not use here get_iam_context since it checks also org_id/org_slug query params and X-Organization header
+                    dst_iam_context = build_iam_context(request, None, None)
                 permissions.append(cls.create_base_perm(
                     request, view, cls.Scopes.CREATE, dst_iam_context, obj
                 ))
@@ -492,9 +493,9 @@ class TaskPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
                     except Organization.DoesNotExist:
                         raise ValidationError("Invalid org id")
                     dst_iam_context = get_iam_context(request, dst_org)
-                else:
-                    # TODO: prohibit here using org_id/org_slug query params or X-Organization header
-                    dst_iam_context = get_iam_context(request, None)
+                else: # sandbox
+                    # do not use here get_iam_context since it checks also org_id/org_slug query params and X-Organization header
+                    dst_iam_context = build_iam_context(request, None, None)
                 permissions.append(cls.create_base_perm(
                     request, view, cls.Scopes.CREATE, dst_iam_context, obj
                 ))
@@ -623,6 +624,7 @@ class TaskPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
                 'organization_id': Scopes.UPDATE_ORGANIZATION,
                 'source_storage': Scopes.UPDATE_ASSOCIATED_STORAGE,
                 'target_storage': Scopes.UPDATE_ASSOCIATED_STORAGE,
+                # 'cloud_storage_id': Scopes.UPDATE_ASSOCIATED_STORAGE,
             }))
 
         elif scope == Scopes.VIEW_ANNOTATIONS:
