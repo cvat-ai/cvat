@@ -57,7 +57,7 @@ export default function DeployedModelsListComponent(props: Props): JSX.Element {
 
     return (
         <>
-            <Row justify='center' align='top'>
+            <Row justify='center' align='top' className='cvat-resource-list-wrapper'>
                 <Col {...dimensions} className='cvat-models-list'>
                     {groupedModels.map(
                         (instances: MLModel[]): JSX.Element => (
@@ -72,7 +72,7 @@ export default function DeployedModelsListComponent(props: Props): JSX.Element {
                     )}
                 </Col>
             </Row>
-            <Row justify='center' align='middle'>
+            <Row justify='center' align='middle' className='cvat-resource-pagination-wrapper'>
                 <Pagination
                     className='cvat-models-pagination'
                     onChange={(newPage: number, newPageSize: number) => {

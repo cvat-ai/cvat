@@ -5,22 +5,7 @@
 @import 'base';
 
 .cvat-requests-page {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    padding-top: $grid-unit-size * 2;
-
-    > div:nth-child(1) {
-        flex-grow: 1;
-        overflow-y: auto;
-        padding-top: $grid-unit-size;
-        align-items: start;
-    }
-
-    > div:nth-child(2) {
-        padding-top: $grid-unit-size;
-        padding-bottom: $grid-unit-size;
-    }
+    @include cvat-resource-page;
 }
 
 .cvat-requests-list {

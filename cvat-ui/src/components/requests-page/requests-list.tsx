@@ -47,12 +47,12 @@ function RequestsList(props: Props): JSX.Element {
 
     return (
         <>
-            <Row justify='center'>
+            <Row justify='center' className='cvat-resource-list-wrapper'>
                 <Col className='cvat-requests-list' {...dimensions}>
                     {requestViews}
                 </Col>
             </Row>
-            <Row justify='center' align='middle'>
+            <Row justify='center' align='middle' className='cvat-resource-pagination-wrapper'>
                 <Pagination
                     className='cvat-tasks-pagination'
                     onChange={(newPage: number, newPageSize: number) => {

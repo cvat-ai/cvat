@@ -183,14 +183,14 @@ $scroll-breakpoint: 1300px;
     display: flex;
     flex-direction: column;
 
-    > div:nth-child(2) {
+    > .cvat-resource-list-wrapper {
         flex-grow: 1;
         overflow-y: auto;
         padding-top: $grid-unit-size;
         align-items: start;
     }
 
-    > div:nth-child(3) {
+    > .cvat-resource-pagination-wrapper {
         padding-top: $grid-unit-size;
         padding-bottom: $grid-unit-size;
     }

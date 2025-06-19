@@ -76,7 +76,7 @@ function WebhooksPage(): JSX.Element | null {
     const content = totalCount ? (
         <>
             <WebhooksList />
-            <Row justify='center' align='middle'>
+            <Row justify='center' align='middle' className='cvat-resource-pagination-wrapper'>
                 <Col md={22} lg={18} xl={16} xxl={14}>
                     <Pagination
                         className='cvat-tasks-pagination'

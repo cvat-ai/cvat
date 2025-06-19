@@ -46,7 +46,7 @@ export default function ProjectListComponent(): JSX.Element {
 
     return (
         <>
-            <Row justify='center' align='middle' className='cvat-project-list-content'>
+            <Row justify='center' align='middle' className='cvat-resource-list-wrapper cvat-project-list-content'>
                 <Col className='cvat-projects-list' {...dimensions}>
                     {groupedProjects.map(
                         (projectInstances: Project[]): JSX.Element => (
@@ -61,7 +61,7 @@ export default function ProjectListComponent(): JSX.Element {
                     )}
                 </Col>
             </Row>
-            <Row justify='center' align='middle'>
+            <Row justify='center' align='middle' className='cvat-resource-pagination-wrapper'>
                 <Col {...dimensions}>
                     <Pagination
                         className='cvat-projects-pagination'

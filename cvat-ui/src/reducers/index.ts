@@ -1013,6 +1013,7 @@ export interface WebhooksState {
 
 export interface InvitationsQuery {
     page: number;
+    pageSize: number;
 }
 
 export interface InvitationsState {

@@ -49,7 +49,7 @@ function JobsPageComponent(): JSX.Element {
     const content = count ? (
         <>
             <JobsContentComponent />
-            <Row justify='space-around' about='middle'>
+            <Row justify='space-around' about='middle' className='cvat-resource-pagination-wrapper'>
                 <Col md={22} lg={18} xl={16} xxl={16}>
                     <Pagination
                         className='cvat-jobs-page-pagination'
