@@ -31,7 +31,7 @@
         }
 
         // Check if GA tracking ID is available
-        if (!window.GA_TRACKING_ID) {
+        if (!window.GOOGLE_TAG_ID) {
             console.log('GA tracking ID not configured');
             return;
         }
@@ -42,14 +42,14 @@
         var s = document.createElement('script');
         s.id = 'ga-script';
         s.async = true;
-        s.src = 'https://www.googletagmanager.com/gtag/js?id=' + window.GA_TRACKING_ID;
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=' + window.GOOGLE_TAG_ID;
         document.head.appendChild(s);
 
         // Initialize Google Analytics directly
         window.dataLayer = window.dataLayer || [];
         window.gtag = function() { dataLayer.push(arguments); };
         window.gtag('js', new Date());
-        window.gtag('config', window.GA_TRACKING_ID);
+        window.gtag('config', window.GOOGLE_TAG_ID);
     }
 
     /**
@@ -93,14 +93,9 @@
      * Handle cookie acceptance
      */
     window.acceptCookies = function() {
-        var previousConsent = localStorage.getItem('cookieConsent');
         localStorage.setItem('cookieConsent', 'true');
         document.getElementById('cookie-consent-banner').style.display = 'none';
-
-        // Only inject GA if not already injected or if this is a fresh consent
-        if (previousConsent !== 'true') {
-            injectGAScript();
-        }
+        injectGAScript();
     };
 
     /**
@@ -108,7 +103,7 @@
      */
     window.rejectCookies = function() {
         var previousConsent = localStorage.getItem('cookieConsent');
-        localStorage.setItem('cookieConsent', 'rejected');
+        localStorage.setItem('cookieConsent', 'false');
         document.getElementById('cookie-consent-banner').style.display = 'none';
 
         // If user previously accepted but now rejects, clear analytics cookies

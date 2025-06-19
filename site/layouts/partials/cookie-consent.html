@@ -1,8 +1,8 @@
 {{/* Cookie Consent Banner */}}
-{{/* Only show in production and if GA tracking ID is configured */}}
+{{/* Only show if GA tracking ID is configured */}}
 {{/* Styles are imported via _custom.scss */}}
-{{ $gaTrackingId := getenv "GA_TRACKING_ID" | default .Site.Params.ga_tracking_id -}}
-{{ if and hugo.IsProduction $gaTrackingId -}}
+{{ $gaTrackingId := getenv "GOOGLE_TAG_ID" | default site.Config.Services.GoogleAnalytics.ID -}}
+{{ if $gaTrackingId -}}
 <div id="cookie-consent-banner">
   <p>
     We use Google Analytics cookies to improve functionality and analyze traffic. You can change your preference at any time using the "Cookie Settings" link in the footer.
@@ -15,7 +15,7 @@
 
 {{/* Pass GA tracking ID to JavaScript */}}
 <script>
-window.GA_TRACKING_ID = '{{ $gaTrackingId }}';
+window.GOOGLE_TAG_ID = '{{ $gaTrackingId }}';
 </script>
 
 {{/* Load cookie consent JavaScript only in production */}}
