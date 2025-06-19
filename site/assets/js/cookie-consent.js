@@ -1,6 +1,6 @@
 /**
  * Cookie Consent Banner JavaScript
- * Copyright (C) 2025 CVAT.ai Corporation
+ * Copyright (C) CVAT.ai Corporation
  * SPDX-License-Identifier: MIT
  *
  * Note: Banner visibility is controlled by Hugo production mode.
