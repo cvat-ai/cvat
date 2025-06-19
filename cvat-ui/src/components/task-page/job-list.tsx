@@ -6,7 +6,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import jsonLogic from 'json-logic-js';
 import _ from 'lodash';
-import { Indexable, JobsQuery } from 'reducers';
+import { JobsQuery } from 'reducers';
 import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
@@ -19,6 +19,7 @@ import JobItem from 'components/job-item/job-item';
 import {
     SortingComponent, ResourceFilterHOC, defaultVisibility, updateHistoryFromQuery,
 } from 'components/resource-sorting-filtering';
+import { useUpdatedQuery } from 'utils/hooks';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './jobs-filter-configuration';
@@ -73,23 +74,14 @@ function JobListComponent(props: Props): JSX.Element {
     const { id: taskId } = taskInstance;
     const { jobs } = taskInstance;
 
-    const queryParams = new URLSearchParams(history.location.search);
-    const updatedQuery: JobsQuery = {
+    const defaultQuery: JobsQuery = {
         page: 1,
         pageSize: 10,
         sort: null,
         search: null,
         filter: null,
     };
-    for (const key of Object.keys(updatedQuery)) {
-        (updatedQuery as Indexable)[key] = queryParams.get(key) || null;
-        if (key === 'page') {
-            updatedQuery.page = updatedQuery.page ? +updatedQuery.page : 1;
-        }
-        if (key === 'pageSize') {
-            updatedQuery.pageSize = updatedQuery.pageSize ? +updatedQuery.pageSize : 10;
-        }
-    }
+    const updatedQuery = useUpdatedQuery<JobsQuery>(defaultQuery);
 
     const [jobChildMapping, setJobChildMapping] = useState<Record<number, Job[]>>({});
     useEffect(() => {

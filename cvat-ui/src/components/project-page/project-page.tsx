@@ -20,7 +20,7 @@ import Input from 'antd/lib/input';
 import notification from 'antd/lib/notification';
 
 import { getCore, Project, Task } from 'cvat-core-wrapper';
-import { CombinedState, Indexable } from 'reducers';
+import { CombinedState, TasksQuery } from 'reducers';
 import { getProjectTasksAsync } from 'actions/projects-actions';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import TaskItem from 'containers/tasks-page/task-item';
@@ -32,6 +32,7 @@ import {
 import CvatDropdownMenuPaper from 'components/common/cvat-dropdown-menu-paper';
 import { ProjectNotFoundComponent } from 'components/common/not-found';
 
+import { useUpdatedQuery } from 'utils/hooks';
 import DetailsComponent from './details';
 import ProjectTopBar from './top-bar';
 
@@ -66,17 +67,7 @@ export default function ProjectPageComponent(): JSX.Element {
     const tasksFetching = useSelector((state: CombinedState) => state.tasks.fetching);
     const [visibility, setVisibility] = useState(defaultVisibility);
 
-    const queryParams = new URLSearchParams(history.location.search);
-    const updatedQuery = { ...tasksQuery };
-    for (const key of Object.keys(updatedQuery)) {
-        (updatedQuery as Indexable)[key] = queryParams.get(key) || null;
-        if (key === 'page') {
-            updatedQuery.page = updatedQuery.page ? +updatedQuery.page : 1;
-        }
-        if (key === 'pageSize') {
-            updatedQuery.pageSize = updatedQuery.pageSize ? +updatedQuery.pageSize : 10;
-        }
-    }
+    const updatedQuery = useUpdatedQuery<TasksQuery>(tasksQuery);
 
     useEffect(() => {
         if (Number.isInteger(id)) {

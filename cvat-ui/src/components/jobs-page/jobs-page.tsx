@@ -12,9 +12,10 @@ import { Col, Row } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
 
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
-import { CombinedState, Indexable, JobsQuery } from 'reducers';
+import { CombinedState, JobsQuery } from 'reducers';
 import { getJobsAsync } from 'actions/jobs-actions';
 import { anySearch } from 'utils/any-search';
+import { useUpdatedQuery } from 'utils/hooks';
 
 import TopBarComponent from './top-bar';
 import JobsContentComponent from './jobs-content';
@@ -28,17 +29,7 @@ function JobsPageComponent(): JSX.Element {
     const fetching = useSelector((state: CombinedState) => state.jobs.fetching);
     const count = useSelector((state: CombinedState) => state.jobs.count);
 
-    const queryParams = new URLSearchParams(history.location.search);
-    const updatedQuery = { ...query };
-    for (const key of Object.keys(updatedQuery)) {
-        (updatedQuery as Indexable)[key] = queryParams.get(key) || null;
-        if (key === 'page') {
-            updatedQuery.page = updatedQuery.page ? +updatedQuery.page : 1;
-        }
-        if (key === 'pageSize') {
-            updatedQuery.pageSize = updatedQuery.pageSize ? +updatedQuery.pageSize : 12;
-        }
-    }
+    const updatedQuery = useUpdatedQuery<JobsQuery>(query, { pageSize: 12 });
 
     useEffect(() => {
         dispatch(getJobsAsync({ ...updatedQuery }));

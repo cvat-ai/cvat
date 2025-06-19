@@ -13,10 +13,11 @@ import { Row, Col } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
 import Button from 'antd/lib/button';
 
-import { CombinedState, Indexable } from 'reducers';
+import { CombinedState, WebhooksQuery } from 'reducers';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import { getWebhooksAsync } from 'actions/webhooks-actions';
 import { LeftOutlined } from '@ant-design/icons';
+import { useUpdatedQuery } from 'utils/hooks';
 import WebhooksList from './webhooks-list';
 import TopBar from './top-bar';
 import EmptyWebhooksListComponent from './empty-list';
@@ -54,14 +55,7 @@ function WebhooksPage(): JSX.Element | null {
         </Button>
     );
 
-    const queryParams = new URLSearchParams(history.location.search);
-    const updatedQuery = { ...query };
-    for (const key of Object.keys(updatedQuery)) {
-        (updatedQuery as Indexable)[key] = queryParams.get(key) || null;
-        if (key === 'page') {
-            updatedQuery.page = updatedQuery.page ? +updatedQuery.page : 1;
-        }
-    }
+    const updatedQuery = useUpdatedQuery<WebhooksQuery>(query);
 
     useEffect(() => {
         if (projectsMatch && projectsMatch.params.id) {

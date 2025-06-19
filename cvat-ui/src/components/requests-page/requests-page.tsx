@@ -5,12 +5,13 @@
 import './styles.scss';
 import { useSelector } from 'react-redux';
 import React, { useEffect } from 'react';
-import { CombinedState, Indexable } from 'reducers';
+import { CombinedState, RequestsQuery } from 'reducers';
 import { useHistory } from 'react-router';
 
 import Spin from 'antd/lib/spin';
 
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
+import { useUpdatedQuery } from 'utils/hooks';
 import EmptyListComponent from './empty-list';
 import RequestsList from './requests-list';
 
@@ -19,17 +20,8 @@ export default function RequestsPageComponent(): JSX.Element {
     const { fetching, query, requests } = useSelector((state: CombinedState) => state.requests);
 
     const count = Object.keys(requests).length;
-    const updatedQuery = { ...query };
-    const queryParams = new URLSearchParams(history.location.search);
-    for (const key of Object.keys(updatedQuery)) {
-        (updatedQuery as Indexable)[key] = queryParams.get(key) || null;
-        if (key === 'page') {
-            updatedQuery.page = updatedQuery.page ? +updatedQuery.page : 1;
-        }
-        if (key === 'pageSize') {
-            updatedQuery.pageSize = updatedQuery.pageSize ? +updatedQuery.pageSize : 10;
-        }
-    }
+
+    const updatedQuery = useUpdatedQuery<RequestsQuery>(query);
 
     useEffect(() => {
         history.replace({

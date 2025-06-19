@@ -11,11 +11,12 @@ import Spin from 'antd/lib/spin';
 import { Col, Row } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
 
-import { TasksQuery, Indexable } from 'reducers';
+import { TasksQuery } from 'reducers';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import TaskListContainer from 'containers/tasks-page/tasks-list';
 import { getTasksAsync } from 'actions/tasks-actions';
 import { anySearch } from 'utils/any-search';
+import { useUpdatedQuery } from 'utils/hooks';
 
 import TopBar from './top-bar';
 import EmptyListComponent from './empty-list';
@@ -36,17 +37,7 @@ function TasksPageComponent(props: Props): JSX.Element {
     const history = useHistory();
     const [isMounted, setIsMounted] = useState(false);
 
-    const queryParams = new URLSearchParams(history.location.search);
-    const updatedQuery = { ...query };
-    for (const key of Object.keys(updatedQuery)) {
-        (updatedQuery as Indexable)[key] = queryParams.get(key) || null;
-        if (key === 'page') {
-            updatedQuery.page = updatedQuery.page ? +updatedQuery.page : 1;
-        }
-        if (key === 'pageSize') {
-            updatedQuery.pageSize = updatedQuery.pageSize ? +updatedQuery.pageSize : 10;
-        }
-    }
+    const updatedQuery = useUpdatedQuery<TasksQuery>(query);
 
     useEffect(() => {
         dispatch(getTasksAsync({ ...updatedQuery }));
