@@ -35,8 +35,8 @@ spec:
           image: {{ .Values.cvat.kvrocks.image }}:{{ .Values.cvat.kvrocks.tag }}
           imagePullPolicy: {{ .Values.cvat.kvrocks.imagePullPolicy }}
           args:
-            - --dir
-            - /var/lib/kvrocks/data
+            - "--compact-cron"
+            - "0 3 * * *"
             - --requirepass
             - "$(CVAT_REDIS_ONDISK_PASSWORD)"
           {{- with .Values.cvat.kvrocks.resources }}
@@ -80,7 +80,7 @@ spec:
           {{- end }}
           volumeMounts:
           - name: {{ .Release.Name }}-kvrocks-data
-            mountPath: /var/lib/kvrocks/data
+            mountPath: /var/lib/kvrocks/db
           {{- with .Values.cvat.kvrocks.additionalVolumeMounts }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
