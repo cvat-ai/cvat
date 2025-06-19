@@ -1,4 +1,4 @@
-name: Run K6 Performance Test
+name: K6 Performance Testing
 
 on:
   push:
@@ -14,14 +14,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Run K6 Performance Test
         env:
           COMPOSE_FILE: docker-compose.yml
         run: |
-          cd ./tests/perf/
+          pwd ./tests
+          cd ./tests/perf
           chmod +x ./k6.sh
           ./k6.sh ${{ github.event.inputs.test_file }}
 
