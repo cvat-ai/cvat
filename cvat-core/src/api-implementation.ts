@@ -204,7 +204,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
             type: isString,
         });
 
-        checkExclusiveFields(query, ['jobID', 'filter', 'search'], ['page', 'sort']);
+        checkExclusiveFields(query, ['jobID', 'filter', 'search'], ['page', 'pageSize', 'sort']);
         if ('jobID' in query) {
             const results = await serverProxy.jobs.get({ id: query.jobID });
             const [job] = results;
@@ -249,7 +249,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
             ordering: isString,
         });
 
-        checkExclusiveFields(filter, ['id'], ['page']);
+        checkExclusiveFields(filter, ['id'], ['page', 'pageSize']);
         const searchParams = filterFieldsToSnakeCase(filter, ['projectId']);
 
         const tasksData = await serverProxy.tasks.get(searchParams, aggregate);
@@ -288,7 +288,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
             filter: isString,
         });
 
-        checkExclusiveFields(filter, ['id'], ['page']);
+        checkExclusiveFields(filter, ['id'], ['page', 'pageSize']);
         const searchParams = fieldsToSnakeCase(filter);
 
         const projectsData = await serverProxy.projects.get(searchParams);
@@ -318,7 +318,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
             search: isString,
         });
 
-        checkExclusiveFields(filter, ['id', 'search'], ['page']);
+        checkExclusiveFields(filter, ['id', 'search'], ['page', 'pageSize']);
         const searchParams = fieldsToSnakeCase(filter);
 
         const cloudStoragesData = await serverProxy.cloudStorages.get(searchParams);
