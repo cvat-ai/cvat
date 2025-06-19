@@ -36,15 +36,13 @@ def _export_images(dst_file, temp_dir, task_data, save_images=False):
 
 @importer(name="Sly Point Cloud Format", ext="ZIP", version="1.0", dimension=DimensionType.DIM_3D)
 def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
-    if zipfile.is_zipfile(src_file):
-        zipfile.ZipFile(src_file).extractall(temp_dir)
+    zipfile.ZipFile(src_file).extractall(temp_dir)
 
-        detect_dataset(
-            temp_dir, format_name="sly_pointcloud", importer=dm_env.importers.get("sly_pointcloud")
-        )
-        dataset = Dataset.import_from(temp_dir, "sly_pointcloud", env=dm_env)
-    else:
-        dataset = Dataset.import_from(src_file.name, "sly_pointcloud", env=dm_env)
+    detect_dataset(
+        temp_dir, format_name="sly_pointcloud", importer=dm_env.importers.get("sly_pointcloud")
+    )
+    dataset = Dataset.import_from(temp_dir, "sly_pointcloud", env=dm_env)
+
     if load_data_callback is not None:
         load_data_callback(dataset, instance_data)
     import_dm_annotations(dataset, instance_data)

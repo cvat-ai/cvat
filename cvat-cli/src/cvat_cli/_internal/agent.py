@@ -85,7 +85,7 @@ class _RecoverableExecutor:
             raise
 
 
-_current_function: cvataa.DetectionFunction
+_current_function: cvataa.AutoAnnotationFunction
 
 
 def _worker_init(function_loader: FunctionLoader):

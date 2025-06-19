@@ -278,7 +278,7 @@ cvat:
       name: cvat-kvrocks-secret
       password: cvat_kvrocks
     image: apache/kvrocks
-    tag: 2.7.0
+    tag: 2.12.1
     imagePullPolicy: IfNotPresent
     labels: {}
     #  test: test
