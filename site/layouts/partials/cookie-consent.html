@@ -1,6 +1,6 @@
 {{/* Cookie Consent Banner */}}
 {{/* Only show if GA tracking ID is configured */}}
-{{/* Styles are imported via _custom.scss */}}
+{{/* Styles are imported via _styles_project.scss */}}
 {{ $gaTrackingId := getenv "GOOGLE_TAG_ID" | default site.Config.Services.GoogleAnalytics.ID -}}
 {{ if $gaTrackingId -}}
 <div id="cookie-consent-banner">
