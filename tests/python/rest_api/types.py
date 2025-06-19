@@ -3,13 +3,15 @@
 #
 # SPDX-License-Identifier: MIT
 
-from shared.tasks.base import _TaskSpecBase
-from shared.tasks.enums import _SourceDataType
-import attrs
-from typing import Callable, ClassVar
-from PIL import Image
 import io
 from contextlib import closing
+from typing import Callable, ClassVar
+
+import attrs
+from PIL import Image
+
+from shared.tasks.base import _TaskSpecBase
+from shared.tasks.enums import _SourceDataType
 from shared.utils.helpers import read_video_file
 
 

@@ -41,6 +41,9 @@ from pytest_cases import fixture, fixture_ref, parametrize
 
 import shared.utils.s3 as s3
 from shared.fixtures.init import container_exec_cvat
+from shared.tasks.interface import ITaskSpec
+from shared.tasks.types import _SourceDataType
+from shared.tasks.utils import parse_frame_step
 from shared.utils.config import (
     delete_method,
     get_method,
@@ -50,12 +53,8 @@ from shared.utils.config import (
     put_method,
 )
 from shared.utils.helpers import generate_image_files
-from shared.tasks.utils import parse_frame_step
 
 from ._test_base import _TestTasksBase
-from shared.tasks.interface import ITaskSpec
-from shared.tasks.types import _SourceDataType
-
 from .utils import (
     DATUMARO_FORMAT_FOR_DIMENSION,
     CollectionSimpleFilterTestBase,
@@ -65,7 +64,6 @@ from .utils import (
     export_dataset,
     export_task_dataset,
 )
-
 
 
 def count_frame_uses(data: Sequence[int], *, included_frames: Sequence[int]) -> dict[int, int]:

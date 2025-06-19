@@ -24,6 +24,9 @@ from PIL import Image
 from pytest_cases import parametrize
 
 import shared.utils.s3 as s3
+from shared.tasks.enums import _SourceDataType
+from shared.tasks.interface import ITaskSpec
+from shared.tasks.utils import parse_frame_step
 from shared.utils.config import (
     get_method,
     make_api_client,
@@ -37,17 +40,9 @@ from shared.utils.helpers import (
     generate_video_file,
     read_video_file,
 )
-from shared.tasks.utils import parse_frame_step
 
-from .utils import (
-    create_task,
-    wait_until_task_is_created,
-    get_cloud_storage_content
-)
-
-from shared.tasks.enums import _SourceDataType
-from shared.tasks.interface import ITaskSpec
 from ._test_base import _TestTasksBase
+from .utils import create_task, get_cloud_storage_content, wait_until_task_is_created
 
 
 @pytest.mark.usefixtures("restore_db_per_function")

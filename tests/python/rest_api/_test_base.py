@@ -1,25 +1,28 @@
-import pytest
-from pytest_cases import fixture, fixture_ref, parametrize
-from typing import Optional, Sequence, Generator
 import io
+import math
+from contextlib import closing
+from functools import partial
+from typing import Generator, Optional, Sequence
+
+import numpy as np
+import pytest
 from cvat_sdk.api_client import models
+from PIL import Image
+from pytest_cases import fixture, fixture_ref, parametrize
+
+import shared.utils.s3 as s3
 from shared.tasks.enums import _SourceDataType
-from shared.tasks.types import _ImagesTaskSpec, _VideoTaskSpec
 from shared.tasks.interface import ITaskSpec
-from shared.utils.helpers import generate_image_files, generate_video_file
+from shared.tasks.types import _ImagesTaskSpec, _VideoTaskSpec
+from shared.tasks.utils import parse_frame_step
 from shared.utils.config import make_api_client
+from shared.utils.helpers import generate_image_files, generate_video_file
+
 from .utils import (
     calc_end_frame,
     create_task,
+    unique,
 )
-from shared.tasks.utils import parse_frame_step
-import math
-import numpy as np
-from contextlib import closing
-import shared.utils.s3 as s3
-from functools import partial
-from PIL import Image
-from .utils import unique
 
 
 class _TestTasksBase:
