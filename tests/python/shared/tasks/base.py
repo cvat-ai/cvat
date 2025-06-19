@@ -35,6 +35,3 @@ class _TaskSpecBase(ITaskSpec):
                 return v
 
         raise AttributeError(k)
-
-
-

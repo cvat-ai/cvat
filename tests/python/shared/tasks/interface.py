@@ -8,6 +8,7 @@ from abc import ABCMeta, abstractmethod
 from PIL import Image
 from .enums import _SourceDataType
 
+
 class ITaskSpec(models.ITaskWriteRequest, models.IDataRequest, metaclass=ABCMeta):
     size: int
     frame_step: int

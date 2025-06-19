@@ -979,30 +979,6 @@ class TestGetTaskDataset:
                         assert tuple(related_image["size"]) > (0, 0)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchTaskLabel:
     def _get_task_labels(self, pid, user, **kwargs) -> list[models.Label]:
