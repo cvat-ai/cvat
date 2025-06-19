@@ -26,8 +26,6 @@ interface ProjectRouteMatch {
     id?: string | undefined;
 }
 
-const PAGE_SIZE = 10;
-
 function WebhooksPage(): JSX.Element | null {
     const dispatch = useDispatch();
     const history = useHistory();
@@ -82,17 +80,18 @@ function WebhooksPage(): JSX.Element | null {
                 <Col md={22} lg={18} xl={16} xxl={14}>
                     <Pagination
                         className='cvat-tasks-pagination'
-                        onChange={(page: number) => {
+                        onChange={(page: number, pageSize: number) => {
                             dispatch(getWebhooksAsync({
                                 ...query,
                                 page,
+                                pageSize,
                             }));
                         }}
-                        showSizeChanger={false}
                         total={totalCount}
+                        pageSize={query.pageSize}
                         current={query.page}
-                        pageSize={PAGE_SIZE}
                         showQuickJumper
+                        showSizeChanger
                     />
                 </Col>
             </Row>

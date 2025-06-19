@@ -996,6 +996,7 @@ export interface OrganizationState {
 
 export interface WebhooksQuery {
     page: number;
+    pageSize: number;
     id: number | null;
     search: string | null;
     filter: string | null;

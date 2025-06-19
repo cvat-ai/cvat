@@ -2114,7 +2114,7 @@ async function getWebhookDelivery(webhookID: number, deliveryID: number): Promis
     }
 }
 
-async function getWebhooks(filter, pageSize = 10): Promise<any> {
+async function getWebhooks(filter): Promise<any> {
     const params = enableOrganization();
     const { backendAPI } = config;
 
@@ -2123,7 +2123,6 @@ async function getWebhooks(filter, pageSize = 10): Promise<any> {
             params: {
                 ...params,
                 ...filter,
-                page_size: pageSize,
             },
         });
 

@@ -373,6 +373,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
     implementationMixin(cvat.webhooks.get, async (filter) => {
         checkFilter(filter, {
             page: isInteger,
+            pageSize: isInteger,
             id: isInteger,
             projectId: isInteger,
             filter: isString,
@@ -380,7 +381,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
             sort: isString,
         });
 
-        checkExclusiveFields(filter, ['id', 'projectId'], ['page']);
+        checkExclusiveFields(filter, ['id', 'projectId'], ['page', 'pageSize']);
 
         const searchParams = filterFieldsToSnakeCase(filter, ['projectId']);
 
