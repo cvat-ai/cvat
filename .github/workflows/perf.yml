@@ -1,0 +1,32 @@
+name: Run K6 Performance Test
+
+on:
+  push:
+  workflow_dispatch:
+    inputs:
+      test_file:
+        description: 'K6 test file to run'
+        required: true
+        default: 'tests/regression/test.js'
+
+jobs:
+  k6-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Run K6 Performance Test
+        env:
+          COMPOSE_FILE: docker-compose.yml
+        run: |
+          chmod +x ./scripts/perf/k6.sh
+          ./scripts/perf/k6.sh ${{ github.event.inputs.test_file }}
+
+      - name: Tear down Docker Compose
+        if: always()
+        run: docker compose down -v
