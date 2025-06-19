@@ -34,6 +34,7 @@ if ! docker ps --filter "name=${MAIN_CONTAINER}" --filter "status=running" | gre
       status_code=$(curl -s -o /tmp/server_response -w "%{http_code}" ${api_about_page})
       (( max_tries-- ))
   done
+  sleep 30
 
   echo -e "Create default admin user"
   docker exec -i cvat_server \
