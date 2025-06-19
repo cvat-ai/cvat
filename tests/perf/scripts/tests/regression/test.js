@@ -47,6 +47,7 @@ function createTask(authKey) {
     check(response, {
         'is status 201': (r) => r.status === 201,
     });
+    console.log(response.body)
     return response.json().id
 }
 
