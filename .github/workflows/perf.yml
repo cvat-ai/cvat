@@ -21,8 +21,8 @@ jobs:
         env:
           COMPOSE_FILE: docker-compose.yml
         run: |
-          chmod +x ./scripts/perf/k6.sh
           cd ./tests/perf/
+          chmod +x ./k6.sh
           ./k6.sh ${{ github.event.inputs.test_file }}
 
       - name: Tear down Docker Compose
