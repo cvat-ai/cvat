@@ -20,10 +20,9 @@ jobs:
         env:
           COMPOSE_FILE: docker-compose.yml
         run: |
-          ls ./tests
           cd ./tests/perf
           chmod +x ./k6.sh
-          ./k6.sh ${{ github.event.inputs.test_file }}
+          ./k6.sh tests/regression/test.js
 
       - name: Tear down Docker Compose
         if: always()
