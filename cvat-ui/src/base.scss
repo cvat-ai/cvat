@@ -189,5 +189,6 @@ $scroll-breakpoint: 1300px;
         overflow-y: auto;
         padding-top: $grid-unit-size;
         padding-bottom: $grid-unit-size;
+        align-items: start;
     }
 }
