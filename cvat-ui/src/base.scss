@@ -178,7 +178,6 @@ $scroll-breakpoint: 1300px;
 
 @mixin cvat-resource-page {
     padding-top: $grid-unit-size * 2;
-    padding-bottom: $grid-unit-size;
     height: 100%;
     width: 100%;
     display: flex;
@@ -188,7 +187,11 @@ $scroll-breakpoint: 1300px;
         flex-grow: 1;
         overflow-y: auto;
         padding-top: $grid-unit-size;
-        padding-bottom: $grid-unit-size;
         align-items: start;
+    }
+
+    > div:nth-child(3) {
+        padding-top: $grid-unit-size;
+        padding-bottom: $grid-unit-size;
     }
 }
