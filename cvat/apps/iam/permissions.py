@@ -142,7 +142,11 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
     @classmethod
     @abstractmethod
     def create(
-        cls, request: ExtendedRequest, view, obj: Any | None, iam_context: IamContext | None = None
+        cls,
+        request: ExtendedRequest,
+        view: ViewSet,
+        obj: Any | None,
+        iam_context: IamContext | None,
     ) -> Sequence[OpenPolicyAgentPermission]: ...
 
     @classmethod
