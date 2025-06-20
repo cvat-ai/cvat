@@ -213,13 +213,13 @@ jobs:
         if: failure() && steps.run_tests.conclusion == 'failure'
         uses: actions/upload-artifact@v4
         with:
-          name: rest_api_container_logs${{ contains(matrix.patterns, 'not') && '_slow' || '' }} # add '_slow' if tests were excluded
+          name: rest_api_container_logs${{ contains(matrix.pattern, 'not') && '-slow' || '' }}-static-cache:${{ matrix.allow_cache }} # add '_slow' if tests were excluded
           path: "${{ github.workspace }}/rest_api_testing"
       - name: Upload allure results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: allure-results-tests-api${{ contains(matrix.patterns, 'not') && '_slow' || '' }}
+          name: allure-results-tests-api${{ contains(matrix.pattern, 'not') && '-slow' || '' }}-static-cache:${{ matrix.allow_cache }}
           path: tests/python/allure-results
 
   unit_testing:
