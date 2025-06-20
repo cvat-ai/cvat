@@ -787,3 +787,5 @@ if ONE_RUNNING_JOB_IN_QUEUE_PER_USER:
             "cron_string": "0 8 * * *",
         }
     )
+
+USER_LAST_ACTIVITY_UPDATEP_PERIOD = timedelta(days=1)
