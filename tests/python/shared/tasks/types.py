@@ -1,0 +1,37 @@
+# Copyright (C) 2025 Intel Corporation
+# Copyright (C) CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
+from .base import _TaskSpecBase
+from .enums import _SourceDataType
+import attrs
+from typing import Callable, ClassVar
+from PIL import Image
+import io
+from contextlib import closing
+from shared.utils.helpers import read_video_file
+
+
+@attrs.define
+class _VideoTaskSpec(_TaskSpecBase):
+    source_data_type: ClassVar[_SourceDataType] = _SourceDataType.video
+
+    _get_video_file: Callable[[], io.IOBase] = attrs.field(kw_only=True)
+
+    def read_frame(self, i: int) -> Image.Image:
+        with closing(read_video_file(self._get_video_file())) as reader:
+            for _ in range(i + 1):
+                frame = next(reader)
+
+            return frame
+
+
+@attrs.define
+class _ImagesTaskSpec(_TaskSpecBase):
+    source_data_type: ClassVar[_SourceDataType] = _SourceDataType.images
+
+    _get_frame: Callable[[int], bytes] = attrs.field(kw_only=True)
+
+    def read_frame(self, i: int) -> Image.Image:
+        return Image.open(io.BytesIO(self._get_frame(i)))

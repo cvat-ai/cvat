@@ -35,8 +35,8 @@ from .utils import (
     compare_annotations,
     create_task,
     export_job_dataset,
-    parse_frame_step,
 )
+from shared.tasks.utils import parse_frame_step
 
 
 def get_job_staff(job, tasks, projects):

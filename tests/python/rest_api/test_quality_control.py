@@ -18,11 +18,11 @@ from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
 
 from shared.utils.config import make_api_client
+from shared.tasks.utils import parse_frame_step
 
 from .utils import (
     CollectionSimpleFilterTestBase,
     invite_user_to_org,
-    parse_frame_step,
     register_new_user,
     wait_background_request,
 )
