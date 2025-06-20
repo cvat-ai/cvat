@@ -3,13 +3,13 @@
 #
 # SPDX-License-Identifier: MIT
 
+from typing import Any, Union
+
 import attrs
 from cvat_sdk.api_client import models
-from typing import Union, Any
 
-
-from .utils import parse_frame_step
 from .interface import ITaskSpec
+from .utils import parse_frame_step
 
 
 @attrs.define

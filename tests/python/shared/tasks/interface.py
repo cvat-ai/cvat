@@ -3,9 +3,11 @@
 #
 # SPDX-License-Identifier: MIT
 
-from cvat_sdk.api_client import models
 from abc import ABCMeta, abstractmethod
+
+from cvat_sdk.api_client import models
 from PIL import Image
+
 from .enums import _SourceDataType
 
 

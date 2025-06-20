@@ -18,11 +18,7 @@ from shared.tasks.utils import parse_frame_step
 from shared.utils.config import make_api_client
 from shared.utils.helpers import generate_image_files, generate_video_file
 
-from .utils import (
-    calc_end_frame,
-    create_task,
-    unique,
-)
+from .utils import calc_end_frame, create_task, unique
 
 
 class _TestTasksBase:
