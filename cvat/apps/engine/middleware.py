@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from datetime import timedelta
 from typing import Protocol
 from uuid import uuid4
 
