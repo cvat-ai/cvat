@@ -8,11 +8,11 @@ from __future__ import annotations
 import importlib
 import operator
 from abc import ABCMeta, abstractmethod
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from enum import Enum
-from functools import cached_property
+from functools import cached_property, lru_cache
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Optional, TypeVar
 
 from attrs import define, field
 from django.apps import AppConfig
@@ -303,10 +303,18 @@ def is_public_obj(obj: T) -> bool:
 
 
 class PolicyEnforcer(BasePermission):
-    def _collect_permission_types(self, request, view, obj) -> list[type[OpenPolicyAgentPermission]]:
-        return OpenPolicyAgentPermission.__subclasses__()
+    @lru_cache(maxsize=1, typed=True)
+    def _collect_permission_types(self) -> Collection[type[OpenPolicyAgentPermission]]:
+        def get_subclasses(cls):
+            return set(cls.__subclasses__()).union(
+                s for c in cls.__subclasses__() for s in get_subclasses(c)
+            )
 
-    def _check_permission(self, request: ExtendedRequest, view: ViewSet, obj) -> tuple[bool, list[OpenPolicyAgentPermission]]:
+        return get_subclasses(OpenPolicyAgentPermission)
+
+    def _check_permission(
+        self, request: ExtendedRequest, view: ViewSet, obj
+    ) -> tuple[bool, list[OpenPolicyAgentPermission]]:
         def _check_permissions():
             # DRF can send OPTIONS request. Internally it will try to get
             # information about serializers for PUT and POST requests (clone
@@ -317,19 +325,19 @@ class PolicyEnforcer(BasePermission):
                 return True
 
             iam_context = get_iam_context(request, obj)
-            for perm_class in self._collect_permission_types(request, view, obj):
-                for perm in perm_class.create(request, view, obj, iam_context=iam_context):
+            for perm_class in self._collect_permission_types():
+                perms = perm_class.create(request, view, obj, iam_context=iam_context)
+                for perm in perms:
+                    checked_permissions.append(perm)
                     result = perm.check_access()
                     if not result.allow:
                         return False
 
-                    used_permissions.append(perm)
-
             return True
 
-        used_permissions = []
+        checked_permissions = []
         allow = _check_permissions()
-        return allow, used_permissions
+        return allow, checked_permissions
 
     def check_permission(self, request, view, obj) -> bool:
         return self._check_permission(request, view, obj)[0]
