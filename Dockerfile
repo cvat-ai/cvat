@@ -37,15 +37,14 @@ FROM build-image-base AS build-image-av
 ARG PREFIX=/opt/ffmpeg
 ARG PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig
 
-ARG FFMPEG_VERSION=4.3.1
-ARG AV_VERSION=9.2.0
-
 ENV OPENH264_VERSION=2.1.1
 
 WORKDIR /tmp/openh264
 RUN curl -sL https://github.com/cisco/openh264/archive/v${OPENH264_VERSION}.tar.gz --output - | \
     tar -zx --strip-components=1 && \
     make -j5 && make install-shared PREFIX=${PREFIX} && make clean
+
+ARG FFMPEG_VERSION=5.1.6
 
 WORKDIR /tmp/ffmpeg
 RUN curl -sL https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.gz --output - | \
@@ -56,6 +55,8 @@ RUN curl -sL https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.gz --outpu
 
 COPY utils/dataset_manifest/requirements.txt /tmp/utils/dataset_manifest/requirements.txt
 
+ARG AV_VERSION=10.0.0
+
 # Since we're using pip-compile-multi, each dependency can only be listed in
 # one requirements file. In the case of PyAV, that should be
 # `dataset_manifest/requirements.txt`. Make sure it's actually there,
@@ -65,13 +66,19 @@ RUN echo 'av==${AV_VERSION}' > /tmp/utils/dataset_manifest/requirements.txt
 
 RUN cat /tmp/utils/dataset_manifest/requirements.txt
 
-# Work around https://github.com/PyAV-Org/PyAV/issues/1140
-RUN pip install setuptools wheel 'cython<3'
-
 RUN --mount=type=cache,target=/root/.cache/pip/http-v2 \
-    python3 -m pip wheel --no-binary=av --no-build-isolation \
-    -r /tmp/utils/dataset_manifest/requirements.txt \
-    -w /tmp/wheelhouse
+    AV_MAJOR=$(echo $AV_VERSION | cut -d. -f1) && \
+    if [ "$AV_MAJOR" -le 10 ]; then \
+        # Work around https://github.com/PyAV-Org/PyAV/issues/1140
+        pip install setuptools wheel 'cython<3'; \
+        python3 -m pip wheel --no-binary=av --no-build-isolation \
+            -r /tmp/utils/dataset_manifest/requirements.txt \
+            -w /tmp/wheelhouse; \
+    else \
+        python3 -m pip wheel --no-binary=av \
+            -r /tmp/utils/dataset_manifest/requirements.txt \
+            -w /tmp/wheelhouse; \
+    fi
 
 # This stage builds wheels for all dependencies (except PyAV)
 FROM build-image-base AS build-image
