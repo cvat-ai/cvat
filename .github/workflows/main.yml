@@ -137,11 +137,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - pattern: '-m slow'
+          - pattern: "test_task_data"
             allow_cache: 'true'
-          - pattern: '-m slow'
+          - pattern: "test_task_data"
             allow_cache: 'no'
-          - pattern: "-m 'not slow'"
+          - pattern: "not 'test_task_data'"
             allow_cache: 'no'
     steps:
       - uses: actions/checkout@v4
@@ -185,9 +185,8 @@ jobs:
           COVERAGE_PROCESS_START: ".coveragerc"
           CVAT_ALLOW_STATIC_CACHE: ${{ matrix.allow_cache }}
         run: |
-          pytest tests/python/ ${{ matrix.pattern }} --cov --cov-report=json --alluredir=tests/python/allure-results
+          pytest tests/python/ -k ${{ matrix.pattern }} --cov --cov-report=json --alluredir=tests/python/allure-results
           ONE_RUNNING_JOB_IN_QUEUE_PER_USER="true" pytest tests/python/rest_api/test_queues.py --cov --cov-report=json
-          # CVAT_ALLOW_STATIC_CACHE="true" pytest -k "TestTaskData" tests/python --cov --cov-report=json # quick solution: send to a 3rd github-runner
 
           for COVERAGE_FILE in `find -name "coverage*.json" -type f -printf "%f\n"`; do mv ${COVERAGE_FILE} "${COVERAGE_FILE%%.*}_0.json"; done
 
@@ -213,13 +212,28 @@ jobs:
         if: failure() && steps.run_tests.conclusion == 'failure'
         uses: actions/upload-artifact@v4
         with:
-          name: rest_api_container_logs${{ contains(matrix.pattern, 'not') && '-slow' || '' }}-static-cache:${{ matrix.allow_cache }} # add '_slow' if tests were excluded
+          name: ${{
+            contains(matrix.pattern, 'not')
+              && 'rest_api_container_logs'
+              || format(
+                  'rest_api_container_logs-{0}-cache:{1}',
+                  matrix.pattern, matrix.allow_cache
+                )
+            }}
           path: "${{ github.workspace }}/rest_api_testing"
+
       - name: Upload allure results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: allure-results-tests-api${{ contains(matrix.pattern, 'not') && '-slow' || '' }}-static-cache:${{ matrix.allow_cache }}
+          name: ${{
+            contains(matrix.pattern, 'not')
+              && 'allure-results-tests-api'
+              || format(
+                  'allure-results-tests-api-{0}-cache:{1}',
+                  matrix.pattern, matrix.allow_cache
+                )
+            }}
           path: tests/python/allure-results
 
   unit_testing:
