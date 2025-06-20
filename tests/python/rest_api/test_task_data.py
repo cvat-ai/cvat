@@ -1,4 +1,3 @@
-
 import io
 import json
 import math
@@ -27,12 +26,7 @@ import shared.utils.s3 as s3
 from shared.tasks.enums import _SourceDataType
 from shared.tasks.interface import ITaskSpec
 from shared.tasks.utils import parse_frame_step
-from shared.utils.config import (
-    get_method,
-    make_api_client,
-    patch_method,
-    post_method,
-)
+from shared.utils.config import get_method, make_api_client, patch_method, post_method
 from shared.utils.helpers import (
     generate_image_file,
     generate_image_files,
