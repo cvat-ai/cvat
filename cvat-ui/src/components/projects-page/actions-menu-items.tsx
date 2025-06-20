@@ -2,15 +2,17 @@
 //
 // SPDX-License-Identifier: MIT
 
+import React from 'react';
+import { Link } from 'react-router-dom';
 import { MenuProps } from 'antd/lib/menu';
 import { usePlugins } from 'utils/hooks';
 
 interface MenuItemsData {
+    projectID: number;
     pluginActions: ReturnType<typeof usePlugins>;
     onExportDataset: () => void;
     onImportDataset: () => void;
     onBackupProject: () => void;
-    onSetupWebhooks: () => void;
     onDeleteProject: () => void;
 }
 
@@ -19,11 +21,11 @@ export default function ProjectActionsItems(
     projectMenuProps: unknown,
 ): MenuProps['items'] {
     const {
+        projectID,
         pluginActions,
         onExportDataset,
         onImportDataset,
         onBackupProject,
-        onSetupWebhooks,
         onDeleteProject,
     } = menuItemsData;
 
@@ -48,20 +50,29 @@ export default function ProjectActionsItems(
     }, 20]);
 
     menuItems.push([{
-        key: 'set-webhooks',
-        onClick: onSetupWebhooks,
-        label: 'Setup webhooks',
+        key: 'view-analytics',
+        label: <Link to={`/projects/${projectID}/analytics`}>View analytics</Link>,
     }, 30]);
 
     menuItems.push([{
+        key: 'quality-control',
+        label: <Link to={`/projects/${projectID}/quality-control`}>Quality control</Link>,
+    }, 40]);
+
+    menuItems.push([{
+        key: 'set-webhooks',
+        label: <Link to={`/projects/${projectID}/webhooks`}>Setup webhooks</Link>,
+    }, 50]);
+
+    menuItems.push([{
         type: 'divider',
-    }, 39]);
+    }, 59]);
 
     menuItems.push([{
         key: 'delete',
         onClick: onDeleteProject,
         label: 'Delete',
-    }, 40]);
+    }, 60]);
 
     menuItems.push(
         ...pluginActions.map(({ component: Component, weight }, index) => {

@@ -4,13 +4,13 @@ from abc import ABC, abstractmethod
 from contextlib import ExitStack
 from http import HTTPStatus
 from time import sleep
-from typing import Any, Optional, TypeVar
+from typing import Any, TypeVar
 
 import pytest
 
 T = TypeVar("T")
 
-from shared.utils.config import get_method, post_method, put_method
+from shared.utils.config import get_method, post_method
 
 FILENAME_TEMPLATE = "cvat/{}/{}.zip"
 EXPORT_FORMAT = "CVAT for images 1.1"
@@ -53,6 +53,26 @@ def _make_import_resource_params(
     return params
 
 
+# FUTURE-TODO: reuse common logic from rest_api/utils
+def _wait_request(
+    user: str,
+    request_id: str,
+    *,
+    sleep_interval: float = 0.1,
+    number_of_checks: int = 100,
+):
+    for _ in range(number_of_checks):
+        sleep(sleep_interval)
+        response = get_method(user, f"requests/{request_id}")
+        assert response.status_code == HTTPStatus.OK
+
+        request_details = json.loads(response.content)
+        status = request_details["status"]
+        assert status in {"started", "queued", "finished", "failed"}
+        if status in {"finished", "failed"}:
+            return
+
+
 class _CloudStorageResourceTest(ABC):
     @staticmethod
     @abstractmethod
@@ -90,13 +110,9 @@ class _CloudStorageResourceTest(ABC):
         resource: str,
         *,
         user: str,
-        _expect_status: Optional[int] = None,
+        _expect_status: HTTPStatus = HTTPStatus.ACCEPTED,
         **kwargs,
     ):
-        _expect_status = _expect_status or HTTPStatus.ACCEPTED
-
-        sleep_interval = 0.1
-        number_of_checks = 100
 
         # initialize the export process
         response = post_method(
@@ -113,47 +129,22 @@ class _CloudStorageResourceTest(ABC):
         rq_id = json.loads(response.content).get("rq_id")
         assert rq_id, "The rq_id was not found in server request"
 
-        for _ in range(number_of_checks):
-            sleep(sleep_interval)
-            # use new requests API for checking the status of the operation
-            response = get_method(user, f"requests/{rq_id}")
-            assert response.status_code == HTTPStatus.OK
-
-            request_details = json.loads(response.content)
-            status = request_details["status"]
-            assert status in {"started", "queued", "finished", "failed"}
-            if status in {"finished", "failed"}:
-                break
+        _wait_request(user, rq_id)
 
     def _import_resource_from_cloud_storage(
-        self, url: str, *, user: str, _expect_status: Optional[int] = None, **kwargs
+        self, url: str, *, user: str, _expect_status: HTTPStatus = HTTPStatus.ACCEPTED, **kwargs
     ) -> None:
-        _expect_status = _expect_status or HTTPStatus.ACCEPTED
-
         response = post_method(user, url, data=None, **kwargs)
         status = response.status_code
 
-        assert status == _expect_status
+        assert status == _expect_status, status
         if status == HTTPStatus.FORBIDDEN:
             return
 
         rq_id = response.json().get("rq_id")
         assert rq_id, "The rq_id parameter was not found in the server response"
 
-        number_of_checks = 100
-        sleep_interval = 0.1
-
-        for _ in range(number_of_checks):
-            sleep(sleep_interval)
-            # use new requests API for checking the status of the operation
-            response = get_method(user, f"requests/{rq_id}")
-            assert response.status_code == HTTPStatus.OK
-
-            request_details = json.loads(response.content)
-            status = request_details["status"]
-            assert status in {"started", "queued", "finished", "failed"}
-            if status in {"finished", "failed"}:
-                break
+        _wait_request(user, rq_id)
 
     def _import_annotations_from_cloud_storage(
         self,
@@ -161,27 +152,17 @@ class _CloudStorageResourceTest(ABC):
         obj,
         *,
         user,
-        _expect_status: Optional[int] = None,
+        _expect_status: HTTPStatus = HTTPStatus.ACCEPTED,
         _check_uploaded: bool = True,
         **kwargs,
     ):
-        _expect_status = _expect_status or HTTPStatus.CREATED
-
         url = f"{obj}/{obj_id}/annotations"
-        response = post_method(user, url, data=None, **kwargs)
-        status = response.status_code
+        self._import_resource_from_cloud_storage(
+            url, user=user, _expect_status=_expect_status, **kwargs
+        )
 
-        # Only the first POST request contains rq_id in response.
-        # Exclude cases with 403 expected status.
-        rq_id = None
-        if status == HTTPStatus.ACCEPTED:
-            rq_id = response.json().get("rq_id")
-            assert rq_id, "The rq_id was not found in the response"
-
-        while status != _expect_status:
-            assert status == HTTPStatus.ACCEPTED
-            response = put_method(user, url, data=None, rq_id=rq_id, **kwargs)
-            status = response.status_code
+        if _expect_status == HTTPStatus.FORBIDDEN:
+            return
 
         if _check_uploaded:
             response = get_method(user, url)
@@ -192,40 +173,18 @@ class _CloudStorageResourceTest(ABC):
             assert len(annotations["shapes"])
 
     def _import_backup_from_cloud_storage(
-        self, obj_id, obj, *, user, _expect_status: Optional[int] = None, **kwargs
+        self, obj, *, user, _expect_status: HTTPStatus = HTTPStatus.ACCEPTED, **kwargs
     ):
-        _expect_status = _expect_status or HTTPStatus.CREATED
-
-        url = f"{obj}/backup"
-        response = post_method(user, url, data=None, **kwargs)
-        status = response.status_code
-
-        while status != _expect_status:
-            assert status == HTTPStatus.ACCEPTED
-            data = json.loads(response.content.decode("utf8"))
-            response = post_method(user, url, data=data, **kwargs)
-            status = response.status_code
+        self._import_resource_from_cloud_storage(
+            f"{obj}/backup", user=user, _expect_status=_expect_status, **kwargs
+        )
 
     def _import_dataset_from_cloud_storage(
-        self, obj_id, obj, *, user, _expect_status: Optional[int] = None, **kwargs
+        self, obj_id, obj, *, user, _expect_status: HTTPStatus = HTTPStatus.ACCEPTED, **kwargs
     ):
-        _expect_status = _expect_status or HTTPStatus.CREATED
-
-        url = f"{obj}/{obj_id}/dataset"
-        response = post_method(user, url, data=None, **kwargs)
-        status = response.status_code
-
-        # Only the first POST request contains rq_id in response.
-        # Exclude cases with 403 expected status.
-        rq_id = None
-        if status == HTTPStatus.ACCEPTED:
-            rq_id = response.json().get("rq_id")
-            assert rq_id, "The rq_id was not found in the response"
-
-        while status != _expect_status:
-            assert status == HTTPStatus.ACCEPTED
-            response = get_method(user, url, action="import_status", rq_id=rq_id)
-            status = response.status_code
+        self._import_resource_from_cloud_storage(
+            f"{obj}/{obj_id}/dataset", user=user, _expect_status=_expect_status, **kwargs
+        )
 
     def _import_resource(self, cloud_storage: dict[str, Any], resource_type: str, *args, **kwargs):
         methods = {

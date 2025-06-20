@@ -34,6 +34,7 @@ from rest_framework import serializers, status, viewsets
 from rest_framework.response import Response
 
 import cvat.apps.dataset_manager as dm
+from cvat.apps.dataset_manager.task import PatchAction
 from cvat.apps.engine.frame_provider import TaskFrameProvider
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import (
@@ -45,10 +46,10 @@ from cvat.apps.engine.models import (
     SourceType,
     Task,
 )
-from cvat.apps.engine.rq import RQId, define_dependent_job
+from cvat.apps.engine.rq import RequestId, define_dependent_job
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.engine.types import ExtendedRequest
-from cvat.apps.engine.utils import get_rq_lock_by_user, get_rq_lock_for_job
+from cvat.apps.engine.utils import get_rq_lock_by_user, get_rq_lock_for_job, take_by
 from cvat.apps.events.handlers import handle_function_call
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.lambda_manager.models import FunctionKind
@@ -170,7 +171,7 @@ class LambdaFunction:
         # ID of the function (e.g. omz.public.yolo-v3)
         self.id = data["metadata"]["name"]
         # type of the function (e.g. detector, interactor)
-        meta_anno = data["metadata"]["annotations"]
+        meta_anno: dict[str, str] = data["metadata"]["annotations"]
         kind = meta_anno.get("type")
         try:
             self.kind = FunctionKind(kind)
@@ -246,6 +247,22 @@ class LambdaFunction:
         self.help_message = meta_anno.get("help_message", "")
         self.gateway = gateway
 
+        if "supported_shape_types" in meta_anno:
+            self.supported_shape_types = [
+                stripped
+                for st in meta_anno["supported_shape_types"].split(",")
+                for stripped in [st.strip()]
+                if stripped
+            ]
+            if not self.supported_shape_types:
+                raise InvalidFunctionMetadataError(
+                    f"{self.id!r} lambda function has no supported shape types"
+                )
+        else:
+            # This means that the function only supports rectangles, and that it
+            # implements the legacy interface where "shapes" only contains point arrays.
+            self.supported_shape_types = None
+
     def to_dict(self):
         response = {
             "id": self.id,
@@ -267,6 +284,12 @@ class LambdaFunction:
                     "animated_gif": self.animated_gif,
                 }
             )
+        elif self.kind is FunctionKind.TRACKER:
+            response.update(
+                {
+                    "supported_shape_types": self.supported_shape_types or ["rectangle"],
+                }
+            )
 
         return response
 
@@ -278,6 +301,7 @@ class LambdaFunction:
         db_job: Optional[Job] = None,
         is_interactive: Optional[bool] = False,
         request: Optional[ExtendedRequest] = None,
+        converter: Optional[DetectionResultConverter] = None,
     ):
         if db_job is not None and db_job.get_task_id() != db_task.id:
             raise ValidationError(
@@ -467,11 +491,29 @@ class LambdaFunction:
         elif self.kind == FunctionKind.TRACKER:
             signer = TimestampSigner(salt=f"cvat-tracker-state:{self.id}")
 
+            def prepare_shape(shape):
+                if shape is None:
+                    return None
+
+                supported_shape_types = self.supported_shape_types or [ShapeType.RECTANGLE]
+                if shape["type"] not in supported_shape_types:
+                    raise ValidationError(
+                        f"This function does not support shapes of type {shape['type']!r}"
+                    )
+
+                if self.supported_shape_types is None:
+                    # If the function does not declare supported shape types,
+                    # it uses the legacy behavior where "shapes" only contains point arrays
+                    # and the "rectangle" type is implied.
+                    return shape["points"]
+
+                return shape
+
             try:
                 payload.update(
                     {
                         "image": self._get_image(db_task, mandatory_arg("frame")),
-                        "shapes": data.get("shapes", []),
+                        "shapes": list(map(prepare_shape, data.get("shapes", []))),
                         "states": [
                             (
                                 None
@@ -503,7 +545,14 @@ class LambdaFunction:
 
             db_attr_type = db_attr["input_type"]
             if db_attr_type == "number":
-                return value.isnumeric()
+                min_value, max_value, step = map(int, db_attr["values"].split("\n"))
+
+                try:
+                    value_num = int(value)
+                except ValueError:
+                    return False
+
+                return min_value <= value_num <= max_value and (value_num - min_value) % step == 0
             elif db_attr_type == "checkbox":
                 return value in ["true", "false"]
             elif db_attr_type == "text":
@@ -553,8 +602,17 @@ class LambdaFunction:
                         )
                 response_filtered.append(item)
 
-            response = response_filtered
+            response = converter.convert(
+                conv_mask_to_poly=data.get("conv_mask_to_poly", False),
+                frame=mandatory_arg("frame"),
+                annotations=response_filtered,
+            )
         elif self.kind == FunctionKind.TRACKER:
+            if "shapes" in response and not self.supported_shape_types:
+                response["shapes"] = [
+                    None if points is None else {"type": ShapeType.RECTANGLE, "points": points}
+                    for points in response["shapes"]
+                ]
             response["states"] = [
                 # We could've used .sign_object, but that unconditionally applies
                 # an extra layer of Base64 encoding, bloating each state by 33%.
@@ -607,7 +665,9 @@ class LambdaQueue:
         job: Optional[int] = None,
     ) -> LambdaJob:
         queue = self._get_queue()
-        rq_id = RQId(RequestAction.AUTOANNOTATE, RequestTarget.TASK, task).render()
+        rq_id = RequestId(
+            action=RequestAction.AUTOANNOTATE, target=RequestTarget.TASK, target_id=task
+        ).render()
 
         # Ensure that there is no race condition when processing parallel requests.
         # Enqueuing an RQ job with (queue, user) lock  but without (queue, rq_id) lock
@@ -668,6 +728,167 @@ class LambdaQueue:
             )
 
         return LambdaJob(rq_job)
+
+
+class DetectionResultConverter:
+    def __init__(self, db_task: Task) -> None:
+        self._labels = self._convert_labels(db_task.get_labels(prefetch=True))
+
+    @classmethod
+    def _convert_labels(cls, db_labels) -> dict:
+        labels = {}
+        for label in db_labels:
+            labels[label.name] = {"id": label.id, "attributes": {}, "type": label.type}
+            if label.type == "skeleton":
+                labels[label.name]["sublabels"] = cls._convert_labels(label.sublabels.all())
+            for attr in label.attributespec_set.values():
+                labels[label.name]["attributes"][attr["name"]] = attr["id"]
+        return labels
+
+    def convert(self, *, conv_mask_to_poly: bool, frame: int, annotations: list) -> dict:
+        data = {"tags": [], "shapes": []}
+
+        for anno in annotations:
+            if parsed := self._parse_anno(
+                labels=self._labels, conv_mask_to_poly=conv_mask_to_poly, frame=frame, anno=anno
+            ):
+                if anno["type"].lower() == "tag":
+                    data["tags"].append(parsed)
+                else:
+                    data["shapes"].append(parsed)
+
+        serializer = LabeledDataSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        return serializer.validated_data
+
+    def _parse_anno(
+        self, *, labels: dict, conv_mask_to_poly: bool, frame: int, anno: dict
+    ) -> Optional[dict]:
+        label = labels.get(anno["label"])
+        if label is None:
+            # Invalid label provided
+            return None
+
+        attrs = [
+            {"spec_id": label["attributes"][attr["name"]], "value": attr["value"]}
+            for attr in anno.get("attributes", [])
+            if attr["name"] in label["attributes"]
+        ]
+
+        if anno["type"].lower() == "tag":
+            return {
+                "frame": frame,
+                "label_id": label["id"],
+                "source": "auto",
+                "attributes": attrs,
+                "group": None,
+            }
+        else:
+            shape = {
+                "frame": frame,
+                "label_id": label["id"],
+                "source": "auto",
+                "attributes": attrs,
+                "group": anno["group_id"] if "group_id" in anno else None,
+                "type": anno["type"],
+                "occluded": False,
+                "outside": anno.get("outside", False),
+                "points": (
+                    anno.get("mask", []) if anno["type"] == "mask" else anno.get("points", [])
+                ),
+                "z_order": 0,
+            }
+
+            if shape["type"] in ("rectangle", "ellipse"):
+                shape["rotation"] = anno.get("rotation", 0)
+
+            if anno["type"] == "mask" and "points" in anno and conv_mask_to_poly:
+                shape["type"] = "polygon"
+                shape["points"] = anno["points"]
+            elif anno["type"] == "mask":
+                [xtl, ytl, xbr, ybr] = shape["points"][-4:]
+                cut_points = shape["points"][:-4]
+                rle = mask_tools.mask_to_rle(np.array(cut_points)[:, np.newaxis])["counts"].tolist()
+                rle.extend([xtl, ytl, xbr, ybr])
+                shape["points"] = rle
+
+            if shape["type"] == "skeleton":
+                parsed_elements = [
+                    self._parse_anno(
+                        labels=label["sublabels"],
+                        conv_mask_to_poly=conv_mask_to_poly,
+                        frame=frame,
+                        anno=x,
+                    )
+                    for x in anno["elements"]
+                ]
+
+                # find a center to set position of missing points
+                center = [0, 0]
+                for element in parsed_elements:
+                    center[0] += element["points"][0]
+                    center[1] += element["points"][1]
+                center[0] /= len(parsed_elements) or 1
+                center[1] /= len(parsed_elements) or 1
+
+                def _map(sublabel_body):
+                    try:
+                        return next(
+                            filter(lambda x: x["label_id"] == sublabel_body["id"], parsed_elements)
+                        )
+                    except StopIteration:
+                        return {
+                            "frame": frame,
+                            "label_id": sublabel_body["id"],
+                            "source": "auto",
+                            "attributes": [],
+                            "group": None,
+                            "type": sublabel_body["type"],
+                            "occluded": False,
+                            "points": center,
+                            "outside": True,
+                            "z_order": 0,
+                        }
+
+                shape["elements"] = list(map(_map, label["sublabels"].values()))
+                if all(element["outside"] for element in shape["elements"]):
+                    return None
+
+            return shape
+
+
+class DetectionResultCollector:
+    def __init__(self, task: Task, job: Optional[Job]) -> None:
+        self._task = task
+        self._job = job
+
+        self._reset()
+
+    def add(self, data: dict) -> None:
+        self._data["tags"] += data["tags"]
+        self._data["shapes"] += data["shapes"]
+
+        assert not data["tracks"]
+
+    def submit(self):
+        if self._is_empty():
+            return
+
+        if self._job:
+            dm.task.patch_job_data(self._job.id, self._data, PatchAction.CREATE)
+        else:
+            dm.task.patch_task_data(self._task.id, self._data, PatchAction.CREATE)
+
+        self._reset()
+
+    def _is_empty(self) -> bool:
+        return not (self._data["tags"] or self._data["shapes"])
+
+    def _reset(self) -> None:
+        s = LabeledDataSerializer(data={})
+        s.is_valid(raise_exception=True)
+
+        self._data = s.validated_data
 
 
 class LambdaJob:
@@ -740,136 +961,15 @@ class LambdaJob:
         cls,
         function: LambdaFunction,
         db_task: Task,
-        labels: dict[str, dict[str, Any]],
         threshold: float,
         mapping: Optional[dict[str, str]],
         conv_mask_to_poly: bool,
         *,
         db_job: Optional[Job] = None,
     ):
-        class Results:
-            def __init__(self, task_id, job_id: Optional[int] = None):
-                self.task_id = task_id
-                self.job_id = job_id
-                self.reset()
+        collector = DetectionResultCollector(db_task, db_job)
 
-            def append_shape(self, shape):
-                self.data["shapes"].append(shape)
-
-            def append_tag(self, tag):
-                self.data["tags"].append(tag)
-
-            def submit(self):
-                if self.is_empty():
-                    return
-
-                serializer = LabeledDataSerializer(data=self.data)
-                if serializer.is_valid(raise_exception=True):
-                    if self.job_id:
-                        dm.task.patch_job_data(self.job_id, serializer.data, "create")
-                    else:
-                        dm.task.patch_task_data(self.task_id, serializer.data, "create")
-
-                self.reset()
-
-            def is_empty(self):
-                return not (self.data["tags"] or self.data["shapes"] or self.data["tracks"])
-
-            def reset(self):
-                # TODO: need to make "tags" and "tracks" are optional
-                # FIXME: need to provide the correct version here
-                self.data = {"version": 0, "tags": [], "shapes": [], "tracks": []}
-
-        def parse_anno(anno, labels):
-            label = labels.get(anno["label"])
-            if label is None:
-                # Invalid label provided
-                return None
-
-            attrs = [
-                {"spec_id": label["attributes"][attr["name"]], "value": attr["value"]}
-                for attr in anno.get("attributes", [])
-                if attr["name"] in label["attributes"]
-            ]
-
-            if anno["type"].lower() == "tag":
-                return {
-                    "frame": frame,
-                    "label_id": label["id"],
-                    "source": "auto",
-                    "attributes": attrs,
-                    "group": None,
-                }
-            else:
-                shape = {
-                    "frame": frame,
-                    "label_id": label["id"],
-                    "source": "auto",
-                    "attributes": attrs,
-                    "group": anno["group_id"] if "group_id" in anno else None,
-                    "type": anno["type"],
-                    "occluded": False,
-                    "outside": anno.get("outside", False),
-                    "points": (
-                        anno.get("mask", []) if anno["type"] == "mask" else anno.get("points", [])
-                    ),
-                    "z_order": 0,
-                }
-
-                if shape["type"] in ("rectangle", "ellipse"):
-                    shape["rotation"] = anno.get("rotation", 0)
-
-                if anno["type"] == "mask" and "points" in anno and conv_mask_to_poly:
-                    shape["type"] = "polygon"
-                    shape["points"] = anno["points"]
-                elif anno["type"] == "mask":
-                    [xtl, ytl, xbr, ybr] = shape["points"][-4:]
-                    cut_points = shape["points"][:-4]
-                    rle = mask_tools.mask_to_rle(np.array(cut_points)[:, np.newaxis])[
-                        "counts"
-                    ].tolist()
-                    rle.extend([xtl, ytl, xbr, ybr])
-                    shape["points"] = rle
-
-                if shape["type"] == "skeleton":
-                    parsed_elements = [parse_anno(x, label["sublabels"]) for x in anno["elements"]]
-
-                    # find a center to set position of missing points
-                    center = [0, 0]
-                    for element in parsed_elements:
-                        center[0] += element["points"][0]
-                        center[1] += element["points"][1]
-                    center[0] /= len(parsed_elements) or 1
-                    center[1] /= len(parsed_elements) or 1
-
-                    def _map(sublabel_body):
-                        try:
-                            return next(
-                                filter(
-                                    lambda x: x["label_id"] == sublabel_body["id"], parsed_elements
-                                )
-                            )
-                        except StopIteration:
-                            return {
-                                "frame": frame,
-                                "label_id": sublabel_body["id"],
-                                "source": "auto",
-                                "attributes": [],
-                                "group": None,
-                                "type": sublabel_body["type"],
-                                "occluded": False,
-                                "points": center,
-                                "outside": True,
-                                "z_order": 0,
-                            }
-
-                    shape["elements"] = list(map(_map, label["sublabels"].values()))
-                    if all(element["outside"] for element in shape["elements"]):
-                        return None
-
-                return shape
-
-        results = Results(db_task.id, job_id=db_job.id if db_job else None)
+        converter = DetectionResultConverter(db_task)
 
         frame_set = cls._get_frame_set(db_task, db_job)
 
@@ -880,28 +980,28 @@ class LambdaJob:
             annotations = function.invoke(
                 db_task,
                 db_job=db_job,
-                data={"frame": frame, "mapping": mapping, "threshold": threshold},
+                data={
+                    "frame": frame,
+                    "mapping": mapping,
+                    "threshold": threshold,
+                    "conv_mask_to_poly": conv_mask_to_poly,
+                },
+                converter=converter,
             )
 
             progress = (frame + 1) / db_task.data.size
             if not cls._update_progress(progress):
                 break
 
-            for anno in annotations:
-                parsed = parse_anno(anno, labels)
-                if parsed is not None:
-                    if anno["type"].lower() == "tag":
-                        results.append_tag(parsed)
-                    else:
-                        results.append_shape(parsed)
+            collector.add(annotations)
 
             # Accumulate data during 100 frames before submitting results.
             # It is optimization to make fewer calls to our server. Also
             # it isn't possible to keep all results in memory.
             if frame and frame % 100 == 0:
-                results.submit()
+                collector.submit()
 
-        results.submit()
+        collector.submit()
 
     @staticmethod
     # progress is in [0, 1] range
@@ -1052,23 +1152,10 @@ class LambdaJob:
             else:
                 assert False
 
-        def convert_labels(db_labels):
-            labels = {}
-            for label in db_labels:
-                labels[label.name] = {"id": label.id, "attributes": {}, "type": label.type}
-                if label.type == "skeleton":
-                    labels[label.name]["sublabels"] = convert_labels(label.sublabels.all())
-                for attr in label.attributespec_set.values():
-                    labels[label.name]["attributes"][attr["name"]] = attr["id"]
-            return labels
-
-        labels = convert_labels(db_task.get_labels(prefetch=True))
-
         if function.kind == FunctionKind.DETECTOR:
             cls._call_detector(
                 function,
                 db_task,
-                labels,
                 kwargs.get("threshold"),
                 kwargs.get("mapping"),
                 kwargs.get("conv_mask_to_poly"),
@@ -1194,10 +1281,16 @@ class FunctionViewSet(viewsets.ViewSet):
         gateway = LambdaGateway()
         lambda_func = gateway.get(func_id)
 
+        converter = None
+
+        if lambda_func.kind == FunctionKind.DETECTOR:
+            converter = DetectionResultConverter(db_task)
+
         response = lambda_func.invoke(
             db_task,
             request.data,  # TODO: better to add validation via serializer for these data
             db_job=job,
+            converter=converter,
             is_interactive=True,
             request=request,
         )
@@ -1262,22 +1355,20 @@ class RequestViewSet(viewsets.ViewSet):
 
     @return_response()
     def list(self, request):
-        queryset = Task.objects.select_related(
-            "assignee",
-            "owner",
-            "organization",
-        ).prefetch_related(
-            "project__owner",
-            "project__assignee",
-            "project__organization",
-        )
-
-        perm = LambdaPermission.create_scope_list(request)
-        queryset = perm.filter(queryset)
-        task_ids = set(queryset.values_list("id", flat=True))
-
         queue = LambdaQueue()
-        rq_jobs = [job.to_dict() for job in queue.get_jobs() if job.get_task() in task_ids]
+        queued_jobs = queue.get_jobs()
+        queued_task_ids = set(job.get_task() for job in queued_jobs if job.get_task())
+        visible_task_ids = set()
+        if queued_task_ids:
+            perm = LambdaPermission.create_scope_list(request)
+
+            queryset = perm.filter(Task.objects).values_list("id", flat=True)
+
+            # Avoid big DB requests
+            for queued_task_ids_chunk in take_by(sorted(queued_task_ids), 1000):
+                visible_task_ids.update(queryset.filter(id__in=queued_task_ids_chunk))
+
+        rq_jobs = [job.to_dict() for job in queued_jobs if job.get_task() in visible_task_ids]
 
         response_serializer = FunctionCallSerializer(rq_jobs, many=True)
         return response_serializer.data

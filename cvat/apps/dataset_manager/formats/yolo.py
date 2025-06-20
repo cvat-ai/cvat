@@ -9,11 +9,11 @@ from typing import Callable, Optional
 from datumaro.components.annotation import AnnotationType
 from datumaro.components.dataset import StreamDataset
 from datumaro.components.dataset_base import DatasetItem
-from datumaro.components.project import Dataset
 from pyunpack import Archive
 
 from cvat.apps.dataset_manager.bindings import (
     CommonData,
+    CVATDataExtractorMixin,
     GetCVATDataExtractor,
     ProjectData,
     detect_dataset,
@@ -24,7 +24,7 @@ from cvat.apps.dataset_manager.bindings import (
 from cvat.apps.dataset_manager.util import make_zip_archive
 
 from .registry import dm_env, exporter, importer
-from .transformations import SetKeyframeForEveryTrackShape
+from .transformations import EllipsesToMasks, SetKeyframeForEveryTrackShape
 
 
 def _export_common(
@@ -60,11 +60,16 @@ def _import_common(
 ):
     Archive(src_file.name).extractall(temp_dir)
 
+    detect_dataset(temp_dir, format_name=format_name, importer=dm_env.importers.get(format_name))
+
+    detected_sources = dm_env.make_importer(format_name)(temp_dir)
+
     image_info = {}
     extractor = dm_env.extractors.get(format_name)
     frames = [
-        extractor.name_from_path(osp.relpath(p, temp_dir))
-        for p in glob(osp.join(temp_dir, "**", "*.txt"), recursive=True)
+        extractor.name_from_path(osp.relpath(p, folder))
+        for folder in set(osp.dirname(source["url"]) for source in detected_sources)
+        for p in glob(osp.join(folder, "**", "*.txt"), recursive=True)
     ]
     root_hint = find_dataset_root([DatasetItem(id=frame) for frame in frames], instance_data)
     for frame in frames:
@@ -77,8 +82,7 @@ def _import_common(
         if frame_info is not None:
             image_info[frame] = (frame_info["height"], frame_info["width"])
 
-    detect_dataset(temp_dir, format_name=format_name, importer=dm_env.importers.get(format_name))
-    dataset = Dataset.import_from(
+    dataset = StreamDataset.import_from(
         temp_dir, format_name, env=dm_env, image_info=image_info, **(import_kwargs or {})
     )
     dataset = dataset.transform(SetKeyframeForEveryTrackShape)
@@ -111,6 +115,7 @@ def _export_yolo_ultralytics_oriented_boxes(*args, **kwargs):
 def _export_yolo_ultralytics_segmentation(dst_file, temp_dir, instance_data, *, save_images=False):
     with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
         dataset = StreamDataset.from_extractors(extractor, env=dm_env)
+        dataset.transform(EllipsesToMasks)
         dataset = dataset.transform("masks_to_polygons")
         dataset.export(temp_dir, "yolo_ultralytics_segmentation", save_media=save_images)
 
@@ -144,13 +149,15 @@ def _import_yolo_ultralytics_oriented_boxes(*args, **kwargs):
 
 @importer(name="Ultralytics YOLO Pose", ext="ZIP", version="1.0")
 def _import_yolo_ultralytics_pose(src_file, temp_dir, instance_data, **kwargs):
-    with GetCVATDataExtractor(instance_data) as extractor:
-        point_categories = extractor.categories().get(AnnotationType.points)
-        label_categories = extractor.categories().get(AnnotationType.label)
-        true_skeleton_point_labels = {
-            label_categories[label_id].name: category.labels
-            for label_id, category in point_categories.items.items()
-        }
+    instance_meta = instance_data.meta[instance_data.META_FIELD]
+    categories = CVATDataExtractorMixin.load_categories(instance_meta["labels"])
+    point_categories = categories.get(AnnotationType.points)
+    label_categories = categories.get(AnnotationType.label)
+    true_skeleton_point_labels = {
+        label_categories[label_id].name: category.labels
+        for label_id, category in point_categories.items.items()
+    }
+
     _import_common(
         src_file,
         temp_dir,

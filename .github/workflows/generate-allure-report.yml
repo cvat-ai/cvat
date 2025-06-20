@@ -1,0 +1,68 @@
+name: Generate Allure Report
+
+on:
+  workflow_call:
+
+    secrets:
+      AWS_ALLURE_REPORTS_ROLE:
+        required: true
+env:
+  S3_BUCKET: cvat-allure-reports
+
+jobs:
+  generate_report:
+    name: Generate Allure Report and Upload to S3
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Allure CLI (.deb)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y default-jre-headless
+          wget https://github.com/allure-framework/allure2/releases/download/2.34.0/allure_2.34.0-1_all.deb
+          sudo dpkg -i allure_2.34.0-1_all.deb
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ALLURE_REPORTS_ROLE }}
+          aws-region: eu-west-1
+
+      - name: Set a timestamp
+        id: timestampid
+        run: |
+          echo "timestamp=$(date --utc +%Y%m%d_%H%M%SZ)" >> "$GITHUB_OUTPUT"
+
+      - name: Download Allure results from artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: allure-results*
+          merge-multiple: true
+          path: merged-allure-results
+
+      - name: Download previous history from S3
+        run: aws s3 cp s3://${{ env.S3_BUCKET }}/history/ ./merged-allure-results/history --recursive || echo "No history found"
+
+      - name: Generate Allure Report
+        run: allure generate ./merged-allure-results --clean -o allure-report
+
+      - name: Backup updated history to S3
+        run: aws s3 cp ./allure-report/history s3://${{ env.S3_BUCKET }}/history/ --recursive
+
+      - name: Deploy report to S3 (timestamped folder)
+        run: aws s3 cp ./allure-report s3://${{ env.S3_BUCKET }}/report/${{ steps.timestampid.outputs.timestamp }}/ --recursive
+
+      - name: Update latest report alias
+        run: |
+          aws s3 rm s3://${{ env.S3_BUCKET }}/report/latest/ --recursive || true
+          aws s3 cp ./allure-report s3://${{ env.S3_BUCKET }}/report/latest/ --recursive
+
+      - name: Write report URL to summary
+        run: |
+          echo "### 🧪 [Allure Report](http://${{ env.S3_BUCKET }}.s3-website.eu-west-1.amazonaws.com/report/${{ steps.timestampid.outputs.timestamp }}/index.html)" >> $GITHUB_STEP_SUMMARY

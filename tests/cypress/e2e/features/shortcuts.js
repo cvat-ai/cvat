@@ -185,8 +185,10 @@ context('Customizable Shortcuts', () => {
             cy.contains('Shortcuts').click();
             cy.get('.cvat-shortcuts-settings-collapse').should('exist').and('be.visible');
             cy.get('.cvat-shortcuts-settings-label').first().click();
-            cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select .ant-select-selection-overflow-item').first().contains('f2');
-            cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select .ant-select-selection-overflow-item').eq(1).should('not.have.text');
+            cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select')
+                .first().find('span.ant-select-selection-item').should('have.text', 'f2');
+            cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select')
+                .eq(1).find('span.ant-select-selection-item').should('not.exist');
             cy.get('.cvat-shortcuts-settings-restore').click();
             cy.get('.cvat-shortcuts-settings-restore-modal .ant-btn-primary').click();
         });
@@ -233,9 +235,14 @@ context('Customizable Shortcuts', () => {
             cy.get('.cvat-canvas-container').click();
             cy.realPress(['F1']);
             cy.get('.cvat-shortcuts-modal-window').should('exist').and('be.visible');
-            cy.get('.cvat-shortcuts-modal-window .ant-pagination-item-5').click();
+            cy.get('.cvat-shortcuts-modal-window .ant-pagination-options-size-changer').click();
+            cy.get('.ant-select-dropdown')
+                .not('.ant-select-dropdown-hidden')
+                .within(() => {
+                    cy.contains('100 / page').click();
+                });
             checkShortcutsMounted((i) => `Switch label to label ${i}`);
-            cy.realPress(['F1']);
+            cy.contains('.cvat-shortcuts-modal-window [type="button"]', 'OK').click();
         });
     });
 });

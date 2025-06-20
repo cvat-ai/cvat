@@ -10,9 +10,10 @@ import {
     GridColor, ColorBy, SettingsState, ToolsBlockerState,
     CombinedState,
 } from 'reducers';
+import { OrientationVisibility } from 'cvat-canvas3d-wrapper';
 import { ImageFilter, ImageFilterAlias, SerializedImageFilter } from 'utils/image-processing';
-import { conflict, conflictDetector } from 'utils/conflict-detector';
 import GammaCorrection, { GammaFilterOptions } from 'utils/fabric-wrapper/gamma-correciton';
+import { resolveConflicts } from 'utils/conflict-detector';
 import { shortcutsActions } from './shortcuts-actions';
 
 export enum SettingsActionTypes {
@@ -44,6 +45,7 @@ export enum SettingsActionTypes {
     CHANGE_AAM_ZOOM_MARGIN = 'CHANGE_AAM_ZOOM_MARGIN',
     CHANGE_DEFAULT_APPROX_POLY_THRESHOLD = 'CHANGE_DEFAULT_APPROX_POLY_THRESHOLD',
     SWITCH_AUTOMATIC_BORDERING = 'SWITCH_AUTOMATIC_BORDERING',
+    SWITCH_ADAPTIVE_ZOOM = 'SWITCH_ADAPTIVE_ZOOM',
     SWITCH_INTELLIGENT_POLYGON_CROP = 'SWITCH_INTELLIGENT_POLYGON_CROP',
     SWITCH_SHOWNIG_INTERPOLATED_TRACKS = 'SWITCH_SHOWNIG_INTERPOLATED_TRACKS',
     SWITCH_SHOWING_OBJECTS_TEXT_ALWAYS = 'SWITCH_SHOWING_OBJECTS_TEXT_ALWAYS',
@@ -56,6 +58,7 @@ export enum SettingsActionTypes {
     ENABLE_IMAGE_FILTER = 'ENABLE_IMAGE_FILTER',
     DISABLE_IMAGE_FILTER = 'DISABLE_IMAGE_FILTER',
     RESET_IMAGE_FILTERS = 'RESET_IMAGE_FILTERS',
+    CHANGE_SHAPES_ORIENTATION_VISIBILITY = 'CHANGE_SHAPES_ORIENTATION_VISIBILITY',
 }
 
 export function changeShapesOpacity(opacity: number): AnyAction {
@@ -118,6 +121,15 @@ export function changeShowProjections(showProjections: boolean): AnyAction {
         type: SettingsActionTypes.CHANGE_SHAPES_SHOW_PROJECTIONS,
         payload: {
             showProjections,
+        },
+    };
+}
+
+export function changeOrientationVisibility(orientationVisibility: Partial<OrientationVisibility>): AnyAction {
+    return {
+        type: SettingsActionTypes.CHANGE_SHAPES_ORIENTATION_VISIBILITY,
+        payload: {
+            orientationVisibility,
         },
     };
 }
@@ -320,6 +332,15 @@ export function switchAutomaticBordering(automaticBordering: boolean): AnyAction
     };
 }
 
+export function switchAdaptiveZoom(adaptiveZoom: boolean): AnyAction {
+    return {
+        type: SettingsActionTypes.SWITCH_ADAPTIVE_ZOOM,
+        payload: {
+            adaptiveZoom,
+        },
+    };
+}
+
 export function switchIntelligentPolygonCrop(intelligentPolygonCrop: boolean): AnyAction {
     return {
         type: SettingsActionTypes.SWITCH_INTELLIGENT_POLYGON_CROP,
@@ -434,20 +455,19 @@ export function restoreSettingsAsync(): ThunkAction {
         } as Pick<SettingsState, 'player' | 'workspace' | 'imageFilters'>;
 
         Object.entries(_.pick(newSettings, ['player', 'workspace'])).forEach(([sectionKey, section]) => {
-            for (const key of Object.keys(section)) {
+            Object.keys(section).forEach((key) => {
                 const settedValue = loadedSettings[sectionKey]?.[key];
                 if (settedValue !== undefined) {
                     Object.defineProperty(newSettings[sectionKey as 'player' | 'workspace'], key, { value: settedValue });
                 }
-            }
+            });
         });
 
         if ('imageFilters' in loadedSettings) {
             loadedSettings.imageFilters.forEach((filter: SerializedImageFilter) => {
                 if (filter.alias === ImageFilterAlias.GAMMA_CORRECTION) {
-                    const modifier = new GammaCorrection(filter.params as GammaFilterOptions);
                     newSettings.imageFilters.push({
-                        modifier,
+                        modifier: new GammaCorrection(filter.params as GammaFilterOptions),
                         alias: ImageFilterAlias.GAMMA_CORRECTION,
                     });
                 }
@@ -458,34 +478,16 @@ export function restoreSettingsAsync(): ThunkAction {
 
         if ('shortcuts' in loadedSettings) {
             const updateKeyMap = structuredClone(shortcuts.keyMap);
-            for (const [key, value] of Object.entries(loadedSettings.shortcuts.keyMap)) {
+
+            Object.entries(loadedSettings.shortcuts.keyMap).forEach(([key, value]) => {
                 if (key in updateKeyMap) {
                     updateKeyMap[key].sequences = (value as { sequences: string[] }).sequences;
                 }
-            }
+            });
 
-            for (const key of Object.keys(updateKeyMap)) {
-                const currValue = {
-                    [key]: { ...updateKeyMap[key] },
-                };
-                const conflictingShortcuts = conflictDetector(currValue, shortcuts.keyMap);
-                if (conflictingShortcuts) {
-                    for (const conflictingShortcut of Object.keys(conflictingShortcuts)) {
-                        for (const sequence of currValue[key].sequences) {
-                            for (const conflictingSequence of conflictingShortcuts[conflictingShortcut].sequences) {
-                                if (conflict(sequence, conflictingSequence)) {
-                                    updateKeyMap[conflictingShortcut].sequences = [
-                                        ...updateKeyMap[conflictingShortcut].sequences.filter(
-                                            (s: string) => s !== conflictingSequence,
-                                        ),
-                                    ];
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            dispatch(shortcutsActions.registerShortcuts(updateKeyMap));
+            const resolvedKeyMap = resolveConflicts(updateKeyMap, shortcuts.keyMap);
+
+            dispatch(shortcutsActions.registerShortcuts(resolvedKeyMap));
         }
     };
 }

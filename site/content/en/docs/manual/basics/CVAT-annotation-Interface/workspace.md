@@ -5,12 +5,11 @@ weight: 12
 description: 'The main annotation area where images and videos are displayed for annotation..'
 ---
 
-In CVAT the Workspace serves as a work area where annotators
+In CVAT, the workspace serves as a work area where annotators
 interact with images, videos, and the various tools
 available to create high-quality annotations.
 
 ![Image quality panel](/images/workspace.png)
-
 
 See:
 

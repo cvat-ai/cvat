@@ -34,8 +34,9 @@ import numpy as np
 import pytest
 from cvat_sdk import exceptions
 from cvat_sdk.api_client import models
-from cvat_sdk.api_client.api_client import ApiClient, ApiException, Endpoint
+from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.api_client.exceptions import ForbiddenException
+from cvat_sdk.core.exceptions import BackgroundRequestException
 from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.progress import NullProgressReporter
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
@@ -1720,7 +1721,7 @@ class TestPostTaskData:
 
             # check sequence of frames
             (data_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
-            assert expected_result == list(map(lambda x: x.name, data_meta.frames))
+            assert expected_result == [x.name for x in data_meta.frames]
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(
@@ -2130,15 +2131,15 @@ class TestPostTaskData:
 
     @parametrize(
         "frame_selection_method, method_params, per_job_count_param",
-        map(
-            lambda e: (*e[0], e[1]),
-            product(
+        (
+            (*e[0], e[1])
+            for e in product(
                 [
                     *tuple(product(["random_uniform"], [{"frame_count"}, {"frame_share"}])),
                     ("manual", {}),
                 ],
                 ["frames_per_job_count", "frames_per_job_share"],
-            ),
+            )
         ),
     )
     def test_can_create_task_with_honeypots(
@@ -4113,11 +4114,10 @@ class TestTaskBackups:
     def test_cannot_export_backup_for_task_without_data(self, tasks):
         task_id = next(t for t in tasks if t["jobs"]["count"] == 0)["id"]
 
-        with pytest.raises(ApiException) as exc:
+        with pytest.raises(exceptions.ApiException) as capture:
             self._test_can_export_backup(task_id)
 
-            assert exc.status == HTTPStatus.BAD_REQUEST
-            assert "Backup of a task without data is not allowed" == exc.body.encode()
+        assert "Backup of a task without data is not allowed" in str(capture.value.body)
 
     @pytest.mark.with_external_services
     def test_can_export_and_import_backup_task_with_cloud_storage(self, tasks):
@@ -5317,14 +5317,12 @@ class TestPatchTask:
         find_users,
     ):
         username, task_id = next(
-            (
-                (user["username"], task["id"])
-                for user in find_users(role=role, exclude_privilege="admin")
-                for task in tasks
-                if task["organization"] == user["org"]
-                and not task["project_id"]
-                and task["owner"]["id"] != user["id"]
-            )
+            (user["username"], task["id"])
+            for user in find_users(role=role, exclude_privilege="admin")
+            for task in tasks
+            if task["organization"] == user["org"]
+            and not task["project_id"]
+            and task["owner"]["id"] != user["id"]
         )
 
         self._test_patch_linked_storage(
@@ -5628,36 +5626,38 @@ class TestImportTaskAnnotations:
 
         assert compare_annotations(original_annotations, updated_annotations) == {}
 
-    @pytest.mark.parametrize(
-        "format_name",
+    @parametrize(
+        "format_name, specific_info_included",
         [
-            "COCO 1.0",
-            "COCO Keypoints 1.0",
-            "CVAT 1.1",
-            "LabelMe 3.0",
-            "MOT 1.1",
-            "MOTS PNG 1.0",
-            "PASCAL VOC 1.1",
-            "Segmentation mask 1.1",
-            "YOLO 1.1",
-            "WiderFace 1.0",
-            "VGGFace2 1.0",
-            "Market-1501 1.0",
-            "Kitti Raw Format 1.0",
-            "Sly Point Cloud Format 1.0",
-            "KITTI 1.0",
-            "LFW 1.0",
-            "Cityscapes 1.0",
-            "Open Images V6 1.0",
-            "Datumaro 1.0",
-            "Datumaro 3D 1.0",
-            "Ultralytics YOLO Oriented Bounding Boxes 1.0",
-            "Ultralytics YOLO Detection 1.0",
-            "Ultralytics YOLO Pose 1.0",
-            "Ultralytics YOLO Segmentation 1.0",
+            ("COCO 1.0", None),
+            ("COCO Keypoints 1.0", None),
+            ("CVAT 1.1", True),
+            ("LabelMe 3.0", True),
+            ("MOT 1.1", True),
+            ("MOTS PNG 1.0", False),
+            pytest.param("PASCAL VOC 1.1", None, marks=pytest.mark.xfail),
+            ("Segmentation mask 1.1", True),
+            ("YOLO 1.1", True),
+            ("WiderFace 1.0", True),
+            ("VGGFace2 1.0", True),
+            ("Market-1501 1.0", False),
+            ("Kitti Raw Format 1.0", True),
+            ("Sly Point Cloud Format 1.0", False),
+            ("KITTI 1.0", False),
+            ("LFW 1.0", True),
+            ("Cityscapes 1.0", True),
+            ("Open Images V6 1.0", True),
+            ("Datumaro 1.0", True),
+            ("Datumaro 3D 1.0", True),
+            ("Ultralytics YOLO Oriented Bounding Boxes 1.0", True),
+            ("Ultralytics YOLO Detection 1.0", True),
+            ("Ultralytics YOLO Pose 1.0", True),
+            ("Ultralytics YOLO Segmentation 1.0", True),
         ],
     )
-    def test_check_import_error_on_wrong_file_structure(self, tasks_with_shapes, format_name):
+    def test_check_import_error_on_wrong_file_structure(
+        self, tasks_with_shapes: Iterable, format_name: str, specific_info_included: Optional[bool]
+    ):
         task_id = tasks_with_shapes[0]["id"]
 
         source_archive_path = self.tmp_dir / "incorrect_archive.zip"
@@ -5667,16 +5667,28 @@ class TestImportTaskAnnotations:
             with open(self.tmp_dir / file, "w") as f:
                 f.write("Some text")
 
-        zip_file = zipfile.ZipFile(source_archive_path, mode="a")
-        for path in incorrect_files:
-            zip_file.write(self.tmp_dir / path, path)
+        with zipfile.ZipFile(source_archive_path, mode="a") as zip_file:
+            for path in incorrect_files:
+                zip_file.write(self.tmp_dir / path, path)
+
         task = self.client.tasks.retrieve(task_id)
 
-        with pytest.raises(exceptions.ApiException) as capture:
+        with pytest.raises(BackgroundRequestException) as capture:
             task.import_annotations(format_name, source_archive_path)
 
-            assert b"Check [format docs]" in capture.value.body
-            assert b"Dataset must contain a file:" in capture.value.body
+        error_message = str(capture.value)
+
+        if specific_info_included is None:
+            assert "Failed to find dataset" in error_message
+            return
+
+        assert "Check [format docs]" in error_message
+        expected_msg = (
+            "Dataset must contain a file:"
+            if specific_info_included
+            else "specific requirement information unavailable"
+        )
+        assert expected_msg in error_message
 
 
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
@@ -5821,10 +5833,10 @@ class TestImportWithComplexFilenames:
                 range(len(self.flat_filenames))
             )
         else:
-            with pytest.raises(exceptions.ApiException) as capture:
+            with pytest.raises(BackgroundRequestException) as capture:
                 task.import_annotations(self.format_name, dataset_file)
 
-            assert b"Could not match item id" in capture.value.body
+            assert "Could not match item id" in str(capture.value)
 
     def delete_annotation_and_import_annotations(
         self, task_id, annotations, format_name, dataset_file

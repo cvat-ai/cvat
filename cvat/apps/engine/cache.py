@@ -53,6 +53,7 @@ from cvat.apps.engine.media_extractors import (
     ZipCompressedChunkWriter,
     load_image,
 )
+from cvat.apps.engine.model_utils import is_field_cached
 from cvat.apps.engine.rq import RQMetaWithFailureInfo
 from cvat.apps.engine.utils import (
     CvatChunkTimestampMismatchError,
@@ -67,6 +68,10 @@ slogger = ServerLogManager(__name__)
 
 DataWithMime = tuple[io.BytesIO, str]
 _CacheItem = tuple[io.BytesIO, str, int, Union[datetime, None]]
+
+
+class CacheTooLargeDataError(Exception):
+    pass
 
 
 def enqueue_create_chunk_job(
@@ -179,6 +184,10 @@ class MediaCache:
     def _get_checksum(value: bytes) -> int:
         return zlib.crc32(value)
 
+    @staticmethod
+    def _get_cache_item_size(item: _CacheItem) -> int:
+        return item[0].getbuffer().nbytes
+
     def _get_or_set_cache_item(
         self,
         key: str,
@@ -231,6 +240,12 @@ class MediaCache:
             if cached_item is not None and timestamp <= cached_item[3]:
                 item = cached_item
             else:
+                item_size = cls._get_cache_item_size(item)
+                if item_size > settings.CVAT_CACHE_ITEM_MAX_SIZE:
+                    raise CacheTooLargeDataError(
+                        f"Chunk data size {item_size} exceeds the maximum allowed size "
+                        f"{settings.CVAT_CACHE_ITEM_MAX_SIZE}."
+                    )
                 cache.set(key, item, timeout=cache_item_ttl or cache.default_timeout)
 
         return item
@@ -412,7 +427,11 @@ class MediaCache:
             self._make_chunk_key(db_task, chunk_number, quality=quality),
             set_callback,
         )
-        db_task.refresh_from_db(fields=["segment_set"])
+
+        if is_field_cached(db_task, "segment_set"):
+            # Refresh segments to report actual dates if they were fetched previously
+            # Doing so without a check leads to an error if the related object is not prefetched
+            db_task.refresh_from_db(fields=["segment_set"])
 
         return self._to_data_with_mime(
             self._validate_cache_item_timestamp(item, db_task.get_chunks_updated_date())
@@ -676,8 +695,7 @@ class MediaCache:
             else:
                 reader = VideoReader([source_path], allow_threading=False)
 
-                for frame_tuple in reader.iterate_frames(frame_filter=frame_ids):
-                    yield frame_tuple
+                yield from reader.iterate_frames(frame_filter=frame_ids)
         else:
             yield from MediaCache._read_raw_images(db_task, frame_ids, manifest_path=manifest_path)
 
@@ -937,7 +955,7 @@ class MediaCache:
             return zip_buffer, ""
 
         with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
-            common_path = os.path.commonpath(list(map(lambda x: str(x.path), related_images)))
+            common_path = os.path.commonpath([str(x.path) for x in related_images])
             for related_image in related_images:
                 path = os.path.realpath(str(related_image.path))
                 name = os.path.relpath(str(related_image.path), common_path)

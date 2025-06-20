@@ -27,7 +27,6 @@ import { BaseShapesAction } from './annotations-actions/base-shapes-action';
 import QualityReport from './quality-report';
 import QualityConflict from './quality-conflict';
 import QualitySettings from './quality-settings';
-import AnalyticsReport from './analytics-report';
 import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
 import { Request } from './request';
 
@@ -148,8 +147,8 @@ function build(): CVATCore {
             },
         },
         tasks: {
-            async get(filter = {}) {
-                const result = await PluginRegistry.apiWrapper(cvat.tasks.get, filter);
+            async get(filter = {}, aggregate = false) {
+                const result = await PluginRegistry.apiWrapper(cvat.tasks.get, filter, aggregate);
                 return result;
             },
         },
@@ -160,8 +159,8 @@ function build(): CVATCore {
             },
         },
         jobs: {
-            async get(filter = {}) {
-                const result = await PluginRegistry.apiWrapper(cvat.jobs.get, filter);
+            async get(filter = {}, aggregate = false) {
+                const result = await PluginRegistry.apiWrapper(cvat.jobs.get, filter, aggregate);
                 return result;
             },
         },
@@ -387,23 +386,15 @@ function build(): CVATCore {
             },
         },
         analytics: {
-            performance: {
-                async reports(filter = {}) {
-                    const result = await PluginRegistry.apiWrapper(cvat.analytics.performance.reports, filter);
-                    return result;
-                },
-                async calculate(body, onUpdate) {
-                    const result = await PluginRegistry.apiWrapper(
-                        cvat.analytics.performance.calculate,
-                        body,
-                        onUpdate,
-                    );
+            events: {
+                async export(filter = {}) {
+                    const result = await PluginRegistry.apiWrapper(cvat.analytics.events.export, filter);
                     return result;
                 },
             },
             quality: {
-                async reports(filter = {}) {
-                    const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.reports, filter);
+                async reports(filter = {}, aggregate = false) {
+                    const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.reports, filter, aggregate);
                     return result;
                 },
                 async conflicts(filter = {}) {
@@ -411,8 +402,12 @@ function build(): CVATCore {
                     return result;
                 },
                 settings: {
-                    async get(filter = {}) {
-                        const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.settings.get, filter);
+                    async get(filter = {}, aggregate = false) {
+                        const result = await PluginRegistry.apiWrapper(
+                            cvat.analytics.quality.settings.get,
+                            filter,
+                            aggregate,
+                        );
                         return result;
                     },
                 },
@@ -459,7 +454,6 @@ function build(): CVATCore {
             BaseShapesAction,
             BaseCollectionAction,
             QualitySettings,
-            AnalyticsReport,
             QualityConflict,
             QualityReport,
             Request,

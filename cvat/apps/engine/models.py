@@ -14,7 +14,7 @@ from abc import ABCMeta, abstractmethod
 from collections.abc import Collection, Iterable, Sequence
 from enum import Enum
 from functools import cached_property
-from typing import Any, ClassVar, Optional
+from typing import TYPE_CHECKING, Any, ClassVar, Optional
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -32,6 +32,9 @@ from cvat.apps.engine.lazy_list import LazyList
 from cvat.apps.engine.model_utils import MaybeUndefined
 from cvat.apps.engine.utils import parse_specific_attributes, take_by
 from cvat.apps.events.utils import cache_deleted
+
+if TYPE_CHECKING:
+    from cvat.apps.organizations.models import Organization
 
 
 class SafeCharField(models.CharField):
@@ -66,7 +69,7 @@ class StatusChoice(str, Enum):
 
     @classmethod
     def list(cls):
-        return list(map(lambda x: x.value, cls))
+        return [x.value for x in cls]
 
     def __str__(self):
         return self.value
@@ -89,7 +92,7 @@ class LabelType(str, Enum):
 
     @classmethod
     def list(cls):
-        return list(map(lambda x: x.value, cls))
+        return [x.value for x in cls]
 
     def __str__(self):
         return self.value
@@ -288,6 +291,7 @@ class ValidationLayout(models.Model):
 class Data(models.Model):
     MANIFEST_FILENAME: ClassVar[str] = 'manifest.jsonl'
 
+    content_size = models.PositiveBigIntegerField(null=True)
     chunk_size = models.PositiveIntegerField(null=True)
     size = models.PositiveIntegerField(default=0)
     image_quality = models.PositiveSmallIntegerField(default=50)
@@ -507,6 +511,8 @@ class Project(TimestampedModel, FileSystemRelatedModel):
     target_storage = models.ForeignKey('Storage', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
 
+    tasks: models.manager.RelatedManager[Task]
+
     def get_labels(self, prefetch=False):
         queryset = self.label_set.filter(parent__isnull=True).select_related('skeleton')
         return queryset.prefetch_related(
@@ -547,22 +553,28 @@ class Project(TimestampedModel, FileSystemRelatedModel):
         return self.name
 
 class TaskQuerySet(models.QuerySet):
+    class JobSummaryFields(str, Enum):
+        total_jobs_count = "total_jobs_count"
+        completed_jobs_count = "completed_jobs_count"
+        validation_jobs_count = "validation_jobs_count"
+
     def with_job_summary(self):
-        return self.prefetch_related(
-            'segment_set__job_set',
-        ).annotate(
-            total_jobs_count=models.Count('segment__job', distinct=True),
-            completed_jobs_count=models.Count(
-                'segment__job',
-                filter=models.Q(segment__job__state=StateChoice.COMPLETED.value) &
-                       models.Q(segment__job__stage=StageChoice.ACCEPTANCE.value),
-                distinct=True,
-            ),
-            validation_jobs_count=models.Count(
-                'segment__job',
-                filter=models.Q(segment__job__stage=StageChoice.VALIDATION.value),
-                distinct=True,
-            )
+        Fields = self.JobSummaryFields
+        return self.annotate(
+            **{
+                Fields.total_jobs_count.value: models.Count('segment__job', distinct=True),
+                Fields.completed_jobs_count.value: models.Count(
+                    'segment__job',
+                    filter=models.Q(segment__job__state=StateChoice.COMPLETED.value) &
+                        models.Q(segment__job__stage=StageChoice.ACCEPTANCE.value),
+                    distinct=True,
+                ),
+                Fields.validation_jobs_count.value: models.Count(
+                    'segment__job',
+                    filter=models.Q(segment__job__stage=StageChoice.VALIDATION.value),
+                    distinct=True,
+                ),
+            }
         )
 
 class Task(TimestampedModel, FileSystemRelatedModel):
@@ -856,6 +868,9 @@ class JobQuerySet(models.QuerySet):
         ).count() != 0:
             raise TaskGroundTruthJobsLimitError()
 
+    def with_issue_counts(self):
+        return self.annotate(issues__count=models.Count('issues'))
+
 
 
 class Job(TimestampedModel, FileSystemRelatedModel):
@@ -883,6 +898,12 @@ class Job(TimestampedModel, FileSystemRelatedModel):
         related_name='child_jobs', related_query_name="child_job"
     )
 
+    user_can_view_task: MaybeUndefined[bool]
+    "Can be defined by the fetching queryset to avoid extra IAM checks, e.g. in a list serializer"
+
+    issues__count: MaybeUndefined[int]
+    "Can be defined by the fetching queryset"
+
     def get_target_storage(self) -> Optional[Storage]:
         return self.segment.task.target_storage
 
@@ -894,8 +915,7 @@ class Job(TimestampedModel, FileSystemRelatedModel):
 
     @extend_schema_field(OpenApiTypes.INT)
     def get_project_id(self):
-        project = self.segment.task.project
-        return project.id if project else None
+        return self.segment.task.project_id
 
     @extend_schema_field(OpenApiTypes.INT)
     def get_guide_id(self):
@@ -911,10 +931,14 @@ class Job(TimestampedModel, FileSystemRelatedModel):
         return self.segment.task_id
 
     @property
-    def organization_id(self):
+    def organization_id(self) -> int | None:
         return self.segment.task.organization_id
 
-    def get_organization_slug(self):
+    @property
+    def organization(self) -> Organization:
+        return self.segment.task.organization
+
+    def get_organization_slug(self) -> str:
         return self.segment.task.organization.slug
 
     def get_bug_tracker(self):
@@ -1079,6 +1103,7 @@ class SourceType(str, Enum):
     SEMI_AUTO = 'semi-auto'
     MANUAL = 'manual'
     FILE = 'file'
+    CONSENSUS = 'consensus'
 
     @classmethod
     def choices(cls):
@@ -1214,7 +1239,7 @@ class CloudProviderChoice(str, Enum):
 
     @classmethod
     def list(cls):
-        return list(map(lambda x: x.value, cls))
+        return [x.value for x in cls]
 
     def __str__(self):
         return self.value
@@ -1233,7 +1258,7 @@ class CredentialsTypeChoice(str, Enum):
 
     @classmethod
     def list(cls):
-        return list(map(lambda x: x.value, cls))
+        return [x.value for x in cls]
 
     def __str__(self):
         return self.value
@@ -1259,6 +1284,10 @@ class Location(str, Enum):
     @classmethod
     def list(cls):
         return [i.value for i in cls]
+
+    @classmethod
+    def _missing_(cls, value):
+        raise ValueError(f"The specified location {value!r} is not supported")
 
 class CloudStorage(TimestampedModel):
     # restrictions:
@@ -1302,7 +1331,7 @@ class CloudStorage(TimestampedModel):
 
     @property
     def has_at_least_one_manifest(self) -> bool:
-        return bool(self.manifests.count())
+        return self.manifests.exists()
 
 class Storage(models.Model):
     location = models.CharField(max_length=16, choices=Location.choices(), default=Location.LOCAL)
@@ -1338,6 +1367,7 @@ class Asset(models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
     owner = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="assets")
     guide = models.ForeignKey(AnnotationGuide, on_delete=models.CASCADE, related_name="assets")
+    content_size = models.PositiveBigIntegerField(null=True)
 
     @property
     def organization_id(self):
@@ -1345,12 +1375,6 @@ class Asset(models.Model):
 
     def get_asset_dir(self):
         return os.path.join(settings.ASSETS_ROOT, str(self.uuid))
-
-class RequestStatus(TextChoices):
-    QUEUED = "queued"
-    STARTED = "started"
-    FAILED = "failed"
-    FINISHED = "finished"
 
 class RequestAction(TextChoices):
     AUTOANNOTATE = "autoannotate"

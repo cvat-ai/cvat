@@ -22,7 +22,7 @@ See:
 
 ## Single Shape mode annotation interface
 
-A set of controls in the interface of the **Single Shape** annotation mode may vary depends on different settings.
+A set of controls in the interface of the **Single Shape** annotation mode may vary depending on different settings.
 
 Images below displays the complete interface, featuring all available fields;
 as mentioned above, certain fields may be absent depending on the scenario.
@@ -62,7 +62,8 @@ To annotate in Single Shape mode, follow these steps:
 
 1. Open the job and switch to **Single Shape** mode.
 2. Annotate the image based on the selected shape.
-   For more information on shapes, see [Annotation Tools](http://localhost:1313/docs/getting_started/overview/#annotation-tools).
+   For more information on shapes, see
+   {{< ilink "/docs/getting_started/overview#annotation-tools" "Annotation Tools" >}}.
 3. (Optional) If the image does not contain any objects to annotate,
    click **Skip** at the top of the right panel.
 4. Submit your work.

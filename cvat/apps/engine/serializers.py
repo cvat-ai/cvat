@@ -10,29 +10,27 @@ import re
 import shutil
 import string
 import textwrap
+import uuid
 import warnings
 from collections import OrderedDict
 from collections.abc import Iterable, Sequence
 from contextlib import closing
 from copy import copy
-from datetime import timedelta
-from decimal import Decimal
 from inspect import isclass
 from tempfile import NamedTemporaryFile
 from typing import Any, Optional, Union
 
 import django_rq
-import rq.defaults as rq_defaults
 from django.conf import settings
 from django.contrib.auth.models import Group, User
+from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
 from django.db.models import Prefetch, prefetch_related_objects
 from django.utils import timezone
 from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
 from numpy import random
+from PIL import Image
 from rest_framework import exceptions, serializers
-from rq.job import Job as RQJob
-from rq.job import JobStatus as RQJobStatus
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import field_validation, models
@@ -41,20 +39,19 @@ from cvat.apps.engine.frame_provider import FrameQuality, TaskFrameProvider
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.permissions import TaskPermission
-from cvat.apps.engine.rq import BaseRQMeta, ExportRQMeta, ImportRQMeta, RequestAction, RQId
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
 from cvat.apps.engine.utils import (
     CvatChunkTimestampMismatchError,
+    av_scan_paths,
     build_field_filter_params,
     format_list,
     get_list_view_name,
+    get_path_size,
     grouped,
-    parse_exception_message,
     parse_specific_attributes,
     reverse,
     take_by,
 )
-from cvat.apps.lambda_manager.rq import LambdaRQMeta
 from utils.dataset_manifest import ImageManifestManager
 
 slogger = ServerLogManager(__name__)
@@ -620,8 +617,39 @@ class StorageSerializer(serializers.ModelSerializer):
         model = models.Storage
         fields = ('id', 'location', 'cloud_storage_id')
 
+class JobReadListSerializer(serializers.ListSerializer):
+    def to_representation(self, data):
+        if (request := self.context.get("request")) and isinstance(data, list) and data:
+            # Optimized prefetch only for the current page
+            page: list[models.Job] = data
+
+            # Annotate page objects
+            # We do it explicitly here and not in the LIST queryset to avoid
+            # doing the same DB computations twice - one time for the page retrieval
+            # and another one for the COUNT(*) request to get the total count
+            page_task_ids = set(j.get_task_id() for j in page)
+            visible_tasks_perm = TaskPermission.create_scope_list(request)
+            visible_tasks_queryset = models.Task.objects.filter(id__in=page_task_ids)
+            visible_tasks = set(
+                visible_tasks_perm.filter(visible_tasks_queryset).values_list("id", flat=True)
+            )
+
+            # Fetching it here removes 1 extra join for all jobs in the COUNT(*) request,
+            # limiting in only for the page
+            issue_counts = dict(
+                models.Job.objects.with_issue_counts().filter(
+                    id__in=set(j.id for j in page)
+                ).values_list("id", "issues__count")
+            )
+
+            for job in page:
+                job.user_can_view_task = job.get_task_id() in visible_tasks
+                job.issues__count = issue_counts.get(job.id, 0)
+
+        return super().to_representation(data)
+
 class JobReadSerializer(serializers.ModelSerializer):
-    task_id = serializers.ReadOnlyField(source="segment.task.id")
+    task_id = serializers.ReadOnlyField(source="get_task_id")
     project_id = serializers.ReadOnlyField(source="get_project_id", allow_null=True)
     guide_id = serializers.ReadOnlyField(source="get_guide_id", allow_null=True)
     start_frame = serializers.ReadOnlyField(source="segment.start_frame")
@@ -630,7 +658,7 @@ class JobReadSerializer(serializers.ModelSerializer):
     assignee = BasicUserSerializer(allow_null=True, read_only=True)
     dimension = serializers.CharField(max_length=2, source='segment.task.dimension', read_only=True)
     data_chunk_size = serializers.ReadOnlyField(source='segment.task.data.chunk_size')
-    organization = serializers.ReadOnlyField(source='segment.task.organization.id', allow_null=True)
+    organization = serializers.ReadOnlyField(source='organization_id', allow_null=True)
     data_original_chunk_type = serializers.ReadOnlyField(source='segment.task.data.original_chunk_type')
     data_compressed_chunk_type = serializers.ReadOnlyField(source='segment.task.data.compressed_chunk_type')
     mode = serializers.ReadOnlyField(source='segment.task.mode')
@@ -654,6 +682,7 @@ class JobReadSerializer(serializers.ModelSerializer):
             'consensus_replicas'
         )
         read_only_fields = fields
+        list_serializer_class = JobReadListSerializer
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -667,9 +696,13 @@ class JobReadSerializer(serializers.ModelSerializer):
             data['consensus_replicas'] = 0
 
         if request := self.context.get('request'):
-            perm = TaskPermission.create_scope_view(request, instance.segment.task)
-            result = perm.check_access()
-            if result.allow:
+            can_view_task = getattr(instance, "user_can_view_task", None)
+            if can_view_task is None:
+                perm = TaskPermission.create_scope_view(request, instance.segment.task)
+                result = perm.check_access()
+                can_view_task = result.allow
+
+            if can_view_task:
                 if task_source_storage := instance.get_source_storage():
                     data['source_storage'] = StorageSerializer(task_source_storage).data
                 if task_target_storage := instance.get_target_storage():
@@ -1814,11 +1847,8 @@ class RqStatusSerializer(serializers.Serializer):
 
     def __init__(self, instance=None, data=..., **kwargs):
         warnings.warn("RqStatusSerializer is deprecated, "
-                      "use cvat.apps.engine.serializers.RequestSerializer instead", DeprecationWarning)
+                      "use cvat.apps.redis_handler.serializers.RequestSerializer instead", DeprecationWarning)
         super().__init__(instance, data, **kwargs)
-
-class RqIdSerializer(serializers.Serializer):
-    rq_id = serializers.CharField(help_text="Request id")
 
 
 class JobFiles(serializers.ListField):
@@ -2012,7 +2042,7 @@ class ValidationParamsSerializer(serializers.ModelSerializer):
 class DataSerializer(serializers.ModelSerializer):
     """
     Read more about parameters here:
-    https://docs.cvat.ai/docs/manual/basics/create_an_annotation_task/#advanced-configuration
+    https://docs.cvat.ai/docs/manual/basics/create-annotation-task/#advanced-configuration
     """
 
     image_quality = serializers.IntegerField(min_value=0, max_value=100,
@@ -2239,6 +2269,33 @@ class DataSerializer(serializers.ModelSerializer):
                     [files_model(data=instance, **f) for f in files[files_type]]
                 )
 
+class TaskReadListSerializer(serializers.ListSerializer):
+    def to_representation(self, data):
+        if isinstance(data, list) and data:
+            # Optimized prefetch only for the current page
+            page: list[models.Task] = data
+
+            # Annotate page objects
+            # We do it explicitly here and not in the LIST queryset to avoid
+            # doing the same DB computations twice - one time for the page retrieval
+            # and another one for the COUNT(*) request to get the total count
+            page_task_ids = set(t.id for t in page)
+            job_summary_fields = [m.value for m in models.TaskQuerySet.JobSummaryFields]
+            job_counts = {
+                task["id"]: task
+                for task in models.Task.objects
+                .filter(id__in=page_task_ids)
+                .with_job_summary()
+                .values("id", *job_summary_fields)
+            }
+
+            for task in page:
+                task_job_summary = job_counts.get(task.id)
+                for k in job_summary_fields:
+                    setattr(task, k, task_job_summary[k])
+
+        return super().to_representation(data)
+
 class TaskReadSerializer(serializers.ModelSerializer):
     data_chunk_size = serializers.ReadOnlyField(source='data.chunk_size', required=False)
     data_compressed_chunk_type = serializers.ReadOnlyField(source='data.compressed_chunk_type', required=False)
@@ -2277,6 +2334,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
             'organization': { 'allow_null': True },
             'overlap': { 'allow_null': True },
         }
+        list_serializer_class = TaskReadListSerializer
 
     def get_consensus_enabled(self, instance: models.Task) -> bool:
         return instance.consensus_replicas > 0
@@ -2963,6 +3021,7 @@ class TaskFileSerializer(serializers.Serializer):
 class ProjectFileSerializer(serializers.Serializer):
     project_file = serializers.FileField()
 
+
 class CommentReadSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(allow_null=True, required=False)
 
@@ -3441,14 +3500,60 @@ class AssetReadSerializer(WriteOnceMixin, serializers.ModelSerializer):
         read_only_fields = fields
 
 class AssetWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
-    uuid = serializers.CharField(required=False)
-    filename = serializers.CharField(required=True, max_length=MAX_FILENAME_LENGTH)
+    file = serializers.FileField(required=True, write_only=True, allow_empty_file=False, max_length=MAX_FILENAME_LENGTH)
     guide_id = serializers.IntegerField(required=True)
+
+    def validate_file(self, value):
+        if not isinstance(value, UploadedFile):
+            raise serializers.ValidationError("Invalid asset_file type. Expected an UploadedFile instance.")
+
+        if value.size / (1024 * 1024) > settings.ASSET_MAX_SIZE_MB:
+            raise serializers.ValidationError(f"Maximum size of asset is {settings.ASSET_MAX_SIZE_MB} MB")
+
+        if value.content_type not in settings.ASSET_SUPPORTED_TYPES:
+            raise serializers.ValidationError(f"File is not supported as an asset. Supported are {settings.ASSET_SUPPORTED_TYPES}")
+
+        return value
+
+    def create(self, validated_data):
+        asset_file = validated_data.pop("file")
+        asset_uuid = str(uuid.uuid4())
+        dirname = os.path.join(settings.ASSETS_ROOT, asset_uuid)
+        basename = asset_file.name
+        filename = os.path.join(dirname, basename)
+        os.makedirs(dirname)
+
+        try:
+            if asset_file.content_type in ("image/jpeg", "image/png"):
+                image = Image.open(asset_file)
+                if any(x > settings.ASSET_MAX_IMAGE_SIZE for x in image.size):
+                    scale_factor = settings.ASSET_MAX_IMAGE_SIZE / max(image.size)
+                    image = image.resize(int(x * scale_factor) for x in image.size)
+                image.save(filename)
+            else:
+                with open(filename, "wb") as destination:
+                    for chunk in asset_file.chunks():
+                        destination.write(chunk)
+
+            av_scan_paths(dirname)
+            return models.Asset.objects.create(
+                **validated_data,
+                uuid=asset_uuid,
+                filename=basename,
+                content_size=get_path_size(dirname),
+            )
+        except Exception:
+            if os.path.exists(filename):
+                os.remove(filename)
+
+            os.rmdir(dirname)
+            raise
 
     class Meta:
         model = models.Asset
-        fields = ('uuid', 'filename', 'created_date', 'guide_id', )
-        write_once_fields = ('uuid', 'filename', 'created_date', 'guide_id', )
+        fields = ("guide_id", "file", )
+        write_once_fields = ("guide_id", )
+
 
 class AnnotationGuideReadSerializer(WriteOnceMixin, serializers.ModelSerializer):
     class Meta:
@@ -3488,130 +3593,3 @@ class AnnotationGuideWriteSerializer(WriteOnceMixin, serializers.ModelSerializer
     class Meta:
         model = models.AnnotationGuide
         fields = ('id', 'task_id', 'project_id', 'markdown', )
-
-class UserIdentifiersSerializer(BasicUserSerializer):
-    class Meta(BasicUserSerializer.Meta):
-        fields = (
-            "id",
-            "username",
-        )
-
-
-class RequestDataOperationSerializer(serializers.Serializer):
-    type = serializers.CharField()
-    target = serializers.ChoiceField(choices=models.RequestTarget.choices)
-    project_id = serializers.IntegerField(required=False, allow_null=True)
-    task_id = serializers.IntegerField(required=False, allow_null=True)
-    job_id = serializers.IntegerField(required=False, allow_null=True)
-    format = serializers.CharField(required=False, allow_null=True)
-    function_id = serializers.CharField(required=False, allow_null=True)
-
-    def to_representation(self, rq_job: RQJob) -> dict[str, Any]:
-        parsed_rq_id: RQId = rq_job.parsed_rq_id
-
-        base_rq_job_meta = BaseRQMeta.for_job(rq_job)
-        representation = {
-            "type": ":".join(
-                [
-                    parsed_rq_id.action,
-                    parsed_rq_id.subresource or parsed_rq_id.target,
-                ]
-            ),
-            "target": parsed_rq_id.target,
-            "project_id": base_rq_job_meta.project_id,
-            "task_id": base_rq_job_meta.task_id,
-            "job_id": base_rq_job_meta.job_id,
-        }
-        if parsed_rq_id.action == RequestAction.AUTOANNOTATE:
-            representation["function_id"] = LambdaRQMeta.for_job(rq_job).function_id
-        elif parsed_rq_id.action in (RequestAction.IMPORT, RequestAction.EXPORT):
-            representation["format"] = parsed_rq_id.format
-
-        return representation
-
-class RequestSerializer(serializers.Serializer):
-    # SerializerMethodField is not used here to mark "status" field as required and fix schema generation.
-    # Marking them as read_only leads to generating type as allOf with one reference to RequestStatus component.
-    # The client generated using openapi-generator from such a schema contains wrong type like:
-    # status (bool, date, datetime, dict, float, int, list, str, none_type): [optional]
-    status = serializers.ChoiceField(source="get_status", choices=models.RequestStatus.choices)
-    message = serializers.SerializerMethodField()
-    id = serializers.CharField()
-    operation = RequestDataOperationSerializer(source="*")
-    progress = serializers.SerializerMethodField()
-    created_date = serializers.DateTimeField(source="created_at")
-    started_date = serializers.DateTimeField(
-        required=False, allow_null=True, source="started_at",
-    )
-    finished_date = serializers.DateTimeField(
-        required=False, allow_null=True, source="ended_at",
-    )
-    expiry_date = serializers.SerializerMethodField()
-    owner = serializers.SerializerMethodField()
-    result_url = serializers.URLField(required=False, allow_null=True)
-    result_id = serializers.IntegerField(required=False, allow_null=True)
-
-    def __init__(self, *args, **kwargs):
-        self._base_rq_job_meta: BaseRQMeta | None = None
-        super().__init__(*args, **kwargs)
-
-    @extend_schema_field(UserIdentifiersSerializer())
-    def get_owner(self, rq_job: RQJob) -> dict[str, Any]:
-        assert self._base_rq_job_meta
-        return UserIdentifiersSerializer(self._base_rq_job_meta.user).data
-
-    @extend_schema_field(
-        serializers.FloatField(min_value=0, max_value=1, required=False, allow_null=True)
-    )
-    def get_progress(self, rq_job: RQJob) -> Decimal:
-        rq_job_meta = ImportRQMeta.for_job(rq_job)
-        # progress of task creation is stored in "task_progress" field
-        # progress of project import is stored in "progress" field
-        return Decimal(rq_job_meta.progress or rq_job_meta.task_progress or 0.)
-
-    @extend_schema_field(serializers.DateTimeField(required=False, allow_null=True))
-    def get_expiry_date(self, rq_job: RQJob) -> Optional[str]:
-        delta = None
-        if rq_job.is_finished:
-            delta = rq_job.result_ttl or rq_defaults.DEFAULT_RESULT_TTL
-        elif rq_job.is_failed:
-            delta = rq_job.failure_ttl or rq_defaults.DEFAULT_FAILURE_TTL
-
-        if rq_job.ended_at and delta:
-            expiry_date = rq_job.ended_at + timedelta(seconds=delta)
-            return expiry_date.replace(tzinfo=timezone.utc)
-
-        return None
-
-    @extend_schema_field(serializers.CharField(allow_blank=True))
-    def get_message(self, rq_job: RQJob) -> str:
-        assert self._base_rq_job_meta
-        rq_job_status = rq_job.get_status()
-        message = ''
-
-        if RQJobStatus.STARTED == rq_job_status:
-            message = self._base_rq_job_meta.status or message
-        elif RQJobStatus.FAILED == rq_job_status:
-            message = self._base_rq_job_meta.formatted_exception or parse_exception_message(str(rq_job.exc_info or "Unknown error"))
-
-        return message
-
-    def to_representation(self, rq_job: RQJob) -> dict[str, Any]:
-        self._base_rq_job_meta = BaseRQMeta.for_job(rq_job)
-        representation = super().to_representation(rq_job)
-
-        # FUTURE-TODO: support such statuses on UI
-        if representation["status"] in (RQJobStatus.DEFERRED, RQJobStatus.SCHEDULED):
-            representation["status"] = RQJobStatus.QUEUED
-
-        if representation["status"] == RQJobStatus.FINISHED:
-            if rq_job.parsed_rq_id.action == models.RequestAction.EXPORT:
-                representation["result_url"] = ExportRQMeta.for_job(rq_job).result_url
-
-            if (
-                rq_job.parsed_rq_id.action == models.RequestAction.IMPORT
-                and rq_job.parsed_rq_id.subresource == models.RequestSubresource.BACKUP
-            ):
-                representation["result_id"] = rq_job.return_value()
-
-        return representation

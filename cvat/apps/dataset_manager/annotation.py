@@ -634,11 +634,10 @@ class TrackManager(ObjectManager):
 
             if isinstance(points, np.ndarray):
                 points = points.tolist()
-            else:
+            elif not isinstance(points, tuple):
                 points = points.copy()
 
-            if points is not None:
-                copied["points"] = points
+            copied["points"] = points
 
             return copied
 
@@ -671,7 +670,7 @@ class TrackManager(ObjectManager):
 
         def simple_3d_interpolation(shape0, shape1):
             result = simple_interpolation(shape0, shape1)
-            angles = (shape0["points"][3:6] + shape1["points"][3:6])
+            angles = shape0["points"][3:6] + shape1["points"][3:6]
             distance = shape1["frame"] - shape0["frame"]
 
             for shape in result:
@@ -700,13 +699,13 @@ class TrackManager(ObjectManager):
         def interpolate_position(left_position, right_position, offset):
             def to_array(points):
                 return np.asarray(
-                    list(map(lambda point: [point["x"], point["y"]], points))
+                    [[point["x"], point["y"]] for point in points]
                 ).flatten()
 
             def to_points(array):
-                return list(map(
-                    lambda point: {"x": point[0], "y": point[1]}, np.asarray(array).reshape(-1, 2)
-                ))
+                return [
+                    {"x": point[0], "y": point[1]} for point in np.asarray(array).reshape(-1, 2)
+                ]
 
             def curve_length(points):
                 length = 0
@@ -947,7 +946,7 @@ class TrackManager(ObjectManager):
 
             return shapes
 
-        def propagate(shape, end_frame, *, included_frames=None):
+        def propagate(shape: dict, end_frame, *, included_frames=None):
             return [
                 copy_shape(shape, i)
                 for i in range(shape["frame"] + 1, end_frame)
@@ -955,7 +954,7 @@ class TrackManager(ObjectManager):
             ]
 
         shapes = []
-        prev_shape = None
+        prev_shape: dict | None = None
         for shape in sorted(track["shapes"], key=lambda shape: shape["frame"]):
             curr_frame = shape["frame"]
             if curr_frame in deleted_frames:
@@ -992,7 +991,7 @@ class TrackManager(ObjectManager):
 
                 # Propagate attributes
                 for attr in prev_shape["attributes"]:
-                    if attr["spec_id"] not in map(lambda el: el["spec_id"], shape["attributes"]):
+                    if attr["spec_id"] not in (el["spec_id"] for el in shape["attributes"]):
                         shape["attributes"].append(faster_deepcopy(attr))
 
                 if not prev_shape["outside"] or include_outside:

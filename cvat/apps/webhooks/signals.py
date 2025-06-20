@@ -154,7 +154,7 @@ def pre_save_resource_event(sender, instance, **kwargs):
     resource_name = instance.__class__.__name__.lower()
 
     event_type = event_name("create" if created else "update", resource_name)
-    if event_type not in map(lambda a: a[0], EventTypeChoice.choices()):
+    if event_type not in (a[0] for a in EventTypeChoice.choices()):
         return
 
     instance._webhooks_selected_webhooks = select_webhooks(instance, event_type)
@@ -176,7 +176,10 @@ def pre_save_resource_event(sender, instance, **kwargs):
 @receiver(post_save, sender=Organization, dispatch_uid=__name__ + ":organization:post_save")
 @receiver(post_save, sender=Invitation, dispatch_uid=__name__ + ":invitation:post_save")
 @receiver(post_save, sender=Membership, dispatch_uid=__name__ + ":membership:post_save")
-def post_save_resource_event(sender, instance, **kwargs):
+def post_save_resource_event(sender, instance, created: bool, raw: bool, **kwargs):
+    if created and raw:
+        return
+
     selected_webhooks = instance._webhooks_selected_webhooks
     del instance._webhooks_selected_webhooks
 
@@ -241,7 +244,7 @@ def post_delete_resource_event(sender, instance, **kwargs):
     resource_name = instance.__class__.__name__.lower()
 
     event_type = event_name("delete", resource_name)
-    if event_type not in map(lambda a: a[0], EventTypeChoice.choices()):
+    if event_type not in (a[0] for a in EventTypeChoice.choices()):
         return
 
     filtered_webhooks = select_webhooks(instance, event_type)
@@ -255,7 +258,7 @@ def post_delete_resource_event(sender, instance, **kwargs):
     related_webhooks = [
         webhook
         for webhook in getattr(instance, "_related_webhooks", [])
-        if webhook.id not in map(lambda a: a.id, filtered_webhooks)
+        if webhook.id not in (a.id for a in filtered_webhooks)
     ]
 
     transaction.on_commit(

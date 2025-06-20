@@ -30,7 +30,7 @@ from cvat.apps.engine import models, serializers
 from cvat.apps.engine.log import DatasetLogManager
 from cvat.apps.engine.model_utils import add_prefetch_fields, bulk_create, get_cached
 from cvat.apps.engine.plugins import plugin_decorator
-from cvat.apps.engine.utils import take_by
+from cvat.apps.engine.utils import av_scan_paths, take_by
 from cvat.apps.events.handlers import handle_annotations_change
 from cvat.apps.profiler import silk_profile
 
@@ -426,9 +426,11 @@ class JobAnnotation:
     def update(self, data):
         data = self._validate_input_annotations(data)
 
+        # in case with "update" must be called prior any annotations in database changes
+        # as this annotations are used to count removed/added shapes
+        handle_annotations_change(self.db_job, data.data, "update")
         self._delete(data)
         self._create(data)
-        handle_annotations_change(self.db_job, self.data, "update")
 
         if not self._data_is_empty(self.data):
             self._set_updated_date()
@@ -494,13 +496,6 @@ class JobAnnotation:
             labeledshape_ids = [shape["id"] for shape in data["shapes"]]
             labeledtrack_ids = [track["id"] for track in data["tracks"]]
 
-            # It is not important for us that data had some "invalid" objects
-            # which were skipped (not actually deleted). The main idea is to
-            # say that all requested objects are absent in DB after the method.
-            self.ir_data.tags = data['tags']
-            self.ir_data.shapes = data['shapes']
-            self.ir_data.tracks = data['tracks']
-
             for labeledimage_ids_chunk in take_by(labeledimage_ids, chunk_size=1000):
                 self._delete_job_labeledimages(labeledimage_ids_chunk)
 
@@ -511,11 +506,13 @@ class JobAnnotation:
                 self._delete_job_labeledtracks(labeledtrack_ids_chunk)
 
             deleted_data = {
+                "version": self.ir_data.version,
                 "tags": data["tags"],
                 "shapes": data["shapes"],
                 "tracks": data["tracks"],
             }
 
+        self.reset()
         return deleted_data
 
     def delete(self, data=None):
@@ -524,6 +521,7 @@ class JobAnnotation:
             self._set_updated_date()
 
         handle_annotations_change(self.db_job, deleted_data, "delete")
+        return deleted_data
 
     @staticmethod
     def _extend_attributes(attributeval_set, default_attribute_values):
@@ -939,17 +937,17 @@ class TaskAnnotation:
         self.reset()
 
         for db_job in self.db_jobs.select_for_update():
-            if db_job.type == models.JobType.GROUND_TRUTH and not (
-                self.db_task.data.validation_mode == models.ValidationMode.GT_POOL
+            if db_job.type == models.JobType.GROUND_TRUTH and (
+                self.db_task.data.validation_mode != models.ValidationMode.GT_POOL
             ):
                 continue
 
-            gt_annotation = JobAnnotation(db_job.id, db_job=db_job)
-            gt_annotation.init_from_db()
-            if gt_annotation.ir_data.version > self.ir_data.version:
-                self.ir_data.version = gt_annotation.ir_data.version
+            annotation = JobAnnotation(db_job.id, db_job=db_job)
+            annotation.init_from_db()
+            if annotation.ir_data.version > self.ir_data.version:
+                self.ir_data.version = annotation.ir_data.version
 
-            self._merge_data(gt_annotation.ir_data, start_frame=db_job.segment.start_frame)
+            self._merge_data(annotation.ir_data, start_frame=db_job.segment.start_frame)
 
     def export(
         self,
@@ -1031,7 +1029,7 @@ def patch_job_data(pk, data: AnnotationIR | dict, action: PatchAction, *, db_job
     elif action == PatchAction.UPDATE:
         annotation.update(data)
     elif action == PatchAction.DELETE:
-        annotation.delete(data)
+        return annotation.delete(data)
 
     return annotation.data
 
@@ -1130,6 +1128,7 @@ def export_task(
 
 @transaction.atomic
 def import_task_annotations(src_file, task_id, format_name, conv_mask_to_poly):
+    av_scan_paths(src_file)
     task = TaskAnnotation(task_id, write_only=True)
 
     importer = make_importer(format_name)
@@ -1142,6 +1141,7 @@ def import_task_annotations(src_file, task_id, format_name, conv_mask_to_poly):
 
 @transaction.atomic
 def import_job_annotations(src_file, job_id, format_name, conv_mask_to_poly):
+    av_scan_paths(src_file)
     job = JobAnnotation(job_id, prefetch_images=True)
 
     importer = make_importer(format_name)

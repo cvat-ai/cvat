@@ -190,7 +190,8 @@
 .cvat-player-frame-url-icon,
 .cvat-player-delete-frame,
 .cvat-player-restore-frame,
-.cvat-player-copy-frame-name-icon {
+.cvat-player-copy-frame-name-icon,
+.cvat-player-search-frame-name-icon {
     opacity: 0.7;
     color: $objects-bar-icons-color;
 
@@ -210,9 +211,24 @@
 }
 
 .cvat-player-frame-selector {
-    width: 5em;
+    width: unset;
     padding-right: 5px;
     margin-left: 5px;
+
+    .ant-input-number-input-wrap {
+        width: unset;
+    }
+
+    .ant-input-number-input {
+        box-sizing: content-box;
+        width: var(--frame-input-width, 6ch);
+        min-width: 6ch;
+        max-width: 10ch;
+    }
+}
+
+.cvat-player-actions {
+    margin-left: $grid-unit-size;
 }
 
 .cvat-annotation-header-right-group {
@@ -531,4 +547,28 @@
     .ant-modal-footer {
         margin: 0;
     }
+}
+
+.cvat-frame-search-selector {
+    width: 100%;
+}
+
+.cvat-frame-search-item {
+    display: flex;
+    justify-content: start;
+    overflow: hidden;
+    width: 100%;
+}
+
+.cvat-frame-search-item-number {
+    margin-right: $grid-unit-size;
+    white-space: nowrap;
+}
+
+.cvat-frame-search-item-name {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    direction: rtl;
+    unicode-bidi: plaintext;
 }
