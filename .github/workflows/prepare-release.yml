@@ -6,15 +6,10 @@ on:
         description: "Version number for the new release"
         required: true
         default: X.Y.Z
-      isHotfix:
-        description: "Version number for the new release"
-        required: false
-        type: boolean
-        default: false
 jobs:
   main:
     env:
-      RELEASE_TYPE: ${{ inputs.isHotfix == 'true' && 'hotfix' || 'release' }}
+      RELEASE_TYPE: ${{ github.ref_name == 'develop' && 'release' || 'hotfix' }}
     runs-on: ubuntu-latest
     steps:
       - name: Validate version number

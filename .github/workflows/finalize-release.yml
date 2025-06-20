@@ -24,7 +24,7 @@ jobs:
             exit 1
           fi
 
-          jq -r '.[] | "prNumber=\(.number)", "releaseType=\(.headRefName | split("-") | .[0] )", "version=\(.headRefName | split("-") | .[1] )"' /tmp/release-prs.json \
+          jq -r '.[] | "prNumber=\(.number)", "releaseType=\(.headRefName | split("-") | .[0] )", "version=\(.headRefName | split("-") | .[1] )"' \
             /tmp/release-prs.json >> "$GITHUB_OUTPUT"
 
       # When you use the default github.token to make changes in the repository,
