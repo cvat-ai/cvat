@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import logging
 import urllib.parse
+from abc import ABCMeta
 from collections.abc import Generator, Sequence
 from contextlib import contextmanager, suppress
 from pathlib import Path
@@ -57,6 +58,33 @@ class Config:
 
     cache_dir: Path = attrs.field(converter=Path, default=_DEFAULT_CACHE_DIR)
     """Directory in which to store cached server data"""
+
+
+class Credentials(metaclass=ABCMeta):
+    pass
+
+
+@attrs.define
+class BasicAuthCredentials(Credentials):
+    """
+    Represents basic authentication credentials.
+    """
+
+    user: str
+    """Username for authentication"""
+
+    password: str
+    """Password for authentication"""
+
+
+@attrs.define
+class ApiTokenAuthCredentials(Credentials):
+    """
+    Represents API token authentication credentials.
+    """
+
+    token: str
+    """API token for authentication"""
 
 
 _VERSION_OBJ = pv.Version(VERSION)
@@ -201,20 +229,26 @@ class Client:
     def close(self) -> None:
         return self.__exit__(None, None, None)
 
-    def login(self, credentials: tuple[str, str]) -> None:
-        (auth, _) = self.api_client.auth_api.create_login(
+    def login(self, credentials: Credentials | tuple[str, str]) -> None:
+        if isinstance(credentials, BasicAuthCredentials):
+            credentials = (credentials.user, credentials.password)
+        elif isinstance(credentials, ApiTokenAuthCredentials):
+            self.api_client.default_headers["Authorization"] = "Bearer " + credentials.token
+            return
+        elif not isinstance(credentials, tuple) or len(credentials) != 2:
+            raise TypeError(f"Unsupported credentials type: {type(credentials).__name__}")
+
+        self.api_client.auth_api.create_login(
             models.LoginSerializerExRequest(username=credentials[0], password=credentials[1])
         )
-
         assert "sessionid" in self.api_client.cookies
         assert "csrftoken" in self.api_client.cookies
-        self.api_client.set_default_header("Authorization", "Token " + auth.key)
 
     def has_credentials(self) -> bool:
         return (
             ("sessionid" in self.api_client.cookies)
             or ("csrftoken" in self.api_client.cookies)
-            or bool(self.api_client.get_common_headers().get("Authorization", ""))
+            or bool(self.api_client.default_headers.get("Authorization"))
         )
 
     def logout(self) -> None:
