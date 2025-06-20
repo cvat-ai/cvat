@@ -133,6 +133,11 @@ jobs:
   rest_api_testing:
     needs: build
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        patterns:
+          [ "-m slow", "-m not slow" ]
     steps:
       - uses: actions/checkout@v4
 
@@ -174,7 +179,7 @@ jobs:
         env:
           COVERAGE_PROCESS_START: ".coveragerc"
         run: |
-          pytest tests/python/ --cov --cov-report=json --alluredir=tests/python/allure-results
+          pytest tests/python/ ${{ matrix.patterns }} --cov --cov-report=json --alluredir=tests/python/allure-results
           ONE_RUNNING_JOB_IN_QUEUE_PER_USER="true" pytest tests/python/rest_api/test_queues.py --cov --cov-report=json
           CVAT_ALLOW_STATIC_CACHE="true" pytest -k "TestTaskData" tests/python --cov --cov-report=json
           for COVERAGE_FILE in `find -name "coverage*.json" -type f -printf "%f\n"`; do mv ${COVERAGE_FILE} "${COVERAGE_FILE%%.*}_0.json"; done
@@ -201,13 +206,13 @@ jobs:
         if: failure() && steps.run_tests.conclusion == 'failure'
         uses: actions/upload-artifact@v4
         with:
-          name: rest_api_container_logs
+          name: rest_api_container_logs${{ contains(matrix.patterns, 'not') && '_slow' || '' }} # add '_slow' if tests were excluded
           path: "${{ github.workspace }}/rest_api_testing"
       - name: Upload allure results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: allure-results-rest-api
+          name: allure-results-tests-api${{ contains(matrix.patterns, 'not') && '_slow' || '' }}
           path: tests/python/allure-results
 
   unit_testing:
