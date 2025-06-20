@@ -136,8 +136,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        patterns:
-          [ "-m slow", "-m 'not slow'" ]
+        include:
+          - pattern: '-m slow'
+            allow_cache: 'true'
+          - pattern: '-m slow'
+            allow_cache: 'no'
+          - pattern: "-m 'not slow'"
+            allow_cache: 'no'
     steps:
       - uses: actions/checkout@v4
 
@@ -178,10 +183,12 @@ jobs:
         id: run_tests
         env:
           COVERAGE_PROCESS_START: ".coveragerc"
+          CVAT_ALLOW_STATIC_CACHE: ${{ matrix.allow_cache }}
         run: |
-          pytest tests/python/ ${{ matrix.patterns }} --cov --cov-report=json --alluredir=tests/python/allure-results
+          pytest tests/python/ ${{ matrix.pattern }} --cov --cov-report=json --alluredir=tests/python/allure-results
           ONE_RUNNING_JOB_IN_QUEUE_PER_USER="true" pytest tests/python/rest_api/test_queues.py --cov --cov-report=json
-          CVAT_ALLOW_STATIC_CACHE="true" pytest -k "TestTaskData" tests/python --cov --cov-report=json
+          # CVAT_ALLOW_STATIC_CACHE="true" pytest -k "TestTaskData" tests/python --cov --cov-report=json # quick solution: send to a 3rd github-runner
+
           for COVERAGE_FILE in `find -name "coverage*.json" -type f -printf "%f\n"`; do mv ${COVERAGE_FILE} "${COVERAGE_FILE%%.*}_0.json"; done
 
       - name: Uploading code coverage results as an artifact
