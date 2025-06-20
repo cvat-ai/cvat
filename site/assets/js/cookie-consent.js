@@ -49,7 +49,7 @@
         window.dataLayer = window.dataLayer || [];
         window.gtag = function() { dataLayer.push(arguments); };
         window.gtag('js', new Date());
-        window.gtag('config', window.GOOGLE_TAG_ID);
+        window.gtag('config', window.GA_TRACKING_ID);
     }
 
     /**
@@ -78,6 +78,11 @@
         // Clear dataLayer
         if (window.dataLayer) {
             window.dataLayer = [];
+        }
+
+        // Properly disable Google Analytics tracking
+        if (window.GOOGLE_TAG_ID) {
+            window['ga-disable-' + window.GOOGLE_TAG_ID] = true;
         }
 
         // Remove GA script if present
