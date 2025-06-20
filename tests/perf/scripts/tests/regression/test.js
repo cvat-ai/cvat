@@ -3,11 +3,9 @@ import http from 'k6/http';
 
 import { defaultTaskSpec } from '../../libs/default-specs.js';
 
-
 export const options = {
-    // duration: "20s",
-    iterations: 1,
-    vus: 1
+    duration: "30s",
+    vus: 10
 }
 
 const BASE_URL = 'http://localhost:8080/api/';
@@ -71,6 +69,5 @@ export function setup() {
 }
 
 export default function (data) {
-    // const taskId = createTask(data.token);
     const taskData = getTask(data.token, data.taskId);
 }
