@@ -609,6 +609,18 @@ class VideoReader(IMediaReader):
         self._frame_count: Optional[int] = None
         self._frame_size: Optional[tuple[int, int]] = None # (w, h)
 
+    @staticmethod
+    def get_stream_rotation_angle(video_stream: av.video.stream.VideoStream) -> int | None:
+        av_major = int(av.__version__.split(".")[0])
+        assert av_major not in (10, 11), "AV version does not give access to rotation info"
+        if av_major == 9:
+            rotate = int(video_stream.metadata.get('rotate', 0))
+            if rotate:
+                return 360 - rotate
+        elif av_major >= 12:
+            assert hasattr(video_stream, "side_data")
+            return video_stream.side_data.get("DISPLAYMATRIX", 0)
+
     def iterate_frames(
         self,
         *,
@@ -651,16 +663,14 @@ class VideoReader(IMediaReader):
                     video_stream.thread_type = 'NONE'
 
             frame_counter = itertools.count()
+            angle = self.get_stream_rotation_angle(video_stream)
             with closing(self._decode_stream(container, video_stream)) as stream_decoder:
                 for frame, frame_number in zip(stream_decoder, frame_counter):
                     if frame_number == next_frame_filter_frame:
-                        if video_stream.metadata.get('rotate'):
+                        if angle:
                             pts = frame.pts
                             frame = av.VideoFrame().from_ndarray(
-                                rotate_image(
-                                    frame.to_ndarray(format='bgr24'),
-                                    360 - int(video_stream.metadata.get('rotate'))
-                                ),
+                                rotate_image(frame.to_ndarray(format='bgr24'), angle),
                                 format ='bgr24'
                             )
                             frame.pts = pts
@@ -815,15 +825,13 @@ class VideoReaderWithManifest:
             container.seek(offset=start_decode_timestamp, stream=video_stream)
 
             frame_counter = itertools.count(start_decode_frame_number)
+            angle = VideoReader.get_stream_rotation_angle(video_stream)
             with closing(self._decode_stream(container, video_stream)) as stream_decoder:
                 for frame, frame_number in zip(stream_decoder, frame_counter):
                     if frame_number == next_frame_filter_frame:
-                        if video_stream.metadata.get('rotate'):
+                        if angle:
                             frame = av.VideoFrame().from_ndarray(
-                                rotate_image(
-                                    frame.to_ndarray(format='bgr24'),
-                                    360 - int(video_stream.metadata.get('rotate'))
-                                ),
+                                rotate_image(frame.to_ndarray(format='bgr24'), angle),
                                 format ='bgr24'
                             )
 
@@ -1013,7 +1021,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
                 "preset": "ultrafast",
             }
 
-    def _add_video_stream(self, container: av.container.OutputContainer, w, h, rate, options):
+    def _add_video_stream(self, container: av.container.OutputContainer, w, h, rate, options) -> av.video.stream.VideoStream:
         # x264 requires width and height must be divisible by 2 for yuv420p
         if h % 2:
             h += 1
