@@ -64,8 +64,6 @@ ARG AV_VERSION=10.0.0
 RUN grep -q '^av==' /tmp/utils/dataset_manifest/requirements.txt
 RUN echo 'av==${AV_VERSION}' > /tmp/utils/dataset_manifest/requirements.txt
 
-RUN cat /tmp/utils/dataset_manifest/requirements.txt
-
 RUN --mount=type=cache,target=/root/.cache/pip/http-v2 \
     AV_MAJOR=$(echo $AV_VERSION | cut -d. -f1) && \
     if [ "$AV_MAJOR" -le 10 ]; then \
