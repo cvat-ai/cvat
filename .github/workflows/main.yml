@@ -216,7 +216,7 @@ jobs:
             contains(matrix.pattern, 'not')
               && 'rest_api_container_logs'
               || format(
-                  'rest_api_container_logs-{0}-cache:{1}',
+                  'rest_api_container_logs-{0}-cache-{1}',
                   matrix.pattern, matrix.allow_cache
                 )
             }}
@@ -230,7 +230,7 @@ jobs:
             contains(matrix.pattern, 'not')
               && 'allure-results-tests-api'
               || format(
-                  'allure-results-tests-api-{0}-cache:{1}',
+                  'allure-results-tests-api-{0}-cache-{1}',
                   matrix.pattern, matrix.allow_cache
                 )
             }}
