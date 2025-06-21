@@ -3477,6 +3477,9 @@ class TaskDataAPITestCase(ApiTestBase):
         cls._share_image_sizes[filename] = img_sizes
         cls._share_files.append(filename)
 
+        # av 10 & 11 do not have any way to get rotation
+        assert av.__version__.split('.')[0] not in ("10", "11")
+
         filename = "test_rotated_90_video.mp4"
         path = os.path.join(os.path.dirname(__file__), "assets", "test_rotated_90_video.mp4")
         container = av.open(path, "r")
