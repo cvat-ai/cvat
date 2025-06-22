@@ -55,7 +55,7 @@ RUN curl -sL https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.gz --outpu
 
 COPY utils/dataset_manifest/requirements.txt /tmp/utils/dataset_manifest/requirements.txt
 
-ARG AV_VERSION=13.0.0
+ARG AV_VERSION=13.1.0
 
 # Since we're using pip-compile-multi, each dependency can only be listed in
 # one requirements file. In the case of PyAV, that should be

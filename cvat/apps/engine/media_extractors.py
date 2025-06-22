@@ -19,6 +19,7 @@ from collections.abc import Generator, Iterable, Iterator, Sequence
 from contextlib import AbstractContextManager, ExitStack, closing, contextmanager
 from dataclasses import dataclass
 from enum import IntEnum
+from fractions import Fraction
 from random import shuffle
 from typing import Any, Callable, Optional, Protocol, TypeVar, Union
 
@@ -1074,7 +1075,10 @@ class Mpeg4ChunkWriter(IChunkWriter):
                 options=self._codec_opts,
             )
 
-            with closing(output_v_stream):
+            if av.__version__ < "13.1":
+                with closing(output_v_stream):
+                    self._encode_images(images, output_container, output_v_stream)
+            else:
                 self._encode_images(images, output_container, output_v_stream)
 
         return [(input_w, input_h)]
@@ -1086,7 +1090,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
         for frame, _, _ in images:
             # let libav set the correct pts and time_base
             frame.pts = None
-            frame.time_base = None
+            frame.time_base = Fraction(0, 1)
 
             for packet in stream.encode(frame):
                 container.mux(packet)
@@ -1131,7 +1135,10 @@ class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
                 options=self._codec_opts,
             )
 
-            with closing(output_v_stream):
+            if av.__version__ < "13.1":
+                with closing(output_v_stream):
+                    self._encode_images(images, output_container, output_v_stream)
+            else:
                 self._encode_images(images, output_container, output_v_stream)
 
         return [(input_w, input_h)]
