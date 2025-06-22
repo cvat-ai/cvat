@@ -445,15 +445,6 @@ class FileSystemRelatedModel(metaclass=ABCModelMeta):
     def get_dirname(self) -> str:
         ...
 
-    def get_tmp_dirname(self) -> str:
-        """
-        The method returns a directory that is only used
-        to store temporary files or folders related to the object
-        """
-        dir_path = os.path.join(self.get_dirname(), "tmp")
-        os.makedirs(dir_path, exist_ok=True)
-
-        return dir_path
 
 
 @transaction.atomic(savepoint=False)
