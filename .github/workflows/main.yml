@@ -185,7 +185,7 @@ jobs:
           COVERAGE_PROCESS_START: ".coveragerc"
           CVAT_ALLOW_STATIC_CACHE: ${{ matrix.allow_cache }}
         run: |
-          pytest tests/python/ -k ${{ matrix.pattern }} --cov --cov-report=json --alluredir=tests/python/allure-results
+          pytest tests/python/ -k "${{ matrix.pattern }}" --cov --cov-report=json --alluredir=tests/python/allure-results
           ONE_RUNNING_JOB_IN_QUEUE_PER_USER="true" pytest tests/python/rest_api/test_queues.py --cov --cov-report=json
 
           for COVERAGE_FILE in `find -name "coverage*.json" -type f -printf "%f\n"`; do mv ${COVERAGE_FILE} "${COVERAGE_FILE%%.*}_0.json"; done
