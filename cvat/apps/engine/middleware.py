@@ -39,7 +39,7 @@ class LastActivityMiddleware:
             last_activity = user.profile.last_activity
             if (
                 not last_activity
-                or (now() - last_activity) > settings.USER_LAST_ACTIVITY_UPDATEP_PERIOD
+                or (now() - last_activity) > settings.USER_LAST_ACTIVITY_UPDATE_MIN_INTERVAL
             ):
                 user.profile.last_activity = now()
                 user.profile.save()
