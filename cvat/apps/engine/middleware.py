@@ -36,12 +36,12 @@ class LastActivityMiddleware:
     def __call__(self, request):
         if request.user.is_authenticated:
             user = request.user
-            last_activity = user.profile.last_activity
+            last_activity_date = user.profile.last_activity_date
             if (
-                not last_activity
-                or (now() - last_activity) > settings.USER_LAST_ACTIVITY_UPDATE_MIN_INTERVAL
+                not last_activity_date
+                or (now() - last_activity_date) > settings.USER_LAST_ACTIVITY_UPDATE_MIN_INTERVAL
             ):
-                user.profile.last_activity = now()
+                user.profile.last_activity_date = now()
                 user.profile.save()
 
         response = self.get_response(request)
