@@ -141,7 +141,7 @@ jobs:
             allow_cache: 'true'
           - pattern: "test_task_data"
             allow_cache: 'no'
-          - pattern: "not 'test_task_data'"
+          - pattern: "not test_task_data"
             allow_cache: 'no'
     steps:
       - uses: actions/checkout@v4
