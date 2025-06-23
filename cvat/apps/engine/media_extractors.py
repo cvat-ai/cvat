@@ -560,7 +560,7 @@ class _AvVideoReading:
         finally:
             # fixes a memory leak in input container closing
             # https://github.com/PyAV-Org/PyAV/issues/1117
-            if av.__version__ <= "14":
+            if av.__version__ < "14":
                 for stream in container.streams:
                     context = stream.codec_context
                     if context and context.is_open:
