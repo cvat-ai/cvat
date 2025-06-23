@@ -48,6 +48,7 @@ class LastActivityMiddleware:
             ):
                 # such way we avoid failing and any db updates if the Profile was removed during the request
                 from cvat.apps.engine.models import Profile
+
                 Profile.objects.filter(user_id=request.user.id).update(last_activity_date=now())
 
         return response
