@@ -193,7 +193,14 @@ jobs:
       - name: Uploading code coverage results as an artifact
         uses: actions/upload-artifact@v4
         with:
-          name: coverage_results_rest_api
+          name: ${{
+            contains(matrix.pattern, 'not')
+              && 'coverage_results_rest_api'
+              || format(
+                  'coverage_results_rest_api-{0}-cache-{1}',
+                  matrix.pattern, matrix.allow_cache
+                )
+            }}
           path: |
             coverage*.json
 
