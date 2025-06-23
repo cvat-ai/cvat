@@ -23,7 +23,7 @@ def init_context(context):
     context.logger.info("Init context...100%")
 
 def handler(context, event):
-    context.logger.info("Run Uflow model")
+    context.logger.info("Run U2Net model")
 
     try:
         data = event.body
