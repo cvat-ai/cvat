@@ -143,6 +143,7 @@ jobs:
             allow_cache: 'no'
           - pattern: "not test_task_data"
             allow_cache: 'no'
+    name: rest_api_testing [${{ matrix.pattern }}, cache-${{ matrix.allow_cache }}]
     steps:
       - uses: actions/checkout@v4
 
