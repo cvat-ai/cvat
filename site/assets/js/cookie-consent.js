@@ -38,6 +38,11 @@
 
         if (document.getElementById('ga-script')) return;
 
+        // Re-enable Google Analytics tracking if it was previously disabled
+        if (window.GOOGLE_TAG_ID) {
+            window['ga-disable-' + window.GOOGLE_TAG_ID] = false;
+        }
+
         // Load the external Google Analytics script
         var s = document.createElement('script');
         s.id = 'ga-script';
@@ -49,7 +54,7 @@
         window.dataLayer = window.dataLayer || [];
         window.gtag = function() { dataLayer.push(arguments); };
         window.gtag('js', new Date());
-        window.gtag('config', window.GA_TRACKING_ID);
+        window.gtag('config', window.GOOGLE_TAG_ID);
     }
 
     /**
