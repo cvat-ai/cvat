@@ -1,0 +1,27 @@
+{{/* Cookie Consent Banner */}}
+{{/* Only show if GA tracking ID is configured */}}
+{{/* Styles are imported via _styles_project.scss */}}
+{{ $gaTrackingId := getenv "GOOGLE_TAG_ID" | default site.Config.Services.GoogleAnalytics.ID -}}
+{{ if $gaTrackingId -}}
+<div id="cookie-consent-banner">
+  <p>
+    We use Google Analytics cookies to improve functionality and analyze traffic. You can change your preference at any time using the "Cookie Settings" link in the footer.
+  </p>
+  <div class="button-group">
+    <button onclick="acceptCookies()">Accept</button>
+    <button class="reject" onclick="rejectCookies()">Reject</button>
+  </div>
+</div>
+
+{{/* Pass GA tracking ID to JavaScript */}}
+<script>
+window.GOOGLE_TAG_ID = '{{ $gaTrackingId }}';
+</script>
+
+{{/* Load cookie consent JavaScript only in production */}}
+{{ $jsCookieConsent := resources.Get "js/cookie-consent.js" -}}
+{{ $jsCookieConsent = $jsCookieConsent | minify | fingerprint -}}
+<script defer src="{{ $jsCookieConsent.RelPermalink }}" {{ with $jsCookieConsent.Data.Integrity -}}
+  integrity="{{ . }}" {{ end -}}
+  crossorigin="anonymous"></script>
+{{ end -}}
