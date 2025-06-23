@@ -786,7 +786,6 @@ class LambdaTestCases(_LambdaTestCaseBase):
         data = {
             "task": self.main_task["id"],
             "frame": 0,
-            "shapes": [{"type": "rectangle", "points": [12.12, 34.45, 54.0, 76.12]}],
             "states": [signer.sign("{}")],
         }
 
