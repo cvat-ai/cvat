@@ -560,12 +560,13 @@ class _AvVideoReading:
         finally:
             # fixes a memory leak in input container closing
             # https://github.com/PyAV-Org/PyAV/issues/1117
-            for stream in container.streams:
-                context = stream.codec_context
-                if context and context.is_open:
-                    # Currently, context closing may get stuck on some videos for an unknown reason,
-                    # so the thread_type == 'AUTO' setting is disabled for future investigation
-                    context.close()
+            if av.__version__ <= "14":
+                for stream in container.streams:
+                    context = stream.codec_context
+                    if context and context.is_open:
+                        # Currently, context closing may get stuck on some videos for an unknown reason,
+                        # so the thread_type == 'AUTO' setting is disabled for future investigation
+                        context.close()
 
             if container.open_files:
                 container.close()
@@ -611,16 +612,18 @@ class VideoReader(IMediaReader):
         self._frame_size: Optional[tuple[int, int]] = None # (w, h)
 
     @staticmethod
-    def get_stream_rotation_angle(video_stream: av.video.stream.VideoStream) -> int | None:
+    def get_rotation_angle(video_stream: av.video.stream.VideoStream, frame: av.VideoFrame) -> int | None:
         av_major = int(av.__version__.split(".")[0])
         assert av_major not in (10, 11), "AV version does not give access to rotation info"
+        assert not av.__version__.startswith("14.0"), "AV version does not give access to rotation info"
         if av_major == 9:
             rotate = int(video_stream.metadata.get('rotate', 0))
             if rotate:
                 return 360 - rotate
-        elif av_major >= 12:
-            assert hasattr(video_stream, "side_data")
+        elif 12 <= av_major < 14:
             return video_stream.side_data.get("DISPLAYMATRIX", 0)
+        else:
+            return frame.rotation
 
     def iterate_frames(
         self,
@@ -664,9 +667,9 @@ class VideoReader(IMediaReader):
                     video_stream.thread_type = 'NONE'
 
             frame_counter = itertools.count()
-            angle = self.get_stream_rotation_angle(video_stream)
             with closing(self._decode_stream(container, video_stream)) as stream_decoder:
                 for frame, frame_number in zip(stream_decoder, frame_counter):
+                    angle = self.get_rotation_angle(video_stream, frame)
                     if frame_number == next_frame_filter_frame:
                         if angle:
                             pts = frame.pts
@@ -826,9 +829,9 @@ class VideoReaderWithManifest:
             container.seek(offset=start_decode_timestamp, stream=video_stream)
 
             frame_counter = itertools.count(start_decode_frame_number)
-            angle = VideoReader.get_stream_rotation_angle(video_stream)
             with closing(self._decode_stream(container, video_stream)) as stream_decoder:
                 for frame, frame_number in zip(stream_decoder, frame_counter):
+                    angle = VideoReader.get_rotation_angle(video_stream, frame)
                     if frame_number == next_frame_filter_frame:
                         if angle:
                             frame = av.VideoFrame().from_ndarray(
