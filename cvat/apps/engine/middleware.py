@@ -47,6 +47,7 @@ class LastActivityMiddleware:
                 not last_activity_date
                 or (now() - last_activity_date) > settings.USER_LAST_ACTIVITY_UPDATE_MIN_INTERVAL
             ):
+                # such way we avoid failing and any db updates if the Profile was removed during the request
                 Profile = apps.get_model("engine", "Profile")
                 Profile.objects.filter(user_id=request.user.id).update(last_activity_date=now())
 
