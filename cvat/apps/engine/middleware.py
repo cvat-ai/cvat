@@ -5,6 +5,7 @@
 from typing import Protocol
 from uuid import uuid4
 
+from django.apps import apps
 from django.conf import settings
 from django.utils.timezone import now
 
@@ -46,7 +47,7 @@ class LastActivityMiddleware:
                 not last_activity_date
                 or (now() - last_activity_date) > settings.USER_LAST_ACTIVITY_UPDATE_MIN_INTERVAL
             ):
-                profile.last_activity_date = now()
-                profile.save(update_fields=["last_activity_date"])
+                Profile = apps.get_model("engine", "Profile")
+                Profile.objects.filter(user_id=request.user.id).update(last_activity_date=now())
 
         return response
