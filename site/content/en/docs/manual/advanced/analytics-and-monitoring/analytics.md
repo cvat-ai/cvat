@@ -112,7 +112,7 @@ To download a CSV file with all event data, select the **Export events** button.
 
 ### Summary tab
 
-![Summary tab in Analytics](/images/analytics/summary-tab.png)
+![Summary tab in Analytics](/images/analytics/summary-tab.jpg)
 
 The **Summary** tab displays the quantitative metrics:
 - **Objects diff**: Difference between created and deleted objects in the selected time period.
@@ -128,7 +128,7 @@ for annotation distribution by labels and types. Hover over a chart or diagram t
 
 ### Annotations tab
 
-![Annotation tab in Analytics](/images/analytics/annotation-tab-detection.png)
+![Annotation tab in Analytics](/images/analytics/annotation-tab-detection.jpg)
 
 The **Annotations** tab shows annotation statistics for:
 - {{< ilink "/docs/manual/basics/shape-mode-basics" "Shape mode">}} (the **Detections** tab).
@@ -174,7 +174,7 @@ The **Tracking** tab table contains the columns:
 
 ### Events tab
 
-![Events tab in Analytics](/images/analytics/events-tab.png)
+![Events tab in Analytics](/images/analytics/events-tab.jpg)
 
 The **Events** tab displays the following metrics:
 - **Total objects**: Total number of objects in the filtered jobs.
