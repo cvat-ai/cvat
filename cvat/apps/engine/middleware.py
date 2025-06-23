@@ -5,7 +5,6 @@
 from typing import Protocol
 from uuid import uuid4
 
-from django.apps import apps
 from django.conf import settings
 from django.utils.timezone import now
 
@@ -48,7 +47,7 @@ class LastActivityMiddleware:
                 or (now() - last_activity_date) > settings.USER_LAST_ACTIVITY_UPDATE_MIN_INTERVAL
             ):
                 # such way we avoid failing and any db updates if the Profile was removed during the request
-                Profile = apps.get_model("engine", "Profile")
+                from cvat.apps.engine.models import Profile
                 Profile.objects.filter(user_id=request.user.id).update(last_activity_date=now())
 
         return response
