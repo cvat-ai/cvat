@@ -34,6 +34,8 @@ class LastActivityMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        response = self.get_response(request)
+
         if request.user.is_authenticated:
             user = request.user
             last_activity_date = user.profile.last_activity_date
@@ -44,5 +46,4 @@ class LastActivityMiddleware:
                 user.profile.last_activity_date = now()
                 user.profile.save()
 
-        response = self.get_response(request)
         return response
