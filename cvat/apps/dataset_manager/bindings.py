@@ -2470,7 +2470,7 @@ def load_dataset_data(project_annotation, dataset: dm.Dataset, project_data):
                 if len(data_root) == 2:
                     root_paths.add(data_root[0])
             elif isinstance(dataset_item.media, dm.PointCloud):
-                dataset_files['media'].append(dataset_item.media)
+                dataset_files['media'].append(dataset_item.media.path)
                 data_root = dataset_item.media.path.rsplit(dataset_item.id, 1)
                 if len(data_root) == 2:
                     root_paths.add(data_root[0])
