@@ -12,7 +12,7 @@ from collections.abc import Generator, Sequence
 from contextlib import contextmanager, suppress
 from pathlib import Path
 from time import sleep
-from typing import Any, Optional, TypeVar
+from typing import Any, Optional, TypeVar, Union
 
 import attrs
 import packaging.specifiers as specifiers
@@ -390,7 +390,10 @@ class CVAT_API_V2:
 
 
 def make_client(
-    host: str, *, port: Optional[int] = None, credentials: Optional[tuple[str, str]] = None
+    host: str,
+    *,
+    port: Optional[int] = None,
+    credentials: Union[Credentials, tuple[str, str], None] = None,
 ) -> Client:
     url = host.rstrip("/")
     if port:
