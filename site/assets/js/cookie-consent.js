@@ -40,7 +40,7 @@
 
         // Re-enable Google Analytics tracking if it was previously disabled
         if (window.GOOGLE_TAG_ID) {
-            window['ga-disable-' + window.GOOGLE_TAG_ID] = false;
+            delete window['ga-disable-' + window.GOOGLE_TAG_ID];
         }
 
         // Load the external Google Analytics script
