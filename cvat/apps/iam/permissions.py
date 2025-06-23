@@ -167,7 +167,7 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
     @classmethod
     def create_scope_list(cls, request: ExtendedRequest, iam_context: IamContext | None = None):
         if not iam_context and request:
-            iam_context = cls.get_iam_context(request, None)
+            iam_context = get_iam_context(request, None)
 
         return cls(**iam_context, scope="list")
 

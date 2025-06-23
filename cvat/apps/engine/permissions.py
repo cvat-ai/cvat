@@ -146,7 +146,6 @@ class UserPermission(OpenPolicyAgentPermission):
 
     def get_resource(self):
         data = None
-        organization = self.payload['input']['auth']['organization']
         if self.obj:
             data = {
                 'id': self.obj.id
@@ -157,12 +156,7 @@ class UserPermission(OpenPolicyAgentPermission):
             }
 
         if data:
-            data.update({
-                'membership': {
-                    'role': organization['user']['role']
-                        if organization else None
-                }
-            })
+            data['membership'] = { 'role': self.org_role if self.org_id else None }
 
         return data
 
