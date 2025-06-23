@@ -39,9 +39,7 @@
         if (document.getElementById('ga-script')) return;
 
         // Re-enable Google Analytics tracking if it was previously disabled
-        if (window.GOOGLE_TAG_ID) {
-            delete window['ga-disable-' + window.GOOGLE_TAG_ID];
-        }
+        delete window['ga-disable-' + window.GOOGLE_TAG_ID];
 
         // Load the external Google Analytics script
         var s = document.createElement('script');
