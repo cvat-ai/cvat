@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Created script to upload data to cvat via the CVAT API [PR #7]
 - Created docker-compose.override.yml file, in this case to mount folders on cvat [PR #8]
 - Add ports for default tracking models TransT and SiamMask [PR #10]
+- U2Net model [PR #16]
 
 ## Changed
 - Modified startup.sh to support docker-compose.override.yml file [PR #9]
