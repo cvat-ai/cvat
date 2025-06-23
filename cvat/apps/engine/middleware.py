@@ -47,6 +47,6 @@ class LastActivityMiddleware:
                 or (now() - last_activity_date) > settings.USER_LAST_ACTIVITY_UPDATE_MIN_INTERVAL
             ):
                 profile.last_activity_date = now()
-                profile.save()
+                profile.save(update_fields=["last_activity_date"])
 
         return response
