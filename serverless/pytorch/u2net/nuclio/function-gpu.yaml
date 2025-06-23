@@ -1,0 +1,83 @@
+metadata:
+  name: u2net
+  namespace: cvat
+  annotations:
+    name: U2Net
+    type: detector
+    spec: |
+      [
+        { "id": 0, "name": "anomaly", "type": "mask" }
+      ]
+
+spec:
+  description: U2Net
+  runtime: 'python:3.10'
+  handler: main:handler
+  eventTimeout: 3000s
+
+  build:
+    image: cvat.pth.u2net.gpu
+    baseImage: ubuntu:22.04  # Base with proper GL libraries
+
+    directives:
+      preCopy:
+        - kind: ENV
+          value: DEBIAN_FRONTEND=noninteractive
+
+        # 1. Install Python 3.9 and system dependencies
+        - kind: RUN
+          value: |
+            apt-get update && \
+            apt-get install -y \
+            python3.10 \
+            python3-dev \
+            python3-distutils \
+            libgl1 \
+            libglib2.0-0 \
+            libsm6 \
+            libxrender1 \
+            libxext6 \
+            curl \
+            git \
+            ca-certificates \
+            python3-pip \
+            && rm -rf /var/lib/apt/lists/*
+
+        - kind: RUN
+          value: ln -s $(which python3) /usr/bin/python  # Critical for Nucli0
+
+        - kind: RUN
+          value: pip install --upgrade pip
+
+        - kind: RUN
+          value: pip install msgpack nuclio_sdk
+          
+
+        # 3. Install Python packages
+        - kind: WORKDIR
+          value: /opt/nuclio
+        - kind: RUN
+          value: pip install --upgrade pip setuptools wheel
+        - kind: RUN
+          value: pip install gdown && gdown 'https://drive.google.com/uc?id=1vhREXZeUE7HYFozskCqOoYyV6g5b6DOS' -O requirements.txt
+        - kind: RUN
+          value: pip install -r requirements.txt
+        - kind: RUN
+          value: git clone https://github.com/xuebinqin/U-2-Net.git u2net
+
+
+  triggers:
+    myHttpTrigger:
+      numWorkers: 2
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 300000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+        port: 32761
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume
