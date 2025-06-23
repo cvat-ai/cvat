@@ -39,7 +39,7 @@ class LastActivityMiddleware:
         if request.user.is_authenticated:
             profile = getattr(request.user, "profile", None)
             if not profile:
-                return
+                return response
 
             last_activity_date = profile.last_activity_date
             if (
