@@ -41,7 +41,7 @@ import QualitySettings from './quality-settings';
 import { getFramesMeta } from './frames';
 import ConsensusSettings from './consensus-settings';
 import {
-    callAction, listActions, registerAction, runAction,
+    callAction, listActions, registerAction, unregisterAction, runAction,
 } from './annotations-actions/annotations-actions';
 import { convertDescriptions, getServerAPISchema } from './server-schema';
 import { JobType } from './enums';
@@ -57,6 +57,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
     implementationMixin(cvat.plugins.register, PluginRegistry.register.bind(cvat));
     implementationMixin(cvat.actions.list, listActions);
     implementationMixin(cvat.actions.register, registerAction);
+    implementationMixin(cvat.actions.unregister, unregisterAction);
     implementationMixin(cvat.actions.run, runAction);
     implementationMixin(cvat.actions.call, callAction);
 
