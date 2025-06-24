@@ -40,6 +40,7 @@ const defaultState: ProjectsState = {
             id: null,
             error: '',
         },
+        updates: {},
     },
 };
 
@@ -202,6 +203,55 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
                         ...previews[projectID],
                         fetching: false,
                         initialized: true,
+                    },
+                },
+            };
+        }
+        case ProjectsActionTypes.UPDATE_PROJECT: {
+            const { projectId } = action.payload;
+            return {
+                ...state,
+                fetching: true,
+                activities: {
+                    ...state.activities,
+                    updates: {
+                        ...state.activities.updates,
+                        [projectId]: true,
+                    },
+                },
+            };
+        }
+        case ProjectsActionTypes.UPDATE_PROJECT_SUCCESS: {
+            const { project } = action.payload;
+            const { updates } = state.activities;
+            delete updates[project.id];
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    updates: {
+                        ...updates,
+                    },
+                },
+                current: state.current.map((projectInstance) => {
+                    if (projectInstance.id === project.id) {
+                        return project;
+                    }
+                    return projectInstance;
+                }),
+                fetching: false,
+            };
+        }
+        case ProjectsActionTypes.UPDATE_PROJECT_FAILED: {
+            const { projectId } = action.payload;
+            const { updates } = state.activities;
+            delete updates[projectId];
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    updates: {
+                        ...updates,
                     },
                 },
             };

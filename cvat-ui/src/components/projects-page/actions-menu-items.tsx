@@ -6,14 +6,20 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { MenuProps } from 'antd/lib/menu';
 import { usePlugins } from 'utils/hooks';
+import UserSelector from 'components/task-page/user-selector';
+import { User } from 'cvat-core-wrapper';
 
 interface MenuItemsData {
     projectID: number;
+    assignee: User | null;
+    editField: string | null;
+    startEditField: (key: string) => void;
     pluginActions: ReturnType<typeof usePlugins>;
     onExportDataset: () => void;
     onImportDataset: () => void;
     onBackupProject: () => void;
     onDeleteProject: () => void;
+    onUpdateProjectAssignee: (assignee: User | null) => void;
 }
 
 export default function ProjectActionsItems(
@@ -21,13 +27,29 @@ export default function ProjectActionsItems(
     projectMenuProps: unknown,
 ): MenuProps['items'] {
     const {
+        editField,
+        startEditField,
         projectID,
+        assignee,
         pluginActions,
         onExportDataset,
         onImportDataset,
         onBackupProject,
         onDeleteProject,
+        onUpdateProjectAssignee,
     } = menuItemsData;
+
+    const fieldSelectors = {
+        assignee: (
+            <UserSelector
+                value={assignee}
+                onSelect={(value: User | null): void => {
+                    if (assignee?.id === value?.id) return;
+                    onUpdateProjectAssignee(value);
+                }}
+            />
+        ),
+    };
 
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
 
@@ -48,6 +70,12 @@ export default function ProjectActionsItems(
         onClick: onBackupProject,
         label: 'Backup Project',
     }, 20]);
+
+    menuItems.push([{
+        key: 'edit_assignee',
+        onClick: () => startEditField('assignee'),
+        label: 'Assignee',
+    }, 25]);
 
     menuItems.push([{
         key: 'view-analytics',
@@ -80,6 +108,13 @@ export default function ProjectActionsItems(
             return [menuItem, weight] as [NonNullable<MenuProps['items']>[0], number];
         }),
     );
+
+    if (editField) {
+        return [{
+            key: `${editField}-selector`,
+            label: fieldSelectors[editField],
+        }];
+    }
 
     return menuItems.sort((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1]).map((menuItem) => menuItem[0]);
 }
