@@ -102,6 +102,16 @@
     border: 0;
     outline: none;
   }
+
+  .confirmation-button {
+    display: inline-block;
+    padding: 16px 36px;
+    font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif;
+    font-size: 16px;
+    color: #000;
+    text-decoration: none;
+    border-radius: 6px;
+  }
   </style>
 
 </head>
@@ -123,11 +133,10 @@
             <td align="center" valign="bottom">
               <a href="https://www.cvat.ai/" target="_blank" style="display: inline-block;">
                 <img
-                  src="https://github.com/cvat-ai/cvat/blob/develop/site/content/en/images/cvat_poster_with_name.png?raw=true"
+                  src="https://app.cvat.ai/static/logo.svg"
                   alt="Logo"
-                  border="0"
-                  width="100%"
-                  style="display: block; width: 100%;"
+                  width="128px"
+                  style="display: block; width: 100%; margin: 24px;"
                 >
               </a>
             </td>
@@ -207,9 +216,7 @@
                           <a
                             href="{{ activate_url }}"
                             target="_blank"
-                            style="display: inline-block; padding: 16px 36px;"
-                                  "font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif;"
-                                  "font-size: 16px; color: #ffffff; text-decoration: none; border-radius: 6px;"
+                            class="confirmation-button"
                             rel="noopener noreferrer"
                           >
                             Confirm
