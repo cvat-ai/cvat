@@ -16,7 +16,7 @@ import threading
 from collections.abc import Generator, Iterator, Sequence
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import attrs
 import cvat_sdk.auto_annotation as cvataa
@@ -531,7 +531,7 @@ class _Agent:
                 "/api/functions/queues/{queue_id}/requests/{request_id}/complete",
                 "POST",
                 path_params={"queue_id": f"function:{self._function_id}", "request_id": ar_id},
-                body={"agent_id": self._agent_id, "annotations": result},
+                body={"agent_id": self._agent_id, **result},
             )
             self._client.logger.info("AR %r completed", ar_id)
         except Exception as ex:
@@ -602,9 +602,7 @@ class _Agent:
         response_data = json.loads(response.data)
         return response_data["ar_assignment"]
 
-    def _calculate_result_for_detection_ar(
-        self, ar_id: str, ar_params
-    ) -> models.PatchedLabeledDataRequest:
+    def _calculate_result_for_detection_ar(self, ar_id: str, ar_params) -> dict[str, Any]:
         if ar_params["type"] == "annotate_task":
             with self._task_cache_limiter.using_cache_for_task(ar_params["task"], with_chunks=True):
                 return self._calculate_result_for_annotate_task_ar(ar_id, ar_params)
@@ -644,9 +642,7 @@ class _Agent:
             conv_mask_to_poly=ar_params["conv_mask_to_poly"],
         )
 
-    def _calculate_result_for_annotate_task_ar(
-        self, ar_id: str, ar_params
-    ) -> models.PatchedLabeledDataRequest:
+    def _calculate_result_for_annotate_task_ar(self, ar_id: str, ar_params) -> dict[str, Any]:
         ds = cvatds.TaskDataset(self._client, ar_params["task"], load_annotations=False)
 
         # Fetching the dataset might take a while, so do a progress update to let the server
@@ -677,11 +673,9 @@ class _Agent:
             # we have to put the current AR on hold and process them ASAP.
             self._process_available_ars(REQUEST_CATEGORY_INTERACTIVE)
 
-        return all_annotations
+        return {"annotations": all_annotations}
 
-    def _calculate_result_for_annotate_frame_ar(
-        self, ar_id: str, ar_params
-    ) -> models.PatchedLabeledDataRequest:
+    def _calculate_result_for_annotate_frame_ar(self, ar_id: str, ar_params) -> dict[str, Any]:
         frame_index = ar_params["frame"]
 
         ds = cvatds.TaskDataset(
@@ -708,7 +702,7 @@ class _Agent:
         )
 
         mapper.validate_and_remap(shapes, frame_index)
-        return models.PatchedLabeledDataRequest(shapes=shapes)
+        return {"annotations": models.PatchedLabeledDataRequest(shapes=shapes)}
 
     def _update_ar(self, ar_id: str, progress: float) -> None:
         self._client.logger.info("Updating AR %r progress to %.2f%%", ar_id, progress * 100)
