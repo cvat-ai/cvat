@@ -227,6 +227,11 @@ class _BadArError(Exception):
     pass
 
 
+class _IncompatibleFunctionError(Exception):
+    # This should only be thrown from inside _validate_X_function_compatibility methods.
+    pass
+
+
 class _Agent:
     def __init__(self, client: Client, executor: _RecoverableExecutor, function_id: int):
         self._rng = random.Random()  # nosec
@@ -280,24 +285,21 @@ class _Agent:
                 f"Agents can only be run for functions with provider {FUNCTION_PROVIDER_NATIVE!r}."
             )
 
-        if isinstance(self._function_spec, cvataa.DetectionFunctionSpec):
-            self._validate_detection_function_compatibility(remote_function)
-            self._calculate_result_for_ar = self._calculate_result_for_detection_ar
-        else:
+        try:
+            if isinstance(self._function_spec, cvataa.DetectionFunctionSpec):
+                self._validate_detection_function_compatibility(remote_function)
+                self._calculate_result_for_ar = self._calculate_result_for_detection_ar
+            else:
+                raise CriticalError(
+                    f"Unsupported function spec type: {type(self._function_spec).__name__}"
+                )
+        except _IncompatibleFunctionError as ex:
             raise CriticalError(
-                f"Unsupported function spec type: {type(self._function_spec).__name__}"
-            )
+                f"Function #{function_id} is incompatible with function object: {ex}"
+            ) from ex
 
     def _validate_detection_function_compatibility(self, remote_function: dict) -> None:
-        incompatible_msg = (
-            f"Function #{remote_function['id']} is incompatible with function object: "
-        )
-
-        if remote_function["kind"] != FUNCTION_KIND_DETECTOR:
-            raise CriticalError(
-                incompatible_msg
-                + f"kind is {remote_function['kind']!r} (expected {FUNCTION_KIND_DETECTOR!r})."
-            )
+        self._validate_remote_function_kind(remote_function, FUNCTION_KIND_DETECTOR)
 
         labels_by_name = {label.name: label for label in self._function_spec.labels}
 
@@ -305,7 +307,7 @@ class _Agent:
             label_desc = f"label {remote_label['name']!r}"
             label = labels_by_name.get(remote_label["name"])
 
-            self._validate_sublabel_compatibility(remote_label, label, incompatible_msg, label_desc)
+            self._validate_sublabel_compatibility(remote_label, label, label_desc)
 
             sublabels_by_name = {sl.name: sl for sl in getattr(label, "sublabels", [])}
 
@@ -313,17 +315,17 @@ class _Agent:
                 sl_desc = f"sublabel {remote_sl['name']!r} of {label_desc}"
                 sl = sublabels_by_name.get(remote_sl["name"])
 
-                self._validate_sublabel_compatibility(remote_sl, sl, incompatible_msg, sl_desc)
+                self._validate_sublabel_compatibility(remote_sl, sl, sl_desc)
 
     def _validate_sublabel_compatibility(
-        self, remote_sl: dict, sl: Optional[models.Sublabel], incompatible_msg: str, sl_desc: str
+        self, remote_sl: dict, sl: Optional[models.Sublabel], sl_desc: str
     ):
         if not sl:
-            raise CriticalError(incompatible_msg + f"{sl_desc} is not supported.")
+            raise CriticalError(f"{sl_desc} is not supported.")
 
         if remote_sl["type"] not in {"any", "unknown"} and remote_sl["type"] != sl.type:
-            raise CriticalError(
-                incompatible_msg + f"{sl_desc} has type {remote_sl['type']!r}, "
+            raise _IncompatibleFunctionError(
+                f"{sl_desc} has type {remote_sl['type']!r}, "
                 f"but the function object declares type {sl.type!r}."
             )
 
@@ -334,19 +336,25 @@ class _Agent:
             attr = attrs_by_name.get(remote_attr["name"])
 
             if not attr:
-                raise CriticalError(incompatible_msg + f"{attr_desc} is not supported.")
+                raise _IncompatibleFunctionError(f"{attr_desc} is not supported.")
 
             if remote_attr["input_type"] != attr.input_type.value:
-                raise CriticalError(
-                    incompatible_msg + f"{attr_desc} has input type {remote_attr['input_type']!r},"
+                raise _IncompatibleFunctionError(
+                    f"{attr_desc} has input type {remote_attr['input_type']!r},"
                     f" but the function object declares input type {attr.input_type.value!r}."
                 )
 
             if remote_attr["values"] != attr.values:
-                raise CriticalError(
-                    incompatible_msg + f"{attr_desc} has values {remote_attr['values']!r},"
+                raise _IncompatibleFunctionError(
+                    f"{attr_desc} has values {remote_attr['values']!r},"
                     f" but the function object declares values {attr.values!r}."
                 )
+
+    def _validate_remote_function_kind(self, remote_function: dict, expected_kind: str) -> None:
+        if remote_function["kind"] != expected_kind:
+            raise _IncompatibleFunctionError(
+                f"kind is {remote_function['kind']!r} (expected {expected_kind!r})."
+            )
 
     def _wait_between_polls(self):
         # offset the interval randomly to avoid synchronization between workers
