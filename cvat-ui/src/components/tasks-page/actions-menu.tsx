@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import Modal from 'antd/lib/modal';
 import Dropdown from 'antd/lib/dropdown';
@@ -35,7 +35,7 @@ function TaskActionsComponent(props: Props): JSX.Element {
         mergingConsensus: state.consensus.actions.merging,
     }), shallowEqual);
 
-    const [dropdownOpen, setDropdownOpen] = React.useState(false);
+    const [dropdownOpen, setDropdownOpen] = useState(false);
     const {
         editField,
         startEditField,
