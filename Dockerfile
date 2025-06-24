@@ -37,7 +37,7 @@ FROM build-image-base AS build-image-av
 ARG PREFIX=/opt/ffmpeg
 ARG PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig
 
-ENV OPENH264_VERSION=2.1.1
+ARG OPENH264_VERSION=2.6.0
 
 WORKDIR /tmp/openh264
 RUN curl -sL https://github.com/cisco/openh264/archive/v${OPENH264_VERSION}.tar.gz --output - | \
