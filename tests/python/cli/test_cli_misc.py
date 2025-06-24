@@ -6,6 +6,7 @@ import json
 import os
 from datetime import timedelta
 from io import BytesIO
+from unittest import mock
 
 import packaging.version as pv
 import pytest
@@ -95,6 +96,31 @@ class TestCliMisc(TestCliBase):
         all_task_ids = list(map(int, self.run_cli("task", "ls").split()))
         assert personal_task_id in all_task_ids
         assert org_task_id in all_task_ids
+
+    def test_can_use_auth_env_variable(self):
+        token = "CustomToken"
+
+        env = os.environ.copy()
+        env["CVAT_AUTH"] = token
+
+        from cvat_sdk.api_client.rest import RESTClientObject
+
+        original_request = RESTClientObject.request
+
+        call_count = 0
+
+        def patched_request(*args, **kwargs):
+            nonlocal call_count
+            call_count += 1
+
+            assert kwargs["headers"].get("Authorization") == f"Bearer {token}"
+
+            return original_request(*args, **kwargs)
+
+        with mock.patch.object(RESTClientObject, "request", patched_request):
+            self.run_cli("task", "ls", env=env, authenticate=False, expected_code=1)
+
+        assert call_count > 0
 
 
 @pytest.mark.parametrize(
