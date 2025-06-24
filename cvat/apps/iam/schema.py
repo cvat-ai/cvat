@@ -45,7 +45,7 @@ class TokenAuthenticationScheme(TokenScheme):
         schema["description"] = textwrap.dedent(
             f"""\
             You can obtain an API key (the token) from the server response on
-            the basic auth request in the /api/auth/login/ endpoint.
+            the /api/auth/login/ endpoint.
         """
         )
         return schema
