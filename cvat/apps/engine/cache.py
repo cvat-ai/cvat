@@ -70,6 +70,10 @@ DataWithMime = tuple[io.BytesIO, str]
 _CacheItem = tuple[io.BytesIO, str, int, Union[datetime, None]]
 
 
+class CacheTooLargeDataError(Exception):
+    pass
+
+
 def enqueue_create_chunk_job(
     queue: rq.Queue,
     rq_job_id: str,
@@ -180,6 +184,10 @@ class MediaCache:
     def _get_checksum(value: bytes) -> int:
         return zlib.crc32(value)
 
+    @staticmethod
+    def _get_cache_item_size(item: _CacheItem) -> int:
+        return item[0].getbuffer().nbytes
+
     def _get_or_set_cache_item(
         self,
         key: str,
@@ -232,6 +240,12 @@ class MediaCache:
             if cached_item is not None and timestamp <= cached_item[3]:
                 item = cached_item
             else:
+                item_size = cls._get_cache_item_size(item)
+                if item_size > settings.CVAT_CACHE_ITEM_MAX_SIZE:
+                    raise CacheTooLargeDataError(
+                        f"Chunk data size {item_size} exceeds the maximum allowed size "
+                        f"{settings.CVAT_CACHE_ITEM_MAX_SIZE}."
+                    )
                 cache.set(key, item, timeout=cache_item_ttl or cache.default_timeout)
 
         return item
