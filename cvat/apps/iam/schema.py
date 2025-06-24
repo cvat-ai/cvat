@@ -39,22 +39,13 @@ class TokenAuthenticationScheme(TokenScheme):
     priority = 0
     match_subclasses = True
 
-    def get_security_requirement(self, auto_schema):
-        # These schemes must be used together
-        return {"sessionAuth": [], "csrfAuth": [], self.name: []}
-
     def get_security_definition(self, auto_schema):
         schema = super().get_security_definition(auto_schema)
         schema["x-token-prefix"] = self.target.keyword
         schema["description"] = textwrap.dedent(
-            f"""
-            To authenticate using a token (or API key), you need to have 3 components in a request:
-            - the 'sessionid' cookie
-            - the 'csrftoken' cookie or 'X-CSRFTOKEN' header
-            - the 'Authentication' header with the '{self.target.keyword} ' prefix
-
+            f"""\
             You can obtain an API key (the token) from the server response on
-            the basic auth request.
+            the basic auth request in the /api/auth/login/ endpoint.
         """
         )
         return schema
@@ -68,10 +59,6 @@ class CookieAuthenticationScheme(SessionScheme):
 
     name = ["sessionAuth", "csrfAuth"]
     priority = 0
-
-    def get_security_requirement(self, auto_schema):
-        # These schemes cannot be used separately
-        return None
 
     def get_security_definition(self, auto_schema):
         sessionid_schema = super().get_security_definition(auto_schema)

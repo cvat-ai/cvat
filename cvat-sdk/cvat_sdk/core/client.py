@@ -205,9 +205,6 @@ class Client:
         (auth, _) = self.api_client.auth_api.create_login(
             models.LoginSerializerExRequest(username=credentials[0], password=credentials[1])
         )
-
-        assert "sessionid" in self.api_client.cookies
-        assert "csrftoken" in self.api_client.cookies
         self.api_client.set_default_header("Authorization", "Token " + auth.key)
 
     def has_credentials(self) -> bool:
@@ -222,6 +219,7 @@ class Client:
             self.api_client.auth_api.create_logout()
             self.api_client.cookies.pop("sessionid", None)
             self.api_client.cookies.pop("csrftoken", None)
+            self.api_client.default_headers.pop("X-CSRFToken", None)
             self.api_client.default_headers.pop("Authorization", None)
 
     def wait_for_completion(
