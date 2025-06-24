@@ -26,7 +26,7 @@ def run_cli(
     test: Union[unittest.TestCase, Any],
     *args: str,
     expected_code: int = 0,
-    env: dict[str, str] | None = None,
+    env: Optional[dict[str, str]] = None,
 ) -> None:
     from cvat_cli.__main__ import main
 
@@ -142,7 +142,7 @@ class TestCliBase:
         expected_code: int = 0,
         organization: Optional[str] = None,
         authenticate: bool = True,
-        env: dict[str, str] | None = None,
+        env: Optional[dict[str, str]] = None,
     ) -> str:
         common_args = [
             f"--server-host={self.host}",
