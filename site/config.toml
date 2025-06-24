@@ -1,6 +1,6 @@
-baseURL = "/"
+baseURL = "https://docs.cvat.ai"
 title = "CVAT"
-relativeURLs = true
+relativeURLs = false
 
 enableRobotsTXT = true
 
