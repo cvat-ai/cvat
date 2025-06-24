@@ -676,14 +676,28 @@ class _Agent:
         return {"annotations": all_annotations}
 
     def _calculate_result_for_annotate_frame_ar(self, ar_id: str, ar_params) -> dict[str, Any]:
-        frame_index = ar_params["frame"]
+        sample, ds_labels = self._get_sample_from_ar_params(ar_params)
 
+        mapper = self._create_annotation_mapper_for_detection_ar(ar_params, ds_labels)
+
+        context = self._create_detection_function_context(ar_params, sample.frame_name)
+
+        shapes = self._executor.result(
+            self._executor.submit(_worker_job_detect, context, sample.media.load_image())
+        )
+
+        mapper.validate_and_remap(shapes, sample.frame_index)
+        return {"annotations": models.PatchedLabeledDataRequest(shapes=shapes)}
+
+    def _get_sample_from_ar_params(self, ar_params):
         ds = cvatds.TaskDataset(
             self._client,
             ar_params["task"],
             load_annotations=False,
             media_download_policy=cvatds.MediaDownloadPolicy.FETCH_FRAMES_ON_DEMAND,
         )
+
+        frame_index = ar_params["frame"]
 
         # Since ds.samples excludes deleted frames, we can't just do sample = ds.samples[frame_index].
         # Once we drop Python 3.9, we can change this to use bisect instead of the linear search.
@@ -693,16 +707,7 @@ class _Agent:
         else:
             raise _BadArError(f"Frame with index {frame_index} does not exist in the task")
 
-        mapper = self._create_annotation_mapper_for_detection_ar(ar_params, ds.labels)
-
-        context = self._create_detection_function_context(ar_params, sample.frame_name)
-
-        shapes = self._executor.result(
-            self._executor.submit(_worker_job_detect, context, sample.media.load_image())
-        )
-
-        mapper.validate_and_remap(shapes, frame_index)
-        return {"annotations": models.PatchedLabeledDataRequest(shapes=shapes)}
+        return sample, ds.labels
 
     def _update_ar(self, ar_id: str, progress: float) -> None:
         self._client.logger.info("Updating AR %r progress to %.2f%%", ar_id, progress * 100)
