@@ -25,10 +25,10 @@ paths:
               $ref: '#/components/schemas/AssetWriteRequest'
         required: true
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -52,10 +52,10 @@ paths:
       tags:
       - assets
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -74,10 +74,10 @@ paths:
       tags:
       - assets
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -104,10 +104,10 @@ paths:
               $ref: '#/components/schemas/LoginSerializerExRequest'
         required: true
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       - {}
       responses:
@@ -128,10 +128,10 @@ paths:
       tags:
       - auth
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       - {}
       responses:
@@ -158,10 +158,10 @@ paths:
               $ref: '#/components/schemas/PasswordChangeRequest'
         required: true
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -187,10 +187,10 @@ paths:
               $ref: '#/components/schemas/PasswordResetSerializerExRequest'
         required: true
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       - {}
       responses:
@@ -219,10 +219,10 @@ paths:
               $ref: '#/components/schemas/PasswordResetConfirmRequest'
         required: true
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       - {}
       responses:
@@ -244,10 +244,10 @@ paths:
               $ref: '#/components/schemas/RegisterSerializerExRequest'
         required: true
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       - {}
       responses:
@@ -282,10 +282,10 @@ paths:
               $ref: '#/components/schemas/SigningRequest'
         required: true
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -396,10 +396,10 @@ paths:
       tags:
       - cloudstorages
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -483,10 +483,10 @@ paths:
               $ref: '#/components/schemas/CloudStorageWriteRequest'
         required: true
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -509,10 +509,10 @@ paths:
       tags:
       - cloudstorages
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -586,10 +586,10 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedCloudStorageWriteRequest'
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -611,10 +611,10 @@ paths:
       tags:
       - cloudstorages
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -635,10 +635,10 @@ paths:
       tags:
       - cloudstorages
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -680,10 +680,10 @@ paths:
       tags:
       - cloudstorages
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -706,10 +706,10 @@ paths:
       tags:
       - cloudstorages
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -732,10 +732,10 @@ paths:
       tags:
       - cloudstorages
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -828,10 +828,10 @@ paths:
       tags:
       - comments
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -868,10 +868,10 @@ paths:
               $ref: '#/components/schemas/CommentWriteRequest'
         required: true
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -894,10 +894,10 @@ paths:
       tags:
       - comments
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -924,10 +924,10 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedCommentWriteRequest'
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -949,10 +949,10 @@ paths:
       tags:
       - comments
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -969,10 +969,10 @@ paths:
             schema:
               $ref: '#/components/schemas/ConsensusMergeCreateRequest'
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '202':
@@ -1048,10 +1048,10 @@ paths:
       tags:
       - consensus
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -1074,10 +1074,10 @@ paths:
       tags:
       - consensus
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -1104,10 +1104,10 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedConsensusSettingsRequest'
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -1181,10 +1181,10 @@ paths:
       tags:
       - events
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       deprecated: true
       responses:
@@ -1223,10 +1223,10 @@ paths:
               $ref: '#/components/schemas/ClientEventsRequest'
         required: true
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -1299,10 +1299,10 @@ paths:
       tags:
       - events
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '202':
@@ -1325,10 +1325,10 @@ paths:
             schema:
               $ref: '#/components/schemas/AnnotationGuideWriteRequest'
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -1351,10 +1351,10 @@ paths:
       tags:
       - guides
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -1381,10 +1381,10 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedAnnotationGuideWriteRequest'
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -1407,10 +1407,10 @@ paths:
       tags:
       - guides
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -1484,10 +1484,10 @@ paths:
       tags:
       - invitations
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -1524,10 +1524,10 @@ paths:
               $ref: '#/components/schemas/InvitationWriteRequest'
         required: true
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -1550,10 +1550,10 @@ paths:
       tags:
       - invitations
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -1580,10 +1580,10 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedInvitationWriteRequest'
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -1605,10 +1605,10 @@ paths:
       tags:
       - invitations
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -1627,10 +1627,10 @@ paths:
       tags:
       - invitations
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -1655,10 +1655,10 @@ paths:
       tags:
       - invitations
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -1677,10 +1677,10 @@ paths:
       tags:
       - invitations
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -1782,10 +1782,10 @@ paths:
       tags:
       - issues
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -1822,10 +1822,10 @@ paths:
               $ref: '#/components/schemas/IssueWriteRequest'
         required: true
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -1848,10 +1848,10 @@ paths:
       tags:
       - issues
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -1878,10 +1878,10 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedIssueWriteRequest'
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -1903,10 +1903,10 @@ paths:
       tags:
       - issues
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -2044,10 +2044,10 @@ paths:
       tags:
       - jobs
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2112,10 +2112,10 @@ paths:
                 summary: create gt job with manual frame selection
         required: true
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -2138,10 +2138,10 @@ paths:
       tags:
       - jobs
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2168,10 +2168,10 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedJobWriteRequest'
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2198,10 +2198,10 @@ paths:
       tags:
       - jobs
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -2265,10 +2265,10 @@ paths:
       tags:
       - jobs
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2338,10 +2338,10 @@ paths:
             schema:
               $ref: '#/components/schemas/AnnotationFileRequest'
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -2375,10 +2375,10 @@ paths:
             schema:
               $ref: '#/components/schemas/LabeledDataRequest'
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2413,10 +2413,10 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedLabeledDataRequest'
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2434,10 +2434,10 @@ paths:
       tags:
       - jobs
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -2485,10 +2485,10 @@ paths:
       tags:
       - jobs
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2512,10 +2512,10 @@ paths:
       tags:
       - jobs
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2542,10 +2542,10 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedJobDataMetaWriteRequest'
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2605,10 +2605,10 @@ paths:
       tags:
       - jobs
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '202':
@@ -2639,10 +2639,10 @@ paths:
       tags:
       - jobs
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2661,10 +2661,10 @@ paths:
       tags:
       - jobs
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2709,10 +2709,10 @@ paths:
                   - 22
                 summary: set honeypots manually
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2836,10 +2836,10 @@ paths:
       tags:
       - labels
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2862,10 +2862,10 @@ paths:
       tags:
       - labels
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2894,10 +2894,10 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedLabelRequest'
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2921,10 +2921,10 @@ paths:
       tags:
       - labels
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -2936,10 +2936,10 @@ paths:
       tags:
       - lambda
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2958,10 +2958,10 @@ paths:
       tags:
       - lambda
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2995,10 +2995,10 @@ paths:
             schema:
               $ref: '#/components/schemas/OnlineFunctionCallRequest'
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -3010,10 +3010,10 @@ paths:
       tags:
       - lambda
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -3052,10 +3052,10 @@ paths:
               $ref: '#/components/schemas/FunctionCallRequest'
         required: true
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -3078,10 +3078,10 @@ paths:
       tags:
       - lambda
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -3103,10 +3103,10 @@ paths:
       tags:
       - lambda
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -3190,10 +3190,10 @@ paths:
       tags:
       - memberships
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -3216,10 +3216,10 @@ paths:
       tags:
       - memberships
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -3246,10 +3246,10 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedMembershipWriteRequest'
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -3271,10 +3271,10 @@ paths:
       tags:
       - memberships
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -3344,10 +3344,10 @@ paths:
       tags:
       - organizations
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -3368,10 +3368,10 @@ paths:
               $ref: '#/components/schemas/OrganizationWriteRequest'
         required: true
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -3394,10 +3394,10 @@ paths:
       tags:
       - organizations
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -3424,10 +3424,10 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedOrganizationWriteRequest'
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -3449,10 +3449,10 @@ paths:
       tags:
       - organizations
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -3546,10 +3546,10 @@ paths:
       tags:
       - projects
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -3586,10 +3586,10 @@ paths:
               $ref: '#/components/schemas/ProjectWriteRequest'
         required: true
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -3612,10 +3612,10 @@ paths:
       tags:
       - projects
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -3642,10 +3642,10 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedProjectWriteRequest'
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -3667,10 +3667,10 @@ paths:
       tags:
       - projects
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -3711,10 +3711,10 @@ paths:
       tags:
       - projects
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '202':
@@ -3785,10 +3785,10 @@ paths:
             schema:
               $ref: '#/components/schemas/DatasetFileRequest'
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '202':
@@ -3852,10 +3852,10 @@ paths:
       tags:
       - projects
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '202':
@@ -3886,10 +3886,10 @@ paths:
       tags:
       - projects
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -3958,10 +3958,10 @@ paths:
             schema:
               $ref: '#/components/schemas/ProjectFileRequest'
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '202':
@@ -4075,10 +4075,10 @@ paths:
       tags:
       - quality
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4189,10 +4189,10 @@ paths:
       tags:
       - quality
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4224,10 +4224,10 @@ paths:
             schema:
               $ref: '#/components/schemas/QualityReportCreateRequest'
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -4262,10 +4262,10 @@ paths:
       tags:
       - quality
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4288,10 +4288,10 @@ paths:
       tags:
       - quality
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4385,10 +4385,10 @@ paths:
       tags:
       - quality
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4411,10 +4411,10 @@ paths:
       tags:
       - quality
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4441,10 +4441,10 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedQualitySettingsRequest'
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4542,10 +4542,10 @@ paths:
       tags:
       - requests
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4567,10 +4567,10 @@ paths:
       tags:
       - requests
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4592,10 +4592,10 @@ paths:
       tags:
       - requests
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4722,10 +4722,10 @@ paths:
       tags:
       - schema
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4750,10 +4750,10 @@ paths:
       tags:
       - server
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4769,10 +4769,10 @@ paths:
       tags:
       - server
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4788,10 +4788,10 @@ paths:
       tags:
       - server
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4818,10 +4818,10 @@ paths:
       tags:
       - server
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4972,10 +4972,10 @@ paths:
       tags:
       - tasks
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -5015,10 +5015,10 @@ paths:
               $ref: '#/components/schemas/TaskWriteRequest'
         required: true
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -5041,10 +5041,10 @@ paths:
       tags:
       - tasks
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -5071,10 +5071,10 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedTaskWriteRequest'
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -5097,10 +5097,10 @@ paths:
       tags:
       - tasks
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -5119,10 +5119,10 @@ paths:
       tags:
       - tasks
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -5194,10 +5194,10 @@ paths:
             schema:
               $ref: '#/components/schemas/AnnotationFileRequest'
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -5231,10 +5231,10 @@ paths:
             schema:
               $ref: '#/components/schemas/LabeledDataRequest'
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -5269,10 +5269,10 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedLabeledDataRequest'
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -5294,10 +5294,10 @@ paths:
       tags:
       - tasks
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -5338,10 +5338,10 @@ paths:
       tags:
       - tasks
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '202':
@@ -5395,10 +5395,10 @@ paths:
       tags:
       - tasks
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -5504,10 +5504,10 @@ paths:
             schema:
               $ref: '#/components/schemas/DataRequest'
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '202':
@@ -5530,10 +5530,10 @@ paths:
       tags:
       - tasks
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -5560,10 +5560,10 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedDataMetaWriteRequest'
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -5623,10 +5623,10 @@ paths:
       tags:
       - tasks
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '202':
@@ -5657,10 +5657,10 @@ paths:
       tags:
       - tasks
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -5684,10 +5684,10 @@ paths:
       tags:
       - tasks
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       deprecated: true
       responses:
@@ -5711,10 +5711,10 @@ paths:
       tags:
       - tasks
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -5770,10 +5770,10 @@ paths:
                   disabled_frames: []
                 summary: restore all validation frames
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -5844,10 +5844,10 @@ paths:
             schema:
               $ref: '#/components/schemas/TaskFileRequest'
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '202':
@@ -5941,10 +5941,10 @@ paths:
       tags:
       - users
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -5967,10 +5967,10 @@ paths:
       tags:
       - users
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -5997,10 +5997,10 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedUserRequest'
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -6022,10 +6022,10 @@ paths:
       tags:
       - users
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -6038,10 +6038,10 @@ paths:
       tags:
       - users
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -6139,10 +6139,10 @@ paths:
       tags:
       - webhooks
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -6179,10 +6179,10 @@ paths:
               $ref: '#/components/schemas/WebhookWriteRequest'
         required: true
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -6205,10 +6205,10 @@ paths:
       tags:
       - webhooks
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -6236,10 +6236,10 @@ paths:
               $ref: '#/components/schemas/WebhookWriteRequest'
         required: true
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -6266,10 +6266,10 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedWebhookWriteRequest'
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -6291,10 +6291,10 @@ paths:
       tags:
       - webhooks
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -6325,10 +6325,10 @@ paths:
       tags:
       - webhooks
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -6357,10 +6357,10 @@ paths:
       tags:
       - webhooks
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -6389,10 +6389,10 @@ paths:
       tags:
       - webhooks
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -6411,10 +6411,10 @@ paths:
       tags:
       - webhooks
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -6436,10 +6436,10 @@ paths:
       tags:
       - webhooks
       security:
+      - tokenAuth: []
+      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -11193,15 +11193,9 @@ components:
       type: apiKey
       in: header
       name: Authorization
-      description: |2
-
-        To authenticate using a token (or API key), you need to have 3 components in a request:
-        - the 'sessionid' cookie
-        - the 'csrftoken' cookie or 'X-CSRFTOKEN' header
-        - the 'Authentication' header with the 'Token ' prefix
-
+      description: |
         You can obtain an API key (the token) from the server response on
-        the basic auth request.
+        the basic auth request in the /api/auth/login/ endpoint.
       x-token-prefix: Token
 externalDocs:
   description: CVAT documentation
