@@ -20,6 +20,7 @@ import ModelRunnerModal from 'components/model-runner-modal/model-runner-dialog'
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import MoveTaskModal from 'components/move-task-modal/move-task-modal';
 import { CombinedState } from 'reducers';
+import { updateTaskAsync } from 'actions/tasks-actions';
 import TopBarComponent from './top-bar';
 import DetailsComponent from './details';
 
@@ -34,6 +35,8 @@ function TaskPageComponent(): JSX.Element {
     const [updatingTask, setUpdatingTask] = useState(false);
 
     const deletes = useSelector((state: CombinedState) => state.tasks.activities.deletes);
+    const updates = useSelector((state: CombinedState) => state.tasks.activities.updates);
+    const isTaskUpdating = updates[id] || updatingTask;
 
     const receieveTask = (): Promise<Task[]> => {
         if (Number.isInteger(id)) {
@@ -82,21 +85,10 @@ function TaskPageComponent(): JSX.Element {
     }
 
     const onUpdateTask = (task: Task): Promise<void> => (
-        new Promise((resolve, reject) => {
-            setUpdatingTask(true);
-            task.save().then((updatedTask: Task) => {
-                setTaskInstance(updatedTask);
-                resolve();
-            }).catch((error: Error) => {
-                notification.error({
-                    message: 'Could not update the task',
-                    className: 'cvat-notification-notice-update-task-failed',
-                    description: error.toString(),
-                });
-                reject();
-            }).finally(() => {
-                setUpdatingTask(false);
-            });
+        dispatch(updateTaskAsync(task, {})).then((updatedTask: Task) => {
+            setTaskInstance(updatedTask);
+        }).finally(() => {
+            setUpdatingTask(false);
         })
     );
 
@@ -118,7 +110,7 @@ function TaskPageComponent(): JSX.Element {
 
     return (
         <div className='cvat-task-page'>
-            { updatingTask ? <CVATLoadingSpinner size='large' /> : null }
+            { isTaskUpdating ? <CVATLoadingSpinner size='large' /> : null }
             <Row
                 justify='center'
                 align='top'

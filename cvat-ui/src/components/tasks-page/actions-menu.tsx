@@ -39,6 +39,7 @@ function TaskActionsComponent(props: Props): JSX.Element {
     const {
         editField,
         startEditField,
+        stopEditField,
     } = useDropdownEditField();
 
     const onOpenBugTracker = useCallback(() => {
@@ -89,7 +90,10 @@ function TaskActionsComponent(props: Props): JSX.Element {
 
     const onUpdateTaskAssignee = useCallback((assignee: User | null) => {
         taskInstance.assignee = assignee;
-        dispatch(updateTaskAsync(taskInstance, { assignee }));
+        dispatch(updateTaskAsync(taskInstance, { assignee })).then(() => {
+            setDropdownOpen(false);
+            stopEditField();
+        });
     }, [taskInstance]);
 
     const onDeleteTask = useCallback(() => {
@@ -116,6 +120,9 @@ function TaskActionsComponent(props: Props): JSX.Element {
             onOpenChange={(open, { source }) => {
                 if (source === 'trigger') {
                     setDropdownOpen(open);
+                }
+                if (!open && editField) {
+                    stopEditField();
                 }
             }}
             menu={{

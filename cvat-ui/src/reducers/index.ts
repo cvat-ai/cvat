@@ -117,6 +117,9 @@ export interface TasksState {
         deletes: {
             [tid: number]: boolean; // deleted (deleting if in dictionary)
         };
+        updates: {
+            [tid: number]: boolean;
+        };
     };
 }
 

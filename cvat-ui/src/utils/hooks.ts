@@ -209,13 +209,16 @@ export function useInstanceId(type: InstanceType): number {
 export type DropdownEditField = {
     editField: string | null;
     startEditField: (key: string) => void;
+    stopEditField: () => void;
 };
 
 export function useDropdownEditField(): DropdownEditField {
     const [editField, setEditField] = useState<string | null>(null);
     const startEditField = useCallback((field: string) => setEditField(field), []);
+    const stopEditField = useCallback(() => setEditField(null), []);
     return {
         editField,
         startEditField,
+        stopEditField,
     };
 }

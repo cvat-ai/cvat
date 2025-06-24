@@ -321,17 +321,20 @@ ThunkAction {
     };
 }
 
-function updateTask(): AnyAction {
+function updateTask(taskId: number): AnyAction {
     return {
         type: TasksActionTypes.UPDATE_TASK,
+        payload: {
+            taskId,
+        },
     };
 }
 
-function updateTaskFailed(taskID: number, error: any): AnyAction {
+function updateTaskFailed(taskId: number, error: any): AnyAction {
     return {
         type: TasksActionTypes.UPDATE_TASK_FAILED,
         payload: {
-            taskID,
+            taskId,
             error,
         },
     };
@@ -340,12 +343,13 @@ function updateTaskFailed(taskID: number, error: any): AnyAction {
 export function updateTaskAsync(
     taskInstance: Task,
     fields: Parameters<Task['save']>[0],
-): ThunkAction<Promise<void>> {
-    return async (dispatch: ThunkDispatch): Promise<void> => {
+): ThunkAction<Promise<Task>> {
+    return async (dispatch: ThunkDispatch): Promise<Task> => {
         try {
-            dispatch(updateTask());
+            dispatch(updateTask(taskInstance.id));
             const updated = await taskInstance.save(fields);
             dispatch(updateTaskInState(updated));
+            return updated;
         } catch (error) {
             dispatch(updateTaskFailed(taskInstance.id, error));
             throw error;
