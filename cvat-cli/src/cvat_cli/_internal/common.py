@@ -18,7 +18,7 @@ from typing import Any, Callable, Optional
 import attrs
 import cvat_sdk.auto_annotation as cvataa
 from cvat_sdk.core.client import (
-    ApiTokenAuthCredentials,
+    ApiTokenCredentials,
     BasicAuthCredentials,
     Client,
     Config,
@@ -48,7 +48,7 @@ def get_auth_factory(s: Optional[str]) -> Callable[[str], Credentials]:
     if not s:
         s = os.getenv(CVAT_AUTH_ENV_VAR)
         if s is not None:
-            return lambda _: ApiTokenAuthCredentials(s)
+            return lambda _: ApiTokenCredentials(s)
         else:
             s = getpass.getuser()
 

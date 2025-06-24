@@ -6,6 +6,7 @@
 import contextlib
 import http.server
 import io
+import os
 import ssl
 import threading
 import unittest
@@ -21,15 +22,24 @@ from shared.utils.config import BASE_URL, USER_PASS
 from shared.utils.helpers import generate_image_file
 
 
-def run_cli(test: Union[unittest.TestCase, Any], *args: str, expected_code: int = 0) -> None:
+def run_cli(
+    test: Union[unittest.TestCase, Any],
+    *args: str,
+    expected_code: int = 0,
+    env: dict[str, str] | None = None,
+) -> None:
     from cvat_cli.__main__ import main
 
-    if isinstance(test, unittest.TestCase):
-        # Unittest
-        test.assertEqual(expected_code, main(args), str(args))
-    else:
-        # Pytest case
-        assert expected_code == main(args)
+    with contextlib.ExitStack() as es:
+        if env:
+            es.enter_context(process_env_changed(env))
+
+        if isinstance(test, unittest.TestCase):
+            # Unittest
+            test.assertEqual(expected_code, main(args), str(args))
+        else:
+            # Pytest case
+            assert expected_code == main(args)
 
 
 def generate_images(dst_dir: Path, count: int) -> list[Path]:
@@ -40,6 +50,19 @@ def generate_images(dst_dir: Path, count: int) -> list[Path]:
         filename.write_bytes(generate_image_file(filename.name).getvalue())
         filenames.append(filename)
     return filenames
+
+
+@contextlib.contextmanager
+def process_env_changed(env: dict[str, str]) -> Generator[None, None, None]:
+    prev_env = os.environ.copy()
+
+    try:
+        os.environ.clear()
+        os.environ.update(env)
+        yield
+    finally:
+        os.environ.clear()
+        os.environ.update(prev_env)
 
 
 @contextlib.contextmanager
@@ -113,13 +136,23 @@ class TestCliBase:
         yield
 
     def run_cli(
-        self, cmd: str, *args: str, expected_code: int = 0, organization: Optional[str] = None
+        self,
+        cmd: str,
+        *args: str,
+        expected_code: int = 0,
+        organization: Optional[str] = None,
+        authenticate: bool = True,
+        env: dict[str, str] | None = None,
     ) -> str:
         common_args = [
-            f"--auth={self.user}:{self.password}",
             f"--server-host={self.host}",
             f"--server-port={self.port}",
         ]
+
+        if authenticate:
+            common_args += [
+                f"--auth={self.user}:{self.password}",
+            ]
 
         if organization is not None:
             common_args.append(f"--organization={organization}")
@@ -130,5 +163,6 @@ class TestCliBase:
             cmd,
             *args,
             expected_code=expected_code,
+            env=env,
         )
         return self.stdout.getvalue()

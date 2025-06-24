@@ -78,7 +78,7 @@ class BasicAuthCredentials(Credentials):
 
 
 @attrs.define
-class ApiTokenAuthCredentials(Credentials):
+class ApiTokenCredentials(Credentials):
     """
     Represents API token authentication credentials.
     """
@@ -232,17 +232,18 @@ class Client:
     def login(self, credentials: Credentials | tuple[str, str]) -> None:
         if isinstance(credentials, BasicAuthCredentials):
             credentials = (credentials.user, credentials.password)
-        elif isinstance(credentials, ApiTokenAuthCredentials):
+        elif isinstance(credentials, ApiTokenCredentials):
             self.api_client.default_headers["Authorization"] = "Bearer " + credentials.token
             return
         elif not isinstance(credentials, tuple) or len(credentials) != 2:
             raise TypeError(f"Unsupported credentials type: {type(credentials).__name__}")
 
-        self.api_client.auth_api.create_login(
+        auth, _ = self.api_client.auth_api.create_login(
             models.LoginSerializerExRequest(username=credentials[0], password=credentials[1])
         )
         assert "sessionid" in self.api_client.cookies
         assert "csrftoken" in self.api_client.cookies
+        self.api_client.set_default_header("Authorization", "Token " + auth.key)
 
     def has_credentials(self) -> bool:
         return (
