@@ -2918,11 +2918,59 @@ class ShapeSerializer(serializers.Serializer):
         allow_empty=True, required=False
     )
 
+    def validate(self, attrs):
+        shape_type = attrs["type"]
+
+        num_points = len(attrs.get("points", ()))
+
+        def bad_num_points_unless(condition: bool) -> None:
+            if not condition:
+                raise serializers.ValidationError(
+                    {"points": f"invalid length for shape type '{shape_type}'"}
+                )
+
+        if shape_type in {models.ShapeType.RECTANGLE, models.ShapeType.ELLIPSE}:
+            bad_num_points_unless(num_points == 4)
+        elif shape_type == models.ShapeType.POLYGON:
+            bad_num_points_unless(num_points >= 6 and num_points % 2 == 0)
+        elif shape_type == models.ShapeType.POLYLINE:
+            bad_num_points_unless(num_points >= 4 and num_points % 2 == 0)
+        elif shape_type == models.ShapeType.POINTS:
+            bad_num_points_unless(num_points >= 2 and num_points % 2 == 0)
+        elif shape_type == models.ShapeType.CUBOID:
+            bad_num_points_unless(num_points == 16)
+        elif shape_type == models.ShapeType.MASK:
+            bad_num_points_unless(num_points >= 5)
+        elif shape_type == models.ShapeType.SKELETON:
+            bad_num_points_unless(num_points == 0)
+        else:
+            assert False, f"Unknown shape type '{shape_type}'"
+
+        return attrs
+
 class SubLabeledShapeSerializer(ShapeSerializer, AnnotationSerializer):
     attributes = AttributeValSerializer(many=True, default=[])
 
 class LabeledShapeSerializer(SubLabeledShapeSerializer):
     elements = SubLabeledShapeSerializer(many=True, required=False)
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+
+        num_elements = len(attrs.get("elements", ()))
+
+        if attrs["type"] == models.ShapeType.SKELETON:
+            if num_elements == 0:
+                raise serializers.ValidationError(
+                    {"elements": "at least one required for skeleton shape"}
+                )
+        else:
+            if num_elements != 0:
+                raise serializers.ValidationError(
+                    {"elements": "not allowed for non-skeleton shape"}
+                )
+
+        return attrs
 
 def _convert_annotation(obj, keys):
     return OrderedDict([(key, obj[key]) for key in keys])
