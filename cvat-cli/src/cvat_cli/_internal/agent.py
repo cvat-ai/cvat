@@ -511,12 +511,20 @@ class _Agent:
             self._process_ar(ar_assignment)
 
     def _process_ar(self, ar_assignment: dict) -> None:
-        self._client.logger.info("Got annotation request assignment: %r", ar_assignment)
-
         ar_id = ar_assignment["ar_id"]
+        ar_params = ar_assignment["ar_params"]
+
+        self._client.logger.info(
+            "Got assigned annotation request %r of type %r (%s)",
+            ar_id,
+            ar_params["type"],
+            # Log only a few key parameters to avoid cluttering the info-level log.
+            " ".join([f"{k}={ar_params[k]!r}" for k in ("task", "frame") if k in ar_params]),
+        )
+        self._client.logger.debug("AR %r parameters: %r", ar_id, ar_params)
 
         try:
-            result = self._calculate_result_for_ar(ar_id, ar_assignment["ar_params"])
+            result = self._calculate_result_for_ar(ar_id, ar_params)
 
             self._client.logger.info("Submitting result for AR %r...", ar_id)
             self._client.api_client.call_api(
