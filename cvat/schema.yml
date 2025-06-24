@@ -11195,7 +11195,7 @@ components:
       name: Authorization
       description: |
         You can obtain an API key (the token) from the server response on
-        the basic auth request in the /api/auth/login/ endpoint.
+        the /api/auth/login/ endpoint.
       x-token-prefix: Token
 externalDocs:
   description: CVAT documentation
