@@ -1,8 +1,98 @@
 {
-  "count": 26,
+  "count": 28,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "assignee": null,
+      "assignee_updated_date": null,
+      "bug_tracker": "",
+      "consensus_enabled": false,
+      "created_date": "2025-05-05T15:35:00.337000Z",
+      "data": 32,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "data_original_chunk_type": "imageset",
+      "dimension": "2d",
+      "guide_id": null,
+      "id": 33,
+      "image_quality": 70,
+      "jobs": {
+        "completed": 1,
+        "count": 3,
+        "url": "http://localhost:8080/api/jobs?task_id=33",
+        "validation": 0
+      },
+      "labels": {
+        "url": "http://localhost:8080/api/labels?task_id=33"
+      },
+      "mode": "annotation",
+      "name": "task with honeypots",
+      "organization": 2,
+      "overlap": 0,
+      "owner": {
+        "first_name": "User",
+        "id": 3,
+        "last_name": "Second",
+        "url": "http://localhost:8080/api/users/3",
+        "username": "user2"
+      },
+      "project_id": 17,
+      "segment_size": 0,
+      "size": 10,
+      "source_storage": null,
+      "status": "annotation",
+      "subset": "",
+      "target_storage": null,
+      "updated_date": "2025-05-05T15:36:34.341000Z",
+      "url": "http://localhost:8080/api/tasks/33",
+      "validation_mode": "gt_pool"
+    },
+    {
+      "assignee": null,
+      "assignee_updated_date": null,
+      "bug_tracker": "",
+      "consensus_enabled": false,
+      "created_date": "2025-05-05T15:35:00.112000Z",
+      "data": 31,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "data_original_chunk_type": "imageset",
+      "dimension": "2d",
+      "guide_id": null,
+      "id": 32,
+      "image_quality": 70,
+      "jobs": {
+        "completed": 1,
+        "count": 2,
+        "url": "http://localhost:8080/api/jobs?task_id=32",
+        "validation": 0
+      },
+      "labels": {
+        "url": "http://localhost:8080/api/labels?task_id=32"
+      },
+      "mode": "annotation",
+      "name": "task with gt job",
+      "organization": 2,
+      "overlap": 0,
+      "owner": {
+        "first_name": "User",
+        "id": 3,
+        "last_name": "Second",
+        "url": "http://localhost:8080/api/users/3",
+        "username": "user2"
+      },
+      "project_id": 17,
+      "segment_size": 4,
+      "size": 4,
+      "source_storage": null,
+      "status": "annotation",
+      "subset": "",
+      "target_storage": null,
+      "updated_date": "2025-05-05T15:38:46.662000Z",
+      "url": "http://localhost:8080/api/tasks/32",
+      "validation_mode": "gt"
+    },
     {
       "assignee": null,
       "assignee_updated_date": null,

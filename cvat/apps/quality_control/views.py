@@ -22,7 +22,7 @@ from rest_framework.response import Response
 from rq.job import JobStatus as RqJobStatus
 
 from cvat.apps.engine.mixins import PartialUpdateModelMixin
-from cvat.apps.engine.models import Project, Task
+from cvat.apps.engine.models import Job, Project, Task
 from cvat.apps.engine.rq import BaseRQMeta
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import get_server_url
@@ -234,6 +234,11 @@ class QualityReportViewSet(
                 queryset = queryset.filter(
                     Q(parents=parent_report) | Q(parents__parents=parent_report)
                 )
+
+            if job_id := self.request.query_params.get("job_id", None):
+                job = get_or_404(Job, job_id)
+                self.check_object_permissions(self.request, job)
+                iam_context = get_iam_context(self.request, job)
 
             if task_id := self.request.query_params.get("task_id", None):
                 # NOTE: This filter is too complex to be implemented by other means

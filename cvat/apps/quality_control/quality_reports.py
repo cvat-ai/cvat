@@ -1360,7 +1360,6 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
         if t not in self.included_ann_types:
             return None
 
-        # pylint: disable=no-value-for-parameter
         if t == dm.AnnotationType.label:
             return self.match_labels(*args)
         elif t == dm.AnnotationType.bbox:
@@ -1375,7 +1374,6 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
             return self.match_lines(*args)
         elif t == dm.AnnotationType.ellipse:
             return self.match_ellipses(*args)
-        # pylint: enable=no-value-for-parameter
         else:
             return None
 
@@ -2582,7 +2580,7 @@ class DatasetComparator:
 
 class QualityReportRQJobManager(AbstractRequestManager):
     QUEUE_NAME = settings.CVAT_QUEUES.QUALITY_REPORTS.value
-    SUPPORTED_TARGETS: ClassVar[set[RequestTarget]] = {RequestTarget.TASK}
+    SUPPORTED_TARGETS: ClassVar[set[RequestTarget]] = {RequestTarget.TASK, RequestTarget.PROJECT}
 
     @property
     def job_result_ttl(self):
@@ -3043,7 +3041,7 @@ class ProjectQualityCalculator:
         }
 
         task_quality_reports: dict[int, models.QualityReport] = {}
-        for task in configured_tasks:
+        for task in configured_tasks.values():
             latest_task_quality_report_id = getattr(task, "latest_quality_report_id", None)
             latest_task_quality_report = latest_quality_reports.get(latest_task_quality_report_id)
             if not latest_task_quality_report:

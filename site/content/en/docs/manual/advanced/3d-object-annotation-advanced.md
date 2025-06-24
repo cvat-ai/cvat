@@ -19,7 +19,7 @@ so you can paste it in other place (double-click to paste the cuboid).
 As well as in 2D task you can copy and paste objects by `Ctrl+C` and `Ctrl+V`,
 but unlike 2D tasks you have to place a copied object in a 3D space (double click to paste).
 
-  ![](/images/gif030_carla_town3.gif)
+  ![Example of copying a cuboid and placing the copy in 3D space](/images/gif030_carla_town3.gif)
 
 ## Image of the projection window
 
@@ -33,7 +33,7 @@ the cuboid's axis orientation (X - red, Y - green, Z - blue) are displayed, prov
 for the cuboid's alignment within the 3D environment. This feature is useful for understanding the spatial
 orientation of the cuboid.
 
-  ![](/images/cuboid_orientation.gif)
+  ![User interface with cuboid projections and orientation elements](/images/cuboid_orientation.gif)
 
 
 ## Cuboid size input
@@ -44,4 +44,4 @@ values for the width, height, and length (X - width, Y - height, Z - length) of 
 By entering these values, the cuboid's size is adjusted accordingly to its orientation, providing
 greater control and accuracy when annotating objects in 3D tasks.
 
-  ![](/images/cuboid_size_input.gif)
+  ![Example of changing a cuboid size using input fields in sidebar](/images/cuboid_size_input.gif)

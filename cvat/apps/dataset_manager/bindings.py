@@ -44,6 +44,7 @@ from cvat.apps.engine.models import (
     Project,
     SegmentType,
     ShapeType,
+    SourceType,
     Task,
 )
 from cvat.apps.engine.rq import ImportRQMeta
@@ -1089,10 +1090,8 @@ class ProjectData(InstanceLabelData):
 
     def _init_tasks(self):
         self._db_tasks: OrderedDict[int, Task] = OrderedDict(
-            (
-                (db_task.id, db_task)
-                for db_task in self._db_project.tasks.exclude(data=None).order_by("subset","id").all()
-            )
+            (db_task.id, db_task)
+            for db_task in self._db_project.tasks.exclude(data=None).order_by("subset","id").all()
         )
 
         subsets = set()
@@ -1634,17 +1633,6 @@ class CVATDataExtractorMixin:
             "updatedAt": meta['updated']
         }
 
-    def _read_cvat_anno(self, cvat_frame_anno: Union[ProjectData.Frame, CommonData.Frame], labels: list):
-        categories = self.categories()
-        label_cat = categories[dm.AnnotationType.label]
-        def map_label(name, parent=''): return label_cat.find(name, parent)[0]
-        label_attrs = {
-            label.get('parent', '') + label['name']: label['attributes']
-            for _, label in labels
-        }
-
-        return self.convert_annotations(cvat_frame_anno, label_attrs, map_label)
-
 
 class CvatDataExtractorBase(CVATDataExtractorMixin):
     def __init__(
@@ -1746,6 +1734,18 @@ class CvatDataExtractorBase(CVATDataExtractorMixin):
 
         return dm_item
 
+    def _read_cvat_anno(self, cvat_frame_anno: CommonData.Frame | ProjectData.Frame, labels: list):
+        categories = self.categories()
+        label_cat = categories[dm.AnnotationType.label]
+        def map_label(name, parent=''): return label_cat.find(name, parent)[0]
+        label_attrs = {
+            label.get('parent', '') + label['name']: label['attributes']
+            for _, label in labels
+        }
+
+        return self.convert_annotations(cvat_frame_anno,
+            label_attrs, map_label, self._format_type, self._dimension)
+
 
 class CvatTaskOrJobDataExtractor(dm.SubsetBase, CvatDataExtractorBase):
     def __init__(self, *args, **kwargs):
@@ -1777,18 +1777,6 @@ class CvatTaskOrJobDataExtractor(dm.SubsetBase, CvatDataExtractorBase):
             # do not keep parsed lazy list data after this iteration
             frame_data = self.copy_frame_data_with_replaced_lazy_lists(frame_data)
             yield self._process_one_frame_data(frame_data)
-
-    def _read_cvat_anno(self, cvat_frame_anno: CommonData.Frame, labels: list):
-        categories = self.categories()
-        label_cat = categories[dm.AnnotationType.label]
-        def map_label(name, parent=''): return label_cat.find(name, parent)[0]
-        label_attrs = {
-            label.get('parent', '') + label['name']: label['attributes']
-            for _, label in labels
-        }
-
-        return self.convert_annotations(cvat_frame_anno,
-            label_attrs, map_label, self._format_type, self._dimension)
 
     def __len__(self):
         return len(self._instance_data)
@@ -1956,7 +1944,7 @@ class CvatToDmAnnotationConverter:
                 if a_desc['input_type'] == AttributeType.NUMBER:
                     a_value = float(a_value)
                 elif a_desc['input_type'] == AttributeType.CHECKBOX:
-                    a_value = (a_value.lower() == 'true')
+                    a_value = a_value.lower() == 'true'
                 dm_attr[a_name] = a_value
             except Exception as e:
                 raise Exception(
@@ -2177,7 +2165,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
         dm.AnnotationType.ellipse: ShapeType.ELLIPSE,
     }
 
-    sources = {'auto', 'semi-auto', 'manual', 'file', 'consensus'}
+    sources = set(SourceType)
 
     track_formats = [
         'cvat',
@@ -2268,7 +2256,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
 
                     track_id = ann.attributes.pop('track_id', None)
                     source = ann.attributes.pop('source').lower() \
-                        if ann.attributes.get('source', '').lower() in sources else 'manual'
+                        if ann.attributes.get('source', '').lower() in sources else SourceType.FILE
 
                     shape_type = shapes[ann.type]
                     if track_id is None or 'keyframe' not in ann.attributes or dm_dataset.format not in track_formats:
@@ -2282,7 +2270,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                                 element_occluded = element.visibility[0] == dm.Points.Visibility.hidden
                                 element_outside = element.visibility[0] == dm.Points.Visibility.absent
                                 element_source = element.attributes.pop('source').lower() \
-                                    if element.attributes.get('source', '').lower() in sources else 'manual'
+                                    if element.attributes.get('source', '').lower() in sources else SourceType.FILE
                                 elements.append(instance_data.LabeledShape(
                                     type=shapes[element.type],
                                     frame=frame_number,
@@ -2354,7 +2342,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                                     for n, v in element.attributes.items()
                                 ]
                                 element_source = element.attributes.pop('source').lower() \
-                                    if element.attributes.get('source', '').lower() in sources else 'manual'
+                                    if element.attributes.get('source', '').lower() in sources else SourceType.FILE
 
                                 tracks[track_id]['elements'][element.label].shapes.append(instance_data.TrackedShape(
                                     type=shapes[element.type],
@@ -2373,7 +2361,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                         frame=frame_number,
                         label=label_cat.items[ann.label].name,
                         group=group_map.get(ann.group, 0),
-                        source='manual',
+                        source=SourceType.FILE,
                         attributes=attributes,
                     ))
             except Exception as e:
@@ -2482,14 +2470,14 @@ def load_dataset_data(project_annotation, dataset: dm.Dataset, project_data):
                 if len(data_root) == 2:
                     root_paths.add(data_root[0])
             elif isinstance(dataset_item.media, dm.PointCloud):
-                dataset_files['media'].append(dataset_item.media)
+                dataset_files['media'].append(dataset_item.media.path)
                 data_root = dataset_item.media.path.rsplit(dataset_item.id, 1)
                 if len(data_root) == 2:
                     root_paths.add(data_root[0])
 
                 if isinstance(dataset_item.media.extra_images, list):
                     dataset_files['media'] += \
-                        list(map(lambda ri: ri.path, dataset_item.media.extra_images))
+                        [ri.path for ri in dataset_item.media.extra_images]
 
         if len(root_paths):
             dataset_files['data_root'] = osp.commonpath(root_paths) + osp.sep

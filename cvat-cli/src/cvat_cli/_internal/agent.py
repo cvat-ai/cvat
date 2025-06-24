@@ -16,7 +16,7 @@ import threading
 from collections.abc import Generator, Iterator, Sequence
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import attrs
 import cvat_sdk.auto_annotation as cvataa
@@ -85,7 +85,7 @@ class _RecoverableExecutor:
             raise
 
 
-_current_function: cvataa.DetectionFunction
+_current_function: cvataa.AutoAnnotationFunction
 
 
 def _worker_init(function_loader: FunctionLoader):
@@ -227,6 +227,11 @@ class _BadArError(Exception):
     pass
 
 
+class _IncompatibleFunctionError(Exception):
+    # This should only be thrown from inside _validate_X_function_compatibility methods.
+    pass
+
+
 class _Agent:
     def __init__(self, client: Client, executor: _RecoverableExecutor, function_id: int):
         self._rng = random.Random()  # nosec
@@ -280,24 +285,21 @@ class _Agent:
                 f"Agents can only be run for functions with provider {FUNCTION_PROVIDER_NATIVE!r}."
             )
 
-        if isinstance(self._function_spec, cvataa.DetectionFunctionSpec):
-            self._validate_detection_function_compatibility(remote_function)
-            self._calculate_result_for_ar = self._calculate_result_for_detection_ar
-        else:
+        try:
+            if isinstance(self._function_spec, cvataa.DetectionFunctionSpec):
+                self._validate_detection_function_compatibility(remote_function)
+                self._calculate_result_for_ar = self._calculate_result_for_detection_ar
+            else:
+                raise CriticalError(
+                    f"Unsupported function spec type: {type(self._function_spec).__name__}"
+                )
+        except _IncompatibleFunctionError as ex:
             raise CriticalError(
-                f"Unsupported function spec type: {type(self._function_spec).__name__}"
-            )
+                f"Function #{function_id} is incompatible with function object: {ex}"
+            ) from ex
 
     def _validate_detection_function_compatibility(self, remote_function: dict) -> None:
-        incompatible_msg = (
-            f"Function #{remote_function['id']} is incompatible with function object: "
-        )
-
-        if remote_function["kind"] != FUNCTION_KIND_DETECTOR:
-            raise CriticalError(
-                incompatible_msg
-                + f"kind is {remote_function['kind']!r} (expected {FUNCTION_KIND_DETECTOR!r})."
-            )
+        self._validate_remote_function_kind(remote_function, FUNCTION_KIND_DETECTOR)
 
         labels_by_name = {label.name: label for label in self._function_spec.labels}
 
@@ -305,7 +307,7 @@ class _Agent:
             label_desc = f"label {remote_label['name']!r}"
             label = labels_by_name.get(remote_label["name"])
 
-            self._validate_sublabel_compatibility(remote_label, label, incompatible_msg, label_desc)
+            self._validate_sublabel_compatibility(remote_label, label, label_desc)
 
             sublabels_by_name = {sl.name: sl for sl in getattr(label, "sublabels", [])}
 
@@ -313,17 +315,17 @@ class _Agent:
                 sl_desc = f"sublabel {remote_sl['name']!r} of {label_desc}"
                 sl = sublabels_by_name.get(remote_sl["name"])
 
-                self._validate_sublabel_compatibility(remote_sl, sl, incompatible_msg, sl_desc)
+                self._validate_sublabel_compatibility(remote_sl, sl, sl_desc)
 
     def _validate_sublabel_compatibility(
-        self, remote_sl: dict, sl: Optional[models.Sublabel], incompatible_msg: str, sl_desc: str
+        self, remote_sl: dict, sl: Optional[models.Sublabel], sl_desc: str
     ):
         if not sl:
-            raise CriticalError(incompatible_msg + f"{sl_desc} is not supported.")
+            raise CriticalError(f"{sl_desc} is not supported.")
 
         if remote_sl["type"] not in {"any", "unknown"} and remote_sl["type"] != sl.type:
-            raise CriticalError(
-                incompatible_msg + f"{sl_desc} has type {remote_sl['type']!r}, "
+            raise _IncompatibleFunctionError(
+                f"{sl_desc} has type {remote_sl['type']!r}, "
                 f"but the function object declares type {sl.type!r}."
             )
 
@@ -334,19 +336,25 @@ class _Agent:
             attr = attrs_by_name.get(remote_attr["name"])
 
             if not attr:
-                raise CriticalError(incompatible_msg + f"{attr_desc} is not supported.")
+                raise _IncompatibleFunctionError(f"{attr_desc} is not supported.")
 
             if remote_attr["input_type"] != attr.input_type.value:
-                raise CriticalError(
-                    incompatible_msg + f"{attr_desc} has input type {remote_attr['input_type']!r},"
+                raise _IncompatibleFunctionError(
+                    f"{attr_desc} has input type {remote_attr['input_type']!r},"
                     f" but the function object declares input type {attr.input_type.value!r}."
                 )
 
             if remote_attr["values"] != attr.values:
-                raise CriticalError(
-                    incompatible_msg + f"{attr_desc} has values {remote_attr['values']!r},"
+                raise _IncompatibleFunctionError(
+                    f"{attr_desc} has values {remote_attr['values']!r},"
                     f" but the function object declares values {attr.values!r}."
                 )
+
+    def _validate_remote_function_kind(self, remote_function: dict, expected_kind: str) -> None:
+        if remote_function["kind"] != expected_kind:
+            raise _IncompatibleFunctionError(
+                f"kind is {remote_function['kind']!r} (expected {expected_kind!r})."
+            )
 
     def _wait_between_polls(self):
         # offset the interval randomly to avoid synchronization between workers
@@ -523,7 +531,7 @@ class _Agent:
                 "/api/functions/queues/{queue_id}/requests/{request_id}/complete",
                 "POST",
                 path_params={"queue_id": f"function:{self._function_id}", "request_id": ar_id},
-                body={"agent_id": self._agent_id, "annotations": result},
+                body={"agent_id": self._agent_id, **result},
             )
             self._client.logger.info("AR %r completed", ar_id)
         except Exception as ex:
@@ -594,9 +602,7 @@ class _Agent:
         response_data = json.loads(response.data)
         return response_data["ar_assignment"]
 
-    def _calculate_result_for_detection_ar(
-        self, ar_id: str, ar_params
-    ) -> models.PatchedLabeledDataRequest:
+    def _calculate_result_for_detection_ar(self, ar_id: str, ar_params) -> dict[str, Any]:
         if ar_params["type"] == "annotate_task":
             with self._task_cache_limiter.using_cache_for_task(ar_params["task"], with_chunks=True):
                 return self._calculate_result_for_annotate_task_ar(ar_id, ar_params)
@@ -636,9 +642,7 @@ class _Agent:
             conv_mask_to_poly=ar_params["conv_mask_to_poly"],
         )
 
-    def _calculate_result_for_annotate_task_ar(
-        self, ar_id: str, ar_params
-    ) -> models.PatchedLabeledDataRequest:
+    def _calculate_result_for_annotate_task_ar(self, ar_id: str, ar_params) -> dict[str, Any]:
         ds = cvatds.TaskDataset(self._client, ar_params["task"], load_annotations=False)
 
         # Fetching the dataset might take a while, so do a progress update to let the server
@@ -669,19 +673,31 @@ class _Agent:
             # we have to put the current AR on hold and process them ASAP.
             self._process_available_ars(REQUEST_CATEGORY_INTERACTIVE)
 
-        return all_annotations
+        return {"annotations": all_annotations}
 
-    def _calculate_result_for_annotate_frame_ar(
-        self, ar_id: str, ar_params
-    ) -> models.PatchedLabeledDataRequest:
-        frame_index = ar_params["frame"]
+    def _calculate_result_for_annotate_frame_ar(self, ar_id: str, ar_params) -> dict[str, Any]:
+        sample, ds_labels = self._get_sample_from_ar_params(ar_params)
 
+        mapper = self._create_annotation_mapper_for_detection_ar(ar_params, ds_labels)
+
+        context = self._create_detection_function_context(ar_params, sample.frame_name)
+
+        shapes = self._executor.result(
+            self._executor.submit(_worker_job_detect, context, sample.media.load_image())
+        )
+
+        mapper.validate_and_remap(shapes, sample.frame_index)
+        return {"annotations": models.PatchedLabeledDataRequest(shapes=shapes)}
+
+    def _get_sample_from_ar_params(self, ar_params):
         ds = cvatds.TaskDataset(
             self._client,
             ar_params["task"],
             load_annotations=False,
             media_download_policy=cvatds.MediaDownloadPolicy.FETCH_FRAMES_ON_DEMAND,
         )
+
+        frame_index = ar_params["frame"]
 
         # Since ds.samples excludes deleted frames, we can't just do sample = ds.samples[frame_index].
         # Once we drop Python 3.9, we can change this to use bisect instead of the linear search.
@@ -691,16 +707,7 @@ class _Agent:
         else:
             raise _BadArError(f"Frame with index {frame_index} does not exist in the task")
 
-        mapper = self._create_annotation_mapper_for_detection_ar(ar_params, ds.labels)
-
-        context = self._create_detection_function_context(ar_params, sample.frame_name)
-
-        shapes = self._executor.result(
-            self._executor.submit(_worker_job_detect, context, sample.media.load_image())
-        )
-
-        mapper.validate_and_remap(shapes, frame_index)
-        return models.PatchedLabeledDataRequest(shapes=shapes)
+        return sample, ds.labels
 
     def _update_ar(self, ar_id: str, progress: float) -> None:
         self._client.logger.info("Updating AR %r progress to %.2f%%", ar_id, progress * 100)

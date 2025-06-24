@@ -41,6 +41,7 @@ import {
     callAction,
     listActions,
     registerAction,
+    unregisterAction,
 } from './annotations-actions/annotations-actions';
 import { BaseCollectionAction } from './annotations-actions/base-collection-action';
 import { BaseShapesAction } from './annotations-actions/base-shapes-action';
@@ -178,6 +179,7 @@ export default interface CVATCore {
     actions: {
         list: typeof listActions;
         register: typeof registerAction;
+        unregister: typeof unregisterAction;
         run: typeof runAction;
         call: typeof callAction;
     };

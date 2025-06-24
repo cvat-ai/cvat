@@ -69,7 +69,7 @@ class StatusChoice(str, Enum):
 
     @classmethod
     def list(cls):
-        return list(map(lambda x: x.value, cls))
+        return [x.value for x in cls]
 
     def __str__(self):
         return self.value
@@ -92,7 +92,7 @@ class LabelType(str, Enum):
 
     @classmethod
     def list(cls):
-        return list(map(lambda x: x.value, cls))
+        return [x.value for x in cls]
 
     def __str__(self):
         return self.value
@@ -291,6 +291,7 @@ class ValidationLayout(models.Model):
 class Data(models.Model):
     MANIFEST_FILENAME: ClassVar[str] = 'manifest.jsonl'
 
+    content_size = models.PositiveBigIntegerField(null=True)
     chunk_size = models.PositiveIntegerField(null=True)
     size = models.PositiveIntegerField(default=0)
     image_quality = models.PositiveSmallIntegerField(default=50)
@@ -1102,6 +1103,7 @@ class SourceType(str, Enum):
     SEMI_AUTO = 'semi-auto'
     MANUAL = 'manual'
     FILE = 'file'
+    CONSENSUS = 'consensus'
 
     @classmethod
     def choices(cls):
@@ -1170,6 +1172,7 @@ class TrackedShapeAttributeVal(AttributeVal):
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     rating = models.FloatField(default=0.0)
+    last_activity_date = models.DateTimeField(null=True, blank=True, default=None)
     has_analytics_access = models.BooleanField(
         _("has access to analytics"),
         default=False,
@@ -1237,7 +1240,7 @@ class CloudProviderChoice(str, Enum):
 
     @classmethod
     def list(cls):
-        return list(map(lambda x: x.value, cls))
+        return [x.value for x in cls]
 
     def __str__(self):
         return self.value
@@ -1257,7 +1260,7 @@ class CredentialsTypeChoice(str, Enum):
 
     @classmethod
     def list(cls):
-        return list(map(lambda x: x.value, cls))
+        return [x.value for x in cls]
 
     def __str__(self):
         return self.value
@@ -1366,6 +1369,7 @@ class Asset(models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
     owner = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="assets")
     guide = models.ForeignKey(AnnotationGuide, on_delete=models.CASCADE, related_name="assets")
+    content_size = models.PositiveBigIntegerField(null=True)
 
     @property
     def organization_id(self):

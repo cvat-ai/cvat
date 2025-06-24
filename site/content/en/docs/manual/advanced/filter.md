@@ -16,19 +16,19 @@ There are some reasons to use the feature:
 
 To apply filters you need to click on the button on the top panel.
 
-![](/images/image059.jpg)
+![Filter button in user interface](/images/image059.jpg)
 
 ## Create a filter
 
 It will open a window for filter input. Here you will find two buttons: `Add rule` and `Add group`.
 
-![](/images/image202.jpg)
+![Filter window with highlighted "Add rule" and "Add group" buttons](/images/image202.jpg)
 
 ### Rules
 
 The `Add rule` button adds a rule for objects display. A rule may use the following properties:
 
-![](/images/image204.jpg)
+![Available objects, operators, and values for filter rules](/images/image204.jpg)
 
 ### Supported properties for annotation
 
@@ -62,7 +62,7 @@ The `Add rule` button adds a rule for objects display. A rule may use the follow
 
 `Any in`; `Not in` - these operators allow you to set multiple values in one rule;
 
-![](/images/image203.jpg)
+![Example of "any in" filter](/images/image203.jpg)
 
 `Is empty`; `is not empty` – these operators don't require to input a value.
 
@@ -74,12 +74,12 @@ The `Add rule` button adds a rule for objects display. A rule may use the follow
 
 Some properties support two types of values that you can choose:
 
-![](/images/image205.jpg)
+![Choosing value type in a filter property](/images/image205.jpg)
 
 You can add multiple rules, to do so click the add rule button and set another rule.
 Once you've set a new rule, you'll be able to choose which operator they will be connected by: `And` or `Or`.
 
-![](/images/image206.jpg)
+![Filter window with highlighted operators](/images/image206.jpg)
 
 All subsequent rules will be joined by the chosen operator.
 Click `Submit` to apply the filter or if you want multiple rules to be connected by different operators, use groups.
@@ -88,7 +88,7 @@ Click `Submit` to apply the filter or if you want multiple rules to be connected
 
 To add a group, click the `Add group` button. Inside the group you can create rules or groups.
 
-![](/images/image207.jpg)
+![Filter window with highlighted group and "Add group" button](/images/image207.jpg)
 
 If there is more than one rule in the group, they can be connected by `And` or `Or` operators.
 The rule group will work as well as a separate rule outside the group and will be joined by an
@@ -98,7 +98,7 @@ You can create groups within other groups, to do so you need to click the add gr
 You can move rules and groups. To move the rule or group, drag it by the button.
 To remove the rule or group, click on the `Delete` button.
 
-![](/images/image208.jpg)
+![Part of the filter window with highlighted buttons for moving and deleting groups and rules](/images/image208.jpg)
 
 If you activate the `Not` button, objects that don't match the group will be filtered out.
 Click `Submit` to apply the filter.
@@ -149,7 +149,7 @@ Quick Filters contain several frequently used filters:
 
 When creating a `Last updated` rule, you can select the date and time by using the selection window.
 
-![](/images/image244_detrac.jpg)
+![Filter window with opened date and time filter and marked elements](/images/image244_detrac.jpg)
 
 You can select the year and month using the arrows or by clicking on the year and month.
 To select a day, click on it in the calendar,

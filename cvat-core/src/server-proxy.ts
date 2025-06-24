@@ -778,14 +778,13 @@ async function getTasks(
     let response = null;
     try {
         if (aggregate) {
-            response = await Axios.get(`${backendAPI}/tasks`, {
-                params: {
+            response = {
+                data: await fetchAll(`${backendAPI}/tasks`, {
                     ...filter,
-                },
-            });
-        }
-
-        if ('id' in filter) {
+                    ...enableOrganization(),
+                }),
+            };
+        } else if ('id' in filter) {
             response = await Axios.get(`${backendAPI}/tasks/${filter.id}`);
             const results = [response.data];
             Object.defineProperty(results, 'count', {
@@ -793,14 +792,14 @@ async function getTasks(
             });
 
             return results as PaginatedResource<SerializedTask>;
+        } else {
+            response = await Axios.get(`${backendAPI}/tasks`, {
+                params: {
+                    ...filter,
+                    page_size: filter.page_size ?? 10,
+                },
+            });
         }
-
-        response = await Axios.get(`${backendAPI}/tasks`, {
-            params: {
-                ...filter,
-                page_size: filter.page_size ?? 10,
-            },
-        });
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -979,11 +978,11 @@ async function importDataset(
                 params,
                 headers: { 'Upload-Start': true },
             });
-        await chunkUpload(file as File, uploadConfig);
+        const { filename } = await chunkUpload(file as File, uploadConfig);
         const response = await Axios.post(url,
             new FormData(),
             {
-                params,
+                params: { ...params, filename },
                 headers: { 'Upload-Finish': true },
             });
         return response.data.rq_id;
@@ -1702,11 +1701,11 @@ async function uploadAnnotations(
                 params,
                 headers: { 'Upload-Start': true },
             });
-        await chunkUpload(file as File, uploadConfig);
+        const { filename } = await chunkUpload(file as File, uploadConfig);
         const response = await Axios.post(url,
             new FormData(),
             {
-                params,
+                params: { ...params, filename },
                 headers: { 'Upload-Finish': true },
             });
         return response.data.rq_id;

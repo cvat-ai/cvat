@@ -560,6 +560,8 @@ def annotate_task(
     with pbar.task(total=len(dataset.samples), unit="samples"):
         for sample in pbar.iter(dataset.samples):
             frame_shapes = function.detect(
+                # https://github.com/pylint-dev/pylint/issues/9013
+                # pylint: disable-next=abstract-class-instantiated
                 _DetectionFunctionContextImpl(
                     frame_name=sample.frame_name,
                     conf_threshold=conf_threshold,

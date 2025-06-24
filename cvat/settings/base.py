@@ -195,6 +195,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.middleware.gzip.GZipMiddleware",
     "cvat.apps.engine.middleware.RequestTrackingMiddleware",
+    "cvat.apps.engine.middleware.LastActivityMiddleware",
     "crum.CurrentRequestUserMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -480,6 +481,7 @@ os.makedirs(CLOUD_STORAGE_ROOT, exist_ok=True)
 
 TMP_FILES_ROOT = os.path.join(DATA_ROOT, "tmp")
 os.makedirs(TMP_FILES_ROOT, exist_ok=True)
+IGNORE_TMP_FOLDER_CLEANUP_ERRORS = True
 
 # logging is known to be unreliable with RQ when using async transports
 vector_log_handler = os.getenv("VECTOR_EVENT_HANDLER", "AsynchronousLogstashHandler")
@@ -788,3 +790,4 @@ if ONE_RUNNING_JOB_IN_QUEUE_PER_USER:
     )
 
 ALLOW_CLOUD_STORAGE_ENV_CREDS = os.environ.get("ALLOW_CLOUD_STORAGE_ENV_CREDS", False)
+USER_LAST_ACTIVITY_UPDATE_MIN_INTERVAL = timedelta(days=1)

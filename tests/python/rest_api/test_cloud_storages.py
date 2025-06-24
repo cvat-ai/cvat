@@ -70,11 +70,7 @@ class TestGetCloudStorage:
             cloud_storage["owner"]["username"]
             if is_owner
             else next(
-                (
-                    u
-                    for u in users
-                    if group in u["groups"] and u["id"] != cloud_storage["owner"]["id"]
-                )
+                u for u in users if group in u["groups"] and u["id"] != cloud_storage["owner"]["id"]
             )["username"]
         )
 
@@ -101,11 +97,9 @@ class TestGetCloudStorage:
             cloud_storage["owner"]["username"]
             if is_owner
             else next(
-                (
-                    u
-                    for u in find_users(role=role, org=org_id)
-                    if u["id"] != cloud_storage["owner"]["id"]
-                )
+                u
+                for u in find_users(role=role, org=org_id)
+                if u["id"] != cloud_storage["owner"]["id"]
             )["username"]
         )
 
@@ -342,11 +336,7 @@ class TestPatchCloudStorage:
             cloud_storage["owner"]["username"]
             if is_owner
             else next(
-                (
-                    u
-                    for u in users
-                    if group in u["groups"] and u["id"] != cloud_storage["owner"]["id"]
-                )
+                u for u in users if group in u["groups"] and u["id"] != cloud_storage["owner"]["id"]
             )["username"]
         )
 
@@ -373,11 +363,9 @@ class TestPatchCloudStorage:
             cloud_storage["owner"]["username"]
             if is_owner
             else next(
-                (
-                    u
-                    for u in find_users(role=role, org=org_id)
-                    if u["id"] != cloud_storage["owner"]["id"]
-                )
+                u
+                for u in find_users(role=role, org=org_id)
+                if u["id"] != cloud_storage["owner"]["id"]
             )["username"]
         )
 
@@ -426,11 +414,7 @@ class TestGetCloudStoragePreview:
             cloud_storage["owner"]["username"]
             if is_owner
             else next(
-                (
-                    u
-                    for u in users
-                    if group in u["groups"] and u["id"] != cloud_storage["owner"]["id"]
-                )
+                u for u in users if group in u["groups"] and u["id"] != cloud_storage["owner"]["id"]
             )["username"]
         )
 
@@ -457,11 +441,9 @@ class TestGetCloudStoragePreview:
             cloud_storage["owner"]["username"]
             if is_owner
             else next(
-                (
-                    u
-                    for u in find_users(role=role, org=org_id)
-                    if u["id"] != cloud_storage["owner"]["id"]
-                )
+                u
+                for u in find_users(role=role, org=org_id)
+                if u["id"] != cloud_storage["owner"]["id"]
             )["username"]
         )
 
