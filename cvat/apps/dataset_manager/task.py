@@ -262,6 +262,8 @@ class JobAnnotation:
             for track in tracks:
                 track_attributes = track.pop("attributes", [])
                 shapes = track.pop("shapes")
+                if not shapes:
+                    continue
                 elements = track.pop("elements", [])
                 db_track = models.LabeledTrack(job=self.db_job, parent=parent_track, **track)
 
@@ -731,6 +733,8 @@ class JobAnnotation:
         tracks = {}
         elements = {}
         for db_track in db_tracks:
+            if not db_track["shapes"]:
+                continue
             db_track["shapes"] = merge_table_rows(
                 db_track["shapes"],
                 {

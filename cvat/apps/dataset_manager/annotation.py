@@ -119,9 +119,8 @@ class AnnotationIR:
         segment_shapes = filter_track_shapes(deepcopy(track["shapes"]))
 
         track["elements"] = [
-            sliced_element
+            cls._slice_track(element, start, stop, dimension)
             for element in track.get("elements", [])
-            if (sliced_element := cls._slice_track(element, start, stop, dimension))["shapes"]
         ]
 
         if len(segment_shapes) < len(track["shapes"]):
