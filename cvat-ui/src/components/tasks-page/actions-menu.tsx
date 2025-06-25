@@ -103,15 +103,14 @@ function TaskActionsComponent(props: Props): JSX.Element {
     }, [taskInstance]);
 
     const updateWorkspace = useCallback((dstOrganizationId: number | null) => {
+        taskInstance.organizationId = dstOrganizationId;
         if (
             taskInstance.cloudStorageId ||
             taskInstance.sourceStorage.cloudStorageId ||
             taskInstance.targetStorage.cloudStorageId
         ) {
-            taskInstance.organizationId = dstOrganizationId;
             dispatch(openLinkedCloudStorageUpdatingModal(taskInstance));
         } else {
-            taskInstance.organizationId = dstOrganizationId;
             dispatch(updateTaskAsync(taskInstance, TaskUpdateTypes.UPDATE_ORGANIZATION));
         }
     }, [taskInstance]);

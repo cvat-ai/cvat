@@ -58,14 +58,13 @@ function ProjectActionsComponent(props: Props): JSX.Element {
     }, [projectInstance]);
 
     const updateWorkspace = useCallback((dstOrganizationId: number | null) => {
+        projectInstance.organizationId = dstOrganizationId;
         if (
             projectInstance.sourceStorage.cloudStorageId ||
             projectInstance.targetStorage.cloudStorageId
         ) {
-            projectInstance.organizationId = dstOrganizationId;
             dispatch(projectActions.openLinkedCloudStorageUpdatingModal(projectInstance));
         } else {
-            projectInstance.organizationId = dstOrganizationId;
             dispatch(updateProjectAsync(projectInstance, ProjectUpdateTypes.UPDATE_ORGANIZATION));
         }
     }, [projectInstance]);
