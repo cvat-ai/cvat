@@ -19,14 +19,13 @@ from copy import copy
 from inspect import isclass
 from tempfile import NamedTemporaryFile
 from typing import Any, Optional, Union, cast
-from django.db.models import Count
 
 import django_rq
 from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
-from django.db.models import Prefetch, prefetch_related_objects
+from django.db.models import Count, Prefetch, prefetch_related_objects
 from django.utils import timezone
 from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
 from numpy import random
@@ -40,6 +39,7 @@ from cvat.apps.engine.frame_provider import FrameQuality, TaskFrameProvider
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.permissions import TaskPermission
+from cvat.apps.engine.rq import update_org_related_data_in_rq_jobs
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import (
@@ -2553,6 +2553,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         # todo: try to reduce code duplication
         workspace_transferring = False
         organization_id = validated_data.get("organization_id")
+        organization_slug = None
 
         if (
             "organization_id" in validated_data
@@ -2560,8 +2561,13 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         ):
             workspace_transferring = True
             # TODO: prohibit changing other fields (except source/target storage)
-            if organization_id is not None and not Organization.objects.filter(pk=organization_id).exists():
-                raise serializers.ValidationError("Invalid organization id")
+            if organization_id is not None:
+                try:
+                    organization_slug = list(
+                        Organization.objects.filter(pk=organization_id).values_list('slug', flat=True)
+                    )[0]
+                except IndexError:
+                    raise serializers.ValidationError("Invalid organization id")
 
             request = cast(ExtendedRequest, self.context['request'])
             cur_user_id = request.user.id
@@ -2590,6 +2596,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             dst_organization_id=organization_id,
         )
 
+        update_org_related_data_in_rq_jobs(organization_id, organization_slug, task_id=instance.pk)
         instance.save() # TODO: update_fields
 
         if 'label_set' in validated_data and not instance.project_id:
@@ -2771,6 +2778,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
 
         workspace_transferring = False
         organization_id = validated_data.get("organization_id")
+        organization_slug = None
 
         if (
             "organization_id" in validated_data
@@ -2780,7 +2788,11 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
 
             # TODO: prohibit changing other fields (except source/target storage)
             # TODO: update schema examples
-            if organization_id is not None and not Organization.objects.filter(pk=organization_id).exists():
+            try:
+                organization_slug = list(
+                    Organization.objects.filter(pk=organization_id).values_list('slug', flat=True)
+                )[0]
+            except IndexError:
                 raise serializers.ValidationError("Invalid organization id")
 
             request = cast(ExtendedRequest, self.context['request'])
@@ -2815,6 +2827,8 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
             workspace_transferring=workspace_transferring,
             dst_organization_id=organization_id,
         )
+
+        update_org_related_data_in_rq_jobs(organization_id, organization_slug, project_id=instance.pk)
 
         instance.save()
 

@@ -9,15 +9,19 @@ from types import NoneType
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Protocol
 
 import attrs
+import django_rq
 from django.conf import settings
 from django.db.models import Model
 from django.utils import timezone
 from django_rq.queues import DjangoRQ
+from redis.client import Pipeline
 from rq.job import Dependency as RQDependency
 from rq.job import Job as RQJob
 from rq.registry import BaseRegistry as RQBaseRegistry
 
 from cvat.apps.engine.types import ExtendedRequest
+from cvat.apps.engine.utils import take_by
+from cvat.apps.redis_handler.apps import SELECTOR_TO_QUEUE
 from cvat.apps.redis_handler.rq import RequestId, RequestIdWithOptionalSubresource
 
 if TYPE_CHECKING:
@@ -153,9 +157,13 @@ class AbstractRQMeta(metaclass=ABCMeta):
     def for_meta(cls, meta: dict[str, Any]):
         return cls(meta=meta)
 
-    def save(self) -> None:
+    def save(self, *, pipeline: Pipeline | None = None) -> None:
         assert isinstance(self._job, RQJob), "To save meta, rq job must be set"
-        self._job.save_meta()
+        # TODO: send PR to the upstream repo to support pipelines
+        # self._job.save_meta()
+        meta = self._job.serializer.dumps(self._job.meta)
+        connection = pipeline if pipeline else self._job.connection
+        connection.hset(self._job.key, "meta", meta)
 
     @staticmethod
     @abstractmethod
@@ -220,13 +228,17 @@ class BaseRQMeta(RQMetaWithFailureInfo):
         return None
 
     # immutable && optional fields
-    org_id: int | None = ImmutableRQMetaAttribute(RQJobMetaField.ORG_ID, optional=True)
-    org_slug: int | None = ImmutableRQMetaAttribute(RQJobMetaField.ORG_SLUG, optional=True)
     project_id: int | None = ImmutableRQMetaAttribute(RQJobMetaField.PROJECT_ID, optional=True)
     task_id: int | None = ImmutableRQMetaAttribute(RQJobMetaField.TASK_ID, optional=True)
     job_id: int | None = ImmutableRQMetaAttribute(RQJobMetaField.JOB_ID, optional=True)
 
     # mutable && optional fields
+    org_id: int | None = MutableRQMetaAttribute(
+        RQJobMetaField.ORG_ID, validator=lambda x: isinstance(x, int), optional=True
+    )
+    org_slug: int | None = MutableRQMetaAttribute(
+        RQJobMetaField.ORG_SLUG, validator=lambda x: isinstance(x, str), optional=True
+    )
     progress: float | None = MutableRQMetaAttribute(
         RQJobMetaField.PROGRESS, validator=lambda x: isinstance(x, float), optional=True
     )
@@ -426,3 +438,50 @@ def define_dependent_job(
         if all_user_jobs
         else None
     )
+
+
+def update_org_related_data_in_rq_jobs(
+    new_org_id: int | None,
+    new_org_slug: str | None,
+    *,
+    project_id: int | None = None,
+    task_id: int | None = None,
+):
+    assert (project_id or task_id) and not (project_id and task_id)
+
+    queues: tuple[django_rq.queues.DjangoRQ] = (
+        django_rq.get_queue(queue_name) for queue_name in set(SELECTOR_TO_QUEUE.values())
+    )
+
+    for queue in queues:
+        job_ids = set(
+            queue.get_job_ids()
+            + queue.started_job_registry.get_job_ids()
+            + queue.finished_job_registry.get_job_ids()
+            + queue.failed_job_registry.get_job_ids()
+            + queue.deferred_job_registry.get_job_ids()
+        )
+
+        # todo: take_by
+        # todo: locks
+        for batched_job_ids in take_by(job_ids, chunk_size=1000):
+            with queue.connection.pipeline() as pipe:
+                for job in queue.job_class.fetch_many(batched_job_ids, queue.connection):
+                    if not job:
+                        continue
+
+                    job_meta = BaseRQMeta.for_job(job)
+
+                    if (
+                        project_id
+                        and job_meta.project_id != project_id
+                        or task_id
+                        and job_meta.task_id != task_id
+                    ):
+                        continue
+
+                    job_meta.org_id = new_org_id
+                    job_meta.org_slug = new_org_slug
+                    job_meta.save(pipeline=pipe)
+
+                pipe.execute()
