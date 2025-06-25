@@ -5,7 +5,7 @@
 
 import os.path as osp
 
-from datumaro.components.dataset import Dataset, StreamDataset
+from datumaro.components.dataset import StreamDataset
 from datumaro.plugins.data_formats.cityscapes import write_label_map
 from pyunpack import Archive
 
@@ -52,7 +52,7 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
         write_label_map(labelmap_file, colormap)
 
     detect_dataset(temp_dir, format_name="cityscapes", importer=dm_env.importers.get("cityscapes"))
-    dataset = Dataset.import_from(temp_dir, "cityscapes", env=dm_env)
+    dataset = StreamDataset.import_from(temp_dir, "cityscapes", env=dm_env)
     dataset = MaskToPolygonTransformation.convert_dataset(dataset, **kwargs)
     if load_data_callback is not None:
         load_data_callback(dataset, instance_data)
