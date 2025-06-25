@@ -495,10 +495,14 @@ class TestPatchTaskAnnotations:
     def request_data(self, annotations):
         def get_data(tid):
             data = deepcopy(annotations["task"][str(tid)])
-            if data["shapes"][0]["type"] == "skeleton":
-                data["shapes"][0]["elements"][0].update({"points": [2.0, 3.0, 4.0, 5.0]})
-            else:
-                data["shapes"][0].update({"points": [2.0, 3.0, 4.0, 5.0, 6.0, 7.0]})
+
+            def mutate(shape):
+                shape["points"] = [p + 1.0 for p in shape["points"]]
+
+            mutate(data["shapes"][0])
+            if elements := data["shapes"][0]["elements"]:
+                mutate(elements[0])
+
             data["version"] += 1
             return data
 
@@ -4111,15 +4115,13 @@ class TestTaskBackups:
         task_id = next(t for t in tasks if t["validation_mode"] == "gt_pool")["id"]
         self._test_can_export_backup(task_id)
 
-    @pytest.mark.xfail(reason="Should be fixed in 9230 PR")
     def test_cannot_export_backup_for_task_without_data(self, tasks):
         task_id = next(t for t in tasks if t["jobs"]["count"] == 0)["id"]
 
-        # FUTURE-FIXME: broken by 9075, is going to be fixed in https://github.com/cvat-ai/cvat/pull/9230
-        with pytest.raises(BackgroundRequestException) as exc:
+        with pytest.raises(exceptions.ApiException) as capture:
             self._test_can_export_backup(task_id)
 
-        assert "Backup of a task without data is not allowed" == str(exc.value)
+        assert "Backup of a task without data is not allowed" in str(capture.value.body)
 
     @pytest.mark.with_external_services
     def test_can_export_and_import_backup_task_with_cloud_storage(self, tasks):

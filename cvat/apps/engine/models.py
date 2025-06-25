@@ -1172,6 +1172,7 @@ class TrackedShapeAttributeVal(AttributeVal):
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     rating = models.FloatField(default=0.0)
+    last_activity_date = models.DateTimeField(null=True, blank=True, default=None)
     has_analytics_access = models.BooleanField(
         _("has access to analytics"),
         default=False,

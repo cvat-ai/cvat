@@ -195,6 +195,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.middleware.gzip.GZipMiddleware",
     "cvat.apps.engine.middleware.RequestTrackingMiddleware",
+    "cvat.apps.engine.middleware.LastActivityMiddleware",
     "crum.CurrentRequestUserMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -787,3 +788,5 @@ if ONE_RUNNING_JOB_IN_QUEUE_PER_USER:
             "cron_string": "0 8 * * *",
         }
     )
+
+USER_LAST_ACTIVITY_UPDATE_MIN_INTERVAL = timedelta(days=1)
