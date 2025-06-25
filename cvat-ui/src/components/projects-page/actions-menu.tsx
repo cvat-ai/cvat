@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
@@ -26,11 +26,13 @@ function ProjectActionsComponent(props: Props): JSX.Element {
 
     const pluginActions = usePlugins((state: CombinedState) => state.plugins.components.projectActions.items, props);
 
-    const [dropdownOpen, setDropdownOpen] = useState(false);
     const {
+        dropdownOpen,
         editField,
         startEditField,
         stopEditField,
+        onOpenChange,
+        onMenuClick,
     } = useDropdownEditField();
 
     const onExportDataset = useCallback(() => {
@@ -63,10 +65,7 @@ function ProjectActionsComponent(props: Props): JSX.Element {
 
     const onUpdateProjectAssignee = useCallback((assignee: User | null) => {
         projectInstance.assignee = assignee;
-        dispatch(updateProjectAsync(projectInstance)).then(() => {
-            setDropdownOpen(false);
-            stopEditField();
-        });
+        dispatch(updateProjectAsync(projectInstance)).then(stopEditField);
     }, [projectInstance]);
 
     return (
@@ -74,14 +73,7 @@ function ProjectActionsComponent(props: Props): JSX.Element {
             destroyPopupOnHide
             trigger={['click']}
             open={dropdownOpen}
-            onOpenChange={(open, { source }) => {
-                if (source === 'trigger') {
-                    setDropdownOpen(open);
-                }
-                if (!open && editField) {
-                    stopEditField();
-                }
-            }}
+            onOpenChange={onOpenChange}
             menu={{
                 selectable: false,
                 className: 'cvat-project-actions-menu',
@@ -97,6 +89,7 @@ function ProjectActionsComponent(props: Props): JSX.Element {
                     onDeleteProject,
                     onUpdateProjectAssignee,
                 }, props),
+                onClick: onMenuClick,
             }}
         >
             {triggerElement}

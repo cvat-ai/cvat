@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import Modal from 'antd/lib/modal';
 import Dropdown from 'antd/lib/dropdown';
@@ -35,11 +35,13 @@ function TaskActionsComponent(props: Props): JSX.Element {
         mergingConsensus: state.consensus.actions.merging,
     }), shallowEqual);
 
-    const [dropdownOpen, setDropdownOpen] = useState(false);
     const {
+        dropdownOpen,
         editField,
         startEditField,
         stopEditField,
+        onOpenChange,
+        onMenuClick,
     } = useDropdownEditField();
 
     const onOpenBugTracker = useCallback(() => {
@@ -90,10 +92,7 @@ function TaskActionsComponent(props: Props): JSX.Element {
 
     const onUpdateTaskAssignee = useCallback((assignee: User | null) => {
         taskInstance.assignee = assignee;
-        dispatch(updateTaskAsync(taskInstance, { assignee })).then(() => {
-            setDropdownOpen(false);
-            stopEditField();
-        });
+        dispatch(updateTaskAsync(taskInstance, { assignee })).then(stopEditField);
     }, [taskInstance]);
 
     const onDeleteTask = useCallback(() => {
@@ -117,14 +116,7 @@ function TaskActionsComponent(props: Props): JSX.Element {
             destroyPopupOnHide
             trigger={['click']}
             open={dropdownOpen}
-            onOpenChange={(open, { source }) => {
-                if (source === 'trigger') {
-                    setDropdownOpen(open);
-                }
-                if (!open && editField) {
-                    stopEditField();
-                }
-            }}
+            onOpenChange={onOpenChange}
             menu={{
                 selectable: false,
                 className: 'cvat-actions-menu',
@@ -150,11 +142,7 @@ function TaskActionsComponent(props: Props): JSX.Element {
                     onDeleteTask,
                     onUpdateTaskAssignee,
                 }, props),
-                onClick: ({ key }) => {
-                    if (!key.startsWith('edit') && !key.endsWith('selector')) {
-                        setDropdownOpen(false);
-                    }
-                },
+                onClick: onMenuClick,
             }}
         >
             {triggerElement}

@@ -28,9 +28,7 @@ interface MenuItemsData {
     onExportAnnotations: () => void;
     onMergeConsensusJob: (() => void) | null;
     onDeleteJob: (() => void) | null;
-    onUpdateJobAssignee: (assignee: User | null) => void;
-    onUpdateJobStage: (stage: JobStage) => void;
-    onUpdateJobState: (state: JobState) => void;
+    onUpdateJobField: (fields: Partial<{ assignee: User | null; state: JobState; stage: JobStage }>) => void;
 }
 
 export default function JobActionsItems(
@@ -53,20 +51,18 @@ export default function JobActionsItems(
         onExportAnnotations,
         onMergeConsensusJob,
         onDeleteJob,
-        onUpdateJobAssignee,
-        onUpdateJobStage,
-        onUpdateJobState,
+        onUpdateJobField,
     } = menuItemsData;
 
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
 
-    const fieldSelectors = {
+    const fieldSelectors: Record<string, JSX.Element> = {
         assignee: (
             <UserSelector
                 value={assignee}
                 onSelect={(value: User | null): void => {
                     if (assignee?.id === value?.id) return;
-                    onUpdateJobAssignee(value);
+                    onUpdateJobField({ assignee: value });
                 }}
             />
         ),
@@ -74,7 +70,7 @@ export default function JobActionsItems(
             <JobStateSelector
                 value={state}
                 onSelect={(value: JobState): void => {
-                    onUpdateJobState(value);
+                    onUpdateJobField({ state: value });
                 }}
             />
         ),
@@ -82,7 +78,7 @@ export default function JobActionsItems(
             <JobStageSelector
                 value={stage}
                 onSelect={(value: JobStage): void => {
-                    onUpdateJobStage(value);
+                    onUpdateJobField({ stage: value });
                 }}
             />
         ),
@@ -154,7 +150,7 @@ export default function JobActionsItems(
     }, 90]);
 
     if (onDeleteJob) {
-        menuItems.push([{ type: 'divider' }, 69]);
+        menuItems.push([{ type: 'divider' }, 99]);
         menuItems.push([{
             key: 'delete',
             onClick: onDeleteJob,

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
@@ -33,11 +33,13 @@ function JobActionsComponent(props: Props): JSX.Element {
     const pluginActions = usePlugins((state: CombinedState) => state.plugins.components.jobActions.items, props);
     const mergingConsensus = useSelector((state: CombinedState) => state.consensus.actions.merging);
 
-    const [dropdownOpen, setDropdownOpen] = useState(false);
     const {
+        dropdownOpen,
         editField,
         startEditField,
         stopEditField,
+        onOpenChange,
+        onMenuClick,
     } = useDropdownEditField();
 
     const onOpenBugTracker = useCallback(() => {
@@ -90,25 +92,10 @@ function JobActionsComponent(props: Props): JSX.Element {
         }
     }, [jobInstance]);
 
-    const onUpdateJobAssignee = useCallback((assignee: User | null) => {
-        dispatch(updateJobAsync(jobInstance, { assignee })).then(() => {
-            setDropdownOpen(false);
-            stopEditField();
-        });
-    }, [jobInstance]);
-
-    const onUpdateJobState = useCallback((state: JobState) => {
-        dispatch(updateJobAsync(jobInstance, { state })).then(() => {
-            setDropdownOpen(false);
-            stopEditField();
-        });
-    }, [jobInstance]);
-
-    const onUpdateJobStage = useCallback((stage: JobStage) => {
-        dispatch(updateJobAsync(jobInstance, { stage })).then(() => {
-            setDropdownOpen(false);
-            stopEditField();
-        });
+    const onUpdateJobField = useCallback((
+        fields: Partial<{ assignee: User | null; state: JobState; stage: JobStage }>,
+    ) => {
+        dispatch(updateJobAsync(jobInstance, fields)).then(stopEditField);
     }, [jobInstance]);
 
     return (
@@ -116,14 +103,7 @@ function JobActionsComponent(props: Props): JSX.Element {
             destroyPopupOnHide
             trigger={['click']}
             open={dropdownOpen}
-            onOpenChange={(open, { source }) => {
-                if (source === 'trigger') {
-                    setDropdownOpen(open);
-                }
-                if (!open && editField) {
-                    stopEditField();
-                }
-            }}
+            onOpenChange={onOpenChange}
             className='job-actions-menu'
             menu={{
                 selectable: false,
@@ -145,10 +125,9 @@ function JobActionsComponent(props: Props): JSX.Element {
                     onMergeConsensusJob: consensusJobsPresent && jobInstance.parentJobId === null ?
                         onMergeConsensusJob : null,
                     onDeleteJob: jobInstance.type === JobType.GROUND_TRUTH ? onDeleteJob : null,
-                    onUpdateJobAssignee,
-                    onUpdateJobStage,
-                    onUpdateJobState,
+                    onUpdateJobField,
                 }, props),
+                onClick: onMenuClick,
             }}
         >
             {triggerElement}

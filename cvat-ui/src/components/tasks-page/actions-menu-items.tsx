@@ -52,7 +52,7 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
         onUpdateTaskAssignee,
     } = menuItemsData;
 
-    const fieldSelectors = {
+    const fieldSelectors: Record<string, JSX.Element> = {
         assignee: (
             <UserSelector
                 value={assignee}

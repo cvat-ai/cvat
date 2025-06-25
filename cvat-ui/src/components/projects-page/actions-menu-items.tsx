@@ -39,7 +39,7 @@ export default function ProjectActionsItems(
         onUpdateProjectAssignee,
     } = menuItemsData;
 
-    const fieldSelectors = {
+    const fieldSelectors: Record<string, JSX.Element> = {
         assignee: (
             <UserSelector
                 value={assignee}
