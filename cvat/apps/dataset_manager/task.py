@@ -259,11 +259,11 @@ class JobAnnotation:
 
             self._sync_frames(tracks, parent_track)
 
+            tracks = [track for track in tracks if track["shapes"]]
+
             for track in tracks:
                 track_attributes = track.pop("attributes", [])
                 shapes = track.pop("shapes")
-                if not shapes:
-                    continue
                 elements = track.pop("elements", [])
                 db_track = models.LabeledTrack(job=self.db_job, parent=parent_track, **track)
 
