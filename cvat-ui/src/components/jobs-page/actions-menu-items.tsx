@@ -134,24 +134,24 @@ export default function JobActionsItems(
         key: 'edit_assignee',
         onClick: () => startEditField('assignee'),
         label: 'Assignee',
-    }, 55]);
+    }, 60]);
 
     menuItems.push([{
         key: 'edit_state',
         onClick: () => startEditField('state'),
         label: 'State',
-    }, 56]);
+    }, 70]);
 
     menuItems.push([{
         key: 'edit_stage',
         onClick: () => startEditField('stage'),
         label: 'Stage',
-    }, 57]);
+    }, 80]);
 
     menuItems.push([{
         key: 'view-analytics',
         label: <Link to={`/tasks/${taskID}/jobs/${jobID}/analytics`}>View analytics</Link>,
-    }, 60]);
+    }, 90]);
 
     if (onDeleteJob) {
         menuItems.push([{ type: 'divider' }, 69]);
@@ -159,7 +159,7 @@ export default function JobActionsItems(
             key: 'delete',
             onClick: onDeleteJob,
             label: 'Delete',
-        }, 70]);
+        }, 100]);
     }
 
     menuItems.push(

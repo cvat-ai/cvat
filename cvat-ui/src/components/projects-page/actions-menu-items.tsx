@@ -75,32 +75,32 @@ export default function ProjectActionsItems(
         key: 'edit_assignee',
         onClick: () => startEditField('assignee'),
         label: 'Assignee',
-    }, 25]);
+    }, 30]);
 
     menuItems.push([{
         key: 'view-analytics',
         label: <Link to={`/projects/${projectID}/analytics`}>View analytics</Link>,
-    }, 30]);
+    }, 40]);
 
     menuItems.push([{
         key: 'quality-control',
         label: <Link to={`/projects/${projectID}/quality-control`}>Quality control</Link>,
-    }, 40]);
+    }, 50]);
 
     menuItems.push([{
         key: 'set-webhooks',
         label: <Link to={`/projects/${projectID}/webhooks`}>Setup webhooks</Link>,
-    }, 50]);
+    }, 60]);
 
     menuItems.push([{
         type: 'divider',
-    }, 59]);
+    }, 69]);
 
     menuItems.push([{
         key: 'delete',
         onClick: onDeleteProject,
         label: 'Delete',
-    }, 60]);
+    }, 70]);
 
     menuItems.push(
         ...pluginActions.map(({ component: Component, weight }, index) => {
