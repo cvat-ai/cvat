@@ -90,6 +90,8 @@ To fetch and display the analytical data, select the **Request** button.
 > So, when you request data for a task, the data for all task jobs is also fetched.
 
 Once the data is fetched and displayed on the page, you can check its relevance under the page title.
+A warning icon ![Warning icon](/images/warning-icon.svg) indicates
+that the resource was updated after the last analytics update.
 
 To update the data, select ![Fetch analytics button](/images/fetch-data-button.svg) button.
 
@@ -110,6 +112,8 @@ To download a CSV file with all event data, select the **Export events** button.
 
 ### Summary tab
 
+![Summary tab in Analytics](/images/analytics/summary-tab.jpg)
+
 The **Summary** tab displays the quantitative metrics:
 - **Objects diff**: Difference between created and deleted objects in the selected time period.
   The value may be negative, if the number of the deleted objects exceeds the number of the
@@ -124,10 +128,13 @@ for annotation distribution by labels and types. Hover over a chart or diagram t
 
 ### Annotations tab
 
+![Annotation tab in Analytics](/images/analytics/annotation-tab-detection.jpg)
+
 The **Annotations** tab shows annotation statistics for:
 - {{< ilink "/docs/manual/basics/shape-mode-basics" "Shape mode">}} (the **Detections** tab).
 - {{< ilink "/docs/manual/basics/track-mode-basics" "Track mode">}} (the **Tracking** tab).
 
+Both tabs always reflect the current state of the resource.
 Each tab includes a filterable, customizable table
 (learn [how to work with tables](#working-with-tables)).
 
@@ -166,6 +173,8 @@ The **Tracking** tab table contains the columns:
 <!--lint enable maximum-line-length-->
 
 ### Events tab
+
+![Events tab in Analytics](/images/analytics/events-tab.jpg)
 
 The **Events** tab displays the following metrics:
 - **Total objects**: Total number of objects in the filtered jobs.

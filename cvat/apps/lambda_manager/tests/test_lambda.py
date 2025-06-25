@@ -156,7 +156,7 @@ class _LambdaTestCaseBase(ApiTestBase):
                 {
                     "confidence": "0.59464583",
                     "label": "car",
-                    "points": [12.17, 45.0, 69.80, 18.99],
+                    "points": [10, 10, 10, 20, 20, 10],
                     "type": "polygon",
                 },
                 {
@@ -786,7 +786,6 @@ class LambdaTestCases(_LambdaTestCaseBase):
         data = {
             "task": self.main_task["id"],
             "frame": 0,
-            "shapes": [{"type": "rectangle", "points": [12.12, 34.45, 54.0, 76.12]}],
             "states": [signer.sign("{}")],
         }
 
