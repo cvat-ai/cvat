@@ -164,9 +164,6 @@ RUN if [ "$CLAM_AV" = "yes" ]; then \
 # Install wheels from the build image
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:${PATH}"
-# setuptools should be uninstalled after updating google-cloud-storage
-# https://github.com/googleapis/python-storage/issues/740
-RUN python -m pip install --upgrade setuptools
 ARG PIP_VERSION
 ARG PIP_DISABLE_PIP_VERSION_CHECK=1
 
@@ -187,8 +184,8 @@ RUN if [ "${CVAT_DEBUG_ENABLED}" = 'yes' ]; then \
 
 # Removing pip due to security reasons. See: https://scout.docker.com/vulnerabilities/id/CVE-2018-20225
 # The vulnerability is dubious and we don't use pip at runtime, but some vulnerability scanners mark it as a high vulnerability,
-# and it was decided to remove pip from the final image
-RUN python -m pip uninstall -y pip
+# and it was decided to remove pip from the final image. Similar story with setuptools.
+RUN python -m pip uninstall -y pip setuptools
 
 # Install and initialize CVAT, copy all necessary files
 COPY cvat/nginx.conf /etc/nginx/nginx.conf
