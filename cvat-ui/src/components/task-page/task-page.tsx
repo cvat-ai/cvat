@@ -32,11 +32,11 @@ function TaskPageComponent(): JSX.Element {
     const dispatch = useDispatch();
     const [taskInstance, setTaskInstance] = useState<Task | null>(null);
     const [fetchingTask, setFetchingTask] = useState(true);
-    const [updatingTask, setUpdatingTask] = useState(false);
 
     const deletes = useSelector((state: CombinedState) => state.tasks.activities.deletes);
     const updates = useSelector((state: CombinedState) => state.tasks.activities.updates);
-    const isTaskUpdating = updates[id] || updatingTask;
+    const jobsFetching = useSelector((state: CombinedState) => state.jobs.fetching);
+    const isTaskUpdating = updates[id] || jobsFetching;
 
     const receieveTask = (): Promise<Task[]> => {
         if (Number.isInteger(id)) {
@@ -87,25 +87,11 @@ function TaskPageComponent(): JSX.Element {
     const onUpdateTask = (task: Task): Promise<void> => (
         dispatch(updateTaskAsync(task, {})).then((updatedTask: Task) => {
             setTaskInstance(updatedTask);
-        }).finally(() => {
-            setUpdatingTask(false);
         })
     );
 
     const onJobUpdate = (job: Job, data: Parameters<Job['save']>[0]): void => {
-        setUpdatingTask(true);
-        dispatch(updateJobAsync(job, data)).then(() => {
-            // if one of jobs changes, task will have its updated_date bumped
-            // but generally we do not use this field anywhere on the page
-            // so, as a kind of optimization we do not fetch the task again
-            setUpdatingTask(false);
-        }).catch((error: Error) => {
-            setUpdatingTask(false);
-            notification.error({
-                message: 'Could not update the job',
-                description: error.toString(),
-            });
-        });
+        dispatch(updateJobAsync(job, data));
     };
 
     return (

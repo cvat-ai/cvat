@@ -7,11 +7,20 @@ import { Link } from 'react-router-dom';
 import { MenuProps } from 'antd/lib/menu';
 import { LoadingOutlined } from '@ant-design/icons';
 import { usePlugins } from 'utils/hooks';
+import { JobStage, JobState, User } from 'cvat-core-wrapper';
+import UserSelector from 'components/task-page/user-selector';
+import { JobStageSelector, JobStateSelector } from 'components/job-item/job-selectors';
 
 interface MenuItemsData {
+    editField: string | null;
+    startEditField: (key: string) => void;
+
     jobID: number;
     taskID: number;
     projectID: number | null;
+    assignee: User | null;
+    state: JobState;
+    stage: JobStage;
     pluginActions: ReturnType<typeof usePlugins>;
     isMergingConsensusEnabled: boolean;
     onOpenBugTracker: (() => void) | null;
@@ -19,6 +28,9 @@ interface MenuItemsData {
     onExportAnnotations: () => void;
     onMergeConsensusJob: (() => void) | null;
     onDeleteJob: (() => void) | null;
+    onUpdateJobAssignee: (assignee: User | null) => void;
+    onUpdateJobStage: (stage: JobStage) => void;
+    onUpdateJobState: (state: JobState) => void;
 }
 
 export default function JobActionsItems(
@@ -26,6 +38,11 @@ export default function JobActionsItems(
     jobMenuProps: unknown,
 ): MenuProps['items'] {
     const {
+        editField,
+        startEditField,
+        assignee,
+        state,
+        stage,
         jobID,
         taskID,
         projectID,
@@ -36,9 +53,40 @@ export default function JobActionsItems(
         onExportAnnotations,
         onMergeConsensusJob,
         onDeleteJob,
+        onUpdateJobAssignee,
+        onUpdateJobStage,
+        onUpdateJobState,
     } = menuItemsData;
 
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
+
+    const fieldSelectors = {
+        assignee: (
+            <UserSelector
+                value={assignee}
+                onSelect={(value: User | null): void => {
+                    if (assignee?.id === value?.id) return;
+                    onUpdateJobAssignee(value);
+                }}
+            />
+        ),
+        state: (
+            <JobStateSelector
+                value={state}
+                onSelect={(value: JobState): void => {
+                    onUpdateJobState(value);
+                }}
+            />
+        ),
+        stage: (
+            <JobStageSelector
+                value={stage}
+                onSelect={(value: JobStage): void => {
+                    onUpdateJobStage(value);
+                }}
+            />
+        ),
+    };
 
     menuItems.push([{
         key: 'task',
@@ -83,6 +131,24 @@ export default function JobActionsItems(
     }
 
     menuItems.push([{
+        key: 'edit_assignee',
+        onClick: () => startEditField('assignee'),
+        label: 'Assignee',
+    }, 55]);
+
+    menuItems.push([{
+        key: 'edit_state',
+        onClick: () => startEditField('state'),
+        label: 'State',
+    }, 56]);
+
+    menuItems.push([{
+        key: 'edit_stage',
+        onClick: () => startEditField('stage'),
+        label: 'Stage',
+    }, 57]);
+
+    menuItems.push([{
         key: 'view-analytics',
         label: <Link to={`/tasks/${taskID}/jobs/${jobID}/analytics`}>View analytics</Link>,
     }, 60]);
@@ -102,6 +168,13 @@ export default function JobActionsItems(
             return [menuItem, weight] as [NonNullable<MenuProps['items']>[0], number];
         }),
     );
+
+    if (editField) {
+        return [{
+            key: `${editField}-selector`,
+            label: fieldSelectors[editField],
+        }];
+    }
 
     return menuItems.sort((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1]).map((menuItem) => menuItem[0]);
 }
