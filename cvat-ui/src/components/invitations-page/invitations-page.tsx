@@ -8,7 +8,7 @@ import { useHistory } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import Spin from 'antd/lib/spin';
 import { CombinedState, InvitationsQuery } from 'reducers';
-import { useIsMounted, useUpdatedQuery } from 'utils/hooks';
+import { useIsMounted, useResourceQuery } from 'utils/hooks';
 import { getInvitationsAsync } from 'actions/invitations-actions';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import EmptyListComponent from './empty-list';
@@ -23,7 +23,7 @@ export default function InvitationsPageComponent(): JSX.Element {
     const query = useSelector((state: CombinedState) => state.invitations.query);
     const count = useSelector((state: CombinedState) => state.invitations.count);
 
-    const updatedQuery = useUpdatedQuery<InvitationsQuery>(query);
+    const updatedQuery = useResourceQuery<InvitationsQuery>(query);
 
     useEffect(() => {
         dispatch(getInvitationsAsync(updatedQuery));

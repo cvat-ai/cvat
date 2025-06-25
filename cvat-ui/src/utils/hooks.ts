@@ -206,18 +206,19 @@ export function useInstanceId(type: InstanceType): number {
     return +(params.tid as string);
 }
 
-interface UseUpdatedQueryOptions {
+interface ResourceQueryDefaultParams {
     page?: number;
     pageSize?: number;
 }
 
-export function useUpdatedQuery<QueryType extends {
-    page: number, pageSize?: number
-}>(query: QueryType, options: UseUpdatedQueryOptions = {}): QueryType {
+export function useResourceQuery<QueryType extends {
+    page: number;
+    pageSize: number;
+}>(query: QueryType, defaultParams: ResourceQueryDefaultParams = {}): QueryType {
     const {
         page = 1,
         pageSize = 10,
-    } = options;
+    } = defaultParams;
 
     const history = useHistory();
 

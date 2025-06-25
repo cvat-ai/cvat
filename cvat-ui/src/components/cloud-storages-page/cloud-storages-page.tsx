@@ -14,7 +14,7 @@ import { CloudStoragesQuery, CombinedState } from 'reducers';
 import { getCloudStoragesAsync } from 'actions/cloud-storage-actions';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import { anySearch } from 'utils/any-search';
-import { useUpdatedQuery } from 'utils/hooks';
+import { useResourceQuery } from 'utils/hooks';
 import CloudStoragesListComponent from './cloud-storages-list';
 import EmptyListComponent from './empty-list';
 import TopBarComponent from './top-bar';
@@ -28,7 +28,7 @@ export default function StoragesPageComponent(): JSX.Element {
     const current = useSelector((state: CombinedState) => state.cloudStorages.current);
     const query = useSelector((state: CombinedState) => state.cloudStorages.gettingQuery);
 
-    const updatedQuery = useUpdatedQuery<CloudStoragesQuery>(query, { pageSize: 12 });
+    const updatedQuery = useResourceQuery<CloudStoragesQuery>(query, { pageSize: 12 });
 
     useEffect(() => {
         dispatch(getCloudStoragesAsync({ ...updatedQuery }));

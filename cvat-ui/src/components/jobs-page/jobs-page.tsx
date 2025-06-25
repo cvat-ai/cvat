@@ -15,7 +15,7 @@ import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import { CombinedState, JobsQuery } from 'reducers';
 import { getJobsAsync } from 'actions/jobs-actions';
 import { anySearch } from 'utils/any-search';
-import { useUpdatedQuery } from 'utils/hooks';
+import { useResourceQuery } from 'utils/hooks';
 
 import TopBarComponent from './top-bar';
 import JobsContentComponent from './jobs-content';
@@ -29,7 +29,7 @@ function JobsPageComponent(): JSX.Element {
     const fetching = useSelector((state: CombinedState) => state.jobs.fetching);
     const count = useSelector((state: CombinedState) => state.jobs.count);
 
-    const updatedQuery = useUpdatedQuery<JobsQuery>(query, { pageSize: 12 });
+    const updatedQuery = useResourceQuery<JobsQuery>(query, { pageSize: 12 });
 
     useEffect(() => {
         dispatch(getJobsAsync({ ...updatedQuery }));

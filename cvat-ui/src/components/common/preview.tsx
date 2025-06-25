@@ -49,22 +49,34 @@ export default function Preview(props: Props): JSX.Element {
     const { ref, inView } = useInView({ triggerOnce: true });
 
     const preview = useSelector((state: CombinedState) => {
-        if (job !== undefined) return state.jobs.previews[job.id];
-        if (project !== undefined) return state.projects.previews[project.id];
-        if (task !== undefined) return state.tasks.previews[task.id];
-        if (cloudStorage !== undefined) return state.cloudStorages.previews[cloudStorage.id];
-        if (model !== undefined) return state.models.previews[model.id];
+        if (job !== undefined) {
+            return state.jobs.previews[job.id];
+        } if (project !== undefined) {
+            return state.projects.previews[project.id];
+        } if (task !== undefined) {
+            return state.tasks.previews[task.id];
+        } if (cloudStorage !== undefined) {
+            return state.cloudStorages.previews[cloudStorage.id];
+        } if (model !== undefined) {
+            return state.models.previews[model.id];
+        }
         return '';
     });
 
     useEffect(() => {
         if (inView && !hasFetched && preview === undefined) {
             setHasFetched(true);
-            if (job !== undefined) dispatch(getJobPreviewAsync(job));
-            else if (project !== undefined) dispatch(getProjectsPreviewAsync(project));
-            else if (task !== undefined) dispatch(getTaskPreviewAsync(task));
-            else if (cloudStorage !== undefined) dispatch(getCloudStoragePreviewAsync(cloudStorage));
-            else if (model !== undefined) dispatch(getModelPreviewAsync(model));
+            if (job !== undefined) {
+                dispatch(getJobPreviewAsync(job));
+            } else if (project !== undefined) {
+                dispatch(getProjectsPreviewAsync(project));
+            } else if (task !== undefined) {
+                dispatch(getTaskPreviewAsync(task));
+            } else if (cloudStorage !== undefined) {
+                dispatch(getCloudStoragePreviewAsync(cloudStorage));
+            } else if (model !== undefined) {
+                dispatch(getModelPreviewAsync(model));
+            }
         }
     }, [inView, hasFetched, preview]);
 
@@ -78,14 +90,14 @@ export default function Preview(props: Props): JSX.Element {
 
     if (preview.initialized && !preview.preview) {
         return (
-            <div ref={ref} className={emptyPreviewClassName || ''} onClick={onClick} aria-hidden>
+            <div className={emptyPreviewClassName || ''} onClick={onClick} aria-hidden>
                 <PictureOutlined />
             </div>
         );
     }
 
     return (
-        <div ref={ref} className={previewWrapperClassName || ''} aria-hidden>
+        <div className={previewWrapperClassName || ''} aria-hidden>
             <img
                 className={previewClassName || ''}
                 src={preview.preview}

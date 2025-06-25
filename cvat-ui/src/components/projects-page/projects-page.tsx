@@ -12,7 +12,7 @@ import { CombinedState, ProjectsQuery } from 'reducers';
 import { getProjectsAsync } from 'actions/projects-actions';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import { anySearch } from 'utils/any-search';
-import { useUpdatedQuery } from 'utils/hooks';
+import { useResourceQuery } from 'utils/hooks';
 import EmptyListComponent from './empty-list';
 import TopBarComponent from './top-bar';
 import ProjectListComponent from './project-list';
@@ -28,7 +28,7 @@ export default function ProjectsPageComponent(): JSX.Element {
     const [isMounted, setIsMounted] = useState(false);
     const isAnySearch = anySearch<ProjectsQuery>(query);
 
-    const updatedQuery = useUpdatedQuery<ProjectsQuery>(query, { pageSize: 12 });
+    const updatedQuery = useResourceQuery<ProjectsQuery>(query, { pageSize: 12 });
 
     useEffect(() => {
         dispatch(getProjectsAsync({ ...updatedQuery }));

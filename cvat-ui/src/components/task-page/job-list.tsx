@@ -19,7 +19,7 @@ import JobItem from 'components/job-item/job-item';
 import {
     SortingComponent, ResourceFilterHOC, defaultVisibility, updateHistoryFromQuery,
 } from 'components/resource-sorting-filtering';
-import { useUpdatedQuery } from 'utils/hooks';
+import { useResourceQuery } from 'utils/hooks';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './jobs-filter-configuration';
@@ -33,7 +33,7 @@ interface Props {
     onJobUpdate(job: Job, data: Parameters<Job['save']>[0]): void;
 }
 
-function setUpJobsList(jobs: Job[], query: JobsQuery): Job[] {
+function filterJobs(jobs: Job[], query: JobsQuery): Job[] {
     let result = jobs;
 
     // consensus jobs will be under the collapse view
@@ -66,6 +66,10 @@ function setUpJobsList(jobs: Job[], query: JobsQuery): Job[] {
     return result;
 }
 
+function setUpJobsList(jobs: Job[], newPage: number, pageSize: number): Job[] {
+    return jobs.slice((newPage - 1) * pageSize, newPage * pageSize);
+}
+
 function JobListComponent(props: Props): JSX.Element {
     const { task: taskInstance, onJobUpdate } = props;
     const [visibility, setVisibility] = useState(defaultVisibility);
@@ -81,7 +85,7 @@ function JobListComponent(props: Props): JSX.Element {
         search: null,
         filter: null,
     };
-    const updatedQuery = useUpdatedQuery<JobsQuery>(defaultQuery);
+    const updatedQuery = useResourceQuery<JobsQuery>(defaultQuery);
 
     const [jobChildMapping, setJobChildMapping] = useState<Record<number, Job[]>>({});
     useEffect(() => {
@@ -119,9 +123,8 @@ function JobListComponent(props: Props): JSX.Element {
     }, []);
 
     const [query, setQuery] = useState<JobsQuery>(updatedQuery);
-    const filteredJobs = setUpJobsList(jobs, query);
-    const jobViews = filteredJobs
-        .slice((query.page - 1) * query.pageSize, query.page * query.pageSize)
+    const filteredJobs = filterJobs(jobs, query);
+    const jobViews = setUpJobsList(filteredJobs, query.page, query.pageSize)
         .map((job: Job) => (
             <JobItem
                 key={job.id}

@@ -11,7 +11,7 @@ import { useHistory } from 'react-router';
 import Spin from 'antd/lib/spin';
 
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
-import { useUpdatedQuery } from 'utils/hooks';
+import { useResourceQuery } from 'utils/hooks';
 import EmptyListComponent from './empty-list';
 import RequestsList from './requests-list';
 
@@ -21,7 +21,7 @@ export default function RequestsPageComponent(): JSX.Element {
 
     const count = Object.keys(requests).length;
 
-    const updatedQuery = useUpdatedQuery<RequestsQuery>(query);
+    const updatedQuery = useResourceQuery<RequestsQuery>(query);
 
     useEffect(() => {
         history.replace({

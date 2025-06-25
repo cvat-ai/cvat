@@ -17,7 +17,7 @@ import { CombinedState, WebhooksQuery } from 'reducers';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import { getWebhooksAsync } from 'actions/webhooks-actions';
 import { LeftOutlined } from '@ant-design/icons';
-import { useUpdatedQuery } from 'utils/hooks';
+import { useResourceQuery } from 'utils/hooks';
 import WebhooksList from './webhooks-list';
 import TopBar from './top-bar';
 import EmptyWebhooksListComponent from './empty-list';
@@ -53,7 +53,7 @@ function WebhooksPage(): JSX.Element | null {
         </Button>
     );
 
-    const updatedQuery = useUpdatedQuery<WebhooksQuery>(query);
+    const updatedQuery = useResourceQuery<WebhooksQuery>(query);
 
     useEffect(() => {
         if (projectsMatch && projectsMatch.params.id) {

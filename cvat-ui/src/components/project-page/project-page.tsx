@@ -32,7 +32,7 @@ import {
 import CvatDropdownMenuPaper from 'components/common/cvat-dropdown-menu-paper';
 import { ProjectNotFoundComponent } from 'components/common/not-found';
 
-import { useUpdatedQuery } from 'utils/hooks';
+import { useResourceQuery } from 'utils/hooks';
 import DetailsComponent from './details';
 import ProjectTopBar from './top-bar';
 
@@ -67,7 +67,7 @@ export default function ProjectPageComponent(): JSX.Element {
     const tasksFetching = useSelector((state: CombinedState) => state.tasks.fetching);
     const [visibility, setVisibility] = useState(defaultVisibility);
 
-    const updatedQuery = useUpdatedQuery<TasksQuery>(tasksQuery);
+    const updatedQuery = useResourceQuery<TasksQuery>(tasksQuery);
 
     useEffect(() => {
         if (Number.isInteger(id)) {

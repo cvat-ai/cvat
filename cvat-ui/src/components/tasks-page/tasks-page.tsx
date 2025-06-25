@@ -16,7 +16,7 @@ import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import TaskListContainer from 'containers/tasks-page/tasks-list';
 import { getTasksAsync } from 'actions/tasks-actions';
 import { anySearch } from 'utils/any-search';
-import { useUpdatedQuery } from 'utils/hooks';
+import { useResourceQuery } from 'utils/hooks';
 
 import TopBar from './top-bar';
 import EmptyListComponent from './empty-list';
@@ -37,7 +37,7 @@ function TasksPageComponent(props: Props): JSX.Element {
     const history = useHistory();
     const [isMounted, setIsMounted] = useState(false);
 
-    const updatedQuery = useUpdatedQuery<TasksQuery>(query);
+    const updatedQuery = useResourceQuery<TasksQuery>(query);
 
     useEffect(() => {
         dispatch(getTasksAsync({ ...updatedQuery }));

@@ -13,7 +13,7 @@ import Spin from 'antd/lib/spin';
 import notification from 'antd/lib/notification';
 
 import { CombinedState, ModelsQuery } from 'reducers';
-import { useUpdatedQuery } from 'utils/hooks';
+import { useResourceQuery } from 'utils/hooks';
 import DeployedModelsList from './deployed-models-list';
 import EmptyListComponent from './empty-list';
 import TopBar from './top-bar';
@@ -25,7 +25,7 @@ function ModelsPageComponent(): JSX.Element {
     const query = useSelector((state: CombinedState) => state.models.query);
     const totalCount = useSelector((state: CombinedState) => state.models.totalCount);
 
-    const updatedQuery = useUpdatedQuery<ModelsQuery>(query, { pageSize: 12 });
+    const updatedQuery = useResourceQuery<ModelsQuery>(query, { pageSize: 12 });
 
     useEffect(() => {
         history.replace({
