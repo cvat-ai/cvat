@@ -9,6 +9,14 @@ extend_skip=[
     "serverless",
 ]
 
+[tool.typos]
+files.extend-exclude = [
+	"cvat-ui/src/assets/opencv_4.8.0.js",
+	"**/*.zip",
+	"*.log",
+	"*.min.js"
+]
+
 [tool.black]
 line-length = 100
 target-version = ['py39']
