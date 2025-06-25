@@ -65,6 +65,10 @@ export interface ProjectsState {
             [projectId: number]: boolean; // deleted (deleting if in dictionary)
         };
     };
+    // TODO: move into activities
+    updateWorkspace: {
+        instance: Project | null;
+    };
 }
 
 export interface TasksQuery {
@@ -106,6 +110,10 @@ export interface TasksState {
     moveTask: {
         modalVisible: boolean;
         taskId: number | null;
+    };
+    // TODO: move into activities
+    updateWorkspace: {
+        instance: Task | null;
     };
     gettingQuery: TasksQuery;
     count: number;

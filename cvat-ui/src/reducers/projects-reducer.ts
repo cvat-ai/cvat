@@ -41,6 +41,9 @@ const defaultState: ProjectsState = {
             error: '',
         },
     },
+    updateWorkspace: {
+        instance: null,
+    },
 };
 
 export default (state: ProjectsState = defaultState, action: AnyAction): ProjectsState => {
@@ -203,6 +206,23 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
                         fetching: false,
                         initialized: true,
                     },
+                },
+            };
+        }
+        case ProjectsActionTypes.OPEN_LINKED_CLOUD_STORAGE_UPDATING_MODAL: {
+            const { project } = action.payload;
+            return {
+                ...state,
+                updateWorkspace: {
+                    instance: project,
+                },
+            };
+        }
+        case ProjectsActionTypes.CLOSE_LINKED_CLOUD_STORAGE_UPDATING_MODAL: {
+            return {
+                ...state,
+                updateWorkspace: {
+                    instance: null,
                 },
             };
         }

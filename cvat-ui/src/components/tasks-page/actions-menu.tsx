@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback } from 'react'; // useState
+import React, { useCallback } from 'react';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import Modal from 'antd/lib/modal';
 import Dropdown from 'antd/lib/dropdown';
@@ -14,7 +14,11 @@ import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
 import { modelsActions } from 'actions/models-actions';
 import { mergeConsensusJobsAsync } from 'actions/consensus-actions';
-import { deleteTaskAsync, switchMoveTaskModalVisible } from 'actions/tasks-actions';
+import {
+    deleteTaskAsync, switchMoveTaskModalVisible,
+    openLinkedCloudStorageUpdatingModal, updateTaskAsync,
+    TaskUpdateTypes,
+} from 'actions/tasks-actions';
 import OrganizationSelector from '../selectors/organization-selector';
 import TaskActionsItems from './actions-menu-items';
 
@@ -35,8 +39,6 @@ function TaskActionsComponent(props: Props): JSX.Element {
         activeInference: state.models.inferences[taskInstance.id],
         mergingConsensus: state.consensus.actions.merging,
     }), shallowEqual);
-
-    // const [cloudStorageChangeSchemeModal, setCloudStorageChangeSchemeModal] = useState(false);
 
     const onOpenBugTracker = useCallback(() => {
         if (taskInstance.bugTracker) {
@@ -100,6 +102,20 @@ function TaskActionsComponent(props: Props): JSX.Element {
         });
     }, [taskInstance]);
 
+    const updateWorkspace = useCallback((dstOrganizationId: number | null) => {
+        if (
+            taskInstance.cloudStorageId ||
+            taskInstance.sourceStorage.cloudStorageId ||
+            taskInstance.targetStorage.cloudStorageId
+        ) {
+            taskInstance.organizationId = dstOrganizationId;
+            dispatch(openLinkedCloudStorageUpdatingModal(taskInstance));
+        } else {
+            taskInstance.organizationId = dstOrganizationId;
+            dispatch(updateTaskAsync(taskInstance, TaskUpdateTypes.UPDATE_ORGANIZATION));
+        }
+    }, [taskInstance]);
+
     // TODO: update menu item after Kirill's PR is merged
     const onTransferTaskBetweenWorkspaces = useCallback(() => {
         const isOrgWorkspace = Boolean(localStorage.getItem('currentOrganization'));
@@ -112,51 +128,20 @@ function TaskActionsComponent(props: Props): JSX.Element {
             content: (
                 <OrganizationSelector
                     showSandboxOption={isOrgWorkspace}
-                    setNewOrganization={(dstWorkspace) => {
-                        taskInstance.organizationId = (dstWorkspace) ? dstWorkspace.id : null;
-                        selectWorkspaceModal.destroy();
+                    setNewOrganization={(dstOrganization) => {
+                        const dstOrganizationId = (dstOrganization) ? dstOrganization.id : dstOrganization;
+
                         if (isOrgWorkspace) {
                             Modal.confirm({
                                 title: `Other organization members will lose access to the task #${taskInstance.id}.`,
                                 content: (
                                     `You are going to move a task to the ${
-                                        (dstWorkspace) ? `${dstWorkspace.slug} organization` : 'Personal sandbox'
+                                        (dstOrganization) ? `${dstOrganization.slug} organization` : 'Personal sandbox'
                                     }. Continue?`
                                 ),
                                 className: 'cvat-modal-confirm-task-transfer-between-workspaces',
                                 onOk: () => {
-                                    // if (
-                                    //     taskInstance.cloudStorageId ||
-                                    //     taskInstance.sourceStorage.cloudStorageId ||
-                                    //     taskInstance.targetStorage.cloudStorageId
-                                    // ) {
-                                    //     <Modal
-                                    //         title='A task is linked with a cloud storage'
-                                    //         className='cvat-modal-choose-cloud-storage-change-scheme'
-                                    //         open={cloudStorageChangeSchemeModal}
-                                    //         footer={[
-                                    //             <Button key='cancel' onClick={() => {}}>
-                                    //                 Cancel
-                                    //             </Button>,
-                                    //             <Button key='move_and_detach' type='primary' onClick={() => {}}>
-                                    //                 Move & detach
-                                    //             </Button>,
-                                    //             <Button
-                                    //                 key='move_and_auto_match'
-                                    //                 type='primary'
-                                    //                 onClick={() => {}}
-                                    //             >
-                                    //                 Move & auto match
-                                    //             </Button>,
-                                    //         ]}
-                                    //     >
-                                    //         This task is linked with the cloud storage.
-                                    //         Please choose how the transfer should be done.
-                                    //     </Modal>;
-                                    // } else {
-                                    //     taskInstance.save();
-                                    // }
-                                    taskInstance.save();
+                                    updateWorkspace(dstOrganizationId);
                                 },
                                 okButtonProps: {
                                     type: 'primary',
@@ -165,8 +150,9 @@ function TaskActionsComponent(props: Props): JSX.Element {
                                 okText: 'Move anyway',
                             });
                         } else {
-                            taskInstance.save();
+                            updateWorkspace(dstOrganizationId);
                         }
+                        selectWorkspaceModal.destroy();
                     }}
                 />
             ),

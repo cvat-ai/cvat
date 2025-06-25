@@ -752,6 +752,8 @@ export class Task extends Session {
     public bugTracker: string;
     public subset: string;
     public labels: Label[];
+    public sourceStorage: Storage;
+    public targetStorage: Storage;
     public readonly guideId: number | null;
     public readonly id: number;
     public readonly status: TaskStatus;
@@ -766,8 +768,6 @@ export class Task extends Session {
     public readonly dataChunkSize: number;
     public readonly dataChunkType: ChunkType;
     public readonly dimension: DimensionType;
-    public readonly sourceStorage: Storage;
-    public readonly targetStorage: Storage;
     public readonly progress: {
         completedJobs: number,
         totalJobs: number,
@@ -1171,9 +1171,23 @@ export class Task extends Session {
                 },
                 sourceStorage: {
                     get: () => data.source_storage,
+                    set: (storage) => {
+                        if (!(storage instanceof Storage)) {
+                            throw new ArgumentError('Value must be an instance of the Storage class');
+                        }
+                        updateTrigger.update('sourceStorage');
+                        data.source_storage = storage;
+                    },
                 },
                 targetStorage: {
                     get: () => data.target_storage,
+                    set: (storage) => {
+                        if (!(storage instanceof Storage)) {
+                            throw new ArgumentError('Value must be an instance of the Storage class');
+                        }
+                        updateTrigger.update('targetStorage');
+                        data.target_storage = storage;
+                    },
                 },
                 progress: {
                     get: () => data.progress,

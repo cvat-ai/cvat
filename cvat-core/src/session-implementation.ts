@@ -681,6 +681,8 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                         projectId: 'project_id',
                         assignee: 'assignee_id',
                         organizationId: 'organization_id',
+                        sourceStorage: 'source_storage',
+                        targetStorage: 'target_storage',
                     }),
                 };
 

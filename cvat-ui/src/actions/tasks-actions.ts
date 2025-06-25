@@ -25,11 +25,16 @@ export enum TasksActionTypes {
     DELETE_TASK_SUCCESS = 'DELETE_TASK_SUCCESS',
     DELETE_TASK_FAILED = 'DELETE_TASK_FAILED',
     CREATE_TASK_FAILED = 'CREATE_TASK_FAILED',
+    UPDATE_TASK = 'UPDATE_TASK',
+    UPDATE_TASK_SUCCESS = 'UPDATE_TASK_SUCCESS',
+    UPDATE_TASK_FAILED = 'UPDATE_TASK_FAILED',
     SWITCH_MOVE_TASK_MODAL_VISIBLE = 'SWITCH_MOVE_TASK_MODAL_VISIBLE',
     GET_TASK_PREVIEW = 'GET_TASK_PREVIEW',
     GET_TASK_PREVIEW_SUCCESS = 'GET_TASK_PREVIEW_SUCCESS',
     GET_TASK_PREVIEW_FAILED = 'GET_TASK_PREVIEW_FAILED',
     UPDATE_TASK_IN_STATE = 'UPDATE_TASK_IN_STATE',
+    OPEN_LINKED_CLOUD_STORAGE_UPDATING_MODAL = 'OPEN_LINKED_CLOUD_STORAGE_UPDATING_MODAL',
+    CLOSE_LINKED_CLOUD_STORAGE_UPDATING_MODAL = 'CLOSE_LINKED_CLOUD_STORAGE_UPDATING_MODAL',
 }
 
 function getTasks(query: Partial<TasksQuery>, updateQuery: boolean, fetchingTimestamp: number): AnyAction {
@@ -318,6 +323,59 @@ ThunkAction {
     };
 }
 
+export enum TaskUpdateTypes {
+    UPDATE_ORGANIZATION = 'UPDATE_ORGANIZATION',
+}
+
+function updateTask(taskId: number): AnyAction {
+    const action = {
+        type: TasksActionTypes.UPDATE_TASK,
+        payload: {
+            taskId,
+        },
+    };
+
+    return action;
+}
+
+function updateTaskSuccess(task: Task): AnyAction {
+    const action = {
+        type: TasksActionTypes.UPDATE_TASK_SUCCESS,
+        payload: {
+            task,
+        },
+    };
+
+    return action;
+}
+
+function updateTaskFailed(taskId: number, error: any, message?: string): AnyAction {
+    const action = {
+        type: TasksActionTypes.UPDATE_TASK_FAILED,
+        payload: {
+            taskId, error, message,
+        },
+    };
+
+    return action;
+}
+
+export function updateTaskAsync(task: Task, updateType?: TaskUpdateTypes): ThunkAction {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
+        try {
+            dispatch(updateTask(task.id));
+            const updatedTask = await task.save();
+            dispatch(updateTaskSuccess(updatedTask));
+        } catch (error) {
+            let message = '';
+            if (updateType === TaskUpdateTypes.UPDATE_ORGANIZATION) {
+                message = `Could not transfer the task #${task.id} to the new workspace`;
+            }
+            dispatch(updateTaskFailed(task.id, error, message));
+        }
+    };
+}
+
 export function switchMoveTaskModalVisible(visible: boolean, taskId: number | null = null): AnyAction {
     const action = {
         type: TasksActionTypes.SWITCH_MOVE_TASK_MODAL_VISIBLE,
@@ -325,6 +383,24 @@ export function switchMoveTaskModalVisible(visible: boolean, taskId: number | nu
             taskId,
             visible,
         },
+    };
+
+    return action;
+}
+
+export function openLinkedCloudStorageUpdatingModal(task: Task): AnyAction {
+    const action = {
+        type: TasksActionTypes.OPEN_LINKED_CLOUD_STORAGE_UPDATING_MODAL,
+        payload: { task },
+    };
+
+    return action;
+}
+
+export function closeLinkedCloudStorageUpdatingModal(): AnyAction {
+    const action = {
+        type: TasksActionTypes.CLOSE_LINKED_CLOUD_STORAGE_UPDATING_MODAL,
+        payload: {},
     };
 
     return action;

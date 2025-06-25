@@ -2017,6 +2017,42 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
+        case ProjectsActionTypes.UPDATE_PROJECT_FAILED: {
+            const { projectId, error, message } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    projects: {
+                        ...state.errors.projects,
+                        updating: {
+                            message:
+                                message || `Could not update the project #${projectId}`,
+                            reason: error,
+                            shouldLog: shouldLog(error),
+                        },
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.UPDATE_TASK_FAILED: {
+            const { taskId, error, message } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    tasks: {
+                        ...state.errors.tasks,
+                        updating: {
+                            message:
+                                message || `Could not update the task #${taskId}`,
+                            reason: error,
+                            shouldLog: shouldLog(error),
+                        },
+                    },
+                },
+            };
+        }
         case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return { ...defaultState };

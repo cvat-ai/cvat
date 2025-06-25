@@ -30,6 +30,7 @@ import ExportBackupModal from 'components/export-backup/export-backup-modal';
 import ImportDatasetModal from 'components/import-dataset/import-dataset-modal';
 import ImportBackupModal from 'components/import-backup/import-backup-modal';
 import UploadFileStatusModal from 'components/common/upload-file-status-modal';
+import SelectCSUpdatingSchemeModal from 'components/update-linked-cs-modal/select-cs-updating-scheme-modal';
 
 import JobsPageComponent from 'components/jobs-page/jobs-page';
 import ModelsPageComponent from 'components/models-page/models-page';
@@ -586,6 +587,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                     <ImportBackupModal />
                                     <InvitationWatcher />
                                     <UploadFileStatusModal />
+                                    <SelectCSUpdatingSchemeModal />
                                     {/* eslint-disable-next-line */}
                                     <a id='downloadAnchor' target='_blank' style={{ display: 'none' }} download />
                                 </Layout.Content>

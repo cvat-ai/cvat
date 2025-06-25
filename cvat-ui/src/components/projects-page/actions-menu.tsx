@@ -10,7 +10,10 @@ import Modal from 'antd/lib/modal';
 import { Project } from 'cvat-core-wrapper';
 import { usePlugins } from 'utils/hooks';
 import { CombinedState } from 'reducers';
-import { deleteProjectAsync } from 'actions/projects-actions';
+import {
+    deleteProjectAsync, projectActions,
+    updateProjectAsync, ProjectUpdateTypes,
+} from 'actions/projects-actions';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
 import ProjectActionsItems from './actions-menu-items';
@@ -54,6 +57,19 @@ function ProjectActionsComponent(props: Props): JSX.Element {
         });
     }, [projectInstance]);
 
+    const updateWorkspace = useCallback((dstOrganizationId: number | null) => {
+        if (
+            projectInstance.sourceStorage.cloudStorageId ||
+            projectInstance.targetStorage.cloudStorageId
+        ) {
+            projectInstance.organizationId = dstOrganizationId;
+            dispatch(projectActions.openLinkedCloudStorageUpdatingModal(projectInstance));
+        } else {
+            projectInstance.organizationId = dstOrganizationId;
+            dispatch(updateProjectAsync(projectInstance, ProjectUpdateTypes.UPDATE_ORGANIZATION));
+        }
+    }, [projectInstance]);
+
     // TODO: update menu item after Kirill's PR is merged
     const onTransferProjectBetweenWorkspaces = useCallback(() => {
         const isOrgWorkspace = Boolean(localStorage.getItem('currentOrganization'));
@@ -67,9 +83,9 @@ function ProjectActionsComponent(props: Props): JSX.Element {
             content: (
                 <OrganizationSelector
                     showSandboxOption={isOrgWorkspace}
-                    setNewOrganization={(dstWorkspace) => {
-                        projectInstance.organizationId = (dstWorkspace) ? dstWorkspace.id : null;
-                        selectWorkspaceModal.destroy();
+                    setNewOrganization={(dstOrganization) => {
+                        const dstOrganizationId = (dstOrganization) ? dstOrganization.id : dstOrganization;
+
                         if (isOrgWorkspace) {
                             Modal.confirm({
                                 title: `Other organization members will lose access to the project #${
@@ -77,12 +93,12 @@ function ProjectActionsComponent(props: Props): JSX.Element {
                                 }.`,
                                 content: (
                                     `You are going to move a project to the ${
-                                        (dstWorkspace) ? `${dstWorkspace.slug} organization` : 'Personal sandbox'
+                                        (dstOrganization) ? `${dstOrganization.slug} organization` : 'Personal sandbox'
                                     }. Continue?`
                                 ),
                                 className: 'cvat-modal-confirm-project-transfer-between-workspaces',
                                 onOk: () => {
-                                    projectInstance.save();
+                                    updateWorkspace(dstOrganizationId);
                                 },
                                 okButtonProps: {
                                     type: 'primary',
@@ -91,8 +107,9 @@ function ProjectActionsComponent(props: Props): JSX.Element {
                                 okText: 'Move anyway',
                             });
                         } else {
-                            projectInstance.save();
+                            updateWorkspace(dstOrganizationId);
                         }
+                        selectWorkspaceModal.destroy();
                     }}
                 />
             ),

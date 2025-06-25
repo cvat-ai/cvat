@@ -20,6 +20,8 @@ export default class Project {
     public organizationId: number | null;
     public assignee: User;
     public bugTracker: string;
+    public sourceStorage: Storage;
+    public targetStorage: Storage;
     public readonly status: ProjectStatus;
     public readonly guideId: number | null;
     public readonly owner: User;
@@ -27,8 +29,6 @@ export default class Project {
     public readonly updatedDate: string;
     public readonly subsets: string[];
     public readonly dimension: DimensionType;
-    public readonly sourceStorage: Storage;
-    public readonly targetStorage: Storage;
     public labels: Label[];
     public annotations: {
         exportDataset: (
@@ -207,9 +207,23 @@ export default class Project {
                 },
                 sourceStorage: {
                     get: () => data.source_storage,
+                    set: (storage) => {
+                        if (!(storage instanceof Storage)) {
+                            throw new ArgumentError('Value must be an instance of the Storage class');
+                        }
+                        updateTrigger.update('sourceStorage');
+                        data.source_storage = storage;
+                    },
                 },
                 targetStorage: {
                     get: () => data.target_storage,
+                    set: (storage) => {
+                        if (!(storage instanceof Storage)) {
+                            throw new ArgumentError('Value must be an instance of the Storage class');
+                        }
+                        updateTrigger.update('targetStorage');
+                        data.target_storage = storage;
+                    },
                 },
                 _internalData: {
                     get: () => data,
