@@ -1,0 +1,120 @@
+// Copyright (C) 2021-2022 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+/* doesn't work in hugo */
+/* stylelint-disable media-feature-range-notation */
+
+/* Code blocks */
+
+div.code-toolbar .toolbar {
+    padding-right: 0.6em;
+    opacity: 1 !important;
+}
+
+pre[class*="language-"] {
+    background: #f8f9fa !important;
+}
+
+details {
+    max-width: 80%;
+}
+
+@media (max-width: 991px) {
+    details {
+        max-width: 100% !important;
+    }
+}
+
+li > details {
+    max-width: 100%;
+}
+
+.code-toolbar {
+    max-width: 80%;
+}
+
+.highlight > .code-toolbar,
+details > summary > .code-toolbar,
+details > .code-toolbar {
+    max-width: 100%;
+}
+
+.navbar-logo {
+    fill: white;
+}
+
+/* Increased left padding on the sidebar of documentation */
+/* stylelint-disable-next-line selector-class-pattern */
+.td-sidebar-nav__section .ul-1 ul {
+    padding-left: 0.6rem !important;
+    padding-right: 0.1rem !important;
+}
+
+/* Main documentation page */
+
+#docs section {
+    padding-top: 2rem;
+    padding-bottom: 7rem;
+}
+
+#docs .row div {
+    margin-top: 1rem;
+}
+
+/* Footer */
+
+.footer-disclaimer {
+    font-size: 0.83rem;
+    line-height: 1.25;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.container-fluid footer {
+    min-height: inherit;
+    padding-bottom: 0.5rem !important;
+    padding-top: 2rem !important;
+}
+
+/* About page */
+
+.logo-2 {
+    opacity: 0.8;
+}
+
+.history #year h2 {
+    text-shadow: 0 0 3px rgb(27, 27, 27);
+}
+
+/* Location block */
+
+.location {
+    width: 70%;
+}
+
+.marker-location i {
+    color: lightgray;
+}
+
+/* Display version menu on mobile version of the site */
+/* stylelint-disable-next-line selector-id-pattern */
+#dropdown_ver {
+    right: 5px !important;
+    left: auto;
+}
+
+@media (min-width: 991.98px) {
+    /* stylelint-disable-next-line selector-id-pattern */
+    #dropdown_ver {
+        right: 245px !important;
+        left: auto;
+    }
+}
+
+/* Hide breadcrumbs, when on the root level
+   https://github.com/google/docsy/issues/944
+*/
+/* stylelint-disable-next-line selector-class-pattern */
+.td-breadcrumbs__single { display: none !important; }
+
