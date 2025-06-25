@@ -9463,13 +9463,9 @@ components:
           type: string
           maxLength: 64
         target_storage:
-          allOf:
-          - $ref: '#/components/schemas/StorageRequest'
-          nullable: true
+          $ref: '#/components/schemas/StorageRequest'
         source_storage:
-          allOf:
-          - $ref: '#/components/schemas/StorageRequest'
-          nullable: true
+          $ref: '#/components/schemas/StorageRequest'
         organization_id:
           type: integer
           writeOnly: true
@@ -10795,13 +10791,9 @@ components:
           type: string
           maxLength: 64
         target_storage:
-          allOf:
-          - $ref: '#/components/schemas/StorageRequest'
-          nullable: true
+          $ref: '#/components/schemas/StorageRequest'
         source_storage:
-          allOf:
-          - $ref: '#/components/schemas/StorageRequest'
-          nullable: true
+          $ref: '#/components/schemas/StorageRequest'
         consensus_replicas:
           type: integer
           minimum: 0
