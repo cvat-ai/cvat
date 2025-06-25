@@ -15,4 +15,4 @@ The search is case insensitive.
 > The applied search will be displayed in the URL of your browser,
 > Thus, you can share the page with applied parameters.
 
-![](/images/search-bar.png)
+![Search bar](/images/search-bar.png)
