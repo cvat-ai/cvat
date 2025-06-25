@@ -10,6 +10,7 @@ import { usePlugins } from 'utils/hooks';
 import { JobStage, JobState, User } from 'cvat-core-wrapper';
 import UserSelector from 'components/task-page/user-selector';
 import { JobStageSelector, JobStateSelector } from 'components/job-item/job-selectors';
+import { CVATMenuEditLabel } from 'components/common/cvat-menu-edit-label';
 
 interface MenuItemsData {
     editField: string | null;
@@ -129,19 +130,19 @@ export default function JobActionsItems(
     menuItems.push([{
         key: 'edit_assignee',
         onClick: () => startEditField('assignee'),
-        label: 'Assignee',
+        label: <CVATMenuEditLabel>Assignee</CVATMenuEditLabel>,
     }, 60]);
 
     menuItems.push([{
         key: 'edit_state',
         onClick: () => startEditField('state'),
-        label: 'State',
+        label: <CVATMenuEditLabel>State</CVATMenuEditLabel>,
     }, 70]);
 
     menuItems.push([{
         key: 'edit_stage',
         onClick: () => startEditField('stage'),
-        label: 'Stage',
+        label: <CVATMenuEditLabel>Stage</CVATMenuEditLabel>,
     }, 80]);
 
     menuItems.push([{

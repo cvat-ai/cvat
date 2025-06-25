@@ -5,9 +5,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { MenuProps } from 'antd/lib/menu';
+import { User } from 'cvat-core-wrapper';
 import { usePlugins } from 'utils/hooks';
 import UserSelector from 'components/task-page/user-selector';
-import { User } from 'cvat-core-wrapper';
+import { CVATMenuEditLabel } from 'components/common/cvat-menu-edit-label';
 
 interface MenuItemsData {
     projectID: number;
@@ -74,7 +75,7 @@ export default function ProjectActionsItems(
     menuItems.push([{
         key: 'edit_assignee',
         onClick: () => startEditField('assignee'),
-        label: 'Assignee',
+        label: <CVATMenuEditLabel>Assignee</CVATMenuEditLabel>,
     }, 30]);
 
     menuItems.push([{
