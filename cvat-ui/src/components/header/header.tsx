@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { connect } from 'react-redux';
 import { useHistory, useLocation } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
@@ -29,24 +29,23 @@ import Button from 'antd/lib/button';
 import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
 import Text from 'antd/lib/typography/Text';
-import notification from 'antd/lib/notification';
 
 import config from 'config';
 
-import { Organization, getCore } from 'cvat-core-wrapper';
+import { Organization } from 'cvat-core-wrapper';
 import ChangePasswordDialog from 'components/change-password-modal/change-password-modal';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import CVATLogo from 'components/common/cvat-logo';
 import { switchSettingsModalVisible as switchSettingsModalVisibleAction } from 'actions/settings-actions';
 import { logoutAsync, authActions } from 'actions/auth-actions';
 import { shortcutsActions, registerComponentShortcuts } from 'actions/shortcuts-actions';
+import { getOrganizationsAsync, organizationActions } from 'actions/organization-actions';
 import { AboutState, CombinedState } from 'reducers';
 import { useIsMounted, usePlugins } from 'utils/hooks';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
 import { subKeyMap } from 'utils/component-subkeymap';
 import SettingsModal from './settings-modal/settings-modal';
-import OrganizationSelector from '../selectors/organization-selector';
 
 interface StateToProps {
     user: any;
@@ -63,6 +62,8 @@ interface StateToProps {
     isModelsPluginActive: boolean;
     organizationFetching: boolean;
     currentOrganization: any | null;
+    organizationsList: Organization[];
+    organizationsListFetching: boolean;
 }
 
 interface DispatchToProps {
@@ -70,9 +71,9 @@ interface DispatchToProps {
     switchSettingsModalVisible: (visible: boolean) => void;
     switchShortcutsModalVisible: (visible: boolean) => void;
     switchChangePasswordModalVisible: (visible: boolean) => void;
+    fetchOrganizations: () => void;
+    openSelectOrganizationModal: (onSelectOrgCallback: (org: Organization | null) => void) => void;
 }
-
-const core = getCore();
 
 const componentShortcuts = {
     SWITCH_SHORTCUTS: {
@@ -103,7 +104,12 @@ function mapStateToProps(state: CombinedState): StateToProps {
         about,
         shortcuts: { normalizedKeyMap, keyMap, visibleShortcutsHelp: shortcutsModalVisible },
         settings: { showDialog: settingsModalVisible },
-        organizations: { fetching: organizationFetching, current: currentOrganization },
+        organizations: {
+            fetching: organizationFetching,
+            current: currentOrganization,
+            currentArray: organizationsList,
+            currentArrayFetching: organizationsListFetching,
+        },
         serverAPI: {
             configuration: {
                 isPasswordChangeEnabled: renderChangePasswordItem,
@@ -126,6 +132,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         isModelsPluginActive: list.MODELS,
         organizationFetching,
         currentOrganization,
+        organizationsList,
+        organizationsListFetching,
     };
 }
 
@@ -140,6 +148,14 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         ),
         switchChangePasswordModalVisible: (visible: boolean): void => dispatch(
             authActions.switchChangePasswordModalVisible(visible),
+        ),
+        fetchOrganizations: (): void => dispatch(
+            getOrganizationsAsync({}, true),
+        ),
+        openSelectOrganizationModal: (
+            onSelectOrgCallback: (org: Organization | null) => void,
+        ): void => dispatch(
+            organizationActions.openSelectOrganizationModal(onSelectOrgCallback),
         ),
     };
 }
@@ -161,9 +177,13 @@ function HeaderComponent(props: Props): JSX.Element {
         isModelsPluginActive,
         organizationFetching,
         currentOrganization,
+        organizationsList,
+        organizationsListFetching,
         switchSettingsModalVisible,
         switchShortcutsModalVisible,
         switchChangePasswordModalVisible,
+        fetchOrganizations,
+        openSelectOrganizationModal,
     } = props;
 
     const {
@@ -171,49 +191,14 @@ function HeaderComponent(props: Props): JSX.Element {
     } = config;
 
     const isMounted = useIsMounted();
-    const [listFetching, setListFetching] = useState(false);
-    const [organizationsList, setOrganizationList] = useState<Organization[] | null>(null);
-    const [hasMore, setHasMore] = useState(false);
-
-    const searchCallback = useCallback((
-        search?: string,
-        page: number = 1,
-    ): Promise<{ organizations: Organization[]; hasNextPage: boolean }> => new Promise((resolve, reject) => {
-        const listOrgsFilter = {
-            page,
-            page_size: 12,
-            ...(search ? { search } : {}),
-        };
-        const promise = core.organizations.get(listOrgsFilter, true);
-
-        setListFetching(true);
-        promise.then((result: { organizations: Organization[]; hasNextPage: boolean }) => {
-            resolve(result);
-        }).catch((error: unknown) => {
-            reject(error);
-        }).finally(() => {
-            if (isMounted()) {
-                setListFetching(false);
-            }
-        });
-    }), []);
 
     useEffect(() => {
-        searchCallback().then((
-            { organizations, hasNextPage }: { organizations: Organization[]; hasNextPage: boolean },
-        ) => {
-            if (isMounted()) {
-                setOrganizationList(organizations);
-                console.log('Has more? (parent component)', hasNextPage);
-                setHasMore(hasNextPage);
-            }
-        }).catch((error: unknown) => {
-            setOrganizationList([]);
-            notification.error({
-                message: 'Could not receive a list of organizations',
-                description: error instanceof Error ? error.message : '',
-            });
-        });
+        if (isMounted()) {
+            console.log('isMounted: true');
+            fetchOrganizations();
+        } else {
+            console.log('isMounted: false');
+        }
     }, []);
 
     const history = useHistory();
@@ -336,9 +321,9 @@ function HeaderComponent(props: Props): JSX.Element {
 
     menuItems.push([{
         key: 'organization',
-        icon: organizationFetching || listFetching ? <LoadingOutlined /> : <TeamOutlined />,
+        icon: organizationFetching || organizationsListFetching ? <LoadingOutlined /> : <TeamOutlined />,
         label: 'Organization',
-        disabled: organizationFetching || listFetching,
+        disabled: organizationFetching || organizationsListFetching,
         children: [
             ...(currentOrganization ? [{
                 key: 'open_organization',
@@ -363,21 +348,7 @@ function HeaderComponent(props: Props): JSX.Element {
                 key: 'switch_organization',
                 label: 'Switch organization',
                 onClick: () => {
-                    Modal.confirm({
-                        title: 'Select an organization',
-                        okButtonProps: {
-                            style: { display: 'none' },
-                        },
-                        content: (
-                            <OrganizationSelector
-                                showSandboxOption={Boolean(localStorage.getItem('currentOrganization'))}
-                                defaultOrganizationList={organizationsList}
-                                defaultHasMore={hasMore}
-                                searchOrganizations={searchCallback}
-                                setNewOrganization={setNewOrganization}
-                            />
-                        ),
-                    });
+                    openSelectOrganizationModal(setNewOrganization);
                 },
             }] : []),
             ...(!!organizationsList && viewType === 'menu' ? [{

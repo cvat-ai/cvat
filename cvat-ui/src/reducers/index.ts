@@ -985,6 +985,12 @@ export interface OrganizationMembersQuery {
     pageSize: number;
 }
 
+export interface OrganizationsQuery {
+    page: number;
+    search: string | null;
+    filter: string | null;
+}
+
 export interface OrganizationState {
     current?: Organization | null;
     initialized: boolean;
@@ -994,6 +1000,15 @@ export interface OrganizationState {
     leaving: boolean;
     removingMember: boolean;
     updatingMember: boolean;
+    currentArray: Organization[];
+    currentArrayFetching: boolean;
+    count: number;
+    nextPageUrl: string | null;
+
+    selectModal: {
+        visible: boolean;
+        onSelectCallback: ((org: Organization | null) => void) | null;
+    };
 }
 
 export interface WebhooksQuery {

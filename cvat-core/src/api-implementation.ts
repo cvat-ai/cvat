@@ -346,7 +346,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         return cloudStorages;
     });
 
-    implementationMixin(cvat.organizations.get, async (filter, withHasNextPage = false) => {
+    implementationMixin(cvat.organizations.get, async (filter, fullResponseData = false) => {
         checkFilter(filter, {
             search: isString,
             filter: isString,
@@ -354,11 +354,11 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
             page_size: isInteger,
         });
 
-        const organizationsData = await serverProxy.organizations.get(filter, withHasNextPage);
-        if (withHasNextPage) {
+        const organizationsData = await serverProxy.organizations.get(filter, fullResponseData);
+        if (fullResponseData) {
             return {
-                organizations: organizationsData.results.map((organizationData) => new Organization(organizationData)),
-                hasNextPage: !!organizationsData.next,
+                ...organizationsData,
+                results: organizationsData.results.map((organizationData) => new Organization(organizationData)),
             };
         }
 

@@ -1881,6 +1881,23 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
+        case OrganizationActionsTypes.GET_ORGANIZATIONS_FAILED: {
+            const { error } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        fetching: {
+                            message: 'Could not fetch the list of organizations',
+                            reason: error,
+                            shouldLog: shouldLog(error),
+                        },
+                    },
+                },
+            };
+        }
         case JobsActionTypes.GET_JOBS_FAILED: {
             return {
                 ...state,

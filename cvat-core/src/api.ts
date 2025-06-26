@@ -340,8 +340,8 @@ function build(): CVATCore {
             },
         },
         organizations: {
-            async get(filter = {}, raw = false) {
-                const result = await PluginRegistry.apiWrapper(cvat.organizations.get, filter, raw);
+            async get(filter = {}, fullResponseData = false) {
+                const result = await PluginRegistry.apiWrapper(cvat.organizations.get, filter, fullResponseData);
                 return result;
             },
             async activate(organization) {

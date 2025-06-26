@@ -84,6 +84,7 @@ import QualityControlPage from './quality-control/quality-control-page';
 import AnalyticsReportPage from './analytics-report/analytics-report-page';
 import ConsensusManagementPage from './consensus-management-page/consensus-management-page';
 import InvitationWatcher from './invitation-watcher/invitation-watcher';
+import SelectOrganizationModal from './select-organization-modal/select-organization-modal';
 
 interface CVATAppProps {
     loadFormats: () => void;
@@ -588,6 +589,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                     <InvitationWatcher />
                                     <UploadFileStatusModal />
                                     <SelectCSUpdatingSchemeModal />
+                                    <SelectOrganizationModal />
                                     {/* eslint-disable-next-line */}
                                     <a id='downloadAnchor' target='_blank' style={{ display: 'none' }} download />
                                 </Layout.Content>

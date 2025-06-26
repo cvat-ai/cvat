@@ -15,6 +15,14 @@ const defaultState: OrganizationState = {
     leaving: false,
     removingMember: false,
     updatingMember: false,
+    currentArray: [],
+    currentArrayFetching: false,
+    count: 0,
+    nextPageUrl: null,
+    selectModal: {
+        visible: false,
+        onSelectCallback: null,
+    },
 };
 
 export default function (
@@ -136,6 +144,52 @@ export default function (
         }
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return { ...defaultState };
+        }
+        case OrganizationActionsTypes.GET_ORGANIZATIONS:
+            return {
+                ...state,
+                // initialized: false,
+                currentArrayFetching: true,
+                currentArray: [],
+                count: 0,
+                nextPageUrl: null,
+            };
+        case OrganizationActionsTypes.GET_ORGANIZATIONS_SUCCESS: {
+            const { array, count, nextPageUrl } = action.payload;
+            return {
+                ...state,
+                // initialized: true,
+                currentArrayFetching: false,
+                count,
+                currentArray: array,
+                nextPageUrl: nextPageUrl || null,
+            };
+        }
+        case OrganizationActionsTypes.GET_ORGANIZATIONS_FAILED: {
+            return {
+                ...state,
+                // initialized: true,
+                currentArrayFetching: false,
+            };
+        }
+        case OrganizationActionsTypes.OPEN_SELECT_ORGANIZATION_MODAL: {
+            const { onSelectCallback } = action.payload;
+            return {
+                ...state,
+                selectModal: {
+                    visible: true,
+                    onSelectCallback,
+                },
+            };
+        }
+        case OrganizationActionsTypes.CLOSE_SELECT_ORGANIZATION_MODAL: {
+            return {
+                ...state,
+                selectModal: {
+                    visible: false,
+                    onSelectCallback: null,
+                },
+            };
         }
         default:
             return state;
