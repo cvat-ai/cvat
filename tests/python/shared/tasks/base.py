@@ -7,8 +7,8 @@ from typing import Any, Union
 import attrs
 from cvat_sdk.api_client import models
 
-from tests.python.shared.tasks.interface import ITaskSpec
-from tests.python.shared.tasks.utils import parse_frame_step
+from shared.tasks.interface import ITaskSpec
+from shared.tasks.utils import parse_frame_step
 
 
 @attrs.define

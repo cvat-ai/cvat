@@ -27,6 +27,8 @@ from PIL import Image
 from pytest_cases import parametrize
 
 import shared.utils.s3 as s3
+from rest_api._test_base import TestTasksBase
+from rest_api.utils import create_task, get_cloud_storage_content, wait_until_task_is_created
 from shared.tasks.enums import SourceDataType
 from shared.tasks.interface import ITaskSpec
 from shared.tasks.utils import parse_frame_step
@@ -37,13 +39,6 @@ from shared.utils.helpers import (
     generate_manifest,
     generate_video_file,
     read_video_file,
-)
-
-from tests.python.rest_api._test_base import TestTasksBase
-from tests.python.rest_api.utils import (
-    create_task,
-    get_cloud_storage_content,
-    wait_until_task_is_created,
 )
 
 

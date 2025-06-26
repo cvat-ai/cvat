@@ -7,7 +7,7 @@ from abc import ABCMeta, abstractmethod
 from cvat_sdk.api_client import models
 from PIL import Image
 
-from tests.python.shared.tasks.enums import SourceDataType
+from shared.tasks.enums import SourceDataType
 
 
 class ITaskSpec(models.ITaskWriteRequest, models.IDataRequest, metaclass=ABCMeta):

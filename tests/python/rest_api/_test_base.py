@@ -11,14 +11,13 @@ from PIL import Image
 from pytest_cases import fixture, fixture_ref, parametrize
 
 import shared.utils.s3 as s3
+from rest_api.utils import calc_end_frame, create_task, unique
 from shared.tasks.enums import SourceDataType
 from shared.tasks.interface import ITaskSpec
 from shared.tasks.types import ImagesTaskSpec, VideoTaskSpec
 from shared.tasks.utils import parse_frame_step
 from shared.utils.config import make_api_client
 from shared.utils.helpers import generate_image_files, generate_video_file
-
-from tests.python.rest_api.utils import calc_end_frame, create_task, unique
 
 
 class TestTasksBase:
