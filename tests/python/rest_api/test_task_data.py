@@ -40,7 +40,11 @@ from shared.utils.helpers import (
 )
 
 from tests.python.rest_api._test_base import TestTasksBase
-from tests.python.rest_api.utils import create_task, get_cloud_storage_content, wait_until_task_is_created
+from tests.python.rest_api.utils import (
+    create_task,
+    get_cloud_storage_content,
+    wait_until_task_is_created,
+)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
