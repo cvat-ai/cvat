@@ -510,10 +510,30 @@ class LambdaFunction:
                 return shape
 
             try:
+                if "states" not in data:
+                    # initializing tracking
+                    shapes = mandatory_arg("shapes")
+                    states = []
+                elif "shapes" not in data:
+                    # continuing tracking
+                    states = mandatory_arg("states")
+
+                    # Previously, the UI used to pass the previous-frame shapes when continuing
+                    # tracking. It doesn't do that anymore, but to support old tracking functions
+                    # that rely on the length of the "shapes" array, we'll pad it out with nulls.
+                    # If a function relies on the _contents_ of the "shapes" array, it will not
+                    # work anymore.
+                    shapes = [None] * len(states)
+                else:
+                    # We should not normally get here, but it's possible if e.g. someone is still
+                    # running an old UI version.
+                    states = data["states"]
+                    shapes = data["shapes"]
+
                 payload.update(
                     {
                         "image": self._get_image(db_task, mandatory_arg("frame")),
-                        "shapes": list(map(prepare_shape, data.get("shapes", []))),
+                        "shapes": list(map(prepare_shape, shapes)),
                         "states": [
                             (
                                 None
@@ -522,7 +542,7 @@ class LambdaFunction:
                                     signer.unsign(state, max_age=self.TRACKER_STATE_MAX_AGE)
                                 )
                             )
-                            for state in data.get("states", [])
+                            for state in states
                         ],
                     }
                 )

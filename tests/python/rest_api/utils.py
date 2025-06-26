@@ -471,7 +471,13 @@ def create_task(username, spec, data, content_type="application/json", **kwargs)
 
 
 def compare_annotations(a: dict, b: dict) -> dict:
-    def _exclude_cb(obj, path):
+    def _exclude_cb(obj, path: str):
+        # ignoring track elements which do not have shapes
+        split_path = path.rsplit("['elements']", maxsplit=1)
+        if len(split_path) == 2:
+            if split_path[1].count("[") == 1 and not obj["shapes"]:
+                return True
+
         return path.endswith("['elements']") and not obj
 
     return DeepDiff(
