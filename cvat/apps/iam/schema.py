@@ -44,6 +44,8 @@ class TokenAuthenticationScheme(TokenScheme):
         schema["x-token-prefix"] = self.target.keyword
         schema["description"] = textwrap.dedent(
             f"""\
+            Deprecated.
+
             You can obtain an API key (the token) from the server response on
             the /api/auth/login/ endpoint.
         """
