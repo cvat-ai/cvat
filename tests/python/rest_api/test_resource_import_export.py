@@ -4,10 +4,19 @@
 # SPDX-License-Identifier: MIT
 
 from http import HTTPStatus
+from pathlib import Path
+from typing import Any, Callable, Optional, Tuple
+from uuid import uuid4
 
 import pytest
+from cvat_sdk import exceptions
+from cvat_sdk.core import Client as SdkClient
+from cvat_sdk.core.progress import NullProgressReporter
+from cvat_sdk.core.uploading import Uploader
+from pytest_cases import fixture, fixture_ref, parametrize
 
-from shared.utils.config import get_method, post_method
+from shared.fixtures.data import Container
+from shared.utils.config import get_method, make_sdk_client, post_method
 from shared.utils.resource_import_export import (
     _CloudStorageResourceTest,
     _make_export_resource_params,
@@ -17,9 +26,6 @@ from shared.utils.s3 import make_client as make_s3_client
 
 from .utils import create_task
 
-# https://docs.pytest.org/en/7.1.x/example/markers.html#marking-whole-classes-or-modules
-pytestmark = [pytest.mark.with_external_services]
-
 
 class _S3ResourceTest(_CloudStorageResourceTest):
     @staticmethod
@@ -27,6 +33,7 @@ class _S3ResourceTest(_CloudStorageResourceTest):
         return make_s3_client()
 
 
+@pytest.mark.with_external_services
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestExportResourceToS3(_S3ResourceTest):
     @pytest.mark.usefixtures("restore_redis_inmem_per_function")
@@ -176,6 +183,7 @@ class TestExportResourceToS3(_S3ResourceTest):
         )
 
 
+@pytest.mark.with_external_services
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_cvat_data_per_function")
 class TestImportResourceFromS3(_S3ResourceTest):
@@ -350,3 +358,315 @@ class TestImportResourceFromS3(_S3ResourceTest):
             _expect_status=HTTPStatus.FORBIDDEN,
             **kwargs,
         )
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
+@pytest.mark.usefixtures("restore_redis_ondisk_per_function")
+class TestUploads:
+    @fixture()
+    def project(self, projects: Container):
+        return next(p for p in projects)
+
+    @fixture()
+    def task(self, tasks: Container):
+        return next(t for t in tasks)
+
+    @fixture()
+    def job(self, jobs: Container):
+        return next(j for j in jobs if j["type"] == "annotation")
+
+    @fixture(scope="class")
+    def restore_task_api_path(self, admin_user: str):
+        with make_sdk_client(admin_user) as client:
+            return client.api_client.tasks_api.create_backup_endpoint.path
+
+    @fixture(scope="class")
+    def restore_project_api_path(self, admin_user: str):
+        with make_sdk_client(admin_user) as client:
+            return client.api_client.projects_api.create_backup_endpoint.path
+
+    @fixture(scope="class")
+    def upload_task_annotations_api_path(self, admin_user: str):
+        with make_sdk_client(admin_user) as client:
+            return client.api_client.tasks_api.create_annotations_endpoint.path
+
+    @fixture(scope="class")
+    def upload_project_dataset_api_path(self, admin_user: str):
+        with make_sdk_client(admin_user) as client:
+            return client.api_client.projects_api.create_dataset_endpoint.path
+
+    @fixture(scope="class")
+    def upload_job_annotations_api_path(self, admin_user: str):
+        with make_sdk_client(admin_user) as client:
+            return client.api_client.jobs_api.create_annotations_endpoint.path
+
+    def _find_malefactor_with_its_resource(
+        self,
+        resources: Container,
+        users: Container,
+        *,
+        get_owner_func: Callable = lambda r: r["owner"],
+        user_to_skip: Optional[int] = None,
+    ) -> Tuple[dict, int]:
+        for resource in resources:
+            malefactor = get_owner_func(resource)
+            if not users[malefactor["id"]]["is_superuser"] and malefactor["id"] != user_to_skip:
+                return malefactor, resource["id"]
+
+        assert False
+
+    @fixture()
+    def downloaded_file_path(self, tmp_path: Path):
+        return tmp_path / f"{uuid4()}.zip"
+
+    @fixture()
+    def project_backup_with_owner_and_malefactor(
+        self,
+        project: dict,
+        projects: Container,
+        downloaded_file_path: Path,
+        restore_project_api_path: str,
+        users: Container,
+    ):
+        project_id, project_owner = project["id"], project["owner"]
+        malefactor, _ = self._find_malefactor_with_its_resource(
+            projects, users, user_to_skip=project_owner["id"]
+        )
+
+        with make_sdk_client(project_owner["username"]) as client:
+            client.projects.retrieve(project_id).download_backup(downloaded_file_path)
+
+            return (
+                None,
+                downloaded_file_path,
+                project_owner,
+                malefactor,
+                None,
+                restore_project_api_path,
+                None,
+            )
+
+    @fixture()
+    def project_dataset_with_owner_and_malefactor(
+        self,
+        project: dict,
+        projects: Container,
+        downloaded_file_path: Path,
+        upload_project_dataset_api_path: str,
+        users: Container,
+    ):
+        project_id, project_owner = project["id"], project["owner"]
+
+        malefactor, malefactor_project_id = self._find_malefactor_with_its_resource(
+            projects, users, user_to_skip=project_owner["id"]
+        )
+
+        with make_sdk_client(project_owner["username"]) as client:
+            client.projects.retrieve(project_id).export_dataset(
+                "COCO 1.0", downloaded_file_path, include_images=True
+            )
+
+            return (
+                project_id,
+                downloaded_file_path,
+                project_owner,
+                malefactor,
+                malefactor_project_id,
+                upload_project_dataset_api_path,
+                {"format": "COCO 1.0"},
+            )
+
+    @fixture()
+    def task_backup_with_owner_and_malefactor(
+        self,
+        task: dict,
+        tasks: Container,
+        downloaded_file_path: Path,
+        restore_task_api_path: str,
+        users: Container,
+    ):
+        task_id = task["id"]
+        task_owner = task["owner"]
+
+        malefactor, _ = self._find_malefactor_with_its_resource(
+            tasks, users, user_to_skip=task_owner["id"]
+        )
+
+        with make_sdk_client(task_owner["username"]) as client:
+            client.tasks.retrieve(task_id).download_backup(downloaded_file_path)
+
+            return (
+                None,
+                downloaded_file_path,
+                task_owner,
+                malefactor,
+                None,
+                restore_task_api_path,
+                None,
+            )
+
+    @fixture()
+    def task_annotations_with_owner_and_malefactor(
+        self,
+        task: dict,
+        tasks: Container,
+        downloaded_file_path: Path,
+        upload_task_annotations_api_path: str,
+        users: Container,
+    ):
+        task_id = task["id"]
+        task_owner = task["owner"]
+
+        malefactor, malefactor_task_id = self._find_malefactor_with_its_resource(
+            tasks, users, user_to_skip=task_owner["id"]
+        )
+
+        with make_sdk_client(task_owner["username"]) as client:
+            client.tasks.retrieve(task_id).export_dataset(
+                "COCO 1.0", downloaded_file_path, include_images=False
+            )
+
+            return (
+                task_id,
+                downloaded_file_path,
+                task_owner,
+                malefactor,
+                malefactor_task_id,
+                upload_task_annotations_api_path,
+                {"format": "COCO 1.0"},
+            )
+
+    @fixture()
+    def job_annotations_with_owner_and_malefactor(
+        self,
+        job: dict,
+        jobs: Container,
+        tasks: Container,
+        downloaded_file_path: Path,
+        upload_job_annotations_api_path: str,
+        users: Container,
+    ):
+        job_id = job["id"]
+        job_owner = tasks[job["task_id"]]["owner"]
+
+        malefactor, malefactor_job_id = self._find_malefactor_with_its_resource(
+            jobs,
+            users,
+            user_to_skip=job_owner["id"],
+            get_owner_func=lambda x: tasks[x["task_id"]]["owner"],
+        )
+
+        with make_sdk_client(job_owner["username"]) as client:
+            client.jobs.retrieve(job_id).export_dataset(
+                "COCO 1.0", downloaded_file_path, include_images=False
+            )
+
+            return (
+                job_id,
+                downloaded_file_path,
+                job_owner,
+                malefactor,
+                malefactor_job_id,
+                upload_job_annotations_api_path,
+                {"format": "COCO 1.0"},
+            )
+
+    def _test_can_finish_upload(
+        self,
+        client: SdkClient,
+        url: str,
+        *,
+        query_params: dict[str, Any],
+    ):
+        Uploader(client)._tus_finish_upload(url, query_params=query_params)
+
+    def _test_cannot_finish_upload(
+        self,
+        client: SdkClient,
+        url: str,
+        *,
+        query_params: dict[str, Any],
+    ):
+        uploader = Uploader(client)
+
+        with pytest.raises(exceptions.ApiException) as capture:
+            uploader._tus_finish_upload(url, query_params=query_params)
+
+        assert capture.value.status == HTTPStatus.BAD_REQUEST
+        assert b"No such file were uploaded" in capture.value.body
+
+    @parametrize(
+        "resource, endpoint_path",
+        [
+            (None, fixture_ref(restore_task_api_path)),
+            (None, fixture_ref(restore_project_api_path)),
+            (fixture_ref(task), fixture_ref(upload_task_annotations_api_path)),
+            (fixture_ref(project), fixture_ref(upload_project_dataset_api_path)),
+            (fixture_ref(job), fixture_ref(upload_job_annotations_api_path)),
+        ],
+    )
+    def test_user_cannot_restore_resource_from_non_existent_uploads(
+        self, resource: dict, endpoint_path: str, admin_user: str
+    ):
+        with make_sdk_client(admin_user) as client:
+            url = client.api_map.make_endpoint_url(
+                endpoint_path, kwsub=({"id": resource["id"]} if resource else None)
+            )
+            self._test_cannot_finish_upload(
+                client, url, query_params={"filename": "non-existent-file.zip"}
+            )
+
+    @parametrize(
+        "src_resource_id, archive_path, owner, malefactor, dst_resource_id, endpoint_path, query_params",
+        [
+            (fixture_ref(task_backup_with_owner_and_malefactor)),
+            (fixture_ref(project_backup_with_owner_and_malefactor)),
+            (fixture_ref(job_annotations_with_owner_and_malefactor)),
+            (fixture_ref(task_annotations_with_owner_and_malefactor)),
+            (fixture_ref(project_dataset_with_owner_and_malefactor)),
+        ],
+    )
+    def test_user_can_use_only_own_uploads(
+        self,
+        src_resource_id: Optional[int],
+        archive_path: Path,
+        owner: dict,
+        malefactor: dict,
+        dst_resource_id: Optional[str],
+        endpoint_path: str,
+        query_params: Optional[dict],
+    ):
+        with (
+            make_sdk_client(owner["username"]) as owner_client,
+            make_sdk_client(malefactor["username"]) as malefactor_client,
+        ):
+            params = {"filename": archive_path.name}
+            pbar = NullProgressReporter()
+            url = owner_client.api_map.make_endpoint_url(
+                endpoint_path, kwsub=({"id": src_resource_id} if src_resource_id else None)
+            )
+
+            uploader = Uploader(owner_client)
+            uploader._tus_start_upload(url, query_params=params)
+            with uploader._uploading_task(pbar, archive_path.stat().st_size):
+                upload_name = uploader._upload_file_data_with_tus(
+                    url,
+                    archive_path,
+                    meta=params,
+                    logger=owner_client.logger.debug,
+                    pbar=pbar,
+                )
+
+            query_params = {"filename": upload_name, **(query_params or {})}
+
+            # check that malefactor cannot use someone else's uploaded file
+            url_to_steal = malefactor_client.api_map.make_endpoint_url(
+                endpoint_path, kwsub=({"id": dst_resource_id} if dst_resource_id else None)
+            )
+            self._test_cannot_finish_upload(
+                malefactor_client, url=url_to_steal, query_params=query_params
+            )
+
+            # check that uploaded file still exists and owner can finish started process
+            self._test_can_finish_upload(owner_client, url=url, query_params=query_params)
