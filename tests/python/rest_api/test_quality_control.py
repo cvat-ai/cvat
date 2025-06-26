@@ -17,12 +17,12 @@ from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
 
+from shared.tasks.utils import parse_frame_step
 from shared.utils.config import make_api_client
 
 from .utils import (
     CollectionSimpleFilterTestBase,
     invite_user_to_org,
-    parse_frame_step,
     register_new_user,
     wait_background_request,
 )
