@@ -82,9 +82,11 @@ export default function CloudStorageEditorComponent(props: Props): JSX.Element {
                         cloudStorage={cloudStorage}
                         setSearchPhrase={setSearchPhrase}
                         onSelectCloudStorage={(_cloudStorage: CloudStorage | null) => {
-                            setCloudStorage(_cloudStorage);
+                            if (_cloudStorage) {
+                                setCloudStorage(_cloudStorage);
+                                onChange(_cloudStorage);
+                            }
                             setCloudStorageEditing(false);
-                            onChange(_cloudStorage);
                         }}
                     />
                 </Col>
