@@ -14,8 +14,18 @@ files.extend-exclude = [
 	"cvat-ui/src/assets/opencv_4.8.0.js",
 	"**/*.zip",
 	"*.log",
-	"*.min.js"
+	"*.min.js",
+	"**/node_modules"
 ]
+[tool.typos.default.extend-words]
+lavel = "label" # way to narrow down suggestions to make this auto-fixable
+splitted = "splitted" # way to override default suggestions
+lol = "" # way to ban specific words
+
+
+[tool.codespell]
+skip = './allure-*,./tests/python/allure*,*.log,./static/**,./**/node_modules/**,./cvat-ui/src/assets/opencv_4.8.0.js,./cvat-core/docs/Interpolation.pdf,*-lock.json,*.lock'
+ignore-words-list = "MOT,secondY"
 
 [tool.black]
 line-length = 100
