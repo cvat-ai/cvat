@@ -15,13 +15,7 @@ target-version = ['py39']
 extend-exclude = """
 # TODO: get rid of these
 ^/cvat/apps/(
-    dataset_manager/(
-        annotation.py
-        |bindings.py
-        |project.py
-        |serializers.py
-        |task.py
-    )
+    dataset_manager/bindings.py
     |engine/(
         admin.py
         |backup.py

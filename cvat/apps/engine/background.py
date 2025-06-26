@@ -49,6 +49,7 @@ from cvat.apps.engine.serializers import (
     TaskFileSerializer,
 )
 from cvat.apps.engine.task import create_thread as create_task
+from cvat.apps.engine.tus import TusFile, TusFileForbiddenError, TusFileNotFoundError
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import (
     build_annotations_file_name,
@@ -311,6 +312,18 @@ class ResourceImporter(AbstractRequestManager):
             and not self.import_args.filename
         ):
             raise serializers.ValidationError("The filename was not specified")
+
+        # file was uploaded via TUS
+        if (
+            self.import_args.location_config.location == Location.LOCAL
+            and self.import_args.filename
+        ):
+            try:
+                TusFile(file_id=self.import_args.filename, upload_dir=self.tmp_dir).validate(
+                    user_id=self.user_id, with_meta=False
+                )
+            except (TusFileNotFoundError, TusFileForbiddenError, ValueError):
+                raise serializers.ValidationError("No such file were uploaded")
 
     def _handle_cloud_storage_file_upload(self):
         storage_id = self.import_args.location_config.cloud_storage_id

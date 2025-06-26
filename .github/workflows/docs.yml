@@ -56,6 +56,7 @@ jobs:
           PATH="$PWD/hugo:$PATH" python site/build_docs.py
         env:
           HUGO_ENV: production
+          GOOGLE_TAG_ID: G-GVSBK1DNK5
 
       - name: Deploy
         if: github.ref == 'refs/heads/develop'
