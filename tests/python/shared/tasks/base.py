@@ -1,4 +1,3 @@
-# Copyright (C) 2025 Intel Corporation
 # Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
@@ -8,12 +7,12 @@ from typing import Any, Union
 import attrs
 from cvat_sdk.api_client import models
 
-from .interface import ITaskSpec
-from .utils import parse_frame_step
+from tests.python.shared.tasks.interface import ITaskSpec
+from tests.python.shared.tasks.utils import parse_frame_step
 
 
 @attrs.define
-class _TaskSpecBase(ITaskSpec):
+class TaskSpecBase(ITaskSpec):
     _params: Union[dict, models.TaskWriteRequest]
     _data_params: Union[dict, models.DataRequest]
     size: int = attrs.field(kw_only=True)

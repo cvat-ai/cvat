@@ -11,17 +11,17 @@ from PIL import Image
 from pytest_cases import fixture, fixture_ref, parametrize
 
 import shared.utils.s3 as s3
-from shared.tasks.enums import _SourceDataType
+from shared.tasks.enums import SourceDataType
 from shared.tasks.interface import ITaskSpec
-from shared.tasks.types import _ImagesTaskSpec, _VideoTaskSpec
+from shared.tasks.types import ImagesTaskSpec, VideoTaskSpec
 from shared.tasks.utils import parse_frame_step
 from shared.utils.config import make_api_client
 from shared.utils.helpers import generate_image_files, generate_video_file
 
-from .utils import calc_end_frame, create_task, unique
+from tests.python.rest_api.utils import calc_end_frame, create_task, unique
 
 
-class _TestTasksBase:
+class TestTasksBase:
     _USERNAME = "admin1"
 
     def _image_task_fxt_base(
@@ -38,7 +38,7 @@ class _TestTasksBase:
         cloud_storage_id: Optional[int] = None,
         job_replication: Optional[int] = None,
         **data_kwargs,
-    ) -> Generator[tuple[_ImagesTaskSpec, int], None, None]:
+    ) -> Generator[tuple[ImagesTaskSpec, int], None, None]:
         task_params = {
             "name": f"{request.node.name}[{request.fixturename}]",
             "labels": [{"name": "a"}],
@@ -91,7 +91,7 @@ class _TestTasksBase:
             return images_data[i]
 
         task_id, _ = create_task(self._USERNAME, spec=task_params, data=data_params)
-        yield _ImagesTaskSpec(
+        yield ImagesTaskSpec(
             models.TaskWriteRequest._from_openapi_data(**task_params),
             models.DataRequest._from_openapi_data(**data_params),
             get_frame=get_frame,
@@ -401,7 +401,7 @@ class _TestTasksBase:
         start_frame: Optional[int] = None,
         stop_frame: Optional[int] = None,
         step: Optional[int] = None,
-    ) -> Generator[tuple[_VideoTaskSpec, int], None, None]:
+    ) -> Generator[tuple[VideoTaskSpec, int], None, None]:
         task_params = {
             "name": f"{request.node.name}[{request.fixturename}]",
             "labels": [{"name": "a"}],
@@ -434,7 +434,7 @@ class _TestTasksBase:
             return io.BytesIO(video_data)
 
         task_id, _ = create_task(self._USERNAME, spec=task_params, data=data_params)
-        yield _VideoTaskSpec(
+        yield VideoTaskSpec(
             models.TaskWriteRequest._from_openapi_data(**task_params),
             models.DataRequest._from_openapi_data(**data_params),
             get_video_file=get_video_file,
@@ -490,7 +490,7 @@ class _TestTasksBase:
         overlap = min(
             (
                 getattr(task_spec, "overlap", None) or 0
-                if task_spec.source_data_type == _SourceDataType.images
+                if task_spec.source_data_type == SourceDataType.images
                 else 5
             ),
             segment_size // 2,

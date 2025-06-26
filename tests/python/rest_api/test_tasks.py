@@ -42,7 +42,7 @@ from pytest_cases import fixture, fixture_ref, parametrize
 import shared.utils.s3 as s3
 from shared.fixtures.init import container_exec_cvat
 from shared.tasks.interface import ITaskSpec
-from shared.tasks.types import _SourceDataType
+from shared.tasks.types import SourceDataType
 from shared.tasks.utils import parse_frame_step
 from shared.utils.config import (
     delete_method,
@@ -54,8 +54,8 @@ from shared.utils.config import (
 )
 from shared.utils.helpers import generate_image_files
 
-from ._test_base import _TestTasksBase
-from .utils import (
+from tests.python.rest_api._test_base import TestTasksBase
+from tests.python.rest_api.utils import (
     DATUMARO_FORMAT_FOR_DIMENSION,
     CollectionSimpleFilterTestBase,
     calc_end_frame,
@@ -3875,23 +3875,23 @@ class TestImportWithComplexFilenames:
 @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_after_class")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
-class TestPatchExportFrames(_TestTasksBase):
+class TestPatchExportFrames(TestTasksBase):
     @fixture(scope="class")
-    @parametrize("media_type", [_SourceDataType.images, _SourceDataType.video])
+    @parametrize("media_type", [SourceDataType.images, SourceDataType.video])
     @parametrize("step", [5])
     @parametrize("frame_count", [20])
     @parametrize("start_frame", [None, 3])
     def fxt_uploaded_media_task(
         self,
         request: pytest.FixtureRequest,
-        media_type: _SourceDataType,
+        media_type: SourceDataType,
         step: int,
         frame_count: int,
         start_frame: Optional[int],
     ) -> Generator[tuple[ITaskSpec, Task, str], None, None]:
         args = dict(request=request, frame_count=frame_count, step=step, start_frame=start_frame)
 
-        if media_type == _SourceDataType.images:
+        if media_type == SourceDataType.images:
             (spec, task_id) = next(self._image_task_fxt_base(**args))
         else:
             (spec, task_id) = next(self._uploaded_video_task_fxt_base(**args))

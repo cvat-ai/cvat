@@ -23,7 +23,7 @@ from PIL import Image
 from pytest_cases import parametrize
 
 import shared.utils.s3 as s3
-from shared.tasks.enums import _SourceDataType
+from shared.tasks.enums import SourceDataType
 from shared.tasks.interface import ITaskSpec
 from shared.tasks.utils import parse_frame_step
 from shared.utils.config import get_method, make_api_client, patch_method, post_method
@@ -35,8 +35,8 @@ from shared.utils.helpers import (
     read_video_file,
 )
 
-from ._test_base import _TestTasksBase
-from .utils import create_task, get_cloud_storage_content, wait_until_task_is_created
+from tests.python.rest_api._test_base import TestTasksBase
+from tests.python.rest_api.utils import create_task, get_cloud_storage_content, wait_until_task_is_created
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -1761,8 +1761,8 @@ class TestPostTaskData:
 @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_after_class")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
-class TestTaskData(_TestTasksBase):
-    @parametrize("task_spec, task_id", _TestTasksBase._all_task_cases)
+class TestTaskData(TestTasksBase):
+    @parametrize("task_spec, task_id", TestTasksBase._all_task_cases)
     def test_can_get_task_meta(self, task_spec: ITaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
@@ -1780,7 +1780,7 @@ class TestTaskData(_TestTasksBase):
             if getattr(task_spec, "chunk_size", None):
                 assert task_meta.chunk_size == task_spec.chunk_size
 
-            if task_spec.source_data_type == _SourceDataType.video:
+            if task_spec.source_data_type == SourceDataType.video:
                 assert len(task_meta.frames) == 1
             else:
                 assert len(task_meta.frames) == task_meta.size
@@ -1789,7 +1789,7 @@ class TestTaskData(_TestTasksBase):
         # This test has to check all the task frames availability, it can make many requests
         timeout=300
     )
-    @parametrize("task_spec, task_id", _TestTasksBase._all_task_cases)
+    @parametrize("task_spec, task_id", TestTasksBase._all_task_cases)
     def test_can_get_task_frames(self, task_spec: ITaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
@@ -1809,7 +1809,7 @@ class TestTaskData(_TestTasksBase):
                     _parse_response=False,
                 )
 
-                if task_spec.source_data_type == _SourceDataType.video:
+                if task_spec.source_data_type == SourceDataType.video:
                     frame_size = (task_meta.frames[0].width, task_meta.frames[0].height)
                 else:
                     frame_size = (
@@ -1824,7 +1824,7 @@ class TestTaskData(_TestTasksBase):
                     task_spec.read_frame(abs_frame_id),
                     frame,
                     must_be_identical=(
-                        task_spec.source_data_type == _SourceDataType.images
+                        task_spec.source_data_type == SourceDataType.images
                         and quality == "original"
                     ),
                 )
@@ -1833,16 +1833,16 @@ class TestTaskData(_TestTasksBase):
         # This test has to check all the task chunks availability, it can make many requests
         timeout=300
     )
-    @parametrize("task_spec, task_id", _TestTasksBase._all_task_cases)
+    @parametrize("task_spec, task_id", TestTasksBase._all_task_cases)
     def test_can_get_task_chunks(self, task_spec: ITaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             (task, _) = api_client.tasks_api.retrieve(task_id)
             (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
 
-            if task_spec.source_data_type == _SourceDataType.images:
+            if task_spec.source_data_type == SourceDataType.images:
                 assert task.data_original_chunk_type == "imageset"
                 assert task.data_compressed_chunk_type == "imageset"
-            elif task_spec.source_data_type == _SourceDataType.video:
+            elif task_spec.source_data_type == SourceDataType.video:
                 assert task.data_original_chunk_type == "video"
 
                 if getattr(task_spec, "use_zip_chunks", False):
@@ -1892,7 +1892,7 @@ class TestTaskData(_TestTasksBase):
                         task_spec.read_frame(abs_frame_id),
                         chunk_images[chunk_frame],
                         must_be_identical=(
-                            task_spec.source_data_type == _SourceDataType.images
+                            task_spec.source_data_type == SourceDataType.images
                             and quality == "original"
                         ),
                     )
@@ -1901,7 +1901,7 @@ class TestTaskData(_TestTasksBase):
         # This test has to check all the task meta availability, it can make many requests
         timeout=300
     )
-    @parametrize("task_spec, task_id", _TestTasksBase._all_task_cases)
+    @parametrize("task_spec, task_id", TestTasksBase._all_task_cases)
     def test_can_get_annotation_job_meta(self, task_spec: ITaskSpec, task_id: int):
         segment_params = self._compute_annotation_segment_params(task_spec)
 
@@ -1936,12 +1936,12 @@ class TestTaskData(_TestTasksBase):
                 if getattr(task_spec, "chunk_size", None):
                     assert job_meta.chunk_size == task_spec.chunk_size
 
-                if task_spec.source_data_type == _SourceDataType.video:
+                if task_spec.source_data_type == SourceDataType.video:
                     assert len(job_meta.frames) == 1
                 else:
                     assert len(job_meta.frames) == job_meta.size
 
-    @parametrize("task_spec, task_id", _TestTasksBase._tasks_with_simple_gt_job_cases)
+    @parametrize("task_spec, task_id", TestTasksBase._tasks_with_simple_gt_job_cases)
     def test_can_get_simple_gt_job_meta(self, task_spec: ITaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             jobs = sorted(
@@ -1991,13 +1991,13 @@ class TestTaskData(_TestTasksBase):
             if getattr(task_spec, "chunk_size", None):
                 assert job_meta.chunk_size == task_spec.chunk_size
 
-            if task_spec.source_data_type == _SourceDataType.video:
+            if task_spec.source_data_type == SourceDataType.video:
                 assert len(job_meta.frames) == 1
             else:
                 # there are placeholders on the non-included places
                 assert len(job_meta.frames) == task_spec.size
 
-    @parametrize("task_spec, task_id", _TestTasksBase._tasks_with_honeypots_cases)
+    @parametrize("task_spec, task_id", TestTasksBase._tasks_with_honeypots_cases)
     def test_can_get_honeypot_gt_job_meta(self, task_spec: ITaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             gt_jobs = get_paginated_collection(
@@ -2025,7 +2025,7 @@ class TestTaskData(_TestTasksBase):
             if getattr(task_spec, "chunk_size", None):
                 assert job_meta.chunk_size == task_spec.chunk_size
 
-            if task_spec.source_data_type == _SourceDataType.video:
+            if task_spec.source_data_type == SourceDataType.video:
                 assert len(job_meta.frames) == 1
             else:
                 assert len(job_meta.frames) == job_meta.size
@@ -2034,7 +2034,7 @@ class TestTaskData(_TestTasksBase):
         # This test has to check the job meta for all jobs, it can make many requests
         timeout=300
     )
-    @parametrize("task_spec, task_id", _TestTasksBase._tasks_with_consensus_cases)
+    @parametrize("task_spec, task_id", TestTasksBase._tasks_with_consensus_cases)
     def test_can_get_consensus_replica_job_meta(self, task_spec: ITaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             jobs = sorted(
@@ -2069,7 +2069,7 @@ class TestTaskData(_TestTasksBase):
         # This test has to check all the job frames availability, it can make many requests
         timeout=300
     )
-    @parametrize("task_spec, task_id", _TestTasksBase._all_task_cases)
+    @parametrize("task_spec, task_id", TestTasksBase._all_task_cases)
     def test_can_get_job_frames(self, task_spec: ITaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             jobs = sorted(
@@ -2095,7 +2095,7 @@ class TestTaskData(_TestTasksBase):
                         _parse_response=False,
                     )
 
-                    if task_spec.source_data_type == _SourceDataType.video:
+                    if task_spec.source_data_type == SourceDataType.video:
                         frame_size = (job_meta.frames[0].width, job_meta.frames[0].height)
                     else:
                         frame_size = (
@@ -2110,7 +2110,7 @@ class TestTaskData(_TestTasksBase):
                         task_spec.read_frame(abs_frame_id),
                         frame,
                         must_be_identical=(
-                            task_spec.source_data_type == _SourceDataType.images
+                            task_spec.source_data_type == SourceDataType.images
                             and quality == "original"
                         ),
                     )
@@ -2119,7 +2119,7 @@ class TestTaskData(_TestTasksBase):
         # This test has to check all the job chunks availability, it can make many requests
         timeout=300
     )
-    @parametrize("task_spec, task_id", _TestTasksBase._all_task_cases)
+    @parametrize("task_spec, task_id", TestTasksBase._all_task_cases)
     @parametrize("indexing", ["absolute", "relative"])
     def test_can_get_job_chunks(self, task_spec: ITaskSpec, task_id: int, indexing: str):
         _placeholder_image = Image.fromarray(np.zeros((1, 1, 3), dtype=np.uint8))
@@ -2138,10 +2138,10 @@ class TestTaskData(_TestTasksBase):
                 if job_meta.included_frames:
                     assert len(job_meta.included_frames) == job_meta.size
 
-                if task_spec.source_data_type == _SourceDataType.images:
+                if task_spec.source_data_type == SourceDataType.images:
                     assert job.data_original_chunk_type == "imageset"
                     assert job.data_compressed_chunk_type == "imageset"
-                elif task_spec.source_data_type == _SourceDataType.video:
+                elif task_spec.source_data_type == SourceDataType.video:
                     assert job.data_original_chunk_type == "video"
 
                     if getattr(task_spec, "use_zip_chunks", False):
@@ -2241,7 +2241,7 @@ class TestTaskData(_TestTasksBase):
                             expected_image,
                             chunk_images[chunk_frame],
                             must_be_identical=(
-                                task_spec.source_data_type == _SourceDataType.images
+                                task_spec.source_data_type == SourceDataType.images
                                 and quality == "original"
                             ),
                         )

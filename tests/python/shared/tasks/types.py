@@ -12,13 +12,13 @@ from PIL import Image
 
 from shared.utils.helpers import read_video_file
 
-from .base import _TaskSpecBase
-from .enums import _SourceDataType
+from tests.python.shared.tasks.base import TaskSpecBase
+from tests.python.shared.tasks.enums import SourceDataType
 
 
 @attrs.define
-class _VideoTaskSpec(_TaskSpecBase):
-    source_data_type: ClassVar[_SourceDataType] = _SourceDataType.video
+class VideoTaskSpec(TaskSpecBase):
+    source_data_type: ClassVar[SourceDataType] = SourceDataType.video
 
     _get_video_file: Callable[[], io.IOBase] = attrs.field(kw_only=True)
 
@@ -31,8 +31,8 @@ class _VideoTaskSpec(_TaskSpecBase):
 
 
 @attrs.define
-class _ImagesTaskSpec(_TaskSpecBase):
-    source_data_type: ClassVar[_SourceDataType] = _SourceDataType.images
+class ImagesTaskSpec(TaskSpecBase):
+    source_data_type: ClassVar[SourceDataType] = SourceDataType.images
 
     _get_frame: Callable[[int], bytes] = attrs.field(kw_only=True)
 
