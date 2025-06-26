@@ -269,10 +269,6 @@ class ProjectPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
                     assignee_id=assignee_id, **scope_params)
                 permissions.append(self)
 
-            if view.action == 'tasks':
-                perm = TaskPermission.create_scope_list(request, iam_context)
-                permissions.append(perm)
-
             owner = request.data.get('owner_id') or request.data.get('owner')
             if owner:
                 perm = UserPermission.create_scope_view(iam_context, owner)
@@ -310,7 +306,6 @@ class ProjectPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
             ('destroy', 'DELETE'): Scopes.DELETE,
             ('partial_update', 'PATCH'): Scopes.UPDATE,
             ('retrieve', 'GET'): Scopes.VIEW,
-            ('tasks', 'GET'): Scopes.VIEW,
             ('dataset', 'POST'): Scopes.IMPORT_DATASET,
             ('append_dataset_chunk', 'HEAD'): Scopes.IMPORT_DATASET,
             ('append_dataset_chunk', 'PATCH'): Scopes.IMPORT_DATASET,
@@ -466,10 +461,6 @@ class TaskPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
                 self = cls.create_base_perm(request, view, scope, iam_context, obj, **params)
                 permissions.append(self)
 
-            if view.action == 'jobs':
-                perm = JobPermission.create_scope_list(request, iam_context)
-                permissions.append(perm)
-
             if owner:
                 perm = UserPermission.create_scope_view(iam_context, owner)
                 permissions.append(perm)
@@ -542,7 +533,6 @@ class TaskPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
             ('data', 'POST'): Scopes.UPLOAD_DATA,
             ('append_data_chunk', 'PATCH'): Scopes.UPLOAD_DATA,
             ('append_data_chunk', 'HEAD'): Scopes.UPLOAD_DATA,
-            ('jobs', 'GET'): Scopes.VIEW,
             ('import_backup', 'POST'): Scopes.IMPORT_BACKUP,
             ('append_backup_chunk', 'PATCH'): Scopes.IMPORT_BACKUP,
             ('append_backup_chunk', 'HEAD'): Scopes.IMPORT_BACKUP,
@@ -707,10 +697,6 @@ class JobPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
                 self = cls.create_base_perm(request, view, scope, iam_context, obj, **scope_params)
                 permissions.append(self)
 
-            if view.action == 'issues':
-                perm = IssuePermission.create_scope_list(request, iam_context)
-                permissions.append(perm)
-
             assignee_id = request.data.get('assignee')
             if assignee_id:
                 perm = UserPermission.create_scope_view(iam_context, assignee_id)
@@ -772,7 +758,6 @@ class JobPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
             ('data', 'GET'): Scopes.VIEW_DATA,
             ('metadata','GET'): Scopes.VIEW_METADATA,
             ('metadata','PATCH'): Scopes.UPDATE_METADATA,
-            ('issues', 'GET'): Scopes.VIEW,
             ('initiate_dataset_export', 'POST'): Scopes.EXPORT_DATASET if is_dataset_export(request) else Scopes.EXPORT_ANNOTATIONS,
             ('preview', 'GET'): Scopes.VIEW,
             ('validation_layout', 'GET'): Scopes.VIEW_VALIDATION_LAYOUT,
@@ -979,7 +964,6 @@ class IssuePermission(OpenPolicyAgentPermission):
             'destroy': Scopes.DELETE,
             'partial_update': Scopes.UPDATE,
             'retrieve': Scopes.VIEW,
-            'comments': Scopes.VIEW,
         }[view.action]]
 
     def get_resource(self):
