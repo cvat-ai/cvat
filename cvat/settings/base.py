@@ -160,7 +160,7 @@ REST_FRAMEWORK = {
     # Disable default handling of the 'format' query parameter by REST framework
     "URL_FORMAT_OVERRIDE": "scheme",
     "DEFAULT_THROTTLE_CLASSES": [
-        "rest_framework.throttling.AnonRateThrottle",
+        "cvat.utils.throttle.CVATAnonRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
         "anon": "100/minute",
@@ -582,6 +582,10 @@ CACHES = {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
         "LOCATION": f"redis://:{urllib.parse.quote(redis_ondisk_password)}@{redis_ondisk_host}:{redis_ondisk_port}",
         "TIMEOUT": CVAT_CHUNK_CACHE_TTL,
+    },
+    "shared": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": f"redis://:{urllib.parse.quote(redis_inmem_password)}@{redis_inmem_host}:{redis_inmem_port}",
     },
 }
 
