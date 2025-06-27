@@ -3704,7 +3704,9 @@ paths:
         name: lightweight
         schema:
           type: boolean
-        description: Make lightweight backup for cloud based tasks
+          default: true
+        description: Make lightweight backup (backup which does not include media)
+          for cloud based tasks
       - in: query
         name: location
         schema:
@@ -5336,7 +5338,9 @@ paths:
         name: lightweight
         schema:
           type: boolean
-        description: Make lightweight backup for cloud based tasks
+          default: true
+        description: Make lightweight backup (backup which does not include media)
+          for cloud based tasks
       - in: query
         name: location
         schema:
@@ -7064,6 +7068,14 @@ components:
           nullable: true
           description: |
             A list of valid frame ids. The None value means all frames are included.
+        storage:
+          allOf:
+          - $ref: '#/components/schemas/StorageType'
+          readOnly: true
+        cloud_storage_id:
+          type: integer
+          nullable: true
+          readOnly: true
       required:
       - chunks_updated_date
       - deleted_frames
@@ -9080,6 +9092,9 @@ components:
           items:
             type: integer
             minimum: 0
+        cloud_storage_id:
+          type: integer
+          nullable: true
     PatchedInvitationWriteRequest:
       type: object
       properties:
@@ -9475,10 +9490,6 @@ components:
         source_storage:
           allOf:
           - $ref: '#/components/schemas/StorageRequest'
-          nullable: true
-        data_storage:
-          allOf:
-          - $ref: '#/components/schemas/TaskDataStorageRequest'
           nullable: true
     PatchedUserRequest:
       type: object
@@ -10585,23 +10596,6 @@ components:
           type: boolean
       required:
       - name
-    TaskDataStorage:
-      type: object
-      properties:
-        location:
-          type: string
-        cloud_storage_id:
-          type: integer
-          nullable: true
-    TaskDataStorageRequest:
-      type: object
-      properties:
-        location:
-          type: string
-          minLength: 1
-        cloud_storage_id:
-          type: integer
-          nullable: true
     TaskFileRequest:
       type: object
       properties:
@@ -10723,8 +10717,6 @@ components:
         consensus_enabled:
           type: boolean
           readOnly: true
-        data_storage:
-          $ref: '#/components/schemas/TaskDataStorage'
       required:
       - jobs
       - labels
@@ -10824,10 +10816,6 @@ components:
           description: |
             The number of consensus replica jobs for each annotation job.
             Configured at task creation
-        data_storage:
-          allOf:
-          - $ref: '#/components/schemas/TaskDataStorageRequest'
-          nullable: true
       required:
       - name
     TasksSummary:
