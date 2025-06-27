@@ -8,6 +8,8 @@ on:
         default: X.Y.Z
 jobs:
   main:
+    env:
+      RELEASE_TYPE: ${{ github.ref_name == 'develop' && 'release' || 'hotfix' }}
     runs-on: ubuntu-latest
     steps:
       - name: Validate version number
@@ -44,7 +46,7 @@ jobs:
 
       - name: Create release branch
         run:
-          git checkout -b "release-${{ inputs.newVersion }}"
+          git checkout -b "$RELEASE_TYPE-${{ inputs.newVersion }}"
 
       - name: Collect changelog
         run:
@@ -57,11 +59,11 @@ jobs:
       - name: Commit release preparation changes
         run: |
           git -c user.name='cvat-bot[bot]' -c user.email='147643061+cvat-bot[bot]@users.noreply.github.com' \
-            commit -a -m "Prepare release v${{ inputs.newVersion }}"
+            commit -a -m "Prepare $RELEASE_TYPE v${{ inputs.newVersion }}"
 
       - name: Push release branch
         run:
-          git push -u origin "release-${{ inputs.newVersion }}"
+          git push -u origin "$RELEASE_TYPE-${{ inputs.newVersion }}"
 
       - name: Create release pull request
         env:
@@ -70,5 +72,5 @@ jobs:
           ./dev/gh_release_notes.sh \
             | gh pr create \
               --base=master \
-              --title="Release v${{ inputs.newVersion }}" \
+              --title="${RELEASE_TYPE^} v${{ inputs.newVersion }}" \
               --body-file=-

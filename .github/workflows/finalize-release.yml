@@ -12,7 +12,7 @@ jobs:
         run: |
           gh --repo="${{ github.repository }}" \
             pr list --base master --state open --json number,headRefName \
-            --jq 'map(select(.headRefName | startswith("release-")))' \
+            --jq 'map(select(.headRefName | startswith("release-") or startswith("hotfix-")))' \
             > /tmp/release-prs.json
 
           if jq -e 'length < 1' /tmp/release-prs.json > /dev/null; then
@@ -24,7 +24,7 @@ jobs:
             exit 1
           fi
 
-          jq -r '.[] | "prNumber=\(.number)", "version=\(.headRefName | ltrimstr("release-"))"' \
+          jq -r '.[] | "prNumber=\(.number)", "releaseType=\(.headRefName | split("-") | .[0] )", "version=\(.headRefName | split("-") | .[1] )"' \
             /tmp/release-prs.json >> "$GITHUB_OUTPUT"
 
       # When you use the default github.token to make changes in the repository,
@@ -44,7 +44,7 @@ jobs:
 
       - uses: actions/checkout@v4
         with:
-          ref: "release-${{ steps.discover.outputs.version }}"
+          ref: "${{ steps.discover.outputs.releaseType }}-${{ steps.discover.outputs.version }}"
 
       - name: Verify that the release is new
         env:
@@ -61,7 +61,7 @@ jobs:
 
       - name: Create post-release branch
         run:
-          git checkout -b "dev-release-${{ steps.discover.outputs.version }}"
+          git checkout -b "dev-${{ steps.discover.outputs.releaseType }}-${{ steps.discover.outputs.version }}"
 
       - name: Bump version
         run:
@@ -74,7 +74,7 @@ jobs:
 
       - name: Push post-release branch
         run:
-          git push -u origin "dev-release-${{ steps.discover.outputs.version }}"
+          git push -u origin "dev-${{ steps.discover.outputs.releaseType }}-${{ steps.discover.outputs.version }}"
 
       - name: Create post-release pull request
         env:
