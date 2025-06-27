@@ -40,19 +40,19 @@ See:
 To start annotating using skeletons, you need to set up a **Skeleton** task
 in **Configurator**:
 
-To open **Configurator**, when {{< ilink "/docs/manual/basics/create_an_annotation_task" "creating a task" >}},
+To open **Configurator**, when {{< ilink "/docs/manual/basics/create-annotation-task" "creating a task" >}},
 click on the **Setup skeleton** button if you want to set up the skeleton manually,
 or {{< ilink "/docs/manual/advanced/skeletons#adding-skeleton-labels-from-the-model" "**From model**" >}}
 if you want to add skeleton labels from a model.
 
-![](/images/image-setup-skeleton-1.jpg)
+![Task creation window with highlighted buttons for skeleton configuration](/images/image-setup-skeleton-1.jpg)
 
 ### Skeleton Configurator
 
 The skeleton **Configurator** is a tool to build
 skeletons for annotation. It has the following fields:
 
-![](/images/image-skeleton-configurator-overview.jpg)
+![Skeleton configurator with numbered interface elements](/images/image-skeleton-configurator-overview.jpg)
 
 <!--lint disable maximum-line-length-->
 
@@ -76,12 +76,13 @@ and change the color of each point of the skeleton.
 
 To do this, right-click on the skeleton point and select **Configure**:
 
-![](/images/image-skeleton-drawn-example.jpg)
+![Skeleton example with opened menu and highlighted "Configure" option](/images/image-skeleton-drawn-example.jpg)
 
 In the opened menu, you can change the point setting. It is similar to
-[adding labels and attributes of the regular task](docs/manual/basics/create_an_annotation_task/#create-a-task):
+{{< ilink "/docs/manual/basics/create-annotation-task#create-a-task"
+"adding labels and attributes of the regular task" >}}:
 
-![](/images/image-skeleton-point-setup.jpg)
+![Example of menu for configuring skeleton point](/images/image-skeleton-point-setup.jpg)
 
 A **Skeleton** point can only exist within its parent **Skeleton**.
 
@@ -96,7 +97,7 @@ To create the **Skeleton** task, do the following:
 1. Open **Configurator**.
 2. (Optional) Upload background image.
 3. In the Label name field, enter the name of the label.
-4. (Optional) {{< ilink "/docs/manual/basics/create_an_annotation_task#add-an-attribute" "**Add attribute**" >}}
+4. (Optional) {{< ilink "/docs/manual/basics/create-annotation-task#add-an-attribute" "**Add attribute**" >}}
    <br>**Note**: you can add attributes exclusively to each point,
    for more information, see [**Configuring Skeleton points**](#configuring-skeleton-points)
 5. Use **Add point** to add points to the **Drawing area**.
@@ -117,7 +118,7 @@ To add points from the model, and annotate do the following:
 4. Click on the model's labels, you want to use.
    <br>Selected labels will become gray.
 
-   ![](/images/auto-annot-sk.jpg)
+   ![Example of configuration for skeleton labels from model](/images/auto-annot-sk.jpg)
 
 5. (Optional) If you want to adjust labels, within the
    label, click the **Update** attributes icon.
@@ -138,14 +139,14 @@ To annotate with **Skeleton**, do the following
 
 1. Open job.
 2. On the tools panel select **Draw new skeleton**.
-3. Select **Track** or **Shape** to annotate.
+3. Select **Track** to annotate with tracking or **Shape** to annotate
    without tracking.
 
-   ![](/images/image-draw-new-skeleton.jpg)
+   ![Highlighted "Skeleton" button with "Draw new skeleton" window](/images/image-draw-new-skeleton.jpg)
 
 4. Draw a skeleton on the image.
 
-![](/images/image-draw-new-skeleton.gif)
+![Example of drawing a skeleton in shape mode](/images/image-draw-new-skeleton.gif)
 
 ## Automatic annotation with Skeletons
 
@@ -156,7 +157,7 @@ To automatically annotate with **Skeleton**, do the following
    You will see a list of points to match and
    the name of the skeleton on the top of the list.
 
-   ![](/images/auto-annot-sk-detectors.jpg)
+   !["Detectors" tab in "AI Tools" with drop-down menu for selecting model for automatic annotation with skeletons](/images/auto-annot-sk-detectors.jpg)
 
 3. (Optional) By clicking on the **Bin** icon, you can
    remove any mapped item:
@@ -170,12 +171,12 @@ A drawn skeleton is encompassed within a bounding box,
 it allows you to manipulate the skeleton as a regular bounding box,
 enabling actions such as dragging, resizing, or rotating:
 
-![](/images/skeleton_editing_canvas.gif)
+![Example of editing a skeleton](/images/skeleton_editing_canvas.gif)
 
 Upon repositioning a point, the bounding box adjusts automatically,
 without affecting other points:
 
-![](/images/skeleton_editing_canvas-2.gif)
+![Example of bounding box adjustment after skeleton editing](/images/skeleton_editing_canvas-2.gif)
 
 Additionally, **Shortcuts** are applicable
 to both the skeleton as a whole and its elements:
@@ -201,13 +202,13 @@ An additional collapsible section is provided for
 users to view a comprehensive list of skeleton parts.
 
 <div style="display: flex; align-items: flex-start;">
-    <img src="/images/image-skeleton-track-sidebar.jpg" width="300px" />
-    <img src="/images/image-skeleton-shape-sidebar.jpg" width="300px" />
+    <img src="/images/image-skeleton-track-sidebar.jpg" alt="Example of interface with skeleton parts for track mode" width="300px" />
+    <img src="/images/image-skeleton-shape-sidebar.jpg" alt="Example of interface with skeleton parts for shape mode" width="300px" />
 </div>
 
 Skeleton points can have properties like **Outside**, **Occluded**, and **Hidden**.
 
-![](/images/point-properties.jpg)
+![Skeleton point properties shown in interface](/images/point-properties.jpg)
 
 Both **Outside** and **Hidden** make a skeleton point invisible.
 

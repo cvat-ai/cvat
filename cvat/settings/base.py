@@ -119,7 +119,6 @@ INSTALLED_APPS = [
     "cvat.apps.health",
     "cvat.apps.events",
     "cvat.apps.quality_control",
-    "cvat.apps.analytics_report",
     "cvat.apps.redis_handler",
     "cvat.apps.consensus",
 ]
@@ -196,6 +195,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.middleware.gzip.GZipMiddleware",
     "cvat.apps.engine.middleware.RequestTrackingMiddleware",
+    "cvat.apps.engine.middleware.LastActivityMiddleware",
     "crum.CurrentRequestUserMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -276,7 +276,6 @@ class CVAT_QUEUES(Enum):
     WEBHOOKS = "webhooks"
     NOTIFICATIONS = "notifications"
     QUALITY_REPORTS = "quality_reports"
-    ANALYTICS_REPORTS = "analytics_reports"
     CLEANING = "cleaning"
     CHUNKS = "chunks"
     CONSENSUS = "consensus"
@@ -297,10 +296,14 @@ RQ_QUEUES = {
     CVAT_QUEUES.IMPORT_DATA.value: {
         **REDIS_INMEM_SETTINGS,
         "DEFAULT_TIMEOUT": "4h",
+        # custom fields
+        "PARSED_JOB_ID_CLASS": "cvat.apps.engine.rq.ImportRequestId",
     },
     CVAT_QUEUES.EXPORT_DATA.value: {
         **REDIS_INMEM_SETTINGS,
         "DEFAULT_TIMEOUT": "4h",
+        # custom fields
+        "PARSED_JOB_ID_CLASS": "cvat.apps.engine.rq.ExportRequestId",
     },
     CVAT_QUEUES.AUTO_ANNOTATION.value: {
         **REDIS_INMEM_SETTINGS,
@@ -317,10 +320,8 @@ RQ_QUEUES = {
     CVAT_QUEUES.QUALITY_REPORTS.value: {
         **REDIS_INMEM_SETTINGS,
         "DEFAULT_TIMEOUT": "1h",
-    },
-    CVAT_QUEUES.ANALYTICS_REPORTS.value: {
-        **REDIS_INMEM_SETTINGS,
-        "DEFAULT_TIMEOUT": "1h",
+        # custom fields
+        "PARSED_JOB_ID_CLASS": "cvat.apps.quality_control.rq.QualityRequestId",
     },
     CVAT_QUEUES.CLEANING.value: {
         **REDIS_INMEM_SETTINGS,
@@ -333,6 +334,8 @@ RQ_QUEUES = {
     CVAT_QUEUES.CONSENSUS.value: {
         **REDIS_INMEM_SETTINGS,
         "DEFAULT_TIMEOUT": "1h",
+        # custom fields
+        "PARSED_JOB_ID_CLASS": "cvat.apps.consensus.rq.ConsensusRequestId",
     },
 }
 
@@ -478,6 +481,7 @@ os.makedirs(CLOUD_STORAGE_ROOT, exist_ok=True)
 
 TMP_FILES_ROOT = os.path.join(DATA_ROOT, "tmp")
 os.makedirs(TMP_FILES_ROOT, exist_ok=True)
+IGNORE_TMP_FOLDER_CLEANUP_ERRORS = True
 
 # logging is known to be unreliable with RQ when using async transports
 vector_log_handler = os.getenv("VECTOR_EVENT_HANDLER", "AsynchronousLogstashHandler")
@@ -666,14 +670,20 @@ SPECTACULAR_SETTINGS = {
         "JobStatus": "cvat.apps.engine.models.StatusChoice",
         "JobStage": "cvat.apps.engine.models.StageChoice",
         "JobType": "cvat.apps.engine.models.JobType",
-        "QualityReportTarget": "cvat.apps.quality_control.models.QualityReportTarget",
         "StorageType": "cvat.apps.engine.models.StorageChoice",
         "SortingMethod": "cvat.apps.engine.models.SortingMethod",
         "WebhookType": "cvat.apps.webhooks.models.WebhookTypeChoice",
         "WebhookContentType": "cvat.apps.webhooks.models.WebhookContentTypeChoice",
-        "RequestStatus": "cvat.apps.engine.models.RequestStatus",
+        "RequestStatus": "cvat.apps.redis_handler.serializers.RequestStatus",
         "ValidationMode": "cvat.apps.engine.models.ValidationMode",
         "FrameSelectionMethod": "cvat.apps.engine.models.JobFrameSelectionMethod",
+        "AnnotationConflictType": "cvat.apps.quality_control.models.AnnotationConflictType",
+        "AnnotationConflictSeverity": "cvat.apps.quality_control.models.AnnotationConflictSeverity",
+        "AnnotationConflictAnnotationType": "cvat.apps.quality_control.models.AnnotationType",
+        "MismatchingAnnotationKind": "cvat.apps.quality_control.models.MismatchingAnnotationKind",
+        "QualityTargetMetric": "cvat.apps.quality_control.models.QualityTargetMetricType",
+        "QualityPointSizeBase": "cvat.apps.quality_control.models.PointSizeBase",
+        "QualityReportTarget": "cvat.apps.quality_control.models.QualityReportTarget",
     },
     # Coercion of {pk} to {id} is controlled by SCHEMA_COERCE_PATH_PK. Additionally,
     # some libraries (e.g. drf-nested-routers) use "_pk" suffixed path variables.
@@ -754,9 +764,9 @@ ONE_RUNNING_JOB_IN_QUEUE_PER_USER = to_bool(os.getenv("ONE_RUNNING_JOB_IN_QUEUE_
 # How many chunks can be prepared simultaneously during task creation in case the cache is not used
 CVAT_CONCURRENT_CHUNK_PROCESSING = int(os.getenv("CVAT_CONCURRENT_CHUNK_PROCESSING", 1))
 
-from cvat.rq_patching import update_started_job_registry_cleanup
+from cvat.rq_patching import patch_rq
 
-update_started_job_registry_cleanup()
+patch_rq()
 
 CLOUD_DATA_DOWNLOADING_MAX_THREADS_NUMBER = 4
 CLOUD_DATA_DOWNLOADING_NUMBER_OF_FILES_PER_THREAD = 1000
@@ -768,3 +778,15 @@ LOGO_FILENAME = "logo.svg"
 ABOUT_INFO = {
     "subtitle": "Open Data Annotation Platform",
 }
+
+if ONE_RUNNING_JOB_IN_QUEUE_PER_USER:
+    PERIODIC_RQ_JOBS.append(
+        {
+            "queue": CVAT_QUEUES.CLEANING.value,
+            "id": "cleanup_deferred_job_registry",
+            "func": "cvat.apps.redis_handler.cron.cleanup_deferred_job_registry",
+            "cron_string": "0 8 * * *",
+        }
+    )
+
+USER_LAST_ACTIVITY_UPDATE_MIN_INTERVAL = timedelta(days=1)

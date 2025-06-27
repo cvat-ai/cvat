@@ -4,14 +4,16 @@ linkTitle: 'Requests page'
 weight: 7
 ---
 
-The Requests page allows users to track the status of data processing jobs such as exporting annotations
-or importing datasets. Users can monitor progress, download results, and check for errors if they occur.
+The **Requests** page allows users to track the status of data processing jobs (such as exporting annotations
+or importing datasets) and most of the background processes (such as task creation, quality calculation,
+report preparation with analytics, merge consensus jobs).
+Users can monitor progress, download results, and check for errors if they occur.
 
 ![Requests page](/images/requests_page.png)
 
 ## Requests List
 
-On the Requests page, requests are displayed as cards. Each card contains the following details (if applicable):
+On the **Requests** page, requests are displayed as cards. Each card contains the following details (if applicable):
 - **Operation Name**
 - **Resource Link**
 - **Status of the Request**
@@ -30,7 +32,7 @@ On the Requests page, requests are displayed as cards. Each card contains the fo
 The following statuses are used to indicate the state of each request:
 
 | Status        | Description                                                                 |
-| --------------| --------------------------------------------------------------------------- |
+| ------------- | --------------------------------------------------------------------------- |
 | `In Progress` | The requested job is being executed. The progress percentage is shown.      |
 | `Queued`      | The requested job is waiting to be picked up by a worker.                   |
 | `Finished`    | The requested job is finished. Downloading the result is available.         |

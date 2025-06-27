@@ -92,6 +92,17 @@ Cypress.Commands.add('deleteUsers', (authResponse, accountsToDelete) => {
     });
 });
 
+Cypress.Commands.add('headlessDeleteUser', (userId) => {
+    cy.intercept('DELETE', '/api/users/**').as('deleteUser');
+    cy.window().its('cvat', { timeout: 25000 }).should('not.be.undefined');
+    cy.window().then(async ($win) => {
+        await $win.cvat.server.request(`/api/users/${userId}`,
+            { method: 'DELETE' },
+        );
+    });
+    cy.wait('@deleteUser');
+});
+
 Cypress.Commands.add('changeUserActiveStatus', (authKey, accountsToChangeActiveStatus, isActive) => {
     cy.request({
         url: '/api/users?page_size=all',
@@ -270,20 +281,25 @@ Cypress.Commands.add('headlessLogin', ({
     nextURL,
 } = {}) => {
     cy.window().its('cvat', { timeout: 25000 }).should('not.be.undefined');
-    cy.window().then((win) => {
+    return cy.window().then((win) => (
         cy.headlessLogout().then(() => (
             win.cvat.server.login(
                 username || Cypress.env('user'),
                 password || Cypress.env('password'),
             ).then(() => win.cvat.users.get({ self: true }).then((users) => {
                 if (nextURL) {
+                    cy.intercept('GET', nextURL).as('nextPage');
                     cy.visit(nextURL);
+                    return cy.wait('@nextPage').then(() => {
+                        cy.url().should('include', nextURL);
+                        cy.get('.cvat-spinner').should('not.exist');
+                    }).then(() => users[0]);
                 }
 
                 return users[0];
             }))
-        ));
-    });
+        ))
+    ));
 });
 
 Cypress.Commands.add('headlessCreateObjects', (objects, jobID) => {
@@ -395,10 +411,9 @@ Cypress.Commands.add('headlessCreateProject', (projectSpec) => {
 });
 
 Cypress.Commands.add('headlessDeleteProject', (projectID) => {
-    cy.window().then(async ($win) => {
-        const [project] = await $win.cvat.projects.get({ id: projectID });
-        await project.delete();
-    });
+    cy.window()
+        .then(($win) => cy.wrap($win.cvat.projects.get({ id: projectID })))
+        .then(([project]) => cy.wrap(project.delete()));
 });
 
 Cypress.Commands.add('headlessDeleteTask', (taskID) => {
@@ -448,6 +463,23 @@ Cypress.Commands.add('headlessCreateJob', (jobSpec) => {
         const result = await job.save(data);
         return cy.wrap({ jobID: result.id });
     });
+});
+
+Cypress.Commands.add('headlessUpdateTask', (taskId, callback) => {
+    cy.window().then(async ($win) => (
+        cy.wrap($win.cvat.tasks.get({ id: taskId }))
+            .then(([task]) => {
+                callback(task);
+                return cy.wrap(task.save());
+            })
+    ));
+});
+
+Cypress.Commands.add('headlessUpdateJob', (jobID, updateJobParameters) => {
+    cy.window().then(async ($win) => (
+        cy.wrap($win.cvat.jobs.get({ jobID }))
+            .then(([job]) => cy.wrap(job.save(updateJobParameters)))
+    ));
 });
 
 Cypress.Commands.add('openTask', (taskName, projectSubsetFieldValue) => {
@@ -1416,7 +1448,7 @@ Cypress.Commands.add('downloadExport', ({ expectNotification = true } = {}) => {
     cy.get('.cvat-requests-card').first().within(() => {
         cy.get('.cvat-requests-page-actions-button').click();
     });
-    cy.intercept('GET', '**=download').as('download');
+    cy.intercept('GET', '**/download?rq_id=*').as('download');
     cy.get('.ant-dropdown')
         .not('.ant-dropdown-hidden')
         .within(() => {
@@ -1832,4 +1864,32 @@ Cypress.Commands.add('applyActionToSliders', (wrapper, slidersClassNames, action
         });
     });
     cy.get('.ant-tooltip').invoke('hide');
+});
+
+Cypress.Commands.add('mergeConsensusTask', (status = 202) => {
+    cy.intercept('POST', '/api/consensus/merges**').as('mergeTask');
+
+    cy.get('.cvat-task-details-wrapper').should('be.visible');
+    cy.contains('button', 'Actions').click();
+    cy.contains('Merge consensus jobs').should('be.visible').click();
+    cy.get('.cvat-modal-confirm-consensus-merge-task')
+        .contains('button', 'Merge')
+        .click();
+
+    cy.wait('@mergeTask').its('response.statusCode').should('eq', status);
+});
+
+Cypress.Commands.add('mergeConsensusJob', (jobID, status = 202) => {
+    cy.intercept('POST', '/api/consensus/merges**').as('mergeJob');
+    cy.get('.cvat-job-item')
+        .filter(':has(.cvat-tag-consensus)')
+        .filter(`:contains("Job #${jobID}")`)
+        .find('.anticon-more').first().click();
+
+    cy.get('.ant-dropdown-menu').contains('li', 'Merge consensus job').click();
+    cy.get('.cvat-modal-confirm-consensus-merge-job')
+        .contains('button', 'Merge')
+        .click();
+
+    cy.wait('@mergeJob').its('response.statusCode').should('eq', status);
 });

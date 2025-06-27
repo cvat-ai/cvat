@@ -22,12 +22,18 @@ const defaultState: SettingsState = {
         showBitmap: false,
         showProjections: false,
         showGroundTruth: false,
+        orientationVisibility: {
+            x: false,
+            y: false,
+            z: false,
+        },
     },
     workspace: {
         autoSave: false,
         autoSaveInterval: 15 * 60 * 1000,
         aamZoomMargin: 100,
         automaticBordering: false,
+        adaptiveZoom: true,
         showObjectsTextAlways: false,
         showAllInterpolationTracks: false,
         intelligentPolygonCrop: true,
@@ -161,6 +167,18 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 shapes: {
                     ...state.shapes,
                     showProjections: action.payload.showProjections,
+                },
+            };
+        }
+        case SettingsActionTypes.CHANGE_SHAPES_ORIENTATION_VISIBILITY: {
+            return {
+                ...state,
+                shapes: {
+                    ...state.shapes,
+                    orientationVisibility: {
+                        ...state.shapes.orientationVisibility,
+                        ...action.payload.orientationVisibility,
+                    },
                 },
             };
         }
@@ -324,6 +342,15 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 workspace: {
                     ...state.workspace,
                     automaticBordering: action.payload.automaticBordering,
+                },
+            };
+        }
+        case SettingsActionTypes.SWITCH_ADAPTIVE_ZOOM: {
+            return {
+                ...state,
+                workspace: {
+                    ...state.workspace,
+                    adaptiveZoom: action.payload.adaptiveZoom,
                 },
             };
         }

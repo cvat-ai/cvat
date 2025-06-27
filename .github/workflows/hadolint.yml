@@ -5,11 +5,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - id: files
-        uses: tj-actions/changed-files@v41.0.0
-        with:
-          files: |
-              **/Dockerfile*
 
       - name: Run checks
         env:
@@ -17,14 +12,8 @@ jobs:
           HADOLINT_VER: "2.12.0"
           VERIFICATION_LEVEL: "error"
         run: |
-          CHANGED_FILES="${{steps.files.outputs.all_changed_files}}"
+          curl -sLo "$HADOLINT" "https://github.com/hadolint/hadolint/releases/download/v$HADOLINT_VER/hadolint-Linux-x86_64"
+          chmod +x "$HADOLINT"
+          echo "hadolint version: $("$HADOLINT" --version)"
 
-          if [[ ! -z $CHANGED_FILES ]]; then
-            curl -sL -o $HADOLINT "https://github.com/hadolint/hadolint/releases/download/v$HADOLINT_VER/hadolint-Linux-x86_64" && chmod 700 $HADOLINT
-            echo "HadoLint version: "$($HADOLINT --version)
-            echo "The files will be checked: "$(echo $CHANGED_FILES)
-
-            $HADOLINT -t $VERIFICATION_LEVEL $CHANGED_FILES
-          else
-            echo "No files with the \"Dockerfile*\" name found"
-          fi
+          git ls-files -z 'Dockerfile*' '*/Dockerfile*' | xargs -0 "$HADOLINT" -t "$VERIFICATION_LEVEL"

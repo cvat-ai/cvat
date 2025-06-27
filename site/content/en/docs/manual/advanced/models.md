@@ -29,4 +29,4 @@ The list of models is presented in the form of a table. The parameters indicated
 - `Description` - brief description of the model
 - `Labels` - list of the supported labels (only for the models of the `detectors` type)
 
-![](/images/image099.jpg)
+![Models page example](/images/image099.jpg)

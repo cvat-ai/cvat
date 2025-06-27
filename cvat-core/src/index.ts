@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import {
-    AnalyticsReportFilter, QualityConflictsFilter, QualityReportsFilter, QualitySettingsFilter,
-    ConsensusSettingsFilter,
+    AnalyticsEventsFilter, QualityConflictsFilter, QualityReportsFilter,
+    QualitySettingsFilter, ConsensusSettingsFilter,
 } from './server-response-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
@@ -32,7 +32,6 @@ import QualityReport from './quality-report';
 import QualityConflict from './quality-conflict';
 import QualitySettings from './quality-settings';
 import ConsensusSettings from './consensus-settings';
-import AnalyticsReport from './analytics-report';
 import AnnotationGuide from './guide';
 import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
 import { Request } from './request';
@@ -42,6 +41,7 @@ import {
     callAction,
     listActions,
     registerAction,
+    unregisterAction,
 } from './annotations-actions/annotations-actions';
 import { BaseCollectionAction } from './annotations-actions/base-collection-action';
 import { BaseShapesAction } from './annotations-actions/base-shapes-action';
@@ -100,7 +100,7 @@ export default interface CVATCore {
             jobID?: number;
             taskID?: number;
             type?: string;
-        }) => Promise<PaginatedResource<Job>>;
+        }, aggregate?: boolean) => Promise<PaginatedResource<Job>>;
     };
     tasks: {
         get: (filter: {
@@ -111,7 +111,7 @@ export default interface CVATCore {
             search?: string;
             filter?: string;
             ordering?: string;
-        }) => Promise<PaginatedResource<Task>>;
+        }, aggregate?: boolean) => Promise<PaginatedResource<Task>>;
     }
     projects: {
         get: (
@@ -149,18 +149,17 @@ export default interface CVATCore {
     }
     analytics: {
         quality: {
-            reports: (filter: QualityReportsFilter) => Promise<PaginatedResource<QualityReport>>;
+            reports: (filter: QualityReportsFilter, aggregate?: boolean) => Promise<PaginatedResource<QualityReport>>;
             conflicts: (filter: QualityConflictsFilter) => Promise<QualityConflict[]>;
             settings: {
-                get: (filter: QualitySettingsFilter) => Promise<QualitySettings>;
+                get: (
+                    filter: QualitySettingsFilter,
+                    aggregate?: boolean,
+                ) => Promise<PaginatedResource<QualitySettings>>;
             };
         };
-        performance: {
-            reports: (filter: AnalyticsReportFilter) => Promise<AnalyticsReport>;
-            calculate: (
-                body: { jobID?: number; taskID?: number; projectID?: number; },
-                onUpdate: (status: enums.RQStatus, progress: number, message: string) => void,
-            ) => Promise<void>;
+        events: {
+            export: (filter: AnalyticsEventsFilter) => Promise<string>;
         };
     };
     frames: {
@@ -180,6 +179,7 @@ export default interface CVATCore {
     actions: {
         list: typeof listActions;
         register: typeof registerAction;
+        unregister: typeof unregisterAction;
         run: typeof runAction;
         call: typeof callAction;
     };
@@ -228,7 +228,6 @@ export default interface CVATCore {
         QualityReport: typeof QualityReport;
         QualityConflict: typeof QualityConflict;
         QualitySettings: typeof QualitySettings;
-        AnalyticsReport: typeof AnalyticsReport;
         Request: typeof Request;
         FramesMetaData: typeof FramesMetaData;
         JobValidationLayout: typeof JobValidationLayout;

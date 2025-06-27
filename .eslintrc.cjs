@@ -17,7 +17,7 @@ module.exports = {
     ignorePatterns: [
         '.eslintrc.cjs',
         'lint-staged.config.js',
-        'site/themes/**',
+        'site/**',
         'webpack.config.cjs',
     ],
     plugins: ['@typescript-eslint', 'security', 'no-unsanitized', 'import'],

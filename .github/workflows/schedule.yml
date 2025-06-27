@@ -133,16 +133,18 @@ jobs:
           docker compose run --rm -v "$PWD:/mnt/src:ro" -w /mnt/src \
             cvat_opa test cvat/apps/*/rules
 
-      - name: REST API and SDK tests
+      - name: Generate SDK
         run: |
           pip3 install -r cvat-sdk/gen/requirements.txt
           ./cvat-sdk/gen/generate.sh
 
-          pip3 install -r ./tests/python/requirements.txt
-          pip3 install -e ./cvat-sdk
-          pip3 install -e ./cvat-cli
+      - name: Install test requirements
+        run: |
+          pip3 install -e ./cvat-sdk -e ./cvat-cli -r ./tests/python/requirements.txt
 
-          pytest tests/python/
+      - name: REST API and SDK tests
+        run: |
+          pytest tests/python/ --alluredir=tests/python/allure-results
           pytest tests/python/ --stop-services
 
           ONE_RUNNING_JOB_IN_QUEUE_PER_USER="true" pytest tests/python/rest_api/test_queues.py
@@ -150,6 +152,13 @@ jobs:
 
           CVAT_ALLOW_STATIC_CACHE="true" pytest tests/python
           pytest tests/python/ --stop-services
+
+      - name: Upload allure results for REST API tests
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-rest-api
+          path: tests/python/allure-results
 
       - name: Unit tests
         env:
@@ -292,3 +301,18 @@ jobs:
         with:
           name: cvat_container_logs_${{ matrix.specs }}
           path: ${{ github.workspace }}/tests/cvat.log
+      - name: Upload Allure results as an artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-e2e-${{ matrix.specs }}
+          path: tests/allure-results-e2e
+
+  generate_report:
+    name: Generate Allure Report and Upload to S3
+    needs: [unit_testing, e2e_testing]
+    if: always()
+
+    uses: ./.github/workflows/generate-allure-report.yml
+    secrets:
+      AWS_ALLURE_REPORTS_ROLE: ${{ secrets.AWS_ALLURE_REPORTS_ROLE }}

@@ -137,18 +137,20 @@ To do this, you will need to edit `traefik.http.<router>.cvat.rule` docker label
 ```yaml
   cvat_server:
     labels:
-      - traefik.http.routers.cvat.rule=(Host(`example1.com`) || Host(`example2.com`)) &&
-          PathPrefix(`/api/`, `/analytics/`, `/static/`, `/admin`, `/documentation/`, `/django-rq`)
+      traefik.http.routers.cvat.rule:
+        (Host(`example1.com`) || Host(`example2.com`)) &&
+        (PathPrefix(`/api/`) || PathPrefix(`/static/`) || PathPrefix(`/admin`)
+          || PathPrefix(`/django-rq`))
 
   cvat_ui:
     labels:
-      - traefik.http.routers.cvat-ui.rule=Host(`example1.com`) || Host(`example2.com`)
+      traefik.http.routers.cvat-ui.rule: Host(`example1.com`) || Host(`example2.com`)
 ```
 
 ## How to create a task with multiple jobs
 
 Set the segment size when you create a new task, this option is available in the
-{{< ilink "/docs/manual/basics/create_an_annotation_task#advanced-configuration" "Advanced configuration" >}}
+{{< ilink "/docs/manual/basics/create-annotation-task#advanced-configuration" "Advanced configuration" >}}
 section.
 
 ## How to transfer CVAT to another machine

@@ -5,8 +5,8 @@
 from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
-from typing import TYPE_CHECKING, Any, Callable, Optional, Protocol, Union
-from uuid import UUID
+from types import NoneType
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Protocol
 
 import attrs
 from django.conf import settings
@@ -18,8 +18,7 @@ from rq.job import Job as RQJob
 from rq.registry import BaseRegistry as RQBaseRegistry
 
 from cvat.apps.engine.types import ExtendedRequest
-
-from .models import RequestAction, RequestSubresource, RequestTarget
+from cvat.apps.redis_handler.rq import RequestId, RequestIdWithOptionalSubresource
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import User
@@ -35,26 +34,32 @@ class RQJobMetaField:
         UUID = "uuid"
         TIMESTAMP = "timestamp"
 
-    # common fields
+    # failure info fields
     FORMATTED_EXCEPTION = "formatted_exception"
+    EXCEPTION_TYPE = "exc_type"
+    EXCEPTION_ARGS = "exc_args"
+
+    # common fields
     REQUEST = "request"
     USER = "user"
+    ORG_ID = "org_id"
+    ORG_SLUG = "org_slug"
     PROJECT_ID = "project_id"
     TASK_ID = "task_id"
     JOB_ID = "job_id"
-    LAMBDA = "lambda"
-    ORG_ID = "org_id"
-    ORG_SLUG = "org_slug"
     STATUS = "status"
     PROGRESS = "progress"
+
+    # import-specific fields
     TASK_PROGRESS = "task_progress"
+
     # export specific fields
     RESULT_URL = "result_url"
-    RESULT = "result"
+    RESULT_FILENAME = "result_filename"
+
+    # lambda fields
+    LAMBDA = "lambda"
     FUNCTION_ID = "function_id"
-    EXCEPTION_TYPE = "exc_type"
-    EXCEPTION_ARGS = "exc_args"
-    TMP_FILE = "tmp_file"
 
 
 class WithMeta(Protocol):
@@ -160,7 +165,7 @@ class AbstractRQMeta(metaclass=ABCMeta):
     def get_meta_on_retry(self) -> dict[str, Any]:
         resettable_fields = self._get_resettable_fields()
 
-        return {k: v for k, v in self._job.meta.items() if k not in resettable_fields}
+        return {k: v for k, v in self._meta.items() if k not in resettable_fields}
 
 
 class RQMetaWithFailureInfo(AbstractRQMeta):
@@ -190,14 +195,29 @@ class RQMetaWithFailureInfo(AbstractRQMeta):
 
 
 class BaseRQMeta(RQMetaWithFailureInfo):
-    # immutable && required fields
+    # immutable fields
+    # FUTURE-TODO: change to required fields when each enqueued job
+    # regardless of queue type will have these fields
+    # Blocked now by:
+    # - [annotation queue] Some jobs may have no user/request info
+    # - [chunks queue] Each job has no user/request info
+    # - [import queue] Jobs running to cleanup uploaded files have no user/request info
+    # - [export queue] Jobs preparing events have no user/request info.
+    # - [export queue] Jobs running to cleanup csv files with events have no user/request info
+
     @property
     def user(self):
-        return UserMeta(self.meta[RQJobMetaField.USER])
+        if user_info := self.meta.get(RQJobMetaField.USER):
+            return UserMeta(user_info)
+
+        return None
 
     @property
     def request(self):
-        return RequestMeta(self.meta[RQJobMetaField.REQUEST])
+        if request_info := self.meta.get(RQJobMetaField.REQUEST):
+            return RequestMeta(request_info)
+
+        return None
 
     # immutable && optional fields
     org_id: int | None = ImmutableRQMetaAttribute(RQJobMetaField.ORG_ID, optional=True)
@@ -260,33 +280,35 @@ class BaseRQMeta(RQMetaWithFailureInfo):
 
 class ExportRQMeta(BaseRQMeta):
     result_url: str | None = ImmutableRQMetaAttribute(
-        RQJobMetaField.RESULT_URL, optional=True
-    )  # will be changed to ExportResultInfo in the next PR
+        RQJobMetaField.RESULT_URL,
+        optional=True,
+    )
+    result_filename: str = ImmutableRQMetaAttribute(RQJobMetaField.RESULT_FILENAME)
 
     @staticmethod
     def _get_resettable_fields() -> list[str]:
         base_fields = BaseRQMeta._get_resettable_fields()
-        return base_fields + [RQJobMetaField.RESULT]
+        return base_fields + [RQJobMetaField.RESULT_URL, RQJobMetaField.RESULT_FILENAME]
 
     @classmethod
     def build_for(
         cls,
         *,
         request: ExtendedRequest,
-        db_obj: Model | None,
+        db_obj: Model,
         result_url: str | None,
+        result_filename: str,
     ):
         base_meta = BaseRQMeta.build(request=request, db_obj=db_obj)
 
-        return {**base_meta, RQJobMetaField.RESULT_URL: result_url}
+        return {
+            **base_meta,
+            RQJobMetaField.RESULT_URL: result_url,
+            RQJobMetaField.RESULT_FILENAME: result_filename,
+        }
 
 
 class ImportRQMeta(BaseRQMeta):
-    # immutable && optional fields
-    tmp_file: str | None = ImmutableRQMetaAttribute(
-        RQJobMetaField.TMP_FILE, optional=True
-    )  # used only when importing annotations|datasets|backups
-
     # mutable fields
     task_progress: float | None = MutableRQMetaAttribute(
         RQJobMetaField.TASK_PROGRESS, validator=lambda x: isinstance(x, float), optional=True
@@ -298,135 +320,55 @@ class ImportRQMeta(BaseRQMeta):
 
         return base_fields + [RQJobMetaField.TASK_PROGRESS]
 
-    @classmethod
-    def build_for(
-        cls,
-        *,
-        request: ExtendedRequest,
-        db_obj: Model | None,
-        tmp_file: str | None = None,
-    ):
-        base_meta = BaseRQMeta.build(request=request, db_obj=db_obj)
-
-        return {**base_meta, RQJobMetaField.TMP_FILE: tmp_file}
-
 
 def is_rq_job_owner(rq_job: RQJob, user_id: int) -> bool:
-    return BaseRQMeta.for_job(rq_job).user.id == user_id
+    if user := BaseRQMeta.for_job(rq_job).user:
+        return user.id == user_id
+
+    return False
 
 
-@attrs.frozen()
-class RQId:
-    action: RequestAction = attrs.field(validator=attrs.validators.instance_of(RequestAction))
-    target: RequestTarget = attrs.field(validator=attrs.validators.instance_of(RequestTarget))
-    identifier: Union[int, UUID] = attrs.field(validator=attrs.validators.instance_of((int, UUID)))
-    subresource: Optional[RequestSubresource] = attrs.field(
-        validator=attrs.validators.optional(attrs.validators.instance_of(RequestSubresource)),
-        kw_only=True,
-        default=None,
-    )
-    user_id: Optional[int] = attrs.field(
-        validator=attrs.validators.optional(attrs.validators.instance_of(int)),
-        kw_only=True,
-        default=None,
-    )
-    format: Optional[str] = attrs.field(
-        validator=attrs.validators.optional(attrs.validators.instance_of(str)),
-        kw_only=True,
-        default=None,
+@attrs.frozen(kw_only=True, slots=False)
+class RequestIdWithOptionalFormat(RequestId):
+    format: str | None = attrs.field(
+        validator=attrs.validators.instance_of((str, NoneType)), default=None
     )
 
-    _OPTIONAL_FIELD_REQUIREMENTS = {
-        RequestAction.AUTOANNOTATE: {"subresource": False, "format": False, "user_id": False},
-        RequestAction.CREATE: {"subresource": False, "format": False, "user_id": False},
-        RequestAction.EXPORT: {"subresource": True, "user_id": True},
-        RequestAction.IMPORT: {"subresource": True, "format": False, "user_id": False},
-    }
 
-    def __attrs_post_init__(self) -> None:
-        for field, req in self._OPTIONAL_FIELD_REQUIREMENTS[self.action].items():
-            if req:
-                if getattr(self, field) is None:
-                    raise ValueError(f"{field} is required for the {self.action} action")
-            else:
-                if getattr(self, field) is not None:
-                    raise ValueError(f"{field} is not allowed for the {self.action} action")
+@attrs.frozen(kw_only=True, slots=False)
+class ExportRequestId(
+    RequestIdWithOptionalSubresource,  # subresource is optional because export queue works also with events
+    RequestIdWithOptionalFormat,
+):
+    ACTION_DEFAULT_VALUE: ClassVar[str] = "export"
+    ACTION_ALLOWED_VALUES: ClassVar[tuple[str]] = (ACTION_DEFAULT_VALUE,)
 
-    # RQ ID templates:
-    # autoannotate:task-<tid>
-    # import:<task|project|job>-<id|uuid>-<annotations|dataset|backup>
-    # create:task-<tid>
-    # export:<project|task|job>-<id>-<annotations|dataset>-in-<format>-format-by-<user_id>
-    # export:<project|task>-<id>-backup-by-<user_id>
+    SUBRESOURCE_ALLOWED_VALUES: ClassVar[tuple[str]] = ("backup", "dataset", "annotations")
+    QUEUE_SELECTORS: ClassVar[tuple[str]] = ACTION_ALLOWED_VALUES
 
-    def render(
-        self,
-    ) -> str:
-        common_prefix = f"{self.action}:{self.target}-{self.identifier}"
+    # will be deleted after several releases
+    LEGACY_FORMAT_PATTERNS: ClassVar[tuple[str]] = (
+        r"export:(?P<target>(task|project))-(?P<target_id>\d+)-(?P<subresource>backup)-by-(?P<user_id>\d+)",
+        r"export:(?P<target>(project|task|job))-(?P<target_id>\d+)-(?P<subresource>(annotations|dataset))"
+        + r"-in-(?P<format>[\w@]+)-format-by-(?P<user_id>\d+)",
+    )
 
-        if RequestAction.IMPORT == self.action:
-            return f"{common_prefix}-{self.subresource}"
-        elif RequestAction.EXPORT == self.action:
-            if self.format is None:
-                return f"{common_prefix}-{self.subresource}-by-{self.user_id}"
 
-            format_to_be_used_in_urls = self.format.replace(" ", "_").replace(".", "@")
-            return f"{common_prefix}-{self.subresource}-in-{format_to_be_used_in_urls}-format-by-{self.user_id}"
-        elif self.action in {RequestAction.CREATE, RequestAction.AUTOANNOTATE}:
-            return common_prefix
-        else:
-            assert False, f"Unsupported action {self.action!r} was found"
+@attrs.frozen(kw_only=True, slots=False)
+class ImportRequestId(
+    RequestIdWithOptionalSubresource,  # subresource is optional because import queue works also with task creation jobs
+    RequestIdWithOptionalFormat,
+):
+    ACTION_ALLOWED_VALUES: ClassVar[tuple[str]] = ("create", "import")
+    SUBRESOURCE_ALLOWED_VALUES: ClassVar[tuple[str]] = ("backup", "dataset", "annotations")
+    QUEUE_SELECTORS: ClassVar[tuple[str]] = ACTION_ALLOWED_VALUES
 
-    @staticmethod
-    def parse(rq_id: str) -> RQId:
-        identifier: Optional[Union[UUID, int]] = None
-        subresource: Optional[RequestSubresource] = None
-        user_id: Optional[int] = None
-        anno_format: Optional[str] = None
-
-        try:
-            action_and_resource, unparsed = rq_id.split("-", maxsplit=1)
-            action_str, target_str = action_and_resource.split(":")
-            action = RequestAction(action_str)
-            target = RequestTarget(target_str)
-
-            if action in {RequestAction.CREATE, RequestAction.AUTOANNOTATE}:
-                identifier = unparsed
-            elif RequestAction.IMPORT == action:
-                identifier, subresource_str = unparsed.rsplit("-", maxsplit=1)
-                subresource = RequestSubresource(subresource_str)
-            else:  # action == export
-                identifier, subresource_str, unparsed = unparsed.split("-", maxsplit=2)
-                subresource = RequestSubresource(subresource_str)
-
-                if RequestSubresource.BACKUP == subresource:
-                    _, user_id = unparsed.split("-")
-                else:
-                    unparsed, _, user_id = unparsed.rsplit("-", maxsplit=2)
-                    # remove prefix(in-), suffix(-format) and restore original format name
-                    # by replacing special symbols: "_" -> " ", "@" -> "."
-                    anno_format = unparsed[3:-7].replace("_", " ").replace("@", ".")
-
-            if identifier is not None:
-                if identifier.isdigit():
-                    identifier = int(identifier)
-                else:
-                    identifier = UUID(identifier)
-
-            if user_id is not None:
-                user_id = int(user_id)
-
-            return RQId(
-                action=action,
-                target=target,
-                identifier=identifier,
-                subresource=subresource,
-                user_id=user_id,
-                format=anno_format,
-            )
-
-        except Exception as ex:
-            raise ValueError(f"The {rq_id!r} RQ ID cannot be parsed: {str(ex)}") from ex
+    # will be deleted after several releases
+    LEGACY_FORMAT_PATTERNS = (
+        r"(?P<action>create):(?P<target>task)-(?P<target_id>\d+)",
+        r"(?P<action>import):(?P<target>(task|project|job))-(?P<target_id>\d+)-(?P<subresource>(annotations|dataset))",
+        r"(?P<action>import):(?P<target>(task|project))-(?P<id>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})-(?P<subresource>backup)",
+    )
 
 
 def define_dependent_job(
@@ -454,7 +396,8 @@ def define_dependent_job(
         job_ids = q.get_job_ids()
         jobs = q.job_class.fetch_many(job_ids, q.connection)
         jobs = filter(
-            lambda job: job and BaseRQMeta.for_job(job).user.id == user_id and f(job), jobs
+            lambda job: job and is_rq_job_owner(job, user_id) and f(job),
+            jobs,
         )
         all_user_jobs.extend(jobs)
 

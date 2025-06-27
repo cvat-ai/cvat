@@ -32,7 +32,7 @@ to your personal account, that inhibits resource sharing with others.
 
 When **Personal workspace** is selected, it will be marked with a tick in the menu.
 
-![](/images/personal_account.jpg)
+![User menu with selected "Personal workspace" in "Organization" option](/images/user_menu_organization.png)
 
 ## Create new organization
 
@@ -41,18 +41,18 @@ To create an organization, do the following:
 1. Log in to the CVAT.
 2. On the top menu, click your **Username** > **Organization** > **+ Create**.
 
-   ![](/images/image233.jpg)
+   ![User menu with highlighted "Create" button for creating organization](/images/user_menu_organization_create.png)
 
 3. Fill in the following fields and click **Submit**.
 
-   ![](/images/image234.jpg)
+   !["Create a new organization" window with options and parameters](/images/create_organization_form.png)
 
 <!--lint disable maximum-line-length-->
 
 | Field            | Description                                                         |
 | ---------------- | ------------------------------------------------------------------- |
 | **Short name**   | A name of the organization that will be displayed in the CVAT menu. |
-| **Full Name**    | Optional. Full name of the organization.                            |
+| **Full name**    | Optional. Full name of the organization.                            |
 | **Description**  | Optional. Description of organization.                              |
 | **Email**        | Optional. Your email.                                               |
 | **Phone number** | Optional. Your phone number.                                        |
@@ -65,9 +65,6 @@ Upon creation, the organization page will open automatically.
 For future access to your organization,
 navigate to **Username** > **Organization**
 
-> **Note**, that if you've created more than 10 organizations,
-> a **Switch organization** line will appear in the drop-down menu.
-
 ### Switching between organizations
 
 If you have more than one **Organization**,
@@ -79,24 +76,24 @@ Follow these steps:
 2. From the drop-down menu, under the **Personal space** section,
    choose the desired **Organization**.
 
-![](/images/image233_1.jpg)
+![Example of user menu with available organizations](/images/user_menu_select_org.png)
 
 > **Note**, that if you've created more than 10 organizations,
 > a **Switch organization** line will appear in the drop-down menu.
 
-![](/images/switch_org.png)
+![Part of user menu with highlighted "Switch organization" button](/images/switch_org.png)
 
 Click on it to see the **Select organization** dialog, and select organization
 from drop-down list.
 
-![](/images/select_org.png)
+!["Select organization" window](/images/select_org.png)
 
 ## Organization page
 
 **Organization page** is a place, where you can edit the **Organization** information
 and manage **Organization** members.
 
-![](/images/orgpage.jpg)
+![Example of organization page interface](/images/org_page.png)
 
 > **Note** that in order to access the organization page, you must first activate
 > the organization (see [Switching between organizations](#switching-between-organizations)).
@@ -110,7 +107,7 @@ To go to the **Organization page**, do the following:
 2. In the drop-down menu, select **Organization**.
 3. In the drop-down menu, click **Settings**.
 
-![](/images/image235.jpg)
+![User menu with highlighted steps to open organization settings](/images/org_page_steps.png)
 
 ## Invite members into organization: menu and roles
 
@@ -118,7 +115,7 @@ Invite members form is available from [Organization page](#organization-page).
 
 It has the following fields:
 
-![](/images/invitemembers.jpg)
+![Form for inviting users to organization](/images/invite_org_members.png)
 
 <!--lint disable maximum-line-length-->
 
@@ -132,10 +129,12 @@ It has the following fields:
 
 Members of **Organization** will appear on the **Organization page**:
 
-![](/images/image237.jpg)
+![Organization page with opened menu for organization member roles](/images/org_members.png)
 
 The member of the organization can leave the organization
 by going to **Organization page** > **Leave organization**.
+
+The organization owner can remove members, by clicking on the **Bin** icon.
 
 ### Inviting members to Organization
 
@@ -144,12 +143,12 @@ To invite members to **Organization** do the following:
 1. Go to the [**Organization page**](#organization-page), and click **Invite members**.
 2. Fill in the form (see below).
 
-   ![](/images/image236.jpg)
+   ![Invite user form with options and parameters](/images/org_invite_form.png)
 
-3. Click **Ok**.
+3. Click **OK**.
 4. The person being invited will receive an email with the link.
 
-   ![](/images/invitation_to_org.jpg)
+   ![Invitation to organization email example](/images/invitation_to_org.png)
 
 5. Person must click the link and:
    1. If the invitee does not have the CVAT account, then
@@ -162,7 +161,7 @@ User can see the list of active invitations.
 
 To see the list, Go to **Username** > **Organization** > **Invitations**.
 
-![](/images/invitations_list.jpg)
+![User menu with highlighted "Invitations" section](/images/invitations_list.png)
 
 You will see the page with the list of invitations.
 
@@ -175,10 +174,7 @@ invitations list.
 The organization owner and maintainers can remove members, by
 clicking on the three dots, and selecting **Remove invitation**
 
-![](/images/resend-remove-invitation.jpg)
-
-The organization owner can remove members, by
-clicking on the **Bin** icon.
+![Organization page with opened menu for resending and removing invitations](/images/resend_remove_invitation.png)
 
 ## Delete organization
 

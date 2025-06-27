@@ -1757,5 +1757,28 @@
       }
     ],
     "tracks": []
+  },
+  "Datumaro 3D 1.0": {
+    "version": 0,
+    "tags": [],
+    "shapes": [
+      {
+        "type": "cuboid",
+        "occluded": false,
+        "z_order": 0,
+        "points": [
+          1.1, 3.2, 4.9, 0.0,
+          0.0, -0.3, 1.0, 0.7,
+          8.2, 0.0, 0.0, 0.0,
+          0.0, 0.0, 0.0, 0.0
+        ],
+        "frame": 0,
+        "group": 0,
+        "source": "manual",
+        "label_id": null,
+        "attributes": []
+      }
+    ],
+    "tracks": []
   }
 }

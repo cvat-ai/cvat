@@ -23,10 +23,7 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      {{- include "cvat.labels" . | nindent 6 }}
-      {{- with merge $localValues.labels .Values.cvat.backend.labels }}
-      {{- toYaml . | nindent 6 }}
-      {{- end }}
+      {{- include "cvat.selectorLabels" . | nindent 6 }}
       app: cvat-app
       tier: backend
       component: worker-annotation
@@ -54,7 +51,10 @@ spec:
           resources:
           {{- toYaml . | nindent 12 }}
           {{- end }}
-          args: ["run", "worker.annotation"]
+          args:
+          - "run"
+          - "worker"
+          - "annotation"
           env:
           {{ include "cvat.sharedBackendEnv" . | indent 10 }}
           {{- with concat .Values.cvat.backend.additionalEnv $localValues.additionalEnv }}

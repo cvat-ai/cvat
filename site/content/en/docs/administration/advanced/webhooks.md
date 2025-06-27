@@ -64,7 +64,7 @@ To create a webhook for **Organization**, do the following:
 2. Go to the **Organization** > **Settings** > **Actions** > **Setup Webhooks**.
 3. In the top right corner click **+**
 
-  ![](/images/create_organization_webhook.gif)
+  ![Creating an organization webhook via the interface](/images/create_organization_webhook.gif)
 
 4. Fill in the **[Setup webhook](#webhooks-forms)** form and click **Submit**.
 
@@ -119,12 +119,12 @@ Webhook payload object for `create:<resource>` events:
 
 <!--lint disable maximum-line-length-->
 
-| Key          | Type      | Description                                                                                                                             |
-| ------------ | --------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `event`      | `string`  | Identifies the event that triggered the webhook, following the `create:<resource>` pattern.                                             |
+| Key          | Type      | Description |
+| ------------ | --------- | ----------- |
+| `event`      | `string`  | Identifies the event that triggered the webhook, following the `create:<resource>` pattern. |
 | `<resource>` | `object`  | Complete information about the created resource. Refer to the [Swagger](#webhooks-with-api-calls) docs for individual resource details. |
-| `webhook_id` | `integer` | The identifier for the webhook that sends the payload.                                                                                   |
-| `sender`     | `object`  | Details about the user that triggered the webhook.                                                                                      |
+| `webhook_id` | `integer` | The identifier for the webhook that sends the payload. |
+| `sender`     | `object`  | Details about the user that triggered the webhook. |
 
 <!--lint enable maximum-line-length-->
 

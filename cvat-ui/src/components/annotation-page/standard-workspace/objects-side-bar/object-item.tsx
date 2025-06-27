@@ -9,7 +9,7 @@ import Collapse from 'antd/lib/collapse';
 
 import ObjectButtonsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-buttons';
 import ItemDetailsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item-details';
-import { ColorBy } from 'reducers';
+import { ColorBy, Workspace } from 'reducers';
 import { ObjectType, ShapeType } from 'cvat-core-wrapper';
 import ObjectItemElementComponent from './object-item-element';
 import ItemBasics from './object-item-basics';
@@ -31,6 +31,7 @@ interface Props {
     labels: any[];
     attributes: any[];
     jobInstance: any;
+    workspace: Workspace;
     activate(activeElementID?: number): void;
     copy(): void;
     propagate(): void;
@@ -79,6 +80,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         edit,
         slice,
         jobInstance,
+        workspace,
     } = props;
 
     const type =
@@ -93,6 +95,8 @@ function ObjectItemComponent(props: Props): JSX.Element {
     const activateState = useCallback(() => {
         activate();
     }, []);
+
+    const sizeControlsVisible = shapeType === ShapeType.CUBOID && workspace === Workspace.STANDARD3D;
 
     return (
         <div style={{ display: 'flex', marginBottom: '1px' }}>
@@ -140,7 +144,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     runAnnotationAction={runAnnotationAction}
                 />
                 <ObjectButtonsContainer readonly={readonly} clientID={clientID} />
-                {!!attributes.length && (
+                {(!!attributes.length || sizeControlsVisible) && (
                     <ItemDetailsContainer
                         readonly={readonly}
                         clientID={clientID}

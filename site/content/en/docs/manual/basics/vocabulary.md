@@ -7,7 +7,7 @@ description: 'List of terms pertaining to annotation in CVAT.'
 ## Label
 Label is a type of an annotated object (e.g. person, car, vehicle, etc.)
 
-![](/images/image032_detrac.jpg)
+![Example of a label in interface](/images/image032_detrac.jpg)
 
 ---
 
@@ -18,12 +18,12 @@ quality, etc.). There are two types of attributes:
 ### Unique
 Unique immutable and can't be changed from frame to frame (e.g. age, gender, color, etc.)
 
-  ![](/images/image073.jpg)
+  ![Example of a unique attribute](/images/image073.jpg)
 
 ### Temporary
 Temporary mutable and can be changed on any frame (e.g. quality, pose, truncated, etc.)
 
-  ![](/images/image072.jpg)
+  ![Example of a temporary attribute](/images/image072.jpg)
 
 ---
 
@@ -31,7 +31,7 @@ Temporary mutable and can be changed on any frame (e.g. quality, pose, truncated
 Track is a set of shapes on different frames which corresponds to one object.
 Tracks are created in `Track mode`
 
-![](/images/gif003_detrac.gif)
+![Example of a track in interface](/images/gif003_detrac.gif)
 
 ---
 
@@ -48,7 +48,7 @@ Annotation is a set of shapes and tracks. There are several types of annotations
 Approximation allows you to reduce the number of points in the polygon.
 Can be used to reduce the annotation file and to facilitate editing polygons.
 
-![](/images/approximation_accuracy.gif)
+![Exampel of an applied approximation](/images/approximation_accuracy.gif)
 
 ---
 
@@ -57,7 +57,7 @@ Trackable object will be tracked automatically if the previous frame was
 a latest keyframe for the object. More details in the section
 {{< ilink "/docs/manual/advanced/ai-tools#trackers" "trackers" >}}.
 
-![](/images/tracker_indication_detrac.jpg)
+![Example of a trackable object in interface](/images/tracker_indication_detrac.png)
 
 ---
 
@@ -81,18 +81,18 @@ Related sections:
 ## Dimension
 
 Depends on the task data type that is defined when the
-{{< ilink "/docs/manual/basics/create_an_annotation_task" "task is created" >}}.
+{{< ilink "/docs/manual/basics/create-annotation-task" "task is created" >}}.
 
 ### 2D
 
 The data format of 2d tasks are images and videos.
 Related sections:
-- {{< ilink "/docs/manual/basics/create_an_annotation_task" "Creating an annotation task" >}}
+- {{< ilink "/docs/manual/basics/create-annotation-task" "Creating an annotation task" >}}
 
 ### 3D
 
 The data format of 3d tasks is a cloud of points.
-{{< ilink "/docs/manual/basics/create_an_annotation_task#data-formats-for-a-3d-task" "Data formats for a 3D task" >}}
+{{< ilink "/docs/manual/basics/create-annotation-task#data-formats-for-a-3d-task" "Data formats for a 3D task" >}}
 
 Related sections:
 - {{< ilink "/docs/manual/basics/3d-task-workspace" "3D task workspace" >}}

@@ -17,3 +17,41 @@
         width: 100%;
     }
 }
+
+.cvat-card-title {
+    font-size: 16px;
+}
+
+.cvat-card-tooltip {
+    margin-left: $grid-unit-size;
+}
+
+.cvat-card-holder {
+    .ant-card-body {
+        padding: $grid-unit-size * 2;
+    }
+}
+
+.cvat-card-value {
+    font-size: 28px;
+}
+
+.cvat-table-wrapper {
+    > *:not(:last-child) {
+        margin-bottom: $grid-unit-size;
+    }
+
+    display: flex;
+    flex-direction: column;
+}
+
+.cvat-table-header {
+    font-size: $grid-unit-size * 2;
+}
+
+.cvat-table-columns-settings-menu {
+    display: flex;
+    flex-direction: column;
+    max-height: $grid-unit-size * 40;
+    overflow-y: auto;
+}
