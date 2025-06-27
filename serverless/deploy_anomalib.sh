@@ -23,7 +23,8 @@ find "$DEPLOY_DIR" -maxdepth 1 -type f -name "function_*.yaml" | while read -r y
         --env CVAT_FUNCTIONS_REDIS_HOST=cvat_redis_ondisk \
         --env CVAT_FUNCTIONS_REDIS_PORT=6666 \
         --platform-config '{"attributes": {"network": "cvat_cvat"}}' \
-        --run-image "$ANOMALIB_IMAGE"
+        --run-image "$ANOMALIB_IMAGE" \
+        --volume /data:/data
 done
 
 echo

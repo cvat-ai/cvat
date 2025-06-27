@@ -303,6 +303,11 @@ class LambdaFunction:
         threshold = data.get("threshold")
         if threshold:
             payload.update({"threshold": threshold})
+
+        keyword = data.get("keyword")
+        if keyword:
+            payload.update({"keyword": keyword})
+
         mapping = data.get("mapping", {})
 
         model_labels = self.labels
@@ -610,6 +615,7 @@ class LambdaQueue:
         self,
         lambda_func,
         threshold,
+        keyword,  # <-- add keyword param
         task,
         mapping,
         cleanup,
@@ -656,6 +662,7 @@ class LambdaQueue:
                     kwargs={
                         "function": lambda_func,
                         "threshold": threshold,
+                        "keyword": keyword,  # <-- add keyword to kwargs
                         "task": task,
                         "job": job,
                         "cleanup": cleanup,
@@ -855,6 +862,7 @@ class LambdaJob:
             "function": {
                 "id": lambda_func.id if lambda_func else None,
                 "threshold": self.job.kwargs.get("threshold"),
+                "keyword": self.job.kwargs.get("keyword"), # <-- add keyword to dict
                 "task": self.job.kwargs.get("task"),
                 **(
                     {
@@ -915,6 +923,7 @@ class LambdaJob:
         function: LambdaFunction,
         db_task: Task,
         threshold: float,
+        keyword: str,  # <-- add keyword param
         mapping: Optional[dict[str, str]],
         conv_mask_to_poly: bool,
         *,
@@ -930,15 +939,19 @@ class LambdaJob:
             if frame in db_task.data.deleted_frames:
                 continue
 
+            payload = {
+                "frame": frame,
+                "mapping": mapping,
+                "threshold": threshold,
+                "conv_mask_to_poly": conv_mask_to_poly,
+            }
+            if keyword:
+                payload["keyword"] = keyword  # <-- add keyword to payload
+
             annotations = function.invoke(
                 db_task,
                 db_job=db_job,
-                data={
-                    "frame": frame,
-                    "mapping": mapping,
-                    "threshold": threshold,
-                    "conv_mask_to_poly": conv_mask_to_poly,
-                },
+                data=payload,
                 converter=converter,
             )
 
@@ -1110,6 +1123,7 @@ class LambdaJob:
                 function,
                 db_task,
                 kwargs.get("threshold"),
+                kwargs.get("keyword"),  # <-- pass keyword
                 kwargs.get("mapping"),
                 kwargs.get("conv_mask_to_poly"),
                 db_job=db_job,
@@ -1337,6 +1351,7 @@ class RequestViewSet(viewsets.ViewSet):
         try:
             function = request_data["function"]
             threshold = request_data.get("threshold")
+            keyword = request_data.get("keyword")  # <-- extract keyword
             task = request_data["task"]
             job = request_data.get("job", None)
             cleanup = request_data.get("cleanup", False)
@@ -1356,6 +1371,7 @@ class RequestViewSet(viewsets.ViewSet):
         rq_job = queue.enqueue(
             lambda_func,
             threshold,
+            keyword,  # <-- pass keyword
             task,
             mapping,
             cleanup,

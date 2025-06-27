@@ -4,11 +4,20 @@
 set -eu
 
 echo "📦 Starting CVAT and Nuclio containers..."
+
 docker compose -f docker-compose.yml \
   -f docker-compose.override.yml \
   -f components/serverless/docker-compose.serverless.yml \
   -f tests/docker-compose.email.yml \
-  up -d --build
+  -f docker-compose.dev.yml \
+  build cvat_ui cvat_server \
+
+docker compose -f docker-compose.yml \
+  -f docker-compose.override.yml \
+  -f components/serverless/docker-compose.serverless.yml \
+  -f tests/docker-compose.email.yml \
+  -f docker-compose.dev.yml \
+  up -d
 
 echo "⏳ Waiting for Nuclio Dashboard to be ready..."
 until curl -s http://localhost:8070 > /dev/null; do

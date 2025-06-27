@@ -31,6 +31,7 @@ class FunctionCallRequestSerializer(serializers.Serializer):
     job = serializers.IntegerField(required=False, help_text="The id of the job to be annotated")
     max_distance = serializers.IntegerField(required=False)
     threshold = serializers.FloatField(required=False)
+    keyword = serializers.CharField(required=False, allow_blank=True, allow_null=True)  # <-- Add this
     cleanup = serializers.BooleanField(
         help_text="Whether existing annotations should be removed", default=False
     )
