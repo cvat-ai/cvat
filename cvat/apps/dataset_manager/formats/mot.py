@@ -101,7 +101,7 @@ def _import_to_task(dataset, instance_data):
 @exporter(name="MOT", ext="ZIP", version="1.1")
 def _export(dst_file, temp_dir, instance_data, save_images=False):
     with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
-        dataset = dm.Dataset.from_extractors(extractor, env=dm_env)
+        dataset = dm.StreamDataset.from_extractors(extractor, env=dm_env)
 
         dataset.export(temp_dir, "mot_seq_gt", save_media=save_images)
 
