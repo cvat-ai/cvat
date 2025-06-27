@@ -53,24 +53,42 @@ class TokenAuthenticationScheme(TokenScheme):
         return schema
 
 
-class CookieAuthenticationScheme(SessionScheme):
+class SessionAuthenticationScheme(SessionScheme):
     """
     This class adds csrftoken cookie into security sections. It must be used together with
     the 'sessionid' cookie.
     """
 
-    name = ["sessionAuth", "csrfAuth"]
+    name = ["sessionAuth", "csrfAuth", "csrfHeaderAuth"]
     priority = 0
 
     def get_security_definition(self, auto_schema):
         sessionid_schema = super().get_security_definition(auto_schema)
-        csrftoken_schema = {
+        csrftoken_cookie_schema = {
             "type": "apiKey",
             "in": "cookie",
             "name": "csrftoken",
-            "description": "Can be sent as a cookie or as the X-CSRFTOKEN header",
+            "description": textwrap.dedent(
+                """\
+                A CSRF protection token. Can be received in the 'csrftoken' cookie in the
+                server response on the /api/auth/login endpoint.
+                The 'Origin' header must also be specified in the request.
+            """
+            ),
         }
-        return [sessionid_schema, csrftoken_schema]
+        csrftoken_header_schema = {
+            "type": "apiKey",
+            "in": "header",
+            "name": "X-CSRFToken",
+            "description": textwrap.dedent(
+                """\
+                A CSRF protection token. Can be received in the 'csrftoken' cookie in the
+                server response on the /api/auth/login endpoint.
+                The 'Origin' header must also be specified in the request.
+            """
+            ),
+        }
+        return [sessionid_schema, csrftoken_cookie_schema, csrftoken_header_schema]
 
 
 class CustomAutoSchema(AutoSchema):

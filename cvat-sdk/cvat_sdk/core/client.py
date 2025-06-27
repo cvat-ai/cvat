@@ -209,7 +209,7 @@ class Client:
         assert "csrftoken" in self.api_client.cookies
         self.api_client.set_default_header("Origin", self.api_client.configuration.host)
         self.api_client.set_default_header(
-            "X-CSRFToken", self.api_client.cookies.get("csrftoken").value
+            "X-CSRFToken", self.api_client.cookies["csrftoken"].value
         )
 
     def has_credentials(self) -> bool:
