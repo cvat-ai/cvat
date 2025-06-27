@@ -8,9 +8,9 @@
 import { projectName, labelName } from '../../support/const_project';
 
 context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
-    const caseID = 104;
+    const caseId = 104;
     const task = {
-        name3d: `Case ${caseID}`,
+        name3d: `Case ${caseId}`,
         label3d: labelName,
         attrName3d: 'Kind',
         attrValue3d: 'Oak',
@@ -20,18 +20,18 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
         attachToProject: false,
         multiAttrParams: false,
     };
-    let projectID = '';
+    let projectId = null;
     let datasetArchiveName;
 
-    function getProjectID() {
+    function getProjectId() {
         cy.url().then((url) => {
-            projectID = Number(url.split('/').slice(-1)[0].split('?')[0]);
+            projectId = Number(url.split('/').slice(-1)[0].split('?')[0]);
         });
     }
 
     before(() => {
         cy.openProject(projectName);
-        getProjectID();
+        getProjectId();
         cy.createAnnotationTask(
             task.name3d,
             task.label3d,
@@ -48,10 +48,10 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
 
     after(() => {
         cy.goToProjectsList();
-        cy.deleteProject(projectName, projectID);
+        cy.deleteProject(projectName, projectId);
     });
 
-    describe(`Testing "Case ${caseID}"`, () => {
+    describe(`Testing "Case ${caseId}"`, () => {
         it('Export project with 3D task. Annotation.', () => {
             cy.goToProjectsList();
             const exportAnnotation3d = {

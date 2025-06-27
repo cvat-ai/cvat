@@ -5,12 +5,12 @@
 /// <reference types="cypress" />
 
 const caseId = '114';
-let projectID = '';
+let projectId = null;
 let projectBackupArchiveFullName;
 
-function getProjectID() {
+function getProjectId() {
     cy.url().then((url) => {
-        projectID = Number(url.split('/').slice(-1)[0].split('?')[0]);
+        projectId = Number(url.split('/').slice(-1)[0].split('?')[0]);
     });
 }
 
@@ -60,7 +60,7 @@ context('Backup, restore a project.', { browser: '!firefox' }, () => {
         cy.goToProjectsList();
         cy.createProjects(project.name, project.label, project.attrName, project.attrVaue);
         cy.openProject(project.name);
-        getProjectID();
+        getProjectId();
         cy.createAnnotationTask(
             task.name,
             task.label,
@@ -82,7 +82,7 @@ context('Backup, restore a project.', { browser: '!firefox' }, () => {
 
     after(() => {
         cy.goToProjectsList();
-        cy.deleteProject(project.name, projectID);
+        cy.deleteProject(project.name, projectId);
     });
 
     describe(`Testing "${caseId}"`, () => {
@@ -96,14 +96,14 @@ context('Backup, restore a project.', { browser: '!firefox' }, () => {
         });
 
         it('Remove and restore the project from backup.', () => {
-            cy.deleteProject(project.name, projectID);
+            cy.deleteProject(project.name, projectId);
             cy.restoreProject(projectBackupArchiveFullName);
         });
 
         it('Checking the availability of a project, task, shape.', () => {
             cy.contains('.cvat-projects-project-item-title', project.name).should('exist');
             cy.openProject(project.name);
-            getProjectID();
+            getProjectId();
             cy.contains('.cvat-constructor-viewer-item', project.label).should('exist');
             cy.get('.cvat-tasks-list-item').should('have.length', 1);
             cy.openTaskJob(task.name, 0, false);
@@ -126,7 +126,7 @@ context('Backup, restore a project with a 3D task.', { browser: '!firefox' }, ()
         cy.goToProjectsList();
         cy.createProjects(project.name, project.label, project.attrName, project.attrVaue);
         cy.openProject(project.name);
-        getProjectID();
+        getProjectId();
         cy.createAnnotationTask(
             task.name,
             task.label,
@@ -148,7 +148,7 @@ context('Backup, restore a project with a 3D task.', { browser: '!firefox' }, ()
 
     after(() => {
         cy.goToProjectsList();
-        cy.deleteProject(project.name, projectID);
+        cy.deleteProject(project.name, projectId);
     });
 
     describe(`Testing "${caseId}"`, () => {
@@ -162,14 +162,14 @@ context('Backup, restore a project with a 3D task.', { browser: '!firefox' }, ()
         });
 
         it('Remove and restore the project from backup.', () => {
-            cy.deleteProject(project.name, projectID);
+            cy.deleteProject(project.name, projectId);
             cy.restoreProject(projectBackupArchiveFullName);
         });
 
         it('Checking the availability of a project, task, shape.', () => {
             cy.contains('.cvat-projects-project-item-title', project.name).should('exist');
             cy.openProject(project.name);
-            getProjectID();
+            getProjectId();
             cy.contains('.cvat-constructor-viewer-item', project.label).should('exist');
             cy.get('.cvat-tasks-list-item').should('have.length', 1);
             cy.openTaskJob(task.name, 0, false);

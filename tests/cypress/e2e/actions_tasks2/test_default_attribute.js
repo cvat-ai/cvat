@@ -26,8 +26,8 @@ context('Test default value for an attribute', () => {
         },
     ];
 
-    let taskID = null;
-    let jobID = null;
+    let taskId = null;
+    let jobId = null;
 
     function checkCreatedObject(attr1Value, attr2Value) {
         cy.createRectangle({
@@ -60,17 +60,17 @@ context('Test default value for an attribute', () => {
         cy.contains('button', 'Submit & Continue').click();
         cy.wait('@createTaskRequest').then((interception) => {
             expect(interception.response.statusCode).to.equal(201);
-            taskID = interception.response.body.id;
+            taskId = interception.response.body.id;
         });
         cy.wait('@getJobsRequest').then((interception) => {
             expect(interception.response.statusCode).to.equal(200);
-            jobID = interception.response.body.results[0].id;
+            jobId = interception.response.body.results[0].id;
         });
     });
 
     describe('Annotation view has correct default attribute after task creationg', () => {
         it('Rectangle has correct default attributes', () => {
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
             cy.get('.cvat-canvas-container').should('exist').and('be.visible');
             checkCreatedObject(attributes[0].defaultValue, attributes[1].defaultValue);
         });
@@ -79,7 +79,7 @@ context('Test default value for an attribute', () => {
     describe('Test can change default attribute', () => {
         it('Can change default attribute value on task page', () => {
             const newDefaultValue = 'third';
-            cy.visit(`/tasks/${taskID}`);
+            cy.visit(`/tasks/${taskId}`);
             cy.get('.cvat-task-details').should('exist').and('be.visible');
             cy.get('.cvat-constructor-viewer-item').within(() => {
                 cy.get('[aria-label="edit"]').click();
@@ -93,7 +93,7 @@ context('Test default value for an attribute', () => {
                 });
             });
             cy.get('button[type="submit"]').click();
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
             cy.get('.cvat-canvas-container').should('exist').and('be.visible');
             checkCreatedObject(newDefaultValue, newDefaultValue);
         });
@@ -105,7 +105,7 @@ context('Test default value for an attribute', () => {
             const authKey = response.body.key;
             cy.request({
                 method: 'DELETE',
-                url: `/api/tasks/${taskID}`,
+                url: `/api/tasks/${taskId}`,
                 headers: {
                     Authorization: `Token ${authKey}`,
                 },

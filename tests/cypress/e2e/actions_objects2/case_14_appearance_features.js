@@ -93,8 +93,8 @@ context('Appearance features', () => {
                 });
             cy.get('.cvat_canvas_shape').each((object) => {
                 cy.get(object).then((obj) => {
-                    const clientID = obj.attr('clientID');
-                    cy.get(`#cvat-objects-sidebar-state-item-${clientID}`).then((sidebarObj) => {
+                    const clientId = obj.attr('clientID');
+                    cy.get(`#cvat-objects-sidebar-state-item-${clientId}`).then((sidebarObj) => {
                         const text = sidebarObj.text();
                         if (text.includes('POLYLINE') || text.includes('POINTS')) {
                             expect(Number(object.attr('fill-opacity'))).to.be.lt(Number(fillOpacity)); // expected 0 to be below 0.03
@@ -157,8 +157,8 @@ context('Appearance features', () => {
             cy.changeAppearance('Group');
             cy.get('.cvat_canvas_shape').each((object) => {
                 cy.get(object).then((obj) => {
-                    const clientID = obj.attr('clientID');
-                    cy.get(`#cvat-objects-sidebar-state-item-${clientID}`).then((sidebarObj) => {
+                    const clientId = obj.attr('clientID');
+                    cy.get(`#cvat-objects-sidebar-state-item-${clientId}`).then((sidebarObj) => {
                         const text = sidebarObj.text();
                         if (!(text.includes('POLYLINE') || text.includes('POINTS'))) {
                             expect(object.css('fill')).to.be.equal('rgb(224, 224, 224)'); // expected rgb(224, 224, 224) to equal rgb(224, 224, 224)

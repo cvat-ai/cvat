@@ -5,8 +5,8 @@
 /// <reference types="cypress" />
 
 context('Regression tests', () => {
-    let taskID = null;
-    let jobID = null;
+    let taskId = null;
+    let jobId = null;
 
     const taskPayload = {
         name: 'Regression tests',
@@ -39,8 +39,8 @@ context('Regression tests', () => {
         cy.login();
 
         cy.headlessCreateTask(taskPayload, dataPayload).then((response) => {
-            taskID = response.taskID;
-            [jobID] = response.jobIDs;
+            taskId = response.taskId;
+            [jobId] = response.jobIds;
 
             cy.headlessCreateObjects([{
                 ...rectanglePayload,
@@ -57,13 +57,13 @@ context('Regression tests', () => {
                     occluded: rectanglePayload.occluded,
                     points: [10, 10, 30, 30],
                 }],
-            }], jobID);
+            }], jobId);
         });
     });
 
     describe('UI does not crash', () => {
         beforeEach(() => {
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
             cy.get('.cvat-canvas-container').should('not.exist');
             cy.get('.cvat-canvas-container').should('exist').and('be.visible');
         });
@@ -106,8 +106,8 @@ context('Regression tests', () => {
     });
 
     after(() => {
-        if (taskID !== null) {
-            cy.headlessDeleteTask(taskID);
+        if (taskId !== null) {
+            cy.headlessDeleteTask(taskId);
         }
         cy.logout();
     });

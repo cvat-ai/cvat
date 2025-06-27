@@ -22,7 +22,7 @@ context('Cloud storage.', () => {
         resource: 'container',
         display_name: 'Demonstration container',
         prefix: 'GCS_prefix',
-        projectID: 'Some ID',
+        projectId: 'Some ID',
     };
 
     const cloudStorageDataWithoutManifest = {
@@ -158,8 +158,8 @@ context('Cloud storage.', () => {
             cy.get('#prefix').type(dummyData.prefix);
             cy.get('#prefix').should('have.value', dummyData.prefix);
             cy.get('#project_id').should('exist');
-            cy.get('#project_id').type(dummyData.projectID);
-            cy.get('#project_id').should('have.value', dummyData.projectID);
+            cy.get('#project_id').type(dummyData.projectId);
+            cy.get('#project_id').should('have.value', dummyData.projectId);
             cy.get('#location').should('exist').click();
             cy.get('.ant-select-dropdown')
                 .not('.ant-select-dropdown-hidden')

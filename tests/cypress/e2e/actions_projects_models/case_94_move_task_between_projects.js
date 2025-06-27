@@ -5,9 +5,9 @@
 /// <reference types="cypress" />
 
 context('Move a task between projects.', () => {
-    const caseID = 94;
+    const caseId = 94;
     const firtsProject = {
-        name: `Firts project case ${caseID}`,
+        name: `Firts project case ${caseId}`,
         label: 'car',
         attrName: 'color',
         attrVaue: 'red',
@@ -15,14 +15,14 @@ context('Move a task between projects.', () => {
     };
 
     const secondProject = {
-        name: `Second project case ${caseID}`,
+        name: `Second project case ${caseId}`,
         label: 'bicycle',
         attrName: 'color',
         attrVaue: 'red',
         multiAttrParams: false,
     };
 
-    const taskName = `Task case ${caseID}`;
+    const taskName = `Task case ${caseId}`;
     const imagesCount = 1;
     const imageFileName = `image_${taskName.replace(/\s+/g, '_').toLowerCase()}`;
     const width = 800;
@@ -103,7 +103,7 @@ context('Move a task between projects.', () => {
         cy.deleteProjectViaActions(secondProject.name);
     });
 
-    describe(`Testing "Case ${caseID}"`, () => {
+    describe(`Testing "Case ${caseId}"`, () => {
         it('Check not able to move a task from one project to another.', () => {
             checkTask(secondProject.name, 'not.exist');
             checkTask(firtsProject.name, 'exist');
