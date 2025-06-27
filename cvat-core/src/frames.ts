@@ -101,6 +101,8 @@ export class FramesMetaData {
     public frameStep: number;
     public chunkCount: number;
     public chunksUpdatedDate: string;
+    public storage: string;
+    public cloudStorageId: number | null;
 
     #updateTrigger: FieldUpdateTrigger;
 
@@ -116,6 +118,8 @@ export class FramesMetaData {
             start_frame: undefined,
             stop_frame: undefined,
             chunks_updated_date: undefined,
+            storage: undefined,
+            cloud_storage_id: undefined,
         };
 
         this.#updateTrigger = new FieldUpdateTrigger();
@@ -196,6 +200,16 @@ export class FramesMetaData {
                 },
                 chunksUpdatedDate: {
                     get: () => data.chunks_updated_date,
+                },
+                storage: {
+                    get: () => data.storage,
+                },
+                cloudStorageId: {
+                    get: () => data.cloud_storage_id,
+                    set: (cloudStorageId) => {
+                        this.#updateTrigger.update('cloudStorageId');
+                        data.cloud_storage_id = cloudStorageId;
+                    },
                 },
             }),
         );
@@ -701,6 +715,22 @@ function saveJobMeta(meta: FramesMetaData, jobID: number): Promise<FramesMetaDat
     return frameMetaCache[jobID];
 }
 
+function saveTaskMeta(meta: FramesMetaData, taskID: number): Promise<FramesMetaData> {
+    return new Promise<FramesMetaData>((resolve, reject) => {
+        serverProxy.frames.saveMeta('task', taskID, {
+            cloud_storage_id: meta.cloudStorageId,
+        }).then((serverMeta) => {
+            const updatedMetaData = new FramesMetaData({
+                ...serverMeta,
+                deleted_frames: Object.fromEntries(serverMeta.deleted_frames.map((_frame) => [_frame, true])),
+            });
+            resolve(updatedMetaData);
+        }).catch((error) => {
+            reject(error);
+        });
+    });
+}
+
 async function refreshJobCacheIfOutdated(jobID: number): Promise<void> {
     const cached = frameDataCache[jobID];
     if (!cached) {
@@ -947,6 +977,14 @@ export async function patchMeta(jobID: number): Promise<FramesMetaData> {
     }
     const newMeta = await frameMetaCache[jobID];
     return newMeta;
+}
+
+export async function patchTaskMeta(taskID: number, meta: FramesMetaData): Promise<FramesMetaData> {
+    const updatedFields = meta.getUpdated();
+    if (Object.keys(updatedFields).length) {
+        return saveTaskMeta(meta, taskID);
+    }
+    return meta;
 }
 
 export async function findFrame(

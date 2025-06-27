@@ -284,6 +284,23 @@ function buildDuplicatedAPI(prototype) {
             },
             writable: true,
         }),
+        meta: Object.freeze({
+            value: {
+                async get() {
+                    const result = await PluginRegistry.apiWrapper.call(this, prototype.meta.get);
+                    return result;
+                },
+                async save(meta) {
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        prototype.meta.save,
+                        meta,
+                    );
+                    return result;
+                },
+            },
+            writable: true,
+        }),
         logger: Object.freeze({
             value: {
                 async log(scope, payload = {}, wait = false) {
@@ -792,6 +809,11 @@ export class Task extends Session {
     public readonly validationFramesPerJobPercent: number;
     public readonly frameSelectionMethod: string;
 
+    public meta: {
+        get: () => Promise<FramesMetaData>;
+        save: (meta: FramesMetaData) => Promise<FramesMetaData>;
+    };
+
     constructor(initialData: Readonly<Omit<SerializedTask, 'labels' | 'jobs'> & {
         labels?: SerializedLabel[];
         progress?: SerializedTask['jobs'];
@@ -1195,6 +1217,11 @@ export class Task extends Session {
                 },
             }),
         );
+
+        this.meta = {
+            get: Object.getPrototypeOf(this).meta.get.bind(this),
+            save: Object.getPrototypeOf(this).meta.save.bind(this),
+        };
     }
 
     async close(): Promise<void> {

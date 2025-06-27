@@ -12,7 +12,7 @@ import Title from 'antd/lib/typography/Title';
 import moment from 'moment';
 
 import {
-    User, getCore, Project, Task, StorageLocation, Storage,
+    User, getCore, Project, Task,
 } from 'cvat-core-wrapper';
 import AutomaticAnnotationProgress from 'components/tasks-page/automatic-annotation-progress';
 import MdGuideControl from 'components/md-guide/md-guide-control';
@@ -199,30 +199,6 @@ class DetailsComponent extends React.PureComponent<Props, State> {
         );
     }
 
-    private renderDataStorageField(): JSX.Element | null {
-        const { task: taskInstance, onUpdateTask } = this.props;
-
-        if (taskInstance.dataStorage.location !== StorageLocation.CLOUD_STORAGE) {
-            return null;
-        }
-        return (
-            <Row justify='space-between' align='middle'>
-                <Col span={12}>
-                    <CloudStorageEditor
-                        instance={taskInstance}
-                        onChange={(cloudStorage) => {
-                            taskInstance.dataStorage = new Storage({
-                                location: taskInstance.dataStorage.location,
-                                cloudStorageId: cloudStorage.id,
-                            });
-                            onUpdateTask(taskInstance);
-                        }}
-                    />
-                </Col>
-            </Row>
-        );
-    }
-
     public render(): JSX.Element {
         const {
             activeInference,
@@ -251,7 +227,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                     </Col>
                     <Col md={16} lg={17} xl={17} xxl={18}>
                         {this.renderDescription()}
-                        {this.renderDataStorageField()}
+                        <CloudStorageEditor task={taskInstance} />
                         { taskInstance.projectId === null && <MdGuideControl instanceType='task' id={taskInstance.id} /> }
                         <Row justify='space-between' align='middle'>
                             <Col span={12}>

@@ -484,6 +484,8 @@ export interface SerializedFramesMetaData {
     size: number;
     start_frame: number;
     stop_frame: number;
+    storage: StorageLocation;
+    cloud_storage_id: number | null;
 }
 
 export interface SerializedAPISchema {

@@ -19,10 +19,12 @@ import {
     restoreFrame,
     getCachedChunks,
     getJobFrameNumbers,
+    getFramesMeta,
     clear as clearFrames,
     findFrame,
     getContextImage,
     patchMeta,
+    patchTaskMeta,
     decodePreview,
 } from './frames';
 import Issue from './issue';
@@ -983,6 +985,23 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             this: TaskClass,
         ): ReturnType<typeof TaskClass.prototype.frames.save> {
             return Promise.all(this.jobs.map((job) => patchMeta(job.id)));
+        },
+    });
+
+    Object.defineProperty(Task.prototype.meta.get, 'implementation', {
+        value: async function saveFramesImplementation(
+            this: TaskClass,
+        ): ReturnType<typeof TaskClass.prototype.meta.get> {
+            return getFramesMeta('task', this.id).then((_meta) => _meta);
+        },
+    });
+
+    Object.defineProperty(Task.prototype.meta.save, 'implementation', {
+        value: async function saveFramesImplementation(
+            this: TaskClass,
+            meta: Parameters<typeof TaskClass.prototype.meta.save>[0],
+        ): ReturnType<typeof TaskClass.prototype.meta.save> {
+            return patchTaskMeta(this.id, meta).then((_meta) => _meta);
         },
     });
 
