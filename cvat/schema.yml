@@ -5013,6 +5013,26 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/TaskWriteRequest'
+            examples:
+              TransferATaskFromAnOrganizationToThePersonalSandbox:
+                value:
+                  organization_id: null
+                summary: Transfer a task from an organization to the personal sandbox
+              TransferATaskFromThePersonalSandboxToAnOrganization:
+                value:
+                  organization_id: 1
+                summary: Transfer a task from the personal sandbox to an organization
+              TransferAStorageLinkedTaskToAnOrganizationAndDetachStorages:
+                value:
+                  organization_id: 1
+                  source_storage:
+                    location: local
+                    cloud_storage_id: null
+                  target_storage:
+                    location: local
+                    cloud_storage_id: null
+                summary: Transfer a storage linked task to an organization and detach
+                  storages
         required: true
       security:
       - sessionAuth: []
@@ -5070,6 +5090,26 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PatchedTaskWriteRequest'
+            examples:
+              TransferATaskFromAnOrganizationToThePersonalSandbox:
+                value:
+                  organization_id: null
+                summary: Transfer a task from an organization to the personal sandbox
+              TransferATaskFromThePersonalSandboxToAnOrganization:
+                value:
+                  organization_id: 1
+                summary: Transfer a task from the personal sandbox to an organization
+              TransferAStorageLinkedTaskToAnOrganizationAndDetachStorages:
+                value:
+                  organization_id: 1
+                  source_storage:
+                    location: local
+                    cloud_storage_id: null
+                  target_storage:
+                    location: local
+                    cloud_storage_id: null
+                summary: Transfer a storage linked task to an organization and detach
+                  storages
       security:
       - sessionAuth: []
         csrfAuth: []

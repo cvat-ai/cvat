@@ -39,7 +39,7 @@ from cvat.apps.engine.frame_provider import FrameQuality, TaskFrameProvider
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.permissions import TaskPermission
-from cvat.apps.engine.rq import update_org_related_data_in_rq_jobs
+from cvat.apps.engine.rq import update_org_related_data_in_rq_jobs, RunningBackgroundProcessesError
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import (
@@ -2550,16 +2550,14 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
             instance.project = project
 
-        # todo: try to reduce code duplication
-        workspace_transferring = False
         organization_id = validated_data.get("organization_id")
         organization_slug = None
 
-        if (
-            "organization_id" in validated_data
-            and organization_id != instance.organization_id
-        ):
-            workspace_transferring = True
+        workspace_transferring = (
+            "organization_id" in validated_data and organization_id != instance.organization_id
+        )
+
+        if workspace_transferring:
             # TODO: prohibit changing other fields (except source/target storage)
             if organization_id is not None:
                 try:
@@ -2596,7 +2594,14 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             dst_organization_id=organization_id,
         )
 
-        update_org_related_data_in_rq_jobs(organization_id, organization_slug, task_id=instance.pk)
+        if workspace_transferring:
+            try:
+                update_org_related_data_in_rq_jobs(organization_id, organization_slug, task_id=instance.pk)
+            except RunningBackgroundProcessesError:
+                raise serializers.ValidationError(
+                    "There are some running background processes related with the task"
+                )
+
         instance.save() # TODO: update_fields
 
         if 'label_set' in validated_data and not instance.project_id:
@@ -2759,9 +2764,30 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
 
         return db_project
 
+    def update_basic_fields(
+        self,
+        instance: models.Project,
+        *,
+        fields_to_check: Iterable[str],
+        validated_data: dict[str, Any],
+        updated_fields: list[str],
+    ):
+        for field_name in fields_to_check:
+            if (
+                field_name in validated_data
+                and (field_value := validated_data[field_name]) != getattr(instance, field_name)
+            ):
+                if field_name != 'assignee_id':
+                    setattr(instance, field_name, field_value)
+                else:
+                    instance.update_assignee(field_value, save=False)
+                updated_fields.append(field_name)
+
     # pylint: disable=no-self-use
     @transaction.atomic
     def update(self, instance: models.Project, validated_data: dict):
+        # TODO: refactor the code && optimize updating
+        # updated_fields = []
         instance.name = validated_data.get('name', instance.name)
         instance.owner_id = validated_data.get('owner_id', instance.owner_id)
         instance.bug_tracker = validated_data.get('bug_tracker', instance.bug_tracker)
@@ -2773,27 +2799,28 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
             instance.assignee_id = validated_data.pop('assignee_id')
             instance.assignee_updated_date = timezone.now()
 
+        # self.update_basic_fields(instance, validated_data=validated_data, updated_fields=updated_fields)
         labels = validated_data.get('label_set', [])
         LabelSerializer.update_labels(labels, parent_instance=instance)
 
-        workspace_transferring = False
         organization_id = validated_data.get("organization_id")
         organization_slug = None
 
-        if (
+        workspace_transferring = (
             "organization_id" in validated_data
             and organization_id != instance.organization_id
-        ):
-            workspace_transferring = True
+        )
 
+        if workspace_transferring:
             # TODO: prohibit changing other fields (except source/target storage)
             # TODO: update schema examples
-            try:
-                organization_slug = list(
-                    Organization.objects.filter(pk=organization_id).values_list('slug', flat=True)
-                )[0]
-            except IndexError:
-                raise serializers.ValidationError("Invalid organization id")
+            if organization_id is not None:
+                try:
+                    organization_slug = list(
+                        Organization.objects.filter(pk=organization_id).values_list('slug', flat=True)
+                    )[0]
+                except IndexError:
+                    raise serializers.ValidationError("Invalid organization id")
 
             request = cast(ExtendedRequest, self.context['request'])
             cur_user_id = request.user.id
@@ -2828,7 +2855,13 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
             dst_organization_id=organization_id,
         )
 
-        update_org_related_data_in_rq_jobs(organization_id, organization_slug, project_id=instance.pk)
+        if workspace_transferring:
+            try:
+                update_org_related_data_in_rq_jobs(organization_id, organization_slug, project_id=instance.pk)
+            except RunningBackgroundProcessesError:
+                raise serializers.ValidationError(
+                    "There are some running background processes related with the resource"
+                )
 
         instance.save()
 

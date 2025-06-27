@@ -210,8 +210,6 @@ class BaseRQMeta(RQMetaWithFailureInfo):
     # - [annotation queue] Some jobs may have no user/request info
     # - [chunks queue] Each job has no user/request info
     # - [import queue] Jobs running to cleanup uploaded files have no user/request info
-    # - [export queue] Jobs preparing events have no user/request info.
-    # - [export queue] Jobs running to cleanup csv files with events have no user/request info
 
     @property
     def user(self):
@@ -439,6 +437,8 @@ def define_dependent_job(
         else None
     )
 
+class RunningBackgroundProcessesError(Exception):
+    pass
 
 def update_org_related_data_in_rq_jobs(
     new_org_id: int | None,
@@ -447,23 +447,42 @@ def update_org_related_data_in_rq_jobs(
     project_id: int | None = None,
     task_id: int | None = None,
 ):
+    def is_rq_job_related(job_meta: BaseRQMeta):
+        return (
+            project_id
+            and job_meta.project_id == project_id
+            or task_id
+            and job_meta.task_id == task_id
+        )
+
     assert (project_id or task_id) and not (project_id and task_id)
 
-    queues: tuple[django_rq.queues.DjangoRQ] = (
+    queues: list[django_rq.queues.DjangoRQ] = [
         django_rq.get_queue(queue_name) for queue_name in set(SELECTOR_TO_QUEUE.values())
-    )
+    ]
 
+    # prohibit moving resources if there is at least one
+    # running background job related to the resource
     for queue in queues:
         job_ids = set(
             queue.get_job_ids()
-            + queue.started_job_registry.get_job_ids()
-            + queue.finished_job_registry.get_job_ids()
-            + queue.failed_job_registry.get_job_ids()
             + queue.deferred_job_registry.get_job_ids()
+            + queue.started_job_registry.get_job_ids()
+        )
+        for batched_job_ids in take_by(job_ids, chunk_size=1000):
+            for job in queue.job_class.fetch_many(batched_job_ids, queue.connection):
+                if not job:
+                    continue
+
+                if is_rq_job_related(BaseRQMeta.for_job(job)):
+                    raise RunningBackgroundProcessesError
+
+    for queue in queues:
+        job_ids = set(
+            queue.finished_job_registry.get_job_ids()
+            + queue.failed_job_registry.get_job_ids()
         )
 
-        # todo: take_by
-        # todo: locks
         for batched_job_ids in take_by(job_ids, chunk_size=1000):
             with queue.connection.pipeline() as pipe:
                 for job in queue.job_class.fetch_many(batched_job_ids, queue.connection):
@@ -472,16 +491,11 @@ def update_org_related_data_in_rq_jobs(
 
                     job_meta = BaseRQMeta.for_job(job)
 
-                    if (
-                        project_id
-                        and job_meta.project_id != project_id
-                        or task_id
-                        and job_meta.task_id != task_id
-                    ):
+                    if not is_rq_job_related():
                         continue
 
                     job_meta.org_id = new_org_id
                     job_meta.org_slug = new_org_slug
                     job_meta.save(pipeline=pipe)
 
-                pipe.execute()
+                pipe.execute() # it handles empty pipe.command_stack too
