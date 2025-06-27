@@ -6,10 +6,35 @@ import data.utils
 import data.organizations
 
 # input: {
-#     "scope": <"create"|"create@project"|"view"|"list"|"update:desc"|
-#         "update:owner"|"update:assignee"|"update:project"|"update:associated_storage"|
-#         "delete"|"view:annotations"|"update:annotations"|"delete:annotations"|
-#         "export:dataset"|"view:data"|"upload:data"|"export:annotations"> or null,
+#     "scope": <
+#              "create"|
+#              "create@project"|
+#              "delete:annotations"|
+#              "delete"|
+#              "download:exported_file"|
+#              "export:annotations"|
+#              "export:backup"|
+#              "export:dataset"|
+#              "import:annotations"|
+#              "import:backup"|
+#              "list"|
+#              "update:annotations"|
+#              "update:assignee"|
+#              "update:associated_storage"|
+#              "update:desc"|
+#              "update:metadata"|
+#              "update:organization"|
+#              "update:owner"|
+#              "update:project"|
+#              "update:validation_layout"|
+#              "update"|
+#              "upload:data"|
+#              "view:annotations"|
+#              "view:data"|
+#              "view:metadata"|
+#              "view:validation_layout"|
+#              "view"|
+#          > or null,
 #     "auth": {
 #         "user": {
 #             "id": <num>,
