@@ -1,0 +1,101 @@
+// Copyright (C) 2020-2022 Intel Corporation
+// SPDX-License-Identifier: MIT
+
+import React, { useRef, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+    selectResource, deselectResource, selectAllResources, clearSelectedResources,
+} from 'actions/selection-actions';
+import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
+import { ShortcutScope } from 'utils/enums';
+
+interface BulkWrapperProps {
+    currentResourceIDs: number[];
+    bulkActionsMenu?: React.ReactNode;
+    children: (selectProps: (id: number, idx: number) => { selected: boolean; onClick: () => void }) => React.ReactNode;
+}
+
+function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
+    const {
+        bulkActionsMenu,
+        children,
+    } = props;
+
+    const dispatch = useDispatch();
+    const selectedIDs = useSelector((state: any) => state.selection.selected);
+    const wrapperRef = useRef<HTMLDivElement>(null);
+    const keyMap: KeyMap = {
+        SELECT_ALL: {
+            name: 'Select all',
+            description: 'Select all resources',
+            sequences: ['ctrl+a'],
+            scope: ShortcutScope.ANNOTATION_PAGE, // or a more appropriate scope for your context
+        },
+    };
+    const handlers = {
+        SELECT_ALL: (event?: KeyboardEvent) => {
+            event?.preventDefault();
+            const { currentResourceIDs } = props;
+            dispatch(selectAllResources(currentResourceIDs));
+        },
+    };
+
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+                dispatch(clearSelectedResources());
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [dispatch]);
+
+    // Track the last selected index for shift+click
+    const lastSelectedIndexRef = useRef<number | null>(null);
+
+    // Function to provide selection props for a given resource ID and index
+    const selectProps = (resourceID: number, idx: number) => {
+        const isSelected = selectedIDs.includes(resourceID);
+        const { currentResourceIDs } = props;
+        return {
+            selected: isSelected,
+            onClick: (event?: React.MouseEvent) => {
+                if (event?.shiftKey && lastSelectedIndexRef.current !== null) {
+                    // Shift+Click: select range
+                    const allIDs = currentResourceIDs;
+                    const clickedIndex = idx;
+                    const lastIndex = lastSelectedIndexRef.current;
+                    const [start, end] = [lastIndex, clickedIndex].sort((a, b) => a - b);
+                    const rangeIDs = allIDs.slice(start, end + 1);
+                    dispatch(clearSelectedResources());
+                    dispatch(selectAllResources(rangeIDs));
+                } else if (event?.ctrlKey) {
+                    // Ctrl+Click: toggle selection without clearing
+                    if (isSelected) {
+                        dispatch(deselectResource(resourceID));
+                    } else {
+                        dispatch(selectResource(resourceID));
+                    }
+                    lastSelectedIndexRef.current = idx;
+                } else {
+                    // Regular click: clear and select only this
+                    dispatch(clearSelectedResources());
+                    dispatch(selectResource(resourceID));
+                    lastSelectedIndexRef.current = idx;
+                }
+            },
+        };
+    };
+
+    return (
+        <div ref={wrapperRef}>
+            <GlobalHotKeys keyMap={keyMap} handlers={handlers} />
+            {bulkActionsMenu}
+            {children(selectProps)}
+        </div>
+    );
+}
+
+export default BulkWrapper;

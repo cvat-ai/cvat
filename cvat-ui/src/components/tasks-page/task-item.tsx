@@ -28,6 +28,8 @@ export interface TaskItemProps {
     ribbonPlugins: PluginComponent[];
     cancelAutoAnnotation(): void;
     updateTaskInState(task: Task): void;
+    selected?: boolean;
+    onClick?: () => void;
 }
 
 interface State {
@@ -272,12 +274,17 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
     }
 
     public render(): JSX.Element {
-        const { deleted, ribbonPlugins } = this.props;
-
-        const style = {};
+        const {
+            deleted, ribbonPlugins, selected, onClick,
+        } = this.props;
+        const style: React.CSSProperties = {};
         if (deleted) {
-            (style as any).pointerEvents = 'none';
-            (style as any).opacity = 0.5;
+            style.pointerEvents = 'none';
+            style.opacity = 0.5;
+        }
+        if (selected) {
+            style.border = '2px solid #1890FF';
+            style.background = '#e6f7ff';
         }
 
         const ribbonItems = ribbonPlugins
@@ -298,7 +305,13 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                     </div>
                 )}
             >
-                <Row className='cvat-tasks-list-item' justify='center' align='top' style={{ ...style }}>
+                <Row
+                    className='cvat-tasks-list-item'
+                    justify='center'
+                    align='top'
+                    style={style}
+                    onClick={onClick}
+                >
                     {this.renderPreview()}
                     {this.renderDescription()}
                     {this.renderProgress()}
