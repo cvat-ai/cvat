@@ -28,28 +28,28 @@ class TestBasicAuth:
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestTokenAuth:
     @staticmethod
-    def login(client: ApiClient, username: str) -> models.Token:
-        (auth, _) = client.auth_api.create_login(
+    def login(api_client: ApiClient, username: str) -> models.Token:
+        (auth, _) = api_client.auth_api.create_login(
             models.LoginSerializerExRequest(username=username, password=USER_PASS)
         )
 
         # Remove automatically managed cookies
-        client.cookies.pop("sessionid")
-        client.cookies.pop("csrftoken")
+        api_client.cookies.pop("sessionid")
+        api_client.cookies.pop("csrftoken")
 
         # Set up the token authentication
-        client.set_default_header("Authorization", "Token " + auth.key)
+        api_client.set_default_header("Authorization", "Token " + auth.key)
 
         return auth
 
     @classmethod
     @contextmanager
     def make_client(cls, username: Optional[str] = None) -> Generator[ApiClient, None, None]:
-        with ApiClient(Configuration(host=BASE_URL)) as client:
+        with ApiClient(Configuration(host=BASE_URL)) as api_client:
             if username:
-                cls.login(client, username)
+                cls.login(api_client, username)
 
-            yield client
+            yield api_client
 
     def test_can_use_token_auth(self, admin_user: str):
         username = admin_user
@@ -109,25 +109,25 @@ class TestTokenAuth:
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestSessionAuth:
     @staticmethod
-    def login(client: ApiClient, username: str) -> models.Token:
-        (auth, _) = client.auth_api.create_login(
+    def login(api_client: ApiClient, username: str) -> models.Token:
+        (auth, _) = api_client.auth_api.create_login(
             models.LoginSerializerExRequest(username=username, password=USER_PASS)
         )
 
         # Set up the session and CSRF authentication
-        client.set_default_header("Origin", client.configuration.host)
-        client.set_default_header("X-CSRFToken", client.cookies["csrftoken"].value)
+        api_client.set_default_header("Origin", api_client.configuration.host)
+        api_client.set_default_header("X-CSRFToken", api_client.cookies["csrftoken"].value)
 
         return auth
 
     @classmethod
     @contextmanager
     def make_client(cls, username: Optional[str] = None) -> Generator[ApiClient, None, None]:
-        with ApiClient(Configuration(host=BASE_URL)) as client:
+        with ApiClient(Configuration(host=BASE_URL)) as api_client:
             if username:
-                cls.login(client, username)
+                cls.login(api_client, username)
 
-            yield client
+            yield api_client
 
     def _test_can_use_auth(self, api_client: ApiClient, username: str):
         from cvat_sdk.api_client.rest import RESTClientObject
