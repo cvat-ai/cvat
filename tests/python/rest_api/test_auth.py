@@ -51,32 +51,35 @@ class TestTokenAuth:
 
             yield api_client
 
+    def _test_can_auth(self, api_client: ApiClient, *, username: str, auth_key: str):
+        from cvat_sdk.api_client.rest import RESTClientObject
+
+        original_request = RESTClientObject.request
+
+        def patched_request(*args, **kwargs):
+            assert "sessionid" not in kwargs["headers"].get("Cookie", "")
+            assert "X-CSRFToken" not in kwargs["headers"]
+            assert kwargs["headers"]["Authorization"] == "Token " + auth_key
+
+            return original_request(api_client.rest_client, *args, **kwargs)
+
+        with mock.patch.object(
+            api_client.rest_client, "request", side_effect=patched_request
+        ) as mock_request:
+            (user, response) = api_client.users_api.retrieve_self()
+
+            mock_request.assert_called_once()
+
+        assert response.status == HTTPStatus.OK
+        assert user.username == username
+
     def test_can_use_token_auth(self, admin_user: str):
         username = admin_user
         with self.make_client() as api_client:
             auth = self.login(api_client, username=username)
             assert auth.key
 
-            from cvat_sdk.api_client.rest import RESTClientObject
-
-            original_request = RESTClientObject.request
-
-            def patched_request(*args, **kwargs):
-                assert "sessionid" not in kwargs["headers"].get("Cookie", "")
-                assert "X-CSRFToken" not in kwargs["headers"]
-                assert kwargs["headers"]["Authorization"] == "Token " + auth.key
-
-                return original_request(api_client.rest_client, *args, **kwargs)
-
-            with mock.patch.object(
-                api_client.rest_client, "request", side_effect=patched_request
-            ) as mock_request:
-                (user, response) = api_client.users_api.retrieve_self()
-
-                mock_request.assert_called_once()
-
-            assert response.status == HTTPStatus.OK
-            assert user.username == username
+            self._test_can_auth(api_client, username=username, auth_key=auth.key)
 
     def test_can_use_token_auth_from_config(self, admin_user: str):
         username = admin_user
@@ -91,9 +94,7 @@ class TestTokenAuth:
             )
 
         with ApiClient(config) as api_client:
-            (user, response) = api_client.users_api.retrieve_self()
-            assert response.status == HTTPStatus.OK
-            assert user.username == username
+            self._test_can_auth(api_client, username=username, auth_key=auth.key)
 
     def test_can_logout(self, admin_user: str):
         with self.make_client(admin_user) as api_client:
@@ -129,7 +130,7 @@ class TestSessionAuth:
 
             yield api_client
 
-    def _test_can_use_auth(self, api_client: ApiClient, username: str):
+    def _test_can_use_auth(self, api_client: ApiClient, *, username: str):
         from cvat_sdk.api_client.rest import RESTClientObject
 
         original_request = RESTClientObject.request
