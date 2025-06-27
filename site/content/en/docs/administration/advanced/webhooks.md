@@ -486,7 +486,8 @@ Example `ping` event payload:
 
 ## Webhooks with API calls
 
-You can create and manage webhooks via API calls. Refer to the [Swagger API documentation](https://app.cvat.ai/api/docs) for details.
+You can create and manage webhooks via API calls.
+Refer to the [Swagger API documentation](https://app.cvat.ai/api/docs) for details.
 
 For implementation examples, check the [REST API tests](https://github.com/cvat-ai/cvat/blob/develop/tests/python/rest_api/test_webhooks.py).
 
