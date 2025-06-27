@@ -2788,7 +2788,7 @@ class DataMetaWriteSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Deleted frames cannot repeat")
 
         unknown_requested_deleted_frames = (
-            requested_deleted_frames_set.difference(range(instance.size))
+            requested_deleted_frames_set.difference(range(self.instance.size))
         )
         if unknown_requested_deleted_frames:
             raise serializers.ValidationError(
