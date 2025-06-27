@@ -15,13 +15,42 @@ files.extend-exclude = [
 	"**/*.zip",
 	"*.log",
 	"*.min.js",
-	"**/node_modules"
+	"**/node_modules",
+    "*.patch"
+]
+default.extend-ignore-re = [
+    "\"md5.*?\""
 ]
 [tool.typos.default.extend-words]
-lavel = "label" # way to narrow down suggestions to make this auto-fixable
-splitted = "splitted" # way to override default suggestions
-lol = "" # way to ban specific words
+# project terms that were confused with real word typos
+nd = "nd"
+tpic = "tpic"
+NAM = "NAM"
+AVOD = "AVOD"
 
+# conventions that serve better than correct words
+splitted = "splitted"
+lastest = "lastest"
+
+# 3rd party tokens that we can't fix
+trak = "trak"
+
+# narrow down options for spell-checker to auto-fix
+lavel = "label"
+firts = "first"
+correciton = "correction"
+segway = "segway"
+typ = "type"
+cheeck = "check"
+custome = "custom"
+blok = "block"
+convertation = "conversion"
+secons = "seconds"
+archieve = "archive"
+corrent = "correct"
+creationg = "creation"
+
+# FIXME: tableBodyFirstRowThs - what is the word `Ths`?
 
 [tool.codespell]
 skip = './allure-*,./tests/python/allure*,*.log,./static/**,./**/node_modules/**,./cvat-ui/src/assets/opencv_4.8.0.js,./cvat-core/docs/Interpolation.pdf,*-lock.json,*.lock'
