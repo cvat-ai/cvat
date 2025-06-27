@@ -122,7 +122,6 @@ export interface SerializedTask {
     updated_date: string;
     url: string;
     consensus_enabled: boolean;
-    data_storage: SerializedStorage;
 }
 
 export interface SerializedJob {

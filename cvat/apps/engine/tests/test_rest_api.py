@@ -1867,30 +1867,20 @@ class ProjectCloudBackupAPINoStaticChunksTestCase(ProjectBackupAPITestCase, _Clo
         super().tearDownClass()
 
     def _compare_tasks(self, original_task, imported_task):
+        super()._compare_tasks(original_task, imported_task)
+
         expected_location = "local"
         if self.MAKE_LIGHTWEIGHT_BACKUP:
-            expected_location = original_task["data_storage"]["location"]
-        assert imported_task["data_storage"] == {
-            "location": expected_location,
-            "cloud_storage_id": None,
-        }
-        compare_objects(
-            self=self,
-            obj1=original_task,
-            obj2=imported_task,
-            ignore_keys=(
-                "id",
-                "url",
-                "created_date",
-                "updated_date",
-                "username",
-                "project_id",
-                "data",
-                "data_storage",
-                # backup does not store overlap explicitly
-                "overlap",
-            ),
+            original_meta_response = self._get_request(
+                f"/api/tasks/{original_task['id']}/data/meta", self.admin
+            )
+            expected_location = original_meta_response.data["storage"]
+
+        imported_meta_response = self._get_request(
+            f"/api/tasks/{imported_task['id']}/data/meta", self.admin
         )
+        self.assertEqual(imported_meta_response.data["storage"], expected_location)
+        self.assertEqual(imported_meta_response.data["cloud_storage_id"], None)
 
     @classmethod
     def _create_media(cls):
@@ -7731,84 +7721,55 @@ class TaskChangeCloudStorageTestCase(_CloudStorageTestBase):
     def test_can_change_cloud_storage(self):
         task = self._create_cloud_task()
         task_id = task["id"]
-        assert task["data_storage"] == {
-            "location": "cloud_storage",
-            "cloud_storage_id": self.cloud_storage_id_1,
-        }
 
-        data = {
-            "data_storage": {
-                "location": "cloud_storage",
-                "cloud_storage_id": self.cloud_storage_id_2,
-            },
-        }
         with ForceLogin(self.owner, self.client):
-            response = self.client.patch(f"/api/tasks/{task_id}", data=data, format="json")
+            response = self.client.get(f"/api/tasks/{task_id}/data/meta")
+            assert response.status_code == status.HTTP_200_OK
+            assert response.json()["storage"] == "cloud_storage"
+            assert response.json()["cloud_storage_id"] == self.cloud_storage_id_1
+
+            response = self.client.patch(
+                f"/api/tasks/{task_id}/data/meta",
+                data=dict(cloud_storage_id=self.cloud_storage_id_2),
+                format="json",
+            )
             assert response.status_code == status.HTTP_200_OK, (
                 response.status_code,
                 response.content,
             )
+            assert response.json()["storage"] == "cloud_storage"
+            assert response.json()["cloud_storage_id"] == self.cloud_storage_id_2
 
-            response = self.client.get(f"/api/tasks/{task_id}")
-            updated_task = response.data
-
-        assert updated_task["data_storage"] == {
-            "location": "cloud_storage",
-            "cloud_storage_id": self.cloud_storage_id_2,
-        }
-        # making sure nothing else changed
-        compare_objects(
-            self=self,
-            obj1=task,
-            obj2=updated_task,
-            ignore_keys=("updated_date", "data_storage"),
-        )
+            response = self.client.get(f"/api/tasks/{task_id}/data/meta")
+            assert response.status_code == status.HTTP_200_OK
+            assert response.json()["storage"] == "cloud_storage"
+            assert response.json()["cloud_storage_id"] == self.cloud_storage_id_2
 
     def test_can_not_change_to_not_existing_cloud_storage(self):
         task = self._create_cloud_task()
         task_id = task["id"]
 
-        data = {
-            "data_storage": {
-                "location": "cloud_storage",
-                "cloud_storage_id": 99999,
-            },
-        }
         with ForceLogin(self.owner, self.client):
-            response = self.client.patch(f"/api/tasks/{task_id}", data=data, format="json")
+            response = self.client.patch(
+                f"/api/tasks/{task_id}/data/meta", data=dict(cloud_storage_id=9999), format="json"
+            )
             assert response.status_code == status.HTTP_400_BAD_REQUEST, (
                 response.status_code,
                 response.content,
             )
 
-    def test_can_not_move_cloud_task_to_local_storage(self):
+    def test_can_not_change_to_not_available_cloud_storage(self):
         task = self._create_cloud_task()
         task_id = task["id"]
 
-        data = {
-            "data_storage": {
-                "location": "local",
-            },
-        }
+        self.mock_aws.get_status = lambda _: Status.FORBIDDEN
+
         with ForceLogin(self.owner, self.client):
-            response = self.client.patch(f"/api/tasks/{task_id}", data=data, format="json")
-            assert response.status_code == status.HTTP_400_BAD_REQUEST, (
-                response.status_code,
-                response.content,
+            response = self.client.patch(
+                f"/api/tasks/{task_id}/data/meta",
+                data=dict(cloud_storage_id=self.cloud_storage_id_2),
+                format="json",
             )
-
-    def test_can_not_move_local_task_to_cloud_storage(self):
-        task = self._create_local_task()
-        task_id = task["id"]
-
-        data = {
-            "data_storage": {
-                "location": "cloud_storage",
-                "cloud_storage_id": self.cloud_storage_id_2,
-            },
-        }
-        with ForceLogin(self.owner, self.client):
-            response = self.client.patch(f"/api/tasks/{task_id}", data=data, format="json")
             assert response.status_code == status.HTTP_400_BAD_REQUEST, (
                 response.status_code,
                 response.content,
