@@ -73,7 +73,7 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
                 as: 'exportAnnotationsRenameArchive',
                 type: 'annotations',
                 format: exportFormat,
-                archiveCustomName: 'task_export_annotation_custome_name',
+                archiveCustomName: 'task_export_annotation_custom_name',
             };
             cy.exportJob(exportAnnotationRenameArchive);
             cy.downloadExport().then((file) => {

@@ -135,7 +135,7 @@ context('New organization pipeline.', () => {
             });
         });
 
-        it('Search within organizations: All members shoould be queryable', () => {
+        it('Search within organizations: All members should be queryable', () => {
             const searchBar = 'searchBar';
             const searchBarRef = `@${searchBar}`;
             function search(string = '') {

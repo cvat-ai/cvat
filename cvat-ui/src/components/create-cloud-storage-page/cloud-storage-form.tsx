@@ -322,7 +322,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         className: 'cvat-cloud-storage-form-item',
     };
 
-    const credentialsBlok = (): JSX.Element | null => {
+    const credentialsBlock = (): JSX.Element | null => {
         const internalCommonProps = {
             ...commonProps,
             className: `${commonProps.className} cvat-cloud-storage-form-item-offset-2`,
@@ -516,7 +516,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                         <Select.Option value={CredentialsType.ANONYMOUS_ACCESS}>Anonymous access</Select.Option>
                     </Select>
                 </Form.Item>
-                {credentialsBlok()}
+                {credentialsBlock()}
                 <Form.Item
                     label='Endpoint URL'
                     help='You can specify an endpoint for your storage when using the AWS S3 cloud storage compatible API'
@@ -564,7 +564,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                     </Select>
                 </Form.Item>
 
-                {credentialsBlok()}
+                {credentialsBlock()}
             </>
         );
     };
@@ -598,7 +598,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                         <Select.Option value={CredentialsType.ANONYMOUS_ACCESS}>Anonymous access</Select.Option>
                     </Select>
                 </Form.Item>
-                {credentialsBlok()}
+                {credentialsBlock()}
                 <Form.Item
                     label='Project ID'
                     name='project_id'

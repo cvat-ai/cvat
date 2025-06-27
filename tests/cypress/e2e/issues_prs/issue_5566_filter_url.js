@@ -10,7 +10,7 @@ const project = {
     name: 'A & B',
     label: 'Tree',
     attrName: 'Kind',
-    attrVaue: 'Oak',
+    attrValue: 'Oak',
 };
 
 context('The filter in the URL is correctly escaped', () => {
@@ -30,7 +30,7 @@ context('The filter in the URL is correctly escaped', () => {
         cy.login();
 
         cy.goToProjectsList();
-        cy.createProjects(project.name, project.label, project.attrName, project.attrVaue);
+        cy.createProjects(project.name, project.label, project.attrName, project.attrValue);
         cy.openProject(project.name);
         getProjectID();
         cy.goToProjectsList();

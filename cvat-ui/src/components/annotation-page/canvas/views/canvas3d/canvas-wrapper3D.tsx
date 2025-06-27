@@ -660,7 +660,7 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
         );
     };
 
-    const onCanvasObjectsGroupped = (event: CustomEvent<{ states: ObjectState[] }>): void => {
+    const onCanvasObjectsGrouped = (event: CustomEvent<{ states: ObjectState[] }>): void => {
         const { states } = event.detail;
         updateActiveControl(ActiveControl.CURSOR);
         onGroupAnnotations(states);
@@ -688,7 +688,7 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
         canvasInstanceDOM.perspective.addEventListener('canvas.edited', onCanvasEditDone);
         canvasInstanceDOM.perspective.addEventListener('canvas.contextmenu', onContextMenu);
         canvasInstanceDOM.perspective.addEventListener('click', onCanvasClick);
-        canvasInstanceDOM.perspective.addEventListener('canvas.groupped', onCanvasObjectsGroupped as EventListener);
+        canvasInstanceDOM.perspective.addEventListener('canvas.grouped', onCanvasObjectsGrouped as EventListener);
         canvasInstanceDOM.perspective.addEventListener('canvas.merged', onCanvasObjectsMerged as EventListener);
         canvasInstanceDOM.perspective.addEventListener('canvas.splitted', onCanvasTrackSplitted as EventListener);
 
@@ -698,7 +698,7 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
             canvasInstanceDOM.perspective.removeEventListener('canvas.edited', onCanvasEditDone);
             canvasInstanceDOM.perspective.removeEventListener('canvas.contextmenu', onContextMenu);
             canvasInstanceDOM.perspective.removeEventListener('click', onCanvasClick);
-            canvasInstanceDOM.perspective.removeEventListener('canvas.groupped', onCanvasObjectsGroupped as EventListener);
+            canvasInstanceDOM.perspective.removeEventListener('canvas.grouped', onCanvasObjectsGrouped as EventListener);
             canvasInstanceDOM.perspective.removeEventListener('canvas.merged', onCanvasObjectsMerged as EventListener);
             canvasInstanceDOM.perspective.removeEventListener('canvas.splitted', onCanvasTrackSplitted as EventListener);
         };

@@ -419,7 +419,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             // if object view was not changed by canvas and points accepted as is without any changes
             // the view will not be updated during objects setup if we just set points as is here
             // that is why we need to set points to an empty array (something that can't normally come from CVAT)
-            // I do not think it can be easily fixed now, hovewer in the future we should refactor code
+            // I do not think it can be easily fixed now, however in the future we should refactor code
             if (Number.isInteger(state.parentID)) {
                 const { elements } = this.drawnStates[state.parentID];
                 const drawnElement = elements.find((el) => el.clientID === state.clientID);
@@ -500,7 +500,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         if (objects && typeof duration !== 'undefined') {
             if (this.mode === Mode.GROUP && objects.length > 1) {
                 this.mode = Mode.IDLE;
-                this.canvas.dispatchEvent(new CustomEvent('canvas.groupped', {
+                this.canvas.dispatchEvent(new CustomEvent('canvas.grouped', {
                     bubbles: false,
                     cancelable: true,
                     detail: {

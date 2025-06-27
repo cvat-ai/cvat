@@ -635,7 +635,7 @@ function SingleShapeSidebar(): JSX.Element {
                 </Col>
             </Row>
             { isPolylabel && (
-                <Row className='cvat-single-shape-annotation-sidebar-predefined-pounts-count-checkbox'>
+                <Row className='cvat-single-shape-annotation-sidebar-predefined-points-count-checkbox'>
                     <Col>
                         <Checkbox
                             checked={state.pointsCountIsPredefined}

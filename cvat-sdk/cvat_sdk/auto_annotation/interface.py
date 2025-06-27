@@ -57,7 +57,7 @@ class DetectionFunctionSpec:
 
     `BadFunctionError` will be raised if any constraint violations are detected.
 
-    It's recommented to use the helper factory functions (label_spec, skeleton_label_spec,
+    It's recommended to use the helper factory functions (label_spec, skeleton_label_spec,
     keypoint_spec) to create the label objects, as they are more concise than the model
     constructors and help to follow some of the constraints.
     """
@@ -226,7 +226,7 @@ class DetectionFunction(AutoAnnotationFunction, Protocol):
           except that the label_id of a sub-shape must equal one of the sublabel IDs
           of the label of its parent shape.
 
-        It's recommented to use the helper factory functions (shape, rectangle, skeleton,
+        It's recommended to use the helper factory functions (shape, rectangle, skeleton,
         keypoint) to create the shape objects, as they are more concise than the model
         constructors and help to follow some of the constraints.
 

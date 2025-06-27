@@ -339,7 +339,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed service name of utils worker in `docker-compose.external_db.yml`
   (<https://github.com/cvat-ai/cvat/pull/9352>)
 
-- Slow performance in exports that require CVAT RLE to COCO RLE convertation
+- Slow performance in exports that require CVAT RLE to COCO RLE conversion
   (<https://github.com/cvat-ai/cvat/pull/9359>)
 
 <a id='changelog-2.34.0'></a>
@@ -835,7 +835,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Installation of YOLOv7 on GPU
   (<https://github.com/cvat-ai/cvat/pull/8824>)
 
-- \[Server API\] Significantly improved preformance of honeypot changes in tasks
+- \[Server API\] Significantly improved performance of honeypot changes in tasks
   (<https://github.com/cvat-ai/cvat/pull/8789>)
 - \[Server API\] `PATCH tasks/id/validation_layout` responses now include correct
   `disabled_frames` and handle simultaneous updates of
@@ -1295,7 +1295,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- `Mean annotaion quality` card on quality page now displays a value depending on `Target metric` setting
+- `Mean annotation quality` card on quality page now displays a value depending on `Target metric` setting
   (<https://github.com/cvat-ai/cvat/pull/8347>)
 
 - When cancelling a request, a user is no longer required to have
@@ -1446,7 +1446,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The automatic annotation process failed for tasks from cloud data
   (<https://github.com/cvat-ai/cvat/pull/8199>)
 
-- Request card was not disabed properly after downloading
+- Request card was not disabled properly after downloading
   (<https://github.com/cvat-ai/cvat/pull/8197>)
 
 - Annotations in a ground truth jobs marked as GT annotations after modifying
@@ -1567,12 +1567,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Failing dataset export cleanup attempts for exports before #7864
   (<https://github.com/cvat-ai/cvat/pull/8039>)
 
-- Exception 'this.el.node.getScreenCTM() is null' occuring in Firefox when
+- Exception 'this.el.node.getScreenCTM() is null' occurring in Firefox when
   a user resizes window during skeleton dragging/resizing
   (<https://github.com/cvat-ai/cvat/pull/8067>)
 
 - Exception 'Edge's nodeFrom M or nodeTo N do not to refer to any node'
-  occuring when a user resizes window during skeleton dragging/resizing
+  occurring when a user resizes window during skeleton dragging/resizing
   (<https://github.com/cvat-ai/cvat/pull/8067>)
 
 - Slightly broken layout when running attributed face detection model
@@ -1581,7 +1581,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Exception 'this.el.node.getScreenCTM() is null' when cancel drawing shape for any tracker
   (<https://github.com/cvat-ai/cvat/pull/8080>)
 
-- The switcher to block an active tool on annotation header is not highligted properly
+- The switcher to block an active tool on annotation header is not highlighted properly
   (<https://github.com/cvat-ai/cvat/pull/8081>)
 
 - Points shape color wasn't changed on changing label
@@ -2011,7 +2011,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Single shape annotation mode allowing to easily annotate scenarious where a user
+- Single shape annotation mode allowing to easily annotate scenarios where a user
   only needs to draw one object on one image (<https://github.com/opencv/cvat/pull/7486>)
 
 ### Fixed
@@ -2183,9 +2183,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - RQ Scheduler launch, broken in PR 7245
   (<https://github.com/opencv/cvat/pull/7293>)
 
-- UI crashes if user highligts conflict related to annotations hidden by a filter
+- UI crashes if user highlights conflict related to annotations hidden by a filter
   (<https://github.com/opencv/cvat/pull/7299>)
-- Annotations conflicts are not highligted properly on the first frame of a job
+- Annotations conflicts are not highlighted properly on the first frame of a job
   (<https://github.com/opencv/cvat/pull/7299>)
 
 - Error message `Edge's nodeFrom ${dataNodeFrom} or nodeTo ${dataNodeTo} do not to refer to any node`
@@ -2563,7 +2563,7 @@ This release has changes only in the Enterprise version.
 
 - PCD files with nan values could not be opened on 3D workspace
   (<https://github.com/opencv/cvat/pull/6862>)
-- Fixed direct navigation to neightbour chunk on 3D workspace
+- Fixed direct navigation to neighbour chunk on 3D workspace
   (<https://github.com/opencv/cvat/pull/6862>)
 - Intencity level from .bin lidar data ignored when converting .bin -> .pcd
   (<https://github.com/opencv/cvat/pull/6862>)
@@ -2621,7 +2621,7 @@ This release has changes only in the Enterprise version.
 
 ### Added
 
-- Gamma correcton filter (<https://github.com/opencv/cvat/pull/6771>)
+- Gamma correction filter (<https://github.com/opencv/cvat/pull/6771>)
 - Introduced the feature to hide or show objects in review mode (<https://github.com/opencv/cvat/pull/6808>)
 
 ### Changed
@@ -3162,7 +3162,7 @@ This release has changes only in the Enterprise version.
 - Dataset export for job (<https://github.com/opencv/cvat/pull/5052>)
 - Angle is not propagated when use `propagate` feature (<https://github.com/opencv/cvat/pull/5139>)
 - Could not fetch task in a corner case (<https://github.com/opencv/cvat/pull/5163>)
-- Restoring CVAT in case of React-renderning fail (<https://github.com/opencv/cvat/pull/5134>)
+- Restoring CVAT in case of React-rendering fail (<https://github.com/opencv/cvat/pull/5134>)
 - Deleted frames become restored if a user deletes frames from another job of the same task
   (<https://github.com/opencv/cvat/pull/5138>)
 - Wrong issue position when create a quick issue on a rotated shape (<https://github.com/opencv/cvat/pull/5162>)
@@ -3367,7 +3367,7 @@ This release has changes only in the Enterprise version.
 - Added intelligent function when paste labels to another task (<https://github.com/openvinotoolkit/cvat/pull/4161>)
 - Uncaught TypeError: this.el.node.getScreenCTM() is null in Firefox (<https://github.com/openvinotoolkit/cvat/pull/4175>)
 - Bug: canvas is busy when start playing, start resizing a shape and do not release the mouse cursor (<https://github.com/openvinotoolkit/cvat/pull/4151>)
-- Bug: could not receive frame N. TypeError: Cannot read properties of undefined (reding "filename") (<https://github.com/openvinotoolkit/cvat/pull/4187>)
+- Bug: could not receive frame N. TypeError: Cannot read properties of undefined (reading "filename") (<https://github.com/openvinotoolkit/cvat/pull/4187>)
 - Cannot choose a dataset format for a linked repository if a task type is annotation (<https://github.com/openvinotoolkit/cvat/pull/4203>)
 - Fixed tus upload error over https (<https://github.com/openvinotoolkit/cvat/pull/4154>)
 - Issues disappear when rescale a browser (<https://github.com/openvinotoolkit/cvat/pull/4189>)
@@ -4181,7 +4181,7 @@ This release has changes only in the Enterprise version.
 ### Fixed
 
 - Django 2.1.5 (security fix, [CVE-2019-3498](https://nvd.nist.gov/vuln/detail/CVE-2019-3498))
-- Several scenarious which cause code 400 after undo/redo/save have been fixed (#315)
+- Several scenarios which cause code 400 after undo/redo/save have been fixed (#315)
 
 ## \[0.3.0] - 2018-12-29
 

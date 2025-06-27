@@ -338,7 +338,7 @@ def get_old_db_paths(db_job):
 
     for db_polygon_path in db_polygon_paths:
         db_polygon_path.attributes = list(set(db_polygon_path.attributes))
-        db_polygon_path.type = "poligon_path"
+        db_polygon_path.type = "polygon_path"
         db_polygon_path.shapes = _merge_table_rows(
             db_polygon_path.shapes,
             {
