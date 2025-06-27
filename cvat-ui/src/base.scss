@@ -175,3 +175,23 @@ $scroll-breakpoint: 1300px;
         }
     }
 }
+
+@mixin cvat-resource-page {
+    padding-top: $grid-unit-size * 2;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+
+    > .cvat-resource-list-wrapper {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding-top: $grid-unit-size;
+        align-items: start;
+    }
+
+    > .cvat-resource-pagination-wrapper {
+        padding-top: $grid-unit-size;
+        padding-bottom: $grid-unit-size;
+    }
+}
