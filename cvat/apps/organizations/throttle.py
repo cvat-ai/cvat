@@ -4,8 +4,6 @@
 
 from rest_framework.throttling import UserRateThrottle
 
-from cvat.utils.throttle import SharedCacheThrottle
 
-
-class ResendOrganizationInvitationThrottle(SharedCacheThrottle, UserRateThrottle):
+class ResendOrganizationInvitationThrottle(UserRateThrottle):
     rate = "5/hour"

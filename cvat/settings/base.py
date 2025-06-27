@@ -21,7 +21,7 @@ import sys
 import tempfile
 import urllib
 from datetime import timedelta
-from enum import Enum
+from enum import Enum, IntEnum
 
 from attr.converters import to_bool
 from corsheaders.defaults import default_headers
@@ -160,7 +160,7 @@ REST_FRAMEWORK = {
     # Disable default handling of the 'format' query parameter by REST framework
     "URL_FORMAT_OVERRIDE": "scheme",
     "DEFAULT_THROTTLE_CLASSES": [
-        "cvat.utils.throttle.CVATAnonRateThrottle",
+        "rest_framework.throttling.AnonRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
         "anon": "100/minute",
@@ -285,10 +285,16 @@ redis_inmem_host = os.getenv("CVAT_REDIS_INMEM_HOST", "localhost")
 redis_inmem_port = os.getenv("CVAT_REDIS_INMEM_PORT", 6379)
 redis_inmem_password = os.getenv("CVAT_REDIS_INMEM_PASSWORD", "")
 
+
+class REDIS_INMEM_DATABASES(IntEnum):
+    RQ = 0
+    CACHE = 1
+
+
 REDIS_INMEM_SETTINGS = {
     "HOST": redis_inmem_host,
     "PORT": redis_inmem_port,
-    "DB": 0,
+    "DB": REDIS_INMEM_DATABASES.RQ,
     "PASSWORD": redis_inmem_password,
 }
 
@@ -576,16 +582,13 @@ CVAT_PREVIEW_CACHE_TTL = 3600 * 24 * 7  # 7 days
 
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": f"redis://:{urllib.parse.quote(redis_inmem_password)}@{redis_inmem_host}:{redis_inmem_port}/{REDIS_INMEM_DATABASES.CACHE}",
     },
     "media": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
         "LOCATION": f"redis://:{urllib.parse.quote(redis_ondisk_password)}@{redis_ondisk_host}:{redis_ondisk_port}",
         "TIMEOUT": CVAT_CHUNK_CACHE_TTL,
-    },
-    "shared": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": f"redis://:{urllib.parse.quote(redis_inmem_password)}@{redis_inmem_host}:{redis_inmem_port}",
     },
 }
 
