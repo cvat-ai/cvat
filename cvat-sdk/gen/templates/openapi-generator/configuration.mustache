@@ -86,20 +86,34 @@ class Configuration:
 
     API Key Authentication Example.
 
-    You can authenticate with API token after doing the basic auth the following way:
+    You can authenticate with a token after logging in the following way:
+
+    conf = {{{packageName}}}.Configuration(
+        ...
+        api_key={
+            "tokenAuth": <auth key value>,
+        }
+    )
+
+    If your custom server uses another token prefix, use the 'api_key_prefix' parameter.
+
+
+    You can authenticate with session tokens after logging in the following way:
 
     conf = {{{packageName}}}.Configuration(
         ...
         api_key={
             "sessionAuth": <sessionid cookie value>,
             "csrfAuth": <csrftoken cookie value>,
-            "tokenAuth": <auth key value>,
+            "csrfHeaderAuth": <auth key value>,
         }
     )
 
-    You need to specify all the 3 keys for this kind of auth.
+    You need to specify all the 3 keys for this kind of auth and also specify the 'Origin' header:
 
-    If your custom server uses another token prefix, use the 'api_key_prefix' parameter.
+    with {{{packageName}}}.ApiClient(configuration) as api_client:
+        api_client.set_default_header("Origin", api_client.configuration.host)
+        ...
 
 {{/hasApiKeyMethods}}
 {{#hasHttpBasicMethods}}

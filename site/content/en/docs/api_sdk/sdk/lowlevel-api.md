@@ -132,47 +132,103 @@ Typically, the first thing you do with `ApiClient` is log in.
 
 ## Authentication
 
-CVAT supports 2 authentication options:
-- basic auth, with your username and password
-- token auth, with your API key
+CVAT supports 3 authentication options:
+- Basic authentication, with a username and a password
+- Token authentication, with an API access key
+- Session authentication, with a session id and a CSRF token
 
-Token auth requires a token, which can be obtained after performing the basic auth.
+Token authentication requires an API key, which can be obtained after logging in
+the `/api/auth/login` endpoint using the basic authentication credentials.
 
-The low-level API supports 2 ways of authentication.
-You can specify authentication parameters in the `Configuration` object:
+Session authentication requires a session id and a CSRF token, which can be obtained after
+logging in the `/api/auth/login` endpoint using the basic authentication credentials.
+
+Authentication credentials for an `ApiClient` instance can be specified in a `Configuration` object:
+
+{{< tabpane text=true >}}
+
+{{%tab header="Basic authentication" %}}
 
 ```python
 configuration = Configuration(
     username='YOUR_USERNAME',
     password='YOUR_PASSWORD',
+    ...
 )
+with ApiClient(configuration) as api_client:
+    ...
 ```
+
+{{% /tab %}}
+
+{{%tab header="Token authentication" %}}
+
+```python
+configuration = Configuration(
+    api_key={
+        "tokenAuth": "Token <api key value>",
+    },
+    ...
+)
+with ApiClient(configuration) as api_client:
+    ...
+```
+
+{{% /tab %}}
+
+{{%tab header="Session authentication" %}}
 
 ```python
 configuration = Configuration(
     api_key={
         "sessionAuth": "<sessionid cookie value>",
         "csrfAuth": "<csrftoken cookie value>",
-        "tokenAuth": "Token <auth key value>",
-    }
+        "csrfHeaderAuth": "<csrftoken cookie value>",
+    },
+    ...
 )
+with ApiClient(configuration) as api_client:
+    api_client.set_default_header("Origin", api_client.configuration.host)
+    ...
 ```
 
-You can perform a regular login using the `auth_api` member of `ApiClient` and
-set the `Authorization` header using the `Token` prefix. This way, you'll be able to
-obtain API tokens, which can be reused in the future to avoid typing your credentials.
+{{% /tab %}}
 
+{{< /tabpane >}}
+
+Session authentication and token authentication tokens can be received by logging in
+using the `ApiClient.auth_api.create_login()` function. Then, the authentication keys
+can be set in the `ApiClient` instance.
+
+{{< tabpane text=true >}}
+
+{{%tab header="Token authentication" %}}
 ```python
 from cvat_sdk.api_client import models
 
 (auth, _) = api_client.auth_api.create_login(
-    models.LoginRequest(username=credentials[0], password=credentials[1])
+    models.LoginSerializerExRequest(username="username", password="password")
 )
 
-assert "sessionid" in api_client.cookies
-assert "csrftoken" in api_client.cookies
 api_client.set_default_header("Authorization", "Token " + auth.key)
 ```
+{{% /tab %}}
+
+{{%tab header="Session authentication" %}}
+```python
+from cvat_sdk.api_client import models
+
+(auth, _) = api_client.auth_api.create_login(
+    models.LoginSerializerExRequest(username="username", password="password")
+)
+
+assert "sessionid" in api_client.cookies # managed by ApiClient automatically
+api_client.set_default_header("Origin", api_client.configuration.host)
+api_client.set_default_header("X-CSRFToken", api_client.cookies["csrftoken"].value)
+```
+{{% /tab %}}
+
+{{< /tabpane >}}
 
 ## API wrappers
 
