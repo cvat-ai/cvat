@@ -81,7 +81,7 @@ context('Ground truth jobs', () => {
     let jobID = null;
     let taskID = null;
 
-    // With seed = 1, frameCount = 4, totalFrames = 100 - predifined ground truth frames are:
+    // With seed = 1, frameCount = 4, totalFrames = 100 - predefined ground truth frames are:
     const groundTruthFrames = [10, 23, 71, 87];
 
     function checkRectangleAndObjectMenu(rectangle, isGroundTruthJob = false) {

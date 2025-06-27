@@ -49,6 +49,7 @@ secons = "seconds"
 archieve = "archive"
 corrent = "correct"
 creationg = "creation"
+performe = "perform"
 
 # FIXME: tableBodyFirstRowThs - what is the word `Ths`?
 

@@ -48,7 +48,7 @@ You can customize shortcuts in CVAT settings.
  ctrl + w (closing tabs) etc, are reserved by the browser and shortcuts such as alt + f4 (closing the window)
  are usually reserved by your operating system.
 
-- All sections collapsable, so you can easily navigate through the list of shortcuts.
+- All sections collapsible, so you can easily navigate through the list of shortcuts.
  Here is the Global scope expanded:\
 ![Expanded "General" section in "Shortcuts" tab](/images/shortcuts04.png)
 

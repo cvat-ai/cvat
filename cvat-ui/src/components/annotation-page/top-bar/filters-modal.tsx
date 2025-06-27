@@ -156,7 +156,7 @@ function FiltersModalComponent(): JSX.Element {
                     type: '!struct',
                     subfields: getAttributesSubfields(labels),
                     fieldSettings: {
-                        treeSelectOnlyLeafs: true,
+                        treeSelectOnlyLeaves: true,
                     },
                 },
             },

@@ -1722,7 +1722,7 @@ class ExportBehaviorTest(_DbTestBase):
         # create a file in the export cache
         first_export_path = export(dst_format=format_name, task_id=task_id)
 
-        initial_file_modfication_time = os.path.getmtime(first_export_path)
+        initial_file_modification_time = os.path.getmtime(first_export_path)
         # make sure that a file in the export cache is outdated by timeout
         # and a file would have to be deleted if the export was not running in parallel
         sleep(export_outdated_after.seconds + 1)
@@ -1785,7 +1785,7 @@ class ExportBehaviorTest(_DbTestBase):
         self.assertGreater(len(new_export_path), 0)
         self.assertTrue(osp.isfile(new_export_path))
         self.assertTrue(osp.isfile(first_export_path))
-        self.assertGreater(os.path.getmtime(first_export_path), initial_file_modfication_time)
+        self.assertGreater(os.path.getmtime(first_export_path), initial_file_modification_time)
 
         # terminate() may break the locks, don't try to acquire
         # https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Process.terminate

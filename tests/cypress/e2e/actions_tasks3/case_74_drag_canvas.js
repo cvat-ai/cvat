@@ -40,7 +40,7 @@ context('Drag canvas.', () => {
                 });
         });
 
-        it('Duble click on canvas. Parameters returned to their original value', () => {
+        it('Double click on canvas. Parameters returned to their original value', () => {
             cy.get('.cvat-canvas-container').dblclick();
             cy.get('#cvat_canvas_background')
                 .invoke('attr', 'style')

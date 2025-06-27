@@ -35,7 +35,7 @@ function TaskPageComponent(): JSX.Element {
 
     const deletes = useSelector((state: CombinedState) => state.tasks.activities.deletes);
 
-    const receieveTask = (): Promise<Task[]> => {
+    const receiveTask = (): Promise<Task[]> => {
         if (Number.isInteger(id)) {
             const promise = core.tasks.get({ id });
             promise.then(([task]: Task[]) => {
@@ -61,7 +61,7 @@ function TaskPageComponent(): JSX.Element {
     };
 
     useEffect(() => {
-        receieveTask().finally(() => {
+        receiveTask().finally(() => {
             setFetchingTask(false);
         });
         dispatch(getInferenceStatusAsync());

@@ -183,7 +183,7 @@ class TestTaskVisionDataset:
             # multiple tags
             _ = dataset[8]
 
-        # make sure the samples can be batched with the default collater
+        # make sure the samples can be batched with the default collator
         loader = DataLoader(dataset, batch_size=2, sampler=[5, 6])
 
         batch = next(iter(loader))

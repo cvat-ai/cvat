@@ -18,7 +18,7 @@ const project = {
     name: `Case ${caseId}`,
     label: 'Tree',
     attrName: 'Kind',
-    attrVaue: 'Oak',
+    attrValue: 'Oak',
 };
 
 const task = {
@@ -58,7 +58,7 @@ context('Backup, restore a project.', { browser: '!firefox' }, () => {
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, project.label, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
         cy.goToProjectsList();
-        cy.createProjects(project.name, project.label, project.attrName, project.attrVaue);
+        cy.createProjects(project.name, project.label, project.attrName, project.attrValue);
         cy.openProject(project.name);
         getProjectID();
         cy.createAnnotationTask(
@@ -124,7 +124,7 @@ context('Backup, restore a project with a 3D task.', { browser: '!firefox' }, ()
 
     before(() => {
         cy.goToProjectsList();
-        cy.createProjects(project.name, project.label, project.attrName, project.attrVaue);
+        cy.createProjects(project.name, project.label, project.attrName, project.attrValue);
         cy.openProject(project.name);
         getProjectID();
         cy.createAnnotationTask(
