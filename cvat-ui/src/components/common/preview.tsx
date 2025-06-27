@@ -6,6 +6,7 @@ import React, { useEffect } from 'react';
 
 import { useDispatch, useSelector } from 'react-redux';
 import { PictureOutlined } from '@ant-design/icons';
+import { useInView } from 'react-intersection-observer';
 import Spin from 'antd/lib/spin';
 import { getJobPreviewAsync } from 'actions/jobs-actions';
 import { getTaskPreviewAsync } from 'actions/tasks-actions';
@@ -31,7 +32,6 @@ interface Props {
 
 export default function Preview(props: Props): JSX.Element {
     const dispatch = useDispatch();
-
     const {
         job,
         task,
@@ -44,6 +44,9 @@ export default function Preview(props: Props): JSX.Element {
         previewWrapperClassName,
         previewClassName,
     } = props;
+
+    const [hasFetched, setHasFetched] = React.useState(false);
+    const { ref, inView } = useInView({ triggerOnce: true });
 
     const preview = useSelector((state: CombinedState) => {
         if (job !== undefined) {
@@ -61,7 +64,8 @@ export default function Preview(props: Props): JSX.Element {
     });
 
     useEffect(() => {
-        if (preview === undefined) {
+        if (inView && !hasFetched && preview === undefined) {
+            setHasFetched(true);
             if (job !== undefined) {
                 dispatch(getJobPreviewAsync(job));
             } else if (project !== undefined) {
@@ -74,11 +78,11 @@ export default function Preview(props: Props): JSX.Element {
                 dispatch(getModelPreviewAsync(model));
             }
         }
-    }, [preview]);
+    }, [inView, hasFetched, preview]);
 
     if (!preview || (preview && preview.fetching)) {
         return (
-            <div className={loadingClassName || ''} aria-hidden>
+            <div ref={ref} className={loadingClassName || ''} aria-hidden>
                 <Spin size='default' />
             </div>
         );
