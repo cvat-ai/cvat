@@ -680,7 +680,6 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 const taskData = {
                     ...this._updateTrigger.getUpdated(this, {
                         bugTracker: 'bug_tracker',
-                        dataStorage: 'data_storage',
                         projectId: 'project_id',
                         assignee: 'assignee_id',
                     }),

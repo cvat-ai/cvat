@@ -768,7 +768,6 @@ export class Task extends Session {
     public bugTracker: string;
     public subset: string;
     public labels: Label[];
-    public dataStorage: Storage;
     public readonly guideId: number | null;
     public readonly id: number;
     public readonly status: TaskStatus;
@@ -848,7 +847,6 @@ export class Task extends Session {
             progress: undefined,
             labels: undefined,
             jobs: undefined,
-            data_storage: undefined,
 
             start_frame: undefined,
             stop_frame: undefined,
@@ -907,11 +905,6 @@ export class Task extends Session {
         data.target_storage = new Storage({
             location: initialData.target_storage?.location || StorageLocation.LOCAL,
             cloudStorageId: initialData.target_storage?.cloud_storage_id,
-        });
-
-        data.data_storage = new Storage({
-            location: initialData.data_storage?.location || StorageLocation.LOCAL,
-            cloudStorageId: initialData.data_storage?.cloud_storage_id,
         });
 
         if (Array.isArray(initialData.jobs)) {
@@ -1195,13 +1188,6 @@ export class Task extends Session {
                 },
                 targetStorage: {
                     get: () => data.target_storage,
-                },
-                dataStorage: {
-                    get: () => data.data_storage,
-                    set: (dataStorage) => {
-                        updateTrigger.update('dataStorage');
-                        data.data_storage = dataStorage;
-                    },
                 },
                 progress: {
                     get: () => data.progress,

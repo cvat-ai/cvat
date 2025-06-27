@@ -583,7 +583,6 @@ class TaskPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
                 'organization': Scopes.UPDATE_ORGANIZATION,
                 'source_storage': Scopes.UPDATE_ASSOCIATED_STORAGE,
                 'target_storage': Scopes.UPDATE_ASSOCIATED_STORAGE,
-                'data_storage': Scopes.UPDATE_ASSOCIATED_STORAGE,
             }))
 
         elif scope == Scopes.VIEW_ANNOTATIONS:
