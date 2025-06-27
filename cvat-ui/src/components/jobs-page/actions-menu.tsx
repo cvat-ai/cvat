@@ -7,13 +7,15 @@ import { useDispatch, useSelector } from 'react-redux';
 import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
 
-import { Job, JobType } from 'cvat-core-wrapper';
-import { usePlugins } from 'utils/hooks';
+import {
+    Job, JobStage, JobState, JobType, User,
+} from 'cvat-core-wrapper';
+import { useDropdownEditField, usePlugins } from 'utils/hooks';
 import { CombinedState } from 'reducers';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
 import { mergeConsensusJobsAsync } from 'actions/consensus-actions';
-import { deleteJobAsync } from 'actions/jobs-actions';
+import { deleteJobAsync, updateJobAsync } from 'actions/jobs-actions';
 
 import { makeKey } from 'reducers/consensus-reducer';
 import JobActionsItems from './actions-menu-items';
@@ -30,6 +32,15 @@ function JobActionsComponent(props: Props): JSX.Element {
 
     const pluginActions = usePlugins((state: CombinedState) => state.plugins.components.jobActions.items, props);
     const mergingConsensus = useSelector((state: CombinedState) => state.consensus.actions.merging);
+
+    const {
+        dropdownOpen,
+        editField,
+        startEditField,
+        stopEditField,
+        onOpenChange,
+        onMenuClick,
+    } = useDropdownEditField();
 
     const onOpenBugTracker = useCallback(() => {
         if (jobInstance.bugTracker) {
@@ -81,18 +92,31 @@ function JobActionsComponent(props: Props): JSX.Element {
         }
     }, [jobInstance]);
 
+    const onUpdateJobField = useCallback((
+        fields: Partial<{ assignee: User | null; state: JobState; stage: JobStage }>,
+    ) => {
+        dispatch(updateJobAsync(jobInstance, fields)).then(stopEditField);
+    }, [jobInstance]);
+
     return (
         <Dropdown
             destroyPopupOnHide
             trigger={['click']}
+            open={dropdownOpen}
+            onOpenChange={onOpenChange}
             className='job-actions-menu'
             menu={{
                 selectable: false,
                 className: 'cvat-job-item-menu',
                 items: JobActionsItems({
+                    editField,
+                    startEditField,
+                    stage: jobInstance.stage,
+                    state: jobInstance.state,
                     jobID: jobInstance.id,
                     taskID: jobInstance.taskId,
                     projectID: jobInstance.projectId,
+                    assignee: jobInstance.assignee,
                     isMergingConsensusEnabled: mergingConsensus[makeKey(jobInstance)],
                     pluginActions,
                     onOpenBugTracker: jobInstance.bugTracker ? onOpenBugTracker : null,
@@ -101,7 +125,9 @@ function JobActionsComponent(props: Props): JSX.Element {
                     onMergeConsensusJob: consensusJobsPresent && jobInstance.parentJobId === null ?
                         onMergeConsensusJob : null,
                     onDeleteJob: jobInstance.type === JobType.GROUND_TRUTH ? onDeleteJob : null,
+                    onUpdateJobField,
                 }, props),
+                onClick: onMenuClick,
             }}
         >
             {triggerElement}

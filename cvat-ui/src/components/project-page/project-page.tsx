@@ -21,7 +21,7 @@ import notification from 'antd/lib/notification';
 
 import { getCore, Project, Task } from 'cvat-core-wrapper';
 import { CombinedState, Indexable } from 'reducers';
-import { getProjectTasksAsync } from 'actions/projects-actions';
+import { getProjectTasksAsync, updateProjectAsync } from 'actions/projects-actions';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import TaskItem from 'containers/tasks-page/task-item';
 import MoveTaskModal from 'components/move-task-modal/move-task-modal';
@@ -56,10 +56,10 @@ export default function ProjectPageComponent(): JSX.Element {
 
     const [projectInstance, setProjectInstance] = useState<Project | null>(null);
     const [fechingProject, setFetchingProject] = useState(true);
-    const [updatingProject, setUpdatingProject] = useState(false);
     const mounted = useRef(false);
 
     const deletes = useSelector((state: CombinedState) => state.projects.activities.deletes);
+    const updates = useSelector((state: CombinedState) => state.projects.activities.updates);
     const tasks = useSelector((state: CombinedState) => state.tasks.current);
     const tasksCount = useSelector((state: CombinedState) => state.tasks.count);
     const tasksQuery = useSelector((state: CombinedState) => state.projects.tasksGettingQuery);
@@ -74,6 +74,8 @@ export default function ProjectPageComponent(): JSX.Element {
             updatedQuery.page = updatedQuery.page ? +updatedQuery.page : 1;
         }
     }
+
+    const updatingProject = updates[id];
 
     useEffect(() => {
         if (Number.isInteger(id)) {
@@ -188,23 +190,8 @@ export default function ProjectPageComponent(): JSX.Element {
                 <ProjectTopBar projectInstance={projectInstance} />
                 <DetailsComponent
                     onUpdateProject={(project: Project) => {
-                        setUpdatingProject(true);
-                        project.save().then((updatedProject: Project) => {
-                            if (mounted.current) {
-                                dispatch(getProjectTasksAsync({ ...updatedQuery, projectId: id }));
-                                setProjectInstance(updatedProject);
-                            }
-                        }).catch((error: Error) => {
-                            if (mounted.current) {
-                                notification.error({
-                                    message: 'Could not update the project',
-                                    description: error.toString(),
-                                });
-                            }
-                        }).finally(() => {
-                            if (mounted.current) {
-                                setUpdatingProject(false);
-                            }
+                        dispatch(updateProjectAsync(project)).then((updatedProject: Project) => {
+                            setProjectInstance(updatedProject);
                         });
                     }}
                     project={projectInstance}

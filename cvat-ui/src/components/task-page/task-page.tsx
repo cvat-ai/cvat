@@ -20,6 +20,7 @@ import ModelRunnerModal from 'components/model-runner-modal/model-runner-dialog'
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import MoveTaskModal from 'components/move-task-modal/move-task-modal';
 import { CombinedState } from 'reducers';
+import { updateTaskAsync } from 'actions/tasks-actions';
 import TopBarComponent from './top-bar';
 import DetailsComponent from './details';
 
@@ -31,9 +32,11 @@ function TaskPageComponent(): JSX.Element {
     const dispatch = useDispatch();
     const [taskInstance, setTaskInstance] = useState<Task | null>(null);
     const [fetchingTask, setFetchingTask] = useState(true);
-    const [updatingTask, setUpdatingTask] = useState(false);
 
     const deletes = useSelector((state: CombinedState) => state.tasks.activities.deletes);
+    const updates = useSelector((state: CombinedState) => state.tasks.activities.updates);
+    const jobsFetching = useSelector((state: CombinedState) => state.jobs.fetching);
+    const isTaskUpdating = updates[id] || jobsFetching;
 
     const receieveTask = (): Promise<Task[]> => {
         if (Number.isInteger(id)) {
@@ -82,43 +85,18 @@ function TaskPageComponent(): JSX.Element {
     }
 
     const onUpdateTask = (task: Task): Promise<void> => (
-        new Promise((resolve, reject) => {
-            setUpdatingTask(true);
-            task.save().then((updatedTask: Task) => {
-                setTaskInstance(updatedTask);
-                resolve();
-            }).catch((error: Error) => {
-                notification.error({
-                    message: 'Could not update the task',
-                    className: 'cvat-notification-notice-update-task-failed',
-                    description: error.toString(),
-                });
-                reject();
-            }).finally(() => {
-                setUpdatingTask(false);
-            });
+        dispatch(updateTaskAsync(task, {})).then((updatedTask: Task) => {
+            setTaskInstance(updatedTask);
         })
     );
 
     const onJobUpdate = (job: Job, data: Parameters<Job['save']>[0]): void => {
-        setUpdatingTask(true);
-        dispatch(updateJobAsync(job, data)).then(() => {
-            // if one of jobs changes, task will have its updated_date bumped
-            // but generally we do not use this field anywhere on the page
-            // so, as a kind of optimization we do not fetch the task again
-            setUpdatingTask(false);
-        }).catch((error: Error) => {
-            setUpdatingTask(false);
-            notification.error({
-                message: 'Could not update the job',
-                description: error.toString(),
-            });
-        });
+        dispatch(updateJobAsync(job, data));
     };
 
     return (
         <div className='cvat-task-page'>
-            { updatingTask ? <CVATLoadingSpinner size='large' /> : null }
+            { isTaskUpdating ? <CVATLoadingSpinner size='large' /> : null }
             <Row
                 justify='center'
                 align='top'

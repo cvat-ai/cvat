@@ -141,6 +141,8 @@ export default function UserSelector(props: Props): JSX.Element {
             }
 
             setSearchPhrase(value.username);
+        } else {
+            setSearchPhrase('');
         }
     }, [value]);
 

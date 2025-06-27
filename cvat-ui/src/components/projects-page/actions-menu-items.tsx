@@ -5,15 +5,22 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { MenuProps } from 'antd/lib/menu';
+import { User } from 'cvat-core-wrapper';
 import { usePlugins } from 'utils/hooks';
+import UserSelector from 'components/task-page/user-selector';
+import { CVATMenuEditLabel } from 'components/common/cvat-menu-edit-label';
 
 interface MenuItemsData {
     projectID: number;
+    assignee: User | null;
+    editField: string | null;
+    startEditField: (key: string) => void;
     pluginActions: ReturnType<typeof usePlugins>;
     onExportDataset: () => void;
     onImportDataset: () => void;
     onBackupProject: () => void;
     onDeleteProject: () => void;
+    onUpdateProjectAssignee: (assignee: User | null) => void;
 }
 
 export default function ProjectActionsItems(
@@ -21,13 +28,29 @@ export default function ProjectActionsItems(
     projectMenuProps: unknown,
 ): MenuProps['items'] {
     const {
+        editField,
+        startEditField,
         projectID,
+        assignee,
         pluginActions,
         onExportDataset,
         onImportDataset,
         onBackupProject,
         onDeleteProject,
+        onUpdateProjectAssignee,
     } = menuItemsData;
+
+    const fieldSelectors: Record<string, JSX.Element> = {
+        assignee: (
+            <UserSelector
+                value={assignee}
+                onSelect={(value: User | null): void => {
+                    if (assignee?.id === value?.id) return;
+                    onUpdateProjectAssignee(value);
+                }}
+            />
+        ),
+    };
 
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
 
@@ -50,29 +73,35 @@ export default function ProjectActionsItems(
     }, 20]);
 
     menuItems.push([{
+        key: 'edit_assignee',
+        onClick: () => startEditField('assignee'),
+        label: <CVATMenuEditLabel>Assignee</CVATMenuEditLabel>,
+    }, 30]);
+
+    menuItems.push([{
         key: 'view-analytics',
         label: <Link to={`/projects/${projectID}/analytics`}>View analytics</Link>,
-    }, 30]);
+    }, 40]);
 
     menuItems.push([{
         key: 'quality-control',
         label: <Link to={`/projects/${projectID}/quality-control`}>Quality control</Link>,
-    }, 40]);
+    }, 50]);
 
     menuItems.push([{
         key: 'set-webhooks',
         label: <Link to={`/projects/${projectID}/webhooks`}>Setup webhooks</Link>,
-    }, 50]);
+    }, 60]);
 
     menuItems.push([{
         type: 'divider',
-    }, 59]);
+    }, 69]);
 
     menuItems.push([{
         key: 'delete',
         onClick: onDeleteProject,
         label: 'Delete',
-    }, 60]);
+    }, 70]);
 
     menuItems.push(
         ...pluginActions.map(({ component: Component, weight }, index) => {
@@ -80,6 +109,13 @@ export default function ProjectActionsItems(
             return [menuItem, weight] as [NonNullable<MenuProps['items']>[0], number];
         }),
     );
+
+    if (editField) {
+        return [{
+            key: `${editField}-selector`,
+            label: fieldSelectors[editField],
+        }];
+    }
 
     return menuItems.sort((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1]).map((menuItem) => menuItem[0]);
 }

@@ -7,11 +7,21 @@ import { Link } from 'react-router-dom';
 import { MenuProps } from 'antd/lib/menu';
 import { LoadingOutlined } from '@ant-design/icons';
 import { usePlugins } from 'utils/hooks';
+import { JobStage, JobState, User } from 'cvat-core-wrapper';
+import UserSelector from 'components/task-page/user-selector';
+import { JobStageSelector, JobStateSelector } from 'components/job-item/job-selectors';
+import { CVATMenuEditLabel } from 'components/common/cvat-menu-edit-label';
 
 interface MenuItemsData {
+    editField: string | null;
+    startEditField: (key: string) => void;
+
     jobID: number;
     taskID: number;
     projectID: number | null;
+    assignee: User | null;
+    state: JobState;
+    stage: JobStage;
     pluginActions: ReturnType<typeof usePlugins>;
     isMergingConsensusEnabled: boolean;
     onOpenBugTracker: (() => void) | null;
@@ -19,6 +29,7 @@ interface MenuItemsData {
     onExportAnnotations: () => void;
     onMergeConsensusJob: (() => void) | null;
     onDeleteJob: (() => void) | null;
+    onUpdateJobField: (fields: Partial<{ assignee: User | null; state: JobState; stage: JobStage }>) => void;
 }
 
 export default function JobActionsItems(
@@ -26,6 +37,11 @@ export default function JobActionsItems(
     jobMenuProps: unknown,
 ): MenuProps['items'] {
     const {
+        editField,
+        startEditField,
+        assignee,
+        state,
+        stage,
         jobID,
         taskID,
         projectID,
@@ -36,9 +52,38 @@ export default function JobActionsItems(
         onExportAnnotations,
         onMergeConsensusJob,
         onDeleteJob,
+        onUpdateJobField,
     } = menuItemsData;
 
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
+
+    const fieldSelectors: Record<string, JSX.Element> = {
+        assignee: (
+            <UserSelector
+                value={assignee}
+                onSelect={(value: User | null): void => {
+                    if (assignee?.id === value?.id) return;
+                    onUpdateJobField({ assignee: value });
+                }}
+            />
+        ),
+        state: (
+            <JobStateSelector
+                value={state}
+                onSelect={(value: JobState): void => {
+                    onUpdateJobField({ state: value });
+                }}
+            />
+        ),
+        stage: (
+            <JobStageSelector
+                value={stage}
+                onSelect={(value: JobStage): void => {
+                    onUpdateJobField({ stage: value });
+                }}
+            />
+        ),
+    };
 
     menuItems.push([{
         key: 'task',
@@ -83,17 +128,35 @@ export default function JobActionsItems(
     }
 
     menuItems.push([{
-        key: 'view-analytics',
-        label: <Link to={`/tasks/${taskID}/jobs/${jobID}/analytics`}>View analytics</Link>,
+        key: 'edit_assignee',
+        onClick: () => startEditField('assignee'),
+        label: <CVATMenuEditLabel>Assignee</CVATMenuEditLabel>,
     }, 60]);
 
+    menuItems.push([{
+        key: 'edit_state',
+        onClick: () => startEditField('state'),
+        label: <CVATMenuEditLabel>State</CVATMenuEditLabel>,
+    }, 70]);
+
+    menuItems.push([{
+        key: 'edit_stage',
+        onClick: () => startEditField('stage'),
+        label: <CVATMenuEditLabel>Stage</CVATMenuEditLabel>,
+    }, 80]);
+
+    menuItems.push([{
+        key: 'view-analytics',
+        label: <Link to={`/tasks/${taskID}/jobs/${jobID}/analytics`}>View analytics</Link>,
+    }, 90]);
+
     if (onDeleteJob) {
-        menuItems.push([{ type: 'divider' }, 69]);
+        menuItems.push([{ type: 'divider' }, 99]);
         menuItems.push([{
             key: 'delete',
             onClick: onDeleteJob,
             label: 'Delete',
-        }, 70]);
+        }, 100]);
     }
 
     menuItems.push(
@@ -102,6 +165,13 @@ export default function JobActionsItems(
             return [menuItem, weight] as [NonNullable<MenuProps['items']>[0], number];
         }),
     );
+
+    if (editField) {
+        return [{
+            key: `${editField}-selector`,
+            label: fieldSelectors[editField],
+        }];
+    }
 
     return menuItems.sort((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1]).map((menuItem) => menuItem[0]);
 }

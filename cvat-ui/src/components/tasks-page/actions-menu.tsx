@@ -7,14 +7,14 @@ import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import Modal from 'antd/lib/modal';
 import Dropdown from 'antd/lib/dropdown';
 
-import { RQStatus, Task } from 'cvat-core-wrapper';
-import { usePlugins } from 'utils/hooks';
+import { RQStatus, Task, User } from 'cvat-core-wrapper';
+import { useDropdownEditField, usePlugins } from 'utils/hooks';
 import { CombinedState } from 'reducers';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
 import { modelsActions } from 'actions/models-actions';
 import { mergeConsensusJobsAsync } from 'actions/consensus-actions';
-import { deleteTaskAsync, switchMoveTaskModalVisible } from 'actions/tasks-actions';
+import { deleteTaskAsync, switchMoveTaskModalVisible, updateTaskAsync } from 'actions/tasks-actions';
 import TaskActionsItems from './actions-menu-items';
 
 interface Props {
@@ -34,6 +34,15 @@ function TaskActionsComponent(props: Props): JSX.Element {
         activeInference: state.models.inferences[taskInstance.id],
         mergingConsensus: state.consensus.actions.merging,
     }), shallowEqual);
+
+    const {
+        dropdownOpen,
+        editField,
+        startEditField,
+        stopEditField,
+        onOpenChange,
+        onMenuClick,
+    } = useDropdownEditField();
 
     const onOpenBugTracker = useCallback(() => {
         if (taskInstance.bugTracker) {
@@ -81,6 +90,11 @@ function TaskActionsComponent(props: Props): JSX.Element {
         }
     }, [taskInstance.id]);
 
+    const onUpdateTaskAssignee = useCallback((assignee: User | null) => {
+        taskInstance.assignee = assignee;
+        dispatch(updateTaskAsync(taskInstance, { assignee })).then(stopEditField);
+    }, [taskInstance]);
+
     const onDeleteTask = useCallback(() => {
         Modal.confirm({
             title: `The task ${taskInstance.id} will be deleted`,
@@ -101,11 +115,16 @@ function TaskActionsComponent(props: Props): JSX.Element {
         <Dropdown
             destroyPopupOnHide
             trigger={['click']}
+            open={dropdownOpen}
+            onOpenChange={onOpenChange}
             menu={{
                 selectable: false,
                 className: 'cvat-actions-menu',
                 items: TaskActionsItems({
+                    editField,
+                    startEditField,
                     taskID: taskInstance.id,
+                    assignee: taskInstance.assignee,
                     isAutomaticAnnotationEnabled: (
                         activeInference &&
                         ![RQStatus.FAILED, RQStatus.FINISHED].includes(activeInference.status)
@@ -121,7 +140,9 @@ function TaskActionsComponent(props: Props): JSX.Element {
                     onRunAutoAnnotation,
                     onMoveTaskToProject: taskInstance.projectId === null ? onMoveTaskToProject : null,
                     onDeleteTask,
+                    onUpdateTaskAssignee,
                 }, props),
+                onClick: onMenuClick,
             }}
         >
             {triggerElement}
