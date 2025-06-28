@@ -5013,6 +5013,26 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/TaskWriteRequest'
+            examples:
+              TransferATaskFromAnOrganizationToThePersonalSandbox:
+                value:
+                  organization_id: null
+                summary: Transfer a task from an organization to the personal sandbox
+              TransferATaskFromThePersonalSandboxToAnOrganization:
+                value:
+                  organization_id: 1
+                summary: Transfer a task from the personal sandbox to an organization
+              TransferAStorageLinkedTaskToAnOrganizationAndDetachStorages:
+                value:
+                  organization_id: 1
+                  source_storage:
+                    location: local
+                    cloud_storage_id: null
+                  target_storage:
+                    location: local
+                    cloud_storage_id: null
+                summary: Transfer a storage linked task to an organization and detach
+                  storages
         required: true
       security:
       - sessionAuth: []
@@ -5070,6 +5090,26 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PatchedTaskWriteRequest'
+            examples:
+              TransferATaskFromAnOrganizationToThePersonalSandbox:
+                value:
+                  organization_id: null
+                summary: Transfer a task from an organization to the personal sandbox
+              TransferATaskFromThePersonalSandboxToAnOrganization:
+                value:
+                  organization_id: 1
+                summary: Transfer a task from the personal sandbox to an organization
+              TransferAStorageLinkedTaskToAnOrganizationAndDetachStorages:
+                value:
+                  organization_id: 1
+                  source_storage:
+                    location: local
+                    cloud_storage_id: null
+                  target_storage:
+                    location: local
+                    cloud_storage_id: null
+                summary: Transfer a storage linked task to an organization and detach
+                  storages
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -9250,6 +9290,10 @@ components:
           allOf:
           - $ref: '#/components/schemas/StorageRequest'
           writeOnly: true
+        organization_id:
+          type: integer
+          writeOnly: true
+          nullable: true
     PatchedQualitySettingsRequest:
       type: object
       properties:
@@ -9459,12 +9503,12 @@ components:
           type: string
           maxLength: 64
         target_storage:
-          allOf:
-          - $ref: '#/components/schemas/StorageRequest'
-          nullable: true
+          $ref: '#/components/schemas/StorageRequest'
         source_storage:
-          allOf:
-          - $ref: '#/components/schemas/StorageRequest'
+          $ref: '#/components/schemas/StorageRequest'
+        organization_id:
+          type: integer
+          writeOnly: true
           nullable: true
     PatchedUserRequest:
       type: object
@@ -9607,6 +9651,11 @@ components:
           nullable: true
           maxLength: 16
         organization:
+          type: integer
+          readOnly: true
+          nullable: true
+          deprecated: true
+        organization_id:
           type: integer
           readOnly: true
           nullable: true
@@ -10663,10 +10712,15 @@ components:
         subset:
           type: string
           readOnly: true
+        organization_id:
+          type: integer
+          readOnly: true
+          nullable: true
         organization:
           type: integer
           readOnly: true
           nullable: true
+          deprecated: true
         target_storage:
           allOf:
           - $ref: '#/components/schemas/Storage'
@@ -10777,13 +10831,9 @@ components:
           type: string
           maxLength: 64
         target_storage:
-          allOf:
-          - $ref: '#/components/schemas/StorageRequest'
-          nullable: true
+          $ref: '#/components/schemas/StorageRequest'
         source_storage:
-          allOf:
-          - $ref: '#/components/schemas/StorageRequest'
-          nullable: true
+          $ref: '#/components/schemas/StorageRequest'
         consensus_replicas:
           type: integer
           minimum: 0

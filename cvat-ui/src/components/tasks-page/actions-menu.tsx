@@ -7,14 +7,19 @@ import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import Modal from 'antd/lib/modal';
 import Dropdown from 'antd/lib/dropdown';
 
-import { RQStatus, Task } from 'cvat-core-wrapper';
+import { RQStatus, Task, Organization } from 'cvat-core-wrapper';
 import { usePlugins } from 'utils/hooks';
 import { CombinedState } from 'reducers';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
 import { modelsActions } from 'actions/models-actions';
 import { mergeConsensusJobsAsync } from 'actions/consensus-actions';
-import { deleteTaskAsync, switchMoveTaskModalVisible } from 'actions/tasks-actions';
+import { organizationActions } from 'actions/organization-actions';
+import {
+    deleteTaskAsync, switchMoveTaskModalVisible,
+    openLinkedCloudStorageUpdatingModal, updateTaskAsync,
+    TaskUpdateTypes,
+} from 'actions/tasks-actions';
 import TaskActionsItems from './actions-menu-items';
 
 interface Props {
@@ -97,6 +102,51 @@ function TaskActionsComponent(props: Props): JSX.Element {
         });
     }, [taskInstance]);
 
+    const updateWorkspace = useCallback((dstOrganizationId: number | null) => {
+        taskInstance.organizationId = dstOrganizationId;
+        if (
+            taskInstance.cloudStorageId ||
+            taskInstance.sourceStorage.cloudStorageId ||
+            taskInstance.targetStorage.cloudStorageId
+        ) {
+            dispatch(openLinkedCloudStorageUpdatingModal(taskInstance));
+        } else {
+            dispatch(updateTaskAsync(taskInstance, TaskUpdateTypes.UPDATE_ORGANIZATION));
+        }
+    }, [taskInstance]);
+
+    const setNewOrganization = useCallback((dstOrganization: Organization | null) => {
+        const isOrgWorkspace = Boolean(localStorage.getItem('currentOrganization'));
+        const dstOrganizationId = (dstOrganization) ? dstOrganization.id : dstOrganization;
+
+        if (isOrgWorkspace) {
+            Modal.confirm({
+                title: `Other organization members will lose access to the task #${taskInstance.id}.`,
+                content: (
+                    `You are going to move a task to the ${
+                        (dstOrganization) ? `${dstOrganization.slug} organization` : 'Personal sandbox'
+                    }. Continue?`
+                ),
+                className: 'cvat-modal-confirm-task-transfer-between-workspaces',
+                onOk: () => {
+                    updateWorkspace(dstOrganizationId);
+                },
+                okButtonProps: {
+                    type: 'primary',
+                    danger: true,
+                },
+                okText: 'Move anyway',
+            });
+        } else {
+            updateWorkspace(dstOrganizationId);
+        }
+    }, [taskInstance]);
+
+    // TODO: update menu item after Kirill's PR is merged
+    const onTransferTaskBetweenWorkspaces = useCallback(() => {
+        dispatch(organizationActions.openSelectOrganizationModal(setNewOrganization));
+    }, [taskInstance]);
+
     return (
         <Dropdown
             destroyPopupOnHide
@@ -121,6 +171,9 @@ function TaskActionsComponent(props: Props): JSX.Element {
                     onRunAutoAnnotation,
                     onMoveTaskToProject: taskInstance.projectId === null ? onMoveTaskToProject : null,
                     onDeleteTask,
+                    onTransferTaskBetweenWorkspaces: (
+                        taskInstance.projectId === null ? onTransferTaskBetweenWorkspaces : null
+                    ),
                 }, props),
             }}
         >

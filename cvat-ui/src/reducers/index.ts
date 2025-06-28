@@ -66,6 +66,10 @@ export interface ProjectsState {
             [projectId: number]: boolean; // deleted (deleting if in dictionary)
         };
     };
+    // TODO: move into activities
+    updateWorkspace: {
+        instance: Project | null;
+    };
 }
 
 export interface TasksQuery {
@@ -109,6 +113,10 @@ export interface TasksState {
     moveTask: {
         modalVisible: boolean;
         taskId: number | null;
+    };
+    // TODO: move into activities
+    updateWorkspace: {
+        instance: Task | null;
     };
     gettingQuery: TasksQuery;
     count: number;
@@ -983,6 +991,12 @@ export interface OrganizationMembersQuery {
     pageSize: number;
 }
 
+export interface OrganizationsQuery {
+    page: number;
+    search: string | null;
+    filter: string | null;
+}
+
 export interface OrganizationState {
     current?: Organization | null;
     initialized: boolean;
@@ -992,6 +1006,15 @@ export interface OrganizationState {
     leaving: boolean;
     removingMember: boolean;
     updatingMember: boolean;
+    currentArray: Organization[];
+    currentArrayFetching: boolean;
+    count: number;
+    nextPageUrl: string | null;
+
+    selectModal: {
+        visible: boolean;
+        onSelectCallback: ((org: Organization | null) => void) | null;
+    };
 }
 
 export interface WebhooksQuery {

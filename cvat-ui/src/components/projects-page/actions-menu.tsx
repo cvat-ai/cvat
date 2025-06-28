@@ -7,12 +7,16 @@ import { useDispatch } from 'react-redux';
 import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
 
-import { Project } from 'cvat-core-wrapper';
+import { Organization, Project } from 'cvat-core-wrapper';
 import { usePlugins } from 'utils/hooks';
 import { CombinedState } from 'reducers';
-import { deleteProjectAsync } from 'actions/projects-actions';
+import {
+    deleteProjectAsync, projectActions,
+    updateProjectAsync, ProjectUpdateTypes,
+} from 'actions/projects-actions';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
+import { organizationActions } from 'actions/organization-actions';
 import ProjectActionsItems from './actions-menu-items';
 
 interface Props {
@@ -53,6 +57,52 @@ function ProjectActionsComponent(props: Props): JSX.Element {
         });
     }, [projectInstance]);
 
+    const updateWorkspace = useCallback((dstOrganizationId: number | null) => {
+        projectInstance.organizationId = dstOrganizationId;
+        if (
+            projectInstance.sourceStorage.cloudStorageId ||
+            projectInstance.targetStorage.cloudStorageId
+        ) {
+            dispatch(projectActions.openLinkedCloudStorageUpdatingModal(projectInstance));
+        } else {
+            dispatch(updateProjectAsync(projectInstance, ProjectUpdateTypes.UPDATE_ORGANIZATION));
+        }
+    }, [projectInstance]);
+
+    const setNewOrganization = useCallback((dstOrganization: Organization | null) => {
+        const isOrgWorkspace = Boolean(localStorage.getItem('currentOrganization'));
+        const dstOrganizationId = (dstOrganization) ? dstOrganization.id : dstOrganization;
+
+        if (isOrgWorkspace) {
+            Modal.confirm({
+                title: `Other organization members will lose access to the project #${
+                    projectInstance.id
+                }.`,
+                content: (
+                    `You are going to move a project to the ${
+                        (dstOrganization) ? `${dstOrganization.slug} organization` : 'Personal sandbox'
+                    }. Continue?`
+                ),
+                className: 'cvat-modal-confirm-project-transfer-between-workspaces',
+                onOk: () => {
+                    updateWorkspace(dstOrganizationId);
+                },
+                okButtonProps: {
+                    type: 'primary',
+                    danger: true,
+                },
+                okText: 'Move anyway',
+            });
+        } else {
+            updateWorkspace(dstOrganizationId);
+        }
+    }, [projectInstance]);
+
+    // TODO: update menu item after Kirill's PR is merged
+    const onTransferProjectBetweenWorkspaces = useCallback(() => {
+        dispatch(organizationActions.openSelectOrganizationModal(setNewOrganization));
+    }, [projectInstance]);
+
     return (
         <Dropdown
             destroyPopupOnHide
@@ -67,6 +117,7 @@ function ProjectActionsComponent(props: Props): JSX.Element {
                     onImportDataset,
                     onBackupProject,
                     onDeleteProject,
+                    onTransferProjectBetweenWorkspaces,
                 }, props),
             }}
         >

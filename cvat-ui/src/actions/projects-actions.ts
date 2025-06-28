@@ -11,12 +11,15 @@ import {
 } from 'reducers';
 import { getTasksAsync } from 'actions/tasks-actions';
 import { getCVATStore } from 'cvat-store';
-import { getCore } from 'cvat-core-wrapper';
+import { getCore, Project } from 'cvat-core-wrapper';
 import { filterNull } from 'utils/filter-null';
 
 const cvat = getCore();
 
 export enum ProjectsActionTypes {
+    UPDATE_PROJECT = 'UPDATE_PROJECT',
+    UPDATE_PROJECT_SUCCESS = 'UPDATE_PROJECT_SUCCESS',
+    UPDATE_PROJECT_FAILED = 'UPDATE_PROJECT_FAILED',
     UPDATE_PROJECTS_GETTING_QUERY = 'UPDATE_PROJECTS_GETTING_QUERY',
     GET_PROJECTS = 'GET_PROJECTS',
     GET_PROJECTS_SUCCESS = 'GET_PROJECTS_SUCCESS',
@@ -30,9 +33,11 @@ export enum ProjectsActionTypes {
     GET_PROJECT_PREVIEW = 'GET_PROJECT_PREVIEW',
     GET_PROJECT_PREVIEW_SUCCESS = 'GET_PROJECT_PREVIEW_SUCCESS',
     GET_PROJECT_PREVIEW_FAILED = 'GET_PROJECT_PREVIEW_FAILED',
+    OPEN_LINKED_CLOUD_STORAGE_UPDATING_MODAL = 'OPEN_LINKED_CLOUD_STORAGE_UPDATING_MODAL',
+    CLOSE_LINKED_CLOUD_STORAGE_UPDATING_MODAL = 'CLOSE_LINKED_CLOUD_STORAGE_UPDATING_MODAL',
 }
 
-const projectActions = {
+export const projectActions = {
     getProjects: (fetchingTimestamp: number) => createAction(ProjectsActionTypes.GET_PROJECTS, { fetchingTimestamp }),
     getProjectsSuccess: (array: any[], count: number) => (
         createAction(ProjectsActionTypes.GET_PROJECTS_SUCCESS, { array, count })
@@ -46,6 +51,15 @@ const projectActions = {
         createAction(ProjectsActionTypes.CREATE_PROJECT_SUCCESS, { projectId })
     ),
     createProjectFailed: (error: any) => createAction(ProjectsActionTypes.CREATE_PROJECT_FAILED, { error }),
+    updateProject: (projectId: number) => (
+        createAction(ProjectsActionTypes.UPDATE_PROJECT, { projectId })
+    ),
+    updateProjectSuccess: (project: Project) => (
+        createAction(ProjectsActionTypes.UPDATE_PROJECT_SUCCESS, { project })
+    ),
+    updateProjectFailed: (projectId: number, error: any, message?: string) => (
+        createAction(ProjectsActionTypes.UPDATE_PROJECT_FAILED, { projectId, error, message })
+    ),
     deleteProject: (projectId: number) => createAction(ProjectsActionTypes.DELETE_PROJECT, { projectId }),
     deleteProjectSuccess: (projectId: number) => (
         createAction(ProjectsActionTypes.DELETE_PROJECT_SUCCESS, { projectId })
@@ -61,6 +75,12 @@ const projectActions = {
     ),
     getProjectPreviewFailed: (projectID: number, error: any) => (
         createAction(ProjectsActionTypes.GET_PROJECT_PREVIEW_FAILED, { projectID, error })
+    ),
+    openLinkedCloudStorageUpdatingModal: (project: Project) => (
+        createAction(ProjectsActionTypes.OPEN_LINKED_CLOUD_STORAGE_UPDATING_MODAL, { project })
+    ),
+    closeLinkedCloudStorageUpdatingModal: () => (
+        createAction(ProjectsActionTypes.CLOSE_LINKED_CLOUD_STORAGE_UPDATING_MODAL, { })
     ),
 };
 
@@ -136,6 +156,27 @@ export function createProjectAsync(data: any): ThunkAction {
             return savedProject;
         } catch (error) {
             dispatch(projectActions.createProjectFailed(error));
+            throw error;
+        }
+    };
+}
+
+export enum ProjectUpdateTypes {
+    UPDATE_ORGANIZATION = 'UPDATE_ORGANIZATION',
+}
+
+export function updateProjectAsync(project: Project, updateType?: ProjectUpdateTypes): ThunkAction {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
+        dispatch(projectActions.updateProject(project.id));
+        try {
+            const updatedProject = await project.save();
+            dispatch(projectActions.updateProjectSuccess(updatedProject));
+        } catch (error) {
+            let message = '';
+            if (updateType === ProjectUpdateTypes.UPDATE_ORGANIZATION) {
+                message = `Could not transfer the project #${project.id} to the new workspace`;
+            }
+            dispatch(projectActions.updateProjectFailed(project.id, error, message));
             throw error;
         }
     };

@@ -22,6 +22,7 @@ interface MenuItemsData {
     onRunAutoAnnotation: (() => void) | null;
     onMoveTaskToProject: (() => void) | null;
     onDeleteTask: () => void;
+    onTransferTaskBetweenWorkspaces: (() => void) | null;
 }
 
 export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuProps: unknown): MenuProps['items'] {
@@ -39,6 +40,7 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
         onRunAutoAnnotation,
         onMoveTaskToProject,
         onDeleteTask,
+        onTransferTaskBetweenWorkspaces,
     } = menuItemsData;
 
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
@@ -109,6 +111,14 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
             onClick: onMoveTaskToProject,
             label: 'Move to project',
         }, 80]);
+    }
+
+    if (onTransferTaskBetweenWorkspaces) {
+        menuItems.push([{
+            key: 'transfer_task_between_workspaces',
+            onClick: onTransferTaskBetweenWorkspaces,
+            label: 'Move to organization/sandbox',
+        }, 85]);
     }
 
     menuItems.push([{ type: 'divider' }, 89]);

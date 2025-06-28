@@ -71,7 +71,7 @@ export interface SerializedProject {
     updated_date: string;
     dimension: DimensionType;
     name: string;
-    organization: number | null;
+    organization_id: number | null;
     guide_id: number | null;
     owner: SerializedUser;
     source_storage: SerializedStorage | null;
@@ -108,7 +108,7 @@ export interface SerializedTask {
     labels: { count: number; url: string; };
     mode: TaskMode | '';
     name: string;
-    organization: number | null;
+    organization_id: number | null;
     overlap: number | null;
     owner: SerializedUser;
     project_id: number | null;
