@@ -39,7 +39,7 @@ from cvat.apps.engine.frame_provider import FrameQuality, TaskFrameProvider
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.permissions import TaskPermission
-from cvat.apps.engine.rq import update_org_related_data_in_rq_jobs, RunningBackgroundProcessesError
+from cvat.apps.engine.rq import RunningBackgroundProcessesError, update_org_related_data_in_rq_jobs
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import (
@@ -2481,6 +2481,23 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     # pylint: disable=no-self-use
     @transaction.atomic
     def update(self, instance: models.Task, validated_data: dict):
+        organization_id = validated_data.get("organization_id")
+        organization_slug = None
+
+        workspace_transferring = (
+            "organization_id" in validated_data
+            and organization_id != instance.organization_id
+        )
+
+        if (
+            workspace_transferring and (set(validated_data.keys()) - {
+                'source_storage', 'target_storage', 'organization_id'
+            })
+        ):
+            raise serializers.ValidationError(
+                "Task attributes cannot be updated during transferring to another workspace"
+            )
+
         instance.name = validated_data.get('name', instance.name)
         instance.owner_id = validated_data.get('owner_id', instance.owner_id)
         instance.bug_tracker = validated_data.get('bug_tracker', instance.bug_tracker)
@@ -2550,15 +2567,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
             instance.project = project
 
-        organization_id = validated_data.get("organization_id")
-        organization_slug = None
-
-        workspace_transferring = (
-            "organization_id" in validated_data and organization_id != instance.organization_id
-        )
-
         if workspace_transferring:
-            # TODO: prohibit changing other fields (except source/target storage)
             if organization_id is not None:
                 try:
                     organization_slug = list(
@@ -2764,30 +2773,27 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
 
         return db_project
 
-    def update_basic_fields(
-        self,
-        instance: models.Project,
-        *,
-        fields_to_check: Iterable[str],
-        validated_data: dict[str, Any],
-        updated_fields: list[str],
-    ):
-        for field_name in fields_to_check:
-            if (
-                field_name in validated_data
-                and (field_value := validated_data[field_name]) != getattr(instance, field_name)
-            ):
-                if field_name != 'assignee_id':
-                    setattr(instance, field_name, field_value)
-                else:
-                    instance.update_assignee(field_value, save=False)
-                updated_fields.append(field_name)
-
     # pylint: disable=no-self-use
     @transaction.atomic
     def update(self, instance: models.Project, validated_data: dict):
-        # TODO: refactor the code && optimize updating
-        # updated_fields = []
+        # FUTURE-TODO: refactor the code && optimize updating
+        organization_id = validated_data.get("organization_id")
+        organization_slug = None
+
+        workspace_transferring = (
+            "organization_id" in validated_data
+            and organization_id != instance.organization_id
+        )
+
+        if (
+            workspace_transferring and (set(validated_data.keys()) - {
+                'source_storage', 'target_storage', 'organization_id'
+            })
+        ):
+            raise serializers.ValidationError(
+                "Project attributes cannot be updated during transferring to another workspace"
+            )
+
         instance.name = validated_data.get('name', instance.name)
         instance.owner_id = validated_data.get('owner_id', instance.owner_id)
         instance.bug_tracker = validated_data.get('bug_tracker', instance.bug_tracker)
@@ -2799,21 +2805,11 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
             instance.assignee_id = validated_data.pop('assignee_id')
             instance.assignee_updated_date = timezone.now()
 
-        # self.update_basic_fields(instance, validated_data=validated_data, updated_fields=updated_fields)
         labels = validated_data.get('label_set', [])
         LabelSerializer.update_labels(labels, parent_instance=instance)
 
-        organization_id = validated_data.get("organization_id")
-        organization_slug = None
-
-        workspace_transferring = (
-            "organization_id" in validated_data
-            and organization_id != instance.organization_id
-        )
-
+        # TODO: extract into a separate method
         if workspace_transferring:
-            # TODO: prohibit changing other fields (except source/target storage)
-            # TODO: update schema examples
             if organization_id is not None:
                 try:
                     organization_slug = list(
