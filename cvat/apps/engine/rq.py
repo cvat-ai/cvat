@@ -492,7 +492,7 @@ def update_org_related_data_in_rq_jobs(
 
                     job_meta = BaseRQMeta.for_job(job)
 
-                    if not is_rq_job_related():
+                    if not is_rq_job_related(job_meta):
                         continue
 
                     job_meta.org_id = new_org_id

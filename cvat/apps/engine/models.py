@@ -450,11 +450,11 @@ class AssignableModel(models.Model):
     def update_assignee(
         self,
         *,
-        id: int | None = None,
+        assignee_id: int | None = None,
         updated_date: datetime.datetime | None = None,
         save: bool = True,
     ) -> None:
-        self.assignee_id = id
+        self.assignee_id = assignee_id
         self.assignee_updated_date = updated_date or timezone.now()
 
         if save:
