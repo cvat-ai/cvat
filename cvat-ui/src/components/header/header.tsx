@@ -194,10 +194,7 @@ function HeaderComponent(props: Props): JSX.Element {
 
     useEffect(() => {
         if (isMounted()) {
-            console.log('isMounted: true');
             fetchOrganizations();
-        } else {
-            console.log('isMounted: false');
         }
     }, []);
 

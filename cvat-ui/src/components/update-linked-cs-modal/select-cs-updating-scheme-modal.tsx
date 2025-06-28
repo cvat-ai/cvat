@@ -65,11 +65,9 @@ function SelectCSUpdatingSchemeModal(): JSX.Element {
                     onClick={() => {
                         if (instance!.sourceStorage?.isCloudLinked()) {
                             instance!.sourceStorage = Storage.buildLocalStorage();
-                            console.log('updated source storage: ', instance!.sourceStorage);
                         }
                         if (instance!.targetStorage?.isCloudLinked()) {
                             instance!.targetStorage = Storage.buildLocalStorage();
-                            console.log('updated target storage: ', instance!.targetStorage);
                         }
                         saveInstance();
                         closeModal();

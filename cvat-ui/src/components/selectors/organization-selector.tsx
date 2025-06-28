@@ -36,17 +36,16 @@ function OrganizationSelector(props: {
         if (organizations.length) {
             setSearchResults((prev) => (page === defaultPage ? [...organizations] : [...prev, ...organizations]));
         }
-    }, [organizations, page]);
+    }, [organizations]);
 
     useEffect(() => {
-        if (searchPhrase) {
-            setPage(defaultPage);
-            const filterQuery = {
-                page: defaultPage,
-                search: searchPhrase,
-            };
-            dispatch(getOrganizationsAsync(filterQuery, true));
-        }
+        setSearchResults([]);
+        const filterQuery = {
+            page: defaultPage,
+            search: searchPhrase,
+        };
+        dispatch(getOrganizationsAsync(filterQuery, true));
+        setPage(defaultPage);
     }, [searchPhrase]);
 
     useEffect(() => {
@@ -57,7 +56,7 @@ function OrganizationSelector(props: {
             ...((searchPhrase) ? { search: searchPhrase } : {}),
         };
         dispatch(getOrganizationsAsync(filterQuery, true));
-    }, [searchPhrase, page]);
+    }, [page]);
 
     const handlePopupScroll = (e: React.UIEvent<HTMLDivElement>) => {
         const target = e.currentTarget;
@@ -66,7 +65,6 @@ function OrganizationSelector(props: {
             hasMore && !fetching
         ) {
             setPage((prev) => prev + 1);
-            console.log('Page was increased');
         }
     };
 
