@@ -437,8 +437,10 @@ def define_dependent_job(
         else None
     )
 
+
 class RunningBackgroundProcessesError(Exception):
     pass
+
 
 def update_org_related_data_in_rq_jobs(
     new_org_id: int | None,
@@ -479,8 +481,7 @@ def update_org_related_data_in_rq_jobs(
 
     for queue in queues:
         job_ids = set(
-            queue.finished_job_registry.get_job_ids()
-            + queue.failed_job_registry.get_job_ids()
+            queue.finished_job_registry.get_job_ids() + queue.failed_job_registry.get_job_ids()
         )
 
         for batched_job_ids in take_by(job_ids, chunk_size=1000):
@@ -498,4 +499,4 @@ def update_org_related_data_in_rq_jobs(
                     job_meta.org_slug = new_org_slug
                     job_meta.save(pipeline=pipe)
 
-                pipe.execute() # it handles empty pipe.command_stack too
+                pipe.execute()  # it handles empty pipe.command_stack too
