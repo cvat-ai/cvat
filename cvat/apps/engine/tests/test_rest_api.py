@@ -3367,38 +3367,48 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
         user = self.admin
 
         TASK_CACHE_TTL = timedelta(hours=1)
-        with (
-            mock.patch("cvat.apps.dataset_manager.views.TASK_CACHE_TTL", new=TASK_CACHE_TTL),
-            mock.patch("cvat.apps.dataset_manager.views.TTL_CONSTS", new={"task": TASK_CACHE_TTL}),
-            mock.patch(
-                "cvat.apps.dataset_manager.cron.clear_export_cache",
-                side_effect=clear_export_cache,
-            ) as mock_clear_export_cache,
-        ):
-            cleanup_export_cache_directory()
-            mock_clear_export_cache.assert_not_called()
-
-            self._export_task_backup(user, task_id, download_locally=False)
-
-            queue: RQQueue = django_rq.get_queue(settings.CVAT_QUEUES.EXPORT_DATA.value)
-            rq_job_ids = queue.finished_job_registry.get_job_ids()
-            self.assertEqual(len(rq_job_ids), 1)
-            job: RQJob | None = queue.fetch_job(rq_job_ids[0])
-            self.assertFalse(job is None)
-            file_path = job.return_value()
-            self.assertTrue(os.path.isfile(file_path))
-
+        for lightweight_backup in [True, False]:
             with (
+                self.subTest(lightweight_backup=lightweight_backup),
+                mock.patch("cvat.apps.dataset_manager.views.TASK_CACHE_TTL", new=TASK_CACHE_TTL),
                 mock.patch(
-                    "cvat.apps.dataset_manager.views.TASK_CACHE_TTL", new=timedelta(seconds=0)
+                    "cvat.apps.dataset_manager.views.TTL_CONSTS", new={"task": TASK_CACHE_TTL}
                 ),
                 mock.patch(
-                    "cvat.apps.dataset_manager.views.TTL_CONSTS", new={"task": timedelta(seconds=0)}
-                ),
+                    "cvat.apps.dataset_manager.cron.clear_export_cache",
+                    side_effect=clear_export_cache,
+                ) as mock_clear_export_cache,
             ):
                 cleanup_export_cache_directory()
-                mock_clear_export_cache.assert_called_once()
-            self.assertFalse(os.path.exists(file_path))
+                mock_clear_export_cache.assert_not_called()
+
+                self._export_task_backup(
+                    user,
+                    task_id,
+                    download_locally=False,
+                    query_params={"lightweight": lightweight_backup},
+                )
+
+                queue: RQQueue = django_rq.get_queue(settings.CVAT_QUEUES.EXPORT_DATA.value)
+                rq_job_ids = queue.finished_job_registry.get_job_ids()
+                self.assertEqual(len(rq_job_ids), 1)
+                job: RQJob | None = queue.fetch_job(rq_job_ids[0])
+                self.assertFalse(job is None)
+                file_path = job.return_value()
+                self.assertTrue(os.path.isfile(file_path))
+
+                with (
+                    mock.patch(
+                        "cvat.apps.dataset_manager.views.TASK_CACHE_TTL", new=timedelta(seconds=0)
+                    ),
+                    mock.patch(
+                        "cvat.apps.dataset_manager.views.TTL_CONSTS",
+                        new={"task": timedelta(seconds=0)},
+                    ),
+                ):
+                    cleanup_export_cache_directory()
+                    mock_clear_export_cache.assert_called_once()
+                self.assertFalse(os.path.exists(file_path))
 
 
 def generate_random_image_file(filename):

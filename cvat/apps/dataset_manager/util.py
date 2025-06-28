@@ -336,6 +336,9 @@ class ExportCacheManager:
                 # The "format" is a part of file id, but there is actually
                 # no need to use it after filename parsing, so just drop it.
                 instance_timestamp, _ = unparsed.split(cls.SPLITTER, maxsplit=1)
+            elif fragments["file_type"] == ExportFileType.BACKUP:
+                if unparsed.endswith(f"{cls.SPLITTER}lightweight"):
+                    instance_timestamp, _ = unparsed.split(cls.SPLITTER, maxsplit=1)
 
             parsed_file_name = ParsedExportFilename(
                 file_type=fragments.pop("file_type"),
