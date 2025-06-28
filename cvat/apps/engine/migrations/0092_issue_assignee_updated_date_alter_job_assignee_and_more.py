@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ("engine", "0090_asset_content_size_data_content_size"),
+        ("engine", "0091_profile_last_activity_date"),
     ]
 
     operations = [
