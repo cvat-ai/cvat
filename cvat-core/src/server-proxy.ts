@@ -725,7 +725,6 @@ async function getProjects(filter: ProjectsFilter = {}): Promise<SerializedProje
         response = await Axios.get(`${backendAPI}/projects`, {
             params: {
                 ...filter,
-                page_size: 12,
             },
         });
     } catch (errorData) {
@@ -1318,7 +1317,6 @@ async function getJobs(
             response = await Axios.get(`${backendAPI}/jobs`, {
                 params: {
                     ...filter,
-                    page_size: 12,
                 },
             });
         }
@@ -1902,7 +1900,6 @@ async function getCloudStorages(filter = {}): Promise<SerializedCloudStorage[] &
         response = await Axios.get(`${backendAPI}/cloudstorages`, {
             params: {
                 ...filter,
-                page_size: 12,
             },
         });
         return Object.assign(response.data.results, { count: response.data.count });
@@ -2076,7 +2073,7 @@ async function deleteOrganizationMembership(membershipId: number): Promise<void>
 }
 
 async function getMembershipInvitations(
-    filter: { page?: number, filter?: string, key?: string },
+    filter: { page?: number, page_size?: number, filter?: string, key?: string },
 ): Promise<{ results: SerializedInvitationData[], count: number }> {
     const { backendAPI } = config;
 
@@ -2095,7 +2092,6 @@ async function getMembershipInvitations(
         response = await Axios.get(`${backendAPI}/invitations`, {
             params: {
                 ...filter,
-                page_size: 11,
             },
         });
         return response.data;
@@ -2118,7 +2114,7 @@ async function getWebhookDelivery(webhookID: number, deliveryID: number): Promis
     }
 }
 
-async function getWebhooks(filter, pageSize = 10): Promise<any> {
+async function getWebhooks(filter): Promise<any> {
     const params = enableOrganization();
     const { backendAPI } = config;
 
@@ -2127,7 +2123,6 @@ async function getWebhooks(filter, pageSize = 10): Promise<any> {
             params: {
                 ...params,
                 ...filter,
-                page_size: pageSize,
             },
         });
 

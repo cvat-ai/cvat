@@ -16,6 +16,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.40.0'></a>
+## \[2.40.0\] - 2025-06-25
+
+### Added
+
+- Serverless tracker functions may now accept shapes other than rectangles
+  (<https://github.com/cvat-ai/cvat/pull/9517>)
+
+- \[CLI\] A more helpful error message is now raised if a loaded
+  auto-annotation function has no `spec` attribute
+  (<https://github.com/cvat-ai/cvat/pull/9530>)
+
+- `CVAT_CACHE_ITEM_MAX_SIZE` option that limits size of data chunk at CVAT level.
+  Generating data that exceeds the size will result in an exception.
+  (<https://github.com/cvat-ai/cvat/pull/9524>)
+
+- CVAT server tracks `last_activity_date` of a user, the field is updated once a day
+  (<https://github.com/cvat-ai/cvat/pull/9554>)
+
+- Filtration by username to Grafana dashboards
+  (<https://github.com/cvat-ai/cvat/pull/9555>)
+
+### Changed
+
+- Updated zooming algorithm, it works much smoother with touchpads and a little bit smoother for mice
+  (<https://github.com/cvat-ai/cvat/pull/9523>)
+
+- Kvrocks: configured auto compaction at scheduled time.
+  (<https://github.com/cvat-ai/cvat/pull/9524>)
+
+- Nuclio tracker functions are no longer passed the previous frame's shapes
+  when continuing the tracking
+  (<https://github.com/cvat-ai/cvat/pull/9548>)
+
+- Endpoints accepting annotations as input now check that shapes have
+  point and element counts that are appropriate for the shape type
+  (<https://github.com/cvat-ai/cvat/pull/9556>)
+
+### Fixed
+
+- Reduced excessive DB use in dataset export
+  (<https://github.com/cvat-ai/cvat/pull/9472>)
+
+- Page size selector on organization page was not working
+  (<https://github.com/cvat-ai/cvat/pull/9521>)
+
+- Incorrect width of project field on webhook setup page
+  (<https://github.com/cvat-ai/cvat/pull/XXXX>)
+
+- Relevant task quality reports now can be reused in project quality reports
+  (<https://github.com/cvat-ai/cvat/pull/9538>)
+
+- Fixing 3d export for projects
+  (<https://github.com/cvat-ai/cvat/pull/9540>)
+
+### Security
+
+- Added missing file name validation when initiating an import process
+  from a file uploaded via the TUS protocol
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-frpr-5w6q-hh4f>)
+
 <a id='changelog-2.39.0'></a>
 ## \[2.39.0\] - 2025-06-05
 

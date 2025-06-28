@@ -20,6 +20,7 @@ const defaultState: ProjectsState = {
     previews: {},
     gettingQuery: {
         page: 1,
+        pageSize: 12,
         id: null,
         search: null,
         filter: null,
@@ -27,6 +28,7 @@ const defaultState: ProjectsState = {
     },
     tasksGettingQuery: {
         page: 1,
+        pageSize: 10,
         id: null,
         search: null,
         filter: null,

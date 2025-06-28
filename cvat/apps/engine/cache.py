@@ -70,6 +70,10 @@ DataWithMime = tuple[io.BytesIO, str]
 _CacheItem = tuple[io.BytesIO, str, int, Union[datetime, None]]
 
 
+class CacheTooLargeDataError(Exception):
+    pass
+
+
 def enqueue_create_chunk_job(
     queue: rq.Queue,
     rq_job_id: str,
@@ -180,6 +184,10 @@ class MediaCache:
     def _get_checksum(value: bytes) -> int:
         return zlib.crc32(value)
 
+    @staticmethod
+    def _get_cache_item_size(item: _CacheItem) -> int:
+        return item[0].getbuffer().nbytes
+
     def _get_or_set_cache_item(
         self,
         key: str,
@@ -232,6 +240,12 @@ class MediaCache:
             if cached_item is not None and timestamp <= cached_item[3]:
                 item = cached_item
             else:
+                item_size = cls._get_cache_item_size(item)
+                if item_size > settings.CVAT_CACHE_ITEM_MAX_SIZE:
+                    raise CacheTooLargeDataError(
+                        f"Chunk data size {item_size} exceeds the maximum allowed size "
+                        f"{settings.CVAT_CACHE_ITEM_MAX_SIZE}."
+                    )
                 cache.set(key, item, timeout=cache_item_ttl or cache.default_timeout)
 
         return item
@@ -681,8 +695,7 @@ class MediaCache:
             else:
                 reader = VideoReader([source_path], allow_threading=False)
 
-                for frame_tuple in reader.iterate_frames(frame_filter=frame_ids):
-                    yield frame_tuple
+                yield from reader.iterate_frames(frame_filter=frame_ids)
         else:
             yield from MediaCache._read_raw_images(db_task, frame_ids, manifest_path=manifest_path)
 

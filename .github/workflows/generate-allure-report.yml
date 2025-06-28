@@ -58,6 +58,11 @@ jobs:
       - name: Deploy report to S3 (timestamped folder)
         run: aws s3 cp ./allure-report s3://${{ env.S3_BUCKET }}/report/${{ steps.timestampid.outputs.timestamp }}/ --recursive
 
+      - name: Update latest report alias
+        run: |
+          aws s3 rm s3://${{ env.S3_BUCKET }}/report/latest/ --recursive || true
+          aws s3 cp ./allure-report s3://${{ env.S3_BUCKET }}/report/latest/ --recursive
+
       - name: Write report URL to summary
         run: |
           echo "### 🧪 [Allure Report](http://${{ env.S3_BUCKET }}.s3-website.eu-west-1.amazonaws.com/report/${{ steps.timestampid.outputs.timestamp }}/index.html)" >> $GITHUB_STEP_SUMMARY
