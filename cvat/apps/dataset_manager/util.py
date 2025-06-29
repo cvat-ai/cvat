@@ -337,8 +337,10 @@ class ExportCacheManager:
                 # no need to use it after filename parsing, so just drop it.
                 instance_timestamp, _ = unparsed.split(cls.SPLITTER, maxsplit=1)
             elif fragments["file_type"] == ExportFileType.BACKUP:
-                if unparsed.endswith(f"{cls.SPLITTER}lightweight"):
-                    instance_timestamp, _ = unparsed.split(cls.SPLITTER, maxsplit=1)
+                # Backup filename may have "lightweight" suffix
+                split_unparsed = unparsed.split(cls.SPLITTER, maxsplit=1)
+                if len(split_unparsed) > 1:
+                    instance_timestamp, _ = split_unparsed
 
             parsed_file_name = ParsedExportFilename(
                 file_type=fragments.pop("file_type"),
