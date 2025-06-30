@@ -27,7 +27,7 @@ function JobsContentComponent(): JSX.Element {
     );
 
     return (
-        <Row justify='center' align='middle'>
+        <Row justify='center' align='middle' className='cvat-resource-list-wrapper'>
             <Col className='cvat-jobs-page-list' {...dimensions}>
                 {groupedJobs.map(
                     (jobInstances: Job[]): JSX.Element => (

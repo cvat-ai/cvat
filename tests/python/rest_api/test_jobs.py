@@ -27,6 +27,7 @@ from deepdiff import DeepDiff
 from PIL import Image
 from pytest_cases import parametrize
 
+from shared.tasks.utils import parse_frame_step
 from shared.utils.config import make_api_client
 from shared.utils.helpers import generate_image_files
 
@@ -35,7 +36,6 @@ from .utils import (
     compare_annotations,
     create_task,
     export_job_dataset,
-    parse_frame_step,
 )
 
 

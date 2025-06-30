@@ -20,7 +20,7 @@ import Input from 'antd/lib/input';
 import notification from 'antd/lib/notification';
 
 import { getCore, Project, Task } from 'cvat-core-wrapper';
-import { CombinedState, Indexable } from 'reducers';
+import { CombinedState, TasksQuery } from 'reducers';
 import { getProjectTasksAsync } from 'actions/projects-actions';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import TaskItem from 'containers/tasks-page/task-item';
@@ -32,6 +32,7 @@ import {
 import CvatDropdownMenuPaper from 'components/common/cvat-dropdown-menu-paper';
 import { ProjectNotFoundComponent } from 'components/common/not-found';
 
+import { useResourceQuery } from 'utils/hooks';
 import DetailsComponent from './details';
 import ProjectTopBar from './top-bar';
 
@@ -66,14 +67,7 @@ export default function ProjectPageComponent(): JSX.Element {
     const tasksFetching = useSelector((state: CombinedState) => state.tasks.fetching);
     const [visibility, setVisibility] = useState(defaultVisibility);
 
-    const queryParams = new URLSearchParams(history.location.search);
-    const updatedQuery = { ...tasksQuery };
-    for (const key of Object.keys(updatedQuery)) {
-        (updatedQuery as Indexable)[key] = queryParams.get(key) || null;
-        if (key === 'page') {
-            updatedQuery.page = updatedQuery.page ? +updatedQuery.page : 1;
-        }
-    }
+    const updatedQuery = useResourceQuery<TasksQuery>(tasksQuery);
 
     useEffect(() => {
         if (Number.isInteger(id)) {
@@ -152,18 +146,19 @@ export default function ProjectPageComponent(): JSX.Element {
                 <Col md={22} lg={18} xl={16} xxl={14}>
                     <Pagination
                         className='cvat-project-tasks-pagination'
-                        onChange={(page: number) => {
+                        onChange={(page: number, pageSize: number) => {
                             dispatch(getProjectTasksAsync({
                                 ...tasksQuery,
                                 projectId: id,
                                 page,
+                                pageSize,
                             }));
                         }}
-                        showSizeChanger={false}
                         total={tasksCount}
-                        pageSize={10}
+                        pageSize={tasksQuery.pageSize}
                         current={tasksQuery.page}
                         showQuickJumper
+                        showSizeChanger
                     />
                 </Col>
             </Row>
