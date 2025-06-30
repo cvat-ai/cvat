@@ -157,7 +157,7 @@ function ExportBackupModal(): JSX.Element {
                     onChangeLocationValue={(value: StorageLocation) => setStorageLocation(value)}
                 />
                 <Form.Item
-                    className='cvat-settings-switch'
+                    className='cvat-settings-switch-lightweight'
                 >
                     <Space>
                         <Switch
