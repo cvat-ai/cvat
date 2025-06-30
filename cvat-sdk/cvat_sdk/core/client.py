@@ -18,7 +18,6 @@ import packaging.specifiers as specifiers
 import packaging.version as pv
 import platformdirs
 import urllib3
-import urllib3.exceptions
 
 from cvat_sdk.api_client import ApiClient, Configuration, exceptions, models
 from cvat_sdk.core.exceptions import (
@@ -207,6 +206,9 @@ class Client:
         )
         assert "sessionid" in self.api_client.cookies
         assert "csrftoken" in self.api_client.cookies
+        self.api_client.set_default_header(
+            "Host", urllib3.util.parse_url(self.api_client.configuration.host).netloc
+        )
         self.api_client.set_default_header("Origin", self.api_client.configuration.host)
         self.api_client.set_default_header(
             "X-CSRFToken", self.api_client.cookies["csrftoken"].value
@@ -220,6 +222,7 @@ class Client:
             self.api_client.auth_api.create_logout()
             self.api_client.cookies.pop("sessionid", None)
             self.api_client.cookies.pop("csrftoken", None)
+            self.api_client.default_headers.pop("Host", None)
             self.api_client.default_headers.pop("Origin", None)
             self.api_client.default_headers.pop("X-CSRFToken", None)
 
