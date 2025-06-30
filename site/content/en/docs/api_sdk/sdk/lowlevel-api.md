@@ -188,7 +188,6 @@ configuration = Configuration(
     ...
 )
 with ApiClient(configuration) as api_client:
-    api_client.set_default_header("Origin", api_client.configuration.host)
     ...
 ```
 
@@ -223,8 +222,12 @@ from cvat_sdk.api_client import models
 )
 
 assert "sessionid" in api_client.cookies # managed by ApiClient automatically
-api_client.set_default_header("Origin", api_client.configuration.host)
 api_client.set_default_header("X-CSRFToken", api_client.cookies["csrftoken"].value)
+
+# Set up web browser headers
+from urllib3.util import parse_url
+api_client.set_default_header("Origin", api_client.configuration.host)
+api_client.set_default_header("Host", parse_url(api_client.configuration.host).netloc)
 ```
 {{% /tab %}}
 
