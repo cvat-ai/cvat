@@ -66,6 +66,8 @@ export default function CloudStorageEditorComponent(props: Props): JSX.Element {
                 setCloudStorage(_cloudStorage);
                 setCloudStorageLoaded(true);
             });
+        } else {
+            setCloudStorageLoaded(true);
         }
     }, [meta]);
 

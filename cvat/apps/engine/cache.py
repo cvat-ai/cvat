@@ -74,6 +74,10 @@ class CacheTooLargeDataError(Exception):
     pass
 
 
+class CloudStorageMissingError(Exception):
+    pass
+
+
 def enqueue_create_chunk_job(
     queue: rq.Queue,
     rq_job_id: str,
@@ -583,7 +587,8 @@ class MediaCache:
             reader = ImageReaderWithManifest(manifest_path)
             with ExitStack() as es:
                 db_cloud_storage = db_data.cloud_storage
-                assert db_cloud_storage, "Cloud storage instance was deleted"
+                if not db_cloud_storage:
+                    raise CloudStorageMissingError("Task is not connected to cloud storage")
                 credentials = Credentials()
                 credentials.convert_from_db(
                     {
