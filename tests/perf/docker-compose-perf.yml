@@ -14,8 +14,10 @@ services:
     container_name: perf_k6
     entrypoint: ["k6"]
     working_dir: /scripts
+    user: root
     volumes:
       - ./scripts:/scripts
+      - ./output:/output
     ports:
       - 6565:6565
     network_mode: host

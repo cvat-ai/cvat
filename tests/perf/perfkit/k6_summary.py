@@ -1,0 +1,93 @@
+from dataclasses import dataclass, asdict
+import json
+import pathlib
+from perfkit.console_print import print_error
+
+
+@dataclass
+class K6MetricStats:
+    avg: float | None = None
+    max: float | None = None
+    min: float | None = None
+    med: float | None = None
+    p90: float | None = None
+    p95: float | None = None
+    count: float | None = None
+    value: float | None = None
+    rate: float | None = None
+
+    def as_dict(self) -> dict:
+        stats = asdict(self)
+        filtered = {k: v for k, v in stats.items() if v is not None}
+        stats.clear()
+        stats.update(filtered)
+        return stats
+
+
+@dataclass
+class K6Summary:
+    metrics: dict[str, K6MetricStats]
+
+    def compare(self, other: "K6Summary", allowed_deltas: dict[str, dict[str, float]]) -> bool:
+        consistent = True
+
+        for metric_name, fields in allowed_deltas.items():
+            self_metric = self.metrics.get(metric_name)
+            other_metric = other.metrics.get(metric_name)
+
+            if self_metric is None or other_metric is None:
+                raise ValueError(f"Metric '{metric_name}' is missing in one of the summaries")
+
+            for field_name, max_delta in fields.items():
+                self_value = getattr(self_metric, field_name, None)
+                other_value = getattr(other_metric, field_name, None)
+
+                if self_value is None or other_value is None:
+                    raise ValueError(f"Field '{field_name}' is missing in metric '{metric_name}'")
+
+                if other_value == 0:
+                    raise ZeroDivisionError(
+                        f"Cannot compare field '{field_name}' of metric '{metric_name}' "
+                        "because baseline value is zero")
+
+                delta = abs(self_value - other_value) / other_value
+
+                if delta > max_delta:
+                    print_error(
+                        f"{metric_name}.{field_name} exceeded delta: {delta:.3f} > {max_delta}")
+                    consistent = False
+
+        return consistent
+
+    def as_dict(self) -> dict:
+        output = {}
+        for metric, stats in self.metrics.items():
+            output[metric] = stats.as_dict()
+        return output
+
+
+def parse_k6_summary(path: pathlib.Path) -> K6Summary:
+    if not path.exists():
+        raise FileNotFoundError("K6 summary file wasn't found")
+    json_str = path.read_text()
+    raw = json.loads(json_str)
+    metrics = raw.get("metrics", {})
+
+    def parse_stat(metric_data: dict) -> K6MetricStats:
+        return K6MetricStats(
+            avg=metric_data.get("avg"),
+            max=metric_data.get("max"),
+            min=metric_data.get("min"),
+            med=metric_data.get("med"),
+            count=metric_data.get("count"),
+            p90=metric_data.get("p(90)"),
+            p95=metric_data.get("p(95)"),
+            value=metric_data.get("value"),
+            rate=metric_data.get("rate"),
+        )
+
+    k6_summary = K6Summary(metrics={})
+    for metric_name, metric_data in metrics.items():
+        stat = parse_stat(metric_data)
+        k6_summary.metrics[metric_name] = stat
+    return k6_summary
