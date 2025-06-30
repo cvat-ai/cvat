@@ -11330,7 +11330,8 @@ components:
       description: |
         A CSRF protection token. Can be received in the 'csrftoken' cookie in the
         server response on the /api/auth/login endpoint.
-        The 'Origin' header must also be specified in the request.
+        For HTTPS requests, the 'Origin' and 'Host' or 'Referer' and 'Host' headers
+        must also be specified in the request.
     csrfHeaderAuth:
       type: apiKey
       in: header
@@ -11338,7 +11339,8 @@ components:
       description: |
         A CSRF protection token. Can be received in the 'csrftoken' cookie in the
         server response on the /api/auth/login endpoint.
-        The 'Origin' header must also be specified in the request.
+        For HTTPS requests, the 'Origin' and 'Host' or 'Referer' and 'Host' headers
+        must also be specified in the request.
     sessionAuth:
       type: apiKey
       in: cookie

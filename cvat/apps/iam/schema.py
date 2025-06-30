@@ -64,29 +64,27 @@ class SessionAuthenticationScheme(SessionScheme):
 
     def get_security_definition(self, auto_schema):
         sessionid_schema = super().get_security_definition(auto_schema)
+
+        csrf_token_description = textwrap.dedent(
+            """\
+            A CSRF protection token. Can be received in the 'csrftoken' cookie in the
+            server response on the /api/auth/login endpoint.
+            For HTTPS requests, the 'Origin' and 'Host' or 'Referer' and 'Host' headers
+            must also be specified in the request.
+        """
+        )
+
         csrftoken_cookie_schema = {
             "type": "apiKey",
             "in": "cookie",
             "name": "csrftoken",
-            "description": textwrap.dedent(
-                """\
-                A CSRF protection token. Can be received in the 'csrftoken' cookie in the
-                server response on the /api/auth/login endpoint.
-                The 'Origin' header must also be specified in the request.
-            """
-            ),
+            "description": csrf_token_description,
         }
         csrftoken_header_schema = {
             "type": "apiKey",
             "in": "header",
             "name": "X-CSRFToken",
-            "description": textwrap.dedent(
-                """\
-                A CSRF protection token. Can be received in the 'csrftoken' cookie in the
-                server response on the /api/auth/login endpoint.
-                The 'Origin' header must also be specified in the request.
-            """
-            ),
+            "description": csrf_token_description,
         }
         return [sessionid_schema, csrftoken_cookie_schema, csrftoken_header_schema]
 
