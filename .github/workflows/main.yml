@@ -448,7 +448,7 @@ jobs:
 
       - name: Update test config
         run: |
-          sed -i -e 's$http://localhost:8080$http://cvat.local$g' tests/python/shared/utils/config.py
+          sed -i -e 's$http://localhost:8080$http://cvat.local:80$g' tests/python/shared/utils/config.py
           find tests/python/shared/assets/ -type f -name '*.json' | xargs sed -i -e 's$http://localhost:8080$http://cvat.local$g'
           echo "$(minikube ip) cvat.local" | sudo tee -a /etc/hosts
 
