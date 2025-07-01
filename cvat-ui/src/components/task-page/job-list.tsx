@@ -6,7 +6,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import jsonLogic from 'json-logic-js';
 import _ from 'lodash';
-import { Indexable, JobsQuery } from 'reducers';
+import { JobsQuery } from 'reducers';
 import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
@@ -19,6 +19,7 @@ import JobItem from 'components/job-item/job-item';
 import {
     SortingComponent, ResourceFilterHOC, defaultVisibility, updateHistoryFromQuery,
 } from 'components/resource-sorting-filtering';
+import { useResourceQuery } from 'utils/hooks';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './jobs-filter-configuration';
@@ -32,8 +33,7 @@ interface Props {
     onJobUpdate(job: Job, data: Parameters<Job['save']>[0]): void;
 }
 
-const PAGE_SIZE = 10;
-function setUpJobsList(jobs: Job[], query: JobsQuery): Job[] {
+function filterJobs(jobs: Job[], query: JobsQuery): Job[] {
     let result = jobs;
 
     // consensus jobs will be under the collapse view
@@ -66,6 +66,10 @@ function setUpJobsList(jobs: Job[], query: JobsQuery): Job[] {
     return result;
 }
 
+function setUpJobsList(jobs: Job[], newPage: number, pageSize: number): Job[] {
+    return jobs.slice((newPage - 1) * pageSize, newPage * pageSize);
+}
+
 function JobListComponent(props: Props): JSX.Element {
     const { task: taskInstance, onJobUpdate } = props;
     const [visibility, setVisibility] = useState(defaultVisibility);
@@ -74,19 +78,14 @@ function JobListComponent(props: Props): JSX.Element {
     const { id: taskId } = taskInstance;
     const { jobs } = taskInstance;
 
-    const queryParams = new URLSearchParams(history.location.search);
-    const updatedQuery: JobsQuery = {
+    const defaultQuery: JobsQuery = {
         page: 1,
+        pageSize: 10,
         sort: null,
         search: null,
         filter: null,
     };
-    for (const key of Object.keys(updatedQuery)) {
-        (updatedQuery as Indexable)[key] = queryParams.get(key) || null;
-        if (key === 'page') {
-            updatedQuery.page = updatedQuery.page ? +updatedQuery.page : 1;
-        }
-    }
+    const updatedQuery = useResourceQuery<JobsQuery>(defaultQuery);
 
     const [jobChildMapping, setJobChildMapping] = useState<Record<number, Job[]>>({});
     useEffect(() => {
@@ -124,9 +123,8 @@ function JobListComponent(props: Props): JSX.Element {
     }, []);
 
     const [query, setQuery] = useState<JobsQuery>(updatedQuery);
-    const filteredJobs = setUpJobsList(jobs, query);
-    const jobViews = filteredJobs
-        .slice((query.page - 1) * PAGE_SIZE, query.page * PAGE_SIZE)
+    const filteredJobs = filterJobs(jobs, query);
+    const jobViews = setUpJobsList(filteredJobs, query.page, query.pageSize)
         .map((job: Job) => (
             <JobItem
                 key={job.id}
@@ -210,17 +208,18 @@ function JobListComponent(props: Props): JSX.Element {
                             <Col>
                                 <Pagination
                                     className='cvat-tasks-pagination'
-                                    onChange={(page: number) => {
+                                    onChange={(page: number, pageSize: number) => {
                                         setQuery({
                                             ...query,
                                             page,
+                                            pageSize,
                                         });
                                     }}
-                                    showSizeChanger={false}
                                     total={filteredJobs.length}
-                                    pageSize={PAGE_SIZE}
+                                    pageSize={query.pageSize}
                                     current={query.page}
                                     showQuickJumper
+                                    showSizeChanger
                                 />
                             </Col>
                         </Row>
