@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Modified serverless/pyrotch/anomalib to support having one image for all anomalib functions [PR #14]
 - Modified UI, backend and function containers to use inference checkpoints from anywhere in /data directory [PR #15]
 
+### Fixed
+- Fix path to anomalib nuclio functions [PR #17]
+
 =======
 
 ## [1.0.0] - 2025-05-12

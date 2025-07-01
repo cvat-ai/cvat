@@ -36,6 +36,6 @@ echo "🚀 Deploying GPU-based Nuclio functions..."
 ./serverless/deploy_array_gpu.sh serverless/gpu_functions.txt
 
 echo "🚀 Deploying Anomalib Nuclio functions..."
-./serverless/deploy_anomalib.sh serverless/anomalib/models/nuclio
+./serverless/deploy_anomalib.sh serverless/pytorch/anomalib/models/nuclio
 
 echo "✅ All functions deployed. CVAT is ready to use."
