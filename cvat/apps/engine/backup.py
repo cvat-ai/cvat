@@ -1118,7 +1118,8 @@ def create_backup(
     Exporter: Type[ProjectExporter | TaskExporter],
     logger: Logger,
     cache_ttl: timedelta,
-    lightweight: bool,
+    *,
+    lightweight: bool = True,
 ):
     db_instance = Exporter.get_object(instance_id)
     instance_type = db_instance.__class__.__name__

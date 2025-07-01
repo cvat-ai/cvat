@@ -228,7 +228,9 @@ class BackupExporter(AbstractExporter):
             Exporter,
             logger,
             self.job_result_ttl,
-            self.export_args.lightweight,
+        )
+        self.callback_kwargs = dict(
+            lightweight=self.export_args.lightweight,
         )
 
     def get_result_filename(self):
