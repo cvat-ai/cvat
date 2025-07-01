@@ -13,10 +13,11 @@ import { Row, Col } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
 import Button from 'antd/lib/button';
 
-import { CombinedState, Indexable } from 'reducers';
+import { CombinedState, WebhooksQuery } from 'reducers';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import { getWebhooksAsync } from 'actions/webhooks-actions';
 import { LeftOutlined } from '@ant-design/icons';
+import { useResourceQuery } from 'utils/hooks';
 import WebhooksList from './webhooks-list';
 import TopBar from './top-bar';
 import EmptyWebhooksListComponent from './empty-list';
@@ -24,8 +25,6 @@ import EmptyWebhooksListComponent from './empty-list';
 interface ProjectRouteMatch {
     id?: string | undefined;
 }
-
-const PAGE_SIZE = 10;
 
 function WebhooksPage(): JSX.Element | null {
     const dispatch = useDispatch();
@@ -54,14 +53,7 @@ function WebhooksPage(): JSX.Element | null {
         </Button>
     );
 
-    const queryParams = new URLSearchParams(history.location.search);
-    const updatedQuery = { ...query };
-    for (const key of Object.keys(updatedQuery)) {
-        (updatedQuery as Indexable)[key] = queryParams.get(key) || null;
-        if (key === 'page') {
-            updatedQuery.page = updatedQuery.page ? +updatedQuery.page : 1;
-        }
-    }
+    const updatedQuery = useResourceQuery<WebhooksQuery>(query);
 
     useEffect(() => {
         if (projectsMatch && projectsMatch.params.id) {
@@ -84,21 +76,22 @@ function WebhooksPage(): JSX.Element | null {
     const content = totalCount ? (
         <>
             <WebhooksList />
-            <Row justify='center' align='middle'>
+            <Row justify='center' align='middle' className='cvat-resource-pagination-wrapper'>
                 <Col md={22} lg={18} xl={16} xxl={14}>
                     <Pagination
                         className='cvat-tasks-pagination'
-                        onChange={(page: number) => {
+                        onChange={(page: number, pageSize: number) => {
                             dispatch(getWebhooksAsync({
                                 ...query,
                                 page,
+                                pageSize,
                             }));
                         }}
-                        showSizeChanger={false}
                         total={totalCount}
+                        pageSize={query.pageSize}
                         current={query.page}
-                        pageSize={PAGE_SIZE}
                         showQuickJumper
+                        showSizeChanger
                     />
                 </Col>
             </Row>

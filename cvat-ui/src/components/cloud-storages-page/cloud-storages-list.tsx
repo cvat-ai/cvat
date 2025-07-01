@@ -15,12 +15,13 @@ interface Props {
     storages: CloudStorage[];
     totalCount: number;
     page: number;
-    onChangePage(page: number): void;
+    pageSize: number;
+    onChangePage(page: number, pageSize: number): void;
 }
 
 export default function StoragesList(props: Props): JSX.Element {
     const {
-        storages, totalCount, page, onChangePage,
+        storages, totalCount, page, pageSize, onChangePage,
     } = props;
 
     const groupedStorages = storages.reduce(
@@ -37,7 +38,7 @@ export default function StoragesList(props: Props): JSX.Element {
 
     return (
         <>
-            <Row justify='center' align='middle'>
+            <Row justify='center' align='middle' className='cvat-resource-list-wrapper'>
                 <Col {...dimensions} className='cvat-cloud-storages-list'>
                     {groupedStorages.map(
                         (instances: CloudStorage[]): JSX.Element => (
@@ -52,16 +53,17 @@ export default function StoragesList(props: Props): JSX.Element {
                     )}
                 </Col>
             </Row>
-            <Row justify='center' align='middle'>
+            <Row justify='center' align='middle' className='cvat-resource-pagination-wrapper'>
                 <Col>
                     <Pagination
                         className='cvat-cloud-storages-pagination'
                         onChange={onChangePage}
-                        showSizeChanger={false}
                         total={totalCount}
-                        pageSize={12}
                         current={page}
+                        pageSize={pageSize}
                         showQuickJumper
+                        showSizeChanger
+                        pageSizeOptions={[12, 24, 48, 96]}
                     />
                 </Col>
             </Row>

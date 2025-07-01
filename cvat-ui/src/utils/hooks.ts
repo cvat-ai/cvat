@@ -205,3 +205,33 @@ export function useInstanceId(type: InstanceType): number {
     if (type === InstanceType.JOB) return +(params.jid as string);
     return +(params.tid as string);
 }
+
+interface ResourceQueryDefaultParams {
+    page?: number;
+    pageSize?: number;
+}
+
+export function useResourceQuery<QueryType extends {
+    page: number;
+    pageSize: number;
+}>(query: QueryType, defaultParams: ResourceQueryDefaultParams = {}): QueryType {
+    const {
+        page = 1,
+        pageSize = 10,
+    } = defaultParams;
+
+    const history = useHistory();
+
+    const queryParams = new URLSearchParams(history.location.search);
+    const updatedQuery = { ...query };
+    for (const key of Object.keys(updatedQuery)) {
+        (updatedQuery as Record<string, any>)[key] = queryParams.get(key) || null;
+        if (key === 'page') {
+            updatedQuery.page = updatedQuery.page ? +updatedQuery.page : page;
+        }
+        if (key === 'pageSize') {
+            updatedQuery.pageSize = updatedQuery.pageSize ? +updatedQuery.pageSize : pageSize;
+        }
+    }
+    return updatedQuery;
+}
