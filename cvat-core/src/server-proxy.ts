@@ -1953,7 +1953,7 @@ async function deleteCloudStorage(id) {
     }
 }
 
-async function getOrganizations(filter) {
+async function getOrganizations(filter, fullResponseData: boolean = false) {
     const { backendAPI } = config;
 
     let response = null;
@@ -1961,13 +1961,14 @@ async function getOrganizations(filter) {
         response = await Axios.get(`${backendAPI}/organizations`, {
             params: {
                 ...filter,
+                page_size: 12,
             },
         });
     } catch (errorData) {
         throw generateError(errorData);
     }
 
-    return response.data.results;
+    return (fullResponseData) ? response.data : response.data.results;
 }
 
 async function createOrganization(data: SerializedOrganization): Promise<SerializedOrganization> {

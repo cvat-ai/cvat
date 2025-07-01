@@ -18,14 +18,14 @@ from contextlib import closing
 from copy import copy
 from inspect import isclass
 from tempfile import NamedTemporaryFile
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, cast
 
 import django_rq
 from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
-from django.db.models import Prefetch, prefetch_related_objects
+from django.db.models import Count, Prefetch, prefetch_related_objects
 from django.utils import timezone
 from django.utils.functional import cached_property
 from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
@@ -40,7 +40,9 @@ from cvat.apps.engine.frame_provider import FrameQuality, TaskFrameProvider
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.permissions import TaskPermission
+from cvat.apps.engine.rq import RunningBackgroundProcessesError, update_org_related_data_in_rq_jobs
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
+from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import (
     CvatChunkTimestampMismatchError,
     av_scan_paths,
@@ -53,6 +55,7 @@ from cvat.apps.engine.utils import (
     reverse,
     take_by,
 )
+from cvat.apps.organizations.models import Organization
 from utils.dataset_manifest import ImageManifestManager
 
 slogger = ServerLogManager(__name__)
@@ -2297,6 +2300,7 @@ class TaskReadListSerializer(serializers.ListSerializer):
 
         return super().to_representation(data)
 
+@extend_schema_serializer(deprecate_fields=["organization"])
 class TaskReadSerializer(serializers.ModelSerializer):
     data_chunk_size = serializers.ReadOnlyField(source='data.chunk_size', required=False)
     data_compressed_chunk_type = serializers.ReadOnlyField(source='data.compressed_chunk_type', required=False)
@@ -2308,6 +2312,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
     assignee = BasicUserSerializer(allow_null=True, required=False)
     project_id = serializers.IntegerField(required=False, allow_null=True)
     guide_id = serializers.IntegerField(source='annotation_guide.id', required=False, allow_null=True)
+    organization_id = serializers.IntegerField(source='organization.id', required=False, read_only=True, allow_null=True)
     dimension = serializers.CharField(allow_blank=True, required=False)
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
@@ -2327,7 +2332,9 @@ class TaskReadSerializer(serializers.ModelSerializer):
             'bug_tracker', 'created_date', 'updated_date', 'overlap', 'segment_size',
             'status', 'data_chunk_size', 'data_compressed_chunk_type', 'guide_id',
             'data_original_chunk_type', 'size', 'image_quality', 'data', 'dimension',
-            'subset', 'organization', 'target_storage', 'source_storage', 'jobs', 'labels',
+            'subset', 'organization_id',
+            'organization', # deprecated field
+            'target_storage', 'source_storage', 'jobs', 'labels',
             'assignee_updated_date', 'validation_mode', 'consensus_enabled',
         )
         read_only_fields = fields
@@ -2345,14 +2352,47 @@ class TaskReadSerializer(serializers.ModelSerializer):
         representation['consensus_enabled'] = self.get_consensus_enabled(instance)
         return representation
 
-
+@extend_schema_serializer(
+    examples=[
+        OpenApiExample(
+            "Transfer a task from an organization to the personal sandbox",
+            value={
+                "organization_id": None,
+            },
+            request_only=True,
+        ),
+        OpenApiExample(
+            "Transfer a task from the personal sandbox to an organization",
+            value={
+                "organization_id": 1,
+            },
+            request_only=True,
+        ),
+        OpenApiExample(
+            "Transfer a storage linked task to an organization and detach storages",
+            value={
+                "organization_id": 1,
+                "source_storage": {
+                    "location": models.Location.LOCAL,
+                    "cloud_storage_id": None,
+                },
+                "target_storage": {
+                    "location": models.Location.LOCAL,
+                    "cloud_storage_id": None,
+                },
+            },
+            request_only=True,
+        )
+    ]
+)
 class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     labels = LabelSerializer(many=True, source='label_set', partial=True, required=False)
     owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     project_id = serializers.IntegerField(required=False, allow_null=True)
-    target_storage = StorageSerializer(required=False, allow_null=True)
-    source_storage = StorageSerializer(required=False, allow_null=True)
+    organization_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
+    target_storage = StorageSerializer(required=False, allow_null=False)
+    source_storage = StorageSerializer(required=False, allow_null=False)
     consensus_replicas = serializers.IntegerField(
         required=False, default=0, min_value=0,
         help_text=textwrap.dedent("""\
@@ -2367,8 +2407,17 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             'url', 'id', 'name', 'project_id', 'owner_id', 'assignee_id',
             'bug_tracker', 'overlap', 'segment_size', 'labels', 'subset',
             'target_storage', 'source_storage', 'consensus_replicas',
+            'organization_id',
         )
         write_once_fields = ('overlap', 'segment_size', 'consensus_replicas')
+        update_only_fields = ('organization_id',)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if getattr(self.context.get('view'), 'action', '') == 'create':
+            for field in self.Meta.update_only_fields:
+                self.fields.pop(field)
 
     def to_representation(self, instance):
         serializer = TaskReadSerializer(instance, context=self.context)
@@ -2402,7 +2451,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 raise serializers.ValidationError(f'The specified project #{project_id} does not exist.')
 
             if project.organization != validated_data.get('organization'):
-                raise serializers.ValidationError(f'The task and its project should be in the same organization.')
+                raise serializers.ValidationError('The task and its project should be in the same organization.')
 
         labels = validated_data.pop('label_set', [])
 
@@ -2432,7 +2481,24 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
     # pylint: disable=no-self-use
     @transaction.atomic
-    def update(self, instance, validated_data):
+    def update(self, instance: models.Task, validated_data: dict):
+        organization_id = validated_data.get("organization_id")
+        organization_slug = None
+
+        workspace_transferring = (
+            "organization_id" in validated_data
+            and organization_id != instance.organization_id
+        )
+
+        if (
+            workspace_transferring and (set(validated_data.keys()) - {
+                'source_storage', 'target_storage', 'organization_id'
+            })
+        ):
+            raise serializers.ValidationError(
+                "Task attributes cannot be updated during transferring to another workspace"
+            )
+
         instance.name = validated_data.get('name', instance.name)
         instance.owner_id = validated_data.get('owner_id', instance.owner_id)
         instance.bug_tracker = validated_data.get('bug_tracker', instance.bug_tracker)
@@ -2502,10 +2568,51 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
             instance.project = project
 
-        # update source and target storages
-        _update_related_storages(instance, validated_data)
+        if workspace_transferring:
+            if organization_id is not None:
+                try:
+                    organization_slug = list(
+                        Organization.objects.filter(pk=organization_id).values_list('slug', flat=True)
+                    )[0]
+                except IndexError:
+                    raise serializers.ValidationError("Invalid organization id")
 
-        instance.save()
+            request = cast(ExtendedRequest, self.context['request'])
+            cur_user_id = request.user.id
+            if instance.owner_id != cur_user_id:
+                instance.owner_id = cur_user_id
+
+            assignee_updated_date = timezone.now()
+
+            if instance.assignee_id is not None:
+                instance.update_assignee(updated_date=assignee_updated_date, save=False)
+
+            assigned_jobs_qs = models.Job.objects.filter(
+                segment__task__id=instance.pk,
+                assignee__isnull=False
+            )
+            if assigned_jobs_qs.exists():
+                assigned_jobs_qs.update(assignee=None, assignee_updated_date=assignee_updated_date)
+
+            instance.organization_id = organization_id
+
+        # update source and target storages
+        _update_related_storages(
+            instance,
+            validated_data=validated_data,
+            workspace_transferring=workspace_transferring,
+            dst_organization_id=organization_id,
+        )
+
+        if workspace_transferring:
+            try:
+                update_org_related_data_in_rq_jobs(organization_id, organization_slug, task_id=instance.pk)
+            except RunningBackgroundProcessesError:
+                raise serializers.ValidationError(
+                    "There are some running background processes related with the task"
+                )
+
+        instance.save() # TODO: update_fields
 
         if 'label_set' in validated_data and not instance.project_id:
             self.update_child_objects_on_labels_update(instance)
@@ -2518,6 +2625,14 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         ).update(updated_date=instance.updated_date)
 
     def validate(self, attrs):
+        if "organization_id" in attrs.keys() and self.instance:
+            if "project_id" in attrs.keys():
+                raise serializers.ValidationError("A task cannot be moved into a project and into an organization at the same time")
+
+            if self.instance.project_id:
+                raise serializers.ValidationError("Only top-level resources can be moved between workspaces")
+
+
         # When moving task labels can be mapped to one, but when not names must be unique
         if 'project_id' in attrs.keys() and self.instance is not None:
             project_id = attrs.get('project_id')
@@ -2568,10 +2683,12 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
         return attrs
 
+@extend_schema_serializer(deprecate_fields=["organization"])
 class ProjectReadSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(allow_null=True, required=False, read_only=True)
     assignee = BasicUserSerializer(allow_null=True, required=False, read_only=True)
     guide_id = serializers.IntegerField(source='annotation_guide.id', required=False, allow_null=True)
+    organization_id = serializers.IntegerField(source='organization.id', required=False, read_only=True, allow_null=True)
     task_subsets = serializers.ListField(child=serializers.CharField(), required=False, read_only=True)
     dimension = serializers.CharField(max_length=16, required=False, read_only=True, allow_null=True)
     target_storage = StorageSerializer(required=False, allow_null=True, read_only=True)
@@ -2582,8 +2699,9 @@ class ProjectReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Project
         fields = ('url', 'id', 'name', 'owner', 'assignee', 'guide_id',
-            'bug_tracker', 'task_subsets', 'created_date', 'updated_date', 'status',
-            'dimension', 'organization', 'target_storage', 'source_storage',
+            'bug_tracker', 'task_subsets', 'created_date', 'updated_date', 'status', 'dimension',
+            'organization', # deprecated field
+            'organization_id', 'target_storage', 'source_storage',
             'tasks', 'labels', 'assignee_updated_date'
         )
         read_only_fields = fields
@@ -2605,6 +2723,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
     labels = LabelSerializer(write_only=True, many=True, source='label_set', partial=True, default=[])
     owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+    organization_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
 
     target_storage = StorageSerializer(write_only=True, required=False)
     source_storage = StorageSerializer(write_only=True, required=False)
@@ -2612,8 +2731,16 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Project
         fields = ('name', 'labels', 'owner_id', 'assignee_id', 'bug_tracker',
-            'target_storage', 'source_storage',
+            'target_storage', 'source_storage', 'organization_id'
         )
+        update_only_fields = ('organization_id',)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if not self.partial:
+            for field in self.Meta.update_only_fields:
+                self.fields.pop(field)
 
     def to_representation(self, instance):
         serializer = ProjectReadSerializer(instance, context=self.context)
@@ -2649,7 +2776,25 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
 
     # pylint: disable=no-self-use
     @transaction.atomic
-    def update(self, instance, validated_data):
+    def update(self, instance: models.Project, validated_data: dict):
+        # FUTURE-TODO: refactor the code && optimize updating
+        organization_id = validated_data.get("organization_id")
+        organization_slug = None
+
+        workspace_transferring = (
+            "organization_id" in validated_data
+            and organization_id != instance.organization_id
+        )
+
+        if (
+            workspace_transferring and (set(validated_data.keys()) - {
+                'source_storage', 'target_storage', 'organization_id'
+            })
+        ):
+            raise serializers.ValidationError(
+                "Project attributes cannot be updated during transferring to another workspace"
+            )
+
         instance.name = validated_data.get('name', instance.name)
         instance.owner_id = validated_data.get('owner_id', instance.owner_id)
         instance.bug_tracker = validated_data.get('bug_tracker', instance.bug_tracker)
@@ -2664,8 +2809,56 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
         labels = validated_data.get('label_set', [])
         LabelSerializer.update_labels(labels, parent_instance=instance)
 
+        # TODO: extract into a separate method
+        if workspace_transferring:
+            if organization_id is not None:
+                try:
+                    organization_slug = list(
+                        Organization.objects.filter(pk=organization_id).values_list('slug', flat=True)
+                    )[0]
+                except IndexError:
+                    raise serializers.ValidationError("Invalid organization id")
+
+            request = cast(ExtendedRequest, self.context['request'])
+            cur_user_id = request.user.id
+
+            if instance.owner_id != cur_user_id:
+                instance.owner_id = cur_user_id
+
+            assignee_updated_date = timezone.now()
+
+            if instance.assignee_id is not None:
+                instance.update_assignee(updated_date=assignee_updated_date, save=False)
+
+            instance.organization_id = organization_id
+            instance.tasks.update(
+                organization_id=organization_id,
+                owner_id=cur_user_id,
+                assignee_id=None,
+                assignee_updated_date=assignee_updated_date
+            )
+
+            if (assigned_jobs_qs := models.Job.objects.filter(
+                segment__task__project__id=instance.pk,
+                assignee__isnull=False
+            )).exists():
+                assigned_jobs_qs.update(assignee=None, assignee_updated_date=assignee_updated_date)
+
         # update source and target storages
-        _update_related_storages(instance, validated_data)
+        _update_related_storages(
+            instance,
+            validated_data=validated_data,
+            workspace_transferring=workspace_transferring,
+            dst_organization_id=organization_id,
+        )
+
+        if workspace_transferring:
+            try:
+                update_org_related_data_in_rq_jobs(organization_id, organization_slug, project_id=instance.pk)
+            except RunningBackgroundProcessesError:
+                raise serializers.ValidationError(
+                    "There are some running background processes related with the resource"
+                )
 
         instance.save()
 
@@ -3499,20 +3692,61 @@ class RelatedFileSerializer(serializers.ModelSerializer):
 
 
 def _update_related_storages(
-    instance: Union[models.Project, models.Task],
+    instance: models.Project | models.Task,
+    *,
     validated_data: dict[str, Any],
+    workspace_transferring: bool = False,
+    dst_organization_id: int | None = None
 ) -> None:
     for storage_type in ('source_storage', 'target_storage'):
-        new_conf = validated_data.pop(storage_type, None)
+        # storage_instance maybe None
+        storage_instance: models.Storage | None = getattr(instance, storage_type, None)
 
-        if not new_conf:
-            continue
-
+        new_conf = validated_data.pop(storage_type, {})
         new_cloud_storage_id = new_conf.get('cloud_storage_id')
         new_location = new_conf.get('location')
 
-        # storage_instance maybe None
-        storage_instance = getattr(instance, storage_type)
+        if not new_conf:
+            if not workspace_transferring:
+                continue
+
+            if (
+                storage_instance and storage_instance.cloud_storage_id
+            ):
+                # generally should not occur
+                try:
+                    original_cs = models.CloudStorage.objects.annotate(Count("manifests")).get(pk=storage_instance.cloud_storage_id)
+                except models.CloudStorage.DoesNotExist:
+                    new_location = models.Location.LOCAL
+
+                similar_ones: list[models.CloudStorage] = []
+                msg_no_similar_cs = "Could not find a similar cloud storage in the new workspace"
+
+                qs_with_similar_ones = models.CloudStorage.objects.filter(
+                    provider_type=original_cs.provider_type,
+                    resource=original_cs.resource,
+                    specific_attributes=original_cs.specific_attributes,
+                    organization_id=dst_organization_id,
+                ).annotate(Count("manifests"))
+
+                for cs in qs_with_similar_ones:
+                    if cs.manifests__count != original_cs.manifests__count:
+                        continue
+
+                    # we do not need to compare manifest contents since the content
+                    # will be synchronized with the original CS file on the next content request
+                    if (
+                        list(cs.manifests.values_list("filename", flat=True).order_by("filename"))
+                        != list(original_cs.manifests.values_list("filename", flat=True).order_by("filename"))
+                    ):
+                        continue
+
+                    similar_ones.append(cs)
+
+                if len(similar_ones) != 1:
+                    raise serializers.ValidationError(msg_no_similar_cs)
+
+                new_cloud_storage_id = similar_ones[0].pk
 
         if new_cloud_storage_id:
             if new_location and new_location != models.Location.CLOUD_STORAGE:
@@ -3545,15 +3779,15 @@ def _update_related_storages(
                     "It is not allowed to reset a cloud storage id without explicitly resetting a location"
                 )
 
-        if not storage_instance:
-            storage_instance = models.Storage(**new_conf)
+        if storage_instance:
+            storage_instance.location = new_location or storage_instance.location
+            storage_instance.cloud_storage_id = new_cloud_storage_id
             storage_instance.save()
-            setattr(instance, storage_type, storage_instance)
             continue
 
-        storage_instance.location = new_location or storage_instance.location
-        storage_instance.cloud_storage_id = new_cloud_storage_id
+        storage_instance = models.Storage(**new_conf)
         storage_instance.save()
+        setattr(instance, storage_type, storage_instance)
 
 def _configure_related_storages(validated_data: dict[str, Any]) -> dict[str, Optional[models.Storage]]:
     storages = {

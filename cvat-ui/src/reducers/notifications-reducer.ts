@@ -1881,6 +1881,23 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
+        case OrganizationActionsTypes.GET_ORGANIZATIONS_FAILED: {
+            const { error } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        fetching: {
+                            message: 'Could not fetch the list of organizations',
+                            reason: error,
+                            shouldLog: shouldLog(error),
+                        },
+                    },
+                },
+            };
+        }
         case JobsActionTypes.GET_JOBS_FAILED: {
             return {
                 ...state,
@@ -2012,6 +2029,42 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             reason: action.payload.error,
                             shouldLog: shouldLog(action.payload.error),
                             className: 'cvat-notification-notice-delete-webhook-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case ProjectsActionTypes.UPDATE_PROJECT_FAILED: {
+            const { projectId, error, message } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    projects: {
+                        ...state.errors.projects,
+                        updating: {
+                            message:
+                                message || `Could not update the project #${projectId}`,
+                            reason: error,
+                            shouldLog: shouldLog(error),
+                        },
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.UPDATE_TASK_FAILED: {
+            const { taskId, error, message } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    tasks: {
+                        ...state.errors.tasks,
+                        updating: {
+                            message:
+                                message || `Could not update the task #${taskId}`,
+                            reason: error,
+                            shouldLog: shouldLog(error),
                         },
                     },
                 },

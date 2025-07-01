@@ -14,6 +14,7 @@ interface MenuItemsData {
     onImportDataset: () => void;
     onBackupProject: () => void;
     onDeleteProject: () => void;
+    onTransferProjectBetweenWorkspaces: () => void;
 }
 
 export default function ProjectActionsItems(
@@ -27,6 +28,7 @@ export default function ProjectActionsItems(
         onImportDataset,
         onBackupProject,
         onDeleteProject,
+        onTransferProjectBetweenWorkspaces,
     } = menuItemsData;
 
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
@@ -63,6 +65,12 @@ export default function ProjectActionsItems(
         key: 'set-webhooks',
         label: <Link to={`/projects/${projectID}/webhooks`}>Setup webhooks</Link>,
     }, 50]);
+
+    menuItems.push([{
+        key: 'transfer_project_between_workspaces',
+        onClick: onTransferProjectBetweenWorkspaces,
+        label: 'Move to organization/sandbox',
+    }, 55]);
 
     menuItems.push([{
         type: 'divider',

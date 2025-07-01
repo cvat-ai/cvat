@@ -34,6 +34,9 @@ const defaultState: TasksState = {
     activities: {
         deletes: {},
     },
+    updateWorkspace: {
+        instance: null,
+    },
 };
 
 export default (state: TasksState = defaultState, action: AnyAction): TasksState => {
@@ -73,6 +76,23 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                     }
                     return taskInstance;
                 }),
+            };
+        }
+        case TasksActionTypes.OPEN_LINKED_CLOUD_STORAGE_UPDATING_MODAL: {
+            const { task } = action.payload;
+            return {
+                ...state,
+                updateWorkspace: {
+                    instance: task,
+                },
+            };
+        }
+        case TasksActionTypes.CLOSE_LINKED_CLOUD_STORAGE_UPDATING_MODAL: {
+            return {
+                ...state,
+                updateWorkspace: {
+                    instance: null,
+                },
             };
         }
         case TasksActionTypes.GET_TASKS_FAILED:
