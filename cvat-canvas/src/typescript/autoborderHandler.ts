@@ -14,7 +14,7 @@ interface TransformedShape {
 
 export interface AutoborderHandler {
     autoborder(enabled: boolean, currentShape?: SVG.Shape, currentID?: number): void;
-    configurate(configuration: Configuration): void;
+    configure(configuration: Configuration): void;
     transform(geometry: Geometry): void;
     updateObjects(): void;
 }
@@ -306,7 +306,7 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
         });
     }
 
-    public configurate(configuration: Configuration): void {
+    public configure(configuration: Configuration): void {
         this.controlPointsSize = configuration.controlPointsSize || consts.BASE_POINT_SIZE;
     }
 }

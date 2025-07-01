@@ -446,7 +446,7 @@
     "segment_size": 100
   },
   "COCO Keypoints 1.0": {
-    "name": "coco keupoints task",
+    "name": "coco keypoints task",
     "overlap": 0,
     "segment_size": 100,
     "labels": [

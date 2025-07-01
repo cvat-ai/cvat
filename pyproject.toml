@@ -19,7 +19,7 @@ files.extend-exclude = [
     "*.patch"
 ]
 default.extend-ignore-re = [
-    "\"md5.*?\""
+    "\"md5.*?\"" # test passwords
 ]
 [tool.typos.default.extend-words]
 # project terms that were confused with real word typos
@@ -28,28 +28,43 @@ tpic = "tpic"
 NAM = "NAM"
 AVOD = "AVOD"
 
+# 3rd party tokens that we can't fix
+trak = "trak"
+
 # conventions that serve better than correct words
 splitted = "splitted"
 lastest = "lastest"
-
-# 3rd party tokens that we can't fix
-trak = "trak"
 
 # narrow down options for spell-checker to auto-fix
 lavel = "label"
 firts = "first"
 correciton = "correction"
-segway = "segway"
+segway = "segway" # lexical
 typ = "type"
 cheeck = "check"
 custome = "custom"
 blok = "block"
-convertation = "conversion"
+convertation = "conversion" # wrong word formation
 secons = "seconds"
 archieve = "archive"
 corrent = "correct"
+cuttent = "current"
 creationg = "creation"
 performe = "perform"
+soring = "sorting"
+tesk = "task"
+puted = "input"
+adjastment = "adjustment" # phonetic mistake
+configurate = "configure"
+occlud = "occluded"
+cubiod = "cuboid"
+cuboiud = "cuboid"
+debounding = "debouncing"
+cuccessfully = "successfully" # alphabet mistake
+occurreed = "occurred"
+keupoints = "keypoints"
+
+
 
 # FIXME: tableBodyFirstRowThs - what is the word `Ths`?
 

@@ -1881,12 +1881,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
 
             this.activate(activeElement);
-            this.editHandler.configurate(this.configuration);
-            this.drawHandler.configurate(this.configuration);
-            this.masksHandler.configurate(this.configuration);
-            this.autoborderHandler.configurate(this.configuration);
-            this.interactionHandler.configurate(this.configuration);
-            this.sliceHandler.configurate(this.configuration);
+            this.editHandler.configure(this.configuration);
+            this.drawHandler.configure(this.configuration);
+            this.masksHandler.configure(this.configuration);
+            this.autoborderHandler.configure(this.configuration);
+            this.interactionHandler.configure(this.configuration);
+            this.sliceHandler.configure(this.configuration);
             this.transformCanvas();
 
             // remove if exist and not enabled
