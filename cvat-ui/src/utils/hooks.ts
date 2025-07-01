@@ -6,7 +6,7 @@
 import _ from 'lodash';
 import {
     useRef, useEffect, useState, useCallback,
-    EffectCallback, DependencyList,
+    useLayoutEffect, EffectCallback, DependencyList,
 } from 'react';
 import { useSelector } from 'react-redux';
 import { useHistory, useLocation, useParams } from 'react-router';
@@ -151,6 +151,28 @@ export function useResetShortcutsOnUnmount(componentShortcuts: Record<string, Ke
     }, []);
 }
 
+export function usePageSizeData(ref: any): any {
+    const [pageSizeData, setPageSizeData] = useState({ width: 0, height: 0 });
+
+    useLayoutEffect(() => {
+        const resize = (): void => {
+            if (ref?.current) {
+                const { clientWidth, clientHeight } = ref.current;
+                setPageSizeData({ width: clientWidth, height: clientHeight });
+            }
+        };
+
+        resize();
+        window.addEventListener('resize', resize);
+
+        return () => {
+            window.removeEventListener('resize', resize);
+        };
+    }, []);
+
+    return pageSizeData;
+}
+
 export function useUpdateEffect(effect: EffectCallback, deps?: DependencyList): void {
     const isFirstRender = useRef(true);
 
@@ -182,4 +204,34 @@ export function useInstanceId(type: InstanceType): number {
     if (type === InstanceType.PROJECT) return +(params.pid as string);
     if (type === InstanceType.JOB) return +(params.jid as string);
     return +(params.tid as string);
+}
+
+interface ResourceQueryDefaultParams {
+    page?: number;
+    pageSize?: number;
+}
+
+export function useResourceQuery<QueryType extends {
+    page: number;
+    pageSize: number;
+}>(query: QueryType, defaultParams: ResourceQueryDefaultParams = {}): QueryType {
+    const {
+        page = 1,
+        pageSize = 10,
+    } = defaultParams;
+
+    const history = useHistory();
+
+    const queryParams = new URLSearchParams(history.location.search);
+    const updatedQuery = { ...query };
+    for (const key of Object.keys(updatedQuery)) {
+        (updatedQuery as Record<string, any>)[key] = queryParams.get(key) || null;
+        if (key === 'page') {
+            updatedQuery.page = updatedQuery.page ? +updatedQuery.page : page;
+        }
+        if (key === 'pageSize') {
+            updatedQuery.pageSize = updatedQuery.pageSize ? +updatedQuery.pageSize : pageSize;
+        }
+    }
+    return updatedQuery;
 }

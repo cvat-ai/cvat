@@ -24,14 +24,13 @@ export interface Props {
     pageSize: number;
     pageNumber: number;
     members: Membership[];
-    setPageNumber: (pageNumber: number) => void;
-    setPageSize: (pageSize: number) => void;
+    onPageChange: (page: number, pageSize: number) => void;
     fetchMembers: () => void;
 }
 
 function MembersList(props: Props): JSX.Element {
     const {
-        organizationInstance, fetching, members, pageSize, pageNumber, fetchMembers, setPageNumber, setPageSize,
+        organizationInstance, fetching, members, pageSize, pageNumber, fetchMembers, onPageChange,
     } = props;
     const dispatch = useDispatch();
     const inviting = useSelector((state: CombinedState) => state.organizations.inviting);
@@ -83,12 +82,8 @@ function MembersList(props: Props): JSX.Element {
             <div className='cvat-organization-members-pagination-block'>
                 <Pagination
                     total={members.length ? (members as any).count : 0}
-                    onShowSizeChange={(current: number, newShowSize: number) => {
-                        setPageNumber(current);
-                        setPageSize(newShowSize);
-                    }}
-                    onChange={(current: number) => {
-                        setPageNumber(current);
+                    onChange={(current: number, newPageSize: number) => {
+                        onPageChange(current, newPageSize);
                     }}
                     current={pageNumber}
                     pageSize={pageSize}

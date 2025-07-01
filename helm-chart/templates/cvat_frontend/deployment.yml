@@ -13,7 +13,7 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      {{- include "cvat.labels" . | nindent 6 }}
+      {{- include "cvat.selectorLabels" . | nindent 6 }}
       app: cvat-app
       tier: frontend
   template:

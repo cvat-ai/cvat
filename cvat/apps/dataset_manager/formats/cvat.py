@@ -29,6 +29,8 @@ from datumaro.plugins.data_formats.cvat.base import CvatImporter as _CvatImporte
 from defusedxml import ElementTree
 
 from cvat.apps.dataset_manager.bindings import (
+    CVATProjectDataExtractor,
+    CvatTaskOrJobDataExtractor,
     JobData,
     NoMediaInAnnotationFileError,
     ProjectData,
@@ -494,7 +496,7 @@ class CvatExtractor(DatasetBase):
         )
 
         common_attrs = ["occluded"]
-        if "interpolation" in map(lambda t: t["mode"], tasks_info.values()):
+        if "interpolation" in (t["mode"] for t in tasks_info.values()):
             common_attrs.append("keyframe")
             common_attrs.append("outside")
             common_attrs.append("track_id")
@@ -854,6 +856,17 @@ def dump_as_cvat_annotation(dumper, annotations):
                 [("width", str(frame_annotation.width)), ("height", str(frame_annotation.height))]
             )
         )
+
+        # do not keep parsed lazy list data after this iteration
+        if isinstance(annotations, ProjectData):
+            frame_annotation = CVATProjectDataExtractor.copy_frame_data_with_replaced_lazy_lists(
+                frame_annotation
+            )
+        else:
+            frame_annotation = CvatTaskOrJobDataExtractor.copy_frame_data_with_replaced_lazy_lists(
+                frame_annotation
+            )
+
         dumper.open_image(image_attrs)
 
         def dump_labeled_shapes(shapes, is_skeleton=False):

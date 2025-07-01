@@ -10,7 +10,7 @@ import {
     Webhook, MLModel, Organization, Job, Task, Project, Label, User,
     QualityConflict, FramesMetaData, RQStatus, Event, Invitation, SerializedAPISchema,
     Request, JobValidationLayout, QualitySettings, TaskValidationLayout, ObjectState,
-    ConsensusSettings, AboutData,
+    ConsensusSettings, AboutData, ShapeType, ObjectType,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
@@ -27,6 +27,7 @@ export interface AuthState {
 
 export interface ProjectsQuery {
     page: number;
+    pageSize: number;
     id: number | null;
     search: string | null;
     filter: string | null;
@@ -69,6 +70,7 @@ export interface ProjectsState {
 
 export interface TasksQuery {
     page: number;
+    pageSize: number;
     id: number | null;
     search: string | null;
     filter: string | null;
@@ -78,6 +80,7 @@ export interface TasksQuery {
 
 export interface JobsQuery {
     page: number;
+    pageSize: number;
     sort: string | null;
     search: string | null;
     filter: string | null;
@@ -198,6 +201,7 @@ export interface FormatsState {
 
 export interface CloudStoragesQuery {
     page: number;
+    pageSize: number;
     id: number | null;
     search: string | null;
     sort: string | null;
@@ -290,21 +294,43 @@ export interface PluginsState {
             };
         };
         qualityControlPage: {
-            overviewTab: ((props: {
-                task: Task;
-                qualitySettings: QualitySettings;
-            }) => JSX.Element)[];
-
-            allocationTable: ((
-                props: {
-                    task: Task;
-                    gtJobId: number;
-                    gtJobMeta: FramesMetaData;
-                    qualitySettings: QualitySettings;
-                    validationLayout: TaskValidationLayout;
-                    onDeleteFrames: (frames: number[]) => void;
-                    onRestoreFrames: (frames: number[]) => void;
+            task: {
+                overviewTab: ((props: {
+                    instance: Task;
+                    qualitySettings: {
+                        settings: QualitySettings | null;
+                        childrenSettings: QualitySettings[] | null;
+                    };
                 }) => JSX.Element)[];
+
+                allocationTable: ((
+                    props: {
+                        task: Task;
+                        gtJobId: number;
+                        gtJobMeta: FramesMetaData;
+                        qualitySettings: QualitySettings;
+                        validationLayout: TaskValidationLayout;
+                        onDeleteFrames: (frames: number[]) => void;
+                        onRestoreFrames: (frames: number[]) => void;
+                    }) => JSX.Element)[];
+            }
+            project : {
+                overviewTab: ((props: {
+                    instance: Project;
+                    qualitySettings: {
+                        settings: QualitySettings | null;
+                        childrenSettings: QualitySettings[] | null;
+                    };
+                }) => JSX.Element)[];
+            }
+        };
+        analyticsReportPage: {
+            content: ((
+                props: {
+                    resource: Project | Task | Job;
+                    timePeriod: { startDate: string; endDate: string; } | null;
+                },
+            ) => JSX.Element)[];
         };
     },
     components: {
@@ -403,6 +429,7 @@ export interface ModelAttribute {
 
 export interface ModelsQuery {
     page: number;
+    pageSize: number;
     id: number | null;
     search: string | null;
     filter: string | null;
@@ -812,6 +839,9 @@ export interface AnnotationState {
         visible: boolean;
         data: any;
     };
+    search: {
+        visible: boolean;
+    }
     propagate: {
         visible: boolean;
     };
@@ -876,6 +906,7 @@ export interface WorkspaceSettingsState {
     autoSaveInterval: number; // in ms
     aamZoomMargin: number;
     automaticBordering: boolean;
+    adaptiveZoom: boolean;
     showObjectsTextAlways: boolean;
     showAllInterpolationTracks: boolean;
     intelligentPolygonCrop: boolean;
@@ -965,6 +996,7 @@ export interface OrganizationState {
 
 export interface WebhooksQuery {
     page: number;
+    pageSize: number;
     id: number | null;
     search: string | null;
     filter: string | null;
@@ -981,6 +1013,7 @@ export interface WebhooksState {
 
 export interface InvitationsQuery {
     page: number;
+    pageSize: number;
 }
 
 export interface InvitationsState {
@@ -993,6 +1026,7 @@ export interface InvitationsState {
 
 export interface RequestsQuery {
     page: number;
+    pageSize: number;
 }
 
 export interface RequestsState {

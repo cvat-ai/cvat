@@ -16,43 +16,25 @@ from .models import ConsensusSettings
 
 
 class ConsensusMergePermission(OpenPolicyAgentPermission):
-    rq_job_owner_id: int | None
     task_id: int | None
 
     class Scopes(StrEnum):
         CREATE = "create"
-        VIEW_STATUS = "view:status"
 
     @classmethod
-    def create_scope_check_status(
-        cls, request: ExtendedRequest, rq_job_owner_id: int, iam_context=None
-    ):
-        if not iam_context and request:
-            iam_context = get_iam_context(request, None)
-        return cls(**iam_context, scope=cls.Scopes.VIEW_STATUS, rq_job_owner_id=rq_job_owner_id)
-
-    @classmethod
-    def create(cls, request, view, obj, iam_context):
-        Scopes = __class__.Scopes
+    def create(cls, request: ExtendedRequest, view, obj, iam_context):
+        Scopes = cls.Scopes
 
         permissions = []
         if view.basename == "consensus_merges":
             for scope in cls.get_scopes(request, view, obj):
                 if scope == Scopes.CREATE:
-                    # Note: POST /api/consensus/merges is used to initiate report creation
-                    # and to check the operation status
-                    rq_id = request.query_params.get("rq_id")
+                    # FUTURE-FIXME: use serializers for validation
                     task_id = request.data.get("task_id")
                     job_id = request.data.get("job_id")
 
-                    if not (task_id or job_id or rq_id):
-                        raise PermissionDenied(
-                            "Either task_id or job_id or rq_id must be specified"
-                        )
-
-                    if rq_id:
-                        # There will be another check for this case during request processing
-                        continue
+                    if not (task_id or job_id):
+                        raise PermissionDenied("Either task_id or job_id must be specified")
 
                     # merge is always at least at the task level, even for specific jobs
                     if task_id is not None or job_id is not None:
@@ -90,15 +72,12 @@ class ConsensusMergePermission(OpenPolicyAgentPermission):
         return permissions
 
     def __init__(self, **kwargs):
-        if "rq_job_owner_id" in kwargs:
-            self.rq_job_owner_id = int(kwargs.pop("rq_job_owner_id"))
-
         super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + "/consensus_merges/allow"
 
-    @staticmethod
-    def get_scopes(request, view, obj):
-        Scopes = __class__.Scopes
+    @classmethod
+    def _get_scopes(cls, request, view, obj):
+        Scopes = cls.Scopes
         return [
             {
                 "create": Scopes.CREATE,
@@ -143,8 +122,6 @@ class ConsensusMergePermission(OpenPolicyAgentPermission):
                     else None
                 ),
             }
-        elif self.scope == self.Scopes.VIEW_STATUS:
-            data = {"owner": {"id": self.rq_job_owner_id}}
 
         return data
 
@@ -159,7 +136,7 @@ class ConsensusSettingPermission(OpenPolicyAgentPermission):
 
     @classmethod
     def create(cls, request, view, obj, iam_context):
-        Scopes = __class__.Scopes
+        Scopes = cls.Scopes
 
         permissions = []
         if view.basename == "consensus_settings":
@@ -205,15 +182,15 @@ class ConsensusSettingPermission(OpenPolicyAgentPermission):
         super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + "/consensus_settings/allow"
 
-    @staticmethod
-    def get_scopes(request, view, obj):
-        Scopes = __class__.Scopes
+    @classmethod
+    def _get_scopes(cls, request, view, obj):
+        Scopes = cls.Scopes
         return [
             {
                 "list": Scopes.LIST,
                 "retrieve": Scopes.VIEW,
                 "partial_update": Scopes.UPDATE,
-            }.get(view.action, None)
+            }[view.action]
         ]
 
     def get_resource(self):

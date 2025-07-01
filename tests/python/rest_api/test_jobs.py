@@ -27,6 +27,7 @@ from deepdiff import DeepDiff
 from PIL import Image
 from pytest_cases import parametrize
 
+from shared.tasks.utils import parse_frame_step
 from shared.utils.config import make_api_client
 from shared.utils.helpers import generate_image_files
 
@@ -35,7 +36,6 @@ from .utils import (
     compare_annotations,
     create_task,
     export_job_dataset,
-    parse_frame_step,
 )
 
 
@@ -1145,10 +1145,14 @@ class TestPatchJobAnnotations:
     def request_data(self, annotations):
         def get_data(jid):
             data = deepcopy(annotations["job"][str(jid)])
-            if data["shapes"][0]["type"] == "skeleton":
-                data["shapes"][0]["elements"][0].update({"points": [2.0, 3.0, 4.0, 5.0]})
-            else:
-                data["shapes"][0].update({"points": [2.0, 3.0, 4.0, 5.0, 6.0, 7.0]})
+
+            def mutate(shape):
+                shape["points"] = [p + 1.0 for p in shape["points"]]
+
+            mutate(data["shapes"][0])
+            if elements := data["shapes"][0]["elements"]:
+                mutate(elements[0])
+
             data["version"] += 1
             return data
 
@@ -1469,25 +1473,21 @@ class TestJobDataset:
 
     def test_non_admin_can_export_dataset(self, users, jobs_with_shapes):
         job, username = next(
-            (
-                (job, self.tasks[job["task_id"]]["owner"]["username"])
-                for job in jobs_with_shapes
-                if "admin" not in users[self.tasks[job["task_id"]]["owner"]["id"]]["groups"]
-                and self.tasks[job["task_id"]]["target_storage"] is None
-                and self.tasks[job["task_id"]]["organization"] is None
-            )
+            (job, self.tasks[job["task_id"]]["owner"]["username"])
+            for job in jobs_with_shapes
+            if "admin" not in users[self.tasks[job["task_id"]]["owner"]["id"]]["groups"]
+            and self.tasks[job["task_id"]]["target_storage"] is None
+            and self.tasks[job["task_id"]]["organization"] is None
         )
         self._test_export_dataset(username, job["id"])
 
     def test_non_admin_can_export_annotations(self, users, jobs_with_shapes):
         job, username = next(
-            (
-                (job, self.tasks[job["task_id"]]["owner"]["username"])
-                for job in jobs_with_shapes
-                if "admin" not in users[self.tasks[job["task_id"]]["owner"]["id"]]["groups"]
-                and self.tasks[job["task_id"]]["target_storage"] is None
-                and self.tasks[job["task_id"]]["organization"] is None
-            )
+            (job, self.tasks[job["task_id"]]["owner"]["username"])
+            for job in jobs_with_shapes
+            if "admin" not in users[self.tasks[job["task_id"]]["owner"]["id"]]["groups"]
+            and self.tasks[job["task_id"]]["target_storage"] is None
+            and self.tasks[job["task_id"]]["organization"] is None
         )
 
         self._test_export_annotations(username, job["id"])

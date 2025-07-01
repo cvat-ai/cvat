@@ -29,10 +29,10 @@ or manually, following [the manifest file format specification](#file-format).
 
 Manifest files can be used in the following cases:
 - A video file or a set of images is used as the data source and
-  the caching mode is enabled. {{< ilink "/docs/manual/advanced/data_on_fly" "Read more" >}}
+  the caching mode is enabled. {{< ilink "/docs/manual/advanced/data-on-fly" "Read more" >}}
 - The data is located in a cloud storage. {{< ilink "/docs/manual/basics/cloud-storages" "Read more" >}}
 - The `predefined` file sorting method is specified.
-  {{< ilink "/docs/manual/basics/create_an_annotation_task#sorting-method" "Read more" >}}
+  {{< ilink "/docs/manual/basics/create-annotation-task#sorting-method" "Read more" >}}
 
 ### The predefined sorting method
 
@@ -117,8 +117,8 @@ pip install -r utils/dataset_manifest/requirements.in
 ```
 
 > Please note that if used with video this way, the results may be different from what
-would the server decode. It is related to the ffmpeg library version. For this reason,
-using the Docker-based version of the tool is recommended.
+> would the server decode. It is related to the ffmpeg library version. For this reason,
+> using the Docker-based version of the tool is recommended.
 
 ### Examples
 

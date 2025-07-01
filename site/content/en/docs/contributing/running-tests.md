@@ -104,7 +104,7 @@ To attach to a container, run one of the following tasks:
 - `REST API tests: Attach to RQ low` for the low priority queue worker
 - `REST API tests: Attach to RQ default` for the default priority queue worker
 
-> If you have a custom development environment setup, you need to adjust
+If you have a custom development environment setup, you need to adjust
 host-remote path mappings in the `.vscode/launch.json`:
 ```json
 ...
@@ -133,6 +133,11 @@ Extra options:
 # Server unit tests
 
 **Initial steps**
+1. If you run unit tests on Linux, ensure that `poppler-utils` and `unrar` are installed on your system:
+   ```
+   sudo apt-get update
+   sudo apt-get install -y poppler-utils unrar
+   ```
 1. Install necessary Python dependencies:
    ```
    pip install -r cvat/requirements/testing.txt

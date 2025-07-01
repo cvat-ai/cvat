@@ -278,7 +278,7 @@ cvat:
       name: cvat-kvrocks-secret
       password: cvat_kvrocks
     image: apache/kvrocks
-    tag: 2.7.0
+    tag: 2.12.1
     imagePullPolicy: IfNotPresent
     labels: {}
     #  test: test
@@ -451,7 +451,7 @@ grafana:
   dashboardsConfigMaps:
     default: "cvat-grafana-dashboards"
   plugins:
-    - grafana-clickhouse-datasource
+    - grafana-clickhouse-datasource 4.8.2
   grafana.ini:
     server:
       root_url: https://cvat.local/analytics

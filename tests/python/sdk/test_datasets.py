@@ -10,6 +10,7 @@ import cvat_sdk.datasets as cvatds
 import PIL.Image
 import pytest
 from cvat_sdk import Client, models
+from cvat_sdk.core.proxies.annotations import AnnotationUpdateAction
 from cvat_sdk.core.proxies.tasks import ResourceType
 
 from shared.utils.helpers import generate_image_files
@@ -83,11 +84,15 @@ class TestTaskDataset:
                         points=[1.0, 2.0, 3.0, 4.0],
                     ),
                 ],
-            )
+            ),
+            action=AnnotationUpdateAction.CREATE,
         )
 
-    def test_basic(self):
-        dataset = cvatds.TaskDataset(self.client, self.task.id)
+    @pytest.mark.parametrize("media_download_policy", cvatds.MediaDownloadPolicy)
+    def test_basic(self, media_download_policy: cvatds.MediaDownloadPolicy):
+        dataset = cvatds.TaskDataset(
+            self.client, self.task.id, media_download_policy=media_download_policy
+        )
 
         # verify that the cache is not empty
         assert list(self.client.config.cache_dir.iterdir())
@@ -122,10 +127,13 @@ class TestTaskDataset:
         assert dataset.samples[6].annotations.shapes[0].type.value == "rectangle"
         assert dataset.samples[6].annotations.shapes[0].points == [1.0, 2.0, 3.0, 4.0]
 
-    def test_deleted_frame(self):
+    @pytest.mark.parametrize("media_download_policy", cvatds.MediaDownloadPolicy)
+    def test_deleted_frame(self, media_download_policy: cvatds.MediaDownloadPolicy):
         self.task.remove_frames_by_ids([1])
 
-        dataset = cvatds.TaskDataset(self.client, self.task.id)
+        dataset = cvatds.TaskDataset(
+            self.client, self.task.id, media_download_policy=media_download_policy
+        )
 
         assert len(dataset.samples) == self.task.size - 1
 
