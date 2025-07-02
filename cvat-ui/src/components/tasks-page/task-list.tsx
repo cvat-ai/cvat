@@ -21,7 +21,7 @@ function TaskListComponent(props: Props): JSX.Element {
 
     return (
         <>
-            <Row justify='center' align='middle'>
+            <Row justify='center' align='middle' className='cvat-resource-list-wrapper'>
                 <Col className='cvat-tasks-list' {...dimensions}>
                     <BulkWrapper
                         currentResourceIDs={currentTasksIndexes}

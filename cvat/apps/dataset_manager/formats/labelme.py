@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from datumaro.components.dataset import Dataset
+from datumaro.components.dataset import Dataset, StreamDataset
 from pyunpack import Archive
 
 from cvat.apps.dataset_manager.bindings import (
@@ -23,7 +23,7 @@ from .registry import dm_env, exporter, importer
 @exporter(name="LabelMe", ext="ZIP", version="3.0")
 def _export(dst_file, temp_dir, instance_data, save_images=False):
     with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
-        dataset = Dataset.from_extractors(extractor, env=dm_env)
+        dataset = StreamDataset.from_extractors(extractor, env=dm_env)
         dataset.transform(EllipsesToMasks)
         dataset.export(temp_dir, "label_me", save_media=save_images)
 

@@ -6,7 +6,7 @@
 import './styles.scss';
 import React, { useEffect, useState } from 'react';
 import { useHistory, useParams } from 'react-router';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector, shallowEqual } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import Spin from 'antd/lib/spin';
 import notification from 'antd/lib/notification';
@@ -33,9 +33,15 @@ function TaskPageComponent(): JSX.Element {
     const [taskInstance, setTaskInstance] = useState<Task | null>(null);
     const [fetchingTask, setFetchingTask] = useState(true);
 
-    const deletes = useSelector((state: CombinedState) => state.tasks.activities.deletes);
-    const updates = useSelector((state: CombinedState) => state.tasks.activities.updates);
-    const jobsFetching = useSelector((state: CombinedState) => state.jobs.fetching);
+    const {
+        deletes,
+        updates,
+        jobsFetching,
+    } = useSelector((state: CombinedState) => ({
+        deletes: state.tasks.activities.deletes,
+        updates: state.tasks.activities.updates,
+        jobsFetching: state.jobs.fetching,
+    }), shallowEqual);
     const isTaskUpdating = updates[id] || jobsFetching;
 
     const receieveTask = (): Promise<Task[]> => {
@@ -60,7 +66,7 @@ function TaskPageComponent(): JSX.Element {
             description: `Requested task id "${id}" is not valid`,
         });
 
-        return Promise.reject();
+        return Promise.reject(new Error(`Requested task id "${id}" is not valid`));
     };
 
     useEffect(() => {

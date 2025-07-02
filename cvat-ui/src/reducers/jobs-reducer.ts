@@ -12,6 +12,7 @@ const defaultState: JobsState = {
     count: 0,
     query: {
         page: 1,
+        pageSize: 12,
         filter: null,
         sort: null,
         search: null,

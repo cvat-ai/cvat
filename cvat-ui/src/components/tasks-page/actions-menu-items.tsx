@@ -6,17 +6,11 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { LoadingOutlined } from '@ant-design/icons';
 import { MenuProps } from 'antd/lib/menu';
-import { User } from 'cvat-core-wrapper';
 import { usePlugins } from 'utils/hooks';
-import UserSelector from 'components/task-page/user-selector';
 import { CVATMenuEditLabel } from 'components/common/cvat-menu-edit-label';
 
 interface MenuItemsData {
-    editField: string | null;
-    startEditField: (key: string) => void;
-
-    taskID: number;
-    assignee: User | null;
+    taskId: number;
     isAutomaticAnnotationEnabled: boolean;
     isConsensusEnabled: boolean;
     isMergingConsensusEnabled: boolean;
@@ -29,15 +23,13 @@ interface MenuItemsData {
     onRunAutoAnnotation: (() => void) | null;
     onMoveTaskToProject: (() => void) | null;
     onDeleteTask: () => void;
-    onUpdateTaskAssignee: (assignee: User | null) => void;
+    startEditField: (key: string) => void;
 }
 
 export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuProps: unknown): MenuProps['items'] {
     const {
-        editField,
         startEditField,
-        taskID,
-        assignee,
+        taskId,
         pluginActions,
         isAutomaticAnnotationEnabled,
         isConsensusEnabled,
@@ -50,20 +42,7 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
         onRunAutoAnnotation,
         onMoveTaskToProject,
         onDeleteTask,
-        onUpdateTaskAssignee,
     } = menuItemsData;
-
-    const fieldSelectors: Record<string, JSX.Element> = {
-        assignee: (
-            <UserSelector
-                value={assignee}
-                onSelect={(value: User | null): void => {
-                    if (assignee?.id === value?.id) return;
-                    onUpdateTaskAssignee(value);
-                }}
-            />
-        ),
-    };
 
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
 
@@ -108,18 +87,18 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
 
     menuItems.push([{
         key: 'view-analytics',
-        label: <Link to={`/tasks/${taskID}/analytics`}>View analytics</Link>,
+        label: <Link to={`/tasks/${taskId}/analytics`}>View analytics</Link>,
     }, 60]);
 
     menuItems.push([{
         key: 'quality_control',
-        label: <Link to={`/tasks/${taskID}/quality-control`}>Quality control</Link>,
+        label: <Link to={`/tasks/${taskId}/quality-control`}>Quality control</Link>,
     }, 70]);
 
     if (isConsensusEnabled) {
         menuItems.push([{
             key: 'consensus_management',
-            label: <Link to={`/tasks/${taskID}/consensus`}>Consensus management</Link>,
+            label: <Link to={`/tasks/${taskId}/consensus`}>Consensus management</Link>,
         }, 75]);
     }
 
@@ -154,13 +133,6 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
             return [menuItem, weight] as [NonNullable<MenuProps['items']>[0], number];
         }),
     );
-
-    if (editField) {
-        return [{
-            key: `${editField}-selector`,
-            label: fieldSelectors[editField],
-        }];
-    }
 
     return menuItems.sort((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1]).map((menuItem) => menuItem[0]);
 }

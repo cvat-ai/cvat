@@ -7,21 +7,12 @@ import { Link } from 'react-router-dom';
 import { MenuProps } from 'antd/lib/menu';
 import { LoadingOutlined } from '@ant-design/icons';
 import { usePlugins } from 'utils/hooks';
-import { JobStage, JobState, User } from 'cvat-core-wrapper';
-import UserSelector from 'components/task-page/user-selector';
-import { JobStageSelector, JobStateSelector } from 'components/job-item/job-selectors';
 import { CVATMenuEditLabel } from 'components/common/cvat-menu-edit-label';
 
 interface MenuItemsData {
-    editField: string | null;
-    startEditField: (key: string) => void;
-
-    jobID: number;
-    taskID: number;
-    projectID: number | null;
-    assignee: User | null;
-    state: JobState;
-    stage: JobStage;
+    jobId: number;
+    taskId: number;
+    projectId: number | null;
     pluginActions: ReturnType<typeof usePlugins>;
     isMergingConsensusEnabled: boolean;
     onOpenBugTracker: (() => void) | null;
@@ -29,7 +20,7 @@ interface MenuItemsData {
     onExportAnnotations: () => void;
     onMergeConsensusJob: (() => void) | null;
     onDeleteJob: (() => void) | null;
-    onUpdateJobField: (fields: Partial<{ assignee: User | null; state: JobState; stage: JobStage }>) => void;
+    startEditField: (key: string) => void;
 }
 
 export default function JobActionsItems(
@@ -37,14 +28,10 @@ export default function JobActionsItems(
     jobMenuProps: unknown,
 ): MenuProps['items'] {
     const {
-        editField,
         startEditField,
-        assignee,
-        state,
-        stage,
-        jobID,
-        taskID,
-        projectID,
+        jobId,
+        taskId,
+        projectId,
         pluginActions,
         isMergingConsensusEnabled,
         onOpenBugTracker,
@@ -52,48 +39,19 @@ export default function JobActionsItems(
         onExportAnnotations,
         onMergeConsensusJob,
         onDeleteJob,
-        onUpdateJobField,
     } = menuItemsData;
 
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
 
-    const fieldSelectors: Record<string, JSX.Element> = {
-        assignee: (
-            <UserSelector
-                value={assignee}
-                onSelect={(value: User | null): void => {
-                    if (assignee?.id === value?.id) return;
-                    onUpdateJobField({ assignee: value });
-                }}
-            />
-        ),
-        state: (
-            <JobStateSelector
-                value={state}
-                onSelect={(value: JobState): void => {
-                    onUpdateJobField({ state: value });
-                }}
-            />
-        ),
-        stage: (
-            <JobStageSelector
-                value={stage}
-                onSelect={(value: JobStage): void => {
-                    onUpdateJobField({ stage: value });
-                }}
-            />
-        ),
-    };
-
     menuItems.push([{
         key: 'task',
-        label: <Link to={`/tasks/${taskID}`}>Go to the task</Link>,
+        label: <Link to={`/tasks/${taskId}`}>Go to the task</Link>,
     }, 0]);
 
-    if (projectID) {
+    if (projectId) {
         menuItems.push([{
             key: 'project',
-            label: <Link to={`/projects/${projectID}`}>Go to the project</Link>,
+            label: <Link to={`/projects/${projectId}`}>Go to the project</Link>,
         }, 10]);
     }
 
@@ -147,7 +105,7 @@ export default function JobActionsItems(
 
     menuItems.push([{
         key: 'view-analytics',
-        label: <Link to={`/tasks/${taskID}/jobs/${jobID}/analytics`}>View analytics</Link>,
+        label: <Link to={`/tasks/${taskId}/jobs/${jobId}/analytics`}>View analytics</Link>,
     }, 90]);
 
     if (onDeleteJob) {
@@ -165,13 +123,6 @@ export default function JobActionsItems(
             return [menuItem, weight] as [NonNullable<MenuProps['items']>[0], number];
         }),
     );
-
-    if (editField) {
-        return [{
-            key: `${editField}-selector`,
-            label: fieldSelectors[editField],
-        }];
-    }
 
     return menuItems.sort((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1]).map((menuItem) => menuItem[0]);
 }

@@ -15,6 +15,7 @@ import { importActions } from 'actions/import-actions';
 import { modelsActions } from 'actions/models-actions';
 import { mergeConsensusJobsAsync } from 'actions/consensus-actions';
 import { deleteTaskAsync, switchMoveTaskModalVisible, updateTaskAsync } from 'actions/tasks-actions';
+import UserSelector from 'components/task-page/user-selector';
 import TaskActionsItems from './actions-menu-items';
 
 interface Props {
@@ -46,7 +47,7 @@ function TaskActionsComponent(props: Props): JSX.Element {
 
     const onOpenBugTracker = useCallback(() => {
         if (taskInstance.bugTracker) {
-            window.open(taskInstance.bugTracker as string, '_blank', 'noopener noreferrer');
+            window.open(taskInstance.bugTracker, '_blank', 'noopener noreferrer');
         }
     }, [taskInstance.bugTracker]);
 
@@ -111,6 +112,45 @@ function TaskActionsComponent(props: Props): JSX.Element {
         });
     }, [taskInstance]);
 
+    let menuItems;
+    if (editField) {
+        const fieldSelectors: Record<string, JSX.Element> = {
+            assignee: (
+                <UserSelector
+                    value={taskInstance.assignee}
+                    onSelect={(value: User | null): void => {
+                        if (taskInstance.assignee?.id === value?.id) return;
+                        onUpdateTaskAssignee(value);
+                    }}
+                />
+            ),
+        };
+        menuItems = [{
+            key: `${editField}-selector`,
+            label: fieldSelectors[editField],
+        }];
+    } else {
+        menuItems = TaskActionsItems({
+            startEditField,
+            taskId: taskInstance.id,
+            isAutomaticAnnotationEnabled: (
+                activeInference &&
+                ![RQStatus.FAILED, RQStatus.FINISHED].includes(activeInference.status)
+            ),
+            isConsensusEnabled: taskInstance.consensusEnabled,
+            isMergingConsensusEnabled: mergingConsensus[`task_${taskInstance.id}`],
+            pluginActions,
+            onMergeConsensusJobs: taskInstance.consensusEnabled ? onMergeConsensusJobs : null,
+            onOpenBugTracker: taskInstance.bugTracker ? onOpenBugTracker : null,
+            onUploadAnnotations,
+            onExportDataset,
+            onBackupTask,
+            onRunAutoAnnotation,
+            onMoveTaskToProject: taskInstance.projectId === null ? onMoveTaskToProject : null,
+            onDeleteTask,
+        }, props);
+    }
+
     return (
         <Dropdown
             destroyPopupOnHide
@@ -120,28 +160,7 @@ function TaskActionsComponent(props: Props): JSX.Element {
             menu={{
                 selectable: false,
                 className: 'cvat-actions-menu',
-                items: TaskActionsItems({
-                    editField,
-                    startEditField,
-                    taskID: taskInstance.id,
-                    assignee: taskInstance.assignee,
-                    isAutomaticAnnotationEnabled: (
-                        activeInference &&
-                        ![RQStatus.FAILED, RQStatus.FINISHED].includes(activeInference.status)
-                    ),
-                    isConsensusEnabled: taskInstance.consensusEnabled,
-                    isMergingConsensusEnabled: mergingConsensus[`task_${taskInstance.id}`],
-                    pluginActions,
-                    onMergeConsensusJobs: taskInstance.consensusEnabled ? onMergeConsensusJobs : null,
-                    onOpenBugTracker: taskInstance.bugTracker ? onOpenBugTracker : null,
-                    onUploadAnnotations,
-                    onExportDataset,
-                    onBackupTask,
-                    onRunAutoAnnotation,
-                    onMoveTaskToProject: taskInstance.projectId === null ? onMoveTaskToProject : null,
-                    onDeleteTask,
-                    onUpdateTaskAssignee,
-                }, props),
+                items: menuItems,
                 onClick: onMenuClick,
             }}
         >

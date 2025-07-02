@@ -17,12 +17,12 @@ from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
 
+from shared.tasks.utils import parse_frame_step
 from shared.utils.config import make_api_client
 
 from .utils import (
     CollectionSimpleFilterTestBase,
     invite_user_to_org,
-    parse_frame_step,
     register_new_user,
     wait_background_request,
 )
@@ -1569,7 +1569,7 @@ class TestQualityReportMetrics(_PermissionTestBase):
 
         with make_api_client(admin_user) as api_client:
             api_client.jobs_api.partial_update_annotations(
-                "update",
+                "create",
                 gt_job["id"],
                 patched_labeled_data_request=dict(
                     shapes=[

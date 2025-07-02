@@ -17,6 +17,8 @@ import { importActions } from 'actions/import-actions';
 import { mergeConsensusJobsAsync } from 'actions/consensus-actions';
 import { deleteJobAsync, updateJobAsync } from 'actions/jobs-actions';
 
+import UserSelector from 'components/task-page/user-selector';
+import { JobStageSelector, JobStateSelector } from 'components/job-item/job-selectors';
 import { makeKey } from 'reducers/consensus-reducer';
 import JobActionsItems from './actions-menu-items';
 
@@ -44,7 +46,7 @@ function JobActionsComponent(props: Props): JSX.Element {
 
     const onOpenBugTracker = useCallback(() => {
         if (jobInstance.bugTracker) {
-            window.open(jobInstance.bugTracker as string, '_blank', 'noopener noreferrer');
+            window.open(jobInstance.bugTracker, '_blank', 'noopener noreferrer');
         }
     }, [jobInstance.bugTracker]);
 
@@ -93,10 +95,55 @@ function JobActionsComponent(props: Props): JSX.Element {
     }, [jobInstance]);
 
     const onUpdateJobField = useCallback((
-        fields: Partial<{ assignee: User | null; state: JobState; stage: JobStage }>,
+        fields: Partial<{ assignee: User | null; state: JobState; stage: JobStage; }>,
     ) => {
         dispatch(updateJobAsync(jobInstance, fields)).then(stopEditField);
     }, [jobInstance]);
+
+    let menuItems;
+    if (editField) {
+        const fieldSelectors: Record<string, JSX.Element> = {
+            assignee: (
+                <UserSelector
+                    value={jobInstance.assignee}
+                    onSelect={(value: User | null): void => {
+                        if (jobInstance.assignee?.id === value?.id) return;
+                        onUpdateJobField({ assignee: value });
+                    }}
+                />
+            ),
+            state: (
+                <JobStateSelector
+                    value={jobInstance.state}
+                    onSelect={(value) => onUpdateJobField({ state: value })}
+                />
+            ),
+            stage: (
+                <JobStageSelector
+                    value={jobInstance.stage}
+                    onSelect={(value) => onUpdateJobField({ stage: value })}
+                />
+            ),
+        };
+        menuItems = [{
+            key: `${editField}-selector`,
+            label: fieldSelectors[editField],
+        }];
+    } else {
+        menuItems = JobActionsItems({
+            startEditField,
+            jobId: jobInstance.id,
+            taskId: jobInstance.taskId,
+            projectId: jobInstance.projectId,
+            pluginActions,
+            isMergingConsensusEnabled: mergingConsensus[makeKey(jobInstance)],
+            onOpenBugTracker: jobInstance.bugTracker ? onOpenBugTracker : null,
+            onImportAnnotations,
+            onExportAnnotations,
+            onMergeConsensusJob: consensusJobsPresent && jobInstance.parentJobId === null ? onMergeConsensusJob : null,
+            onDeleteJob: jobInstance.type === JobType.GROUND_TRUTH ? onDeleteJob : null,
+        }, props);
+    }
 
     return (
         <Dropdown
@@ -108,25 +155,7 @@ function JobActionsComponent(props: Props): JSX.Element {
             menu={{
                 selectable: false,
                 className: 'cvat-job-item-menu',
-                items: JobActionsItems({
-                    editField,
-                    startEditField,
-                    stage: jobInstance.stage,
-                    state: jobInstance.state,
-                    jobID: jobInstance.id,
-                    taskID: jobInstance.taskId,
-                    projectID: jobInstance.projectId,
-                    assignee: jobInstance.assignee,
-                    isMergingConsensusEnabled: mergingConsensus[makeKey(jobInstance)],
-                    pluginActions,
-                    onOpenBugTracker: jobInstance.bugTracker ? onOpenBugTracker : null,
-                    onImportAnnotations,
-                    onExportAnnotations,
-                    onMergeConsensusJob: consensusJobsPresent && jobInstance.parentJobId === null ?
-                        onMergeConsensusJob : null,
-                    onDeleteJob: jobInstance.type === JobType.GROUND_TRUTH ? onDeleteJob : null,
-                    onUpdateJobField,
-                }, props),
+                items: menuItems,
                 onClick: onMenuClick,
             }}
         >
