@@ -5,7 +5,7 @@
 
 import './styles.scss';
 import React, { useEffect, useRef, useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector, useDispatch, shallowEqual } from 'react-redux';
 import { useHistory, useParams } from 'react-router';
 import Spin from 'antd/lib/spin';
 import { Row, Col } from 'antd/lib/grid';
@@ -59,17 +59,26 @@ export default function ProjectPageComponent(): JSX.Element {
     const [fechingProject, setFetchingProject] = useState(true);
     const mounted = useRef(false);
 
-    const deletes = useSelector((state: CombinedState) => state.projects.activities.deletes);
-    const updates = useSelector((state: CombinedState) => state.projects.activities.updates);
-    const tasks = useSelector((state: CombinedState) => state.tasks.current);
-    const tasksCount = useSelector((state: CombinedState) => state.tasks.count);
-    const tasksQuery = useSelector((state: CombinedState) => state.projects.tasksGettingQuery);
-    const tasksFetching = useSelector((state: CombinedState) => state.tasks.fetching);
+    const {
+        deletes,
+        updates,
+        tasks,
+        tasksCount,
+        tasksQuery,
+        tasksFetching,
+    } = useSelector((state: CombinedState) => ({
+        deletes: state.projects.activities.deletes,
+        updates: state.projects.activities.updates,
+        tasks: state.tasks.current,
+        tasksCount: state.tasks.count,
+        tasksQuery: state.projects.tasksGettingQuery,
+        tasksFetching: state.tasks.fetching,
+    }), shallowEqual);
     const [visibility, setVisibility] = useState(defaultVisibility);
 
     const updatedQuery = useResourceQuery<TasksQuery>(tasksQuery);
 
-    const updatingProject = updates[id];
+    const isProjectUpdating = updates[id];
 
     useEffect(() => {
         if (Number.isInteger(id)) {
@@ -171,13 +180,13 @@ export default function ProjectPageComponent(): JSX.Element {
 
     return (
         <Row justify='center' align='top' className='cvat-project-page'>
-            { updatingProject ? <CVATLoadingSpinner size='large' /> : null }
+            { isProjectUpdating ? <CVATLoadingSpinner size='large' /> : null }
             <Col
                 md={22}
                 lg={18}
                 xl={16}
                 xxl={14}
-                style={updatingProject ? {
+                style={isProjectUpdating ? {
                     pointerEvents: 'none',
                     opacity: 0.7,
                 } : {}}
@@ -204,7 +213,7 @@ export default function ProjectPageComponent(): JSX.Element {
                                         search: _search,
                                     }));
                                 }}
-                                defaultValue={tasksQuery.search || ''}
+                                defaultValue={tasksQuery.search ?? ''}
                                 className='cvat-project-page-tasks-search-bar'
                                 placeholder='Search ...'
                             />

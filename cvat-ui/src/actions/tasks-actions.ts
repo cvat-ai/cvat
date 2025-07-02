@@ -29,7 +29,6 @@ export enum TasksActionTypes {
     GET_TASK_PREVIEW = 'GET_TASK_PREVIEW',
     GET_TASK_PREVIEW_SUCCESS = 'GET_TASK_PREVIEW_SUCCESS',
     GET_TASK_PREVIEW_FAILED = 'GET_TASK_PREVIEW_FAILED',
-    UPDATE_TASK_IN_STATE = 'UPDATE_TASK_IN_STATE',
     UPDATE_TASK = 'UPDATE_TASK',
     UPDATE_TASK_SUCCESS = 'UPDATE_TASK_SUCCESS',
     UPDATE_TASK_FAILED = 'UPDATE_TASK_FAILED',
@@ -208,7 +207,7 @@ export function getTaskPreviewAsync(taskInstance: any): ThunkAction {
 
 export function updateTaskInState(task: Task): AnyAction {
     const action = {
-        type: TasksActionTypes.UPDATE_TASK_IN_STATE,
+        type: TasksActionTypes.UPDATE_TASK_SUCCESS,
         payload: { task },
     };
 

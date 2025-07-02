@@ -7,8 +7,9 @@ import { AnyAction } from 'redux';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { TasksActionTypes } from 'actions/tasks-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
-
 import { ProjectsActionTypes } from 'actions/projects-actions';
+import { omit } from 'lodash';
+
 import { TasksState } from '.';
 
 const defaultState: TasksState = {
@@ -198,17 +199,14 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 },
             };
         }
-        case TasksActionTypes.UPDATE_TASK_IN_STATE: {
+        case TasksActionTypes.UPDATE_TASK_SUCCESS: {
             const { task } = action.payload;
             const { updates } = state.activities;
-            delete updates[task.id];
             return {
                 ...state,
                 activities: {
                     ...state.activities,
-                    updates: {
-                        ...updates,
-                    },
+                    updates: omit(updates, task.id),
                 },
                 current: state.current.map((taskInstance) => {
                     if (taskInstance.id === task.id) {
@@ -222,14 +220,11 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
         case TasksActionTypes.UPDATE_TASK_FAILED: {
             const { taskId } = action.payload;
             const { updates } = state.activities;
-            delete updates[taskId];
             return {
                 ...state,
                 activities: {
                     ...state.activities,
-                    updates: {
-                        ...updates,
-                    },
+                    updates: omit(updates, taskId),
                 },
             };
         }

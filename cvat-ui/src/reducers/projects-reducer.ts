@@ -226,14 +226,11 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
         case ProjectsActionTypes.UPDATE_PROJECT_SUCCESS: {
             const { project } = action.payload;
             const { updates } = state.activities;
-            delete updates[project.id];
             return {
                 ...state,
                 activities: {
                     ...state.activities,
-                    updates: {
-                        ...updates,
-                    },
+                    updates: omit(updates, project.id),
                 },
                 current: state.current.map((projectInstance) => {
                     if (projectInstance.id === project.id) {
@@ -247,14 +244,11 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
         case ProjectsActionTypes.UPDATE_PROJECT_FAILED: {
             const { projectId } = action.payload;
             const { updates } = state.activities;
-            delete updates[projectId];
             return {
                 ...state,
                 activities: {
                     ...state.activities,
-                    updates: {
-                        ...updates,
-                    },
+                    updates: omit(updates, projectId),
                 },
             };
         }

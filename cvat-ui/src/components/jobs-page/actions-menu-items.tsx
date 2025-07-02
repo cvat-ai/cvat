@@ -29,7 +29,7 @@ interface MenuItemsData {
     onExportAnnotations: () => void;
     onMergeConsensusJob: (() => void) | null;
     onDeleteJob: (() => void) | null;
-    onUpdateJobField: (fields: Partial<{ assignee: User | null; state: JobState; stage: JobStage }>) => void;
+    onUpdateJobField: (fields: Partial<{ assignee: User | null; state: JobState; stage: JobStage; }>) => void;
 }
 
 export default function JobActionsItems(

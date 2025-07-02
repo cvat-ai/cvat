@@ -124,7 +124,7 @@ export interface TasksState {
             [tid: number]: boolean; // deleted (deleting if in dictionary)
         };
         updates: {
-            [tid: number]: boolean;
+            [taskId: number]: boolean;
         };
     };
 }

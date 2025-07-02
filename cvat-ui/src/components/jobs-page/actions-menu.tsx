@@ -93,7 +93,7 @@ function JobActionsComponent(props: Props): JSX.Element {
     }, [jobInstance]);
 
     const onUpdateJobField = useCallback((
-        fields: Partial<{ assignee: User | null; state: JobState; stage: JobStage }>,
+        fields: Partial<{ assignee: User | null; state: JobState; stage: JobStage; }>,
     ) => {
         dispatch(updateJobAsync(jobInstance, fields)).then(stopEditField);
     }, [jobInstance]);
