@@ -177,6 +177,19 @@ class DatasetExporter(AbstractExporter):
 class BackupExporter(AbstractExporter):
     SUPPORTED_TARGETS = {RequestTarget.PROJECT, RequestTarget.TASK}
 
+    @dataclass
+    class ExportArgs(AbstractExporter.ExportArgs):
+        lightweight: bool
+
+    def init_request_args(self) -> None:
+        super().init_request_args()
+        lightweight = to_bool(self.request.query_params.get("lightweight", True))
+
+        self.export_args: BackupExporter.ExportArgs = self.ExportArgs(
+            **self.export_args.to_dict(),
+            lightweight=lightweight,
+        )
+
     def validate_request(self):
         super().validate_request()
 
@@ -215,6 +228,9 @@ class BackupExporter(AbstractExporter):
             Exporter,
             logger,
             self.job_result_ttl,
+        )
+        self.callback_kwargs = dict(
+            lightweight=self.export_args.lightweight,
         )
 
     def get_result_filename(self):

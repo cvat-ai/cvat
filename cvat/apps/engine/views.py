@@ -53,6 +53,7 @@ from cvat.apps.engine import backup
 from cvat.apps.engine.background import BackupImporter, DatasetImporter, TaskCreator
 from cvat.apps.engine.cache import (
     CacheTooLargeDataError,
+    CloudStorageMissingError,
     CvatChunkTimestampMismatchError,
     LockError,
     MediaCache,
@@ -586,6 +587,11 @@ class _DataGetter(metaclass=ABCMeta):
                 data=str(ex),
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+        except CloudStorageMissingError as ex:
+            return Response(
+                data=str(ex),
+                status=status.HTTP_409_CONFLICT,
+            )
 
     @abstractmethod
     def _get_chunk_response_headers(self, chunk_data: DataWithMeta) -> dict[str, str]: ...
@@ -693,6 +699,11 @@ class _JobDataGetter(_DataGetter):
                 return Response(
                     data=str(ex),
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+            except CloudStorageMissingError as ex:
+                return Response(
+                    data=str(ex),
+                    status=status.HTTP_409_CONFLICT,
                 )
         else:
             return super().__call__()

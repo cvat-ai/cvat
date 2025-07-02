@@ -3701,6 +3701,13 @@ paths:
         description: A unique integer value identifying this project.
         required: true
       - in: query
+        name: lightweight
+        schema:
+          type: boolean
+          default: true
+        description: Make lightweight backup (backup which does not include media)
+          for tasks whose media is located in cloud storage
+      - in: query
         name: location
         schema:
           type: string
@@ -5327,6 +5334,13 @@ paths:
           type: integer
         description: A unique integer value identifying this task.
         required: true
+      - in: query
+        name: lightweight
+        schema:
+          type: boolean
+          default: true
+        description: Make lightweight backup (backup which does not include media)
+          for tasks whose media is located in cloud storage
       - in: query
         name: location
         schema:
@@ -7054,6 +7068,14 @@ components:
           nullable: true
           description: |
             A list of valid frame ids. The None value means all frames are included.
+        storage:
+          allOf:
+          - $ref: '#/components/schemas/StorageType'
+          readOnly: true
+        cloud_storage_id:
+          type: integer
+          nullable: true
+          readOnly: true
       required:
       - chunks_updated_date
       - deleted_frames
@@ -9070,6 +9092,9 @@ components:
           items:
             type: integer
             minimum: 0
+        cloud_storage_id:
+          type: integer
+          nullable: true
     PatchedInvitationWriteRequest:
       type: object
       properties:

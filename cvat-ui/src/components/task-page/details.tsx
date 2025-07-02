@@ -22,6 +22,7 @@ import { CombinedState, ActiveInference } from 'reducers';
 import CVATTag, { TagType } from 'components/common/cvat-tag';
 import UserSelector from './user-selector';
 import BugTrackerEditor from './bug-tracker-editor';
+import CloudStorageEditor from './cloud-storage-editor';
 import LabelsEditorComponent from '../labels-editor/labels-editor';
 import ProjectSubsetField from '../create-task-page/project-subset-field';
 
@@ -226,6 +227,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                     </Col>
                     <Col md={16} lg={17} xl={17} xxl={18}>
                         {this.renderDescription()}
+                        <CloudStorageEditor task={taskInstance} />
                         { taskInstance.projectId === null && <MdGuideControl instanceType='task' id={taskInstance.id} /> }
                         <Row justify='space-between' align='middle'>
                             <Col span={12}>
