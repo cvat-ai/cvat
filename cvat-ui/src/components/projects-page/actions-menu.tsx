@@ -13,6 +13,7 @@ import { CombinedState } from 'reducers';
 import { deleteProjectAsync, updateProjectAsync } from 'actions/projects-actions';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
+import UserSelector from 'components/task-page/user-selector';
 import ProjectActionsItems from './actions-menu-items';
 
 interface Props {
@@ -68,6 +69,36 @@ function ProjectActionsComponent(props: Props): JSX.Element {
         dispatch(updateProjectAsync(projectInstance)).then(stopEditField);
     }, [projectInstance]);
 
+    let menuItems;
+    if (editField) {
+        const fieldSelectors: Record<string, JSX.Element> = {
+            assignee: (
+                <UserSelector
+                    value={projectInstance.assignee}
+                    onSelect={(value: User | null): void => {
+                        if (projectInstance.assignee?.id === value?.id) return;
+                        onUpdateProjectAssignee(value);
+                    }}
+                />
+            ),
+        };
+        menuItems = [{
+            key: `${editField}-selector`,
+            label: fieldSelectors[editField],
+        }];
+    } else {
+        menuItems = ProjectActionsItems({
+            startEditField,
+            projectId: projectInstance.id,
+            assignee: projectInstance.assignee,
+            pluginActions,
+            onExportDataset,
+            onImportDataset,
+            onBackupProject,
+            onDeleteProject,
+        }, props);
+    }
+
     return (
         <Dropdown
             destroyPopupOnHide
@@ -77,18 +108,7 @@ function ProjectActionsComponent(props: Props): JSX.Element {
             menu={{
                 selectable: false,
                 className: 'cvat-project-actions-menu',
-                items: ProjectActionsItems({
-                    editField,
-                    startEditField,
-                    projectID: projectInstance.id,
-                    assignee: projectInstance.assignee,
-                    pluginActions,
-                    onExportDataset,
-                    onImportDataset,
-                    onBackupProject,
-                    onDeleteProject,
-                    onUpdateProjectAssignee,
-                }, props),
+                items: menuItems,
                 onClick: onMenuClick,
             }}
         >
