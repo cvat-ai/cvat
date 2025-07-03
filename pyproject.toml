@@ -16,26 +16,20 @@ files.extend-exclude = [
 	"*.log",
 	"*.min.js",
 	"**/node_modules",
-    "*.patch"
+    "*.patch",
+    "wignore"
 ]
 default.extend-ignore-re = [
     "\"md5.*?\"" # test passwords
 ]
 [tool.typos.default.extend-words]
-# project terms that were confused with real word typos
 nd = "nd"
 tpic = "tpic"
 NAM = "NAM"
 AVOD = "AVOD"
-
-# 3rd party tokens that we can't fix
 trak = "trak"
-
-# conventions that serve better than correct words
 splitted = "splitted"
 lastest = "lastest"
-
-# narrow down options for spell-checker to auto-fix
 lavel = "label"
 firts = "first"
 correciton = "correction"
@@ -44,33 +38,35 @@ typ = "type"
 cheeck = "check"
 custome = "custom"
 blok = "block"
-convertation = "conversion" # wrong word formation
 secons = "seconds"
 archieve = "archive"
 corrent = "correct"
 cuttent = "current"
 creationg = "creation"
 performe = "perform"
-soring = "sorting"
 tesk = "task"
 puted = "input"
-adjastment = "adjustment" # phonetic mistake
-configurate = "configure"
 occlud = "occluded"
 cubiod = "cuboid"
 cuboiud = "cuboid"
 debounding = "debouncing"
-cuccessfully = "successfully" # alphabet mistake
 occurreed = "occurred"
 keupoints = "keypoints"
-
-
-
-# FIXME: tableBodyFirstRowThs - what is the word `Ths`?
-
-[tool.codespell]
-skip = './allure-*,./tests/python/allure*,*.log,./static/**,./**/node_modules/**,./cvat-ui/src/assets/opencv_4.8.0.js,./cvat-core/docs/Interpolation.pdf,*-lock.json,*.lock'
-ignore-words-list = "MOT,secondY"
+convertation = "conversion"
+configurate = "configure"
+adjastment = "adjustment"
+cuccessfully = "successfully"
+analitics = "analytics"
+inconvinient = "inconvenient"
+clicable = "clickable"
+convertor = "converter"
+perameters = "parameters"
+succefull = "successful"
+roration = "rotation"
+tupe = "type"
+onject = "object"
+concatening = "concatenating"
+perpective = "perspective"
 
 [tool.black]
 line-length = 100
