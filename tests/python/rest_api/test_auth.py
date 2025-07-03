@@ -7,7 +7,6 @@ from contextlib import contextmanager
 from http import HTTPStatus
 from typing import Generator, Optional
 from unittest import mock
-from urllib.parse import urlparse
 
 import pytest
 from cvat_sdk.api_client import ApiClient, Configuration, models
@@ -117,8 +116,7 @@ class TestSessionAuth:
         )
 
         # Set up the session and CSRF authentication
-        api_client.set_default_header("Host", urlparse(api_client.configuration.host).netloc)
-        api_client.set_default_header("Origin", api_client.configuration.host)
+        api_client.set_default_header("Origin", api_client.build_origin_header())
         api_client.set_default_header("X-CSRFToken", api_client.cookies["csrftoken"].value)
 
         return auth
@@ -142,7 +140,6 @@ class TestSessionAuth:
             assert "csrftoken" in kwargs["headers"].get("Cookie", "")
             assert "X-CSRFToken" in kwargs["headers"]
             assert "Origin" in kwargs["headers"]
-            assert "Host" in kwargs["headers"]
             assert "Authorization" not in kwargs["headers"]
 
             return original_request(api_client.rest_client, *args, **kwargs)
@@ -175,7 +172,6 @@ class TestSessionAuth:
                 api_key={
                     "sessionAuth": api_client.cookies["sessionid"].value,
                     "csrfAuth": api_client.cookies["csrftoken"].value,
-                    "csrfHeaderAuth": api_client.cookies["csrftoken"].value,
                 },
             )
 

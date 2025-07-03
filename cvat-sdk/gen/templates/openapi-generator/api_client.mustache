@@ -661,6 +661,17 @@ class ApiClient(object):
         else:
             return content_types[0]
 
+    def build_origin_header(self, request_host: typing.Optional[str] = None) -> str:
+        if request_host is None:
+            request_host = self.configuration.host
+
+        parsed_url = parse_url(request_host)
+        origin = f"{parsed_url.scheme}://{parsed_url.host}"
+        if parsed_url.port is not None and parsed_url.port not in (80, 443):
+            origin = f"{origin}:{parsed_url.port}"
+
+        return origin
+
     def update_params_for_auth(self, headers, queries, auth_settings,
                                resource_path, method, body, request_host: str, request_auths=None):
         """Updates header and query params based on authentication setting.
@@ -689,10 +700,9 @@ class ApiClient(object):
             if auth_setting:
                 self._apply_auth_params(headers, queries, resource_path, method, body, auth_setting)
 
-                # A custom extension for CSRF HTTPS headers - add browser headers automatically
-                if auth in ('csrfAuth', 'csrfHeaderAuth'):
-                    headers['Host'] = parse_url(request_host).netloc
-                    headers['Origin'] = request_host
+                # A custom extension for CSRF HTTPS headers - add related headers automatically
+                if auth == 'csrfAuth' and 'Origin' not in headers:
+                    headers['Origin'] = self.build_origin_header(request_host)
 
     def _apply_auth_params(self, headers, queries, resource_path, method, body, auth_setting):
         if auth_setting['in'] == 'cookie':

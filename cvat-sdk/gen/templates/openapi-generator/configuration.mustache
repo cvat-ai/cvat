@@ -105,7 +105,6 @@ class Configuration:
         api_key={
             "sessionAuth": <sessionid cookie value>,
             "csrfAuth": <csrftoken cookie value>,
-            "csrfHeaderAuth": <auth key value>,
         }
     )
 
@@ -561,6 +560,16 @@ class Configuration:
             }
 {{/isOAuth}}
 {{/authMethods}}
+
+        if 'csrfAuth' in auth and 'csrfHeaderAuth' not in auth:
+            # Copy 'csrfAuth' into 'csrfHeaderAuth' by default
+            auth['csrfHeaderAuth'] = {
+                'type': 'api_key',
+                'in': 'header',
+                'key': 'X-CSRFToken',
+                'value': auth['csrfAuth']['value'],
+            }
+
         return auth
 
     def to_debug_report(self):
