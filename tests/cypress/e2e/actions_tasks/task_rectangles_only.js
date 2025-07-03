@@ -22,7 +22,7 @@ context('Creating a task with only bounding boxes', () => {
         name: 'car',
         type: 'rectangle',
     };
-    let taskID = null;
+    let taskId = null;
 
     before(() => {
         cy.visit('/auth/login');
@@ -47,7 +47,7 @@ context('Creating a task with only bounding boxes', () => {
             const authKey = response.body.key;
             cy.request({
                 method: 'DELETE',
-                url: `/api/tasks/${taskID}`,
+                url: `/api/tasks/${taskId}`,
                 headers: {
                     Authorization: `Token ${authKey}`,
                 },
@@ -81,9 +81,9 @@ context('Creating a task with only bounding boxes', () => {
             cy.contains('Submit & Open').click();
 
             cy.wait('@taskPost').then((interception) => {
-                taskID = interception.response.body.id;
+                taskId = interception.response.body.id;
                 expect(interception.response.statusCode).to.be.equal(201);
-                cy.intercept(`/api/tasks/${taskID}`).as('getTask');
+                cy.intercept(`/api/tasks/${taskId}`).as('getTask');
                 cy.wait('@getTask');
                 cy.get('.cvat-job-item').should('exist').and('be.visible');
                 cy.openJob();

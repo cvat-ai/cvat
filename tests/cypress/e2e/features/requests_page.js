@@ -51,9 +51,9 @@ context('Requests page', () => {
     const brokenTaskName = 'Broken Annotation task for testing requests page';
 
     const data = {
-        projectID: null,
-        taskID: null,
-        cloudStorageID: null,
+        projectId: null,
+        taskId: null,
+        cloudStorageId: null,
     };
 
     function checkRequestStatus(
@@ -61,7 +61,7 @@ context('Requests page', () => {
         innerCheck,
         {
             checkResourceLink, resourceLink,
-        } = { checkResourceLink: true, resourceLink: `/tasks/${data.taskID}` },
+        } = { checkResourceLink: true, resourceLink: `/tasks/${data.taskId}` },
     ) {
         cy.contains('.cvat-header-button', 'Requests').click();
         cy.get(selector ? `.cvat-requests-card:contains("${selector}")` : '.cvat-requests-card')
@@ -99,7 +99,7 @@ context('Requests page', () => {
         cy.createZipArchive(directoryToArchive, archivePath);
         cy.createZipArchive(emptyDirectoryToArchive, brokenArchivePath);
 
-        data.cloudStorageID = cy.attachS3Bucket(cloudStorageData);
+        data.cloudStorageId = cy.attachS3Bucket(cloudStorageData);
 
         const defaultAttrValue = 'Requests attr';
         const multiAttrParams = false;
@@ -115,7 +115,7 @@ context('Requests page', () => {
         );
         cy.openProject(projectName);
         cy.url().then((url) => {
-            data.projectID = Number(url.split('/').slice(-1)[0].split('?')[0]);
+            data.projectId = Number(url.split('/').slice(-1)[0].split('?')[0]);
 
             const forProject = true;
             const attachToProject = true;
@@ -154,9 +154,9 @@ context('Requests page', () => {
             cy.goToTaskList();
             cy.openTask(taskName);
             cy.url().then((taskUrl) => {
-                data.taskID = Number(taskUrl.split('/').slice(-1)[0].split('?')[0]);
-                cy.getJobIDFromIdx(0).then((jobID) => {
-                    cy.headlessCreateObjects([rectanglePayload], jobID);
+                data.taskId = Number(taskUrl.split('/').slice(-1)[0].split('?')[0]);
+                cy.getJobIdFromIdx(0).then((jobId) => {
+                    cy.headlessCreateObjects([rectanglePayload], jobId);
                 });
             });
         });
@@ -167,7 +167,7 @@ context('Requests page', () => {
         cy.url().should('include', '/cloudstorages');
         cy.deleteCloudStorage(cloudStorageData.displayName);
 
-        cy.headlessDeleteProject(data.projectID);
+        cy.headlessDeleteProject(data.projectId);
     });
 
     describe('Requests page. Create a task.', () => {
@@ -177,7 +177,7 @@ context('Requests page', () => {
         });
 
         it('Creating a task creates a request. Correct task can be opened.', () => {
-            checkRequestStatus(`Task #${data.taskID}`, () => {
+            checkRequestStatus(`Task #${data.taskId}`, () => {
                 cy.contains('Create Task').should('exist');
                 cy.get('.cvat-request-item-progress-success').should('exist');
             });
@@ -201,7 +201,7 @@ context('Requests page', () => {
                 archiveCustomName: annotationsArchiveNameLocal,
             });
 
-            checkRequestStatus(`Task #${data.taskID}`, () => {
+            checkRequestStatus(`Task #${data.taskId}`, () => {
                 cy.contains('Export Annotations').should('exist');
                 cy.get('.cvat-request-item-progress-success').should('exist');
                 cy.contains('Expires').should('exist');
@@ -222,13 +222,13 @@ context('Requests page', () => {
                 archiveCustomName: annotationsArchiveNameCloud,
                 targetStorage: {
                     location: 'Cloud storage',
-                    cloudStorageId: data.cloudStorageID,
+                    cloudStorageId: data.cloudStorageId,
                 },
                 useDefaultLocation: false,
             });
             cy.waitForFileUploadToCloudStorage();
 
-            checkRequestStatus(`Task #${data.taskID}`, () => {
+            checkRequestStatus(`Task #${data.taskId}`, () => {
                 cy.contains('Export Annotations').should('exist');
                 cy.get('.cvat-request-item-progress-success').should('exist');
                 cy.contains('Expires').should('not.exist');
@@ -251,7 +251,7 @@ context('Requests page', () => {
                 waitAnnotationsGet: false,
             });
 
-            checkRequestStatus(`Task #${data.taskID}`, () => {
+            checkRequestStatus(`Task #${data.taskId}`, () => {
                 cy.contains('Import Annotations').should('exist');
                 cy.get('.cvat-request-item-progress-success').should('exist');
             });
@@ -266,7 +266,7 @@ context('Requests page', () => {
                 expectedResult: 'fail',
             });
 
-            checkRequestStatus(`Task #${data.taskID}`, () => {
+            checkRequestStatus(`Task #${data.taskId}`, () => {
                 cy.contains('Import Annotations').should('exist');
                 cy.get('.cvat-request-item-progress-failed').should('exist');
             });
@@ -285,11 +285,11 @@ context('Requests page', () => {
                 backupArchiveName,
             );
 
-            checkRequestStatus(`Project #${data.projectID}`, () => {
+            checkRequestStatus(`Project #${data.projectId}`, () => {
                 cy.contains('Export Backup').should('exist');
                 cy.get('.cvat-request-item-progress-success').should('exist');
                 cy.contains('Expires').should('exist');
-            }, `/projects/${data.projectID}`);
+            }, `/projects/${data.projectId}`);
             cy.downloadExport().then((file) => {
                 cy.verifyDownload(file);
             });
@@ -322,7 +322,7 @@ context('Requests page', () => {
                 });
             });
 
-            cy.getJobIDFromIdx(0).then((jobID) => {
+            cy.getJobIdFromIdx(0).then((jobId) => {
                 const closeExportNotification = () => {
                     cy.get('.ant-notification-notice').first().within((notification) => {
                         cy.contains('Export is finished').should('be.visible');
@@ -335,7 +335,7 @@ context('Requests page', () => {
                     type: 'dataset',
                     format: exportFormat,
                     archiveCustomName: 'job_annotations_cvat',
-                    jobOnTaskPage: jobID,
+                    jobOnTaskPage: jobId,
                 };
 
                 cy.exportJob(exportParams);
@@ -352,7 +352,7 @@ context('Requests page', () => {
                 cy.contains('.cvat-header-button', 'Requests').should('be.visible').click();
                 cy.url().should('include', '/requests');
 
-                cy.get(`.cvat-requests-card:contains("Job #${jobID}")`)
+                cy.get(`.cvat-requests-card:contains("Job #${jobId}")`)
                     .should('have.length', 2)
                     .each((card) => {
                         cy.wrap(card).within(() => {

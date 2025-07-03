@@ -12,8 +12,8 @@ context('Settings. Text size/position. Text labels content.', () => {
     const serverFiles = ['images/image_1.jpg', 'images/image_2.jpg', 'images/image_3.jpg'];
     const attrName = 'Attr for test label';
     const textDefaultValue = 'Default attr for test label';
-    let taskID = null;
-    let jobID = null;
+    let taskId = null;
+    let jobId = null;
 
     const skeletonLabel = {
         name: 'skeleton',
@@ -168,10 +168,10 @@ context('Settings. Text size/position. Text labels content.', () => {
             use_cache: true,
             sorting_method: 'lexicographical',
         }).then((response) => {
-            taskID = response.taskID;
-            [jobID] = response.jobIDs;
+            taskId = response.taskId;
+            [jobId] = response.jobIds;
         }).then(() => {
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
             cy.get('.cvat-canvas-container').should('exist').and('be.visible');
 
             cy.createRectangle(rectangleShape2Points);

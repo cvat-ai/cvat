@@ -5,8 +5,8 @@
 /// <reference types="cypress" />
 
 context('Testing annotations actions workflow', () => {
-    let taskID = null;
-    let jobID = null;
+    let taskId = null;
+    let jobId = null;
     let labels = [];
 
     const latestFrameNumber = 11;
@@ -41,11 +41,11 @@ context('Testing annotations actions workflow', () => {
         cy.login();
 
         cy.headlessCreateTask(taskPayload, dataPayload).then((response) => {
-            taskID = response.taskID;
-            [jobID] = response.jobIDs;
+            taskId = response.taskId;
+            [jobId] = response.jobIds;
 
-            cy.intercept(`/api/labels?**job_id=${jobID}**`).as('getJobLabels');
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.intercept(`/api/labels?**job_id=${jobId}**`).as('getJobLabels');
+            cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
             cy.wait('@getJobLabels').then((interception) => {
                 labels = interception.response.body.results;
             });
@@ -154,7 +154,7 @@ context('Testing annotations actions workflow', () => {
             }]).flat();
 
             cy.window().then((window) => {
-                window.cvat.server.request(`/api/jobs/${jobID}/annotations`, {
+                window.cvat.server.request(`/api/jobs/${jobId}/annotations`, {
                     method: 'PUT',
                     data: { shapes, tracks, tags },
                 });
@@ -162,7 +162,7 @@ context('Testing annotations actions workflow', () => {
         });
 
         beforeEach(() => {
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
             cy.get('.cvat-canvas-container').should('not.exist');
             cy.get('.cvat-canvas-container').should('exist').and('be.visible');
         });
@@ -279,7 +279,7 @@ context('Testing annotations actions workflow', () => {
             }];
 
             cy.window().then((window) => {
-                window.cvat.server.request(`/api/jobs/${jobID}/annotations`, {
+                window.cvat.server.request(`/api/jobs/${jobId}/annotations`, {
                     method: 'PUT',
                     data: { shapes },
                 });
@@ -287,7 +287,7 @@ context('Testing annotations actions workflow', () => {
         });
 
         beforeEach(() => {
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
             cy.get('.cvat-canvas-container').should('not.exist');
             cy.get('.cvat-canvas-container').should('exist').and('be.visible');
         });
@@ -350,10 +350,10 @@ context('Testing annotations actions workflow', () => {
         cy.logout();
         cy.getAuthKey().then((response) => {
             const authKey = response.body.key;
-            if (taskID) {
+            if (taskId) {
                 cy.request({
                     method: 'DELETE',
-                    url: `/api/tasks/${taskID}`,
+                    url: `/api/tasks/${taskId}`,
                     headers: {
                         Authorization: `Token ${authKey}`,
                     },
