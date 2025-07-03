@@ -9,65 +9,6 @@ extend_skip=[
     "serverless",
 ]
 
-[tool.typos]
-files.extend-exclude = [
-	"cvat-ui/src/assets/opencv_4.8.0.js",
-	"**/*.zip",
-	"*.log",
-	"*.min.js",
-	"**/node_modules",
-    "*.patch",
-    "wignore"
-]
-default.extend-ignore-re = [
-    "\"md5.*?\"" # test passwords
-]
-[tool.typos.default.extend-words]
-nd = "nd"
-tpic = "tpic"
-NAM = "NAM"
-AVOD = "AVOD"
-trak = "trak"
-splitted = "splitted"
-lastest = "lastest"
-lavel = "label"
-firts = "first"
-correciton = "correction"
-segway = "segway" # lexical
-typ = "type"
-cheeck = "check"
-custome = "custom"
-blok = "block"
-secons = "seconds"
-archieve = "archive"
-corrent = "correct"
-cuttent = "current"
-creationg = "creation"
-performe = "perform"
-tesk = "task"
-puted = "input"
-occlud = "occluded"
-cubiod = "cuboid"
-cuboiud = "cuboid"
-debounding = "debouncing"
-occurreed = "occurred"
-keupoints = "keypoints"
-convertation = "conversion"
-configurate = "configure"
-adjastment = "adjustment"
-cuccessfully = "successfully"
-analitics = "analytics"
-inconvinient = "inconvenient"
-clicable = "clickable"
-convertor = "converter"
-perameters = "parameters"
-succefull = "successful"
-roration = "rotation"
-tupe = "type"
-onject = "object"
-concatening = "concatenating"
-perpective = "perspective"
-
 [tool.black]
 line-length = 100
 target-version = ['py39']
