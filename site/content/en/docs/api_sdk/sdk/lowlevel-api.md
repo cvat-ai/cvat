@@ -183,7 +183,6 @@ configuration = Configuration(
     api_key={
         "sessionAuth": "<sessionid cookie value>",
         "csrfAuth": "<csrftoken cookie value>",
-        "csrfHeaderAuth": "<csrftoken cookie value>",
     },
     ...
 )
@@ -225,9 +224,7 @@ assert "sessionid" in api_client.cookies # managed by ApiClient automatically
 api_client.set_default_header("X-CSRFToken", api_client.cookies["csrftoken"].value)
 
 # Set up web browser headers
-from urllib3.util import parse_url
-api_client.set_default_header("Origin", api_client.configuration.host)
-api_client.set_default_header("Host", parse_url(api_client.configuration.host).netloc)
+api_client.set_default_header("Origin", api_client.build_origin_header())
 ```
 {{% /tab %}}
 
