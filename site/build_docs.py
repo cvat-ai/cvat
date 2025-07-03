@@ -19,6 +19,9 @@ from packaging import version
 # the initial version for the documentation site
 MINIMUM_VERSION = version.Version("1.5.0")
 
+# Number of most recent tags to build documentation for
+MAX_VERSIONS_TO_BUILD = 6
+
 # apply new hugo version starting from release 2.9.2
 UPDATED_HUGO_FROM = version.Version("2.9.2")
 
@@ -31,17 +34,18 @@ hugo83 = "hugo-0.83"  # required for older docs
 
 
 def prepare_tags(repo: git.Repo):
-    tags = {}
+    # Get all non-prerelease tags that meet minimum version requirement
+    valid_tags = []
     for tag in repo.tags:
         tag_version = version.parse(tag.name)
         if tag_version >= MINIMUM_VERSION and not tag_version.is_prerelease:
-            release_version = (tag_version.major, tag_version.minor)
-            if release_version not in tags or tag_version > version.parse(
-                tags[release_version].name
-            ):
-                tags[release_version] = tag
+            valid_tags.append(tag)
 
-    return tags.values()
+    # Sort tags by version in descending order (newest first)
+    valid_tags.sort(key=lambda t: version.parse(t.name), reverse=True)
+
+    # Return only the configured number of most recent tags
+    return valid_tags[:MAX_VERSIONS_TO_BUILD]
 
 
 def generate_versioning_config(filename, versions, url_prefix=""):
