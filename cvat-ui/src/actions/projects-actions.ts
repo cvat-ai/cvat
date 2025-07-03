@@ -11,7 +11,7 @@ import {
 } from 'reducers';
 import { getTasksAsync } from 'actions/tasks-actions';
 import { getCVATStore } from 'cvat-store';
-import { getCore } from 'cvat-core-wrapper';
+import { getCore, Project } from 'cvat-core-wrapper';
 import { filterNull } from 'utils/filter-null';
 
 const cvat = getCore();
@@ -30,6 +30,9 @@ export enum ProjectsActionTypes {
     GET_PROJECT_PREVIEW = 'GET_PROJECT_PREVIEW',
     GET_PROJECT_PREVIEW_SUCCESS = 'GET_PROJECT_PREVIEW_SUCCESS',
     GET_PROJECT_PREVIEW_FAILED = 'GET_PROJECT_PREVIEW_FAILED',
+    UPDATE_PROJECT = 'UPDATE_PROJECT',
+    UPDATE_PROJECT_SUCCESS = 'UPDATE_PROJECT_SUCCESS',
+    UPDATE_PROJECT_FAILED = 'UPDATE_PROJECT_FAILED',
 }
 
 const projectActions = {
@@ -62,6 +65,11 @@ const projectActions = {
     getProjectPreviewFailed: (projectID: number, error: any) => (
         createAction(ProjectsActionTypes.GET_PROJECT_PREVIEW_FAILED, { projectID, error })
     ),
+    updateProject: (projectId: number) => createAction(ProjectsActionTypes.UPDATE_PROJECT, { projectId }),
+    updateProjectSuccess: (project: Project) => (
+        createAction(ProjectsActionTypes.UPDATE_PROJECT_SUCCESS, { project })
+    ),
+    updateProjectFailed: (error: any) => createAction(ProjectsActionTypes.UPDATE_PROJECT_FAILED, { error }),
 };
 
 export type ProjectActions = ActionUnion<typeof projectActions>;
@@ -162,3 +170,19 @@ export const getProjectsPreviewAsync = (project: any): ThunkAction => async (dis
         dispatch(projectActions.getProjectPreviewFailed(project.id, error));
     }
 };
+
+export function updateProjectAsync(
+    projectInstance: Project,
+): ThunkAction<Promise<Project>> {
+    return async (dispatch: ThunkDispatch): Promise<Project> => {
+        dispatch(projectActions.updateProject(projectInstance.id));
+        try {
+            const updatedProject = await projectInstance.save();
+            dispatch(projectActions.updateProjectSuccess(updatedProject));
+            return updatedProject;
+        } catch (error) {
+            dispatch(projectActions.updateProjectFailed(error));
+            throw error;
+        }
+    };
+}
