@@ -5,13 +5,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { MenuProps } from 'antd/lib/menu';
-import { User } from 'cvat-core-wrapper';
 import { usePlugins } from 'utils/hooks';
 import { CVATMenuEditLabel } from 'components/common/cvat-menu-edit-label';
 
 interface MenuItemsData {
     projectId: number;
-    assignee: User | null;
     startEditField: (key: string) => void;
     pluginActions: ReturnType<typeof usePlugins>;
     onExportDataset: () => void;
