@@ -275,7 +275,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
 
     public render(): JSX.Element {
         const {
-            deleted, ribbonPlugins, selected, onClick,
+            deleted, ribbonPlugins, selected, onClick, taskInstance,
         } = this.props;
         const style: React.CSSProperties = {};
         if (deleted) {
@@ -305,18 +305,24 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                     </div>
                 )}
             >
-                <Row
-                    className='cvat-tasks-list-item'
-                    justify='center'
-                    align='top'
-                    style={style}
-                    onClick={onClick}
-                >
-                    {this.renderPreview()}
-                    {this.renderDescription()}
-                    {this.renderProgress()}
-                    {this.renderNavigation()}
-                </Row>
+                <TaskActionsComponent
+                    taskInstance={taskInstance}
+                    dropdownTrigger={['contextMenu']}
+                    triggerElement={(
+                        <Row
+                            className='cvat-tasks-list-item'
+                            justify='center'
+                            align='top'
+                            style={style}
+                            onClick={onClick}
+                        >
+                            {this.renderPreview()}
+                            {this.renderDescription()}
+                            {this.renderProgress()}
+                            {this.renderNavigation()}
+                        </Row>
+                    )}
+                />
             </Badge.Ribbon>
         );
     }

@@ -21,10 +21,11 @@ import TaskActionsItems from './actions-menu-items';
 interface Props {
     taskInstance: Task;
     triggerElement: JSX.Element;
+    dropdownTrigger?: ('click' | 'hover' | 'contextMenu')[];
 }
 
-function TaskActionsComponent(props: Props): JSX.Element {
-    const { taskInstance, triggerElement } = props;
+function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
+    const { taskInstance, triggerElement, dropdownTrigger } = props;
     const dispatch = useDispatch();
 
     const pluginActions = usePlugins((state: CombinedState) => state.plugins.components.taskActions.items, props);
@@ -154,7 +155,7 @@ function TaskActionsComponent(props: Props): JSX.Element {
     return (
         <Dropdown
             destroyPopupOnHide
-            trigger={['click']}
+            trigger={dropdownTrigger || ['click']}
             open={dropdownOpen}
             onOpenChange={onOpenChange}
             menu={{
