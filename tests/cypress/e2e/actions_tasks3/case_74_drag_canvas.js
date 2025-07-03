@@ -29,7 +29,7 @@ context('Drag canvas.', () => {
             cy.get('.cvat-canvas-container').trigger('mousemove', 500, 500);
         });
 
-        it('Top and left style perameters is changed.', () => {
+        it('Top and left style parameters is changed.', () => {
             cy.get('#cvat_canvas_background')
                 .invoke('attr', 'style')
                 .then(($style) => {

@@ -72,7 +72,7 @@ context('Rotated bounding boxes.', () => {
         });
 
         it('Check interpolation, merging/splitting rotated shapes.', () => {
-            // Check track roration on all frames
+            // Check track rotation on all frames
             cy.document().then((doc) => {
                 const shapeTransformMatrix = decomposeMatrix(doc.getElementById('cvat_canvas_shape_2').getCTM());
                 for (let frame = 1; frame < 10; frame++) {

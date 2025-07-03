@@ -948,7 +948,7 @@ function factory() {
 
       /*
 
-        asm.js implementation of a yuv to rgb convertor
+        asm.js implementation of a yuv to rgb converter
         provided by @soliton4
 
         based on
@@ -957,7 +957,7 @@ function factory() {
       */
 
 
-      // factory to create asm.js yuv -> rgb convertor for a given resolution
+      // factory to create asm.js yuv -> rgb converter for a given resolution
       var asmInstances = {};
       var getAsm = function(parWidth, parHeight) {
           var idStr = "" + parWidth + "x" + parHeight;

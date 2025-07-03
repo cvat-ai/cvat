@@ -3944,7 +3944,7 @@ This release has changes only in the Enterprise version.
   (<https://github.com/opencv/cvat/pull/1430>)
 - Hide functionality (H) doesn't work (<https://github.com/opencv/cvat/pull/1445>)
 - The highlighted attribute doesn't correspond to the chosen attribute in AAM (<https://github.com/opencv/cvat/pull/1445>)
-- Inconvinient image shaking while drawing a polygon (hold Alt key during drawing/editing/grouping to drag an image) (<https://github.com/opencv/cvat/pull/1445>)
+- Inconvenient image shaking while drawing a polygon (hold Alt key during drawing/editing/grouping to drag an image) (<https://github.com/opencv/cvat/pull/1445>)
 - Filter property "shape" doesn't work and extra operator in description (<https://github.com/opencv/cvat/pull/1445>)
 - Block of text information doesn't disappear after deactivating for locked shapes (<https://github.com/opencv/cvat/pull/1445>)
 - Annotation uploading fails in annotation view (<https://github.com/opencv/cvat/pull/1445>)
@@ -4170,7 +4170,7 @@ This release has changes only in the Enterprise version.
 ### Changed
 
 - Propagation setup has been moved from settings to bottom player panel
-- Additional events like "Debug Info" or "Fit Image" have been added for analitics
+- Additional events like "Debug Info" or "Fit Image" have been added for analytics
 - Optional using LFS for git annotation storages (#314)
 
 ### Deprecated

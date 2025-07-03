@@ -101,7 +101,7 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
         this.auxiliaryGroupID = null;
     }
 
-    // convert each shape to group of clicable points
+    // convert each shape to group of clickable points
     // save all groups
     private drawMarkers(transformedShapes: TransformedShape[]): void {
         const svgNamespace = 'http://www.w3.org/2000/svg';
