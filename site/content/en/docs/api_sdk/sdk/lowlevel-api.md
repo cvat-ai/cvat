@@ -134,14 +134,14 @@ Typically, the first thing you do with `ApiClient` is log in.
 
 CVAT supports 3 authentication options:
 - Basic authentication, with a username and a password
-- Token authentication, with an API access key
-- Session authentication, with a session id and a CSRF token
+- Session authentication, with a session ID and a CSRF token
+- Token authentication, with an API key (deprecated)
 
 Token authentication requires an API key, which can be obtained after logging in
-the `/api/auth/login` endpoint using the basic authentication credentials.
+via the `/api/auth/login` endpoint using the basic authentication credentials.
 
 Session authentication requires a session id and a CSRF token, which can be obtained after
-logging in the `/api/auth/login` endpoint using the basic authentication credentials.
+logging in via the `/api/auth/login` endpoint using the basic authentication credentials.
 
 Authentication credentials for an `ApiClient` instance can be specified in a `Configuration` object:
 
@@ -153,21 +153,6 @@ Authentication credentials for an `ApiClient` instance can be specified in a `Co
 configuration = Configuration(
     username='YOUR_USERNAME',
     password='YOUR_PASSWORD',
-    ...
-)
-with ApiClient(configuration) as api_client:
-    ...
-```
-
-{{% /tab %}}
-
-{{%tab header="Token authentication" %}}
-
-```python
-configuration = Configuration(
-    api_key={
-        "tokenAuth": "Token <api key value>",
-    },
     ...
 )
 with ApiClient(configuration) as api_client:
@@ -192,6 +177,23 @@ with ApiClient(configuration) as api_client:
 
 {{% /tab %}}
 
+{{%tab header="Token authentication (deprecated)" %}}
+
+> This authentication option is deprecated and will be removed in future.
+
+```python
+configuration = Configuration(
+    api_key={
+        "tokenAuth": "Token <api key value>",
+    },
+    ...
+)
+with ApiClient(configuration) as api_client:
+    ...
+```
+
+{{% /tab %}}
+
 {{< /tabpane >}}
 
 Session authentication and token authentication tokens can be received by logging in
@@ -200,7 +202,26 @@ can be set in the `ApiClient` instance.
 
 {{< tabpane text=true >}}
 
-{{%tab header="Token authentication" %}}
+{{%tab header="Session authentication" %}}
+
+```python
+from cvat_sdk.api_client import models
+
+(auth, _) = api_client.auth_api.create_login(
+    models.LoginSerializerExRequest(username="username", password="password")
+)
+
+# Set up required headers
+assert "sessionid" in api_client.cookies # managed by ApiClient automatically
+api_client.set_default_header("X-CSRFToken", api_client.cookies["csrftoken"].value)
+api_client.set_default_header("Origin", api_client.build_origin_header())
+```
+{{% /tab %}}
+
+{{%tab header="Token authentication (deprecated)" %}}
+
+> This authentication option is deprecated and will be removed in future.
+
 ```python
 from cvat_sdk.api_client import models
 
@@ -209,22 +230,6 @@ from cvat_sdk.api_client import models
 )
 
 api_client.set_default_header("Authorization", "Token " + auth.key)
-```
-{{% /tab %}}
-
-{{%tab header="Session authentication" %}}
-```python
-from cvat_sdk.api_client import models
-
-(auth, _) = api_client.auth_api.create_login(
-    models.LoginSerializerExRequest(username="username", password="password")
-)
-
-assert "sessionid" in api_client.cookies # managed by ApiClient automatically
-api_client.set_default_header("X-CSRFToken", api_client.cookies["csrftoken"].value)
-
-# Set up web browser headers
-api_client.set_default_header("Origin", api_client.build_origin_header())
 ```
 {{% /tab %}}
 

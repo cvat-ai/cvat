@@ -86,18 +86,6 @@ class Configuration:
 
     API Key Authentication Example.
 
-    You can authenticate with a token after logging in the following way:
-
-    conf = {{{packageName}}}.Configuration(
-        ...
-        api_key={
-            "tokenAuth": <auth key value>,
-        }
-    )
-
-    If your custom server uses another token prefix, use the 'api_key_prefix' parameter.
-
-
     You can authenticate with session tokens after logging in the following way:
 
     conf = {{{packageName}}}.Configuration(
@@ -107,6 +95,18 @@ class Configuration:
             "csrfAuth": <csrftoken cookie value>,
         }
     )
+
+    Alternatively, you can authenticate with a token after logging in the following way:
+
+    conf = {{{packageName}}}.Configuration(
+        ...
+        api_key={
+            "tokenAuth": <auth key value>,
+        }
+    )
+
+    If your custom server uses another token prefix, use the 'api_key_prefix' parameter.
+    This authentication option is deprecated and will be removed in future.
 
 {{/hasApiKeyMethods}}
 {{#hasHttpBasicMethods}}
