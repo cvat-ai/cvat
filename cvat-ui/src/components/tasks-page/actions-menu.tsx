@@ -28,6 +28,8 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
     const { taskInstance, triggerElement, dropdownTrigger } = props;
     const dispatch = useDispatch();
 
+    const selectedIDs = useSelector((state: CombinedState) => state.selection.selected);
+
     const pluginActions = usePlugins((state: CombinedState) => state.plugins.components.taskActions.items, props);
     const {
         activeInference,
@@ -149,6 +151,7 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
             onRunAutoAnnotation,
             onMoveTaskToProject: taskInstance.projectId === null ? onMoveTaskToProject : null,
             onDeleteTask,
+            selectedIds: selectedIDs,
         }, props);
     }
 

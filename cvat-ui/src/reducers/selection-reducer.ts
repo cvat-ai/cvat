@@ -1,6 +1,7 @@
 // Copyright (C) 2020-2022 Intel Corporation
 // SPDX-License-Identifier: MIT
 
+import { SelectionState } from 'reducers';
 import {
     SELECT_RESOURCE,
     DESELECT_RESOURCE,
@@ -8,11 +9,6 @@ import {
     CLEAR_SELECTED_RESOURCES,
     SET_SELECTION_RESOURCE_TYPE,
 } from '../actions/selection-actions';
-
-interface SelectionState {
-    selected: number[];
-    resourceType: string;
-}
 
 const initialState: SelectionState = {
     selected: [],

@@ -257,6 +257,11 @@ export interface CloudStoragesState {
     };
 }
 
+export interface SelectionState {
+    selected: number[];
+    resourceType: string;
+}
+
 export enum SupportedPlugins {
     ANALYTICS = 'ANALYTICS',
     MODELS = 'MODELS',
@@ -1070,6 +1075,7 @@ export interface CombinedState {
     invitations: InvitationsState;
     webhooks: WebhooksState;
     requests: RequestsState;
+    selection: SelectionState;
     serverAPI: ServerAPIState;
     navigation: NavigationState;
 }

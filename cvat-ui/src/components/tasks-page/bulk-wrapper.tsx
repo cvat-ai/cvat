@@ -55,7 +55,6 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
     // Track the last selected index for shift+click
     const lastSelectedIndexRef = useRef<number | null>(null);
 
-    // Function to provide selection props for a given resource ID and index
     const selectProps = (resourceID: number, idx: number) => {
         const isSelected = selectedIDs.includes(resourceID);
         const { currentResourceIDs } = props;
