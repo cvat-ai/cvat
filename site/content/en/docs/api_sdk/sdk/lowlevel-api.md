@@ -140,7 +140,7 @@ CVAT supports 3 authentication options:
 Token authentication requires an API key, which can be obtained after logging in
 via the `/api/auth/login` endpoint using the basic authentication credentials.
 
-Session authentication requires a session id and a CSRF token, which can be obtained after
+Session authentication requires a session ID and a CSRF token, which can be obtained after
 logging in via the `/api/auth/login` endpoint using the basic authentication credentials.
 
 Authentication credentials for an `ApiClient` instance can be specified in a `Configuration` object:
