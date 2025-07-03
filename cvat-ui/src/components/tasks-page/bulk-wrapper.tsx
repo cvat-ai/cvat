@@ -42,6 +42,10 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
+            // Ignore clicks inside dropdown menus (Ant Design)
+            const dropdown = (event.target as HTMLElement).closest('.ant-dropdown');
+            if (dropdown) return;
+
             if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
                 dispatch(clearSelectedResources());
             }
@@ -55,7 +59,10 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
     // Track the last selected index for shift+click
     const lastSelectedIndexRef = useRef<number | null>(null);
 
-    const selectProps = (resourceID: number, idx: number) => {
+    const selectProps = (
+        resourceID: number,
+        idx: number,
+    ): { selected: boolean; onClick: (event?: React.MouseEvent) => void } => {
         const isSelected = selectedIDs.includes(resourceID);
         const { currentResourceIDs } = props;
         return {
