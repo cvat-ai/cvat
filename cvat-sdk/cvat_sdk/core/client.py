@@ -18,7 +18,6 @@ import packaging.specifiers as specifiers
 import packaging.version as pv
 import platformdirs
 import urllib3
-import urllib3.exceptions
 
 from cvat_sdk.api_client import ApiClient, Configuration, exceptions, models
 from cvat_sdk.core.exceptions import (
@@ -202,27 +201,26 @@ class Client:
         return self.__exit__(None, None, None)
 
     def login(self, credentials: tuple[str, str]) -> None:
-        (auth, _) = self.api_client.auth_api.create_login(
+        self.api_client.auth_api.create_login(
             models.LoginSerializerExRequest(username=credentials[0], password=credentials[1])
         )
-
         assert "sessionid" in self.api_client.cookies
         assert "csrftoken" in self.api_client.cookies
-        self.api_client.set_default_header("Authorization", "Token " + auth.key)
+        self.api_client.set_default_header("Origin", self.api_client.build_origin_header())
+        self.api_client.set_default_header(
+            "X-CSRFToken", self.api_client.cookies["csrftoken"].value
+        )
 
     def has_credentials(self) -> bool:
-        return (
-            ("sessionid" in self.api_client.cookies)
-            or ("csrftoken" in self.api_client.cookies)
-            or bool(self.api_client.get_common_headers().get("Authorization", ""))
-        )
+        return ("sessionid" in self.api_client.cookies) or ("csrftoken" in self.api_client.cookies)
 
     def logout(self) -> None:
         if self.has_credentials():
             self.api_client.auth_api.create_logout()
             self.api_client.cookies.pop("sessionid", None)
             self.api_client.cookies.pop("csrftoken", None)
-            self.api_client.default_headers.pop("Authorization", None)
+            self.api_client.default_headers.pop("Origin", None)
+            self.api_client.default_headers.pop("X-CSRFToken", None)
 
     def wait_for_completion(
         self: Client,

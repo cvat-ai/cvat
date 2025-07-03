@@ -3,7 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 import json
+from contextlib import contextmanager
 from http import HTTPStatus
+from typing import Generator, Optional
+from unittest import mock
 
 import pytest
 from cvat_sdk.api_client import ApiClient, Configuration, models
@@ -13,7 +16,7 @@ from shared.utils.config import BASE_URL, USER_PASS, make_api_client
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestBasicAuth:
-    def test_can_do_basic_auth(self, admin_user: str):
+    def test_can_use_basic_auth(self, admin_user: str):
         username = admin_user
         config = Configuration(host=BASE_URL, username=username, password=USER_PASS)
         with ApiClient(config) as client:
@@ -25,59 +28,158 @@ class TestBasicAuth:
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestTokenAuth:
     @staticmethod
-    def login(client: ApiClient, username: str) -> models.Token:
-        (auth, _) = client.auth_api.create_login(
+    def login(api_client: ApiClient, username: str) -> models.Token:
+        (auth, _) = api_client.auth_api.create_login(
             models.LoginSerializerExRequest(username=username, password=USER_PASS)
         )
-        client.set_default_header("Authorization", "Token " + auth.key)
+
+        # Remove automatically managed cookies
+        api_client.cookies.pop("sessionid")
+        api_client.cookies.pop("csrftoken")
+
+        # Set up the token authentication
+        api_client.set_default_header("Authorization", "Token " + auth.key)
+
         return auth
 
     @classmethod
-    def make_client(cls, username: str) -> ApiClient:
-        with ApiClient(Configuration(host=BASE_URL)) as client:
-            cls.login(client, username)
-            return client
-
-    def test_can_do_token_auth_and_manage_cookies(self, admin_user: str):
-        username = admin_user
+    @contextmanager
+    def make_client(cls, username: Optional[str] = None) -> Generator[ApiClient, None, None]:
         with ApiClient(Configuration(host=BASE_URL)) as api_client:
+            if username:
+                cls.login(api_client, username)
+
+            yield api_client
+
+    def _test_can_auth(self, api_client: ApiClient, *, username: str, auth_key: str):
+        from cvat_sdk.api_client.rest import RESTClientObject
+
+        original_request = RESTClientObject.request
+
+        def patched_request(*args, **kwargs):
+            assert "sessionid" not in kwargs["headers"].get("Cookie", "")
+            assert "X-CSRFToken" not in kwargs["headers"]
+            assert kwargs["headers"]["Authorization"] == "Token " + auth_key
+
+            return original_request(api_client.rest_client, *args, **kwargs)
+
+        with mock.patch.object(
+            api_client.rest_client, "request", side_effect=patched_request
+        ) as mock_request:
+            (user, response) = api_client.users_api.retrieve_self()
+
+            mock_request.assert_called_once()
+
+        assert response.status == HTTPStatus.OK
+        assert user.username == username
+
+    def test_can_use_token_auth(self, admin_user: str):
+        username = admin_user
+        with self.make_client() as api_client:
             auth = self.login(api_client, username=username)
-            assert "sessionid" in api_client.cookies
-            assert "csrftoken" in api_client.cookies
             assert auth.key
 
-            (user, response) = api_client.users_api.retrieve_self()
-            assert response.status == HTTPStatus.OK
-            assert user.username == username
+            self._test_can_auth(api_client, username=username, auth_key=auth.key)
 
-    def test_can_do_token_auth_from_config(self, admin_user: str):
+    def test_can_use_token_auth_from_config(self, admin_user: str):
         username = admin_user
-
-        with make_api_client(username) as api_client:
+        with self.make_client() as api_client:
             auth = self.login(api_client, username=username)
 
             config = Configuration(
                 host=BASE_URL,
                 api_key={
-                    "sessionAuth": api_client.cookies["sessionid"].value,
-                    "csrfAuth": api_client.cookies["csrftoken"].value,
                     "tokenAuth": auth.key,
                 },
             )
 
         with ApiClient(config) as api_client:
-            auth = self.login(api_client, username=username)
-            assert "sessionid" in api_client.cookies
-            assert "csrftoken" in api_client.cookies
-            assert auth.key
+            self._test_can_auth(api_client, username=username, auth_key=auth.key)
 
-            (user, response) = api_client.users_api.retrieve_self()
+    def test_can_logout(self, admin_user: str):
+        with self.make_client(admin_user) as api_client:
+            (_, response) = api_client.auth_api.create_logout()
             assert response.status == HTTPStatus.OK
-            assert user.username == username
 
-    def test_can_do_logout(self, admin_user: str):
+            (_, response) = api_client.users_api.retrieve_self(
+                _parse_response=False, _check_status=False
+            )
+            assert response.status == HTTPStatus.UNAUTHORIZED
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestSessionAuth:
+    @staticmethod
+    def login(api_client: ApiClient, username: str) -> models.Token:
+        (auth, _) = api_client.auth_api.create_login(
+            models.LoginSerializerExRequest(username=username, password=USER_PASS)
+        )
+
+        # Set up the session and CSRF authentication
+        api_client.set_default_header("Origin", api_client.build_origin_header())
+        api_client.set_default_header("X-CSRFToken", api_client.cookies["csrftoken"].value)
+
+        return auth
+
+    @classmethod
+    @contextmanager
+    def make_client(cls, username: Optional[str] = None) -> Generator[ApiClient, None, None]:
+        with ApiClient(Configuration(host=BASE_URL)) as api_client:
+            if username:
+                cls.login(api_client, username)
+
+            yield api_client
+
+    def _test_can_use_auth(self, api_client: ApiClient, *, username: str):
+        from cvat_sdk.api_client.rest import RESTClientObject
+
+        original_request = RESTClientObject.request
+
+        def patched_request(*args, **kwargs):
+            assert "sessionid" in kwargs["headers"].get("Cookie", "")
+            assert "csrftoken" in kwargs["headers"].get("Cookie", "")
+            assert "X-CSRFToken" in kwargs["headers"]
+            assert "Origin" in kwargs["headers"]
+            assert "Authorization" not in kwargs["headers"]
+
+            return original_request(api_client.rest_client, *args, **kwargs)
+
+        with mock.patch.object(
+            api_client.rest_client, "request", side_effect=patched_request
+        ) as mock_request:
+            (user, response) = api_client.users_api.retrieve_self()
+
+            mock_request.assert_called_once()
+
+        assert response.status == HTTPStatus.OK
+        assert user.username == username
+
+        # Check CSRF authentication in an "unsafe" request
+        api_client.users_api.partial_update(
+            user.id, patched_user_request=models.PatchedUserRequest(first_name="Newname")
+        )
+
+    def test_can_use_session_auth(self, admin_user: str):
         username = admin_user
         with self.make_client(username) as api_client:
+            self._test_can_use_auth(api_client, username=username)
+
+    def test_can_use_session_auth_from_config(self, admin_user: str):
+        username = admin_user
+        with self.make_client(username) as api_client:
+            config = Configuration(
+                host=BASE_URL,
+                api_key={
+                    "sessionAuth": api_client.cookies["sessionid"].value,
+                    "csrfAuth": api_client.cookies["csrftoken"].value,
+                },
+            )
+
+        with ApiClient(config) as api_client:
+            self._test_can_use_auth(api_client, username=username)
+
+    def test_can_logout(self, admin_user: str):
+        with self.make_client(admin_user) as api_client:
             (_, response) = api_client.auth_api.create_logout()
             assert response.status == HTTPStatus.OK
 
