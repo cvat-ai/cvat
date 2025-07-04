@@ -28,7 +28,7 @@ export const selectionActions = {
         SelectionActionsTypes.SET_SELECTION_RESOURCE_TYPE, { resourceType }),
     startBulkAction: () => createAction(
         SelectionActionsTypes.START_BULK_ACTION),
-    updateBulkActionStatus: (status: string) => createAction(
+    updateBulkActionStatus: (status: { message: string; percent: number }) => createAction(
         SelectionActionsTypes.UPDATE_BULK_ACTION_STATUS, { status }),
     finishBulkAction: () => createAction(
         SelectionActionsTypes.FINISH_BULK_ACTION),

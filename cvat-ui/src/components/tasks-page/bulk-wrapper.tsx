@@ -46,6 +46,9 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
             const dropdown = (event.target as HTMLElement).closest('.ant-dropdown');
             if (dropdown) return;
 
+            const virtualList = (event.target as HTMLElement).closest('.rc-virtual-list');
+            if (virtualList) return;
+
             if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
                 dispatch(selectionActions.clearSelectedResources());
             }

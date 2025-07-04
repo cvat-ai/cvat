@@ -257,11 +257,16 @@ export interface CloudStoragesState {
     };
 }
 
+export interface SelectionStatus {
+    message: string;
+    percent: number;
+}
+
 export interface SelectionState {
     selected: number[];
     resourceType: string;
     fetching: boolean;
-    status: string | null;
+    status: SelectionStatus | null;
 }
 
 export enum SupportedPlugins {

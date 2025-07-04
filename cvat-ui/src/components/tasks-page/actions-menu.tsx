@@ -16,6 +16,7 @@ import { modelsActions } from 'actions/models-actions';
 import { mergeConsensusJobsAsync } from 'actions/consensus-actions';
 import { deleteTaskAsync, switchMoveTaskModalVisible, updateTaskAsync } from 'actions/tasks-actions';
 import UserSelector from 'components/task-page/user-selector';
+import { selectionActions } from 'actions/selection-actions';
 import TaskActionsItems from './actions-menu-items';
 
 interface Props {
@@ -29,6 +30,7 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
     const dispatch = useDispatch();
 
     const selectedIDs = useSelector((state: CombinedState) => state.selection.selected);
+    const allTasks = useSelector((state: CombinedState) => state.tasks.current);
 
     const pluginActions = usePlugins((state: CombinedState) => state.plugins.components.taskActions.items, props);
     const {
@@ -94,10 +96,22 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
         }
     }, [taskInstance.id]);
 
-    const onUpdateTaskAssignee = useCallback((assignee: User | null) => {
-        taskInstance.assignee = assignee;
-        dispatch(updateTaskAsync(taskInstance, { assignee })).then(stopEditField);
-    }, [taskInstance]);
+    const onUpdateTaskAssignee = useCallback(async (assignee: User | null) => {
+        const allTaskIDs = selectedIDs.includes(taskInstance.id) ? selectedIDs : [taskInstance.id, ...selectedIDs];
+        const tasksToUpdate = allTasks.filter((task) => allTaskIDs.includes(task.id));
+
+        dispatch(selectionActions.startBulkAction());
+        for (let i = 0; i < tasksToUpdate.length; i++) {
+            const task = tasksToUpdate[i];
+            dispatch(selectionActions.updateBulkActionStatus({
+                message: `Updating assignee for task ${task.id} (${i + 1}/${tasksToUpdate.length})`,
+                percent: Math.round(((i + 1) / tasksToUpdate.length) * 100),
+            }));
+            await dispatch(updateTaskAsync(task, { assignee }));
+        }
+        dispatch(selectionActions.finishBulkAction());
+        stopEditField();
+    }, [taskInstance, selectedIDs, allTasks, stopEditField]);
 
     const onDeleteTask = useCallback(() => {
         Modal.confirm({
