@@ -16,7 +16,7 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
         attrValue: 'Oak',
         nameSecond: `Case ${caseID} second`,
         labelSecond: 'Car',
-        attrNameSeconds: 'Color',
+        attrNameSecond: 'Color',
         attrValueSecond: 'Red',
         multiAttrParams: false,
         advancedConfigurationParams: false,
