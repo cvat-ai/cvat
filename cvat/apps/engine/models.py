@@ -457,7 +457,7 @@ class FileSystemRelatedModel(metaclass=ABCModelMeta):
 
 
 @transaction.atomic(savepoint=False)
-def clear_annotations_in_jobs(job_ids: Iterable[int], attrspec_ids: list[int]):
+def clear_annotations_in_jobs(job_ids: Iterable[int], attrspec_ids: models.QuerySet[list[int]]):
     # attrspec_ids helps to efficiently remove the following models:
     # LabeledImageAttributeVal, LabeledShapeAttributeVal, LabeledTrackAttributeVal, TrackedShapeAttributeVal
     # Before the database needs to join on two large tables (e.g. for LabeledShape):
