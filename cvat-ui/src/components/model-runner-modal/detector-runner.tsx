@@ -38,6 +38,7 @@ type ServerMapping = Record<string, {
 }>;
 
 export interface DetectorRequestBody {
+    type: string,
     mapping: ServerMapping;
     cleanup: boolean;
     conv_mask_to_poly: boolean;
@@ -257,6 +258,7 @@ function DetectorRunner(props: Props): JSX.Element {
                             const serverMapping = convertMappingToServer(mapping);
                             if (model.kind === ModelKind.DETECTOR) {
                                 runInference(model, {
+                                    type: 'annotate_task',
                                     mapping: serverMapping,
                                     cleanup,
                                     conv_mask_to_poly: convertMasksToPolygons,
