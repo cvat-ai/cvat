@@ -526,7 +526,7 @@ def _get_labels(resource: Project | Task, prefetch: bool, only_parent: bool) -> 
     return queryset
 
 def _get_attributes(resource: Project | Task, only_parent: bool) -> models.QuerySet[AttributeSpec]:
-    return _get_labels(resource, prefetch=False, only_parent=only_parent)
+    return AttributeSpec.objects.filter(label__in=_get_labels(resource, prefetch=False, only_parent=only_parent))
 
 class Project(TimestampedModel, FileSystemRelatedModel):
     name = SafeCharField(max_length=256)
