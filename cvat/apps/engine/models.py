@@ -654,7 +654,7 @@ class Task(TimestampedModel, FileSystemRelatedModel):
         return _get_labels(self.project or self, prefetch=prefetch, only_parent=only_parent)
 
     def get_attributes(self, only_parent=True) -> models.QuerySet[AttributeSpec]:
-        return _get_attributes(self, only_parent=only_parent)
+        return _get_attributes(self.project or self, only_parent=only_parent)
 
     def get_dirname(self) -> str:
         return os.path.join(settings.TASKS_ROOT, str(self.id))
