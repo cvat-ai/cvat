@@ -260,6 +260,8 @@ export interface CloudStoragesState {
 export interface SelectionState {
     selected: number[];
     resourceType: string;
+    fetching: boolean;
+    status: string | null;
 }
 
 export enum SupportedPlugins {

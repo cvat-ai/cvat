@@ -2,28 +2,36 @@
 //
 // SPDX-License-Identifier: MIT
 
-export const SELECT_RESOURCE = 'SELECT_RESOURCE';
-export const DESELECT_RESOURCE = 'DESELECT_RESOURCE';
-export const SELECT_ALL_RESOURCES = 'SELECT_ALL_RESOURCES';
-export const CLEAR_SELECTED_RESOURCES = 'CLEAR_SELECTED_RESOURCES';
-export const SET_SELECTION_RESOURCE_TYPE = 'SET_SELECTION_RESOURCE_TYPE';
+import { ActionUnion, createAction } from 'utils/redux';
 
-export function selectResource(resourceID: number) {
-    return { type: SELECT_RESOURCE, payload: resourceID };
+export enum SelectionActionsTypes {
+    SELECT_RESOURCE = 'SELECT_RESOURCE',
+    DESELECT_RESOURCE = 'DESELECT_RESOURCE',
+    SELECT_ALL_RESOURCES = 'SELECT_ALL_RESOURCES',
+    CLEAR_SELECTED_RESOURCES = 'CLEAR_SELECTED_RESOURCES',
+    SET_SELECTION_RESOURCE_TYPE = 'SET_SELECTION_RESOURCE_TYPE',
+    START_BULK_ACTION = 'START_BULK_ACTION',
+    UPDATE_BULK_ACTION_STATUS = 'UPDATE_BULK_ACTION_STATUS',
+    FINISH_BULK_ACTION = 'FINISH_BULK_ACTION',
 }
 
-export function deselectResource(resourceID: number) {
-    return { type: DESELECT_RESOURCE, payload: resourceID };
-}
+export const selectionActions = {
+    selectResource: (resourceID: number) => createAction(
+        SelectionActionsTypes.SELECT_RESOURCE, { resourceID }),
+    deselectResource: (resourceID: number) => createAction(
+        SelectionActionsTypes.DESELECT_RESOURCE, { resourceID }),
+    selectAllResources: (resourceIDs: number[]) => createAction(
+        SelectionActionsTypes.SELECT_ALL_RESOURCES, { resourceIDs }),
+    clearSelectedResources: () => createAction(
+        SelectionActionsTypes.CLEAR_SELECTED_RESOURCES),
+    setSelectionResourceType: (resourceType: string) => createAction(
+        SelectionActionsTypes.SET_SELECTION_RESOURCE_TYPE, { resourceType }),
+    startBulkAction: () => createAction(
+        SelectionActionsTypes.START_BULK_ACTION),
+    updateBulkActionStatus: (status: string) => createAction(
+        SelectionActionsTypes.UPDATE_BULK_ACTION_STATUS, { status }),
+    finishBulkAction: () => createAction(
+        SelectionActionsTypes.FINISH_BULK_ACTION),
+};
 
-export function selectAllResources(resourceIDs: number[]) {
-    return { type: SELECT_ALL_RESOURCES, payload: resourceIDs };
-}
-
-export function clearSelectedResources() {
-    return { type: CLEAR_SELECTED_RESOURCES };
-}
-
-export function setSelectionResourceType(resourceType: string) {
-    return { type: SET_SELECTION_RESOURCE_TYPE, payload: resourceType };
-}
+export type SelectionActions = ActionUnion<typeof selectionActions>;

@@ -4,7 +4,7 @@
 import React, { useRef, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
-    selectResource, deselectResource, selectAllResources, clearSelectedResources,
+    selectionActions,
 } from 'actions/selection-actions';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
@@ -36,7 +36,7 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
         SELECT_ALL: (event?: KeyboardEvent) => {
             event?.preventDefault();
             const { currentResourceIDs } = props;
-            dispatch(selectAllResources(currentResourceIDs));
+            dispatch(selectionActions.selectAllResources(currentResourceIDs));
         },
     };
 
@@ -47,7 +47,7 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
             if (dropdown) return;
 
             if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
-                dispatch(clearSelectedResources());
+                dispatch(selectionActions.clearSelectedResources());
             }
         }
         document.addEventListener('mousedown', handleClickOutside);
@@ -75,20 +75,20 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
                     const lastIndex = lastSelectedIndexRef.current;
                     const [start, end] = [lastIndex, clickedIndex].sort((a, b) => a - b);
                     const rangeIDs = allIDs.slice(start, end + 1);
-                    dispatch(clearSelectedResources());
-                    dispatch(selectAllResources(rangeIDs));
+                    dispatch(selectionActions.clearSelectedResources());
+                    dispatch(selectionActions.selectAllResources(rangeIDs));
                 } else if (event?.ctrlKey) {
                     // Ctrl+Click: toggle selection without clearing
                     if (isSelected) {
-                        dispatch(deselectResource(resourceID));
+                        dispatch(selectionActions.deselectResource(resourceID));
                     } else {
-                        dispatch(selectResource(resourceID));
+                        dispatch(selectionActions.selectResource(resourceID));
                     }
                     lastSelectedIndexRef.current = idx;
                 } else {
                     // Regular click: clear and select only this
-                    dispatch(clearSelectedResources());
-                    dispatch(selectResource(resourceID));
+                    dispatch(selectionActions.clearSelectedResources());
+                    dispatch(selectionActions.selectResource(resourceID));
                     lastSelectedIndexRef.current = idx;
                 }
             },
