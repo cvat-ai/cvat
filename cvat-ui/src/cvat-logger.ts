@@ -53,7 +53,7 @@ export function logError(
         const { instance: job } = state.annotation.job;
 
         const onError = (_error: unknown): void => {
-            const message = 'Error occured during another error logging';
+            const message = 'Error occurred during another error logging';
             console.error(message, _error instanceof Error ? _error.message : String(_error));
         };
 

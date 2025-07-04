@@ -32,11 +32,11 @@ context('Rotated bounding boxes.', () => {
     function testCompareRotate(shape, toFrame) {
         for (let frame = 8; frame >= toFrame; frame--) {
             cy.document().then((doc) => {
-                const shapeTranformMatrix = decomposeMatrix(doc.getElementById(shape).getCTM());
+                const shapeTransformMatrix = decomposeMatrix(doc.getElementById(shape).getCTM());
                 cy.goToPreviousFrame(frame);
                 cy.document().then((doc2) => {
-                    const shapeTranformMatrix2 = decomposeMatrix(doc2.getElementById(shape).getCTM());
-                    expect(shapeTranformMatrix).not.deep.eq(shapeTranformMatrix2);
+                    const shapeTransformMatrix2 = decomposeMatrix(doc2.getElementById(shape).getCTM());
+                    expect(shapeTransformMatrix).not.deep.eq(shapeTransformMatrix2);
                 });
             });
         }
@@ -72,16 +72,16 @@ context('Rotated bounding boxes.', () => {
         });
 
         it('Check interpolation, merging/splitting rotated shapes.', () => {
-            // Check track roration on all frames
+            // Check track rotation on all frames
             cy.document().then((doc) => {
-                const shapeTranformMatrix = decomposeMatrix(doc.getElementById('cvat_canvas_shape_2').getCTM());
+                const shapeTransformMatrix = decomposeMatrix(doc.getElementById('cvat_canvas_shape_2').getCTM());
                 for (let frame = 1; frame < 10; frame++) {
                     cy.goToNextFrame(frame);
                     cy.document().then((docNext) => {
-                        const nextShapeTranformMatrix = (
+                        const nextShapeTransformMatrix = (
                             decomposeMatrix(docNext.getElementById('cvat_canvas_shape_2').getCTM())
                         );
-                        expect(nextShapeTranformMatrix).to.deep.eq(shapeTranformMatrix);
+                        expect(nextShapeTransformMatrix).to.deep.eq(shapeTransformMatrix);
                     });
                 }
             });

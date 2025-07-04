@@ -47,11 +47,11 @@ context('Actions on ellipse.', () => {
     function testCompareRotate(shape, toFrame) {
         for (let frame = 8; frame >= toFrame; frame--) {
             cy.document().then((doc) => {
-                const shapeTranformMatrix = decomposeMatrix(doc.getElementById(shape).getCTM());
+                const shapeTransformMatrix = decomposeMatrix(doc.getElementById(shape).getCTM());
                 cy.goToPreviousFrame(frame);
                 cy.document().then((doc2) => {
-                    const shapeTranformMatrix2 = decomposeMatrix(doc2.getElementById(shape).getCTM());
-                    expect(shapeTranformMatrix).not.deep.eq(shapeTranformMatrix2);
+                    const shapeTransformMatrix2 = decomposeMatrix(doc2.getElementById(shape).getCTM());
+                    expect(shapeTransformMatrix).not.deep.eq(shapeTransformMatrix2);
                 });
             });
         }

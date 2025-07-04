@@ -123,12 +123,12 @@ Assets directory has two parts:
 
 - `cvat_db` directory --- this directory contains all necessary files for
   successful restoring of test db
-  - `cvat_data.tar.bz2` --- archieve with data volumes;
+  - `cvat_data.tar.bz2` --- archive with data volumes;
   - `data.json` --- file required for DB restoring.
     Contains all information about test db;
   - `restore.sql` --- SQL script for creating copy of database and
   killing connection for `cvat` database.
-  Script should be run with varialbe declaration:
+  Script should be run with variable declaration:
   ```
   # create database <new> with template <existing>
   psql -U root -d postgres -v from=<existing> -v to=<new> restore.sql

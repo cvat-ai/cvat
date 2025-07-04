@@ -36,7 +36,7 @@ context('Canvas 3D functionality. Interaction with cuboid via sidebar.', () => {
         it('Activate a cuboid on sidear.', () => {
             cy.get('#cvat-objects-sidebar-state-item-1').trigger('mouseover');
             cy.get('#cvat-objects-sidebar-state-item-1').should('have.class', 'cvat-objects-sidebar-state-active-item');
-            cy.wait(1000); // Wating for cuboid activation
+            cy.wait(1000); // Waiting for cuboid activation
             cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_after_activating_cuboid');
             cy.compareImagesAndCheckResult(
                 `${screenshotsPath}/canvas3d_perspective_before_all.png`,
@@ -49,10 +49,10 @@ context('Canvas 3D functionality. Interaction with cuboid via sidebar.', () => {
                 ['canvas3d_topview_before_all.png', 'canvas3d_topview_activating_cuboid.png'],
                 ['canvas3d_sideview_before_all.png', 'canvas3d_sideview_activating_cuboid.png'],
                 ['canvas3d_frontview_before_all.png', 'canvas3d_frontview_activating_cuboid.png'],
-            ].forEach(([viewBefore, viewAfterCubiodActivation]) => {
+            ].forEach(([viewBefore, viewAfterCuboidActivation]) => {
                 cy.compareImagesAndCheckResult(
                     `${screenshotsPath}/${viewBefore}`,
-                    `${screenshotsPath}/${viewAfterCubiodActivation}`,
+                    `${screenshotsPath}/${viewAfterCuboidActivation}`,
                 );
             });
         });
@@ -73,10 +73,10 @@ context('Canvas 3D functionality. Interaction with cuboid via sidebar.', () => {
                 ['canvas3d_topview_activating_cuboid.png', 'canvas3d_topview_change_label_cuboid.png'],
                 ['canvas3d_sideview_activating_cuboid.png', 'canvas3d_sideview_change_label_cuboid.png'],
                 ['canvas3d_frontview_activating_cuboid.png', 'canvas3d_frontview_change_label_cuboid.png'],
-            ].forEach(([viewAfterCubiodActivation, viewAfterCubiodChangeLabel]) => {
+            ].forEach(([viewAfterCuboidActivation, viewAfterCuboidChangeLabel]) => {
                 cy.compareImagesAndCheckResult(
-                    `${screenshotsPath}/${viewAfterCubiodActivation}`,
-                    `${screenshotsPath}/${viewAfterCubiodChangeLabel}`,
+                    `${screenshotsPath}/${viewAfterCuboidActivation}`,
+                    `${screenshotsPath}/${viewAfterCuboidChangeLabel}`,
                 );
             });
         });
@@ -84,7 +84,7 @@ context('Canvas 3D functionality. Interaction with cuboid via sidebar.', () => {
         it('Lock/unlock a cuboid via sidear. The control points of the cuboid on the top/side/front view are locked/unlocked.', () => {
             cy.get('#cvat-objects-sidebar-state-item-1')
                 .find('.cvat-object-item-button-lock')
-                .click({ force: true }); // Lock the cubiod
+                .click({ force: true }); // Lock the cuboid
             cy.get('.cvat-object-item-button-lock-enabled').should('exist');
             ['topview', 'sideview', 'frontview'].forEach((view) => {
                 cy.customScreenshot(`.cvat-canvas3d-${view}`, `canvas3d_${view}_lock_cuboid`);
@@ -93,13 +93,13 @@ context('Canvas 3D functionality. Interaction with cuboid via sidebar.', () => {
                 ['canvas3d_topview_change_label_cuboid.png', 'canvas3d_topview_lock_cuboid.png'],
                 ['canvas3d_sideview_change_label_cuboid.png', 'canvas3d_sideview_lock_cuboid.png'],
                 ['canvas3d_frontview_change_label_cuboid.png', 'canvas3d_frontview_lock_cuboid.png'],
-            ].forEach(([viewAfterCubiodChangeLabel, viewAfterCubiodLock]) => {
+            ].forEach(([viewAfterCuboidChangeLabel, viewAfterCuboidLock]) => {
                 cy.compareImagesAndCheckResult(
-                    `${screenshotsPath}/${viewAfterCubiodChangeLabel}`,
-                    `${screenshotsPath}/${viewAfterCubiodLock}`,
+                    `${screenshotsPath}/${viewAfterCuboidChangeLabel}`,
+                    `${screenshotsPath}/${viewAfterCuboidLock}`,
                 );
             });
-            cy.get('.cvat-object-item-button-lock-enabled').click({ force: true }); // Unlock the cubiod
+            cy.get('.cvat-object-item-button-lock-enabled').click({ force: true }); // Unlock the cuboid
             cy.get('.cvat-object-item-button-lock').should('exist').trigger('mouseout');
             ['topview', 'sideview', 'frontview'].forEach((view) => {
                 cy.customScreenshot(`.cvat-canvas3d-${view}`, `canvas3d_${view}_unlock_cuboid`);
@@ -108,28 +108,28 @@ context('Canvas 3D functionality. Interaction with cuboid via sidebar.', () => {
                 ['canvas3d_topview_lock_cuboid.png', 'canvas3d_topview_unlock_cuboid.png'],
                 ['canvas3d_sideview_lock_cuboid.png', 'canvas3d_sideview_unlock_cuboid.png'],
                 ['canvas3d_frontview_lock_cuboid.png', 'canvas3d_frontview_unlock_cuboid.png'],
-            ].forEach(([viewAfterCubiodLock, viewAfterCubiodUnlock]) => {
+            ].forEach(([viewAfterCuboidLock, viewAfterCuboidUnlock]) => {
                 cy.compareImagesAndCheckResult(
-                    `${screenshotsPath}/${viewAfterCubiodLock}`,
-                    `${screenshotsPath}/${viewAfterCubiodUnlock}`,
+                    `${screenshotsPath}/${viewAfterCuboidLock}`,
+                    `${screenshotsPath}/${viewAfterCuboidUnlock}`,
                 );
             });
         });
 
-        it('Switch occluded property for a cuboid via sidear. The cuboid on the perpective view are occluded.', () => {
+        it('Switch occluded property for a cuboid via sidear. The cuboid on the perspective view are occluded.', () => {
             cy.get('#cvat-objects-sidebar-state-item-1')
                 .find('.cvat-object-item-button-occluded')
                 .click({ force: true }); // Switch occluded property
-            cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_enable_occlud_cuboid');
+            cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_enable_occluded_cuboid');
             cy.compareImagesAndCheckResult(
                 `${screenshotsPath}/canvas3d_perspective_after_activating_cuboid.png`,
-                `${screenshotsPath}/canvas3d_perspective_enable_occlud_cuboid.png`,
+                `${screenshotsPath}/canvas3d_perspective_enable_occluded_cuboid.png`,
             );
             cy.get('.cvat-object-item-button-occluded-enabled').click({ force: true }); // Switch occluded property again
-            cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_disable_occlud_cuboid');
+            cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_disable_occluded_cuboid');
             cy.compareImagesAndCheckResult(
-                `${screenshotsPath}/canvas3d_perspective_enable_occlud_cuboid.png`,
-                `${screenshotsPath}/canvas3d_perspective_disable_occlud_cuboid.png`,
+                `${screenshotsPath}/canvas3d_perspective_enable_occluded_cuboid.png`,
+                `${screenshotsPath}/canvas3d_perspective_disable_occluded_cuboid.png`,
             );
         });
 
@@ -139,7 +139,7 @@ context('Canvas 3D functionality. Interaction with cuboid via sidebar.', () => {
                 .click({ force: true }); // Hide the cuboid
             cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_hide_cuboid');
             cy.compareImagesAndCheckResult(
-                `${screenshotsPath}/canvas3d_perspective_disable_occlud_cuboid.png`,
+                `${screenshotsPath}/canvas3d_perspective_disable_occluded_cuboid.png`,
                 `${screenshotsPath}/canvas3d_perspective_hide_cuboid.png`,
             );
             ['topview', 'sideview', 'frontview'].forEach((view) => {
@@ -149,10 +149,10 @@ context('Canvas 3D functionality. Interaction with cuboid via sidebar.', () => {
                 ['canvas3d_topview_unlock_cuboid.png', 'canvas3d_topview_hide_cuboid.png'],
                 ['canvas3d_sideview_unlock_cuboid.png', 'canvas3d_sideview_hide_cuboid.png'],
                 ['canvas3d_frontview_unlock_cuboid.png', 'canvas3d_frontview_hide_cuboid.png'],
-            ].forEach(([viewAfterCubiodUnlock, viewAfterCubiodHide]) => {
+            ].forEach(([viewAfterCuboidUnlock, viewAfterCuboidHide]) => {
                 cy.compareImagesAndCheckResult(
-                    `${screenshotsPath}/${viewAfterCubiodUnlock}`,
-                    `${screenshotsPath}/${viewAfterCubiodHide}`,
+                    `${screenshotsPath}/${viewAfterCuboidUnlock}`,
+                    `${screenshotsPath}/${viewAfterCuboidHide}`,
                 );
             });
             cy.get('.cvat-object-item-button-hidden-enabled').click({ force: true }); // Unhide the cuboid
@@ -168,10 +168,10 @@ context('Canvas 3D functionality. Interaction with cuboid via sidebar.', () => {
                 ['canvas3d_topview_hide_cuboid.png', 'canvas3d_topview_unhide_cuboid.png'],
                 ['canvas3d_sideview_hide_cuboid.png', 'canvas3d_sideview_unhide_cuboid.png'],
                 ['canvas3d_frontview_hide_cuboid.png', 'canvas3d_frontview_unhide_cuboid.png'],
-            ].forEach(([viewAfterCubiodHide, viewAfterCubiodUnhide]) => {
+            ].forEach(([viewAfterCuboidHide, viewAfterCuboidUnhide]) => {
                 cy.compareImagesAndCheckResult(
-                    `${screenshotsPath}/${viewAfterCubiodHide}`,
-                    `${screenshotsPath}/${viewAfterCubiodUnhide}`,
+                    `${screenshotsPath}/${viewAfterCuboidHide}`,
+                    `${screenshotsPath}/${viewAfterCuboidUnhide}`,
                 );
             });
         });

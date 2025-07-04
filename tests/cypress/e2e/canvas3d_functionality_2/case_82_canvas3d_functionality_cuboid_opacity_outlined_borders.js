@@ -24,7 +24,7 @@ context('Canvas 3D functionality. Opacity. Outlined borders.', () => {
         cy.wait(2000); // Waiting for the point cloud to display
         cy.create3DCuboid(cuboidCreationParams);
         cy.get('.cvat-canvas3d-perspective').trigger('mousemove');
-        cy.get('.cvat-canvas3d-perspective').click(); // Deactivate the cuboiud
+        cy.get('.cvat-canvas3d-perspective').click(); // Deactivate the cuboid
     });
 
     const getScene = (el) => el.scene.children[0];

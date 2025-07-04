@@ -519,7 +519,7 @@ def annotate_task(
 
     pbar, if supplied, is used to report progress information.
 
-    If clear_existing is true, any annotations already existing in the tesk are removed.
+    If clear_existing is true, any annotations already existing in the task are removed.
     Otherwise, they are kept, and the new annotations are added to them.
 
     The allow_unmatched_labels parameter controls the behavior in the case when a detection

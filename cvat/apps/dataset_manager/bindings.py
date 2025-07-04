@@ -78,7 +78,7 @@ class InstanceLabelData:
 
         db_labels = self.add_prefetch_info(instance.label_set.all())
 
-        # If this flag is set to true, create attribute within anntations import
+        # If this flag is set to true, create attribute within annotations import
         self._soft_attribute_import = False
         self._label_mapping = OrderedDict[int, Label](
             (db_label.id, db_label)

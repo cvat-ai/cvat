@@ -631,7 +631,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                     if (exception instanceof Error) {
                         this.data.exception = exception;
                     } else {
-                        this.data.exception = new Error('Unknown error occured when fetching image data');
+                        this.data.exception = new Error('Unknown error occurred when fetching image data');
                     }
                     this.notify(UpdateReasons.DATA_FAILED);
                 }

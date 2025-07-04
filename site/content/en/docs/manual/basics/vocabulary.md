@@ -48,7 +48,7 @@ Annotation is a set of shapes and tracks. There are several types of annotations
 Approximation allows you to reduce the number of points in the polygon.
 Can be used to reduce the annotation file and to facilitate editing polygons.
 
-![Exampel of an applied approximation](/images/approximation_accuracy.gif)
+![Example of an applied approximation](/images/approximation_accuracy.gif)
 
 ---
 

@@ -35,7 +35,7 @@ for (const key of Object.keys(originalDraw)) {
     SVG.Element.prototype.draw[key] = originalDraw[key];
 }
 
-// Create undo for polygones and polylines
+// Create undo for polygons and polylines
 function undo(): void {
     if (this.set && this.set.length()) {
         this.set.members.splice(-1, 1)[0].remove();

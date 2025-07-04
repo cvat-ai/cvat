@@ -272,7 +272,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
         null;
 
     for (const conflict of conflictMapping) {
-        const isConflictHighligted = highlightedObjectsIDs?.includes(conflict.serverID) || false;
+        const isConflictHighlighted = highlightedObjectsIDs?.includes(conflict.serverID) || false;
         conflictLabels.push(
             <ConflictLabel
                 key={(Math.random() + 1).toString(36).substring(7)}
@@ -282,11 +282,11 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
                 angle={-geometry.angle}
                 scale={1 / geometry.scale}
                 severity={conflict.severity}
-                darken={!isConflictHighligted}
+                darken={!isConflictHighlighted}
                 conflict={conflict.conflict}
                 onEnter={onEnter}
                 onLeave={onLeave}
-                tooltipVisible={isConflictHighligted}
+                tooltipVisible={isConflictHighlighted}
             />,
         );
     }

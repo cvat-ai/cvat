@@ -102,26 +102,26 @@ context('Actions on polygon.', () => {
         });
 
         it('Set start point.', () => {
-            const notFirtsPointCoords = {
+            const notFirstPointCoords = {
                 x: 0,
                 y: 0,
             };
-            const firtsPointCoords = {
+            const firstPointCoords = {
                 x: 0,
                 y: 0,
             };
             cy.get('#cvat_canvas_shape_4').trigger('mousemove', { scrollBehavior: false });
             cy.get('#cvat_canvas_shape_4').trigger('mouseover', { scrollBehavior: false });
             cy.get('#cvat_canvas_shape_4').should('have.class', 'cvat_canvas_shape_activated');
-            cy.get('.svg_select_points').not('.cvat_canvas_first_poly_point').first().then((notFirtsPoint) => {
-                notFirtsPointCoords.x = notFirtsPoint.attr('cx');
-                notFirtsPointCoords.y = notFirtsPoint.attr('cy');
+            cy.get('.svg_select_points').not('.cvat_canvas_first_poly_point').first().then((notFirstPoint) => {
+                notFirstPointCoords.x = notFirstPoint.attr('cx');
+                notFirstPointCoords.y = notFirstPoint.attr('cy');
             }).rightclick({ scrollBehavior: false });
             cy.get('.cvat-canvas-point-context-menu').contains('span', 'Set start point').click({ scrollBehavior: false });
-            cy.get('.cvat_canvas_first_poly_point').then((firtsPoint) => {
-                firtsPointCoords.x = firtsPoint.attr('cx');
-                firtsPointCoords.y = firtsPoint.attr('cy');
-                expect(notFirtsPointCoords).to.deep.equal(firtsPointCoords);
+            cy.get('.cvat_canvas_first_poly_point').then((firstPoint) => {
+                firstPointCoords.x = firstPoint.attr('cx');
+                firstPointCoords.y = firstPoint.attr('cy');
+                expect(notFirstPointCoords).to.deep.equal(firstPointCoords);
             });
         });
 

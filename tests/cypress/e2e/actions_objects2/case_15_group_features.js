@@ -241,7 +241,7 @@ context('Group features', () => {
             }
         });
 
-        it('Try to change color group for third onject. Color not changed.', () => {
+        it('Try to change color group for third object. Color not changed.', () => {
             changeGroupColor('#cvat-objects-sidebar-state-item-3', yellowHex);
             cy.get('#cvat_canvas_shape_3').should('have.attr', 'stroke', defaultGroupColorHex);
             cy.get('#cvat-objects-sidebar-state-item-3')

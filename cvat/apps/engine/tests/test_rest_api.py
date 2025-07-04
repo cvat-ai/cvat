@@ -5677,7 +5677,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
 
         response = self._get_api_v2_jobs_id_data(job["id"], annotator)
         self.assertEqual(response.status_code, HTTP_200_OK)
-        # server should add default attribute values if puted data doesn't contain it
+        # server should add default attribute values if input data doesn't contain it
         data["tags"][0]["attributes"] = default_attr_values[data["tags"][0]["label_id"]]["all"]
         data["tracks"][0]["shapes"][1]["attributes"] = default_attr_values[
             data["tracks"][0]["label_id"]
@@ -5797,7 +5797,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
 
         response = self._get_api_v2_jobs_id_data(job["id"], annotator)
         self.assertEqual(response.status_code, HTTP_200_OK)
-        # server should add default attribute values if puted data doesn't contain it
+        # server should add default attribute values if input data doesn't contain it
         data["tags"][0]["attributes"] = default_attr_values[data["tags"][0]["label_id"]]["all"]
         data["tracks"][0]["shapes"][1]["attributes"] = default_attr_values[
             data["tracks"][0]["label_id"]
@@ -6108,7 +6108,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
 
         default_attr_values = self._get_default_attr_values(task)
         response = self._get_api_v2_tasks_id_annotations(task["id"], owner)
-        # server should add default attribute values if puted data doesn't contain it
+        # server should add default attribute values if input data doesn't contain it
         data["tags"][0]["attributes"] = default_attr_values[data["tags"][0]["label_id"]]["all"]
         data["tracks"][0]["shapes"][1]["attributes"] = default_attr_values[
             data["tracks"][0]["label_id"]
@@ -6228,7 +6228,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
         self._check_response(response, data)
 
         response = self._get_api_v2_tasks_id_annotations(task["id"], owner)
-        # server should add default attribute values if puted data doesn't contain it
+        # server should add default attribute values if input data doesn't contain it
         data["tags"][0]["attributes"] = default_attr_values[data["tags"][0]["label_id"]]["all"]
         data["tracks"][0]["shapes"][1]["attributes"] = default_attr_values[
             data["tracks"][0]["label_id"]

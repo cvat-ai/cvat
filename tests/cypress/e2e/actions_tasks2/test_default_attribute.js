@@ -68,7 +68,7 @@ context('Test default value for an attribute', () => {
         });
     });
 
-    describe('Annotation view has correct default attribute after task creationg', () => {
+    describe('Annotation view has correct default attribute after task creation', () => {
         it('Rectangle has correct default attributes', () => {
             cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
             cy.get('.cvat-canvas-container').should('exist').and('be.visible');

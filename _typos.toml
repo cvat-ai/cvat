@@ -1,0 +1,68 @@
+files.extend-exclude = [
+	"cvat-ui/src/assets/opencv_4.8.0.js",
+	"cvat/apps/engine/migrations/0033_projects_adjastment.py", # legacy migration name, set for life
+	"cvat-data/src/ts/3rdparty/*.js",
+	"**/*.zip",
+	"*.log",
+	"*.min.js",
+	"**/node_modules",
+    "*.patch",
+]
+default.extend-ignore-re = [
+	# test passwords
+    "\"md5.*?\"",
+
+	# Line ignore with trailing "# spellchecker: disable-line":
+	"(?Rm)^.*(#|//)\\s*spellchecker: disable-line$",
+
+	# Line block with # spellchecker:<on|off>:
+	"(?s)(#|//)\\s*spellchecker:off.*?\\n\\s*(#|//)\\s*spellchecker:on"
+	# Taken from https://github.com/crate-ci/typos/blob/master/docs/reference.md#example-configurations
+
+]
+
+[default.extend-words]
+AVOD = "AVOD"
+NAM = "NAM"
+adjastment = "adjustment"
+analitics = "analytics"
+archieve = "archive"
+blok = "block"
+cheeck = "check"
+clicable = "clickable"
+concatening = "concatenating"
+configurate = "configure"
+convertation = "conversion"
+convertor = "converter"
+correciton = "correction"
+corrent = "correct"
+creationg = "creation"
+cubiod = "cuboid"
+cuboiud = "cuboid"
+cuccessfully = "successfully"
+custome = "custom"
+cuttent = "current"
+debounding = "debouncing"
+firts = "first"
+inconvinient = "inconvenient"
+keupoints = "keypoints"
+lastest = "lastest"
+lavel = "label"
+leafs = "leafs"
+nd = "nd"
+occlud = "occluded"
+occurreed = "occurred"
+onject = "object"
+perameters = "parameters"
+performe = "perform"
+perpective = "perspective"
+puted = "input"
+roration = "rotation"
+segway = "segway"
+splitted = "splitted"
+succefull = "successful"
+tesk = "task"
+tpic = "tpic"
+trak = "trak"
+tupe = "type"
+typ = "type"

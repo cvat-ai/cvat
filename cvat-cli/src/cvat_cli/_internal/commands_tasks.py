@@ -143,7 +143,7 @@ class TaskCreate:
             "--sorting-method",
             default="lexicographical",
             choices=["lexicographical", "natural", "predefined", "random"],
-            help="""data soring method (default: %(default)s)""",
+            help="""data sorting method (default: %(default)s)""",
         )
         parser.add_argument(
             "--start_frame",
