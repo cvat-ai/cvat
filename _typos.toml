@@ -1,5 +1,6 @@
 files.extend-exclude = [
 	"cvat-ui/src/assets/opencv_4.8.0.js",
+	"cvat-data/src/ts/3rdparty/*.js",
 	"**/*.zip",
 	"*.log",
 	"*.min.js",
@@ -55,3 +56,4 @@ tupe = "type"
 onject = "object"
 concatening = "concatenating"
 perpective = "perspective"
+leafs = "leafs"
