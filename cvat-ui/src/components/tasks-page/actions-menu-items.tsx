@@ -7,6 +7,7 @@ import { LoadingOutlined } from '@ant-design/icons';
 import { MenuProps } from 'antd/lib/menu';
 import { usePlugins } from 'utils/hooks';
 import { Link } from 'react-router-dom';
+import { CVATMenuEditLabel } from '../common/cvat-menu-edit-label';
 
 interface MenuItemsData {
     taskId: number;
@@ -24,20 +25,6 @@ interface MenuItemsData {
     onDeleteTask: () => void;
     startEditField: (key: string) => void;
     selectedIds: number[];
-}
-
-function labelWithCount(
-    label: string,
-    key: string,
-    url: string,
-    isBulkMode: boolean,
-    bulkAllowedKeys: string[],
-    selectedIds: number[],
-): React.ReactNode {
-    if (isBulkMode && bulkAllowedKeys.includes(key)) {
-        return `${label} (${selectedIds.length})`;
-    }
-    return <Link to={url}>{label}</Link>;
 }
 
 export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuProps: unknown): MenuProps['items'] {
@@ -63,11 +50,22 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
     const bulkAllowedKeys = ['edit_assignee', 'backup_task', 'export_task_dataset', 'delete_task'];
     const isDisabled = (key: string): boolean => isBulkMode && !bulkAllowedKeys.includes(key);
 
-    const withCount = (label: string, key: string): string => {
-        if (isBulkMode && bulkAllowedKeys.includes(key)) {
-            return `${label} (${selectedIds.length})`;
+    const withCount = (
+        label: string,
+        key: string,
+        url?: string,
+    ): React.ReactNode => {
+        let result: React.ReactNode = label;
+        if (isBulkMode && bulkAllowedKeys && selectedIds && bulkAllowedKeys.includes(key)) {
+            result = `${label} (${selectedIds.length})`;
         }
-        return label;
+        if (url) {
+            result = <Link to={url}>{result}</Link>;
+        }
+        if (key.includes('edit')) {
+            result = <CVATMenuEditLabel>{result}</CVATMenuEditLabel>;
+        }
+        return result;
     };
 
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
@@ -118,20 +116,20 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
 
     menuItems.push([{
         key: 'view-analytics',
-        label: labelWithCount('View analytics', 'view-analytics', `/tasks/${taskId}/analytics`, isBulkMode, bulkAllowedKeys, selectedIds),
+        label: withCount('View analytics', 'view-analytics', `/tasks/${taskId}/analytics`),
         disabled: isDisabled('view-analytics'),
     }, 60]);
 
     menuItems.push([{
         key: 'quality_control',
-        label: labelWithCount('Quality control', 'quality_control', `/tasks/${taskId}/quality-control`, isBulkMode, bulkAllowedKeys, selectedIds),
+        label: withCount('Quality control', 'quality_control', `/tasks/${taskId}/quality-control`),
         disabled: isDisabled('quality_control'),
     }, 70]);
 
     if (isConsensusEnabled) {
         menuItems.push([{
             key: 'consensus_management',
-            label: labelWithCount('Consensus management', 'consensus_management', `/tasks/${taskId}/consensus`, isBulkMode, bulkAllowedKeys, selectedIds),
+            label: withCount('Consensus management', 'consensus_management', `/tasks/${taskId}/consensus`),
             disabled: isDisabled('consensus_management'),
         }, 75]);
     }
