@@ -23,7 +23,7 @@ jobs:
       - uses: actions/checkout@4
 
       - name: Run spell check
-        uses: crate-ci/typos@v1.34.0
+        uses: crate-ci/typos@v1.33.1
         with:
           config: ./_typos.toml
 
