@@ -782,6 +782,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         });
 
                         const response = await core.lambda.call(jobInstance.taskId, tracker, {
+                            type: 'init_tracking',
                             frame: frame - 1,
                             shapes: trackableObjects.shapes,
                             job: jobInstance.id,
@@ -829,6 +830,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         });
                         // eslint-disable-next-line no-await-in-loop
                         const response = await core.lambda.call(jobInstance.taskId, tracker, {
+                            type: 'track',
                             frame,
                             states: trackableObjects.states,
                             job: jobInstance.id,
@@ -1213,7 +1215,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         const { cleanup, ...restOfBody } = body;
 
                         const result = await core.lambda.call(jobInstance.taskId, model, {
-                            ...restOfBody, frame, job: jobInstance.id,
+                            ...restOfBody, type: 'annotate_frame', frame, job: jobInstance.id,
                         }) as DetectorResults;
 
                         const tagStates = result.tags.map((tag) => {
