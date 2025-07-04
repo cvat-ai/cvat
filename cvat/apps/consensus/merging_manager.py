@@ -125,7 +125,11 @@ class _TaskMerger:
         # will be appended to the existing annotations, and thus updated annotation
         # would have both existing + imported annotations, but we only want the
         # imported annotations
-        clear_annotations_in_jobs([parent_job_id])
+        clear_annotations_in_jobs(
+            [parent_job_id],
+            (self._task.project or self._task)
+                .get_attributes(only_parent=False).values_list("id", flat=True),
+        )
 
         parent_job_data_provider = JobDataProvider(parent_job_id)
 

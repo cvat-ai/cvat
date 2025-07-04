@@ -457,15 +457,37 @@ class FileSystemRelatedModel(metaclass=ABCModelMeta):
 
 
 @transaction.atomic(savepoint=False)
-def clear_annotations_in_jobs(job_ids: Iterable[int]):
+def clear_annotations_in_jobs(job_ids: Iterable[int], attrspec_ids: list[int]):
+    # attrspec_ids helps to efficiently remove the following models:
+    # LabeledImageAttributeVal, LabeledShapeAttributeVal, LabeledTrackAttributeVal, TrackedShapeAttributeVal
+    # Before the database needs to join on two large tables (e.g. for LabeledShape):
+    # - engine_labeledshapeattributeval
+    # - engine_labeledshape
+    # it does not work efficiently, leading to seq scan of the first table
+    # Extra filter on another index (spec_id) allows to significantly reduce working set
+
     for job_ids_chunk in take_by(job_ids, chunk_size=1000):
-        TrackedShapeAttributeVal.objects.filter(shape__track__job_id__in=job_ids_chunk).delete()
+        TrackedShapeAttributeVal.objects.filter(
+            spec_id__in=attrspec_ids,
+            shape__track__job_id__in=job_ids_chunk,
+        ).delete()
         TrackedShape.objects.filter(track__job_id__in=job_ids_chunk).delete()
-        LabeledTrackAttributeVal.objects.filter(track__job_id__in=job_ids_chunk).delete()
+        LabeledTrackAttributeVal.objects.filter(
+            spec_id__in=attrspec_ids,
+            track__job_id__in=job_ids_chunk,
+        ).delete()
         LabeledTrack.objects.filter(job_id__in=job_ids_chunk).delete()
-        LabeledShapeAttributeVal.objects.filter(shape__job_id__in=job_ids_chunk).delete()
+
+        LabeledShapeAttributeVal.objects.filter(
+            spec_id__in=attrspec_ids,
+            shape__job_id__in=job_ids_chunk,
+        ).delete()
         LabeledShape.objects.filter(job_id__in=job_ids_chunk).delete()
-        LabeledImageAttributeVal.objects.filter(image__job_id__in=job_ids_chunk).delete()
+
+        LabeledImageAttributeVal.objects.filter(
+            spec_id__in=attrspec_ids,
+            image__job_id__in=job_ids_chunk,
+        ).delete()
         LabeledImage.objects.filter(job_id__in=job_ids_chunk).delete()
 
 
@@ -493,6 +515,19 @@ def clear_annotations_on_frames_in_honeypot_task(db_task: Task, frames: Sequence
             frame__in=frames_batch,
         ).delete()
 
+def _get_labels(resource: Project | Task, prefetch=False, only_parent=True) -> models.QuerySet[Label]:
+    queryset = resource.label_set.select_related('skeleton')
+    if only_parent:
+        queryset = queryset.filter(parent__isnull=True)
+    if prefetch:
+        queryset = queryset.prefetch_related(
+            'attributespec_set', 'sublabels__attributespec_set',
+        )
+    return queryset
+
+def _get_attributes(labels: models.QuerySet[Label]) -> list[AttributeSpec]:
+    return AttributeSpec.objects.filter(label__in=labels)
+
 class Project(TimestampedModel, FileSystemRelatedModel):
     name = SafeCharField(max_length=256)
     owner = models.ForeignKey(User, null=True, blank=True,
@@ -513,11 +548,11 @@ class Project(TimestampedModel, FileSystemRelatedModel):
 
     tasks: models.manager.RelatedManager[Task]
 
-    def get_labels(self, prefetch=False):
-        queryset = self.label_set.filter(parent__isnull=True).select_related('skeleton')
-        return queryset.prefetch_related(
-            'attributespec_set', 'sublabels__attributespec_set',
-        ) if prefetch else queryset
+    def get_labels(self, prefetch=False, only_parent=True) -> models.QuerySet[Label]:
+        return _get_labels(self, prefetch=prefetch, only_parent=only_parent)
+
+    def get_attributes(self, only_parent=True) -> models.QuerySet[AttributeSpec]:
+        return _get_attributes(self.get_labels(prefetch=False, only_parent=only_parent))
 
     def get_dirname(self) -> str:
         return os.path.join(settings.PROJECTS_ROOT, str(self.id))
@@ -615,15 +650,11 @@ class Task(TimestampedModel, FileSystemRelatedModel):
     class Meta:
         default_permissions = ()
 
-    def get_labels(self, prefetch=False):
-        project = self.project
-        if project:
-            return project.get_labels(prefetch)
+    def get_labels(self, prefetch=False, only_parent=True) -> models.QuerySet[Label]:
+        return _get_labels(self.project or self, prefetch=prefetch, only_parent=only_parent)
 
-        queryset = self.label_set.filter(parent__isnull=True).select_related('skeleton')
-        return queryset.prefetch_related(
-            'attributespec_set', 'sublabels__attributespec_set',
-        ) if prefetch else queryset
+    def get_attributes(self, only_parent=True) -> models.QuerySet[AttributeSpec]:
+        return _get_attributes(self.get_labels(prefetch=False, only_parent=only_parent))
 
     def get_dirname(self) -> str:
         return os.path.join(settings.TASKS_ROOT, str(self.id))
@@ -671,8 +702,9 @@ class Task(TimestampedModel, FileSystemRelatedModel):
                 self.label_set.exclude(parent=None).delete()
             self.label_set.filter(parent=None).delete()
         else:
-            job_ids = list(self.segment_set.values_list('job__id', flat=True))
-            clear_annotations_in_jobs(job_ids)
+            job_ids = list(self.segment_set.values_list("job__id", flat=True))
+            attr_ids = self.get_attributes(only_parent=False).values_list("id", flat=True)
+            clear_annotations_in_jobs(job_ids, attr_ids)
         super().delete(using, keep_parents)
 
     def get_chunks_updated_date(self) -> datetime.datetime:
@@ -946,10 +978,13 @@ class Job(TimestampedModel, FileSystemRelatedModel):
         project = task.project
         return task.bug_tracker or getattr(project, 'bug_tracker', None)
 
-    def get_labels(self, prefetch=False):
+    def get_labels(self, prefetch=False, only_parent=True) -> models.QuerySet[Label]:
         task = self.segment.task
         project = task.project
-        return project.get_labels(prefetch) if project else task.get_labels(prefetch)
+        return _get_labels(project or task, prefetch=prefetch, only_parent=only_parent)
+
+    def get_attributes(self, only_parent=True) -> models.QuerySet[AttributeSpec]:
+        return _get_attributes(self.get_labels(prefetch=False, only_parent=only_parent))
 
     class Meta:
         default_permissions = ()
@@ -957,7 +992,8 @@ class Job(TimestampedModel, FileSystemRelatedModel):
     @cache_deleted
     @transaction.atomic(savepoint=False)
     def delete(self, using=None, keep_parents=False):
-        clear_annotations_in_jobs([self.id])
+        attr_ids = self.get_attributes(only_parent=False).values_list("id", flat=True)
+        clear_annotations_in_jobs([self.id], attr_ids)
         segment = self.segment
         super().delete(using, keep_parents)
         if segment:
