@@ -515,7 +515,7 @@ def clear_annotations_on_frames_in_honeypot_task(db_task: Task, frames: Sequence
             frame__in=frames_batch,
         ).delete()
 
-def _get_labels(resource: Project | Task, prefetch=False, only_parent=True) -> models.QuerySet[Label]:
+def _get_labels(resource: Project | Task, prefetch: bool, only_parent: bool) -> models.QuerySet[Label]:
     queryset = resource.label_set.select_related('skeleton')
     if only_parent:
         queryset = queryset.filter(parent__isnull=True)
@@ -525,8 +525,8 @@ def _get_labels(resource: Project | Task, prefetch=False, only_parent=True) -> m
         )
     return queryset
 
-def _get_attributes(labels: models.QuerySet[Label]) -> list[AttributeSpec]:
-    return AttributeSpec.objects.filter(label__in=labels)
+def _get_attributes(resource: Project | Task, only_parent: bool) -> models.QuerySet[AttributeSpec]:
+    return _get_labels(resource, prefetch=False, only_parent=only_parent)
 
 class Project(TimestampedModel, FileSystemRelatedModel):
     name = SafeCharField(max_length=256)
@@ -552,7 +552,7 @@ class Project(TimestampedModel, FileSystemRelatedModel):
         return _get_labels(self, prefetch=prefetch, only_parent=only_parent)
 
     def get_attributes(self, only_parent=True) -> models.QuerySet[AttributeSpec]:
-        return _get_attributes(self.get_labels(prefetch=False, only_parent=only_parent))
+        return _get_attributes(self, only_parent=only_parent)
 
     def get_dirname(self) -> str:
         return os.path.join(settings.PROJECTS_ROOT, str(self.id))
@@ -654,7 +654,7 @@ class Task(TimestampedModel, FileSystemRelatedModel):
         return _get_labels(self.project or self, prefetch=prefetch, only_parent=only_parent)
 
     def get_attributes(self, only_parent=True) -> models.QuerySet[AttributeSpec]:
-        return _get_attributes(self.get_labels(prefetch=False, only_parent=only_parent))
+        return _get_attributes(self, only_parent=only_parent)
 
     def get_dirname(self) -> str:
         return os.path.join(settings.TASKS_ROOT, str(self.id))
@@ -984,7 +984,9 @@ class Job(TimestampedModel, FileSystemRelatedModel):
         return _get_labels(project or task, prefetch=prefetch, only_parent=only_parent)
 
     def get_attributes(self, only_parent=True) -> models.QuerySet[AttributeSpec]:
-        return _get_attributes(self.get_labels(prefetch=False, only_parent=only_parent))
+        task = self.segment.task
+        project = task.project
+        return _get_attributes(project or task, only_parent=only_parent)
 
     class Meta:
         default_permissions = ()
