@@ -128,7 +128,8 @@ class _TaskMerger:
         clear_annotations_in_jobs(
             [parent_job_id],
             (self._task.project or self._task)
-                .get_attributes(only_parent=False).values_list("id", flat=True),
+            .get_attributes(only_parent=False)
+            .values_list("id", flat=True),
         )
 
         parent_job_data_provider = JobDataProvider(parent_job_id)
