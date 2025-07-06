@@ -577,35 +577,36 @@ class JobAnnotation:
                 )
 
     def _init_tags_from_db(self):
-        # NOTE: do not use .prefetch_related() with .values() since it's useless:
-        # https://github.com/cvat-ai/cvat/pull/7748#issuecomment-2063695007
-        db_tags = (
-            self.db_job.labeledimage_set.values(
-                "id",
-                "frame",
-                "label_id",
-                "group",
-                "source",
-                "attribute__spec_id",
-                "attribute__value",
-                "attribute__id",
-            )
-            .order_by("frame")
-            .iterator(chunk_size=2000)
-        )
+        db_tags = {}
+        with transaction.atomic(savepoint=False):
+            db_tags = {
+                row["id"]: dotdict(row, attributes=[])
+                for row in self.db_job.labeledimage_set.values(
+                    "id",
+                    "frame",
+                    "label_id",
+                    "group",
+                    "source",
+                )
+                .order_by("frame")
+                .iterator(chunk_size=5000)
+            }
 
-        db_tags = merge_table_rows(
-            rows=db_tags,
-            keys_for_merge={
-                "attributes": [
-                    "attribute__spec_id",
-                    "attribute__value",
-                    "attribute__id",
-                ],
-            },
-            field_id="id",
-        )
+            for attr in models.LabeledImageAttributeVal.objects.filter(
+                spec__in=self.db_job.get_attributes(only_parent=False),
+                image__in=self.db_job.labeledimage_set.all(),
+            ).values(
+                "image_id", "spec_id", "value", "id",
+            ).iterator(chunk_size=5000):
+                db_tags[attr["image_id"]]["attributes"].append(
+                    dotdict({
+                        "id": attr["id"],
+                        "spec_id": attr["spec_id"],
+                        "value": attr["value"],
+                    })
+                )
 
+        db_tags = list(db_tags.values())
         for db_tag in db_tags:
             self._extend_attributes(
                 db_tag.attributes, self.db_attributes[db_tag.label_id]["all"].values()
@@ -615,45 +616,45 @@ class JobAnnotation:
         self.ir_data.tags = serializer.data
 
     def _init_shapes_from_db(self):
-        # NOTE: do not use .prefetch_related() with .values() since it's useless:
-        # https://github.com/cvat-ai/cvat/pull/7748#issuecomment-2063695007
-        db_shapes = (
-            self.db_job.labeledshape_set.values(
-                "id",
-                "label_id",
-                "type",
-                "frame",
-                "group",
-                "source",
-                "occluded",
-                "outside",
-                "z_order",
-                "rotation",
-                "points",
-                "parent",
-                "attribute__spec_id",
-                "attribute__value",
-                "attribute__id",
-            )
-            .order_by("frame")
-            .iterator(chunk_size=2000)
-        )
+        db_shapes = {}
+        with transaction.atomic(savepoint=False):
+            db_shapes = {
+                row["id"]: dotdict(row, attributes=[])
+                for row in self.db_job.labeledshape_set.values(
+                    "id",
+                    "label_id",
+                    "type",
+                    "frame",
+                    "group",
+                    "source",
+                    "occluded",
+                    "outside",
+                    "z_order",
+                    "rotation",
+                    "points",
+                    "parent",
+                )
+                .order_by("frame")
+                .iterator(chunk_size=5000)
+            }
 
-        db_shapes = merge_table_rows(
-            rows=db_shapes,
-            keys_for_merge={
-                "attributes": [
-                    "attribute__spec_id",
-                    "attribute__value",
-                    "attribute__id",
-                ],
-            },
-            field_id="id",
-        )
+            for attr in models.LabeledShapeAttributeVal.objects.filter(
+                spec__in=self.db_job.get_attributes(only_parent=False),
+                shape__in=self.db_job.labeledshape_set.all(),
+            ).values(
+                "shape_id", "spec_id", "value", "id",
+            ).iterator(chunk_size=5000):
+                db_shapes[attr["shape_id"]]["attributes"].append(
+                    dotdict({
+                        "id": attr["id"],
+                        "spec_id": attr["spec_id"],
+                        "value": attr["value"],
+                    })
+                )
 
         shapes = {}
         elements = {}
-        for db_shape in db_shapes:
+        for db_shape in db_shapes.values():
             self._extend_attributes(
                 db_shape.attributes, self.db_attributes[db_shape.label_id]["all"].values()
             )
