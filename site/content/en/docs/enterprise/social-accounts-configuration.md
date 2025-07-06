@@ -13,7 +13,7 @@ such benefits as:
 - Convenience: you can use the existing
   social service credentials to sign in to CVAT.
 - Time-saving: with just two clicks, you can
-  sign in without the hassle of typing in сredentials, saving time and effort.
+  sign in without the hassle of typing in credentials, saving time and effort.
 - Security: social auth service providers have
   high-level security measures in place to protect your accounts.
 
