@@ -457,8 +457,8 @@ class FileSystemRelatedModel(metaclass=ABCModelMeta):
 
 
 @transaction.atomic(savepoint=False)
-def clear_annotations_in_jobs(job_ids: Iterable[int], attrspec_ids: models.QuerySet[list[int]]):
-    # attrspec_ids helps to efficiently remove the following models:
+def clear_annotations_in_jobs(job_ids: Iterable[int], *, attr_ids: models.QuerySet[list[int]]):
+    # attr_ids helps to efficiently remove the following models:
     # LabeledImageAttributeVal, LabeledShapeAttributeVal, LabeledTrackAttributeVal, TrackedShapeAttributeVal
     # Before the database needs to join on two large tables (e.g. for LabeledShape):
     # - engine_labeledshapeattributeval
@@ -468,24 +468,24 @@ def clear_annotations_in_jobs(job_ids: Iterable[int], attrspec_ids: models.Query
 
     for job_ids_chunk in take_by(job_ids, chunk_size=1000):
         TrackedShapeAttributeVal.objects.filter(
-            spec_id__in=attrspec_ids,
+            spec_id__in=attr_ids,
             shape__track__job_id__in=job_ids_chunk,
         ).delete()
         TrackedShape.objects.filter(track__job_id__in=job_ids_chunk).delete()
         LabeledTrackAttributeVal.objects.filter(
-            spec_id__in=attrspec_ids,
+            spec_id__in=attr_ids,
             track__job_id__in=job_ids_chunk,
         ).delete()
         LabeledTrack.objects.filter(job_id__in=job_ids_chunk).delete()
 
         LabeledShapeAttributeVal.objects.filter(
-            spec_id__in=attrspec_ids,
+            spec_id__in=attr_ids,
             shape__job_id__in=job_ids_chunk,
         ).delete()
         LabeledShape.objects.filter(job_id__in=job_ids_chunk).delete()
 
         LabeledImageAttributeVal.objects.filter(
-            spec_id__in=attrspec_ids,
+            spec_id__in=attr_ids,
             image__job_id__in=job_ids_chunk,
         ).delete()
         LabeledImage.objects.filter(job_id__in=job_ids_chunk).delete()
@@ -704,7 +704,7 @@ class Task(TimestampedModel, FileSystemRelatedModel):
         else:
             job_ids = list(self.segment_set.values_list("job__id", flat=True))
             attr_ids = self.get_attributes(only_parent=False).values_list("id", flat=True)
-            clear_annotations_in_jobs(job_ids, attr_ids)
+            clear_annotations_in_jobs(job_ids, attr_ids=attr_ids)
         super().delete(using, keep_parents)
 
     def get_chunks_updated_date(self) -> datetime.datetime:
@@ -995,7 +995,7 @@ class Job(TimestampedModel, FileSystemRelatedModel):
     @transaction.atomic(savepoint=False)
     def delete(self, using=None, keep_parents=False):
         attr_ids = self.get_attributes(only_parent=False).values_list("id", flat=True)
-        clear_annotations_in_jobs([self.id], attr_ids)
+        clear_annotations_in_jobs([self.id], attr_ids=attr_ids)
         segment = self.segment
         super().delete(using, keep_parents)
         if segment:

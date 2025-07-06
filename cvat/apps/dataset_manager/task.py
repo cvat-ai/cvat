@@ -529,7 +529,7 @@ class JobAnnotation:
             self.init_from_db()
             deleted_data = self.data
             attr_ids = self.db_job.get_attributes(only_parent=False).values_list("id", flat=True)
-            models.clear_annotations_in_jobs([self.db_job.id], attr_ids)
+            models.clear_annotations_in_jobs([self.db_job.id], attr_ids=attr_ids)
         else:
             labeledimage_ids = [image["id"] for image in data["tags"]]
             labeledshape_ids = [shape["id"] for shape in data["shapes"]]
