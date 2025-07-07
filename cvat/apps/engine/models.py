@@ -1075,7 +1075,7 @@ class AttributeVal(models.Model):
     # TODO: add a validator here to be sure that it corresponds to self.label
     id = models.BigAutoField(primary_key=True)
     spec = models.ForeignKey(AttributeSpec, on_delete=models.CASCADE)
-    job = models.ForeignKey(Job, on_delete=models.DO_NOTHING, null=False, related_name="+")
+    job = models.ForeignKey(Job, on_delete=models.DO_NOTHING, null=False)
     value = SafeCharField(max_length=4096)
 
     class Meta:
