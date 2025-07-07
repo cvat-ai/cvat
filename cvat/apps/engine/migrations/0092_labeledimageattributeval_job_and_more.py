@@ -2,7 +2,7 @@
 
 import django.db.models.deletion
 from django.db import connection, migrations, models
-from django.db.models import F, Subquery, OuterRef
+from django.db.models import F, OuterRef, Subquery
 
 
 def set_attributeval_job_id(apps, schema_editor):
@@ -20,33 +20,25 @@ def set_attributeval_job_id(apps, schema_editor):
         related_job_id=Subquery(
             LabeledImage.objects.filter(id=OuterRef("image_id")).values("job_id")[:1]
         )
-    ).update(
-        job_id=F("related_job_id")
-    )
+    ).update(job_id=F("related_job_id"))
 
     LabeledShapeAttributeVal.objects.annotate(
         related_job_id=Subquery(
             LabeledShape.objects.filter(id=OuterRef("shape_id")).values("job_id")[:1]
         )
-    ).update(
-        job_id=F("related_job_id")
-    )
+    ).update(job_id=F("related_job_id"))
 
     LabeledTrackAttributeVal.objects.annotate(
         related_job_id=Subquery(
             LabeledTrack.objects.filter(id=OuterRef("track_id")).values("job_id")[:1]
         )
-    ).update(
-        job_id=F("related_job_id")
-    )
+    ).update(job_id=F("related_job_id"))
 
     TrackedShapeAttributeVal.objects.annotate(
         related_job_id=Subquery(
             TrackedShape.objects.filter(id=OuterRef("shape_id")).values("track__job_id")[:1]
         )
-    ).update(
-        job_id=F("related_job_id")
-    )
+    ).update(job_id=F("related_job_id"))
 
 
 class Migration(migrations.Migration):
