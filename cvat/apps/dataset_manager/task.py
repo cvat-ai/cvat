@@ -590,7 +590,7 @@ class JobAnnotation:
                 .iterator(chunk_size=5000)
             }
 
-            for attr in self.db_job.labeledimageattrval_set.values(
+            for attr in self.db_job.labeledimageattributeval_set.values(
                 "image_id",
                 "spec_id",
                 "value",
@@ -637,7 +637,7 @@ class JobAnnotation:
                 .iterator(chunk_size=5000)
             }
 
-            for attr in self.db_job.labeledshapeattrval_set.values(
+            for attr in self.db_job.labeledshapeattributeval_set.values(
                 "shape_id",
                 "spec_id",
                 "value",
