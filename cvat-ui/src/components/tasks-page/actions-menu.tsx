@@ -16,7 +16,7 @@ import { modelsActions } from 'actions/models-actions';
 import { mergeConsensusJobsAsync } from 'actions/consensus-actions';
 import { deleteTaskAsync, switchMoveTaskModalVisible, updateTaskAsync } from 'actions/tasks-actions';
 import UserSelector from 'components/task-page/user-selector';
-import { selectionActions } from 'actions/selection-actions';
+import { makeBulkOperationAsync } from 'actions/selection-actions';
 import TaskActionsItems from './actions-menu-items';
 
 interface Props {
@@ -100,18 +100,17 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
         const allTaskIDs = selectedIds.includes(taskInstance.id) ? selectedIds : [taskInstance.id, ...selectedIds];
         const tasksToUpdate = allTasks.filter((task) => allTaskIDs.includes(task.id));
 
-        dispatch(selectionActions.startBulkAction());
-        for (let i = 0; i < tasksToUpdate.length; i++) {
-            const task = tasksToUpdate[i];
-            dispatch(selectionActions.updateBulkActionStatus({
-                message: `Updating assignee for task ${task.id} (${i + 1}/${tasksToUpdate.length})`,
-                percent: Math.round(((i + 1) / tasksToUpdate.length) * 100),
-            }));
-            await dispatch(updateTaskAsync(task, { assignee }));
-        }
-        dispatch(selectionActions.finishBulkAction());
+        await dispatch(makeBulkOperationAsync(
+            tasksToUpdate,
+            async (task) => {
+                task.assignee = assignee;
+                await dispatch(updateTaskAsync(task, { assignee }));
+            },
+            (task, idx, total) => `Updating assignee for task ${task.id} (${idx + 1}/${total})`,
+        ));
+
         stopEditField();
-    }, [taskInstance, selectedIds, allTasks, stopEditField]);
+    }, [taskInstance, selectedIds, allTasks, stopEditField, dispatch]);
 
     const onDeleteTask = useCallback(() => {
         Modal.confirm({

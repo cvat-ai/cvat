@@ -34,4 +34,28 @@ export const selectionActions = {
         SelectionActionsTypes.FINISH_BULK_ACTION),
 };
 
+export function makeBulkOperationAsync<T>(
+    items: T[],
+    operation: (item: T, idx: number, total: number) => Promise<void>,
+    statusMessage: (item: T, idx: number, total: number) => string,
+) {
+    return async (dispatch: any) => {
+        if (items.length === 1) {
+            await operation(items[0], 0, 1);
+            return;
+        }
+        dispatch(selectionActions.startBulkAction());
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            dispatch(selectionActions.updateBulkActionStatus({
+                message: statusMessage(item, i, items.length),
+                percent: Math.round(((i + 1) / items.length) * 100),
+            }));
+            // eslint-disable-next-line no-await-in-loop
+            await operation(item, i, items.length);
+        }
+        dispatch(selectionActions.finishBulkAction());
+    };
+}
+
 export type SelectionActions = ActionUnion<typeof selectionActions>;
