@@ -19,7 +19,7 @@ import Button from 'antd/lib/button';
 import { MenuProps } from 'antd/lib/menu';
 
 import Preview from 'components/common/preview';
-import { usePlugins } from 'utils/hooks';
+import { useCardHeightHOC, usePlugins } from 'utils/hooks';
 import { CombinedState } from 'reducers';
 import { MLModel, ModelProviders } from 'cvat-core-wrapper';
 
@@ -27,9 +27,19 @@ interface Props {
     model: MLModel;
 }
 
+const useCardHeight = useCardHeightHOC({
+    containerClassName: 'cvat-models-page',
+    siblingClassNames: ['cvat-models-pagination', 'cvat-models-page-top-bar'],
+    paddings: 72,
+    minHeight: 200,
+    numberOfRows: 3,
+});
+
 export default function DeployedModelItem(props: Props): JSX.Element {
     const { model } = props;
     const [isModalShown, setIsModalShown] = useState(false);
+    const height = useCardHeight();
+    const style: React.CSSProperties = { height };
 
     const onOpenModel = (): void => {
         setIsModalShown(true);
@@ -42,6 +52,7 @@ export default function DeployedModelItem(props: Props): JSX.Element {
     const modelDescription = model.provider !== ModelProviders.CVAT ?
         <Text type='secondary'>{`Added ${created}`}</Text> :
         <Text type='secondary'>System model</Text>;
+    console.log(modelDescription);
 
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
     const topBarItems: [JSX.Element, number][] = [];
@@ -153,6 +164,7 @@ export default function DeployedModelItem(props: Props): JSX.Element {
                         onClick={onOpenModel}
                     />
                 )}
+                style={style}
                 size='small'
                 className='cvat-models-item-card'
                 hoverable
@@ -167,7 +179,12 @@ export default function DeployedModelItem(props: Props): JSX.Element {
                     description={(
                         <div className='cvat-models-item-description'>
                             <Row onClick={onOpenModel} className='cvat-models-item-text-description'>
-                                {model.owner && (<Text strong>{model.owner}</Text>)}
+                                {model.owner && (
+                                    <>
+                                        <Text type='secondary'>{`Created by ${model.owner}`}</Text>
+                                        <br />
+                                    </>
+                                )}
                                 {modelDescription}
                             </Row>
                             {

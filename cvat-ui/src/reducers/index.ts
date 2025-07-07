@@ -27,6 +27,7 @@ export interface AuthState {
 
 export interface ProjectsQuery {
     page: number;
+    pageSize: number;
     id: number | null;
     search: string | null;
     filter: string | null;
@@ -64,11 +65,15 @@ export interface ProjectsState {
         deletes: {
             [projectId: number]: boolean; // deleted (deleting if in dictionary)
         };
+        updates: {
+            [projectId: number]: boolean; // updated (updating if in dictionary)
+        };
     };
 }
 
 export interface TasksQuery {
     page: number;
+    pageSize: number;
     id: number | null;
     search: string | null;
     filter: string | null;
@@ -78,6 +83,7 @@ export interface TasksQuery {
 
 export interface JobsQuery {
     page: number;
+    pageSize: number;
     sort: string | null;
     search: string | null;
     filter: string | null;
@@ -116,6 +122,9 @@ export interface TasksState {
     activities: {
         deletes: {
             [tid: number]: boolean; // deleted (deleting if in dictionary)
+        };
+        updates: {
+            [taskId: number]: boolean;
         };
     };
 }
@@ -198,6 +207,7 @@ export interface FormatsState {
 
 export interface CloudStoragesQuery {
     page: number;
+    pageSize: number;
     id: number | null;
     search: string | null;
     sort: string | null;
@@ -425,6 +435,7 @@ export interface ModelAttribute {
 
 export interface ModelsQuery {
     page: number;
+    pageSize: number;
     id: number | null;
     search: string | null;
     filter: string | null;
@@ -991,6 +1002,7 @@ export interface OrganizationState {
 
 export interface WebhooksQuery {
     page: number;
+    pageSize: number;
     id: number | null;
     search: string | null;
     filter: string | null;
@@ -1007,6 +1019,7 @@ export interface WebhooksState {
 
 export interface InvitationsQuery {
     page: number;
+    pageSize: number;
 }
 
 export interface InvitationsState {
@@ -1019,6 +1032,7 @@ export interface InvitationsState {
 
 export interface RequestsQuery {
     page: number;
+    pageSize: number;
 }
 
 export interface RequestsState {
