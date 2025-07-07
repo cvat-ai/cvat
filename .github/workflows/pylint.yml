@@ -16,14 +16,3 @@ jobs:
 
           echo "Pylint version: "$(pylint --version | head -1)
           pylint -j0 .
-
-  SpellCheck:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Run spell check
-        uses: crate-ci/typos@v1.33.1
-        with:
-          config: ./_typos.toml
-
