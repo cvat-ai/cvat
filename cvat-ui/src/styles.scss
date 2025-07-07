@@ -215,3 +215,7 @@ html, body {
 .cvat-item-selected {
     border: 2px solid $border-color-hover;
 }
+
+.cvat-item-list-selected {
+    user-select: none;
+}

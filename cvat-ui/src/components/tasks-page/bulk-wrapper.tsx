@@ -22,8 +22,9 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
     } = props;
 
     const dispatch = useDispatch();
-    const selectedIDs = useSelector((state: any) => state.selection.selected);
+    const selectedIds = useSelector((state: any) => state.selection.selected);
     const wrapperRef = useRef<HTMLDivElement>(null);
+
     const keyMap: KeyMap = {
         SELECT_ALL: {
             name: 'Select all',
@@ -66,7 +67,7 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
         resourceID: number,
         idx: number,
     ): { selected: boolean; onClick: (event?: React.MouseEvent) => void } => {
-        const isSelected = selectedIDs.includes(resourceID);
+        const isSelected = selectedIds.includes(resourceID);
         const { currentResourceIDs } = props;
         return {
             selected: isSelected,
@@ -99,7 +100,10 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
     };
 
     return (
-        <div ref={wrapperRef}>
+        <div
+            className={`cvat-bulk-wrapper${selectedIds.length > 1 ? ' cvat-item-list-selected' : ''}`}
+            ref={wrapperRef}
+        >
             <GlobalHotKeys keyMap={keyMap} handlers={handlers} />
             {bulkActionsMenu}
             {children(selectProps)}
