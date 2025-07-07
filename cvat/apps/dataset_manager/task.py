@@ -592,18 +592,27 @@ class JobAnnotation:
                 .iterator(chunk_size=5000)
             }
 
-            for attr in models.LabeledImageAttributeVal.objects.filter(
-                spec__in=self.db_job.get_attributes(only_parent=False),
-                image__in=self.db_job.labeledimage_set.all(),
-            ).values(
-                "image_id", "spec_id", "value", "id",
-            ).iterator(chunk_size=5000):
+            for attr in (
+                models.LabeledImageAttributeVal.objects.filter(
+                    spec__in=self.db_job.get_attributes(only_parent=False),
+                    image__in=self.db_job.labeledimage_set.all(),
+                )
+                .values(
+                    "image_id",
+                    "spec_id",
+                    "value",
+                    "id",
+                )
+                .iterator(chunk_size=5000)
+            ):
                 db_tags[attr["image_id"]]["attributes"].append(
-                    dotdict({
-                        "id": attr["id"],
-                        "spec_id": attr["spec_id"],
-                        "value": attr["value"],
-                    })
+                    dotdict(
+                        {
+                            "id": attr["id"],
+                            "spec_id": attr["spec_id"],
+                            "value": attr["value"],
+                        }
+                    )
                 )
 
         db_tags = list(db_tags.values())
@@ -638,18 +647,27 @@ class JobAnnotation:
                 .iterator(chunk_size=5000)
             }
 
-            for attr in models.LabeledShapeAttributeVal.objects.filter(
-                spec__in=self.db_job.get_attributes(only_parent=False),
-                shape__in=self.db_job.labeledshape_set.all(),
-            ).values(
-                "shape_id", "spec_id", "value", "id",
-            ).iterator(chunk_size=5000):
+            for attr in (
+                models.LabeledShapeAttributeVal.objects.filter(
+                    spec__in=self.db_job.get_attributes(only_parent=False),
+                    shape__in=self.db_job.labeledshape_set.all(),
+                )
+                .values(
+                    "shape_id",
+                    "spec_id",
+                    "value",
+                    "id",
+                )
+                .iterator(chunk_size=5000)
+            ):
                 db_shapes[attr["shape_id"]]["attributes"].append(
-                    dotdict({
-                        "id": attr["id"],
-                        "spec_id": attr["spec_id"],
-                        "value": attr["value"],
-                    })
+                    dotdict(
+                        {
+                            "id": attr["id"],
+                            "spec_id": attr["spec_id"],
+                            "value": attr["value"],
+                        }
+                    )
                 )
 
         shapes = {}
