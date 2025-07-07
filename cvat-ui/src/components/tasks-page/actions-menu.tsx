@@ -106,7 +106,7 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
                 task.assignee = assignee;
                 await dispatch(updateTaskAsync(task, { assignee }));
             },
-            (task, idx, total) => `Updating assignee for task ${task.id} (${idx + 1}/${total})`,
+            (task, idx, total) => `Updating assignee for task #${task.id} (${idx + 1}/${total})`,
         ));
 
         stopEditField();
@@ -130,7 +130,7 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
                         async (task) => {
                             await dispatch(deleteTaskAsync(task));
                         },
-                        (task, idx, total) => `Deleting task ${task.id} (${idx + 1}/${total})`,
+                        (task, idx, total) => `Deleting task #${task.id} (${idx + 1}/${total})`,
                     ));
                 }, 0);
             },
