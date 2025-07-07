@@ -270,7 +270,7 @@ class JobAnnotation:
                 self._validate_label_for_existence(db_track.label_id)
 
                 for attr in track_attributes:
-                    db_attr_val = models.LabeledTrackAttributeVal(**attr, track_id=len(db_tracks))
+                    db_attr_val = models.LabeledTrackAttributeVal(**attr, job_id=self.db_job.id, track_id=len(db_tracks))
 
                     self._validate_attribute_for_existence(
                         db_attr_val, db_track.label_id, "immutable"
@@ -284,7 +284,7 @@ class JobAnnotation:
 
                     for attr in shape_attributes:
                         db_attr_val = models.TrackedShapeAttributeVal(
-                            **attr, shape_id=len(db_shapes)
+                            **attr, shape_id=len(db_shapes), job_id=self.db_job.id,
                         )
 
                         self._validate_attribute_for_existence(
@@ -347,7 +347,7 @@ class JobAnnotation:
                 self._validate_label_for_existence(db_shape.label_id)
 
                 for attr in attributes:
-                    db_attr_val = models.LabeledShapeAttributeVal(**attr, shape_id=len(db_shapes))
+                    db_attr_val = models.LabeledShapeAttributeVal(**attr, job_id=self.db_job.id, shape_id=len(db_shapes))
 
                     self._validate_attribute_for_existence(db_attr_val, db_shape.label_id, "all")
 
@@ -384,7 +384,7 @@ class JobAnnotation:
             self._validate_label_for_existence(db_tag.label_id)
 
             for attr in attributes:
-                db_attr_val = models.LabeledImageAttributeVal(**attr)
+                db_attr_val = models.LabeledImageAttributeVal(**attr, job_id=self.db_job.id)
 
                 self._validate_attribute_for_existence(db_attr_val, db_tag.label_id, "all")
 
