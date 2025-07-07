@@ -459,13 +459,13 @@ class FileSystemRelatedModel(metaclass=ABCModelMeta):
 @transaction.atomic(savepoint=False)
 def clear_annotations_in_jobs(job_ids: Iterable[int]):
     for job_ids_chunk in take_by(job_ids, chunk_size=1000):
-        TrackedShapeAttributeVal.objects.filter(shape__track__job_id__in=job_ids_chunk).delete()
+        TrackedShapeAttributeVal.objects.filter(job_id__in=job_ids_chunk).delete()
         TrackedShape.objects.filter(track__job_id__in=job_ids_chunk).delete()
-        LabeledTrackAttributeVal.objects.filter(track__job_id__in=job_ids_chunk).delete()
+        LabeledTrackAttributeVal.objects.filter(job_id__in=job_ids_chunk).delete()
         LabeledTrack.objects.filter(job_id__in=job_ids_chunk).delete()
-        LabeledShapeAttributeVal.objects.filter(shape__job_id__in=job_ids_chunk).delete()
+        LabeledShapeAttributeVal.objects.filter(job_id__in=job_ids_chunk).delete()
         LabeledShape.objects.filter(job_id__in=job_ids_chunk).delete()
-        LabeledImageAttributeVal.objects.filter(image__job_id__in=job_ids_chunk).delete()
+        LabeledImageAttributeVal.objects.filter(job_id__in=job_ids_chunk).delete()
         LabeledImage.objects.filter(job_id__in=job_ids_chunk).delete()
 
 
@@ -1075,6 +1075,7 @@ class AttributeVal(models.Model):
     # TODO: add a validator here to be sure that it corresponds to self.label
     id = models.BigAutoField(primary_key=True)
     spec = models.ForeignKey(AttributeSpec, on_delete=models.CASCADE)
+    job = models.ForeignKey(Job, on_delete=models.DO_NOTHING, null=False, related_name="+")
     value = SafeCharField(max_length=4096)
 
     class Meta:
