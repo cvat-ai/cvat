@@ -1,4 +1,4 @@
-name: Spell-check
+name: Typos
 on: pull_request
 jobs:
   Spell-checker:
