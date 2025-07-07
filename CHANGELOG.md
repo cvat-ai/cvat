@@ -16,6 +16,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.40.1'></a>
+## \[2.40.1\] - 2025-07-07
+
+### Fixed
+
+- Low performance of DELELE `/api/tasks/<id>` and GET `/api/jobs(tasks)/<id>/annotations`
+  Because of inefficient database queries (<https://github.com/cvat-ai/cvat/pull/9612>)
+
 <a id='changelog-2.40.0'></a>
 ## \[2.40.0\] - 2025-06-25
 
