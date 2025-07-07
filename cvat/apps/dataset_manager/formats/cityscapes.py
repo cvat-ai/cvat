@@ -5,7 +5,7 @@
 
 import os.path as osp
 
-from datumaro.components.dataset import Dataset
+from datumaro.components.dataset import StreamDataset
 from datumaro.plugins.data_formats.cityscapes import write_label_map
 from pyunpack import Archive
 
@@ -24,7 +24,7 @@ from .utils import make_colormap
 @exporter(name="Cityscapes", ext="ZIP", version="1.0")
 def _export(dst_file, temp_dir, instance_data, save_images=False):
     with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
-        dataset = Dataset.from_extractors(extractor, env=dm_env)
+        dataset = StreamDataset.from_extractors(extractor, env=dm_env)
         dataset.transform(RotatedBoxesToPolygons)
         dataset.transform("polygons_to_masks")
         dataset.transform("boxes_to_masks")
@@ -52,7 +52,7 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
         write_label_map(labelmap_file, colormap)
 
     detect_dataset(temp_dir, format_name="cityscapes", importer=dm_env.importers.get("cityscapes"))
-    dataset = Dataset.import_from(temp_dir, "cityscapes", env=dm_env)
+    dataset = StreamDataset.import_from(temp_dir, "cityscapes", env=dm_env)
     dataset = MaskToPolygonTransformation.convert_dataset(dataset, **kwargs)
     if load_data_callback is not None:
         load_data_callback(dataset, instance_data)
