@@ -26,11 +26,12 @@ interface Props {
     importing: boolean;
     query: TasksQuery;
     count: number;
+    bulkFetching: boolean;
 }
 
 function TasksPageComponent(props: Props): JSX.Element {
     const {
-        query, fetching, importing, count,
+        query, fetching, importing, count, bulkFetching,
     } = props;
 
     const dispatch = useDispatch();
@@ -114,7 +115,7 @@ function TasksPageComponent(props: Props): JSX.Element {
                 query={updatedQuery}
                 importing={importing}
             />
-            { fetching ? (
+            { fetching && !bulkFetching ? (
                 <div className='cvat-empty-tasks-list'>
                     <Spin size='large' className='cvat-spinner' />
                 </div>
