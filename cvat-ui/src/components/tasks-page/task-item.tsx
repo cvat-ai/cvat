@@ -282,10 +282,6 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
             style.pointerEvents = 'none';
             style.opacity = 0.5;
         }
-        if (selected) {
-            style.border = '2px solid #1890FF';
-            style.background = '#e6f7ff';
-        }
 
         const ribbonItems = ribbonPlugins
             .filter((plugin) => plugin.data.shouldBeRendered(this.props, this.state))
@@ -310,7 +306,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                     dropdownTrigger={['contextMenu']}
                     triggerElement={(
                         <Row
-                            className='cvat-tasks-list-item'
+                            className={`cvat-tasks-list-item${selected ? ' cvat-item-selected' : ''}`}
                             justify='center'
                             align='top'
                             style={style}

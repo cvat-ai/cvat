@@ -211,3 +211,7 @@ html, body {
         margin-bottom: $grid-unit-size * 2;
     }
 }
+
+.cvat-item-selected {
+    border: 2px solid $border-color-hover;
+}
