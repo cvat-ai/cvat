@@ -477,7 +477,7 @@ def clear_annotations_on_frames_in_honeypot_task(db_task: Task, frames: Sequence
 
     for frames_batch in take_by(frames, chunk_size=1000):
         LabeledShapeAttributeVal.objects.filter(
-            shape__job_id__segment__task_id=db_task.id,
+            job_id__segment__task_id=db_task.id,
             shape__frame__in=frames_batch,
         ).delete()
         LabeledShape.objects.filter(
@@ -485,7 +485,7 @@ def clear_annotations_on_frames_in_honeypot_task(db_task: Task, frames: Sequence
             frame__in=frames_batch,
         ).delete()
         LabeledImageAttributeVal.objects.filter(
-            image__job_id__segment__task_id=db_task.id,
+            job_id__segment__task_id=db_task.id,
             image__frame__in=frames_batch,
         ).delete()
         LabeledImage.objects.filter(
