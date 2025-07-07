@@ -12,6 +12,7 @@ const initialState: SelectionState = {
     resourceType: '',
     fetching: false,
     status: null,
+    cancelled: false,
 };
 
 export default function selectionReducer(
@@ -33,11 +34,22 @@ export default function selectionReducer(
         case SelectionActionsTypes.CLEAR_SELECTED_RESOURCES:
             return { ...state, selected: [] };
         case SelectionActionsTypes.START_BULK_ACTION:
-            return { ...state, fetching: true };
+            return {
+                ...state,
+                fetching: true,
+                cancelled: false,
+            };
+        case SelectionActionsTypes.CANCEL_BULK_ACTION:
+            return { ...state, cancelled: true };
         case SelectionActionsTypes.UPDATE_BULK_ACTION_STATUS:
             return { ...state, status: action.payload.status };
         case SelectionActionsTypes.FINISH_BULK_ACTION:
-            return { ...state, fetching: false, status: null };
+            return {
+                ...state,
+                fetching: false,
+                status: null,
+                cancelled: false,
+            };
         default:
             return state;
     }

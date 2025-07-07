@@ -14,36 +14,15 @@ export default function BulkProgress(): JSX.Element | null {
     const dispatch = useDispatch();
     if (!fetching) return null;
     return (
-        <div
-            style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                width: '100vw',
-                height: '100vh',
-                background: 'rgba(255,255,255,0.7)',
-                zIndex: 2000,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexDirection: 'column',
-            }}
-        >
+        <div className='cvat-bulk-progress-wrapper'>
             <Progress type='circle' percent={percent} size={120} />
-            <div
-                style={{
-                    marginTop: 24,
-                    fontSize: 18,
-                    color: '#333',
-                    minHeight: 24,
-                }}
-            >
+            <div className='cvat-bulk-progress-message'>
                 {message}
             </div>
             <Button
-                style={{ marginTop: 24 }}
+                className='cvat-bulk-progress-cancel'
                 danger
-                onClick={() => dispatch(selectionActions.finishBulkAction())}
+                onClick={() => dispatch(selectionActions.cancelBulkAction())}
             >
                 Cancel
             </Button>

@@ -266,7 +266,8 @@ export interface SelectionState {
     selected: number[];
     resourceType: string;
     fetching: boolean;
-    status: SelectionStatus | null;
+    status: { message: string; percent: number } | null;
+    cancelled: boolean;
 }
 
 export enum SupportedPlugins {

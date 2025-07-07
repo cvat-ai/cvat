@@ -219,3 +219,28 @@ html, body {
 .cvat-item-list-selected {
     user-select: none;
 }
+
+.cvat-bulk-progress-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(255,255,255,70%);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.cvat-bulk-progress-message {
+    margin-top: 24px;
+    font-size: 18px;
+    color: #333;
+    min-height: 24px;
+}
+
+.cvat-bulk-progress-cancel {
+    margin-top: 24px;
+}
