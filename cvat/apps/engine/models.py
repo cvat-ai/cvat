@@ -898,6 +898,15 @@ class Job(TimestampedModel, FileSystemRelatedModel):
         related_name='child_jobs', related_query_name="child_job"
     )
 
+    labeledimage_set: models.manager.RelatedManager[LabeledImage]
+    labeledshape_set: models.manager.RelatedManager[LabeledShape]
+    labeledtrack_set: models.manager.RelatedManager[LabeledTrack]
+    trackedshape_set: models.manager.RelatedManager[TrackedShape]
+    labeledimageattributeval_set: models.manager.RelatedManager[LabeledImageAttributeVal]
+    labeledshapeattributeval_set: models.manager.RelatedManager[LabeledShapeAttributeVal]
+    labeledtrackattributeval_set: models.manager.RelatedManager[LabeledTrackAttributeVal]
+    trackedshapeattributeval_set: models.manager.RelatedManager[TrackedShapeAttributeVal]
+
     user_can_view_task: MaybeUndefined[bool]
     "Can be defined by the fetching queryset to avoid extra IAM checks, e.g. in a list serializer"
 
