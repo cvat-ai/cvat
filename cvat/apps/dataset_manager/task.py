@@ -576,35 +576,37 @@ class JobAnnotation:
                 )
 
     def _init_tags_from_db(self):
-        with transaction.atomic(savepoint=False):
-            db_tags = {
-                row["id"]: dotdict(row, attributes=[])
-                for row in self.db_job.labeledimage_set.values(
-                    "id",
-                    "frame",
-                    "label_id",
-                    "group",
-                    "source",
-                )
-                .order_by("frame")
-                .iterator(chunk_size=5000)
-            }
-
-            for attr in self.db_job.labeledimageattributeval_set.values(
-                "image_id",
-                "spec_id",
-                "value",
+        db_tags = {
+            row["id"]: dotdict(row, attributes=[])
+            for row in self.db_job.labeledimage_set.values(
                 "id",
-            ).iterator(chunk_size=5000):
-                db_tags[attr["image_id"]]["attributes"].append(
-                    dotdict(
-                        {
-                            "id": attr["id"],
-                            "spec_id": attr["spec_id"],
-                            "value": attr["value"],
-                        }
-                    )
+                "frame",
+                "label_id",
+                "group",
+                "source",
+            )
+            .order_by("frame")
+            .iterator(chunk_size=5000)
+        }
+
+        for attr in self.db_job.labeledimageattributeval_set.values(
+            "image_id",
+            "spec_id",
+            "value",
+            "id",
+        ).iterator(chunk_size=5000):
+            if attr["image_id"] not in db_tags:
+                continue
+
+            db_tags[attr["image_id"]]["attributes"].append(
+                dotdict(
+                    {
+                        "id": attr["id"],
+                        "spec_id": attr["spec_id"],
+                        "value": attr["value"],
+                    }
                 )
+            )
 
         db_tags = list(db_tags.values())
         for db_tag in db_tags:
@@ -616,42 +618,44 @@ class JobAnnotation:
         self.ir_data.tags = serializer.data
 
     def _init_shapes_from_db(self):
-        with transaction.atomic(savepoint=False):
-            db_shapes = {
-                row["id"]: dotdict(row, attributes=[])
-                for row in self.db_job.labeledshape_set.values(
-                    "id",
-                    "label_id",
-                    "type",
-                    "frame",
-                    "group",
-                    "source",
-                    "occluded",
-                    "outside",
-                    "z_order",
-                    "rotation",
-                    "points",
-                    "parent",
-                )
-                .order_by("frame")
-                .iterator(chunk_size=5000)
-            }
-
-            for attr in self.db_job.labeledshapeattributeval_set.values(
-                "shape_id",
-                "spec_id",
-                "value",
+        db_shapes = {
+            row["id"]: dotdict(row, attributes=[])
+            for row in self.db_job.labeledshape_set.values(
                 "id",
-            ).iterator(chunk_size=5000):
-                db_shapes[attr["shape_id"]]["attributes"].append(
-                    dotdict(
-                        {
-                            "id": attr["id"],
-                            "spec_id": attr["spec_id"],
-                            "value": attr["value"],
-                        }
-                    )
+                "label_id",
+                "type",
+                "frame",
+                "group",
+                "source",
+                "occluded",
+                "outside",
+                "z_order",
+                "rotation",
+                "points",
+                "parent",
+            )
+            .order_by("frame")
+            .iterator(chunk_size=5000)
+        }
+
+        for attr in self.db_job.labeledshapeattributeval_set.values(
+            "shape_id",
+            "spec_id",
+            "value",
+            "id",
+        ).iterator(chunk_size=5000):
+            if attr["shape_id"] not in db_shapes:
+                continue
+
+            db_shapes[attr["shape_id"]]["attributes"].append(
+                dotdict(
+                    {
+                        "id": attr["id"],
+                        "spec_id": attr["spec_id"],
+                        "value": attr["value"],
+                    }
                 )
+            )
 
         shapes = {}
         elements = {}
