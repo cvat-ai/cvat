@@ -221,7 +221,7 @@ class IssuesSummarySerializer(serializers.Serializer):
             query_params={ 'job_id': instance.id })
 
     def get_count(self, instance):
-        return getattr(instance, 'issues__count', 0)
+        return getattr(instance, 'issue__count', 0)
 
     def to_representation(self, instance):
         request = self.context.get('request')
@@ -759,12 +759,12 @@ class JobReadListSerializer(serializers.ListSerializer):
             issue_counts = dict(
                 models.Job.objects.with_issue_counts().filter(
                     id__in=set(j.id for j in page)
-                ).values_list("id", "issues__count")
+                ).values_list("id", "issue__count")
             )
 
             for job in page:
                 job.user_can_view_task = job.get_task_id() in visible_tasks
-                job.issues__count = issue_counts.get(job.id, 0)
+                job.issue__count = issue_counts.get(job.id, 0)
 
         return super().to_representation(data)
 
