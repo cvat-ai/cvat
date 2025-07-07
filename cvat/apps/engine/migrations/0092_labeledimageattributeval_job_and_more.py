@@ -2,46 +2,51 @@
 
 import django.db.models.deletion
 from django.db import connection, migrations, models
+from django.db.models import F, Subquery, OuterRef
 
 
 def set_attributeval_job_id(apps, schema_editor):
-    with connection.cursor() as cursor:
-        cursor.execute(
-            """
-            UPDATE engine_labeledimageattributeval AS attrval
-            SET job_id = image.job_id
-            FROM engine_labeledimage AS image
-            WHERE attrval.image_id = image.id;
-            """
-        )
+    LabeledImage = apps.get_model("engine", "LabeledImage")
+    LabeledShape = apps.get_model("engine", "LabeledShape")
+    LabeledTrack = apps.get_model("engine", "LabeledTrack")
+    TrackedShape = apps.get_model("engine", "TrackedShape")
 
-        cursor.execute(
-            """
-            UPDATE engine_labeledshapeattributeval AS attrval
-            SET job_id = shape.job_id
-            FROM engine_labeledshape AS shape
-            WHERE attrval.shape_id = shape.id;
-            """
-        )
+    LabeledImageAttributeVal = apps.get_model("engine", "LabeledImageAttributeVal")
+    LabeledShapeAttributeVal = apps.get_model("engine", "LabeledShapeAttributeVal")
+    LabeledTrackAttributeVal = apps.get_model("engine", "LabeledTrackAttributeVal")
+    TrackedShapeAttributeVal = apps.get_model("engine", "TrackedShapeAttributeVal")
 
-        cursor.execute(
-            """
-            UPDATE engine_labeledtrackattributeval AS attrval
-            SET job_id = track.job_id
-            FROM engine_labeledtrack AS track
-            WHERE attrval.track_id = track.id;
-            """
+    LabeledImageAttributeVal.objects.annotate(
+        related_job_id=Subquery(
+            LabeledImage.objects.filter(id=OuterRef("image_id")).values("job_id")[:1]
         )
+    ).update(
+        job_id=F("related_job_id")
+    )
 
-        cursor.execute(
-            """
-            UPDATE engine_trackedshapeattributeval AS attrval
-            SET job_id = track.job_id
-            FROM engine_trackedshape AS shape
-            JOIN engine_labeledtrack AS track ON shape.track_id = track.id
-            WHERE attrval.shape_id = shape.id;
-            """
+    LabeledShapeAttributeVal.objects.annotate(
+        related_job_id=Subquery(
+            LabeledShape.objects.filter(id=OuterRef("shape_id")).values("job_id")[:1]
         )
+    ).update(
+        job_id=F("related_job_id")
+    )
+
+    LabeledTrackAttributeVal.objects.annotate(
+        related_job_id=Subquery(
+            LabeledTrack.objects.filter(id=OuterRef("track_id")).values("job_id")[:1]
+        )
+    ).update(
+        job_id=F("related_job_id")
+    )
+
+    TrackedShapeAttributeVal.objects.annotate(
+        related_job_id=Subquery(
+            TrackedShape.objects.filter(id=OuterRef("shape_id")).values("track__job_id")[:1]
+        )
+    ).update(
+        job_id=F("related_job_id")
+    )
 
 
 class Migration(migrations.Migration):
