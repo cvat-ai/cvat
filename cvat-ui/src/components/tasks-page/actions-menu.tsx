@@ -113,20 +113,34 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
     }, [taskInstance, selectedIds, allTasks, stopEditField, dispatch]);
 
     const onDeleteTask = useCallback(() => {
+        const tasksToDelete = allTasks.filter((task) => selectedIds.includes(task.id));
+        const isBulk = tasksToDelete.length > 1;
         Modal.confirm({
-            title: `The task ${taskInstance.id} will be deleted`,
-            content: 'All related data (images, annotations) will be lost. Continue?',
+            title: isBulk ?
+                `Delete ${tasksToDelete.length} selected tasks` :
+                `The task ${taskInstance.id} will be deleted`,
+            content: isBulk ?
+                'All related data (images, annotations) for all selected tasks will be lost. Continue?' :
+                'All related data (images, annotations) will be lost. Continue?',
             className: 'cvat-modal-confirm-delete-task',
             onOk: () => {
-                dispatch(deleteTaskAsync(taskInstance));
+                setTimeout(() => {
+                    dispatch(makeBulkOperationAsync(
+                        tasksToDelete.length ? tasksToDelete : [taskInstance],
+                        async (task) => {
+                            await dispatch(deleteTaskAsync(task));
+                        },
+                        (task, idx, total) => `Deleting task ${task.id} (${idx + 1}/${total})`,
+                    ));
+                }, 0);
             },
             okButtonProps: {
                 type: 'primary',
                 danger: true,
             },
-            okText: 'Delete',
+            okText: isBulk ? 'Delete selected' : 'Delete',
         });
-    }, [taskInstance]);
+    }, [taskInstance, allTasks, selectedIds, dispatch]);
 
     let menuItems;
     if (editField) {
