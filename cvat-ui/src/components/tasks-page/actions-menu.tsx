@@ -29,7 +29,7 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
     const { taskInstance, triggerElement, dropdownTrigger } = props;
     const dispatch = useDispatch();
 
-    const selectedIDs = useSelector((state: CombinedState) => state.selection.selected);
+    const selectedIds = useSelector((state: CombinedState) => state.selection.selected);
     const allTasks = useSelector((state: CombinedState) => state.tasks.current);
 
     const pluginActions = usePlugins((state: CombinedState) => state.plugins.components.taskActions.items, props);
@@ -97,7 +97,7 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
     }, [taskInstance.id]);
 
     const onUpdateTaskAssignee = useCallback(async (assignee: User | null) => {
-        const allTaskIDs = selectedIDs.includes(taskInstance.id) ? selectedIDs : [taskInstance.id, ...selectedIDs];
+        const allTaskIDs = selectedIds.includes(taskInstance.id) ? selectedIds : [taskInstance.id, ...selectedIds];
         const tasksToUpdate = allTasks.filter((task) => allTaskIDs.includes(task.id));
 
         dispatch(selectionActions.startBulkAction());
@@ -111,7 +111,7 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
         }
         dispatch(selectionActions.finishBulkAction());
         stopEditField();
-    }, [taskInstance, selectedIDs, allTasks, stopEditField]);
+    }, [taskInstance, selectedIds, allTasks, stopEditField]);
 
     const onDeleteTask = useCallback(() => {
         Modal.confirm({
@@ -165,7 +165,7 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
             onRunAutoAnnotation,
             onMoveTaskToProject: taskInstance.projectId === null ? onMoveTaskToProject : null,
             onDeleteTask,
-            selectedIds: selectedIDs,
+            selectedIds,
         }, props);
     }
 
