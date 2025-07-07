@@ -592,7 +592,7 @@ class JobAnnotation:
                 "source",
             )
             .order_by("frame")
-            .iterator(chunk_size=5000)
+            .iterator(chunk_size=2000)
         }
 
         for attr in self.db_job.labeledimageattributeval_set.values(
@@ -600,7 +600,7 @@ class JobAnnotation:
             "spec_id",
             "value",
             "id",
-        ).iterator(chunk_size=5000):
+        ).iterator(chunk_size=2000):
             if attr["image_id"] not in db_tags:
                 continue
 
@@ -641,7 +641,7 @@ class JobAnnotation:
                 "parent",
             )
             .order_by("frame")
-            .iterator(chunk_size=5000)
+            .iterator(chunk_size=2000)
         }
 
         for attr in self.db_job.labeledshapeattributeval_set.values(
@@ -649,7 +649,7 @@ class JobAnnotation:
             "spec_id",
             "value",
             "id",
-        ).iterator(chunk_size=5000):
+        ).iterator(chunk_size=2000):
             if attr["shape_id"] not in db_shapes:
                 continue
 
