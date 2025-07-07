@@ -268,7 +268,9 @@ class JobAnnotation:
                 self._validate_label_for_existence(db_track.label_id)
 
                 for attr in track_attributes:
-                    db_attr_val = models.LabeledTrackAttributeVal(**attr, track_id=len(db_tracks))
+                    db_attr_val = models.LabeledTrackAttributeVal(
+                        **attr, job_id=self.db_job.id, track_id=len(db_tracks)
+                    )
 
                     self._validate_attribute_for_existence(
                         db_attr_val, db_track.label_id, "immutable"
@@ -282,7 +284,9 @@ class JobAnnotation:
 
                     for attr in shape_attributes:
                         db_attr_val = models.TrackedShapeAttributeVal(
-                            **attr, shape_id=len(db_shapes)
+                            **attr,
+                            shape_id=len(db_shapes),
+                            job_id=self.db_job.id,
                         )
 
                         self._validate_attribute_for_existence(
@@ -345,7 +349,9 @@ class JobAnnotation:
                 self._validate_label_for_existence(db_shape.label_id)
 
                 for attr in attributes:
-                    db_attr_val = models.LabeledShapeAttributeVal(**attr, shape_id=len(db_shapes))
+                    db_attr_val = models.LabeledShapeAttributeVal(
+                        **attr, job_id=self.db_job.id, shape_id=len(db_shapes)
+                    )
 
                     self._validate_attribute_for_existence(db_attr_val, db_shape.label_id, "all")
 
@@ -382,7 +388,7 @@ class JobAnnotation:
             self._validate_label_for_existence(db_tag.label_id)
 
             for attr in attributes:
-                db_attr_val = models.LabeledImageAttributeVal(**attr)
+                db_attr_val = models.LabeledImageAttributeVal(**attr, job_id=self.db_job.id)
 
                 self._validate_attribute_for_existence(db_attr_val, db_tag.label_id, "all")
 
@@ -574,35 +580,39 @@ class JobAnnotation:
                 )
 
     def _init_tags_from_db(self):
-        # NOTE: do not use .prefetch_related() with .values() since it's useless:
-        # https://github.com/cvat-ai/cvat/pull/7748#issuecomment-2063695007
-        db_tags = (
-            self.db_job.labeledimage_set.values(
+        db_tags = {
+            row["id"]: dotdict(row, attributes=[])
+            for row in self.db_job.labeledimage_set.values(
                 "id",
                 "frame",
                 "label_id",
                 "group",
                 "source",
-                "attribute__spec_id",
-                "attribute__value",
-                "attribute__id",
             )
             .order_by("frame")
             .iterator(chunk_size=2000)
-        )
+        }
 
-        db_tags = merge_table_rows(
-            rows=db_tags,
-            keys_for_merge={
-                "attributes": [
-                    "attribute__spec_id",
-                    "attribute__value",
-                    "attribute__id",
-                ],
-            },
-            field_id="id",
-        )
+        for attr in self.db_job.labeledimageattributeval_set.values(
+            "image_id",
+            "spec_id",
+            "value",
+            "id",
+        ).iterator(chunk_size=2000):
+            if attr["image_id"] not in db_tags:
+                continue
 
+            db_tags[attr["image_id"]]["attributes"].append(
+                dotdict(
+                    {
+                        "id": attr["id"],
+                        "spec_id": attr["spec_id"],
+                        "value": attr["value"],
+                    }
+                )
+            )
+
+        db_tags = list(db_tags.values())
         for db_tag in db_tags:
             self._extend_attributes(
                 db_tag.attributes, self.db_attributes[db_tag.label_id]["all"].values()
@@ -612,10 +622,9 @@ class JobAnnotation:
         self.ir_data.tags = serializer.data
 
     def _init_shapes_from_db(self):
-        # NOTE: do not use .prefetch_related() with .values() since it's useless:
-        # https://github.com/cvat-ai/cvat/pull/7748#issuecomment-2063695007
-        db_shapes = (
-            self.db_job.labeledshape_set.values(
+        db_shapes = {
+            row["id"]: dotdict(row, attributes=[])
+            for row in self.db_job.labeledshape_set.values(
                 "id",
                 "label_id",
                 "type",
@@ -628,29 +637,33 @@ class JobAnnotation:
                 "rotation",
                 "points",
                 "parent",
-                "attribute__spec_id",
-                "attribute__value",
-                "attribute__id",
             )
             .order_by("frame")
             .iterator(chunk_size=2000)
-        )
+        }
 
-        db_shapes = merge_table_rows(
-            rows=db_shapes,
-            keys_for_merge={
-                "attributes": [
-                    "attribute__spec_id",
-                    "attribute__value",
-                    "attribute__id",
-                ],
-            },
-            field_id="id",
-        )
+        for attr in self.db_job.labeledshapeattributeval_set.values(
+            "shape_id",
+            "spec_id",
+            "value",
+            "id",
+        ).iterator(chunk_size=2000):
+            if attr["shape_id"] not in db_shapes:
+                continue
+
+            db_shapes[attr["shape_id"]]["attributes"].append(
+                dotdict(
+                    {
+                        "id": attr["id"],
+                        "spec_id": attr["spec_id"],
+                        "value": attr["value"],
+                    }
+                )
+            )
 
         shapes = {}
         elements = {}
-        for db_shape in db_shapes:
+        for db_shape in db_shapes.values():
             self._extend_attributes(
                 db_shape.attributes, self.db_attributes[db_shape.label_id]["all"].values()
             )
