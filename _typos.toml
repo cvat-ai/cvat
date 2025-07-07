@@ -5,17 +5,18 @@ files.extend-exclude = [
 	"**/*.zip",
 	"*.log",
 	"*.min.js",
-	"**/node_modules",
     "*.patch",
 ]
 default.extend-ignore-re = [
 	# test passwords
     "\"md5.*?\"",
 
-	# Line ignore with trailing "# spellchecker: disable-line":
+	# Line ignore with trailing "# spellchecker: disable-line"
+	# or trailing "// spellchecker: disable-line"
 	"(?Rm)^.*(#|//)\\s*spellchecker: disable-line$",
 
-	# Line block with # spellchecker:<on|off>:
+	# Line block with "# spellchecker:<on|off>"
+	# or "// spellchecker:<on|off>"
 	"(?s)(#|//)\\s*spellchecker:off.*?\\n\\s*(#|//)\\s*spellchecker:on"
 	# Taken from https://github.com/crate-ci/typos/blob/master/docs/reference.md#example-configurations
 
@@ -41,12 +42,12 @@ debounding = "debouncing"
 firts = "first"
 inconvinient = "inconvenient"
 keupoints = "keypoints"
-lastest = "latest"
 leafs = "leafs"
 nd = "nd"
 occurreed = "occurred"
 perameters = "parameters"
 performe = "perform"
+lastest = "latest"
 roration = "rotation"
 segway = "segway"
 splitted = "splitted"
