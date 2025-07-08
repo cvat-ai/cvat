@@ -104,20 +104,22 @@ context('Search frame by filename', () => {
             });
         });
 
-        it('search for present frames, scroll through', { keystrokeDelay: 50 }, () => {
-            const input = '0';
-            const expectedFilenames = filenamesThatContain(input);
+        it('search for present frames, scroll through',
+            { keystrokeDelay: 50 }, // search debounce
+            () => {
+                const input = '0';
+                const expectedFilenames = filenamesThatContain(input);
 
-            cy.get('.cvat-frame-search-modal').find('input')
-                .should('be.focused').type(input);
-            cy.contains(expectedFilenames[0]).then(() => {
-                checkFrameSearchResults(expectedFilenames, allFilenames);
+                cy.get('.cvat-frame-search-modal').find('input')
+                    .should('be.focused').type(input);
+                cy.contains(expectedFilenames[0]).then(() => {
+                    checkFrameSearchResults(expectedFilenames, allFilenames);
+                });
+                // After clearing the input, modal should stay
+                cy.get('.cvat-frame-search-modal').find('input').clear();
+                cy.get('.cvat-frame-search-modal').should('be.visible')
+                    .find('input').should('be.visible');
             });
-            // After clearing the input, modal should stay
-            cy.get('.cvat-frame-search-modal').find('input').clear();
-            cy.get('.cvat-frame-search-modal').should('be.visible')
-                .find('input').should('be.visible');
-        });
 
         it("negative search, modal shows 'No frames found", () => {
             cy.get('.cvat-frame-search-modal').find('input').type('N');
