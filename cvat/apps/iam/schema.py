@@ -68,8 +68,7 @@ class SessionAuthenticationScheme(SessionScheme):
         csrf_token_description = textwrap.dedent(
             """\
             A CSRF protection token. Can be received in the 'csrftoken' cookie in the
-            server response on the /api/auth/login endpoint.
-            For HTTPS requests, the 'Origin' and 'Host' or 'Referer' and 'Host' headers
+            server response on the /api/auth/login endpoint. The 'Origin' header
             must also be specified in the request.
         """
         )
