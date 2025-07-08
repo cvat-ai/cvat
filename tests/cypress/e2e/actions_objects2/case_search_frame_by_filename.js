@@ -104,7 +104,7 @@ context('Search frame by filename', () => {
             });
         });
 
-        it('search for present frames, scroll through', () => {
+        it('search for present frames, scroll through', { keystrokeDelay: 50 }, () => {
             const input = '0';
             const expectedFilenames = filenamesThatContain(input);
 
