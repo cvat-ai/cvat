@@ -889,7 +889,7 @@ class JobQuerySet(models.QuerySet):
             raise TaskGroundTruthJobsLimitError()
 
     def with_issue_counts(self):
-        return self.annotate(issues__count=models.Count('issues'))
+        return self.annotate(issue__count=models.Count('issue'))
 
 
 
@@ -930,7 +930,7 @@ class Job(TimestampedModel, FileSystemRelatedModel):
     user_can_view_task: MaybeUndefined[bool]
     "Can be defined by the fetching queryset to avoid extra IAM checks, e.g. in a list serializer"
 
-    issues__count: MaybeUndefined[int]
+    issue__count: MaybeUndefined[int]
     "Can be defined by the fetching queryset"
 
     def get_target_storage(self) -> Optional[Storage]:
