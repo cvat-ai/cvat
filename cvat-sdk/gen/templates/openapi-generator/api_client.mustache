@@ -667,7 +667,11 @@ class ApiClient(object):
 
         parsed_url = parse_url(request_host)
         origin = f"{parsed_url.scheme}://{parsed_url.host}"
-        if parsed_url.port is not None and parsed_url.port not in (80, 443):
+
+        if parsed_url.port is not None and not (
+             parsed_url.scheme == "http" and parsed_url.port == 80 or
+             parsed_url.scheme == "https" and parsed_url.port == 443
+        ):
             origin = f"{origin}:{parsed_url.port}"
 
         return origin
