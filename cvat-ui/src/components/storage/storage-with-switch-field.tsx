@@ -11,8 +11,7 @@ import Switch from 'antd/lib/switch';
 import Tooltip from 'antd/lib/tooltip';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { StorageData } from 'cvat-core-wrapper';
-import { StorageLocation } from 'reducers';
+import { StorageData, StorageLocation } from 'cvat-core-wrapper';
 import StorageField from './storage-field';
 
 export interface Props {
@@ -28,6 +27,7 @@ export interface Props {
     onChangeLocationValue?: (value: StorageLocation) => void;
     onChangeStorage?: (values: StorageData) => void;
     onChangeUseDefaultStorage?: (value: boolean) => void;
+    disableSwitch?: boolean;
 }
 
 export default function StorageWithSwitchField(props: Props): JSX.Element {
@@ -44,6 +44,7 @@ export default function StorageWithSwitchField(props: Props): JSX.Element {
         onChangeUseDefaultStorage,
         onChangeStorage,
         onChangeLocationValue,
+        disableSwitch,
     } = props;
 
     return (
@@ -62,6 +63,7 @@ export default function StorageWithSwitchField(props: Props): JSX.Element {
                                         onChangeUseDefaultStorage(value);
                                     }
                                 }}
+                                disabled={disableSwitch}
                             />
                         </Form.Item>
                         <Text strong>{switchDescription}</Text>

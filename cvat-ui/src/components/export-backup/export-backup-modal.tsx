@@ -11,14 +11,44 @@ import Notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
 import Input from 'antd/lib/input';
 import Form from 'antd/lib/form';
+import Tooltip from 'antd/lib/tooltip';
+import { QuestionCircleOutlined } from '@ant-design/icons';
 import { CombinedState } from 'reducers';
 import { exportActions, exportBackupAsync } from 'actions/export-actions';
 import {
-    getCore, Storage, StorageData, StorageLocation,
+    getCore, Job, ProjectOrTaskOrJob, Storage, StorageData, StorageLocation,
 } from 'cvat-core-wrapper';
 
 import CVATMarkdown from 'components/common/cvat-markdown';
 import TargetStorageField from 'components/storage/target-storage-field';
+
+function NameTemplateTooltip(props: Readonly<{ nameTemplate: string; example: string }>): JSX.Element {
+    const { example } = props;
+    return (
+        <>
+            You can use in the template:
+            <ul style={{ marginBottom: 0 }}>
+                <li>
+                    <code>{'{{id}}'}</code>
+                    - task id
+                </li>
+                <li>
+                    <code>{'{{name}}'}</code>
+                    - task name
+                </li>
+                <li>
+                    <code>{'{{index}}'}</code>
+                    - index in selection (starts from 1)
+                </li>
+            </ul>
+            <div>
+                Example:
+                {' '}
+                <i>{example || 'backup_1.zip'}</i>
+            </div>
+        </>
+    );
+}
 
 const core = getCore();
 
@@ -45,80 +75,146 @@ function ExportBackupModal(): JSX.Element {
     const [useDefaultStorage, setUseDefaultStorage] = useState(true);
     const [storageLocation, setStorageLocation] = useState(StorageLocation.LOCAL);
     const [defaultStorageLocation, setDefaultStorageLocation] = useState(StorageLocation.LOCAL);
-    const [defaultStorageCloudId, setDefaultStorageCloudId] = useState<number | null>(null);
+    const [defaultStorageCloudId, setDefaultStorageCloudId] = useState<number | undefined>(undefined);
     const [helpMessage, setHelpMessage] = useState('');
+    const [nameTemplate, setNameTemplate] = useState('backup_{{id}}');
+
+    const selectedIds = useSelector((state: CombinedState) => state.selection.selected);
+    const allTasks = useSelector((state: CombinedState) => state.tasks.current);
 
     const instanceT = useSelector((state: CombinedState) => state.export.instanceType);
     const instance = useSelector((state: CombinedState) => {
         if (!instanceT) {
             return null;
         }
-        return state.export[`${instanceT}s` as 'projects' | 'tasks']?.backup?.modalInstance;
+        return state.export[`${instanceT}s` as 'projects' | 'tasks']?.backup?.modalInstance ?? null;
     });
 
+    const isBulkMode = selectedIds.length > 1;
+    let selectedInstances: Exclude<ProjectOrTaskOrJob, Job>[] = [];
+    if (isBulkMode) {
+        selectedInstances = allTasks.filter((t) => selectedIds.includes(t.id));
+    } else if (instance) {
+        selectedInstances = [instance];
+    }
+
     useEffect(() => {
-        if (instance instanceof core.classes.Project) {
-            setInstanceType(`project #${instance.id}`);
-        } else if (instance instanceof core.classes.Task) {
-            setInstanceType(`task #${instance.id}`);
+        if (instance && instance instanceof core.classes.Project) {
+            setInstanceType('project');
+        } else if (instance && instance instanceof core.classes.Task) {
+            setInstanceType('task');
         }
     }, [instance]);
 
     useEffect(() => {
         if (instance) {
             setDefaultStorageLocation(instance.targetStorage.location);
-            setDefaultStorageCloudId(instance.targetStorage.cloudStorageId);
+            setDefaultStorageCloudId(instance.targetStorage.cloudStorageId ?? undefined);
         }
     }, [instance]);
 
     useEffect(() => {
-        // eslint-disable-next-line prefer-template
-        const message = `Export backup to ${(defaultStorageLocation) ? defaultStorageLocation.split('_')[0] : 'local'} ` +
-                        `storage ${(defaultStorageCloudId) ? `№${defaultStorageCloudId}` : ''}`;
-        setHelpMessage(message);
+        const loc = defaultStorageLocation ? defaultStorageLocation.split('_')[0] : 'local';
+        const cloudId = defaultStorageCloudId !== undefined && defaultStorageCloudId !== null ? `№${defaultStorageCloudId}` : '';
+        setHelpMessage(`Export backup to ${loc} storage ${cloudId}`);
     }, [defaultStorageLocation, defaultStorageCloudId]);
 
     const closeModal = (): void => {
         setUseDefaultStorage(true);
         setStorageLocation(StorageLocation.LOCAL);
         form.resetFields();
-        dispatch(exportActions.closeExportBackupModal(instance));
+        if (instance) {
+            dispatch(exportActions.closeExportBackupModal(instance));
+        }
     };
 
     const handleExport = useCallback(
         (values: FormValues): void => {
-            dispatch(
-                exportBackupAsync(
-                    instance,
-                    new Storage({
-                        location: useDefaultStorage ? defaultStorageLocation : values.targetStorage?.location,
-                        cloudStorageId: useDefaultStorage ? (
-                            defaultStorageCloudId
-                        ) : (
-                            values.targetStorage?.cloudStorageId
+            if (isBulkMode) {
+                selectedInstances.forEach((inst, idx) => {
+                    if (!inst) return;
+                    // Format name using template
+                    let backupName = nameTemplate
+                        .replaceAll('{{id}}', String(inst.id))
+                        .replaceAll('{{name}}', inst.name ?? '')
+                        .replaceAll('{{index}}', String(idx + 1));
+                    if (!backupName.endsWith('.zip')) backupName += '.zip';
+                    dispatch(
+                        exportBackupAsync(
+                            inst,
+                            new Storage({
+                                location: values.targetStorage?.location,
+                                cloudStorageId: values.targetStorage?.cloudStorageId,
+                            }),
+                            false,
+                            backupName,
                         ),
-                    }),
-                    useDefaultStorage,
-                    values.customName ? `${values.customName}.zip` : undefined,
-                ),
-            );
+                    );
+                });
+            } else if (instance) {
+                const customName = values.customName ? `${values.customName}.zip` : '';
+                let cloudStorageId: number | undefined;
+                if (useDefaultStorage) {
+                    cloudStorageId = defaultStorageCloudId ?? undefined;
+                } else {
+                    cloudStorageId = values.targetStorage?.cloudStorageId;
+                }
+                dispatch(
+                    exportBackupAsync(
+                        instance,
+                        new Storage({
+                            location: useDefaultStorage ? defaultStorageLocation : values.targetStorage?.location,
+                            cloudStorageId,
+                        }),
+                        useDefaultStorage,
+                        customName,
+                    ),
+                );
+            }
             closeModal();
 
-            const description = 'Backup export was started. You can check progress [here](/requests).';
+            const description = isBulkMode ?
+                'Bulk backup export was started. You can check progress [here](/requests).' :
+                'Backup export was started. You can check progress [here](/requests).';
             Notification.info({
-                message: 'Backup export started',
+                message: isBulkMode ? 'Bulk backup export started' : 'Backup export started',
                 description: (
                     <CVATMarkdown history={history}>{description}</CVATMarkdown>
                 ),
                 className: 'cvat-notification-notice-export-backup-start',
             });
         },
-        [instance, useDefaultStorage, defaultStorageLocation, defaultStorageCloudId],
+        [
+            instance,
+            isBulkMode,
+            selectedInstances,
+            nameTemplate,
+            useDefaultStorage,
+            defaultStorageLocation,
+            defaultStorageCloudId,
+            dispatch,
+            history,
+        ],
     );
+
+    const exampleName = (isBulkMode && selectedInstances.length > 0 && selectedInstances[0]) ?
+        nameTemplate
+            .replaceAll('{{id}}', String(selectedInstances[0].id))
+            .replaceAll('{{name}}', selectedInstances[0].name ?? '')
+            .replaceAll('{{index}}', '1') :
+        'backup_1.zip';
 
     return (
         <Modal
-            title={<Text strong>{`Export ${instanceType}`}</Text>}
+            title={
+                isBulkMode ? (
+                    <Text strong>
+                        {`Export ${selectedInstances.length} ${instanceType}s`}
+                    </Text>
+                ) : (
+                    <Text strong>{`Export ${instanceType} #${instance?.id}`}</Text>
+                )
+            }
             open={!!instance}
             onCancel={closeModal}
             onOk={() => form.submit()}
@@ -126,27 +222,51 @@ function ExportBackupModal(): JSX.Element {
             destroyOnClose
         >
             <Form
-                name={`Export ${instanceType}`}
                 form={form}
                 layout='vertical'
                 initialValues={initialValues}
                 onFinish={handleExport}
             >
-                <Form.Item label={<Text strong>Custom name</Text>} name='customName'>
-                    <Input
-                        placeholder='Custom name for a backup file'
-                        suffix='.zip'
-                        className='cvat-modal-export-filename-input'
-                    />
-                </Form.Item>
+                {isBulkMode ? (
+                    <Form.Item label={<Text strong>Name template</Text>} required>
+                        <Input
+                            value={nameTemplate}
+                            onChange={(e) => setNameTemplate(e.target.value)}
+                            placeholder='backup_{{id}}'
+                            suffix='.zip'
+                            className='cvat-modal-export-filename-input'
+                        />
+                        <Text type='secondary'>
+                            <Tooltip
+                                title={(
+                                    <NameTemplateTooltip
+                                        nameTemplate={nameTemplate}
+                                        example={exampleName}
+                                    />
+                                )}
+                            >
+                                When forming the backup name, a template is used.
+                                <QuestionCircleOutlined />
+                            </Tooltip>
+                        </Text>
+                    </Form.Item>
+                ) : (
+                    <Form.Item label={<Text strong>Custom name</Text>} name='customName'>
+                        <Input
+                            placeholder='Custom name for a backup file'
+                            suffix='.zip'
+                            className='cvat-modal-export-filename-input'
+                        />
+                    </Form.Item>
+                )}
                 <TargetStorageField
-                    instanceId={instance?.id}
+                    instanceId={instance ? instance.id : null}
                     switchDescription='Use default settings'
                     switchHelpMessage={helpMessage}
-                    useDefaultStorage={useDefaultStorage}
+                    useDefaultStorage={isBulkMode ? false : useDefaultStorage}
                     storageDescription={`Specify target storage for export ${instanceType}`}
                     locationValue={storageLocation}
-                    onChangeUseDefaultStorage={(value: boolean) => setUseDefaultStorage(value)}
+                    onChangeUseDefaultStorage={isBulkMode ? undefined : (value: boolean) => setUseDefaultStorage(value)}
                     onChangeLocationValue={(value: StorageLocation) => setStorageLocation(value)}
                 />
             </Form>

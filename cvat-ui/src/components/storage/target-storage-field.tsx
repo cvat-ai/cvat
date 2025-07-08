@@ -4,8 +4,7 @@
 
 import './styles.scss';
 import React from 'react';
-import { StorageLocation } from 'reducers';
-import { StorageData } from 'cvat-core-wrapper';
+import { StorageData, StorageLocation } from 'cvat-core-wrapper';
 import StorageWithSwitchField from './storage-with-switch-field';
 
 export interface Props {
@@ -18,6 +17,7 @@ export interface Props {
     onChangeLocationValue?: (value: StorageLocation) => void;
     onChangeStorage?: (values: StorageData) => void;
     onChangeUseDefaultStorage?: (value: boolean) => void;
+    disableSwitch?: boolean;
 }
 
 export default function TargetStorageField(props: Props): JSX.Element {
@@ -31,6 +31,7 @@ export default function TargetStorageField(props: Props): JSX.Element {
         onChangeLocationValue,
         onChangeUseDefaultStorage,
         onChangeStorage,
+        disableSwitch,
     } = props;
 
     return (
@@ -47,6 +48,7 @@ export default function TargetStorageField(props: Props): JSX.Element {
             onChangeUseDefaultStorage={onChangeUseDefaultStorage}
             onChangeStorage={onChangeStorage}
             onChangeLocationValue={onChangeLocationValue}
+            disableSwitch={disableSwitch}
         />
     );
 }

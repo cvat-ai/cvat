@@ -43,12 +43,14 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
-            // Ignore clicks inside dropdown menus (Ant Design)
             const dropdown = (event.target as HTMLElement).closest('.ant-dropdown');
             if (dropdown) return;
 
             const virtualList = (event.target as HTMLElement).closest('.rc-virtual-list');
             if (virtualList) return;
+
+            const modal = document.querySelector('.ant-modal-root .ant-modal');
+            if (modal && (modal as HTMLElement).offsetParent !== null) return;
 
             if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
                 dispatch(selectionActions.clearSelectedResources());
