@@ -68,7 +68,7 @@ def _receive_attributes_from_db(related_manager, foreign_key: str) -> defaultdic
         "spec_id",
         "value",
         "id",
-    ).iterator(chunk_size=anno_iterator_size):
+    ).iterator(chunk_size=anno_chunk_size):
         attributes[attr[foreign_key]].append(
             dotdict(
                 {
@@ -613,7 +613,7 @@ class JobAnnotation:
                 "source",
             )
             .order_by("frame")
-            .iterator(chunk_size=anno_iterator_size)
+            .iterator(chunk_size=anno_chunk_size)
         ]
 
         labeledimage_attributes = _receive_attributes_from_db(
@@ -648,7 +648,7 @@ class JobAnnotation:
                 "parent",
             )
             .order_by("frame")
-            .iterator(chunk_size=anno_iterator_size)
+            .iterator(chunk_size=anno_chunk_size)
         ]
 
         labeledshape_attributes = _receive_attributes_from_db(
@@ -703,7 +703,7 @@ class JobAnnotation:
                 "shape__outside",
             )
             .order_by("id", "shape__frame")
-            .iterator(chunk_size=anno_iterator_size)
+            .iterator(chunk_size=anno_chunk_size)
         )
 
         db_tracks = merge_table_rows(
