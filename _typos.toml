@@ -11,9 +11,9 @@ default.extend-ignore-re = [
 	# test passwords
     "\"md5.*?\"",
 
-	# Line ignore with trailing "# spellchecker: disable-line"
-	# or trailing "// spellchecker: disable-line"
-	"(?Rm)^.*(#|//)\\s*spellchecker: disable-line$",
+	# Line ignore with trailing "# spellchecker:disable-line"
+	# or trailing "// spellchecker:disable-line"
+	"(?Rm)^.*(#|//)\\s*spellchecker:disable-line$",
 
 	# Line block with "# spellchecker:<on|off>"
 	# or "// spellchecker:<on|off>"
@@ -55,5 +55,4 @@ succefull = "successful"
 tesk = "task"
 tpic = "tpic"
 trak = "trak"
-tupe = "type"
 typ = "type"
