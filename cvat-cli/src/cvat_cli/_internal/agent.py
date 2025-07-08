@@ -126,7 +126,7 @@ class _TrackingStateContainer:
             raise _BadArError(f"Tracking state {state_id!r} is not for task #{task_id}")
 
         if image_dims != ext_state.original_image_dims:
-            raise _BadArError(f"Image size changed between frames")
+            raise _BadArError(f"Image sizes of the start frame and the current frame are different")
 
         ext_state.last_accessed_at = datetime.now(tz=timezone.utc)
         self._id_to_ext_state.move_to_end(state_id)
