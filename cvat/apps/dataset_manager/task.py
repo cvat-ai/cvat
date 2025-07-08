@@ -657,7 +657,7 @@ class JobAnnotation:
 
         shapes = {}
         elements = {}
-        for db_shape in db_shapes.values():
+        for db_shape in db_shapes:
             db_shape.attributes = labeledshape_attributes[db_shape.id]
             self._extend_attributes(
                 db_shape.attributes, self.db_attributes[db_shape.label_id]["all"].values()
