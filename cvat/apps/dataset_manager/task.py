@@ -37,6 +37,7 @@ from cvat.apps.profiler import silk_profile
 dlogger = DatasetLogManager()
 anno_chunk_size = settings.DEFAULT_DB_ANNO_CHUNK_SIZE
 
+
 class dotdict(OrderedDict):
     """dot.notation access to dictionary attributes"""
 
