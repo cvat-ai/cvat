@@ -4,19 +4,20 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import { useDispatch } from 'react-redux';
-import React, { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useHistory } from 'react-router';
 import Spin from 'antd/lib/spin';
 import { Col, Row } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
 
-import { TasksQuery } from 'reducers';
+import { TasksQuery, CombinedState } from 'reducers';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import TaskListContainer from 'containers/tasks-page/tasks-list';
 import { getTasksAsync } from 'actions/tasks-actions';
 import { anySearch } from 'utils/any-search';
 import { useResourceQuery } from 'utils/hooks';
+import { selectionActions } from 'actions/selection-actions';
 
 import TopBar from './top-bar';
 import EmptyListComponent from './empty-list';
@@ -29,7 +30,7 @@ interface Props {
     bulkFetching: boolean;
 }
 
-function TasksPageComponent(props: Props): JSX.Element {
+function TasksPageComponent(props: Readonly<Props>): JSX.Element {
     const {
         query, fetching, importing, count, bulkFetching,
     } = props;
@@ -37,6 +38,12 @@ function TasksPageComponent(props: Props): JSX.Element {
     const dispatch = useDispatch();
     const history = useHistory();
     const [isMounted, setIsMounted] = useState(false);
+
+    const allTaskIds = useSelector((state: CombinedState) => state.tasks.current.map((t) => t.id));
+    const selectedCount = useSelector((state: CombinedState) => state.selection.selected.length);
+    const onSelectAll = useCallback(() => {
+        dispatch(selectionActions.selectAllResources(allTaskIds));
+    }, [dispatch, allTaskIds]);
 
     const updatedQuery = useResourceQuery<TasksQuery>(query);
 
@@ -114,6 +121,8 @@ function TasksPageComponent(props: Props): JSX.Element {
                 }}
                 query={updatedQuery}
                 importing={importing}
+                selectedCount={selectedCount}
+                onSelectAll={onSelectAll}
             />
             { fetching && !bulkFetching ? (
                 <div className='cvat-empty-tasks-list'>
