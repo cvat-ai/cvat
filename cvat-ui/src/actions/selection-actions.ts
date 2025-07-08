@@ -14,6 +14,7 @@ export enum SelectionActionsTypes {
     UPDATE_BULK_ACTION_STATUS = 'UPDATE_BULK_ACTION_STATUS',
     FINISH_BULK_ACTION = 'FINISH_BULK_ACTION',
     CANCEL_BULK_ACTION = 'CANCEL_BULK_ACTION',
+    BULK_OPERATION_FAILED = 'BULK_OPERATION_FAILED',
 }
 
 export const selectionActions = {
@@ -35,6 +36,12 @@ export const selectionActions = {
         SelectionActionsTypes.FINISH_BULK_ACTION),
     cancelBulkAction: () => createAction(
         SelectionActionsTypes.CANCEL_BULK_ACTION),
+    bulkOperationFailed: (payload: {
+        message: string;
+        remainingItemsCount: number;
+        retryPayload: any;
+    }) => createAction(
+        SelectionActionsTypes.BULK_OPERATION_FAILED, payload),
 };
 
 export function makeBulkOperationAsync<T>(
@@ -43,6 +50,7 @@ export function makeBulkOperationAsync<T>(
     statusMessage: (item: T, idx: number, total: number) => string,
 ) {
     return async (dispatch: any, getState: any) => {
+        let processedCount = 0;
         try {
             if (items.length === 1) {
                 await operation(items[0], 0, 1);
@@ -60,10 +68,19 @@ export function makeBulkOperationAsync<T>(
                 }));
                 // eslint-disable-next-line no-await-in-loop
                 await operation(item, i, items.length);
+                processedCount = i + 1;
             }
         } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error(error);
+            const remainingItems = items.slice(processedCount);
+            dispatch(selectionActions.bulkOperationFailed({
+                message: 'Bulk operation failed',
+                remainingItemsCount: remainingItems.length,
+                retryPayload: {
+                    items: remainingItems,
+                    operation,
+                    statusMessage,
+                },
+            }));
         } finally {
             dispatch(selectionActions.finishBulkAction());
         }

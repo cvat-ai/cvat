@@ -656,6 +656,17 @@ export interface NotificationsState {
             fetching: null | ErrorState;
             canceling: null | ErrorState;
             deleting: null | ErrorState;
+        };
+        selection: {
+            bulkOperation: {
+                message: string,
+                remainingItemsCount: number,
+                retryPayload: {
+                    items: any[],
+                    operation: (item: any, idx: number, total: number) => Promise<void>,
+                    statusMessage: (item: any, idx: number, total: number) => string,
+                },
+            } | null;
         }
     };
     messages: {

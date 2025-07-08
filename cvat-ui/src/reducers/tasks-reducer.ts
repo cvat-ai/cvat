@@ -226,6 +226,7 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                     ...state.activities,
                     updates: omit(updates, taskId),
                 },
+                fetching: false,
             };
         }
         default:

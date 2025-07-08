@@ -125,6 +125,11 @@ interface CVATAppProps {
     serverAPISchemaInitialized: boolean;
     isPasswordResetEnabled: boolean;
     isRegistrationEnabled: boolean;
+    retryBulkOperation: (payload: {
+        items: any[];
+        operation: (item: any, idx: number, total: number) => Promise<void>;
+        statusMessage: (item: any, idx: number, total: number) => string;
+    }) => void;
 }
 
 interface CVATAppState {
@@ -354,7 +359,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             return;
         }
 
-        if (user == null || !user.isVerified || !user.id) {
+        if (user == null || !user.isVerified || !user?.id) {
             return;
         }
 
@@ -385,7 +390,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
     private showMessages(): void {
         const { notifications, resetMessages, history } = this.props;
-
         function showMessage(notificationState: NotificationState): void {
             notification.info({
                 message: (
@@ -394,7 +398,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                 description: notificationState?.description && (
                     <CVATMarkdown history={history}>{notificationState?.description}</CVATMarkdown>
                 ),
-                duration: notificationState.duration || null,
+                duration: notificationState.duration ?? null,
             });
         }
 
@@ -415,26 +419,36 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
     }
 
     private showErrors(): void {
-        const { notifications, resetErrors, history } = this.props;
-
-        function showError(title: string, _error: Error, shouldLog?: boolean, className?: string): void {
+        const {
+            notifications,
+            resetErrors,
+            history,
+            retryBulkOperation,
+        } = this.props;
+        function showError(
+            title: string,
+            _error: Error,
+            shouldLog?: boolean,
+            className?: string,
+            customDescription?: React.ReactNode,
+        ): void {
             const error = _error?.message || _error.toString();
             const dynamicProps = typeof className === 'undefined' ? {} : { className };
-
             let errorLength = error.length;
-            // Do not count the length of the link in the Markdown error message
             if (/]\(.+\)/.test(error)) {
                 errorLength = error.replace(/]\(.+\)/, ']').length;
             }
-
             notification.error({
                 ...dynamicProps,
                 message: (
                     <CVATMarkdown history={history}>{title}</CVATMarkdown>
                 ),
                 duration: null,
-                description: errorLength > appConfig.MAXIMUM_NOTIFICATION_MESSAGE_LENGTH ?
-                    'Open the Browser Console to get details' : <CVATMarkdown history={history}>{error}</CVATMarkdown>,
+                description: customDescription ?? (
+                    errorLength > appConfig.MAXIMUM_NOTIFICATION_MESSAGE_LENGTH ?
+                        'Open the Browser Console to get details' :
+                        <CVATMarkdown history={history}>{error}</CVATMarkdown>
+                ),
             });
 
             if (shouldLog) {
@@ -457,7 +471,40 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                 }
             }
         }
-
+        const bulkError = notifications.errors.selection.bulkOperation;
+        if (bulkError) {
+            const { remainingItemsCount, retryPayload } = bulkError;
+            const description = (
+                <>
+                    {remainingItemsCount > 0 ? (
+                        <>
+                            Some items failed to process. You can retry the operation for the remaining
+                            {` ${remainingItemsCount} items.`}
+                        </>
+                    ) : (
+                        'An error occurred during the bulk operation.'
+                    )}
+                    {remainingItemsCount > 0 && (
+                        <>
+                            <br />
+                            <button
+                                type='button'
+                                className='ant-btn ant-btn-primary ant-btn-sm'
+                                style={{ marginTop: 8 }}
+                                onClick={() => {
+                                    notification.destroy();
+                                    retryBulkOperation(retryPayload);
+                                }}
+                            >
+                                Retry
+                            </button>
+                        </>
+                    )}
+                </>
+            );
+            showError(bulkError.message, new Error(bulkError.message), false, undefined, description);
+            resetErrors();
+        }
         if (shown) {
             resetErrors();
         }
@@ -576,7 +623,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         <Redirect
                                             push
                                             to={{
-                                                pathname: queryParams.get('next') || '/tasks',
+                                                pathname: queryParams.get('next') ?? '/tasks',
                                                 search: authParams ? new URLSearchParams(authParams).toString() : '',
                                             }}
                                         />

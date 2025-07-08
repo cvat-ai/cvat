@@ -27,6 +27,7 @@ import { RequestsActionsTypes } from 'actions/requests-actions';
 import { ImportActionTypes } from 'actions/import-actions';
 import { ExportActionTypes } from 'actions/export-actions';
 import { ConsensusActionTypes } from 'actions/consensus-actions';
+import { SelectionActionsTypes } from 'actions/selection-actions';
 import { getInstanceType } from 'actions/common';
 
 import config from 'config';
@@ -191,6 +192,9 @@ const defaultState: NotificationsState = {
             fetching: null,
             canceling: null,
             deleting: null,
+        },
+        selection: {
+            bulkOperation: null,
         },
     },
     messages: {
@@ -1178,7 +1182,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case AnnotationActionTypes.SLICE_ANNOTATIONS_FAILED:
+        case AnnotationActionTypes.SLICE_ANNOTATIONS_FAILED: {
             return {
                 ...state,
                 errors: {
@@ -1193,6 +1197,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     },
                 },
             };
+        }
         case AnnotationActionTypes.SPLIT_ANNOTATIONS_FAILED: {
             return {
                 ...state,
@@ -2047,6 +2052,18 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             shouldLog: shouldLog(action.payload.error),
                             className: 'cvat-notification-notice-delete-webhook-failed',
                         },
+                    },
+                },
+            };
+        }
+        case SelectionActionsTypes.BULK_OPERATION_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    selection: {
+                        ...state.errors.selection,
+                        bulkOperation: action.payload,
                     },
                 },
             };
