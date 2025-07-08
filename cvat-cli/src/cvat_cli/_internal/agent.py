@@ -174,7 +174,10 @@ def _worker_job_init_tracking(
 ) -> list[str]:
     _tracking_states.prune()
 
-    pp_image = _current_function.preprocess_image(context, image)
+    if hasattr(_current_function, "preprocess_image"):
+        pp_image = _current_function.preprocess_image(context, image)
+    else:
+        pp_image = image
 
     return [
         _tracking_states.store(

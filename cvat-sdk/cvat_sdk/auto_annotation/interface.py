@@ -302,10 +302,13 @@ class TrackingFunction(AutoAnnotationFunction, Protocol[_PreprocessedImage, _Tra
       It may also update the tracking state as needed in order to improve tracking quality
       on subsequent images.
 
-    In addition, a tracking function must implement a `preprocess_image` method
+    In addition, a tracking function may implement a `preprocess_image` method
     that performs any processing that is independent of the specific shapes being tracked.
     Any image used with the function will first be passed to `preprocess_image`.
     When `init_tracking_state` and `track` are called, they will receive this method's output value.
+
+    If a function does not implement `preprocess_image`, then `init_tracking_state` and `track`
+    will receive the original image as a `PIL.Image.Image` object.
     """
 
     @property
@@ -324,6 +327,8 @@ class TrackingFunction(AutoAnnotationFunction, Protocol[_PreprocessedImage, _Tra
 
         Note that the resulting object may be reused in multiple calls to
         `init_tracking_state` and `track`.
+
+        This method is optional to implement.
         """
         ...
 
@@ -340,7 +345,8 @@ class TrackingFunction(AutoAnnotationFunction, Protocol[_PreprocessedImage, _Tra
         `shape.type` will be one of the types listed in the `supported_shape_types` field
         of the function's spec.
 
-        `pp_image` will be the result of calling `preprocess_image` on the image the shape is on.
+        `pp_image` will be the result of calling `preprocess_image` on the image the shape is on,
+        or, if `preprocess_image` is not implemented, that image itself as a `PIL.Image.Image`.
         The method must not modify this object.
         """
         ...
@@ -352,7 +358,8 @@ class TrackingFunction(AutoAnnotationFunction, Protocol[_PreprocessedImage, _Tra
         Predicts the position of a previously-analyzed shape on a new image.
 
         `pp_image` will be the result of calling `preprocess_image` on the image
-        on which the shape must be located.
+        on which the shape must be located,
+        or, if `preprocess_image` is not implemented, that image itself as a `PIL.Image.Image`.
         The method must not modify this object.
 
         `state` will be the result of calling `init_tracking_state`.
