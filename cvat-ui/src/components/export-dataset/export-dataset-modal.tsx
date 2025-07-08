@@ -5,11 +5,11 @@
 
 import './styles.scss';
 import React, { useState, useEffect, useCallback } from 'react';
-import { connect, useDispatch } from 'react-redux';
+import { connect, useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
 import Modal from 'antd/lib/modal';
 import Notification from 'antd/lib/notification';
-import { DownloadOutlined } from '@ant-design/icons';
+import { DownloadOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import Text from 'antd/lib/typography/Text';
 import Select from 'antd/lib/select';
 import Input from 'antd/lib/input';
@@ -23,6 +23,8 @@ import { exportActions, exportDatasetAsync } from 'actions/export-actions';
 import {
     Dumper, ProjectOrTaskOrJob, Job, Project, Storage, StorageData, StorageLocation, Task,
 } from 'cvat-core-wrapper';
+import Tooltip from 'antd/lib/tooltip';
+import { makeBulkOperationAsync } from 'actions/selection-actions';
 
 type FormValues = {
     selectedFormat: string | undefined;
@@ -43,7 +45,38 @@ const initialValues: FormValues = {
     useProjectTargetStorage: true,
 };
 
-function ExportDatasetModal(props: StateToProps): JSX.Element {
+function NameTemplateTooltip(props: Readonly<{ nameTemplate: string; example: string }>): JSX.Element {
+    const { example } = props;
+    return (
+        <>
+            You can use in the template:
+            <ul style={{ marginBottom: 0 }}>
+                <li>
+                    <code>{'{{id}}'}</code>
+                    <br />
+                    - task/project id
+                </li>
+                <li>
+                    <code>{'{{name}}'}</code>
+                    <br />
+                    - task/project name
+                </li>
+                <li>
+                    <code>{'{{index}}'}</code>
+                    <br />
+                    - index in selection (starts from 1)
+                </li>
+            </ul>
+            <div>
+                Example:
+                <br />
+                <i>{example || 'dataset_task_1.zip'}</i>
+            </div>
+        </>
+    );
+}
+
+function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
     const {
         dumpers,
         instance,
@@ -61,6 +94,18 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
     const [helpMessage, setHelpMessage] = useState('');
     const dispatch = useDispatch();
     const history = useHistory();
+
+    // Bulk logic additions
+    const selectedIds = useSelector((state: CombinedState) => state.selection.selected);
+    const allTasks = useSelector((state: CombinedState) => state.tasks.current);
+    const isBulkMode = selectedIds.length > 1;
+    let selectedInstances: (Task | Project)[] = [];
+    if (isBulkMode) {
+        selectedInstances = allTasks.filter((t) => selectedIds.includes(t.id));
+    } else if (instance && (instance instanceof Task || instance instanceof Project)) {
+        selectedInstances = [instance];
+    }
+    const [nameTemplate, setNameTemplate] = useState('dataset_task_{{id}}');
 
     useEffect(() => {
         if (instance instanceof Project) {
@@ -87,8 +132,9 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
     }, [instance]);
 
     useEffect(() => {
-        setHelpMessage(`Export to ${(defaultStorageLocation) ? defaultStorageLocation.split('_')[0] : 'local'} ` +
-                        `storage ${(defaultStorageCloudId) ? `№${defaultStorageCloudId}` : ''}`);
+        const loc = defaultStorageLocation ? defaultStorageLocation.split('_')[0] : 'local';
+        const cloudId = defaultStorageCloudId !== undefined && defaultStorageCloudId !== null ? `№${defaultStorageCloudId}` : '';
+        setHelpMessage(`Export to ${loc} storage ${cloudId}`);
     }, [defaultStorageLocation, defaultStorageCloudId]);
 
     const closeModal = (): void => {
@@ -102,6 +148,47 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
 
     const handleExport = useCallback(
         (values: FormValues): void => {
+            if (isBulkMode) {
+                dispatch(makeBulkOperationAsync<Task | Project>(
+                    selectedInstances,
+                    async (inst: Task | Project, idx: number) => {
+                        let exportName = nameTemplate
+                            .replaceAll('{{id}}', String(inst.id))
+                            .replaceAll('{{name}}', inst.name ?? '')
+                            .replaceAll('{{index}}', String(idx + 1));
+                        if (!exportName.endsWith('.zip')) exportName += '.zip';
+                        await dispatch(
+                            exportDatasetAsync(
+                                inst,
+                                values.selectedFormat as string,
+                                values.saveImages,
+                                false, // always custom storage in bulk
+                                new Storage({
+                                    location: values.targetStorage?.location,
+                                    cloudStorageId: values.targetStorage?.cloudStorageId,
+                                }),
+                                exportName,
+                            ),
+                        );
+                    },
+                    (inst: Task | Project, idx: number, total: number) => (
+                        `Exporting dataset for ${instanceType}#${inst.id} [${idx + 1}/${total}]`
+                    ),
+                ));
+                closeModal();
+                const resource = values.saveImages ? 'Dataset' : 'Annotations';
+                const description =
+                    `Bulk ${resource.toLowerCase()} export was started. ` +
+                    'You can check progress and download the file [here](/requests).';
+                Notification.info({
+                    message: `Bulk ${resource.toLowerCase()} export started`,
+                    description: (
+                        <CVATMarkdown history={history}>{description}</CVATMarkdown>
+                    ),
+                    className: `cvat-notification-notice-export-${instanceType.split(' ')[0]}-start`,
+                });
+                return;
+            }
             // have to validate format before so it would not be undefined
             dispatch(
                 exportDatasetAsync(
@@ -128,13 +215,42 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
                 className: `cvat-notification-notice-export-${instanceType.split(' ')[0]}-start`,
             });
         },
-        [instance, instanceType, useDefaultTargetStorage,
-            defaultStorageLocation, defaultStorageCloudId, targetStorage],
+        [
+            instance,
+            instanceType,
+            useDefaultTargetStorage,
+            defaultStorageLocation,
+            defaultStorageCloudId,
+            targetStorage,
+            isBulkMode,
+            selectedInstances,
+            nameTemplate,
+            dispatch,
+            history,
+        ],
     );
+
+    const exampleName = (isBulkMode && selectedInstances.length > 0 && selectedInstances[0]) ?
+        nameTemplate
+            .replaceAll('{{id}}', String(selectedInstances[0].id))
+            .replaceAll('{{name}}', selectedInstances[0].name ?? '')
+            .replaceAll('{{index}}', '1') :
+        'dataset_task_1.zip';
+
+    const sortedDumpers = dumpers.slice();
+    sortedDumpers.sort((a: Dumper, b: Dumper) => a.name.localeCompare(b.name));
 
     return (
         <Modal
-            title={<Text strong>{`Export ${instanceType} as a dataset`}</Text>}
+            title={
+                isBulkMode ? (
+                    <Text strong>
+                        {`Export ${selectedInstances.length} tasks as a dataset`}
+                    </Text>
+                ) : (
+                    <Text strong>{`Export ${instanceType} as a dataset`}</Text>
+                )
+            }
             open={!!instance}
             onCancel={closeModal}
             onOk={() => form.submit()}
@@ -154,8 +270,7 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
                     rules={[{ required: true, message: 'Format must be selected' }]}
                 >
                     <Select virtual={false} placeholder='Select dataset format' className='cvat-modal-export-select'>
-                        {dumpers
-                            .sort((a: Dumper, b: Dumper) => a.name.localeCompare(b.name))
+                        {sortedDumpers
                             .filter(
                                 (dumper: Dumper): boolean => dumper.dimension === instance?.dimension ||
                                     (instance instanceof Project && instance.dimension === null),
@@ -184,26 +299,51 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
                     </Form.Item>
                     <Text strong>Save images</Text>
                 </Space>
-
-                <Form.Item label={<Text strong>Custom name</Text>} name='customName'>
-                    <Input
-                        placeholder='Custom name for a dataset'
-                        suffix='.zip'
-                        className='cvat-modal-export-filename-input'
-                    />
-                </Form.Item>
+                {isBulkMode ? (
+                    <Form.Item label={<Text strong>Name template</Text>} required>
+                        <Input
+                            value={nameTemplate}
+                            onChange={(e) => setNameTemplate(e.target.value)}
+                            placeholder='dataset_{{id}}'
+                            suffix='.zip'
+                            className='cvat-modal-export-filename-input'
+                        />
+                        <Text type='secondary'>
+                            <Tooltip
+                                title={(
+                                    <NameTemplateTooltip
+                                        nameTemplate={nameTemplate}
+                                        example={exampleName}
+                                    />
+                                )}
+                            >
+                                When forming the dataset name, a template is used.
+                                <QuestionCircleOutlined />
+                            </Tooltip>
+                        </Text>
+                    </Form.Item>
+                ) : (
+                    <Form.Item label={<Text strong>Custom name</Text>} name='customName'>
+                        <Input
+                            placeholder='Custom name for a dataset'
+                            suffix='.zip'
+                            className='cvat-modal-export-filename-input'
+                        />
+                    </Form.Item>
+                )}
                 <TargetStorageField
                     instanceId={instance ? instance.id : null}
                     switchDescription='Use default settings'
                     switchHelpMessage={helpMessage}
-                    useDefaultStorage={useDefaultTargetStorage}
+                    useDefaultStorage={isBulkMode ? false : useDefaultTargetStorage}
                     storageDescription='Specify target storage for export dataset'
                     locationValue={targetStorage.location}
-                    onChangeUseDefaultStorage={(value: boolean) => setUseDefaultTargetStorage(value)}
-                    onChangeStorage={(value: StorageData) => setTargetStorage(value)}
-                    onChangeLocationValue={(value: StorageLocation) => {
-                        setTargetStorage({ location: value });
+                    onChangeUseDefaultStorage={isBulkMode ? undefined : (value: boolean) => {
+                        setUseDefaultTargetStorage(value);
                     }}
+                    onChangeStorage={(value: StorageData) => setTargetStorage(value)}
+                    onChangeLocationValue={(value: StorageLocation) => { setTargetStorage({ location: value }); }}
+                    disableSwitch={isBulkMode}
                 />
             </Form>
         </Modal>
@@ -218,7 +358,7 @@ interface StateToProps {
 function mapStateToProps(state: CombinedState): StateToProps {
     const { instanceType } = state.export;
     const instance = !instanceType ? null : (
-        state.export[`${instanceType}s` as 'projects' | 'tasks' | 'jobs']
+        state.export[`${instanceType}s`]
     ).dataset.modalInstance;
 
     return {

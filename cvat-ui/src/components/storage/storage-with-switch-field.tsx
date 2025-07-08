@@ -30,7 +30,7 @@ export interface Props {
     disableSwitch?: boolean;
 }
 
-export default function StorageWithSwitchField(props: Props): JSX.Element {
+export default function StorageWithSwitchField(props: Readonly<Props>): JSX.Element {
     const {
         instanceId,
         storageName,
@@ -49,56 +49,49 @@ export default function StorageWithSwitchField(props: Props): JSX.Element {
 
     return (
         <>
-            {
-                !!instanceId && (
-                    <Space>
-                        <Form.Item
-                            name={switchName}
-                            valuePropName='checked'
-                            className='cvat-settings-switch cvat-switch-use-default-storage'
-                        >
-                            <Switch
-                                onChange={(value: boolean) => {
-                                    if (onChangeUseDefaultStorage) {
-                                        onChangeUseDefaultStorage(value);
-                                    }
-                                }}
-                                disabled={disableSwitch}
-                            />
-                        </Form.Item>
-                        <Text strong>{switchDescription}</Text>
-                        {(switchHelpMessage) ? (
-                            <Tooltip title={switchHelpMessage}>
-                                <QuestionCircleOutlined />
-                            </Tooltip>
-                        ) : null}
-                    </Space>
-                )
-            }
-            {
-                (!instanceId || !useDefaultStorage) && (
+            {!!instanceId && !disableSwitch && (
+                <Space>
                     <Form.Item
-                        label={(
-                            <Space>
-                                {storageLabel}
-                                <CVATTooltip title={storageDescription}>
-                                    <QuestionCircleOutlined
-                                        style={{ opacity: 0.5 }}
-                                    />
-                                </CVATTooltip>
-                            </Space>
-                        )}
+                        name={switchName}
+                        valuePropName='checked'
+                        className='cvat-settings-switch cvat-switch-use-default-storage'
                     >
-                        <StorageField
-                            locationName={[storageName, 'location']}
-                            selectCloudStorageName={[storageName, 'cloudStorageId']}
-                            locationValue={locationValue}
-                            onChangeStorage={onChangeStorage}
-                            onChangeLocationValue={onChangeLocationValue}
+                        <Switch
+                            onChange={(value: boolean) => {
+                                if (onChangeUseDefaultStorage) {
+                                    onChangeUseDefaultStorage(value);
+                                }
+                            }}
                         />
                     </Form.Item>
-                )
-            }
+                    <Text strong>{switchDescription}</Text>
+                    {switchHelpMessage ? (
+                        <Tooltip title={switchHelpMessage}>
+                            <QuestionCircleOutlined />
+                        </Tooltip>
+                    ) : null}
+                </Space>
+            )}
+            {(!instanceId || !useDefaultStorage) && (
+                <Form.Item
+                    label={(
+                        <Space>
+                            {storageLabel}
+                            <CVATTooltip title={storageDescription}>
+                                <QuestionCircleOutlined style={{ opacity: 0.5 }} />
+                            </CVATTooltip>
+                        </Space>
+                    )}
+                >
+                    <StorageField
+                        locationName={[storageName, 'location']}
+                        selectCloudStorageName={[storageName, 'cloudStorageId']}
+                        locationValue={locationValue}
+                        onChangeStorage={onChangeStorage}
+                        onChangeLocationValue={onChangeLocationValue}
+                    />
+                </Form.Item>
+            )}
         </>
     );
 }

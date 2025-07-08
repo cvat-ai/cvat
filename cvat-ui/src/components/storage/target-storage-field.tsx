@@ -20,7 +20,7 @@ export interface Props {
     disableSwitch?: boolean;
 }
 
-export default function TargetStorageField(props: Props): JSX.Element {
+export default function TargetStorageField(props: Readonly<Props>): JSX.Element {
     const {
         instanceId,
         locationValue,

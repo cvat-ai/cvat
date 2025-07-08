@@ -15,6 +15,7 @@ import Tooltip from 'antd/lib/tooltip';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 import { CombinedState } from 'reducers';
 import { exportActions, exportBackupAsync } from 'actions/export-actions';
+import { makeBulkOperationAsync } from 'actions/selection-actions';
 import {
     getCore, Job, ProjectOrTaskOrJob, Storage, StorageData, StorageLocation,
 } from 'cvat-core-wrapper';
@@ -30,21 +31,24 @@ function NameTemplateTooltip(props: Readonly<{ nameTemplate: string; example: st
             <ul style={{ marginBottom: 0 }}>
                 <li>
                     <code>{'{{id}}'}</code>
-                    - task id
+                    <br />
+                    - task/project id
                 </li>
                 <li>
                     <code>{'{{name}}'}</code>
-                    - task name
+                    <br />
+                    - task/project name
                 </li>
                 <li>
                     <code>{'{{index}}'}</code>
+                    <br />
                     - index in selection (starts from 1)
                 </li>
             </ul>
             <div>
                 Example:
-                {' '}
-                <i>{example || 'backup_1.zip'}</i>
+                <br />
+                <i>{example || 'backup_task_1.zip'}</i>
             </div>
         </>
     );
@@ -77,7 +81,7 @@ function ExportBackupModal(): JSX.Element {
     const [defaultStorageLocation, setDefaultStorageLocation] = useState(StorageLocation.LOCAL);
     const [defaultStorageCloudId, setDefaultStorageCloudId] = useState<number | undefined>(undefined);
     const [helpMessage, setHelpMessage] = useState('');
-    const [nameTemplate, setNameTemplate] = useState('backup_{{id}}');
+    const [nameTemplate, setNameTemplate] = useState('backup_task_{{id}}');
 
     const selectedIds = useSelector((state: CombinedState) => state.selection.selected);
     const allTasks = useSelector((state: CombinedState) => state.tasks.current);
@@ -131,25 +135,39 @@ function ExportBackupModal(): JSX.Element {
     const handleExport = useCallback(
         (values: FormValues): void => {
             if (isBulkMode) {
-                selectedInstances.forEach((inst, idx) => {
-                    if (!inst) return;
-                    // Format name using template
-                    let backupName = nameTemplate
-                        .replaceAll('{{id}}', String(inst.id))
-                        .replaceAll('{{name}}', inst.name ?? '')
-                        .replaceAll('{{index}}', String(idx + 1));
-                    if (!backupName.endsWith('.zip')) backupName += '.zip';
-                    dispatch(
-                        exportBackupAsync(
-                            inst,
-                            new Storage({
-                                location: values.targetStorage?.location,
-                                cloudStorageId: values.targetStorage?.cloudStorageId,
-                            }),
-                            false,
-                            backupName,
-                        ),
-                    );
+                dispatch(makeBulkOperationAsync<Exclude<ProjectOrTaskOrJob, Job>>(
+                    selectedInstances,
+                    async (inst: Exclude<ProjectOrTaskOrJob, Job>, idx: number) => {
+                        let backupName = nameTemplate
+                            .replaceAll('{{id}}', String(inst.id))
+                            .replaceAll('{{name}}', inst.name ?? '')
+                            .replaceAll('{{index}}', String(idx + 1));
+                        if (!backupName.endsWith('.zip')) backupName += '.zip';
+                        await dispatch(
+                            exportBackupAsync(
+                                inst,
+                                new Storage({
+                                    location: values.targetStorage?.location,
+                                    cloudStorageId: values.targetStorage?.cloudStorageId,
+                                }),
+                                false,
+                                backupName,
+                            ),
+                        );
+                    },
+                    (inst: Exclude<ProjectOrTaskOrJob, Job>, idx: number, total: number) => (
+                        `Exporting backup for ${instanceType}#${inst.id} [${idx + 1}/${total}]`
+                    ),
+                ));
+                closeModal();
+                const description =
+                    'Bulk backup export was started. You can check progress [here](/requests).';
+                Notification.info({
+                    message: 'Bulk backup export started',
+                    description: (
+                        <CVATMarkdown history={history}>{description}</CVATMarkdown>
+                    ),
+                    className: 'cvat-notification-notice-export-backup-start',
                 });
             } else if (instance) {
                 const customName = values.customName ? `${values.customName}.zip` : '';
@@ -170,19 +188,19 @@ function ExportBackupModal(): JSX.Element {
                         customName,
                     ),
                 );
-            }
-            closeModal();
+                closeModal();
 
-            const description = isBulkMode ?
-                'Bulk backup export was started. You can check progress [here](/requests).' :
-                'Backup export was started. You can check progress [here](/requests).';
-            Notification.info({
-                message: isBulkMode ? 'Bulk backup export started' : 'Backup export started',
-                description: (
-                    <CVATMarkdown history={history}>{description}</CVATMarkdown>
-                ),
-                className: 'cvat-notification-notice-export-backup-start',
-            });
+                const description = isBulkMode ?
+                    'Bulk backup export was started. You can check progress [here](/requests).' :
+                    'Backup export was started. You can check progress [here](/requests).';
+                Notification.info({
+                    message: isBulkMode ? 'Bulk backup export started' : 'Backup export started',
+                    description: (
+                        <CVATMarkdown history={history}>{description}</CVATMarkdown>
+                    ),
+                    className: 'cvat-notification-notice-export-backup-start',
+                });
+            }
         },
         [
             instance,
@@ -202,7 +220,7 @@ function ExportBackupModal(): JSX.Element {
             .replaceAll('{{id}}', String(selectedInstances[0].id))
             .replaceAll('{{name}}', selectedInstances[0].name ?? '')
             .replaceAll('{{index}}', '1') :
-        'backup_1.zip';
+        'backup_task_1.zip';
 
     return (
         <Modal
@@ -268,6 +286,7 @@ function ExportBackupModal(): JSX.Element {
                     locationValue={storageLocation}
                     onChangeUseDefaultStorage={isBulkMode ? undefined : (value: boolean) => setUseDefaultStorage(value)}
                     onChangeLocationValue={(value: StorageLocation) => setStorageLocation(value)}
+                    disableSwitch={isBulkMode}
                 />
             </Form>
         </Modal>
