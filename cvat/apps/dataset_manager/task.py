@@ -13,7 +13,8 @@ from typing import Callable, Optional, Union
 
 from datumaro.components.errors import DatasetError, DatasetImportError, DatasetNotFoundError
 from django.conf import settings
-from django.db import transaction, models as django_models
+from django.db import models as django_models
+from django.db import transaction
 from django.db.models.query import Prefetch, QuerySet
 from rest_framework.exceptions import ValidationError
 
