@@ -35,7 +35,6 @@ from cvat.apps.events.handlers import handle_annotations_change
 from cvat.apps.profiler import silk_profile
 
 dlogger = DatasetLogManager()
-anno_chunk_size = settings.DEFAULT_DB_ANNO_CHUNK_SIZE
 
 
 class dotdict(OrderedDict):
@@ -68,7 +67,7 @@ def _receive_attributes_from_db(related_manager, foreign_key: str) -> defaultdic
         "spec_id",
         "value",
         "id",
-    ).iterator(chunk_size=anno_chunk_size):
+    ).iterator(chunk_size=settings.DEFAULT_DB_ANNO_CHUNK_SIZE):
         attributes[attr[foreign_key]].append(
             dotdict(
                 {
@@ -613,7 +612,7 @@ class JobAnnotation:
                 "source",
             )
             .order_by("frame")
-            .iterator(chunk_size=anno_chunk_size)
+            .iterator(chunk_size=settings.DEFAULT_DB_ANNO_CHUNK_SIZE)
         ]
 
         labeledimage_attributes = _receive_attributes_from_db(
@@ -648,7 +647,7 @@ class JobAnnotation:
                 "parent",
             )
             .order_by("frame")
-            .iterator(chunk_size=anno_chunk_size)
+            .iterator(chunk_size=settings.DEFAULT_DB_ANNO_CHUNK_SIZE)
         ]
 
         labeledshape_attributes = _receive_attributes_from_db(
@@ -703,7 +702,7 @@ class JobAnnotation:
                 "shape__outside",
             )
             .order_by("id", "shape__frame")
-            .iterator(chunk_size=anno_chunk_size)
+            .iterator(chunk_size=settings.DEFAULT_DB_ANNO_CHUNK_SIZE)
         )
 
         db_tracks = merge_table_rows(
