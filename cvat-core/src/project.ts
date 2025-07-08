@@ -18,7 +18,7 @@ export default class Project {
     public readonly id: number;
     public name: string;
     public organizationId: number | null;
-    public assignee: User;
+    public assignee: User | null;
     public bugTracker: string;
     public sourceStorage: Storage;
     public targetStorage: Storage;

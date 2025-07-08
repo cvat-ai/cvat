@@ -7,11 +7,12 @@ import { Link } from 'react-router-dom';
 import { MenuProps } from 'antd/lib/menu';
 import { LoadingOutlined } from '@ant-design/icons';
 import { usePlugins } from 'utils/hooks';
+import { CVATMenuEditLabel } from 'components/common/cvat-menu-edit-label';
 
 interface MenuItemsData {
-    jobID: number;
-    taskID: number;
-    projectID: number | null;
+    jobId: number;
+    taskId: number;
+    projectId: number | null;
     pluginActions: ReturnType<typeof usePlugins>;
     isMergingConsensusEnabled: boolean;
     onOpenBugTracker: (() => void) | null;
@@ -19,6 +20,7 @@ interface MenuItemsData {
     onExportAnnotations: () => void;
     onMergeConsensusJob: (() => void) | null;
     onDeleteJob: (() => void) | null;
+    startEditField: (key: string) => void;
 }
 
 export default function JobActionsItems(
@@ -26,9 +28,10 @@ export default function JobActionsItems(
     jobMenuProps: unknown,
 ): MenuProps['items'] {
     const {
-        jobID,
-        taskID,
-        projectID,
+        startEditField,
+        jobId,
+        taskId,
+        projectId,
         pluginActions,
         isMergingConsensusEnabled,
         onOpenBugTracker,
@@ -42,13 +45,13 @@ export default function JobActionsItems(
 
     menuItems.push([{
         key: 'task',
-        label: <Link to={`/tasks/${taskID}`}>Go to the task</Link>,
+        label: <Link to={`/tasks/${taskId}`}>Go to the task</Link>,
     }, 0]);
 
-    if (projectID) {
+    if (projectId) {
         menuItems.push([{
             key: 'project',
-            label: <Link to={`/projects/${projectID}`}>Go to the project</Link>,
+            label: <Link to={`/projects/${projectId}`}>Go to the project</Link>,
         }, 10]);
     }
 
@@ -83,17 +86,35 @@ export default function JobActionsItems(
     }
 
     menuItems.push([{
-        key: 'view-analytics',
-        label: <Link to={`/tasks/${taskID}/jobs/${jobID}/analytics`}>View analytics</Link>,
+        key: 'edit_assignee',
+        onClick: () => startEditField('assignee'),
+        label: <CVATMenuEditLabel>Assignee</CVATMenuEditLabel>,
     }, 60]);
 
+    menuItems.push([{
+        key: 'edit_state',
+        onClick: () => startEditField('state'),
+        label: <CVATMenuEditLabel>State</CVATMenuEditLabel>,
+    }, 70]);
+
+    menuItems.push([{
+        key: 'edit_stage',
+        onClick: () => startEditField('stage'),
+        label: <CVATMenuEditLabel>Stage</CVATMenuEditLabel>,
+    }, 80]);
+
+    menuItems.push([{
+        key: 'view-analytics',
+        label: <Link to={`/tasks/${taskId}/jobs/${jobId}/analytics`}>View analytics</Link>,
+    }, 90]);
+
     if (onDeleteJob) {
-        menuItems.push([{ type: 'divider' }, 69]);
+        menuItems.push([{ type: 'divider' }, 99]);
         menuItems.push([{
             key: 'delete',
             onClick: onDeleteJob,
             label: 'Delete',
-        }, 70]);
+        }, 100]);
     }
 
     menuItems.push(

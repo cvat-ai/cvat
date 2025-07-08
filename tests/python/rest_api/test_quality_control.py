@@ -1569,7 +1569,7 @@ class TestQualityReportMetrics(_PermissionTestBase):
 
         with make_api_client(admin_user) as api_client:
             api_client.jobs_api.partial_update_annotations(
-                "update",
+                "create",
                 gt_job["id"],
                 patched_labeled_data_request=dict(
                     shapes=[

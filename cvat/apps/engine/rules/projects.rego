@@ -6,9 +6,24 @@ import data.utils
 import data.organizations
 
 # input: {
-#     "scope": <"create"|"list"|"update:desc"|"update:owner"|"update:assignee"|
-#               "update:associated_storage"|"view"|"delete"|"export:dataset"|"export:annotations"|
-#               "import:dataset"> or null,
+#     "scope": <
+#              "create"|
+#              "delete"|
+#              "download:exported_file"|
+#              "export:annotations"|
+#              "export:backup"|
+#              "export:dataset"|
+#              "import:backup"|
+#              "import:dataset"|
+#              "list"|
+#              "update:assignee"|
+#              "update:associated_storage"|
+#              "update:desc"|
+#              "update:organization"|
+#              "update:owner"|
+#              "update"|
+#              "view"|
+#          > or null,
 #     "auth": {
 #         "user": {
 #             "id": <num>,

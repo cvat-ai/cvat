@@ -15,7 +15,7 @@ export function isInteger(value): boolean {
 }
 
 export function isEmail(value): boolean {
-    return typeof value === 'string' && RegExp(/^[^\s@]+@[^\s@]+\.[^\s@]+$/).test(value);
+    return typeof value === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
 // Called with specific Enum context

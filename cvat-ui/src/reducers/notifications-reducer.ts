@@ -738,6 +738,25 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
+        case TasksActionTypes.UPDATE_TASK_FAILED: {
+            const { taskId, error, message } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    tasks: {
+                        ...state.errors.tasks,
+                        updating: {
+                            message:
+                                message || `Could not update the [task #${taskId}](/tasks/${taskId})`,
+                            reason: error.toString(),
+                            shouldLog: shouldLog(error),
+                            className: 'cvat-notification-notice-update-task-failed',
+                        },
+                    },
+                },
+            };
+        }
         case ConsensusActionTypes.MERGE_CONSENSUS_JOBS_SUCCESS: {
             const { instance } = action.payload;
             let message = '';
@@ -850,6 +869,25 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             reason: action.payload.error,
                             shouldLog: shouldLog(action.payload.error),
                             className: 'cvat-notification-notice-delete-project-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case ProjectsActionTypes.UPDATE_PROJECT_FAILED: {
+            const { projectId, error, message } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    projects: {
+                        ...state.errors.projects,
+                        creating: {
+                            message:
+                                message || `Could not update [project #${projectId}](/project/${projectId})`,
+                            reason: error.toString(),
+                            className: 'cvat-notification-notice-update-project-failed',
+                            shouldLog: shouldLog(error),
                         },
                     },
                 },
@@ -2029,42 +2067,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             reason: action.payload.error,
                             shouldLog: shouldLog(action.payload.error),
                             className: 'cvat-notification-notice-delete-webhook-failed',
-                        },
-                    },
-                },
-            };
-        }
-        case ProjectsActionTypes.UPDATE_PROJECT_FAILED: {
-            const { projectId, error, message } = action.payload;
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    projects: {
-                        ...state.errors.projects,
-                        updating: {
-                            message:
-                                message || `Could not update the project #${projectId}`,
-                            reason: error,
-                            shouldLog: shouldLog(error),
-                        },
-                    },
-                },
-            };
-        }
-        case TasksActionTypes.UPDATE_TASK_FAILED: {
-            const { taskId, error, message } = action.payload;
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    tasks: {
-                        ...state.errors.tasks,
-                        updating: {
-                            message:
-                                message || `Could not update the task #${taskId}`,
-                            reason: error,
-                            shouldLog: shouldLog(error),
                         },
                     },
                 },

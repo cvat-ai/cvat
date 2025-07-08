@@ -7,19 +7,25 @@ import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import Modal from 'antd/lib/modal';
 import Dropdown from 'antd/lib/dropdown';
 
-import { RQStatus, Task, Organization } from 'cvat-core-wrapper';
-import { usePlugins } from 'utils/hooks';
+import {
+    RQStatus, Task, User, Organization,
+} from 'cvat-core-wrapper';
+import { useDropdownEditField, usePlugins } from 'utils/hooks';
+
 import { CombinedState } from 'reducers';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
 import { modelsActions } from 'actions/models-actions';
 import { mergeConsensusJobsAsync } from 'actions/consensus-actions';
+
 import { organizationActions } from 'actions/organization-actions';
 import {
     deleteTaskAsync, switchMoveTaskModalVisible,
     openLinkedCloudStorageUpdatingModal, updateTaskAsync,
     TaskUpdateTypes,
 } from 'actions/tasks-actions';
+import UserSelector from 'components/task-page/user-selector';
+
 import TaskActionsItems from './actions-menu-items';
 
 interface Props {
@@ -40,9 +46,18 @@ function TaskActionsComponent(props: Props): JSX.Element {
         mergingConsensus: state.consensus.actions.merging,
     }), shallowEqual);
 
+    const {
+        dropdownOpen,
+        editField,
+        startEditField,
+        stopEditField,
+        onOpenChange,
+        onMenuClick,
+    } = useDropdownEditField();
+
     const onOpenBugTracker = useCallback(() => {
         if (taskInstance.bugTracker) {
-            window.open(taskInstance.bugTracker as string, '_blank', 'noopener noreferrer');
+            window.open(taskInstance.bugTracker, '_blank', 'noopener noreferrer');
         }
     }, [taskInstance.bugTracker]);
 
@@ -86,6 +101,11 @@ function TaskActionsComponent(props: Props): JSX.Element {
         }
     }, [taskInstance.id]);
 
+    const onUpdateTaskAssignee = useCallback((assignee: User | null) => {
+        taskInstance.assignee = assignee;
+        dispatch(updateTaskAsync(taskInstance, { assignee })).then(stopEditField);
+    }, [taskInstance]);
+
     const onDeleteTask = useCallback(() => {
         Modal.confirm({
             title: `The task ${taskInstance.id} will be deleted`,
@@ -111,7 +131,7 @@ function TaskActionsComponent(props: Props): JSX.Element {
         ) {
             dispatch(openLinkedCloudStorageUpdatingModal(taskInstance));
         } else {
-            dispatch(updateTaskAsync(taskInstance, TaskUpdateTypes.UPDATE_ORGANIZATION));
+            dispatch(updateTaskAsync(taskInstance, { dstOrganizationId }, TaskUpdateTypes.UPDATE_ORGANIZATION));
         }
     }, [taskInstance]);
 
@@ -147,34 +167,59 @@ function TaskActionsComponent(props: Props): JSX.Element {
         dispatch(organizationActions.openSelectOrganizationModal(setNewOrganization));
     }, [taskInstance]);
 
+    let menuItems;
+    if (editField) {
+        const fieldSelectors: Record<string, JSX.Element> = {
+            assignee: (
+                <UserSelector
+                    value={taskInstance.assignee}
+                    onSelect={(value: User | null): void => {
+                        if (taskInstance.assignee?.id === value?.id) return;
+                        onUpdateTaskAssignee(value);
+                    }}
+                />
+            ),
+        };
+        menuItems = [{
+            key: `${editField}-selector`,
+            label: fieldSelectors[editField],
+        }];
+    } else {
+        menuItems = TaskActionsItems({
+            startEditField,
+            taskId: taskInstance.id,
+            isAutomaticAnnotationEnabled: (
+                activeInference &&
+                ![RQStatus.FAILED, RQStatus.FINISHED].includes(activeInference.status)
+            ),
+            isConsensusEnabled: taskInstance.consensusEnabled,
+            isMergingConsensusEnabled: mergingConsensus[`task_${taskInstance.id}`],
+            pluginActions,
+            onMergeConsensusJobs: taskInstance.consensusEnabled ? onMergeConsensusJobs : null,
+            onOpenBugTracker: taskInstance.bugTracker ? onOpenBugTracker : null,
+            onUploadAnnotations,
+            onExportDataset,
+            onBackupTask,
+            onRunAutoAnnotation,
+            onMoveTaskToProject: taskInstance.projectId === null ? onMoveTaskToProject : null,
+            onDeleteTask,
+            onTransferTaskBetweenWorkspaces: (
+                taskInstance.projectId === null ? onTransferTaskBetweenWorkspaces : null
+            ),
+        }, props);
+    }
+
     return (
         <Dropdown
             destroyPopupOnHide
             trigger={['click']}
+            open={dropdownOpen}
+            onOpenChange={onOpenChange}
             menu={{
                 selectable: false,
                 className: 'cvat-actions-menu',
-                items: TaskActionsItems({
-                    taskID: taskInstance.id,
-                    isAutomaticAnnotationEnabled: (
-                        activeInference &&
-                        ![RQStatus.FAILED, RQStatus.FINISHED].includes(activeInference.status)
-                    ),
-                    isConsensusEnabled: taskInstance.consensusEnabled,
-                    isMergingConsensusEnabled: mergingConsensus[`task_${taskInstance.id}`],
-                    pluginActions,
-                    onMergeConsensusJobs: taskInstance.consensusEnabled ? onMergeConsensusJobs : null,
-                    onOpenBugTracker: taskInstance.bugTracker ? onOpenBugTracker : null,
-                    onUploadAnnotations,
-                    onExportDataset,
-                    onBackupTask,
-                    onRunAutoAnnotation,
-                    onMoveTaskToProject: taskInstance.projectId === null ? onMoveTaskToProject : null,
-                    onDeleteTask,
-                    onTransferTaskBetweenWorkspaces: (
-                        taskInstance.projectId === null ? onTransferTaskBetweenWorkspaces : null
-                    ),
-                }, props),
+                items: menuItems,
+                onClick: onMenuClick,
             }}
         >
             {triggerElement}

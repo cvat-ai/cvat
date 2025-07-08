@@ -25,14 +25,13 @@ export enum TasksActionTypes {
     DELETE_TASK_SUCCESS = 'DELETE_TASK_SUCCESS',
     DELETE_TASK_FAILED = 'DELETE_TASK_FAILED',
     CREATE_TASK_FAILED = 'CREATE_TASK_FAILED',
-    UPDATE_TASK = 'UPDATE_TASK',
-    UPDATE_TASK_SUCCESS = 'UPDATE_TASK_SUCCESS',
-    UPDATE_TASK_FAILED = 'UPDATE_TASK_FAILED',
     SWITCH_MOVE_TASK_MODAL_VISIBLE = 'SWITCH_MOVE_TASK_MODAL_VISIBLE',
     GET_TASK_PREVIEW = 'GET_TASK_PREVIEW',
     GET_TASK_PREVIEW_SUCCESS = 'GET_TASK_PREVIEW_SUCCESS',
     GET_TASK_PREVIEW_FAILED = 'GET_TASK_PREVIEW_FAILED',
-    UPDATE_TASK_IN_STATE = 'UPDATE_TASK_IN_STATE',
+    UPDATE_TASK = 'UPDATE_TASK',
+    UPDATE_TASK_SUCCESS = 'UPDATE_TASK_SUCCESS',
+    UPDATE_TASK_FAILED = 'UPDATE_TASK_FAILED',
     OPEN_LINKED_CLOUD_STORAGE_UPDATING_MODAL = 'OPEN_LINKED_CLOUD_STORAGE_UPDATING_MODAL',
     CLOSE_LINKED_CLOUD_STORAGE_UPDATING_MODAL = 'CLOSE_LINKED_CLOUD_STORAGE_UPDATING_MODAL',
 }
@@ -210,7 +209,7 @@ export function getTaskPreviewAsync(taskInstance: any): ThunkAction {
 
 export function updateTaskInState(task: Task): AnyAction {
     const action = {
-        type: TasksActionTypes.UPDATE_TASK_IN_STATE,
+        type: TasksActionTypes.UPDATE_TASK_SUCCESS,
         payload: { task },
     };
 
@@ -328,50 +327,43 @@ export enum TaskUpdateTypes {
 }
 
 function updateTask(taskId: number): AnyAction {
-    const action = {
+    return {
         type: TasksActionTypes.UPDATE_TASK,
         payload: {
             taskId,
         },
     };
-
-    return action;
-}
-
-function updateTaskSuccess(task: Task): AnyAction {
-    const action = {
-        type: TasksActionTypes.UPDATE_TASK_SUCCESS,
-        payload: {
-            task,
-        },
-    };
-
-    return action;
 }
 
 function updateTaskFailed(taskId: number, error: any, message?: string): AnyAction {
-    const action = {
+    return {
         type: TasksActionTypes.UPDATE_TASK_FAILED,
         payload: {
-            taskId, error, message,
+            taskId,
+            error,
+            message,
         },
     };
-
-    return action;
 }
 
-export function updateTaskAsync(task: Task, updateType?: TaskUpdateTypes): ThunkAction {
-    return async (dispatch: ThunkDispatch): Promise<void> => {
+export function updateTaskAsync(
+    taskInstance: Task,
+    fields: Parameters<Task['save']>[0],
+    updateType?: TaskUpdateTypes,
+): ThunkAction<Promise<Task>> {
+    return async (dispatch: ThunkDispatch): Promise<Task> => {
         try {
-            dispatch(updateTask(task.id));
-            const updatedTask = await task.save();
-            dispatch(updateTaskSuccess(updatedTask));
+            dispatch(updateTask(taskInstance.id));
+            const updated = await taskInstance.save(fields);
+            dispatch(updateTaskInState(updated));
+            return updated;
         } catch (error) {
             let message = '';
             if (updateType === TaskUpdateTypes.UPDATE_ORGANIZATION) {
-                message = `Could not transfer the task #${task.id} to the new workspace`;
+                message = `Could not transfer the task #${taskInstance.id} to the new workspace`;
             }
-            dispatch(updateTaskFailed(task.id, error, message));
+            dispatch(updateTaskFailed(taskInstance.id, error, message));
+            throw error;
         }
     };
 }

@@ -65,6 +65,9 @@ export interface ProjectsState {
         deletes: {
             [projectId: number]: boolean; // deleted (deleting if in dictionary)
         };
+        updates: {
+            [projectId: number]: boolean; // updated (updating if in dictionary)
+        };
     };
     // TODO: move into activities
     updateWorkspace: {
@@ -127,6 +130,9 @@ export interface TasksState {
     activities: {
         deletes: {
             [tid: number]: boolean; // deleted (deleting if in dictionary)
+        };
+        updates: {
+            [taskId: number]: boolean;
         };
     };
 }

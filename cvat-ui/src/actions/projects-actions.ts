@@ -17,9 +17,6 @@ import { filterNull } from 'utils/filter-null';
 const cvat = getCore();
 
 export enum ProjectsActionTypes {
-    UPDATE_PROJECT = 'UPDATE_PROJECT',
-    UPDATE_PROJECT_SUCCESS = 'UPDATE_PROJECT_SUCCESS',
-    UPDATE_PROJECT_FAILED = 'UPDATE_PROJECT_FAILED',
     UPDATE_PROJECTS_GETTING_QUERY = 'UPDATE_PROJECTS_GETTING_QUERY',
     GET_PROJECTS = 'GET_PROJECTS',
     GET_PROJECTS_SUCCESS = 'GET_PROJECTS_SUCCESS',
@@ -33,6 +30,9 @@ export enum ProjectsActionTypes {
     GET_PROJECT_PREVIEW = 'GET_PROJECT_PREVIEW',
     GET_PROJECT_PREVIEW_SUCCESS = 'GET_PROJECT_PREVIEW_SUCCESS',
     GET_PROJECT_PREVIEW_FAILED = 'GET_PROJECT_PREVIEW_FAILED',
+    UPDATE_PROJECT = 'UPDATE_PROJECT',
+    UPDATE_PROJECT_SUCCESS = 'UPDATE_PROJECT_SUCCESS',
+    UPDATE_PROJECT_FAILED = 'UPDATE_PROJECT_FAILED',
     OPEN_LINKED_CLOUD_STORAGE_UPDATING_MODAL = 'OPEN_LINKED_CLOUD_STORAGE_UPDATING_MODAL',
     CLOSE_LINKED_CLOUD_STORAGE_UPDATING_MODAL = 'CLOSE_LINKED_CLOUD_STORAGE_UPDATING_MODAL',
 }
@@ -51,15 +51,6 @@ export const projectActions = {
         createAction(ProjectsActionTypes.CREATE_PROJECT_SUCCESS, { projectId })
     ),
     createProjectFailed: (error: any) => createAction(ProjectsActionTypes.CREATE_PROJECT_FAILED, { error }),
-    updateProject: (projectId: number) => (
-        createAction(ProjectsActionTypes.UPDATE_PROJECT, { projectId })
-    ),
-    updateProjectSuccess: (project: Project) => (
-        createAction(ProjectsActionTypes.UPDATE_PROJECT_SUCCESS, { project })
-    ),
-    updateProjectFailed: (projectId: number, error: any, message?: string) => (
-        createAction(ProjectsActionTypes.UPDATE_PROJECT_FAILED, { projectId, error, message })
-    ),
     deleteProject: (projectId: number) => createAction(ProjectsActionTypes.DELETE_PROJECT, { projectId }),
     deleteProjectSuccess: (projectId: number) => (
         createAction(ProjectsActionTypes.DELETE_PROJECT_SUCCESS, { projectId })
@@ -75,6 +66,13 @@ export const projectActions = {
     ),
     getProjectPreviewFailed: (projectID: number, error: any) => (
         createAction(ProjectsActionTypes.GET_PROJECT_PREVIEW_FAILED, { projectID, error })
+    ),
+    updateProject: (projectId: number) => createAction(ProjectsActionTypes.UPDATE_PROJECT, { projectId }),
+    updateProjectSuccess: (project: Project) => (
+        createAction(ProjectsActionTypes.UPDATE_PROJECT_SUCCESS, { project })
+    ),
+    updateProjectFailed: (projectId: number, error: any, message?: string) => (
+        createAction(ProjectsActionTypes.UPDATE_PROJECT_FAILED, { projectId, error, message })
     ),
     openLinkedCloudStorageUpdatingModal: (project: Project) => (
         createAction(ProjectsActionTypes.OPEN_LINKED_CLOUD_STORAGE_UPDATING_MODAL, { project })
@@ -161,27 +159,6 @@ export function createProjectAsync(data: any): ThunkAction {
     };
 }
 
-export enum ProjectUpdateTypes {
-    UPDATE_ORGANIZATION = 'UPDATE_ORGANIZATION',
-}
-
-export function updateProjectAsync(project: Project, updateType?: ProjectUpdateTypes): ThunkAction {
-    return async (dispatch: ThunkDispatch): Promise<void> => {
-        dispatch(projectActions.updateProject(project.id));
-        try {
-            const updatedProject = await project.save();
-            dispatch(projectActions.updateProjectSuccess(updatedProject));
-        } catch (error) {
-            let message = '';
-            if (updateType === ProjectUpdateTypes.UPDATE_ORGANIZATION) {
-                message = `Could not transfer the project #${project.id} to the new workspace`;
-            }
-            dispatch(projectActions.updateProjectFailed(project.id, error, message));
-            throw error;
-        }
-    };
-}
-
 export function deleteProjectAsync(projectInstance: any): ThunkAction {
     return async (dispatch: ThunkDispatch): Promise<void> => {
         dispatch(projectActions.deleteProject(projectInstance.id));
@@ -203,3 +180,28 @@ export const getProjectsPreviewAsync = (project: any): ThunkAction => async (dis
         dispatch(projectActions.getProjectPreviewFailed(project.id, error));
     }
 };
+
+export enum ProjectUpdateTypes {
+    UPDATE_ORGANIZATION = 'UPDATE_ORGANIZATION',
+}
+
+export function updateProjectAsync(
+    projectInstance: Project,
+    updateType?: ProjectUpdateTypes,
+): ThunkAction<Promise<Project>> {
+    return async (dispatch: ThunkDispatch): Promise<Project> => {
+        dispatch(projectActions.updateProject(projectInstance.id));
+        try {
+            const updatedProject = await projectInstance.save();
+            dispatch(projectActions.updateProjectSuccess(updatedProject));
+            return updatedProject;
+        } catch (error) {
+            let message = '';
+            if (updateType === ProjectUpdateTypes.UPDATE_ORGANIZATION) {
+                message = `Could not transfer the project #${projectInstance.id} to the new workspace`;
+            }
+            dispatch(projectActions.updateProjectFailed(projectInstance.id, error, message));
+            throw error;
+        }
+    };
+}
