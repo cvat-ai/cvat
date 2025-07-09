@@ -25,7 +25,7 @@ import ModelActionsComponent from './actions-menu';
 interface Props {
     model: MLModel;
     selected: boolean;
-    onClick: () => void;
+    onClick: (event: React.MouseEvent) => boolean;
 }
 
 const useCardHeight = useCardHeightHOC({
@@ -42,8 +42,11 @@ export default function DeployedModelItem(props: Readonly<Props>): JSX.Element {
     const height = useCardHeight();
     const style: React.CSSProperties = { height };
 
-    const onOpenModel = (): void => {
-        setIsModalShown(true);
+    const onOpenModel = (event: React.MouseEvent): void => {
+        const cancel = onClick(event);
+        if (!cancel) {
+            setIsModalShown(true);
+        }
     };
     const onCloseModel = (): void => {
         setIsModalShown(false);
@@ -166,7 +169,7 @@ export default function DeployedModelItem(props: Readonly<Props>): JSX.Element {
                         size='small'
                         className={cardClassName}
                         hoverable
-                        onClick={onClick}
+                        onClick={onOpenModel}
                     >
                         <Meta
                             title={(

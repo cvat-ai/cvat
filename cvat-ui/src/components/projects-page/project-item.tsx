@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import moment from 'moment';
 import { useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
@@ -23,7 +23,7 @@ import ProjectActionsComponent from './actions-menu';
 interface Props {
     projectInstance: Project;
     selected: boolean;
-    onClick: () => void;
+    onClick: (event: React.MouseEvent) => boolean;
 }
 
 const useCardHeight = useCardHeightHOC({
@@ -49,9 +49,12 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
     const deletes = useSelector((state: CombinedState) => state.projects.activities.deletes);
     const deleted = instance.id in deletes ? deletes[instance.id] : false;
 
-    const onOpenProject = (): void => {
-        history.push(`/projects/${instance.id}`);
-    };
+    const onOpenProject = useCallback((event: React.MouseEvent): void => {
+        const cancel = onClick(event);
+        if (!cancel) {
+            history.push(`/projects/${instance.id}`);
+        }
+    }, [history, instance, onClick]);
 
     const style: React.CSSProperties = { height };
     if (deleted) {
@@ -87,20 +90,19 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
                                 emptyPreviewClassName='cvat-project-item-empty-preview'
                                 previewWrapperClassName='cvat-projects-project-item-card-preview-wrapper'
                                 previewClassName='cvat-projects-project-item-card-preview'
-                                onClick={onOpenProject}
                             />
                         )}
                         size='small'
                         style={style}
                         className={cardClassName}
                         hoverable
-                        onClick={onClick}
+                        onClick={onOpenProject}
                     >
                         <Meta
                             title={(
                                 <Text
                                     ellipsis={{ tooltip: instance.name }}
-                                    onClick={onClick}
+                                    onClick={onOpenProject}
                                     className='cvat-projects-project-item-title'
                                     aria-hidden
                                 >

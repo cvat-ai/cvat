@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
 import Card from 'antd/lib/card';
@@ -27,7 +27,7 @@ const useCardHeight = useCardHeightHOC({
 interface Props {
     job: Job;
     selected: boolean;
-    onClick: () => void;
+    onClick: (event: React.MouseEvent) => boolean;
 }
 
 function JobCardComponent(props: Readonly<Props>): JSX.Element {
@@ -38,14 +38,17 @@ function JobCardComponent(props: Readonly<Props>): JSX.Element {
 
     const history = useHistory();
     const height = useCardHeight();
-    const handleCardClick = (event: React.MouseEvent): void => {
-        const url = `/tasks/${job.taskId}/jobs/${job.id}`;
-        if (event.ctrlKey) {
-            window.open(url, '_blank', 'noopener noreferrer');
-        } else {
-            history.push(url);
+    const handleCardClick = useCallback((event: React.MouseEvent): void => {
+        const cancel = onClick(event);
+        if (!cancel) {
+            const url = `/tasks/${job.taskId}/jobs/${job.id}`;
+            if (event.ctrlKey) {
+                window.open(url, '_blank', 'noopener noreferrer');
+            } else {
+                history.push(url);
+            }
         }
-    };
+    }, [history, job, onClick]);
 
     const style = {};
     if (deleted) {
@@ -90,7 +93,7 @@ function JobCardComponent(props: Readonly<Props>): JSX.Element {
                         </>
                     )}
                     hoverable
-                    onClick={onClick}
+                    onClick={handleCardClick}
                 >
                     <Descriptions column={1} size='small'>
                         <Descriptions.Item label='Stage and state'>{`${job.stage} ${job.state}`}</Descriptions.Item>

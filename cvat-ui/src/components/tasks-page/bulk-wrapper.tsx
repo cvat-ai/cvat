@@ -11,7 +11,7 @@ import { ShortcutScope } from 'utils/enums';
 
 export interface BulkSelectProps {
     selected: boolean;
-    onClick: (event?: React.MouseEvent) => void;
+    onClick: (event?: React.MouseEvent) => boolean;
 }
 
 interface BulkWrapperProps {
@@ -77,16 +77,18 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
         return {
             selected: isSelected,
             onClick: (event?: React.MouseEvent) => {
-                if (event?.shiftKey && lastSelectedIndexRef.current !== null) {
+                if (event?.shiftKey) {
                     // Shift+Click: select range
                     const allIDs = currentResourceIDs;
                     const clickedIndex = idx;
-                    const lastIndex = lastSelectedIndexRef.current;
+                    const lastIndex = lastSelectedIndexRef.current || idx;
                     const [start, end] = [lastIndex, clickedIndex].sort((a, b) => a - b);
                     const rangeIDs = allIDs.slice(start, end + 1);
                     dispatch(selectionActions.clearSelectedResources());
                     dispatch(selectionActions.selectAllResources(rangeIDs));
-                } else if (event?.ctrlKey) {
+                    return true;
+                }
+                if (event?.ctrlKey) {
                     // Ctrl+Click: toggle selection without clearing
                     if (isSelected) {
                         dispatch(selectionActions.deselectResource(resourceID));
@@ -94,11 +96,12 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
                         dispatch(selectionActions.selectResource(resourceID));
                     }
                     lastSelectedIndexRef.current = idx;
-                } else {
-                    // Regular click: clear and select only this
-                    dispatch(selectionActions.clearSelectedResources());
-                    lastSelectedIndexRef.current = idx;
+                    return true;
                 }
+                // Regular click: clear
+                dispatch(selectionActions.clearSelectedResources());
+                lastSelectedIndexRef.current = null;
+                return false;
             },
         };
     };
