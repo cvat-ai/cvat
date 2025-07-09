@@ -17,11 +17,12 @@ interface Props {
     dropdownTrigger?: ('click' | 'hover' | 'contextMenu')[];
 }
 
-function RequestActionsComponent(props: Readonly<Props>): JSX.Element | null {
+function RequestActionsComponent(props: Readonly<Props>): JSX.Element {
     const { requestInstance, triggerElement, dropdownTrigger } = props;
     const dispatch = useDispatch();
     const selectedIds = useSelector((state: CombinedState) => state.selection.selected);
-    const allRequests = useSelector((state: CombinedState) => Object.values(state.requests.requests));
+    const requestsMap = useSelector((state: CombinedState) => state.requests.requests);
+    const allRequests = Object.values(requestsMap);
 
     const requestsToAct = selectedIds.includes(requestInstance.id) ?
         allRequests.filter((r) => selectedIds.includes(r.id)) :
@@ -73,10 +74,6 @@ function RequestActionsComponent(props: Readonly<Props>): JSX.Element | null {
             label: withCount('Cancel', queuedCount),
             onClick: onCancel,
         });
-    }
-
-    if (menuItems.length === 0) {
-        return null;
     }
 
     return (

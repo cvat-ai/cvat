@@ -170,6 +170,9 @@ Cypress.Commands.add('removeMemberFromOrganization', (username) => {
         .and('be.visible')
         .contains('Delete')
         .click();
+    cy.get('.cvat-modal-organization-member-remove')
+        .contains('button', 'Yes, remove')
+        .click();
 });
 
 Cypress.Commands.add('headlessCreateOrganization', (data = {}) => {

@@ -90,13 +90,13 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
                                 emptyPreviewClassName='cvat-project-item-empty-preview'
                                 previewWrapperClassName='cvat-projects-project-item-card-preview-wrapper'
                                 previewClassName='cvat-projects-project-item-card-preview'
+                                onClick={onOpenProject}
                             />
                         )}
                         size='small'
                         style={style}
                         className={cardClassName}
                         hoverable
-                        onClick={onOpenProject}
                     >
                         <Meta
                             title={(

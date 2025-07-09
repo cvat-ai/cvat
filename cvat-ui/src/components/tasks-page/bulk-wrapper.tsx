@@ -44,6 +44,9 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
         },
     };
 
+    // Track the last selected index for shift+click
+    const lastSelectedIndexRef = useRef<number | null>(null);
+
     useEffect(() => {
         function handleClickOutside(event: MouseEvent): void {
             const dropdown = (event.target as HTMLElement).closest('.ant-dropdown');
@@ -57,6 +60,7 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
 
             if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
                 dispatch(selectionActions.clearSelectedResources());
+                lastSelectedIndexRef.current = null;
             }
         }
         document.addEventListener('mousedown', handleClickOutside);
@@ -64,9 +68,6 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, [dispatch]);
-
-    // Track the last selected index for shift+click
-    const lastSelectedIndexRef = useRef<number | null>(null);
 
     const selectProps = (
         resourceID: number | string,
@@ -81,11 +82,12 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
                     // Shift+Click: select range
                     const allIDs = currentResourceIDs;
                     const clickedIndex = idx;
-                    const lastIndex = lastSelectedIndexRef.current || idx;
+                    const lastIndex = lastSelectedIndexRef.current ?? idx;
                     const [start, end] = [lastIndex, clickedIndex].sort((a, b) => a - b);
                     const rangeIDs = allIDs.slice(start, end + 1);
                     dispatch(selectionActions.clearSelectedResources());
                     dispatch(selectionActions.selectAllResources(rangeIDs));
+                    lastSelectedIndexRef.current ??= idx;
                     return true;
                 }
                 if (event?.ctrlKey) {
