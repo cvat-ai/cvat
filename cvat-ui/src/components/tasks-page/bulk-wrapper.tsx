@@ -15,8 +15,8 @@ export interface BulkSelectProps {
 }
 
 interface BulkWrapperProps {
-    currentResourceIDs: number[];
-    children: (selectProps: (id: number, idx: number) => BulkSelectProps) => React.ReactNode;
+    currentResourceIDs: (number | string)[];
+    children: (selectProps: (id: number | string, idx: number) => BulkSelectProps) => React.ReactNode;
 }
 
 function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
@@ -69,7 +69,7 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
     const lastSelectedIndexRef = useRef<number | null>(null);
 
     const selectProps = (
-        resourceID: number,
+        resourceID: number | string,
         idx: number,
     ): BulkSelectProps => {
         const isSelected = selectedIds.includes(resourceID);

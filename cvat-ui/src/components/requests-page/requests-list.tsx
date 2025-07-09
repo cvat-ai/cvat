@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import { CombinedState, RequestsQuery } from 'reducers';
 
@@ -14,6 +14,9 @@ import { requestsActions } from 'actions/requests-actions';
 
 import moment from 'moment';
 import dimensions from 'utils/dimensions';
+import { ResourceSelectionInfo } from 'components/resource-sorting-filtering';
+import BulkWrapper from 'components/tasks-page/bulk-wrapper';
+import { selectionActions } from 'actions/selection-actions';
 import RequestCard from './request-card';
 
 interface Props {
@@ -27,7 +30,7 @@ function setUpRequestsList(requests: Request[], newPage: number, pageSize: numbe
     return displayRequests.slice((newPage - 1) * pageSize, newPage * pageSize);
 }
 
-function RequestsList(props: Props): JSX.Element {
+function RequestsList(props: Readonly<Props>): JSX.Element {
     const dispatch = useDispatch();
     const { query, count } = props;
     const { page, pageSize } = query;
@@ -35,21 +38,39 @@ function RequestsList(props: Props): JSX.Element {
         requests: state.requests.requests, disabled: state.requests.disabled,
     }), shallowEqual);
 
-    const requestViews = setUpRequestsList(Object.values(requests), page, pageSize)
-        .map((request: Request): JSX.Element => (
-            <RequestCard
-                request={request}
-                key={request.id}
-                disabled={request.id in disabled}
-            />
-        ),
-        );
+    const requestList = Object.values(requests);
+    const requestViews = setUpRequestsList(requestList, page, pageSize);
+    const requestIds = requestViews.map((request) => request.id);
+    const selectedCount = useSelector((state: CombinedState) => state.selection.selected.length);
+    const onSelectAll = useCallback(() => {
+        dispatch(selectionActions.selectAllResources(requestIds));
+    }, [requestIds]);
 
     return (
         <>
+            <Row justify='center'>
+                <Col {...dimensions}>
+                    <ResourceSelectionInfo selectedCount={selectedCount} onSelectAll={onSelectAll} />
+                </Col>
+            </Row>
             <Row justify='center' className='cvat-resource-list-wrapper'>
                 <Col className='cvat-requests-list' {...dimensions}>
-                    {requestViews}
+                    <BulkWrapper currentResourceIDs={requestIds}>
+                        {(selectProps) => (
+                            requestViews.map((request: Request, idx: number) => {
+                                const { selected, onClick } = selectProps(request.id, idx);
+                                return (
+                                    <RequestCard
+                                        request={request}
+                                        key={request.id}
+                                        disabled={request.id in disabled}
+                                        selected={selected}
+                                        onClick={onClick}
+                                    />
+                                );
+                            })
+                        )}
+                    </BulkWrapper>
                 </Col>
             </Row>
             <Row justify='center' align='middle' className='cvat-resource-pagination-wrapper'>

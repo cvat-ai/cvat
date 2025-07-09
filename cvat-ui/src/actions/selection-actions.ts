@@ -18,11 +18,11 @@ export enum SelectionActionsTypes {
 }
 
 export const selectionActions = {
-    selectResource: (resourceID: number) => createAction(
+    selectResource: (resourceID: number | string) => createAction(
         SelectionActionsTypes.SELECT_RESOURCE, { resourceID }),
-    deselectResource: (resourceID: number) => createAction(
+    deselectResource: (resourceID: number | string) => createAction(
         SelectionActionsTypes.DESELECT_RESOURCE, { resourceID }),
-    selectAllResources: (resourceIDs: number[]) => createAction(
+    selectAllResources: (resourceIDs: (number | string)[]) => createAction(
         SelectionActionsTypes.SELECT_ALL_RESOURCES, { resourceIDs }),
     clearSelectedResources: () => createAction(
         SelectionActionsTypes.CLEAR_SELECTED_RESOURCES),
