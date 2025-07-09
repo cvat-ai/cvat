@@ -90,12 +90,6 @@ const componentShortcuts = {
         sequences: ['n'],
         scope: ShortcutScope.TAG_ANNOTATION_WORKSPACE,
     },
-    SWITCH_REDRAW_MODE_TAG_ANNOTATION: {
-        name: 'Redraw shape',
-        description: 'Remove selected shape and redraw it from scratch',
-        sequences: ['shift+n'],
-        scope: ShortcutScope.TAG_ANNOTATION_WORKSPACE,
-    },
 };
 
 registerComponentShortcuts(componentShortcuts);
@@ -200,12 +194,12 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
         setSelectedLabelID(value.id);
     };
 
-    const onRemoveState = (labelID: number): void => {
+    const onRemoveTag = useCallback((labelID: number): void => {
         const objectState = frameTags.find((tag: ObjectState): boolean => tag.label.id === labelID);
         if (objectState) {
             removeObject(objectState);
         }
-    };
+    }, [frameTags]);
 
     const onChangeFrame = async (): Promise<void> => {
         const frame = await jobInstance.frames.search(
@@ -218,40 +212,37 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
         }
     };
 
-    const onAddTag = (labelID: number): void => {
+    const onAddTag = useCallback((labelID: number): void => {
         if (frameTags.every((objectState: ObjectState): boolean => objectState.label.id !== labelID)) {
             onRememberObject(labelID);
 
-            const objectState = new cvat.classes.ObjectState({
-                objectType: ObjectType.TAG,
-                label: labels.filter((label: any) => label.id === labelID)[0],
-                frame: frameNumber,
-            });
-            createAnnotations([objectState]);
+            createAnnotations([
+                new cvat.classes.ObjectState({
+                    objectType: ObjectType.TAG,
+                    label: labels.filter((label: any) => label.id === labelID)[0],
+                    frame: frameNumber,
+                }),
+            ]);
 
-            if (skipFrame) onChangeFrame();
+            if (skipFrame) {
+                onChangeFrame();
+            }
         }
-    };
+    }, [frameTags, skipFrame]);
 
     const onShortcutPress = useCallback((labelID: number) => {
         if (frameTags.some((tag: ObjectState) => tag.label.id === labelID)) {
-            onRemoveState(labelID);
+            onRemoveTag(labelID);
         } else {
             onAddTag(labelID);
         }
-    }, [frameTags]);
+    }, [frameTags, onAddTag, onRemoveTag]);
 
     const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
         SWITCH_DRAW_MODE_TAG_ANNOTATION: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
             if (selectedLabelID !== null) {
                 onAddTag(selectedLabelID);
-            }
-        },
-        SWITCH_REDRAW_MODE_TAG_ANNOTATION: (event: KeyboardEvent | undefined) => {
-            preventDefault(event);
-            if (selectedLabelID !== null) {
-                onRemoveState(selectedLabelID);
             }
         },
     };
