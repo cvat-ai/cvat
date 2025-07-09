@@ -16,6 +16,7 @@ import { CombinedState, JobsQuery } from 'reducers';
 import { getJobsAsync } from 'actions/jobs-actions';
 import { anySearch } from 'utils/any-search';
 import { useResourceQuery } from 'utils/hooks';
+import { selectionActions } from 'actions/selection-actions';
 
 import TopBarComponent from './top-bar';
 import JobsContentComponent from './jobs-content';
@@ -28,6 +29,11 @@ function JobsPageComponent(): JSX.Element {
     const query = useSelector((state: CombinedState) => state.jobs.query);
     const fetching = useSelector((state: CombinedState) => state.jobs.fetching);
     const count = useSelector((state: CombinedState) => state.jobs.count);
+    const allJobIds = useSelector((state: CombinedState) => state.jobs.current.map((j) => j.id));
+    const selectedCount = useSelector((state: CombinedState) => state.selection.selected.length);
+    const onSelectAll = React.useCallback(() => {
+        dispatch(selectionActions.selectAllResources(allJobIds));
+    }, [allJobIds]);
 
     const updatedQuery = useResourceQuery<JobsQuery>(query, { pageSize: 12 });
 
@@ -78,6 +84,8 @@ function JobsPageComponent(): JSX.Element {
         <div className='cvat-jobs-page'>
             <TopBarComponent
                 query={updatedQuery}
+                selectedCount={selectedCount}
+                onSelectAll={onSelectAll}
                 onApplySearch={(search: string | null) => {
                     dispatch(
                         getJobsAsync({
