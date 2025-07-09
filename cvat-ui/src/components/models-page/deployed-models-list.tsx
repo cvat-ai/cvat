@@ -13,6 +13,7 @@ import { MLModel } from 'cvat-core-wrapper';
 import { ModelProviders } from 'cvat-core/src/enums';
 import { getModelsAsync } from 'actions/models-actions';
 import dimensions from 'utils/dimensions';
+import BulkWrapper from 'components/tasks-page/bulk-wrapper';
 import DeployedModelItem from './deployed-model-item';
 
 interface Props {
@@ -27,7 +28,7 @@ function setUpModelsList(models: MLModel[], newPage: number, pageSize: number): 
     return renderModels.slice((newPage - 1) * pageSize, newPage * pageSize);
 }
 
-export default function DeployedModelsListComponent(props: Props): JSX.Element {
+export default function DeployedModelsListComponent(props: Readonly<Props>): JSX.Element {
     const interactors = useSelector((state: CombinedState) => state.models.interactors);
     const detectors = useSelector((state: CombinedState) => state.models.detectors);
     const trackers = useSelector((state: CombinedState) => state.models.trackers);
@@ -55,21 +56,33 @@ export default function DeployedModelsListComponent(props: Props): JSX.Element {
         [],
     );
 
+    const modelIdToIndex = new Map<number, number>();
+    models.forEach((m, idx) => modelIdToIndex.set(Number(m.id), idx));
+
     return (
         <>
             <Row justify='center' align='top' className='cvat-resource-list-wrapper'>
                 <Col {...dimensions} className='cvat-models-list'>
-                    {groupedModels.map(
-                        (instances: MLModel[]): JSX.Element => (
-                            <Row key={instances[0].id}>
-                                {instances.map((model: MLModel) => (
-                                    <Col span={6} key={model.id}>
-                                        <DeployedModelItem model={model} />
-                                    </Col>
-                                ))}
-                            </Row>
-                        ),
-                    )}
+                    <BulkWrapper currentResourceIDs={models.map((m) => Number(m.id))}>
+                        {(selectProps) => {
+                            const renderModelRow = (instances: MLModel[]): JSX.Element => (
+                                <Row key={instances[0].id} className='cvat-projects-list-row'>
+                                    {instances.map((model: MLModel) => {
+                                        const globalIdx = modelIdToIndex.get(Number(model.id)) ?? 0;
+                                        return (
+                                            <Col span={6} key={model.id}>
+                                                <DeployedModelItem
+                                                    model={model}
+                                                    {...selectProps(Number(model.id), globalIdx)}
+                                                />
+                                            </Col>
+                                        );
+                                    })}
+                                </Row>
+                            );
+                            return groupedModels.map(renderModelRow);
+                        }}
+                    </BulkWrapper>
                 </Col>
             </Row>
             <Row justify='center' align='middle' className='cvat-resource-pagination-wrapper'>

@@ -52,7 +52,7 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
             const virtualList = (event.target as HTMLElement).closest('.rc-virtual-list');
             if (virtualList) return;
 
-            const modal = document.querySelector('.ant-modal-root .ant-modal');
+            const modal = document.querySelector('.ant-modal');
             if (modal && (modal as HTMLElement).offsetParent !== null) return;
 
             if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
@@ -97,7 +97,6 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
                 } else {
                     // Regular click: clear and select only this
                     dispatch(selectionActions.clearSelectedResources());
-                    dispatch(selectionActions.selectResource(resourceID));
                     lastSelectedIndexRef.current = idx;
                 }
             },
