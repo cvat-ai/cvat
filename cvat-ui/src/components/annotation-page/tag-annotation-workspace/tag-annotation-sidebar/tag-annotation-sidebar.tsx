@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { connect } from 'react-redux';
 import { Action } from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
@@ -23,7 +23,8 @@ import {
     rememberObject,
 } from 'actions/annotation-actions';
 import {
-    getCore, Label, LabelType, ObjectType,
+    getCore, Label, LabelType, ObjectType, ObjectState,
+    Job, FrameData,
 } from 'cvat-core-wrapper';
 import { CombinedState } from 'reducers';
 import { filterApplicableForType } from 'utils/filter-applicable-labels';
@@ -38,19 +39,19 @@ import ShortcutsSelect from './shortcuts-select';
 const cvat = getCore();
 
 interface StateToProps {
-    states: any[];
-    labels: any[];
-    jobInstance: any;
+    states: ObjectState[];
+    labels: Label[];
+    jobInstance: Job;
     frameNumber: number;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
-    frameData: any;
+    frameData: FrameData;
     showDeletedFrames: boolean;
 }
 
 interface DispatchToProps {
-    removeObject(objectState: any): void;
-    createAnnotations(objectStates: any[]): void;
+    removeObject(objectState: ObjectState): void;
+    createAnnotations(objectStates: ObjectState[]): void;
     changeFrame(frame: number, fillBuffer?: boolean, frameStep?: number): void;
     onRememberObject(labelID: number): void;
 }
@@ -104,10 +105,10 @@ function mapDispatchToProps(dispatch: ThunkDispatch<CombinedState, {}, Action>):
         changeFrame(frame: number, fillBuffer?: boolean, frameStep?: number): void {
             dispatch(changeFrameAsync(frame, fillBuffer, frameStep));
         },
-        createAnnotations(objectStates: any[]): void {
+        createAnnotations(objectStates: ObjectState[]): void {
             dispatch(createAnnotationsAsync(objectStates));
         },
-        removeObject(objectState: any): void {
+        removeObject(objectState: ObjectState): void {
             dispatch(removeObjectAction(objectState, false));
         },
         onRememberObject(labelID: number): void {
@@ -178,7 +179,9 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
     }, []);
 
     useEffect(() => {
-        const tags = states.filter((objectState: any): boolean => objectState.objectType === ObjectType.TAG);
+        const tags = states.filter((objectState: ObjectState): boolean => (
+            objectState.objectType === ObjectType.TAG),
+        );
         setFrameTags(tags);
     }, [states]);
 
@@ -198,8 +201,10 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
     };
 
     const onRemoveState = (labelID: number): void => {
-        const objectState = frameTags.find((tag: any): boolean => tag.label.id === labelID);
-        if (objectState) removeObject(objectState);
+        const objectState = frameTags.find((tag: ObjectState): boolean => tag.label.id === labelID);
+        if (objectState) {
+            removeObject(objectState);
+        }
     };
 
     const onChangeFrame = async (): Promise<void> => {
@@ -214,7 +219,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
     };
 
     const onAddTag = (labelID: number): void => {
-        if (frameTags.every((objectState: any): boolean => objectState.label.id !== labelID)) {
+        if (frameTags.every((objectState: ObjectState): boolean => objectState.label.id !== labelID)) {
             onRememberObject(labelID);
 
             const objectState = new cvat.classes.ObjectState({
@@ -228,13 +233,13 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
         }
     };
 
-    const onShortcutPress = (event: KeyboardEvent | undefined, labelID: number): void => {
-        if (event?.shiftKey) {
+    const onShortcutPress = useCallback((labelID: number) => {
+        if (frameTags.some((tag: ObjectState) => tag.label.id === labelID)) {
             onRemoveState(labelID);
         } else {
             onAddTag(labelID);
         }
-    };
+    }, [frameTags]);
 
     const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
         SWITCH_DRAW_MODE_TAG_ANNOTATION: (event: KeyboardEvent | undefined) => {
@@ -322,14 +327,8 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
                 <Row justify='center' className='cvat-tag-annotation-sidebar-shortcut-help'>
                     <Col>
                         <Text>
-                            Use&nbsp;
-                            <Text code>N</Text>
-                            &nbsp;or digits&nbsp;
-                            <Text code>0-9</Text>
-                            &nbsp;to add selected tag.&nbsp;
-                            Add&nbsp;
-                            <Text code>Shift</Text>
-                            &nbsp;modifier to remove selected tag.
+                            Use configured shortcuts to add a new tag.
+                            If a tag with such label is already exists on the frame, it will be removed.
                         </Text>
                     </Col>
                 </Row>
