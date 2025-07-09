@@ -88,10 +88,9 @@ It is the starting point for using CVAT SDK.
 A `Client` instance allows you to:
 - configure connection options with the `Config` class
 - check server API compatibility with the current SDK version
-- deduce server connection scheme (`https` or `http`) automatically
 - manage user session with the `login()`, `logout()` and other methods
-- obtain Repository objects with the `users`, `tasks`, `jobs` and other members
-- reach to lower-level APIs with the corresponding members
+- obtain high-level server object wrappers with the `users`, `tasks`, `jobs` and other members
+- easily reach lower-level APIs to send raw requests, typically via the `api` member of the object
 
 An instance of `Client` can be created directly by calling the class constructor
 or with the utility function `cvat_sdk.core.client.make_client()` which can handle
@@ -108,7 +107,7 @@ You can create and start using a `Client` instance this way:
 ```python
 from cvat_sdk import make_client
 
-with make_client('http://localhost', port='8080', credentials=('user', 'password')) as client:
+with make_client('https://app.cvat.ai', credentials=('user', 'password')) as client:
     ...
 ```
 
@@ -123,7 +122,7 @@ from cvat_sdk import Config, Client
 config = Config()
 # set up some config fields ...
 
-with Client('http://localhost:8080', config=config) as client:
+with Client('https://app.cvat.ai', config=config) as client:
     client.login(('user', 'password'))
     ...
 ```
@@ -138,6 +137,41 @@ When the server is located, its version is checked. If an unsupported version is
 an error can be raised or suppressed (controlled by `config.allow_unsupported_server`).
 If the error is suppressed, some SDK functions may not work as expected with this server.
 By default, a warning is raised and the error is suppressed.
+
+### Authentication
+
+High-level SDK supports 2 authentication options:
+- Basic authentication, with a username and a password
+- Personal API Token authentication, with a token value
+
+Basic authentication doesn't require a special configuration, but for better security it's
+recommended to use a Personal API Token (PAT) instead, if possible.
+
+{{< tabpane text=true >}}
+
+{{%tab header="Basic authentication" %}}
+
+```python
+from cvat_sdk import make_client
+
+with make_client('https://app.cvat.ai', credentials=('user', 'password')) as client:
+    ...
+```
+
+{{% /tab %}}
+
+{{%tab header="Personal API Token authentication" %}}
+
+```python
+from cvat_sdk import make_client, ApiTokenCredentials
+
+with make_client('https://app.cvat.ai', credentials=ApiTokenCredentials('token')) as client:
+    ...
+```
+
+{{% /tab %}}
+
+{{< /tabpane >}}
 
 ### Users and organizations
 
