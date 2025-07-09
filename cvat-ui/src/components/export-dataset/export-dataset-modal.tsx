@@ -70,7 +70,7 @@ function NameTemplateTooltip(props: Readonly<{ nameTemplate: string; example: st
             <div>
                 Example:
                 <br />
-                <i>{example || 'dataset_task_1.zip'}</i>
+                <i>{example}</i>
             </div>
         </>
     );
@@ -95,26 +95,29 @@ function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
     const dispatch = useDispatch();
     const history = useHistory();
 
-    // Bulk logic additions
     const selectedIds = useSelector((state: CombinedState) => state.selection.selected);
     const allTasks = useSelector((state: CombinedState) => state.tasks.current);
+    const allProjects = useSelector((state: CombinedState) => state.projects.current);
     const isBulkMode = selectedIds.length > 1;
     let selectedInstances: (Task | Project)[] = [];
     if (isBulkMode) {
-        selectedInstances = allTasks.filter((t) => selectedIds.includes(t.id));
+        const selectedTasks = allTasks.filter((t) => selectedIds.includes(t.id));
+        const selectedProjects = allProjects.filter((p) => selectedIds.includes(p.id));
+        selectedInstances = [...selectedTasks, ...selectedProjects];
     } else if (instance && (instance instanceof Task || instance instanceof Project)) {
         selectedInstances = [instance];
     }
     const [nameTemplate, setNameTemplate] = useState('dataset_task_{{id}}');
 
     useEffect(() => {
+        let newIntanceType = '';
         if (instance instanceof Project) {
-            setInstanceType(`project #${instance.id}`);
+            newIntanceType = 'project';
         } else if (instance instanceof Task || instance instanceof Job) {
             if (instance instanceof Task) {
-                setInstanceType(`task #${instance.id}`);
+                newIntanceType = 'task';
             } else {
-                setInstanceType(`job #${instance.id}`);
+                newIntanceType = 'job';
             }
             if (instance.mode === 'interpolation' && instance.dimension === '2d') {
                 form.setFieldsValue({ selectedFormat: 'CVAT for video 1.1' });
@@ -122,6 +125,8 @@ function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
                 form.setFieldsValue({ selectedFormat: 'CVAT for images 1.1' });
             }
         }
+        setNameTemplate(`dataset_${newIntanceType}_{{id}}`);
+        setInstanceType(newIntanceType);
     }, [instance]);
 
     useEffect(() => {
@@ -235,7 +240,7 @@ function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
             .replaceAll('{{id}}', String(selectedInstances[0].id))
             .replaceAll('{{name}}', selectedInstances[0].name ?? '')
             .replaceAll('{{index}}', '1') :
-        'dataset_task_1.zip';
+        `dataset_${instanceType}_1.zip`;
 
     const sortedDumpers = dumpers.slice();
     sortedDumpers.sort((a: Dumper, b: Dumper) => a.name.localeCompare(b.name));
@@ -245,7 +250,7 @@ function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
             title={
                 isBulkMode ? (
                     <Text strong>
-                        {`Export ${selectedInstances.length} tasks as a dataset`}
+                        {`Export ${selectedInstances.length} ${instanceType}s as datasets`}
                     </Text>
                 ) : (
                     <Text strong>{`Export ${instanceType} as a dataset`}</Text>

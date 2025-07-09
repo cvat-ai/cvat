@@ -85,6 +85,7 @@ function ExportBackupModal(): JSX.Element {
 
     const selectedIds = useSelector((state: CombinedState) => state.selection.selected);
     const allTasks = useSelector((state: CombinedState) => state.tasks.current);
+    const allProjects = useSelector((state: CombinedState) => state.projects.current);
 
     const instanceT = useSelector((state: CombinedState) => state.export.instanceType);
     const instance = useSelector((state: CombinedState) => {
@@ -97,17 +98,22 @@ function ExportBackupModal(): JSX.Element {
     const isBulkMode = selectedIds.length > 1;
     let selectedInstances: Exclude<ProjectOrTaskOrJob, Job>[] = [];
     if (isBulkMode) {
-        selectedInstances = allTasks.filter((t) => selectedIds.includes(t.id));
+        const selectedTasks = allTasks.filter((t) => selectedIds.includes(t.id));
+        const selectedProjects = allProjects.filter((p) => selectedIds.includes(p.id));
+        selectedInstances = [...selectedTasks, ...selectedProjects];
     } else if (instance) {
         selectedInstances = [instance];
     }
 
     useEffect(() => {
+        let newIntanceType = '';
         if (instance && instance instanceof core.classes.Project) {
-            setInstanceType('project');
+            newIntanceType = 'project';
         } else if (instance && instance instanceof core.classes.Task) {
-            setInstanceType('task');
+            newIntanceType = 'task';
         }
+        setNameTemplate(`backup_${newIntanceType}_{{id}}`);
+        setInstanceType(newIntanceType);
     }, [instance]);
 
     useEffect(() => {
@@ -220,7 +226,7 @@ function ExportBackupModal(): JSX.Element {
             .replaceAll('{{id}}', String(selectedInstances[0].id))
             .replaceAll('{{name}}', selectedInstances[0].name ?? '')
             .replaceAll('{{index}}', '1') :
-        'backup_task_1.zip';
+        `backup_${instanceType}_1.zip`;
 
     return (
         <Modal
