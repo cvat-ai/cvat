@@ -17,8 +17,6 @@ interface Props {
     query: InvitationsQuery;
 }
 
-const PAGE_SIZE = 11;
-
 export default function InvitationsListComponent(props: Props): JSX.Element {
     const { query } = props;
 
@@ -36,16 +34,17 @@ export default function InvitationsListComponent(props: Props): JSX.Element {
         dispatch(declineInvitationAsync(invitationKey))
     ), []);
 
-    const onPageChange = useCallback((newPage) => {
+    const onPageChange = useCallback((newPage: number, newPageSize: number) => {
         dispatch(getInvitationsAsync({
             ...query,
             page: newPage,
+            pageSize: newPageSize,
         }));
-    }, []);
+    }, [query]);
 
     return (
         <>
-            <Row justify='center' align='top' className='cvat-invitations-list-content'>
+            <Row justify='center' align='top' className='cvat-resource-list-wrapper cvat-invitations-list-content'>
                 <Col className='cvat-invitations-list' {...dimensions}>
                     {invitations.map(
                         (invitation: Invitation): JSX.Element => (
@@ -59,16 +58,16 @@ export default function InvitationsListComponent(props: Props): JSX.Element {
                     )}
                 </Col>
             </Row>
-            <Row justify='center' align='middle'>
+            <Row justify='center' align='middle' className='cvat-resource-pagination-wrapper'>
                 <Col {...dimensions}>
                     <Pagination
                         className='cvat-invitations-pagination'
-                        showSizeChanger={false}
-                        total={totalCount}
-                        pageSize={PAGE_SIZE}
-                        current={query.page}
                         onChange={onPageChange}
+                        total={totalCount}
+                        pageSize={query.pageSize}
+                        current={query.page}
                         showQuickJumper
+                        showSizeChanger
                     />
                 </Col>
             </Row>

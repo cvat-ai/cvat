@@ -27,6 +27,7 @@ from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
 from django.db.models import Prefetch, prefetch_related_objects
 from django.utils import timezone
+from django.utils.functional import cached_property
 from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
 from numpy import random
 from PIL import Image
@@ -2881,6 +2882,40 @@ class AnnotationSerializer(serializers.Serializer):
     label_id = serializers.IntegerField(min_value=0)
     group = serializers.IntegerField(min_value=0, allow_null=True, default=None)
     source = serializers.CharField(default='manual')
+
+    def _validate_id_absent(self, value):
+        if value is not None:
+            raise serializers.ValidationError("must be absent")
+        return value
+
+    def _validate_id_present(self, value):
+        if value is None:
+            raise serializers.ValidationError("must be present and not null")
+        return value
+
+    @cached_property
+    def validate_id(self):
+        # avoid circular import
+        from cvat.apps.dataset_manager.task import PatchAction
+
+        # It would've been better to determine the validator in `__init__`,
+        # but in a nested serializer the top-level context doesn't actually become
+        # accessible until after initialization.
+        if action := self.context.get("annotation_action"):
+            if action == PatchAction.CREATE:
+                return self._validate_id_absent
+            elif action == PatchAction.UPDATE:
+                # Logically, we should return _validate_id_present here.
+                # However, due to the way the implementation historically worked,
+                # passing annotations without IDs would work as a "create" operation.
+                # There are almost certainly clients relying on this, so keep allowing it.
+                return None
+            elif action == PatchAction.DELETE:
+                return self._validate_id_present
+            else:
+                assert False, f"Unknown action {action!r}"
+
+        return None
 
 class LabeledImageSerializer(AnnotationSerializer):
     attributes = AttributeValSerializer(many=True, default=[])

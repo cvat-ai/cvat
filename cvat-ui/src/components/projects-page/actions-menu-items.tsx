@@ -6,9 +6,11 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { MenuProps } from 'antd/lib/menu';
 import { usePlugins } from 'utils/hooks';
+import { CVATMenuEditLabel } from 'components/common/cvat-menu-edit-label';
 
 interface MenuItemsData {
-    projectID: number;
+    projectId: number;
+    startEditField: (key: string) => void;
     pluginActions: ReturnType<typeof usePlugins>;
     onExportDataset: () => void;
     onImportDataset: () => void;
@@ -21,7 +23,8 @@ export default function ProjectActionsItems(
     projectMenuProps: unknown,
 ): MenuProps['items'] {
     const {
-        projectID,
+        projectId,
+        startEditField,
         pluginActions,
         onExportDataset,
         onImportDataset,
@@ -50,29 +53,35 @@ export default function ProjectActionsItems(
     }, 20]);
 
     menuItems.push([{
-        key: 'view-analytics',
-        label: <Link to={`/projects/${projectID}/analytics`}>View analytics</Link>,
+        key: 'edit_assignee',
+        onClick: () => startEditField('assignee'),
+        label: <CVATMenuEditLabel>Assignee</CVATMenuEditLabel>,
     }, 30]);
 
     menuItems.push([{
-        key: 'quality-control',
-        label: <Link to={`/projects/${projectID}/quality-control`}>Quality control</Link>,
+        key: 'view-analytics',
+        label: <Link to={`/projects/${projectId}/analytics`}>View analytics</Link>,
     }, 40]);
 
     menuItems.push([{
-        key: 'set-webhooks',
-        label: <Link to={`/projects/${projectID}/webhooks`}>Setup webhooks</Link>,
+        key: 'quality-control',
+        label: <Link to={`/projects/${projectId}/quality-control`}>Quality control</Link>,
     }, 50]);
 
     menuItems.push([{
+        key: 'set-webhooks',
+        label: <Link to={`/projects/${projectId}/webhooks`}>Setup webhooks</Link>,
+    }, 60]);
+
+    menuItems.push([{
         type: 'divider',
-    }, 59]);
+    }, 69]);
 
     menuItems.push([{
         key: 'delete',
         onClick: onDeleteProject,
         label: 'Delete',
-    }, 60]);
+    }, 70]);
 
     menuItems.push(
         ...pluginActions.map(({ component: Component, weight }, index) => {

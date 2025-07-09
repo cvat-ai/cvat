@@ -19,8 +19,9 @@ def get_opa_bundle() -> tuple[bytes, str]:
 
     with tarfile.open(fileobj=bundle_file, mode="w:gz") as tar:
         for p in _OPA_RULES_PATHS:
-            for f in p.glob("*[!.gen].rego"):
-                tar.add(name=f, arcname=f.relative_to(p.parent))
+            for f in p.glob("*.rego"):
+                if not f.name.endswith(".gen.rego"):
+                    tar.add(name=f, arcname=f.relative_to(p.parent))
 
     bundle = bundle_file.getvalue()
     etag = hashlib.blake2b(bundle).hexdigest()
