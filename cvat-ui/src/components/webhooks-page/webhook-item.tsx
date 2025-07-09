@@ -4,7 +4,6 @@
 
 import './styles.scss';
 import React, { useCallback, useState } from 'react';
-import { useHistory } from 'react-router';
 import moment from 'moment';
 import { Col, Row } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
@@ -50,7 +49,6 @@ function setUpWebhookStatus(status: number): WebhookStatus {
 
 function WebhookItem(props: Readonly<WebhookItemProps>): JSX.Element | null {
     const [pingFetching, setPingFetching] = useState<boolean>(false);
-    const history = useHistory();
     const {
         webhookInstance, selected, onClick,
     } = props;
@@ -81,13 +79,6 @@ function WebhookItem(props: Readonly<WebhookItemProps>): JSX.Element | null {
         });
     }, [webhookInstance]);
 
-    const onOpenWebhook = useCallback((event: React.MouseEvent): void => {
-        const cancel = onClick(event);
-        if (!cancel) {
-            history.push(`/webhooks/update/${id}`);
-        }
-    }, [history, id, onClick]);
-
     const rowClassName = `cvat-webhooks-list-item${selected ? ' cvat-item-selected' : ''}`;
 
     return (
@@ -98,7 +89,7 @@ function WebhookItem(props: Readonly<WebhookItemProps>): JSX.Element | null {
                 <Row
                     className={rowClassName}
                     style={deleted ? { opacity: 0.5, pointerEvents: 'none' } : {}}
-                    onClick={onOpenWebhook}
+                    onClick={onClick}
                 >
                     <Col span={1}>
                         {
