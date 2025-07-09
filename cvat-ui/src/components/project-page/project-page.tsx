@@ -4,7 +4,9 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect, useRef, useState } from 'react';
+import React, {
+    useCallback, useEffect, useRef, useState,
+} from 'react';
 import { useSelector, useDispatch, shallowEqual } from 'react-redux';
 import { useHistory, useParams } from 'react-router';
 import Spin from 'antd/lib/spin';
@@ -28,11 +30,14 @@ import MoveTaskModal from 'components/move-task-modal/move-task-modal';
 import ModelRunnerDialog from 'components/model-runner-modal/model-runner-dialog';
 import {
     SortingComponent, ResourceFilterHOC, defaultVisibility, updateHistoryFromQuery,
+    ResourceSelectionInfo,
 } from 'components/resource-sorting-filtering';
 import CvatDropdownMenuPaper from 'components/common/cvat-dropdown-menu-paper';
 import { ProjectNotFoundComponent } from 'components/common/not-found';
+import BulkWrapper, { BulkSelectProps } from 'components/tasks-page/bulk-wrapper';
 
 import { useResourceQuery } from 'utils/hooks';
+import { selectionActions } from 'actions/selection-actions';
 import DetailsComponent from './details';
 import ProjectTopBar from './top-bar';
 
@@ -54,6 +59,7 @@ export default function ProjectPageComponent(): JSX.Element {
     const id = +useParams<ParamType>().id;
     const dispatch = useDispatch();
     const history = useHistory();
+    const selectedCount = useSelector((state: CombinedState) => state.selection.selected.length);
 
     const [projectInstance, setProjectInstance] = useState<Project | null>(null);
     const [fechingProject, setFetchingProject] = useState(true);
@@ -126,6 +132,11 @@ export default function ProjectPageComponent(): JSX.Element {
         }
     }, [deletes]);
 
+    const allTaskIds = tasks.map((t) => t.id);
+    const onSelectAll = useCallback(() => {
+        dispatch(selectionActions.selectAllResources(allTaskIds));
+    }, [allTaskIds]);
+
     if (fechingProject || id in deletes) {
         return <Spin size='large' className='cvat-spinner' />;
     }
@@ -137,43 +148,68 @@ export default function ProjectPageComponent(): JSX.Element {
     const subsets = Array.from(
         new Set<string>(tasks.map((task: Task) => task.subset)),
     );
+    const projectTaskIDs = tasks.filter((task) => task.projectId === projectInstance.id).map((task) => task.id);
+    function renderTasksForSubset(
+        subset: string,
+        selectProps: (id: number, idx: number) => BulkSelectProps,
+    ): JSX.Element[] {
+        if (!projectInstance) return [];
+        const filteredTasks = tasks.filter(
+            (task) => task.projectId === projectInstance.id && task.subset === subset,
+        );
+        return filteredTasks.map((task: Task) => {
+            const idx = tasks.findIndex((t) => t.id === task.id);
+            const { selected, onClick } = selectProps(task.id, idx);
+            return (
+                <TaskItem
+                    key={task.id}
+                    taskID={task.id}
+                    idx={tasks.indexOf(task)}
+                    selected={selected}
+                    onClick={onClick}
+                />
+            );
+        });
+    }
+
     const content = tasksCount ? (
-        <>
-            {subsets.map((subset: string) => (
-                <React.Fragment key={subset}>
-                    {subset && <Title level={4}>{subset}</Title>}
-                    {tasks
-                        .filter((task) => task.projectId === projectInstance.id && task.subset === subset)
-                        .map((task: Task) => (
-                            <TaskItem
-                                key={task.id}
-                                taskID={task.id}
-                                idx={tasks.indexOf(task)}
+        <BulkWrapper currentResourceIDs={projectTaskIDs}>
+            {(selectProps) => (
+                <>
+                    {subsets.map((subset: string) => (
+                        <React.Fragment key={subset}>
+                            {subset && <Title level={4}>{subset}</Title>}
+                            {renderTasksForSubset(subset, selectProps)}
+                        </React.Fragment>
+                    ))}
+                    <Row justify='center' align='middle'>
+                        <Col md={22} lg={18} xl={16} xxl={14}>
+                            <Pagination
+                                className='cvat-project-tasks-pagination'
+                                onChange={(
+                                    page: number,
+                                    pageSize: number,
+                                ) => {
+                                    dispatch(
+                                        getProjectTasksAsync({
+                                            ...tasksQuery,
+                                            projectId: id,
+                                            page,
+                                            pageSize,
+                                        }),
+                                    );
+                                }}
+                                total={tasksCount}
+                                pageSize={tasksQuery.pageSize}
+                                current={tasksQuery.page}
+                                showQuickJumper
+                                showSizeChanger
                             />
-                        ))}
-                </React.Fragment>
-            ))}
-            <Row justify='center' align='middle'>
-                <Col md={22} lg={18} xl={16} xxl={14}>
-                    <Pagination
-                        className='cvat-project-tasks-pagination'
-                        onChange={(page: number, pageSize: number) => {
-                            dispatch(getProjectTasksAsync({
-                                ...tasksQuery,
-                                projectId: id,
-                                page,
-                                pageSize,
-                            }));
-                        }}
-                        total={tasksCount}
-                        pageSize={tasksQuery.pageSize}
-                        current={tasksQuery.page}
-                        showQuickJumper
-                        showSizeChanger
-                    />
-                </Col>
-            </Row>
-        </>
+                        </Col>
+                    </Row>
+                </>
+            )}
+        </BulkWrapper>
     ) : (
         <Empty description='No tasks found' />
     );
@@ -203,20 +239,26 @@ export default function ProjectPageComponent(): JSX.Element {
                 <Row justify='space-between' align='middle' className='cvat-project-page-tasks-bar'>
                     <Col span={24}>
                         <div className='cvat-project-page-tasks-filters-wrapper'>
-                            <Input.Search
-                                enterButton
-                                onSearch={(_search: string) => {
-                                    dispatch(getProjectTasksAsync({
-                                        ...tasksQuery,
-                                        page: 1,
-                                        projectId: id,
-                                        search: _search,
-                                    }));
-                                }}
-                                defaultValue={tasksQuery.search ?? ''}
-                                className='cvat-project-page-tasks-search-bar'
-                                placeholder='Search ...'
-                            />
+                            <div>
+                                <Input.Search
+                                    enterButton
+                                    onSearch={(_search: string) => {
+                                        dispatch(getProjectTasksAsync({
+                                            ...tasksQuery,
+                                            page: 1,
+                                            projectId: id,
+                                            search: _search,
+                                        }));
+                                    }}
+                                    defaultValue={tasksQuery.search ?? ''}
+                                    className='cvat-project-page-tasks-search-bar'
+                                    placeholder='Search ...'
+                                />
+                                <ResourceSelectionInfo
+                                    selectedCount={selectedCount}
+                                    onSelectAll={onSelectAll}
+                                />
+                            </div>
                             <div>
                                 <SortingComponent
                                     visible={visibility.sorting}

@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useHistory } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import Spin from 'antd/lib/spin';
@@ -31,7 +31,7 @@ function JobsPageComponent(): JSX.Element {
     const count = useSelector((state: CombinedState) => state.jobs.count);
     const allJobIds = useSelector((state: CombinedState) => state.jobs.current.map((j) => j.id));
     const selectedCount = useSelector((state: CombinedState) => state.selection.selected.length);
-    const onSelectAll = React.useCallback(() => {
+    const onSelectAll = useCallback(() => {
         dispatch(selectionActions.selectAllResources(allJobIds));
     }, [allJobIds]);
 

@@ -9,9 +9,14 @@ import {
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
 
+export interface BulkSelectProps {
+    selected: boolean;
+    onClick: (event?: React.MouseEvent) => void;
+}
+
 interface BulkWrapperProps {
     currentResourceIDs: number[];
-    children: (selectProps: (id: number, idx: number) => { selected: boolean; onClick: () => void }) => React.ReactNode;
+    children: (selectProps: (id: number, idx: number) => BulkSelectProps) => React.ReactNode;
 }
 
 function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
@@ -40,7 +45,7 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
     };
 
     useEffect(() => {
-        function handleClickOutside(event: MouseEvent) {
+        function handleClickOutside(event: MouseEvent): void {
             const dropdown = (event.target as HTMLElement).closest('.ant-dropdown');
             if (dropdown) return;
 
@@ -66,7 +71,7 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
     const selectProps = (
         resourceID: number,
         idx: number,
-    ): { selected: boolean; onClick: (event?: React.MouseEvent) => void } => {
+    ): BulkSelectProps => {
         const isSelected = selectedIds.includes(resourceID);
         const { currentResourceIDs } = props;
         return {
