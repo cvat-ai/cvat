@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useHistory } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import Spin from 'antd/lib/spin';
@@ -13,6 +13,7 @@ import { getProjectsAsync } from 'actions/projects-actions';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import { anySearch } from 'utils/any-search';
 import { useResourceQuery } from 'utils/hooks';
+import { selectionActions } from 'actions/selection-actions';
 import EmptyListComponent from './empty-list';
 import TopBarComponent from './top-bar';
 import ProjectListComponent from './project-list';
@@ -27,6 +28,12 @@ export default function ProjectsPageComponent(): JSX.Element {
     const importing = useSelector((state: CombinedState) => state.import.projects.backup.importing);
     const [isMounted, setIsMounted] = useState(false);
     const isAnySearch = anySearch<ProjectsQuery>(query);
+
+    const allProjectIds = useSelector((state: CombinedState) => state.projects.current.map((p) => p.id));
+    const selectedCount = useSelector((state: CombinedState) => state.selection.selected.length);
+    const onSelectAll = useCallback(() => {
+        dispatch(selectionActions.selectAllResources(allProjectIds));
+    }, [allProjectIds]);
 
     const updatedQuery = useResourceQuery<ProjectsQuery>(query, { pageSize: 12 });
 
@@ -77,6 +84,8 @@ export default function ProjectsPageComponent(): JSX.Element {
                 }}
                 query={updatedQuery}
                 importing={importing}
+                selectedCount={selectedCount}
+                onSelectAll={onSelectAll}
             />
             { fetching ? (
                 <div className='cvat-empty-project-list'>

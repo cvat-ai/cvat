@@ -38,15 +38,15 @@ interface VisibleTopBarProps {
     onApplySearch(search: string | null): void;
     query: TasksQuery;
     importing: boolean;
-    selectedCount?: number;
-    onSelectAll?: () => void;
+    selectedCount: number;
+    onSelectAll: () => void;
 }
 
 export default function TopBarComponent(props: Readonly<VisibleTopBarProps>): JSX.Element {
     const dispatch = useDispatch();
     const {
         importing, query, onApplyFilter, onApplySorting, onApplySearch,
-        selectedCount = 0, onSelectAll,
+        selectedCount, onSelectAll,
     } = props;
     const [visibility, setVisibility] = useState(defaultVisibility);
     const history = useHistory();
