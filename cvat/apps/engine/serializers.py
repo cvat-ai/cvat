@@ -976,7 +976,7 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
         return job
 
-    def update(self, instance, validated_data):
+    def update(self, instance: models.Job, validated_data: dict[str, Any]):
         stage = validated_data.get('stage', instance.stage)
         state = validated_data.get('state', models.StateChoice.NEW if stage != instance.stage else instance.state)
 
@@ -994,8 +994,7 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         if "assignee" in validated_data and (
             (assignee_id := validated_data.pop("assignee")) != instance.assignee_id
         ):
-            validated_data["assignee_id"] = assignee_id
-            validated_data["assignee_updated_date"] = timezone.now()
+            instance.update_assignee(assignee_id)
 
         instance = super().update(instance, validated_data)
         return instance
@@ -2509,8 +2508,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             "assignee_id" in validated_data and
             validated_data["assignee_id"] != instance.assignee_id
         ):
-            instance.assignee_id = validated_data.pop('assignee_id')
-            instance.assignee_updated_date = timezone.now()
+            instance.update_assignee(validated_data.pop('assignee_id'))
 
         if instance.project_id is None:
             LabelSerializer.update_labels(labels, parent_instance=instance)
@@ -2585,7 +2583,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             assignee_updated_date = timezone.now()
 
             if instance.assignee_id is not None:
-                instance.update_assignee(updated_date=assignee_updated_date, save=False)
+                instance.update_assignee(None, updated_date=assignee_updated_date)
 
             assigned_jobs_qs = models.Job.objects.filter(
                 segment__task__id=instance.pk,
@@ -2803,8 +2801,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
             "assignee_id" in validated_data and
             validated_data['assignee_id'] != instance.assignee_id
         ):
-            instance.assignee_id = validated_data.pop('assignee_id')
-            instance.assignee_updated_date = timezone.now()
+            instance.update_assignee(validated_data.pop('assignee_id'))
 
         labels = validated_data.get('label_set', [])
         LabelSerializer.update_labels(labels, parent_instance=instance)
@@ -2828,7 +2825,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
             assignee_updated_date = timezone.now()
 
             if instance.assignee_id is not None:
-                instance.update_assignee(updated_date=assignee_updated_date, save=False)
+                instance.update_assignee(None, updated_date=assignee_updated_date)
 
             instance.organization_id = organization_id
             instance.tasks.update(

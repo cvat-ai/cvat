@@ -440,7 +440,8 @@ class TimestampedModel(models.Model):
 
 class AssignableModel(models.Model):
     assignee = models.ForeignKey(
-        User, null=True, blank=True, on_delete=models.SET_NULL, related_name="assigned_%(class)ss"
+        User, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="assigned_%(class)ss", related_query_name="assigned_%(class)s"
     )
     assignee_updated_date = models.DateTimeField(null=True, blank=True, default=None)
 
@@ -449,24 +450,18 @@ class AssignableModel(models.Model):
 
     def update_assignee(
         self,
+        assignee_id: int | None,
+        /,
         *,
-        assignee_id: int | None = None,
         updated_date: datetime.datetime | None = None,
-        save: bool = True,
+        commit: bool = False,
     ) -> None:
         self.assignee_id = assignee_id
         self.assignee_updated_date = updated_date or timezone.now()
 
-        if save:
-            self.save(update_fields=["assignee, assignee_updated_date"])
+        if commit:
+            self.save(update_fields=["assignee", "assignee_updated_date"])
 
-class AssignableModelWithoutBackRelationship(AssignableModel):
-    assignee = models.ForeignKey(
-        User, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
-    )
-
-    class Meta:
-        abstract = True
 
 class ABCModelMeta(ABCMeta, ModelBase):
     pass
@@ -614,7 +609,7 @@ class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
     name = SafeCharField(max_length=256)
     mode = models.CharField(max_length=32)
     owner = models.ForeignKey(User, null=True, blank=True,
-        on_delete=models.SET_NULL, related_name="owned_tasks")
+        on_delete=models.SET_NULL, related_name="tasks", related_query_name="task")
 
     bug_tracker = models.CharField(max_length=2000, blank=True, default="")
     overlap = models.PositiveIntegerField(null=True)
@@ -1204,7 +1199,7 @@ class Profile(models.Model):
     )
 
 
-class Issue(TimestampedModel, AssignableModelWithoutBackRelationship):
+class Issue(TimestampedModel, AssignableModel):
     frame = models.PositiveIntegerField()
     position = FloatArrayField()
     job = models.ForeignKey(Job, related_name='issues', on_delete=models.CASCADE)
