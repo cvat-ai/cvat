@@ -1039,6 +1039,11 @@ export interface WebhooksState {
     totalCount: number;
     fetching: boolean;
     query: WebhooksQuery;
+    activities: {
+        deletes: {
+            [webhookId: number]: boolean; // deleted (deleting if in dictionary)
+        };
+    }
 }
 
 export interface InvitationsQuery {
