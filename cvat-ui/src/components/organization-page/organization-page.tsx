@@ -5,13 +5,14 @@
 
 import './styles.scss';
 import React, { useCallback, useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import Empty from 'antd/lib/empty';
 import Spin from 'antd/lib/spin';
 
 import { CombinedState, OrganizationMembersQuery } from 'reducers';
 import { Membership, Organization, OrganizationMembersFilter } from 'cvat-core-wrapper';
 import { filterNull } from 'utils/filter-null';
+import { selectionActions } from 'actions/selection-actions';
 import TopBarComponent from './top-bar';
 import MembersList from './members-list';
 
@@ -34,10 +35,12 @@ function fetchMembers(
 }
 
 function OrganizationPage(): JSX.Element | null {
+    const dispatch = useDispatch();
     const organization = useSelector((state: CombinedState) => state.organizations.current);
     const fetching = useSelector((state: CombinedState) => state.organizations.fetching);
     const updating = useSelector((state: CombinedState) => state.organizations.updating);
     const user = useSelector((state: CombinedState) => state.auth.user);
+    const selectedIds = useSelector((state: CombinedState) => state.selection.selected);
     const [membersFetching, setMembersFetching] = useState<boolean>(true);
     const [members, setMembers] = useState<Membership[]>([]);
     const [query, setQuery] = useState<OrganizationMembersQuery>({
@@ -62,6 +65,11 @@ function OrganizationPage(): JSX.Element | null {
             pageSize,
         });
     }, [query]);
+
+    const allMembeshipsIds = members.map((m) => m.id);
+    const onSelectAll = useCallback(() => {
+        dispatch(selectionActions.selectAllResources(allMembeshipsIds));
+    }, [allMembeshipsIds]);
 
     useEffect(() => {
         fetchMembersCallback();
@@ -103,6 +111,8 @@ function OrganizationPage(): JSX.Element | null {
                                 page: 1,
                             });
                         }}
+                        selectedCount={selectedIds.length}
+                        onSelectAll={onSelectAll}
                     />
                     <MembersList
                         fetching={membersFetching}

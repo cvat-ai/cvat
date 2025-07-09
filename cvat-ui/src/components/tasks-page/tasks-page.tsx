@@ -27,12 +27,11 @@ interface Props {
     importing: boolean;
     query: TasksQuery;
     count: number;
-    bulkFetching: boolean;
 }
 
 function TasksPageComponent(props: Readonly<Props>): JSX.Element {
     const {
-        query, fetching, importing, count, bulkFetching,
+        query, fetching, importing, count,
     } = props;
 
     const dispatch = useDispatch();
@@ -124,7 +123,7 @@ function TasksPageComponent(props: Readonly<Props>): JSX.Element {
                 selectedCount={selectedCount}
                 onSelectAll={onSelectAll}
             />
-            { fetching && !bulkFetching ? (
+            { fetching ? (
                 <div className='cvat-empty-tasks-list'>
                     <Spin size='large' className='cvat-spinner' />
                 </div>
