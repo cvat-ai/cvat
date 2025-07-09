@@ -13,6 +13,10 @@ import { useSelector, useDispatch } from 'react-redux';
 import { CombinedState } from 'reducers';
 import { updateProjectAsync, ProjectUpdateTypes } from 'actions/projects-actions';
 import { updateTaskAsync, TaskUpdateTypes } from 'actions/tasks-actions';
+import { useDropdownEditField } from 'utils/hooks';
+import CVATTooltip from 'components/common/cvat-tooltip';
+import Space from 'antd/lib/space';
+import { QuestionCircleOutlined } from '@ant-design/icons';
 import {
     closeLinkedCloudStorageUpdatingModal as closeTaskLinkedCloudStorageUpdatingModal,
 } from '../../actions/tasks-actions';
@@ -27,12 +31,13 @@ function SelectCSUpdatingSchemeModal(): JSX.Element {
     const instance = task || project;
     const [instanceType, setInstanceType] = useState('');
     const dispatch = useDispatch();
+    const { stopEditField } = useDropdownEditField();
 
     const saveInstance = useCallback(() => {
         if (instance instanceof core.classes.Project) {
             dispatch(updateProjectAsync(instance, ProjectUpdateTypes.UPDATE_ORGANIZATION));
         } else if (instance instanceof core.classes.Task) {
-            dispatch(updateTaskAsync(instance, TaskUpdateTypes.UPDATE_ORGANIZATION));
+            dispatch(updateTaskAsync(instance, {}, TaskUpdateTypes.UPDATE_ORGANIZATION));
         }
     }, [instance]);
 
@@ -42,6 +47,7 @@ function SelectCSUpdatingSchemeModal(): JSX.Element {
         } else if (instance instanceof core.classes.Task) {
             dispatch(closeTaskLinkedCloudStorageUpdatingModal());
         }
+        stopEditField();
     }, [instance]);
 
     useEffect(() => {
@@ -52,9 +58,34 @@ function SelectCSUpdatingSchemeModal(): JSX.Element {
 
     return (
         <Modal
-            title={`A ${instanceType} #${instance?.id} is linked with a cloud storage`}
+            title={(
+                <Space>
+                    {`${instanceType.charAt(0).toUpperCase() + instanceType.slice(1)}
+                        #${instance?.id} is linked to cloud storage`}
+                    <CVATTooltip
+                        title={(
+                            <>
+                                <div>
+                                    <strong>Move & Detach</strong>
+                                    : Transfer and unlink a resource from a cloud storage.
+                                </div>
+                                <div>
+                                    <strong>Move & Auto-match</strong>
+                                    : Transfer and attempt to auto-link with a similar cloud storage
+                                     in the target workspace. A similar cloud storage is defined
+                                     by comparing the whole cloud storage configuration except credentials
+                                     and owner when resource is transferring into an organization.
+                                </div>
+                            </>
+                        )}
+                    >
+                        <QuestionCircleOutlined className='cvat-choose-cloud-storage-change-scheme-help-button' />
+                    </CVATTooltip>
+                </Space>
+            )}
             className='cvat-modal-choose-cloud-storage-change-scheme'
             open={!!instance}
+            closable={false}
             footer={[
                 <Button key='cancel' onClick={() => closeModal()}>
                     Cancel
@@ -87,8 +118,14 @@ function SelectCSUpdatingSchemeModal(): JSX.Element {
                 </Button>,
             ]}
         >
-            This task is linked with cloud storage.
-            Please choose how the transfer should be done.
+            <p>
+                This
+                {' '}
+                {instanceType}
+                {' '}
+                is linked to cloud storage.
+                Please choose how you would like the transfer to be done.
+            </p>
         </Modal>
     );
 }

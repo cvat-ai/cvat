@@ -16,7 +16,6 @@ interface MenuItemsData {
     onImportDataset: () => void;
     onBackupProject: () => void;
     onDeleteProject: () => void;
-    onTransferProjectBetweenWorkspaces: () => void;
 }
 
 export default function ProjectActionsItems(
@@ -31,7 +30,6 @@ export default function ProjectActionsItems(
         onImportDataset,
         onBackupProject,
         onDeleteProject,
-        onTransferProjectBetweenWorkspaces,
     } = menuItemsData;
 
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
@@ -61,6 +59,12 @@ export default function ProjectActionsItems(
     }, 30]);
 
     menuItems.push([{
+        key: 'edit_organization',
+        onClick: () => startEditField('organization'),
+        label: <CVATMenuEditLabel>Organization</CVATMenuEditLabel>,
+    }, 31]);
+
+    menuItems.push([{
         key: 'view-analytics',
         label: <Link to={`/projects/${projectId}/analytics`}>View analytics</Link>,
     }, 40]);
@@ -69,12 +73,6 @@ export default function ProjectActionsItems(
         key: 'quality-control',
         label: <Link to={`/projects/${projectId}/quality-control`}>Quality control</Link>,
     }, 50]);
-
-    menuItems.push([{
-        key: 'transfer_project_between_workspaces',
-        onClick: onTransferProjectBetweenWorkspaces,
-        label: 'Move to organization/sandbox',
-    }, 55]);
 
     menuItems.push([{
         key: 'set-webhooks',

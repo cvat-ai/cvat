@@ -18,7 +18,6 @@ import { importActions } from 'actions/import-actions';
 import { modelsActions } from 'actions/models-actions';
 import { mergeConsensusJobsAsync } from 'actions/consensus-actions';
 
-import { organizationActions } from 'actions/organization-actions';
 import {
     deleteTaskAsync, switchMoveTaskModalVisible,
     openLinkedCloudStorageUpdatingModal, updateTaskAsync,
@@ -26,6 +25,7 @@ import {
 } from 'actions/tasks-actions';
 import UserSelector from 'components/task-page/user-selector';
 
+import OrganizationSelector from 'components/selectors/organization-selector';
 import TaskActionsItems from './actions-menu-items';
 
 interface Props {
@@ -41,14 +41,17 @@ function TaskActionsComponent(props: Props): JSX.Element {
     const {
         activeInference,
         mergingConsensus,
+        currentOrganization,
     } = useSelector((state: CombinedState) => ({
         activeInference: state.models.inferences[taskInstance.id],
         mergingConsensus: state.consensus.actions.merging,
+        currentOrganization: state.organizations.current,
     }), shallowEqual);
 
     const {
         dropdownOpen,
         editField,
+        setDropdownOpen,
         startEditField,
         stopEditField,
         onOpenChange,
@@ -122,7 +125,7 @@ function TaskActionsComponent(props: Props): JSX.Element {
         });
     }, [taskInstance]);
 
-    const updateWorkspace = useCallback((dstOrganizationId: number | null) => {
+    const updateOrganization = useCallback((dstOrganizationId: number | null) => {
         taskInstance.organizationId = dstOrganizationId;
         if (
             taskInstance.cloudStorageId ||
@@ -131,15 +134,16 @@ function TaskActionsComponent(props: Props): JSX.Element {
         ) {
             dispatch(openLinkedCloudStorageUpdatingModal(taskInstance));
         } else {
-            dispatch(updateTaskAsync(taskInstance, { dstOrganizationId }, TaskUpdateTypes.UPDATE_ORGANIZATION));
+            dispatch(updateTaskAsync(taskInstance, {}, TaskUpdateTypes.UPDATE_ORGANIZATION))
+                .then(stopEditField);
         }
     }, [taskInstance]);
 
-    const setNewOrganization = useCallback((dstOrganization: Organization | null) => {
-        const isOrgWorkspace = Boolean(localStorage.getItem('currentOrganization'));
+    const onUpdateTaskOrganization = useCallback((dstOrganization: Organization | null) => {
         const dstOrganizationId = (dstOrganization) ? dstOrganization.id : dstOrganization;
+        setDropdownOpen(false);
 
-        if (isOrgWorkspace) {
+        if (currentOrganization) {
             Modal.confirm({
                 title: `Other organization members will lose access to the task #${taskInstance.id}.`,
                 content: (
@@ -149,7 +153,7 @@ function TaskActionsComponent(props: Props): JSX.Element {
                 ),
                 className: 'cvat-modal-confirm-task-transfer-between-workspaces',
                 onOk: () => {
-                    updateWorkspace(dstOrganizationId);
+                    updateOrganization(dstOrganizationId);
                 },
                 okButtonProps: {
                     type: 'primary',
@@ -158,13 +162,8 @@ function TaskActionsComponent(props: Props): JSX.Element {
                 okText: 'Move anyway',
             });
         } else {
-            updateWorkspace(dstOrganizationId);
+            updateOrganization(dstOrganizationId);
         }
-    }, [taskInstance]);
-
-    // TODO: update menu item after Kirill's PR is merged
-    const onTransferTaskBetweenWorkspaces = useCallback(() => {
-        dispatch(organizationActions.openSelectOrganizationModal(setNewOrganization));
     }, [taskInstance]);
 
     let menuItems;
@@ -179,6 +178,12 @@ function TaskActionsComponent(props: Props): JSX.Element {
                     }}
                 />
             ),
+            organization: (
+                <OrganizationSelector
+                    defaultValue={currentOrganization?.slug}
+                    setNewOrganization={onUpdateTaskOrganization}
+                />
+            ),
         };
         menuItems = [{
             key: `${editField}-selector`,
@@ -188,6 +193,7 @@ function TaskActionsComponent(props: Props): JSX.Element {
         menuItems = TaskActionsItems({
             startEditField,
             taskId: taskInstance.id,
+            projectId: taskInstance.projectId,
             isAutomaticAnnotationEnabled: (
                 activeInference &&
                 ![RQStatus.FAILED, RQStatus.FINISHED].includes(activeInference.status)
@@ -201,11 +207,8 @@ function TaskActionsComponent(props: Props): JSX.Element {
             onExportDataset,
             onBackupTask,
             onRunAutoAnnotation,
-            onMoveTaskToProject: taskInstance.projectId === null ? onMoveTaskToProject : null,
+            onMoveTaskToProject,
             onDeleteTask,
-            onTransferTaskBetweenWorkspaces: (
-                taskInstance.projectId === null ? onTransferTaskBetweenWorkspaces : null
-            ),
         }, props);
     }
 

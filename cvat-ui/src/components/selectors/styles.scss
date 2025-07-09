@@ -5,6 +5,7 @@
 @import 'base';
 
 .cvat-organization-selector {
+    min-width: $grid-unit-size * 32;
     width: 100%;
 }
 

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
 
@@ -16,8 +16,8 @@ import {
 } from 'actions/projects-actions';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
-import { organizationActions } from 'actions/organization-actions';
 import UserSelector from 'components/task-page/user-selector';
+import OrganizationSelector from 'components/selectors/organization-selector';
 
 import ProjectActionsItems from './actions-menu-items';
 
@@ -35,11 +35,14 @@ function ProjectActionsComponent(props: Props): JSX.Element {
     const {
         dropdownOpen,
         editField,
+        setDropdownOpen,
         startEditField,
         stopEditField,
         onOpenChange,
         onMenuClick,
     } = useDropdownEditField();
+
+    const currentOrganization = useSelector((state: CombinedState) => state.organizations.current);
 
     const onExportDataset = useCallback(() => {
         dispatch(exportActions.openExportDatasetModal(projectInstance));
@@ -69,7 +72,7 @@ function ProjectActionsComponent(props: Props): JSX.Element {
         });
     }, [projectInstance]);
 
-    const updateWorkspace = useCallback((dstOrganizationId: number | null) => {
+    const updateOrganization = useCallback((dstOrganizationId: number | null) => {
         projectInstance.organizationId = dstOrganizationId;
         if (
             projectInstance.sourceStorage.cloudStorageId ||
@@ -77,15 +80,15 @@ function ProjectActionsComponent(props: Props): JSX.Element {
         ) {
             dispatch(projectActions.openLinkedCloudStorageUpdatingModal(projectInstance));
         } else {
-            dispatch(updateProjectAsync(projectInstance, ProjectUpdateTypes.UPDATE_ORGANIZATION));
+            dispatch(updateProjectAsync(projectInstance, ProjectUpdateTypes.UPDATE_ORGANIZATION)).then(stopEditField);
         }
     }, [projectInstance]);
 
-    const setNewOrganization = useCallback((dstOrganization: Organization | null) => {
-        const isOrgWorkspace = Boolean(localStorage.getItem('currentOrganization'));
+    const onUpdateProjectOrganization = useCallback((dstOrganization: Organization | null) => {
         const dstOrganizationId = (dstOrganization) ? dstOrganization.id : dstOrganization;
+        setDropdownOpen(false);
 
-        if (isOrgWorkspace) {
+        if (currentOrganization) {
             Modal.confirm({
                 title: `Other organization members will lose access to the project #${
                     projectInstance.id
@@ -97,7 +100,7 @@ function ProjectActionsComponent(props: Props): JSX.Element {
                 ),
                 className: 'cvat-modal-confirm-project-transfer-between-workspaces',
                 onOk: () => {
-                    updateWorkspace(dstOrganizationId);
+                    updateOrganization(dstOrganizationId);
                 },
                 okButtonProps: {
                     type: 'primary',
@@ -106,12 +109,8 @@ function ProjectActionsComponent(props: Props): JSX.Element {
                 okText: 'Move anyway',
             });
         } else {
-            updateWorkspace(dstOrganizationId);
+            updateOrganization(dstOrganizationId);
         }
-    }, [projectInstance]);
-
-    const onTransferProjectBetweenWorkspaces = useCallback(() => {
-        dispatch(organizationActions.openSelectOrganizationModal(setNewOrganization));
     }, [projectInstance]);
 
     const onUpdateProjectAssignee = useCallback((assignee: User | null) => {
@@ -131,6 +130,11 @@ function ProjectActionsComponent(props: Props): JSX.Element {
                     }}
                 />
             ),
+            organization: (
+                <OrganizationSelector
+                    setNewOrganization={onUpdateProjectOrganization}
+                />
+            ),
         };
         menuItems = [{
             key: `${editField}-selector`,
@@ -146,7 +150,6 @@ function ProjectActionsComponent(props: Props): JSX.Element {
             onImportDataset,
             onBackupProject,
             onDeleteProject,
-            onTransferProjectBetweenWorkspaces,
         }, props);
     }
 

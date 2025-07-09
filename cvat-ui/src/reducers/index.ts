@@ -69,7 +69,6 @@ export interface ProjectsState {
             [projectId: number]: boolean; // updated (updating if in dictionary)
         };
     };
-    // TODO: move into activities
     updateWorkspace: {
         instance: Project | null;
     };
@@ -117,7 +116,6 @@ export interface TasksState {
         modalVisible: boolean;
         taskId: number | null;
     };
-    // TODO: move into activities
     updateWorkspace: {
         instance: Task | null;
     };

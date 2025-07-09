@@ -27,7 +27,6 @@ function SelectOrganizationModal(): JSX.Element {
             onCancel={() => dispatch(organizationActions.closeSelectOrganizationModal())}
         >
             <OrganizationSelector
-                showSandboxOption={Boolean(localStorage.getItem('currentOrganization'))}
                 setNewOrganization={(org: Organization | null) => {
                     if (onSelectCallback) {
                         onSelectCallback(org);

@@ -13,22 +13,23 @@ import { useSelector, useDispatch } from 'react-redux';
 import { CombinedState } from 'reducers';
 
 function OrganizationSelector(props: {
-    showSandboxOption?: boolean;
     setNewOrganization: (org: Organization | null) => void;
+    defaultValue?: string
 }): JSX.Element {
     const {
-        showSandboxOption,
         setNewOrganization,
+        defaultValue,
     } = props;
 
     const defaultPage = 1;
     const [page, setPage] = useState(defaultPage);
-    const [searchPhrase, setSearchPhrase] = useState('');
+    const [searchPhrase, setSearchPhrase] = useState(defaultValue || '');
     const [searchResults, setSearchResults] = useState<Organization[]>([]);
 
     const organizations = useSelector((state: CombinedState) => state.organizations.currentArray);
     const fetching = useSelector((state: CombinedState) => state.organizations.currentArrayFetching);
     const hasMore = useSelector((state: CombinedState) => Boolean(state.organizations.nextPageUrl));
+    const showSandboxOption = useSelector((state: CombinedState) => Boolean(state.organizations.current));
 
     const dispatch = useDispatch();
 

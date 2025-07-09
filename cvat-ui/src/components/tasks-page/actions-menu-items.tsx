@@ -11,6 +11,7 @@ import { CVATMenuEditLabel } from 'components/common/cvat-menu-edit-label';
 
 interface MenuItemsData {
     taskId: number;
+    projectId: number | null;
     isAutomaticAnnotationEnabled: boolean;
     isConsensusEnabled: boolean;
     isMergingConsensusEnabled: boolean;
@@ -21,9 +22,8 @@ interface MenuItemsData {
     onExportDataset: () => void;
     onBackupTask: () => void;
     onRunAutoAnnotation: (() => void) | null;
-    onMoveTaskToProject: (() => void) | null;
+    onMoveTaskToProject: () => void;
     onDeleteTask: () => void;
-    onTransferTaskBetweenWorkspaces: (() => void) | null;
     startEditField: (key: string) => void;
 }
 
@@ -31,6 +31,7 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
     const {
         startEditField,
         taskId,
+        projectId,
         pluginActions,
         isAutomaticAnnotationEnabled,
         isConsensusEnabled,
@@ -43,7 +44,6 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
         onRunAutoAnnotation,
         onMoveTaskToProject,
         onDeleteTask,
-        onTransferTaskBetweenWorkspaces,
     } = menuItemsData;
 
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
@@ -87,6 +87,14 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
         label: <CVATMenuEditLabel>Assignee</CVATMenuEditLabel>,
     }, 50]);
 
+    if (!projectId) {
+        menuItems.push([{
+            key: 'edit_organization',
+            onClick: () => startEditField('organization'),
+            label: <CVATMenuEditLabel>Organization</CVATMenuEditLabel>,
+        }, 51]);
+    }
+
     menuItems.push([{
         key: 'view-analytics',
         label: <Link to={`/tasks/${taskId}/analytics`}>View analytics</Link>,
@@ -114,20 +122,12 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
         }, 80]);
     }
 
-    if (onMoveTaskToProject) {
+    if (!projectId) {
         menuItems.push([{
             key: 'move_task_to_project',
             onClick: onMoveTaskToProject,
             label: 'Move to project',
         }, 90]);
-    }
-
-    if (onTransferTaskBetweenWorkspaces) {
-        menuItems.push([{
-            key: 'transfer_task_between_workspaces',
-            onClick: onTransferTaskBetweenWorkspaces,
-            label: 'Move to organization/sandbox',
-        }, 85]);
     }
 
     menuItems.push([{ type: 'divider' }, 89]);
