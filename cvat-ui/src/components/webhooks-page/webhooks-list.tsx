@@ -6,7 +6,7 @@ import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import { useSelector } from 'react-redux';
 import { CombinedState } from 'reducers';
-import BulkWrapper from 'components/tasks-page/bulk-wrapper';
+import BulkWrapper from 'components/bulk-wrapper';
 import WebhookItem from './webhook-item';
 
 function WebhooksList(): JSX.Element {

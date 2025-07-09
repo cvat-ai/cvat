@@ -18,6 +18,7 @@ import Switch from 'antd/lib/switch';
 import Space from 'antd/lib/space';
 import TargetStorageField from 'components/storage/target-storage-field';
 import CVATMarkdown from 'components/common/cvat-markdown';
+import NameTemplateTooltip from 'components/common/cvat-name-temlate-tooltip';
 import { CombinedState } from 'reducers';
 import { exportActions, exportDatasetAsync } from 'actions/export-actions';
 import {
@@ -44,37 +45,6 @@ const initialValues: FormValues = {
     },
     useProjectTargetStorage: true,
 };
-
-function NameTemplateTooltip(props: Readonly<{ nameTemplate: string; example: string }>): JSX.Element {
-    const { example } = props;
-    return (
-        <>
-            You can use in the template:
-            <ul style={{ marginBottom: 0 }}>
-                <li>
-                    <code>{'{{id}}'}</code>
-                    <br />
-                    - task/project id
-                </li>
-                <li>
-                    <code>{'{{name}}'}</code>
-                    <br />
-                    - task/project name
-                </li>
-                <li>
-                    <code>{'{{index}}'}</code>
-                    <br />
-                    - index in selection (starts from 1)
-                </li>
-            </ul>
-            <div>
-                Example:
-                <br />
-                <i>{example}</i>
-            </div>
-        </>
-    );
-}
 
 function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
     const {
@@ -243,8 +213,6 @@ function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
             isBulkMode,
             selectedInstances,
             nameTemplate,
-            dispatch,
-            history,
         ],
     );
 
@@ -333,7 +301,6 @@ function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
                             <Tooltip
                                 title={(
                                     <NameTemplateTooltip
-                                        nameTemplate={nameTemplate}
                                         example={exampleName}
                                     />
                                 )}

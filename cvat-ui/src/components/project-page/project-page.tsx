@@ -34,7 +34,7 @@ import {
 } from 'components/resource-sorting-filtering';
 import CvatDropdownMenuPaper from 'components/common/cvat-dropdown-menu-paper';
 import { ProjectNotFoundComponent } from 'components/common/not-found';
-import BulkWrapper, { BulkSelectProps } from 'components/tasks-page/bulk-wrapper';
+import BulkWrapper, { BulkSelectProps } from 'components/bulk-wrapper';
 
 import { useResourceQuery } from 'utils/hooks';
 import { selectionActions } from 'actions/selection-actions';

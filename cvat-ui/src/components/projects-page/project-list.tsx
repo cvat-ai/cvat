@@ -12,7 +12,7 @@ import { getProjectsAsync } from 'actions/projects-actions';
 import { CombinedState } from 'reducers';
 import { Project } from 'cvat-core-wrapper';
 import dimensions from 'utils/dimensions';
-import BulkWrapper from 'components/tasks-page/bulk-wrapper';
+import BulkWrapper from 'components/bulk-wrapper';
 import ProjectItem from './project-item';
 
 export default function ProjectListComponent(): JSX.Element {

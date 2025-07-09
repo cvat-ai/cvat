@@ -21,7 +21,7 @@ import {
     SortingComponent, ResourceFilterHOC, defaultVisibility, updateHistoryFromQuery, ResourceSelectionInfo,
 } from 'components/resource-sorting-filtering';
 import { useResourceQuery } from 'utils/hooks';
-import BulkWrapper from 'components/tasks-page/bulk-wrapper';
+import BulkWrapper from 'components/bulk-wrapper';
 import { selectionActions } from 'actions/selection-actions';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,

@@ -40,7 +40,7 @@ interface Props {
 
 export default function StoragesTopBar(props: Readonly<Props>): JSX.Element {
     const {
-        query, onApplyFilter, onApplySorting, onApplySearch, selectedCount = 0, onSelectAll = () => {},
+        query, onApplyFilter, onApplySorting, onApplySearch, selectedCount, onSelectAll,
     } = props;
     const history = useHistory();
     const [visibility, setVisibility] = useState(defaultVisibility);

@@ -15,7 +15,7 @@ import { requestsActions } from 'actions/requests-actions';
 import moment from 'moment';
 import dimensions from 'utils/dimensions';
 import { ResourceSelectionInfo } from 'components/resource-sorting-filtering';
-import BulkWrapper from 'components/tasks-page/bulk-wrapper';
+import BulkWrapper from 'components/bulk-wrapper';
 import { selectionActions } from 'actions/selection-actions';
 import RequestCard from './request-card';
 

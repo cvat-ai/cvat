@@ -3,11 +3,11 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { MenuProps } from 'antd/lib/menu';
 import { LoadingOutlined } from '@ant-design/icons';
 import { usePlugins } from 'utils/hooks';
 import { CVATMenuEditLabel } from 'components/common/cvat-menu-edit-label';
+import { LabelWithCountHOC } from 'components/common/label-with-count';
 
 interface MenuItemsData {
     jobId: number;
@@ -46,20 +46,7 @@ export default function JobActionsItems(
     const isBulkMode = selectedIds.length > 1;
     const bulkAllowedKeys = ['edit_assignee', 'edit_state', 'edit_stage', 'export_job', 'delete'];
     const isDisabled = (key: string): boolean => isBulkMode && !bulkAllowedKeys.includes(key);
-
-    const withCount = (
-        label: string,
-        key: string,
-        url?: string,
-    ): React.ReactNode => {
-        let result: React.ReactNode = label;
-        if (isBulkMode && bulkAllowedKeys.includes(key)) {
-            result = `${label} (${selectedIds.length})`;
-        }
-        if (url) result = <Link to={url}>{result}</Link>;
-        if (key.includes('edit')) result = <CVATMenuEditLabel>{result}</CVATMenuEditLabel>;
-        return result;
-    };
+    const withCount = LabelWithCountHOC(isBulkMode, selectedIds, bulkAllowedKeys);
 
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
 
@@ -113,21 +100,21 @@ export default function JobActionsItems(
     menuItems.push([{
         key: 'edit_assignee',
         onClick: () => startEditField('assignee'),
-        label: withCount('Assignee', 'edit_assignee'),
+        label: withCount('Assignee', 'edit_assignee', undefined, CVATMenuEditLabel),
         disabled: isDisabled('edit_assignee'),
     }, 60]);
 
     menuItems.push([{
         key: 'edit_state',
         onClick: () => startEditField('state'),
-        label: withCount('State', 'edit_state'),
+        label: withCount('State', 'edit_state', undefined, CVATMenuEditLabel),
         disabled: isDisabled('edit_state'),
     }, 70]);
 
     menuItems.push([{
         key: 'edit_stage',
         onClick: () => startEditField('stage'),
-        label: withCount('Stage', 'edit_stage'),
+        label: withCount('Stage', 'edit_stage', undefined, CVATMenuEditLabel),
         disabled: isDisabled('edit_stage'),
     }, 80]);
 

@@ -264,7 +264,6 @@ export interface SelectionStatus {
 
 export interface SelectionState {
     selected: (number | string)[];
-    resourceType: string;
     fetching: boolean;
     status: { message: string; percent: number } | null;
     cancelled: boolean;

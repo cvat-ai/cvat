@@ -48,7 +48,7 @@ function JobCardComponent(props: Readonly<Props>): JSX.Element {
                 history.push(url);
             }
         }
-    }, [history, job, onClick]);
+    }, [job, onClick]);
 
     const style = {};
     if (deleted) {

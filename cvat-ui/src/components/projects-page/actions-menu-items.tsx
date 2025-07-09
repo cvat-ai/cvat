@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import { MenuProps } from 'antd/lib/menu';
 import { usePlugins } from 'utils/hooks';
 import { CVATMenuEditLabel } from 'components/common/cvat-menu-edit-label';
+import { LabelWithCountHOC } from 'components/common/label-with-count';
 
 interface MenuItemsData {
     projectId: number;
@@ -37,23 +38,7 @@ export default function ProjectActionsItems(
     const isBulkMode = selectedIds.length > 1;
     const bulkAllowedKeys = ['edit_assignee', 'backup-project', 'export-dataset', 'delete'];
     const isDisabled = (key: string): boolean => isBulkMode && !bulkAllowedKeys.includes(key);
-    const withCount = (
-        label: string,
-        key: string,
-        url?: string,
-    ): React.ReactNode => {
-        let result: React.ReactNode = label;
-        if (isBulkMode && bulkAllowedKeys && selectedIds && bulkAllowedKeys.includes(key)) {
-            result = `${label} (${selectedIds.length})`;
-        }
-        if (url) {
-            result = <Link to={url}>{result}</Link>;
-        }
-        if (key.includes('edit')) {
-            result = <CVATMenuEditLabel>{result}</CVATMenuEditLabel>;
-        }
-        return result;
-    };
+    const withCount = LabelWithCountHOC(isBulkMode, selectedIds, bulkAllowedKeys);
 
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
 
@@ -81,7 +66,7 @@ export default function ProjectActionsItems(
     menuItems.push([{
         key: 'edit_assignee',
         onClick: () => startEditField('assignee'),
-        label: withCount('Assignee', 'edit_assignee'),
+        label: withCount('Assignee', 'edit_assignee', undefined, CVATMenuEditLabel),
         disabled: isDisabled('edit_assignee'),
     }, 30]);
 

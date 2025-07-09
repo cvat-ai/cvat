@@ -9,7 +9,6 @@ import {
 
 const initialState: SelectionState = {
     selected: [],
-    resourceType: '',
     fetching: false,
     status: null,
     cancelled: false,
@@ -20,8 +19,6 @@ export default function selectionReducer(
     action: SelectionActions,
 ): SelectionState {
     switch (action.type) {
-        case SelectionActionsTypes.SET_SELECTION_RESOURCE_TYPE:
-            return { ...state, resourceType: action.payload.resourceType, selected: [] };
         case SelectionActionsTypes.SELECT_RESOURCE:
             if (!state.selected.includes(action.payload.resourceID)) {
                 return { ...state, selected: [...state.selected, action.payload.resourceID] };

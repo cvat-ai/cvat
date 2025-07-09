@@ -13,6 +13,7 @@ import { CVATMenuEditLabel } from 'components/common/cvat-menu-edit-label';
 import { MenuProps } from 'antd/lib/menu';
 import { useSelector } from 'react-redux';
 import { CombinedState } from 'reducers';
+import { LabelWithCountHOC } from 'components/common/label-with-count';
 import MemberRoleSelector from './member-role-selector';
 
 export interface MemberActionsMenuProps {
@@ -55,22 +56,14 @@ function MemberActionsMenu(props: Readonly<MemberActionsMenuProps>): JSX.Element
     const selectedIds = useSelector((state: CombinedState) => state.selection.selected);
 
     const isBulkMode = selectedIds.length > 1;
-    const bulkKeys = [MenuKeys.EDIT_ROLE, MenuKeys.REMOVE_MEMBER, MenuKeys.DELETE_INVITATION];
-    const withCount = (label: string, key: string): React.ReactNode => {
-        if (
-            isBulkMode &&
-            bulkKeys.includes(key as MenuKeys)
-        ) {
-            return `${label} (${selectedIds.length})`;
-        }
-        return label;
-    };
+    const bulkKeys = [MenuKeys.EDIT_ROLE, MenuKeys.REMOVE_MEMBER, MenuKeys.DELETE_INVITATION].map(String);
+    const withCount = LabelWithCountHOC(isBulkMode, selectedIds, bulkKeys);
 
     let menuItems: NonNullable<MenuProps['items']> = [
         {
             key: MenuKeys.EDIT_ROLE,
             label: (
-                <CVATMenuEditLabel>{withCount('Role', MenuKeys.EDIT_ROLE)}</CVATMenuEditLabel>
+                <CVATMenuEditLabel>{withCount('Role', MenuKeys.EDIT_ROLE, undefined, CVATMenuEditLabel)}</CVATMenuEditLabel>
             ),
             disabled: role === 'owner',
         },

@@ -45,7 +45,7 @@ interface Props {
     onClick?: (event?: React.MouseEvent) => void;
 }
 
-function ReviewSummaryComponent({ jobInstance }: Readonly<{ jobInstance: any }>): JSX.Element {
+function ReviewSummaryComponent({ jobInstance }: Readonly<{ jobInstance: Job }>): JSX.Element {
     const [summary, setSummary] = useState<Record<string, any> | null>(null);
     const [error, setError] = useState<any>(null);
     const isMounted = useIsMounted();

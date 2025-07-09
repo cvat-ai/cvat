@@ -9,7 +9,7 @@ import { Row, Col } from 'antd/lib/grid';
 
 import { CloudStorage } from 'reducers';
 import dimensions from 'utils/dimensions';
-import BulkWrapper from 'components/tasks-page/bulk-wrapper';
+import BulkWrapper from 'components/bulk-wrapper';
 import CloudStorageItemComponent from './cloud-storage-item';
 
 interface Props {

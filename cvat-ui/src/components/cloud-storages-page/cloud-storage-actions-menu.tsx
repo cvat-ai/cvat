@@ -1,3 +1,7 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 import { MoreOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';

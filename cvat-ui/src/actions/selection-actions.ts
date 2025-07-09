@@ -2,7 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { ActionUnion, createAction } from 'utils/redux';
+import { CombinedState } from 'reducers';
+import { ActionUnion, createAction, ThunkDispatch } from 'utils/redux';
 
 export enum SelectionActionsTypes {
     SELECT_RESOURCE = 'SELECT_RESOURCE',
@@ -26,8 +27,6 @@ export const selectionActions = {
         SelectionActionsTypes.SELECT_ALL_RESOURCES, { resourceIDs }),
     clearSelectedResources: () => createAction(
         SelectionActionsTypes.CLEAR_SELECTED_RESOURCES),
-    setSelectionResourceType: (resourceType: string) => createAction(
-        SelectionActionsTypes.SET_SELECTION_RESOURCE_TYPE, { resourceType }),
     startBulkAction: () => createAction(
         SelectionActionsTypes.START_BULK_ACTION),
     updateBulkActionStatus: (status: { message: string; percent: number }) => createAction(
@@ -39,7 +38,11 @@ export const selectionActions = {
     bulkOperationFailed: (payload: {
         message: string;
         remainingItemsCount: number;
-        retryPayload: any;
+        retryPayload: {
+            items: any,
+            operation: (item: any, idx: number, total: number) => Promise<void>,
+            statusMessage: (item: any, idx: number, total: number) => string,
+        };
     }) => createAction(
         SelectionActionsTypes.BULK_OPERATION_FAILED, payload),
 };
@@ -49,7 +52,7 @@ export function makeBulkOperationAsync<T>(
     operation: (item: T, idx: number, total: number) => Promise<void>,
     statusMessage: (item: T, idx: number, total: number) => string,
 ) {
-    return async (dispatch: any, getState: any) => {
+    return async (dispatch: ThunkDispatch, getState: () => CombinedState) => {
         let processedCount = 0;
         try {
             if (items.length === 1) {
@@ -66,7 +69,6 @@ export function makeBulkOperationAsync<T>(
                     message: statusMessage(item, i, items.length),
                     percent: Math.round(((i + 1) / items.length) * 100),
                 }));
-                // eslint-disable-next-line no-await-in-loop
                 await operation(item, i, items.length);
                 processedCount = i + 1;
             }

@@ -1,18 +1,23 @@
 // Copyright (C) CVAT.ai Corporation
+//
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
 import { Progress, Button } from 'antd';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectionActions } from 'actions/selection-actions';
+import { CombinedState } from 'reducers';
 
 export default function BulkProgress(): JSX.Element | null {
-    const fetching = useSelector((state: any) => state.selection.fetching);
-    const status = useSelector((state: any) => state.selection.status);
+    const dispatch = useDispatch();
+    const fetching = useSelector((state: CombinedState) => state.selection.fetching);
+    const status = useSelector((state: CombinedState) => state.selection.status);
+
     const percent = status?.percent ?? 0;
     const message = status?.message ?? 'Processing...';
-    const dispatch = useDispatch();
+
     if (!fetching) return null;
+
     return (
         <div className='cvat-bulk-progress-wrapper'>
             <Progress type='circle' percent={percent} size={120} />

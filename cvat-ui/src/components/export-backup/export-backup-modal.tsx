@@ -22,37 +22,7 @@ import {
 
 import CVATMarkdown from 'components/common/cvat-markdown';
 import TargetStorageField from 'components/storage/target-storage-field';
-
-function NameTemplateTooltip(props: Readonly<{ nameTemplate: string; example: string }>): JSX.Element {
-    const { example } = props;
-    return (
-        <>
-            You can use in the template:
-            <ul style={{ marginBottom: 0 }}>
-                <li>
-                    <code>{'{{id}}'}</code>
-                    <br />
-                    - task/project id
-                </li>
-                <li>
-                    <code>{'{{name}}'}</code>
-                    <br />
-                    - task/project name
-                </li>
-                <li>
-                    <code>{'{{index}}'}</code>
-                    <br />
-                    - index in selection (starts from 1)
-                </li>
-            </ul>
-            <div>
-                Example:
-                <br />
-                <i>{example || 'backup_task_1.zip'}</i>
-            </div>
-        </>
-    );
-}
+import NameTemplateTooltip from 'components/common/cvat-name-temlate-tooltip';
 
 const core = getCore();
 
@@ -225,8 +195,6 @@ function ExportBackupModal(): JSX.Element {
             useDefaultStorage,
             defaultStorageLocation,
             defaultStorageCloudId,
-            dispatch,
-            history,
         ],
     );
 
@@ -273,7 +241,6 @@ function ExportBackupModal(): JSX.Element {
                             <Tooltip
                                 title={(
                                     <NameTemplateTooltip
-                                        nameTemplate={nameTemplate}
                                         example={exampleName}
                                     />
                                 )}

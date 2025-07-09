@@ -13,7 +13,7 @@ import { MLModel } from 'cvat-core-wrapper';
 import { ModelProviders } from 'cvat-core/src/enums';
 import { getModelsAsync } from 'actions/models-actions';
 import dimensions from 'utils/dimensions';
-import BulkWrapper from 'components/tasks-page/bulk-wrapper';
+import BulkWrapper from 'components/bulk-wrapper';
 import DeployedModelItem from './deployed-model-item';
 
 interface Props {

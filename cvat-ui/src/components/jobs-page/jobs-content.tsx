@@ -9,7 +9,7 @@ import { Col, Row } from 'antd/lib/grid';
 import { CombinedState } from 'reducers';
 import { Job } from 'cvat-core-wrapper';
 import dimensions from 'utils/dimensions';
-import BulkWrapper from 'components/tasks-page/bulk-wrapper';
+import BulkWrapper from 'components/bulk-wrapper';
 import JobCard from './job-card';
 
 function JobsContentComponent(): JSX.Element {

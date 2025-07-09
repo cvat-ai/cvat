@@ -14,7 +14,7 @@ import {
 } from 'actions/organization-actions';
 import { resendInvitationAsync } from 'actions/invitations-actions';
 import { Membership } from 'cvat-core-wrapper';
-import BulkWrapper from 'components/tasks-page/bulk-wrapper';
+import BulkWrapper from 'components/bulk-wrapper';
 import { makeBulkOperationAsync } from 'actions/selection-actions';
 import MemberItem from './member-item';
 import EmptyListComponent from './empty-list';
