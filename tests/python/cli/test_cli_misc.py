@@ -6,7 +6,6 @@ import json
 import os
 from datetime import timedelta
 from io import BytesIO
-from unittest import mock
 
 import packaging.version as pv
 import pytest
@@ -15,7 +14,7 @@ from cvat_sdk import Client
 from cvat_sdk.api_client import models
 from cvat_sdk.core.proxies.tasks import ResourceType
 
-from .util import TestCliBase, generate_images, https_reverse_proxy, run_cli
+from .util import TestCliBase, generate_images, https_reverse_proxy, monkeypatch_object, run_cli
 
 
 class TestCliMisc(TestCliBase):
@@ -107,17 +106,19 @@ class TestCliMisc(TestCliBase):
 
         original_request = RESTClientObject.request
 
-        def patched_request(*args, **kwargs):
+        calls = 0
+
+        def patched_request(self, *args, **kwargs):
+            nonlocal calls
+            calls += 1
+
             assert kwargs["headers"].get("Authorization") == f"Bearer {token}"
+            return original_request(self, *args, **kwargs)
 
-            return original_request(*args, **kwargs)
-
-        with mock.patch.object(
-            RESTClientObject, "request", side_effect=patched_request
-        ) as mock_request:
+        with monkeypatch_object(RESTClientObject, "request", patched_request):
             self.run_cli("task", "ls", env=env, authenticate=False, expected_code=1)
 
-        assert mock_request.assert_called()
+        assert calls
 
 
 @pytest.mark.parametrize(

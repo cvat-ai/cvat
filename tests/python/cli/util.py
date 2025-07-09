@@ -166,3 +166,20 @@ class TestCliBase:
             env=env,
         )
         return self.stdout.getvalue()
+
+
+@contextlib.contextmanager
+def monkeypatch_object(obj: Any, attribute: str, value: Any):
+    # unittest's mock patch() requires an instance.
+    # Using wraps= doesn't forward the self for a class method.
+    # https://stackoverflow.com/questions/44777408/python-mocking-and-wrapping-methods-without-instantating-objects
+    # https://stackoverflow.com/questions/25608107/python-mock-patching-a-method-without-obstructing-implementation
+    assert hasattr(obj, attribute)
+
+    original = getattr(obj, attribute)
+
+    try:
+        setattr(obj, attribute, value)
+        yield
+    finally:
+        setattr(obj, attribute, original)
