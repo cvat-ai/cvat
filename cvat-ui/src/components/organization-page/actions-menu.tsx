@@ -91,7 +91,7 @@ function MemberActionsMenu(props: Readonly<MemberActionsMenuProps>): JSX.Element
                 />
             ),
         }];
-    } else if (invitation) {
+    } else if (invitation && !membershipInstance.isActive) {
         menuItems.push(
             { key: MenuKeys.RESEND_INVITATION, label: withCount('Resend invitation', MenuKeys.RESEND_INVITATION) },
             { key: 'divider', type: 'divider' },
@@ -108,6 +108,7 @@ function MemberActionsMenu(props: Readonly<MemberActionsMenuProps>): JSX.Element
             open={dropdownOpen}
             onOpenChange={onOpenChange}
             menu={{
+                className: 'cvat-organization-membership-actions-menu',
                 items: menuItems,
                 onClick: (action: MenuInfo) => {
                     if (action.key === MenuKeys.RESEND_INVITATION) {

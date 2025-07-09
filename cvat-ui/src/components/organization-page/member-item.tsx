@@ -82,7 +82,7 @@ function MemberItem(props: Readonly<Props>): JSX.Element {
                             onUpdateMembershipRole={onUpdateMembershipRole}
                             selfUserName={selfUserName}
                             triggerElement={
-                                <MoreOutlined className='cvat-organization-invitation-actions-button cvat-menu-icon' />
+                                <MoreOutlined className='cvat-organization-actions-button cvat-menu-icon' />
                             }
                         />
                     </Col>
