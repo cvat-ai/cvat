@@ -16,6 +16,7 @@ interface MenuItemsData {
     onImportDataset: () => void;
     onBackupProject: () => void;
     onDeleteProject: () => void;
+    selectedIds: number[];
 }
 
 export default function ProjectActionsItems(
@@ -30,47 +31,76 @@ export default function ProjectActionsItems(
         onImportDataset,
         onBackupProject,
         onDeleteProject,
+        selectedIds = [],
     } = menuItemsData;
+
+    const isBulkMode = selectedIds.length > 1;
+    const bulkAllowedKeys = ['edit_assignee', 'backup-project', 'export-dataset', 'delete'];
+    const isDisabled = (key: string): boolean => isBulkMode && !bulkAllowedKeys.includes(key);
+    const withCount = (
+        label: string,
+        key: string,
+        url?: string,
+    ): React.ReactNode => {
+        let result: React.ReactNode = label;
+        if (isBulkMode && bulkAllowedKeys && selectedIds && bulkAllowedKeys.includes(key)) {
+            result = `${label} (${selectedIds.length})`;
+        }
+        if (url) {
+            result = <Link to={url}>{result}</Link>;
+        }
+        if (key.includes('edit')) {
+            result = <CVATMenuEditLabel>{result}</CVATMenuEditLabel>;
+        }
+        return result;
+    };
 
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
 
     menuItems.push([{
         key: 'export-dataset',
         onClick: onExportDataset,
-        label: 'Export dataset',
+        label: withCount('Export dataset', 'export-dataset'),
+        disabled: isDisabled('export-dataset'),
     }, 0]);
 
     menuItems.push([{
         key: 'import-dataset',
         onClick: onImportDataset,
         label: 'Import dataset',
+        disabled: isDisabled('import-dataset'),
     }, 10]);
 
     menuItems.push([{
         key: 'backup-project',
         onClick: onBackupProject,
-        label: 'Backup Project',
+        label: withCount('Backup Project', 'backup-project'),
+        disabled: isDisabled('backup-project'),
     }, 20]);
 
     menuItems.push([{
         key: 'edit_assignee',
         onClick: () => startEditField('assignee'),
-        label: <CVATMenuEditLabel>Assignee</CVATMenuEditLabel>,
+        label: withCount('Assignee', 'edit_assignee'),
+        disabled: isDisabled('edit_assignee'),
     }, 30]);
 
     menuItems.push([{
         key: 'view-analytics',
         label: <Link to={`/projects/${projectId}/analytics`}>View analytics</Link>,
+        disabled: isDisabled('view-analytics'),
     }, 40]);
 
     menuItems.push([{
         key: 'quality-control',
         label: <Link to={`/projects/${projectId}/quality-control`}>Quality control</Link>,
+        disabled: isDisabled('quality-control'),
     }, 50]);
 
     menuItems.push([{
         key: 'set-webhooks',
         label: <Link to={`/projects/${projectId}/webhooks`}>Setup webhooks</Link>,
+        disabled: isDisabled('set-webhooks'),
     }, 60]);
 
     menuItems.push([{
@@ -80,7 +110,8 @@ export default function ProjectActionsItems(
     menuItems.push([{
         key: 'delete',
         onClick: onDeleteProject,
-        label: 'Delete',
+        label: withCount('Delete', 'delete'),
+        disabled: isDisabled('delete'),
     }, 70]);
 
     menuItems.push(
@@ -90,5 +121,5 @@ export default function ProjectActionsItems(
         }),
     );
 
-    return menuItems.sort((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1]).map((menuItem) => menuItem[0]);
+    return menuItems.toSorted((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1]).map((menuItem) => menuItem[0]);
 }

@@ -198,7 +198,7 @@
     display: flex;
     flex-wrap: wrap;
 
-    > div {
+    .cvat-projects-list-row {
         width: 100%;
         margin-bottom: $grid-unit-size;
 

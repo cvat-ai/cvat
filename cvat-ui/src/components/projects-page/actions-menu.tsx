@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
 
@@ -14,16 +14,20 @@ import { deleteProjectAsync, updateProjectAsync } from 'actions/projects-actions
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
 import UserSelector from 'components/task-page/user-selector';
+import { makeBulkOperationAsync } from 'actions/selection-actions';
 import ProjectActionsItems from './actions-menu-items';
 
 interface Props {
     projectInstance: Project;
     triggerElement: JSX.Element;
+    dropdownTrigger?: ('click' | 'hover' | 'contextMenu')[];
 }
 
-function ProjectActionsComponent(props: Props): JSX.Element {
-    const { projectInstance, triggerElement } = props;
+function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
+    const { projectInstance, triggerElement, dropdownTrigger } = props;
     const dispatch = useDispatch();
+    const selectedIds = useSelector((state: CombinedState) => state.selection.selected);
+    const allProjects = useSelector((state: CombinedState) => state.projects.current);
 
     const pluginActions = usePlugins((state: CombinedState) => state.plugins.components.projectActions.items, props);
 
@@ -48,27 +52,49 @@ function ProjectActionsComponent(props: Props): JSX.Element {
         dispatch(exportActions.openExportBackupModal(projectInstance));
     }, [projectInstance]);
 
+    const onUpdateProjectAssignee = useCallback((assignee: User | null) => {
+        const allProjectIDs = selectedIds.includes(projectInstance.id) ?
+            selectedIds :
+            [projectInstance.id, ...selectedIds];
+        const projectsToUpdate = allProjects.filter((project) => allProjectIDs.includes(project.id));
+        dispatch(makeBulkOperationAsync(
+            projectsToUpdate,
+            async (project) => {
+                project.assignee = assignee;
+                await dispatch(updateProjectAsync(project));
+            },
+            (project, idx, total) => `Updating assignee for project #${project.id} (${idx + 1}/${total})`,
+        )).then(stopEditField);
+    }, [projectInstance, selectedIds, allProjects, stopEditField, dispatch]);
     const onDeleteProject = useCallback((): void => {
+        const projectsToDelete = allProjects.filter((project) => selectedIds.includes(project.id));
+        const isBulk = projectsToDelete.length > 1;
         Modal.confirm({
-            title: `The project ${projectInstance.id} will be deleted`,
-            content: 'All related data (images, annotations) will be lost. Continue?',
+            title: isBulk ?
+                `Delete ${projectsToDelete.length} selected projects` :
+                `The project ${projectInstance.id} will be deleted`,
+            content: isBulk ?
+                'All related data (images, annotations) for all selected projects will be lost. Continue?' :
+                'All related data (images, annotations) will be lost. Continue?',
             className: 'cvat-modal-confirm-remove-project',
             onOk: () => {
-                dispatch(deleteProjectAsync(projectInstance));
+                setTimeout(() => {
+                    dispatch(makeBulkOperationAsync(
+                        projectsToDelete.length ? projectsToDelete : [projectInstance],
+                        async (project) => {
+                            await dispatch(deleteProjectAsync(project));
+                        },
+                        (project, idx, total) => `Deleting project #${project.id} (${idx + 1}/${total})`,
+                    ));
+                }, 0);
             },
             okButtonProps: {
                 type: 'primary',
                 danger: true,
             },
-            okText: 'Delete',
+            okText: isBulk ? 'Delete selected' : 'Delete',
         });
-    }, [projectInstance]);
-
-    const onUpdateProjectAssignee = useCallback((assignee: User | null) => {
-        projectInstance.assignee = assignee;
-        dispatch(updateProjectAsync(projectInstance)).then(stopEditField);
-    }, [projectInstance]);
-
+    }, [projectInstance, allProjects, selectedIds]);
     let menuItems;
     if (editField) {
         const fieldSelectors: Record<string, JSX.Element> = {
@@ -90,19 +116,19 @@ function ProjectActionsComponent(props: Props): JSX.Element {
         menuItems = ProjectActionsItems({
             startEditField,
             projectId: projectInstance.id,
-            assignee: projectInstance.assignee,
             pluginActions,
             onExportDataset,
             onImportDataset,
             onBackupProject,
             onDeleteProject,
+            selectedIds,
         }, props);
     }
 
     return (
         <Dropdown
             destroyPopupOnHide
-            trigger={['click']}
+            trigger={dropdownTrigger || ['click']}
             open={dropdownOpen}
             onOpenChange={onOpenChange}
             menu={{

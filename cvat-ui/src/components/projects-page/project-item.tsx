@@ -22,6 +22,8 @@ import ProjectActionsComponent from './actions-menu';
 
 interface Props {
     projectInstance: Project;
+    selected?: boolean;
+    onClick?: () => void;
 }
 
 const useCardHeight = useCardHeightHOC({
@@ -35,6 +37,8 @@ const useCardHeight = useCardHeightHOC({
 export default function ProjectItemComponent(props: Props): JSX.Element {
     const {
         projectInstance: instance,
+        selected,
+        onClick,
     } = props;
 
     const history = useHistory();
@@ -55,6 +59,8 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
         style.opacity = 0.5;
     }
 
+    const cardClassName = `cvat-projects-project-item-card${selected ? ' cvat-item-selected' : ''}`;
+
     return (
         <Badge.Ribbon
             style={{ visibility: ribbonPlugins.length ? 'visible' : 'hidden' }}
@@ -69,61 +75,71 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
                 </div>
             )}
         >
-            <Card
-                cover={(
-                    <Preview
-                        project={instance}
-                        loadingClassName='cvat-project-item-loading-preview'
-                        emptyPreviewClassName='cvat-project-item-empty-preview'
-                        previewWrapperClassName='cvat-projects-project-item-card-preview-wrapper'
-                        previewClassName='cvat-projects-project-item-card-preview'
-                        onClick={onOpenProject}
-                    />
-                )}
-                size='small'
-                style={style}
-                className='cvat-projects-project-item-card'
-                hoverable
-            >
-                <Meta
-                    title={(
-                        <Text
-                            ellipsis={{ tooltip: instance.name }}
-                            onClick={onOpenProject}
-                            className='cvat-projects-project-item-title'
-                            aria-hidden
-                        >
-                            {instance.name}
-                        </Text>
-                    )}
-                    description={(
-                        <div className='cvat-projects-project-item-description'>
-                            <div>
-                                {ownerName && (
-                                    <>
-                                        <Text type='secondary'>{`Created ${ownerName ? `by ${ownerName}` : ''}`}</Text>
-                                        <br />
-                                    </>
-                                )}
-                                <Text type='secondary'>{`Last updated ${updated}`}</Text>
-                            </div>
-                            <div>
-                                <ProjectActionsComponent
-                                    projectInstance={instance}
-                                    triggerElement={(
-                                        <Button
-                                            className='cvat-project-details-button'
-                                            type='link'
-                                            size='large'
-                                            icon={<MoreOutlined />}
+            <ProjectActionsComponent
+                projectInstance={instance}
+                dropdownTrigger={['contextMenu']}
+                triggerElement={(
+                    <Card
+                        cover={(
+                            <Preview
+                                project={instance}
+                                loadingClassName='cvat-project-item-loading-preview'
+                                emptyPreviewClassName='cvat-project-item-empty-preview'
+                                previewWrapperClassName='cvat-projects-project-item-card-preview-wrapper'
+                                previewClassName='cvat-projects-project-item-card-preview'
+                                onClick={onOpenProject}
+                            />
+                        )}
+                        size='small'
+                        style={style}
+                        className={cardClassName}
+                        hoverable
+                        onClick={onClick}
+                    >
+                        <Meta
+                            title={(
+                                <Text
+                                    ellipsis={{ tooltip: instance.name }}
+                                    onClick={onClick}
+                                    className='cvat-projects-project-item-title'
+                                    aria-hidden
+                                >
+                                    {instance.name}
+                                </Text>
+                            )}
+                            description={(
+                                <div className='cvat-projects-project-item-description'>
+                                    <div>
+                                        {ownerName && (
+                                            <>
+                                                <Text type='secondary'>
+                                            Created
+                                                    {ownerName ? ` by ${ownerName}` : ''}
+                                                </Text>
+                                                <br />
+                                            </>
+                                        )}
+                                        <Text type='secondary'>{`Last updated ${updated}`}</Text>
+                                    </div>
+                                    <div>
+                                        <ProjectActionsComponent
+                                            projectInstance={instance}
+                                            triggerElement={(
+                                                <Button
+                                                    className='cvat-project-details-button'
+                                                    type='link'
+                                                    size='large'
+                                                    icon={<MoreOutlined />}
+                                                />
+                                            )}
                                         />
-                                    )}
-                                />
-                            </div>
-                        </div>
-                    )}
-                />
-            </Card>
+                                    </div>
+                                </div>
+                            )}
+                        />
+                    </Card>
+                )}
+            />
         </Badge.Ribbon>
     );
 }

@@ -13,7 +13,6 @@ import BulkWrapper from './bulk-wrapper';
 
 export interface Props {
     currentTasksIndexes: number[];
-    selectedTaskIDs?: number[];
 }
 
 function TaskListComponent(props: Props): JSX.Element {

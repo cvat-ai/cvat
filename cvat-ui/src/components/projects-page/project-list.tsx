@@ -12,6 +12,7 @@ import { getProjectsAsync } from 'actions/projects-actions';
 import { CombinedState } from 'reducers';
 import { Project } from 'cvat-core-wrapper';
 import dimensions from 'utils/dimensions';
+import BulkWrapper from 'components/tasks-page/bulk-wrapper';
 import ProjectItem from './project-item';
 
 export default function ProjectListComponent(): JSX.Element {
@@ -44,21 +45,34 @@ export default function ProjectListComponent(): JSX.Element {
         [],
     );
 
+    const projectIdToIndex = new Map<number, number>();
+    projects.forEach((p, idx) => projectIdToIndex.set(p.id, idx));
+
     return (
         <>
             <Row justify='center' align='middle' className='cvat-resource-list-wrapper cvat-project-list-content'>
                 <Col className='cvat-projects-list' {...dimensions}>
-                    {groupedProjects.map(
-                        (projectInstances: Project[]): JSX.Element => (
-                            <Row key={projectInstances[0].id}>
-                                {projectInstances.map((project: Project) => (
-                                    <Col span={6} key={project.id}>
-                                        <ProjectItem key={project.id} projectInstance={project} />
-                                    </Col>
-                                ))}
-                            </Row>
-                        ),
-                    )}
+                    <BulkWrapper currentResourceIDs={projects.map((p) => p.id)}>
+                        {(selectProps) => {
+                            const renderProjectRow = (projectInstances: Project[]): JSX.Element => (
+                                <Row key={projectInstances[0].id} className='cvat-projects-list-row'>
+                                    {projectInstances.map((project: Project) => {
+                                        const globalIdx = projectIdToIndex.get(project.id) ?? 0;
+                                        return (
+                                            <Col span={6} key={project.id}>
+                                                <ProjectItem
+                                                    key={project.id}
+                                                    projectInstance={project}
+                                                    {...selectProps(project.id, globalIdx)}
+                                                />
+                                            </Col>
+                                        );
+                                    })}
+                                </Row>
+                            );
+                            return groupedProjects.map(renderProjectRow);
+                        }}
+                    </BulkWrapper>
                 </Col>
             </Row>
             <Row justify='center' align='middle' className='cvat-resource-pagination-wrapper'>

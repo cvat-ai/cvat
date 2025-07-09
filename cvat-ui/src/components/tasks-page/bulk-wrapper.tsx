@@ -11,13 +11,11 @@ import { ShortcutScope } from 'utils/enums';
 
 interface BulkWrapperProps {
     currentResourceIDs: number[];
-    bulkActionsMenu?: React.ReactNode;
     children: (selectProps: (id: number, idx: number) => { selected: boolean; onClick: () => void }) => React.ReactNode;
 }
 
 function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
     const {
-        bulkActionsMenu,
         children,
     } = props;
 
@@ -107,7 +105,6 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
             ref={wrapperRef}
         >
             <GlobalHotKeys keyMap={keyMap} handlers={handlers} />
-            {bulkActionsMenu}
             {children(selectProps)}
         </div>
     );

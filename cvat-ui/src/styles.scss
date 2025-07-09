@@ -213,7 +213,7 @@ html, body {
 }
 
 .cvat-item-selected {
-    border: 2px solid $border-color-hover;
+    border: 2px solid $border-color-hover !important;
 }
 
 .cvat-item-list-selected {
