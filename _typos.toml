@@ -1,24 +1,24 @@
 files.extend-exclude = [
-	"cvat-ui/src/assets/opencv_4.8.0.js",
-	"cvat/apps/engine/migrations/0033_projects_adjastment.py", # legacy migration name, set for life
-	"cvat-data/src/ts/3rdparty/*.js",
-	"**/*.zip",
-	"*.log",
-	"*.min.js",
+    "cvat-ui/src/assets/opencv_4.8.0.js",
+    "cvat/apps/engine/migrations/0033_projects_adjastment.py", # legacy migration name, set for life
+    "cvat-data/src/ts/3rdparty/*.js",
+    "**/*.zip",
+    "*.log",
+    "*.min.js",
     "*.patch",
 ]
 default.extend-ignore-re = [
-	# test passwords
+    # test passwords
     "\"md5.*?\"",
 
-	# Line ignore with trailing "# spellchecker:disable-line"
-	# or trailing "// spellchecker:disable-line"
-	"(?Rm)^.*(#|//)\\s*spellchecker:disable-line$",
+    # Line ignore with trailing "# spellchecker:disable-line"
+    # or trailing "// spellchecker:disable-line"
+    "(?Rm)^.*(#|//)\\s*spellchecker:disable-line$",
 
-	# Line block with "# spellchecker:<on|off>"
-	# or "// spellchecker:<on|off>"
-	"(?s)(#|//)\\s*spellchecker:off.*?\\n\\s*(#|//)\\s*spellchecker:on"
-	# Taken from https://github.com/crate-ci/typos/blob/master/docs/reference.md#example-configurations
+    # Line block with "# spellchecker:<on|off>"
+    # or "// spellchecker:<on|off>"
+    "(?s)(#|//)\\s*spellchecker:off.*?\\n\\s*(#|//)\\s*spellchecker:on"
+    # Taken from https://github.com/crate-ci/typos/blob/master/docs/reference.md#example-configurations
 
 ]
 
