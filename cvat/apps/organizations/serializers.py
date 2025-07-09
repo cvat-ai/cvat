@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from allauth.account.models import EmailAddress
 from attr.converters import to_bool
 from django.conf import settings
 from django.contrib.auth import get_user_model
