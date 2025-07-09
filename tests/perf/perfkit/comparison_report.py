@@ -52,7 +52,7 @@ def build_report(
 
             assert allowed_delta
             delta = (stat_value - baseline_value) / baseline_value
-            passed = delta <= allowed_delta
+            passed = abs(delta) <= allowed_delta
             if not passed:
                 failed = True
             add_report_row(metric_stat, baseline_value, stat_value, delta, passed)

@@ -7,11 +7,11 @@ export const options = {
   scenarios: {
     contacts: {
       executor: 'constant-arrival-rate',
-      duration: '2m',
+      duration: '20s',
       rate: 5,
       timeUnit: '1s',
       preAllocatedVUs: 2,
-      maxVUs: 50,
+      maxVUs: 5,
     },
   },
 };

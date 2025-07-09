@@ -45,6 +45,8 @@ class K6Profile:
             "--address", "0.0.0.0:6565",
             "--tag", f"testid={self.test_file.name}",
             "--summary-export=/output/summary.json",
+            # "--no-connection-reuse",
+            # "--no-vu-connection-reuse",
             *self.args,
             str(self.test_file)
         ]

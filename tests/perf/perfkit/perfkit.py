@@ -1,5 +1,6 @@
 import time
 import threading
+import json
 from pathlib import Path
 from typing import Optional
 
@@ -136,7 +137,19 @@ def run_regression(
         stop_cluster()
     comparison_report, failed = build_report(parse_k6_summary(K6_OUTPUT_SUMMARY_JSON),
                                              baselines[test_key][commit_value])
+
     console.print(get_comparison_table(comparison_report))
+
+    import random
+    report_file = Path(f"regression-report-{test_key}.txt")
+    with report_file.open("a+") as f:
+        f.write(f"Regression Report for test: {test_key}\n\n")
+        f.write("{:<40} {:>10} {:>10} {:>10} {:>6}\n".format(
+            "Metric", "Baseline", "Actual", "Delta", "Status"))
+        f.write("-" * 80 + "\n")
+        for row in comparison_report:
+            f.write("{:<40} {:>10} {:>10} {:>10} {:>6}\n".format(*row))
+        f.write("\n")
 
     if failed:
         exit_with_error("Performance regression detected", bold=True)

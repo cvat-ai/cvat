@@ -1,0 +1,45 @@
+
+
+services:
+  cvat_server:
+    cpuset: 1-3
+  cvat_db:
+    cpuset: 1-3
+  cvat_redis_inmem:
+    cpuset: 1-3
+  cvat_redis_ondisk:
+    cpuset: 1-3
+  cvat_worker_utils:
+    cpuset: 1-3
+  cvat_worker_export:
+    cpuset: 1-3
+  cvat_worker_import:
+    cpuset: 1-3
+  cvat_worker_annotation:
+    cpuset: 1-3
+  cvat_worker_webhooks:
+    cpuset: 1-3
+  cvat_worker_quality_reports:
+    cpuset: 1-3
+  cvat_worker_chunks:
+    cpuset: 1-3
+  cvat_worker_consensus:
+    cpuset: 1-3
+  cvat_ui:
+    cpuset: 1-3
+  traefik:
+    cpuset: 1-3
+  cvat_opa:
+    cpuset: 1-3
+  cvat_clickhouse:
+    cpuset: 1-3
+  cvat_vector:
+    cpuset: 1-3
+  cvat_grafana:
+    cpuset: 1-3
+  minio:
+    cpuset: 1-3
+  mc:
+    cpuset: 1-3
+  nuclio:
+    cpuset: 1-3
