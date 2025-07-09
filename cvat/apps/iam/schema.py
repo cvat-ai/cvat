@@ -44,31 +44,48 @@ class TokenAuthenticationScheme(TokenScheme):
         schema["x-token-prefix"] = self.target.keyword
         schema["description"] = textwrap.dedent(
             f"""\
+            Deprecated.
+
             You can obtain an API key (the token) from the server response on
-            the basic auth request in the /api/auth/login/ endpoint.
+            the /api/auth/login/ endpoint.
         """
         )
         return schema
 
 
-class CookieAuthenticationScheme(SessionScheme):
+class SessionAuthenticationScheme(SessionScheme):
     """
     This class adds csrftoken cookie into security sections. It must be used together with
     the 'sessionid' cookie.
     """
 
-    name = ["sessionAuth", "csrfAuth"]
+    name = ["sessionAuth", "csrfAuth", "csrfHeaderAuth"]
     priority = 0
 
     def get_security_definition(self, auto_schema):
         sessionid_schema = super().get_security_definition(auto_schema)
-        csrftoken_schema = {
+
+        csrf_token_description = textwrap.dedent(
+            """\
+            A CSRF protection token. Can be received in the 'csrftoken' cookie in the
+            server response on the /api/auth/login endpoint. The 'Origin' header
+            must also be specified in the request.
+        """
+        )
+
+        csrftoken_cookie_schema = {
             "type": "apiKey",
             "in": "cookie",
             "name": "csrftoken",
-            "description": "Can be sent as a cookie or as the X-CSRFTOKEN header",
+            "description": csrf_token_description,
         }
-        return [sessionid_schema, csrftoken_schema]
+        csrftoken_header_schema = {
+            "type": "apiKey",
+            "in": "header",
+            "name": "X-CSRFToken",
+            "description": csrf_token_description,
+        }
+        return [sessionid_schema, csrftoken_cookie_schema, csrftoken_header_schema]
 
 
 class CustomAutoSchema(AutoSchema):

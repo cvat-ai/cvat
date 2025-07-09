@@ -29,6 +29,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -56,6 +57,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -78,6 +80,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -108,6 +111,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       - {}
       responses:
@@ -132,6 +136,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       - {}
       responses:
@@ -162,6 +167,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -191,6 +197,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       - {}
       responses:
@@ -223,6 +230,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       - {}
       responses:
@@ -248,6 +256,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       - {}
       responses:
@@ -286,6 +295,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -400,6 +410,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -487,6 +498,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -513,6 +525,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -590,6 +603,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -615,6 +629,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -639,6 +654,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -684,6 +700,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -710,6 +727,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -736,6 +754,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -832,6 +851,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -872,6 +892,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -898,6 +919,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -928,6 +950,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -953,6 +976,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -973,6 +997,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '202':
@@ -1052,6 +1077,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -1078,6 +1104,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -1108,6 +1135,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -1185,6 +1213,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       deprecated: true
       responses:
@@ -1227,6 +1256,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -1303,6 +1333,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '202':
@@ -1329,6 +1360,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -1355,6 +1387,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -1385,6 +1418,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -1411,6 +1445,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -1488,6 +1523,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -1528,6 +1564,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -1554,6 +1591,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -1584,6 +1622,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -1609,6 +1648,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -1631,6 +1671,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -1659,6 +1700,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -1681,6 +1723,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -1786,6 +1829,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -1826,6 +1870,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -1852,6 +1897,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -1882,6 +1928,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -1907,6 +1954,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -2048,6 +2096,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2116,6 +2165,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -2142,6 +2192,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2172,6 +2223,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2202,6 +2254,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -2269,6 +2322,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2342,6 +2396,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -2379,6 +2434,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2417,6 +2473,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2438,6 +2495,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -2489,6 +2547,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2516,6 +2575,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2546,6 +2606,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2609,6 +2670,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '202':
@@ -2643,6 +2705,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2665,6 +2728,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2713,6 +2777,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2840,6 +2905,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2866,6 +2932,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2898,6 +2965,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2925,6 +2993,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -2940,6 +3009,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2962,6 +3032,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2999,6 +3070,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -3014,6 +3086,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -3056,6 +3129,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -3082,6 +3156,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -3107,6 +3182,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -3194,6 +3270,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -3220,6 +3297,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -3250,6 +3328,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -3275,6 +3354,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -3348,6 +3428,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -3372,6 +3453,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -3398,6 +3480,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -3428,6 +3511,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -3453,6 +3537,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -3550,6 +3635,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -3590,6 +3676,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -3616,6 +3703,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -3646,6 +3734,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -3671,6 +3760,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -3715,6 +3805,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '202':
@@ -3789,6 +3880,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '202':
@@ -3856,6 +3948,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '202':
@@ -3890,6 +3983,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -3962,6 +4056,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '202':
@@ -4079,6 +4174,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4193,6 +4289,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4228,6 +4325,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -4266,6 +4364,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4292,6 +4391,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4389,6 +4489,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4415,6 +4516,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4445,6 +4547,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4546,6 +4649,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4571,6 +4675,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4596,6 +4701,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4726,6 +4832,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4754,6 +4861,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4773,6 +4881,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4792,6 +4901,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4822,6 +4932,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4976,6 +5087,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -5019,6 +5131,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -5045,6 +5158,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -5075,6 +5189,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -5101,6 +5216,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -5123,6 +5239,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -5198,6 +5315,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -5235,6 +5353,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -5273,6 +5392,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -5298,6 +5418,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -5342,6 +5463,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '202':
@@ -5399,6 +5521,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -5508,6 +5631,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '202':
@@ -5534,6 +5658,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -5564,6 +5689,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -5627,6 +5753,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '202':
@@ -5661,6 +5788,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -5688,6 +5816,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       deprecated: true
       responses:
@@ -5715,6 +5844,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -5774,6 +5904,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -5848,6 +5979,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '202':
@@ -5945,6 +6077,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -5971,6 +6104,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -6001,6 +6135,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -6026,6 +6161,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -6042,6 +6178,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -6143,6 +6280,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -6183,6 +6321,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -6209,6 +6348,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -6240,6 +6380,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -6270,6 +6411,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -6295,6 +6437,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -6329,6 +6472,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -6361,6 +6505,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -6393,6 +6538,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -6415,6 +6561,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -6440,6 +6587,7 @@ paths:
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -11179,7 +11327,18 @@ components:
       type: apiKey
       in: cookie
       name: csrftoken
-      description: Can be sent as a cookie or as the X-CSRFTOKEN header
+      description: |
+        A CSRF protection token. Can be received in the 'csrftoken' cookie in the
+        server response on the /api/auth/login endpoint. The 'Origin' header
+        must also be specified in the request.
+    csrfHeaderAuth:
+      type: apiKey
+      in: header
+      name: X-CSRFToken
+      description: |
+        A CSRF protection token. Can be received in the 'csrftoken' cookie in the
+        server response on the /api/auth/login endpoint. The 'Origin' header
+        must also be specified in the request.
     sessionAuth:
       type: apiKey
       in: cookie
@@ -11194,8 +11353,10 @@ components:
       in: header
       name: Authorization
       description: |
+        Deprecated.
+
         You can obtain an API key (the token) from the server response on
-        the basic auth request in the /api/auth/login/ endpoint.
+        the /api/auth/login/ endpoint.
       x-token-prefix: Token
 externalDocs:
   description: CVAT documentation
