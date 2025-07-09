@@ -86,7 +86,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
 const componentShortcuts = {
     SWITCH_DRAW_MODE_TAG_ANNOTATION: {
         name: 'Create a tag',
-        description: 'Adds a new tag, corresponding to the selected label.',
+        description: 'Add a new tag, corresponding to the selected label.',
         sequences: ['n'],
         scope: ShortcutScope.TAG_ANNOTATION_WORKSPACE,
     },
