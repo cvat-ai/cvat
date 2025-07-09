@@ -5,7 +5,7 @@
 
 import './styles.scss';
 import React, { useEffect, useRef, useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector, useDispatch, shallowEqual } from 'react-redux';
 import { useHistory, useParams } from 'react-router';
 import Spin from 'antd/lib/spin';
 import { Row, Col } from 'antd/lib/grid';
@@ -21,7 +21,7 @@ import notification from 'antd/lib/notification';
 
 import { getCore, Project, Task } from 'cvat-core-wrapper';
 import { CombinedState, TasksQuery } from 'reducers';
-import { getProjectTasksAsync } from 'actions/projects-actions';
+import { getProjectTasksAsync, updateProjectAsync } from 'actions/projects-actions';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import TaskItem from 'containers/tasks-page/task-item';
 import MoveTaskModal from 'components/move-task-modal/move-task-modal';
@@ -57,17 +57,28 @@ export default function ProjectPageComponent(): JSX.Element {
 
     const [projectInstance, setProjectInstance] = useState<Project | null>(null);
     const [fechingProject, setFetchingProject] = useState(true);
-    const [updatingProject, setUpdatingProject] = useState(false);
     const mounted = useRef(false);
 
-    const deletes = useSelector((state: CombinedState) => state.projects.activities.deletes);
-    const tasks = useSelector((state: CombinedState) => state.tasks.current);
-    const tasksCount = useSelector((state: CombinedState) => state.tasks.count);
-    const tasksQuery = useSelector((state: CombinedState) => state.projects.tasksGettingQuery);
-    const tasksFetching = useSelector((state: CombinedState) => state.tasks.fetching);
+    const {
+        deletes,
+        updates,
+        tasks,
+        tasksCount,
+        tasksQuery,
+        tasksFetching,
+    } = useSelector((state: CombinedState) => ({
+        deletes: state.projects.activities.deletes,
+        updates: state.projects.activities.updates,
+        tasks: state.tasks.current,
+        tasksCount: state.tasks.count,
+        tasksQuery: state.projects.tasksGettingQuery,
+        tasksFetching: state.tasks.fetching,
+    }), shallowEqual);
     const [visibility, setVisibility] = useState(defaultVisibility);
 
     const updatedQuery = useResourceQuery<TasksQuery>(tasksQuery);
+
+    const isProjectUpdating = updates[id];
 
     useEffect(() => {
         if (Number.isInteger(id)) {
@@ -169,13 +180,13 @@ export default function ProjectPageComponent(): JSX.Element {
 
     return (
         <Row justify='center' align='top' className='cvat-project-page'>
-            { updatingProject ? <CVATLoadingSpinner size='large' /> : null }
+            { isProjectUpdating ? <CVATLoadingSpinner size='large' /> : null }
             <Col
                 md={22}
                 lg={18}
                 xl={16}
                 xxl={14}
-                style={updatingProject ? {
+                style={isProjectUpdating ? {
                     pointerEvents: 'none',
                     opacity: 0.7,
                 } : {}}
@@ -183,23 +194,8 @@ export default function ProjectPageComponent(): JSX.Element {
                 <ProjectTopBar projectInstance={projectInstance} />
                 <DetailsComponent
                     onUpdateProject={(project: Project) => {
-                        setUpdatingProject(true);
-                        project.save().then((updatedProject: Project) => {
-                            if (mounted.current) {
-                                dispatch(getProjectTasksAsync({ ...updatedQuery, projectId: id }));
-                                setProjectInstance(updatedProject);
-                            }
-                        }).catch((error: Error) => {
-                            if (mounted.current) {
-                                notification.error({
-                                    message: 'Could not update the project',
-                                    description: error.toString(),
-                                });
-                            }
-                        }).finally(() => {
-                            if (mounted.current) {
-                                setUpdatingProject(false);
-                            }
+                        dispatch(updateProjectAsync(project)).then((updatedProject: Project) => {
+                            setProjectInstance(updatedProject);
                         });
                     }}
                     project={projectInstance}
@@ -217,7 +213,7 @@ export default function ProjectPageComponent(): JSX.Element {
                                         search: _search,
                                     }));
                                 }}
-                                defaultValue={tasksQuery.search || ''}
+                                defaultValue={tasksQuery.search ?? ''}
                                 className='cvat-project-page-tasks-search-bar'
                                 placeholder='Search ...'
                             />

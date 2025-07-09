@@ -259,7 +259,7 @@ For more information about keys, consult
 To configure anonymous access:
 
 1. Open the bucket and go to the **Permissions** tab.
-1. Сlick **+ Grant access** to add new principals.
+1. Click **+ Grant access** to add new principals.
 1. In the **New principals** field specify `allUsers`,
    select roles: `Cloud Storage Legacy` > `Storage Legacy Bucket Reader`.
 1. Select **Save**.
