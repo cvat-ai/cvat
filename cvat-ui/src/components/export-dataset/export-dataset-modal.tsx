@@ -98,15 +98,28 @@ function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
     const selectedIds = useSelector((state: CombinedState) => state.selection.selected);
     const allTasks = useSelector((state: CombinedState) => state.tasks.current);
     const allProjects = useSelector((state: CombinedState) => state.projects.current);
+    const allJobs = useSelector((state: CombinedState) => state.jobs.current);
     const isBulkMode = selectedIds.length > 1;
-    let selectedInstances: (Task | Project)[] = [];
-    if (isBulkMode) {
-        const selectedTasks = allTasks.filter((t) => selectedIds.includes(t.id));
-        const selectedProjects = allProjects.filter((p) => selectedIds.includes(p.id));
-        selectedInstances = [...selectedTasks, ...selectedProjects];
-    } else if (instance && (instance instanceof Task || instance instanceof Project)) {
-        selectedInstances = [instance];
-    }
+
+    const [selectedInstances, setSelectedInstances] = useState<ProjectOrTaskOrJob[]>([]);
+    useEffect(() => {
+        if (isBulkMode) {
+            let filtered: ProjectOrTaskOrJob[] = [];
+            if (instanceType === 'task') {
+                filtered = allTasks.filter((t) => selectedIds.includes(t.id));
+            } else if (instanceType === 'project') {
+                filtered = allProjects.filter((p) => selectedIds.includes(p.id));
+            } else if (instanceType === 'job') {
+                filtered = allJobs.filter((j) => selectedIds.includes(j.id));
+            }
+            setSelectedInstances(filtered);
+        } else if (instance && (instance instanceof Task || instance instanceof Project || instance instanceof Job)) {
+            setSelectedInstances([instance]);
+        } else {
+            setSelectedInstances([]);
+        }
+    }, [isBulkMode, instanceType, selectedIds, allTasks, allProjects, allJobs, instance]);
+
     const [nameTemplate, setNameTemplate] = useState('dataset_task_{{id}}');
 
     useEffect(() => {
@@ -154,15 +167,15 @@ function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
     const handleExport = useCallback(
         (values: FormValues): void => {
             if (isBulkMode) {
-                dispatch(makeBulkOperationAsync<Task | Project>(
+                dispatch(makeBulkOperationAsync<ProjectOrTaskOrJob>(
                     selectedInstances,
-                    async (inst: Task | Project, idx: number) => {
+                    async (inst: ProjectOrTaskOrJob, idx: number) => {
                         let exportName = nameTemplate
                             .replaceAll('{{id}}', String(inst.id))
-                            .replaceAll('{{name}}', inst.name ?? '')
+                            .replaceAll('{{name}}', ('name' in inst ? inst.name : '') ?? '')
                             .replaceAll('{{index}}', String(idx + 1));
                         if (!exportName.endsWith('.zip')) exportName += '.zip';
-                        await dispatch(
+                        dispatch(
                             exportDatasetAsync(
                                 inst,
                                 values.selectedFormat as string,
@@ -176,7 +189,7 @@ function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
                             ),
                         );
                     },
-                    (inst: Task | Project, idx: number, total: number) => (
+                    (inst: ProjectOrTaskOrJob, idx: number, total: number) => (
                         `Exporting dataset for ${instanceType}#${inst.id} [${idx + 1}/${total}]`
                     ),
                 ));
@@ -235,12 +248,15 @@ function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
         ],
     );
 
-    const exampleName = (isBulkMode && selectedInstances.length > 0 && selectedInstances[0]) ?
-        nameTemplate
-            .replaceAll('{{id}}', String(selectedInstances[0].id))
-            .replaceAll('{{name}}', selectedInstances[0].name ?? '')
-            .replaceAll('{{index}}', '1') :
-        `dataset_${instanceType}_1.zip`;
+    let exampleName = `dataset_${instanceType}_1.zip`;
+    if (isBulkMode && selectedInstances.length > 0 && selectedInstances[0]) {
+        const first = selectedInstances[0];
+        const firstName = 'name' in first ? first.name : '';
+        exampleName = nameTemplate
+            .replaceAll('{{id}}', String(first.id))
+            .replaceAll('{{name}}', firstName ?? '')
+            .replaceAll('{{index}}', '1');
+    }
 
     const sortedDumpers = dumpers.slice();
     sortedDumpers.sort((a: Dumper, b: Dumper) => a.name.localeCompare(b.name));

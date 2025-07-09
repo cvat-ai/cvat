@@ -96,14 +96,23 @@ function ExportBackupModal(): JSX.Element {
     });
 
     const isBulkMode = selectedIds.length > 1;
-    let selectedInstances: Exclude<ProjectOrTaskOrJob, Job>[] = [];
-    if (isBulkMode) {
-        const selectedTasks = allTasks.filter((t) => selectedIds.includes(t.id));
-        const selectedProjects = allProjects.filter((p) => selectedIds.includes(p.id));
-        selectedInstances = [...selectedTasks, ...selectedProjects];
-    } else if (instance) {
-        selectedInstances = [instance];
-    }
+
+    const [selectedInstances, setSelectedInstances] = useState<Exclude<ProjectOrTaskOrJob, Job>[]>([]);
+    useEffect(() => {
+        if (isBulkMode) {
+            let filtered: Exclude<ProjectOrTaskOrJob, Job>[] = [];
+            if (instanceType === 'task') {
+                filtered = allTasks.filter((t) => selectedIds.includes(t.id));
+            } else if (instanceType === 'project') {
+                filtered = allProjects.filter((p) => selectedIds.includes(p.id));
+            }
+            setSelectedInstances(filtered);
+        } else if (instance) {
+            setSelectedInstances([instance]);
+        } else {
+            setSelectedInstances([]);
+        }
+    }, [isBulkMode, instanceType, selectedIds, allTasks, allProjects, instance]);
 
     useEffect(() => {
         let newIntanceType = '';
@@ -149,7 +158,7 @@ function ExportBackupModal(): JSX.Element {
                             .replaceAll('{{name}}', inst.name ?? '')
                             .replaceAll('{{index}}', String(idx + 1));
                         if (!backupName.endsWith('.zip')) backupName += '.zip';
-                        await dispatch(
+                        dispatch(
                             exportBackupAsync(
                                 inst,
                                 new Storage({
