@@ -107,20 +107,17 @@ class TestCliMisc(TestCliBase):
 
         original_request = RESTClientObject.request
 
-        call_count = 0
-
         def patched_request(*args, **kwargs):
-            nonlocal call_count
-            call_count += 1
-
             assert kwargs["headers"].get("Authorization") == f"Bearer {token}"
 
             return original_request(*args, **kwargs)
 
-        with mock.patch.object(RESTClientObject, "request", patched_request):
+        with mock.patch.object(
+            RESTClientObject, "request", side_effect=patched_request
+        ) as mock_request:
             self.run_cli("task", "ls", env=env, authenticate=False, expected_code=1)
 
-        assert call_count > 0
+        assert mock_request.assert_called()
 
 
 @pytest.mark.parametrize(

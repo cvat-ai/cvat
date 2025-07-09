@@ -261,6 +261,7 @@ class Client:
             self.api_client.cookies.pop("csrftoken", None)
             self.api_client.default_headers.pop("Origin", None)
             self.api_client.default_headers.pop("X-CSRFToken", None)
+            self.api_client.default_headers.pop("Authorization", None)
 
     def wait_for_completion(
         self: Client,
