@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { useHistory } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import { getModelsAsync } from 'actions/models-actions';
@@ -14,6 +14,7 @@ import notification from 'antd/lib/notification';
 
 import { CombinedState, ModelsQuery } from 'reducers';
 import { useResourceQuery } from 'utils/hooks';
+import { selectionActions } from 'actions/selection-actions';
 import DeployedModelsList from './deployed-models-list';
 import EmptyListComponent from './empty-list';
 import TopBar from './top-bar';
@@ -44,6 +45,17 @@ function ModelsPageComponent(): JSX.Element {
         }
     }, []);
 
+    const allModelIds = useSelector((state: CombinedState) => [
+        ...state.models.interactors,
+        ...state.models.detectors,
+        ...state.models.trackers,
+        ...state.models.reid,
+    ].map((m) => m.id));
+    const selectedCount = useSelector((state: CombinedState) => state.selection.selected.length);
+    const onSelectAll = useCallback(() => {
+        dispatch(selectionActions.selectAllResources(allModelIds));
+    }, [allModelIds]);
+
     const content = (totalCount && !pageOutOfBounds) ? (
         <DeployedModelsList query={updatedQuery} />
     ) : <EmptyListComponent />;
@@ -53,6 +65,8 @@ function ModelsPageComponent(): JSX.Element {
             <TopBar
                 disabled
                 query={updatedQuery}
+                selectedCount={selectedCount}
+                onSelectAll={onSelectAll}
                 onApplySearch={(search: string | null) => {
                     dispatch(
                         getModelsAsync({
