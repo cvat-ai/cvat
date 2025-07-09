@@ -22,8 +22,8 @@ import ProjectActionsComponent from './actions-menu';
 
 interface Props {
     projectInstance: Project;
-    selected?: boolean;
-    onClick?: () => void;
+    selected: boolean;
+    onClick: () => void;
 }
 
 const useCardHeight = useCardHeightHOC({

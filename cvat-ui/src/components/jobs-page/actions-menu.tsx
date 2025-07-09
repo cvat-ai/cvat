@@ -16,6 +16,7 @@ import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
 import { mergeConsensusJobsAsync } from 'actions/consensus-actions';
 import { deleteJobAsync, updateJobAsync } from 'actions/jobs-actions';
+import { makeBulkOperationAsync } from 'actions/selection-actions';
 
 import UserSelector from 'components/task-page/user-selector';
 import { JobStageSelector, JobStateSelector } from 'components/job-item/job-selectors';
@@ -26,14 +27,25 @@ interface Props {
     jobInstance: Job;
     consensusJobsPresent: boolean;
     triggerElement: JSX.Element;
+    dropdownTrigger?: ('click' | 'hover' | 'contextMenu')[];
 }
 
-function JobActionsComponent(props: Props): JSX.Element {
-    const { jobInstance, triggerElement, consensusJobsPresent } = props;
+function JobActionsComponent(
+    props: Readonly<Props>,
+): JSX.Element {
+    const {
+        jobInstance,
+        triggerElement,
+        consensusJobsPresent,
+        dropdownTrigger,
+    } = props;
     const dispatch = useDispatch();
 
     const pluginActions = usePlugins((state: CombinedState) => state.plugins.components.jobActions.items, props);
     const mergingConsensus = useSelector((state: CombinedState) => state.consensus.actions.merging);
+
+    const selectedIds = useSelector((state: CombinedState) => state.selection.selected);
+    const allJobs = useSelector((state: CombinedState) => state.jobs.current);
 
     const {
         dropdownOpen,
@@ -77,28 +89,50 @@ function JobActionsComponent(props: Props): JSX.Element {
     }, [consensusJobsPresent, jobInstance]);
 
     const onDeleteJob = useCallback(() => {
-        if (jobInstance.type === JobType.GROUND_TRUTH) {
-            Modal.confirm({
-                title: `The job ${jobInstance.id} will be deleted`,
-                content: 'All related data (annotations) will be lost. Continue?',
-                className: 'cvat-modal-confirm-delete-job',
-                onOk: () => {
-                    dispatch(deleteJobAsync(jobInstance));
-                },
-                okButtonProps: {
-                    type: 'primary',
-                    danger: true,
-                },
-                okText: 'Delete',
-            });
-        }
-    }, [jobInstance]);
+        const jobsToDelete = allJobs.filter((job) => selectedIds.includes(job.id));
+        const isBulk = jobsToDelete.length > 1;
+        Modal.confirm({
+            title: isBulk ?
+                `Delete ${jobsToDelete.length} selected jobs` :
+                `The job ${jobInstance.id} will be deleted`,
+            content: isBulk ?
+                'All related data (annotations) for all selected jobs will be lost. Continue?' :
+                'All related data (annotations) will be lost. Continue?',
+            className: 'cvat-modal-confirm-delete-job',
+            onOk: () => {
+                setTimeout(() => {
+                    dispatch(makeBulkOperationAsync(
+                        jobsToDelete.length ? jobsToDelete : [jobInstance],
+                        async (job) => {
+                            if (job.type === JobType.GROUND_TRUTH) {
+                                await dispatch(deleteJobAsync(job));
+                            }
+                        },
+                        (job, idx, total) => `Deleting job #${job.id} (${idx + 1}/${total})`,
+                    ));
+                }, 0);
+            },
+            okButtonProps: {
+                type: 'primary',
+                danger: true,
+            },
+            okText: isBulk ? 'Delete selected' : 'Delete',
+        });
+    }, [jobInstance, allJobs, selectedIds, dispatch]);
 
     const onUpdateJobField = useCallback((
         fields: Partial<{ assignee: User | null; state: JobState; stage: JobStage; }>,
     ) => {
-        dispatch(updateJobAsync(jobInstance, fields)).then(stopEditField);
-    }, [jobInstance]);
+        const jobsToUpdate = allJobs.filter((job) => selectedIds.includes(job.id));
+        const jobs = jobsToUpdate.length ? jobsToUpdate : [jobInstance];
+        dispatch(makeBulkOperationAsync(
+            jobs,
+            async (job) => {
+                await dispatch(updateJobAsync(job, fields));
+            },
+            (job, idx, total) => `Updating job #${job.id} (${idx + 1}/${total})`,
+        )).then(stopEditField);
+    }, [jobInstance, allJobs, selectedIds, dispatch, stopEditField]);
 
     let menuItems;
     if (editField) {
@@ -142,13 +176,14 @@ function JobActionsComponent(props: Props): JSX.Element {
             onExportAnnotations,
             onMergeConsensusJob: consensusJobsPresent && jobInstance.parentJobId === null ? onMergeConsensusJob : null,
             onDeleteJob: jobInstance.type === JobType.GROUND_TRUTH ? onDeleteJob : null,
+            selectedIds,
         }, props);
     }
 
     return (
         <Dropdown
             destroyPopupOnHide
-            trigger={['click']}
+            trigger={dropdownTrigger || ['click']}
             open={dropdownOpen}
             onOpenChange={onOpenChange}
             className='job-actions-menu'
