@@ -34,7 +34,6 @@ def add_opa_rules_path(path: Path) -> None:
 
 
 def get_dummy_user(email):
-    from allauth.account import app_settings
     from allauth.account.models import EmailAddress
     from allauth.account.utils import filter_users_by_email
 
@@ -44,11 +43,11 @@ def get_dummy_user(email):
     user = users[0]
     if user.has_usable_password():
         return None
-    if app_settings.EMAIL_VERIFICATION == app_settings.EmailVerificationMethod.MANDATORY:
-        email = EmailAddress.objects.get_for_user(user, email)
-        if email.verified:
-            return None
-    return user
+    try:
+        EmailAddress.objects.get_for_user(user, email)
+    except EmailAddress.DoesNotExist:
+        return user
+    return None
 
 
 def clean_up_sessions() -> None:

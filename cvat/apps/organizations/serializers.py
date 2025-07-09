@@ -126,12 +126,7 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
             user_email = membership_data["user"]["email"]
             user = User.objects.create_user(username=user_email, email=user_email)
             user.set_unusable_password()
-            # User.objects.create_user(...) normalizes passed email and user.email can be different from original user_email
-            email = EmailAddress.objects.create(
-                user=user, email=user.email, primary=True, verified=False
-            )
             user.save()
-            email.save()
             del membership_data["user"]
         membership, created = Membership.objects.get_or_create(
             defaults=membership_data, user=user, organization=organization

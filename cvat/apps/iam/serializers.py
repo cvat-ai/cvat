@@ -58,34 +58,12 @@ class RegisterSerializerEx(RegisterSerializer):
 
         return data
 
-    def validate_email(self, email):
-        def email_address_exists(email) -> bool:
-            if EmailAddress.objects.filter(email__iexact=email).exists():
-                return True
-
-            if email_field := allauth_settings.USER_MODEL_EMAIL_FIELD:
-                users = get_user_model().objects
-                return users.filter(**{email_field + "__iexact": email}).exists()
-            return False
-
-        email = get_adapter().clean_email(email)
-        if allauth_settings.UNIQUE_EMAIL:
-            if email and email_address_exists(email):
-                user = get_dummy_user(email)
-                if not user:
-                    raise serializers.ValidationError(
-                        ("A user is already registered with this e-mail address."),
-                    )
-
-        return email
-
     def save(self, request):
         adapter = get_adapter()
         self.cleaned_data = self.get_cleaned_data()
 
         # Allow to overwrite data for dummy users
-        dummy_user = get_dummy_user(self.cleaned_data["email"])
-        user = dummy_user if dummy_user else adapter.new_user(request)
+        user = get_dummy_user(self.cleaned_data["email"]) or adapter.new_user(request)
 
         user = adapter.save_user(request, user, self, commit=False)
         if "password1" in self.cleaned_data:
@@ -96,8 +74,7 @@ class RegisterSerializerEx(RegisterSerializer):
         user.save()
         self.custom_signup(request, user)
 
-        if not dummy_user:
-            setup_user_email(request, user, [])
+        setup_user_email(request, user, [])
         return user
 
 
