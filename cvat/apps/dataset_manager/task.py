@@ -1108,14 +1108,8 @@ def export_job(
     save_images=False,
     temp_dir: str | None = None,
 ):
-    # For big tasks dump function may run for a long time and
-    # we dont need to acquire lock after the task has been initialized from DB.
-    # But there is the bug with corrupted dump file in case 2 or
-    # more dump request received at the same time:
-    # https://github.com/cvat-ai/cvat/issues/217
-    with transaction.atomic():
-        job = JobAnnotation(job_id, prefetch_images=True, lock_job_in_db=True)
-        job.init_from_db()
+    job = JobAnnotation(job_id, prefetch_images=True, lock_job_in_db=True)
+    job.init_from_db()
 
     exporter = make_exporter(format_name)
     with open(dst_file, "wb") as f:
