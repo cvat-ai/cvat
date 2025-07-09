@@ -15,6 +15,7 @@ import { getCloudStoragesAsync } from 'actions/cloud-storage-actions';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import { anySearch } from 'utils/any-search';
 import { useResourceQuery } from 'utils/hooks';
+import { selectionActions } from 'actions/selection-actions';
 import CloudStoragesListComponent from './cloud-storages-list';
 import EmptyListComponent from './empty-list';
 import TopBarComponent from './top-bar';
@@ -52,6 +53,12 @@ export default function StoragesPageComponent(): JSX.Element {
         },
         [query],
     );
+
+    const allStorageIds = useSelector((state: CombinedState) => state.cloudStorages.current.map((s) => s.id));
+    const selectedCount = useSelector((state: CombinedState) => state.selection.selected.length);
+    const onSelectAll = useCallback(() => {
+        dispatch(selectionActions.selectAllResources(allStorageIds));
+    }, [allStorageIds]);
 
     const isAnySearch = anySearch<CloudStoragesQuery>(query);
 
@@ -98,6 +105,8 @@ export default function StoragesPageComponent(): JSX.Element {
                     );
                 }}
                 query={updatedQuery}
+                selectedCount={selectedCount}
+                onSelectAll={onSelectAll}
             />
             { fetching ? (
                 <Row className='cvat-cloud-storages-page' justify='center' align='middle'>

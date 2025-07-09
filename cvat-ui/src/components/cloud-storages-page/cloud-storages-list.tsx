@@ -9,6 +9,7 @@ import { Row, Col } from 'antd/lib/grid';
 
 import { CloudStorage } from 'reducers';
 import dimensions from 'utils/dimensions';
+import BulkWrapper from 'components/tasks-page/bulk-wrapper';
 import CloudStorageItemComponent from './cloud-storage-item';
 
 interface Props {
@@ -19,7 +20,7 @@ interface Props {
     onChangePage(page: number, pageSize: number): void;
 }
 
-export default function StoragesList(props: Props): JSX.Element {
+export default function StoragesList(props: Readonly<Props>): JSX.Element {
     const {
         storages, totalCount, page, pageSize, onChangePage,
     } = props;
@@ -36,21 +37,33 @@ export default function StoragesList(props: Props): JSX.Element {
         [],
     );
 
+    const storageIdToIndex = new Map<number, number>();
+    storages.forEach((s, idx) => storageIdToIndex.set(s.id, idx));
+
     return (
         <>
             <Row justify='center' align='middle' className='cvat-resource-list-wrapper'>
                 <Col {...dimensions} className='cvat-cloud-storages-list'>
-                    {groupedStorages.map(
-                        (instances: CloudStorage[]): JSX.Element => (
-                            <Row key={instances[0].id} gutter={[8, 8]}>
-                                {instances.map((instance: CloudStorage) => (
-                                    <Col span={6} key={instance.id}>
-                                        <CloudStorageItemComponent cloudStorage={instance} />
-                                    </Col>
-                                ))}
-                            </Row>
-                        ),
-                    )}
+                    <BulkWrapper currentResourceIDs={storages.map((s) => s.id)}>
+                        {(selectProps) => {
+                            const renderStorageRow = (instances: CloudStorage[]): JSX.Element => (
+                                <Row key={instances[0].id} className='cvat-cloud-storages-list-row'>
+                                    {instances.map((instance: CloudStorage) => {
+                                        const globalIdx = storageIdToIndex.get(instance.id) ?? 0;
+                                        return (
+                                            <Col span={6} key={instance.id}>
+                                                <CloudStorageItemComponent
+                                                    cloudStorage={instance}
+                                                    {...selectProps(instance.id, globalIdx)}
+                                                />
+                                            </Col>
+                                        );
+                                    })}
+                                </Row>
+                            );
+                            return groupedStorages.map(renderStorageRow);
+                        }}
+                    </BulkWrapper>
                 </Col>
             </Row>
             <Row justify='center' align='middle' className='cvat-resource-pagination-wrapper'>
