@@ -28,8 +28,8 @@ export interface TaskItemProps {
     ribbonPlugins: PluginComponent[];
     cancelAutoAnnotation(): void;
     updateTaskInState(task: Task): void;
-    selected?: boolean;
-    onClick?: () => void;
+    selected: boolean;
+    onClick: () => void;
 }
 
 interface State {

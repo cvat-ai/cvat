@@ -12,7 +12,7 @@ import Spin from 'antd/lib/spin';
 import notification from 'antd/lib/notification';
 
 import { getInferenceStatusAsync } from 'actions/models-actions';
-import { updateJobAsync } from 'actions/jobs-actions';
+import { updateJobAsync, jobsActions, JobsList } from 'actions/jobs-actions';
 import { getCore, Task, Job } from 'cvat-core-wrapper';
 import { TaskNotFoundComponent } from 'components/common/not-found';
 import JobListComponent from 'components/task-page/job-list';
@@ -50,6 +50,11 @@ function TaskPageComponent(): JSX.Element {
             promise.then(([task]: Task[]) => {
                 if (task) {
                     setTaskInstance(task);
+                    if (task.jobs && Array.isArray(task.jobs)) {
+                        const jobsList = [...task.jobs] as JobsList;
+                        jobsList.count = jobsList.length;
+                        dispatch(jobsActions.getJobsSuccess(jobsList));
+                    }
                 }
             }).catch((error: Error) => {
                 notification.error({
