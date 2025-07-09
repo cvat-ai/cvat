@@ -77,9 +77,9 @@ context('Ground truth jobs', () => {
         },
     ];
 
-    let groundTruthJobID = null;
-    let jobID = null;
-    let taskID = null;
+    let groundTruthJobId = null;
+    let jobId = null;
+    let taskId = null;
 
     // With seed = 1, frameCount = 4, totalFrames = 100 - predifined ground truth frames are:
     const groundTruthFrames = [10, 23, 71, 87];
@@ -119,14 +119,14 @@ context('Ground truth jobs', () => {
             taskName, serverFiles, labelName, validationParams,
         });
         return cy.headlessCreateTask(taskSpec, dataSpec, extras).then((taskResponse) => {
-            taskID = taskResponse.taskID;
+            taskId = taskResponse.taskId;
             if (validationParams) {
-                [groundTruthJobID, jobID] = taskResponse.jobIDs;
+                [groundTruthJobId, jobId] = taskResponse.jobIds;
             } else {
-                [jobID] = taskResponse.jobIDs;
+                [jobId] = taskResponse.jobIds;
             }
         }).then(() => {
-            cy.visit(`/tasks/${taskID}`);
+            cy.visit(`/tasks/${taskId}`);
             cy.get('.cvat-task-details').should('exist').and('be.visible');
         });
     }
@@ -167,7 +167,7 @@ context('Ground truth jobs', () => {
         });
 
         after(() => {
-            cy.headlessDeleteTask(taskID);
+            cy.headlessDeleteTask(taskId);
         });
 
         it('Create ground truth job from task page', () => {
@@ -177,10 +177,10 @@ context('Ground truth jobs', () => {
                 seed: 1,
             });
             cy.url().then((url) => {
-                groundTruthJobID = Number(url.split('/').slice(-1)[0].split('?')[0]);
+                groundTruthJobId = Number(url.split('/').slice(-1)[0].split('?')[0]);
 
                 cy.interactMenu('Open the task');
-                cy.get('.cvat-job-item').contains('a', `Job #${groundTruthJobID}`)
+                cy.get('.cvat-job-item').contains('a', `Job #${groundTruthJobId}`)
                     .parents('.cvat-job-item')
                     .find('.ant-tag')
                     .should('have.text', 'Ground truth');
@@ -188,7 +188,7 @@ context('Ground truth jobs', () => {
         });
 
         it('Frame navigation in ground truth job', () => {
-            cy.get('.cvat-job-item').contains('a', `Job #${groundTruthJobID}`).click();
+            cy.get('.cvat-job-item').contains('a', `Job #${groundTruthJobId}`).click();
             cy.get('.cvat-spinner').should('not.exist');
 
             groundTruthFrames.forEach((frame) => {
@@ -199,7 +199,7 @@ context('Ground truth jobs', () => {
 
         it('Check ground truth annotations in GT job and in regular job', () => {
             cy.interactMenu('Open the task');
-            cy.get('.cvat-job-item').contains('a', `Job #${groundTruthJobID}`).click();
+            cy.get('.cvat-job-item').contains('a', `Job #${groundTruthJobId}`).click();
 
             groundTruthFrames.forEach((frame, index) => {
                 cy.goCheckFrameNumber(frame);
@@ -215,9 +215,9 @@ context('Ground truth jobs', () => {
             cy.saveJob();
             cy.interactMenu('Open the task');
 
-            cy.getJobIDFromIdx(1).then((gtJobID) => cy.setJobStage(gtJobID, 'acceptance'));
-            cy.getJobIDFromIdx(1).then((gtJobID) => cy.setJobState(gtJobID, 'completed'));
-            cy.get('.cvat-job-item').contains('a', `Job #${jobID}`).click();
+            cy.getJobIdFromIdx(1).then((gtJobId) => cy.setJobStage(gtJobId, 'acceptance'));
+            cy.getJobIdFromIdx(1).then((gtJobId) => cy.setJobState(gtJobId, 'completed'));
+            cy.get('.cvat-job-item').contains('a', `Job #${jobId}`).click();
             cy.changeWorkspace('Review');
 
             cy.get('.cvat-objects-sidebar-show-ground-truth').click();
@@ -229,7 +229,7 @@ context('Ground truth jobs', () => {
 
         it('Delete ground truth job', () => {
             cy.interactMenu('Open the task');
-            cy.deleteJob(groundTruthJobID);
+            cy.deleteJob(groundTruthJobId);
         });
     });
 
@@ -273,14 +273,14 @@ context('Ground truth jobs', () => {
 
         before(() => {
             createAndOpenTask(serverFiles, defaultValidationParams).then(() => {
-                cy.visit(`/tasks/${taskID}/quality-control#management`);
+                cy.visit(`/tasks/${taskId}/quality-control#management`);
                 cy.get('.cvat-quality-control-management-tab').should('exist').and('be.visible');
                 cy.get('.cvat-quality-control-management-tab-summary').should('exist').and('be.visible');
             });
         });
 
         after(() => {
-            cy.headlessDeleteTask(taskID);
+            cy.headlessDeleteTask(taskId);
         });
 
         it('Check management page contents.', () => {
@@ -304,7 +304,7 @@ context('Ground truth jobs', () => {
                 cy.get('.cvat-open-frame-button').first().click();
             });
             cy.get('.cvat-spinner').should('not.exist');
-            cy.url().should('contain', `/tasks/${taskID}/jobs/${groundTruthJobID}`);
+            cy.url().should('contain', `/tasks/${taskId}/jobs/${groundTruthJobId}`);
             cy.checkFrameNum(2);
 
             cy.interactMenu('Open the task');
@@ -377,7 +377,7 @@ context('Ground truth jobs', () => {
         it('Check management table .csv representation is available for download', () => {
             cy.get('.cvat-quality-control-management-tab .cvat-table-export-csv-button').click();
 
-            const expectedFileName = `allocation-table-task_${taskID}.csv`;
+            const expectedFileName = `allocation-table-task_${taskId}.csv`;
             cy.verifyDownload(expectedFileName);
             cy.checkCsvFileContent(expectedFileName, 'frame,name,active', 4, (row, index) => {
                 expect(row).to.include(`images/image_${index + 1}.jpg`);
@@ -395,7 +395,7 @@ context('Ground truth jobs', () => {
             });
 
             afterEach(() => {
-                cy.headlessDeleteTask(taskID);
+                cy.headlessDeleteTask(taskId);
             });
 
             it('Check GT button should be disabled while waiting for GT job creation', () => {
@@ -426,19 +426,19 @@ context('Ground truth jobs', () => {
 
                 cy.get('.cvat-canvas-container').should('exist').and('be.visible');
                 cy.url().then((url) => {
-                    jobID = Number(url.split('/').slice(-1)[0].split('?')[0]);
+                    jobId = Number(url.split('/').slice(-1)[0].split('?')[0]);
                 }).should('match', /\/tasks\/\d+\/jobs\/\d+/);
             });
 
             it('Check GT annotations can not be shown in standard annotation view', () => {
                 cy.headlessCreateJob({
-                    task_id: taskID,
+                    task_id: taskId,
                     frame_count: 4,
                     type: 'ground_truth',
                     frame_selection_method: 'random_uniform',
                     seed: 1,
                 }).then((jobResponse) => {
-                    groundTruthJobID = jobResponse.jobID;
+                    groundTruthJobId = jobResponse.jobId;
                     return cy.headlessCreateObjects(groundTruthFrames.map((frame, index) => {
                         const gtRect = groundTruthRectangles[index];
                         return {
@@ -449,9 +449,9 @@ context('Ground truth jobs', () => {
                             frame,
                             points: [gtRect.firstX, gtRect.firstY, gtRect.secondX, gtRect.secondY],
                         };
-                    }), groundTruthJobID);
+                    }), groundTruthJobId);
                 }).then(() => {
-                    cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+                    cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
                     cy.get('.cvat-canvas-container').should('exist');
 
                     cy.changeWorkspace('Review');
@@ -466,7 +466,7 @@ context('Ground truth jobs', () => {
 
                     cy.interactMenu('Open the task');
                     cy.get('.cvat-task-job-list').within(() => {
-                        cy.contains('a', `Job #${jobID}`).click();
+                        cy.contains('a', `Job #${jobId}`).click();
                     });
                     groundTruthFrames.forEach((frame) => {
                         cy.goCheckFrameNumber(frame);
@@ -486,7 +486,7 @@ context('Ground truth jobs', () => {
                     // which is the condition for reproducing the bug
                 );
                 cy.get('.cvat-task-job-list').within(() => {
-                    cy.contains('a', `Job #${groundTruthJobID}`).click();
+                    cy.contains('a', `Job #${groundTruthJobId}`).click();
                 });
             });
             it('Check crashing while navigating through GT job frames (#9095) ', () => {
@@ -494,7 +494,7 @@ context('Ground truth jobs', () => {
                 cy.get('.ant-notification-notice-error').should('not.exist');
             });
             after(() => {
-                cy.headlessDeleteTask(taskID);
+                cy.headlessDeleteTask(taskId);
             });
         });
         describe('Check metadata in a GT job is correct', () => {
@@ -520,19 +520,19 @@ context('Ground truth jobs', () => {
                 }, archiveName, newTaskName);
                 cy.then(() => {
                     cy.location('pathname').should('match', /\/tasks\/\d+/).then((path) => {
-                        taskID = Number(path.split('/').slice(-1)[0]);
+                        taskId = Number(path.split('/').slice(-1)[0]);
                     });
                 });
             });
             after(() => {
-                cy.headlessDeleteTask(taskID);
+                cy.headlessDeleteTask(taskId);
             });
 
             it('Incorrect data returned in frames meta response for a GT job (#9097)', () => {
                 cy.get('.cvat-tag-ground-truth').should('be.visible').and('have.length', 1);
                 cy.intercept('GET', '/api/jobs/**/data/meta**').as('getMeta');
-                cy.getJobIDFromIdx(1).then((gtJobID) => {
-                    cy.get('.cvat-job-item').contains('a', `Job #${gtJobID}`).click();
+                cy.getJobIdFromIdx(1).then((gtJobId) => {
+                    cy.get('.cvat-job-item').contains('a', `Job #${gtJobId}`).click();
                 });
                 cy.wait('@getMeta').then((intercept) => {
                     const {
@@ -543,7 +543,7 @@ context('Ground truth jobs', () => {
                         },
                     } = intercept;
                     expect(statusCode).to.equal(200);
-                    cy.request(`/api/tasks/${taskID}/validation_layout`)
+                    cy.request(`/api/tasks/${taskId}/validation_layout`)
                         .then((validationResponse) => {
                             const validationFrames = validationResponse.body.validation_frames;
                             expect(includedFrames).to.have.ordered.members(validationFrames);

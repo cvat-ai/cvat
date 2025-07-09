@@ -58,8 +58,8 @@ context('New organization pipeline.', () => {
     const taskName = `New annotation task for ${labelName}`;
     const newTaskName = labelName;
     const serverFiles = ['archive.zip'];
-    let taskID = null;
-    let jobID = null;
+    let taskId = null;
+    let jobId = null;
 
     const createCuboidShape2Points = {
         points: 'From rectangle',
@@ -187,16 +187,16 @@ context('New organization pipeline.', () => {
                         values: [project.attrValue],
                     }],
                 }],
-            }).then(({ projectID }) => {
+            }).then(({ projectId }) => {
                 const { taskSpec, dataSpec, extras } = defaultTaskSpec({
                     labelName, taskName, serverFiles,
                 });
                 delete taskSpec.labels;
-                taskSpec.project_id = projectID;
+                taskSpec.project_id = projectId;
                 cy.headlessCreateTask(
                     taskSpec, dataSpec, extras,
                 ).then((taskResponse) => {
-                    taskID = taskResponse.taskID;
+                    taskId = taskResponse.taskId;
                 });
             });
             cy.goToProjectsList();
@@ -258,9 +258,9 @@ context('New organization pipeline.', () => {
         it('Open the task, assign one of jobs to the third user. Rename the task.', () => {
             cy.goToTaskList();
             cy.openTask(taskName);
-            cy.getJobIDFromIdx(0).then((_jobID) => {
-                jobID = _jobID;
-                cy.assignJobToUser(_jobID, thirdUserName);
+            cy.getJobIdFromIdx(0).then((_jobId) => {
+                jobId = _jobId;
+                cy.assignJobToUser(_jobId, thirdUserName);
             });
             cy.renameTask(taskName, newTaskName);
         });
@@ -273,7 +273,7 @@ context('New organization pipeline.', () => {
         });
 
         it('User can open the job using direct link. Organization is set automatically. Create an object, save annotations.', () => {
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
             cy.get('.cvat-canvas-container').should('exist');
             cy.get('.cvat-header-menu-user-dropdown-organization').should('have.text', organizationParams.shortName);
             cy.createCuboid(createCuboidShape2Points);
@@ -310,7 +310,7 @@ context('New organization pipeline.', () => {
             cy.visit('/organization');
             cy.checkOrganizationParams(organizationParams);
             cy.checkOrganizationMembers(1, [thirdUserName]);
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
             cy.get('.cvat-canvas-container').should('exist');
             cy.get('.cvat_canvas_shape_cuboid').should('be.visible');
         });

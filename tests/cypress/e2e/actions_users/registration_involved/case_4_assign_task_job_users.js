@@ -24,8 +24,8 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
     const directoryToArchive = imagesFolder;
     const secondUserName = 'Seconduser';
     const thirdUserName = 'Thirduser';
-    let taskID;
-    let jobID;
+    let taskId = null;
+    let jobId = null;
 
     const secondUser = {
         firstName: `${secondUserName} fitstname`,
@@ -115,12 +115,12 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
             cy.goToTaskList();
             cy.openTask(taskName);
             cy.assignTaskToUser(secondUserName);
-            cy.getJobIDFromIdx(0).then((_jobID) => cy.assignJobToUser(_jobID, secondUserName));
+            cy.getJobIdFromIdx(0).then((_jobId) => cy.assignJobToUser(_jobId, secondUserName));
             cy.openJob();
             // Getting the task and job id
             cy.url().then((url) => {
-                jobID = Number(url.split('/').slice(-1)[0]);
-                taskID = Number(url.split('/').slice(-3)[0]);
+                jobId = Number(url.split('/').slice(-1)[0]);
+                taskId = Number(url.split('/').slice(-3)[0]);
             });
             cy.logout();
         });
@@ -129,7 +129,7 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
             cy.login(secondUserName, secondUser.password);
             cy.contains('strong', taskName).should('exist');
             cy.openTask(taskName);
-            cy.getJobIDFromIdx(0).then((_jobID) => cy.assignJobToUser(_jobID, null));
+            cy.getJobIdFromIdx(0).then((_jobId) => cy.assignJobToUser(_jobId, null));
             cy.logout();
         });
 
@@ -142,14 +142,14 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
         it('First user login and assign the job to the third user. Logout', () => {
             cy.login();
             cy.openTask(taskName);
-            cy.getJobIDFromIdx(0).then((_jobID) => cy.assignJobToUser(_jobID, thirdUserName));
+            cy.getJobIdFromIdx(0).then((_jobId) => cy.assignJobToUser(_jobId, thirdUserName));
             cy.logout();
         });
 
         it('The third user can not open the task, but can open the job by a direct link.', () => {
             cy.login(thirdUserName, thirdUser.password);
             cy.get('.cvat-item-task-name').should('not.exist');
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
             cy.get('.cvat-canvas-container').should('exist');
 
             // Check issue "Info modal does not work if a job assigneed to somebody (4140)"

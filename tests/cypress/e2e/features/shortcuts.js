@@ -16,8 +16,8 @@ context('Customizable Shortcuts', () => {
         secondX: 350,
         secondY: 450,
     };
-    let taskID = null;
-    let jobID = null;
+    let taskId = null;
+    let jobId = null;
 
     const task = {
         labels: [
@@ -62,8 +62,8 @@ context('Customizable Shortcuts', () => {
         cy.get('.cvat-tasks-page').should('exist').and('be.visible');
         cy.url().should('contain', '/tasks');
         cy.headlessCreateTask(task, storage).then((response) => {
-            taskID = response.taskID;
-            [jobID] = response.jobIDs;
+            taskId = response.taskId;
+            [jobId] = response.jobIds;
         });
     });
 
@@ -208,7 +208,7 @@ context('Customizable Shortcuts', () => {
 
     describe('Tag Annotation, Attribute Annotation and Labels', () => {
         it('Tag Annotation Mode, Dynamic Titles and Description', () => {
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
             cy.get('.cvat-canvas-container').should('exist').and('be.visible');
             cy.createRectangle(createRectangleShape2Points);
             cy.changeWorkspace('Tag annotation');

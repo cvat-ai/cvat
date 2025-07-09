@@ -9,8 +9,8 @@ context('Dump annotation if cuboid created.', () => {
     const issueId = '1568';
     const exportFormat = 'Datumaro';
 
-    let taskID = null;
-    let jobID = null;
+    let taskId = null;
+    let jobId = null;
     const labelName = 'label';
 
     before(() => {
@@ -29,8 +29,8 @@ context('Dump annotation if cuboid created.', () => {
             use_cache: true,
             sorting_method: 'lexicographical',
         }).then((response) => {
-            taskID = response.taskID;
-            [jobID] = response.jobIDs;
+            taskId = response.taskId;
+            [jobId] = response.jobIds;
 
             const cuboidPayload = {
                 objectType: 'shape',
@@ -45,8 +45,8 @@ context('Dump annotation if cuboid created.', () => {
                 occluded: false,
             };
 
-            cy.headlessCreateObjects([cuboidPayload], jobID);
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.headlessCreateObjects([cuboidPayload], jobId);
+            cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
             cy.get('.cvat-canvas-container').should('exist').and('be.visible');
         });
     });
@@ -72,12 +72,12 @@ context('Dump annotation if cuboid created.', () => {
 
     after(() => {
         cy.logout();
-        if (taskID) {
+        if (taskId) {
             cy.getAuthKey().then((response) => {
                 const authKey = response.body.key;
                 cy.request({
                     method: 'DELETE',
-                    url: `/api/tasks/${taskID}`,
+                    url: `/api/tasks/${taskId}`,
                     headers: {
                         Authorization: `Token ${authKey}`,
                     },

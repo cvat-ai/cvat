@@ -7,13 +7,13 @@
 import { projectName } from '../../support/const_project';
 
 context('Delete a project via actions.', () => {
-    const issueID = 2625;
+    const issueId = 2625;
 
     before(() => {
         cy.openProject(projectName);
     });
 
-    describe(`Testing "Issue ${issueID}"`, () => {
+    describe(`Testing "Issue ${issueId}"`, () => {
         it('Delete a project via actions.', () => {
             cy.deleteProjectViaActions(projectName);
         });

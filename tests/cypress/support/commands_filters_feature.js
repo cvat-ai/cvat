@@ -14,23 +14,23 @@ Cypress.Commands.add('checkFiltersModalOpened', () => {
     });
 });
 
-Cypress.Commands.add('collectGroupID', () => {
-    const groupDataID = [];
+Cypress.Commands.add('collectGroupId', () => {
+    const groupDataId = [];
     cy.get('.group').then(($group) => {
         for (let i = 0; i < $group.length; i++) {
-            groupDataID.push($group[i].dataset.id);
+            groupDataId.push($group[i].dataset.id);
         }
-        return groupDataID;
+        return groupDataId;
     });
 });
 
-Cypress.Commands.add('collectRuleID', () => {
-    const ruleDataID = [];
+Cypress.Commands.add('collectRuleId', () => {
+    const ruleDataId = [];
     cy.get('.rule').then(($rule) => {
         for (let i = 0; i < $rule.length; i++) {
-            ruleDataID.push($rule[i].dataset.id);
+            ruleDataId.push($rule[i].dataset.id);
         }
-        return ruleDataID;
+        return ruleDataId;
     });
 });
 
@@ -43,21 +43,21 @@ Cypress.Commands.add('clearFilters', () => {
 
 Cypress.Commands.add('addFiltersGroup', (groupIndex) => {
     cy.checkFiltersModalOpened();
-    cy.collectGroupID().then((groupIdIndex) => {
+    cy.collectGroupId().then((groupIdIndex) => {
         cy.get(`[data-id="${groupIdIndex[groupIndex]}"]`).contains('button', 'Add group').first().click();
     });
 });
 
 Cypress.Commands.add('addFiltersRule', (groupIndex) => {
     cy.checkFiltersModalOpened();
-    cy.collectGroupID().then((groupIdIndex) => {
+    cy.collectGroupId().then((groupIdIndex) => {
         cy.get(`[data-id="${groupIdIndex[groupIndex]}"]`).contains('button', 'Add rule').click();
     });
 });
 
 Cypress.Commands.add('setGroupCondition', (groupIndex, condition) => {
     cy.checkFiltersModalOpened();
-    cy.collectGroupID().then((groupIdIndex) => {
+    cy.collectGroupId().then((groupIdIndex) => {
         cy.get(`[data-id="${groupIdIndex[groupIndex]}"]`).first().within(() => {
             cy.get('.group--header').first().trigger('mouseover');
             cy.contains('button', condition).click({ force: true });
@@ -71,8 +71,8 @@ Cypress.Commands.add(
         groupIndex, ruleIndex, field, operator, valueSource, value, label, labelAttr, submit,
     }) => {
         cy.checkFiltersModalOpened();
-        cy.collectGroupID().then((groupIdIndex) => {
-            cy.collectRuleID().then((ruleIdIndex) => {
+        cy.collectGroupId().then((groupIdIndex) => {
+            cy.collectRuleId().then((ruleIdIndex) => {
                 cy.get(`[data-id="${groupIdIndex[groupIndex]}"]`)
                     .find(`[data-id="${ruleIdIndex[ruleIndex]}"]`)
                     .first()
