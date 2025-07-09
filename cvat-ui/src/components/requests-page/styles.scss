@@ -5,22 +5,10 @@
 @import 'base';
 
 .cvat-requests-page {
-    height: 100%;
-    padding-top: $grid-unit-size * 2;
-    padding-bottom: $grid-unit-size;
-
-    > div:nth-child(1) {
-        height: 90%;
-    }
-
-    > div:nth-child(2) {
-        padding-top: $grid-unit-size * 2;
-    }
+    @include cvat-resource-page;
 }
 
 .cvat-requests-list {
-    height: 100%;
-    overflow-y: auto;
     margin: $grid-unit-size;
 
     .ant-card .ant-card-body {

@@ -41,7 +41,7 @@ import {
     updateAnnotationsAsync,
     createAnnotationsAsync,
 } from 'actions/annotation-actions';
-import DetectorRunner, { DetectorRequestBody } from 'components/model-runner-modal/detector-runner';
+import DetectorRunner, { AnnotateTaskRequestBody } from 'components/model-runner-modal/detector-runner';
 import LabelSelector from 'components/label-selector/label-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import CVATMarkdown from 'components/common/cvat-markdown';
@@ -782,6 +782,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         });
 
                         const response = await core.lambda.call(jobInstance.taskId, tracker, {
+                            type: 'init_tracking',
                             frame: frame - 1,
                             shapes: trackableObjects.shapes,
                             job: jobInstance.id,
@@ -829,8 +830,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         });
                         // eslint-disable-next-line no-await-in-loop
                         const response = await core.lambda.call(jobInstance.taskId, tracker, {
+                            type: 'track',
                             frame,
-                            shapes: trackableObjects.shapes,
                             states: trackableObjects.states,
                             job: jobInstance.id,
                         }) as TrackerResults;
@@ -1200,7 +1201,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 models={detectors}
                 labels={labels}
                 dimension={jobInstance.dimension}
-                runInference={async (model: MLModel, body: DetectorRequestBody) => {
+                runInference={async (model: MLModel, body: AnnotateTaskRequestBody) => {
                     function loadAttributes(
                         attributes: { spec_id: number; value: string }[],
                     ): Record<number, string> {
@@ -1214,7 +1215,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         const { cleanup, ...restOfBody } = body;
 
                         const result = await core.lambda.call(jobInstance.taskId, model, {
-                            ...restOfBody, frame, job: jobInstance.id,
+                            ...restOfBody, type: 'annotate_frame', frame, job: jobInstance.id,
                         }) as DetectorResults;
 
                         const tagStates = result.tags.map((tag) => {

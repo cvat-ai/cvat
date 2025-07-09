@@ -28,31 +28,34 @@ context('Search frame by filename', () => {
         return cy.then(() => {
             const actualIndicesWrapped = [];
             const actualNamesWrapped = [];
-            return cy.get('.ant-select-dropdown').should('be.visible').then(() => {
-                for (let i = 0; i <= expectedCount; i++) {
-                    cy.realPress('ArrowDown');
-                    cy.get('.ant-select-item-option-active').invoke('text').then((text) => {
-                        const split = text.split(' ');
-                        assert(split.length === 2);
-                        const [frameIdRaw, frameFilename] = split;
-                        const frameId = parseInt(frameIdRaw.replace('#', ''), 10);
-                        actualIndicesWrapped.push(frameId);
-                        actualNamesWrapped.push(frameFilename);
-                    });
-                }
-            }).then(() => {
+            return cy.get('.ant-select-dropdown')
+                .should('be.visible')
+                .and('not.have.class', 'ant-slide-up')
+                .then(() => {
+                    for (let i = 0; i <= expectedCount; i++) {
+                        cy.realPress('ArrowDown');
+                        cy.get('.ant-select-item-option-active').invoke('text').then((text) => {
+                            const split = text.split(' ');
+                            assert(split.length === 2);
+                            const [frameIdRaw, frameFilename] = split;
+                            const frameId = parseInt(frameIdRaw.replace('#', ''), 10);
+                            actualIndicesWrapped.push(frameId);
+                            actualNamesWrapped.push(frameFilename);
+                        });
+                    }
+                }).then(() => {
                 // Check that we wrapped the list correctly and found the first filename again
-                cy.wrap(actualNamesWrapped[expectedCount]).should('equal', expectedResults[0]);
-                const actualNames = actualNamesWrapped.slice(0, actualNamesWrapped.length - 1);
-                const actualIndices = actualIndicesWrapped.slice(0, actualIndicesWrapped.length - 1);
+                    cy.wrap(actualNamesWrapped[expectedCount]).should('equal', expectedResults[0]);
+                    const actualNames = actualNamesWrapped.slice(0, actualNamesWrapped.length - 1);
+                    const actualIndices = actualIndicesWrapped.slice(0, actualIndicesWrapped.length - 1);
 
-                cy.wrap(actualNames).each((actualName, i) => {
-                    cy.wrap(actualName).should('equal', expectedResults[i]);
+                    cy.wrap(actualNames).each((actualName, i) => {
+                        cy.wrap(actualName).should('equal', expectedResults[i]);
+                    });
+                    cy.wrap(actualIndices).each((actualFrameId, i) => {
+                        cy.wrap(allNames[actualFrameId]).should('equal', expectedResults[i]);
+                    });
                 });
-                cy.wrap(actualIndices).each((actualFrameId, i) => {
-                    cy.wrap(allNames[actualFrameId]).should('equal', expectedResults[i]);
-                });
-            });
         });
     }
 

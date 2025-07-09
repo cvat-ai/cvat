@@ -27,6 +27,7 @@ from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
 from django.db.models import Prefetch, prefetch_related_objects
 from django.utils import timezone
+from django.utils.functional import cached_property
 from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
 from numpy import random
 from PIL import Image
@@ -2882,6 +2883,40 @@ class AnnotationSerializer(serializers.Serializer):
     group = serializers.IntegerField(min_value=0, allow_null=True, default=None)
     source = serializers.CharField(default='manual')
 
+    def _validate_id_absent(self, value):
+        if value is not None:
+            raise serializers.ValidationError("must be absent")
+        return value
+
+    def _validate_id_present(self, value):
+        if value is None:
+            raise serializers.ValidationError("must be present and not null")
+        return value
+
+    @cached_property
+    def validate_id(self):
+        # avoid circular import
+        from cvat.apps.dataset_manager.task import PatchAction
+
+        # It would've been better to determine the validator in `__init__`,
+        # but in a nested serializer the top-level context doesn't actually become
+        # accessible until after initialization.
+        if action := self.context.get("annotation_action"):
+            if action == PatchAction.CREATE:
+                return self._validate_id_absent
+            elif action == PatchAction.UPDATE:
+                # Logically, we should return _validate_id_present here.
+                # However, due to the way the implementation historically worked,
+                # passing annotations without IDs would work as a "create" operation.
+                # There are almost certainly clients relying on this, so keep allowing it.
+                return None
+            elif action == PatchAction.DELETE:
+                return self._validate_id_present
+            else:
+                assert False, f"Unknown action {action!r}"
+
+        return None
+
 class LabeledImageSerializer(AnnotationSerializer):
     attributes = AttributeValSerializer(many=True, default=[])
 
@@ -2918,11 +2953,59 @@ class ShapeSerializer(serializers.Serializer):
         allow_empty=True, required=False
     )
 
+    def validate(self, attrs):
+        shape_type = attrs["type"]
+
+        num_points = len(attrs.get("points", ()))
+
+        def bad_num_points_unless(condition: bool) -> None:
+            if not condition:
+                raise serializers.ValidationError(
+                    {"points": f"invalid length for shape type '{shape_type}'"}
+                )
+
+        if shape_type in {models.ShapeType.RECTANGLE, models.ShapeType.ELLIPSE}:
+            bad_num_points_unless(num_points == 4)
+        elif shape_type == models.ShapeType.POLYGON:
+            bad_num_points_unless(num_points >= 6 and num_points % 2 == 0)
+        elif shape_type == models.ShapeType.POLYLINE:
+            bad_num_points_unless(num_points >= 4 and num_points % 2 == 0)
+        elif shape_type == models.ShapeType.POINTS:
+            bad_num_points_unless(num_points >= 2 and num_points % 2 == 0)
+        elif shape_type == models.ShapeType.CUBOID:
+            bad_num_points_unless(num_points == 16)
+        elif shape_type == models.ShapeType.MASK:
+            bad_num_points_unless(num_points >= 5)
+        elif shape_type == models.ShapeType.SKELETON:
+            bad_num_points_unless(num_points == 0)
+        else:
+            assert False, f"Unknown shape type '{shape_type}'"
+
+        return attrs
+
 class SubLabeledShapeSerializer(ShapeSerializer, AnnotationSerializer):
     attributes = AttributeValSerializer(many=True, default=[])
 
 class LabeledShapeSerializer(SubLabeledShapeSerializer):
     elements = SubLabeledShapeSerializer(many=True, required=False)
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+
+        num_elements = len(attrs.get("elements", ()))
+
+        if attrs["type"] == models.ShapeType.SKELETON:
+            if num_elements == 0:
+                raise serializers.ValidationError(
+                    {"elements": "at least one required for skeleton shape"}
+                )
+        else:
+            if num_elements != 0:
+                raise serializers.ValidationError(
+                    {"elements": "not allowed for non-skeleton shape"}
+                )
+
+        return attrs
 
 def _convert_annotation(obj, keys):
     return OrderedDict([(key, obj[key]) for key in keys])

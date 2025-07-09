@@ -251,7 +251,7 @@ class Client:
         return (
             ("sessionid" in self.api_client.cookies)
             or ("csrftoken" in self.api_client.cookies)
-            or (self.api_client.default_headers.get("Authorization"))
+            or self.api_client.default_headers.get("Authorization")
         )
 
     def logout(self) -> None:

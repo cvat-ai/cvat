@@ -21,7 +21,7 @@ import sys
 import tempfile
 import urllib
 from datetime import timedelta
-from enum import Enum
+from enum import Enum, IntEnum
 
 from attr.converters import to_bool
 from corsheaders.defaults import default_headers
@@ -195,6 +195,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.middleware.gzip.GZipMiddleware",
     "cvat.apps.engine.middleware.RequestTrackingMiddleware",
+    "cvat.apps.engine.middleware.LastActivityMiddleware",
     "crum.CurrentRequestUserMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -284,10 +285,16 @@ redis_inmem_host = os.getenv("CVAT_REDIS_INMEM_HOST", "localhost")
 redis_inmem_port = os.getenv("CVAT_REDIS_INMEM_PORT", 6379)
 redis_inmem_password = os.getenv("CVAT_REDIS_INMEM_PASSWORD", "")
 
+
+class REDIS_INMEM_DATABASES(IntEnum):
+    RQ = 0
+    CACHE = 1
+
+
 REDIS_INMEM_SETTINGS = {
     "HOST": redis_inmem_host,
     "PORT": redis_inmem_port,
-    "DB": 0,
+    "DB": REDIS_INMEM_DATABASES.RQ,
     "PASSWORD": redis_inmem_password,
 }
 
@@ -575,7 +582,8 @@ CVAT_PREVIEW_CACHE_TTL = 3600 * 24 * 7  # 7 days
 
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": f"redis://:{urllib.parse.quote(redis_inmem_password)}@{redis_inmem_host}:{redis_inmem_port}/{REDIS_INMEM_DATABASES.CACHE}",
     },
     "media": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
@@ -787,3 +795,5 @@ if ONE_RUNNING_JOB_IN_QUEUE_PER_USER:
             "cron_string": "0 8 * * *",
         }
     )
+
+USER_LAST_ACTIVITY_UPDATE_MIN_INTERVAL = timedelta(days=1)
