@@ -66,7 +66,7 @@ class ModelHandler:
             state = self.decode_state(state)
             state = siamese_track(state, image, mask_enable=True,
                 refine_enable=True, device=self.device)
-            shape = state['ploygon'].flatten().tolist()
+            shape = state['ploygon'].flatten().tolist() # spellchecker:disable-line
             state = self.encode_state(state)
 
         return shape, state
