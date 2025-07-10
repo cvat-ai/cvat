@@ -24,18 +24,20 @@ hugo110 = "hugo-0.110"  # used for all documentation builds
 
 
 def prepare_tags(repo: git.Repo):
-    # Get all non-prerelease tags
-    valid_tags = []
+    # Group tags by minor version (major.minor) and keep only the latest patch for each
+    minor_versions = {}
     for tag in repo.tags:
         tag_version = version.parse(tag.name)
         if not tag_version.is_prerelease:
-            valid_tags.append(tag)
+            minor_key = (tag_version.major, tag_version.minor)
+            if minor_key not in minor_versions or tag_version > version.parse(minor_versions[minor_key].name):
+                minor_versions[minor_key] = tag
 
-    # Sort tags by version in descending order (newest first)
-    valid_tags.sort(key=lambda t: version.parse(t.name), reverse=True)
+    # Sort minor versions by version in descending order (newest first)
+    sorted_tags = sorted(minor_versions.values(), key=lambda t: version.parse(t.name), reverse=True)
 
-    # Return only the configured number of most recent tags
-    return valid_tags[:MAX_VERSIONS_TO_BUILD]
+    # Return only the configured number of most recent minor versions
+    return sorted_tags[:MAX_VERSIONS_TO_BUILD]
 
 
 def generate_versioning_config(filename, versions, url_prefix=""):
@@ -134,7 +136,6 @@ def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
 
 
 def validate_env():
-    # Only validate hugo110 since we use it for all builds now
     try:
         subprocess.run([hugo110, "version"], capture_output=True)  # nosec
     except (subprocess.CalledProcessError, FileNotFoundError) as ex:
