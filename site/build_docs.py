@@ -30,7 +30,9 @@ def prepare_tags(repo: git.Repo):
         tag_version = version.parse(tag.name)
         if not tag_version.is_prerelease:
             minor_key = (tag_version.major, tag_version.minor)
-            if minor_key not in minor_versions or tag_version > version.parse(minor_versions[minor_key].name):
+            if minor_key not in minor_versions or tag_version > version.parse(
+                minor_versions[minor_key].name
+            ):
                 minor_versions[minor_key] = tag
 
     # Sort minor versions by version in descending order (newest first)
