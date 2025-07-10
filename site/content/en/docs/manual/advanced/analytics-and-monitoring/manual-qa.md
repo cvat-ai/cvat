@@ -137,7 +137,7 @@ To correct annotation issues as a reviewer, do the following:
 3. In the top right corner, from the drop-down list,
    select **Standard**.
 
-   ![Change job status](/images/switch_to_standart_mode.jpg)
+   ![Change job status](/images/switch_to_standard_mode.jpg)
 
 ## Issues navigation and interface
 

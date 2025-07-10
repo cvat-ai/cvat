@@ -76,7 +76,7 @@ To convert shapes, do the following:
 6. (Optional) Select an option from **Or choose one of the predefined options** to apply the action.
 7. Click **Run**. <br> A progress bar will appear. You may abort the process by clicking **Cancel** until the process commits modified objects at the end of pipeline.
 
-   ![Progress bar for shapes converter with defined parameters](/images/shapes-coverter-action-run.jpg)
+   ![Progress bar for shapes converter with defined parameters](/images/shapes-converter-action-run.jpg)
 
 > **Note:** Once the action is applied, it cannot be undone.
 
