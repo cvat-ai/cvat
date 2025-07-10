@@ -16,6 +16,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.41.0'></a>
+## \[2.41.0\] - 2025-07-09
+
+### Added
+
+- Page size selector for different resource pages
+  (<https://github.com/cvat-ai/cvat/pull/9527>)
+
+- Selector that allows inline editing of the following fields from card views: `assignee`, `state`, and `stage`.
+    (<https://github.com/cvat-ai/cvat/pull/9543>)
+
+### Changed
+
+- Improved email templates for email confirmation and organization invitation
+  (<https://github.com/cvat-ai/cvat/pull/9567>)
+
+- \[CLI\] Reduced log clutter in the `function run-agent` command
+  (<https://github.com/cvat-ai/cvat/pull/9570>)
+
+- The `PATCH` and `PUT` methods on the `/api/(tasks|jobs)/<id>/annotations`
+  paths now verify that annotation IDs are present/absent, depending on the
+  action
+  (<https://github.com/cvat-ai/cvat/pull/9583>)
+
+- Changed the default Django cache backend from LocMem to Redis
+  (<https://github.com/cvat-ai/cvat/pull/9581>)
+
+- Unified design of actions menu on organization page to match style of other action menus
+  (<https://github.com/cvat-ai/cvat/pull/9614>)
+
+### Deprecated
+
+- \[Server API\] Token authentication
+  (<https://github.com/cvat-ai/cvat/pull/9568>)
+
+### Fixed
+
+- Fixing COCO keypoints export for case when some keypoints are absent
+  (<https://github.com/cvat-ai/cvat/pull/9565>)
+
+- Incorrect logo in email template for email confirmation
+  (<https://github.com/cvat-ai/cvat/pull/9567>)
+
+- Fixed LDAP as an issue was formed with the wrong arguments being apart of the function definition
+  (<https://github.com/cvat-ai/cvat/pull/9478>)
+
+- \[Server API\] Actualized outdated API schema for token and session authentication
+  (<https://github.com/cvat-ai/cvat/pull/9568>)
+
+- Low performance in `GET /api/jobs(tasks)/<id>/annotations`
+  when a target resource have many tracks with attributes, especially mutable
+  (<https://github.com/cvat-ai/cvat/pull/9617>)
+
+- Shortcuts cannot be properly configured in tag annotation mode
+  (<https://github.com/cvat-ai/cvat/pull/9625>)
+
+- Setting "Automatically go to the next frame" does not apply when the first tag is added
+  on tag annotation workspace
+  (<https://github.com/cvat-ai/cvat/pull/9625>)
+
 <a id='changelog-2.40.1'></a>
 ## \[2.40.1\] - 2025-07-07
 
