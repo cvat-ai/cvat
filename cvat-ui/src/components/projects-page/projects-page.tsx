@@ -26,6 +26,7 @@ export default function ProjectsPageComponent(): JSX.Element {
     const query = useSelector((state: CombinedState) => state.projects.gettingQuery);
     const tasksQuery = useSelector((state: CombinedState) => state.projects.tasksGettingQuery);
     const importing = useSelector((state: CombinedState) => state.import.projects.backup.importing);
+    const bulkFetching = useSelector((state: CombinedState) => state.selection.fetching);
     const [isMounted, setIsMounted] = useState(false);
     const isAnySearch = anySearch<ProjectsQuery>(query);
 
@@ -87,7 +88,7 @@ export default function ProjectsPageComponent(): JSX.Element {
                 selectedCount={selectedCount}
                 onSelectAll={onSelectAll}
             />
-            { fetching ? (
+            { fetching && !bulkFetching ? (
                 <div className='cvat-empty-project-list'>
                     <Spin size='large' className='cvat-spinner' />
                 </div>

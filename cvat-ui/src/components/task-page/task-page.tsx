@@ -37,12 +37,14 @@ function TaskPageComponent(): JSX.Element {
         deletes,
         updates,
         jobsFetching,
+        bulkFetching,
     } = useSelector((state: CombinedState) => ({
         deletes: state.tasks.activities.deletes,
         updates: state.tasks.activities.updates,
         jobsFetching: state.jobs.fetching,
+        bulkFetching: state.selection.fetching,
     }), shallowEqual);
-    const isTaskUpdating = updates[id] || jobsFetching;
+    const isTaskUpdating = (updates[id] || jobsFetching) && !bulkFetching;
 
     const receieveTask = (): Promise<Task[]> => {
         if (Number.isInteger(id)) {

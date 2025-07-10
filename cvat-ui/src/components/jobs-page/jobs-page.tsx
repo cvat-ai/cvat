@@ -31,6 +31,7 @@ function JobsPageComponent(): JSX.Element {
     const count = useSelector((state: CombinedState) => state.jobs.count);
     const allJobIds = useSelector((state: CombinedState) => state.jobs.current.map((j) => j.id));
     const selectedCount = useSelector((state: CombinedState) => state.selection.selected.length);
+    const bulkFetching = useSelector((state: CombinedState) => state.selection.fetching);
     const onSelectAll = useCallback(() => {
         dispatch(selectionActions.selectResources(allJobIds));
     }, [allJobIds]);
@@ -114,7 +115,7 @@ function JobsPageComponent(): JSX.Element {
                     );
                 }}
             />
-            {fetching ? <Spin size='large' className='cvat-spinner' /> : content}
+            {fetching && !bulkFetching ? <Spin size='large' className='cvat-spinner' /> : content}
         </div>
     );
 }

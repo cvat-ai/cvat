@@ -158,7 +158,7 @@ function JobItem(props: Readonly<Props>): JSX.Element {
             onCollapseChange(job.id, Array.isArray(keys) ? keys.length === 0 : keys === '');
         }
     }, [onCollapseChange]);
-    const consensusJobsPresent = (childJobs as Job[]).length > 0;
+
     const card = (
         <Card
             className={`cvat-job-item${selected ? ' cvat-item-selected' : ''}`}
@@ -306,7 +306,7 @@ function JobItem(props: Readonly<Props>): JSX.Element {
     return (
         <Col span={24}>
             {
-                consensusJobsPresent ? (
+                job.parentJobId === null ? (
                     <JobActionsComponent
                         jobInstance={job}
                         consensusJobsPresent={(childJobs as Job[]).length > 0}

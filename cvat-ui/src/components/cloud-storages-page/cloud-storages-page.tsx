@@ -28,6 +28,7 @@ export default function StoragesPageComponent(): JSX.Element {
     const fetching = useSelector((state: CombinedState) => state.cloudStorages.fetching);
     const current = useSelector((state: CombinedState) => state.cloudStorages.current);
     const query = useSelector((state: CombinedState) => state.cloudStorages.gettingQuery);
+    const bulkFetching = useSelector((state: CombinedState) => state.selection.fetching);
 
     const updatedQuery = useResourceQuery<CloudStoragesQuery>(query, { pageSize: 12 });
 
@@ -108,7 +109,7 @@ export default function StoragesPageComponent(): JSX.Element {
                 selectedCount={selectedCount}
                 onSelectAll={onSelectAll}
             />
-            { fetching ? (
+            { fetching && !bulkFetching ? (
                 <Row className='cvat-cloud-storages-page' justify='center' align='middle'>
                     <Spin size='large' />
                 </Row>

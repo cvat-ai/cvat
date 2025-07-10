@@ -25,6 +25,7 @@ function ModelsPageComponent(): JSX.Element {
     const fetching = useSelector((state: CombinedState) => state.models.fetching);
     const query = useSelector((state: CombinedState) => state.models.query);
     const totalCount = useSelector((state: CombinedState) => state.models.totalCount);
+    const bulkFetching = useSelector((state: CombinedState) => state.selection.fetching);
 
     const updatedQuery = useResourceQuery<ModelsQuery>(query, { pageSize: 12 });
 
@@ -95,7 +96,7 @@ function ModelsPageComponent(): JSX.Element {
                     );
                 }}
             />
-            { fetching ? (
+            { fetching && !bulkFetching ? (
                 <div className='cvat-empty-models-list'>
                     <Spin size='large' className='cvat-spinner' />
                 </div>

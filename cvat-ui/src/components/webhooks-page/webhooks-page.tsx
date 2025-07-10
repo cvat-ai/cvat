@@ -34,6 +34,7 @@ function WebhooksPage(): JSX.Element | null {
     const fetching = useSelector((state: CombinedState) => state.webhooks.fetching);
     const totalCount = useSelector((state: CombinedState) => state.webhooks.totalCount);
     const query = useSelector((state: CombinedState) => state.webhooks.query);
+    const bulkFetching = useSelector((state: CombinedState) => state.selection.fetching);
 
     const projectsMatch = useRouteMatch<ProjectRouteMatch>({ path: '/projects/:id/webhooks' });
 
@@ -141,7 +142,7 @@ function WebhooksPage(): JSX.Element | null {
                     );
                 }}
             />
-            { fetching ? (
+            { fetching && !bulkFetching ? (
                 <div className='cvat-empty-webhooks-list'>
                     <Spin size='large' className='cvat-spinner' />
                 </div>
