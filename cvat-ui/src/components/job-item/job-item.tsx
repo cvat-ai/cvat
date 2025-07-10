@@ -131,10 +131,10 @@ function JobItem(props: Readonly<Props>): JSX.Element {
     const jobName = `Job #${job.id}`;
 
     let childJobViews: React.JSX.Element[] = [];
-    if (childJobs) {
+    if (childJobs && childJobs.length > 0) {
         const sortedChildJobs = [...childJobs].sort((a, b) => a.id - b.id);
         childJobViews = sortedChildJobs.map((eachJob: Job) => (
-            <JobItem key={eachJob.id} job={eachJob} task={task} onJobUpdate={onJobUpdate} />
+            <JobItem key={eachJob.id} job={eachJob} task={task} onJobUpdate={onJobUpdate} selected={selected} />
         ));
     }
 

@@ -32,7 +32,7 @@ function JobsPageComponent(): JSX.Element {
     const allJobIds = useSelector((state: CombinedState) => state.jobs.current.map((j) => j.id));
     const selectedCount = useSelector((state: CombinedState) => state.selection.selected.length);
     const onSelectAll = useCallback(() => {
-        dispatch(selectionActions.selectAllResources(allJobIds));
+        dispatch(selectionActions.selectResources(allJobIds));
     }, [allJobIds]);
 
     const updatedQuery = useResourceQuery<JobsQuery>(query, { pageSize: 12 });

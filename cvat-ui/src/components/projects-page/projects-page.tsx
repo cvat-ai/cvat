@@ -32,7 +32,7 @@ export default function ProjectsPageComponent(): JSX.Element {
     const allProjectIds = useSelector((state: CombinedState) => state.projects.current.map((p) => p.id));
     const selectedCount = useSelector((state: CombinedState) => state.selection.selected.length);
     const onSelectAll = useCallback(() => {
-        dispatch(selectionActions.selectAllResources(allProjectIds));
+        dispatch(selectionActions.selectResources(allProjectIds));
     }, [allProjectIds]);
 
     const updatedQuery = useResourceQuery<ProjectsQuery>(query, { pageSize: 12 });

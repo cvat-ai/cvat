@@ -108,6 +108,12 @@ function JobListComponent(props: Readonly<Props>): JSX.Element {
         }
     }, [taskInstance]);
 
+    const jobChildIdMapping = Object.keys(jobChildMapping).reduce((acc, jobId) => {
+        const childIds = jobChildMapping[Number(jobId)].map((job) => job.id);
+        acc[Number(jobId)] = childIds;
+        return acc;
+    }, {} as Record<number, number[]>);
+
     const [uncollapsedJobs, setUncollapsedJobs] = useState<Record<number, boolean>>({});
     useEffect(() => {
         const savedState = localStorage.getItem('uncollapsedJobs');
@@ -142,7 +148,11 @@ function JobListComponent(props: Readonly<Props>): JSX.Element {
     const dispatch = useDispatch();
     const selectedCount = useSelector((state: CombinedState) => state.selection.selected.length);
     const onSelectAll = useCallback(() => {
-        dispatch(selectionActions.selectAllResources(viewedJobs.map((job) => job.id)));
+        const allJobIds = viewedJobs.flatMap((job) => [
+            job.id,
+            ...(jobChildIdMapping[job.id] || []),
+        ]);
+        dispatch(selectionActions.selectResources(allJobIds));
     }, [dispatch, filteredJobs]);
 
     return (
@@ -198,7 +208,7 @@ function JobListComponent(props: Readonly<Props>): JSX.Element {
             {jobIds.length ? (
                 <div className='cvat-task-job-list'>
                     <Col className='cvat-jobs-list'>
-                        <BulkWrapper currentResourceIDs={jobIds}>
+                        <BulkWrapper currentResourceIDs={jobIds} parentToChildrenMap={jobChildIdMapping}>
                             {(selectProps) => (
                                 viewedJobs
                                     .map((job: Job, idx: number) => {

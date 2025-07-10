@@ -134,7 +134,7 @@ export default function ProjectPageComponent(): JSX.Element {
 
     const allTaskIds = tasks.map((t) => t.id);
     const onSelectAll = useCallback(() => {
-        dispatch(selectionActions.selectAllResources(allTaskIds));
+        dispatch(selectionActions.selectResources(allTaskIds));
     }, [allTaskIds]);
 
     if (fechingProject || id in deletes) {

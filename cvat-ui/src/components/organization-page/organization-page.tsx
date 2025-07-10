@@ -68,7 +68,7 @@ function OrganizationPage(): JSX.Element | null {
 
     const allMembeshipsIds = members.map((m) => m.id);
     const onSelectAll = useCallback(() => {
-        dispatch(selectionActions.selectAllResources(allMembeshipsIds));
+        dispatch(selectionActions.selectResources(allMembeshipsIds));
     }, [allMembeshipsIds]);
 
     useEffect(() => {

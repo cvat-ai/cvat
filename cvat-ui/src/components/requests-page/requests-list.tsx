@@ -43,7 +43,7 @@ function RequestsList(props: Readonly<Props>): JSX.Element {
     const requestIds = requestViews.map((request) => request.id);
     const selectedCount = useSelector((state: CombinedState) => state.selection.selected.length);
     const onSelectAll = useCallback(() => {
-        dispatch(selectionActions.selectAllResources(requestIds));
+        dispatch(selectionActions.selectResources(requestIds));
     }, [requestIds]);
 
     return (

@@ -53,7 +53,7 @@ function ModelsPageComponent(): JSX.Element {
     ].map((m) => m.id));
     const selectedCount = useSelector((state: CombinedState) => state.selection.selected.length);
     const onSelectAll = useCallback(() => {
-        dispatch(selectionActions.selectAllResources(allModelIds));
+        dispatch(selectionActions.selectResources(allModelIds));
     }, [allModelIds]);
 
     const content = (totalCount && !pageOutOfBounds) ? (

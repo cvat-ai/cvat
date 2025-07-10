@@ -5,9 +5,11 @@ import React, { useRef, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
     selectionActions,
+    SelectionActionsTypes,
 } from 'actions/selection-actions';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
+import { Action } from 'redux';
 
 export interface BulkSelectProps {
     selected: boolean;
@@ -16,6 +18,7 @@ export interface BulkSelectProps {
 
 interface BulkWrapperProps {
     currentResourceIDs: (number | string)[];
+    parentToChildrenMap?: Record<number, number[]>;
     children: (selectProps: (id: number | string, idx: number) => BulkSelectProps) => React.ReactNode;
 }
 
@@ -40,7 +43,7 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
         SELECT_ALL: (event?: KeyboardEvent) => {
             event?.preventDefault();
             const { currentResourceIDs } = props;
-            dispatch(selectionActions.selectAllResources(currentResourceIDs));
+            dispatch(selectionActions.selectResources(currentResourceIDs));
         },
     };
 
@@ -69,38 +72,67 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
         };
     }, [dispatch]);
 
+    const { parentToChildrenMap = {} } = props;
+
+    function handleChildren(rangeIds: (number | string)[]): (number | string)[] {
+        const childIds = [];
+        for (const resourceId of rangeIds) {
+            if (parentToChildrenMap[resourceId as number]) {
+                const childrenIDs = parentToChildrenMap[resourceId as number];
+                childIds.push(...childrenIDs);
+            }
+        }
+        return childIds;
+    }
+
+    function updateResources(
+        rangeIds: (number | string)[],
+        action: (ids: (number | string)[], appendSelection: boolean) => Action<SelectionActionsTypes>,
+        reset = true,
+        appendSelection = false,
+    ): void {
+        if (reset) {
+            dispatch(selectionActions.clearSelectedResources());
+        }
+        const childrenIds = handleChildren(rangeIds);
+        const allIds = rangeIds.concat(childrenIds);
+        dispatch(action(allIds, appendSelection));
+    }
+
     const selectProps = (
-        resourceID: number | string,
+        resourceId: number | string,
         idx: number,
     ): BulkSelectProps => {
-        const isSelected = selectedIds.includes(resourceID);
+        const isSelected = selectedIds.includes(resourceId);
         const { currentResourceIDs } = props;
         return {
             selected: isSelected,
             onClick: (event?: React.MouseEvent) => {
                 if (event?.shiftKey) {
                     // Shift+Click: select range
-                    const allIDs = currentResourceIDs;
+                    const allIds = currentResourceIDs;
                     const clickedIndex = idx;
                     const lastIndex = lastSelectedIndexRef.current ?? idx;
                     const [start, end] = [lastIndex, clickedIndex].sort((a, b) => a - b);
-                    const rangeIDs = allIDs.slice(start, end + 1);
-                    dispatch(selectionActions.clearSelectedResources());
-                    dispatch(selectionActions.selectAllResources(rangeIDs));
+                    const rangeIds = allIds.slice(start, end + 1);
+                    updateResources(rangeIds, selectionActions.selectResources);
                     lastSelectedIndexRef.current ??= idx;
                     return true;
                 }
                 if (event?.ctrlKey) {
                     // Ctrl+Click: toggle selection without clearing
-                    if (isSelected) {
-                        dispatch(selectionActions.deselectResource(resourceID));
-                    } else {
-                        dispatch(selectionActions.selectResource(resourceID));
-                    }
+                    updateResources(
+                        [resourceId],
+                        isSelected ? selectionActions.deselectResources : selectionActions.selectResources,
+                        false,
+                        true,
+                    );
+
                     lastSelectedIndexRef.current = idx;
                     return true;
                 }
-                // Regular click: clear
+
+                // Regular click: reset selection
                 dispatch(selectionActions.clearSelectedResources());
                 lastSelectedIndexRef.current = null;
                 return false;

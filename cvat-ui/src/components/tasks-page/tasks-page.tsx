@@ -41,7 +41,7 @@ function TasksPageComponent(props: Readonly<Props>): JSX.Element {
     const allTaskIds = useSelector((state: CombinedState) => state.tasks.current.map((t) => t.id));
     const selectedCount = useSelector((state: CombinedState) => state.selection.selected.length);
     const onSelectAll = useCallback(() => {
-        dispatch(selectionActions.selectAllResources(allTaskIds));
+        dispatch(selectionActions.selectResources(allTaskIds));
     }, [dispatch, allTaskIds]);
 
     const updatedQuery = useResourceQuery<TasksQuery>(query);

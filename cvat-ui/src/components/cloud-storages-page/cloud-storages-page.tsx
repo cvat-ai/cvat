@@ -57,7 +57,7 @@ export default function StoragesPageComponent(): JSX.Element {
     const allStorageIds = useSelector((state: CombinedState) => state.cloudStorages.current.map((s) => s.id));
     const selectedCount = useSelector((state: CombinedState) => state.selection.selected.length);
     const onSelectAll = useCallback(() => {
-        dispatch(selectionActions.selectAllResources(allStorageIds));
+        dispatch(selectionActions.selectResources(allStorageIds));
     }, [allStorageIds]);
 
     const isAnySearch = anySearch<CloudStoragesQuery>(query);

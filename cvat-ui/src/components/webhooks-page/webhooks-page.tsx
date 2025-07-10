@@ -77,7 +77,7 @@ function WebhooksPage(): JSX.Element | null {
     const allWebhookIds = useSelector((state: CombinedState) => state.webhooks.current.map((w) => w.id));
     const selectedCount = useSelector((state: CombinedState) => state.selection.selected.length);
     const onSelectAll = useCallback(() => {
-        dispatch(selectionActions.selectAllResources(allWebhookIds));
+        dispatch(selectionActions.selectResources(allWebhookIds));
     }, [allWebhookIds]);
 
     const content = totalCount ? (

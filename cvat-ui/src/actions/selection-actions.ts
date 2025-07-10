@@ -6,9 +6,8 @@ import { CombinedState } from 'reducers';
 import { ActionUnion, createAction, ThunkDispatch } from 'utils/redux';
 
 export enum SelectionActionsTypes {
-    SELECT_RESOURCE = 'SELECT_RESOURCE',
-    DESELECT_RESOURCE = 'DESELECT_RESOURCE',
-    SELECT_ALL_RESOURCES = 'SELECT_ALL_RESOURCES',
+    DESELECT_RESOURCES = 'DESELECT_RESOURCES',
+    SELECT_RESOURCES = 'SELECT_RESOURCES',
     CLEAR_SELECTED_RESOURCES = 'CLEAR_SELECTED_RESOURCES',
     SET_SELECTION_RESOURCE_TYPE = 'SET_SELECTION_RESOURCE_TYPE',
     START_BULK_ACTION = 'START_BULK_ACTION',
@@ -19,12 +18,10 @@ export enum SelectionActionsTypes {
 }
 
 export const selectionActions = {
-    selectResource: (resourceID: number | string) => createAction(
-        SelectionActionsTypes.SELECT_RESOURCE, { resourceID }),
-    deselectResource: (resourceID: number | string) => createAction(
-        SelectionActionsTypes.DESELECT_RESOURCE, { resourceID }),
-    selectAllResources: (resourceIDs: (number | string)[]) => createAction(
-        SelectionActionsTypes.SELECT_ALL_RESOURCES, { resourceIDs }),
+    deselectResources: (resourceIds: (number | string)[]) => createAction(
+        SelectionActionsTypes.DESELECT_RESOURCES, { resourceIds }),
+    selectResources: (resourceIds: (number | string)[], extendSelection = false) => createAction(
+        SelectionActionsTypes.SELECT_RESOURCES, { resourceIds, extendSelection }),
     clearSelectedResources: () => createAction(
         SelectionActionsTypes.CLEAR_SELECTED_RESOURCES),
     startBulkAction: () => createAction(
