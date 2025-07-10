@@ -93,12 +93,15 @@ class LoginViewEx(LoginView):
 
             # Check that user's email is verified.
             # If not, send a verification email.
-            if not has_verified_email(user):
-                send_email_confirmation(request, user)
-                # we cannot use redirect to ACCOUNT_EMAIL_VERIFICATION_SENT_REDIRECT_URL here
-                # because redirect will make a POST request and we'll get a 404 code
-                # (although in the browser request method will be displayed like GET)
-                return HttpResponseBadRequest("Unverified email")
+            if has_verified_email(user):
+                raise
+
+            send_email_confirmation(request, user)
+            # we cannot use redirect to ACCOUNT_EMAIL_VERIFICATION_SENT_REDIRECT_URL here
+            # because redirect will make a POST request and we'll get a 404 code
+            # (although in the browser request method will be displayed like GET)
+            return HttpResponseBadRequest("Unverified email")
+        # TODO: check why we need to handle exceptions here
         except Exception:  # nosec
             pass
 
