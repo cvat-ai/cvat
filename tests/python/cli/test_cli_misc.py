@@ -14,7 +14,7 @@ from cvat_sdk import Client
 from cvat_sdk.api_client import models
 from cvat_sdk.core.proxies.tasks import ResourceType
 
-from .util import TestCliBase, generate_images, https_reverse_proxy, monkeypatch_object, run_cli
+from .util import TestCliBase, generate_images, https_reverse_proxy, run_cli
 
 
 class TestCliMisc(TestCliBase):
@@ -96,11 +96,8 @@ class TestCliMisc(TestCliBase):
         assert personal_task_id in all_task_ids
         assert org_task_id in all_task_ids
 
-    def test_can_use_auth_env_variable(self):
+    def test_can_use_auth_env_variable(self, monkeypatch: pytest.MonkeyPatch):
         token = "CustomToken"
-
-        env = os.environ.copy()
-        env["CVAT_AUTH"] = token
 
         from cvat_sdk.api_client.rest import RESTClientObject
 
@@ -115,8 +112,9 @@ class TestCliMisc(TestCliBase):
             assert kwargs["headers"].get("Authorization") == f"Bearer {token}"
             return original_request(self, *args, **kwargs)
 
-        with monkeypatch_object(RESTClientObject, "request", patched_request):
-            self.run_cli("task", "ls", env=env, authenticate=False, expected_code=1)
+        monkeypatch.setenv("CVAT_AUTH", token),
+        monkeypatch.setattr(RESTClientObject, "request", patched_request),
+        self.run_cli("task", "ls", authenticate=False, expected_code=1)
 
         assert calls
 

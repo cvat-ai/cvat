@@ -6,7 +6,6 @@
 import contextlib
 import http.server
 import io
-import os
 import ssl
 import threading
 import unittest
@@ -26,20 +25,15 @@ def run_cli(
     test: Union[unittest.TestCase, Any],
     *args: str,
     expected_code: int = 0,
-    env: Optional[dict[str, str]] = None,
 ) -> None:
     from cvat_cli.__main__ import main
 
-    with contextlib.ExitStack() as es:
-        if env:
-            es.enter_context(process_env_changed(env))
-
-        if isinstance(test, unittest.TestCase):
-            # Unittest
-            test.assertEqual(expected_code, main(args), str(args))
-        else:
-            # Pytest case
-            assert expected_code == main(args)
+    if isinstance(test, unittest.TestCase):
+        # Unittest
+        test.assertEqual(expected_code, main(args), str(args))
+    else:
+        # Pytest case
+        assert expected_code == main(args)
 
 
 def generate_images(dst_dir: Path, count: int) -> list[Path]:
@@ -50,19 +44,6 @@ def generate_images(dst_dir: Path, count: int) -> list[Path]:
         filename.write_bytes(generate_image_file(filename.name).getvalue())
         filenames.append(filename)
     return filenames
-
-
-@contextlib.contextmanager
-def process_env_changed(env: dict[str, str]) -> Generator[None, None, None]:
-    prev_env = os.environ.copy()
-
-    try:
-        os.environ.clear()
-        os.environ.update(env)
-        yield
-    finally:
-        os.environ.clear()
-        os.environ.update(prev_env)
 
 
 @contextlib.contextmanager
@@ -142,7 +123,6 @@ class TestCliBase:
         expected_code: int = 0,
         organization: Optional[str] = None,
         authenticate: bool = True,
-        env: Optional[dict[str, str]] = None,
     ) -> str:
         common_args = [
             f"--server-host={self.host}",
@@ -163,23 +143,5 @@ class TestCliBase:
             cmd,
             *args,
             expected_code=expected_code,
-            env=env,
         )
         return self.stdout.getvalue()
-
-
-@contextlib.contextmanager
-def monkeypatch_object(obj: Any, attribute: str, value: Any):
-    # unittest's mock patch() requires an instance.
-    # Using wraps= doesn't forward the self for a class method.
-    # https://stackoverflow.com/questions/44777408/python-mocking-and-wrapping-methods-without-instantating-objects
-    # https://stackoverflow.com/questions/25608107/python-mock-patching-a-method-without-obstructing-implementation
-    assert hasattr(obj, attribute)
-
-    original = getattr(obj, attribute)
-
-    try:
-        setattr(obj, attribute, value)
-        yield
-    finally:
-        setattr(obj, attribute, original)
