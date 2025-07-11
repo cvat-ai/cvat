@@ -8,8 +8,8 @@ from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from http import HTTPStatus
 
-import pytest
 import allure
+import pytest
 
 import shared.utils.s3 as s3
 from shared.utils.config import make_api_client
