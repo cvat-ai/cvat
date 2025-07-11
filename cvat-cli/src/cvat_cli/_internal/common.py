@@ -37,20 +37,26 @@ class CriticalError(Exception):
 CVAT_API_TOKEN_ENV_VAR = "CVAT_API_TOKEN"
 
 
-def get_auth_factory(s: Optional[str]) -> Callable[[str], Credentials]:
+def default_auth_factory() -> Callable[[str], Credentials]:
     """
-    Parse a USER[:PASS] string and return a callable that takes the server URL
-    and returns auth credentials for that URL. If the value is not provided,
-    it will try to read the CVAT_API_TOKEN environment variable for a Personal Access Token (PAT).
-    The callable will prompt the user for the password if none was initially supplied.
+    Try to read the CVAT_API_TOKEN environment variable for a Personal Access Token (PAT).
+    If there is no value, try using the current user and asking for the password.
     """
 
-    if not s:
-        s = os.getenv(CVAT_API_TOKEN_ENV_VAR)
-        if s is not None:
-            return lambda _: ApiTokenCredentials(s)
-        else:
-            s = getpass.getuser()
+    token = os.getenv(CVAT_API_TOKEN_ENV_VAR)
+    if token is not None:
+        return lambda _: ApiTokenCredentials(token)
+
+    return get_auth_factory(getpass.getuser())
+
+
+def get_auth_factory(s: str) -> Callable[[str], Credentials]:
+    """
+    Parse a USER[:PASS] string and return a callable that takes the server URL
+    and returns auth credentials for that URL.
+    The callable will prompt the user for the password if none was initially supplied in the
+    input string and in the PASS env variable.
+    """
 
     user, _, password = s.partition(":")
     if not password:
@@ -76,7 +82,7 @@ def configure_common_arguments(parser: argparse.ArgumentParser) -> None:
         "--auth",
         type=get_auth_factory,
         metavar="USER[:PASS]",
-        default=get_auth_factory(None),  # simple default=None doesn't trigger the type function
+        default=default_auth_factory(),
         help=textwrap.dedent(
             """\
             User and password to use for authentication;

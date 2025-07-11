@@ -6,6 +6,7 @@ import json
 import os
 from datetime import timedelta
 from io import BytesIO
+from unittest import mock
 
 import packaging.version as pv
 import pytest
@@ -117,6 +118,46 @@ class TestCliMisc(TestCliBase):
         self.run_cli("task", "ls", authenticate=False, expected_code=1)
 
         assert calls
+
+    def test_can_use_current_user_env_variable(self, monkeypatch: pytest.MonkeyPatch):
+        # set all user env vars supported by getuser()
+        for env_var in ("LOGNAME", "USER", "LNAME", "USERNAME"):
+            monkeypatch.setenv(env_var, self.user)
+
+        from getpass import getuser as original_getuser
+
+        from cvat_cli._internal.common import default_auth_factory
+
+        with (
+            mock.patch(
+                "cvat_cli._internal.common.default_auth_factory", wraps=default_auth_factory
+            ) as mock_auth_factory,
+            mock.patch("getpass.getuser", wraps=original_getuser) as mock_getuser,
+            mock.patch("getpass.getpass", return_value=self.password) as mock_getpass,
+        ):
+            self.run_cli("task", "ls", authenticate=False)
+
+        mock_auth_factory.assert_called_once()
+        mock_getuser.assert_called()
+        mock_getpass.assert_called_once()
+
+    def test_can_use_pass_env_variable(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setenv("PASS", self.password)
+
+        from getpass import getuser as original_getpass
+
+        from cvat_cli._internal.common import default_auth_factory
+
+        with (
+            mock.patch(
+                "cvat_cli._internal.common.default_auth_factory", wraps=default_auth_factory
+            ) as mock_auth_factory,
+            mock.patch("getpass.getpass", wraps=original_getpass) as mock_getpass,
+        ):
+            self.run_cli(f"--auth={self.user}", "task", "ls", authenticate=False)
+
+        mock_auth_factory.assert_called_once()
+        mock_getpass.assert_not_called()
 
 
 @pytest.mark.parametrize(
