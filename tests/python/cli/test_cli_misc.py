@@ -112,7 +112,7 @@ class TestCliMisc(TestCliBase):
             assert kwargs["headers"].get("Authorization") == f"Bearer {token}"
             return original_request(self, *args, **kwargs)
 
-        monkeypatch.setenv("CVAT_AUTH", token),
+        monkeypatch.setenv("CVAT_API_TOKEN", token),
         monkeypatch.setattr(RESTClientObject, "request", patched_request),
         self.run_cli("task", "ls", authenticate=False, expected_code=1)
 

@@ -1,5 +1,5 @@
 ### Added
 
-- \[CLI\] `CVAT_AUTH` env. variable can now be used for authentication with an API token
+- \[CLI\] `CVAT_API_TOKEN` env. variable can now be used for authentication with an API token
   \[SDK\] `Client.login()` and `make_client()` can now be called with an API token
   (<https://github.com/cvat-ai/cvat/pull/9563>)

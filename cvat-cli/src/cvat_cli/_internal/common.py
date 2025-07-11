@@ -34,19 +34,19 @@ class CriticalError(Exception):
     pass
 
 
-CVAT_AUTH_ENV_VAR = "CVAT_AUTH"
+CVAT_API_TOKEN_ENV_VAR = "CVAT_API_TOKEN"
 
 
 def get_auth_factory(s: Optional[str]) -> Callable[[str], Credentials]:
     """
     Parse a USER[:PASS] string and return a callable that takes the server URL
     and returns auth credentials for that URL. If the value is not provided,
-    it will try to read the CVAT_AUTH environment variable for a Personal Access Token (PAT).
+    it will try to read the CVAT_API_TOKEN environment variable for a Personal Access Token (PAT).
     The callable will prompt the user for the password if none was initially supplied.
     """
 
     if not s:
-        s = os.getenv(CVAT_AUTH_ENV_VAR)
+        s = os.getenv(CVAT_API_TOKEN_ENV_VAR)
         if s is not None:
             return lambda _: ApiTokenCredentials(s)
         else:
@@ -86,7 +86,7 @@ def configure_common_arguments(parser: argparse.ArgumentParser) -> None:
             and specified in the {} environment variable.
             (default user: {}).
         """
-        ).format(CVAT_AUTH_ENV_VAR, getpass.getuser()),
+        ).format(CVAT_API_TOKEN_ENV_VAR, getpass.getuser()),
     )
     parser.add_argument(
         "--server-host", type=str, default="http://localhost", help="host (default: %(default)s)"
