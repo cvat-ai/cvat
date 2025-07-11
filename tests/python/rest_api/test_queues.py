@@ -9,6 +9,7 @@ from functools import partial
 from http import HTTPStatus
 
 import pytest
+import allure
 
 import shared.utils.s3 as s3
 from shared.utils.config import make_api_client
@@ -32,8 +33,13 @@ class TestRQQueueWorking:
     )
     @pytest.mark.parametrize("cloud_storage_id", [2])
     def test_user_cannot_clog_import_queue_with_his_tasks(
-        self, cloud_storage_id: int, cloud_storages, request
+        self, cloud_storage_id: int, cloud_storages, request: pytest.FixtureRequest
     ):
+        allure.dynamic.title(
+            "{}[CVAT_ALLOW_STATIC_CACHE={}]".format(
+                request.node.name, os.getenv('CVAT_ALLOW_STATIC_CACHE', 'no')
+            )
+        )
         def _create_task(idx: int, username: str) -> int:
             task_spec = {
                 "name": f"Test task {idx}",
