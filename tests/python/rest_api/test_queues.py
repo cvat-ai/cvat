@@ -37,9 +37,10 @@ class TestRQQueueWorking:
     ):
         allure.dynamic.title(
             "{}[CVAT_ALLOW_STATIC_CACHE={}]".format(
-                request.node.name, os.getenv('CVAT_ALLOW_STATIC_CACHE', 'no')
+                request.node.name, os.getenv("CVAT_ALLOW_STATIC_CACHE", "no")
             )
         )
+
         def _create_task(idx: int, username: str) -> int:
             task_spec = {
                 "name": f"Test task {idx}",
