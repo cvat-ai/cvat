@@ -234,7 +234,7 @@ class Client:
         if isinstance(credentials, BasicAuthCredentials):
             credentials = (credentials.user, credentials.password)
         elif isinstance(credentials, ApiTokenCredentials):
-            self.api_client.default_headers["Authorization"] = "Bearer " + credentials.token
+            self.api_client.configuration.api_key["patAuth"] = credentials.token
             return
         elif not isinstance(credentials, tuple) or len(credentials) != 2:
             raise TypeError(f"Unsupported credentials type: {type(credentials).__name__}")
@@ -253,7 +253,7 @@ class Client:
         return (
             ("sessionid" in self.api_client.cookies)
             or ("csrftoken" in self.api_client.cookies)
-            or self.api_client.default_headers.get("Authorization")
+            or self.api_client.configuration.api_key.get("patAuth")
         )
 
     def _clear_credentials(self):
@@ -261,8 +261,7 @@ class Client:
         self.api_client.cookies.pop("csrftoken", None)
         self.api_client.default_headers.pop("Origin", None)
         self.api_client.default_headers.pop("X-CSRFToken", None)
-        self.api_client.default_headers.pop("Authorization", None)
-
+        self.api_client.configuration.api_key.pop("patAuth", None)
 
     def logout(self) -> None:
         if self.has_credentials():

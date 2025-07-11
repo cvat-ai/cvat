@@ -33,6 +33,7 @@ class Configuration:
       The dict value is the API key secret.
       Supported key names:{{#authMethods}}{{#isApiKey}}
         '{{name}}'{{/isApiKey}}{{/authMethods}}
+        'patAuth'
     :param api_key_prefix: Dict to store API prefix (e.g. Bearer)
       The dict key is the name of the security scheme in the OAS specification.
       The dict value is an API key prefix when generating the auth data.
@@ -568,6 +569,15 @@ class Configuration:
                 'in': 'header',
                 'key': 'X-CSRFToken',
                 'value': auth['csrfAuth']['value'],
+            }
+
+        # Add support for enterprise-only Personal Access Token (PAT) authentication feature
+        if 'patAuth' in self.api_key:
+            auth['patAuth'] = {
+                'type': 'bearer',
+                'in': 'header',
+                'key': 'Authorization',
+                'value': 'Bearer ' + self.get_api_key_with_prefix('patAuth'),
             }
 
         return auth
