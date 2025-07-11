@@ -229,6 +229,8 @@ class Client:
         return self.__exit__(None, None, None)
 
     def login(self, credentials: Credentials | tuple[str, str]) -> None:
+        self._clear_credentials()
+
         if isinstance(credentials, BasicAuthCredentials):
             credentials = (credentials.user, credentials.password)
         elif isinstance(credentials, ApiTokenCredentials):
@@ -254,14 +256,18 @@ class Client:
             or self.api_client.default_headers.get("Authorization")
         )
 
+    def _clear_credentials(self):
+        self.api_client.cookies.pop("sessionid", None)
+        self.api_client.cookies.pop("csrftoken", None)
+        self.api_client.default_headers.pop("Origin", None)
+        self.api_client.default_headers.pop("X-CSRFToken", None)
+        self.api_client.default_headers.pop("Authorization", None)
+
+
     def logout(self) -> None:
         if self.has_credentials():
             self.api_client.auth_api.create_logout()
-            self.api_client.cookies.pop("sessionid", None)
-            self.api_client.cookies.pop("csrftoken", None)
-            self.api_client.default_headers.pop("Origin", None)
-            self.api_client.default_headers.pop("X-CSRFToken", None)
-            self.api_client.default_headers.pop("Authorization", None)
+            self._clear_credentials()
 
     def wait_for_completion(
         self: Client,
