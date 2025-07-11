@@ -65,7 +65,7 @@ class TestRQQueueWorking:
         s3_client = s3.make_client(bucket=cs_name)
         dataset_size = 100
 
-        img_content = generate_image_file(size=(4020, 2080)).getvalue()
+        img_content = generate_image_file(size=(1920, 1080)).getvalue()
 
         for i in range(dataset_size):
             filename = f"dataset/image_{i}.jpeg"
