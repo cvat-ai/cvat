@@ -9,7 +9,7 @@ from logging import Logger
 import packaging.version as pv
 import pytest
 from cvat_sdk import Client, models
-from cvat_sdk.core.client import ApiTokenCredentials, BasicAuthCredentials, Config, make_client
+from cvat_sdk.core.client import AccessTokenCredentials, BasicAuthCredentials, Config, make_client
 from cvat_sdk.core.exceptions import IncompatibleVersionException, InvalidHostException
 from cvat_sdk.exceptions import ApiException
 
@@ -50,12 +50,12 @@ class TestClientUsecases:
         assert not self.client.has_credentials()
 
     def test_can_login_with_pat_auth(self):
-        self.client.login(ApiTokenCredentials("CustomToken"))
+        self.client.login(AccessTokenCredentials("CustomToken"))
 
         assert self.client.has_credentials()
 
     def test_can_logout_after_pat_login(self):
-        self.client.login(ApiTokenCredentials("CustomToken"))
+        self.client.login(AccessTokenCredentials("CustomToken"))
 
         self.client.logout()
 

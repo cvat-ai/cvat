@@ -190,14 +190,12 @@ class TestSessionAuth:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
-class TestPatAuth:
+class TestAccessTokenAuth:
     def test_can_use_session_auth_from_config(self):
         token = "custom pat"
         config = Configuration(
             host=BASE_URL,
-            api_key={
-                "patAuth": token,
-            },
+            access_token=token,
         )
 
         with ApiClient(config) as api_client:

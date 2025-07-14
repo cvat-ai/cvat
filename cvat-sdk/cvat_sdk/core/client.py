@@ -77,13 +77,13 @@ class BasicAuthCredentials(Credentials):
 
 
 @attrs.define
-class ApiTokenCredentials(Credentials):
+class AccessTokenCredentials(Credentials):
     """
-    Represents API token authentication credentials.
+    Represents API access token authentication credentials.
     """
 
     token: str
-    """API token for authentication"""
+    """API access token for authentication"""
 
 
 _VERSION_OBJ = pv.Version(VERSION)
@@ -229,12 +229,13 @@ class Client:
         return self.__exit__(None, None, None)
 
     def login(self, credentials: Credentials | tuple[str, str]) -> None:
-        self._clear_credentials()
+        if self.has_credentials():
+            self.logout()
 
         if isinstance(credentials, BasicAuthCredentials):
             credentials = (credentials.user, credentials.password)
-        elif isinstance(credentials, ApiTokenCredentials):
-            self.api_client.configuration.api_key["patAuth"] = credentials.token
+        elif isinstance(credentials, AccessTokenCredentials):
+            self.api_client.configuration.access_token = credentials.token
             return
         elif not isinstance(credentials, tuple) or len(credentials) != 2:
             raise TypeError(f"Unsupported credentials type: {type(credentials).__name__}")
@@ -253,7 +254,7 @@ class Client:
         return (
             ("sessionid" in self.api_client.cookies)
             or ("csrftoken" in self.api_client.cookies)
-            or self.api_client.configuration.api_key.get("patAuth")
+            or self.api_client.configuration.access_token
         )
 
     def _clear_credentials(self):
@@ -261,7 +262,7 @@ class Client:
         self.api_client.cookies.pop("csrftoken", None)
         self.api_client.default_headers.pop("Origin", None)
         self.api_client.default_headers.pop("X-CSRFToken", None)
-        self.api_client.configuration.api_key.pop("patAuth", None)
+        self.api_client.configuration.access_token = None
 
     def logout(self) -> None:
         if self.has_credentials():
@@ -404,12 +405,23 @@ def make_client(
     *,
     port: Optional[int] = None,
     credentials: Union[Credentials, tuple[str, str], None] = None,
+    access_token: Optional[str] = None,
 ) -> Client:
+    if credentials is not None and access_token is not None:
+        raise ValueError(
+            "'credentials' and 'access_token' cannot be used together. Please use only one."
+        )
+
     url = host.rstrip("/")
     if port:
         url = f"{url}:{port}"
 
     client = Client(url=url)
+
+    if access_token is not None:
+        credentials = AccessTokenCredentials(access_token)
+
     if credentials is not None:
         client.login(credentials)
+
     return client

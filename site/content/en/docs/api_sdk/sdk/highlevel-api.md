@@ -141,15 +141,15 @@ By default, a warning is raised and the error is suppressed.
 ### Authentication
 
 High-level SDK supports 2 authentication options:
-- Basic authentication, with a username and a password
-- Personal Access Token authentication, with a token value
+- Password authentication, with a username and a password
+- Personal Access Token (PAT) authentication, with an access token value
 
-Basic authentication doesn't require a special configuration, but for better security it's
+Password authentication doesn't require a special configuration, but for better security it's
 recommended to use a Personal Access Token (PAT) instead, if possible.
 
 {{< tabpane text=true >}}
 
-{{%tab header="Basic authentication" %}}
+{{%tab header="Password authentication" %}}
 
 ```python
 from cvat_sdk import make_client
@@ -160,12 +160,12 @@ with make_client('https://app.cvat.ai', credentials=('user', 'password')) as cli
 
 {{% /tab %}}
 
-{{%tab header="Personal Access Token authentication" %}}
+{{%tab header="Personal Access Token (PAT) authentication" %}}
 
 ```python
-from cvat_sdk import make_client, ApiTokenCredentials
+from cvat_sdk import make_client, AccessTokenCredentials
 
-with make_client('https://app.cvat.ai', credentials=ApiTokenCredentials('token')) as client:
+with make_client('https://app.cvat.ai', access_token='token') as client:
     ...
 ```
 

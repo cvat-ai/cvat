@@ -33,7 +33,6 @@ class Configuration:
       The dict value is the API key secret.
       Supported key names:{{#authMethods}}{{#isApiKey}}
         '{{name}}'{{/isApiKey}}{{/authMethods}}
-        'patAuth'
     :param api_key_prefix: Dict to store API prefix (e.g. Bearer)
       The dict key is the name of the security scheme in the OAS specification.
       The dict value is an API key prefix when generating the auth data.
@@ -95,6 +94,13 @@ class Configuration:
             "sessionAuth": <sessionid cookie value>,
             "csrfAuth": <csrftoken cookie value>,
         }
+    )
+
+    Alternatively, you can authenticate with an API access token in the following way:
+
+    conf = {{{packageName}}}.Configuration(
+        ...
+        access_token= <access token value>,
     )
 
     Alternatively, you can authenticate with a token after logging in the following way:
@@ -180,7 +186,8 @@ class Configuration:
         api_key: typing.Optional[dict[str, str]] = None,
         api_key_prefix: typing.Optional[dict[str, str]] = None,
         username: typing.Optional[str] = None,
-        password: typing.Optional[str]=None,
+        password: typing.Optional[str] = None,
+        access_token: typing.Optional[str] = None,
         discard_unknown_keys: bool = False,
         disabled_client_side_validations: str = "",
 {{#hasHttpSignatureMethods}}
@@ -212,7 +219,7 @@ class Configuration:
         """Temp file folder for downloading files"""
 
         # Authentication Settings
-        self.access_token = None
+        self.access_token = access_token
         """Bearer API token"""
 
         self.api_key = {}
@@ -572,12 +579,12 @@ class Configuration:
             }
 
         # Add support for enterprise-only Personal Access Token (PAT) authentication feature
-        if 'patAuth' in self.api_key:
-            auth['patAuth'] = {
+        if self.access_token is not None:
+            auth['accessTokenAuth'] = {
                 'type': 'bearer',
                 'in': 'header',
                 'key': 'Authorization',
-                'value': 'Bearer ' + self.get_api_key_with_prefix('patAuth'),
+                'value': 'Bearer ' + self.access_token,
             }
 
         return auth

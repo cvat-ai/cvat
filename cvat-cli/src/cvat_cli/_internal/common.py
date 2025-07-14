@@ -18,7 +18,7 @@ from typing import Any, Callable, Optional
 import attrs
 import cvat_sdk.auto_annotation as cvataa
 from cvat_sdk.core.client import (
-    ApiTokenCredentials,
+    AccessTokenCredentials,
     BasicAuthCredentials,
     Client,
     Config,
@@ -34,18 +34,18 @@ class CriticalError(Exception):
     pass
 
 
-CVAT_API_TOKEN_ENV_VAR = "CVAT_API_TOKEN"
+CVAT_ACCESS_TOKEN_ENV_VAR = "CVAT_ACCESS_TOKEN"  # nosec - a variable name declaration
 
 
 def default_auth_factory() -> Callable[[str], Credentials]:
     """
-    Try to read the CVAT_API_TOKEN environment variable for a Personal Access Token (PAT).
+    Try to read the CVAT_ACCESS_TOKEN environment variable for a Personal Access Token (PAT).
     If there is no value, try using the current user and asking for the password.
     """
 
-    token = os.getenv(CVAT_API_TOKEN_ENV_VAR)
+    token = os.getenv(CVAT_ACCESS_TOKEN_ENV_VAR)
     if token is not None:
-        return lambda _: ApiTokenCredentials(token)
+        return lambda _: AccessTokenCredentials(token)
 
     return get_auth_factory(getpass.getuser())
 
@@ -92,7 +92,7 @@ def configure_common_arguments(parser: argparse.ArgumentParser) -> None:
             and specified in the {} environment variable.
             (default user: {}).
         """
-        ).format(CVAT_API_TOKEN_ENV_VAR, getpass.getuser()),
+        ).format(CVAT_ACCESS_TOKEN_ENV_VAR, getpass.getuser()),
     )
     parser.add_argument(
         "--server-host", type=str, default="http://localhost", help="host (default: %(default)s)"
