@@ -80,31 +80,40 @@ from .utils import check_annotation_response, compare_objects
 logging.getLogger("libav").setLevel(logging.ERROR)
 
 
-def create_db_users(cls):
-    (group_admin, _) = Group.objects.get_or_create(name="admin")
-    (group_user, _) = Group.objects.get_or_create(name="user")
-    (group_annotator, _) = Group.objects.get_or_create(name="worker")
-    (group_somebody, _) = Group.objects.get_or_create(name="somebody")
+def create_db_users(
+    cls: type[ApiTestBase],
+    *,
+    admin: bool = True,
+    primary: bool = True,
+    extra: bool = True,
+):
+    if admin:
+        (group_admin, _) = Group.objects.get_or_create(name="admin")
+        user_admin = User.objects.create_superuser(username="admin", email="", password="admin")
+        user_admin.groups.add(group_admin)
+        cls.admin = user_admin
 
-    user_admin = User.objects.create_superuser(username="admin", email="", password="admin")
-    user_admin.groups.add(group_admin)
-    user_owner = User.objects.create_user(username="user1", password="user1")
-    user_owner.groups.add(group_user)
-    user_assignee = User.objects.create_user(username="user2", password="user2")
-    user_assignee.groups.add(group_annotator)
-    user_annotator = User.objects.create_user(username="user3", password="user3")
-    user_annotator.groups.add(group_annotator)
-    user_somebody = User.objects.create_user(username="user4", password="user4")
-    user_somebody.groups.add(group_somebody)
-    user_dummy = User.objects.create_user(username="user5", password="user5")
-    user_dummy.groups.add(group_user)
+    if primary:
+        (group_user, _) = Group.objects.get_or_create(name="user")
+        (group_annotator, _) = Group.objects.get_or_create(name="worker")
+        user_owner = User.objects.create_user(username="user1", password="user1")
+        user_owner.groups.add(group_user)
+        user_assignee = User.objects.create_user(username="user2", password="user2")
+        user_assignee.groups.add(group_annotator)
+        user_annotator = User.objects.create_user(username="user3", password="user3")
+        user_annotator.groups.add(group_annotator)
+        cls.owner = cls.user1 = user_owner
+        cls.assignee = cls.user2 = user_assignee
+        cls.annotator = cls.user3 = user_annotator
 
-    cls.admin = user_admin
-    cls.owner = cls.user1 = user_owner
-    cls.assignee = cls.user2 = user_assignee
-    cls.annotator = cls.user3 = user_annotator
-    cls.somebody = cls.user4 = user_somebody
-    cls.user = cls.user5 = user_dummy
+    if extra:
+        (group_somebody, _) = Group.objects.get_or_create(name="somebody")
+        user_somebody = User.objects.create_user(username="user4", password="user4")
+        user_somebody.groups.add(group_somebody)
+        user_dummy = User.objects.create_user(username="user5", password="user5")
+        user_dummy.groups.add(group_user)
+        cls.somebody = cls.user4 = user_somebody
+        cls.user = cls.user5 = user_dummy
 
 
 def create_db_task(data):
