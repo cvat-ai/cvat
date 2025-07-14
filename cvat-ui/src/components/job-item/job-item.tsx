@@ -12,7 +12,6 @@ import moment from 'moment';
 import { Col, Row } from 'antd/lib/grid';
 import Card from 'antd/lib/card';
 import Text from 'antd/lib/typography/Text';
-import Select from 'antd/lib/select';
 import Icon from '@ant-design/icons';
 import {
     BorderOutlined,
@@ -29,6 +28,7 @@ import { CombinedState } from 'reducers';
 import Collapse from 'antd/lib/collapse';
 import CVATTag, { TagType } from 'components/common/cvat-tag';
 import JobActionsComponent from 'components/jobs-page/actions-menu';
+import { JobStageSelector, JobStateSelector } from './job-selectors';
 
 function formatDate(value: moment.Moment): string {
     return value.format('MMM Do YYYY HH:mm');
@@ -114,7 +114,7 @@ function JobItem(props: Props): JSX.Element {
     const deletes = useSelector((state: CombinedState) => state.jobs.activities.deletes);
     const deleted = job.id in deletes ? deletes[job.id] === true : false;
 
-    const { stage } = job;
+    const { stage, state } = job;
     const created = moment(job.createdDate);
     const updated = moment(job.updatedDate);
     const now = moment(moment.now());
@@ -208,24 +208,12 @@ function JobItem(props: Props): JSX.Element {
                                                 <Text>Stage:</Text>
                                             </Col>
                                         </Row>
-                                        <Select
-                                            className='cvat-job-item-stage'
-                                            popupClassName='cvat-job-item-stage-dropdown'
+                                        <JobStageSelector
                                             value={stage}
-                                            onChange={(newValue: JobStage) => {
+                                            onSelect={(newValue: JobStage) => {
                                                 onJobUpdate(job, { stage: newValue });
                                             }}
-                                        >
-                                            <Select.Option value={JobStage.ANNOTATION}>
-                                                {JobStage.ANNOTATION}
-                                            </Select.Option>
-                                            <Select.Option value={JobStage.VALIDATION}>
-                                                {JobStage.VALIDATION}
-                                            </Select.Option>
-                                            <Select.Option value={JobStage.ACCEPTANCE}>
-                                                {JobStage.ACCEPTANCE}
-                                            </Select.Option>
-                                        </Select>
+                                        />
                                     </Col>
                                     <Col className='cvat-job-item-select'>
                                         <Row justify='space-between' align='middle'>
@@ -233,23 +221,12 @@ function JobItem(props: Props): JSX.Element {
                                                 <Text>State:</Text>
                                             </Col>
                                         </Row>
-                                        <Select
-                                            className='cvat-job-item-state'
-                                            popupClassName='cvat-job-item-state-dropdown'
-                                            value={job.state}
-                                            onChange={(newValue: JobState) => {
+                                        <JobStateSelector
+                                            value={state}
+                                            onSelect={(newValue: JobState) => {
                                                 onJobUpdate(job, { state: newValue });
                                             }}
-                                        >
-                                            <Select.Option value={JobState.NEW}>{JobState.NEW}</Select.Option>
-                                            <Select.Option value={JobState.IN_PROGRESS}>
-                                                {JobState.IN_PROGRESS}
-                                            </Select.Option>
-                                            <Select.Option value={JobState.REJECTED}>{JobState.REJECTED}</Select.Option>
-                                            <Select.Option value={JobState.COMPLETED}>
-                                                {JobState.COMPLETED}
-                                            </Select.Option>
-                                        </Select>
+                                        />
                                     </Col>
                                 </Row>
                             </Col>

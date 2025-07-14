@@ -121,14 +121,14 @@ context('Object make a copy.', () => {
         it('After copying via sidebar, the attributes of the objects are the same.', () => {
             checkObjectArrSize(12, 12);
             for (let id = 1; id < countObject; id++) {
-                // Parameters id 1 equal patameters id 8, 2 to 9, etc.
+                // Parameters id 1 equal parameters id 8, 2 to 9, etc.
                 compareObjectsAttr(`#cvat_canvas_shape_${id}`, `#cvat_canvas_shape_${id + countObject}`);
             }
             for (let idSidebar = 1; idSidebar < 7; idSidebar++) {
                 compareObjectsSidebarAttr(
                     `#cvat-objects-sidebar-state-item-${idSidebar}`,
                     `#cvat-objects-sidebar-state-item-${idSidebar + countObject}`,
-                ); // Parameters sidebar id 1 equal patameters sidebar id 8, 2 to 9, etc.
+                ); // Parameters sidebar id 1 equal parameters sidebar id 8, 2 to 9, etc.
             }
         });
 
@@ -158,14 +158,14 @@ context('Object make a copy.', () => {
             () => {
                 checkObjectArrSize(17, 17); // The point was not copied via the object's context menu
                 for (let id = 1; id < countObject; id++) {
-                    // Parameters id 1 equal patameters id 13, 2 to 14, etc.
+                    // Parameters id 1 equal parameters id 13, 2 to 14, etc.
                     compareObjectsAttr(`#cvat_canvas_shape_${id}`, `#cvat_canvas_shape_${id + 2 * countObject}`);
                 }
                 for (let idSidebar = 1; idSidebar < countObject; idSidebar++) {
                     compareObjectsSidebarAttr(
                         `#cvat-objects-sidebar-state-item-${idSidebar}`,
                         `#cvat-objects-sidebar-state-item-${idSidebar + 2 * countObject}`,
-                    ); // Parameters sidebar id 1 equal patameters sidebar id 15, 2 to 16, etc.
+                    ); // Parameters sidebar id 1 equal parameters sidebar id 15, 2 to 16, etc.
                 }
             },
         );

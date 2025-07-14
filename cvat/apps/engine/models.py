@@ -459,13 +459,13 @@ class FileSystemRelatedModel(metaclass=ABCModelMeta):
 @transaction.atomic(savepoint=False)
 def clear_annotations_in_jobs(job_ids: Iterable[int]):
     for job_ids_chunk in take_by(job_ids, chunk_size=1000):
-        TrackedShapeAttributeVal.objects.filter(shape__track__job_id__in=job_ids_chunk).delete()
+        TrackedShapeAttributeVal.objects.filter(job_id__in=job_ids_chunk).delete()
         TrackedShape.objects.filter(track__job_id__in=job_ids_chunk).delete()
-        LabeledTrackAttributeVal.objects.filter(track__job_id__in=job_ids_chunk).delete()
+        LabeledTrackAttributeVal.objects.filter(job_id__in=job_ids_chunk).delete()
         LabeledTrack.objects.filter(job_id__in=job_ids_chunk).delete()
-        LabeledShapeAttributeVal.objects.filter(shape__job_id__in=job_ids_chunk).delete()
+        LabeledShapeAttributeVal.objects.filter(job_id__in=job_ids_chunk).delete()
         LabeledShape.objects.filter(job_id__in=job_ids_chunk).delete()
-        LabeledImageAttributeVal.objects.filter(image__job_id__in=job_ids_chunk).delete()
+        LabeledImageAttributeVal.objects.filter(job_id__in=job_ids_chunk).delete()
         LabeledImage.objects.filter(job_id__in=job_ids_chunk).delete()
 
 
@@ -477,7 +477,7 @@ def clear_annotations_on_frames_in_honeypot_task(db_task: Task, frames: Sequence
 
     for frames_batch in take_by(frames, chunk_size=1000):
         LabeledShapeAttributeVal.objects.filter(
-            shape__job_id__segment__task_id=db_task.id,
+            job_id__segment__task_id=db_task.id,
             shape__frame__in=frames_batch,
         ).delete()
         LabeledShape.objects.filter(
@@ -485,7 +485,7 @@ def clear_annotations_on_frames_in_honeypot_task(db_task: Task, frames: Sequence
             frame__in=frames_batch,
         ).delete()
         LabeledImageAttributeVal.objects.filter(
-            image__job_id__segment__task_id=db_task.id,
+            job_id__segment__task_id=db_task.id,
             image__frame__in=frames_batch,
         ).delete()
         LabeledImage.objects.filter(
@@ -898,6 +898,15 @@ class Job(TimestampedModel, FileSystemRelatedModel):
         related_name='child_jobs', related_query_name="child_job"
     )
 
+    labeledimage_set: models.manager.RelatedManager[LabeledImage]
+    labeledshape_set: models.manager.RelatedManager[LabeledShape]
+    labeledtrack_set: models.manager.RelatedManager[LabeledTrack]
+    trackedshape_set: models.manager.RelatedManager[TrackedShape]
+    labeledimageattributeval_set: models.manager.RelatedManager[LabeledImageAttributeVal]
+    labeledshapeattributeval_set: models.manager.RelatedManager[LabeledShapeAttributeVal]
+    labeledtrackattributeval_set: models.manager.RelatedManager[LabeledTrackAttributeVal]
+    trackedshapeattributeval_set: models.manager.RelatedManager[TrackedShapeAttributeVal]
+
     user_can_view_task: MaybeUndefined[bool]
     "Can be defined by the fetching queryset to avoid extra IAM checks, e.g. in a list serializer"
 
@@ -1075,6 +1084,7 @@ class AttributeVal(models.Model):
     # TODO: add a validator here to be sure that it corresponds to self.label
     id = models.BigAutoField(primary_key=True)
     spec = models.ForeignKey(AttributeSpec, on_delete=models.CASCADE)
+    job = models.ForeignKey(Job, on_delete=models.DO_NOTHING, null=False)
     value = SafeCharField(max_length=4096)
 
     class Meta:

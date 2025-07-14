@@ -101,7 +101,7 @@ class Serializable(metaclass=ABCMeta):
 class ReportNode(Serializable):
     _CACHED_FIELDS: ClassVar[list[str] | None] = None
     "Fields that can be set externally or be computed on access. Can be defined in a subclass"
-    # sublcasses must have a __dict__ attribute (i.e. don't use slots)
+    # subclasses must have a __dict__ attribute (i.e. don't use slots)
 
     @classmethod
     def _find_cached_fields(cls) -> list[str]:
@@ -2828,7 +2828,7 @@ class TaskQualityCalculator:
         # between jobs, from which annotations are merged to get the task annotations.
         # Thus, a separate report could be computed for the task. Instead, here we only
         # compute the combined summary of the job reports.
-        # It's possible that overlapped frames cheched more than once, ignore extra checks
+        # It's possible that overlapped frames checked more than once, ignore extra checks
         # in this statistics and results.
         task_validated_frames = set()
         task_validation_frames_count = 0  # in included and non-checkable jobs
@@ -2991,7 +2991,7 @@ class ProjectQualityCalculator:
 
             project_quality_params = self._get_quality_params(project)
 
-            # Tasks could be added or removed in the project after inital report fetching
+            # Tasks could be added or removed in the project after initial report fetching
             # Fix working the set of tasks by requesting ids first.
             all_task_ids: set[int] = set(
                 Task.objects.filter(project=project).values_list("id", flat=True)
