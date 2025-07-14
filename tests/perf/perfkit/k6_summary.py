@@ -28,6 +28,45 @@ class K6MetricStats:
 class K6Summary:
     metrics: dict[str, K6MetricStats]
 
+    def __add__(self, other: "K6Summary") -> "K6Summary":
+        if self.metrics.keys() != other.metrics.keys():
+            raise ValueError("Metric keys mismatch between summaries")
+
+        new_metrics: dict[str, K6MetricStats] = {}
+
+        for metric_name in self.metrics:
+            m1 = self.metrics[metric_name]
+            m2 = other.metrics[metric_name]
+
+            combined = K6MetricStats()
+            for field in K6MetricStats.__annotations__:
+                v1 = getattr(m1, field)
+                v2 = getattr(m2, field)
+
+                if v1 is not None and v2 is not None:
+                    setattr(combined, field, v1 + v2)
+                elif v1 is not None:
+                    setattr(combined, field, v1)
+                elif v2 is not None:
+                    setattr(combined, field, v2)
+                # else leave it as None
+            new_metrics[metric_name] = combined
+        return K6Summary(metrics=new_metrics)
+
+    def __truediv__(self, divisor: float) -> "K6Summary":
+        if divisor == 0:
+            raise ZeroDivisionError()
+
+        new_metrics: dict[str, K6MetricStats] = {}
+
+        for metric_name, metric in self.metrics.items():
+            divided = K6MetricStats()
+            for field, value in metric.as_dict().items():
+                setattr(divided, field, value / divisor)
+            new_metrics[metric_name] = divided
+
+        return K6Summary(metrics=new_metrics)
+
     def compare(self, other: "K6Summary", allowed_deltas: dict[str, dict[str, float]]) -> bool:
         consistent = True
 

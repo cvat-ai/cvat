@@ -20,7 +20,7 @@ setup(
     install_requires=load_requirements("./requirements.txt"),
     entry_points={
         "console_scripts": [
-            "perfkit=perfkit.perfkit:app",
+            "perfkit=perfkit.main:app",
         ],
     },
     classifiers=[

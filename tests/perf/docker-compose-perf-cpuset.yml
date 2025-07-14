@@ -43,3 +43,9 @@ services:
     cpuset: 1-3
   nuclio:
     cpuset: 1-3
+  perf-k6:
+    cpuset: 1-3
+  perf-prometheus:
+    cpuset: 1-3
+  perf-grafana:
+    cpuset: 1-3

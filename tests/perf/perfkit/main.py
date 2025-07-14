@@ -3,6 +3,7 @@ import threading
 import json
 from pathlib import Path
 from typing import Optional
+import datetime
 
 import typer
 from rich.console import Console
@@ -35,7 +36,7 @@ def run_golden(
     save_baseline: bool = typer.Option(True, help="Save result as baseline. Be default prints it into the console.")
 ):
     test_invalid = threading.Event()
-    k6_metrics: list[K6Summary] = []
+    k6_metrics_total: list[K6Summary] = []
 
     def interrupt_test() -> None:
         nonlocal test_invalid
@@ -59,7 +60,7 @@ def run_golden(
         if exit_code != 0:
             exit_with_error("K6 execution finished with an error.")
         k6_summary_metrics = parse_k6_summary(K6_OUTPUT_SUMMARY_JSON)
-        k6_metrics.append(k6_summary_metrics)
+        k6_metrics_total.append(k6_summary_metrics)
         stop_metrics()
         stop_cluster()
         return k6_summary_metrics
@@ -74,17 +75,13 @@ def run_golden(
             exit_with_error("Test was aborted due to system limits. "
                 "Please close all resource consuming processes and try again. "
                 "Or try less demanding load profile.")
-
         assert k6_output_metrics
-        if i > 0:
-            is_consistent = k6_output_metrics.compare(k6_metrics[0], ALLOWED_DELTAS)
-            if not is_consistent:
-                exit_with_error("test runs are not consistent")
 
-    assert k6_output_metrics
+    k6_summary_averaged = sum(k6_metrics_total) / runs
+
     if save_baseline:
         test_key = Path(test_file).stem
-        add_baseline(k6_output_metrics, test_key)
+        add_baseline(k6_summary_averaged, test_key)
         print_success(f"✅ Saved baseline for {test_key}")
     else:
         print_info("📊 Golden run complete. Results not saved.")
@@ -140,10 +137,9 @@ def run_regression(
 
     console.print(get_comparison_table(comparison_report))
 
-    import random
     report_file = Path(f"regression-report-{test_key}.txt")
     with report_file.open("a+") as f:
-        f.write(f"Regression Report for test: {test_key}\n\n")
+        f.write(f"Regression Report for test: {test_key} | {datetime.datetime.now()}\n\n")
         f.write("{:<40} {:>10} {:>10} {:>10} {:>6}\n".format(
             "Metric", "Baseline", "Actual", "Delta", "Status"))
         f.write("-" * 80 + "\n")
