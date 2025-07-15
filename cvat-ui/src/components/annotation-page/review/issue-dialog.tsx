@@ -28,6 +28,8 @@ interface Props {
     isFetching: boolean;
     angle: number;
     scale: number;
+    clickCoordinates: { x: number; y: number } | null;
+    canvasRect: DOMRect | null;
     collapse: () => void;
     resolve: () => void;
     reopen: () => void;
@@ -54,9 +56,14 @@ export default function IssueDialog(props: Props): JSX.Element {
         comment,
         highlight,
         blur,
+        clickCoordinates,
+        canvasRect,
     } = props;
 
     const { id, comments } = issue;
+
+    const [adjustedTop, setAdjustedTop] = useState(top);
+    const [adjustedLeft, setAdjustedLeft] = useState(left);
 
     useEffect(() => {
         if (!resolved) {
@@ -65,6 +72,38 @@ export default function IssueDialog(props: Props): JSX.Element {
             setTimeout(blur);
         }
     }, [resolved]);
+
+    useEffect(() => {
+        if (ref.current && clickCoordinates && canvasRect) {
+            const dialogRect = ref.current.getBoundingClientRect();
+            const margin = 5;
+            const dialogWidth = dialogRect.width;
+            const dialogHeight = dialogRect.height;
+
+            let newTop = top;
+            let newLeft = left;
+            const clickRelativeX = clickCoordinates.x - canvasRect.left;
+            const clickRelativeY = clickCoordinates.y - canvasRect.top;
+
+            // Check if dialog extends beyond bottom edge
+            if (clickRelativeY + dialogHeight > canvasRect.height) {
+                const overflow = (clickRelativeY + dialogHeight) - canvasRect.height + margin;
+                newTop = top - (overflow * scale);
+            }
+
+            // Check if dialog extends beyond right edge
+            if (clickRelativeX + dialogWidth > canvasRect.width) {
+                const overflow = (clickRelativeX + dialogWidth) - canvasRect.width + margin;
+                newLeft = left - (overflow * scale);
+            }
+
+            setAdjustedTop(newTop);
+            setAdjustedLeft(newLeft);
+        } else {
+            setAdjustedTop(top);
+            setAdjustedLeft(left);
+        }
+    }, [top, left, scale, clickCoordinates, canvasRect]);
 
     useEffect(() => {
         const listener = (event: WheelEvent): void => {
@@ -82,8 +121,9 @@ export default function IssueDialog(props: Props): JSX.Element {
     }, [ref.current]);
 
     const onDeleteIssue = useCallback((): void => {
+        const issueNumber = typeof id === 'number' ? ` #${id}` : '';
         Modal.confirm({
-            title: `The issue${typeof id === 'number' ? ` #${id}` : ''} will be deleted.`,
+            title: `The issue${issueNumber} will be deleted.`,
             className: 'cvat-modal-confirm-remove-issue',
             onOk: () => {
                 collapse();
@@ -95,7 +135,7 @@ export default function IssueDialog(props: Props): JSX.Element {
             autoFocusButton: 'cancel',
             okText: 'Delete',
         });
-    }, []);
+    }, [id, collapse, dispatch]);
 
     const lines = comments.map(
         (_comment: CommentModel): JSX.Element => {
@@ -130,7 +170,7 @@ export default function IssueDialog(props: Props): JSX.Element {
 
     return ReactDOM.createPortal(
         <div
-            style={{ top, left, transform: `scale(${scale}) rotate(${angle}deg)` }}
+            style={{ top: adjustedTop, left: adjustedLeft, transform: `scale(${scale}) rotate(${angle}deg)` }}
             ref={ref}
             className='cvat-issue-dialog'
         >

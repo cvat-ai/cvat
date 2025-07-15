@@ -67,7 +67,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
 
     const [expandedIssue, setExpandedIssue] = useState<number | null>(null);
     const [geometry, setGeometry] = useState<Canvas['geometry'] | null>(null);
-
+    const [clickCoordinates, setClickCoordinates] = useState<{ x: number; y: number } | null>(null);
     const highlightedObjectsIDs = highlightedConflict?.annotationConflicts
         ?.map((annotationConflict: AnnotationConflict) => annotationConflict.serverID);
 
@@ -190,6 +190,9 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
         return null;
     }
 
+    const canvasElementRect: DOMRect | null = window.document.getElementById('cvat_canvas_wrapper') ?
+        window.document.getElementById('cvat_canvas_wrapper')!.getBoundingClientRect() :
+        null;
     for (const issue of frameIssues) {
         if (issuesHidden) break;
         const issueResolved = issue.resolved;
@@ -228,12 +231,16 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
                     resolved={issueResolved}
                     highlight={highlight}
                     blur={blur}
+                    clickCoordinates={clickCoordinates}
+                    canvasRect={canvasElementRect}
                     collapse={() => {
                         setExpandedIssue(null);
+                        setClickCoordinates(null);
                     }}
                     resolve={() => {
                         dispatch(resolveIssueAsync(issue.id));
                         setExpandedIssue(null);
+                        setClickCoordinates(null);
                     }}
                     reopen={() => {
                         dispatch(reopenIssueAsync(issue.id));
@@ -255,7 +262,12 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
                     resolved={issueResolved}
                     highlight={highlight}
                     blur={blur}
-                    onClick={() => {
+                    onClick={(event) => {
+                        const clickCoords = {
+                            x: event.clientX,
+                            y: event.clientY,
+                        };
+                        setClickCoordinates(clickCoords);
                         setExpandedIssue(id);
                     }}
                 />,
