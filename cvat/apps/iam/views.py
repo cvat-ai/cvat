@@ -29,8 +29,12 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
+from cvat.apps.engine.log import ServerLogManager
+
 from .authentication import Signer
 from .utils import get_opa_bundle
+
+slogger = ServerLogManager(__name__)
 
 
 @extend_schema(tags=["auth"])
@@ -101,9 +105,9 @@ class LoginViewEx(LoginView):
             # because redirect will make a POST request and we'll get a 404 code
             # (although in the browser request method will be displayed like GET)
             return HttpResponseBadRequest("Unverified email")
-        # TODO: check why we need to handle exceptions here
-        except Exception:  # nosec
-            pass
+        # FUTURE-TODO: check why we need to handle exceptions here
+        except Exception as ex:
+            slogger.glob.warning(str(ex), exc_info=True)
 
         self.login()
         return self.get_response()

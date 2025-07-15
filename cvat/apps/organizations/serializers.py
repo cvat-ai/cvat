@@ -12,7 +12,7 @@ from django.db import transaction
 from rest_framework import serializers
 
 from cvat.apps.engine.serializers import BasicUserSerializer
-from cvat.apps.iam.utils import get_dummy_user
+from cvat.apps.iam.utils import get_dummy_or_regular_user
 
 from .models import Invitation, Membership, Organization
 
@@ -143,8 +143,8 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
 
     def save(self, request, **kwargs):
         invitation = super().save(**kwargs)
-        dummy_user = get_dummy_user(invitation.membership.user.email)
-        if not to_bool(settings.ORG_INVITATION_CONFIRM) and not dummy_user:
+        _, regular_user = get_dummy_or_regular_user(invitation.membership.user.email)
+        if not to_bool(settings.ORG_INVITATION_CONFIRM) and regular_user:
             invitation.accept()
         else:
             invitation.send(request)

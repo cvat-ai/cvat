@@ -13,12 +13,13 @@ from dj_rest_auth.serializers import LoginSerializer, PasswordResetSerializer
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.utils.translation import gettext_lazy as _
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from cvat.apps.iam.forms import ResetPasswordFormEx
-from cvat.apps.iam.utils import get_dummy_user
+from cvat.apps.iam.utils import get_dummy_or_regular_user
 
 
 class RegisterSerializerEx(RegisterSerializer):
@@ -60,8 +61,16 @@ class RegisterSerializerEx(RegisterSerializer):
         adapter = get_adapter()
         self.cleaned_data = self.get_cleaned_data()
 
+        dummy_user, regular_user = get_dummy_or_regular_user(self.cleaned_data["email"])
+        # A regular user registered via standard sign-up or social login method;
+        # has an unverified email address
+        if regular_user:
+            raise serializers.ValidationError(
+                _("A user is already registered with this e-mail address.")
+            )
+
         # Allow to overwrite data for dummy users
-        user = get_dummy_user(self.cleaned_data["email"]) or adapter.new_user(request)
+        user = dummy_user or adapter.new_user(request)
 
         user = adapter.save_user(request, user, self, commit=False)
         if "password1" in self.cleaned_data:

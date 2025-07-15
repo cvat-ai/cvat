@@ -12,8 +12,8 @@ from rest_framework.authtoken.models import Token
 
 from cvat.apps.engine.tests.test_rest_api import create_db_users
 from cvat.apps.engine.tests.utils import ApiTestBase
-from cvat.urls import urlpatterns as original_urlpatterns
 from cvat.apps.iam.views import ConfirmEmailViewEx
+from cvat.urls import urlpatterns as original_urlpatterns
 
 urlpatterns = original_urlpatterns + [
     re_path(
