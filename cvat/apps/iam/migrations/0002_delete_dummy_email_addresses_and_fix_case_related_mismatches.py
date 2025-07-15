@@ -8,10 +8,12 @@ def delete_email_addresses_for_dummy_users(apps, schema_editor):
     EmailAddress = apps.get_model("account", "EmailAddress")
 
     # delete EmailAddress records for dummy users that were created by invitations
-    EmailAddress.objects.filter(verified=False) \
-        .annotate(social_accounts_count=Count("user__socialaccount")) \
-        .filter(social_accounts_count=0, user__password__startswith="!") \
-        .delete()
+    EmailAddress.objects.filter(verified=False).annotate(
+        social_accounts_count=Count("user__socialaccount")
+    ).filter(
+        social_accounts_count=0, user__password__startswith="!"  # nosec
+    ).delete()
+
 
 def normalize_email_case_mismatches(apps, schema_editor):
     EmailAddress = apps.get_model("account", "EmailAddress")
@@ -27,10 +29,7 @@ def normalize_email_case_mismatches(apps, schema_editor):
 
     for email_address in email_addresses:
         user_email = email_address.user.email
-        if (
-            email_address.email.lower() == user_email.lower()
-            and email_address.email != user_email
-        ):
+        if email_address.email.lower() == user_email.lower() and email_address.email != user_email:
             email_address.email = user_email
             email_addresses_to_update.append(email_address)
     EmailAddress.objects.bulk_update(email_addresses_to_update, ["email"])
