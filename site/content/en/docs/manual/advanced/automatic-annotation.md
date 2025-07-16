@@ -106,7 +106,9 @@ In case you did not find the model you need, you can add a model
 of your choice from [Hugging Face](https://huggingface.co/)
 or [Roboflow](https://roboflow.com/).
 
-> **Note**, that you cannot add models from Hugging Face and Roboflow to self-hosted CVAT.
+{{% alert title="Note" color="secondary" %}}
+You cannot add models from Hugging Face and Roboflow to self-hosted CVAT.
+{{% /alert %}}
 
 <!--lint disable maximum-line-length-->
 

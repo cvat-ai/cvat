@@ -16,10 +16,14 @@ objects (polygons and masks) to track them forward for a specified number of fra
 
 ## How to install
 
-> **Note**: This feature is not available in the community CVAT version.
+{{% alert title="Note" color="secondary" %}}
+This feature is not available in the community CVAT version.
+{{% /alert %}}
 
-> **Note**: This feature requires the enhanced actions UI plugin, which is enabled by default.
-> Usually, no additional steps are necessary on this.
+{{% alert title="Note" color="secondary" %}}
+This feature requires the enhanced actions UI plugin, which is enabled by default.
+Usually, no additional steps are necessary on this.
+{{% /alert %}}
 
 ### Docker
 

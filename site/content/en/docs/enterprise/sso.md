@@ -5,7 +5,9 @@ weight: 3
 description: 'SSO for a Self-Hosted solution'
 ---
 
-> **Note:** This is a paid feature available only to [Enterprise clients](https://www.cvat.ai/pricing/on-prem).
+{{% alert title="Note" color="secondary" %}}
+This is a paid feature available only to [Enterprise clients](https://www.cvat.ai/pricing/on-prem).
+{{% /alert %}}
 
 CVAT supports Single Sign-On (SSO) using both OpenID Connect (OIDC) and Security Assertion Markup Language (SAML)
 protocols.
@@ -41,7 +43,7 @@ To start, log into your [Microsoft Azure Portal](https://portal.azure.com/#home)
 
 1. Click on the `Register` button.
 
-{{% alert title="Note" color="primary" %}}
+{{% alert title="Note" color="secondary" %}}
 More information on how to configure an OIDC-based application on the Azure platform can be found
 [here](https://learn.microsoft.com/en-us/power-pages/security/authentication/openid-settings#create-an-app-registration-in-azure).
 {{% /alert %}}

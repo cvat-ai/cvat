@@ -62,9 +62,11 @@ Consult the detailed guide on quality estimation in CVAT in the
 
 ## How to enable immediate job feedback
 
-> **Note**: This feature requires a configured validation set in the task. Learn more
-> in [How to enable quality control](#how-to-enable-quality-control) and in the
-> {{< ilink "/docs/manual/advanced/analytics-and-monitoring/auto-qa#configuring-quality-estimation" "full guide" >}}.
+{{% alert title="Note" color="secondary" %}}
+This feature requires a configured validation set in the task. Learn more
+in [How to enable quality control](#how-to-enable-quality-control) and in the
+{{< ilink "/docs/manual/advanced/analytics-and-monitoring/auto-qa#configuring-quality-estimation" "full guide" >}}.
+{{% /alert %}}
 
 1. Open the task **Actions** menu > **Quality control** > **Settings**
 1. Set **Max validations per job** to above zero. 3 is a good starting number

@@ -28,11 +28,13 @@ Immediate feedback settings, such as `Target metric`, `Target metric threshold`,
 This feature is considered enabled if the `Max validations per job` is above 0. You can change
 the parameters any time.
 
-> **Note**: This feature requires a configured validation set in the task. Read more
-> in the
-> {{< ilink "/docs/manual/basics/quality-control#how-to-enable-quality-control" "quality overview" >}}
-> section or in the
-> {{< ilink "/docs/manual/advanced/analytics-and-monitoring/auto-qa#configuring-quality-estimation" "full guide" >}}.
+{{% alert title="Note" color="secondary" %}}
+This feature requires a configured validation set in the task. Read more
+in the
+{{< ilink "/docs/manual/basics/quality-control#how-to-enable-quality-control" "quality overview" >}}
+section or in the
+{{< ilink "/docs/manual/advanced/analytics-and-monitoring/auto-qa#configuring-quality-estimation" "full guide" >}}.
+{{% /alert %}}
 
 1. Open the task **Actions** menu > **Quality control** > **Settings**
 
@@ -53,8 +55,10 @@ the parameters any time.
 
 Each assignee gets no more than the specified number of validation attempts.
 
-> **Note**: this functionality is only available in regular annotation jobs. For instance,
-> it's not possible to use it in Ground Truth jobs.
+{{% alert title="Note" color="secondary" %}}
+This functionality is only available in regular annotation jobs. For instance,
+it's not possible to use it in Ground Truth jobs.
+{{% /alert %}}
 
 ### Available feedbacks
 

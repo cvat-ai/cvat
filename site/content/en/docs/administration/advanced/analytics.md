@@ -24,7 +24,9 @@ on admin page by `Has access to analytics` checkbox.
 
 ![CVAT Analytics](/images/analytics_menu.jpg)
 
-> Note: CVAT analytics and monitoring are available only for on-prem solution.
+{{% alert title="Note" color="secondary" %}}
+CVAT analytics and monitoring are available only for on-prem solution.
+{{% /alert %}}
 
 See:
 
@@ -397,9 +399,11 @@ GROUP BY time
 ORDER BY time
 ```
 
-> **Note**, that by default the updated configuration will not be saved
-> and will be reset to the default parameters after you restart the
-> container.
+{{% alert title="Note" color="secondary" %}}
+By default the updated configuration will not be saved
+and will be reset to the default parameters after you restart the
+container.
+{{% /alert %}}
 
 To save the updated configuration, do the following:
 
