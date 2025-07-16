@@ -21,10 +21,10 @@ def restore_email_addresses_for_dummy_users(apps, schema_editor):
     EmailAddress = apps.get_model("account", "EmailAddress")
     SocialAccount = apps.get_model("socialaccount", "SocialAccount")
 
-    social_accounts = SocialAccount.objects.filter(user=OuterRef("user"))
-    email_addresses = EmailAddress.objects.filter(user=OuterRef("user"))
+    social_accounts = SocialAccount.objects.filter(user=OuterRef("pk"))
+    email_addresses = EmailAddress.objects.filter(user=OuterRef("pk"))
     dummy_users = (
-        User.objects.filter(password__startswith="!")
+        User.objects.filter(password__startswith="!")  # nosec
         .annotate(
             has_social_account=Exists(social_accounts), has_email_address=Exists(email_addresses)
         )
@@ -35,7 +35,7 @@ def restore_email_addresses_for_dummy_users(apps, schema_editor):
         EmailAddress(email=user.email, user=user, primary=True, verified=False)
         for user in dummy_users
     ]
-    EmailAddress.objects.bulk_create(email_addresses_to_create)
+    EmailAddress.objects.bulk_create(email_addresses_to_create, batch_size=2000)
 
 
 def normalize_email_case_mismatches(apps, schema_editor):
@@ -44,15 +44,26 @@ def normalize_email_case_mismatches(apps, schema_editor):
 
     social_accounts = SocialAccount.objects.filter(user=OuterRef("user"))
     # fix case-related mismatches between User.email and EmailAddress.email
-    EmailAddress.objects.filter(
-        ~Exists(social_accounts), verified=True, email__iexact=F("user__email")
-    ).exclude(email=F("user__email")).update(email=F("user__email"))
+    email_addresses_to_update = (
+        EmailAddress.objects.filter(
+            ~Exists(social_accounts), verified=True, email__iexact=F("user__email")
+        )
+        .exclude(email=F("user__email"))
+        .select_related("user")
+    )
+
+    for email_address in email_addresses_to_update:
+        email_address.email = email_address.user.email
+
+    EmailAddress.objects.bulk_update(email_addresses_to_update, ["email"], batch_size=2000)
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
         ("iam", "0001_remove_business_group"),
+        ("account", "0005_emailaddress_idx_upper_email"),
+        ("socialaccount", "0005_socialtoken_nullable_app"),
     ]
 
     operations = [
