@@ -68,6 +68,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
     const [expandedIssue, setExpandedIssue] = useState<number | null>(null);
     const [geometry, setGeometry] = useState<Canvas['geometry'] | null>(null);
     const [clickCoordinates, setClickCoordinates] = useState<{ x: number; y: number } | null>(null);
+    const [canvasRect, setCanvasRect] = useState<DOMRect | null>(null);
     const highlightedObjectsIDs = highlightedConflict?.annotationConflicts
         ?.map((annotationConflict: AnnotationConflict) => annotationConflict.serverID);
 
@@ -101,6 +102,11 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
         if (canvasReady) {
             const { geometry: updatedGeometry } = canvasInstance;
             setGeometry(updatedGeometry);
+
+            const canvasElement = window.document.getElementById('cvat_canvas_wrapper');
+            if (canvasElement) {
+                setCanvasRect(canvasElement.getBoundingClientRect());
+            }
 
             const geometryListener = (): void => {
                 setGeometry(canvasInstance.geometry);
@@ -190,9 +196,6 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
         return null;
     }
 
-    const canvasElementRect: DOMRect | null = window.document.getElementById('cvat_canvas_wrapper') ?
-        window.document.getElementById('cvat_canvas_wrapper')!.getBoundingClientRect() :
-        null;
     for (const issue of frameIssues) {
         if (issuesHidden) break;
         const issueResolved = issue.resolved;
@@ -232,7 +235,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
                     highlight={highlight}
                     blur={blur}
                     clickCoordinates={clickCoordinates}
-                    canvasRect={canvasElementRect}
+                    canvasRect={canvasRect}
                     collapse={() => {
                         setExpandedIssue(null);
                         setClickCoordinates(null);
