@@ -261,10 +261,24 @@ class TrackingFunctionSpec:
 
 class TrackingFunctionContext(metaclass=abc.ABCMeta):
     """
-    Information that is supplied to an auto-annotation tracking function.
+    Information that is supplied to all methods of an auto-annotation tracking function.
 
     Currently, this class is empty, but in the future some properties may be added.
     """
+
+
+class TrackingFunctionShapeContext(TrackingFunctionContext):
+    """
+    Information that is supplied to shape-specific methods of an auto-annotation tracking function.
+    """
+
+    @property
+    @abc.abstractmethod
+    def original_shape_type(self) -> str:
+        """
+        The type of the shape that is being tracked.
+        """
+        ...
 
 
 @attrs.frozen(kw_only=True)
@@ -334,7 +348,7 @@ class TrackingFunction(AutoAnnotationFunction, Protocol[_PreprocessedImage, _Tra
 
     def init_tracking_state(
         self,
-        context: TrackingFunctionContext,
+        context: TrackingFunctionShapeContext,
         pp_image: _PreprocessedImage,
         shape: TrackableShape,
     ) -> _TrackingState:
@@ -352,7 +366,10 @@ class TrackingFunction(AutoAnnotationFunction, Protocol[_PreprocessedImage, _Tra
         ...
 
     def track(
-        self, context: TrackingFunctionContext, pp_image: _PreprocessedImage, state: _TrackingState
+        self,
+        context: TrackingFunctionShapeContext,
+        pp_image: _PreprocessedImage,
+        state: _TrackingState,
     ) -> Optional[TrackableShape]:
         """
         Predicts the position of a previously-analyzed shape on a new image.

@@ -303,9 +303,8 @@ spec = cvataa.TrackingFunctionSpec(supported_shape_types=["rectangle"])
 
 `init_tracking_state` must be a function accepting the following parameters:
 
-- `context` (`TrackingFunctionContext`).
-  This is currently a dummy object and should be ignored.
-  In future versions, this may contain additional parameters.
+- `context` (`TrackingFunctionShapeContext`).
+  An object with information about the shape being tracked. See details below.
 
 - `pp_image` (type varies).
   A preprocessed image.
@@ -326,8 +325,8 @@ It must then return this object.
 
 `track` must be a function accepting the following parameters:
 
-- `context` (`TrackingFunctionContext`).
-  Same as in `init_tracking_state`.
+- `context` (`TrackingFunctionShapeContext`).
+  An object with information about the shape being tracked. See details below.
 
 - `pp_image` (type varies).
   A preprocessed image.
@@ -347,10 +346,19 @@ If `track` is unable to locate the shape, it must return `None`.
 `track` may modify `state` as needed to improve prediction accuracy on subsequent frames.
 It must not modify `pp_image`.
 
+A `TrackingFunctionShapeContext` object passed to both `init_tracking_state` and `track`
+will have the following field:
+
+- `original_shape_type` (`str`).
+  The type of the shape being tracked.
+  In `init_tracking_state`, this is the same as `shape.type`.
+  In `track`, this is the type of the shape that `state` was created from.
+
 `preprocess_image`, if implemented, must accept the following parameters:
 
 - `context` (`TrackingFunctionContext`).
-  Same as in `init_tracking_state`.
+  This is currently a dummy object and should be ignored.
+  In future versions, this may contain additional information.
 
 - `image` (`PIL.Image.Image`).
   An image that will be used to either start or continue tracking.

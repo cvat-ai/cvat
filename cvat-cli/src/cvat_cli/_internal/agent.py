@@ -167,7 +167,6 @@ def _worker_job_detect(
 
 
 def _worker_job_init_tracking(
-    context: _TrackingFunctionContextImpl,
     task_id: int,
     image: PIL.Image.Image,
     shapes: list[cvataa.TrackableShape],
@@ -175,13 +174,15 @@ def _worker_job_init_tracking(
     _tracking_states.prune()
 
     if hasattr(_current_function, "preprocess_image"):
-        pp_image = _current_function.preprocess_image(context, image)
+        pp_image = _current_function.preprocess_image(_TrackingFunctionContextImpl(), image)
     else:
         pp_image = image
 
     return [
         _tracking_states.store(
-            state=_current_function.init_tracking_state(context, pp_image, shape),
+            state=_current_function.init_tracking_state(
+                _TrackingFunctionShapeContextImpl(original_shape_type=shape.type), pp_image, shape
+            ),
             shape_type=shape.type,
             task_id=task_id,
             image_dims=image.size,
@@ -191,18 +192,22 @@ def _worker_job_init_tracking(
 
 
 def _worker_job_track(
-    context: _TrackingFunctionContextImpl, task_id: int, image: PIL.Image.Image, states: list[str]
+    task_id: int, image: PIL.Image.Image, states: list[str]
 ) -> list[Optional[cvataa.TrackableShape]]:
     _tracking_states.prune()
 
-    pp_image = _current_function.preprocess_image(context, image)
+    pp_image = _current_function.preprocess_image(_TrackingFunctionContextImpl(), image)
 
     def track(state_id):
         inner_state, original_shape_type = _tracking_states.retrieve(
             state_id=state_id, task_id=task_id, image_dims=image.size
         )
 
-        output_shape = _current_function.track(context, pp_image, inner_state)
+        output_shape = _current_function.track(
+            _TrackingFunctionShapeContextImpl(original_shape_type=original_shape_type),
+            pp_image,
+            inner_state,
+        )
 
         if output_shape and output_shape.type != original_shape_type:
             raise cvataa.BadFunctionError(
@@ -347,6 +352,11 @@ class _IncompatibleFunctionError(Exception):
 
 class _TrackingFunctionContextImpl(cvataa.TrackingFunctionContext):
     pass
+
+
+@attrs.frozen(kw_only=True)
+class _TrackingFunctionShapeContextImpl(cvataa.TrackingFunctionShapeContext):
+    original_shape_type: str
 
 
 class _Agent:
@@ -846,8 +856,6 @@ class _Agent:
     def _calculate_result_for_init_tracking_ar(self, ar_id: str, ar_params) -> dict[str, Any]:
         sample, _ = self._get_sample_from_ar_params(ar_params)
 
-        context = _TrackingFunctionContextImpl()
-
         def convert_shape(shape: dict) -> cvataa.TrackableShape:
             if shape["type"] not in self._function_spec.supported_shape_types:
                 raise _BadArError(f"Unsupported shape type {shape['type']!r}")
@@ -858,7 +866,6 @@ class _Agent:
         states = self._executor.result(
             self._executor.submit(
                 _worker_job_init_tracking,
-                context,
                 ar_params["task"],
                 sample.media.load_image(),
                 shapes,
@@ -870,12 +877,10 @@ class _Agent:
     def _calculate_result_for_track_ar(self, ar_id: str, ar_params) -> dict[str, Any]:
         sample, _ = self._get_sample_from_ar_params(ar_params)
 
-        context = _TrackingFunctionContextImpl()
-
         states = ar_params["states"]
         shapes = self._executor.result(
             self._executor.submit(
-                _worker_job_track, context, ar_params["task"], sample.media.load_image(), states
+                _worker_job_track, ar_params["task"], sample.media.load_image(), states
             )
         )
 
