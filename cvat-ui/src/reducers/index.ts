@@ -266,6 +266,10 @@ export type PluginsList = {
     [name in SupportedPlugins]: boolean;
 };
 
+export interface CallbackReturnType {
+    preventMethodCall?: boolean;
+}
+
 export interface PluginComponent {
     component: any;
     data: {
@@ -288,7 +292,7 @@ export interface PluginsState {
         annotationPage: {
             header: {
                 menu: {
-                    beforeJobFinish: (() => Promise<void>)[];
+                    beforeJobFinish: (() => Promise<CallbackReturnType>)[];
                 };
             };
         };
