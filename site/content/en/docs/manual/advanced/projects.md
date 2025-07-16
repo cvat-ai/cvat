@@ -45,8 +45,10 @@ or create a new project by clicking on the `+` button and select `Create New Pro
 
 !["Projects" page with highlighted menu for project creation](/images/image190.jpg)
 
-> Note that the project will be created in the organization that you selected at the time of creation.
-> Read more about {{< ilink "/docs/manual/advanced/organization" "organizations" >}}.
+{{% alert title="Note" color="primary" %}}
+Note that the project will be created in the organization that you selected at the time of creation.
+Read more about {{< ilink "/docs/manual/advanced/organization" "organizations" >}}.
+{{% /alert %}}
 
 You can change: the name of the project, the list of labels
 (which will be used for tasks created as parts of this project) and a skeleton if it's necessary.

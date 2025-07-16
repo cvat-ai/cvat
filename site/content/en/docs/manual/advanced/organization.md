@@ -78,8 +78,10 @@ Follow these steps:
 
 ![Example of user menu with available organizations](/images/user_menu_select_org.png)
 
-> **Note**, that if you've created more than 10 organizations,
-> a **Switch organization** line will appear in the drop-down menu.
+{{% alert title="Note" color="primary" %}}
+If you've created more than 10 organizations,
+a **Switch organization** line will appear in the drop-down menu.
+{{% /alert %}}
 
 ![Part of user menu with highlighted "Switch organization" button](/images/switch_org.png)
 
@@ -95,11 +97,13 @@ and manage **Organization** members.
 
 ![Example of organization page interface](/images/org_page.png)
 
-> **Note** that in order to access the organization page, you must first activate
-> the organization (see [Switching between organizations](#switching-between-organizations)).
-> Without activation, the organization page will remain inaccessible.
-> <br>An organization is considered activated when it's ticked in the drop-down menu
-> and its name is visible in the top-right corner under the username.
+{{% alert title="Note" color="primary" %}}
+In order to access the organization page, you must first activate
+the organization (see [Switching between organizations](#switching-between-organizations)).
+Without activation, the organization page will remain inaccessible.
+<br>An organization is considered activated when it's ticked in the drop-down menu
+and its name is visible in the top-right corner under the username.
+{{% /alert %}}
 
 To go to the **Organization page**, do the following:
 
@@ -180,8 +184,10 @@ clicking on the three dots, and selecting **Remove invitation**
 
 You can remove an organization that you created.
 
-> **Note**: Removing an organization will delete all related resources (annotations,
-> jobs, tasks, projects, cloud storage, and so on).
+{{% alert title="Note" color="primary" %}}
+Removing an organization will delete all related resources (annotations,
+jobs, tasks, projects, cloud storage, and so on).
+{{% /alert %}}
 
 To remove an organization, do the following:
 
