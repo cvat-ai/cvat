@@ -133,14 +133,14 @@ class UserRegisterAPITestCase(ApiTestBase):
         response = self._post_request(
             "/api/organizations", self.admin, data={"slug": org_slug, "name": "Test organization"}
         )
-        self.assertTrue(response.status_code == status.HTTP_201_CREATED)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         response = self._post_request(
             "/api/invitations",
             self.admin,
             data={"role": "worker", "email": self.user_data["email"].upper()},
             query_params={"org": org_slug},
         )
-        self.assertTrue(response.status_code == status.HTTP_201_CREATED)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         response = self._run_api_v2_user_register(self.user_data)
         self._check_response(
@@ -161,6 +161,6 @@ class UserRegisterAPITestCase(ApiTestBase):
             format="json",
             data={"email": self.user_data["email"], "password": self.user_data["password1"]},
         )
-        self.assertTrue(response.status_code == status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("sessionid", response.cookies)
         self.assertIn("csrftoken", response.cookies)
