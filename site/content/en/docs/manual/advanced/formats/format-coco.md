@@ -61,7 +61,7 @@ Upload format: a single unpacked `*.json` or a zip archive with the structure de
 [here](https://open-edge-platform.github.io/datumaro/latest/docs/data-formats/formats/coco.html#import-coco-dataset)
 (without images).
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 Even though `licenses` and `info` fields are required according to format specifications,
 CVAT does not require them to import annotations.
 {{% /alert %}}

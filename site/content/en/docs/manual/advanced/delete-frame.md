@@ -13,7 +13,7 @@ Thus, it is possible to mark corrupted frames that are not subject to annotation
 
 1. Go to the Job annotation view and click on the **Delete frame** button (**Alt**+**Del**).
 
-   {{% alert title="Note" color="secondary" %}}
+   {{% alert title="Note" color="primary" %}}
    When you delete with the shortcut,
    the frame will be deleted immediately without additional confirmation.
    {{% /alert %}}
@@ -22,7 +22,7 @@ Thus, it is possible to mark corrupted frames that are not subject to annotation
 
 1. After that you will be asked to confirm frame deleting.
 
-   {{% alert title="Note" color="secondary" %}}
+   {{% alert title="Note" color="primary" %}}
    all annotations from that frame will be deleted, unsaved annotations
    will be saved and the frame will be invisible in the annotation view (Until you make it visible in the settings).
    If there is some overlap in the task and the deleted frame falls within this interval,

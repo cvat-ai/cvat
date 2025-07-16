@@ -123,7 +123,7 @@ For export, see {{< ilink "/docs/manual/advanced/import-datasets" "Export datase
 Import follows the general {{< ilink "/docs/manual/advanced/import-datasets" "import dataset" >}} procedure,
 with the additional option of converting masks to polygons.
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 This option is available for formats that work with masks only.
 {{% /alert %}}
 

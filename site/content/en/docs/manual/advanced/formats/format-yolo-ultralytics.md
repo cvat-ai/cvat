@@ -118,7 +118,7 @@ All coordinates must be normalized.
 It can be achieved by dividing x coordinates and widths by image width,
 and y coordinates and heights by image height.
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 In CVAT you can place an object or some parts of it outside the image,
 which will cause the coordinates to be outside the \[0, 1\] range.
 YOLOv8 framework ignores labels with such coordinates.

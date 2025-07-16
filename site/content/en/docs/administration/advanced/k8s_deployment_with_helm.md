@@ -143,7 +143,7 @@ Analytics is enabled by default, to disable set `analytics.enabled: false` in yo
 ## Deployment
 Make sure you are using correct kubernetes context. You can check it with `kubectl config current-context`.
 
-{{% alert title="Warning" color="primary" %}}
+{{% alert title="Warning" color="warning" %}}
 The k8s service name of Open Policy Agent is fixed to opa by default.
 This is done to be compatible with CVAT 2.0 but limits this helm chart to a single release per namespace.
 The OPA url currently can´t be set as an environment variable.

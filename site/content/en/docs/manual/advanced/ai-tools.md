@@ -66,7 +66,7 @@ To annotate with interactors, do the following:
 
 ### AI tools: add extra points
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 More points improve outline accuracy, but make shape editing harder.
 Fewer points make shape editing easier, but reduce outline accuracy.
 {{% /alert %}}
@@ -269,7 +269,7 @@ To annotate with trackers, do the following:
 4. Annotation actions window will pop-up. Setup `Target frame`
 and `Convert rectangle shapes to tracks` parameters and click `Run`
 
-   {{% alert title="Note" color="secondary" %}}
+   {{% alert title="Note" color="primary" %}}
    Tracking will be applied to all filtered rectangle annotations.
    {{% /alert %}}
 

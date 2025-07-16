@@ -5,7 +5,7 @@ weight: 3
 description: 'SSO for a Self-Hosted solution'
 ---
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 This is a paid feature available only to [Enterprise clients](https://www.cvat.ai/pricing/on-prem).
 {{% /alert %}}
 
@@ -43,7 +43,7 @@ To start, log into your [Microsoft Azure Portal](https://portal.azure.com/#home)
 
 1. Click on the `Register` button.
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 More information on how to configure an OIDC-based application on the Azure platform can be found
 [here](https://learn.microsoft.com/en-us/power-pages/security/authentication/openid-settings#create-an-app-registration-in-azure).
 {{% /alert %}}

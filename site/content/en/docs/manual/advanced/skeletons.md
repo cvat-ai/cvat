@@ -20,7 +20,7 @@ possessing unique attributes and properties like color, occlusion, and visibilit
 in two formats: {{< ilink "/docs/manual/advanced/formats/format-cvat#cvat-for-videos-export" "**CVAT for image**" >}}
 and {{< ilink "/docs/manual/advanced/formats/coco-keypoints" "**COCO Keypoints**" >}}.
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 Skeletons' labels cannot be imported in a label-less project by importing a dataset.
 You need to define the labels manually before the import.
 {{% /alert %}}
@@ -88,7 +88,7 @@ In the opened menu, you can change the point setting. It is similar to
 
 A **Skeleton** point can only exist within its parent **Skeleton**.
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 You cannot change the skeleton configuration for an existing task/project.
 
 You can copy/insert skeleton configuration from the **Raw** tab of the label configurator.

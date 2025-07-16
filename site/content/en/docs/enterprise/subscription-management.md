@@ -110,7 +110,7 @@ Here’s how you can do it:
 
 6. Select checkbox **I agree to refund policy** **(4)**.
 
-   {{% alert title="Note" color="secondary" %}}
+   {{% alert title="Note" color="primary" %}}
    Please read the **Refund policy** before selecting the checkbox.
    {{% /alert %}}
 
@@ -194,7 +194,7 @@ This section describes how to change or add payment methods.
 
 ### Paying with bank transfer
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 At the moment this method of payment
 works only with US banks.
 {{% /alert %}}
@@ -205,7 +205,7 @@ To pay with a bank transfer:
 2. Click **US Bank Transfer**.
 3. Upon successful completion of the payment, you will receive a receipt via email.
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 The completion of the payment process may take up to three banking days.
 {{% /alert %}}
 

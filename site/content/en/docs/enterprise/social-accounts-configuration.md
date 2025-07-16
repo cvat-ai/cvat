@@ -5,7 +5,7 @@ weight: 3
 description: 'Social accounts authentication for a Self-Hosted solution'
 ---
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 This is a paid feature available for [Enterprise clients](https://www.cvat.ai/pricing/on-prem).
 {{% /alert %}}
 
@@ -98,7 +98,7 @@ There are 2 basic steps to enable GitHub account authentication.
    docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.override.yml up -d --build
    ```
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 You can also configure [GitHub App](https://docs.github.com/en/developers/apps/building-github-apps/creating-a-github-app),
 but don't forget to add required permissions.
 <br>In the **Permission** > **Account permissions** > **Email addresses** must be set to **read-only**.

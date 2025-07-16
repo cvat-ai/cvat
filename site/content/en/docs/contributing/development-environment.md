@@ -89,7 +89,7 @@ description: 'Installing a development environment for different operating syste
   That way, you're more likely to be able to install the dependencies,
   but their versions might not correspond to those used in production.
 
-  {{% alert title="Note for Mac users" color="secondary" %}}
+  {{% alert title="Note for Mac users" color="primary" %}}
   If you have any problems with installing dependencies from
   `cvat/requirements/*.txt`, you may need to reinstall your system python
   In some cases after system update it can be configured incorrectly and cannot compile
@@ -137,7 +137,7 @@ description: 'Installing a development environment for different operating syste
   ```
   {{% /alert %}}
 
-  {{% alert title="Note for Arch Linux users" color="secondary" %}}
+  {{% alert title="Note for Arch Linux users" color="primary" %}}
   Because PyAV as of version 10.0.0 already [works](https://github.com/PyAV-Org/PyAV/pull/910)
   with FFMPEG5, you may consider changing the `av` version requirement
   in `/cvat/cvat/requirements/base.txt` to 10.0.0 or higher.
@@ -177,7 +177,7 @@ description: 'Installing a development environment for different operating syste
   yarn --frozen-lockfile
   ```
 
-  {{% alert title="Note for Mac users" color="secondary" %}}
+  {{% alert title="Note for Mac users" color="primary" %}}
   If you faced with error
   `Node Sass does not yet support your current environment: OS X 64-bit with Unsupported runtime (57)`,
   read this article [Node Sass does not yet support your current environment](https://marketplace.visualstudio.com/items?itemName=msjsdiag.debugger-for-chrome)
@@ -208,7 +208,7 @@ description: 'Installing a development environment for different operating syste
 - If you choose to run CVAT in localhost: Select `server: chrome` configuration and run it (F5) to open CVAT in Chrome
 - Alternative: If you changed CVAT_UI_HOST just enter `<YOUR_HOST_IP>:3000` in your browser.
 
-{{% alert title="Note for Mac users" color="secondary" %}}
+{{% alert title="Note for Mac users" color="primary" %}}
 You may have a permission denied problem starting the server because **AirPlay Receiver** running on port 5000/7000.
 
 Turn off AirPlay Receiver:

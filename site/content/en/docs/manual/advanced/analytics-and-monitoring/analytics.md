@@ -86,7 +86,7 @@ Use the link in the page title to return to the corresponding project, task, or 
 Analytics data is not fetched automatically. When you first open the **Analytics** page, it will be empty.
 To fetch and display the analytical data, select the **Request** button.
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 The analytical data is fetched for all resource children.
 So, when you request data for a task, the data for all task jobs is also fetched.
 {{% /alert %}}
@@ -104,7 +104,7 @@ The **Analytics** page includes:
 - Date filter.
 - **Export events** button.
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 The date filter is applied to the [**Summary**](#summary-tab)
 and [**Events**](#events-tab) tabs.
 {{% /alert %}}
@@ -186,7 +186,7 @@ The **Events** tab displays the following metrics:
 - **Total working time**: Total user time spent.
 - **Avg. annotation speed**: : Average number of objects annotated per hour.
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 All metrics are recalculated when you apply the date or table filter.
 {{% /alert %}}
 
@@ -248,7 +248,7 @@ The events table columns:
 The tables in the **Annotations** and **Events** tabs support:
 1. Exporting the data: select ![Export button](/images/export-button.svg) button.
 
-   {{% alert title="Note" color="secondary" %}}
+   {{% alert title="Note" color="primary" %}}
    Visible columns do not affect the file with exported data.
    It always contains the complete table with all columns and rows.
    {{% /alert %}}

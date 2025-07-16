@@ -8,7 +8,7 @@ description: 'How to perform bulk actions on filtered shapes'
 The shapes converter is a feature that enables bulk actions on filtered **shapes**. It allows you to perform mutual
 conversion between masks, polygons and rectangles.
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 All shapes converter work only when the filter is set up.
 {{% /alert %}}
 
@@ -24,7 +24,7 @@ Annotations actions can be accessed from the annotation menu.
 To access it, click on the burger icon
 and then select **Run actions**.
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 All **Shapes converter** functions work in alignment with set up filter.
 {{% /alert %}}
 
@@ -82,7 +82,7 @@ To convert shapes, do the following:
 
    ![Progress bar for shapes converter with defined parameters](/images/shapes-converter-action-run.jpg)
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 Once the action is applied, it cannot be undone.
 {{% /alert %}}
 

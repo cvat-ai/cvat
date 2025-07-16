@@ -39,7 +39,7 @@ Next, specify the task parameters in the configurator:
    <!-- TODO: replace the image with '/images/select_project.png' after updating screenshots -->
    ![Select project](/images/image193.jpg)
 
-   {{% alert title="Note" color="secondary" %}}
+   {{% alert title="Note" color="primary" %}}
    Following steps are valid if the task does not belong to a project.
    <br>If the task has been assigned to a project, the project's labels will be applied to the task.
    {{% /alert %}}
@@ -96,7 +96,7 @@ but if you select `Rectangle` for all labels,
 only the **Rectangle** tool will be
 visible on the sidebar.
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 You cannot apply the **Label shape**
 to the **AI** and **OpenCV** tools,
 these tools will always be available.
@@ -112,7 +112,7 @@ the label shape to polylines, all previously created objects will remain
 polygons. However, you will not be able to add new polygon
 objects with the same label.
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 You cannot change the shape of the `skeleton` label.
 <br>The **Label shape** field for the `skeleton` label is disabled.
 {{% /alert %}}
@@ -190,7 +190,7 @@ The **Raw** is a way of working with labels for an advanced user.
 
 It is useful when you need to copy labels from one independent task to another.
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 Be careful with changing the raw specification of an existing task/project.
 Removing any "id" properties will lead to losing existing annotations.
 **This property will be removed automatically from any text you insert to this field**.
@@ -205,7 +205,7 @@ The **Done** button applies the changes and the **Reset** button cancels the cha
 
 To create a 3D task, you must prepare an archive with one of the following directory structures.
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 You can't mix 2D and 3D data in the same task.
 {{% /alert %}}
 

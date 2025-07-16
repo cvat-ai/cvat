@@ -78,7 +78,7 @@ Follow these steps:
 
 ![Example of user menu with available organizations](/images/user_menu_select_org.png)
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 If you've created more than 10 organizations,
 a **Switch organization** line will appear in the drop-down menu.
 {{% /alert %}}
@@ -97,7 +97,7 @@ and manage **Organization** members.
 
 ![Example of organization page interface](/images/org_page.png)
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 In order to access the organization page, you must first activate
 the organization (see [Switching between organizations](#switching-between-organizations)).
 Without activation, the organization page will remain inaccessible.
@@ -184,7 +184,7 @@ clicking on the three dots, and selecting **Remove invitation**
 
 You can remove an organization that you created.
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 Removing an organization will delete all related resources (annotations,
 jobs, tasks, projects, cloud storage, and so on).
 {{% /alert %}}

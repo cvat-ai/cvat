@@ -58,7 +58,7 @@ A new bucket will appear on the list of buckets.
 
 ### Upload data
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 The manifest file is optional.
 {{% /alert %}}
 
@@ -138,7 +138,7 @@ After filling in all the fields, select **Submit**.
 
 ### AWS S3 manifest file
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 The manifest file is optional.
 {{% /alert %}}
 
@@ -199,7 +199,7 @@ To create bucket, do the following:
 1. On the [Google Cloud](https://cloud.google.com/) page, select **Start Free**, then enter the required
    data and accept the terms of service.
 
-   {{% alert title="Note" color="secondary" %}}
+   {{% alert title="Note" color="primary" %}}
    Google requires to add payment, you will need a bank card to accomplish step 2.
    {{% /alert %}}
 
@@ -217,7 +217,7 @@ You will be forwarded to the bucket.
 
 ### Upload data
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 The manifest file is optional.
 {{% /alert %}}
 
@@ -387,7 +387,7 @@ You need to upload data for annotation and the `manifest.jsonl` file.
 1. Go to container and select **Upload**.
 1. Select **Browse for files** and select images.
 
-   {{% alert title="Note" color="secondary" %}}
+   {{% alert title="Note" color="primary" %}}
    If images are in folder, specify folder in the **Advanced settings** > **Upload to folder**.
    {{% /alert %}}
 

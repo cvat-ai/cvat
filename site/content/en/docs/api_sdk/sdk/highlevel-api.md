@@ -128,7 +128,7 @@ with Client('http://localhost:8080', config=config) as client:
     ...
 ```
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 Historically, the SDK has allowed the URL scheme (`http:` or `https:`)
 to be omitted, and would attempt to automatically detect the protocol.
 This behavior is deprecated due to being inherently insecure,

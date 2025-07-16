@@ -11,7 +11,7 @@ description: 'Information about the installation of components needed for semi-a
 
 <!--lint disable maximum-line-length-->
 
-{{% alert title="Warning" color="primary" %}}
+{{% alert title="Warning" color="warning" %}}
 **Do not use `docker compose up`**.
 If you did, make sure all containers are stopped by `docker compose down`.
 {{% /alert %}}

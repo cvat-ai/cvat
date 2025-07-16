@@ -45,7 +45,7 @@ or create a new project by clicking on the `+` button and select `Create New Pro
 
 !["Projects" page with highlighted menu for project creation](/images/image190.jpg)
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 Note that the project will be created in the organization that you selected at the time of creation.
 Read more about {{< ilink "/docs/manual/advanced/organization" "organizations" >}}.
 {{% /alert %}}

@@ -10,7 +10,7 @@ In the demanding process of annotation, ensuring accuracy is paramount.
 CVAT introduces a specialized **Review mode**, designed to streamline the
 validation of annotations by pinpointing errors or discrepancies in annotation.
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 The **Review mode** is not applicable for 3D tasks.
 {{% /alert %}}
 
@@ -35,7 +35,7 @@ Review mode is a user interface (UI) setting where a specialized
 **Issue** tool is available. This tool allows you to identify
 and describe issues with objects or areas within the frame.
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 While in review mode, all other tools will be hidden.
 {{% /alert %}}
 
@@ -45,7 +45,7 @@ While in review mode, all other tools will be hidden.
 
 ### Assigning reviewer
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 Reviewers can be assigned by project or task owner, assignee, and maintainer.
 {{% /alert %}}
 
@@ -96,7 +96,7 @@ To create a **Quick issue** do the following:
 
 ### Assigning corrector
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 Only project owners and maintainers can assign reviewers.
 {{% /alert %}}
 

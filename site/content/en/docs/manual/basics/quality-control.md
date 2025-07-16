@@ -62,7 +62,7 @@ Consult the detailed guide on quality estimation in CVAT in the
 
 ## How to enable immediate job feedback
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 This feature requires a configured validation set in the task. Learn more
 in [How to enable quality control](#how-to-enable-quality-control) and in the
 {{< ilink "/docs/manual/advanced/analytics-and-monitoring/auto-qa#configuring-quality-estimation" "full guide" >}}.

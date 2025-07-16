@@ -120,7 +120,7 @@ The maximum amount of contextual images is twelve.
 
 By default they will be positioned on the right side of the main image.
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 By default, only three contextual images will be visible.
 {{% /alert %}}
 

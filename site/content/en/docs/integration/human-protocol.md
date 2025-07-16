@@ -49,7 +49,7 @@ integration, providing a clear picture of the workflow and participants involved
 
 ## Requester: How to get data annotated?
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 Either you are Requester or Annotator,
 to access this feature, you'll need to [send a request to HUMAN Protocol](mailto:app@humanprotocol.org).
 {{% /alert %}}
@@ -65,7 +65,7 @@ annotated according to the specified requirements and quality standards.
 
 ## Annotator: How to earn money?
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 Either you are Requester or Annotator,
 to access this feature, you'll need to [send a request to HUMAN Protocol](mailto:app@humanprotocol.org).
 {{% /alert %}}

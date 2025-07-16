@@ -19,7 +19,7 @@ To create an account or log in, go to the [CVAT Online](https://app.cvat.ai/) lo
 
 ![CVAT Online login page](/images/image001.jpg)
 
-{{% alert title="Note" color="secondary" %}}
+{{% alert title="Note" color="primary" %}}
 By default, authentication and registration with
 Google and GitHub work only for [CVAT Online](https://app.cvat.ai/).
 <br>If you want to use Google and GitHub authentication on a local installation,
