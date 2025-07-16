@@ -89,61 +89,61 @@ description: 'Installing a development environment for different operating syste
   That way, you're more likely to be able to install the dependencies,
   but their versions might not correspond to those used in production.
 
-  > Note for Mac users
-  >
-  > If you have any problems with installing dependencies from
-  > `cvat/requirements/*.txt`, you may need to reinstall your system python
-  > In some cases after system update it can be configured incorrectly and cannot compile
-  > some native modules
-  >
-  > Make sure Homebrew lib path is in `DYLD_LIBRARY_PATH`.
-  > For Apple Silicon: `export DYLD_LIBRARY_PATH=/opt/homebrew/lib:$DYLD_LIBRARY_PATH`
-  >
-  > Homebrew will install FFMpeg 5.0 by default, which does not work, so you should install 4.X.
-  > You can install older 4.X FFMpeg using Homebrew like that:
-  >
-  > ```
-  >  cd "$(brew --repo homebrew/core)"
-  >  git checkout addd616edc9134f057e33694c420f4900be59db8
-  >  brew unlink ffmpeg
-  >  HOMEBREW_NO_AUTO_UPDATE=1 brew install ffmpeg
-  >  git checkout master
-  > ```
-  >
-  > if you are still facing error `Running setup.py install for av ... error`, you may
-  > try more radical variant
-  >
-  > ```
-  >  cd "$(brew --repo homebrew/core)"
-  >  git checkout addd616edc9134f057e33694c420f4900be59db8
-  >  brew uninstall ffmpeg --force
-  >  HOMEBREW_NO_AUTO_UPDATE=1 brew install ffmpeg
-  >  git checkout master
-  > ```
-  >
-  > If you faced with error `Failed building wheel for h5py`, you may need install `hdf5`
-  >
-  > ```
-  > brew install hdf5
-  > export HDF5_DIR="$(brew --prefix hdf5)"
-  > pip install --no-binary=h5py h5py
-  > ```
-  >
-  > If you faced with error
-  > `OSError: Could not find library geos_c or load any of its variants ['libgeos_c.so.1', 'libgeos_c.so']`.
-  > You may fix this using
-  >
-  > ```
-  > sudo ln -s /opt/homebrew/lib/libgeos_c.dylib /usr/local/lib
-  > ```
+  {{% alert title="Note for Mac users" color="primary" %}}
+  If you have any problems with installing dependencies from
+  `cvat/requirements/*.txt`, you may need to reinstall your system python
+  In some cases after system update it can be configured incorrectly and cannot compile
+  some native modules
 
-  > Note for Arch Linux users:
-  >
-  > Because PyAV as of version 10.0.0 already [works](https://github.com/PyAV-Org/PyAV/pull/910)
-  > with FFMPEG5, you may consider changing the `av` version requirement
-  > in `/cvat/cvat/requirements/base.txt` to 10.0.0 or higher.
-  >
-  > Perform this action before installing cvat requirements from the list mentioned above.
+  Make sure Homebrew lib path is in `DYLD_LIBRARY_PATH`.
+  For Apple Silicon: `export DYLD_LIBRARY_PATH=/opt/homebrew/lib:$DYLD_LIBRARY_PATH`
+
+  Homebrew will install FFMpeg 5.0 by default, which does not work, so you should install 4.X.
+  You can install older 4.X FFMpeg using Homebrew like that:
+
+  ```
+  cd "$(brew --repo homebrew/core)"
+  git checkout addd616edc9134f057e33694c420f4900be59db8
+  brew unlink ffmpeg
+  HOMEBREW_NO_AUTO_UPDATE=1 brew install ffmpeg
+  git checkout master
+  ```
+
+  if you are still facing error `Running setup.py install for av ... error`, you may
+  try more radical variant
+
+  ```
+  cd "$(brew --repo homebrew/core)"
+  git checkout addd616edc9134f057e33694c420f4900be59db8
+  brew uninstall ffmpeg --force
+  HOMEBREW_NO_AUTO_UPDATE=1 brew install ffmpeg
+  git checkout master
+  ```
+
+  If you faced with error `Failed building wheel for h5py`, you may need install `hdf5`
+
+  ```
+  brew install hdf5
+  export HDF5_DIR="$(brew --prefix hdf5)"
+  pip install --no-binary=h5py h5py
+  ```
+
+  If you faced with error
+  `OSError: Could not find library geos_c or load any of its variants ['libgeos_c.so.1', 'libgeos_c.so']`.
+  You may fix this using
+
+  ```
+  sudo ln -s /opt/homebrew/lib/libgeos_c.dylib /usr/local/lib
+  ```
+  {{% /alert %}}
+
+  {{% alert title="Note for Arch Linux users" color="primary" %}}
+  Because PyAV as of version 10.0.0 already [works](https://github.com/PyAV-Org/PyAV/pull/910)
+  with FFMPEG5, you may consider changing the `av` version requirement
+  in `/cvat/cvat/requirements/base.txt` to 10.0.0 or higher.
+
+  Perform this action before installing cvat requirements from the list mentioned above.
+  {{% /alert %}}
 
 - Install [Docker Engine](https://docs.docker.com/engine/install/ubuntu/) and [Docker Compose](https://docs.docker.com/compose/install/)
 
@@ -177,13 +177,11 @@ description: 'Installing a development environment for different operating syste
   yarn --frozen-lockfile
   ```
 
-  > Note for Mac users
-  >
-  > If you faced with error
-  >
-  > `Node Sass does not yet support your current environment: OS X 64-bit with Unsupported runtime (57)`
-  >
-  > Read this article [Node Sass does not yet support your current environment](https://marketplace.visualstudio.com/items?itemName=msjsdiag.debugger-for-chrome)
+  {{% alert title="Note for Mac users" color="primary" %}}
+  If you faced with error
+  `Node Sass does not yet support your current environment: OS X 64-bit with Unsupported runtime (57)`,
+  read this article [Node Sass does not yet support your current environment](https://marketplace.visualstudio.com/items?itemName=msjsdiag.debugger-for-chrome)
+  {{% /alert %}}
 
 ### Run CVAT
 
@@ -210,13 +208,12 @@ description: 'Installing a development environment for different operating syste
 - If you choose to run CVAT in localhost: Select `server: chrome` configuration and run it (F5) to open CVAT in Chrome
 - Alternative: If you changed CVAT_UI_HOST just enter `<YOUR_HOST_IP>:3000` in your browser.
 
-> Note for Mac users
->
-> You may have a permission denied problem starting the server because **AirPlay Receiver** running on port 5000/7000.
->
-> Turn off AirPlay Receiver:
-> _Go to System Settings_ → _General_ → _AirDrop & Handoff_ → _Untick Airplay Receiver_.
+{{% alert title="Note for Mac users" color="primary" %}}
+You may have a permission denied problem starting the server because **AirPlay Receiver** running on port 5000/7000.
 
+Turn off AirPlay Receiver:
+_Go to System Settings_ → _General_ → _AirDrop & Handoff_ → _Untick Airplay Receiver_.
+{{% /alert %}}
 
 You have done! Now it is possible to insert breakpoints and debug server and client of the tool.
 Instructions for running tests locally are available {{< ilink "/docs/contributing/running-tests" "here" >}}.
