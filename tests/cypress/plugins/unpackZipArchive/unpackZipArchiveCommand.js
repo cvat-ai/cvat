@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-Cypress.Commands.add('unpackZipArchive', (arhivePath, extractPath) => cy.task('unpackZipArchive', {
-    arhivePath,
+Cypress.Commands.add('unpackZipArchive', (archivePath, extractPath) => cy.task('unpackZipArchive', {
+    archivePath,
     extractPath,
 }));

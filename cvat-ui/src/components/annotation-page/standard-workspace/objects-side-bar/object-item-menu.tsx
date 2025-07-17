@@ -264,7 +264,7 @@ export default function ItemMenu(props: Props): MenuProps {
         COPY = 'copy',
         PROPAGATE = 'propagate',
         SWITCH_ORIENTATION = 'switch_orientation',
-        RESET_PERSPECIVE = 'reset_perspective',
+        RESET_PERSPECTIVE = 'reset_perspective',
         TO_BACKGROUND = 'to_background',
         TO_FOREGROUND = 'to_foreground',
         SWITCH_COLOR = 'switch_color',
@@ -318,7 +318,7 @@ export default function ItemMenu(props: Props): MenuProps {
 
     if (is2D && !readonly && shapeType === ShapeType.CUBOID) {
         items.push({
-            key: MenuKeys.RESET_PERSPECIVE,
+            key: MenuKeys.RESET_PERSPECTIVE,
             label: <ResetPerspectiveItem toolProps={props} />,
         });
     }

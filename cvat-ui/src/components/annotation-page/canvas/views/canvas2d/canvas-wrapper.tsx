@@ -518,10 +518,10 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                 ).filter((state: ObjectState | undefined) => !!state) as ObjectState[];
             const highlightedClientIDs = highlightedObjects.map((state) => state?.clientID) as number[];
 
-            const higlightedTags = highlightedObjects.some((state) => state?.objectType === ObjectType.TAG);
-            if (higlightedTags && prevProps.highlightedConflict) {
+            const highlightedTags = highlightedObjects.some((state) => state?.objectType === ObjectType.TAG);
+            if (highlightedTags && prevProps.highlightedConflict) {
                 canvasInstance.highlight([], null);
-            } else if (!higlightedTags) {
+            } else if (!highlightedTags) {
                 canvasInstance.highlight(highlightedClientIDs, severity || null);
             }
         }
@@ -622,7 +622,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().removeEventListener('canvas.clicked', this.onCanvasShapeClicked);
         canvasInstance.html().removeEventListener('canvas.drawn', this.onCanvasShapeDrawn);
         canvasInstance.html().removeEventListener('canvas.merged', this.onCanvasObjectsMerged);
-        canvasInstance.html().removeEventListener('canvas.groupped', this.onCanvasObjectsGroupped);
+        canvasInstance.html().removeEventListener('canvas.grouped', this.onCanvasObjectsGrouped);
         canvasInstance.html().removeEventListener('canvas.joined', this.onCanvasObjectsJoined);
         canvasInstance.html().removeEventListener('canvas.regionselected', this.onCanvasPositionSelected);
         canvasInstance.html().removeEventListener('canvas.splitted', this.onCanvasTrackSplitted);
@@ -705,7 +705,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         onMergeAnnotations(states);
     };
 
-    private onCanvasObjectsGroupped = (event: any): void => {
+    private onCanvasObjectsGrouped = (event: any): void => {
         const {
             jobInstance, onGroupAnnotations, updateActiveControl,
         } = this.props;
@@ -1086,7 +1086,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener('canvas.clicked', this.onCanvasShapeClicked);
         canvasInstance.html().addEventListener('canvas.drawn', this.onCanvasShapeDrawn);
         canvasInstance.html().addEventListener('canvas.merged', this.onCanvasObjectsMerged);
-        canvasInstance.html().addEventListener('canvas.groupped', this.onCanvasObjectsGroupped);
+        canvasInstance.html().addEventListener('canvas.grouped', this.onCanvasObjectsGrouped);
         canvasInstance.html().addEventListener('canvas.joined', this.onCanvasObjectsJoined);
         canvasInstance.html().addEventListener('canvas.regionselected', this.onCanvasPositionSelected);
         canvasInstance.html().addEventListener('canvas.splitted', this.onCanvasTrackSplitted);

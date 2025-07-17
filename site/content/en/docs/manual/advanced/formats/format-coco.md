@@ -60,11 +60,14 @@ such as `instances`, `panoptic`, `image_info`, `labels`, `captions`, or `stuff`.
 Upload format: a single unpacked `*.json` or a zip archive with the structure described above or
 [here](https://open-edge-platform.github.io/datumaro/latest/docs/data-formats/formats/coco.html#import-coco-dataset)
 (without images).
-> Note, that even though `licenses` and `info` fields are required according to format specifications,
-> CVAT does not require them to import annotations.
 
-- supported annotations: Polygons, Rectangles (if the `segmentation` field is empty)
-- supported tasks: `instances`, `person_keypoints` (only segmentations will be imported), `panoptic`
+{{% alert title="Note" color="primary" %}}
+Even though `licenses` and `info` fields are required according to format specifications,
+CVAT does not require them to import annotations.
+{{% /alert %}}
+
+- Supported annotations: Polygons, Rectangles (if the `segmentation` field is empty)
+- Supported tasks: `instances`, `person_keypoints` (only segmentations will be imported), `panoptic`
 
 ## How to create a task from MS COCO dataset
 

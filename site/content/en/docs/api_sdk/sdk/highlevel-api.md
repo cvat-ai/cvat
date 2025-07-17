@@ -128,11 +128,13 @@ with Client('http://localhost:8080', config=config) as client:
     ...
 ```
 
-> **Note**: Historically, the SDK has allowed the URL scheme (`http:` or `https:`)
-> to be omitted, and would attempt to automatically detect the protocol.
-> This behavior is deprecated due to being inherently insecure,
-> and will be removed in a future version.
-> To avoid future breakage, make sure to specify the scheme explicitly.
+{{% alert title="Note" color="primary" %}}
+Historically, the SDK has allowed the URL scheme (`http:` or `https:`)
+to be omitted, and would attempt to automatically detect the protocol.
+This behavior is deprecated due to being inherently insecure,
+and will be removed in a future version.
+To avoid future breakage, make sure to specify the scheme explicitly.
+{{% /alert %}}
 
 When the server is located, its version is checked. If an unsupported version is found,
 an error can be raised or suppressed (controlled by `config.allow_unsupported_server`).
