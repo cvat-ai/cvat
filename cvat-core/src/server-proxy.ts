@@ -1953,7 +1953,7 @@ async function deleteCloudStorage(id) {
     }
 }
 
-async function getOrganizations(filter, fullResponseData: boolean = false) {
+async function getOrganizations(filter) {
     const { backendAPI } = config;
 
     let response = null;
@@ -1967,8 +1967,7 @@ async function getOrganizations(filter, fullResponseData: boolean = false) {
     } catch (errorData) {
         throw generateError(errorData);
     }
-
-    return (fullResponseData) ? response.data : response.data.results;
+    return response.data;
 }
 
 async function createOrganization(data: SerializedOrganization): Promise<SerializedOrganization> {

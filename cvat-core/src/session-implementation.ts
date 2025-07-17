@@ -744,6 +744,9 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             if (typeof this.subset !== 'undefined') {
                 taskSpec.subset = this.subset;
             }
+            if (typeof this.organizationId !== 'undefined') {
+                taskSpec.organization_id = this.organizationId;
+            }
 
             if (this.targetStorage) {
                 taskSpec.target_storage = this.targetStorage.toJSON();
@@ -755,9 +758,6 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
 
             if (fields.consensus_replicas) {
                 taskSpec.consensus_replicas = fields.consensus_replicas;
-            }
-            if (typeof this.organizationId !== 'undefined') {
-                taskSpec.organization_id = this.organizationId;
             }
 
             const taskDataSpec = {

@@ -32,7 +32,7 @@ import Webhook from './webhook';
 import { ArgumentError } from './exceptions';
 import {
     AnalyticsEventsFilter, QualityConflictsFilter,
-    SerializedAsset, ConsensusSettingsFilter,
+    SerializedAsset, ConsensusSettingsFilter, SerializedOrganization,
 } from './server-response-types';
 import QualityReport from './quality-report';
 import AboutData from './about';
@@ -45,7 +45,7 @@ import {
 } from './annotations-actions/annotations-actions';
 import { convertDescriptions, getServerAPISchema } from './server-schema';
 import { JobType } from './enums';
-import { PaginatedResource } from './core-types';
+import { PaginatedResource, PaginatedResourceWithNextUrl } from './core-types';
 import CVATCore from '.';
 
 function implementationMixin(func: Function, implementation: Function): void {
@@ -328,7 +328,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         return cloudStorages;
     });
 
-    implementationMixin(cvat.organizations.get, async (filter, fullResponseData = false) => {
+    implementationMixin(cvat.organizations.get, async (filter) => {
         checkFilter(filter, {
             search: isString,
             filter: isString,
@@ -336,15 +336,14 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
             page_size: isInteger,
         });
 
-        const organizationsData = await serverProxy.organizations.get(filter, fullResponseData);
-        if (fullResponseData) {
-            return {
-                ...organizationsData,
-                results: organizationsData.results.map((organizationData) => new Organization(organizationData)),
-            };
-        }
+        const organizationsPage = await serverProxy.organizations.get(filter);
+        const results = organizationsPage.results.map((org_) => new Organization(org_));
+        Object.assign(results, 'count', {
+            value: organizationsPage.count,
+            next: organizationsPage.next,
+        });
 
-        return organizationsData.map((organizationData) => new Organization(organizationData));
+        return results as PaginatedResourceWithNextUrl<SerializedOrganization>;
     });
     implementationMixin(cvat.organizations.activate, (organization) => {
         checkObjectType('organization', organization, null, Organization);

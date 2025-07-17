@@ -266,20 +266,13 @@ export function updateOrganizationMemberAsync(
     };
 }
 
-export function getOrganizationsAsync(
-    query: Partial<OrganizationsQuery> = {},
-    withHasNextPage: boolean = false,
-): ThunkAction {
+export function getOrganizationsAsync(query: Partial<OrganizationsQuery> = {}): ThunkAction {
     return async (dispatch): Promise<void> => {
         dispatch(organizationActions.getOrganizations());
 
         try {
-            const result = await core.organizations.get(query, withHasNextPage);
-            if (withHasNextPage) {
-                dispatch(organizationActions.getOrganizationsSuccess(result.results, result.count, result.next));
-            } else {
-                dispatch(organizationActions.getOrganizationsSuccess(result, result.length));
-            }
+            const result = await core.organizations.get(query);
+            dispatch(organizationActions.getOrganizationsSuccess(result.results, result.count, result.next));
         } catch (error) {
             dispatch(organizationActions.getOrganizationsFailed(error));
         }

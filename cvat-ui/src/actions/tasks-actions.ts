@@ -12,6 +12,7 @@ import { filterNull } from 'utils/filter-null';
 import { ThunkDispatch, ThunkAction } from 'utils/redux';
 
 import { ValidationMode } from 'components/create-task-page/quality-configuration-form';
+import { ResourceUpdateTypes } from 'utils/enums';
 import { getInferenceStatusAsync } from './models-actions';
 import { updateRequestProgress } from './requests-actions';
 
@@ -322,10 +323,6 @@ ThunkAction {
     };
 }
 
-export enum TaskUpdateTypes {
-    UPDATE_ORGANIZATION = 'UPDATE_ORGANIZATION',
-}
-
 function updateTask(taskId: number): AnyAction {
     return {
         type: TasksActionTypes.UPDATE_TASK,
@@ -335,13 +332,13 @@ function updateTask(taskId: number): AnyAction {
     };
 }
 
-function updateTaskFailed(taskId: number, error: any, message?: string): AnyAction {
+function updateTaskFailed(taskId: number, error: any, updateType?: ResourceUpdateTypes): AnyAction {
     return {
         type: TasksActionTypes.UPDATE_TASK_FAILED,
         payload: {
             taskId,
             error,
-            message,
+            updateType,
         },
     };
 }
@@ -349,7 +346,7 @@ function updateTaskFailed(taskId: number, error: any, message?: string): AnyActi
 export function updateTaskAsync(
     taskInstance: Task,
     fields: Parameters<Task['save']>[0],
-    updateType?: TaskUpdateTypes,
+    updateType?: ResourceUpdateTypes,
 ): ThunkAction<Promise<Task>> {
     return async (dispatch: ThunkDispatch): Promise<Task> => {
         try {
@@ -358,11 +355,7 @@ export function updateTaskAsync(
             dispatch(updateTaskInState(updated));
             return updated;
         } catch (error) {
-            let message = '';
-            if (updateType === TaskUpdateTypes.UPDATE_ORGANIZATION) {
-                message = `Could not transfer the task #${taskInstance.id} to the new workspace`;
-            }
-            dispatch(updateTaskFailed(taskInstance.id, error, message));
+            dispatch(updateTaskFailed(taskInstance.id, error, updateType));
             throw error;
         }
     };

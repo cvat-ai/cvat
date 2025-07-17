@@ -13,6 +13,7 @@ import { getTasksAsync } from 'actions/tasks-actions';
 import { getCVATStore } from 'cvat-store';
 import { getCore, Project } from 'cvat-core-wrapper';
 import { filterNull } from 'utils/filter-null';
+import { ResourceUpdateTypes } from 'utils/enums';
 
 const cvat = getCore();
 
@@ -71,14 +72,14 @@ export const projectActions = {
     updateProjectSuccess: (project: Project) => (
         createAction(ProjectsActionTypes.UPDATE_PROJECT_SUCCESS, { project })
     ),
-    updateProjectFailed: (projectId: number, error: any, message?: string) => (
-        createAction(ProjectsActionTypes.UPDATE_PROJECT_FAILED, { projectId, error, message })
+    updateProjectFailed: (projectId: number, error: any, updateType?: ResourceUpdateTypes) => (
+        createAction(ProjectsActionTypes.UPDATE_PROJECT_FAILED, { projectId, error, updateType })
     ),
     openLinkedCloudStorageUpdatingModal: (project: Project) => (
         createAction(ProjectsActionTypes.OPEN_LINKED_CLOUD_STORAGE_UPDATING_MODAL, { project })
     ),
     closeLinkedCloudStorageUpdatingModal: () => (
-        createAction(ProjectsActionTypes.CLOSE_LINKED_CLOUD_STORAGE_UPDATING_MODAL, { })
+        createAction(ProjectsActionTypes.CLOSE_LINKED_CLOUD_STORAGE_UPDATING_MODAL)
     ),
 };
 
@@ -181,13 +182,9 @@ export const getProjectsPreviewAsync = (project: any): ThunkAction => async (dis
     }
 };
 
-export enum ProjectUpdateTypes {
-    UPDATE_ORGANIZATION = 'UPDATE_ORGANIZATION',
-}
-
 export function updateProjectAsync(
     projectInstance: Project,
-    updateType?: ProjectUpdateTypes,
+    updateType?: ResourceUpdateTypes,
 ): ThunkAction<Promise<Project>> {
     return async (dispatch: ThunkDispatch): Promise<Project> => {
         dispatch(projectActions.updateProject(projectInstance.id));
@@ -196,11 +193,7 @@ export function updateProjectAsync(
             dispatch(projectActions.updateProjectSuccess(updatedProject));
             return updatedProject;
         } catch (error) {
-            let message = '';
-            if (updateType === ProjectUpdateTypes.UPDATE_ORGANIZATION) {
-                message = `Could not transfer the project #${projectInstance.id} to the new workspace`;
-            }
-            dispatch(projectActions.updateProjectFailed(projectInstance.id, error, message));
+            dispatch(projectActions.updateProjectFailed(projectInstance.id, error, updateType));
             throw error;
         }
     };

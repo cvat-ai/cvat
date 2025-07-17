@@ -8,9 +8,9 @@ import Modal from 'antd/lib/modal';
 import { useSelector, useDispatch } from 'react-redux';
 import { CombinedState } from 'reducers';
 
+import { Organization } from 'cvat-core-wrapper';
 import { organizationActions } from '../../actions/organization-actions';
 import OrganizationSelector from '../selectors/organization-selector';
-import { Organization } from '../../cvat-core-wrapper';
 
 function SelectOrganizationModal(): JSX.Element {
     const dispatch = useDispatch();

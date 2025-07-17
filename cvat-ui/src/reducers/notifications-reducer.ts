@@ -28,6 +28,7 @@ import { ImportActionTypes } from 'actions/import-actions';
 import { ExportActionTypes } from 'actions/export-actions';
 import { ConsensusActionTypes } from 'actions/consensus-actions';
 import { getInstanceType } from 'actions/common';
+import { ResourceUpdateTypes } from 'utils/enums';
 
 import config from 'config';
 import { NotificationsState } from '.';
@@ -739,7 +740,13 @@ export default function (state = defaultState, action: AnyAction): Notifications
             };
         }
         case TasksActionTypes.UPDATE_TASK_FAILED: {
-            const { taskId, error, message } = action.payload;
+            const { taskId, error, updateType } = action.payload;
+            let message = `Could not update the [task #${taskId}](/tasks/${taskId})`;
+
+            if (updateType === ResourceUpdateTypes.UPDATE_ORGANIZATION) {
+                message = `Could not transfer the [task #${taskId}](/tasks/${taskId}) to the new workspace`;
+            }
+
             return {
                 ...state,
                 errors: {
@@ -747,8 +754,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     tasks: {
                         ...state.errors.tasks,
                         updating: {
-                            message:
-                                message || `Could not update the [task #${taskId}](/tasks/${taskId})`,
+                            message,
                             reason: error.toString(),
                             shouldLog: shouldLog(error),
                             className: 'cvat-notification-notice-update-task-failed',
@@ -875,7 +881,13 @@ export default function (state = defaultState, action: AnyAction): Notifications
             };
         }
         case ProjectsActionTypes.UPDATE_PROJECT_FAILED: {
-            const { projectId, error, message } = action.payload;
+            const { projectId, error, updateType } = action.payload;
+            let message = `Could not update the [project #${projectId}](/projects/${projectId})`;
+
+            if (updateType === ResourceUpdateTypes.UPDATE_ORGANIZATION) {
+                message = `Could not transfer the [project #${projectId}](/projects/${projectId}) to the new workspace`;
+            }
+
             return {
                 ...state,
                 errors: {
@@ -883,8 +895,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     projects: {
                         ...state.errors.projects,
                         creating: {
-                            message:
-                                message || `Could not update [project #${projectId}](/project/${projectId})`,
+                            message,
                             reason: error.toString(),
                             className: 'cvat-notification-notice-update-project-failed',
                             shouldLog: shouldLog(error),

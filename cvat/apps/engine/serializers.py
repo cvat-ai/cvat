@@ -2489,14 +2489,15 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             and organization_id != instance.organization_id
         )
 
-        if (
-            workspace_transferring and (set(validated_data.keys()) - {
-                'source_storage', 'target_storage', 'organization_id'
-            })
-        ):
-            raise serializers.ValidationError(
-                "Task attributes cannot be updated during transferring to another workspace"
-            )
+        if workspace_transferring:
+            if set(validated_data.keys()) - {'source_storage', 'target_storage', 'organization_id'}:
+                raise serializers.ValidationError(
+                    "Task attributes cannot be updated during transferring to another workspace"
+                )
+            if instance.project_id:
+                raise serializers.ValidationError(
+                    "Transferring a task from a project is not allowed"
+                )
 
         instance.name = validated_data.get('name', instance.name)
         instance.owner_id = validated_data.get('owner_id', instance.owner_id)
@@ -2569,7 +2570,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         if workspace_transferring:
             if organization_id is not None:
                 try:
-                    organization_slug = list(
+                    organization_slug = (
                         Organization.objects.filter(pk=organization_id).values_list('slug', flat=True)
                     )[0]
                 except IndexError:
@@ -2585,13 +2586,10 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             if instance.assignee_id is not None:
                 instance.update_assignee(None, updated_date=assignee_updated_date)
 
-            assigned_jobs_qs = models.Job.objects.filter(
+            models.Job.objects.filter(
                 segment__task__id=instance.pk,
                 assignee__isnull=False
-            )
-            if assigned_jobs_qs.exists():
-                assigned_jobs_qs.update(assignee=None, assignee_updated_date=assignee_updated_date)
-
+            ).update(assignee=None, assignee_updated_date=assignee_updated_date)
             instance.organization_id = organization_id
 
         # update source and target storages
@@ -2810,7 +2808,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
         if workspace_transferring:
             if organization_id is not None:
                 try:
-                    organization_slug = list(
+                    organization_slug = (
                         Organization.objects.filter(pk=organization_id).values_list('slug', flat=True)
                     )[0]
                 except IndexError:
@@ -2835,11 +2833,10 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
                 assignee_updated_date=assignee_updated_date
             )
 
-            if (assigned_jobs_qs := models.Job.objects.filter(
+            models.Job.objects.filter(
                 segment__task__project__id=instance.pk,
                 assignee__isnull=False
-            )).exists():
-                assigned_jobs_qs.update(assignee=None, assignee_updated_date=assignee_updated_date)
+            ).update(assignee=None, assignee_updated_date=assignee_updated_date)
 
         # update source and target storages
         _update_related_storages(

@@ -250,7 +250,6 @@ class ProjectPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
         UPDATE_ASSIGNEE = 'update:assignee'
         UPDATE_ASSOCIATED_STORAGE = 'update:associated_storage'
         UPDATE_DESC = 'update:desc'
-        # complex scope consisting of a combination of other scopes
         UPDATE_ORGANIZATION = 'update:organization'
         UPDATE_OWNER = 'update:owner'
         VIEW = 'view'
@@ -445,7 +444,6 @@ class TaskPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
         UPDATE_ASSOCIATED_STORAGE = 'update:associated_storage'
         UPDATE_DESC = 'update:desc'
         UPDATE_METADATA = 'update:metadata'
-        # complex scope consisting of a combination of other scopes
         UPDATE_ORGANIZATION = 'update:organization'
         UPDATE_OWNER = 'update:owner'
         UPDATE_PROJECT = 'update:project'
@@ -469,11 +467,6 @@ class TaskPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
 
             if cls.Scopes.UPDATE_ORGANIZATION in scopes:
                 # consider this case as deleting a task in the org A and creating a new one in the org B
-                if obj.project is not None:
-                    raise ValidationError(
-                        'Cannot change the organization for a task inside a project'
-                    )
-
                 permissions.append(cls.create_base_perm(request, view, cls.Scopes.DELETE, iam_context, obj))
 
                 if dst_org_id := request.data['organization_id']:
@@ -608,7 +601,6 @@ class TaskPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
                 'organization_id': Scopes.UPDATE_ORGANIZATION,
                 'source_storage': Scopes.UPDATE_ASSOCIATED_STORAGE,
                 'target_storage': Scopes.UPDATE_ASSOCIATED_STORAGE,
-                # 'cloud_storage_id': Scopes.UPDATE_ASSOCIATED_STORAGE,
             }))
 
         elif scope == Scopes.VIEW_ANNOTATIONS:
