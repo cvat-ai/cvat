@@ -2058,7 +2058,7 @@ class CvatToDmAnnotationConverter:
             anno = dm.Skeleton(elements, label=dm_label,
                 attributes=dm_attr, group=dm_group, z_order=shape.z_order)
         else:
-            raise CvatExportError("Unknown shape type '%s'" % shape.type)
+            raise Exception("Unknown shape type '%s'" % shape.type)
 
         results = []
 
