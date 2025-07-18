@@ -802,15 +802,16 @@ class _Agent:
 
         mapper = self._create_annotation_mapper_for_detection_ar(ar_params, ds.labels)
 
-        all_annotations = models.PatchedLabeledDataRequest(shapes=[])
+        all_annotations = models.PatchedLabeledDataRequest(tags=[], shapes=[])
 
         for sample_index, sample in enumerate(ds.samples):
             context = self._create_detection_function_context(ar_params, sample.frame_name)
-            shapes = self._executor.result(
+            tags_and_shapes = self._executor.result(
                 self._executor.submit(_worker_job_detect, context, sample.media.load_image())
             )
 
-            mapper.validate_and_remap(shapes, sample.frame_index)
+            tags, shapes = mapper.validate_and_remap(tags_and_shapes, sample.frame_index)
+            all_annotations.tags.extend(tags)
             all_annotations.shapes.extend(shapes)
 
             current_timestamp = datetime.now(tz=timezone.utc)
@@ -832,12 +833,12 @@ class _Agent:
 
         context = self._create_detection_function_context(ar_params, sample.frame_name)
 
-        shapes = self._executor.result(
+        tags_and_shapes = self._executor.result(
             self._executor.submit(_worker_job_detect, context, sample.media.load_image())
         )
 
-        mapper.validate_and_remap(shapes, sample.frame_index)
-        return {"annotations": models.PatchedLabeledDataRequest(shapes=shapes)}
+        tags, shapes = mapper.validate_and_remap(tags_and_shapes, sample.frame_index)
+        return {"annotations": models.PatchedLabeledDataRequest(tags=tags, shapes=shapes)}
 
     def _calculate_result_for_tracking_ar(self, ar_id: str, ar_params) -> dict[str, Any]:
         if ar_params["type"] == "init_tracking":
