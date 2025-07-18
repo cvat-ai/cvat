@@ -126,7 +126,7 @@ git submodule update --remote
 
 Add and then commit the change to project:
 
-```bashs
+```bash
 git add themes/
 git commit -m "Updating theme submodule"
 ```
