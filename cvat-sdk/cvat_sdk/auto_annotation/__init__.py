@@ -9,6 +9,7 @@ from .interface import (
     DetectionFunction,
     DetectionFunctionContext,
     DetectionFunctionSpec,
+    TagOrShape,
     TrackableShape,
     TrackingFunctionContext,
     TrackingFunctionShapeContext,
@@ -27,6 +28,7 @@ from .interface import (
     shape,
     skeleton,
     skeleton_label_spec,
+    tag,
     text_attribute_spec,
 )
 
@@ -39,6 +41,7 @@ __all__ = [
     "DetectionFunction",
     "DetectionFunctionContext",
     "DetectionFunctionSpec",
+    "TagOrShape",
     "TrackableShape",
     "TrackingFunctionContext",
     "TrackingFunctionShapeContext",
@@ -55,5 +58,6 @@ __all__ = [
     "shape",
     "skeleton_label_spec",
     "skeleton",
+    "tag",
     "text_attribute_spec",
 ]
