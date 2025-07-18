@@ -80,8 +80,8 @@ pip -m venv venv
 pip install -r requirements.txt
 ```
 
-The documentation site includes both old and new releases. Since we now only build
-the 6 most recent releases, you only need:
+The documentation site includes the last MAX_VERSIONS_TO_BUILD releases
+(they are defined in `build_docs.py`). To build the website, you only need:
 - `hugo-0.110` - for all documentation builds
 
 Please download this hugo release (extended), and make the binary
@@ -110,6 +110,11 @@ The resulting folder contains the whole site, which can be published by a server
 Read more [here](https://www.docsy.dev/docs/getting-started/)
 and [here](https://gohugo.io/hosting-and-deployment/).
 
+You can also deploy the website locally:
+```bash
+python -m http.server -d path/to/public
+```
+
 ### How to update the submodule of the Docsy theme
 
 To update the submodule of the docsy theme, you need to have a repository clone.
@@ -121,7 +126,7 @@ git submodule update --remote
 
 Add and then commit the change to project:
 
-```bash
+```bashs
 git add themes/
 git commit -m "Updating theme submodule"
 ```
