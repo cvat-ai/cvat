@@ -1,4 +1,4 @@
-FROM cvat/server:local
+FROM cvat/server:v2.35.0
 
 ENV DJANGO_SETTINGS_MODULE=cvat.settings.testing
 USER root

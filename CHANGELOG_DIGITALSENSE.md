@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+### Fixed
+- Fixed Task creating changing cvat base docker image to version v2.35.0 [PR #21]
+
 =======
 
 ## [1.1.0] - 2025-07-01
