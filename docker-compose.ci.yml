@@ -11,6 +11,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.ci
+      args:
+        CVAT_VERSION: ${CVAT_VERSION:-v2.35.0}
     depends_on:
       - cvat_server
     environment:
