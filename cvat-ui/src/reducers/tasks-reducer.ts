@@ -7,8 +7,9 @@ import { AnyAction } from 'redux';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { TasksActionTypes } from 'actions/tasks-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
-
 import { ProjectsActionTypes } from 'actions/projects-actions';
+import { omit } from 'lodash';
+
 import { TasksState } from '.';
 
 const defaultState: TasksState = {
@@ -29,9 +30,11 @@ const defaultState: TasksState = {
         filter: null,
         sort: null,
         projectId: null,
+        pageSize: 10,
     },
     activities: {
         deletes: {},
+        updates: {},
     },
 };
 
@@ -60,18 +63,6 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 fetching: false,
                 count: action.payload.count,
                 current: action.payload.array,
-            };
-        }
-        case TasksActionTypes.UPDATE_TASK_IN_STATE: {
-            const { task } = action.payload;
-            return {
-                ...state,
-                current: state.current.map((taskInstance) => {
-                    if (taskInstance.id === task.id) {
-                        return task;
-                    }
-                    return taskInstance;
-                }),
             };
         }
         case TasksActionTypes.GET_TASKS_FAILED:
@@ -191,6 +182,49 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                         fetching: false,
                         initialized: true,
                     },
+                },
+            };
+        }
+        case TasksActionTypes.UPDATE_TASK: {
+            const { taskId } = action.payload;
+            return {
+                ...state,
+                fetching: true,
+                activities: {
+                    ...state.activities,
+                    updates: {
+                        ...state.activities.updates,
+                        [taskId]: true,
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.UPDATE_TASK_SUCCESS: {
+            const { task } = action.payload;
+            const { updates } = state.activities;
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    updates: omit(updates, task.id),
+                },
+                current: state.current.map((taskInstance) => {
+                    if (taskInstance.id === task.id) {
+                        return task;
+                    }
+                    return taskInstance;
+                }),
+                fetching: false,
+            };
+        }
+        case TasksActionTypes.UPDATE_TASK_FAILED: {
+            const { taskId } = action.payload;
+            const { updates } = state.activities;
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    updates: omit(updates, taskId),
                 },
             };
         }

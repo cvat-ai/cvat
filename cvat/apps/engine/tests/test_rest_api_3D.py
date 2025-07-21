@@ -427,10 +427,11 @@ class Task3DTest(_DbTestBase):
             task_data = self.copy_pcd_file_and_get_task_data(test_dir)
             task = self._create_task(self.task, task_data)
             task_id = task["id"]
-            annotation = self._get_tmp_annotation(task, self.cuboid_example)
 
             for user, edata in list(self.expected_action.items()):
                 with self.subTest(format=edata["name"]):
+                    annotation = self._get_tmp_annotation(task, self.cuboid_example)
+
                     response = self._patch_api_v2_task_id_annotations(
                         task_id, annotation, CREATE_ACTION, self.admin
                     )
@@ -508,10 +509,11 @@ class Task3DTest(_DbTestBase):
             task = self._create_task(self.task, task_data)
             task_id = task["id"]
             jobs = self._get_jobs(task_id)
-            annotation = self._get_tmp_annotation(task, self.cuboid_example)
 
             for user, edata in list(self.expected_action.items()):
                 with self.subTest(format=edata["name"]):
+                    annotation = self._get_tmp_annotation(task, self.cuboid_example)
+
                     response = self._patch_api_v2_job_id_annotations(
                         jobs[0]["id"], annotation, CREATE_ACTION, self.admin
                     )

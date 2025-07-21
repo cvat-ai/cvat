@@ -15,7 +15,7 @@ export function isInteger(value): boolean {
 }
 
 export function isEmail(value): boolean {
-    return typeof value === 'string' && RegExp(/^[^\s@]+@[^\s@]+\.[^\s@]+$/).test(value);
+    return typeof value === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
 // Called with specific Enum context
@@ -137,29 +137,6 @@ export function camelToSnakeCase(str: string): string {
     return str.replace(/[A-Z]/g, (letter: string) => `_${letter.toLowerCase()}`);
 }
 
-export function filterFieldsToSnakeCase(filter: Record<string, string>, keysToSnake: string[]): Record<string, string> {
-    const searchParams:Record<string, string> = {};
-    for (const key of Object.keys(filter)) {
-        if (!keysToSnake.includes(key)) {
-            searchParams[key] = filter[key];
-        }
-    }
-    const filtersGroup = [];
-    for (const key of keysToSnake) {
-        if (filter[key]) {
-            filtersGroup.push({ '==': [{ var: camelToSnakeCase(key) }, filter[key]] });
-        }
-    }
-
-    if (searchParams.filter) {
-        const parsed = JSON.parse(searchParams.filter);
-        searchParams.filter = JSON.stringify({ and: [parsed, ...filtersGroup] });
-    } else if (filtersGroup.length) {
-        searchParams.filter = JSON.stringify({ and: [...filtersGroup] });
-    }
-    return searchParams;
-}
-
 export function isResourceURL(url: string): boolean {
     return /\/([0-9]+)$/.test(url);
 }
@@ -174,4 +151,32 @@ export function fieldsToSnakeCase(params: Record<string, any>): Record<string, a
         result[snakeCase(k)] = v;
     }
     return result;
+}
+
+export function filterFieldsToSnakeCase(
+    filter: Record<string, string | number>,
+    keysToSnake: string[],
+): Record<string, string | number> {
+    let searchParams: Record<string, string | number> = {};
+    for (const key of Object.keys(filter)) {
+        if (!keysToSnake.includes(key)) {
+            searchParams[key] = filter[key];
+        }
+    }
+    searchParams = fieldsToSnakeCase(searchParams);
+
+    const filtersGroup = [];
+    for (const key of keysToSnake) {
+        if (filter[key]) {
+            filtersGroup.push({ '==': [{ var: camelToSnakeCase(key) }, filter[key]] });
+        }
+    }
+
+    if (searchParams.filter) {
+        const parsed = JSON.parse(searchParams.filter);
+        searchParams.filter = JSON.stringify({ and: [parsed, ...filtersGroup] });
+    } else if (filtersGroup.length) {
+        searchParams.filter = JSON.stringify({ and: [...filtersGroup] });
+    }
+    return searchParams;
 }

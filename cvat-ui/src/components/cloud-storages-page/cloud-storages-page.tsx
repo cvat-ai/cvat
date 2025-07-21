@@ -10,10 +10,11 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Row } from 'antd/lib/grid';
 import Spin from 'antd/lib/spin';
 
-import { CloudStoragesQuery, CombinedState, Indexable } from 'reducers';
+import { CloudStoragesQuery, CombinedState } from 'reducers';
 import { getCloudStoragesAsync } from 'actions/cloud-storage-actions';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import { anySearch } from 'utils/any-search';
+import { useResourceQuery } from 'utils/hooks';
 import CloudStoragesListComponent from './cloud-storages-list';
 import EmptyListComponent from './empty-list';
 import TopBarComponent from './top-bar';
@@ -27,14 +28,7 @@ export default function StoragesPageComponent(): JSX.Element {
     const current = useSelector((state: CombinedState) => state.cloudStorages.current);
     const query = useSelector((state: CombinedState) => state.cloudStorages.gettingQuery);
 
-    const queryParams = new URLSearchParams(history.location.search);
-    const updatedQuery = { ...query };
-    for (const key of Object.keys(updatedQuery)) {
-        (updatedQuery as Indexable)[key] = queryParams.get(key) || null;
-        if (key === 'page') {
-            updatedQuery.page = updatedQuery.page ? +updatedQuery.page : 1;
-        }
-    }
+    const updatedQuery = useResourceQuery<CloudStoragesQuery>(query, { pageSize: 12 });
 
     useEffect(() => {
         dispatch(getCloudStoragesAsync({ ...updatedQuery }));
@@ -51,9 +45,9 @@ export default function StoragesPageComponent(): JSX.Element {
     }, [query]);
 
     const onChangePage = useCallback(
-        (page: number) => {
-            if (!fetching && page !== query.page) {
-                dispatch(getCloudStoragesAsync({ ...query, page }));
+        (page: number, pageSize: number) => {
+            if (!fetching) {
+                dispatch(getCloudStoragesAsync({ ...query, page, pageSize }));
             }
         },
         [query],
@@ -65,6 +59,7 @@ export default function StoragesPageComponent(): JSX.Element {
         <CloudStoragesListComponent
             totalCount={totalCount}
             page={query.page}
+            pageSize={query.pageSize}
             storages={current}
             onChangePage={onChangePage}
         />

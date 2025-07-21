@@ -471,7 +471,13 @@ def create_task(username, spec, data, content_type="application/json", **kwargs)
 
 
 def compare_annotations(a: dict, b: dict) -> dict:
-    def _exclude_cb(obj, path):
+    def _exclude_cb(obj, path: str):
+        # ignoring track elements which do not have shapes
+        split_path = path.rsplit("['elements']", maxsplit=1)
+        if len(split_path) == 2:
+            if split_path[1].count("[") == 1 and not obj["shapes"]:
+                return True
+
         return path.endswith("['elements']") and not obj
 
     return DeepDiff(
@@ -494,10 +500,6 @@ DATUMARO_FORMAT_FOR_DIMENSION = {
     "2d": "Datumaro 1.0",
     "3d": "Datumaro 3D 1.0",
 }
-
-
-def parse_frame_step(frame_filter: str) -> int:
-    return int((frame_filter or "step=1").split("=")[1])
 
 
 def calc_end_frame(start_frame: int, stop_frame: int, frame_step: int) -> int:
@@ -543,3 +545,11 @@ def invite_user_to_org(
             org_id=org_id,
         )
         return invitation
+
+
+def get_cloud_storage_content(username: str, cloud_storage_id: int, manifest: Optional[str] = None):
+    with make_api_client(username) as api_client:
+        kwargs = {"manifest_path": manifest} if manifest else {}
+
+        (data, _) = api_client.cloudstorages_api.retrieve_content_v2(cloud_storage_id, **kwargs)
+        return [f"{f['name']}{'/' if str(f['type']) == 'DIR' else ''}" for f in data["content"]]
