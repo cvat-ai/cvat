@@ -11,6 +11,7 @@ K6_PERF_SERVICE = "k6-perf"
 BASELINE_FILE = Path.home() / ".perf_baselines.json"
 
 DOCKER_COMPOSE_FILE = ROOT_DIR / "docker-compose-perf.yml"
+DOCKER_COMPOSE_FILE_WITH_CPUSET = ROOT_DIR / "docker-compose-perf-cpuset.yml"
 K6_OUTPUT_SUMMARY_JSON = ROOT_DIR / "output" / "summary.json"
 
 ALLOWED_DELTAS: dict[str, dict[str, float]] = {

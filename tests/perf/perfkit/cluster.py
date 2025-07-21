@@ -8,7 +8,8 @@ import requests
 from rich.console import Console
 from plumbum import local, FG
 
-from perfkit.config import URL_SERVER_ABOUT, DOCKER_COMPOSE_FILE, CVAT_SERVER_SERVICE
+from perfkit.config import URL_SERVER_ABOUT, DOCKER_COMPOSE_FILE, DOCKER_COMPOSE_FILE_WITH_CPUSET, \
+    CVAT_SERVER_SERVICE
 from perfkit.console_print import print_info, print_success, exit_with_error, print_error
 from perfkit.k6_profile import K6Profile
 
@@ -16,7 +17,10 @@ from perfkit.k6_profile import K6Profile
 console = Console()
 
 docker = local["docker"]
-docker_compose = docker["compose", "-f", DOCKER_COMPOSE_FILE]
+docker_compose = docker[
+    "compose",
+    "-f", DOCKER_COMPOSE_FILE,
+    "-f", DOCKER_COMPOSE_FILE_WITH_CPUSET]
 
 
 def is_service_running(service_name: str) -> bool:

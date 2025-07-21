@@ -46,6 +46,6 @@ services:
   perf-k6:
     cpuset: 1-3
   perf-prometheus:
-    cpuset: 1-3
+    cpuset: "0"
   perf-grafana:
-    cpuset: 1-3
+    cpuset: "0"

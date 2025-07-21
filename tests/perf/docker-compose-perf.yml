@@ -6,7 +6,7 @@ include:
     - ../../components/serverless/docker-compose.serverless.yml
     - ../docker-compose.minio.yml
     - ../docker-compose.file_share.yml
-    - docker-compose-perf-cpuset.yml
+    # - docker-compose-perf-cpuset.yml
 services:
   perf-k6:
     image: grafana/k6:latest
@@ -23,7 +23,6 @@ services:
     network_mode: host
   perf-prometheus:
     image: prom/prometheus:latest
-    container_name: perf_prometheus
     ports:
     - 9190:9090
     volumes:
@@ -33,7 +32,6 @@ services:
     - --web.enable-remote-write-receiver
   perf-grafana:
     image: grafana/grafana:latest
-    container_name: perf_grafana
     user: root
     ports:
     - 3000:3000
@@ -43,4 +41,4 @@ services:
     - GF_SECURITY_ADMIN_PASSWORD=admin
 
 volumes:
-  grafana-data
+  grafana-data:
