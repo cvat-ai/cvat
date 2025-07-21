@@ -88,6 +88,9 @@ def change_version_menu_toml(filename, version):
 def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
     repo_root = Path(repo.working_tree_dir)
 
+    # Get baseURL from environment or use default
+    default_base_url = os.getenv("HUGO_BASEURL", "https://docs.cvat.ai")
+
     with tempfile.TemporaryDirectory() as temp_dir:
         content_loc = Path(temp_dir, "site")
         shutil.copytree(repo_root / "site", content_loc, symlinks=True)
@@ -133,7 +136,7 @@ def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
         # Process the develop version
         generate_versioning_config(versioning_toml_path, (t.name for t in tags))
         change_version_menu_toml(versioning_toml_path, "develop")
-        run_hugo(output_dir, executable=hugo110, base_url="https://docs.cvat.ai")
+        run_hugo(output_dir, executable=hugo110, base_url=default_base_url)
 
         # Create a temp repo for checkouts
         temp_repo_path = Path(temp_dir) / "tmp_repo"
@@ -157,7 +160,7 @@ def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
                 # but it was required in v2.11.2 and older.
                 extra_env_vars={VERSION_URL_ENV_VAR: f"/{tag.name}/docs"},
                 executable=hugo,
-                base_url="https://docs.cvat.ai",
+                base_url=default_base_url,
             )
 
 
