@@ -1,6 +1,10 @@
 from time import sleep
 from cvat_sdk.api_client import Configuration, ApiClient, models, apis, exceptions
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 
 def create_task_and_upload_images(configuration, task_name, segment_size, project_id, org_name, image_folder):
@@ -68,17 +72,17 @@ def create_task_and_upload_images(configuration, task_name, segment_size, projec
 
 
 configuration = Configuration(
-    host="http://192.168.0.220:9090/",
-    username='ssarachu',
-    password='S4r4chu2808',
+    host=f"http://{os.getenv('CVAT_HOST')}:{os.getenv('CVAT_PORT')}/",
+    username=os.getenv('CVAT_USERNAME'),
+    password=os.getenv('CVAT_PASSWORD'),
 )
 
-task_name = "250217_colored"
+task_name = "task_name" # Replace with your desired task name
 segment_size = 500
 project_id = 1
-org_name = "Sienz"
+org_name = "org_name"  # Replace with your organization name or leave empty if not needed
 
-image_folder = "/data/projects/sienz/datasets_clearml/Oranges/250217/val/color/"
+image_folder = "image_folder"  # Replace with your image folder path
 
-create_task_and_upload_images(configuration,task_name=task_name, segment_size=segment_size,
+create_task_and_upload_images(configuration, task_name=task_name, segment_size=segment_size,
                               project_id=project_id, org_name=org_name, image_folder=image_folder)
