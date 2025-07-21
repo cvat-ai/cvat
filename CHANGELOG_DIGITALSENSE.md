@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
+- Updated files to utilize environment variables. [PR #22]
 
 ### Fixed
 - Fixed Task creating changing cvat base docker image to version v2.35.0 [PR #21]
