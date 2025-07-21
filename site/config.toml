@@ -1,6 +1,6 @@
-baseURL = "/"
+baseURL = "https://docs.cvat.ai"
 title = "CVAT"
-relativeURLs = true
+relativeURLs = false
 
 enableRobotsTXT = true
 
@@ -90,11 +90,17 @@ weight = 1
 # Hugo security configuration
 [security]
   [security.funcs]
-    getenv = ["^HUGO_", "^GOOGLE_TAG_ID$"]
+    getenv = ["^HUGO_", "^GOOGLE_TAG_ID$", "^HUGO_BASEURL$"]
 
 # Comment out if you don't want the "print entire section" link enabled.
 [outputs]
 section = ["HTML", "print"]
+
+# Sitemap configuration for SEO
+[sitemap]
+changefreq = "monthly"
+filename = "sitemap.xml"
+priority = 0.5
 
 [params]
 cvat_ai_terms_of_use = "https://www.cvat.ai/terms-of-use"

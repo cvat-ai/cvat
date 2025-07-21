@@ -100,6 +100,7 @@ def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
             *,
             extra_env_vars: dict[str, str] = None,
             executable: Optional[str] = "hugo",
+            base_url: Optional[str] = None,
         ):
             extra_kwargs = {}
 
@@ -107,14 +108,21 @@ def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
                 extra_kwargs["env"] = os.environ.copy()
                 extra_kwargs["env"].update(extra_env_vars)
 
+            hugo_args = [
+                executable,
+                "--destination",
+                str(destination_dir),
+                "--config",
+                "config.toml,versioning.toml",
+            ]
+
+            # Add baseURL if provided (can be overridden by environment variable)
+            if base_url or os.getenv("HUGO_BASEURL"):
+                effective_base_url = os.getenv("HUGO_BASEURL", base_url)
+                hugo_args.extend(["--baseURL", effective_base_url])
+
             subprocess.run(  # nosec
-                [
-                    executable,
-                    "--destination",
-                    str(destination_dir),
-                    "--config",
-                    "config.toml,versioning.toml",
-                ],
+                hugo_args,
                 cwd=content_loc,
                 check=True,
                 **extra_kwargs,
@@ -125,7 +133,7 @@ def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
         # Process the develop version
         generate_versioning_config(versioning_toml_path, (t.name for t in tags))
         change_version_menu_toml(versioning_toml_path, "develop")
-        run_hugo(output_dir, executable=hugo110)
+        run_hugo(output_dir, executable=hugo110, base_url="https://docs.cvat.ai")
 
         # Create a temp repo for checkouts
         temp_repo_path = Path(temp_dir) / "tmp_repo"
@@ -149,6 +157,7 @@ def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
                 # but it was required in v2.11.2 and older.
                 extra_env_vars={VERSION_URL_ENV_VAR: f"/{tag.name}/docs"},
                 executable=hugo,
+                base_url="https://docs.cvat.ai",
             )
 
 
