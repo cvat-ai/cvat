@@ -1,4 +1,4 @@
-baseURL = "https://docs.cvat.ai"
+baseURL = "/"
 title = "CVAT"
 relativeURLs = false
 
