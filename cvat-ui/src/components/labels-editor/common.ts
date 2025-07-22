@@ -3,9 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import {
-    SerializedLabel, SerializedAttribute, getCore, Attribute,
-} from 'cvat-core-wrapper';
+import { SerializedLabel, SerializedAttribute, getCore } from 'cvat-core-wrapper';
 
 export interface SkeletonConfiguration {
     type: 'skeleton';
@@ -50,10 +48,13 @@ function validateParsedAttribute(attr: SerializedAttribute): void {
         }
     }
 
-    if (attr.default_value && !getCore().utils.validateAttributeValue(attr.default_value, new Attribute(attr))) {
-        throw new Error(
-            `Attribute: "${attr.name}". Invalid default value ${attr.default_value}`,
-        );
+    if (attr.default_value) {
+        const core = getCore();
+        if (!core.utils.validateAttributeValue(attr.default_value, new core.classes.Attribute(attr))) {
+            throw new Error(
+                `Attribute: "${attr.name}". Invalid default value ${attr.default_value}`,
+            );
+        }
     }
 }
 
