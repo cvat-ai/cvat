@@ -50,7 +50,7 @@ function validateParsedAttribute(attr: SerializedAttribute): void {
         }
     }
 
-    if (!validateAttributeValue(attr.default_value, new Attribute(attr))) {
+    if (attr.default_value && !validateAttributeValue(attr.default_value, new Attribute(attr))) {
         throw new Error(
             `Attribute: "${attr.name}". Invalid default value ${attr.default_value}`,
         );
