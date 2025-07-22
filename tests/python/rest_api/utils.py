@@ -28,7 +28,6 @@ DEFAULT_RETRIES = 100
 DEFAULT_INTERVAL = 0.1
 
 
-
 def initialize_export(endpoint: Endpoint, *, expect_forbidden: bool = False, **kwargs) -> str:
     (_, response) = endpoint.call_with_http_info(
         **kwargs, _parse_response=False, _check_status=False
