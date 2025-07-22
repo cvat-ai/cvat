@@ -77,11 +77,11 @@ def run_golden(
                 "Or try less demanding load profile.")
         assert k6_output_metrics
 
-    k6_summary_averaged = sum(k6_metrics_total) / runs
+    # k6_summary_averaged = sum(k6_metrics_total) / runs
 
     if save_baseline:
         test_key = Path(test_file).stem
-        add_baseline(k6_summary_averaged, test_key)
+        add_baseline(k6_output_metrics, test_key)
         print_success(f"✅ Saved baseline for {test_key}")
     else:
         print_info("📊 Golden run complete. Results not saved.")
