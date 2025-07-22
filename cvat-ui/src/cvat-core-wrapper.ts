@@ -7,6 +7,7 @@ import CVATCore from 'cvat-core/src';
 import _cvat from 'cvat-core/src/api';
 
 import ObjectState from 'cvat-core/src/object-state';
+import { validateAttributeValue } from 'cvat-core/src/object-utils';
 import Webhook from 'cvat-core/src/webhook';
 import MLModel from 'cvat-core/src/ml-model';
 import CloudStorage from 'cvat-core/src/cloud-storage';
@@ -116,6 +117,7 @@ export {
     StorageLocation,
     MembershipRole,
     AboutData,
+    validateAttributeValue,
 };
 
 export type {

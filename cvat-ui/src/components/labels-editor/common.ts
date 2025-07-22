@@ -3,7 +3,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { SerializedLabel, SerializedAttribute } from 'cvat-core-wrapper';
+import {
+    SerializedLabel, SerializedAttribute, validateAttributeValue, Attribute,
+} from 'cvat-core-wrapper';
 
 export interface SkeletonConfiguration {
     type: 'skeleton';
@@ -46,6 +48,12 @@ function validateParsedAttribute(attr: SerializedAttribute): void {
         if (typeof value !== 'string') {
             throw new Error(`Attribute: "${attr.name}". Each value must be a string. Got value ${value}`);
         }
+    }
+
+    if (!validateAttributeValue(attr.default_value, new Attribute(attr))) {
+        throw new Error(
+            `Attribute: "${attr.name}". Invalid default value ${attr.default_value}`,
+        );
     }
 }
 
