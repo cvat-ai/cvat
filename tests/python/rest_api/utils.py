@@ -47,7 +47,7 @@ def wait_background_request(
     api_client: ApiClient,
     rq_id: str,
     *,
-    max_retries: int = 50,
+    max_retries: int = 100,
     interval: float = 0.1,
 ) -> tuple[models.Request, HTTPResponse]:
     for _ in range(max_retries):
@@ -191,7 +191,7 @@ def export_task_backup(username: str, *args, **kwargs) -> Optional[bytes]:
 def import_resource(
     endpoint: Endpoint,
     *,
-    max_retries: int = 50,
+    max_retries: int = 100,
     interval: float = 0.1,
     expect_forbidden: bool = False,
     wait_result: bool = True,
