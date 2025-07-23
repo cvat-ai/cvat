@@ -5,7 +5,9 @@ weight: 3
 description: 'SSO for a Self-Hosted solution'
 ---
 
-> **Note:** This is a paid feature available only to [Enterprise clients](https://www.cvat.ai/pricing/on-prem).
+{{% alert title="Note" color="primary" %}}
+This is a paid feature available only to [Enterprise clients](https://www.cvat.ai/pricing/on-prem).
+{{% /alert %}}
 
 CVAT supports Single Sign-On (SSO) using both OpenID Connect (OIDC) and Security Assertion Markup Language (SAML)
 protocols.
