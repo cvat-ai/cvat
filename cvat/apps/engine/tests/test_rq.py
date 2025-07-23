@@ -1,18 +1,17 @@
-from datetime import datetime, timedelta
-import uuid
-from unittest import mock
 import unittest
+import uuid
+from datetime import datetime, timedelta
+from unittest import mock
 
-from rq.job import Job, Dependency
-from rq.registry import DeferredJobRegistry, StartedJobRegistry
 import django_rq
-from django_rq.queues import DjangoRQ
-from django.test import override_settings
 from django.conf import settings
+from django.test import override_settings
+from django_rq.queues import DjangoRQ
+from rq.job import Dependency, Job
+from rq.registry import DeferredJobRegistry, StartedJobRegistry
 
 from cvat.apps.engine.rq import define_dependent_job, is_rq_job_owner
 from cvat.apps.engine.tests.utils import clear_rq_jobs
-
 
 DEFAULT_USER_ID = 1
 
