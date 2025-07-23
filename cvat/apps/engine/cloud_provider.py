@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import functools
 import json
-import math
 import os
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
