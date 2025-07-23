@@ -276,14 +276,14 @@ def get_cpu_number() -> int:
                     cfs_quota_us = int(fp.read())
                 with open(cfs_period_us_path) as fp:
                     cfs_period_us = int(fp.read())
-                if cfs_quota_us == -1: # No quota
+                if cfs_quota_us == -1:  # No quota
                     cpu_number = cpu_count()
                 else:
                     cpu_number = max(cfs_quota_us / cfs_period_us, 1)
             elif cpu_max_path.exists():
                 with open(cpu_max_path) as fp:
                     quota_str, period_str = fp.read().strip().split()
-                if quota_str == 'max': # No quota
+                if quota_str == "max":  # No quota
                     cpu_number = cpu_count()
                 else:
                     cpu_number = max(int(quota_str) / int(period_str), 1)
