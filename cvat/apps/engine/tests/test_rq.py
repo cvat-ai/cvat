@@ -21,8 +21,12 @@ def dummy_task():
     return 2 + 2
 
 
-def _create_test_job(
-    queue: DjangoRQ, job_id: str = None, user_id: int = DEFAULT_USER_ID, depends_on: list[Job] = None) -> Job:
+def _enqueue_test_job(
+    queue: DjangoRQ,
+    job_id: str | None = None,
+    user_id: int = DEFAULT_USER_ID,
+    depends_on: list[Job] | None = None
+) -> Job:
     job_id = job_id or str(uuid.uuid4())
     job = queue.enqueue(
         f=dummy_task,
@@ -45,13 +49,14 @@ class TestDefineDependentJob(unittest.TestCase):
     The logic finds the latest enqueued job (optionally filtered by rq_id)
     and defines a new job depending on it unless skipped by flags or self-dependency.
     """
+
     @classmethod
     def setUpClass(cls) -> None:
         _set_rq_async_mode(True)
         cls.queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
 
     def setUp(self) -> None:
-        self.patcher = mock.patch('cvat.apps.engine.rq.is_rq_job_owner', return_value=True)
+        self.patcher = mock.patch("cvat.apps.engine.rq.is_rq_job_owner", return_value=True)
         self.patcher.start()
         clear_rq_jobs()
 
@@ -63,16 +68,15 @@ class TestDefineDependentJob(unittest.TestCase):
         self.addCleanup(self.patcher.stop)
 
     def _define_dependent_job(
-        self, should_be_dependent: bool = True, rq_id: str | None = None) -> Dependency:
+        self, should_be_dependent: bool = True, rq_id: str | None = None
+    ) -> Dependency:
         return define_dependent_job(
-            self.queue,
-            DEFAULT_USER_ID,
-            should_be_dependent=should_be_dependent,
-            rq_id=rq_id)
+            self.queue, DEFAULT_USER_ID, should_be_dependent=should_be_dependent, rq_id=rq_id
+        )
 
     def test_define_dependency_on_latest_user_job(self) -> None:
         """Ensures a new job correctly depends on the latest job if specific rq_id provided."""
-        job = _create_test_job(self.queue)
+        job = _enqueue_test_job(self.queue)
         dependency = self._define_dependent_job(rq_id=str(uuid.uuid4()))
         assert dependency is not None, "Dependent job not found."
         assert len(dependency.dependencies) == 1
@@ -81,7 +85,7 @@ class TestDefineDependentJob(unittest.TestCase):
 
     def test_no_dependency_when_should_be_dependent_is_false(self) -> None:
         """Skips dependency if the flag should_be_dependent=False is used."""
-        job = _create_test_job(self.queue)
+        job = _enqueue_test_job(self.queue)
         dependency = self._define_dependent_job(should_be_dependent=False)
         assert dependency is None
 
@@ -96,11 +100,12 @@ class TestDefineDependentJob(unittest.TestCase):
     def test_skip_self_dependent_job(self):
         """Avoids creating dependency if a job is dependent on itself."""
         first_job_id = str(uuid.uuid4())
-        first_job = _create_test_job(self.queue, job_id=first_job_id)
-        second_job = _create_test_job(
+        first_job = _enqueue_test_job(self.queue, job_id=first_job_id)
+        second_job = _enqueue_test_job(
             self.queue,
             job_id=first_job_id,
-            depends_on=Dependency(jobs=[first_job_id], allow_failure=False))
+            depends_on=Dependency(jobs=[first_job_id], allow_failure=False)
+        )
         dependency = self._define_dependent_job(rq_id=first_job_id)
 
         assert dependency is None
@@ -108,7 +113,7 @@ class TestDefineDependentJob(unittest.TestCase):
     def test_skip_dependency_for_same_job(self):
         """Ignores dependencies if rq_id matches already enqueued job."""
         job_id = str(uuid.uuid4())
-        job = _create_test_job(self.queue, job_id=job_id)
+        job = _enqueue_test_job(self.queue, job_id=job_id)
         dependency = self._define_dependent_job(rq_id=job_id)
 
         assert dependency is None
@@ -119,10 +124,11 @@ class TestDefineDependentJob(unittest.TestCase):
         job_ids = [str(uuid.uuid4()) for _ in range(total_jobs)]
         latest_job_id = job_ids[-1]
         for i, job_id in enumerate(job_ids):
-            if i == 0:
-                _create_test_job(self.queue, job_id)
-            else:
-                _create_test_job(self.queue, job_id, depends_on=Dependency(jobs=[job_ids[i-1]]))
+            _create_test_job(
+                self.queue,
+                job_id,
+                depends_on=Dependency(jobs=[job_ids[i - 1]], allow_failure=True) if i else None
+            )
         dependent = self._define_dependent_job()
         assert dependent is not None, "Dependent job not found."
         assert len(dependent.dependencies) == 1
