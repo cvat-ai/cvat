@@ -156,7 +156,7 @@ class _LambdaTestCaseBase(ApiTestBase):
                 {
                     "confidence": "0.59464583",
                     "label": "car",
-                    "points": [12.17, 45.0, 69.80, 18.99],
+                    "points": [10, 10, 10, 20, 20, 10],
                     "type": "polygon",
                 },
                 {

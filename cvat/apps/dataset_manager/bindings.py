@@ -78,7 +78,7 @@ class InstanceLabelData:
 
         db_labels = self.add_prefetch_info(instance.label_set.all())
 
-        # If this flag is set to true, create attribute within anntations import
+        # If this flag is set to true, create attribute within annotations import
         self._soft_attribute_import = False
         self._label_mapping = OrderedDict[int, Label](
             (db_label.id, db_label)
@@ -1633,17 +1633,6 @@ class CVATDataExtractorMixin:
             "updatedAt": meta['updated']
         }
 
-    def _read_cvat_anno(self, cvat_frame_anno: Union[ProjectData.Frame, CommonData.Frame], labels: list):
-        categories = self.categories()
-        label_cat = categories[dm.AnnotationType.label]
-        def map_label(name, parent=''): return label_cat.find(name, parent)[0]
-        label_attrs = {
-            label.get('parent', '') + label['name']: label['attributes']
-            for _, label in labels
-        }
-
-        return self.convert_annotations(cvat_frame_anno, label_attrs, map_label)
-
 
 class CvatDataExtractorBase(CVATDataExtractorMixin):
     def __init__(
@@ -1745,6 +1734,18 @@ class CvatDataExtractorBase(CVATDataExtractorMixin):
 
         return dm_item
 
+    def _read_cvat_anno(self, cvat_frame_anno: CommonData.Frame | ProjectData.Frame, labels: list):
+        categories = self.categories()
+        label_cat = categories[dm.AnnotationType.label]
+        def map_label(name, parent=''): return label_cat.find(name, parent)[0]
+        label_attrs = {
+            label.get('parent', '') + label['name']: label['attributes']
+            for _, label in labels
+        }
+
+        return self.convert_annotations(cvat_frame_anno,
+            label_attrs, map_label, self._format_type, self._dimension)
+
 
 class CvatTaskOrJobDataExtractor(dm.SubsetBase, CvatDataExtractorBase):
     def __init__(self, *args, **kwargs):
@@ -1776,18 +1777,6 @@ class CvatTaskOrJobDataExtractor(dm.SubsetBase, CvatDataExtractorBase):
             # do not keep parsed lazy list data after this iteration
             frame_data = self.copy_frame_data_with_replaced_lazy_lists(frame_data)
             yield self._process_one_frame_data(frame_data)
-
-    def _read_cvat_anno(self, cvat_frame_anno: CommonData.Frame, labels: list):
-        categories = self.categories()
-        label_cat = categories[dm.AnnotationType.label]
-        def map_label(name, parent=''): return label_cat.find(name, parent)[0]
-        label_attrs = {
-            label.get('parent', '') + label['name']: label['attributes']
-            for _, label in labels
-        }
-
-        return self.convert_annotations(cvat_frame_anno,
-            label_attrs, map_label, self._format_type, self._dimension)
 
     def __len__(self):
         return len(self._instance_data)
@@ -2481,7 +2470,7 @@ def load_dataset_data(project_annotation, dataset: dm.Dataset, project_data):
                 if len(data_root) == 2:
                     root_paths.add(data_root[0])
             elif isinstance(dataset_item.media, dm.PointCloud):
-                dataset_files['media'].append(dataset_item.media)
+                dataset_files['media'].append(dataset_item.media.path)
                 data_root = dataset_item.media.path.rsplit(dataset_item.id, 1)
                 if len(data_root) == 2:
                     root_paths.add(data_root[0])

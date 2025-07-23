@@ -66,8 +66,10 @@ To annotate with interactors, do the following:
 
 ### AI tools: add extra points
 
-> **Note:** More points improve outline accuracy, but make shape editing harder.
-> Fewer points make shape editing easier, but reduce outline accuracy.
+{{% alert title="Note" color="primary" %}}
+More points improve outline accuracy, but make shape editing harder.
+Fewer points make shape editing easier, but reduce outline accuracy.
+{{% /alert %}}
 
 Each model has a minimum required number of points for annotation.
 Once the required number of points is reached, the request
@@ -267,7 +269,9 @@ To annotate with trackers, do the following:
 4. Annotation actions window will pop-up. Setup `Target frame`
 and `Convert rectangle shapes to tracks` parameters and click `Run`
 
-   > **Note:** Tracking will be applied to all filtered rectangle annotations.
+   {{% alert title="Note" color="primary" %}}
+   Tracking will be applied to all filtered rectangle annotations.
+   {{% /alert %}}
 
    <br>![Annotation actions window with parameters and buttons](/images/tracker_mil_action.png)
 

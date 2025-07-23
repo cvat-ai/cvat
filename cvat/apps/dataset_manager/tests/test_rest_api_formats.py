@@ -179,6 +179,17 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
         return response
 
     @staticmethod
+    def _generate_task_pcd():  # pylint: disable=no-self-use
+        pcd_path = osp.join(osp.dirname(__file__), "assets", "test_pcd.pcd")
+        with open(pcd_path, "rb") as f:
+            buf = BytesIO(f.read())
+
+        buf.name = "000001.pcd"
+        buf.seek(0)
+
+        return {"client_files[0]": buf, "image_quality": 75}
+
+    @staticmethod
     def _generate_task_images(count, name_offsets=0):  # pylint: disable=no-self-use
         images = {
             "client_files[%d]" % i: generate_image_file("image_%d.jpg" % (i + name_offsets))
@@ -1711,7 +1722,7 @@ class ExportBehaviorTest(_DbTestBase):
         # create a file in the export cache
         first_export_path = export(dst_format=format_name, task_id=task_id)
 
-        initial_file_modfication_time = os.path.getmtime(first_export_path)
+        initial_file_modification_time = os.path.getmtime(first_export_path)
         # make sure that a file in the export cache is outdated by timeout
         # and a file would have to be deleted if the export was not running in parallel
         sleep(export_outdated_after.seconds + 1)
@@ -1774,7 +1785,7 @@ class ExportBehaviorTest(_DbTestBase):
         self.assertGreater(len(new_export_path), 0)
         self.assertTrue(osp.isfile(new_export_path))
         self.assertTrue(osp.isfile(first_export_path))
-        self.assertGreater(os.path.getmtime(first_export_path), initial_file_modfication_time)
+        self.assertGreater(os.path.getmtime(first_export_path), initial_file_modification_time)
 
         # terminate() may break the locks, don't try to acquire
         # https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Process.terminate
@@ -2276,10 +2287,10 @@ class ProjectDumpUpload(_DbTestBase):
 
         with TestDir() as test_dir:
             for dump_format in dump_formats:
-                if (
-                    not dump_format.ENABLED
-                    or dump_format.DIMENSION == dm.bindings.DimensionType.DIM_3D
-                ):
+                if not dump_format.ENABLED or dump_format.DISPLAY_NAME in [
+                    "Kitti Raw Format 1.0",
+                    "Sly Point Cloud Format 1.0",
+                ]:
                     continue
                 dump_format_name = dump_format.DISPLAY_NAME
                 if dump_format_name in [
@@ -2295,7 +2306,11 @@ class ProjectDumpUpload(_DbTestBase):
                     project["labels"] = tasks[dump_format_name]["labels"]
                 project = self._create_project(project)
                 tasks["task in project #1"]["project_id"] = project["id"]
-                task = self._create_task(tasks["task in project #1"], self._generate_task_images(3))
+                if dump_format.DIMENSION == dm.bindings.DimensionType.DIM_3D:
+                    media = self._generate_task_pcd()
+                else:
+                    media = self._generate_task_images(3)
+                task = self._create_task(tasks["task in project #1"], media)
 
                 export_params = {
                     "format": dump_format_name,
@@ -2327,10 +2342,10 @@ class ProjectDumpUpload(_DbTestBase):
                     self.assertEqual(osp.exists(file_zip_name), edata["file_exists"])
 
             for upload_format in upload_formats:
-                if (
-                    not upload_format.ENABLED
-                    or upload_format.DIMENSION == dm.bindings.DimensionType.DIM_3D
-                ):
+                if not dump_format.ENABLED or dump_format.DISPLAY_NAME in [
+                    "Kitti Raw Format 1.0",
+                    "Sly Point Cloud Format 1.0",
+                ]:
                     continue
                 upload_format_name = upload_format.DISPLAY_NAME
                 if upload_format_name in [
@@ -2363,6 +2378,29 @@ class ProjectDumpUpload(_DbTestBase):
                                 binary_file,
                                 query_params={"format": upload_format_name},
                             )
+
+    def test_api_v2_can_export_3d_annotations(self):
+        dump_format_name = "Datumaro 3D 1.0"
+        project = self._create_project(projects["main"])
+        tasks["task in project #1"]["project_id"] = project["id"]
+        task = self._create_task(tasks["task in project #1"], self._generate_task_pcd())
+        self._create_annotations(task, dump_format_name, "default")
+
+        with TestDir() as test_dir:
+            file_zip_name = osp.join(test_dir, "exported.zip")
+
+            self._export_project_dataset(
+                self.admin,
+                project["id"],
+                query_params={"format": dump_format_name},
+                file_path=file_zip_name,
+            )
+            folder_name = osp.join(test_dir, f"folder")
+            with zipfile.ZipFile(file_zip_name, "r") as zip_ref:
+                zip_ref.extractall(folder_name)
+            dataset = Dataset.import_from(folder_name, "datumaro")
+
+            assert any(bool(item.annotations) for item in dataset)
 
     def test_api_v2_export_annotations(self):
         test_name = self._testMethodName

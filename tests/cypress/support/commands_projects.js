@@ -55,8 +55,8 @@ Cypress.Commands.add('deleteProjects', (authResponse, projectsToDelete) => {
             Authorization: `Token ${authKey}`,
         },
     }).then((_response) => {
-        const responceResult = _response.body.results;
-        for (const project of responceResult) {
+        const responseResult = _response.body.results;
+        for (const project of responseResult) {
             const { id, name } = project;
             for (const projectToDelete of projectsToDelete) {
                 if (name === projectToDelete) {
@@ -112,8 +112,8 @@ Cypress.Commands.add('deleteProject', (projectName, projectID, expectedResult = 
             cy.contains('button', 'Delete').click();
         });
     if (expectedResult === 'success') {
-        cy.wait(`@${interceptorName}`).then((interseption) => {
-            expect(interseption.response.statusCode).to.be.equal(204);
+        cy.wait(`@${interceptorName}`).then((interception) => {
+            expect(interception.response.statusCode).to.be.equal(204);
         });
         cy.get('.cvat-projects-project-item-card').should('have.css', 'opacity', '0.5');
     } else if (expectedResult === 'fail') {

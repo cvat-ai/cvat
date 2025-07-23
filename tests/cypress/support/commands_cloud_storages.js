@@ -34,9 +34,9 @@ Cypress.Commands.add('attachS3Bucket', (data) => {
     cy.get('.cvat-cloud-storage-form').within(() => {
         cy.contains('button', 'Submit').click();
     });
-    cy.wait('@createCloudStorage').then((interseption) => {
-        expect(interseption.response.statusCode).to.be.equal(201);
-        createdCloudStorageId = interseption.response.body.id;
+    cy.wait('@createCloudStorage').then((interception) => {
+        expect(interception.response.statusCode).to.be.equal(201);
+        createdCloudStorageId = interception.response.body.id;
     });
     cy.verifyNotification();
     return createdCloudStorageId;

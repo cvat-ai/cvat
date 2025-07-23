@@ -17,35 +17,33 @@ import git
 import toml
 from packaging import version
 
-# the initial version for the documentation site
-MINIMUM_VERSION = version.Version("1.5.0")
-
-# apply new hugo version starting from release 2.9.2
-UPDATED_HUGO_FROM = version.Version("2.9.2")
-
-# Start the name with HUGO_ for Hugo default security checks
-VERSION_URL_ENV_VAR = "HUGO_VERSION_REL_URL"
+# Number of most recent tags to build documentation for
+MAX_VERSIONS_TO_BUILD = 6
 
 # Base URL for the documentation site
 BASE_URL = os.getenv("BASE_URL", "/")
 
-# Hugo binaries for different versions
-hugo110 = "hugo-0.110"  # required for new docs
-hugo83 = "hugo-0.83"  # required for older docs
+# Hugo binary for documentation builds
+hugo110 = "hugo-0.110"  # used for all documentation builds
 
 
 def prepare_tags(repo: git.Repo):
-    tags = {}
+    # Group tags by minor version (major.minor) and keep only the latest patch for each
+    minor_versions = {}
     for tag in repo.tags:
         tag_version = version.parse(tag.name)
-        if tag_version >= MINIMUM_VERSION and not tag_version.is_prerelease:
-            release_version = (tag_version.major, tag_version.minor)
-            if release_version not in tags or tag_version > version.parse(
-                tags[release_version].name
+        if not tag_version.is_prerelease:
+            minor_key = (tag_version.major, tag_version.minor)
+            if minor_key not in minor_versions or tag_version > version.parse(
+                minor_versions[minor_key].name
             ):
-                tags[release_version] = tag
+                minor_versions[minor_key] = tag
 
-    return tags.values()
+    # Sort minor versions by version in descending order (newest first)
+    sorted_tags = sorted(minor_versions.values(), key=lambda t: version.parse(t.name), reverse=True)
+
+    # Return only the configured number of most recent minor versions
+    return sorted_tags[:MAX_VERSIONS_TO_BUILD]
 
 
 def generate_versioning_config(filename, versions, url_prefix=""):
@@ -101,16 +99,9 @@ def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
 
         def run_hugo(
             *,
-            extra_env_vars: dict[str, str] = None,
             executable: Optional[str] = "hugo",
             rel_dest_dir: str = ".",
         ):
-            extra_kwargs = {}
-
-            if extra_env_vars:
-                extra_kwargs["env"] = os.environ.copy()
-                extra_kwargs["env"].update(extra_env_vars)
-
             # Construct the full destination path
             full_destination = Path(output_dir) / rel_dest_dir
 
@@ -126,7 +117,6 @@ def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
                 ],
                 cwd=content_loc,
                 check=True,
-                **extra_kwargs,
             )
 
         versioning_toml_path = content_loc / "versioning.toml"
@@ -149,24 +139,18 @@ def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
             change_version_menu_toml(versioning_toml_path, tag.name)
             run_npm_install()
 
-            # find correct hugo version
-            hugo = hugo110 if version.parse(tag.name) >= UPDATED_HUGO_FROM else hugo83
-
+            # Use hugo110 for all recent versions (since we only build the last MAX_VERSIONS_TO_BUILD tags)
             run_hugo(
-                # This variable is no longer needed by the current version,
-                # but it was required in v2.11.2 and older.
-                extra_env_vars={VERSION_URL_ENV_VAR: f"/{tag.name}/docs"},
-                executable=hugo,
+                executable=hugo110,
                 rel_dest_dir=tag.name,
             )
 
 
 def validate_env():
-    for hugo in [hugo83, hugo110]:
-        try:
-            subprocess.run([hugo, "version"], capture_output=True)  # nosec
-        except (subprocess.CalledProcessError, FileNotFoundError) as ex:
-            raise Exception(f"Failed to run '{hugo}', please make sure it exists.") from ex
+    try:
+        subprocess.run([hugo110, "version"], capture_output=True)  # nosec
+    except (subprocess.CalledProcessError, FileNotFoundError) as ex:
+        raise Exception(f"Failed to run '{hugo110}', please make sure it exists.") from ex
 
 
 if __name__ == "__main__":

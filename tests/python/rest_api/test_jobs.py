@@ -27,6 +27,7 @@ from deepdiff import DeepDiff
 from PIL import Image
 from pytest_cases import parametrize
 
+from shared.tasks.utils import parse_frame_step
 from shared.utils.config import make_api_client
 from shared.utils.helpers import generate_image_files
 
@@ -35,7 +36,6 @@ from .utils import (
     compare_annotations,
     create_task,
     export_job_dataset,
-    parse_frame_step,
 )
 
 
@@ -1145,10 +1145,14 @@ class TestPatchJobAnnotations:
     def request_data(self, annotations):
         def get_data(jid):
             data = deepcopy(annotations["job"][str(jid)])
-            if data["shapes"][0]["type"] == "skeleton":
-                data["shapes"][0]["elements"][0].update({"points": [2.0, 3.0, 4.0, 5.0]})
-            else:
-                data["shapes"][0].update({"points": [2.0, 3.0, 4.0, 5.0, 6.0, 7.0]})
+
+            def mutate(shape):
+                shape["points"] = [p + 1.0 for p in shape["points"]]
+
+            mutate(data["shapes"][0])
+            if elements := data["shapes"][0]["elements"]:
+                mutate(elements[0])
+
             data["version"] += 1
             return data
 
