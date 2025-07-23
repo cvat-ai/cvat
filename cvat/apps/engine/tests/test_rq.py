@@ -25,15 +25,11 @@ def _enqueue_test_job(
     queue: DjangoRQ,
     job_id: str | None = None,
     user_id: int = DEFAULT_USER_ID,
-    depends_on: list[Job] | None = None
+    depends_on: list[Job] | None = None,
 ) -> Job:
     job_id = job_id or str(uuid.uuid4())
     job = queue.enqueue(
-        f=dummy_task,
-        args=(),
-        job_id=job_id,
-        meta={"user_id": user_id},
-        depends_on=depends_on
+        f=dummy_task, args=(), job_id=job_id, meta={"user_id": user_id}, depends_on=depends_on
     )
     return job
 
@@ -108,7 +104,7 @@ class TestDefineDependentJob(unittest.TestCase):
         second_job = _enqueue_test_job(
             self.queue,
             job_id=second_job_id,
-            depends_on=Dependency(jobs=[first_job_id], allow_failure=True)
+            depends_on=Dependency(jobs=[first_job_id], allow_failure=True),
         )
         first_job.cancel()
         dependency = self._define_dependent_job(rq_id=first_job_id)
@@ -132,7 +128,7 @@ class TestDefineDependentJob(unittest.TestCase):
             _enqueue_test_job(
                 self.queue,
                 job_id,
-                depends_on=Dependency(jobs=[job_ids[i - 1]], allow_failure=True) if i else None
+                depends_on=Dependency(jobs=[job_ids[i - 1]], allow_failure=True) if i else None,
             )
         dependent = self._define_dependent_job()
         assert dependent is not None, "Dependent job not found."
