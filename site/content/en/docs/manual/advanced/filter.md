@@ -120,10 +120,12 @@ and {{< ilink "/docs/manual/basics/cloud-storages" "cloud storage" >}} pages, yo
 ### Sort by
 
 You can sort by the following parameters:
-- Jobs list: ID, assignee, updated date, {{< ilink "/docs/manual/basics/vocabulary#stage" "stage" >}}, {{< ilink "/docs/manual/basics/vocabulary#state" "state" >}}, task ID, project ID,
+- Jobs list: ID, assignee, updated date, {{< ilink "/docs/manual/basics/vocabulary#stage" "stage" >}},
+{{< ilink "/docs/manual/basics/vocabulary#state" "state" >}}, task ID, project ID,
 task name, project name.
 - Tasks list or tasks list on project page: ID, owner, status, assignee, updated date,
-{{< ilink "/docs/manual/basics/vocabulary#subset" "subset" >}}, {{< ilink "/docs/manual/basics/vocabulary#mode" "mode">}},
+{{< ilink "/docs/manual/basics/vocabulary#subset" "subset" >}},
+{{< ilink "/docs/manual/basics/vocabulary#mode" "mode">}},
 {{< ilink "/docs/manual/basics/vocabulary#dimension" "dimension">}}, project ID, name, project name.
 - Projects list: ID, assignee, owner, status, name, updated date.
 - Cloud storages list: ID, provider type, updated date, display name,

@@ -957,10 +957,12 @@ you can use the Ubuntu subsystem, for this do the following:
    ![Docker WSL integration Ubuntu 18.04](/images/docker_wsl_integration.jpg)
 
 1. Then you can download and install `nuctl` on Ubuntu,
-   using the {{< ilink "/docs/administration/advanced/installation_automatic_annotation" "automatic annotation guide" >}}.
+   using the
+   {{< ilink "/docs/administration/advanced/installation_automatic_annotation" "automatic annotation guide" >}}.
 
 1. Install `git` and clone repository on Ubuntu,
-   as described in the {{< ilink "/docs/administration/basics/installation#ubuntu-1804-x86_64amd64" "installation manual" >}}.
+   as described in the
+   {{< ilink "/docs/administration/basics/installation#ubuntu-1804-x86_64amd64" "installation manual" >}}.
 
 1. After that, run the commands from this tutorial through Ubuntu.
 

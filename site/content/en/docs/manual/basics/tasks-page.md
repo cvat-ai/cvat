@@ -36,7 +36,8 @@ In the upper right corner, there are {{< ilink "/docs/manual/advanced/filter#sor
 
 The filter works similarly to the filters for annotation,
 you can create rules from [properties](#supported-properties-for-tasks-list),
-{{< ilink "/docs/manual/advanced/filter#supported-operators-for-properties" "operators" >}}, and values and group rules into {{< ilink "/docs/manual/advanced/filter#groups" "groups" >}}.
+{{< ilink "/docs/manual/advanced/filter#supported-operators-for-properties" "operators" >}},
+and values and group rules into {{< ilink "/docs/manual/advanced/filter#groups" "groups" >}}.
 For more details, consult the {{< ilink "/docs/manual/advanced/filter#create-a-filter" "filter section" >}}.
 Learn more about {{< ilink "/docs/manual/advanced/filter#date-and-time-selection" "date and time selection" >}}.
 
