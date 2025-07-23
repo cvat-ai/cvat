@@ -97,15 +97,20 @@ class TestDefineDependentJob(unittest.TestCase):
         dependency = self._define_dependent_job(rq_id=str(uuid.uuid4()))
         assert dependency is None
 
-    def test_skip_self_dependent_job(self):
-        """Avoids creating dependency if a job is dependent on itself."""
+    def test_skip_cyclic_dependencies(self):
+        """
+        Avoids creating dependency for the X1 if the X1 was as a dependency
+        for the X2 and then cancelled.
+        """
         first_job_id = str(uuid.uuid4())
+        second_job_id = str(uuid.uuid4())
         first_job = _enqueue_test_job(self.queue, job_id=first_job_id)
         second_job = _enqueue_test_job(
             self.queue,
-            job_id=first_job_id,
-            depends_on=Dependency(jobs=[first_job_id], allow_failure=False)
+            job_id=second_job_id,
+            depends_on=Dependency(jobs=[first_job_id], allow_failure=True)
         )
+        first_job.cancel()
         dependency = self._define_dependent_job(rq_id=first_job_id)
 
         assert dependency is None
@@ -124,7 +129,7 @@ class TestDefineDependentJob(unittest.TestCase):
         job_ids = [str(uuid.uuid4()) for _ in range(total_jobs)]
         latest_job_id = job_ids[-1]
         for i, job_id in enumerate(job_ids):
-            _create_test_job(
+            _enqueue_test_job(
                 self.queue,
                 job_id,
                 depends_on=Dependency(jobs=[job_ids[i - 1]], allow_failure=True) if i else None
