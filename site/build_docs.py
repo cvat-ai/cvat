@@ -11,6 +11,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 from typing import Optional
+from urllib.parse import urljoin
 
 import git
 import toml
@@ -18,6 +19,9 @@ from packaging import version
 
 # Number of most recent tags to build documentation for
 MAX_VERSIONS_TO_BUILD = 6
+
+# Base URL for the documentation site
+BASE_URL = os.getenv("BASE_URL", "/")
 
 # Hugo binary for documentation builds
 hugo110 = "hugo-0.110"  # used for all documentation builds
@@ -94,15 +98,20 @@ def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
             subprocess.run(["npm", "install"], cwd=content_loc)  # nosec
 
         def run_hugo(
-            destination_dir: os.PathLike,
             *,
             executable: Optional[str] = "hugo",
+            rel_dest_dir: str = ".",
         ):
+            # Construct the full destination path
+            full_destination = Path(output_dir) / rel_dest_dir
+
             subprocess.run(  # nosec
                 [
                     executable,
                     "--destination",
-                    str(destination_dir),
+                    str(full_destination),
+                    "--baseURL",
+                    urljoin(BASE_URL, rel_dest_dir),
                     "--config",
                     "config.toml,versioning.toml",
                 ],
@@ -115,7 +124,7 @@ def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
         # Process the develop version
         generate_versioning_config(versioning_toml_path, (t.name for t in tags))
         change_version_menu_toml(versioning_toml_path, "develop")
-        run_hugo(output_dir, executable=hugo110)
+        run_hugo(executable=hugo110)
 
         # Create a temp repo for checkouts
         temp_repo_path = Path(temp_dir) / "tmp_repo"
@@ -132,8 +141,8 @@ def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
 
             # Use hugo110 for all recent versions (since we only build the last MAX_VERSIONS_TO_BUILD tags)
             run_hugo(
-                output_dir / tag.name,
                 executable=hugo110,
+                rel_dest_dir=tag.name,
             )
 
 
