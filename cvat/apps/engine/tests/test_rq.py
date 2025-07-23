@@ -1,3 +1,7 @@
+# Copyright (C) CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
 import unittest
 import uuid
 from unittest import mock
