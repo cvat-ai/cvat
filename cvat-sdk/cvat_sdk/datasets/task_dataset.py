@@ -82,12 +82,6 @@ class TaskDataset:
         if not self._task.size or not self._task.data_chunk_size:
             raise UnsupportedDatasetError("The task has no data")
 
-        if self._task.data_original_chunk_type != "imageset":
-            raise UnsupportedDatasetError(
-                f"{self.__class__.__name__} only supports tasks with image chunks;"
-                f" current chunk type is {self._task.data_original_chunk_type!r}"
-            )
-
         self._logger.info("Fetching labels...")
         self._labels = tuple(self._task.get_labels())
 
@@ -120,10 +114,12 @@ class TaskDataset:
 
         # TODO: tracks?
 
+        is_imageset = self._task.data_original_chunk_type == "imageset"
+
         self._samples = [
             Sample(
                 frame_index=k,
-                frame_name=data_meta.frames[k].name,
+                frame_name=data_meta.frames[k if is_imageset else 0].name,
                 annotations=v,
                 media=self._TaskMediaElement(self, k),
             )
@@ -131,6 +127,12 @@ class TaskDataset:
         ]
 
     def _ensure_chunks(self, task_id, cache_manager, chunk_indexes):
+        if self._task.data_original_chunk_type != "imageset":
+            raise UnsupportedDatasetError(
+                f"Preloading media data is only supported for tasks with image chunks;"
+                f" current chunk type is {self._task.data_original_chunk_type!r}"
+            )
+
         self._logger.info("Downloading chunks...")
 
         self._chunk_dir = cache_manager.chunk_dir(task_id)
