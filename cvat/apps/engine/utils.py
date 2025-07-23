@@ -268,7 +268,7 @@ def get_cpu_number() -> int:
             cfs_quota_us_path = Path("/sys/fs/cgroup/cpu/cpu.cfs_quota_us")
             cfs_period_us_path = Path("/sys/fs/cgroup/cpu/cpu.cfs_period_us")
 
-            # cgroups v2
+            # cgroup v2
             cpu_max_path = Path("/sys/fs/cgroup/cpu.max")
 
             if cfs_quota_us_path.exists() and cfs_period_us_path.exists():
