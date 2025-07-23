@@ -10,17 +10,19 @@ description: 'Creating and exporting projects in CVAT.'
 On this page, you can create a new project, create a project from a backup, and also see the created projects.
 
 In the upper left corner there is a search bar, using which you can find the project by project name, assignee etc.
-In the upper right corner there are [sorting][sorting], [quick filters][quick-filters] and filter.
+In the upper right corner there are {{< ilink "/docs/manual/advanced/filter#sort-by" "sorting" >}},
+{{< ilink "/docs/manual/advanced/filter#quick-filters" "quick filters" >}} and filter.
 
 ## Filter
 
-> Applying a filter disables the [quick filter][quick-filters].
+> Applying a filter disables the {{< ilink "/docs/manual/advanced/filter#quick-filters" "quick filters" >}}.
 
 The filter works similarly to the filters for annotation,
 you can create rules from [properties](#supported-properties-for-projects-list),
-[operators][operators] and values and group rules into [groups][groups].
-For more details, see the [filter section][create-filter].
-Learn more about [date and time selection][data-and-time].
+{{< ilink "/docs/manual/advanced/filter#supported-operators-for-properties" "operators" >}} and values and group rules into
+{{< ilink "/docs/manual/advanced/filter#groups" "groups" >}}.
+For more details, see the {{< ilink "/docs/manual/advanced/filter#create-a-filter" "filter section" >}}.
+Learn more about {{< ilink "/docs/manual/advanced/filter#date-and-time-selection" "date and time selection" >}}.
 
 To clear all filters, press `Clear filters`.
 
@@ -92,9 +94,3 @@ Here you can do the following:
 It is possible to choose a subset for tasks in the project. You can use the available options
 (`Train`, `Test`, `Validation`) or set your own.
 
-[create-filter]: /docs/manual/advanced/filter/#create-a-filter
-[operators]: /docs/manual/advanced/filter/#supported-operators-for-properties
-[groups]: /docs/manual/advanced/filter/#groups
-[data-and-time]: /docs/manual/advanced/filter#date-and-time-selection
-[sorting]: /docs/manual/advanced/filter/#sort-by
-[quick-filters]: /docs/manual/advanced/filter/#quick-filters

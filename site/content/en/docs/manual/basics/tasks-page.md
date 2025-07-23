@@ -27,17 +27,18 @@ Each button is responsible for a menu `Actions` specific function:
 - `Delete` — delete task.
 
 In the upper left corner, there is a search bar, using which you can find the task by assignee, task name etc.
-In the upper right corner, there are [sorting][sorting], [quick filters][quick-filters], and filter.
+In the upper right corner, there are {{< ilink "/docs/manual/advanced/filter#sort-by" "sorting" >}},
+{{< ilink "/docs/manual/advanced/filter#quick-filters" "quick filters" >}}, and filter.
 
 ## Filter
 
-> Applying a filter disables the [quick filter][quick-filters].
+> Applying a filter disables the {{< ilink "/docs/manual/advanced/filter#quick-filters" "quick filter" >}}.
 
 The filter works similarly to the filters for annotation,
 you can create rules from [properties](#supported-properties-for-tasks-list),
-[operators][operators], and values and group rules into [groups][groups].
-For more details, consult the [filter section][create-filter].
-Learn more about [date and time selection][data-and-time].
+{{< ilink "/docs/manual/advanced/filter#supported-operators-for-properties" "operators" >}}, and values and group rules into {{< ilink "/docs/manual/advanced/filter#groups" "groups" >}}.
+For more details, consult the {{< ilink "/docs/manual/advanced/filter#create-a-filter" "filter section" >}}.
+Learn more about {{< ilink "/docs/manual/advanced/filter#date-and-time-selection" "date and time selection" >}}.
 
 For clear all filters press `Clear filters`.
 
@@ -48,7 +49,7 @@ For clear all filters press `Clear filters`.
 | `Dimension`    | `2D` or `3D`                                 | Depends on the data format <br>(read more in {{< ilink "/docs/manual/basics/create-annotation-task" "creating an annotation task" >}}) |
 | `Status`       | `annotation`, `validation` or `completed`    |                                             |
 | `Data`         | `video`, `images`                            | Depends on the data format <br>(read more in {{< ilink "/docs/manual/basics/create-annotation-task" "creating an annotation task" >}}) |
-| `Subset`       | `test`, `train`, `validation` or custom subset | [learn more][subset]                      |
+| `Subset`       | `test`, `train`, `validation` or custom subset | {{< ilink "/docs/manual/basics/vocabulary#subset" "learn more" >}} |
 | `Assignee`     | username                                     | Assignee is the user who is working on the project, task or job <br>(they are specified on task page) |
 | `Owner`        | username                                     | The user who owns the project, task, or job |
 | `Last updated` | last modified date and time (or value range) | The date can be entered in the `dd.MM.yyyy HH:mm` format <br>or by selecting the date in the window that appears <br>when you click on the input field |
@@ -60,11 +61,3 @@ For clear all filters press `Clear filters`.
 ---
 
 Select `Open` to go to {{< ilink "/docs/manual/basics/task-details" "task details" >}}.
-
-[create-filter]: /docs/manual/advanced/filter/#create-a-filter
-[operators]: /docs/manual/advanced/filter/#supported-operators-for-properties
-[groups]: /docs/manual/advanced/filter/#groups
-[data-and-time]: /docs/manual/advanced/filter#date-and-time-selection
-[sorting]: /docs/manual/advanced/filter/#sort-by
-[quick-filters]: /docs/manual/advanced/filter/#quick-filters
-[subset]: /docs/manual/basics/vocabulary/#subset
