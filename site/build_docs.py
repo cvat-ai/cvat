@@ -11,6 +11,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 from typing import Optional
+from urllib.parse import urljoin
 
 import git
 import toml
@@ -24,6 +25,9 @@ UPDATED_HUGO_FROM = version.Version("2.9.2")
 
 # Start the name with HUGO_ for Hugo default security checks
 VERSION_URL_ENV_VAR = "HUGO_VERSION_REL_URL"
+
+# Base URL for the documentation site
+BASE_URL = os.getenv("BASE_URL", "/")
 
 # Hugo binaries for different versions
 hugo110 = "hugo-0.110"  # required for new docs
@@ -96,10 +100,10 @@ def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
             subprocess.run(["npm", "install"], cwd=content_loc)  # nosec
 
         def run_hugo(
-            destination_dir: os.PathLike,
             *,
             extra_env_vars: dict[str, str] = None,
             executable: Optional[str] = "hugo",
+            rel_dest_dir: str = ".",
         ):
             extra_kwargs = {}
 
@@ -107,11 +111,16 @@ def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
                 extra_kwargs["env"] = os.environ.copy()
                 extra_kwargs["env"].update(extra_env_vars)
 
+            # Construct the full destination path
+            full_destination = Path(output_dir) / rel_dest_dir
+
             subprocess.run(  # nosec
                 [
                     executable,
                     "--destination",
-                    str(destination_dir),
+                    str(full_destination),
+                    "--baseURL",
+                    urljoin(BASE_URL, rel_dest_dir),
                     "--config",
                     "config.toml,versioning.toml",
                 ],
@@ -125,7 +134,7 @@ def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
         # Process the develop version
         generate_versioning_config(versioning_toml_path, (t.name for t in tags))
         change_version_menu_toml(versioning_toml_path, "develop")
-        run_hugo(output_dir, executable=hugo110)
+        run_hugo(executable=hugo110)
 
         # Create a temp repo for checkouts
         temp_repo_path = Path(temp_dir) / "tmp_repo"
@@ -144,11 +153,11 @@ def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
             hugo = hugo110 if version.parse(tag.name) >= UPDATED_HUGO_FROM else hugo83
 
             run_hugo(
-                output_dir / tag.name,
                 # This variable is no longer needed by the current version,
                 # but it was required in v2.11.2 and older.
                 extra_env_vars={VERSION_URL_ENV_VAR: f"/{tag.name}/docs"},
                 executable=hugo,
+                rel_dest_dir=tag.name,
             )
 
 

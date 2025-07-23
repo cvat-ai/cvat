@@ -55,6 +55,7 @@ jobs:
           python site/process_sdk_docs.py
           PATH="$PWD/hugo:$PATH" python site/build_docs.py
         env:
+          BASE_URL: https://docs.cvat.ai
           HUGO_ENV: production
           GOOGLE_TAG_ID: G-GVSBK1DNK5
 
