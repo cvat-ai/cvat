@@ -1,16 +1,13 @@
 import unittest
 import uuid
-from datetime import datetime, timedelta
 from unittest import mock
 
 import django_rq
 from django.conf import settings
-from django.test import override_settings
 from django_rq.queues import DjangoRQ
 from rq.job import Dependency, Job
-from rq.registry import DeferredJobRegistry, StartedJobRegistry
 
-from cvat.apps.engine.rq import define_dependent_job, is_rq_job_owner
+from cvat.apps.engine.rq import define_dependent_job
 from cvat.apps.engine.tests.utils import clear_rq_jobs
 
 DEFAULT_USER_ID = 1
@@ -80,7 +77,7 @@ class TestDefineDependentJob(unittest.TestCase):
 
     def test_no_dependency_when_should_be_dependent_is_false(self) -> None:
         """Skips dependency if the flag should_be_dependent=False is used."""
-        job = _enqueue_test_job(self.queue)
+        _enqueue_test_job(self.queue)
         dependency = self._define_dependent_job(should_be_dependent=False)
         assert dependency is None
 
@@ -100,7 +97,7 @@ class TestDefineDependentJob(unittest.TestCase):
         first_job_id = str(uuid.uuid4())
         second_job_id = str(uuid.uuid4())
         first_job = _enqueue_test_job(self.queue, job_id=first_job_id)
-        second_job = _enqueue_test_job(
+        _enqueue_test_job(
             self.queue,
             job_id=second_job_id,
             depends_on=Dependency(jobs=[first_job_id], allow_failure=True),
@@ -113,7 +110,7 @@ class TestDefineDependentJob(unittest.TestCase):
     def test_skip_dependency_for_same_job(self):
         """Ignores dependencies if rq_id matches already enqueued job."""
         job_id = str(uuid.uuid4())
-        job = _enqueue_test_job(self.queue, job_id=job_id)
+        _enqueue_test_job(self.queue, job_id=job_id)
         dependency = self._define_dependent_job(rq_id=job_id)
 
         assert dependency is None
