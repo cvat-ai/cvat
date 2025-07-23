@@ -20,8 +20,10 @@ The 3D annotation canvas looks like the following:
 
 ![3D canvas](/images/3d-canvas.jpg)
 
-> Note: if you added contextual images to the dataset, the canvas will include them.
-> For more information, consult {{< ilink "/docs/manual/advanced/contextual-images" "Contextual images" >}}
+{{% alert title="Note" color="primary" %}}
+If you added contextual images to the dataset, the canvas will include them.
+For more information, consult {{< ilink "/docs/manual/advanced/contextual-images" "Contextual images" >}}
+{{% /alert %}}
 
 For information on the available tools, consult
 {{< ilink "/docs/manual/basics/CVAT-annotation-Interface/controls-sidebar" "Controls sidebar" >}}.

@@ -86,10 +86,14 @@ Use the link in the page title to return to the corresponding project, task, or 
 Analytics data is not fetched automatically. When you first open the **Analytics** page, it will be empty.
 To fetch and display the analytical data, select the **Request** button.
 
-> **Note**: The analytical data is fetched for all resource children.
-> So, when you request data for a task, the data for all task jobs is also fetched.
+{{% alert title="Note" color="primary" %}}
+The analytical data is fetched for all resource children.
+So, when you request data for a task, the data for all task jobs is also fetched.
+{{% /alert %}}
 
 Once the data is fetched and displayed on the page, you can check its relevance under the page title.
+A warning icon ![Warning icon](/images/warning-icon.svg) indicates
+that the resource was updated after the last analytics update.
 
 To update the data, select ![Fetch analytics button](/images/fetch-data-button.svg) button.
 
@@ -100,8 +104,10 @@ The **Analytics** page includes:
 - Date filter.
 - **Export events** button.
 
-> **Note**: The date filter is applied to the [**Summary**](#summary-tab)
-> and [**Events**](#events-tab) tabs.
+{{% alert title="Note" color="primary" %}}
+The date filter is applied to the [**Summary**](#summary-tab)
+and [**Events**](#events-tab) tabs.
+{{% /alert %}}
 
 The **Summary** tab provides a statistics overview, while the **Annotations** and **Events** tabs
 contain the detailed data in table form.
@@ -109,6 +115,8 @@ contain the detailed data in table form.
 To download a CSV file with all event data, select the **Export events** button.
 
 ### Summary tab
+
+![Summary tab in Analytics](/images/analytics/summary-tab.jpg)
 
 The **Summary** tab displays the quantitative metrics:
 - **Objects diff**: Difference between created and deleted objects in the selected time period.
@@ -124,10 +132,13 @@ for annotation distribution by labels and types. Hover over a chart or diagram t
 
 ### Annotations tab
 
+![Annotation tab in Analytics](/images/analytics/annotation-tab-detection.jpg)
+
 The **Annotations** tab shows annotation statistics for:
 - {{< ilink "/docs/manual/basics/shape-mode-basics" "Shape mode">}} (the **Detections** tab).
 - {{< ilink "/docs/manual/basics/track-mode-basics" "Track mode">}} (the **Tracking** tab).
 
+Both tabs always reflect the current state of the resource.
 Each tab includes a filterable, customizable table
 (learn [how to work with tables](#working-with-tables)).
 
@@ -167,13 +178,17 @@ The **Tracking** tab table contains the columns:
 
 ### Events tab
 
+![Events tab in Analytics](/images/analytics/events-tab.jpg)
+
 The **Events** tab displays the following metrics:
 - **Total objects**: Total number of objects in the filtered jobs.
 - **Total images**: Total number of images in the filtered jobs.
 - **Total working time**: Total user time spent.
 - **Avg. annotation speed**: : Average number of objects annotated per hour.
 
-> **Note**: All metrics are recalculated when you apply the date or table filter.
+{{% alert title="Note" color="primary" %}}
+All metrics are recalculated when you apply the date or table filter.
+{{% /alert %}}
 
 The **Events** tab table contains the aggregated events for the selected resource.
 Each event is defined by a unique status signature, which is a combination of the
@@ -232,8 +247,12 @@ The events table columns:
 
 The tables in the **Annotations** and **Events** tabs support:
 1. Exporting the data: select ![Export button](/images/export-button.svg) button.
-   > **Note:** visible columns do not affect the file with exported data.
-   > It always contains the complete table with all columns and rows.
+
+   {{% alert title="Note" color="primary" %}}
+   Visible columns do not affect the file with exported data.
+   It always contains the complete table with all columns and rows.
+   {{% /alert %}}
+
 1. Filtering entries by a custom rule: select **Filter**, and set filtering criteria.
    To learn more about how to set a filter, refer to the **{{< ilink "/docs/manual/advanced/filter" "Filter" >}}**
    article.

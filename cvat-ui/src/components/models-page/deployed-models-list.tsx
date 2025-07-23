@@ -15,18 +15,16 @@ import { getModelsAsync } from 'actions/models-actions';
 import dimensions from 'utils/dimensions';
 import DeployedModelItem from './deployed-model-item';
 
-export const PAGE_SIZE = 12;
-
 interface Props {
     query: ModelsQuery;
 }
 
-function setUpModelsList(models: MLModel[], newPage: number): MLModel[] {
+function setUpModelsList(models: MLModel[], newPage: number, pageSize: number): MLModel[] {
     const builtInModels = models.filter((model: MLModel) => model.provider === ModelProviders.CVAT);
     const externalModels = models.filter((model: MLModel) => model.provider !== ModelProviders.CVAT);
     externalModels.sort((a, b) => moment(a.createdDate).valueOf() - moment(b.createdDate).valueOf());
     const renderModels = [...builtInModels, ...externalModels];
-    return renderModels.slice((newPage - 1) * PAGE_SIZE, newPage * PAGE_SIZE);
+    return renderModels.slice((newPage - 1) * pageSize, newPage * pageSize);
 }
 
 export default function DeployedModelsListComponent(props: Props): JSX.Element {
@@ -38,10 +36,11 @@ export default function DeployedModelsListComponent(props: Props): JSX.Element {
 
     const dispatch = useDispatch();
     const { query } = props;
-    const { page } = query;
+    const { page, pageSize } = query;
     const models = setUpModelsList(
         [...interactors, ...detectors, ...trackers, ...reid],
         page,
+        pageSize,
     );
 
     const groupedModels = models.reduce(
@@ -58,7 +57,7 @@ export default function DeployedModelsListComponent(props: Props): JSX.Element {
 
     return (
         <>
-            <Row justify='center' align='top'>
+            <Row justify='center' align='top' className='cvat-resource-list-wrapper'>
                 <Col {...dimensions} className='cvat-models-list'>
                     {groupedModels.map(
                         (instances: MLModel[]): JSX.Element => (
@@ -73,20 +72,22 @@ export default function DeployedModelsListComponent(props: Props): JSX.Element {
                     )}
                 </Col>
             </Row>
-            <Row justify='center' align='middle'>
+            <Row justify='center' align='middle' className='cvat-resource-pagination-wrapper'>
                 <Pagination
-                    className='cvat-tasks-pagination'
-                    onChange={(newPage: number) => {
+                    className='cvat-models-pagination'
+                    onChange={(newPage: number, newPageSize: number) => {
                         dispatch(getModelsAsync({
                             ...query,
                             page: newPage,
+                            pageSize: newPageSize,
                         }));
                     }}
-                    showSizeChanger={false}
                     total={totalCount}
                     current={page}
-                    pageSize={PAGE_SIZE}
+                    pageSize={pageSize}
+                    pageSizeOptions={[12, 24, 48, 96]}
                     showQuickJumper
+                    showSizeChanger
                 />
             </Row>
         </>

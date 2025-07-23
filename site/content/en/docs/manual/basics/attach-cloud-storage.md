@@ -58,7 +58,9 @@ A new bucket will appear on the list of buckets.
 
 ### Upload data
 
-> **Note**: manifest file is optional.
+{{% alert title="Note" color="primary" %}}
+The manifest file is optional.
+{{% /alert %}}
 
 You need to upload data for annotation and the `manifest.jsonl` file.
 
@@ -136,7 +138,9 @@ After filling in all the fields, select **Submit**.
 
 ### AWS S3 manifest file
 
-> **Note**: manifest file is optional.
+{{% alert title="Note" color="primary" %}}
+The manifest file is optional.
+{{% /alert %}}
 
 To prepare the manifest file, do the following:
 
@@ -194,7 +198,11 @@ To create bucket, do the following:
 1. Create [Google account](https://support.google.com/accounts/answer/27441?hl=en) and log into it.
 1. On the [Google Cloud](https://cloud.google.com/) page, select **Start Free**, then enter the required
    data and accept the terms of service.
-   > **Note:** Google requires to add payment, you will need a bank card to accomplish step 2.
+
+   {{% alert title="Note" color="primary" %}}
+   Google requires to add payment, you will need a bank card to accomplish step 2.
+   {{% /alert %}}
+
 1. [Create a Bucket](https://cloud.google.com/storage/docs/creating-buckets) with the following parameters:
    - **Name your bucket**: Unique name.
    - **Choose where to store your data**: Set up a location nearest to you.
@@ -209,7 +217,9 @@ You will be forwarded to the bucket.
 
 ### Upload data
 
-> **Note**: manifest file is optional.
+{{% alert title="Note" color="primary" %}}
+The manifest file is optional.
+{{% /alert %}}
 
 You need to upload data for annotation and the `manifest.jsonl` file.
 
@@ -259,7 +269,7 @@ For more information about keys, consult
 To configure anonymous access:
 
 1. Open the bucket and go to the **Permissions** tab.
-1. Сlick **+ Grant access** to add new principals.
+1. Click **+ Grant access** to add new principals.
 1. In the **New principals** field specify `allUsers`,
    select roles: `Cloud Storage Legacy` > `Storage Legacy Bucket Reader`.
 1. Select **Save**.
@@ -376,7 +386,11 @@ You need to upload data for annotation and the `manifest.jsonl` file.
    refer on how to [prepare the dataset](#prepare-the-dataset).
 1. Go to container and select **Upload**.
 1. Select **Browse for files** and select images.
-   > Note: If images are in folder, specify folder in the **Advanced settings** > **Upload to folder**.
+
+   {{% alert title="Note" color="primary" %}}
+   If images are in folder, specify folder in the **Advanced settings** > **Upload to folder**.
+   {{% /alert %}}
+
 1. Select **Upload**.
 
 ![Microsoft Azure interface with highlighted "Upload" button and upload settings](/images/azure_blob_container_tutorial9.jpg)

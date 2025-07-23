@@ -38,10 +38,7 @@ if settings.IAM_TYPE == "BASIC":
 
 elif settings.IAM_TYPE == "LDAP":
 
-    def create_user(sender, created: bool, raw: bool, user=None, ldap_user=None, **kwargs):
-        if created and raw:
-            return
-
+    def create_user(sender, user=None, ldap_user=None, **kwargs):
         user_groups = []
         for role in settings.IAM_ROLES:
             db_group = Group.objects.get(name=role)

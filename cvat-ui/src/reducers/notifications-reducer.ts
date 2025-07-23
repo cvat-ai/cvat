@@ -738,6 +738,23 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
+        case TasksActionTypes.UPDATE_TASK_FAILED: {
+            const { taskId } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    tasks: {
+                        ...state.errors.tasks,
+                        updating: {
+                            message: `Could not update the [task #${taskId}](/tasks/${taskId})`,
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-update-task-failed',
+                        },
+                    },
+                },
+            };
+        }
         case ConsensusActionTypes.MERGE_CONSENSUS_JOBS_SUCCESS: {
             const { instance } = action.payload;
             let message = '';
@@ -850,6 +867,23 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             reason: action.payload.error,
                             shouldLog: shouldLog(action.payload.error),
                             className: 'cvat-notification-notice-delete-project-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case ProjectsActionTypes.UPDATE_PROJECT_FAILED: {
+            const { projectId } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    projects: {
+                        ...state.errors.projects,
+                        creating: {
+                            message: `Could not update [project #${projectId}](/project/${projectId})`,
+                            reason: action.payload.error,
+                            className: 'cvat-notification-notice-update-project-failed',
                         },
                     },
                 },
@@ -1564,7 +1598,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             message: 'Canvas error occurred',
                             reason: action.payload.error,
                             shouldLog: true,
-                            className: 'cvat-notification-notice-canvas-error-occurreed',
+                            className: 'cvat-notification-notice-canvas-error-occurred',
                         },
                     },
                 },

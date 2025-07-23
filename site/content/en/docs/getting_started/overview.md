@@ -95,9 +95,10 @@ tasks in advanced computer vision projects.
 CVAT has an automated labeling features, enhancing the annotation process significantly,
 potentially speeding it up by up to 10 times.
 
-> **Note:**
-> For more information,
-> see {{< ilink "/docs/manual/advanced/ai-tools" "**OpenCV and AI Tools**" >}}
+{{% alert title="Note" color="primary" %}}
+For more information,
+see {{< ilink "/docs/manual/advanced/ai-tools" "**OpenCV and AI Tools**" >}}
+{{% /alert %}}
 
 Below is a detailed table of the supported algorithms and the platforms they operate on:
 
@@ -161,8 +162,10 @@ CVAT is a global tool, trusted and utilized by teams worldwide.
 Below is a list of key companies that contribute significantly to our
 product support or are an integral part of our ecosystem.
 
-> **Note:** If you're using CVAT, we'd love to
-> hear from you at [contact@cvat.ai](mailto:contact+github@cvat.ai).
+{{% alert title="Note" color="primary" %}}
+If you're using CVAT, we'd love to
+hear from you at [contact@cvat.ai](mailto:contact+github@cvat.ai).
+{{% /alert %}}
 
 <!--lint disable maximum-line-length-->
 

@@ -17,12 +17,12 @@ from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
 
+from shared.tasks.utils import parse_frame_step
 from shared.utils.config import make_api_client
 
 from .utils import (
     CollectionSimpleFilterTestBase,
     invite_user_to_org,
-    parse_frame_step,
     register_new_user,
     wait_background_request,
 )
@@ -1569,7 +1569,7 @@ class TestQualityReportMetrics(_PermissionTestBase):
 
         with make_api_client(admin_user) as api_client:
             api_client.jobs_api.partial_update_annotations(
-                "update",
+                "create",
                 gt_job["id"],
                 patched_labeled_data_request=dict(
                     shapes=[
@@ -2088,6 +2088,96 @@ class TestPostProjectQualityReports(_PermissionTestBase):
 
         # Create project report
         self.create_quality_report(user=admin_user, project_id=project_id)
+
+    def test_can_reuse_relevant_task_reports_in_project_report(
+        self, admin_user, projects, tasks, labels, quality_settings, quality_reports
+    ):
+        project = next(
+            p
+            for p in projects
+            if any(r["project_id"] == p["id"] for r in quality_reports)
+            if p["tasks"]["count"] >= 2
+            if all(t["size"] > 0 for t in tasks if t["project_id"] == p["id"])
+            if any(l for l in labels if l.get("project_id") == p["id"])
+            if any(t["validation_mode"] for t in tasks if t.get("project_id") == p["id"])
+            if all(
+                s["inherit"]
+                for s in quality_settings
+                if s["task_id"]
+                if tasks[s["task_id"]]["project_id"] == p["id"]
+            )
+        )
+        project_id = project["id"]
+
+        project_tasks = sorted(
+            [t for t in tasks if t.get("project_id") == project_id], key=lambda t: t["id"]
+        )
+
+        latest_project_reports = sorted(
+            [r for r in quality_reports if r["project_id"] == project_id], key=lambda r: -r["id"]
+        )
+        latest_project_report = next(r for r in latest_project_reports if r["target"] == "project")
+        latest_project_reports = [
+            r for r in latest_project_reports if r["parent_id"] == latest_project_report["id"]
+        ]
+        latest_task_reports = {
+            task_id: next(task_reports)
+            for task_id, task_reports in groupby(
+                sorted(latest_project_reports, key=lambda r: (r["task_id"], -r["id"])),
+                key=lambda r: r["task_id"],
+            )
+        }
+
+        # Create project report before task changes
+        new_report_before_task_changes = self.create_quality_report(
+            user=admin_user, project_id=project_id
+        )
+
+        with make_api_client(admin_user) as api_client:
+            task_reports_in_new_report_before_task_changes = {
+                r["id"]
+                for r in get_paginated_collection(
+                    api_client.quality_api.list_reports_endpoint,
+                    parent_id=new_report_before_task_changes["id"],
+                    target="task",
+                )
+            }
+            assert task_reports_in_new_report_before_task_changes == set(
+                r["id"] for r in latest_task_reports.values()
+            )
+
+        # Modify one of the tasks
+        with make_api_client(admin_user) as api_client:
+            modified_task_id = project_tasks[0]["id"]
+            api_client.tasks_api.update_annotations(
+                modified_task_id, labeled_data_request={"shapes": []}
+            )
+
+        # Create new project report after task changes
+        new_report_after_task_changes = self.create_quality_report(
+            user=admin_user, project_id=project_id
+        )
+
+        with make_api_client(admin_user) as api_client:
+            task_reports_in_new_report_after_task_changes = {
+                (r["id"], r["task_id"])
+                for r in get_paginated_collection(
+                    api_client.quality_api.list_reports_endpoint,
+                    parent_id=new_report_after_task_changes["id"],
+                    target="task",
+                )
+            }
+            assert set(
+                r for r in task_reports_in_new_report_after_task_changes if r[1] != modified_task_id
+            ) == set(
+                (r["id"], r["task_id"])
+                for task_id, r in latest_task_reports.items()
+                if task_id != modified_task_id
+            )
+            assert (
+                latest_task_reports[modified_task_id]["id"],
+                modified_task_id,
+            ) not in task_reports_in_new_report_after_task_changes
 
     @pytest.mark.parametrize(*_PermissionTestBase._default_sandbox_cases)
     def test_user_create_project_report_in_sandbox(self, is_staff, allow, find_sandbox_project):
