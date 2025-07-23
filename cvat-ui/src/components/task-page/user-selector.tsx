@@ -33,7 +33,7 @@ const searchUsers = debounce(
                     setUsers(result);
                 }
             }).catch((error: unknown) => {
-                // user may get logged out while debounding
+                // user may get logged out while debouncing
                 // it is normal situation
                 if (!(error instanceof ServerError && error.code === 401)) {
                     throw error;

@@ -70,7 +70,7 @@ Mousetrap.prototype.stopCallback = function (e: KeyboardEvent, element: Element,
 
     const activeSequences = Object.values(applicationKeyMap).map((keyMap) => [...keyMap.sequences]).flat();
     if (activeSequences.some((sequence) => sequence.startsWith(combo))) {
-        // prevent default behaviour of the event if potentially one of active shortcuts will be trigerred
+        // prevent default behaviour of the event if potentially one of active shortcuts will be triggered
         e?.preventDefault();
     }
 

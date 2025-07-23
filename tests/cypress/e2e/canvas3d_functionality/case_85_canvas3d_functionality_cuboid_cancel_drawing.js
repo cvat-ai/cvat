@@ -31,13 +31,13 @@ context('Canvas 3D functionality. Cancel drawing.', () => {
                 });
             cy.get('.cvat-draw-cuboid-popover').contains('Shape').click();
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove');
-            cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_drawning');
+            cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_drawing');
             cy.get('body').type('{Esc}');
             cy.get('.cvat-active-canvas-control').should('exist');
-            cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_cancel_drawning');
+            cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_cancel_drawing');
             cy.compareImagesAndCheckResult(
-                `${screenshotsPath}/canvas3d_perspective_drawning.png`,
-                `${screenshotsPath}/canvas3d_perspective_cancel_drawning.png`,
+                `${screenshotsPath}/canvas3d_perspective_drawing.png`,
+                `${screenshotsPath}/canvas3d_perspective_cancel_drawing.png`,
             );
         });
 

@@ -42,7 +42,7 @@ context('Navigation to empty frames', () => {
     });
 
     describe(`Testing issue "${issueId}"`, () => {
-        it('Check navigation is corrent for filtered and empty frames', () => {
+        it('Check navigation is correct for filtered and empty frames', () => {
             // set mode to only filtered
             cy.get('.cvat-player-previous-button').rightclick();
             cy.get('.cvat-player-previous-filtered-inlined-button').click();

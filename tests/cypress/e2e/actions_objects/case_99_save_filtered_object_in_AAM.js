@@ -24,7 +24,7 @@ context('Save filtered object in AAM.', () => {
     before(() => {
         cy.openTask(taskName);
         cy.document().then((doc) => {
-            // Getting list of labels and create a label if neccessary
+            // Getting list of labels and create a label if necessary
             const labelsList = Array.from(doc.querySelectorAll('.cvat-constructor-viewer-item'));
             if (labelsList.length < 2) {
                 cy.addNewLabel({ name: newLabelName });
