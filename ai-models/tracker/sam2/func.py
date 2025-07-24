@@ -32,6 +32,14 @@ class _TrackingState:
 class _Sam2Tracker:
     def __init__(self, model_id: str, device: str = "cpu", **kwargs) -> None:
         self._device = torch.device(device)
+
+        if self._device.type == "cuda":
+            torch.set_autocast_enabled(True)
+            torch.set_autocast_gpu_dtype(torch.bfloat16)
+            if torch.cuda.get_device_properties(self._device).major >= 8:
+                torch.backends.cuda.matmul.allow_tf32 = True
+                torch.backends.cudnn.allow_tf32 = True
+
         self._predictor = SAM2VideoPredictor.from_pretrained(
             model_id, device=self._device, **kwargs
         )
