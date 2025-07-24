@@ -22,7 +22,7 @@ def dummy_task():
 
 
 def _dependency_should_be_none(dependency: Dependency | None):
-    if dependency is None:
+    if dependency is not None:
         raise AssertionError(f"Dependency was defined unexpectedly: {dependency.dependencies}.")
 
 
