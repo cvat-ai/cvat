@@ -6,7 +6,9 @@ import collections
 import dataclasses
 from typing import Optional, TypedDict
 
+import cv2
 import cvat_sdk.auto_annotation as cvataa
+import numpy as np
 import PIL.Image
 import torch
 import torchvision.transforms
@@ -66,7 +68,7 @@ class _Sam2Tracker:
             ]
         )
 
-    spec = cvataa.TrackingFunctionSpec(supported_shape_types=["mask"])
+    spec = cvataa.TrackingFunctionSpec(supported_shape_types=["mask", "polygon"])
 
     @torch.inference_mode()
     def preprocess_image(
@@ -107,6 +109,24 @@ class _Sam2Tracker:
             "obj_ptr": out["obj_ptr"],
         }
 
+    def _shape_to_mask(
+        self, pp_image: _PreprocessedImage, shape: cvataa.TrackableShape
+    ) -> np.ndarray:
+        if shape.type == "mask":
+            return decode_mask(
+                shape.points,
+                image_width=pp_image.original_width,
+                image_height=pp_image.original_height,
+            )
+
+        if shape.type == "polygon":
+            mask = np.zeros((pp_image.original_height, pp_image.original_width), dtype=np.uint8)
+            points_array = np.array(shape.points, dtype=np.int32).reshape((-1, 2))
+            cv2.fillPoly(mask, [points_array], 1)
+            return mask
+
+        assert False, f"unexpected shape type {shape.type!r}"
+
     @torch.inference_mode()
     def init_tracking_state(
         self,
@@ -114,10 +134,7 @@ class _Sam2Tracker:
         pp_image: _PreprocessedImage,
         shape: cvataa.TrackableShape,
     ) -> _TrackingState:
-        mask = decode_mask(
-            shape.points, image_width=pp_image.original_width, image_height=pp_image.original_height
-        )
-        mask = torch.from_numpy(mask)
+        mask = torch.from_numpy(self._shape_to_mask(pp_image, shape))
 
         resized_mask = torch.nn.functional.interpolate(
             mask.float()[None, None],  # add batch and channel dimensions
@@ -142,6 +159,27 @@ class _Sam2Tracker:
                 "non_cond_frame_outputs": collections.OrderedDict(),
             },
         )
+
+    def _mask_to_shape(
+        self, context: cvataa.TrackingFunctionShapeContext, mask: torch.Tensor
+    ) -> Optional[cvataa.TrackableShape]:
+        if context.original_shape_type == "mask":
+            return cvataa.TrackableShape(type="mask", points=encode_mask(mask))
+
+        if context.original_shape_type == "polygon":
+            mask_np = np.asarray(mask, dtype=np.uint8)
+            contours, _ = cv2.findContours(mask_np, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            if not contours:
+                return None
+
+            largest_contour = max(contours, key=cv2.contourArea)
+            approx_contour = cv2.approxPolyDP(largest_contour, epsilon=1.0, closed=True)
+            if approx_contour.shape[0] < 3:
+                return None
+
+            return cvataa.TrackableShape(type="polygon", points=approx_contour.flatten().tolist())
+
+        assert False, f"unexpected shape type {context.original_shape_type!r}"
 
     @torch.inference_mode()
     def track(
@@ -179,7 +217,7 @@ class _Sam2Tracker:
         )
 
         if output_mask.any():
-            return cvataa.TrackableShape(type="mask", points=encode_mask(output_mask.cpu()))
+            return self._mask_to_shape(context, output_mask.cpu())
         else:
             return None
 

@@ -1,7 +1,8 @@
 # SAM2 tracker
 
 This directory contains an implementation of a CVAT auto-annotation function
-that tracks masks using the [Segment Anything Model 2][sam2] (SAM2) from Meta Research.
+that tracks masks and polygons using the [Segment Anything Model 2][sam2] (SAM2)
+from Meta Research.
 
 [sam2]: https://github.com/facebookresearch/sam2
 
