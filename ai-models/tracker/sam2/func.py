@@ -4,7 +4,7 @@
 
 import collections
 import dataclasses
-from typing import TypedDict
+from typing import Optional, TypedDict
 
 import cvat_sdk.auto_annotation as cvataa
 import PIL.Image
@@ -149,7 +149,7 @@ class _Sam2Tracker:
         context: cvataa.TrackingFunctionShapeContext,
         pp_image: _PreprocessedImage,
         state: _TrackingState,
-    ) -> cvataa.TrackableShape:
+    ) -> Optional[cvataa.TrackableShape]:
         state.frame_idx += 1
 
         current_out = self._call_predictor(
