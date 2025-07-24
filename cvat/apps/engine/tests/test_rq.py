@@ -95,8 +95,8 @@ class TestDefineDependentJob(unittest.TestCase):
 
     def test_skip_cyclic_dependencies(self):
         """
-        Avoids creating dependency for the X1 if the X1 was as a dependency
-        for the X2 and then cancelled.
+        Avoids creating dependency for job X1 in case when 
+        X2 depended on X1 and then X1 got cancelled
         """
         first_job_id = str(uuid.uuid4())
         second_job_id = str(uuid.uuid4())
