@@ -54,7 +54,7 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 CPU_NUMBER = get_cpu_number()
 
-def get_threads_number(number_of_files: int) -> int:
+def get_max_threads_number(number_of_files: int) -> int:
     return max(
         min(
             number_of_files // settings.CLOUD_DATA_DOWNLOADING_MAX_THREADS_NUMBER_PER_CPU,
@@ -242,7 +242,7 @@ class _CloudStorage(ABC):
         _use_optimal_downloading: bool = True,
     ) -> Iterator[BytesIO]:
         func = self.optimally_image_download if _use_optimal_downloading else self.download_fileobj
-        threads_number = get_threads_number(len(files))
+        threads_number = get_max_threads_number(len(files))
 
         with ThreadPoolExecutor(max_workers=threads_number) as executor:
             for batch_links in take_by(files, chunk_size=threads_number):
@@ -253,7 +253,7 @@ class _CloudStorage(ABC):
         files: list[str],
         upload_dir: str,
     ) -> None:
-        threads_number = get_threads_number(len(files))
+        threads_number = get_max_threads_number(len(files))
 
         with ThreadPoolExecutor(max_workers=threads_number) as executor:
             futures = [executor.submit(self.download_file, f, os.path.join(upload_dir, f)) for f in files]
