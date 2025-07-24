@@ -42,8 +42,9 @@ export default function DeployedModelItem(props: Readonly<Props>): JSX.Element {
     const height = useCardHeight();
     const style: React.CSSProperties = { height };
 
+    const systemModel = model.provider === ModelProviders.CVAT;
     const onOpenModel = (event: React.MouseEvent): void => {
-        const cancel = onClick(event);
+        const cancel = !systemModel ? onClick(event) : false;
         if (!cancel) {
             setIsModalShown(true);
         }
@@ -53,7 +54,7 @@ export default function DeployedModelItem(props: Readonly<Props>): JSX.Element {
     };
 
     const created = moment(model.createdDate).fromNow();
-    const modelDescription = model.provider !== ModelProviders.CVAT ?
+    const modelDescription = !systemModel ?
         <Text type='secondary'>{`Added ${created}`}</Text> :
         <Text type='secondary'>System model</Text>;
 
@@ -191,6 +192,7 @@ export default function DeployedModelItem(props: Readonly<Props>): JSX.Element {
                                     </Row>
                                     <ModelActionsComponent
                                         model={model}
+                                        renderTriggerIfEmpty={false}
                                         triggerElement={(
                                             <Button
                                                 className='cvat-deployed-model-details-button'

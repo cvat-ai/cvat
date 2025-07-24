@@ -5,7 +5,7 @@
 
 import React from 'react';
 import Dropdown from 'antd/lib/dropdown';
-import { MLModel } from 'cvat-core-wrapper';
+import { MLModel, ModelProviders } from 'cvat-core-wrapper';
 import { usePlugins } from 'utils/hooks';
 import { CombinedState } from 'reducers';
 import { MenuProps } from 'antd/lib/menu';
@@ -15,10 +15,16 @@ interface ModelActionsProps {
     model: MLModel;
     triggerElement: JSX.Element;
     dropdownTrigger?: ('click' | 'hover' | 'contextMenu')[];
+    renderTriggerIfEmpty?: boolean;
 }
 
-function ModelActionsComponent(props: Readonly<ModelActionsProps>): JSX.Element {
-    const { model, triggerElement, dropdownTrigger } = props;
+function ModelActionsComponent(props: Readonly<ModelActionsProps>): JSX.Element | null {
+    const {
+        model,
+        triggerElement,
+        dropdownTrigger,
+        renderTriggerIfEmpty = true,
+    } = props;
     const allModels = useSelector((state: CombinedState) => [
         ...state.models.interactors,
         ...state.models.detectors,
@@ -41,6 +47,10 @@ function ModelActionsComponent(props: Readonly<ModelActionsProps>): JSX.Element 
 
     // Sort menu items by weight before passing to Dropdown
     const sortedMenuItems = [...menuItems].sort((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1]);
+
+    if (!renderTriggerIfEmpty && (menuItems.length === 0 || model.provider === ModelProviders.CVAT)) {
+        return null;
+    }
 
     return (
         <Dropdown

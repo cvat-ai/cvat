@@ -4,45 +4,27 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import moment from 'moment';
-import { useSelector, useDispatch } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
-import { CombinedState, ModelsQuery } from 'reducers';
+import { useDispatch } from 'react-redux';
 import { MLModel } from 'cvat-core-wrapper';
-import { ModelProviders } from 'cvat-core/src/enums';
 import { getModelsAsync } from 'actions/models-actions';
 import dimensions from 'utils/dimensions';
 import BulkWrapper from 'components/bulk-wrapper';
+import { ModelsQuery } from 'reducers';
+
 import DeployedModelItem from './deployed-model-item';
 
 interface Props {
     query: ModelsQuery;
-}
-
-function setUpModelsList(models: MLModel[], newPage: number, pageSize: number): MLModel[] {
-    const builtInModels = models.filter((model: MLModel) => model.provider === ModelProviders.CVAT);
-    const externalModels = models.filter((model: MLModel) => model.provider !== ModelProviders.CVAT);
-    externalModels.sort((a, b) => moment(a.createdDate).valueOf() - moment(b.createdDate).valueOf());
-    const renderModels = [...builtInModels, ...externalModels];
-    return renderModels.slice((newPage - 1) * pageSize, newPage * pageSize);
+    models: MLModel[];
+    totalCount: number;
 }
 
 export default function DeployedModelsListComponent(props: Readonly<Props>): JSX.Element {
-    const interactors = useSelector((state: CombinedState) => state.models.interactors);
-    const detectors = useSelector((state: CombinedState) => state.models.detectors);
-    const trackers = useSelector((state: CombinedState) => state.models.trackers);
-    const reid = useSelector((state: CombinedState) => state.models.reid);
-    const totalCount = useSelector((state: CombinedState) => state.models.totalCount);
-
     const dispatch = useDispatch();
-    const { query } = props;
+    const { query, models, totalCount } = props;
     const { page, pageSize } = query;
-    const models = setUpModelsList(
-        [...interactors, ...detectors, ...trackers, ...reid],
-        page,
-        pageSize,
-    );
 
     const groupedModels = models.reduce(
         (acc: MLModel[][], storage: MLModel, index: number): MLModel[][] => {
