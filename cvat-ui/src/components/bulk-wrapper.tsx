@@ -1,4 +1,5 @@
-// Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
+//
 // SPDX-License-Identifier: MIT
 
 import React, { useRef, useEffect } from 'react';
@@ -77,11 +78,13 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
         function handleClickOutside(event: MouseEvent): void {
             const target = event.target as HTMLElement;
 
-            const dropdown = target.closest('.ant-dropdown');
-            if (dropdown) return;
-
-            const virtualList = target.closest('.rc-virtual-list');
-            if (virtualList) return;
+            const keepClasses = [
+                'ant-dropdown',
+                'rc-virtual-list',
+                'cvat-resource-select-all-button',
+            ];
+            const hasKeepClass = keepClasses.some((cls) => target.classList.contains(cls) || target.closest(`.${cls}`));
+            if (hasKeepClass) return;
 
             const modal = document.querySelector('.ant-modal');
             if (modal && (modal as HTMLElement).offsetParent !== null) return;
