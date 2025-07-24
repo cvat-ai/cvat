@@ -97,6 +97,7 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
                         style={style}
                         className={cardClassName}
                         hoverable
+                        onClick={onClick}
                     >
                         <Meta
                             title={(

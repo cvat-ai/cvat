@@ -78,7 +78,7 @@ function JobCardComponent(props: Readonly<Props>): JSX.Element {
                         <>
                             <Preview
                                 job={job}
-                                onClick={onClick || handleCardClick}
+                                onClick={handleCardClick}
                                 loadingClassName='cvat-job-item-loading-preview'
                                 emptyPreviewClassName='cvat-job-item-empty-preview'
                                 previewWrapperClassName='cvat-jobs-page-job-item-card-preview-wrapper'
@@ -93,7 +93,7 @@ function JobCardComponent(props: Readonly<Props>): JSX.Element {
                         </>
                     )}
                     hoverable
-                    onClick={handleCardClick}
+                    onClick={onClick}
                 >
                     <Descriptions column={1} size='small'>
                         <Descriptions.Item label='Stage and state'>{`${job.stage} ${job.state}`}</Descriptions.Item>
