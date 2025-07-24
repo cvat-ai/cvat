@@ -247,4 +247,12 @@ html, body {
 
 .cvat-bulk-wrapper {
     width: 100%;
+
+    &.cvat-shift-selecting {
+        user-select: none;
+
+        * {
+            user-select: none !important;
+        }
+    }
 }

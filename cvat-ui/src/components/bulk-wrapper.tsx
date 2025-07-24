@@ -30,12 +30,13 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
     const dispatch = useDispatch();
     const selectedIds = useSelector((state: any) => state.selection.selected);
     const wrapperRef = useRef<HTMLDivElement>(null);
+    const [isShiftSelecting, setIsShiftSelecting] = React.useState(false);
 
     const keyMap: KeyMap = {
         SELECT_ALL: {
             name: 'Select all',
             description: 'Select all resources',
-            sequences: ['ctrl+a'],
+            sequences: ['ctrl+a', 'command+a'],
             scope: ShortcutScope.ANNOTATION_PAGE, // or a more appropriate scope for your context
         },
     };
@@ -49,6 +50,28 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
 
     // Track the last selected index for shift+click
     const lastSelectedIndexRef = useRef<number | null>(null);
+
+    useEffect(() => {
+        function handleKeyDown(event: KeyboardEvent): void {
+            if (event.shiftKey && !isShiftSelecting) {
+                setIsShiftSelecting(true);
+            }
+        }
+
+        function handleKeyUp(event: KeyboardEvent): void {
+            if (!event.shiftKey && isShiftSelecting) {
+                setIsShiftSelecting(false);
+            }
+        }
+
+        document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('keyup', handleKeyUp);
+
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+            document.removeEventListener('keyup', handleKeyUp);
+        };
+    }, [isShiftSelecting]);
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent): void {
@@ -122,6 +145,8 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
             selected: isSelected,
             onClick: (event?: React.MouseEvent) => {
                 if (event?.shiftKey) {
+                    event.preventDefault();
+
                     // Shift+Click: select range
                     const allIds = currentResourceIDs;
                     const clickedIndex = idx;
@@ -132,8 +157,8 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
                     lastSelectedIndexRef.current ??= idx;
                     return true;
                 }
-                if (event?.ctrlKey) {
-                    // Ctrl+Click: toggle selection without clearing
+
+                if (event?.metaKey || event?.ctrlKey) {
                     updateResources(
                         [resourceId],
                         isSelected ? selectionActions.deselectResources : selectionActions.selectResources,
@@ -155,7 +180,7 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
 
     return (
         <div
-            className={`cvat-bulk-wrapper${selectedIds.length > 1 ? ' cvat-item-list-selected' : ''}`}
+            className={`cvat-bulk-wrapper${isShiftSelecting ? ' cvat-shift-selecting' : ''}`}
             ref={wrapperRef}
         >
             <GlobalHotKeys keyMap={keyMap} handlers={handlers} />
