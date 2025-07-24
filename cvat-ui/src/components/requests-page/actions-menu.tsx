@@ -1,4 +1,5 @@
 // Copyright (C) CVAT.ai Corporation
+//
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback } from 'react';
@@ -15,18 +16,33 @@ interface Props {
     requestInstance: Request;
     triggerElement: JSX.Element;
     dropdownTrigger?: ('click' | 'hover' | 'contextMenu')[];
+    renderTriggerIfEmpty?: boolean;
 }
 
-function RequestActionsComponent(props: Readonly<Props>): JSX.Element {
-    const { requestInstance, triggerElement, dropdownTrigger } = props;
+function RequestActionsComponent(props: Readonly<Props>): JSX.Element | null {
+    const {
+        requestInstance,
+        triggerElement,
+        dropdownTrigger,
+        renderTriggerIfEmpty = true,
+    } = props;
     const dispatch = useDispatch();
     const selectedIds = useSelector((state: CombinedState) => state.selection.selected);
     const requestsMap = useSelector((state: CombinedState) => state.requests.requests);
     const allRequests = Object.values(requestsMap);
+    const isCardMenu = !dropdownTrigger;
 
-    const requestsToAct = selectedIds.includes(requestInstance.id) ?
-        allRequests.filter((r) => selectedIds.includes(r.id)) :
-        [requestInstance];
+    const downloadable = (_request: Request): boolean => !!_request.url;
+    const cancelable = (_request: Request): boolean => _request.status === RQStatus.QUEUED;
+
+    let requestsToAct: Request[];
+    if (isCardMenu && !downloadable(requestInstance) && !cancelable(requestInstance)) {
+        requestsToAct = [requestInstance];
+    } else if (selectedIds.includes(requestInstance.id)) {
+        requestsToAct = allRequests.filter((r) => selectedIds.includes(r.id));
+    } else {
+        requestsToAct = [requestInstance];
+    }
 
     const onDownload = useCallback(() => {
         requestsToAct.forEach((request) => {
@@ -51,8 +67,8 @@ function RequestActionsComponent(props: Readonly<Props>): JSX.Element {
     }, [requestsToAct]);
 
     // Helper to show count in label for bulk actions
-    const queuedCount = requestsToAct.filter((r) => r.status === RQStatus.QUEUED).length;
-    const downloadableCount = requestsToAct.filter((r) => !!r.url).length;
+    const queuedCount = requestsToAct.filter(cancelable).length;
+    const downloadableCount = requestsToAct.filter(downloadable).length;
     function withCount(label: string, count: number): React.ReactNode {
         if (count > 1) {
             return `${label} (${count})`;
@@ -74,6 +90,10 @@ function RequestActionsComponent(props: Readonly<Props>): JSX.Element {
             label: withCount('Cancel', queuedCount),
             onClick: onCancel,
         });
+    }
+
+    if (!renderTriggerIfEmpty && menuItems.length === 0) {
+        return null;
     }
 
     return (

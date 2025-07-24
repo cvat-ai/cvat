@@ -230,6 +230,7 @@ function RequestCard(props: Readonly<Props>): JSX.Element {
                                 <Col span={3} style={{ display: 'flex', justifyContent: 'end' }}>
                                     <RequestActionsComponent
                                         requestInstance={request}
+                                        renderTriggerIfEmpty={false}
                                         triggerElement={(
                                             <Button
                                                 type='link'
