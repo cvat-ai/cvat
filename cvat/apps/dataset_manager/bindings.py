@@ -1853,6 +1853,10 @@ class CvatImportError(Exception):
     pass
 
 
+class CvatExportError(Exception):
+    pass
+
+
 @attrs
 class CvatDatasetNotFoundError(CvatImportError):
     message: str = ""
@@ -1947,7 +1951,7 @@ class CvatToDmAnnotationConverter:
                     a_value = a_value.lower() == 'true'
                 dm_attr[a_name] = a_value
             except Exception as e:
-                raise Exception(
+                raise CvatExportError(
                     "Failed to convert attribute '%s'='%s': %s" %
                     (a_name, a_value, e))
 

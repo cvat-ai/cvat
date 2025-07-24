@@ -304,14 +304,14 @@ function SingleShapeSidebar(): JSX.Element {
 
             savingRef.current = true;
 
-            appDispatch(finishCurrentJobAsync()).then(() => {
+            appDispatch(finishCurrentJobAsync(() => {
                 message.open({
                     duration: 1,
                     type: 'success',
                     content: 'You tagged the job as completed',
                     className: 'cvat-annotation-job-finished-success',
                 });
-            }).finally(() => {
+            })).finally(() => {
                 appDispatch(setNavigationType(NavigationType.REGULAR));
                 dispatch(actionCreators.switchAutoNextFrame(false));
                 savingRef.current = false;
