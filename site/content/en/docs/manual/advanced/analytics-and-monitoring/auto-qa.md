@@ -120,7 +120,7 @@ A _configured_ Ground Truth job is required for all quality computations in CVAT
   It can be any integer number, the same value will yield the same random selection (given that the
   frame number is unchanged). <br> **Note** that if you want to use a
   custom frame sequence, you can do this using the server API instead,
-  see [Job API create()](/docs/api_sdk/sdk/reference/apis/jobs-api/#create).
+  see {{< ilink "/docs/api_sdk/sdk/reference/apis/jobs-api#create" "Job API create()" >}}.
 
 4. Click **Submit**.
 

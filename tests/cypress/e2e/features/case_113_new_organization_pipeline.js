@@ -283,6 +283,7 @@ context('New organization pipeline.', () => {
 
         it('The owner of the organization removes the second user from it.', () => {
             cy.headlessLogin(makeLoginUser(firstUser));
+            cy.contains(firstUser.username).should('exist').and('be.visible');
             cy.activateOrganization(organizationParams.shortName);
             cy.openOrganization(organizationParams.shortName);
             cy.removeMemberFromOrganization(secondUserName);
