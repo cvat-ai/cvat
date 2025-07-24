@@ -21,6 +21,11 @@ def dummy_task():
     return 2 + 2
 
 
+def _dependency_should_be_none(dependency: Dependency | None):
+    if dependency is None:
+        raise AssertionError(f"Dependency was defined unexpectedly: {dependency.dependencies}.")
+
+
 def _enqueue_test_job(
     queue: DjangoRQ,
     job_id: str | None = None,
@@ -83,19 +88,19 @@ class TestDefineDependentJob(unittest.TestCase):
         """Skips dependency if the flag should_be_dependent=False is used."""
         _enqueue_test_job(self.queue)
         dependency = self._define_dependent_job(should_be_dependent=False)
-        assert dependency is None
+        _dependency_should_be_none(dependency)
 
     def test_no_dependency_with_empty_queue(self):
         dependency = self._define_dependent_job()
-        assert dependency is None
+        _dependency_should_be_none(dependency)
 
     def test_no_dependency_with_empty_queue_and_rq_id(self):
         dependency = self._define_dependent_job(rq_id=str(uuid.uuid4()))
-        assert dependency is None
+        _dependency_should_be_none(dependency)
 
     def test_skip_cyclic_dependencies(self):
         """
-        Avoids creating dependency for job X1 in case when 
+        Avoids creating dependency for job X1 in case when
         X2 depended on X1 and then X1 got cancelled
         """
         first_job_id = str(uuid.uuid4())
@@ -108,8 +113,7 @@ class TestDefineDependentJob(unittest.TestCase):
         )
         first_job.cancel()
         dependency = self._define_dependent_job(rq_id=first_job_id)
-
-        assert dependency is None
+        _dependency_should_be_none(dependency)
 
     def test_skip_dependency_for_same_job(self):
         """Ignores dependencies if rq_id matches already enqueued job."""
@@ -117,7 +121,7 @@ class TestDefineDependentJob(unittest.TestCase):
         _enqueue_test_job(self.queue, job_id=job_id)
         dependency = self._define_dependent_job(rq_id=job_id)
 
-        assert dependency is None
+        _dependency_should_be_none(dependency)
 
     def test_select_latest_created_job(self):
         """Selects the most recent job as dependency if multiple jobs are chained."""
