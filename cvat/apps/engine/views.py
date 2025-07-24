@@ -1284,7 +1284,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             if {"format", "rq_id"} & set(request.query_params.keys()):
                 return get_410_response_when_checking_process_status("import")
 
-            serializer = LabeledDataSerializer(data=request.data)
+            serializer = LabeledDataSerializer(
+                data=request.data, context={"annotation_action": dm.task.PatchAction.CREATE}
+            )
             if serializer.is_valid(raise_exception=True):
                 data = dm.task.put_task_data(pk, serializer.validated_data)
                 return Response(data)
@@ -1297,7 +1299,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             if action not in dm.task.PatchAction.values():
                 raise serializers.ValidationError(
                     "Please specify a correct 'action' for the request")
-            serializer = LabeledDataSerializer(data=request.data)
+            serializer = LabeledDataSerializer(
+                data=request.data, context={"annotation_action": action}
+            )
             if serializer.is_valid(raise_exception=True):
                 try:
                     data = dm.task.patch_task_data(pk, serializer.validated_data, action)
@@ -1764,7 +1768,9 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             if {"format", "rq_id"} & set(request.query_params.keys()):
                 return get_410_response_when_checking_process_status("import")
 
-            serializer = LabeledDataSerializer(data=request.data)
+            serializer = LabeledDataSerializer(
+                data=request.data, context={"annotation_action": dm.task.PatchAction.CREATE}
+            )
             if serializer.is_valid(raise_exception=True):
                 try:
                     data = dm.task.put_job_data(pk, serializer.validated_data)
@@ -1779,7 +1785,9 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             if action not in dm.task.PatchAction.values():
                 raise serializers.ValidationError(
                     "Please specify a correct 'action' for the request")
-            serializer = LabeledDataSerializer(data=request.data)
+            serializer = LabeledDataSerializer(
+                data=request.data, context={"annotation_action": action}
+            )
             if serializer.is_valid(raise_exception=True):
                 try:
                     data = dm.task.patch_job_data(pk, serializer.validated_data, action)

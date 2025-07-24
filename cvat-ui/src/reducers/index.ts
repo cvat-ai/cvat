@@ -65,6 +65,9 @@ export interface ProjectsState {
         deletes: {
             [projectId: number]: boolean; // deleted (deleting if in dictionary)
         };
+        updates: {
+            [projectId: number]: boolean; // updated (updating if in dictionary)
+        };
     };
 }
 
@@ -119,6 +122,9 @@ export interface TasksState {
     activities: {
         deletes: {
             [tid: number]: boolean; // deleted (deleting if in dictionary)
+        };
+        updates: {
+            [taskId: number]: boolean;
         };
     };
 }
@@ -260,6 +266,8 @@ export type PluginsList = {
     [name in SupportedPlugins]: boolean;
 };
 
+export type CallbackReturnType = Promise<void | { preventJobStatusChange: boolean }>;
+
 export interface PluginComponent {
     component: any;
     data: {
@@ -282,7 +290,7 @@ export interface PluginsState {
         annotationPage: {
             header: {
                 menu: {
-                    beforeJobFinish: (() => Promise<void>)[];
+                    beforeJobFinish: (() => CallbackReturnType)[];
                 };
             };
         };

@@ -5,7 +5,9 @@ weight: 3
 description: 'Social accounts authentication for a Self-Hosted solution'
 ---
 
-> **Note:** This is a paid feature available for [Enterprise clients](https://www.cvat.ai/pricing/on-prem).
+{{% alert title="Note" color="primary" %}}
+This is a paid feature available for [Enterprise clients](https://www.cvat.ai/pricing/on-prem).
+{{% /alert %}}
 
 You can now easily set up authentication with popular social services, which opens doors to
 such benefits as:
@@ -13,7 +15,7 @@ such benefits as:
 - Convenience: you can use the existing
   social service credentials to sign in to CVAT.
 - Time-saving: with just two clicks, you can
-  sign in without the hassle of typing in сredentials, saving time and effort.
+  sign in without the hassle of typing in credentials, saving time and effort.
 - Security: social auth service providers have
   high-level security measures in place to protect your accounts.
 
@@ -96,9 +98,11 @@ There are 2 basic steps to enable GitHub account authentication.
    docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.override.yml up -d --build
    ```
 
-> **Note:** You can also configure [GitHub App](https://docs.github.com/en/developers/apps/building-github-apps/creating-a-github-app),
-> but don't forget to add required permissions.
-> <br>In the **Permission** > **Account permissions** > **Email addresses** must be set to **read-only**.
+{{% alert title="Note" color="primary" %}}
+You can also configure [GitHub App](https://docs.github.com/en/developers/apps/building-github-apps/creating-a-github-app),
+but don't forget to add required permissions.
+<br>In the **Permission** > **Account permissions** > **Email addresses** must be set to **read-only**.
+{{% /alert %}}
 
 ## Authentication with Amazon Cognito
 

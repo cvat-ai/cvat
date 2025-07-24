@@ -10,6 +10,7 @@ from pathlib import Path
 
 import pytest
 from cvat_sdk import Client, models
+from cvat_sdk.core.proxies.annotations import AnnotationUpdateAction
 from cvat_sdk.core.proxies.tasks import ResourceType
 
 try:
@@ -105,7 +106,8 @@ class TestTaskVisionDataset:
                         points=[1.1, 2.1, 3.1, 4.1],
                     ),
                 ],
-            )
+            ),
+            action=AnnotationUpdateAction.CREATE,
         )
 
     def test_basic(self):
@@ -183,7 +185,7 @@ class TestTaskVisionDataset:
             # multiple tags
             _ = dataset[8]
 
-        # make sure the samples can be batched with the default collater
+        # make sure the samples can be batched with the default collator
         loader = DataLoader(dataset, batch_size=2, sampler=[5, 6])
 
         batch = next(iter(loader))

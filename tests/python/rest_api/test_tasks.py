@@ -637,7 +637,7 @@ class TestPatchTaskAnnotations:
         response = patch_method("admin1", endpoint, annotations, action="create")
         assert response.status_code == HTTPStatus.OK, response.content
 
-        annotations["tracks"][0]["shapes"] = shapes0[1:]
+        annotations["tracks"][0]["shapes"] = response.json()["shapes"][1:]
         response = patch_method("admin1", endpoint, annotations, action="update")
         assert response.status_code == HTTPStatus.OK
 
@@ -837,9 +837,7 @@ class TestGetTaskDataset:
                 }
             ],
         }
-        response = patch_method(
-            admin_user, f"tasks/{tid}/annotations", annotations, action="update"
-        )
+        response = put_method(admin_user, f"tasks/{tid}/annotations", annotations)
         assert response.status_code == HTTPStatus.OK
 
         # check that we can export task dataset

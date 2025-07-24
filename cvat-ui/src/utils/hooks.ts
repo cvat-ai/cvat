@@ -206,6 +206,51 @@ export function useInstanceId(type: InstanceType): number {
     return +(params.tid as string);
 }
 
+export type DropdownEditField = {
+    dropdownOpen: boolean;
+    editField: string | null;
+    startEditField: (key: string) => void;
+    stopEditField: () => void;
+    onOpenChange: (open: boolean, options: { source: 'trigger' | 'menu' }) => void;
+    onMenuClick: (options: { key: string }) => void;
+};
+
+export function useDropdownEditField(): DropdownEditField {
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+    const [editField, setEditField] = useState<string | null>(null);
+    const startEditField = useCallback((field: string) => setEditField(field), []);
+    const stopEditField = useCallback(() => {
+        setEditField(null);
+        setDropdownOpen(false);
+    }, []);
+
+    const onOpenChange = useCallback((open: boolean, { source }: {
+        source: 'trigger' | 'menu';
+    }) => {
+        if (source === 'trigger') {
+            setDropdownOpen(open);
+        }
+        if (!open && editField) {
+            stopEditField();
+        }
+    }, [editField, stopEditField]);
+
+    const onMenuClick = useCallback(({ key }: { key: string }) => {
+        if (!key.startsWith('edit') && !key.endsWith('selector')) {
+            setDropdownOpen(false);
+        }
+    }, []);
+
+    return {
+        dropdownOpen,
+        editField,
+        startEditField,
+        stopEditField,
+        onOpenChange,
+        onMenuClick,
+    };
+}
+
 interface ResourceQueryDefaultParams {
     page?: number;
     pageSize?: number;
