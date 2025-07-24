@@ -278,6 +278,8 @@ export type PluginsList = {
     [name in SupportedPlugins]: boolean;
 };
 
+export type CallbackReturnType = Promise<void | { preventJobStatusChange: boolean }>;
+
 export interface PluginComponent {
     component: any;
     data: {
@@ -300,7 +302,7 @@ export interface PluginsState {
         annotationPage: {
             header: {
                 menu: {
-                    beforeJobFinish: (() => Promise<void>)[];
+                    beforeJobFinish: (() => CallbackReturnType)[];
                 };
             };
         };

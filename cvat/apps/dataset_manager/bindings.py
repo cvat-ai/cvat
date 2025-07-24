@@ -78,7 +78,7 @@ class InstanceLabelData:
 
         db_labels = self.add_prefetch_info(instance.label_set.all())
 
-        # If this flag is set to true, create attribute within anntations import
+        # If this flag is set to true, create attribute within annotations import
         self._soft_attribute_import = False
         self._label_mapping = OrderedDict[int, Label](
             (db_label.id, db_label)
@@ -1853,6 +1853,10 @@ class CvatImportError(Exception):
     pass
 
 
+class CvatExportError(Exception):
+    pass
+
+
 @attrs
 class CvatDatasetNotFoundError(CvatImportError):
     message: str = ""
@@ -1947,7 +1951,7 @@ class CvatToDmAnnotationConverter:
                     a_value = a_value.lower() == 'true'
                 dm_attr[a_name] = a_value
             except Exception as e:
-                raise Exception(
+                raise CvatExportError(
                     "Failed to convert attribute '%s'='%s': %s" %
                     (a_name, a_value, e))
 

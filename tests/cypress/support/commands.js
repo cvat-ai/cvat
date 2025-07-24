@@ -110,8 +110,8 @@ Cypress.Commands.add('changeUserActiveStatus', (authKey, accountsToChangeActiveS
             Authorization: `Token ${authKey}`,
         },
     }).then((response) => {
-        const responceResult = response.body.results;
-        responceResult.forEach((user) => {
+        const responseResult = response.body.results;
+        responseResult.forEach((user) => {
             const userId = user.id;
             const userName = user.username;
             if (userName.includes(accountsToChangeActiveStatus)) {
@@ -137,8 +137,8 @@ Cypress.Commands.add('checkUserStatuses', (authKey, userName, staffStatus, super
             Authorization: `Token ${authKey}`,
         },
     }).then((response) => {
-        const responceResult = response.body.results;
-        responceResult.forEach((user) => {
+        const responseResult = response.body.results;
+        responseResult.forEach((user) => {
             if (user.username.includes(userName)) {
                 expect(staffStatus).to.be.equal(user.is_staff);
                 expect(superuserStatus).to.be.equal(user.is_superuser);
@@ -156,8 +156,8 @@ Cypress.Commands.add('deleteTasks', (authResponse, tasksToDelete) => {
             Authorization: `Token ${authKey}`,
         },
     }).then((_response) => {
-        const responceResult = _response.body.results;
-        for (const task of responceResult) {
+        const responseResult = _response.body.results;
+        for (const task of responseResult) {
             const { id, name } = task;
             for (const taskToDelete of tasksToDelete) {
                 if (name === taskToDelete) {
@@ -1498,9 +1498,9 @@ Cypress.Commands.add('shapeRotate', (shape, expectedRotateDeg, pressShift = fals
         cy.get(shape).should('have.attr', 'transform');
         cy.document().then((doc) => {
             const modShapeIDString = shape.substring(1); // Remove "#" from the shape id string
-            const shapeTranformMatrix = decomposeMatrix(doc.getElementById(modShapeIDString).getCTM());
-            cy.get('#cvat_canvas_text_content').should('contain.text', `${shapeTranformMatrix}°`);
-            expect(`${shapeTranformMatrix}°`).to.be.equal(`${expectedRotateDeg}°`);
+            const shapeTransformMatrix = decomposeMatrix(doc.getElementById(modShapeIDString).getCTM());
+            cy.get('#cvat_canvas_text_content').should('contain.text', `${shapeTransformMatrix}°`);
+            expect(`${shapeTransformMatrix}°`).to.be.equal(`${expectedRotateDeg}°`);
         });
         cy.get('#root').trigger('mouseup');
     });

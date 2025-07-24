@@ -22,7 +22,7 @@ class ModelHandler:
     #   mask: [[a, a, a, a, a, ...], [a, a, a, a, ...], ...]
     def handle(self, image, points):
         DEXTR_PADDING = 50
-        DEXTR_TRESHOLD = 0.8
+        DEXTR_THRESHOLD = 0.8
         DEXTR_SIZE = 512
 
         numpy_image = np.array(image)
@@ -59,7 +59,7 @@ class ModelHandler:
         input_dextr = input_dextr.transpose((2,0,1))
 
         pred = self.model.infer(input_dextr[np.newaxis, ...], False)[0, 0, :, :]
-        pred = (pred > DEXTR_TRESHOLD).astype(np.uint8)
+        pred = (pred > DEXTR_THRESHOLD).astype(np.uint8)
         pred = cv2.resize(pred, tuple(reversed(numpy_cropped.shape[:2])), interpolation = cv2.INTER_NEAREST)
         result = np.zeros(numpy_image.shape[:2]).astype(np.uint8)
         result[bounding_box[1]:bounding_box[1] + pred.shape[0], bounding_box[0]:bounding_box[0] + pred.shape[1]] = pred
