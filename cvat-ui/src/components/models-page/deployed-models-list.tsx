@@ -66,7 +66,7 @@ export default function DeployedModelsListComponent(props: Readonly<Props>): JSX
                     <BulkWrapper currentResourceIDs={models.map((m) => Number(m.id))}>
                         {(selectProps) => {
                             const renderModelRow = (instances: MLModel[]): JSX.Element => (
-                                <Row key={instances[0].id} className='cvat-projects-list-row'>
+                                <Row key={instances[0].id} className='cvat-models-list-row'>
                                     {instances.map((model: MLModel) => {
                                         const globalIdx = modelIdToIndex.get(Number(model.id)) ?? 0;
                                         return (

@@ -52,16 +52,29 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent): void {
-            const dropdown = (event.target as HTMLElement).closest('.ant-dropdown');
+            const target = event.target as HTMLElement;
+
+            const dropdown = target.closest('.ant-dropdown');
             if (dropdown) return;
 
-            const virtualList = (event.target as HTMLElement).closest('.rc-virtual-list');
+            const virtualList = target.closest('.rc-virtual-list');
             if (virtualList) return;
 
             const modal = document.querySelector('.ant-modal');
             if (modal && (modal as HTMLElement).offsetParent !== null) return;
 
-            if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+            const resetClasses = [
+                'cvat-bulk-wrapper',
+                'cvat-cloud-storages-list-row',
+                'cvat-jobs-list-row',
+                'cvat-models-list-row',
+                'cvat-projects-list-row',
+            ];
+            const hasResetClass = resetClasses.some((cls) => target.classList.contains(cls));
+
+            if (hasResetClass ||
+                (wrapperRef.current && !wrapperRef.current.contains(event.target as Node))
+            ) {
                 dispatch(selectionActions.clearSelectedResources());
                 lastSelectedIndexRef.current = null;
             }
