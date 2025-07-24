@@ -4,6 +4,7 @@
 
 import collections
 import dataclasses
+from typing import TypedDict
 
 import cvat_sdk.auto_annotation as cvataa
 import PIL.Image
@@ -23,10 +24,18 @@ class _PreprocessedImage:
     feat_sizes: list[tuple[int, int]]
 
 
+class _PredictorOutputs(TypedDict):
+    # We always keep 1 cond_frame_outputs and up to num_maskmem non_cond_frame_outputs.
+
+    cond_frame_outputs: dict[int, dict]
+    # We make this an OrderedDict to make popping old elements easier.
+    non_cond_frame_outputs: collections.OrderedDict[int, dict]
+
+
 @dataclasses.dataclass(kw_only=True)
 class _TrackingState:
     frame_idx: int
-    predictor_outputs: dict
+    predictor_outputs: _PredictorOutputs
 
 
 class _Sam2Tracker:
@@ -126,7 +135,6 @@ class _Sam2Tracker:
             output_dict={},
         )
 
-        # we always keep 1 cond_frame_outputs and up to num_maskmem non_cond_frame_outputs
         return _TrackingState(
             frame_idx=0,
             predictor_outputs={
