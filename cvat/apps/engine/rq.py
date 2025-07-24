@@ -160,7 +160,6 @@ class AbstractRQMeta(metaclass=ABCMeta):
     def save(self, *, pipeline: Pipeline | None = None) -> None:
         assert isinstance(self._job, RQJob), "To save meta, rq job must be set"
         # TODO: send PR to the upstream repo to support pipelines
-        # self._job.save_meta()
         meta = self._job.serializer.dumps(self._job.meta)
         connection = pipeline if pipeline else self._job.connection
         connection.hset(self._job.key, "meta", meta)
@@ -439,7 +438,9 @@ def define_dependent_job(
 
 
 class RunningBackgroundProcessesError(Exception):
-    pass
+    def __init__(self, queue_name: str, *args):
+        self.queue_name = queue_name
+        super().__init__(*args)
 
 
 def update_org_related_data_in_rq_jobs(
@@ -477,15 +478,15 @@ def update_org_related_data_in_rq_jobs(
                     continue
 
                 if is_rq_job_related(BaseRQMeta.for_job(job)):
-                    raise RunningBackgroundProcessesError
+                    raise RunningBackgroundProcessesError(queue_name=queue.name)
 
-    for queue in queues:
-        job_ids = set(
-            queue.finished_job_registry.get_job_ids() + queue.failed_job_registry.get_job_ids()
-        )
+    with queue.connection.pipeline() as pipe:
+        for queue in queues:
+            job_ids = set(
+                queue.finished_job_registry.get_job_ids() + queue.failed_job_registry.get_job_ids()
+            )
 
-        for batched_job_ids in take_by(job_ids, chunk_size=1000):
-            with queue.connection.pipeline() as pipe:
+            for batched_job_ids in take_by(job_ids, chunk_size=1000):
                 for job in queue.job_class.fetch_many(batched_job_ids, queue.connection):
                     if not job:
                         continue
@@ -499,4 +500,6 @@ def update_org_related_data_in_rq_jobs(
                     job_meta.org_slug = new_org_slug
                     job_meta.save(pipeline=pipe)
 
-                pipe.execute()  # it handles empty pipe.command_stack too
+        # FUTURE-TODO: probably need to move it into a background process
+        # and update RQ jobs in batches with rollback support.
+        pipe.execute()  # it handles empty pipe.command_stack too

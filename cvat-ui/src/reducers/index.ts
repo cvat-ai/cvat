@@ -67,10 +67,9 @@ export interface ProjectsState {
         };
         updates: {
             [projectId: number]: boolean; // updated (updating if in dictionary)
+            current: Project | null;
+            visibleLinkedCloudStorageUpdatingModal: boolean;
         };
-    };
-    updateWorkspace: {
-        instance: Project | null;
     };
 }
 
@@ -116,9 +115,6 @@ export interface TasksState {
         modalVisible: boolean;
         taskId: number | null;
     };
-    updateWorkspace: {
-        instance: Task | null;
-    };
     gettingQuery: TasksQuery;
     count: number;
     current: Task[];
@@ -131,6 +127,8 @@ export interface TasksState {
         };
         updates: {
             [taskId: number]: boolean;
+            current: Task | null;
+            visibleLinkedCloudStorageUpdatingModal: boolean;
         };
     };
 }
@@ -998,7 +996,6 @@ export interface OrganizationMembersQuery {
 export interface OrganizationsQuery {
     page: number;
     search: string | null;
-    filter: string | null;
 }
 
 export interface OrganizationState {
@@ -1010,6 +1007,7 @@ export interface OrganizationState {
     leaving: boolean;
     removingMember: boolean;
     updatingMember: boolean;
+    gettingQuery: OrganizationsQuery;
     currentArray: Organization[];
     currentArrayFetching: boolean;
     count: number;

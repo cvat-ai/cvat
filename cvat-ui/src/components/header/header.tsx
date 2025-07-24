@@ -150,7 +150,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             authActions.switchChangePasswordModalVisible(visible),
         ),
         fetchOrganizations: (): void => dispatch(
-            getOrganizationsAsync({}, true),
+            getOrganizationsAsync({}),
         ),
         openSelectOrganizationModal: (
             onSelectOrgCallback: (org: Organization | null) => void,

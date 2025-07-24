@@ -9,7 +9,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { CombinedState } from 'reducers';
 
 import { Organization } from 'cvat-core-wrapper';
-import { organizationActions } from '../../actions/organization-actions';
+import { organizationActions } from 'actions/organization-actions';
 import OrganizationSelector from '../selectors/organization-selector';
 
 function SelectOrganizationModal(): JSX.Element {

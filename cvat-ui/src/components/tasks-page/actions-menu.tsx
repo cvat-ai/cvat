@@ -21,8 +21,8 @@ import { mergeConsensusJobsAsync } from 'actions/consensus-actions';
 import {
     deleteTaskAsync, switchMoveTaskModalVisible,
     openLinkedCloudStorageUpdatingModal, updateTaskAsync,
-    TaskUpdateTypes,
 } from 'actions/tasks-actions';
+import { ResourceUpdateTypes } from 'utils/enums';
 import UserSelector from 'components/task-page/user-selector';
 
 import OrganizationSelector from 'components/selectors/organization-selector';
@@ -51,7 +51,6 @@ function TaskActionsComponent(props: Props): JSX.Element {
     const {
         dropdownOpen,
         editField,
-        setDropdownOpen,
         startEditField,
         stopEditField,
         onOpenChange,
@@ -134,14 +133,13 @@ function TaskActionsComponent(props: Props): JSX.Element {
         ) {
             dispatch(openLinkedCloudStorageUpdatingModal(taskInstance));
         } else {
-            dispatch(updateTaskAsync(taskInstance, {}, TaskUpdateTypes.UPDATE_ORGANIZATION))
-                .then(stopEditField);
+            dispatch(updateTaskAsync(taskInstance, {}, ResourceUpdateTypes.UPDATE_ORGANIZATION));
         }
     }, [taskInstance]);
 
     const onUpdateTaskOrganization = useCallback((dstOrganization: Organization | null) => {
         const dstOrganizationId = (dstOrganization) ? dstOrganization.id : dstOrganization;
-        setDropdownOpen(false);
+        stopEditField();
 
         if (currentOrganization) {
             Modal.confirm({

@@ -454,13 +454,13 @@ class AssignableModel(models.Model):
         /,
         *,
         updated_date: datetime.datetime | None = None,
-        commit: bool = False,
     ) -> None:
+        """
+        Updates the assignee id and the corresponding timestamp.
+        Changes are not persisted to the database.
+        """
         self.assignee_id = assignee_id
         self.assignee_updated_date = updated_date or timezone.now()
-
-        if commit:
-            self.save(update_fields=["assignee", "assignee_updated_date"])
 
 
 class ABCModelMeta(ABCMeta, ModelBase):

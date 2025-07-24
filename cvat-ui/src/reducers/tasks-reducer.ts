@@ -34,10 +34,10 @@ const defaultState: TasksState = {
     },
     activities: {
         deletes: {},
-        updates: {},
-    },
-    updateWorkspace: {
-        instance: null,
+        updates: {
+            current: null,
+            visibleLinkedCloudStorageUpdatingModal: false,
+        },
     },
 };
 
@@ -235,16 +235,26 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
             const { task } = action.payload;
             return {
                 ...state,
-                updateWorkspace: {
-                    instance: task,
+                activities: {
+                    ...state.activities,
+                    updates: {
+                        ...state.activities.updates,
+                        current: task,
+                        visibleLinkedCloudStorageUpdatingModal: true,
+                    },
                 },
             };
         }
         case TasksActionTypes.CLOSE_LINKED_CLOUD_STORAGE_UPDATING_MODAL: {
             return {
                 ...state,
-                updateWorkspace: {
-                    instance: null,
+                activities: {
+                    ...state.activities,
+                    updates: {
+                        ...state.activities.updates,
+                        current: null,
+                        visibleLinkedCloudStorageUpdatingModal: false,
+                    },
                 },
             };
         }

@@ -209,7 +209,6 @@ export function useInstanceId(type: InstanceType): number {
 export type DropdownEditField = {
     dropdownOpen: boolean;
     editField: string | null;
-    setDropdownOpen: (open: boolean) => void;
     startEditField: (key: string) => void;
     stopEditField: () => void;
     onOpenChange: (open: boolean, options: { source: 'trigger' | 'menu' }) => void;
@@ -245,7 +244,6 @@ export function useDropdownEditField(): DropdownEditField {
     return {
         dropdownOpen,
         editField,
-        setDropdownOpen,
         startEditField,
         stopEditField,
         onOpenChange,

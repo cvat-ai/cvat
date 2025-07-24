@@ -334,12 +334,13 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
             filter: isString,
             page: isInteger,
             page_size: isInteger,
+            sort: isString,
         });
 
         const organizationsPage = await serverProxy.organizations.get(filter);
         const results = organizationsPage.results.map((org_) => new Organization(org_));
-        Object.assign(results, 'count', {
-            value: organizationsPage.count,
+        Object.assign(results, {
+            count: organizationsPage.count,
             next: organizationsPage.next,
         });
 

@@ -92,24 +92,24 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
             key: 'edit_organization',
             onClick: () => startEditField('organization'),
             label: <CVATMenuEditLabel>Organization</CVATMenuEditLabel>,
-        }, 51]);
+        }, 60]);
     }
 
     menuItems.push([{
         key: 'view-analytics',
         label: <Link to={`/tasks/${taskId}/analytics`}>View analytics</Link>,
-    }, 60]);
+    }, 70]);
 
     menuItems.push([{
         key: 'quality_control',
         label: <Link to={`/tasks/${taskId}/quality-control`}>Quality control</Link>,
-    }, 70]);
+    }, 80]);
 
     if (isConsensusEnabled) {
         menuItems.push([{
             key: 'consensus_management',
             label: <Link to={`/tasks/${taskId}/consensus`}>Consensus management</Link>,
-        }, 75]);
+        }, 85]);
     }
 
     if (onMergeConsensusJobs) {
@@ -119,7 +119,7 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
             label: 'Merge consensus jobs',
             disabled: isMergingConsensusEnabled,
             itemIcon: isMergingConsensusEnabled ? <LoadingOutlined /> : undefined,
-        }, 80]);
+        }, 90]);
     }
 
     if (!projectId) {
@@ -127,7 +127,7 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
             key: 'move_task_to_project',
             onClick: onMoveTaskToProject,
             label: 'Move to project',
-        }, 90]);
+        }, 100]);
     }
 
     menuItems.push([{ type: 'divider' }, 89]);
@@ -135,7 +135,7 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
         key: 'delete_task',
         onClick: onDeleteTask,
         label: 'Delete',
-    }, 100]);
+    }, 110]);
 
     menuItems.push(
         ...pluginActions.map(({ component: Component, weight }, index) => {

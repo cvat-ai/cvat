@@ -1961,7 +1961,8 @@ async function getOrganizations(filter) {
         response = await Axios.get(`${backendAPI}/organizations`, {
             params: {
                 ...filter,
-                page_size: 12,
+                page_size: filter.page_size || 10,
+                sort: filter.sort || 'slug',
             },
         });
     } catch (errorData) {

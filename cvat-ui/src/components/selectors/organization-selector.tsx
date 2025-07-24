@@ -6,6 +6,7 @@ import './styles.scss';
 import _ from 'lodash';
 import React, { useEffect, useState } from 'react';
 import AutoComplete from 'antd/lib/auto-complete';
+import { useInView } from 'react-intersection-observer';
 
 import { Organization } from 'cvat-core-wrapper';
 import { getOrganizationsAsync } from 'actions/organization-actions';
@@ -31,21 +32,26 @@ function OrganizationSelector(props: {
     const hasMore = useSelector((state: CombinedState) => Boolean(state.organizations.nextPageUrl));
     const showSandboxOption = useSelector((state: CombinedState) => Boolean(state.organizations.current));
 
+    const [ref, inView] = useInView();
+
     const dispatch = useDispatch();
 
     useEffect(() => {
+        if (fetching) return;
+
         if (organizations.length) {
             setSearchResults((prev) => (page === defaultPage ? [...organizations] : [...prev, ...organizations]));
+        } else if (page === defaultPage && searchPhrase) {
+            setSearchResults([]);
         }
     }, [organizations]);
 
     useEffect(() => {
-        setSearchResults([]);
         const filterQuery = {
             page: defaultPage,
             search: searchPhrase,
         };
-        dispatch(getOrganizationsAsync(filterQuery, true));
+        dispatch(getOrganizationsAsync(filterQuery));
         setPage(defaultPage);
     }, [searchPhrase]);
 
@@ -56,18 +62,14 @@ function OrganizationSelector(props: {
             page,
             ...((searchPhrase) ? { search: searchPhrase } : {}),
         };
-        dispatch(getOrganizationsAsync(filterQuery, true));
+        dispatch(getOrganizationsAsync(filterQuery));
     }, [page]);
 
-    const handlePopupScroll = (e: React.UIEvent<HTMLDivElement>) => {
-        const target = e.currentTarget;
-        if (
-            ((target.scrollTop + target.offsetHeight) >= (target.scrollHeight - 10)) &&
-            hasMore && !fetching
-        ) {
+    useEffect(() => {
+        if (inView && hasMore && !fetching) {
             setPage((prev) => prev + 1);
         }
-    };
+    }, [inView]);
 
     return (
         <AutoComplete
@@ -82,10 +84,19 @@ function OrganizationSelector(props: {
                         label: 'Personal workspace',
                     }] : []
                 ),
-                ...searchResults.map((organization) => ({
-                    value: organization.slug,
-                    label: `${organization.slug}${organization.name === organization.slug ? '' : ` (${organization.name})`}`,
-                })),
+                ...searchResults.map((organization, index, array) => {
+                    const isLastItem = index === array.length - 1;
+
+                    return {
+                        value: organization.slug,
+                        label: (
+                            <div ref={(isLastItem) ? ref : undefined}>
+                                {organization.slug}
+                                {organization.name === organization.slug ? '' : ` (${organization.name})`}
+                            </div>
+                        ),
+                    };
+                }),
             ]}
             onSelect={(value: string) => {
                 if (value === '') {
@@ -98,7 +109,6 @@ function OrganizationSelector(props: {
                     }
                 }
             }}
-            onPopupScroll={handlePopupScroll}
             allowClear
             className='cvat-organization-selector'
         />

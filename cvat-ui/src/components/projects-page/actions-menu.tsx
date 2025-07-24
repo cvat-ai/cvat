@@ -12,12 +12,13 @@ import { useDropdownEditField, usePlugins } from 'utils/hooks';
 import { CombinedState } from 'reducers';
 import {
     deleteProjectAsync, projectActions,
-    updateProjectAsync, ProjectUpdateTypes,
+    updateProjectAsync,
 } from 'actions/projects-actions';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
 import UserSelector from 'components/task-page/user-selector';
 import OrganizationSelector from 'components/selectors/organization-selector';
+import { ResourceUpdateTypes } from 'utils/enums';
 
 import ProjectActionsItems from './actions-menu-items';
 
@@ -35,7 +36,6 @@ function ProjectActionsComponent(props: Props): JSX.Element {
     const {
         dropdownOpen,
         editField,
-        setDropdownOpen,
         startEditField,
         stopEditField,
         onOpenChange,
@@ -80,13 +80,13 @@ function ProjectActionsComponent(props: Props): JSX.Element {
         ) {
             dispatch(projectActions.openLinkedCloudStorageUpdatingModal(projectInstance));
         } else {
-            dispatch(updateProjectAsync(projectInstance, ProjectUpdateTypes.UPDATE_ORGANIZATION)).then(stopEditField);
+            dispatch(updateProjectAsync(projectInstance, ResourceUpdateTypes.UPDATE_ORGANIZATION));
         }
     }, [projectInstance]);
 
     const onUpdateProjectOrganization = useCallback((dstOrganization: Organization | null) => {
         const dstOrganizationId = (dstOrganization) ? dstOrganization.id : dstOrganization;
-        setDropdownOpen(false);
+        stopEditField();
 
         if (currentOrganization) {
             Modal.confirm({

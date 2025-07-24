@@ -11,33 +11,30 @@ import { Storage, getCore } from 'cvat-core-wrapper';
 
 import { useSelector, useDispatch } from 'react-redux';
 import { CombinedState } from 'reducers';
-import { updateProjectAsync, ProjectUpdateTypes } from 'actions/projects-actions';
-import { updateTaskAsync, TaskUpdateTypes } from 'actions/tasks-actions';
-import { useDropdownEditField } from 'utils/hooks';
+import { updateProjectAsync, projectActions } from 'actions/projects-actions';
+import {
+    updateTaskAsync, closeLinkedCloudStorageUpdatingModal as closeTaskLinkedCloudStorageUpdatingModal,
+} from 'actions/tasks-actions';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import Space from 'antd/lib/space';
 import { QuestionCircleOutlined } from '@ant-design/icons';
-import {
-    closeLinkedCloudStorageUpdatingModal as closeTaskLinkedCloudStorageUpdatingModal,
-} from '../../actions/tasks-actions';
-import { projectActions } from '../../actions/projects-actions';
+import { ResourceUpdateTypes } from 'utils/enums';
 
 const core = getCore();
 
 function SelectCSUpdatingSchemeModal(): JSX.Element {
-    const task = useSelector((state: CombinedState) => state.tasks.updateWorkspace.instance);
-    const project = useSelector((state: CombinedState) => state.projects.updateWorkspace.instance);
+    const task = useSelector((state: CombinedState) => state.tasks.activities.updates.current);
+    const project = useSelector((state: CombinedState) => state.projects.activities.updates.current);
 
     const instance = task || project;
     const [instanceType, setInstanceType] = useState('');
     const dispatch = useDispatch();
-    const { stopEditField } = useDropdownEditField();
 
     const saveInstance = useCallback(() => {
         if (instance instanceof core.classes.Project) {
-            dispatch(updateProjectAsync(instance, ProjectUpdateTypes.UPDATE_ORGANIZATION));
+            dispatch(updateProjectAsync(instance, ResourceUpdateTypes.UPDATE_ORGANIZATION));
         } else if (instance instanceof core.classes.Task) {
-            dispatch(updateTaskAsync(instance, {}, TaskUpdateTypes.UPDATE_ORGANIZATION));
+            dispatch(updateTaskAsync(instance, {}, ResourceUpdateTypes.UPDATE_ORGANIZATION));
         }
     }, [instance]);
 
@@ -47,7 +44,6 @@ function SelectCSUpdatingSchemeModal(): JSX.Element {
         } else if (instance instanceof core.classes.Task) {
             dispatch(closeTaskLinkedCloudStorageUpdatingModal());
         }
-        stopEditField();
     }, [instance]);
 
     useEffect(() => {

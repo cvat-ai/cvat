@@ -16,6 +16,7 @@ from collections import OrderedDict
 from collections.abc import Iterable, Sequence
 from contextlib import closing
 from copy import copy
+from datetime import datetime
 from inspect import isclass
 from tempfile import NamedTemporaryFile
 from typing import Any, Optional, Union, cast
@@ -226,6 +227,81 @@ class IssuesSummarySerializer(serializers.Serializer):
             'count': self.get_count(instance)
         }
 
+
+class OrgTransferableMixin():
+    def _validate_org_transferring(self, attrs: dict[str, Any]):
+        """Method should be called explicitly"""
+
+        if (
+            disallowed_fields := set(attrs.keys()) - {'source_storage', 'target_storage', 'organization_id'}
+        ):
+            raise serializers.ValidationError(
+                f"Fields {disallowed_fields} cannot be updated when transferring to another workspace"
+            )
+
+    def update_organization(
+        self,
+        instance: models.Task | models.Project,
+        *,
+        validated_data: dict[str, Any],
+        update_fields: list[str],
+    ):
+        update_date = timezone.now()
+        request = cast(ExtendedRequest, self.context['request'])
+        organization_id = validated_data["organization_id"]
+        organization_slug = None
+
+        if organization_id is not None:
+            try:
+                organization_slug = (
+                    Organization.objects.filter(pk=organization_id).values_list('slug', flat=True)
+                )[0]
+            except IndexError:
+                raise serializers.ValidationError("Invalid organization id")
+
+        cur_user_id = request.user.id
+        if instance.owner_id != cur_user_id:
+            instance.owner_id = cur_user_id
+            update_fields.append("owner_id")
+
+        if instance.assignee_id is not None:
+            instance.update_assignee(None, updated_date=update_date)
+            update_fields.extend("assignee_id", "assignee_updated_date")
+
+        self.update_child_objects_on_organization_update(
+            instance, owner_id=cur_user_id, organization_id=organization_id, updated_date=update_date)
+
+        instance.organization_id = organization_id
+        update_fields.append("organization_id")
+
+        # update source and target storages
+        _update_related_storages(
+            instance,
+            validated_data=validated_data,
+            workspace_transferring=True,
+            dst_organization_id=organization_id,
+        )
+
+        id_param = f"{instance.__class__.__name__}_id".lower()
+
+        try:
+            update_org_related_data_in_rq_jobs( # pylint: disable=unexpected-keyword-arg
+                organization_id, organization_slug, **{id_param: instance.pk}
+            )
+        except RunningBackgroundProcessesError as ex:
+            raise serializers.ValidationError(
+                f"Background processes are still running in the {ex.queue_name!r} queue"
+            )
+
+    def update_child_objects_on_organization_update(
+        self,
+        instance: models.Task,
+        *,
+        organization_id: int | None,
+        owner_id: int,
+        updated_date: datetime,
+    ):
+        raise NotImplementedError()
 
 class BasicUserSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
@@ -620,6 +696,39 @@ class StorageSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Storage
         fields = ('id', 'location', 'cloud_storage_id')
+
+    def validate(self, attrs: dict[str, Any]):
+        new_cloud_storage_id = attrs.get('cloud_storage_id')
+        new_location = attrs.get('location')
+
+        if new_cloud_storage_id:
+            if new_location and new_location != models.Location.CLOUD_STORAGE:
+                raise serializers.ValidationError(
+                    f"It is not allowed to specify '{new_location}' location together with cloud storage id"
+                )
+            elif not new_location:
+                raise serializers.ValidationError(
+                    "The configuration is not full, the location=cloud_storage is missing"
+                )
+
+            if not models.CloudStorage.objects.filter(id=new_cloud_storage_id).exists():
+                raise serializers.ValidationError(
+                    f"The specified cloud storage {new_cloud_storage_id} does not exist."
+                )
+        else:
+            if new_location == models.Location.CLOUD_STORAGE:
+                raise serializers.ValidationError(
+                    "Cloud storage was selected as location but its id was not specified"
+                )
+            elif (
+                not new_location
+                and "cloud_storage_id" in attrs
+            ):
+                raise serializers.ValidationError(
+                    "It is not allowed to reset a cloud storage id without explicitly resetting a location"
+                )
+
+        return super().validate(attrs)
 
 class JobReadListSerializer(serializers.ListSerializer):
     def to_representation(self, data):
@@ -2384,7 +2493,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
         )
     ]
 )
-class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
+class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer, OrgTransferableMixin):
     labels = LabelSerializer(many=True, source='label_set', partial=True, required=False)
     owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
@@ -2478,137 +2587,118 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
         return db_task
 
+    def update_base_properties(
+        self,
+        instance: models.Task,
+        *,
+        validated_data: dict[str, Any],
+        update_fields: list[str],
+    ):
+        for field_name in (
+            "name", "bug_tracker", "subset", "owner_id", "assignee_id"
+        ):
+            if field_name in validated_data and (field_value := validated_data[field_name]) != getattr(instance, field_name):
+                if field_name != "assignee_id":
+                    setattr(instance, field_name, field_value)
+                else:
+                    instance.update_assignee(field_value)
+                update_fields.append(field_name)
+
+    def update_labels(
+        self,
+        instance: models.Task,
+        *,
+        validated_data: dict[str, Any],
+        update_fields: list[str],
+    ):
+        if (labels := validated_data.get('label_set')) and instance.project_id is None:
+            LabelSerializer.update_labels(labels, parent_instance=instance)
+            update_fields.append("updated_date")
+
+    def update_project(
+        self,
+        instance: models.Task,
+        *,
+        validated_data: dict[str, Any],
+        update_fields: list[str],
+    ):
+        labels = validated_data.get('label_set', [])
+        validated_project_id = validated_data['project_id']
+
+        project = models.Project.objects.get(id=validated_project_id)
+        if project.tasks.count() and project.tasks.first().dimension != instance.dimension:
+            raise serializers.ValidationError(f'Dimension ({instance.dimension}) of the task must be the same as other tasks in project ({project.tasks.first().dimension})')
+
+        if instance.project_id is None:
+            label_set = instance.label_set.all()
+        else:
+            label_set = instance.project.label_set.all()
+
+        for old_label in label_set:
+            new_label_for_name = list(filter(lambda x: x.get('id', None) == old_label.id, labels))
+            if len(new_label_for_name):
+                old_label.name = new_label_for_name[0].get('name', old_label.name)
+            try:
+                if old_label.parent:
+                    new_label = project.label_set.filter(name=old_label.name, parent__name=old_label.parent.name).first()
+                else:
+                    new_label = project.label_set.filter(name=old_label.name).first()
+            except ValueError:
+                raise serializers.ValidationError(f'Target project does not have label with name "{old_label.name}"')
+
+            for old_attr in old_label.attributespec_set.all():
+                new_attr = new_label.attributespec_set.filter(name=old_attr.name,
+                                                                values=old_attr.values,
+                                                                input_type=old_attr.input_type).first()
+                if new_attr is None:
+                    raise serializers.ValidationError('Target project does not have ' \
+                        f'"{old_label.name}" label with "{old_attr.name}" attribute')
+
+                for (model, model_name) in (
+                    (models.LabeledTrackAttributeVal, 'track'),
+                    (models.LabeledShapeAttributeVal, 'shape'),
+                    (models.LabeledImageAttributeVal, 'image'),
+                    (models.TrackedShapeAttributeVal, 'shape__track')
+                ):
+                    model.objects.filter(**{
+                        f'{model_name}__job__segment__task': instance,
+                        f'{model_name}__label': old_label,
+                        'spec': old_attr
+                    }).update(spec=new_attr)
+
+            for model in (models.LabeledTrack, models.LabeledShape, models.LabeledImage):
+                model.objects.filter(job__segment__task=instance, label=old_label).update(
+                    label=new_label
+                )
+
+        if instance.project_id is None:
+            instance.label_set.all().delete()
+
+        instance.project = project
+        update_fields.append("project")
+
     # pylint: disable=no-self-use
     @transaction.atomic
     def update(self, instance: models.Task, validated_data: dict):
-        organization_id = validated_data.get("organization_id")
-        organization_slug = None
-
-        workspace_transferring = (
-            "organization_id" in validated_data
-            and organization_id != instance.organization_id
-        )
-
-        if workspace_transferring:
-            if set(validated_data.keys()) - {'source_storage', 'target_storage', 'organization_id'}:
-                raise serializers.ValidationError(
-                    "Task attributes cannot be updated during transferring to another workspace"
-                )
-            if instance.project_id:
-                raise serializers.ValidationError(
-                    "Transferring a task from a project is not allowed"
-                )
-
-        instance.name = validated_data.get('name', instance.name)
-        instance.owner_id = validated_data.get('owner_id', instance.owner_id)
-        instance.bug_tracker = validated_data.get('bug_tracker', instance.bug_tracker)
-        instance.subset = validated_data.get('subset', instance.subset)
-        labels = validated_data.get('label_set', [])
+        update_fields: list[str] = []
 
         if (
-            "assignee_id" in validated_data and
-            validated_data["assignee_id"] != instance.assignee_id
+            "organization_id" in validated_data
+            and validated_data.get("organization_id") != instance.organization_id
         ):
-            instance.update_assignee(validated_data.pop('assignee_id'))
+            self.update_organization(instance, validated_data=validated_data, update_fields=update_fields)
+        elif (
+            (validated_project_id := validated_data.get("organization_id")) is not None and validated_project_id != instance.project_id
+        ):
+            self.update_project(instance, validated_data=validated_data, update_fields=update_fields)
+        else:
+            self.update_base_properties(instance, validated_data=validated_data, update_fields=update_fields)
+            self.update_labels(instance, validated_data=validated_data, update_fields=update_fields)
+            # update source and target storages
+            _update_related_storages(instance, validated_data=validated_data)
 
-        if instance.project_id is None:
-            LabelSerializer.update_labels(labels, parent_instance=instance)
-
-        validated_project_id = validated_data.get('project_id')
-        if validated_project_id is not None and validated_project_id != instance.project_id:
-            project = models.Project.objects.get(id=validated_project_id)
-            if project.tasks.count() and project.tasks.first().dimension != instance.dimension:
-                raise serializers.ValidationError(f'Dimension ({instance.dimension}) of the task must be the same as other tasks in project ({project.tasks.first().dimension})')
-
-            if instance.project_id is None:
-                label_set = instance.label_set.all()
-            else:
-                label_set = instance.project.label_set.all()
-
-            for old_label in label_set:
-                new_label_for_name = list(filter(lambda x: x.get('id', None) == old_label.id, labels))
-                if len(new_label_for_name):
-                    old_label.name = new_label_for_name[0].get('name', old_label.name)
-                try:
-                    if old_label.parent:
-                        new_label = project.label_set.filter(name=old_label.name, parent__name=old_label.parent.name).first()
-                    else:
-                        new_label = project.label_set.filter(name=old_label.name).first()
-                except ValueError:
-                    raise serializers.ValidationError(f'Target project does not have label with name "{old_label.name}"')
-
-                for old_attr in old_label.attributespec_set.all():
-                    new_attr = new_label.attributespec_set.filter(name=old_attr.name,
-                                                                  values=old_attr.values,
-                                                                  input_type=old_attr.input_type).first()
-                    if new_attr is None:
-                        raise serializers.ValidationError('Target project does not have ' \
-                            f'"{old_label.name}" label with "{old_attr.name}" attribute')
-
-                    for (model, model_name) in (
-                        (models.LabeledTrackAttributeVal, 'track'),
-                        (models.LabeledShapeAttributeVal, 'shape'),
-                        (models.LabeledImageAttributeVal, 'image'),
-                        (models.TrackedShapeAttributeVal, 'shape__track')
-                    ):
-                        model.objects.filter(**{
-                            f'{model_name}__job__segment__task': instance,
-                            f'{model_name}__label': old_label,
-                            'spec': old_attr
-                        }).update(spec=new_attr)
-
-                for model in (models.LabeledTrack, models.LabeledShape, models.LabeledImage):
-                    model.objects.filter(job__segment__task=instance, label=old_label).update(
-                        label=new_label
-                    )
-
-            if instance.project_id is None:
-                instance.label_set.all().delete()
-
-            instance.project = project
-
-        if workspace_transferring:
-            if organization_id is not None:
-                try:
-                    organization_slug = (
-                        Organization.objects.filter(pk=organization_id).values_list('slug', flat=True)
-                    )[0]
-                except IndexError:
-                    raise serializers.ValidationError("Invalid organization id")
-
-            request = cast(ExtendedRequest, self.context['request'])
-            cur_user_id = request.user.id
-            if instance.owner_id != cur_user_id:
-                instance.owner_id = cur_user_id
-
-            assignee_updated_date = timezone.now()
-
-            if instance.assignee_id is not None:
-                instance.update_assignee(None, updated_date=assignee_updated_date)
-
-            models.Job.objects.filter(
-                segment__task__id=instance.pk,
-                assignee__isnull=False
-            ).update(assignee=None, assignee_updated_date=assignee_updated_date)
-            instance.organization_id = organization_id
-
-        # update source and target storages
-        _update_related_storages(
-            instance,
-            validated_data=validated_data,
-            workspace_transferring=workspace_transferring,
-            dst_organization_id=organization_id,
-        )
-
-        if workspace_transferring:
-            try:
-                update_org_related_data_in_rq_jobs(organization_id, organization_slug, task_id=instance.pk)
-            except RunningBackgroundProcessesError:
-                raise serializers.ValidationError(
-                    "There are some running background processes related with the task"
-                )
-
-        instance.save() # TODO: update_fields
+        if update_fields:
+            instance.save(update_fields=list(set(update_fields) | {"updated_date"}))
 
         if 'label_set' in validated_data and not instance.project_id:
             self.update_child_objects_on_labels_update(instance)
@@ -2620,14 +2710,29 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             updated_date__lt=instance.updated_date, segment__task=instance
         ).update(updated_date=instance.updated_date)
 
+    def update_child_objects_on_organization_update(
+        self,
+        instance: models.Task,
+        *,
+        organization_id: int | None,
+        owner_id: int,
+        updated_date: datetime,
+    ):
+        models.Job.objects.filter(
+            segment__task__id=instance.pk,
+            assignee__isnull=False
+        ).update(assignee=None, assignee_updated_date=updated_date)
+
+    def _validate_org_transferring(self, attrs: dict[str, Any]):
+        if "project_id" in attrs.keys():
+            raise serializers.ValidationError("A task cannot be moved into a project and into an organization at the same time")
+        elif self.instance.project_id:
+            raise serializers.ValidationError("Only top-level resources can be moved between workspaces")
+        super()._validate_org_transferring(attrs)
+
     def validate(self, attrs):
-        if "organization_id" in attrs.keys() and self.instance:
-            if "project_id" in attrs.keys():
-                raise serializers.ValidationError("A task cannot be moved into a project and into an organization at the same time")
-
-            if self.instance.project_id:
-                raise serializers.ValidationError("Only top-level resources can be moved between workspaces")
-
+        if self.instance and "organization_id" in attrs.keys():
+            self._validate_org_transferring(attrs)
 
         # When moving task labels can be mapped to one, but when not names must be unique
         if 'project_id' in attrs.keys() and self.instance is not None:
@@ -2715,7 +2820,7 @@ class ProjectReadSerializer(serializers.ModelSerializer):
         response['dimension'] = task_dimension
         return response
 
-class ProjectWriteSerializer(serializers.ModelSerializer):
+class ProjectWriteSerializer(serializers.ModelSerializer, OrgTransferableMixin):
     labels = LabelSerializer(write_only=True, many=True, source='label_set', partial=True, default=[])
     owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
@@ -2741,6 +2846,12 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         serializer = ProjectReadSerializer(instance, context=self.context)
         return serializer.data
+
+    def validate(self, attrs):
+        if self.instance and "organization_id" in attrs.keys():
+            self._validate_org_transferring(attrs)
+
+        return attrs
 
     # pylint: disable=no-self-use
     @transaction.atomic
@@ -2770,91 +2881,46 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
 
         return db_project
 
+    # FUTURE-TODO: move into a common interface
+    def update_base_properties(
+        self,
+        instance: models.Project,
+        *,
+        validated_data: dict[str, Any],
+        update_fields: list[str],
+    ):
+        for field_name in (
+            "name", "bug_tracker", "owner_id", "assignee_id"
+        ):
+            if field_name in validated_data and (field_value := validated_data[field_name]) != getattr(instance, field_name):
+                if field_name != "assignee_id":
+                    setattr(instance, field_name, field_value)
+                else:
+                    instance.update_assignee(field_value)
+                update_fields.append(field_name)
+
     # pylint: disable=no-self-use
     @transaction.atomic
     def update(self, instance: models.Project, validated_data: dict):
-        # FUTURE-TODO: refactor the code && optimize updating
-        organization_id = validated_data.get("organization_id")
-        organization_slug = None
+        update_fields: list[str] = []
 
-        workspace_transferring = (
+        if (
             "organization_id" in validated_data
-            and organization_id != instance.organization_id
-        )
-
-        if (
-            workspace_transferring and (set(validated_data.keys()) - {
-                'source_storage', 'target_storage', 'organization_id'
-            })
+            and validated_data.get("organization_id") != instance.organization_id
         ):
-            raise serializers.ValidationError(
-                "Project attributes cannot be updated during transferring to another workspace"
-            )
+            self.update_organization(instance, validated_data=validated_data, update_fields=update_fields)
+        else:
+            self.update_base_properties(instance, validated_data=validated_data, update_fields=update_fields)
 
-        instance.name = validated_data.get('name', instance.name)
-        instance.owner_id = validated_data.get('owner_id', instance.owner_id)
-        instance.bug_tracker = validated_data.get('bug_tracker', instance.bug_tracker)
+            if labels := validated_data.get('label_set'):
+                LabelSerializer.update_labels(labels, parent_instance=instance)
+                update_fields.append("updated_date")
 
-        if (
-            "assignee_id" in validated_data and
-            validated_data['assignee_id'] != instance.assignee_id
-        ):
-            instance.update_assignee(validated_data.pop('assignee_id'))
+            # update source and target storages
+            _update_related_storages(instance, validated_data=validated_data)
 
-        labels = validated_data.get('label_set', [])
-        LabelSerializer.update_labels(labels, parent_instance=instance)
-
-        # TODO: extract into a separate method
-        if workspace_transferring:
-            if organization_id is not None:
-                try:
-                    organization_slug = (
-                        Organization.objects.filter(pk=organization_id).values_list('slug', flat=True)
-                    )[0]
-                except IndexError:
-                    raise serializers.ValidationError("Invalid organization id")
-
-            request = cast(ExtendedRequest, self.context['request'])
-            cur_user_id = request.user.id
-
-            if instance.owner_id != cur_user_id:
-                instance.owner_id = cur_user_id
-
-            assignee_updated_date = timezone.now()
-
-            if instance.assignee_id is not None:
-                instance.update_assignee(None, updated_date=assignee_updated_date)
-
-            instance.organization_id = organization_id
-            instance.tasks.update(
-                organization_id=organization_id,
-                owner_id=cur_user_id,
-                assignee_id=None,
-                assignee_updated_date=assignee_updated_date
-            )
-
-            models.Job.objects.filter(
-                segment__task__project__id=instance.pk,
-                assignee__isnull=False
-            ).update(assignee=None, assignee_updated_date=assignee_updated_date)
-
-        # update source and target storages
-        _update_related_storages(
-            instance,
-            validated_data=validated_data,
-            workspace_transferring=workspace_transferring,
-            dst_organization_id=organization_id,
-        )
-
-        if workspace_transferring:
-            try:
-                update_org_related_data_in_rq_jobs(organization_id, organization_slug, project_id=instance.pk)
-            except RunningBackgroundProcessesError:
-                raise serializers.ValidationError(
-                    "There are some running background processes related with the resource"
-                )
-
-        instance.save()
+        if update_fields:
+            instance.save(update_fields=list(set(update_fields) | {"updated_date"}))
 
         if 'label_set' in validated_data:
             self.update_child_objects_on_labels_update(instance)
@@ -2870,6 +2936,26 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
         models.Job.objects.filter(
             updated_date__lt=instance.updated_date, segment__task__project=instance
         ).update(updated_date=instance.updated_date)
+
+    def update_child_objects_on_organization_update(
+        self,
+        instance: models.Project,
+        *,
+        organization_id: int | None,
+        owner_id: int,
+        updated_date: datetime,
+    ):
+        instance.tasks.update(
+            organization_id=organization_id,
+            owner_id=owner_id,
+            assignee_id=None,
+            assignee_updated_date=updated_date
+        )
+
+        models.Job.objects.filter(
+            segment__task__project__id=instance.pk,
+            assignee__isnull=False
+        ).update(assignee=None, assignee_updated_date=updated_date)
 
 
 class AboutSerializer(serializers.Serializer):
@@ -3697,40 +3783,40 @@ def _update_related_storages(
         storage_instance: models.Storage | None = getattr(instance, storage_type, None)
 
         new_conf = validated_data.pop(storage_type, {})
-        new_cloud_storage_id = new_conf.get('cloud_storage_id')
-        new_location = new_conf.get('location')
 
         if not new_conf:
-            if not workspace_transferring:
+            if (
+                not workspace_transferring
+                or workspace_transferring and (
+                    not storage_instance or storage_instance and not storage_instance.cloud_storage_id
+                )
+            ):
                 continue
 
-            if (
-                storage_instance and storage_instance.cloud_storage_id
-            ):
+            try:
+                original_cs = models.CloudStorage.objects.annotate(Count("manifests")).get(pk=storage_instance.cloud_storage_id)
+            except models.CloudStorage.DoesNotExist:
                 # generally should not occur
-                try:
-                    original_cs = models.CloudStorage.objects.annotate(Count("manifests")).get(pk=storage_instance.cloud_storage_id)
-                except models.CloudStorage.DoesNotExist:
-                    new_location = models.Location.LOCAL
-
+                new_conf = {
+                    "location": models.Location.LOCAL,
+                    "cloud_storage_id": None,
+                }
+            else:
                 similar_ones: list[models.CloudStorage] = []
                 msg_no_similar_cs = "Could not find a similar cloud storage in the new workspace"
 
                 qs_with_similar_ones = models.CloudStorage.objects.filter(
                     provider_type=original_cs.provider_type,
                     resource=original_cs.resource,
-                    specific_attributes=original_cs.specific_attributes,
                     organization_id=dst_organization_id,
-                ).annotate(Count("manifests"))
+                ).annotate(Count("manifests")).filter(manifests__count=original_cs.manifests__count)
 
                 for cs in qs_with_similar_ones:
-                    if cs.manifests__count != original_cs.manifests__count:
-                        continue
-
-                    # we do not need to compare manifest contents since the content
-                    # will be synchronized with the original CS file on the next content request
                     if (
-                        list(cs.manifests.values_list("filename", flat=True).order_by("filename"))
+                        cs.get_specific_attributes() != original_cs.get_specific_attributes()
+                        # we do not need to compare manifest contents since the content
+                        # will be synchronized with the original CS file on the next content request
+                        or list(cs.manifests.values_list("filename", flat=True).order_by("filename"))
                         != list(original_cs.manifests.values_list("filename", flat=True).order_by("filename"))
                     ):
                         continue
@@ -3740,47 +3826,15 @@ def _update_related_storages(
                 if len(similar_ones) != 1:
                     raise serializers.ValidationError(msg_no_similar_cs)
 
-                new_cloud_storage_id = similar_ones[0].pk
+                new_conf = {
+                    "location": models.Location.CLOUD_STORAGE,
+                    "cloud_storage_id": similar_ones[0].pk
+                }
 
-        if new_cloud_storage_id:
-            if new_location and new_location != models.Location.CLOUD_STORAGE:
-                raise serializers.ValidationError(
-                    f"It is not allowed to specify '{new_location}' location together with cloud storage id"
-                )
-            elif (
-                not new_location
-                and getattr(storage_instance, "location", None) != models.Location.CLOUD_STORAGE
-            ):
-                raise serializers.ValidationError(
-                    f"The configuration of {storage_type} is not full"
-                )
+        storage_serializer = StorageSerializer(storage_instance, data=new_conf)
+        storage_serializer.is_valid(raise_exception=True)
 
-            if not models.CloudStorage.objects.filter(id=new_cloud_storage_id).exists():
-                raise serializers.ValidationError(
-                    f"The specified cloud storage {new_cloud_storage_id} does not exist."
-                )
-        else:
-            if new_location == models.Location.CLOUD_STORAGE:
-                raise serializers.ValidationError(
-                    "Cloud storage was selected as location but its id was not specified"
-                )
-            elif (
-                not new_location
-                and getattr(storage_instance, "location", None) == models.Location.CLOUD_STORAGE
-                and "cloud_storage_id" in new_conf
-            ):
-                raise serializers.ValidationError(
-                    "It is not allowed to reset a cloud storage id without explicitly resetting a location"
-                )
-
-        if storage_instance:
-            storage_instance.location = new_location or storage_instance.location
-            storage_instance.cloud_storage_id = new_cloud_storage_id
-            storage_instance.save()
-            continue
-
-        storage_instance = models.Storage(**new_conf)
-        storage_instance.save()
+        storage_instance = storage_serializer.save()
         setattr(instance, storage_type, storage_instance)
 
 def _configure_related_storages(validated_data: dict[str, Any]) -> dict[str, Optional[models.Storage]]:

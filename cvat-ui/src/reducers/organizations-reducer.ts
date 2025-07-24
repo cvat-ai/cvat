@@ -17,6 +17,10 @@ const defaultState: OrganizationState = {
     updatingMember: false,
     currentArray: [],
     currentArrayFetching: false,
+    gettingQuery: {
+        page: 1,
+        search: null,
+    },
     count: 0,
     nextPageUrl: null,
     selectModal: {
@@ -148,7 +152,6 @@ export default function (
         case OrganizationActionsTypes.GET_ORGANIZATIONS:
             return {
                 ...state,
-                // initialized: false,
                 currentArrayFetching: true,
                 currentArray: [],
                 count: 0,
@@ -158,7 +161,6 @@ export default function (
             const { array, count, nextPageUrl } = action.payload;
             return {
                 ...state,
-                // initialized: true,
                 currentArrayFetching: false,
                 count,
                 currentArray: array,
@@ -168,8 +170,17 @@ export default function (
         case OrganizationActionsTypes.GET_ORGANIZATIONS_FAILED: {
             return {
                 ...state,
-                // initialized: true,
                 currentArrayFetching: false,
+            };
+        }
+        case OrganizationActionsTypes.UPDATE_ORGANIZATIONS_GETTING_QUERY: {
+            const { query } = action.payload;
+            return {
+                ...state,
+                gettingQuery: {
+                    ...defaultState.gettingQuery,
+                    ...query,
+                },
             };
         }
         case OrganizationActionsTypes.OPEN_SELECT_ORGANIZATION_MODAL: {
