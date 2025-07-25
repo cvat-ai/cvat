@@ -53,6 +53,11 @@ function validateParsedAttribute(attr: SerializedAttribute): void {
         }
     }
 
+    const attrValues = attr.values.map((value: string) => value.trim());
+    if (new Set(attrValues).size !== attrValues.length) {
+        throw new Error(`Attribute: "${attr.name}": attribute values must be unique`);
+    }
+
     if (attr.default_value) {
         if (!core.utils.validateAttributeValue(attr.default_value, new core.classes.Attribute(attr))) {
             throw new Error(

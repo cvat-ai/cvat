@@ -124,35 +124,35 @@ export default class RawViewer extends React.PureComponent<Props> {
             replaceTrailingCommas(values.labels),
         ) as SerializedLabel[];
 
-        const labelIDs: number[] = [];
-        const attrIDs: number[] = [];
+        const labelIds: number[] = [];
+        const attrIds: number[] = [];
         for (const label of parsed) {
             if (label.svg) {
                 label.svg = label.svg.replaceAll('&quot;', '"');
             }
             label.id = label.id || idGenerator();
             if (label.id >= 0) {
-                labelIDs.push(label.id);
+                labelIds.push(label.id);
             }
             for (const attr of label.attributes) {
                 attr.id = attr.id || idGenerator();
                 if (attr.id >= 0) {
-                    attrIDs.push(attr.id);
+                    attrIds.push(attr.id);
                 }
             }
         }
 
         const deletedLabels = labels
             .filter((_label: LabelOptColor) => {
-                const labelID = _label.id as number;
-                return labelID >= 0 && !labelIDs.includes(labelID);
+                const labelId = _label.id as number;
+                return labelId >= 0 && !labelIds.includes(labelId);
             });
 
         const deletedAttributes = labels
             .reduce((acc: SerializedAttribute[], _label) => [...acc, ..._label.attributes], [])
             .filter((_attr: SerializedAttribute) => {
-                const attrID = _attr.id as number;
-                return attrID >= 0 && !attrIDs.includes(attrID);
+                const attrId = _attr.id as number;
+                return attrId >= 0 && !attrIds.includes(attrId);
             });
 
         if (deletedLabels.length || deletedAttributes.length) {
