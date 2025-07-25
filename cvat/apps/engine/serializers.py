@@ -2688,7 +2688,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer, OrgTransf
         ):
             self.update_organization(instance, validated_data=validated_data, update_fields=update_fields)
         elif (
-            (validated_project_id := validated_data.get("organization_id")) is not None and validated_project_id != instance.project_id
+            (validated_project_id := validated_data.get("project_id")) is not None and validated_project_id != instance.project_id
         ):
             self.update_project(instance, validated_data=validated_data, update_fields=update_fields)
         else:
