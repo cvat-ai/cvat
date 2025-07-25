@@ -480,7 +480,8 @@ def update_org_related_data_in_rq_jobs(
                 if is_rq_job_related(BaseRQMeta.for_job(job)):
                     raise RunningBackgroundProcessesError(queue_name=queue.name)
 
-    with queue.connection.pipeline() as pipe:
+    conn = django_rq.get_connection()
+    with conn.pipeline() as pipe:
         for queue in queues:
             job_ids = set(
                 queue.finished_job_registry.get_job_ids() + queue.failed_job_registry.get_job_ids()
