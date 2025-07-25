@@ -45,7 +45,7 @@ import {
 } from './annotations-actions/annotations-actions';
 import { convertDescriptions, getServerAPISchema } from './server-schema';
 import { JobType } from './enums';
-import { PaginatedResource, PaginatedResourceWithNextUrl } from './core-types';
+import { PaginatedResource } from './core-types';
 import CVATCore from '.';
 
 function implementationMixin(func: Function, implementation: Function): void {
@@ -344,7 +344,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
             next: organizationsPage.next,
         });
 
-        return results as PaginatedResourceWithNextUrl<SerializedOrganization>;
+        return results as PaginatedResource<SerializedOrganization>;
     });
     implementationMixin(cvat.organizations.activate, (organization) => {
         checkObjectType('organization', organization, null, Organization);

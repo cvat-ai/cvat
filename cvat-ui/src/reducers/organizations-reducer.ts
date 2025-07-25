@@ -158,12 +158,12 @@ export default function (
                 nextPageUrl: null,
             };
         case OrganizationActionsTypes.GET_ORGANIZATIONS_SUCCESS: {
-            const { array, count, nextPageUrl } = action.payload;
+            const { organizations, count, nextPageUrl } = action.payload;
             return {
                 ...state,
                 currentArrayFetching: false,
                 count,
-                currentArray: array,
+                currentArray: organizations,
                 nextPageUrl: nextPageUrl || null,
             };
         }

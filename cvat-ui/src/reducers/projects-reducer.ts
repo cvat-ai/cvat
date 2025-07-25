@@ -42,10 +42,7 @@ const defaultState: ProjectsState = {
             id: null,
             error: '',
         },
-        updates: {
-            current: null,
-            visibleLinkedCloudStorageUpdatingModal: false,
-        },
+        updates: {},
     },
 };
 
@@ -252,33 +249,6 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
                 activities: {
                     ...state.activities,
                     updates: omit(updates, projectId),
-                },
-            };
-        }
-        case ProjectsActionTypes.OPEN_LINKED_CLOUD_STORAGE_UPDATING_MODAL: {
-            const { project } = action.payload;
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    updates: {
-                        ...state.activities.updates,
-                        current: project,
-                        visibleLinkedCloudStorageUpdatingModal: true,
-                    },
-                },
-            };
-        }
-        case ProjectsActionTypes.CLOSE_LINKED_CLOUD_STORAGE_UPDATING_MODAL: {
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    updates: {
-                        ...state.activities.updates,
-                        current: null,
-                        visibleLinkedCloudStorageUpdatingModal: false,
-                    },
                 },
             };
         }

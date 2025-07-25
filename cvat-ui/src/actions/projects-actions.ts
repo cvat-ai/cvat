@@ -34,11 +34,9 @@ export enum ProjectsActionTypes {
     UPDATE_PROJECT = 'UPDATE_PROJECT',
     UPDATE_PROJECT_SUCCESS = 'UPDATE_PROJECT_SUCCESS',
     UPDATE_PROJECT_FAILED = 'UPDATE_PROJECT_FAILED',
-    OPEN_LINKED_CLOUD_STORAGE_UPDATING_MODAL = 'OPEN_LINKED_CLOUD_STORAGE_UPDATING_MODAL',
-    CLOSE_LINKED_CLOUD_STORAGE_UPDATING_MODAL = 'CLOSE_LINKED_CLOUD_STORAGE_UPDATING_MODAL',
 }
 
-export const projectActions = {
+const projectActions = {
     getProjects: (fetchingTimestamp: number) => createAction(ProjectsActionTypes.GET_PROJECTS, { fetchingTimestamp }),
     getProjectsSuccess: (array: any[], count: number) => (
         createAction(ProjectsActionTypes.GET_PROJECTS_SUCCESS, { array, count })
@@ -74,12 +72,6 @@ export const projectActions = {
     ),
     updateProjectFailed: (projectId: number, error: any, updateType?: ResourceUpdateTypes) => (
         createAction(ProjectsActionTypes.UPDATE_PROJECT_FAILED, { projectId, error, updateType })
-    ),
-    openLinkedCloudStorageUpdatingModal: (project: Project) => (
-        createAction(ProjectsActionTypes.OPEN_LINKED_CLOUD_STORAGE_UPDATING_MODAL, { project })
-    ),
-    closeLinkedCloudStorageUpdatingModal: () => (
-        createAction(ProjectsActionTypes.CLOSE_LINKED_CLOUD_STORAGE_UPDATING_MODAL)
     ),
 };
 

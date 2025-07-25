@@ -19,13 +19,14 @@ import { modelsActions } from 'actions/models-actions';
 import { mergeConsensusJobsAsync } from 'actions/consensus-actions';
 
 import {
-    deleteTaskAsync, switchMoveTaskModalVisible,
-    openLinkedCloudStorageUpdatingModal, updateTaskAsync,
+    deleteTaskAsync, switchMoveTaskModalVisible, updateTaskAsync,
 } from 'actions/tasks-actions';
+import { cloudStoragesActions } from 'actions/cloud-storage-actions';
 import { ResourceUpdateTypes } from 'utils/enums';
 import UserSelector from 'components/task-page/user-selector';
 
 import OrganizationSelector from 'components/selectors/organization-selector';
+import { confirmTransferModal } from 'utils/modals';
 import TaskActionsItems from './actions-menu-items';
 
 interface Props {
@@ -131,37 +132,17 @@ function TaskActionsComponent(props: Props): JSX.Element {
             taskInstance.sourceStorage.cloudStorageId ||
             taskInstance.targetStorage.cloudStorageId
         ) {
-            dispatch(openLinkedCloudStorageUpdatingModal(taskInstance));
+            dispatch(cloudStoragesActions.openLinkedCloudStorageUpdatingModal(taskInstance));
         } else {
             dispatch(updateTaskAsync(taskInstance, {}, ResourceUpdateTypes.UPDATE_ORGANIZATION));
         }
     }, [taskInstance]);
 
     const onUpdateTaskOrganization = useCallback((dstOrganization: Organization | null) => {
-        const dstOrganizationId = (dstOrganization) ? dstOrganization.id : dstOrganization;
         stopEditField();
-
-        if (currentOrganization) {
-            Modal.confirm({
-                title: `Other organization members will lose access to the task #${taskInstance.id}.`,
-                content: (
-                    `You are going to move a task to the ${
-                        (dstOrganization) ? `${dstOrganization.slug} organization` : 'Personal sandbox'
-                    }. Continue?`
-                ),
-                className: 'cvat-modal-confirm-task-transfer-between-workspaces',
-                onOk: () => {
-                    updateOrganization(dstOrganizationId);
-                },
-                okButtonProps: {
-                    type: 'primary',
-                    danger: true,
-                },
-                okText: 'Move anyway',
-            });
-        } else {
-            updateOrganization(dstOrganizationId);
-        }
+        confirmTransferModal(
+            taskInstance, currentOrganization as Organization | null, dstOrganization, updateOrganization,
+        );
     }, [taskInstance]);
 
     let menuItems;

@@ -59,29 +59,29 @@ export default function ProjectActionsItems(
     }, 30]);
 
     menuItems.push([{
-        key: 'edit_organization',
-        onClick: () => startEditField('organization'),
-        label: <CVATMenuEditLabel>Organization</CVATMenuEditLabel>,
-    }, 40]);
-
-    menuItems.push([{
         key: 'view-analytics',
         label: <Link to={`/projects/${projectId}/analytics`}>View analytics</Link>,
-    }, 50]);
+    }, 40]);
 
     menuItems.push([{
         key: 'quality-control',
         label: <Link to={`/projects/${projectId}/quality-control`}>Quality control</Link>,
-    }, 60]);
+    }, 50]);
 
     menuItems.push([{
         key: 'set-webhooks',
         label: <Link to={`/projects/${projectId}/webhooks`}>Setup webhooks</Link>,
-    }, 70]);
+    }, 60]);
 
     menuItems.push([{
         type: 'divider',
-    }, 79]);
+    }, 69]);
+
+    menuItems.push([{
+        key: 'edit_organization',
+        onClick: () => startEditField('organization'),
+        label: <CVATMenuEditLabel>Organization</CVATMenuEditLabel>,
+    }, 70]);
 
     menuItems.push([{
         key: 'delete',

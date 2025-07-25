@@ -62,5 +62,7 @@ export interface UpdateStatusData {
     message: string;
 }
 
-export type PaginatedResource<T> = T[] & { count: number };
-export type PaginatedResourceWithNextUrl<T> = T[] & { count: number, next: string };
+export type PaginatedResource<T> = T[] & {
+    count: number;
+    next?: string;
+};

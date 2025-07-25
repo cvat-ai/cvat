@@ -11,10 +11,9 @@ import { Storage, getCore } from 'cvat-core-wrapper';
 
 import { useSelector, useDispatch } from 'react-redux';
 import { CombinedState } from 'reducers';
-import { updateProjectAsync, projectActions } from 'actions/projects-actions';
-import {
-    updateTaskAsync, closeLinkedCloudStorageUpdatingModal as closeTaskLinkedCloudStorageUpdatingModal,
-} from 'actions/tasks-actions';
+import { updateProjectAsync } from 'actions/projects-actions';
+import { cloudStoragesActions } from 'actions/cloud-storage-actions';
+import { updateTaskAsync } from 'actions/tasks-actions';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import Space from 'antd/lib/space';
 import { QuestionCircleOutlined } from '@ant-design/icons';
@@ -23,10 +22,10 @@ import { ResourceUpdateTypes } from 'utils/enums';
 const core = getCore();
 
 function SelectCSUpdatingSchemeModal(): JSX.Element {
-    const task = useSelector((state: CombinedState) => state.tasks.activities.updates.current);
-    const project = useSelector((state: CombinedState) => state.projects.activities.updates.current);
-
-    const instance = task || project;
+    const instance = useSelector((state: CombinedState) => state.cloudStorages.updateWorkspace.instance);
+    const visible = useSelector((state: CombinedState) => (
+        state.cloudStorages.updateWorkspace.visibleLinkedCloudStorageUpdatingModal
+    ));
     const [instanceType, setInstanceType] = useState('');
     const dispatch = useDispatch();
 
@@ -39,10 +38,8 @@ function SelectCSUpdatingSchemeModal(): JSX.Element {
     }, [instance]);
 
     const closeModal = useCallback(() => {
-        if (instance instanceof core.classes.Project) {
-            dispatch(projectActions.closeLinkedCloudStorageUpdatingModal());
-        } else if (instance instanceof core.classes.Task) {
-            dispatch(closeTaskLinkedCloudStorageUpdatingModal());
+        if (instance) {
+            dispatch(cloudStoragesActions.closeLinkedCloudStorageUpdatingModal());
         }
     }, [instance]);
 
@@ -80,7 +77,7 @@ function SelectCSUpdatingSchemeModal(): JSX.Element {
                 </Space>
             )}
             className='cvat-modal-choose-cloud-storage-change-scheme'
-            open={!!instance}
+            open={visible}
             closable={false}
             footer={[
                 <Button key='cancel' onClick={() => closeModal()}>

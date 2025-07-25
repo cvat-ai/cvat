@@ -13,7 +13,7 @@ import django_rq
 from django.conf import settings
 from django.db.models import Model
 from django.utils import timezone
-from django_rq.queues import DjangoRQ
+from django_rq.queues import DjangoRQ, get_redis_connection
 from redis.client import Pipeline
 from rq.job import Dependency as RQDependency
 from rq.job import Job as RQJob
@@ -480,7 +480,7 @@ def update_org_related_data_in_rq_jobs(
                 if is_rq_job_related(BaseRQMeta.for_job(job)):
                     raise RunningBackgroundProcessesError(queue_name=queue.name)
 
-    conn = django_rq.get_connection()
+    conn = get_redis_connection(settings.REDIS_INMEM_SETTINGS)
     with conn.pipeline() as pipe:
         for queue in queues:
             job_ids = set(

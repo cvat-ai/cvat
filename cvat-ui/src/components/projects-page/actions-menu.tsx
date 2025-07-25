@@ -10,15 +10,14 @@ import Modal from 'antd/lib/modal';
 import { Organization, Project, User } from 'cvat-core-wrapper';
 import { useDropdownEditField, usePlugins } from 'utils/hooks';
 import { CombinedState } from 'reducers';
-import {
-    deleteProjectAsync, projectActions,
-    updateProjectAsync,
-} from 'actions/projects-actions';
+import { deleteProjectAsync, updateProjectAsync } from 'actions/projects-actions';
+import { cloudStoragesActions } from 'actions/cloud-storage-actions';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
 import UserSelector from 'components/task-page/user-selector';
 import OrganizationSelector from 'components/selectors/organization-selector';
 import { ResourceUpdateTypes } from 'utils/enums';
+import { confirmTransferModal } from 'utils/modals';
 
 import ProjectActionsItems from './actions-menu-items';
 
@@ -78,39 +77,17 @@ function ProjectActionsComponent(props: Props): JSX.Element {
             projectInstance.sourceStorage.cloudStorageId ||
             projectInstance.targetStorage.cloudStorageId
         ) {
-            dispatch(projectActions.openLinkedCloudStorageUpdatingModal(projectInstance));
+            dispatch(cloudStoragesActions.openLinkedCloudStorageUpdatingModal(projectInstance));
         } else {
             dispatch(updateProjectAsync(projectInstance, ResourceUpdateTypes.UPDATE_ORGANIZATION));
         }
     }, [projectInstance]);
 
     const onUpdateProjectOrganization = useCallback((dstOrganization: Organization | null) => {
-        const dstOrganizationId = (dstOrganization) ? dstOrganization.id : dstOrganization;
         stopEditField();
-
-        if (currentOrganization) {
-            Modal.confirm({
-                title: `Other organization members will lose access to the project #${
-                    projectInstance.id
-                }.`,
-                content: (
-                    `You are going to move a project to the ${
-                        (dstOrganization) ? `${dstOrganization.slug} organization` : 'Personal sandbox'
-                    }. Continue?`
-                ),
-                className: 'cvat-modal-confirm-project-transfer-between-workspaces',
-                onOk: () => {
-                    updateOrganization(dstOrganizationId);
-                },
-                okButtonProps: {
-                    type: 'primary',
-                    danger: true,
-                },
-                okText: 'Move anyway',
-            });
-        } else {
-            updateOrganization(dstOrganizationId);
-        }
+        confirmTransferModal(
+            projectInstance, currentOrganization as Organization | null, dstOrganization, updateOrganization,
+        );
     }, [projectInstance]);
 
     const onUpdateProjectAssignee = useCallback((assignee: User | null) => {
@@ -144,7 +121,6 @@ function ProjectActionsComponent(props: Props): JSX.Element {
         menuItems = ProjectActionsItems({
             startEditField,
             projectId: projectInstance.id,
-            assignee: projectInstance.assignee,
             pluginActions,
             onExportDataset,
             onImportDataset,

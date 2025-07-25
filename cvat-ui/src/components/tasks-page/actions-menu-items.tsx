@@ -87,29 +87,21 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
         label: <CVATMenuEditLabel>Assignee</CVATMenuEditLabel>,
     }, 50]);
 
-    if (!projectId) {
-        menuItems.push([{
-            key: 'edit_organization',
-            onClick: () => startEditField('organization'),
-            label: <CVATMenuEditLabel>Organization</CVATMenuEditLabel>,
-        }, 60]);
-    }
-
     menuItems.push([{
         key: 'view-analytics',
         label: <Link to={`/tasks/${taskId}/analytics`}>View analytics</Link>,
-    }, 70]);
+    }, 60]);
 
     menuItems.push([{
         key: 'quality_control',
         label: <Link to={`/tasks/${taskId}/quality-control`}>Quality control</Link>,
-    }, 80]);
+    }, 70]);
 
     if (isConsensusEnabled) {
         menuItems.push([{
             key: 'consensus_management',
             label: <Link to={`/tasks/${taskId}/consensus`}>Consensus management</Link>,
-        }, 85]);
+        }, 75]);
     }
 
     if (onMergeConsensusJobs) {
@@ -119,7 +111,7 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
             label: 'Merge consensus jobs',
             disabled: isMergingConsensusEnabled,
             itemIcon: isMergingConsensusEnabled ? <LoadingOutlined /> : undefined,
-        }, 90]);
+        }, 80]);
     }
 
     if (!projectId) {
@@ -127,6 +119,12 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
             key: 'move_task_to_project',
             onClick: onMoveTaskToProject,
             label: 'Move to project',
+        }, 90]);
+
+        menuItems.push([{
+            key: 'edit_organization',
+            onClick: () => startEditField('organization'),
+            label: <CVATMenuEditLabel>Organization</CVATMenuEditLabel>,
         }, 100]);
     }
 

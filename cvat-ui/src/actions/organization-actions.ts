@@ -6,6 +6,7 @@
 import { Store } from 'antd/lib/form/interface';
 import { getCore, Organization, User } from 'cvat-core-wrapper';
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
+import { filterNull } from 'utils/filter-null';
 import { OrganizationsQuery } from 'reducers';
 
 const core = getCore();
@@ -99,8 +100,8 @@ export const organizationActions = {
         OrganizationActionsTypes.UPDATE_ORGANIZATION_MEMBER_FAILED, { username, role, error },
     ),
     getOrganizations: () => createAction(OrganizationActionsTypes.GET_ORGANIZATIONS, {}),
-    getOrganizationsSuccess: (array: Organization[], count: number, nextPageUrl?: string) => (
-        createAction(OrganizationActionsTypes.GET_ORGANIZATIONS_SUCCESS, { array, count, nextPageUrl })
+    getOrganizationsSuccess: (organizations: Organization[], count: number, nextPageUrl?: string) => (
+        createAction(OrganizationActionsTypes.GET_ORGANIZATIONS_SUCCESS, { organizations, count, nextPageUrl })
     ),
     getOrganizationsFailed: (error: any) => createAction(OrganizationActionsTypes.GET_ORGANIZATIONS_FAILED, { error }),
     updateOrganizationsGettingQuery: (query: Partial<OrganizationsQuery>) => (
@@ -275,8 +276,11 @@ export function getOrganizationsAsync(query: Partial<OrganizationsQuery> = {}): 
         dispatch(organizationActions.getOrganizations());
         dispatch(organizationActions.updateOrganizationsGettingQuery(query));
 
+        // Clear query object from null fields
+        const filteredQuery: Partial<OrganizationsQuery> = filterNull(query);
+
         try {
-            const result = await core.organizations.get(query);
+            const result = await core.organizations.get(filteredQuery);
             const array: Organization[] = Array.from(result);
             dispatch(organizationActions.getOrganizationsSuccess(array, result.count, result.next));
         } catch (error) {

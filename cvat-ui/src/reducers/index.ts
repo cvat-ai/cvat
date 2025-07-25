@@ -67,8 +67,6 @@ export interface ProjectsState {
         };
         updates: {
             [projectId: number]: boolean; // updated (updating if in dictionary)
-            current: Project | null;
-            visibleLinkedCloudStorageUpdatingModal: boolean;
         };
     };
 }
@@ -127,8 +125,6 @@ export interface TasksState {
         };
         updates: {
             [taskId: number]: boolean;
-            current: Task | null;
-            visibleLinkedCloudStorageUpdatingModal: boolean;
         };
     };
 }
@@ -259,6 +255,10 @@ export interface CloudStoragesState {
             error: string;
         };
     };
+    updateWorkspace: {
+        instance: Task | Project | null,
+        visibleLinkedCloudStorageUpdatingModal: boolean,
+    }
 }
 
 export enum SupportedPlugins {

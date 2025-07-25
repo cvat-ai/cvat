@@ -266,7 +266,7 @@ class OrgTransferableMixin():
 
         if instance.assignee_id is not None:
             instance.update_assignee(None, updated_date=update_date)
-            update_fields.extend("assignee_id", "assignee_updated_date")
+            update_fields.extend(["assignee_id", "assignee_updated_date"])
 
         self.update_child_objects_on_organization_update(
             instance, owner_id=cur_user_id, organization_id=organization_id, updated_date=update_date)

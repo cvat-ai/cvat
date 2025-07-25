@@ -33,8 +33,6 @@ export enum TasksActionTypes {
     UPDATE_TASK = 'UPDATE_TASK',
     UPDATE_TASK_SUCCESS = 'UPDATE_TASK_SUCCESS',
     UPDATE_TASK_FAILED = 'UPDATE_TASK_FAILED',
-    OPEN_LINKED_CLOUD_STORAGE_UPDATING_MODAL = 'OPEN_LINKED_CLOUD_STORAGE_UPDATING_MODAL',
-    CLOSE_LINKED_CLOUD_STORAGE_UPDATING_MODAL = 'CLOSE_LINKED_CLOUD_STORAGE_UPDATING_MODAL',
 }
 
 function getTasks(query: Partial<TasksQuery>, updateQuery: boolean, fetchingTimestamp: number): AnyAction {
@@ -368,24 +366,6 @@ export function switchMoveTaskModalVisible(visible: boolean, taskId: number | nu
             taskId,
             visible,
         },
-    };
-
-    return action;
-}
-
-export function openLinkedCloudStorageUpdatingModal(task: Task): AnyAction {
-    const action = {
-        type: TasksActionTypes.OPEN_LINKED_CLOUD_STORAGE_UPDATING_MODAL,
-        payload: { task },
-    };
-
-    return action;
-}
-
-export function closeLinkedCloudStorageUpdatingModal(): AnyAction {
-    const action = {
-        type: TasksActionTypes.CLOSE_LINKED_CLOUD_STORAGE_UPDATING_MODAL,
-        payload: {},
     };
 
     return action;

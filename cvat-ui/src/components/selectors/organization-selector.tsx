@@ -30,7 +30,7 @@ function OrganizationSelector(props: {
     const organizations = useSelector((state: CombinedState) => state.organizations.currentArray);
     const fetching = useSelector((state: CombinedState) => state.organizations.currentArrayFetching);
     const hasMore = useSelector((state: CombinedState) => Boolean(state.organizations.nextPageUrl));
-    const showSandboxOption = useSelector((state: CombinedState) => Boolean(state.organizations.current));
+    const currentOrg = useSelector((state: CombinedState) => state.organizations.current);
 
     const [ref, inView] = useInView();
 
@@ -79,31 +79,29 @@ function OrganizationSelector(props: {
             onSearch={_.debounce(setSearchPhrase, 500)}
             options={[
                 ...(
-                    (showSandboxOption) ? [{
+                    (currentOrg) ? [{
                         value: '',
                         label: 'Personal workspace',
                     }] : []
                 ),
-                ...searchResults.map((organization, index, array) => {
-                    const isLastItem = index === array.length - 1;
-
-                    return {
+                ...searchResults
+                    .map((organization, index, array) => ({
                         value: organization.slug,
                         label: (
-                            <div ref={(isLastItem) ? ref : undefined}>
+                            <div ref={index === array.length - 1 ? ref : undefined}>
                                 {organization.slug}
                                 {organization.name === organization.slug ? '' : ` (${organization.name})`}
                             </div>
                         ),
-                    };
-                }),
+                        disabled: !!currentOrg && organization.slug === currentOrg.slug,
+                    })),
             ]}
             onSelect={(value: string) => {
                 if (value === '') {
                     setNewOrganization(null);
                 } else {
                     const organization = searchResults
-                        .find((_organization): boolean => _organization.slug === value);
+                        .find((org_): boolean => org_.slug === value);
                     if (organization) {
                         setNewOrganization(organization);
                     }
