@@ -31,6 +31,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '201':
           content:
@@ -59,6 +60,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           description: Asset file
@@ -82,9 +84,211 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '204':
           description: The asset has been deleted
+  /api/auth/api_tokens:
+    get:
+      operationId: auth_list_api_tokens
+      summary: List API tokens
+      parameters:
+      - name: filter
+        required: false
+        in: query
+        description: |2-
+
+          JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.
+
+          For example, using such a filter you can get all resources created by you:
+
+              - {"and":[{"==":[{"var":"owner"},"<user>"]}]}
+
+          Details about the syntax used can be found at the link: https://jsonlogic.com/
+
+           Available filter_fields: ['name', 'id', 'owner', 'created_date', 'updated_date', 'expiry_date', 'last_used_date', 'read_only'].
+        schema:
+          type: string
+      - name: name
+        in: query
+        description: A simple equality filter for the name field
+        schema:
+          type: string
+      - name: owner
+        in: query
+        description: A simple equality filter for the owner field
+        schema:
+          type: integer
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: 'A search term. Available search_fields: (''name'',)'
+        schema:
+          type: string
+      - name: sort
+        required: false
+        in: query
+        description: 'Which field to use when ordering the results. Available ordering_fields:
+          [''name'', ''id'', ''owner'', ''created_date'', ''updated_date'', ''expiry_date'',
+          ''last_used_date'', ''read_only'']'
+        schema:
+          type: string
+      tags:
+      - auth
+      security:
+      - tokenAuth: []
+      - signatureAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      - accessTokenAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/PaginatedApiTokenReadList'
+          description: ''
+    post:
+      operationId: auth_create_api_tokens
+      summary: Create an API token
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiTokenWriteRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - signatureAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      - accessTokenAuth: []
+      responses:
+        '201':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/ApiTokenRead'
+          description: ''
+  /api/auth/api_tokens/{id}:
+    get:
+      operationId: auth_retrieve_api_tokens
+      summary: Get API token details
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this API Token.
+        required: true
+      tags:
+      - auth
+      security:
+      - tokenAuth: []
+      - signatureAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      - accessTokenAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/ApiTokenRead'
+          description: ''
+    patch:
+      operationId: auth_partial_update_api_tokens
+      summary: Update an API token
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this API Token.
+        required: true
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedApiTokenWriteRequest'
+      security:
+      - tokenAuth: []
+      - signatureAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      - accessTokenAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/ApiTokenRead'
+          description: ''
+    delete:
+      operationId: auth_destroy_api_tokens
+      summary: Revoke API token
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this API Token.
+        required: true
+      tags:
+      - auth
+      security:
+      - tokenAuth: []
+      - signatureAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      - accessTokenAuth: []
+      responses:
+        '204':
+          description: The token was successfully revoked
+  /api/auth/api_tokens/self:
+    get:
+      operationId: auth_retrieve_api_tokens_self
+      description: |
+        Get details of the API token used for the current request.
+        This endpoint is only allowed if the request is performed using an API token.
+      summary: Get current API token details
+      tags:
+      - auth
+      security:
+      - accessTokenAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/ApiTokenRead'
+          description: ''
   /api/auth/login:
     post:
       operationId: auth_create_login
@@ -113,6 +317,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       - {}
       responses:
         '200':
@@ -138,6 +343,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       - {}
       responses:
         '200':
@@ -169,6 +375,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -199,6 +406,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       - {}
       responses:
         '200':
@@ -232,6 +440,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       - {}
       responses:
         '200':
@@ -258,6 +467,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       - {}
       responses:
         '201':
@@ -297,6 +507,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -412,6 +623,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -500,6 +712,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '201':
           content:
@@ -527,6 +740,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -605,6 +819,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -631,6 +846,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '204':
           description: The cloud storage has been removed
@@ -656,6 +872,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -702,6 +919,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -729,6 +947,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           description: Cloud Storage preview
@@ -756,6 +975,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -853,6 +1073,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -894,6 +1115,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '201':
           content:
@@ -921,6 +1143,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -952,6 +1175,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -978,6 +1202,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '204':
           description: The comment has been deleted
@@ -999,6 +1224,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '202':
           content:
@@ -1079,6 +1305,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -1106,6 +1333,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -1137,6 +1365,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -1215,6 +1444,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       deprecated: true
       responses:
         '200':
@@ -1258,6 +1488,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '201':
           content:
@@ -1335,6 +1566,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '202':
           content:
@@ -1362,6 +1594,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '201':
           content:
@@ -1389,6 +1622,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -1420,6 +1654,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -1447,6 +1682,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '204':
           description: The annotation guide has been deleted
@@ -1525,6 +1761,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -1566,6 +1803,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '201':
           content:
@@ -1593,6 +1831,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -1624,6 +1863,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -1650,6 +1890,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '204':
           description: The invitation has been deleted
@@ -1673,6 +1914,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -1702,6 +1944,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '204':
           description: The invitation has been declined
@@ -1725,6 +1968,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '204':
           description: Invitation has been sent
@@ -1831,6 +2075,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -1872,6 +2117,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '201':
           content:
@@ -1899,6 +2145,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -1930,6 +2177,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -1956,6 +2204,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '204':
           description: The issue has been deleted
@@ -2098,6 +2347,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -2167,6 +2417,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '201':
           content:
@@ -2194,6 +2445,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -2225,6 +2477,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -2256,6 +2509,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '204':
           description: The job has been deleted
@@ -2324,6 +2578,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -2398,6 +2653,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '201':
           description: Uploading has finished
@@ -2436,6 +2692,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           description: Annotations have been replaced
@@ -2475,6 +2732,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           description: Annotations successfully uploaded
@@ -2497,6 +2755,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '204':
           description: The annotation has been deleted
@@ -2549,6 +2808,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -2577,6 +2837,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -2608,6 +2869,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -2672,6 +2934,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '202':
           content:
@@ -2707,6 +2970,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           description: Job image preview
@@ -2730,6 +2994,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -2779,6 +3044,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -2907,6 +3173,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -2934,6 +3201,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -2967,6 +3235,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -2995,6 +3264,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '204':
           description: The label has been deleted
@@ -3011,6 +3281,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           description: No response body
@@ -3034,6 +3305,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -3072,6 +3344,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           description: Returns function invocation results
@@ -3088,6 +3361,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -3131,6 +3405,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -3158,6 +3433,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -3184,6 +3460,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '204':
           description: No response body
@@ -3272,6 +3549,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -3299,6 +3577,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -3330,6 +3609,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -3356,6 +3636,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '204':
           description: The membership has been deleted
@@ -3430,6 +3711,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -3455,6 +3737,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '201':
           content:
@@ -3482,6 +3765,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -3513,6 +3797,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -3539,6 +3824,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '204':
           description: The organization has been deleted
@@ -3637,6 +3923,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -3678,6 +3965,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '201':
           content:
@@ -3705,6 +3993,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -3736,6 +4025,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -3762,6 +4052,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '204':
           description: The project has been deleted
@@ -3807,6 +4098,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '202':
           content:
@@ -3882,6 +4174,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '202':
           content:
@@ -3950,6 +4243,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '202':
           content:
@@ -3985,6 +4279,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           description: Project image preview
@@ -4058,6 +4353,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '202':
           content:
@@ -4176,6 +4472,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -4291,6 +4588,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -4327,6 +4625,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '201':
           content:
@@ -4366,6 +4665,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -4393,6 +4693,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -4491,6 +4792,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -4518,6 +4820,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -4549,6 +4852,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -4651,6 +4955,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -4677,6 +4982,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -4703,6 +5009,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           description: The request has been cancelled
@@ -4834,6 +5141,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -4863,6 +5171,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -4883,6 +5192,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -4903,6 +5213,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -4934,6 +5245,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -5089,6 +5401,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -5133,6 +5446,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '201':
           content:
@@ -5160,6 +5474,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -5191,6 +5506,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -5218,6 +5534,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '204':
           description: The task has been deleted
@@ -5241,6 +5558,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -5317,6 +5635,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '201':
           description: Uploading has finished
@@ -5355,6 +5674,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           description: Annotations have been replaced
@@ -5394,6 +5714,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -5420,6 +5741,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '204':
           description: The annotation has been deleted
@@ -5465,6 +5787,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '202':
           content:
@@ -5523,6 +5846,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           headers:
@@ -5633,6 +5957,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '202':
           content:
@@ -5660,6 +5985,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -5691,6 +6017,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -5755,6 +6082,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '202':
           content:
@@ -5790,6 +6118,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           description: Task image preview
@@ -5818,6 +6147,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       deprecated: true
       responses:
         '200':
@@ -5846,6 +6176,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -5906,6 +6237,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -5981,6 +6313,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '202':
           content:
@@ -6079,6 +6412,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -6106,6 +6440,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -6137,6 +6472,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -6163,6 +6499,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '204':
           description: The user has been deleted
@@ -6180,6 +6517,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -6282,6 +6620,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -6323,6 +6662,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '201':
           content:
@@ -6350,6 +6690,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -6382,6 +6723,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -6413,6 +6755,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -6439,6 +6782,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '204':
           description: The webhook has been deleted
@@ -6474,6 +6818,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -6507,6 +6852,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -6540,6 +6886,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           description: No response body
@@ -6563,6 +6910,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -6589,6 +6937,7 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
+      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -6755,6 +7104,56 @@ components:
           oneOf:
           - $ref: '#/components/schemas/ShapeType'
           - $ref: '#/components/schemas/NullEnum'
+    ApiTokenRead:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          description: A free-form name for the API key. Need not be unique. 50 characters
+            max.
+          maxLength: 50
+        created_date:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_date:
+          type: string
+          format: date-time
+          readOnly: true
+        expiry_date:
+          type: string
+          format: date-time
+          nullable: true
+          title: Expires
+          description: Once API key expires, clients cannot use it anymore.
+        last_used_date:
+          type: string
+          format: date-time
+          nullable: true
+        read_only:
+          type: boolean
+        owner:
+          type: integer
+          readOnly: true
+        value:
+          type: string
+    ApiTokenWriteRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        expiry_date:
+          type: string
+          format: date-time
+          nullable: true
+        read_only:
+          type: boolean
+      required:
+      - name
     AssetRead:
       type: object
       properties:
@@ -8687,6 +9086,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AnnotationConflict'
+    PaginatedApiTokenReadList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiTokenRead'
     PaginatedCloudStorageReadList:
       type: object
       required:
@@ -9141,6 +9563,18 @@ components:
           nullable: true
         markdown:
           type: string
+    PatchedApiTokenWriteRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        expiry_date:
+          type: string
+          format: date-time
+          nullable: true
+        read_only:
+          type: boolean
     PatchedCloudStorageWriteRequest:
       type: object
       properties:
@@ -11320,6 +11754,15 @@ components:
       - target_url
       - type
   securitySchemes:
+    accessTokenAuth:
+      type: http
+      scheme: bearer
+      description: |
+        To authenticate using an API token, you need to include
+        the 'Authentication' header with the 'Bearer ' prefix
+
+        An API token has to be issued in the user profile section of the UI or
+        via the /auth/api_tokens API before this authentication method can be used.
     basicAuth:
       type: http
       scheme: basic

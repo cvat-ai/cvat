@@ -99,6 +99,7 @@ INSTALLED_APPS = [
     "django_filters",
     "rest_framework",
     "rest_framework.authtoken",
+    "rest_framework_api_key",
     "drf_spectacular",
     "django.contrib.sites",
     "allauth",
@@ -121,6 +122,7 @@ INSTALLED_APPS = [
     "cvat.apps.quality_control",
     "cvat.apps.redis_handler",
     "cvat.apps.consensus",
+    "cvat.apps.api_tokens",
 ]
 
 SITE_ID = 1
@@ -135,13 +137,14 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
-        "cvat.apps.iam.permissions.PolicyEnforcer",
+        "cvat.apps.api_tokens.permissions.PolicyEnforcer",
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.TokenAuthentication",
         "cvat.apps.iam.authentication.SignatureAuthentication",
         "rest_framework.authentication.SessionAuthentication",
         "rest_framework.authentication.BasicAuthentication",
+        "cvat.apps.api_tokens.authentication.ApiTokenAuthentication",
     ],
     "DEFAULT_VERSIONING_CLASS": "rest_framework.versioning.AcceptHeaderVersioning",
     "ALLOWED_VERSIONS": ("2.0"),
@@ -243,7 +246,7 @@ IAM_OPA_DATA_URL = f"{IAM_OPA_HOST}/v1/data"
 LOGIN_URL = "rest_login"
 LOGIN_REDIRECT_URL = "/"
 
-OBJECTS_NOT_RELATED_WITH_ORG = ["user", "lambda_function", "lambda_request", "server", "request"]
+OBJECTS_NOT_RELATED_WITH_ORG = ["user", "lambda_function", "lambda_request", "server", "request", "api_token"]
 
 # ORG settings
 ORG_INVITATION_CONFIRM = "No"
@@ -386,6 +389,12 @@ PERIODIC_RQ_JOBS = [
         # Run once a day
         "cron_string": "0 18 * * *",
     },
+    {
+        "queue": CVAT_QUEUES.CLEANING.value,
+        "id": "clear_unusable_api_tokens",
+        "func": "cvat.apps.api_tokens.cron.clear_unusable_api_tokens",
+        "cron_string": "0 0 * * 0",
+    }
 ]
 
 # JavaScript and CSS compression

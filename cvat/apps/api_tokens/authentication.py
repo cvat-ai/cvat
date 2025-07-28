@@ -1,0 +1,33 @@
+# Copyright (C) CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
+from rest_framework import exceptions
+from rest_framework.authentication import TokenAuthentication
+
+from . import models
+
+
+class ApiTokenAuthentication(TokenAuthentication):
+    keyword = "Bearer"
+
+    def authenticate(self, request):
+        auth = super().authenticate(request)
+        if not auth:
+            return None
+
+        auth[1].update_last_use()
+
+        return auth
+
+    def authenticate_credentials(self, key):
+        model = models.ApiToken
+        try:
+            token = model.objects.get_from_key(key)
+        except model.DoesNotExist:
+            raise exceptions.AuthenticationFailed("Invalid token.")
+
+        if not token.user.is_active:
+            raise exceptions.AuthenticationFailed("User inactive or deleted.")
+
+        return (token.user, token)
