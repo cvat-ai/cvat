@@ -5125,26 +5125,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/TaskWriteRequest'
-            examples:
-              TransferATaskFromAnOrganizationToThePersonalSandbox:
-                value:
-                  organization_id: null
-                summary: Transfer a task from an organization to the personal sandbox
-              TransferATaskFromThePersonalSandboxToAnOrganization:
-                value:
-                  organization_id: 1
-                summary: Transfer a task from the personal sandbox to an organization
-              TransferAStorageLinkedTaskToAnOrganizationAndDetachStorages:
-                value:
-                  organization_id: 1
-                  source_storage:
-                    location: local
-                    cloud_storage_id: null
-                  target_storage:
-                    location: local
-                    cloud_storage_id: null
-                summary: Transfer a storage linked task to an organization and detach
-                  storages
         required: true
       security:
       - tokenAuth: []
@@ -5205,14 +5185,48 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedTaskWriteRequest'
             examples:
-              TransferATaskFromAnOrganizationToThePersonalSandbox:
+              UpdateTaskProperties:
+                value:
+                  name: string
+                  owner_id: 0
+                  assignee_id: 0
+                  bug_tracker: string
+                  subset: string
+                  target_storage:
+                    location: cloud_storage
+                    cloud_storage_id: 0
+                  source_storage:
+                    location: cloud_storage
+                    cloud_storage_id: 0
+                summary: Update task properties
+              UpdateTaskLabels:
+                value:
+                  labels:
+                  - name: string
+                    color: string
+                    attributes: []
+                    deleted: false
+                    type: any
+                    svg: string
+                    sublabels:
+                    - name: string
+                      color: string
+                      attributes: []
+                      type: any
+                      has_parent: true
+                summary: Update task labels
+              MoveTaskToAProject:
+                value:
+                  project_id: 0
+                summary: Move task to a project
+              TransferTaskToPersonalSandbox:
                 value:
                   organization_id: null
-                summary: Transfer a task from an organization to the personal sandbox
-              TransferATaskFromThePersonalSandboxToAnOrganization:
+                summary: Transfer task to personal sandbox
+              TransferTaskToOrganization:
                 value:
                   organization_id: 1
-                summary: Transfer a task from the personal sandbox to an organization
+                summary: Transfer task to organization
               TransferAStorageLinkedTaskToAnOrganizationAndDetachStorages:
                 value:
                   organization_id: 1

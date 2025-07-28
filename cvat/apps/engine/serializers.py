@@ -239,6 +239,7 @@ class OrgTransferableMixin():
                 f"Fields {disallowed_fields} cannot be updated when transferring to another workspace"
             )
 
+    # FUTURE-TODO: race condition is possible here
     def update_organization(
         self,
         instance: models.Task | models.Project,
@@ -2460,39 +2461,6 @@ class TaskReadSerializer(serializers.ModelSerializer):
         representation['consensus_enabled'] = self.get_consensus_enabled(instance)
         return representation
 
-@extend_schema_serializer(
-    examples=[
-        OpenApiExample(
-            "Transfer a task from an organization to the personal sandbox",
-            value={
-                "organization_id": None,
-            },
-            request_only=True,
-        ),
-        OpenApiExample(
-            "Transfer a task from the personal sandbox to an organization",
-            value={
-                "organization_id": 1,
-            },
-            request_only=True,
-        ),
-        OpenApiExample(
-            "Transfer a storage linked task to an organization and detach storages",
-            value={
-                "organization_id": 1,
-                "source_storage": {
-                    "location": models.Location.LOCAL,
-                    "cloud_storage_id": None,
-                },
-                "target_storage": {
-                    "location": models.Location.LOCAL,
-                    "cloud_storage_id": None,
-                },
-            },
-            request_only=True,
-        )
-    ]
-)
 class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer, OrgTransferableMixin):
     labels = LabelSerializer(many=True, source='label_set', partial=True, required=False)
     owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
