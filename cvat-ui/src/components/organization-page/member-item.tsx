@@ -4,47 +4,72 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
 import moment from 'moment';
 import { CombinedState } from 'reducers';
 import { Membership } from 'cvat-core-wrapper';
 import { MoreOutlined } from '@ant-design/icons';
+import { makeBulkOperationAsync } from 'actions/selection-actions';
+import { updateOrganizationMemberAsync } from 'actions/organization-actions';
 import MemberActionsMenu from './actions-menu';
 import MemberRoleSelector from './member-role-selector';
 
 export interface Props {
     membershipInstance: Membership;
-    onRemoveMembership(): void;
-    onUpdateMembershipRole(role: string): void;
-    onResendInvitation(key: string): void;
-    onDeleteInvitation(key: string): void;
+    fetchMembers: () => void;
     selected?: boolean;
     onClick?: (event: React.MouseEvent) => boolean;
 }
 
 function MemberItem(props: Readonly<Props>): JSX.Element {
     const {
-        membershipInstance, onRemoveMembership, onUpdateMembershipRole,
-        onResendInvitation, onDeleteInvitation, selected, onClick,
+        membershipInstance, selected, onClick, fetchMembers,
     } = props;
     const {
         user, joinedDate, role, invitation,
     } = membershipInstance;
     const { username, firstName, lastName } = user;
+
+    const dispatch = useDispatch();
+    const memberships = useSelector((state: CombinedState) => state.organizations.members);
+    const organizationInstance = useSelector((state: CombinedState) => state.organizations.current);
+    const selectedIds = useSelector((state: CombinedState) => state.selection.selected);
     const { username: selfUserName } = useSelector((state: CombinedState) => state.auth.user || { username: '' });
     const rowClassName = `cvat-organization-member-item${selected ? ' cvat-item-selected' : ''}`;
+
+    const canUpdateRole = (membership: Membership) => (membership.role !== 'owner');
+    const onUpdateMembershipRole = (newRole: string): void => {
+        const membershipToUpdate = selectedIds.includes(membershipInstance.id) ?
+            memberships
+                .filter((m) => selectedIds.includes(m.id as number | string))
+                .filter(canUpdateRole) :
+            [membershipInstance];
+
+        const membershipsNeedingUpdate = membershipToUpdate.filter((m) => m.role !== newRole);
+
+        if (membershipsNeedingUpdate.length === 0) {
+            return;
+        }
+
+        dispatch(makeBulkOperationAsync(
+            membershipsNeedingUpdate,
+            async (m) => {
+                await dispatch(updateOrganizationMemberAsync(organizationInstance, m, newRole));
+            },
+            (m, idx, total) => `Updating role for ${m.user.username} (${idx + 1}/${total})`,
+            fetchMembers,
+        ));
+    };
 
     return (
         <MemberActionsMenu
             membershipInstance={membershipInstance}
-            onRemoveMembership={onRemoveMembership}
-            onResendInvitation={onResendInvitation}
-            onDeleteInvitation={onDeleteInvitation}
-            onUpdateMembershipRole={onUpdateMembershipRole}
             selfUserName={selfUserName}
             dropdownTrigger={['contextMenu']}
+            fetchMembers={fetchMembers}
+            onUpdateMembershipRole={onUpdateMembershipRole}
             triggerElement={(
                 <Row
                     className={rowClassName}
@@ -76,13 +101,11 @@ function MemberItem(props: Readonly<Props>): JSX.Element {
                     <Col span={1} className='cvat-organization-member-item-remove'>
                         <MemberActionsMenu
                             membershipInstance={membershipInstance}
-                            onRemoveMembership={onRemoveMembership}
-                            onResendInvitation={onResendInvitation}
-                            onDeleteInvitation={onDeleteInvitation}
                             onUpdateMembershipRole={onUpdateMembershipRole}
                             selfUserName={selfUserName}
+                            fetchMembers={fetchMembers}
                             triggerElement={
-                                <MoreOutlined className='cvat-organization-actions-button cvat-menu-icon' />
+                                <MoreOutlined className='cvat-organization-actions-button cvat-actions-menu-button cvat-menu-icon' />
                             }
                         />
                     </Col>

@@ -30,6 +30,7 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
     const dispatch = useDispatch();
 
     const selectedIds = useSelector((state: CombinedState) => state.selection.selected);
+    const isBulkMode = selectedIds.length > 1;
     const allTasks = useSelector((state: CombinedState) => state.tasks.current);
 
     const pluginActions = usePlugins((state: CombinedState) => state.plugins.components.taskActions.items, props);
@@ -100,8 +101,15 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
         const allTaskIDs = selectedIds.includes(taskInstance.id) ? selectedIds : [taskInstance.id, ...selectedIds];
         const tasksToUpdate = allTasks.filter((task) => allTaskIDs.includes(task.id));
 
+        const tasksNeedingUpdate = tasksToUpdate.filter((task) => task.assignee?.id !== assignee?.id);
+
+        if (tasksNeedingUpdate.length === 0) {
+            stopEditField();
+            return;
+        }
+
         await dispatch(makeBulkOperationAsync(
-            tasksToUpdate,
+            tasksNeedingUpdate,
             async (task) => {
                 task.assignee = assignee;
                 await dispatch(updateTaskAsync(task, { assignee }));
@@ -113,13 +121,12 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
     }, [taskInstance, selectedIds, allTasks, stopEditField, dispatch]);
 
     const onDeleteTask = useCallback(() => {
-        const tasksToDelete = allTasks.filter((task) => selectedIds.includes(task.id));
-        const isBulk = tasksToDelete.length > 1;
+        const tasksToDelete = allTasks.filter((task) => selectedIds.includes(task.id as number | string));
         Modal.confirm({
-            title: isBulk ?
+            title: isBulkMode ?
                 `Delete ${tasksToDelete.length} selected tasks` :
                 `The task ${taskInstance.id} will be deleted`,
-            content: isBulk ?
+            content: isBulkMode ?
                 'All related data (images, annotations) for all selected tasks will be lost. Continue?' :
                 'All related data (images, annotations) will be lost. Continue?',
             className: 'cvat-modal-confirm-delete-task',
@@ -138,20 +145,20 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
                 type: 'primary',
                 danger: true,
             },
-            okText: isBulk ? 'Delete selected' : 'Delete',
+            okText: isBulkMode ? 'Delete selected' : 'Delete',
         });
-    }, [taskInstance, allTasks, selectedIds, dispatch]);
+    }, [taskInstance, allTasks, selectedIds, isBulkMode]);
 
     let menuItems;
     if (editField) {
         const fieldSelectors: Record<string, JSX.Element> = {
             assignee: (
                 <UserSelector
-                    value={taskInstance.assignee}
+                    value={isBulkMode ? null : taskInstance.assignee}
                     onSelect={(value: User | null): void => {
-                        if (taskInstance.assignee?.id === value?.id) return;
                         onUpdateTaskAssignee(value);
                     }}
+                    showClearOption={isBulkMode}
                 />
             ),
         };

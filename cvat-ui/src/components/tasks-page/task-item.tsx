@@ -261,7 +261,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                         <TaskActionsComponent
                             taskInstance={taskInstance}
                             triggerElement={(
-                                <div>
+                                <div className='cvat-task-item-actions-button cvat-actions-menu-button'>
                                     <Text className='cvat-text-color'>Actions</Text>
                                     <MoreOutlined className='cvat-menu-icon' />
                                 </div>

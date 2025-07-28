@@ -45,6 +45,7 @@ function JobActionsComponent(
     const mergingConsensus = useSelector((state: CombinedState) => state.consensus.actions.merging);
 
     const selectedIds = useSelector((state: CombinedState) => state.selection.selected);
+    const isBulkMode = selectedIds.length > 1;
     const allJobs = useSelector((state: CombinedState) => state.jobs.current);
 
     const {
@@ -125,8 +126,27 @@ function JobActionsComponent(
     ) => {
         const jobsToUpdate = allJobs.filter((job) => selectedIds.includes(job.id));
         const jobs = jobsToUpdate.length ? jobsToUpdate : [jobInstance];
+
+        const jobsNeedingUpdate = jobs.filter((job) => {
+            if (fields.assignee !== undefined) {
+                return job.assignee?.id !== fields.assignee?.id;
+            }
+            if (fields.state !== undefined) {
+                return job.state !== fields.state;
+            }
+            if (fields.stage !== undefined) {
+                return job.stage !== fields.stage;
+            }
+            return true;
+        });
+
+        if (jobsNeedingUpdate.length === 0) {
+            stopEditField();
+            return;
+        }
+
         dispatch(makeBulkOperationAsync(
-            jobs,
+            jobsNeedingUpdate,
             async (job) => {
                 await dispatch(updateJobAsync(job, fields));
             },
@@ -139,22 +159,22 @@ function JobActionsComponent(
         const fieldSelectors: Record<string, JSX.Element> = {
             assignee: (
                 <UserSelector
-                    value={jobInstance.assignee}
+                    value={isBulkMode ? null : jobInstance.assignee}
                     onSelect={(value: User | null): void => {
-                        if (jobInstance.assignee?.id === value?.id) return;
                         onUpdateJobField({ assignee: value });
                     }}
+                    showClearOption={isBulkMode}
                 />
             ),
             state: (
                 <JobStateSelector
-                    value={jobInstance.state}
+                    value={isBulkMode ? null : jobInstance.state}
                     onSelect={(value) => onUpdateJobField({ state: value })}
                 />
             ),
             stage: (
                 <JobStageSelector
-                    value={jobInstance.stage}
+                    value={isBulkMode ? null : jobInstance.stage}
                     onSelect={(value) => onUpdateJobField({ stage: value })}
                 />
             ),

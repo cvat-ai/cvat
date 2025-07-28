@@ -108,7 +108,7 @@ function JobCardComponent(props: Readonly<Props>): JSX.Element {
                         jobInstance={job}
                         consensusJobsPresent={false} // consensus merging is not allowed from jobs page
                         triggerElement={
-                            <MoreOutlined className='cvat-job-card-more-button' />
+                            <MoreOutlined className='cvat-job-card-more-button cvat-actions-menu-button' />
                         }
                     />
                 </Card>

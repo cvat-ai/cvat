@@ -195,7 +195,7 @@ export default function DeployedModelItem(props: Readonly<Props>): JSX.Element {
                                         renderTriggerIfEmpty={false}
                                         triggerElement={(
                                             <Button
-                                                className='cvat-deployed-model-details-button'
+                                                className='cvat-deployed-model-details-button cvat-actions-menu-button'
                                                 type='link'
                                                 size='large'
                                                 icon={<MoreOutlined />}

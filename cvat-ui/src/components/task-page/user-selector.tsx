@@ -19,6 +19,7 @@ interface Props {
     username?: string;
     className?: string;
     onSelect: (user: User | null) => void;
+    showClearOption?: boolean;
 }
 
 const searchUsers = debounce(
@@ -74,9 +75,9 @@ const initialUsersStorage: {
     },
 };
 
-export default function UserSelector(props: Props): JSX.Element {
+export default function UserSelector(props: Readonly<Props>): JSX.Element {
     const {
-        value, className, username, onSelect,
+        value, className, username, onSelect, showClearOption = false,
     } = props;
     const [searchPhrase, setSearchPhrase] = useState(username || '');
     const [initialUsers, setInitialUsers] = useState<User[]>([]);
@@ -123,9 +124,14 @@ export default function UserSelector(props: Props): JSX.Element {
     };
 
     const handleSelect = (_value: SelectValue): void => {
-        const user = _value ? users.filter((_user) => _user.id === +_value)[0] : null;
-        if ((user?.id || null) !== (value?.id || null)) {
-            onSelect(user);
+        if (_value === 'RESET_ASSIGNEE') {
+            onSelect(null);
+            setSearchPhrase('');
+        } else {
+            const user = _value ? users.filter((_user) => _user.id === +_value)[0] : null;
+            if ((user?.id || null) !== (value?.id || null)) {
+                onSelect(user);
+            }
         }
     };
 
@@ -157,10 +163,16 @@ export default function UserSelector(props: Props): JSX.Element {
             onBlur={onBlur}
             className={combinedClassName}
             popupClassName='cvat-user-search-dropdown'
-            options={users.map((user) => ({
-                value: user.id.toString(),
-                label: user.username,
-            }))}
+            options={[
+                ...(showClearOption && (!searchPhrase || 'reset assignee'.includes(searchPhrase.toLowerCase())) ? [{
+                    value: 'RESET_ASSIGNEE',
+                    label: 'Reset assignee',
+                }] : []),
+                ...users.map((user) => ({
+                    value: user.id.toString(),
+                    label: user.username,
+                })),
+            ]}
         >
             <Input onPressEnter={() => autocompleteRef.current?.blur()} />
         </Autocomplete>

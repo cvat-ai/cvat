@@ -49,7 +49,7 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
     const isBulkMode = selectedIds.length > 1;
     const bulkAllowedKeys = ['edit_assignee', 'backup_task', 'export_task_dataset', 'delete_task'];
     const isDisabled = (key: string): boolean => isBulkMode && !bulkAllowedKeys.includes(key);
-    const withCount = LabelWithCountHOC(isBulkMode, selectedIds, bulkAllowedKeys);
+    const withCount = LabelWithCountHOC(selectedIds, bulkAllowedKeys);
 
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
 
@@ -93,7 +93,7 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
     menuItems.push([{
         key: 'edit_assignee',
         onClick: () => startEditField('assignee'),
-        label: withCount('Assignee', 'edit_assignee', undefined, CVATMenuEditLabel),
+        label: <CVATMenuEditLabel>{withCount('Assignee', 'edit_assignee')}</CVATMenuEditLabel>,
         disabled: isDisabled('edit_assignee'),
     }, 50]);
 

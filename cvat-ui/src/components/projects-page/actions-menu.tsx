@@ -26,7 +26,9 @@ interface Props {
 function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
     const { projectInstance, triggerElement, dropdownTrigger } = props;
     const dispatch = useDispatch();
+
     const selectedIds = useSelector((state: CombinedState) => state.selection.selected);
+    const isBulkMode = selectedIds.length > 1;
     const allProjects = useSelector((state: CombinedState) => state.projects.current);
 
     const pluginActions = usePlugins((state: CombinedState) => state.plugins.components.projectActions.items, props);
@@ -57,8 +59,16 @@ function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
             selectedIds :
             [projectInstance.id, ...selectedIds];
         const projectsToUpdate = allProjects.filter((project) => allProjectIDs.includes(project.id));
+
+        const projectsNeedingUpdate = projectsToUpdate.filter((project) => project.assignee?.id !== assignee?.id);
+
+        if (projectsNeedingUpdate.length === 0) {
+            stopEditField();
+            return;
+        }
+
         dispatch(makeBulkOperationAsync(
-            projectsToUpdate,
+            projectsNeedingUpdate,
             async (project) => {
                 project.assignee = assignee;
                 await dispatch(updateProjectAsync(project));
@@ -66,14 +76,14 @@ function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
             (project, idx, total) => `Updating assignee for project #${project.id} (${idx + 1}/${total})`,
         )).then(stopEditField);
     }, [projectInstance, selectedIds, allProjects, stopEditField, dispatch]);
+
     const onDeleteProject = useCallback((): void => {
         const projectsToDelete = allProjects.filter((project) => selectedIds.includes(project.id));
-        const isBulk = projectsToDelete.length > 1;
         Modal.confirm({
-            title: isBulk ?
+            title: isBulkMode ?
                 `Delete ${projectsToDelete.length} selected projects` :
                 `The project ${projectInstance.id} will be deleted`,
-            content: isBulk ?
+            content: isBulkMode ?
                 'All related data (images, annotations) for all selected projects will be lost. Continue?' :
                 'All related data (images, annotations) will be lost. Continue?',
             className: 'cvat-modal-confirm-remove-project',
@@ -92,19 +102,19 @@ function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
                 type: 'primary',
                 danger: true,
             },
-            okText: isBulk ? 'Delete selected' : 'Delete',
+            okText: isBulkMode ? 'Delete selected' : 'Delete',
         });
-    }, [projectInstance, allProjects, selectedIds]);
+    }, [projectInstance, allProjects, selectedIds, isBulkMode]);
     let menuItems;
     if (editField) {
         const fieldSelectors: Record<string, JSX.Element> = {
             assignee: (
                 <UserSelector
-                    value={projectInstance.assignee}
+                    value={isBulkMode ? null : projectInstance.assignee}
                     onSelect={(value: User | null): void => {
-                        if (projectInstance.assignee?.id === value?.id) return;
                         onUpdateProjectAssignee(value);
                     }}
+                    showClearOption={isBulkMode}
                 />
             ),
         };

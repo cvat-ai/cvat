@@ -129,7 +129,7 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
                                             projectInstance={instance}
                                             triggerElement={(
                                                 <Button
-                                                    className='cvat-project-details-button'
+                                                    className='cvat-project-details-button cvat-actions-menu-button'
                                                     type='link'
                                                     size='large'
                                                     icon={<MoreOutlined />}

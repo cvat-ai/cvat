@@ -46,7 +46,7 @@ export default function JobActionsItems(
     const isBulkMode = selectedIds.length > 1;
     const bulkAllowedKeys = ['edit_assignee', 'edit_state', 'edit_stage', 'export_job', 'delete'];
     const isDisabled = (key: string): boolean => isBulkMode && !bulkAllowedKeys.includes(key);
-    const withCount = LabelWithCountHOC(isBulkMode, selectedIds, bulkAllowedKeys);
+    const withCount = LabelWithCountHOC(selectedIds, bulkAllowedKeys);
 
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
 
@@ -100,21 +100,21 @@ export default function JobActionsItems(
     menuItems.push([{
         key: 'edit_assignee',
         onClick: () => startEditField('assignee'),
-        label: withCount('Assignee', 'edit_assignee', undefined, CVATMenuEditLabel),
+        label: <CVATMenuEditLabel>{withCount('Assignee', 'edit_assignee')}</CVATMenuEditLabel>,
         disabled: isDisabled('edit_assignee'),
     }, 60]);
 
     menuItems.push([{
         key: 'edit_state',
         onClick: () => startEditField('state'),
-        label: withCount('State', 'edit_state', undefined, CVATMenuEditLabel),
+        label: <CVATMenuEditLabel>{withCount('State', 'edit_state')}</CVATMenuEditLabel>,
         disabled: isDisabled('edit_state'),
     }, 70]);
 
     menuItems.push([{
         key: 'edit_stage',
         onClick: () => startEditField('stage'),
-        label: withCount('Stage', 'edit_stage', undefined, CVATMenuEditLabel),
+        label: <CVATMenuEditLabel>{withCount('Stage', 'edit_stage')}</CVATMenuEditLabel>,
         disabled: isDisabled('edit_stage'),
     }, 80]);
 

@@ -7,7 +7,7 @@ import Select from 'antd/lib/select';
 import { JobStage, JobState } from 'cvat-core-wrapper';
 
 interface JobStateSelectorProps {
-    value: JobState;
+    value: JobState | null;
     onSelect: (newValue: JobState) => void;
 }
 
@@ -18,6 +18,7 @@ export function JobStateSelector({ value, onSelect }: JobStateSelectorProps): JS
             popupClassName='cvat-job-item-state-dropdown'
             value={value}
             onChange={onSelect}
+            placeholder='Select a state'
         >
             <Select.Option value={JobState.NEW}>{JobState.NEW}</Select.Option>
             <Select.Option value={JobState.IN_PROGRESS}>{JobState.IN_PROGRESS}</Select.Option>
@@ -28,7 +29,7 @@ export function JobStateSelector({ value, onSelect }: JobStateSelectorProps): JS
 }
 
 interface JobStageSelectorProps {
-    value: JobStage;
+    value: JobStage | null;
     onSelect: (newValue: JobStage) => void;
 }
 
@@ -39,6 +40,7 @@ export function JobStageSelector({ value, onSelect }: JobStageSelectorProps): JS
             popupClassName='cvat-job-item-stage-dropdown'
             value={value}
             onChange={onSelect}
+            placeholder='Select a stage'
         >
             <Select.Option value={JobStage.ANNOTATION}>
                 {JobStage.ANNOTATION}

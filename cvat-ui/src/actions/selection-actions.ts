@@ -48,12 +48,14 @@ export function makeBulkOperationAsync<T>(
     items: T[],
     operation: (item: T, idx: number, total: number) => Promise<void>,
     statusMessage: (item: T, idx: number, total: number) => string,
+    onSuccess?: () => void,
 ) {
     return async (dispatch: ThunkDispatch, getState: () => CombinedState) => {
         let processedCount = 0;
         try {
             if (items.length === 1) {
                 await operation(items[0], 0, 1);
+                onSuccess?.();
                 return;
             }
             dispatch(selectionActions.startBulkAction());
@@ -69,6 +71,7 @@ export function makeBulkOperationAsync<T>(
                 await operation(item, i, items.length);
                 processedCount = i + 1;
             }
+            onSuccess?.();
         } catch (error) {
             const remainingItems = items.slice(processedCount);
             dispatch(selectionActions.bulkOperationFailed({

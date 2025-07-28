@@ -5,19 +5,27 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-export function LabelWithCountHOC(isBulkMode: boolean, selectedIds: (number | string)[], bulkKeys: string[]) {
-    return (label: string, key: string, url?: string, EditLabelComponent?: any): React.ReactNode => {
+export function LabelWithCountHOC<T>(
+    selectedIds: (number | string)[],
+    bulkKeys: string[],
+    instances?: Record<string, T[]>,
+) {
+    return (label: string, key: string, url?: string): React.ReactNode => {
         let result: React.ReactNode = label;
 
+        const isBulkMode = selectedIds.length > 1;
+
         if (isBulkMode && bulkKeys.includes(key)) {
-            result = `${label} (${selectedIds.length})`;
+            if (instances) {
+                result = `${label} (${instances[key].length})`;
+            } else {
+                result = `${label} (${selectedIds.length})`;
+            }
         }
         if (url) {
             result = <Link to={url}>{result}</Link>;
         }
-        if (key.includes('edit') && EditLabelComponent) {
-            result = <EditLabelComponent>{result}</EditLabelComponent>;
-        }
+
         return result;
     };
 }

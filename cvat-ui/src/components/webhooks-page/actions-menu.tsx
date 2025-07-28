@@ -3,8 +3,6 @@ import { useHistory } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
-import Text from 'antd/lib/typography/Text';
-import { MoreOutlined } from '@ant-design/icons';
 import { MenuProps } from 'antd/lib/menu';
 
 import { Webhook } from 'cvat-core-wrapper';
@@ -14,7 +12,7 @@ import { makeBulkOperationAsync } from 'actions/selection-actions';
 
 interface WebhookActionsMenuProps {
     webhookInstance: Webhook;
-    triggerElement?: JSX.Element;
+    triggerElement: JSX.Element;
     dropdownTrigger?: ('click' | 'hover' | 'contextMenu')[];
 }
 
@@ -81,12 +79,7 @@ export default function WebhookActionsMenu(props: Readonly<WebhookActionsMenuPro
                 items: menuItems,
             }}
         >
-            {triggerElement || (
-                <div className='cvat-webhooks-page-actions-button'>
-                    <Text className='cvat-text-color'>Actions</Text>
-                    <MoreOutlined className='cvat-menu-icon' />
-                </div>
-            )}
+            {triggerElement}
         </Dropdown>
     );
 }

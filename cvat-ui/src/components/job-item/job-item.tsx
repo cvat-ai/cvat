@@ -283,7 +283,7 @@ function JobItem(props: Readonly<Props>): JSX.Element {
                 jobInstance={job}
                 consensusJobsPresent={(childJobs as Job[]).length > 0}
                 triggerElement={
-                    <MoreOutlined className='cvat-job-item-more-button' />
+                    <MoreOutlined className='cvat-job-item-more-button cvat-actions-menu-button' />
                 }
             />
             {childJobViews.length > 0 && (

@@ -235,7 +235,7 @@ function RequestCard(props: Readonly<Props>): JSX.Element {
                                             <Button
                                                 type='link'
                                                 size='middle'
-                                                className='cvat-requests-page-actions-button'
+                                                className='cvat-requests-page-actions-button cvat-actions-menu-button'
                                                 icon={<MoreOutlined className='cvat-menu-icon' />}
                                             />
                                         )}

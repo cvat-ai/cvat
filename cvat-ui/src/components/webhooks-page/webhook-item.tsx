@@ -165,7 +165,7 @@ function WebhookItem(props: Readonly<WebhookItemProps>): JSX.Element | null {
                                 <WebhookActionsMenu
                                     webhookInstance={webhookInstance}
                                     triggerElement={(
-                                        <div className='cvat-webhooks-page-actions-button'>
+                                        <div className='cvat-webhooks-page-actions-button cvat-actions-menu-button'>
                                             <Text className='cvat-text-color'>Actions</Text>
                                             <MoreOutlined className='cvat-menu-icon' />
                                         </div>

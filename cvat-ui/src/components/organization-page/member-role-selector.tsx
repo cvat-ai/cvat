@@ -2,7 +2,7 @@ import React from 'react';
 import Select from 'antd/lib/select';
 
 export interface MemberRoleSelectorProps {
-    value: string;
+    value: string | null;
     onChange: (role: string) => void;
     disabled?: boolean;
 }
@@ -22,6 +22,7 @@ export default function MemberRoleSelector(props: MemberRoleSelectorProps): JSX.
             onChange={onChange}
             disabled={disabled || value === 'owner'}
             className='cvat-organization-member-role-selector'
+            placeholder='Select role'
         >
             {value === 'owner' ? (
                 <Select.Option value='owner'>Owner</Select.Option>

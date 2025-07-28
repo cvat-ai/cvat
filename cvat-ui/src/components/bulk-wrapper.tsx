@@ -4,13 +4,14 @@
 
 import React, { useRef, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { Action } from 'redux';
 import {
     selectionActions,
     SelectionActionsTypes,
 } from 'actions/selection-actions';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
-import { Action } from 'redux';
+import { platform } from 'utils/platform';
 
 export interface BulkSelectProps {
     selected: boolean;
@@ -32,6 +33,8 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
     const selectedIds = useSelector((state: any) => state.selection.selected);
     const wrapperRef = useRef<HTMLDivElement>(null);
     const [isShiftSelecting, setIsShiftSelecting] = React.useState(false);
+
+    const isMac = platform().includes('mac');
 
     const keyMap: KeyMap = {
         SELECT_ALL: {
@@ -81,7 +84,6 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
             const keepClasses = [
                 'ant-dropdown',
                 'rc-virtual-list',
-                'cvat-resource-select-all-button',
             ];
             const hasKeepClass = keepClasses.some((cls) => target.classList.contains(cls) || target.closest(`.${cls}`));
             if (hasKeepClass) return;
@@ -161,7 +163,8 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
                     return true;
                 }
 
-                if (event?.metaKey || event?.ctrlKey) {
+                const isModifierPressed = isMac ? event?.metaKey : event?.ctrlKey;
+                if (isModifierPressed) {
                     updateResources(
                         [resourceId],
                         isSelected ? selectionActions.deselectResources : selectionActions.selectResources,
@@ -171,6 +174,34 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
 
                     lastSelectedIndexRef.current = idx;
                     return true;
+                }
+
+                // Watch for click on menu inside the card
+                if (event) {
+                    const keepParentClasses = [
+                        'cvat-actions-menu-button',
+                        'ant-dropdown-menu',
+                        'ant-select-selector',
+                    ];
+                    let hasAllowedParentClass = false;
+                    let parent = (event.target as HTMLElement);
+                    let depth = 0;
+                    const hasParentClass = (element: HTMLElement | null): boolean => (
+                        !!element && keepParentClasses.some((cls) => element.classList.contains(cls))
+                    );
+                    while (parent && depth < 5) {
+                        if (hasParentClass(parent)) {
+                            hasAllowedParentClass = true;
+                            break;
+                        }
+                        if (parent.parentElement) {
+                            parent = parent.parentElement;
+                        } else {
+                            break;
+                        }
+                        depth += 1;
+                    }
+                    if (hasAllowedParentClass) return true;
                 }
 
                 // Regular click: reset selection

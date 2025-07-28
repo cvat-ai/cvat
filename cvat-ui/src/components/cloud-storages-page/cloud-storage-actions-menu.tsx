@@ -56,7 +56,7 @@ export default function CloudStorageActionsMenu(props: Props): JSX.Element {
         >
             {triggerElement || (
                 <Button
-                    className='cvat-cloud-storage-item-menu-button'
+                    className='cvat-cloud-storage-item-menu-button cvat-actions-menu-button'
                     type='link'
                     size='large'
                     icon={<MoreOutlined />}
