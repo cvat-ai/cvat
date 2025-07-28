@@ -93,14 +93,14 @@ function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
     const [nameTemplate, setNameTemplate] = useState('dataset_task_{{id}}');
 
     useEffect(() => {
-        let newIntanceType = '';
+        let newInstanceType = '';
         if (instance instanceof Project) {
-            newIntanceType = 'project';
+            newInstanceType = 'project';
         } else if (instance instanceof Task || instance instanceof Job) {
             if (instance instanceof Task) {
-                newIntanceType = 'task';
+                newInstanceType = 'task';
             } else {
-                newIntanceType = 'job';
+                newInstanceType = 'job';
             }
             if (instance.mode === 'interpolation' && instance.dimension === '2d') {
                 form.setFieldsValue({ selectedFormat: 'CVAT for video 1.1' });
@@ -108,8 +108,8 @@ function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
                 form.setFieldsValue({ selectedFormat: 'CVAT for images 1.1' });
             }
         }
-        setNameTemplate(`dataset_${newIntanceType}_{{id}}`);
-        setInstanceType(newIntanceType);
+        setNameTemplate(`dataset_${newInstanceType}_{{id}}`);
+        setInstanceType(newInstanceType);
     }, [instance]);
 
     useEffect(() => {

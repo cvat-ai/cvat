@@ -85,14 +85,14 @@ function ExportBackupModal(): JSX.Element {
     }, [isBulkMode, instanceType, selectedIds, allTasks, allProjects, instance]);
 
     useEffect(() => {
-        let newIntanceType = '';
+        let newInstanceType = '';
         if (instance && instance instanceof core.classes.Project) {
-            newIntanceType = 'project';
+            newInstanceType = 'project';
         } else if (instance && instance instanceof core.classes.Task) {
-            newIntanceType = 'task';
+            newInstanceType = 'task';
         }
-        setNameTemplate(`backup_${newIntanceType}_{{id}}`);
-        setInstanceType(newIntanceType);
+        setNameTemplate(`backup_${newInstanceType}_{{id}}`);
+        setInstanceType(newInstanceType);
     }, [instance]);
 
     useEffect(() => {
