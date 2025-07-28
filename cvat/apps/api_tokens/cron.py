@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from datetime import timedelta
-
 from django.conf import settings
 from django.db.models import QuerySet
 from django.db.models.functions import Coalesce

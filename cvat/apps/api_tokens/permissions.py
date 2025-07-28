@@ -258,7 +258,7 @@ class ApiTokenPluginPermission(ApiTokenPluginPermissionBase):
         return []
 
     @classmethod
-    # pylint: disable-next=signature-differs
+    # pylint: disable-next=arguments-differ
     def create(
         cls,
         request,
@@ -376,7 +376,7 @@ class ApiTokenReadOnlyDefaultPermission(ApiTokenPluginPermissionBase):
 
     @classmethod
     def _get_scopes(cls, request, view, obj):
-        raise []
+        return []
 
     def get_resource(self):
         return {}

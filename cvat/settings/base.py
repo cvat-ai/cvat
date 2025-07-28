@@ -246,7 +246,14 @@ IAM_OPA_DATA_URL = f"{IAM_OPA_HOST}/v1/data"
 LOGIN_URL = "rest_login"
 LOGIN_REDIRECT_URL = "/"
 
-OBJECTS_NOT_RELATED_WITH_ORG = ["user", "lambda_function", "lambda_request", "server", "request", "api_token"]
+OBJECTS_NOT_RELATED_WITH_ORG = [
+    "user",
+    "lambda_function",
+    "lambda_request",
+    "server",
+    "request",
+    "api_token",
+]
 
 # ORG settings
 ORG_INVITATION_CONFIRM = "No"
@@ -394,7 +401,7 @@ PERIODIC_RQ_JOBS = [
         "id": "clear_unusable_api_tokens",
         "func": "cvat.apps.api_tokens.cron.clear_unusable_api_tokens",
         "cron_string": "0 0 * * 0",
-    }
+    },
 ]
 
 # JavaScript and CSS compression

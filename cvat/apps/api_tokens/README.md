@@ -27,8 +27,8 @@ the plugin package name after the prefix. Plugins receive the base permission pa
 input and also an extended part that includes:
 
 - `input.auth.token`
- - `.id` - the id of the API Token used for the client authentication.
- - `.read_only` - the `read_only` property of the API Token.
+  - `.id` - the id of the API Token used for the client authentication.
+  - `.read_only` - the `read_only` property of the API Token.
 
 Additionally, plugins can use the `data.utils.api_token.is_api_token` variable to check
 if the client is using an API token.

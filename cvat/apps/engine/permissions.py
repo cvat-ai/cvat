@@ -439,7 +439,7 @@ class ProjectPermission(
             cls.Scopes.EXPORT_BACKUP,
             cls.Scopes.EXPORT_DATASET,
         ):
-            super(ExportableResourceExtension, cls).update_scope_params(params, request=request)
+            ExportableResourceExtension.update_scope_params.__func__(cls, params, request=request)
 
         return params
 
@@ -461,7 +461,7 @@ class ProjectPermission(
                 self.Scopes.EXPORT_BACKUP,
                 self.Scopes.EXPORT_DATASET,
             ):
-                super(ExportableResourceExtension, self).update_resource_data(data)
+                ExportableResourceExtension.update_resource_data(self, data)
 
         elif self.scope in [self.Scopes.CREATE, self.Scopes.IMPORT_BACKUP]:
             data = {
@@ -685,7 +685,7 @@ class TaskPermission(
             cls.Scopes.EXPORT_BACKUP,
             cls.Scopes.EXPORT_DATASET,
         ):
-            super(ExportableResourceExtension, cls).update_scope_params(params, request=request)
+            ExportableResourceExtension.update_scope_params.__func__(cls, params, request=request)
 
         return params
 
@@ -720,7 +720,7 @@ class TaskPermission(
                 self.Scopes.EXPORT_BACKUP,
                 self.Scopes.EXPORT_DATASET,
             ):
-                super(ExportableResourceExtension, self).update_resource_data(data)
+                ExportableResourceExtension.update_resource_data(self, data)
 
         elif self.scope in [
             self.Scopes.CREATE,
@@ -918,7 +918,7 @@ class JobPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
             )
 
         if scope in (cls.Scopes.EXPORT_ANNOTATIONS, cls.Scopes.EXPORT_DATASET):
-            super(ExportableResourceExtension, cls).update_scope_params(params, request=request)
+            ExportableResourceExtension.update_scope_params.__func__(cls, params, request=request)
 
         return params
 
@@ -948,7 +948,7 @@ class JobPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
                 self.extend_resource_with_rq_job_details(data)
 
             if self.scope in (self.Scopes.EXPORT_ANNOTATIONS, self.Scopes.EXPORT_DATASET):
-                super(ExportableResourceExtension, self).update_resource_data(data)
+                ExportableResourceExtension.update_resource_data(self, data)
 
         elif self.scope == self.Scopes.CREATE:
             if self.task_id is None:
