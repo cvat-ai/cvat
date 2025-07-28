@@ -12,7 +12,7 @@ export function confirmTransferModal(
     let details = `You are going to move a ${instanceType} to the ` +
             `${(dstWorkspace) ? `${dstWorkspace.slug} organization` : 'Personal sandbox'}`;
     if (activeWorkspace) {
-        details += '. Other organization members will lose access to the project';
+        details += `. Other organization members will lose access to the ${instanceType}`;
     }
     Modal.confirm({
         title: `Transfer the ${instanceType} #${instance.id} to another workspace`,
