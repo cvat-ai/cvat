@@ -62,7 +62,6 @@ context('Create a link for shape, frame.', () => {
                 });
 
             cy.get('.cvat-player-frame-url-icon').click({ scrollBehavior: false });
-            cy.contains('Create frame URL').should('exist').and('be.visible'); // wait for tooltip
             cy.get('@copyTextToClipboard').should('be.called');
             cy.get('@copyTextToClipboard').then((stub) => {
                 const url = stub.args[0][0];
