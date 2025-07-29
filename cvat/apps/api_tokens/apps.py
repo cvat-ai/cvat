@@ -28,10 +28,6 @@ class ApiTokensConfig(AppConfig):
 
         load_app_permissions(self)
 
-        from .permissions import load_permission_plugins
-
-        load_permission_plugins()
-
         from .events import patch_events
 
         patch_events()

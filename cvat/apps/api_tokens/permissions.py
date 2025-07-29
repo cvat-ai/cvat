@@ -147,8 +147,8 @@ class ApiTokenPermissionPluginManager:
         original_package: str
 
     @classmethod
-    def build_plugin_descriptor(cls, p: Path) -> PluginInfo:
-        package = cls.get_plugin_package_name(p)
+    def _build_plugin_descriptor(cls, p: Path) -> PluginInfo:
+        package = cls._get_plugin_package_name(p)
         if not package.startswith(cls.PLUGIN_PACKAGE_PREFIX):
             raise Exception(
                 "Api token plugins must have the '{}' "
@@ -164,7 +164,7 @@ class ApiTokenPermissionPluginManager:
         )
 
     @classmethod
-    def get_plugin_package_name(cls, p: Path) -> str:
+    def _get_plugin_package_name(cls, p: Path) -> str:
         package_regex = r"package\s+([\w.]+)"
 
         for line in p.open():
@@ -175,25 +175,29 @@ class ApiTokenPermissionPluginManager:
         raise ValueError(f"Could not find package declaration in '{p}'")
 
     @classmethod
-    def collect_plugins(cls) -> dict[str, Sequence[ApiTokenPermissionPluginManager.PluginInfo]]:
+    def _collect_plugins(
+        cls, *, plugin_dirs: Sequence[Path]
+    ) -> dict[str, Sequence[ApiTokenPermissionPluginManager.PluginInfo]]:
+        plugin_dirs = set(p.resolve() for p in plugin_dirs)
         plugin_filename_pattern = f"{cls.PLUGIN_FILE_PREFIX}*{cls.PLUGIN_FILE_EXT}"
 
         plugins: dict[str, ApiTokenPermissionPluginManager.PluginInfo] = {}
-        for p in (Path(__file__).parent / "rules").glob(plugin_filename_pattern):
-            if not p.is_file():
-                continue
+        for plugin_dir in plugin_dirs:
+            for plugin_path in plugin_dir.glob(plugin_filename_pattern):
+                if not plugin_path.is_file():
+                    continue
 
-            plugin = cls.build_plugin_descriptor(p)
+                plugin = cls._build_plugin_descriptor(plugin_path)
 
-            plugin_key = plugin.package
-            if plugin_key in plugins:
-                existing_plugin = plugins[plugin_key]
-                raise Exception(
-                    f"Api token permission plugin '{plugin.package}' "
-                    f"already found in '{existing_plugin.file_path}'"
-                )
+                plugin_key = plugin.package
+                if plugin_key in plugins:
+                    existing_plugin = plugins[plugin_key]
+                    raise Exception(
+                        f"Api token permission plugin '{plugin.package}' "
+                        f"already found in '{existing_plugin.file_path}'"
+                    )
 
-            plugins[plugin_key] = plugin
+                plugins[plugin_key] = plugin
 
         plugins_by_source_package = grouped(plugins.values(), key=lambda p: p.original_package)
 
@@ -201,13 +205,30 @@ class ApiTokenPermissionPluginManager:
 
     _manager_instance: ClassVar[ApiTokenPermissionPluginManager] = None
 
-    plugins: dict[str, list[ApiTokenPermissionPluginManager.PluginInfo]]
-
     def __init__(self):
-        self.plugins = self.collect_plugins()
+        self._cached_plugins: (
+            tuple[int, dict[str, list[ApiTokenPermissionPluginManager.PluginInfo]]] | None
+        ) = None
+
+    @property
+    def plugins(self) -> dict[str, list[ApiTokenPermissionPluginManager.PluginInfo]]:
+        from cvat.apps.iam.utils import _OPA_RULES_PATHS
+
+        # Not really a strong hash, but there's no "official" way to remove rules after
+        # they're registered. Another option would be to have a dedicated reload() method
+        # that has to be called explicitly in the apps that update rule paths.
+        opa_rules_hash = len(_OPA_RULES_PATHS)
+
+        if not self._cached_plugins or self._cached_plugins[0] != opa_rules_hash:
+            self._cached_plugins = (
+                opa_rules_hash,
+                self._collect_plugins(plugin_dirs=_OPA_RULES_PATHS),
+            )
+
+        return self._cached_plugins[1]
 
     @classmethod
-    def _get_instance(cls) -> ApiTokenPermissionPluginManager:
+    def get_instance(cls) -> ApiTokenPermissionPluginManager:
         if cls._manager_instance is None:
             cls._manager_instance = ApiTokenPermissionPluginManager()
 
@@ -217,11 +238,7 @@ class ApiTokenPermissionPluginManager:
     def get_plugins(
         cls, original_package: str
     ) -> Sequence[ApiTokenPermissionPluginManager.PluginInfo]:
-        return cls._manager_instance.plugins.get(original_package, [])
-
-
-def load_permission_plugins():
-    ApiTokenPermissionPluginManager._get_instance()
+        return cls.get_instance().plugins.get(original_package, [])
 
 
 class ApiTokenPluginPermissionBase(ApiTokenPermissionBase):
