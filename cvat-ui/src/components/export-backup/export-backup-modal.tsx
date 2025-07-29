@@ -164,7 +164,7 @@ function ExportBackupModal(): JSX.Element {
                             checked={lightweight}
                             onChange={setLightweight}
                         />
-                        <Text strong>Make light-weight backup</Text>
+                        <Text strong>Make a lightweight backup</Text>
                     </Space>
                 </Form.Item>
             </Form>

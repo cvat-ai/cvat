@@ -588,7 +588,7 @@ class MediaCache:
             with ExitStack() as es:
                 db_cloud_storage = db_data.cloud_storage
                 if not db_cloud_storage:
-                    raise CloudStorageMissingError("Task is not connected to cloud storage")
+                    raise CloudStorageMissingError("Task is no longer connected to cloud storage")
                 credentials = Credentials()
                 credentials.convert_from_db(
                     {

@@ -239,7 +239,7 @@ export default class Project {
         targetStorage: Storage,
         useDefaultSettings: boolean,
         fileName?: string,
-        lightweight: bool,
+        lightweight: boolean,
     ): Promise<string | void> {
         const result = await PluginRegistry.apiWrapper.call(
             this,

@@ -32,10 +32,8 @@ function renderCloudStorageName(cloudStorage: CloudStorage): JSX.Element {
 
 async function getCloudStorageById(id: number): Promise<CloudStorage | null> {
     try {
-        const data = await getCore().cloudStorages.get({ id });
-        if (data.length === 1) {
-            return data[0];
-        }
+    const [data] = await core.projects.get({ id });
+    return data;
     } catch (error) {
         notification.error({
             message: 'Could not fetch a cloud storage',
@@ -92,7 +90,7 @@ export default function CloudStorageEditorComponent(props: Props): JSX.Element {
         meta && meta.storage === StorageLocation.CLOUD_STORAGE && (
             <Row justify='space-between' align='middle'>
                 <Col span={12}>
-                    <Row className='cvat-cloud-storage'>
+                    <Row className='cvat-task-cloud-storage'>
                         { !cloudStorageEditing && <Col>Connected cloud storage:</Col> }
                         { !cloudStorageEditing && (
                             <Col>

@@ -984,7 +984,7 @@ class _ProjectBackupBase(_BackupBase):
 class ProjectExporter(_ExporterBase, _ProjectBackupBase):
     ModelClass: ClassVar[models.Project] = models.Project
 
-    def __init__(self, pk, version=Version.V1, *, lightweight: bool = True):
+    def __init__(self, pk, *, lightweight: bool, version: Version = Version.V1):
         super().__init__(logger=slogger.project[pk])
         self._db_project = self.ModelClass.objects.prefetch_related('tasks', 'annotation_guide__assets').select_related('annotation_guide').get(pk=pk)
         self._version = version
