@@ -26,10 +26,12 @@ function transformSkeletonSVG(value: string): string {
     // the function guarantees successful result only if all labels configuration is passed
     // or if the whole configuration for one label is passed (with sublabels, etc)
 
-    let data = value;
+    let data = value.trim();
+    data = data.startsWith('[') ? data : `[${data}]`;
+
     const idNameMapping: Record<string, string> = {};
     try {
-        const parsed = JSON.parse(data.trim().startsWith('[') ? data : `[${data}]`);
+        const parsed = JSON.parse(replaceTrailingCommas(data));
         for (const label of parsed) {
             for (const sublabel of (label.sublabels || [])) {
                 idNameMapping[sublabel.id] = sublabel.name;
@@ -58,10 +60,6 @@ function validateLabels(_: RuleObject, value: string): Promise<void> {
         if (!Array.isArray(parsed)) {
             return Promise.reject(new Error('Field is expected to be a JSON array'));
         }
-        const labelNames = parsed.map((label: SerializedLabel) => label.name);
-        if (new Set(labelNames).size !== labelNames.length) {
-            return Promise.reject(new Error('Label names must be unique for the task'));
-        }
 
         for (const label of parsed) {
             try {
@@ -69,6 +67,11 @@ function validateLabels(_: RuleObject, value: string): Promise<void> {
             } catch (error) {
                 return Promise.reject(error);
             }
+        }
+
+        const labelNames = parsed.map((label: SerializedLabel) => label.name.trim());
+        if (new Set(labelNames).size !== labelNames.length) {
+            return Promise.reject(new Error('Label name must be unique'));
         }
     } catch (error) {
         return Promise.reject(error);
@@ -121,35 +124,35 @@ export default class RawViewer extends React.PureComponent<Props> {
             replaceTrailingCommas(values.labels),
         ) as SerializedLabel[];
 
-        const labelIDs: number[] = [];
-        const attrIDs: number[] = [];
+        const labelIds: number[] = [];
+        const attrIds: number[] = [];
         for (const label of parsed) {
             if (label.svg) {
                 label.svg = label.svg.replaceAll('&quot;', '"');
             }
             label.id = label.id || idGenerator();
             if (label.id >= 0) {
-                labelIDs.push(label.id);
+                labelIds.push(label.id);
             }
             for (const attr of label.attributes) {
                 attr.id = attr.id || idGenerator();
                 if (attr.id >= 0) {
-                    attrIDs.push(attr.id);
+                    attrIds.push(attr.id);
                 }
             }
         }
 
         const deletedLabels = labels
             .filter((_label: LabelOptColor) => {
-                const labelID = _label.id as number;
-                return labelID >= 0 && !labelIDs.includes(labelID);
+                const labelId = _label.id as number;
+                return labelId >= 0 && !labelIds.includes(labelId);
             });
 
         const deletedAttributes = labels
             .reduce((acc: SerializedAttribute[], _label) => [...acc, ..._label.attributes], [])
             .filter((_attr: SerializedAttribute) => {
-                const attrID = _attr.id as number;
-                return attrID >= 0 && !attrIDs.includes(attrID);
+                const attrId = _attr.id as number;
+                return attrId >= 0 && !attrIds.includes(attrId);
             });
 
         if (deletedLabels.length || deletedAttributes.length) {
