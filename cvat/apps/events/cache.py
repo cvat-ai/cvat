@@ -4,14 +4,17 @@
 
 _caches = {}
 
+
 def _default_cache_value():
     from cvat.apps.engine.models import Comment, Issue, Job, Task
+
     return {
         Task: {},
         Job: {},
         Issue: {},
         Comment: {},
     }
+
 
 class DeleteCache:
     def __init__(self, cache_id):
