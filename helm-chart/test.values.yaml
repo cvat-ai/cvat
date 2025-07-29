@@ -28,9 +28,9 @@ cvat:
       qualityreports:
         replicas: 0
       webhooks:
-        replicas: 0
+        replicas: 1
       utils:
-        replicas: 3
+        replicas: 1
         additionalVolumeMounts:
         - mountPath: /home/django/share
           name: cvat-backend-data
@@ -42,12 +42,11 @@ cvat:
         - "export"
         - "import"
         - "quality_reports"
-        - "webhooks"
 
     # Images are already present in the node
     imagePullPolicy: Never
   frontend:
-    imagePullPolicy: Always
+    imagePullPolicy: Never
 
 redis:
   master:
