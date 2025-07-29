@@ -30,7 +30,7 @@ cvat:
       webhooks:
         replicas: 0
       utils:
-        replicas: 4
+        replicas: 2
         additionalVolumeMounts:
         - mountPath: /home/django/share
           name: cvat-backend-data
@@ -65,6 +65,3 @@ traefik:
       level: DEBUG
     access:
       enabled: true
-  service:
-    externalIPs:
-      - 192.168.49.2
