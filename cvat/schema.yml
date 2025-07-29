@@ -26,12 +26,12 @@ paths:
         required: true
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '201':
           content:
@@ -55,12 +55,12 @@ paths:
       - assets
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           description: Asset file
@@ -79,12 +79,12 @@ paths:
       - assets
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '204':
           description: The asset has been deleted
@@ -149,12 +149,12 @@ paths:
       - auth
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -175,12 +175,12 @@ paths:
         required: true
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '201':
           content:
@@ -203,12 +203,12 @@ paths:
       - auth
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -235,12 +235,12 @@ paths:
               $ref: '#/components/schemas/PatchedApiTokenWriteRequest'
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -262,12 +262,12 @@ paths:
       - auth
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '204':
           description: The token was successfully revoked
@@ -312,12 +312,12 @@ paths:
         required: true
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       - {}
       responses:
         '200':
@@ -338,12 +338,12 @@ paths:
       - auth
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       - {}
       responses:
         '200':
@@ -375,7 +375,6 @@ paths:
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -401,12 +400,12 @@ paths:
         required: true
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       - {}
       responses:
         '200':
@@ -435,12 +434,12 @@ paths:
         required: true
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       - {}
       responses:
         '200':
@@ -462,12 +461,12 @@ paths:
         required: true
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       - {}
       responses:
         '201':
@@ -502,12 +501,12 @@ paths:
         required: true
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -618,12 +617,12 @@ paths:
       - cloudstorages
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -707,12 +706,12 @@ paths:
         required: true
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '201':
           content:
@@ -735,12 +734,12 @@ paths:
       - cloudstorages
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -814,12 +813,12 @@ paths:
               $ref: '#/components/schemas/PatchedCloudStorageWriteRequest'
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -841,12 +840,12 @@ paths:
       - cloudstorages
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '204':
           description: The cloud storage has been removed
@@ -867,12 +866,12 @@ paths:
       - cloudstorages
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -914,12 +913,12 @@ paths:
       - cloudstorages
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -942,12 +941,12 @@ paths:
       - cloudstorages
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           description: Cloud Storage preview
@@ -970,12 +969,12 @@ paths:
       - cloudstorages
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -1068,12 +1067,12 @@ paths:
       - comments
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -1110,12 +1109,12 @@ paths:
         required: true
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '201':
           content:
@@ -1138,12 +1137,12 @@ paths:
       - comments
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -1170,12 +1169,12 @@ paths:
               $ref: '#/components/schemas/PatchedCommentWriteRequest'
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -1197,12 +1196,12 @@ paths:
       - comments
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '204':
           description: The comment has been deleted
@@ -1219,12 +1218,12 @@ paths:
               $ref: '#/components/schemas/ConsensusMergeCreateRequest'
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '202':
           content:
@@ -1300,12 +1299,12 @@ paths:
       - consensus
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -1328,12 +1327,12 @@ paths:
       - consensus
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -1360,12 +1359,12 @@ paths:
               $ref: '#/components/schemas/PatchedConsensusSettingsRequest'
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -1439,12 +1438,12 @@ paths:
       - events
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       deprecated: true
       responses:
         '200':
@@ -1483,12 +1482,12 @@ paths:
         required: true
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '201':
           content:
@@ -1561,12 +1560,12 @@ paths:
       - events
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '202':
           content:
@@ -1589,12 +1588,12 @@ paths:
               $ref: '#/components/schemas/AnnotationGuideWriteRequest'
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '201':
           content:
@@ -1617,12 +1616,12 @@ paths:
       - guides
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -1649,12 +1648,12 @@ paths:
               $ref: '#/components/schemas/PatchedAnnotationGuideWriteRequest'
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -1677,12 +1676,12 @@ paths:
       - guides
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '204':
           description: The annotation guide has been deleted
@@ -1756,12 +1755,12 @@ paths:
       - invitations
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -1798,12 +1797,12 @@ paths:
         required: true
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '201':
           content:
@@ -1826,12 +1825,12 @@ paths:
       - invitations
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -1858,12 +1857,12 @@ paths:
               $ref: '#/components/schemas/PatchedInvitationWriteRequest'
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -1885,12 +1884,12 @@ paths:
       - invitations
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '204':
           description: The invitation has been deleted
@@ -1909,12 +1908,12 @@ paths:
       - invitations
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -1939,12 +1938,12 @@ paths:
       - invitations
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '204':
           description: The invitation has been declined
@@ -1963,12 +1962,12 @@ paths:
       - invitations
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '204':
           description: Invitation has been sent
@@ -2070,12 +2069,12 @@ paths:
       - issues
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -2112,12 +2111,12 @@ paths:
         required: true
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '201':
           content:
@@ -2140,12 +2139,12 @@ paths:
       - issues
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -2172,12 +2171,12 @@ paths:
               $ref: '#/components/schemas/PatchedIssueWriteRequest'
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -2199,12 +2198,12 @@ paths:
       - issues
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '204':
           description: The issue has been deleted
@@ -2342,12 +2341,12 @@ paths:
       - jobs
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -2412,12 +2411,12 @@ paths:
         required: true
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '201':
           content:
@@ -2440,12 +2439,12 @@ paths:
       - jobs
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -2472,12 +2471,12 @@ paths:
               $ref: '#/components/schemas/PatchedJobWriteRequest'
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -2504,12 +2503,12 @@ paths:
       - jobs
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '204':
           description: The job has been deleted
@@ -2573,12 +2572,12 @@ paths:
       - jobs
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -2648,12 +2647,12 @@ paths:
               $ref: '#/components/schemas/AnnotationFileRequest'
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '201':
           description: Uploading has finished
@@ -2687,12 +2686,12 @@ paths:
               $ref: '#/components/schemas/LabeledDataRequest'
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           description: Annotations have been replaced
@@ -2727,12 +2726,12 @@ paths:
               $ref: '#/components/schemas/PatchedLabeledDataRequest'
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           description: Annotations successfully uploaded
@@ -2750,12 +2749,12 @@ paths:
       - jobs
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '204':
           description: The annotation has been deleted
@@ -2803,12 +2802,12 @@ paths:
       - jobs
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -2832,12 +2831,12 @@ paths:
       - jobs
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -2864,12 +2863,12 @@ paths:
               $ref: '#/components/schemas/PatchedJobDataMetaWriteRequest'
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -2929,12 +2928,12 @@ paths:
       - jobs
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '202':
           content:
@@ -2965,12 +2964,12 @@ paths:
       - jobs
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           description: Job image preview
@@ -2989,12 +2988,12 @@ paths:
       - jobs
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -3039,12 +3038,12 @@ paths:
                 summary: set honeypots manually
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -3168,12 +3167,12 @@ paths:
       - labels
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -3196,12 +3195,12 @@ paths:
       - labels
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -3230,12 +3229,12 @@ paths:
               $ref: '#/components/schemas/PatchedLabelRequest'
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -3259,12 +3258,12 @@ paths:
       - labels
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '204':
           description: The label has been deleted
@@ -3276,12 +3275,12 @@ paths:
       - lambda
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           description: No response body
@@ -3300,12 +3299,12 @@ paths:
       - lambda
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -3339,12 +3338,12 @@ paths:
               $ref: '#/components/schemas/OnlineFunctionCallRequest'
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           description: Returns function invocation results
@@ -3356,12 +3355,12 @@ paths:
       - lambda
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -3400,12 +3399,12 @@ paths:
         required: true
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -3428,12 +3427,12 @@ paths:
       - lambda
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -3455,12 +3454,12 @@ paths:
       - lambda
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '204':
           description: No response body
@@ -3544,12 +3543,12 @@ paths:
       - memberships
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -3572,12 +3571,12 @@ paths:
       - memberships
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -3604,12 +3603,12 @@ paths:
               $ref: '#/components/schemas/PatchedMembershipWriteRequest'
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -3631,12 +3630,12 @@ paths:
       - memberships
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '204':
           description: The membership has been deleted
@@ -3706,12 +3705,12 @@ paths:
       - organizations
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -3732,12 +3731,12 @@ paths:
         required: true
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '201':
           content:
@@ -3760,12 +3759,12 @@ paths:
       - organizations
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -3792,12 +3791,12 @@ paths:
               $ref: '#/components/schemas/PatchedOrganizationWriteRequest'
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -3819,12 +3818,12 @@ paths:
       - organizations
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '204':
           description: The organization has been deleted
@@ -3918,12 +3917,12 @@ paths:
       - projects
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -3960,12 +3959,12 @@ paths:
         required: true
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '201':
           content:
@@ -3988,12 +3987,12 @@ paths:
       - projects
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -4020,12 +4019,12 @@ paths:
               $ref: '#/components/schemas/PatchedProjectWriteRequest'
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -4047,12 +4046,12 @@ paths:
       - projects
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '204':
           description: The project has been deleted
@@ -4093,12 +4092,12 @@ paths:
       - projects
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '202':
           content:
@@ -4169,12 +4168,12 @@ paths:
               $ref: '#/components/schemas/DatasetFileRequest'
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '202':
           content:
@@ -4238,12 +4237,12 @@ paths:
       - projects
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '202':
           content:
@@ -4274,12 +4273,12 @@ paths:
       - projects
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           description: Project image preview
@@ -4348,12 +4347,12 @@ paths:
               $ref: '#/components/schemas/ProjectFileRequest'
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '202':
           content:
@@ -4467,12 +4466,12 @@ paths:
       - quality
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -4583,12 +4582,12 @@ paths:
       - quality
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -4620,12 +4619,12 @@ paths:
               $ref: '#/components/schemas/QualityReportCreateRequest'
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '201':
           content:
@@ -4660,12 +4659,12 @@ paths:
       - quality
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -4688,12 +4687,12 @@ paths:
       - quality
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -4787,12 +4786,12 @@ paths:
       - quality
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -4815,12 +4814,12 @@ paths:
       - quality
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -4847,12 +4846,12 @@ paths:
               $ref: '#/components/schemas/PatchedQualitySettingsRequest'
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -4950,12 +4949,12 @@ paths:
       - requests
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -4977,12 +4976,12 @@ paths:
       - requests
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -5004,12 +5003,12 @@ paths:
       - requests
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           description: The request has been cancelled
@@ -5136,12 +5135,12 @@ paths:
       - schema
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -5166,12 +5165,12 @@ paths:
       - server
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -5187,12 +5186,12 @@ paths:
       - server
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -5208,12 +5207,12 @@ paths:
       - server
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -5240,12 +5239,12 @@ paths:
       - server
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -5396,12 +5395,12 @@ paths:
       - tasks
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -5441,12 +5440,12 @@ paths:
         required: true
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '201':
           content:
@@ -5469,12 +5468,12 @@ paths:
       - tasks
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -5501,12 +5500,12 @@ paths:
               $ref: '#/components/schemas/PatchedTaskWriteRequest'
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -5529,12 +5528,12 @@ paths:
       - tasks
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '204':
           description: The task has been deleted
@@ -5553,12 +5552,12 @@ paths:
       - tasks
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -5630,12 +5629,12 @@ paths:
               $ref: '#/components/schemas/AnnotationFileRequest'
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '201':
           description: Uploading has finished
@@ -5669,12 +5668,12 @@ paths:
               $ref: '#/components/schemas/LabeledDataRequest'
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           description: Annotations have been replaced
@@ -5709,12 +5708,12 @@ paths:
               $ref: '#/components/schemas/PatchedLabeledDataRequest'
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -5736,12 +5735,12 @@ paths:
       - tasks
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '204':
           description: The annotation has been deleted
@@ -5782,12 +5781,12 @@ paths:
       - tasks
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '202':
           content:
@@ -5841,12 +5840,12 @@ paths:
       - tasks
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           headers:
@@ -5952,12 +5951,12 @@ paths:
               $ref: '#/components/schemas/DataRequest'
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '202':
           content:
@@ -5980,12 +5979,12 @@ paths:
       - tasks
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -6012,12 +6011,12 @@ paths:
               $ref: '#/components/schemas/PatchedDataMetaWriteRequest'
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -6077,12 +6076,12 @@ paths:
       - tasks
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '202':
           content:
@@ -6113,12 +6112,12 @@ paths:
       - tasks
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           description: Task image preview
@@ -6142,12 +6141,12 @@ paths:
       - tasks
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       deprecated: true
       responses:
         '200':
@@ -6171,12 +6170,12 @@ paths:
       - tasks
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -6232,12 +6231,12 @@ paths:
                 summary: restore all validation frames
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -6308,12 +6307,12 @@ paths:
               $ref: '#/components/schemas/TaskFileRequest'
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '202':
           content:
@@ -6407,12 +6406,12 @@ paths:
       - users
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -6435,12 +6434,12 @@ paths:
       - users
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -6467,12 +6466,12 @@ paths:
               $ref: '#/components/schemas/PatchedUserRequest'
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -6494,12 +6493,12 @@ paths:
       - users
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '204':
           description: The user has been deleted
@@ -6512,12 +6511,12 @@ paths:
       - users
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -6615,12 +6614,12 @@ paths:
       - webhooks
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -6657,12 +6656,12 @@ paths:
         required: true
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '201':
           content:
@@ -6685,12 +6684,12 @@ paths:
       - webhooks
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -6718,12 +6717,12 @@ paths:
         required: true
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -6750,12 +6749,12 @@ paths:
               $ref: '#/components/schemas/PatchedWebhookWriteRequest'
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -6777,12 +6776,12 @@ paths:
       - webhooks
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '204':
           description: The webhook has been deleted
@@ -6813,12 +6812,12 @@ paths:
       - webhooks
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -6847,12 +6846,12 @@ paths:
       - webhooks
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -6881,12 +6880,12 @@ paths:
       - webhooks
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           description: No response body
@@ -6905,12 +6904,12 @@ paths:
       - webhooks
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
@@ -6932,12 +6931,12 @@ paths:
       - webhooks
       security:
       - tokenAuth: []
+      - accessTokenAuth: []
       - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
       - basicAuth: []
-      - accessTokenAuth: []
       responses:
         '200':
           content:
