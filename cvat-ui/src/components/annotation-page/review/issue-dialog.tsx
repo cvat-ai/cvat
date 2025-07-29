@@ -19,6 +19,7 @@ import moment from 'moment';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { Issue, Comment as CommentModel } from 'cvat-core-wrapper';
 import { deleteIssueAsync } from 'actions/review-actions';
+import { useDialogPositioning } from './use-dialog-positioning';
 
 interface Props {
     issue: Issue;
@@ -28,7 +29,7 @@ interface Props {
     isFetching: boolean;
     angle: number;
     scale: number;
-    clickCoordinates: { x: number; y: number } | null;
+    clientCoordinates: [number, number];
     canvasRect: DOMRect | null;
     collapse: () => void;
     resolve: () => void;
@@ -56,14 +57,21 @@ export default function IssueDialog(props: Props): JSX.Element {
         comment,
         highlight,
         blur,
-        clickCoordinates,
+        clientCoordinates,
         canvasRect,
     } = props;
 
     const { id, comments } = issue;
 
-    const [adjustedTop, setAdjustedTop] = useState(top);
-    const [adjustedLeft, setAdjustedLeft] = useState(left);
+    const { adjustedTop, adjustedLeft } = useDialogPositioning({
+        ref,
+        top,
+        left,
+        scale,
+        angle,
+        clientCoordinates,
+        canvasRect,
+    });
 
     useEffect(() => {
         if (!resolved) {
@@ -72,53 +80,6 @@ export default function IssueDialog(props: Props): JSX.Element {
             setTimeout(blur);
         }
     }, [resolved]);
-
-    useEffect(() => {
-        if (ref.current && clickCoordinates && canvasRect) {
-            const dialogRect = ref.current.getBoundingClientRect();
-            const margin = 5;
-            const dialogWidth = dialogRect.width;
-            const dialogHeight = dialogRect.height;
-
-            let newTop = top;
-            let newLeft = left;
-            const clickRelativeX = clickCoordinates.x - canvasRect.left;
-            const clickRelativeY = clickCoordinates.y - canvasRect.top;
-
-            // For rotation, we need to transform the overflow adjustments
-            const angleRad = (-angle * Math.PI) / 180;
-
-            let totalDeltaX = 0;
-            let totalDeltaY = 0;
-
-            // Check if dialog extends beyond bottom edge
-            if (clickRelativeY + dialogHeight > canvasRect.height) {
-                const overflow = (clickRelativeY + dialogHeight) - canvasRect.height + margin;
-                const deltaX = overflow * Math.sin(angleRad);
-                const deltaY = overflow * Math.cos(angleRad);
-                totalDeltaX -= deltaX;
-                totalDeltaY -= deltaY;
-            }
-
-            // Check if dialog extends beyond right edge
-            if (clickRelativeX + dialogWidth > canvasRect.width) {
-                const overflow = (clickRelativeX + dialogWidth) - canvasRect.width + margin;
-                const deltaX = overflow * Math.cos(angleRad);
-                const deltaY = -overflow * Math.sin(angleRad);
-                totalDeltaX -= deltaX;
-                totalDeltaY -= deltaY;
-            }
-
-            newLeft = left + (totalDeltaX * scale);
-            newTop = top + (totalDeltaY * scale);
-
-            setAdjustedTop(newTop);
-            setAdjustedLeft(newLeft);
-        } else {
-            setAdjustedTop(top);
-            setAdjustedLeft(left);
-        }
-    }, [top, left, scale, angle, clickCoordinates, canvasRect]);
 
     useEffect(() => {
         const listener = (event: WheelEvent): void => {

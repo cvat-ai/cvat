@@ -14,7 +14,6 @@ import {
     AnnotationConflict, ConflictSeverity, ObjectState, QualityConflict,
 } from 'cvat-core-wrapper';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
-
 import { highlightConflict, updateActiveControl } from 'actions/annotation-actions';
 import CreateIssueDialog from './create-issue-dialog';
 import HiddenIssueLabel from './hidden-issue-label';
@@ -67,7 +66,6 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
 
     const [expandedIssue, setExpandedIssue] = useState<number | null>(null);
     const [geometry, setGeometry] = useState<Canvas['geometry'] | null>(null);
-    const [clickCoordinates, setClickCoordinates] = useState<{ x: number; y: number } | null>(null);
     const [canvasRect, setCanvasRect] = useState<DOMRect | null>(null);
     const highlightedObjectsIDs = highlightedConflict?.annotationConflicts
         ?.map((annotationConflict: AnnotationConflict) => annotationConflict.serverID);
@@ -234,16 +232,14 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
                     resolved={issueResolved}
                     highlight={highlight}
                     blur={blur}
-                    clickCoordinates={clickCoordinates}
+                    clientCoordinates={canvasInstance.translateFromSVG([minX, minY]) as [number, number]}
                     canvasRect={canvasRect}
                     collapse={() => {
                         setExpandedIssue(null);
-                        setClickCoordinates(null);
                     }}
                     resolve={() => {
                         dispatch(resolveIssueAsync(issue.id));
                         setExpandedIssue(null);
-                        setClickCoordinates(null);
                     }}
                     reopen={() => {
                         dispatch(reopenIssueAsync(issue.id));
@@ -265,12 +261,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
                     resolved={issueResolved}
                     highlight={highlight}
                     blur={blur}
-                    onClick={(event) => {
-                        const clickCoords = {
-                            x: event.clientX,
-                            y: event.clientY,
-                        };
-                        setClickCoordinates(clickCoords);
+                    onClick={() => {
                         setExpandedIssue(id);
                     }}
                 />,
@@ -315,6 +306,8 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
                     angle={-geometry.angle}
                     scale={1 / geometry.scale}
                     onCreateIssue={onCreateIssue}
+                    canvasRect={canvasRect}
+                    clientCoordinates={canvasInstance.translateFromSVG([createLeft, createTop]) as [number, number]}
                 />
             ) : null}
             {issueDialogs}
