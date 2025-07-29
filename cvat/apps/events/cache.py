@@ -2,12 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-from functools import cache
-
 _caches = {}
 
 
-@cache
 def _default_cache_value():
     from cvat.apps.engine.models import Comment, Issue, Job, Task
 
