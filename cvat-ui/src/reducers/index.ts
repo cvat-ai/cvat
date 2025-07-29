@@ -257,7 +257,6 @@ export interface CloudStoragesState {
     };
     updateWorkspace: {
         instance: Task | Project | null,
-        visibleLinkedCloudStorageUpdatingModal: boolean,
     }
 }
 
@@ -995,7 +994,7 @@ export interface OrganizationMembersQuery {
 
 export interface OrganizationsQuery {
     page: number;
-    search: string | null;
+    search: string;
 }
 
 export interface OrganizationState {

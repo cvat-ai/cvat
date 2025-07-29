@@ -19,7 +19,7 @@ const defaultState: OrganizationState = {
     currentArrayFetching: false,
     gettingQuery: {
         page: 1,
-        search: null,
+        search: '',
     },
     count: 0,
     nextPageUrl: null,

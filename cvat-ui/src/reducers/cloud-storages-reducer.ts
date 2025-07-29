@@ -43,7 +43,6 @@ const defaultState: CloudStoragesState = {
     },
     updateWorkspace: {
         instance: null,
-        visibleLinkedCloudStorageUpdatingModal: false,
     },
 };
 
@@ -360,7 +359,6 @@ export default (
                 ...state,
                 updateWorkspace: {
                     instance,
-                    visibleLinkedCloudStorageUpdatingModal: true,
                 },
             };
         }
@@ -369,7 +367,6 @@ export default (
                 ...state,
                 updateWorkspace: {
                     instance: null,
-                    visibleLinkedCloudStorageUpdatingModal: false,
                 },
             };
         }

@@ -109,6 +109,7 @@ function ProjectActionsComponent(props: Props): JSX.Element {
             ),
             organization: (
                 <OrganizationSelector
+                    defaultValue={currentOrganization?.slug}
                     setNewOrganization={onUpdateProjectOrganization}
                 />
             ),

@@ -23,9 +23,6 @@ const core = getCore();
 
 function SelectCSUpdatingSchemeModal(): JSX.Element {
     const instance = useSelector((state: CombinedState) => state.cloudStorages.updateWorkspace.instance);
-    const visible = useSelector((state: CombinedState) => (
-        state.cloudStorages.updateWorkspace.visibleLinkedCloudStorageUpdatingModal
-    ));
     const [instanceType, setInstanceType] = useState('');
     const dispatch = useDispatch();
 
@@ -77,7 +74,7 @@ function SelectCSUpdatingSchemeModal(): JSX.Element {
                 </Space>
             )}
             className='cvat-modal-choose-cloud-storage-change-scheme'
-            open={visible}
+            open={!!instance}
             closable={false}
             footer={[
                 <Button key='cancel' onClick={() => closeModal()}>
@@ -112,11 +109,7 @@ function SelectCSUpdatingSchemeModal(): JSX.Element {
             ]}
         >
             <p>
-                This
-                {' '}
-                {instanceType}
-                {' '}
-                is linked to cloud storage.
+                {`This ${instanceType} is linked to cloud storage. `}
                 Please choose how you would like the transfer to be done.
             </p>
         </Modal>

@@ -276,7 +276,6 @@ export function getOrganizationsAsync(query: Partial<OrganizationsQuery> = {}): 
         dispatch(organizationActions.getOrganizations());
         dispatch(organizationActions.updateOrganizationsGettingQuery(query));
 
-        // Clear query object from null fields
         const filteredQuery: Partial<OrganizationsQuery> = filterNull(query);
 
         try {

@@ -114,6 +114,8 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
         }, 80]);
     }
 
+    menuItems.push([{ type: 'divider' }, 89]);
+
     if (!projectId) {
         menuItems.push([{
             key: 'move_task_to_project',
@@ -128,7 +130,6 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
         }, 100]);
     }
 
-    menuItems.push([{ type: 'divider' }, 89]);
     menuItems.push([{
         key: 'delete_task',
         onClick: onDeleteTask,

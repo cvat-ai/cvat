@@ -57,6 +57,7 @@ from cvat.apps.engine.utils import (
     take_by,
 )
 from cvat.apps.organizations.models import Organization
+from cvat.apps.webhooks.models import Webhook
 from utils.dataset_manifest import ImageManifestManager
 
 slogger = ServerLogManager(__name__)
@@ -2921,9 +2922,11 @@ class ProjectWriteSerializer(serializers.ModelSerializer, OrgTransferableMixin):
         )
 
         models.Job.objects.filter(
-            segment__task__project__id=instance.pk,
+            segment__task__project_id=instance.pk,
             assignee__isnull=False
         ).update(assignee=None, assignee_updated_date=updated_date)
+
+        Webhook.objects.filter(project_id=instance.pk).update(organization_id=organization_id)
 
 
 class AboutSerializer(serializers.Serializer):

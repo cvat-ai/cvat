@@ -1,3 +1,7 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import Modal from 'antd/lib/modal';
 
 import { Organization, Project, Task } from 'cvat-core-wrapper';

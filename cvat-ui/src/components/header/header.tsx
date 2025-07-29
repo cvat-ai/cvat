@@ -64,6 +64,8 @@ interface StateToProps {
     currentOrganization: any | null;
     organizationsList: Organization[];
     organizationsListFetching: boolean;
+    organizationsListSearch: string;
+    organizationsListPage: number;
 }
 
 interface DispatchToProps {
@@ -109,6 +111,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
             current: currentOrganization,
             currentArray: organizationsList,
             currentArrayFetching: organizationsListFetching,
+            gettingQuery: {
+                search: organizationsListSearch,
+                page: organizationsListPage,
+            },
         },
         serverAPI: {
             configuration: {
@@ -134,6 +140,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         currentOrganization,
         organizationsList,
         organizationsListFetching,
+        organizationsListSearch,
+        organizationsListPage,
     };
 }
 
@@ -179,6 +187,8 @@ function HeaderComponent(props: Props): JSX.Element {
         currentOrganization,
         organizationsList,
         organizationsListFetching,
+        organizationsListSearch,
+        organizationsListPage,
         switchSettingsModalVisible,
         switchShortcutsModalVisible,
         switchChangePasswordModalVisible,
@@ -541,6 +551,11 @@ function HeaderComponent(props: Props): JSX.Element {
                         className: 'cvat-header-menu',
                     }}
                     className='cvat-header-menu-user-dropdown'
+                    onOpenChange={(open: boolean) => {
+                        if (open && (organizationsListSearch || organizationsListPage !== 1)) {
+                            fetchOrganizations();
+                        }
+                    }}
                 >
                     <span>
                         <UserOutlined className='cvat-header-dropdown-icon' />

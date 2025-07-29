@@ -5,13 +5,13 @@
 import './styles.scss';
 import _ from 'lodash';
 import React, { useEffect, useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { CombinedState } from 'reducers';
 import AutoComplete from 'antd/lib/auto-complete';
 import { useInView } from 'react-intersection-observer';
 
 import { Organization } from 'cvat-core-wrapper';
 import { getOrganizationsAsync } from 'actions/organization-actions';
-import { useSelector, useDispatch } from 'react-redux';
-import { CombinedState } from 'reducers';
 
 function OrganizationSelector(props: {
     setNewOrganization: (org: Organization | null) => void;
@@ -74,7 +74,7 @@ function OrganizationSelector(props: {
     return (
         <AutoComplete
             defaultValue={searchPhrase}
-            placeholder='Type to search'
+            placeholder='Select an organization'
             showSearch
             onSearch={_.debounce(setSearchPhrase, 500)}
             options={[
