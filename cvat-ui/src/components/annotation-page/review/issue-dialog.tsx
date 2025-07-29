@@ -85,17 +85,32 @@ export default function IssueDialog(props: Props): JSX.Element {
             const clickRelativeX = clickCoordinates.x - canvasRect.left;
             const clickRelativeY = clickCoordinates.y - canvasRect.top;
 
+            // For rotation, we need to transform the overflow adjustments
+            const angleRad = (-angle * Math.PI) / 180;
+
+            let totalDeltaX = 0;
+            let totalDeltaY = 0;
+
             // Check if dialog extends beyond bottom edge
             if (clickRelativeY + dialogHeight > canvasRect.height) {
                 const overflow = (clickRelativeY + dialogHeight) - canvasRect.height + margin;
-                newTop = top - (overflow * scale);
+                const deltaX = overflow * Math.sin(angleRad);
+                const deltaY = overflow * Math.cos(angleRad);
+                totalDeltaX -= deltaX;
+                totalDeltaY -= deltaY;
             }
 
             // Check if dialog extends beyond right edge
             if (clickRelativeX + dialogWidth > canvasRect.width) {
                 const overflow = (clickRelativeX + dialogWidth) - canvasRect.width + margin;
-                newLeft = left - (overflow * scale);
+                const deltaX = overflow * Math.cos(angleRad);
+                const deltaY = -overflow * Math.sin(angleRad);
+                totalDeltaX -= deltaX;
+                totalDeltaY -= deltaY;
             }
+
+            newLeft = left + (totalDeltaX * scale);
+            newTop = top + (totalDeltaY * scale);
 
             setAdjustedTop(newTop);
             setAdjustedLeft(newLeft);
@@ -103,7 +118,7 @@ export default function IssueDialog(props: Props): JSX.Element {
             setAdjustedTop(top);
             setAdjustedLeft(left);
         }
-    }, [top, left, scale, clickCoordinates, canvasRect]);
+    }, [top, left, scale, angle, clickCoordinates, canvasRect]);
 
     useEffect(() => {
         const listener = (event: WheelEvent): void => {
