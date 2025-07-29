@@ -45,11 +45,6 @@ which are used by containers for the testing system.
   See the [contributing guide](../../site/content/en/docs/contributing/running-tests.md)
   to get more information about tests running.
 
-- Run tests to check the functionality of limiting active jobs in a queue per user:
-
-  ```shell
-  ONE_RUNNING_JOB_IN_QUEUE_PER_USER="true" pytest tests/python/rest_api/test_queues.py
-  ```
 ## How to upgrade testing assets?
 
 When you have a new use case which cannot be expressed using objects already
@@ -123,12 +118,12 @@ Assets directory has two parts:
 
 - `cvat_db` directory --- this directory contains all necessary files for
   successful restoring of test db
-  - `cvat_data.tar.bz2` --- archieve with data volumes;
+  - `cvat_data.tar.bz2` --- archive with data volumes;
   - `data.json` --- file required for DB restoring.
     Contains all information about test db;
   - `restore.sql` --- SQL script for creating copy of database and
   killing connection for `cvat` database.
-  Script should be run with varialbe declaration:
+  Script should be run with variable declaration:
   ```
   # create database <new> with template <existing>
   psql -U root -d postgres -v from=<existing> -v to=<new> restore.sql

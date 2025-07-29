@@ -13,16 +13,22 @@ Thus, it is possible to mark corrupted frames that are not subject to annotation
 
 1. Go to the Job annotation view and click on the **Delete frame** button (**Alt**+**Del**).
 
-   > **Note:** When you delete with the shortcut,
-   > the frame will be deleted immediately without additional confirmation.
+   {{% alert title="Note" color="primary" %}}
+   When you delete with the shortcut,
+   the frame will be deleted immediately without additional confirmation.
+   {{% /alert %}}
 
    ![Part of annotation interface with highlighted "Delete frame" button](/images/image245.jpg)
 
 1. After that you will be asked to confirm frame deleting.
-   > **Note:** all annotations from that frame will be deleted, unsaved annotations
-   > will be saved and the frame will be invisible in the annotation view (Until you make it visible in the settings).
-   > If there is some overlap in the task and the deleted frame falls within this interval,
-   > then this will cause this frame to become unavailable in another job as well.
+
+   {{% alert title="Note" color="primary" %}}
+   all annotations from that frame will be deleted, unsaved annotations
+   will be saved and the frame will be invisible in the annotation view (Until you make it visible in the settings).
+   If there is some overlap in the task and the deleted frame falls within this interval,
+   then this will cause this frame to become unavailable in another job as well.
+   {{% /alert %}}
+
 1. When you delete a frame in a job with tracks, you may need to adjust some tracks manually. Common adjustments are:
    - Add keyframes at the edges of the deleted interval for the interpolation to look correct;
    - Move the keyframe start or end keyframe to the correct side of the deleted interval.

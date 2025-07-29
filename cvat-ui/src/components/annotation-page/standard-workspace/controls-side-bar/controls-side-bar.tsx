@@ -295,7 +295,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             }
 
             canvasInstance.cancel();
-            // repeateDrawShapes gets all the latest parameters
+            // repeatDrawShape gets all the latest parameters
             // and calls canvasInstance.draw() with them
 
             if (action === 'draw') {
