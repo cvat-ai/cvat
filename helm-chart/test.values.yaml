@@ -30,7 +30,7 @@ cvat:
       webhooks:
         replicas: 0
       utils:
-        replicas: 1
+        replicas: 2
         additionalVolumeMounts:
         - mountPath: /home/django/share
           name: cvat-backend-data
