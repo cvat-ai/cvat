@@ -35,7 +35,6 @@ class UserDeletionValidator(ABC, metaclass=AutoRegisterValidatorMeta):
         If the user cannot be deleted, this method must raise
         rest_framework.exceptions.ValidationError with a description of the reason.
         """
-        pass
 
 
 class NonEmptyOrgsValidator(UserDeletionValidator):
@@ -95,10 +94,10 @@ class UserDeletionManager:
         if not dry_run:
             db_orgs.delete()
             for db_project in db_projects:
-                # call delete on each instance insead of qs.delete() to perform custom .delete() method
+                # call delete on each instance instead of qs.delete() to perform custom .delete() method
                 db_project.delete()
             for db_task in db_tasks:
-                # call delete on each instance insead of qs.delete() to perform custom .delete() method
+                # call delete on each instance instead of qs.delete() to perform custom .delete() method
                 db_task.delete()
             db_cloud_storages.delete()
 
