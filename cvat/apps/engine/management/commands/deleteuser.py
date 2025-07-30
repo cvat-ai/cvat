@@ -29,8 +29,7 @@ class Command(BaseCommand):
         try:
             deleted_resources = manager.delete_user_with_cleanup(dry_run=dry_run)
             for resource_type in deleted_resources:
-                if deleted_resources[resource_type]:
-                    for resource_id in deleted_resources[resource_type]:
-                        self.stdout.write(f"Deleted {resource_type}: #{resource_id}")
+                for resource_id in deleted_resources[resource_type]:
+                    self.stdout.write(f"Deleted {resource_type}: #{resource_id}")
         except ValidationError as e:
             raise CommandError(e.detail)
