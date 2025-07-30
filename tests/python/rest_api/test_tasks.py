@@ -1427,6 +1427,7 @@ class TestTaskBackups:
                     r"root\['organization'\]",  # depends on the task setup, deprecated field
                     r"root\['organization_id'\]",  # depends on the task setup
                     r"root\['project_id'\]",  # should be dropped
+                    r"root\['data_cloud_storage_id'\]",  # should be dropped
                     r"root(\['.*'\])*\['url'\]",  # depends on the task id
                     r"root\['data_compressed_chunk_type'\]",  # depends on the server configuration
                     r"root\['source_storage'\]",  # should be dropped
