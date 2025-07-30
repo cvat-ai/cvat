@@ -72,6 +72,7 @@ export function makeBulkOperationAsync<T>(
                 processedCount = i + 1;
             }
             onSuccess?.();
+            dispatch(selectionActions.clearSelectedResources());
         } catch (error) {
             const remainingItems = items.slice(processedCount);
             dispatch(selectionActions.bulkOperationFailed({
