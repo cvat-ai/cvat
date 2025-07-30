@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 from django.core.management.base import BaseCommand, CommandError
-from django.utils.encoding import force_str
 from rest_framework.exceptions import ValidationError
 
 from cvat.apps.engine.models import User
