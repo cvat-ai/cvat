@@ -104,5 +104,6 @@ class UserDeletionManager:
                 # call delete on each instance instead of qs.delete() to perform custom .delete() method
                 db_task.delete()
             db_cloud_storages.delete()
+            self.user.delete()
 
         _slogger.glob.warning(f"User #{self.user.id} has been deleted.")
