@@ -163,7 +163,6 @@ function JobActionsComponent(
                     onSelect={(value: User | null): void => {
                         onUpdateJobField({ assignee: value });
                     }}
-                    showClearOption={isBulkMode}
                 />
             ),
             state: (

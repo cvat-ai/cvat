@@ -20,7 +20,6 @@ interface Props {
     username?: string;
     className?: string;
     onSelect: (user: User | null) => void;
-    showClearOption?: boolean;
 }
 
 const searchUsers = debounce(
@@ -78,7 +77,7 @@ const initialUsersStorage: {
 
 export default function UserSelector(props: Readonly<Props>): JSX.Element {
     const {
-        value, className, username, onSelect, showClearOption = false,
+        value, className, username, onSelect,
     } = props;
     const [searchPhrase, setSearchPhrase] = useState(username || '');
     const [initialUsers, setInitialUsers] = useState<User[]>([]);
@@ -166,7 +165,7 @@ export default function UserSelector(props: Readonly<Props>): JSX.Element {
             className={combinedClassName}
             popupClassName='cvat-user-search-dropdown'
             options={[
-                ...(showClearOption && (!searchPhrase || 'reset assignee'.includes(searchPhrase.toLowerCase())) ? [{
+                ...(!searchPhrase || 'reset assignee'.includes(searchPhrase.toLowerCase()) ? [{
                     value: 'RESET_ASSIGNEE',
                     label: 'Reset assignee',
                 }] : []),

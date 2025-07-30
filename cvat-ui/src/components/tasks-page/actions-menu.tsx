@@ -155,7 +155,6 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
                     onSelect={(value: User | null): void => {
                         onUpdateTaskAssignee(value);
                     }}
-                    showClearOption={isBulkMode}
                 />
             ),
         };

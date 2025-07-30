@@ -114,7 +114,6 @@ function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
                     onSelect={(value: User | null): void => {
                         onUpdateProjectAssignee(value);
                     }}
-                    showClearOption={isBulkMode}
                 />
             ),
         };
