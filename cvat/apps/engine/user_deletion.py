@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import TypedDict
 
 from django.db import transaction
-from django.db.models import Count, Max, Q
+from django.db.models import Count, Max, Q, QuerySet
 from django.db.models.functions import Coalesce
 from rest_framework.exceptions import ValidationError
 
@@ -88,19 +88,17 @@ class UserDeletionManager:
             ValidatorClass().validate(self.user)
 
         db_orgs = Organization.objects.select_for_update().filter(owner=self.user)
-        db_projects = list(
-            Project.objects.select_for_update()
-            .filter(owner=self.user)
-            .filter(Q(organization=None) | Q(organization__in=db_orgs))
-        )
+
+        def filter_by_owner_and_org(queryset: QuerySet) -> QuerySet:
+            return queryset.filter(owner=self.user).filter(
+                Q(organization=None) | Q(organization__in=db_orgs)
+            )
+
+        db_projects = list(filter_by_owner_and_org(Project.objects).select_for_update())
         db_tasks = list(
-            Task.objects.select_for_update()
-            .filter(owner=self.user, project=None)
-            .filter(Q(organization=None) | Q(organization__in=db_orgs))
+            filter_by_owner_and_org(Task.objects.filter(project=None)).select_for_update()
         )
-        db_cloud_storages = CloudStorage.objects.select_for_update() \
-            .filter(owner=self.user) \
-            .filter(Q(organization=None) | Q(organization__in=db_orgs))
+        db_cloud_storages = filter_by_owner_and_org(CloudStorage.objects).select_for_update()
 
         for resource_type, db_resources in (
             ("organization", db_orgs),
