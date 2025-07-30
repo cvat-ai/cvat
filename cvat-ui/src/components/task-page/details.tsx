@@ -143,31 +143,34 @@ class DetailsComponent extends React.PureComponent<Props, State> {
         );
 
         return (
-            <Row className='cvat-task-details-user-block' justify='space-between' align='middle'>
-                <Col span={12}>
-                    {owner && (
-                        <div>
-                            <Text type='secondary'>
-                                {`Task #${taskInstance.id} Created by ${owner} on ${created}`}
-                            </Text>
-                        </div>
-                    )}
-                    {consensusEnabled && <CVATTag type={TagType.CONSENSUS} />}
-                </Col>
-                <Col>
-                    <Row>
+            <>
+                <Row className='cvat-task-details-user-block' justify='space-between' align='middle'>
+                    <Col span={12}>
+                        {owner && (
+                            <div>
+                                <Text type='secondary'>
+                                    {`Task #${taskInstance.id} Created by ${owner} on ${created}`}
+                                </Text>
+                            </div>
+                        )}
+                        {consensusEnabled && <CVATTag type={TagType.CONSENSUS} />}
+                    </Col>
+                    <Col>
                         <Text type='secondary'>Assigned to</Text>
                         {assigneeSelect}
-                    </Row>
-                    <Row>
+                    </Col>
+                </Row>
+                <Row>
+                    <Col span={12} />
+                    <Col>
                         <CloudStorageEditor
                             taskMeta={taskMeta}
                             cloudStorageInstance={cloudStorageInstance}
                             onUpdateTaskMeta={onUpdateTaskMeta}
                         />
-                    </Row>
-                </Col>
-            </Row>
+                    </Col>
+                </Row>
+            </>
         );
     }
 
