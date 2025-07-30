@@ -40,7 +40,7 @@ function RequestsList(props: Readonly<Props>): JSX.Element {
 
     const requestList = Object.values(requests);
     const requestViews = setUpRequestsList(requestList, page, pageSize);
-    const requestIds = requestViews.map((request) => request.id);
+    const requestIds = requestViews.map((request) => request.id).filter((id) => !cancelled[id]);
     const selectedCount = useSelector((state: CombinedState) => state.selection.selected.length);
     const onSelectAll = useCallback(() => {
         dispatch(selectionActions.selectResources(requestIds));
@@ -57,13 +57,20 @@ function RequestsList(props: Readonly<Props>): JSX.Element {
                 <Col className='cvat-requests-list' {...dimensions}>
                     <BulkWrapper currentResourceIDs={requestIds}>
                         {(selectProps) => (
-                            requestViews.map((request: Request, idx: number) => {
-                                const { selected, onClick } = selectProps(request.id, idx);
+                            requestViews.map((request: Request) => {
+                                const isCancelled = request.id in cancelled;
+                                const selectableIndex = isCancelled ? -1 : requestIds.indexOf(request.id);
+                                const canSelect = !isCancelled && selectableIndex !== -1;
+
+                                const { selected, onClick } = canSelect ?
+                                    selectProps(request.id, selectableIndex) :
+                                    { selected: false, onClick: () => false };
+
                                 return (
                                     <RequestCard
                                         request={request}
                                         key={request.id}
-                                        cancelled={request.id in cancelled}
+                                        cancelled={isCancelled}
                                         selected={selected}
                                         onClick={onClick}
                                     />
