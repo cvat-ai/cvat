@@ -8,7 +8,6 @@ import Dropdown from 'antd/lib/dropdown';
 import { MenuProps } from 'antd/lib/menu';
 import { Request, RQStatus } from 'cvat-core-wrapper';
 import { cancelRequestAsync } from 'actions/requests-async-actions';
-import { requestsActions } from 'actions/requests-actions';
 import { makeBulkOperationAsync } from 'actions/selection-actions';
 import { CombinedState } from 'reducers';
 
@@ -29,11 +28,12 @@ function RequestActionsComponent(props: Readonly<Props>): JSX.Element | null {
     const dispatch = useDispatch();
     const selectedIds = useSelector((state: CombinedState) => state.selection.selected);
     const requestsMap = useSelector((state: CombinedState) => state.requests.requests);
+    const cancelled = useSelector((state: CombinedState) => state.requests.cancelled);
     const allRequests = Object.values(requestsMap);
     const isCardMenu = !dropdownTrigger;
 
-    const downloadable = (_request: Request): boolean => !!_request.url;
-    const cancelable = (_request: Request): boolean => _request.status === RQStatus.QUEUED;
+    const downloadable = (_request: Request): boolean => !!_request.url && !cancelled[_request.id];
+    const cancelable = (_request: Request): boolean => _request.status === RQStatus.QUEUED && !cancelled[_request.id];
 
     let requestsToAct: Request[];
     if (isCardMenu && !downloadable(requestInstance) && !cancelable(requestInstance)) {
@@ -45,22 +45,30 @@ function RequestActionsComponent(props: Readonly<Props>): JSX.Element | null {
     }
 
     const onDownload = useCallback(() => {
-        requestsToAct.forEach((request) => {
-            if (request.url) {
-                const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
-                downloadAnchor.href = request.url;
-                downloadAnchor.click();
-            }
+        const requestsToDownload = requestsToAct.filter(downloadable);
+
+        if (requestsToDownload.length === 0) {
+            return;
+        }
+
+        requestsToDownload.forEach((request) => {
+            const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
+            downloadAnchor.href = request.url!;
+            downloadAnchor.click();
         });
     }, [requestsToAct]);
 
     const onCancel = useCallback(() => {
+        const requestsToCancel = requestsToAct.filter(cancelable);
+
+        if (requestsToCancel.length === 0) {
+            return;
+        }
+
         dispatch(makeBulkOperationAsync(
-            requestsToAct,
+            requestsToCancel,
             async (request) => {
-                await dispatch(cancelRequestAsync(request, () => {
-                    dispatch(requestsActions.disableRequest(request));
-                }));
+                await dispatch(cancelRequestAsync(request));
             },
             (request, idx, total) => `Canceling request #${request.id} (${idx + 1}/${total})`,
         ));

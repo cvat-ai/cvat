@@ -1073,7 +1073,7 @@ export interface RequestsState {
     fetching: boolean;
     initialized: boolean;
     requests: Record<string, Request>;
-    disabled: Record<string, boolean>;
+    cancelled: Record<string, boolean>;
     query: RequestsQuery;
 }
 

@@ -12,7 +12,7 @@ const defaultState: RequestsState = {
     initialized: false,
     fetching: false,
     requests: {},
-    disabled: {},
+    cancelled: {},
     query: {
         page: 1,
         pageSize: 10,
@@ -35,12 +35,12 @@ export default function (
                 },
             };
         }
-        case RequestsActionsTypes.DISABLE_REQUEST: {
+        case RequestsActionsTypes.CANCEL_REQUEST_SUCCESS: {
             const { request } = action.payload;
             return {
                 ...state,
-                disabled: {
-                    ...state.disabled,
+                cancelled: {
+                    ...state.cancelled,
                     [request.id]: true,
                 },
             };
@@ -61,7 +61,7 @@ export default function (
             };
         }
         case RequestsActionsTypes.GET_REQUEST_STATUS_SUCCESS: {
-            const { requests, disabled } = state;
+            const { requests, cancelled } = state;
 
             return {
                 ...state,
@@ -69,7 +69,7 @@ export default function (
                     ...requests,
                     [action.payload.request.id]: action.payload.request,
                 },
-                disabled: _.omit(disabled, action.payload.request.id),
+                cancelled: _.omit(cancelled, action.payload.request.id),
             };
         }
         case BoundariesActionTypes.RESET_AFTER_ERROR:

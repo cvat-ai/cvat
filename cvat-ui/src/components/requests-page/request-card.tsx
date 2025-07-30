@@ -21,7 +21,7 @@ import RequestActionsComponent from './actions-menu';
 
 export interface Props {
     request: Request;
-    disabled: boolean;
+    cancelled: boolean;
     selected?: boolean;
     onClick?: (event?: React.MouseEvent) => void;
 }
@@ -141,7 +141,7 @@ const dimensions = {
 
 function RequestCard(props: Readonly<Props>): JSX.Element {
     const {
-        request, disabled, selected, onClick,
+        request, cancelled, selected, onClick,
     } = props;
     const { operation } = request;
     const { type } = operation;
@@ -155,7 +155,7 @@ function RequestCard(props: Readonly<Props>): JSX.Element {
     const percentProgress = (request.status === RQStatus.FAILED || !percent) ? '' : `${percent.toFixed(2)}%`;
 
     const style: React.CSSProperties = {};
-    if (disabled) {
+    if (cancelled) {
         style.pointerEvents = 'none';
         style.opacity = 0.5;
     }
@@ -195,7 +195,11 @@ function RequestCard(props: Readonly<Props>): JSX.Element {
                             <Row>
                                 <Col span={21}>
                                     <Row />
-                                    <StatusMessage message={request.message} status={request.status} />
+                                    <StatusMessage
+                                        message={request.message}
+                                        status={request.status}
+                                        cancelled={cancelled}
+                                    />
                                     <Row>
                                         <Col span={18} className='cvat-requests-progress'>
                                             {

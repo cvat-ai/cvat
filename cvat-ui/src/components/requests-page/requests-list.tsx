@@ -34,8 +34,8 @@ function RequestsList(props: Readonly<Props>): JSX.Element {
     const dispatch = useDispatch();
     const { query, count } = props;
     const { page, pageSize } = query;
-    const { requests, disabled } = useSelector((state: CombinedState) => ({
-        requests: state.requests.requests, disabled: state.requests.disabled,
+    const { requests, cancelled } = useSelector((state: CombinedState) => ({
+        requests: state.requests.requests, cancelled: state.requests.cancelled,
     }), shallowEqual);
 
     const requestList = Object.values(requests);
@@ -63,7 +63,7 @@ function RequestsList(props: Readonly<Props>): JSX.Element {
                                     <RequestCard
                                         request={request}
                                         key={request.id}
-                                        disabled={request.id in disabled}
+                                        cancelled={request.id in cancelled}
                                         selected={selected}
                                         onClick={onClick}
                                     />
