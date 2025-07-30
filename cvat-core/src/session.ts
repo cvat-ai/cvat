@@ -1245,7 +1245,7 @@ export class Task extends Session {
         targetStorage: Storage,
         useDefaultSettings: boolean,
         fileName?: string,
-        lightweight: boolean,
+        lightweight?: boolean,
     ): Promise<string | void> {
         const result = await PluginRegistry.apiWrapper.call(
             this,

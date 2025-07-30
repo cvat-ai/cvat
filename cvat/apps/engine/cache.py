@@ -40,6 +40,7 @@ from cvat.apps.engine.cloud_provider import (
     db_storage_to_storage_instance,
     get_cloud_storage_instance,
 )
+from cvat.apps.engine.exceptions import CloudStorageMissingError
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_extractors import (
     FrameQuality,
@@ -71,10 +72,6 @@ _CacheItem = tuple[io.BytesIO, str, int, Union[datetime, None]]
 
 
 class CacheTooLargeDataError(Exception):
-    pass
-
-
-class CloudStorageMissingError(Exception):
     pass
 
 

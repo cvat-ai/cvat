@@ -11,11 +11,13 @@ import { ProviderType } from 'utils/enums';
 import Text from 'antd/lib/typography/Text';
 import SelectCloudStorage from 'components/select-cloud-storage/select-cloud-storage';
 import {
-    getCore, FramesMetaData, Task, StorageLocation,
+    getCore, FramesMetaData, StorageLocation,
 } from 'cvat-core-wrapper';
 
 interface Props {
-    task: Task;
+    taskMeta: FramesMetaData,
+    cloudStorageInstance: CloudStorage,
+    onUpdateTaskMeta: (meta: FramesMetaData) => Promise<void>;
 }
 
 function renderCloudStorageName(cloudStorage: CloudStorage): JSX.Element {
@@ -30,10 +32,10 @@ function renderCloudStorageName(cloudStorage: CloudStorage): JSX.Element {
     );
 }
 
-async function getCloudStorageById(id: number): Promise<CloudStorage | null> {
+export async function getCloudStorageById(id: number): Promise<CloudStorage | null> {
     try {
-    const [data] = await core.projects.get({ id });
-    return data;
+        const [data] = await getCore().cloudStorages.get({ id });
+        return data;
     } catch (error) {
         notification.error({
             message: 'Could not fetch a cloud storage',
@@ -44,85 +46,52 @@ async function getCloudStorageById(id: number): Promise<CloudStorage | null> {
 }
 
 export default function CloudStorageEditorComponent(props: Props): JSX.Element {
-    const { task } = props;
+    const { task, taskMeta, cloudStorageInstance, onUpdateTaskMeta } = props;
 
-    const [cloudStorage, setCloudStorage] = useState<CloudStorage | null>(null);
-    const [cloudStorageLoaded, setCloudStorageLoaded] = useState(false);
     const [cloudStorageEditing, setCloudStorageEditing] = useState(false);
     const [searchPhrase, setSearchPhrase] = useState('');
-    const [meta, setMeta] = useState<FramesMetaData | null>(null);
-
-    useEffect(() => {
-        task.meta.get().then((_meta) => {
-            setMeta(_meta);
-        });
-    }, []);
-
-    useEffect(() => {
-        if (meta && meta.cloudStorageId) {
-            getCloudStorageById(meta.cloudStorageId).then((_cloudStorage) => {
-                setCloudStorage(_cloudStorage);
-                setCloudStorageLoaded(true);
-            });
-        } else {
-            setCloudStorageLoaded(true);
-        }
-    }, [meta]);
 
     const updateCloudStorage = (_cloudStorage: CloudStorage | null): Promise<void> => (
         new Promise((resolve, reject) => {
-            meta.cloudStorageId = _cloudStorage.id;
-            task.meta.save(meta).then((updatedMeta: FramesMetaData) => {
-                setMeta(updatedMeta);
-                resolve();
-            }).catch((error: Error) => {
-                notification.error({
-                    message: 'Could not update the task',
-                    className: 'cvat-notification-notice-update-task-failed',
-                    description: error.toString(),
-                });
-                reject();
-            });
+            taskMeta.cloudStorageId = _cloudStorage.id;
+            onUpdateTaskMeta(taskMeta);
         })
     );
 
     return (
-        meta && meta.storage === StorageLocation.CLOUD_STORAGE && (
-            <Row justify='space-between' align='middle'>
-                <Col span={12}>
-                    <Row className='cvat-task-cloud-storage'>
-                        { !cloudStorageEditing && <Col>Connected cloud storage:</Col> }
-                        { !cloudStorageEditing && (
-                            <Col>
-                                { cloudStorageLoaded && cloudStorage && renderCloudStorageName(cloudStorage) }
-                                { cloudStorageLoaded && !cloudStorage && 'MISSING' }
-                                <Text
-                                    className='cvat-issue-tracker-value'
-                                    editable={{
-                                        editing: cloudStorageEditing,
-                                        onStart: (): void => setCloudStorageEditing(true),
-                                    }}
-                                />
-                            </Col>
-                        )}
-                        { cloudStorageEditing && (
-                            <Col>
-                                <SelectCloudStorage
-                                    searchPhrase={searchPhrase}
-                                    cloudStorage={cloudStorage}
-                                    setSearchPhrase={setSearchPhrase}
-                                    onSelectCloudStorage={(_cloudStorage: CloudStorage | null) => {
-                                        if (_cloudStorage) {
-                                            updateCloudStorage(_cloudStorage);
-                                        }
-                                        setCloudStorageEditing(false);
-                                    }}
-                                />
-                            </Col>
-                        )}
-                    </Row>
-                </Col>
-            </Row>
+        taskMeta.storage === StorageLocation.CLOUD_STORAGE && (
+            <Row className='cvat-task-cloud-storage'>
+                { !cloudStorageEditing && <Text type='secondary'>Connected cloud storage:</Text> }
+                { !cloudStorageEditing && (
+                    <Col>
+                        { cloudStorageInstance && renderCloudStorageName(cloudStorageInstance) }
+                        { !cloudStorageInstance && 'MISSING' }
+                        <Text
+                            className='cvat-task-cloud-storage-value'
+                            editable={{
+                                editing: cloudStorageEditing,
+                                onStart: (): void => setCloudStorageEditing(true),
+                            }}
+                        />
+                    </Col>
+                )}
+                { cloudStorageEditing && (
+                    <Col>
+                        <SelectCloudStorage
+                            searchPhrase={searchPhrase}
+                            cloudStorage={cloudStorageInstance}
+                            setSearchPhrase={setSearchPhrase}
+                            onSelectCloudStorage={(_cloudStorage: CloudStorage | null) => {
+                                if (_cloudStorage) {
+                                    updateCloudStorage(_cloudStorage);
+                                }
+                                setCloudStorageEditing(false);
+                            }}
+                            required={false}
+                        />
+                    </Col>
+                 )}
+             </Row>
         )
     );
 }

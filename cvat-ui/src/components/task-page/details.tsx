@@ -12,13 +12,13 @@ import Title from 'antd/lib/typography/Title';
 import moment from 'moment';
 
 import {
-    User, getCore, Project, Task,
+    User, getCore, Project, Task, FramesMetaData,
 } from 'cvat-core-wrapper';
 import AutomaticAnnotationProgress from 'components/tasks-page/automatic-annotation-progress';
 import MdGuideControl from 'components/md-guide/md-guide-control';
 import Preview from 'components/common/preview';
 import { cancelInferenceAsync } from 'actions/models-actions';
-import { CombinedState, ActiveInference } from 'reducers';
+import { CombinedState, ActiveInference, CloudStorage } from 'reducers';
 import CVATTag, { TagType } from 'components/common/cvat-tag';
 import UserSelector from './user-selector';
 import BugTrackerEditor from './bug-tracker-editor';
@@ -29,6 +29,9 @@ import ProjectSubsetField from '../create-task-page/project-subset-field';
 interface OwnProps {
     task: Task;
     onUpdateTask: (task: Task) => Promise<void>;
+    taskMeta: FramesMetaData;
+    cloudStorageInstance: CloudStorage | null;
+    onUpdateTaskMeta: (meta: FramesMetaData) => Promise<void>;
 }
 
 interface StateToProps {
@@ -117,7 +120,13 @@ class DetailsComponent extends React.PureComponent<Props, State> {
     }
 
     private renderDescription(): JSX.Element {
-        const { task: taskInstance, onUpdateTask } = this.props;
+        const {
+            task: taskInstance,
+            onUpdateTask,
+            taskMeta,
+            cloudStorageInstance,
+            onUpdateTaskMeta,
+        } = this.props;
         const { consensusEnabled } = this.state;
         const owner = taskInstance.owner ? taskInstance.owner.username : null;
         const assignee = taskInstance.assignee ? taskInstance.assignee : null;
@@ -146,8 +155,17 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                     {consensusEnabled && <CVATTag type={TagType.CONSENSUS} />}
                 </Col>
                 <Col>
-                    <Text type='secondary'>Assigned to</Text>
-                    {assigneeSelect}
+                    <Row>
+                        <Text type='secondary'>Assigned to</Text>
+                        {assigneeSelect}
+                    </Row>
+                    <Row>
+                        <CloudStorageEditor
+                            taskMeta={taskMeta}
+                            cloudStorageInstance={cloudStorageInstance}
+                            onUpdateTaskMeta={onUpdateTaskMeta}
+                        />
+                    </Row>
                 </Col>
             </Row>
         );
@@ -227,7 +245,6 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                     </Col>
                     <Col md={16} lg={17} xl={17} xxl={18}>
                         {this.renderDescription()}
-                        <CloudStorageEditor task={taskInstance} />
                         { taskInstance.projectId === null && <MdGuideControl instanceType='task' id={taskInstance.id} /> }
                         <Row justify='space-between' align='middle'>
                             <Col span={12}>

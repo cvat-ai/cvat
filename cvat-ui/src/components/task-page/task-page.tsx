@@ -13,16 +13,17 @@ import notification from 'antd/lib/notification';
 
 import { getInferenceStatusAsync } from 'actions/models-actions';
 import { updateJobAsync } from 'actions/jobs-actions';
-import { getCore, Task, Job } from 'cvat-core-wrapper';
+import { getCore, Task, Job, FramesMetaData } from 'cvat-core-wrapper';
 import { TaskNotFoundComponent } from 'components/common/not-found';
 import JobListComponent from 'components/task-page/job-list';
 import ModelRunnerModal from 'components/model-runner-modal/model-runner-dialog';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import MoveTaskModal from 'components/move-task-modal/move-task-modal';
-import { CombinedState } from 'reducers';
-import { updateTaskAsync } from 'actions/tasks-actions';
+import { CombinedState, CloudStorage } from 'reducers';
+import { updateTaskAsync, updateTaskMetadataAsync } from 'actions/tasks-actions';
 import TopBarComponent from './top-bar';
 import DetailsComponent from './details';
+import { getCloudStorageById } from './cloud-storage-editor'
 
 const core = getCore();
 
@@ -31,6 +32,8 @@ function TaskPageComponent(): JSX.Element {
     const id = +useParams<{ id: string }>().id;
     const dispatch = useDispatch();
     const [taskInstance, setTaskInstance] = useState<Task | null>(null);
+    const [taskMeta, setTaskMeta] = useState<FramesMetaData | null>(null);
+    const [cloudStorageInstance, setCloudStorageInstance] = useState<CloudStorage | null>(null);
     const [fetchingTask, setFetchingTask] = useState(true);
 
     const {
@@ -46,17 +49,29 @@ function TaskPageComponent(): JSX.Element {
 
     const receiveTask = (): Promise<Task[]> => {
         if (Number.isInteger(id)) {
-            const promise = core.tasks.get({ id });
-            promise.then(([task]: Task[]) => {
+            let promise = core.tasks.get({ id });
+            promise = promise.then(([task]: Task[]) => {
                 if (task) {
                     setTaskInstance(task);
+                    return task.meta.get();
                 }
             }).catch((error: Error) => {
                 notification.error({
                     message: 'Could not receive the requested task from the server',
                     description: error.toString(),
                 });
+            })
+
+            promise = promise.then((_meta: FramesMetaData) => {
+                setTaskMeta(_meta);
+                if (_meta && _meta.cloudStorageId) {
+                    return getCloudStorageById(_meta.cloudStorageId);
+                }
             });
+
+            promise = promise.then((_cloudStorage) => {
+                setCloudStorageInstance(_cloudStorage);
+            })
 
             return promise;
         }
@@ -96,6 +111,17 @@ function TaskPageComponent(): JSX.Element {
         })
     );
 
+    const onUpdateTaskMeta = (meta: FramesMetaData): Promise<void> => (
+        dispatch(updateTaskMetadataAsync(taskInstance, meta)).then((updatedMeta: FramesMetaData) => {
+            setTaskMeta(updatedMeta);
+            if (updatedMeta && updatedMeta.cloudStorageId) {
+                return getCloudStorageById(updatedMeta.cloudStorageId);
+            }
+        }).then((_cloudStorage) => {
+            setCloudStorageInstance(_cloudStorage);
+        })
+    );
+
     const onJobUpdate = (job: Job, data: Parameters<Job['save']>[0]): void => {
         dispatch(updateJobAsync(job, data));
     };
@@ -110,7 +136,13 @@ function TaskPageComponent(): JSX.Element {
             >
                 <Col span={22} xl={18} xxl={14}>
                     <TopBarComponent taskInstance={taskInstance} />
-                    <DetailsComponent task={taskInstance} onUpdateTask={onUpdateTask} />
+                    <DetailsComponent
+                        task={taskInstance}
+                        onUpdateTask={onUpdateTask}
+                        taskMeta={taskMeta}
+                        cloudStorageInstance={cloudStorageInstance}
+                        onUpdateTaskMeta={onUpdateTaskMeta}
+                    />
                     <JobListComponent task={taskInstance} onJobUpdate={onJobUpdate} />
                 </Col>
             </Row>

@@ -370,7 +370,7 @@ class _ExporterBase(metaclass=ABCMeta):
 class TaskExporter(_ExporterBase, _TaskBackupBase):
     ModelClass: ClassVar[models.Task] = models.Task
 
-    def __init__(self, pk, version=Version.V1, *, lightweight: bool = True):
+    def __init__(self, pk, version=Version.V1, *, lightweight: bool):
         super().__init__(logger=slogger.task[pk])
 
         self._db_task: models.Task = (
@@ -1119,7 +1119,7 @@ def create_backup(
     logger: Logger,
     cache_ttl: timedelta,
     *,
-    lightweight: bool = True,
+    lightweight: bool = False,
 ):
     db_instance = Exporter.get_object(instance_id)
     instance_type = db_instance.__class__.__name__

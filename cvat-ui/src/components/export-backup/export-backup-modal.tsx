@@ -13,6 +13,8 @@ import Input from 'antd/lib/input';
 import Form from 'antd/lib/form';
 import Space from 'antd/lib/space';
 import Switch from 'antd/lib/switch';
+import Tooltip from 'antd/lib/tooltip';
+import { QuestionCircleOutlined } from '@ant-design/icons';
 import { CombinedState } from 'reducers';
 import { exportActions, exportBackupAsync } from 'actions/export-actions';
 import {
@@ -164,7 +166,10 @@ function ExportBackupModal(): JSX.Element {
                             checked={lightweight}
                             onChange={setLightweight}
                         />
-                        <Text strong>Make a lightweight backup</Text>
+                        <Text strong>Use lightweight backup whenever possible</Text>
+                        <Tooltip title='If a task uses media from a cloud storage, its possible to make a backup without including media. The task restored from a lightweight backup has to be manually connected to the cloud storage.'>
+                            <QuestionCircleOutlined />
+                        </Tooltip>
                     </Space>
                 </Form.Item>
             </Form>

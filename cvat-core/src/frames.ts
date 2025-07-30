@@ -696,28 +696,10 @@ export function getFramesMeta(type: 'job' | 'task', id: number, forceReload = fa
     return frameMetaCache[id];
 }
 
-function saveJobMeta(meta: FramesMetaData, jobID: number): Promise<FramesMetaData> {
-    frameMetaCache[jobID] = new Promise<FramesMetaData>((resolve, reject) => {
-        serverProxy.frames.saveMeta('job', jobID, {
+function saveMeta(meta: FramesMetaData, session: 'job' | 'task', id: number): Promise<FramesMetaData> {
+    const newMeta = new Promise<FramesMetaData>((resolve, reject) => {
+        serverProxy.frames.saveMeta(session, id, {
             deleted_frames: Object.keys(meta.deletedFrames).map((frame) => +frame),
-        }).then((serverMeta) => {
-            const updatedMetaData = new FramesMetaData({
-                ...serverMeta,
-                deleted_frames: Object.fromEntries(serverMeta.deleted_frames.map((_frame) => [_frame, true])),
-            });
-            resolve(updatedMetaData);
-        }).catch((error) => {
-            frameMetaCache[jobID] = Promise.resolve(meta);
-            reject(error);
-        });
-    });
-
-    return frameMetaCache[jobID];
-}
-
-function saveTaskMeta(meta: FramesMetaData, taskID: number): Promise<FramesMetaData> {
-    return new Promise<FramesMetaData>((resolve, reject) => {
-        serverProxy.frames.saveMeta('task', taskID, {
             cloud_storage_id: meta.cloudStorageId,
         }).then((serverMeta) => {
             const updatedMetaData = new FramesMetaData({
@@ -726,9 +708,18 @@ function saveTaskMeta(meta: FramesMetaData, taskID: number): Promise<FramesMetaD
             });
             resolve(updatedMetaData);
         }).catch((error) => {
+            if (session == 'job') {
+                frameMetaCache[id] = Promise.resolve(meta);
+            }
             reject(error);
         });
     });
+
+    if (session == 'job') {
+        frameMetaCache[jobID] = newMeta;
+    }
+
+    return newMeta;
 }
 
 async function refreshJobCacheIfOutdated(jobID: number): Promise<void> {
@@ -968,21 +959,13 @@ export async function restoreFrame(jobID: number, frame: number): Promise<void> 
     delete meta.deletedFrames[frame];
 }
 
-export async function patchMeta(jobID: number): Promise<FramesMetaData> {
-    const meta = await frameMetaCache[jobID];
-    const updatedFields = meta.getUpdated();
-
-    if (Object.keys(updatedFields).length) {
-        await saveJobMeta(meta, jobID);
+export async function patchMeta(id: number, meta?: FramesMetaData, session: 'job' | 'task' = 'job'): Promise<FramesMetaData> {
+    if (session == 'job') {
+        meta = await frameMetaCache[id];
     }
-    const newMeta = await frameMetaCache[jobID];
-    return newMeta;
-}
-
-export async function patchTaskMeta(taskID: number, meta: FramesMetaData): Promise<FramesMetaData> {
     const updatedFields = meta.getUpdated();
     if (Object.keys(updatedFields).length) {
-        return saveTaskMeta(meta, taskID);
+        return await saveMeta(meta, session, id);
     }
     return meta;
 }

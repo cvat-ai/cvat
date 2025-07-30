@@ -24,7 +24,6 @@ import {
     findFrame,
     getContextImage,
     patchMeta,
-    patchTaskMeta,
     decodePreview,
 } from './frames';
 import Issue from './issue';
@@ -1000,7 +999,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             this: TaskClass,
             meta: Parameters<typeof TaskClass.prototype.meta.save>[0],
         ): ReturnType<typeof TaskClass.prototype.meta.save> {
-            return patchTaskMeta(this.id, meta).then((_meta) => _meta);
+            return patchMeta(this.id, meta, 'task').then((_meta) => _meta);
         },
     });
 
