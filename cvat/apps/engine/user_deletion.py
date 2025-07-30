@@ -105,4 +105,4 @@ class UserDeletionManager:
                 db_task.delete()
             db_cloud_storages.delete()
             self.user.delete()
-        _slogger.glob.warning(f"Done.")
+        _slogger.glob.info(f"Done.")
