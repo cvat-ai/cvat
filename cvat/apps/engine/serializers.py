@@ -2415,6 +2415,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
     data_chunk_size = serializers.ReadOnlyField(source='data.chunk_size', required=False)
     data_compressed_chunk_type = serializers.ReadOnlyField(source='data.compressed_chunk_type', required=False)
     data_original_chunk_type = serializers.ReadOnlyField(source='data.original_chunk_type', required=False)
+    data_cloud_storage_id = serializers.ReadOnlyField(source='data.cloud_storage_id', required=False)
     size = serializers.ReadOnlyField(source='data.size', required=False)
     image_quality = serializers.ReadOnlyField(source='data.image_quality', required=False)
     data = serializers.ReadOnlyField(source='data.id', required=False)
@@ -2440,8 +2441,8 @@ class TaskReadSerializer(serializers.ModelSerializer):
         model = models.Task
         fields = ('url', 'id', 'name', 'project_id', 'mode', 'owner', 'assignee',
             'bug_tracker', 'created_date', 'updated_date', 'overlap', 'segment_size',
-            'status', 'data_chunk_size', 'data_compressed_chunk_type', 'guide_id',
-            'data_original_chunk_type', 'size', 'image_quality', 'data', 'dimension',
+            'status', 'data_chunk_size', 'data_original_chunk_type', 'data_compressed_chunk_type',
+            'data_cloud_storage_id', 'guide_id', 'size', 'image_quality', 'data', 'dimension',
             'subset', 'organization_id',
             'organization', # deprecated field
             'target_storage', 'source_storage', 'jobs', 'labels',
@@ -2687,6 +2688,10 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer, OrgTransf
         owner_id: int,
         updated_date: datetime,
     ):
+        if instance.data.cloud_storage_id:
+            instance.data.cloud_storage = None
+            instance.data.save(update_fields=["cloud_storage"])
+
         models.Job.objects.filter(
             segment__task__id=instance.pk,
             assignee__isnull=False

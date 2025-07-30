@@ -263,7 +263,7 @@ ThunkAction {
             description.subset = data.subset;
         }
         if (data.cloudStorageId) {
-            description.cloud_storage_id = data.cloudStorageId;
+            description.data_cloud_storage_id = data.cloudStorageId;
         }
         if (data.advanced.consensusReplicas) {
             description.consensus_replicas = +data.advanced.consensusReplicas;

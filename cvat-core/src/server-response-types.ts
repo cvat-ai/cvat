@@ -96,6 +96,7 @@ export interface SerializedTask {
     data_chunk_size: number | null;
     data_compressed_chunk_type: ChunkType
     data_original_chunk_type: ChunkType;
+    data_cloud_storage_id: number | null;
     dimension: DimensionType;
     id: number;
     image_quality: number;

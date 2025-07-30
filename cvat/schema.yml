@@ -10845,17 +10845,21 @@ components:
           minimum: 0
           nullable: true
           readOnly: true
-        data_compressed_chunk_type:
-          allOf:
-          - $ref: '#/components/schemas/ChunkType'
-          readOnly: true
-        guide_id:
-          type: integer
-          nullable: true
         data_original_chunk_type:
           allOf:
           - $ref: '#/components/schemas/ChunkType'
           readOnly: true
+        data_compressed_chunk_type:
+          allOf:
+          - $ref: '#/components/schemas/ChunkType'
+          readOnly: true
+        data_cloud_storage_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        guide_id:
+          type: integer
+          nullable: true
         size:
           type: integer
           maximum: 2147483647

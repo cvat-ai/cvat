@@ -783,7 +783,7 @@ export class Task extends Session {
     public readonly useZipChunks: boolean;
     public readonly useCache: boolean;
     public readonly copyData: boolean;
-    public readonly cloudStorageId: number;
+    public readonly cloudStorageId: number | null;
     public readonly sortingMethod: string;
 
     public readonly validationMode: string | null;
@@ -819,6 +819,7 @@ export class Task extends Session {
             data_chunk_size: undefined,
             data_compressed_chunk_type: undefined,
             data_original_chunk_type: undefined,
+            data_cloud_storage_id: undefined,
             dimension: undefined,
             source_storage: undefined,
             target_storage: undefined,
@@ -832,7 +833,6 @@ export class Task extends Session {
             use_zip_chunks: undefined,
             use_cache: undefined,
             copy_data: undefined,
-            cloud_storage_id: undefined,
             sorting_method: undefined,
             files: undefined,
             consensus_enabled: undefined,
@@ -1153,7 +1153,7 @@ export class Task extends Session {
                     get: () => data.dimension,
                 },
                 cloudStorageId: {
-                    get: () => data.cloud_storage_id,
+                    get: () => data.data_cloud_storage_id,
                 },
                 sortingMethod: {
                     get: () => data.sorting_method,

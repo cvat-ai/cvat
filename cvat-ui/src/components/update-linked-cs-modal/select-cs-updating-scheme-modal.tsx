@@ -6,8 +6,9 @@ import React, { useCallback, useState, useEffect } from 'react';
 import Modal from 'antd/lib/modal';
 
 import Button from 'antd/lib/button';
+import Alert from 'antd/lib/alert';
 
-import { Storage, getCore } from 'cvat-core-wrapper';
+import { Storage, getCore, Task } from 'cvat-core-wrapper';
 
 import { useSelector, useDispatch } from 'react-redux';
 import { CombinedState } from 'reducers';
@@ -96,18 +97,35 @@ function SelectCSUpdatingSchemeModal(): JSX.Element {
                 >
                     Move & detach
                 </Button>,
-                <Button
-                    key='move_and_auto_match'
-                    type='primary'
-                    onClick={() => {
-                        saveInstance();
-                        closeModal();
-                    }}
-                >
-                    Move & auto match
-                </Button>,
+                // do not show option "move and auto match" when only data storage is linked
+                (
+                    instance?.sourceStorage?.isCloudLinked() || instance?.targetStorage?.isCloudLinked()
+                ) && (
+                    <Button
+                        key='move_and_auto_match'
+                        type='primary'
+                        onClick={() => {
+                            saveInstance();
+                            closeModal();
+                        }}
+                    >
+                        Move & auto match
+                    </Button>
+                ),
             ]}
         >
+            {
+                (
+                    instance instanceof Task && instance.cloudStorageId &&
+                    (instance!.sourceStorage?.isCloudLinked() || instance!.targetStorage?.isCloudLinked())
+                ) && (
+                    <Alert
+                        message='Data-linked storage will only be reset during the transfer and must be updated manually afterward'
+                        type='warning'
+                    />
+                )
+            }
+
             <p>
                 {`This ${instanceType} is linked to cloud storage. `}
                 Please choose how you would like the transfer to be done.
