@@ -366,7 +366,7 @@ class DownloadBackupMixin(_ExportMixin):
         pbar: Optional[ProgressReporter] = None,
         location: Optional[str] = None,
         cloud_storage_id: Optional[int] = None,
-        lightweight: bool = True,
+        lightweight: bool = False,
     ) -> None:
         """
         Create a resource backup and download it locally or upload to a cloud storage.
