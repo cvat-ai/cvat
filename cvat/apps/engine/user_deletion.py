@@ -70,7 +70,7 @@ class UserDeletionManager:
         These resources are considered like "owned" by the organization
         as user has given control over them during creation.
         """
-        _slogger.glob.info(f"Deleting the user #{self.user.id} {self.user.username}...")
+        _slogger.glob.info(f"Deleting the user #{self.user.id} ({self.user.username})...")
 
         for ValidatorClass in _USER_DELETION_VALIDATORS:
             ValidatorClass().validate(self.user)
@@ -105,5 +105,4 @@ class UserDeletionManager:
                 db_task.delete()
             db_cloud_storages.delete()
             self.user.delete()
-
-        _slogger.glob.warning(f"User #{self.user.id} has been deleted.")
+        _slogger.glob.warning(f"Done.")
