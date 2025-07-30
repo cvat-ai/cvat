@@ -337,7 +337,9 @@ class RequestIdWithOptionalFormat(RequestId):
 
 @attrs.frozen(kw_only=True, slots=False)
 class RequestIdWithOptionalLightweight(RequestId):
-    lightweight: bool | None = attrs.field(converter=lambda x: x if x is None else bool(x), default=None)
+    lightweight: bool | None = attrs.field(
+        converter=lambda x: x if x is None else bool(x), default=None
+    )
 
 
 @attrs.frozen(kw_only=True, slots=False)

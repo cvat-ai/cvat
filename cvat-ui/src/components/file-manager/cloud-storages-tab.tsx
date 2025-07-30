@@ -51,7 +51,7 @@ export default function CloudStorageTab(props: Props): JSX.Element {
                 cloudStorage={cloudStorage}
                 setSearchPhrase={setSearchPhrase}
                 onSelectCloudStorage={onSelectCloudStorage}
-                required={true}
+                required
             />
             {cloudStorage ? (
                 <Form.Item

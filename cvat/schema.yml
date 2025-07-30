@@ -3795,8 +3795,8 @@ paths:
         schema:
           type: boolean
           default: true
-        description: Make lightweight backup (backup which does not include media)
-          for tasks whose media is located in cloud storage
+        description: Makes a lightweight backup (without media files) for tasks whose
+          media is located in cloud storage
       - in: query
         name: location
         schema:
@@ -5460,8 +5460,8 @@ paths:
         schema:
           type: boolean
           default: true
-        description: Make lightweight backup (backup which does not include media)
-          for tasks whose media is located in cloud storage
+        description: Makes a lightweight backup (without media files) for tasks whose
+          media is located in cloud storage
       - in: query
         name: location
         schema:

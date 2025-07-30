@@ -97,7 +97,7 @@ function SelectCloudStorage(props: Props): JSX.Element {
         <Form.Item
             label='Select cloud storage'
             name={name || 'cloudStorageSelect'}
-            rules={[{ required: required, message: 'Please, specify a cloud storage' }]}
+            rules={[{ required, message: 'Please, specify a cloud storage' }]}
             valuePropName='label'
         >
             <AutoComplete

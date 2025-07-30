@@ -6,7 +6,7 @@
 import { AnyAction } from 'redux';
 import { TasksQuery } from 'reducers';
 import {
-    getCore, RQStatus, Storage, StorageLocation, Task, UpdateStatusData, Request, FramesMetaData
+    getCore, RQStatus, Storage, StorageLocation, Task, UpdateStatusData, Request, FramesMetaData,
 } from 'cvat-core-wrapper';
 import { filterNull } from 'utils/filter-null';
 import { ThunkDispatch, ThunkAction } from 'utils/redux';

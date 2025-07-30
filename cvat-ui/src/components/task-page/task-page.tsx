@@ -13,7 +13,9 @@ import notification from 'antd/lib/notification';
 
 import { getInferenceStatusAsync } from 'actions/models-actions';
 import { updateJobAsync } from 'actions/jobs-actions';
-import { getCore, Task, Job, FramesMetaData } from 'cvat-core-wrapper';
+import {
+    getCore, Task, Job, FramesMetaData,
+} from 'cvat-core-wrapper';
 import { TaskNotFoundComponent } from 'components/common/not-found';
 import JobListComponent from 'components/task-page/job-list';
 import ModelRunnerModal from 'components/model-runner-modal/model-runner-dialog';
@@ -23,7 +25,7 @@ import { CombinedState, CloudStorage } from 'reducers';
 import { updateTaskAsync, updateTaskMetadataAsync } from 'actions/tasks-actions';
 import TopBarComponent from './top-bar';
 import DetailsComponent from './details';
-import { getCloudStorageById } from './cloud-storage-editor'
+import { getCloudStorageById } from './cloud-storage-editor';
 
 const core = getCore();
 
@@ -53,25 +55,24 @@ function TaskPageComponent(): JSX.Element {
             promise = promise.then(([task]: Task[]) => {
                 if (task) {
                     setTaskInstance(task);
-                    return task.meta.get();
                 }
+                return (task ? task.meta.get() : null);
             }).catch((error: Error) => {
                 notification.error({
                     message: 'Could not receive the requested task from the server',
                     description: error.toString(),
                 });
-            })
+            });
 
             promise = promise.then((_meta: FramesMetaData) => {
                 setTaskMeta(_meta);
-                if (_meta && _meta.cloudStorageId) {
-                    return getCloudStorageById(_meta.cloudStorageId);
-                }
+                const isCloudBased = _meta && _meta.cloudStorageId;
+                return (isCloudBased ? getCloudStorageById(_meta.cloudStorageId) : null);
             });
 
             promise = promise.then((_cloudStorage) => {
                 setCloudStorageInstance(_cloudStorage);
-            })
+            });
 
             return promise;
         }
@@ -117,6 +118,7 @@ function TaskPageComponent(): JSX.Element {
             if (updatedMeta && updatedMeta.cloudStorageId) {
                 return getCloudStorageById(updatedMeta.cloudStorageId);
             }
+            return null;
         }).then((_cloudStorage) => {
             setCloudStorageInstance(_cloudStorage);
         })

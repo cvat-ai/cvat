@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import notification from 'antd/lib/notification';
 import { Row, Col } from 'antd/lib/grid';
 import { CloudStorage } from 'reducers';
@@ -46,17 +46,10 @@ export async function getCloudStorageById(id: number): Promise<CloudStorage | nu
 }
 
 export default function CloudStorageEditorComponent(props: Props): JSX.Element {
-    const { task, taskMeta, cloudStorageInstance, onUpdateTaskMeta } = props;
+    const { taskMeta, cloudStorageInstance, onUpdateTaskMeta } = props;
 
     const [cloudStorageEditing, setCloudStorageEditing] = useState(false);
     const [searchPhrase, setSearchPhrase] = useState('');
-
-    const updateCloudStorage = (_cloudStorage: CloudStorage | null): Promise<void> => (
-        new Promise((resolve, reject) => {
-            taskMeta.cloudStorageId = _cloudStorage.id;
-            onUpdateTaskMeta(taskMeta);
-        })
-    );
 
     return (
         taskMeta.storage === StorageLocation.CLOUD_STORAGE && (
@@ -83,15 +76,15 @@ export default function CloudStorageEditorComponent(props: Props): JSX.Element {
                             setSearchPhrase={setSearchPhrase}
                             onSelectCloudStorage={(_cloudStorage: CloudStorage | null) => {
                                 if (_cloudStorage) {
-                                    updateCloudStorage(_cloudStorage);
+                                    taskMeta.cloudStorageId = _cloudStorage.id;
+                                    onUpdateTaskMeta(taskMeta);
                                 }
                                 setCloudStorageEditing(false);
                             }}
-                            required={false}
                         />
                     </Col>
-                 )}
-             </Row>
+                )}
+            </Row>
         )
     );
 }

@@ -47,7 +47,7 @@ export default function StorageField(props: Props): JSX.Element {
                 }}
                 name={selectCloudStorageName}
                 onSelectCloudStorage={(_cloudStorage: CloudStorage | null) => setCloudStorage(_cloudStorage)}
-                required={true}
+                required
             />
         );
     }
