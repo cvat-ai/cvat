@@ -27,6 +27,11 @@ class AutoRegisterValidatorMeta(ABCMeta):
 
 
 class UserDeletionValidator(ABC, metaclass=AutoRegisterValidatorMeta):
+    """
+    Base class for user deletion validators.
+    To add a new validator, inherit from this class and implement the `validate` method.
+    The implemented class will be automatically registered and used during user deletion.
+    """
     @abstractmethod
     def validate(self, user: User) -> None:
         """
