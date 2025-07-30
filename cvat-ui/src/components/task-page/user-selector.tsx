@@ -11,6 +11,7 @@ import debounce from 'lodash/debounce';
 
 import { User, getCore, ServerError } from 'cvat-core-wrapper';
 import { getCVATStore } from 'cvat-store';
+import { handleDropdownKeyDown } from 'utils/dropdown-utils';
 
 const core = getCore();
 
@@ -161,6 +162,7 @@ export default function UserSelector(props: Readonly<Props>): JSX.Element {
             onSearch={setSearchPhrase}
             onSelect={handleSelect}
             onBlur={onBlur}
+            onKeyDown={handleDropdownKeyDown}
             className={combinedClassName}
             popupClassName='cvat-user-search-dropdown'
             options={[

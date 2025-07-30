@@ -5,19 +5,21 @@
 import React from 'react';
 import Select from 'antd/lib/select';
 import { JobStage, JobState } from 'cvat-core-wrapper';
+import { handleDropdownKeyDown } from 'utils/dropdown-utils';
 
 interface JobStateSelectorProps {
     value: JobState | null;
     onSelect: (newValue: JobState) => void;
 }
 
-export function JobStateSelector({ value, onSelect }: JobStateSelectorProps): JSX.Element {
+export function JobStateSelector({ value, onSelect }: Readonly<JobStateSelectorProps>): JSX.Element {
     return (
         <Select
             className='cvat-job-item-state'
             popupClassName='cvat-job-item-state-dropdown'
             value={value}
             onChange={onSelect}
+            onKeyDown={handleDropdownKeyDown}
             placeholder='Select a state'
         >
             <Select.Option value={JobState.NEW}>{JobState.NEW}</Select.Option>
@@ -33,13 +35,14 @@ interface JobStageSelectorProps {
     onSelect: (newValue: JobStage) => void;
 }
 
-export function JobStageSelector({ value, onSelect }: JobStageSelectorProps): JSX.Element {
+export function JobStageSelector({ value, onSelect }: Readonly<JobStageSelectorProps>): JSX.Element {
     return (
         <Select
             className='cvat-job-item-stage'
             popupClassName='cvat-job-item-stage-dropdown'
             value={value}
             onChange={onSelect}
+            onKeyDown={handleDropdownKeyDown}
             placeholder='Select a stage'
         >
             <Select.Option value={JobStage.ANNOTATION}>

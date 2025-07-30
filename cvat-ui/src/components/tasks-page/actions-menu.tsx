@@ -98,9 +98,10 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
     }, [taskInstance.id]);
 
     const onUpdateTaskAssignee = useCallback(async (assignee: User | null) => {
-        const allTaskIDs = selectedIds.includes(taskInstance.id) ? selectedIds : [taskInstance.id, ...selectedIds];
+        const allTaskIDs = selectedIds.includes(taskInstance.id) ? selectedIds : [taskInstance.id];
+        console.log(allTaskIDs);
         const tasksToUpdate = allTasks.filter((task) => allTaskIDs.includes(task.id));
-
+        console.log('tasksToUpdate', tasksToUpdate, assignee, taskInstance);
         const tasksNeedingUpdate = tasksToUpdate.filter((task) => task.assignee?.id !== assignee?.id);
 
         if (tasksNeedingUpdate.length === 0) {
