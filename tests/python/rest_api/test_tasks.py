@@ -2588,6 +2588,56 @@ class TestPatchTask:
             expected_status=HTTPStatus.OK if is_allow else HTTPStatus.FORBIDDEN,
         )
 
+    def test_transfer_task_from_sandbox_to_organization(
+        self,
+        filter_tasks,
+        organizations,
+        find_users,
+    ):
+        task, user, dst_org = None, None, None
+        org_owners = {o["owner"]["username"] for o in organizations}
+        filtered_users = org_owners & {u["username"] for u in find_users(privilege="user")}
+        for t in filter_tasks(organization_id=None, project_id=None, exclude_assignee=None):
+            user = t["owner"]["username"]
+            if user in filtered_users:
+                task = t
+                dst_org = next(o for o in organizations if o["owner"]["username"] == user)
+                break
+
+        assert task and user and dst_org
+
+        with make_api_client(user) as api_client:
+            task_details, _ = api_client.tasks_api.partial_update(
+                task["id"], patched_task_write_request={"organization_id": dst_org["id"]}
+            )
+            assert task_details.organization_id == dst_org["id"]
+            assert not task_details.assignee
+
+    def test_cannot_transfer_task_from_project_to_different_workspace(
+        self,
+        filter_tasks,
+        find_users,
+    ):
+        task, user = None, None
+
+        filtered_users = {u["username"] for u in find_users(privilege="user")}
+        for t in filter_tasks(exclude_project_id=None):
+            user = t["owner"]["username"]
+            if user in filtered_users:
+                task = t
+                break
+
+        assert task and user
+
+        with make_api_client(user) as api_client:
+            _, response = api_client.tasks_api.partial_update(
+                task["id"],
+                patched_task_write_request={"organization_id": None},
+                _check_status=False,
+                _parse_response=False,
+            )
+            assert response.status == HTTPStatus.BAD_REQUEST
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 def test_can_report_correct_completed_jobs_count(tasks_wlc, jobs_wlc, admin_user):

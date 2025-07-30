@@ -264,7 +264,9 @@ class ProjectPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
 
             if cls.Scopes.UPDATE_ORGANIZATION in scopes:
                 # consider this case as deleting a project in the org A and creating a new one in the org B
-                permissions.append(cls.create_base_perm(request, view, cls.Scopes.DELETE, iam_context, obj))
+                permissions.append(cls.create_base_perm(
+                    request, view, cls.Scopes.DELETE, iam_context, obj, assignee_id=assignee_id
+                ))
 
                 if dst_org_id := request.data['organization_id']:
                     try:
@@ -276,7 +278,7 @@ class ProjectPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
                     # do not use here get_iam_context since it checks also org_id/org_slug query params and X-Organization header
                     dst_iam_context = build_iam_context(request, None, None)
                 permissions.append(cls.create_base_perm(
-                    request, view, cls.Scopes.CREATE, dst_iam_context, obj
+                    request, view, cls.Scopes.CREATE, dst_iam_context, assignee_id=assignee_id
                 ))
                 scopes.remove(cls.Scopes.UPDATE_ORGANIZATION)
 
@@ -467,7 +469,9 @@ class TaskPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
 
             if cls.Scopes.UPDATE_ORGANIZATION in scopes:
                 # consider this case as deleting a task in the org A and creating a new one in the org B
-                permissions.append(cls.create_base_perm(request, view, cls.Scopes.DELETE, iam_context, obj))
+                permissions.append(cls.create_base_perm(
+                    request, view, cls.Scopes.DELETE, iam_context, obj, project_id=project_id, assignee_id=assignee_id
+                ))
 
                 if dst_org_id := request.data['organization_id']:
                     try:
@@ -479,7 +483,7 @@ class TaskPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
                     # do not use here get_iam_context since it checks also org_id/org_slug query params and X-Organization header
                     dst_iam_context = build_iam_context(request, None, None)
                 permissions.append(cls.create_base_perm(
-                    request, view, cls.Scopes.CREATE, dst_iam_context, obj
+                    request, view, cls.Scopes.CREATE, dst_iam_context, project_id=project_id, assignee_id=assignee_id
                 ))
                 scopes.remove(cls.Scopes.UPDATE_ORGANIZATION)
 
