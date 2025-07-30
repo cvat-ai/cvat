@@ -56,6 +56,12 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
     const lastSelectedIndexRef = useRef<number | null>(null);
 
     useEffect(() => {
+        if (selectedIds.length === 0) {
+            lastSelectedIndexRef.current = null;
+        }
+    }, [selectedIds]);
+
+    useEffect(() => {
         function handleKeyDown(event: KeyboardEvent): void {
             if (event.shiftKey && !isShiftSelecting) {
                 setIsShiftSelecting(true);
@@ -97,6 +103,7 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
                 'cvat-jobs-list-row',
                 'cvat-models-list-row',
                 'cvat-projects-list-row',
+                'cvat-requests-list',
             ];
             const hasResetClass = resetClasses.some((cls) => target.classList.contains(cls));
 
