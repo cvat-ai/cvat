@@ -140,8 +140,8 @@ function JobActionsComponent(
             return true;
         });
 
+        stopEditField();
         if (jobsNeedingUpdate.length === 0) {
-            stopEditField();
             return;
         }
 
@@ -151,7 +151,7 @@ function JobActionsComponent(
                 await dispatch(updateJobAsync(job, fields));
             },
             (job, idx, total) => `Updating job #${job.id} (${idx + 1}/${total})`,
-        )).then(stopEditField);
+        ));
     }, [jobInstance, allJobs, selectedIds, dispatch, stopEditField]);
 
     let menuItems;

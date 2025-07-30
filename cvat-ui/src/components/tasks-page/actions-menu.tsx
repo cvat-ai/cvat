@@ -99,13 +99,11 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
 
     const onUpdateTaskAssignee = useCallback(async (assignee: User | null) => {
         const allTaskIDs = selectedIds.includes(taskInstance.id) ? selectedIds : [taskInstance.id];
-        console.log(allTaskIDs);
         const tasksToUpdate = allTasks.filter((task) => allTaskIDs.includes(task.id));
-        console.log('tasksToUpdate', tasksToUpdate, assignee, taskInstance);
         const tasksNeedingUpdate = tasksToUpdate.filter((task) => task.assignee?.id !== assignee?.id);
 
+        stopEditField();
         if (tasksNeedingUpdate.length === 0) {
-            stopEditField();
             return;
         }
 
@@ -117,8 +115,6 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
             },
             (task, idx, total) => `Updating assignee for task #${task.id} (${idx + 1}/${total})`,
         ));
-
-        stopEditField();
     }, [taskInstance, selectedIds, allTasks, stopEditField, dispatch]);
 
     const onDeleteTask = useCallback(() => {

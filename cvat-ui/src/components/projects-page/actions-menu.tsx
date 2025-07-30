@@ -62,8 +62,8 @@ function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
 
         const projectsNeedingUpdate = projectsToUpdate.filter((project) => project.assignee?.id !== assignee?.id);
 
+        stopEditField();
         if (projectsNeedingUpdate.length === 0) {
-            stopEditField();
             return;
         }
 
@@ -74,7 +74,7 @@ function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
                 await dispatch(updateProjectAsync(project));
             },
             (project, idx, total) => `Updating assignee for project #${project.id} (${idx + 1}/${total})`,
-        )).then(stopEditField);
+        ));
     }, [projectInstance, selectedIds, allProjects, stopEditField, dispatch]);
 
     const onDeleteProject = useCallback((): void => {

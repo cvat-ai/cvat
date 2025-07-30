@@ -124,8 +124,8 @@ function MemberActionsMenu(props: Readonly<MemberActionsMenuProps>): JSX.Element
                 <MemberRoleSelector
                     value={isBulkMode ? null : role}
                     onChange={(newRole) => {
-                        onUpdateMembershipRole(newRole);
                         stopEditField();
+                        onUpdateMembershipRole(newRole);
                     }}
                     disabled={role === 'owner' && actionsApplicable[MenuKeys.EDIT_ROLE].length < 1}
                 />
