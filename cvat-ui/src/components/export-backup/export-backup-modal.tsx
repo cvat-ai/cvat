@@ -246,6 +246,7 @@ function ExportBackupModal(): JSX.Element {
                                 )}
                             >
                                 When forming the backup name, a template is used.
+                                {' '}
                                 <QuestionCircleOutlined />
                             </Tooltip>
                         </Text>
