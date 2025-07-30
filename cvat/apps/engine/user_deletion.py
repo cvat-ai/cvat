@@ -72,7 +72,7 @@ class UserDeletionManager:
 
         # CASCADE: Membership, Webhook
         # SET_NULL: Project, Task, CloudStorage
-        db_orgs = Organization.objects.select_for_update().filter(owner=self.user)
+        db_orgs = Organization.objects.filter(owner=self.user)
         db_projects = Project.objects.select_for_update().filter(owner=self.user, organization=None)
         db_tasks = Task.objects.select_for_update().filter(owner=self.user, organization=None)
         db_cloud_storages = CloudStorage.objects.filter(owner=self.user, organization=None)
