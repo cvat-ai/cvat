@@ -41,7 +41,7 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
             name: 'Select all',
             description: 'Select all resources',
             sequences: ['ctrl+a', 'command+a'],
-            scope: ShortcutScope.ANNOTATION_PAGE, // or a more appropriate scope for your context
+            scope: ShortcutScope.GENERAL,
         },
     };
     const handlers = {
@@ -128,16 +128,11 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
 
     function updateResources(
         rangeIds: (number | string)[],
-        action: (ids: (number | string)[], appendSelection: boolean) => Action<SelectionActionsTypes>,
-        reset = true,
-        appendSelection = false,
+        action: (ids: (number | string)[]) => Action<SelectionActionsTypes>,
     ): void {
-        if (reset) {
-            dispatch(selectionActions.clearSelectedResources());
-        }
         const childrenIds = handleChildren(rangeIds);
         const allIds = rangeIds.concat(childrenIds);
-        dispatch(action(allIds, appendSelection));
+        dispatch(action(allIds));
     }
 
     const selectProps = (
@@ -168,8 +163,6 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
                     updateResources(
                         [resourceId],
                         isSelected ? selectionActions.deselectResources : selectionActions.selectResources,
-                        false,
-                        true,
                     );
 
                     lastSelectedIndexRef.current = idx;

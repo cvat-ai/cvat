@@ -20,8 +20,8 @@ export enum SelectionActionsTypes {
 export const selectionActions = {
     deselectResources: (resourceIds: (number | string)[]) => createAction(
         SelectionActionsTypes.DESELECT_RESOURCES, { resourceIds }),
-    selectResources: (resourceIds: (number | string)[], extendSelection = false) => createAction(
-        SelectionActionsTypes.SELECT_RESOURCES, { resourceIds, extendSelection }),
+    selectResources: (resourceIds: (number | string)[]) => createAction(
+        SelectionActionsTypes.SELECT_RESOURCES, { resourceIds }),
     clearSelectedResources: () => createAction(
         SelectionActionsTypes.CLEAR_SELECTED_RESOURCES),
     startBulkAction: () => createAction(

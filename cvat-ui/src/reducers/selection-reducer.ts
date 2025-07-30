@@ -23,10 +23,7 @@ export default function selectionReducer(
         case SelectionActionsTypes.DESELECT_RESOURCES:
             return { ...state, selected: state.selected.filter((id) => !action.payload.resourceIds.includes(id)) };
         case SelectionActionsTypes.SELECT_RESOURCES:
-            if (action.payload.extendSelection) {
-                return { ...state, selected: Array.from(new Set([...state.selected, ...action.payload.resourceIds])) };
-            }
-            return { ...state, selected: [...action.payload.resourceIds] };
+            return { ...state, selected: Array.from(new Set([...state.selected, ...action.payload.resourceIds])) };
         case SelectionActionsTypes.CLEAR_SELECTED_RESOURCES:
             return { ...state, selected: [] };
         case SelectionActionsTypes.START_BULK_ACTION:
