@@ -40,7 +40,6 @@ export enum OrganizationActionsTypes {
     GET_ORGANIZATIONS = 'GET_ORGANIZATIONS',
     GET_ORGANIZATIONS_SUCCESS = 'GET_ORGANIZATIONS_SUCCESS',
     GET_ORGANIZATIONS_FAILED = 'GET_ORGANIZATIONS_FAILED',
-    UPDATE_ORGANIZATIONS_GETTING_QUERY = 'UPDATE_ORGANIZATIONS_GETTING_QUERY',
     OPEN_SELECT_ORGANIZATION_MODAL = 'OPEN_SELECT_ORGANIZATION_MODAL',
     CLOSE_SELECT_ORGANIZATION_MODAL = 'CLOSE_SELECT_ORGANIZATION_MODAL',
 }
@@ -99,14 +98,13 @@ export const organizationActions = {
     updateOrganizationMemberFailed: (username: string, role: string, error: any) => createAction(
         OrganizationActionsTypes.UPDATE_ORGANIZATION_MEMBER_FAILED, { username, role, error },
     ),
-    getOrganizations: () => createAction(OrganizationActionsTypes.GET_ORGANIZATIONS, {}),
+    getOrganizations: (query: Partial<OrganizationsQuery>) => (
+        createAction(OrganizationActionsTypes.GET_ORGANIZATIONS, { query })
+    ),
     getOrganizationsSuccess: (organizations: Organization[], count: number, nextPageUrl?: string) => (
         createAction(OrganizationActionsTypes.GET_ORGANIZATIONS_SUCCESS, { organizations, count, nextPageUrl })
     ),
     getOrganizationsFailed: (error: any) => createAction(OrganizationActionsTypes.GET_ORGANIZATIONS_FAILED, { error }),
-    updateOrganizationsGettingQuery: (query: Partial<OrganizationsQuery>) => (
-        createAction(OrganizationActionsTypes.UPDATE_ORGANIZATIONS_GETTING_QUERY, { query })
-    ),
     openSelectOrganizationModal: (
         onSelectCallback: (org: Organization | null) => void,
     ) => createAction(OrganizationActionsTypes.OPEN_SELECT_ORGANIZATION_MODAL, { onSelectCallback }),
@@ -273,10 +271,8 @@ export function updateOrganizationMemberAsync(
 
 export function getOrganizationsAsync(query: Partial<OrganizationsQuery> = {}): ThunkAction {
     return async (dispatch): Promise<void> => {
-        dispatch(organizationActions.getOrganizations());
-        dispatch(organizationActions.updateOrganizationsGettingQuery(query));
-
         const filteredQuery: Partial<OrganizationsQuery> = filterNull(query);
+        dispatch(organizationActions.getOrganizations(filteredQuery));
 
         try {
             const result = await core.organizations.get(filteredQuery);

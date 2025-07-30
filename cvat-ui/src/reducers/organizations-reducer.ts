@@ -149,14 +149,20 @@ export default function (
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return { ...defaultState };
         }
-        case OrganizationActionsTypes.GET_ORGANIZATIONS:
+        case OrganizationActionsTypes.GET_ORGANIZATIONS: {
+            const { query } = action.payload;
             return {
                 ...state,
                 currentArrayFetching: true,
                 currentArray: [],
                 count: 0,
                 nextPageUrl: null,
+                gettingQuery: {
+                    ...defaultState.gettingQuery,
+                    ...query,
+                },
             };
+        }
         case OrganizationActionsTypes.GET_ORGANIZATIONS_SUCCESS: {
             const { organizations, count, nextPageUrl } = action.payload;
             return {
@@ -171,16 +177,6 @@ export default function (
             return {
                 ...state,
                 currentArrayFetching: false,
-            };
-        }
-        case OrganizationActionsTypes.UPDATE_ORGANIZATIONS_GETTING_QUERY: {
-            const { query } = action.payload;
-            return {
-                ...state,
-                gettingQuery: {
-                    ...defaultState.gettingQuery,
-                    ...query,
-                },
             };
         }
         case OrganizationActionsTypes.OPEN_SELECT_ORGANIZATION_MODAL: {
