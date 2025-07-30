@@ -4,17 +4,16 @@
 
 from abc import ABC, ABCMeta, abstractmethod
 from dataclasses import dataclass
+from typing import TypedDict
 
 from django.db import transaction
-from django.db.models import Count, Max
+from django.db.models import Count, Max, Q
 from django.db.models.functions import Coalesce
 from rest_framework.exceptions import ValidationError
 
-from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import CloudStorage, Project, Task, User
 from cvat.apps.organizations.models import Organization
 
-_slogger = ServerLogManager(__name__)
 _USER_DELETION_VALIDATORS = []
 
 
@@ -57,12 +56,19 @@ class NonEmptyOrgsValidator(UserDeletionValidator):
             )
 
 
+class _DeletedResources(TypedDict):
+    organization: list[int]
+    project: list[int]
+    task: list[int]
+    cloud_storage: list[int]
+
+
 @dataclass
 class UserDeletionManager:
     user: User
 
     @transaction.atomic
-    def delete_user_with_cleanup(self, dry_run=True) -> None:
+    def delete_user_with_cleanup(self, dry_run=True) -> _DeletedResources:
         """
         The method removes user and associated resources.
 
@@ -70,39 +76,49 @@ class UserDeletionManager:
         These resources are considered like "owned" by the organization
         as user has given control over them during creation.
         """
-        _slogger.glob.info(f"Deleting the user #{self.user.id} ({self.user.username})...")
+
+        deleted_resources: _DeletedResources = {
+            "organization": [],
+            "project": [],
+            "task": [],
+            "cloud_storage": [],
+        }
 
         for ValidatorClass in _USER_DELETION_VALIDATORS:
             ValidatorClass().validate(self.user)
 
-        db_orgs = Organization.objects.filter(owner=self.user)
-        db_projects = Project.objects.select_for_update().filter(owner=self.user, organization=None)
-        db_tasks = Task.objects.select_for_update().filter(owner=self.user, organization=None)
-        db_cloud_storages = CloudStorage.objects.filter(owner=self.user, organization=None)
+        db_orgs = Organization.objects.select_for_update().filter(owner=self.user)
+        db_projects = list(
+            Project.objects.select_for_update()
+            .filter(owner=self.user)
+            .filter(Q(organization=None) | Q(organization__in=db_orgs))
+        )
+        db_tasks = list(
+            Task.objects.select_for_update()
+            .filter(owner=self.user, project=None)
+            .filter(Q(organization=None) | Q(organization__in=db_orgs))
+        )
+        db_cloud_storages = CloudStorage.objects.select_for_update().filter(
+            owner=self.user, organization=None
+        )
 
-        for db_org in db_orgs:
-            _slogger.glob.warning(
-                f"\tUser organization #{db_org.id} {db_org.slug} will be deleted."
-            )
-
-        for db_project in db_projects:
-            _slogger.glob.warning(f"\tUser project #{db_project.id} will be deleted.")
-
-        for db_task in db_tasks:
-            _slogger.glob.warning(f"\tUser task #{db_task.id} will be deleted.")
-
-        db_cloud_storages = CloudStorage.objects.filter(owner=self.user, organization=None)
-        for db_cloud_storage in db_cloud_storages:
-            _slogger.glob.warning(f"\tUser cloud storage #{db_cloud_storage.id} will be deleted.")
+        for resource_type, db_resources in (
+            ("organization", db_orgs),
+            ("project", db_projects),
+            ("task", db_tasks),
+            ("cloud_storage", db_cloud_storages),
+        ):
+            for db_resource in db_resources:
+                deleted_resources[resource_type].append(db_resource.id)
 
         if not dry_run:
             db_orgs.delete()
-            for db_project in db_projects:
-                # call delete on each instance instead of qs.delete() to perform custom .delete() method
-                db_project.delete()
-            for db_task in db_tasks:
-                # call delete on each instance instead of qs.delete() to perform custom .delete() method
-                db_task.delete()
             db_cloud_storages.delete()
+            # for projects and tasks
+            # call delete on each instance instead of qs.delete()
+            # to perform custom .delete() method (e.g. query optimizations, audit logs)
+            for db_project_or_task in db_projects + db_tasks:
+                db_project_or_task.delete()
             self.user.delete()
-        _slogger.glob.info(f"Done.")
+
+        return deleted_resources
