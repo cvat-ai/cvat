@@ -98,9 +98,9 @@ class UserDeletionManager:
             .filter(owner=self.user, project=None)
             .filter(Q(organization=None) | Q(organization__in=db_orgs))
         )
-        db_cloud_storages = CloudStorage.objects.select_for_update().filter(
-            owner=self.user, organization=None
-        )
+        db_cloud_storages = CloudStorage.objects.select_for_update() \
+            .filter(owner=self.user) \
+            .filter(Q(organization=None) | Q(organization__in=db_orgs))
 
         for resource_type, db_resources in (
             ("organization", db_orgs),
