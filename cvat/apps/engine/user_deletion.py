@@ -87,7 +87,7 @@ class UserDeletionManager:
         for ValidatorClass in _USER_DELETION_VALIDATORS:
             ValidatorClass().validate(self.user)
 
-        db_orgs = Organization.objects.select_for_update().filter(owner=self.user)
+        db_orgs = Organization.objects.filter(owner=self.user).select_for_update()
 
         def filter_by_owner_and_org(queryset: QuerySet) -> QuerySet:
             return queryset.filter(owner=self.user).filter(
