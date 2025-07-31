@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ("engine", "0033_projects_adjastment"),
+        ("engine", "0033_projects_adjastment"),  # spellchecker:disable-line
     ]
 
     operations = [

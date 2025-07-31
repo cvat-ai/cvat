@@ -141,7 +141,7 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.TokenAuthentication",
         "cvat.apps.iam.authentication.SignatureAuthentication",
         "rest_framework.authentication.SessionAuthentication",
-        "rest_framework.authentication.BasicAuthentication",
+        "cvat.apps.iam.authentication.BasicAuthenticationEx",
     ],
     "DEFAULT_VERSIONING_CLASS": "rest_framework.versioning.AcceptHeaderVersioning",
     "ALLOWED_VERSIONS": ("2.0"),
@@ -775,8 +775,7 @@ from cvat.rq_patching import patch_rq
 
 patch_rq()
 
-CLOUD_DATA_DOWNLOADING_MAX_THREADS_NUMBER = 4
-CLOUD_DATA_DOWNLOADING_NUMBER_OF_FILES_PER_THREAD = 1000
+CLOUD_DATA_DOWNLOADING_MAX_THREADS_NUMBER_PER_CPU = 4
 
 # Indicates the maximum number of days a file or directory is retained in the temporary directory
 TMP_FILE_OR_DIR_RETENTION_DAYS = 3

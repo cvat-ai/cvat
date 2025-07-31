@@ -24,6 +24,9 @@ from urllib3 import HTTPResponse
 
 from shared.utils.config import USER_PASS, make_api_client, post_method
 
+DEFAULT_RETRIES = 50
+DEFAULT_INTERVAL = 0.1
+
 
 def initialize_export(endpoint: Endpoint, *, expect_forbidden: bool = False, **kwargs) -> str:
     (_, response) = endpoint.call_with_http_info(
@@ -47,8 +50,8 @@ def wait_background_request(
     api_client: ApiClient,
     rq_id: str,
     *,
-    max_retries: int = 50,
-    interval: float = 0.1,
+    max_retries: int = DEFAULT_RETRIES,
+    interval: float = DEFAULT_INTERVAL,
 ) -> tuple[models.Request, HTTPResponse]:
     for _ in range(max_retries):
         (background_request, response) = api_client.requests_api.retrieve(rq_id)
@@ -70,8 +73,8 @@ def wait_and_download_v2(
     api_client: ApiClient,
     rq_id: str,
     *,
-    max_retries: int = 50,
-    interval: float = 0.1,
+    max_retries: int = DEFAULT_RETRIES,
+    interval: float = DEFAULT_INTERVAL,
 ) -> bytes:
     background_request, _ = wait_background_request(
         api_client, rq_id, max_retries=max_retries, interval=interval
@@ -90,8 +93,8 @@ def wait_and_download_v2(
 def export_v2(
     endpoint: Endpoint,
     *,
-    max_retries: int = 50,
-    interval: float = 0.1,
+    max_retries: int = DEFAULT_RETRIES,
+    interval: float = DEFAULT_INTERVAL,
     expect_forbidden: bool = False,
     wait_result: bool = True,
     download_result: bool = True,
@@ -136,7 +139,7 @@ def export_dataset(
     *,
     save_images: bool,
     max_retries: int = 300,
-    interval: float = 0.1,
+    interval: float = DEFAULT_INTERVAL,
     format: str = "CVAT for images 1.1",  # pylint: disable=redefined-builtin
     **kwargs,
 ) -> Optional[bytes]:
@@ -170,8 +173,8 @@ def export_job_dataset(username: str, *args, **kwargs) -> Optional[bytes]:
 def export_backup(
     api: Union[ProjectsApi, TasksApi],
     *,
-    max_retries: int = 50,
-    interval: float = 0.1,
+    max_retries: int = DEFAULT_RETRIES,
+    interval: float = DEFAULT_INTERVAL,
     **kwargs,
 ) -> Optional[bytes]:
     endpoint = api.create_backup_export_endpoint
@@ -191,8 +194,8 @@ def export_task_backup(username: str, *args, **kwargs) -> Optional[bytes]:
 def import_resource(
     endpoint: Endpoint,
     *,
-    max_retries: int = 50,
-    interval: float = 0.1,
+    max_retries: int = DEFAULT_RETRIES,
+    interval: float = DEFAULT_INTERVAL,
     expect_forbidden: bool = False,
     wait_result: bool = True,
     **kwargs,
@@ -238,8 +241,8 @@ def import_resource(
 def import_backup(
     api: Union[ProjectsApi, TasksApi],
     *,
-    max_retries: int = 50,
-    interval: float = 0.1,
+    max_retries: int = DEFAULT_RETRIES,
+    interval: float = DEFAULT_INTERVAL,
     **kwargs,
 ):
     endpoint = api.create_backup_endpoint

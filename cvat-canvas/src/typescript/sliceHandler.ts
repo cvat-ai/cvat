@@ -17,7 +17,7 @@ import { ObjectSelector } from './objectSelector';
 export interface SliceHandler {
     slice(sliceData: any): void;
     transform(geometry: Geometry): void;
-    configurate(config: Configuration): void;
+    configure(config: Configuration): void;
     cancel(): void;
 }
 
@@ -584,7 +584,7 @@ export class SliceHandlerImpl implements SliceHandler {
         });
     }
 
-    public configurate(config: Configuration): void {
+    public configure(config: Configuration): void {
         this.controlPointSize = config.controlPointsSize || consts.BASE_POINT_SIZE;
         this.outlinedBorders = config.outlinedBorders || 'black';
         if (this.slicingLine) this.slicingLine.attr('stroke', this.outlinedBorders);

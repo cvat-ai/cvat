@@ -11,7 +11,12 @@ from typing import Any, Union
 import cvat_sdk.auto_annotation as cvataa
 from cvat_sdk import Client, models
 
-from .agent import FUNCTION_KIND_DETECTOR, FUNCTION_PROVIDER_NATIVE, run_agent
+from .agent import (
+    FUNCTION_KIND_DETECTOR,
+    FUNCTION_KIND_TRACKER,
+    FUNCTION_PROVIDER_NATIVE,
+    run_agent,
+)
 from .command_base import CommandGroup
 from .common import FunctionLoader, configure_function_implementation_arguments
 
@@ -84,6 +89,9 @@ class FunctionCreateNative:
                     remote_function["labels_v2"][-1]["sublabels"] = [
                         self._dump_sublabel_spec(sublabel) for sublabel in sublabels
                     ]
+        elif isinstance(spec, cvataa.TrackingFunctionSpec):
+            remote_function["kind"] = FUNCTION_KIND_TRACKER
+            remote_function["supported_shape_types"] = sorted(spec.supported_shape_types)
         else:
             raise cvataa.BadFunctionError(f"Unsupported function spec type: {type(spec).__name__}")
 

@@ -1,6 +1,6 @@
 {
   "name": "cvat-ui",
-  "version": "2.40.2",
+  "version": "2.42.1",
   "description": "CVAT single-page application",
   "main": "src/index.tsx",
   "scripts": {
@@ -12,8 +12,8 @@
     "lint:fix": "eslint './src/**/*.{ts,tsx}' --fix"
   },
   "browserslist": [
-    "Chrome >= 63",
-    "Firefox > 102",
+    "Chrome >= 99",
+    "Firefox >= 110",
     "not IE 11",
     "> 2%"
   ],

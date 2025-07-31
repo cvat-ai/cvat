@@ -1613,7 +1613,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             message: 'Canvas error occurred',
                             reason: action.payload.error,
                             shouldLog: true,
-                            className: 'cvat-notification-notice-canvas-error-occurreed',
+                            className: 'cvat-notification-notice-canvas-error-occurred',
                         },
                     },
                 },
