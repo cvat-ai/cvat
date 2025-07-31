@@ -363,7 +363,6 @@ services:
           - clickhouse
     volumes:
       - ./components/analytics/clickhouse/:/docker-entrypoint-initdb.d/:ro
-      - cvat_events_db:/var/lib/clickhouse/
     entrypoint:
       # https://github.com/ClickHouse/ClickHouse/blob/master/programs/client/clickhouse-client.xml
       - /bin/bash
