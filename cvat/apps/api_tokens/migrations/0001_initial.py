@@ -66,7 +66,7 @@ class Migration(migrations.Migration):
             options={
                 "verbose_name": "API Token",
                 "verbose_name_plural": "API Tokens",
-                "ordering": (),
+                "ordering": ("id",),
                 "abstract": False,
             },
         ),

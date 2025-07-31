@@ -80,7 +80,7 @@ class ApiToken(AbstractAPIKey):
     class Meta(AbstractAPIKey.Meta):
         verbose_name = "API Token"
         verbose_name_plural = "API Tokens"
-        ordering = ()
+        ordering = ("id",)
 
     def touch(self) -> None:
         self.save(update_fields=["updated_date"])
