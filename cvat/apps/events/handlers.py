@@ -155,10 +155,18 @@ def _get_value(obj, key):
 def request_info(instance=None):
     request = get_request(instance)
     request_headers = _get_value(request, "headers")
-    return {
+
+    data = {
         "id": _get_value(request, "uuid"),
         "user_agent": request_headers.get("User-Agent") if request_headers is not None else None,
     }
+
+    from cvat.apps.api_tokens.models import ApiToken
+    api_token = getattr(request, "auth", None)
+    if isinstance(api_token, ApiToken):
+        data["api_token_id"] = api_token.id
+
+    return data
 
 
 def user_id(instance=None):
