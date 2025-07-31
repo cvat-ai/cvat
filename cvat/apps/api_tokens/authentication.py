@@ -18,9 +18,9 @@ class ApiTokenAuthentication(TokenAuthentication):
         except model.DoesNotExist:
             raise exceptions.AuthenticationFailed("Invalid token.")
 
-        if not token.user.is_active:
+        if not token.owner.is_active:
             raise exceptions.AuthenticationFailed("User inactive or deleted.")
 
         token.update_last_use()
 
-        return (token.user, token)
+        return (token.owner, token)

@@ -54,7 +54,7 @@ class Migration(migrations.Migration):
                 ("last_used_date", models.DateTimeField(blank=True, null=True)),
                 ("read_only", models.BooleanField(default=True)),
                 (
-                    "user",
+                    "owner",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="api_tokens",

@@ -67,7 +67,7 @@ class ApiToken(AbstractAPIKey):
 
     read_only = models.BooleanField(default=True)
 
-    user = models.ForeignKey(
+    owner = models.ForeignKey(
         User,
         related_name="api_tokens",
         related_query_name="api_token",

@@ -68,7 +68,7 @@ class ApiTokensViewSet(
     ordering_fields = list(filter_fields)
     ordering = "-id"
     lookup_fields = {
-        "owner": "user__id",
+        "owner": "owner__id",
     }
 
     iam_organization_field = None

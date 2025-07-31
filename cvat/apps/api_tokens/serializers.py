@@ -32,7 +32,7 @@ class ApiTokenReadSerializer(serializers.ModelSerializer):
 
         extra_kwargs = {
             "created_date": {"source": "created", "read_only": True},
-            "owner": {"source": "user_id", "read_only": True},
+            "owner": {"source": "owner_id", "read_only": True},
         }
 
 
@@ -55,7 +55,7 @@ class ApiTokenWriteSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data: dict[str, Any]) -> models.ApiToken:
         instance, raw_token = models.ApiToken.objects.create_key(
-            **validated_data, user=self.context["request"].user
+            **validated_data, owner=self.context["request"].user
         )
         instance.raw_token = raw_token
         return instance
