@@ -629,10 +629,9 @@ class JobAnnotation:
         serializer = serializers.LabeledImageSerializerFromDB(db_tags, many=True)
         self.ir_data.tags = serializer.data
 
-    def _init_shapes_from_db(self):
-        db_shapes = [
-            dotdict(row)
-            for row in self.db_job.labeledshape_set.values(
+    def _shapes_db_request(self):
+        return (
+            self.db_job.labeledshape_set.values(
                 "id",
                 "label_id",
                 "type",
@@ -648,7 +647,10 @@ class JobAnnotation:
             )
             .order_by("frame")
             .iterator(chunk_size=settings.DEFAULT_DB_ANNO_CHUNK_SIZE)
-        ]
+        )
+
+    def _init_shapes_from_db(self):
+        db_shapes = [dotdict(row) for row in self._shapes_db_request()]
 
         labeledshape_attributes = _receive_attributes_from_db(
             self.db_job.labeledshapeattributeval_set,
@@ -831,6 +833,55 @@ class JobAnnotation:
                 raise not_found
 
         self.create(job_data.data.slice(self.start_frame, self.stop_frame).serialize())
+
+
+class JobAnnotationStream(JobAnnotation):
+    def _init_shapes_from_db(self):
+        db_shapes = (dotdict(row) for row in self._shapes_db_request())
+
+        labeledshape_attributes = _receive_attributes_from_db(
+            self.db_job.labeledshapeattributeval_set,
+            "shape_id",
+        )
+
+        def yield_shapes_for_one_frame(shapes: dict, elements):
+            for shape_id, shape_elements in elements.items():
+                shapes[shape_id].elements = shape_elements
+
+            serializer = serializers.LabeledShapeSerializerFromDB(list(shapes.values()), many=True)
+            yield from serializer.data
+
+            shapes.clear()
+            elements.clear()
+
+        def generate_shapes():
+            shapes = {}
+            elements = {}
+
+            for db_shape in db_shapes:
+                if shapes and next(iter(shapes.values())).frame != db_shape.frame:
+                    yield from yield_shapes_for_one_frame(shapes, elements)
+
+                db_shape.attributes = labeledshape_attributes[db_shape.id]
+                self._extend_attributes(
+                    db_shape.attributes, self.db_attributes[db_shape.label_id]["all"].values()
+                )
+                if db_shape["type"] == str(models.ShapeType.SKELETON):
+                    # skeletons themselves should not have points as they consist of other elements
+                    # here we ensure that it was initialized correctly
+                    db_shape["points"] = []
+
+                if db_shape.parent is None:
+                    db_shape.elements = []
+                    shapes[db_shape.id] = db_shape
+                else:
+                    if db_shape.parent not in elements:
+                        elements[db_shape.parent] = []
+                    elements[db_shape.parent].append(db_shape)
+
+            yield from yield_shapes_for_one_frame(shapes, elements)
+
+        self.ir_data.shapes = generate_shapes()
 
 
 class TaskAnnotation:
@@ -1061,6 +1112,15 @@ class TaskAnnotation:
 @transaction.atomic
 def get_job_data(pk):
     annotation = JobAnnotation(pk)
+    annotation.init_from_db()
+
+    return annotation.data
+
+
+@silk_profile(name="GET job data stream")
+@transaction.atomic
+def get_job_data_stream(pk):
+    annotation = JobAnnotationStream(pk)
     annotation.init_from_db()
 
     return annotation.data
