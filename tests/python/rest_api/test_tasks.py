@@ -2588,30 +2588,74 @@ class TestPatchTask:
             expected_status=HTTPStatus.OK if is_allow else HTTPStatus.FORBIDDEN,
         )
 
-    def test_transfer_task_from_sandbox_to_organization(
+    # TODO: Test assignee reset
+    # TODO: Test owner update
+    # TODO: Test source/target/data storage reset
+    @pytest.mark.parametrize(
+        "from_org, to_org",
+        [
+            (True, True),
+            (True, False),
+            (False, True),
+        ],
+    )
+    def test_task_can_be_transferred_to_different_workspace(
         self,
-        filter_tasks,
+        from_org: bool,
+        to_org: bool,
         organizations,
         find_users,
     ):
-        task, user, dst_org = None, None, None
+        src_org, dst_org, user = None, None, None
         org_owners = {o["owner"]["username"] for o in organizations}
-        filtered_users = org_owners & {u["username"] for u in find_users(privilege="user")}
-        for t in filter_tasks(organization_id=None, project_id=None, exclude_assignee=None):
-            user = t["owner"]["username"]
-            if user in filtered_users:
-                task = t
-                dst_org = next(o for o in organizations if o["owner"]["username"] == user)
+        regular_users = {u["username"] for u in find_users(privilege="user")}
+
+        for u in regular_users & org_owners:
+            src_org, dst_org = None, None
+            for org in organizations:
+                if from_org and not src_org and u == org["owner"]["username"]:
+                    src_org = org
+                    continue
+                if to_org and not dst_org and u == org["owner"]["username"]:
+                    dst_org = org
+                    break
+            if (from_org and src_org or not from_org) and (to_org and dst_org or not to_org):
+                user = u
                 break
 
-        assert task and user and dst_org
+        assert user, "Could not find a user matching the filters"
+        assert (
+            from_org and src_org or not from_org and not src_org
+        ), "Could not find a source org matching the filters"
+        assert (
+            to_org and dst_org or not to_org and not dst_org
+        ), "Could not find a destination org matching the filters"
+
+        src_org_id = src_org["id"] if src_org else src_org
+        dst_org_id = dst_org["id"] if dst_org else dst_org
+
+        task_spec = {
+            "name": "Task to be transferred to another workspace",
+            "labels": [
+                {
+                    "name": "car",
+                }
+            ],
+        }
+        data_spec = {
+            "image_quality": 75,
+            "use_cache": True,
+            "server_files": ["images/image_1.jpg"],
+        }
+        (task_id, _) = create_task(
+            user, task_spec, data_spec, **({"org_id": src_org_id} if src_org_id else {})
+        )
 
         with make_api_client(user) as api_client:
             task_details, _ = api_client.tasks_api.partial_update(
-                task["id"], patched_task_write_request={"organization_id": dst_org["id"]}
+                task_id, patched_task_write_request={"organization_id": dst_org_id}
             )
-            assert task_details.organization_id == dst_org["id"]
-            assert not task_details.assignee
+            assert task_details.organization_id == dst_org_id
 
     def test_cannot_transfer_task_from_project_to_different_workspace(
         self,
