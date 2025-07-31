@@ -1902,11 +1902,8 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         if db_job.type == models.JobType.GROUND_TRUTH:
             deleted_frames.update(db_data.validation_layout.disabled_frames)
 
-        # Filter data with segment size
-        db_data.deleted_frames = sorted(filter(
-            lambda frame: frame >= start_frame and frame <= stop_frame,
-            deleted_frames,
-        ))
+        # Filter data with segment frames
+        db_data.deleted_frames = sorted(deleted_frames.intersection(db_segment.frame_set))
 
         db_data.start_frame = data_start_frame
         db_data.stop_frame = data_stop_frame
