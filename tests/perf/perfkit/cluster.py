@@ -8,8 +8,12 @@ import requests
 from rich.console import Console
 from plumbum import local, FG
 
-from perfkit.config import URL_SERVER_ABOUT, DOCKER_COMPOSE_FILE, DOCKER_COMPOSE_FILE_WITH_CPUSET, \
-    CVAT_SERVER_SERVICE
+from perfkit.config import (
+    URL_SERVER_ABOUT,
+    DOCKER_COMPOSE_FILE,
+    DOCKER_COMPOSE_FILE_WITH_CPUSET,
+    CVAT_SERVER_SERVICE,
+)
 from perfkit.console_print import print_info, print_success, exit_with_error, print_error
 from perfkit.k6_profile import K6Profile
 
@@ -17,14 +21,13 @@ from perfkit.k6_profile import K6Profile
 console = Console()
 
 docker = local["docker"]
-docker_compose = docker[
-    "compose",
-    "-f", DOCKER_COMPOSE_FILE,
-    "-f", DOCKER_COMPOSE_FILE_WITH_CPUSET]
+docker_compose = docker["compose", "-f", DOCKER_COMPOSE_FILE, "-f", DOCKER_COMPOSE_FILE_WITH_CPUSET]
 
 
 def is_service_running(service_name: str) -> bool:
-    result = docker_compose["ps", "--filter", f"name={service_name}", "--filter", "status=running"]()
+    result = docker_compose[
+        "ps", "--filter", f"name={service_name}", "--filter", "status=running"
+    ]()
     if service_name in result:
         return True
     return False
@@ -44,8 +47,9 @@ def wait_for_server(url: str = URL_SERVER_ABOUT, timeout: int = 180, interval: f
     return False
 
 
-def start_cluster(container_name: str = CVAT_SERVER_SERVICE,
-                  compose_file: pathlib.Path = DOCKER_COMPOSE_FILE) -> None:
+def start_cluster(
+    container_name: str = CVAT_SERVER_SERVICE, compose_file: pathlib.Path = DOCKER_COMPOSE_FILE
+) -> None:
     if is_service_running(CVAT_SERVER_SERVICE):
         print_success("✅ cluster already running")
         return
@@ -62,9 +66,14 @@ def start_cluster(container_name: str = CVAT_SERVER_SERVICE,
         "from django.contrib.auth.models import User; "
         "User.objects.create_superuser('admin', 'admin@localhost.company', '12qwaszx')"
     )
-    exec_cmd = docker["exec", "-i", container_name,
-                      "bash", "-c",
-                      f'echo \"{admin_code}\" | python3 ~/manage.py shell']
+    exec_cmd = docker[
+        "exec",
+        "-i",
+        container_name,
+        "bash",
+        "-c",
+        f'echo "{admin_code}" | python3 ~/manage.py shell',
+    ]
     exec_cmd()
     time.sleep(10)
 

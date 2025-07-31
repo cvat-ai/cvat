@@ -1,13 +1,11 @@
 from setuptools import setup, find_packages
 from pathlib import Path
 
+
 def load_requirements(path: str) -> list[str]:
     with open(path) as f:
-        return [
-            line.strip()
-            for line in f
-            if line.strip() and not line.startswith("#")
-        ]
+        return [line.strip() for line in f if line.strip() and not line.startswith("#")]
+
 
 setup(
     name="perfkit",

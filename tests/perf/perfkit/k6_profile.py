@@ -11,7 +11,7 @@ class K6Profile:
         self.test_file = Path(test_file)
         self.env_vars: dict[str, str] = {
             "K6_PROMETHEUS_RW_SERVER_URL": f"{PROMETHEUS_URL}/api/v1/write",
-            "K6_PROMETHEUS_RW_TREND_STATS": _DEFAULT_TREND_STATS
+            "K6_PROMETHEUS_RW_TREND_STATS": _DEFAULT_TREND_STATS,
         }
         if enable_dashboard:
             self.env_vars["K6_WEB_DASHBOARD"] = "true"
@@ -41,14 +41,17 @@ class K6Profile:
         return [
             "run",
             *self._build_env_list(),
-            "--out", "experimental-prometheus-rw",
-            "--address", "0.0.0.0:6565",
-            "--tag", f"testid={self.test_file.name}",
+            "--out",
+            "experimental-prometheus-rw",
+            "--address",
+            "0.0.0.0:6565",
+            "--tag",
+            f"testid={self.test_file.name}",
             "--summary-export=/output/summary.json",
             # "--no-connection-reuse",
             # "--no-vu-connection-reuse",
             *self.args,
-            str(self.test_file)
+            str(self.test_file),
         ]
 
     def __repr__(self):

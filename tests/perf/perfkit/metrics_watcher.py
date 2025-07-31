@@ -13,7 +13,7 @@ def start_metrics_watcher(
     mem_limit: float = 92.0,
     max_alerts: int = 15,
     max_alerts_in_row: int = 5,
-    on_threshold_exceeded: Callable[[], None] = lambda: None
+    on_threshold_exceeded: Callable[[], None] = lambda: None,
 ) -> Callable[[], None]:
 
     stop_event = threading.Event()
@@ -31,7 +31,9 @@ def start_metrics_watcher(
             if cpu > cpu_limit or mem > mem_limit:
                 has_alert = True
                 alert_count += 1
-                console.print(f"[red][ALERT][/red] Resource usage high: CPU: {cpu:.1f}% | RAM: {mem:.1f}%")
+                console.print(
+                    f"[red][ALERT][/red] Resource usage high: CPU: {cpu:.1f}% | RAM: {mem:.1f}%"
+                )
 
             if has_alert:
                 alert_in_row_count += 1
@@ -41,7 +43,8 @@ def start_metrics_watcher(
             if alert_in_row_count >= max_alerts_in_row or alert_count >= max_alerts:
                 console.print(
                     f"[bold red]🚨 Too many alerts (total: {alert_count}/in row: {alert_in_row_count}), "
-                    "stopping test![/bold red]")
+                    "stopping test![/bold red]"
+                )
                 on_threshold_exceeded()
                 break
             time.sleep(interval)

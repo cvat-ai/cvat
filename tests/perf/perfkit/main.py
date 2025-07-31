@@ -11,8 +11,13 @@ from rich.table import Table
 
 from perfkit.cluster import run_k6_docker, stop_k6_docker, stop_cluster, start_cluster
 from perfkit.metrics_watcher import start_metrics_watcher
-from perfkit.baselines import add_baseline, load_baselines, save_baselines, resolve_commit_by_alias, \
-    resolve_test_baseline
+from perfkit.baselines import (
+    add_baseline,
+    load_baselines,
+    save_baselines,
+    resolve_commit_by_alias,
+    resolve_test_baseline,
+)
 from perfkit.comparison_report import get_comparison_table, build_report
 from perfkit.console_print import exit_with_error, print_info, print_success
 from perfkit.config import ALLOWED_DELTAS, K6_OUTPUT_SUMMARY_JSON
@@ -28,12 +33,16 @@ golden_app = typer.Typer(name="golden", help="Commands to manage a file with the
 app.add_typer(golden_app)
 
 
-@app.command("run-golden", help="Run and record golden test execution that will be used for comparison.")
+@app.command(
+    "run-golden", help="Run and record golden test execution that will be used for comparison."
+)
 def run_golden(
     test_file: str = typer.Argument(..., help="K6 test script to run"),
     runs: int = typer.Option(DEFAULT_RUNS, help="Number of runs"),
     # commit: Optional[str] = typer.Option(None, help="Product version or commit hash. Default is the last commit."),
-    save_baseline: bool = typer.Option(True, help="Save result as baseline. Be default prints it into the console.")
+    save_baseline: bool = typer.Option(
+        True, help="Save result as baseline. Be default prints it into the console."
+    ),
 ):
     test_invalid = threading.Event()
     k6_metrics_total: list[K6Summary] = []
@@ -72,9 +81,11 @@ def run_golden(
         k6_output_metrics = run_k6_test(i)
 
         if test_invalid.is_set():
-            exit_with_error("Test was aborted due to system limits. "
+            exit_with_error(
+                "Test was aborted due to system limits. "
                 "Please close all resource consuming processes and try again. "
-                "Or try less demanding load profile.")
+                "Or try less demanding load profile."
+            )
         assert k6_output_metrics
 
     # k6_summary_averaged = sum(k6_metrics_total) / runs
@@ -92,9 +103,13 @@ def run_golden(
 def run_regression(
     test_file: str = typer.Argument(..., help="K6 test file."),
     commit: Optional[str] = typer.Option(None, help="Baseline commit to compare against"),
-    alias: Optional[str] = typer.Option(None, help="Named alias to baseline (e.g. 'latest-release')"),
-    reuse_cluster: bool = typer.Option(False, help="Reuse existing cluster. Cluster won't be shutdown after test."),
-    no_warmup: bool = typer.Option(False, help="Disable warmup for test execution.")
+    alias: Optional[str] = typer.Option(
+        None, help="Named alias to baseline (e.g. 'latest-release')"
+    ),
+    reuse_cluster: bool = typer.Option(
+        False, help="Reuse existing cluster. Cluster won't be shutdown after test."
+    ),
+    no_warmup: bool = typer.Option(False, help="Disable warmup for test execution."),
 ):
 
     def resolve_commit() -> str:
@@ -132,16 +147,20 @@ def run_regression(
     stop_metrics()
     if not reuse_cluster:
         stop_cluster()
-    comparison_report, failed = build_report(parse_k6_summary(K6_OUTPUT_SUMMARY_JSON),
-                                             baselines[test_key][commit_value])
+    comparison_report, failed = build_report(
+        parse_k6_summary(K6_OUTPUT_SUMMARY_JSON), baselines[test_key][commit_value]
+    )
 
     console.print(get_comparison_table(comparison_report))
 
     report_file = Path(f"regression-report-{test_key}.txt")
     with report_file.open("a+") as f:
         f.write(f"Regression Report for test: {test_key} | {datetime.datetime.now()}\n\n")
-        f.write("{:<40} {:>10} {:>10} {:>10} {:>6}\n".format(
-            "Metric", "Baseline", "Actual", "Delta", "Status"))
+        f.write(
+            "{:<40} {:>10} {:>10} {:>10} {:>6}\n".format(
+                "Metric", "Baseline", "Actual", "Delta", "Status"
+            )
+        )
         f.write("-" * 80 + "\n")
         for row in comparison_report:
             f.write("{:<40} {:>10} {:>10} {:>10} {:>6}\n".format(*row))

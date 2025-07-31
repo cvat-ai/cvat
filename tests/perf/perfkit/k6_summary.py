@@ -87,13 +87,15 @@ class K6Summary:
                 if other_value == 0:
                     raise ZeroDivisionError(
                         f"Cannot compare field '{field_name}' of metric '{metric_name}' "
-                        "because baseline value is zero")
+                        "because baseline value is zero"
+                    )
 
                 delta = abs(self_value - other_value) / other_value
 
                 if delta > max_delta:
                     print_error(
-                        f"{metric_name}.{field_name} exceeded delta: {delta:.3f} > {max_delta}")
+                        f"{metric_name}.{field_name} exceeded delta: {delta:.3f} > {max_delta}"
+                    )
                     consistent = False
 
         return consistent

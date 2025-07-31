@@ -1,6 +1,6 @@
 import tasks from '../libs/api/tasks.js';
 import APIAuth from '../libs/api/auth.js';
-import { BASE_URL, ADMIN_PASSWORD, ADMIN_USERNAME } from '../variables/variables.js';
+import { ADMIN_PASSWORD, ADMIN_USERNAME } from '../variables/variables.js';
 
 
 export const options = {

@@ -12,7 +12,8 @@ ReportRow = tuple[str, str, str, str, str]
 
 
 def build_report(
-    k6_output_summary: K6Summary, baseline: dict[str, dict[str, float]]) -> tuple[list, bool]:
+    k6_output_summary: K6Summary, baseline: dict[str, dict[str, float]]
+) -> tuple[list, bool]:
     report: list[ReportRow] = []
     failed = False
 
@@ -21,16 +22,18 @@ def build_report(
         baseline_value: float | None = None,
         actual_value: float | None = None,
         delta: float | None = None,
-        passed: bool = False
-        ) -> None:
+        passed: bool = False,
+    ) -> None:
         status = OK if passed else FAIL
-        report.append((
-            metric_name,
-            f"{baseline_value:.2f}" if baseline_value is not None else MISSING,
-            f"{actual_value:.2f}" if actual_value is not None else MISSING,
-            f"{delta * 100:.2f}%" if delta is not None else MISSING,
-            status
-        ))
+        report.append(
+            (
+                metric_name,
+                f"{baseline_value:.2f}" if baseline_value is not None else MISSING,
+                f"{actual_value:.2f}" if actual_value is not None else MISSING,
+                f"{delta * 100:.2f}%" if delta is not None else MISSING,
+                status,
+            )
+        )
 
     for metric_name, metric in k6_output_summary.metrics.items():
         for stat_name, stat_value in metric.as_dict().items():
