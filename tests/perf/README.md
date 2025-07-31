@@ -68,55 +68,53 @@ for cpu in {2..15}; do
 done
 ```
 
-⚡ 4. Set IRQ Affinity (Interrupts)
-Method 1: Use TUNA (recommended)
-
+### Set IRQ Affinity (Interrupts)
+#### Method 1: Use TUNA (recommended)
+This script moves all irqs to 0-1 cores.
+```bash
 sudo apt install tuna
-sudo tuna --irqs --cpus=0-1 --move
-
-Method 2: Manual IRQ binding
-
-    List IRQs:
-
+sudo tuna --irqs=* --cpus=0-1 --move
+sudo tuna --show-irqs
+```
+#### Method 2: Manual IRQ binding
+List IRQs:
+```bash
 cat /proc/interrupts
-
-    Set affinity (example for IRQ 35):
-
+```
+Set affinity (example for IRQ 35):
+```bash
 echo 3 | sudo tee /proc/irq/35/smp_affinity
-
+```
 3 means binary 11 = CPUs 0 and 1.
-
 Repeat for other IRQs.
-🔒 5. Disable ASLR
 
+### Disable ASLR (Optional)
+
+```bash
 echo 0 | sudo tee /proc/sys/kernel/randomize_va_space
-
+```
 Persist it:
 
+```bash
 echo 'kernel.randomize_va_space = 0' | sudo tee -a /etc/sysctl.conf
+```
 
-🧬 6. Disable Hyper-Threading (SMT)
+### Disable Hyper-Threading (SMT)
 
-Check thread siblings:
+```bash
+echo off | sudo tee /sys/devices/system/cpu/smt/control
+```
 
-lscpu -e | grep -v '^#' | sort -k4
+### Docker Compose cpuset Configuration
 
-Disable logical threads:
+To assign specific cores to containers, add cpuset to each service in `docker-compose-perf-cpuset.yml`:
 
-for i in 1 3 5 7; do
-  echo 0 | sudo tee /sys/devices/system/cpu/cpu$i/online
-done
-
-🐳 7. Docker Compose cpuset Configuration
-
-To assign specific cores to containers, add cpuset to each service in your docker-compose-cpuset.yml:
-
+```yaml
 services:
   my_service:
-    cpuset: "2-15"
-
+    cpuset: "2,4,6,8,10"
+```
 Repeat for all containers. Reserve cores 0–1 for the system.
-
 
 ## Perfkit
 ```bash
@@ -127,5 +125,15 @@ pip install -e .
 Check perfkit is installed and can be used:
 ```bash
 perfkit golden show
+```
+
+To record a baseline:
+```bash
+perfkit run-golden --runs 1 /tests/regression/tasks.js
+```
+
+To run regression test:
+```bash
+perfkit run-regression --commit <commit-id> /tests/regression/tasks.js
 ```
 
