@@ -3,11 +3,13 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState, ReactPortal, useRef } from 'react';
+import React, {
+    useState, ReactPortal, useRef, useEffect,
+} from 'react';
 import ReactDOM from 'react-dom';
 import { useDispatch } from 'react-redux';
 import Form from 'antd/lib/form';
-import Input from 'antd/lib/input';
+import Input, { InputRef } from 'antd/lib/input';
 import Button from 'antd/lib/button';
 import { Row, Col } from 'antd/lib/grid';
 import { Store } from 'antd/lib/form/interface';
@@ -34,8 +36,9 @@ function MessageForm(props: Readonly<FormProps>): JSX.Element {
     } = props;
 
     const dialogRef = useRef<HTMLDivElement>(null);
+    const inputRef = useRef<InputRef>(null);
 
-    const { adjustedTop, adjustedLeft } = useDialogPositioning({
+    const position = useDialogPositioning({
         ref: dialogRef,
         top,
         left,
@@ -44,6 +47,14 @@ function MessageForm(props: Readonly<FormProps>): JSX.Element {
         clientCoordinates,
         canvasRect,
     });
+
+    useEffect(() => {
+        if (inputRef.current) {
+            setTimeout(() => {
+                inputRef.current?.focus();
+            }, 0);
+        }
+    }, [position]);
 
     function handleSubmit(values: Store): void {
         submit(values.issue_description);
@@ -54,8 +65,8 @@ function MessageForm(props: Readonly<FormProps>): JSX.Element {
             ref={dialogRef}
             className='cvat-create-issue-dialog'
             style={{
-                top: adjustedTop,
-                left: adjustedLeft,
+                top: position.top,
+                left: position.left,
                 transform: `scale(${scale}) rotate(${angle}deg)`,
             }}
         >
@@ -66,7 +77,7 @@ function MessageForm(props: Readonly<FormProps>): JSX.Element {
                     name='issue_description'
                     rules={[{ required: true, message: 'Please, fill out the field' }]}
                 >
-                    <Input autoFocus autoComplete='off' placeholder='Please, describe the issue' />
+                    <Input ref={inputRef} autoComplete='off' placeholder='Please, describe the issue' />
                 </Form.Item>
                 <Row justify='space-between'>
                     <Col>

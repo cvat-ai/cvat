@@ -63,7 +63,7 @@ export default function IssueDialog(props: Props): JSX.Element {
 
     const { id, comments } = issue;
 
-    const { adjustedTop, adjustedLeft } = useDialogPositioning({
+    const position = useDialogPositioning({
         ref,
         top,
         left,
@@ -146,7 +146,7 @@ export default function IssueDialog(props: Props): JSX.Element {
 
     return ReactDOM.createPortal(
         <div
-            style={{ top: adjustedTop, left: adjustedLeft, transform: `scale(${scale}) rotate(${angle}deg)` }}
+            style={{ top: position.top, left: position.left, transform: `scale(${scale}) rotate(${angle}deg)` }}
             ref={ref}
             className='cvat-issue-dialog'
         >

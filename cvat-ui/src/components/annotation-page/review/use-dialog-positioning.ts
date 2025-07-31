@@ -15,8 +15,8 @@ interface UseDialogPositioningParams {
 }
 
 interface UseDialogPositioningResult {
-    adjustedTop: number;
-    adjustedLeft: number;
+    top: number;
+    left: number;
 }
 
 export function useDialogPositioning({
@@ -28,13 +28,12 @@ export function useDialogPositioning({
     clientCoordinates,
     canvasRect,
 }: UseDialogPositioningParams): UseDialogPositioningResult {
-    const [adjustedTop, setAdjustedTop] = useState(top);
-    const [adjustedLeft, setAdjustedLeft] = useState(left);
+    const [position, setPosition] = useState({ top, left });
 
     useEffect(() => {
         if (ref.current && clientCoordinates && canvasRect) {
             const dialogRect = ref.current.getBoundingClientRect();
-            const margin = 5;
+            const margin = 8;
             const dialogWidth = dialogRect.width;
             const dialogHeight = dialogRect.height;
 
@@ -69,13 +68,9 @@ export function useDialogPositioning({
             newLeft = left + (totalDeltaX * scale);
             newTop = top + (totalDeltaY * scale);
 
-            setAdjustedTop(newTop);
-            setAdjustedLeft(newLeft);
-        } else {
-            setAdjustedTop(top);
-            setAdjustedLeft(left);
+            setPosition({ top: newTop, left: newLeft });
         }
     }, [ref.current, top, left, scale, angle, clientCoordinates, canvasRect]);
 
-    return { adjustedTop, adjustedLeft };
+    return position;
 }
