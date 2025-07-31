@@ -1505,6 +1505,70 @@ class TestWorkWithSimpleGtJobTasks:
             assert not annotation_source.tracks
 
     @parametrize("task, gt_job, annotation_jobs", [fixture_ref(fxt_task_with_gt_job)])
+    def test_gt_job_deleted_frames_contain_only_included_frames(
+        self, admin_user, task, gt_job, annotation_jobs
+    ):
+        with make_api_client(admin_user) as api_client:
+            task_meta, _ = api_client.tasks_api.retrieve_data_meta(task["id"])
+            frame_step = parse_frame_step(task_meta.frame_filter)
+
+            api_client.tasks_api.partial_update_data_meta(
+                task["id"],
+                patched_data_meta_write_request=models.PatchedDataMetaWriteRequest(
+                    deleted_frames=list(
+                        range(task_meta.start_frame, task_meta.stop_frame + 1, frame_step)
+                    )
+                ),
+            )
+
+            gt_job_meta, _ = api_client.jobs_api.retrieve_data_meta(gt_job["id"])
+            assert gt_job_meta.deleted_frames == sorted(gt_job_meta.included_frames)
+
+            for j in annotation_jobs:
+                updated_job_meta, _ = api_client.jobs_api.retrieve_data_meta(j["id"])
+                assert updated_job_meta.deleted_frames == list(
+                    range(updated_job_meta.start_frame, updated_job_meta.stop_frame + 1, frame_step)
+                )
+
+    @parametrize("task, gt_job, annotation_jobs", [fixture_ref(fxt_task_with_gt_job)])
+    def test_changing_gt_job_deleted_frames_does_not_change_task_deleted_frames(
+        self, admin_user, task, gt_job, annotation_jobs
+    ):
+        with make_api_client(admin_user) as api_client:
+            task_meta, _ = api_client.tasks_api.retrieve_data_meta(task["id"])
+            frame_step = parse_frame_step(task_meta.frame_filter)
+
+            api_client.tasks_api.partial_update_data_meta(
+                task["id"],
+                patched_data_meta_write_request=models.PatchedDataMetaWriteRequest(
+                    deleted_frames=list(
+                        range(task_meta.start_frame, task_meta.stop_frame + 1, frame_step)
+                    )
+                ),
+            )
+
+            # Will return these frames back into the validation pool,
+            # but not change deleted frames in the simple GT job
+            # (they are computed as union of task deleted frames and validation layout
+            # disabled frames)
+            gt_job_meta, _ = api_client.jobs_api.partial_update_data_meta(
+                gt_job["id"],
+                patched_job_data_meta_write_request=models.PatchedJobDataMetaWriteRequest(
+                    deleted_frames=[]
+                ),
+            )
+            assert sorted(gt_job_meta.deleted_frames) == sorted(gt_job_meta.included_frames)
+
+            task_validation_layout, _ = api_client.tasks_api.retrieve_validation_layout(task["id"])
+            assert task_validation_layout.disabled_frames == []
+
+            for j in annotation_jobs:
+                updated_job_meta, _ = api_client.jobs_api.retrieve_data_meta(j["id"])
+                assert updated_job_meta.deleted_frames == list(
+                    range(updated_job_meta.start_frame, updated_job_meta.stop_frame + 1, frame_step)
+                )
+
+    @parametrize("task, gt_job, annotation_jobs", [fixture_ref(fxt_task_with_gt_job)])
     def test_can_exclude_and_restore_gt_frames_via_gt_job_meta(
         self, admin_user, task, gt_job, annotation_jobs
     ):
