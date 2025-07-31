@@ -11,15 +11,6 @@ from . import models
 class ApiTokenAuthentication(TokenAuthentication):
     keyword = "Bearer"
 
-    def authenticate(self, request):
-        auth = super().authenticate(request)
-        if not auth:
-            return None
-
-        auth[1].update_last_use()
-
-        return auth
-
     def authenticate_credentials(self, key):
         model = models.ApiToken
         try:
@@ -29,5 +20,7 @@ class ApiTokenAuthentication(TokenAuthentication):
 
         if not token.user.is_active:
             raise exceptions.AuthenticationFailed("User inactive or deleted.")
+
+        token.update_last_use()
 
         return (token.user, token)

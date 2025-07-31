@@ -11,6 +11,7 @@ from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated
 from rest_framework.views import exception_handler
 
+from cvat.apps.api_tokens.models import ApiToken
 from cvat.apps.dataset_manager.tracks_counter import TracksCounter
 from cvat.apps.engine.models import (
     CloudStorage,
@@ -161,7 +162,6 @@ def request_info(instance=None):
         "user_agent": request_headers.get("User-Agent") if request_headers is not None else None,
     }
 
-    from cvat.apps.api_tokens.models import ApiToken
     api_token = getattr(request, "auth", None)
     if isinstance(api_token, ApiToken):
         data["api_token_id"] = api_token.id

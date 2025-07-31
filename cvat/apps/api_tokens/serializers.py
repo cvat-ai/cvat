@@ -10,9 +10,11 @@ from . import models
 
 
 class ApiTokenReadSerializer(serializers.ModelSerializer):
-    created_date = serializers.DateTimeField(source="created", read_only=True)
-    owner = serializers.IntegerField(source="user.id", read_only=True)
-    value = serializers.CharField(source="raw_token", required=False)
+    value = serializers.CharField(
+        source="raw_token",
+        required=False,
+        help_text="The raw value of the token. Must be saved by the user, shown only once",
+    )
 
     class Meta:
         model = models.ApiToken
@@ -28,12 +30,13 @@ class ApiTokenReadSerializer(serializers.ModelSerializer):
             "value",
         )
 
+        extra_kwargs = {
+            "created_date": {"source": "created", "read_only": True},
+            "owner": {"source": "user_id", "read_only": True},
+        }
+
 
 class ApiTokenWriteSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(required=True, allow_blank=False)
-    expiry_date = serializers.DateTimeField(required=False, allow_null=True)
-    read_only = serializers.BooleanField(required=False)
-
     class Meta:
         model = models.ApiToken
         fields = (
@@ -41,6 +44,11 @@ class ApiTokenWriteSerializer(serializers.ModelSerializer):
             "expiry_date",
             "read_only",
         )
+
+        extra_kwargs = {
+            "name": {"required": True, "allow_blank": False},
+            "expiry_date": {"allow_null": True},
+        }
 
     def to_representation(self, instance):
         return ApiTokenReadSerializer().to_representation(instance)

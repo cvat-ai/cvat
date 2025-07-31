@@ -7139,16 +7139,23 @@ components:
           readOnly: true
         value:
           type: string
+          description: The raw value of the token. Must be saved by the user, shown
+            only once
     ApiTokenWriteRequest:
       type: object
       properties:
         name:
           type: string
           minLength: 1
+          description: A free-form name for the API key. Need not be unique. 50 characters
+            max.
+          maxLength: 50
         expiry_date:
           type: string
           format: date-time
           nullable: true
+          title: Expires
+          description: Once API key expires, clients cannot use it anymore.
         read_only:
           type: boolean
       required:
@@ -9568,10 +9575,15 @@ components:
         name:
           type: string
           minLength: 1
+          description: A free-form name for the API key. Need not be unique. 50 characters
+            max.
+          maxLength: 50
         expiry_date:
           type: string
           format: date-time
           nullable: true
+          title: Expires
+          description: Once API key expires, clients cannot use it anymore.
         read_only:
           type: boolean
     PatchedCloudStorageWriteRequest:
