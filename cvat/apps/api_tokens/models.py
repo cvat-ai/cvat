@@ -41,8 +41,15 @@ class ApiTokenManager(BaseAPIKeyManager):
 
 
 class ApiToken(AbstractAPIKey):
-    # rest_framework_api_key is not supposed for authentication,
-    # however we implement additional security measures to protect API tokens.
+    # rest_framework_api_key and "classic" API keys are not recommended for authentication,
+    # however we implement additional security measures to improve security API tokens:
+    # - Each token can have an expiration date
+    # - Each token can be revoked at any time by the user or admin
+    # - Server tracks the last usage for each token and unused tokens are automatically revoked
+    # - Tokens have basic access control - read-only or not
+    # - Token-authenticated clients are not allowed to modify tokens
+    # - Token-authenticated clients are not allowed to modify the owning user email or password
+
     objects = ApiTokenManager()
 
     id = models.AutoField(primary_key=True)
