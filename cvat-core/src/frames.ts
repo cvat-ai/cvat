@@ -708,14 +708,14 @@ function saveMeta(meta: FramesMetaData, session: 'job' | 'task', id: number): Pr
             });
             resolve(updatedMetaData);
         }).catch((error) => {
-            if (session == 'job') {
+            if (session === 'job') {
                 frameMetaCache[id] = Promise.resolve(meta);
             }
             reject(error);
         });
     });
 
-    if (session == 'job') {
+    if (session === 'job') {
         frameMetaCache[jobID] = newMeta;
     }
 
@@ -960,14 +960,14 @@ export async function restoreFrame(jobID: number, frame: number): Promise<void> 
 }
 
 export async function patchMeta(id: number, meta?: FramesMetaData, session: 'job' | 'task' = 'job'): Promise<FramesMetaData> {
-    if (session == 'job') {
-        meta = await frameMetaCache[id];
-    }
-    const updatedFields = meta.getUpdated();
+    const oldMeta = (session === 'job' ? await frameMetaCache[id] : meta);
+    const updatedFields = oldMeta.getUpdated();
+    let newMeta = null;
     if (Object.keys(updatedFields).length) {
-        return await saveMeta(meta, session, id);
+        newMeta = await saveMeta(oldMeta, session, id);
     }
-    return meta;
+    newMeta = (session === 'job' ? await frameMetaCache[id] : newMeta);
+    return newMeta;
 }
 
 export async function findFrame(
