@@ -11,7 +11,7 @@ This directory contains migrations for the Clickhouse DB used by CVAT.
 ## Implementation details
 
 The Clickhouse documentation explains options to customize DB loading here:
-https://clickhouse.com/docs/install/docker#how-to-extend-image
+<https://clickhouse.com/docs/install/docker#how-to-extend-image>
 
 Migrations are mounted into the container into the `/docker-entrypoint-initdb.d` directory.
 There, only the main script `init.sh` is an executable shell script. The migration files
