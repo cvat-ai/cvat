@@ -577,7 +577,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             db_jobs = self._get_db_jobs()
             db_job_ids = (j.id for j in db_jobs)
             for db_job_id in db_job_ids:
-                annotations = dm.task.get_job_data_stream(db_job_id)
+                annotations = dm.task.get_job_data(db_job_id, streaming=True)
                 annotations_serializer = LabeledDataSerializer(data=dict(annotations, shapes=[]))
                 annotations_serializer.is_valid(raise_exception=True)
                 annotation_data = annotations_serializer.data
