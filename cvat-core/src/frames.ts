@@ -716,7 +716,7 @@ function saveMeta(meta: FramesMetaData, session: 'job' | 'task', id: number): Pr
     });
 
     if (session === 'job') {
-        frameMetaCache[jobID] = newMeta;
+        frameMetaCache[id] = newMeta;
     }
 
     return newMeta;
