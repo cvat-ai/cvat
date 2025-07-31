@@ -141,9 +141,9 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.TokenAuthentication",
+        "cvat.apps.api_tokens.authentication.ApiTokenAuthentication",
         "cvat.apps.iam.authentication.SignatureAuthentication",
         "rest_framework.authentication.SessionAuthentication",
-        "cvat.apps.api_tokens.authentication.ApiTokenAuthentication",
         "cvat.apps.iam.authentication.BasicAuthenticationEx",
     ],
     "DEFAULT_VERSIONING_CLASS": "rest_framework.versioning.AcceptHeaderVersioning",
