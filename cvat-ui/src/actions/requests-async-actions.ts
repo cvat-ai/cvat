@@ -91,13 +91,13 @@ export function getRequestsAsync(query: RequestsQuery): ThunkAction {
     };
 }
 
-export function cancelRequestAsync(request: Request, onSuccess: () => void): ThunkAction {
+export function cancelRequestAsync(request: Request): ThunkAction {
     return async (dispatch): Promise<void> => {
-        dispatch(requestsActions.cancelRequest(request));
+        dispatch(requestsActions.cancelRequest());
 
         try {
             await core.requests.cancel(request.id);
-            onSuccess();
+            dispatch(requestsActions.cancelRequestSuccess(request));
         } catch (error) {
             dispatch(requestsActions.cancelRequestFailed(request, error));
         }

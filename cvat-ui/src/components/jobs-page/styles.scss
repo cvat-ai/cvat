@@ -162,7 +162,7 @@
         flex-wrap: wrap;
         overflow-y: auto;
 
-        > div {
+        .cvat-jobs-list-row {
             width: 100%;
             margin-bottom: $grid-unit-size;
 

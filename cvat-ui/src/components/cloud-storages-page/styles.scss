@@ -55,7 +55,7 @@
     flex-wrap: wrap;
     overflow-y: auto;
 
-    > div {
+    .cvat-cloud-storages-list-row {
         width: 100%;
         margin-bottom: $grid-unit-size;
 

@@ -12,7 +12,7 @@ import Spin from 'antd/lib/spin';
 import notification from 'antd/lib/notification';
 
 import { getInferenceStatusAsync } from 'actions/models-actions';
-import { updateJobAsync } from 'actions/jobs-actions';
+import { updateJobAsync, jobsActions, JobsList } from 'actions/jobs-actions';
 import { getCore, Task, Job } from 'cvat-core-wrapper';
 import { TaskNotFoundComponent } from 'components/common/not-found';
 import JobListComponent from 'components/task-page/job-list';
@@ -37,12 +37,14 @@ function TaskPageComponent(): JSX.Element {
         deletes,
         updates,
         jobsFetching,
+        bulkFetching,
     } = useSelector((state: CombinedState) => ({
         deletes: state.tasks.activities.deletes,
         updates: state.tasks.activities.updates,
         jobsFetching: state.jobs.fetching,
+        bulkFetching: state.selection.fetching,
     }), shallowEqual);
-    const isTaskUpdating = updates[id] || jobsFetching;
+    const isTaskUpdating = (updates[id] || jobsFetching) && !bulkFetching;
 
     const receiveTask = (): Promise<Task[]> => {
         if (Number.isInteger(id)) {
@@ -50,6 +52,11 @@ function TaskPageComponent(): JSX.Element {
             promise.then(([task]: Task[]) => {
                 if (task) {
                     setTaskInstance(task);
+                    if (task.jobs && Array.isArray(task.jobs)) {
+                        const jobsList = [...task.jobs] as JobsList;
+                        jobsList.count = jobsList.length;
+                        dispatch(jobsActions.getJobsSuccess(jobsList));
+                    }
                 }
             }).catch((error: Error) => {
                 notification.error({

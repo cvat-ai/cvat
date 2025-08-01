@@ -28,6 +28,8 @@ export interface TaskItemProps {
     ribbonPlugins: PluginComponent[];
     cancelAutoAnnotation(): void;
     updateTaskInState(task: Task): void;
+    selected: boolean;
+    onClick: () => void;
 }
 
 interface State {
@@ -259,7 +261,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                         <TaskActionsComponent
                             taskInstance={taskInstance}
                             triggerElement={(
-                                <div>
+                                <div className='cvat-task-item-actions-button cvat-actions-menu-button'>
                                     <Text className='cvat-text-color'>Actions</Text>
                                     <MoreOutlined className='cvat-menu-icon' />
                                 </div>
@@ -272,12 +274,13 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
     }
 
     public render(): JSX.Element {
-        const { deleted, ribbonPlugins } = this.props;
-
-        const style = {};
+        const {
+            deleted, ribbonPlugins, selected, onClick, taskInstance,
+        } = this.props;
+        const style: React.CSSProperties = {};
         if (deleted) {
-            (style as any).pointerEvents = 'none';
-            (style as any).opacity = 0.5;
+            style.pointerEvents = 'none';
+            style.opacity = 0.5;
         }
 
         const ribbonItems = ribbonPlugins
@@ -298,12 +301,24 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                     </div>
                 )}
             >
-                <Row className='cvat-tasks-list-item' justify='center' align='top' style={{ ...style }}>
-                    {this.renderPreview()}
-                    {this.renderDescription()}
-                    {this.renderProgress()}
-                    {this.renderNavigation()}
-                </Row>
+                <TaskActionsComponent
+                    taskInstance={taskInstance}
+                    dropdownTrigger={['contextMenu']}
+                    triggerElement={(
+                        <Row
+                            className={`cvat-tasks-list-item${selected ? ' cvat-item-selected' : ''}`}
+                            justify='center'
+                            align='top'
+                            style={style}
+                            onClick={onClick}
+                        >
+                            {this.renderPreview()}
+                            {this.renderDescription()}
+                            {this.renderProgress()}
+                            {this.renderNavigation()}
+                        </Row>
+                    )}
+                />
             </Badge.Ribbon>
         );
     }

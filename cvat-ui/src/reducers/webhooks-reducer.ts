@@ -4,6 +4,7 @@
 
 import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
 import { WebhooksActions, WebhooksActionsTypes } from 'actions/webhooks-actions';
+import { omit } from 'lodash';
 import { WebhooksState } from 'reducers';
 
 const defaultState: WebhooksState = {
@@ -17,6 +18,9 @@ const defaultState: WebhooksState = {
         search: null,
         filter: null,
         sort: null,
+    },
+    activities: {
+        deletes: {},
     },
     fetching: false,
 };
@@ -48,6 +52,42 @@ export default function (
                 ...state,
                 fetching: false,
             };
+        case WebhooksActionsTypes.DELETE_WEBHOOK: {
+            const { webhookId } = action.payload;
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    deletes: {
+                        ...state.activities.deletes,
+                        [webhookId]: false,
+                    },
+                },
+            };
+        }
+        case WebhooksActionsTypes.DELETE_WEBHOOK_SUCCESS: {
+            const { webhookId } = action.payload;
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    deletes: {
+                        ...state.activities.deletes,
+                        [webhookId]: true,
+                    },
+                },
+            };
+        }
+        case WebhooksActionsTypes.DELETE_WEBHOOK_FAILED: {
+            const { webhookId } = action.payload;
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    deletes: omit(state.activities.deletes, webhookId),
+                },
+            };
+        }
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return { ...defaultState };
         }
