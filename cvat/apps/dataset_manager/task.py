@@ -632,24 +632,22 @@ class JobAnnotation:
     def _init_shapes_from_db(self, streaming: bool = False):
         db_shapes = (
             dotdict(row)
-            for row in (
-                self.db_job.labeledshape_set.values(
-                    "id",
-                    "label_id",
-                    "type",
-                    "frame",
-                    "group",
-                    "source",
-                    "occluded",
-                    "outside",
-                    "z_order",
-                    "rotation",
-                    "points",
-                    "parent",
-                )
-                .order_by("frame")
-                .iterator(chunk_size=settings.DEFAULT_DB_ANNO_CHUNK_SIZE)
+            for row in self.db_job.labeledshape_set.values(
+                "id",
+                "label_id",
+                "type",
+                "frame",
+                "group",
+                "source",
+                "occluded",
+                "outside",
+                "z_order",
+                "rotation",
+                "points",
+                "parent",
             )
+            .order_by("frame")
+            .iterator(chunk_size=settings.DEFAULT_DB_ANNO_CHUNK_SIZE)
         )
 
         labeledshape_attributes = _receive_attributes_from_db(
