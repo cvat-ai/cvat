@@ -72,7 +72,7 @@ jobs:
 
       - name: Instrumentation of the code then rebuilding the CVAT UI
         run: |
-          yarn --frozen-lockfile
+          yarn --immutable
           yarn run coverage
 
       - name: CVAT UI. Build and push
@@ -371,7 +371,7 @@ jobs:
         run: |
           docker exec -i cvat_server /bin/bash -c "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
           cd ./tests
-          yarn --frozen-lockfile
+          yarn --immutable
 
           if [[ ${{ matrix.specs }} == canvas3d_* ]]; then
             npx cypress run \

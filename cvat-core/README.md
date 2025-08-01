@@ -10,7 +10,7 @@ It contains the core logic of the Computer Vision Annotation Tool.
 - Dependencies installation
 
 ```bash
-yarn install --frozen-lockfile
+yarn install --immutable
 ```
 
 - Building the module from sources in the `dist` directory:

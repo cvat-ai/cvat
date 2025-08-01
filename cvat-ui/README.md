@@ -9,7 +9,7 @@ This is a client UI for Computer Vision Annotation Tool based on React, Redux an
 - Installing dependencies:
 
 ```bash
-yarn --frozen-lockfile
+yarn --immutable
 ```
 
 - Running development UI server with autorebuild on change
