@@ -965,6 +965,17 @@
   }
 },
 {
+  "model": "engine.validationlayout",
+  "pk": 7,
+  "fields": {
+    "task_data": 33,
+    "mode": "gt",
+    "frames_per_job_count": null,
+    "frames": "7,10,19",
+    "disabled_frames": "[]"
+  }
+},
+{
   "model": "engine.data",
   "pk": 2,
   "fields": {
@@ -1505,6 +1516,26 @@
   }
 },
 {
+  "model": "engine.data",
+  "pk": 33,
+  "fields": {
+    "content_size": 1696254,
+    "chunk_size": 72,
+    "size": 20,
+    "image_quality": 70,
+    "start_frame": 2,
+    "stop_frame": 97,
+    "frame_filter": "step=5",
+    "compressed_chunk_type": "imageset",
+    "original_chunk_type": "video",
+    "storage_method": "cache",
+    "storage": "local",
+    "cloud_storage": null,
+    "sorting_method": "lexicographical",
+    "deleted_frames": "10"
+  }
+},
+{
   "model": "engine.video",
   "pk": 1,
   "fields": {
@@ -1520,6 +1551,16 @@
   "fields": {
     "data": 14,
     "path": "test_video_1.mp4",
+    "width": 1280,
+    "height": 720
+  }
+},
+{
+  "model": "engine.video",
+  "pk": 3,
+  "fields": {
+    "data": 33,
+    "path": "random_video_10s.mp4",
     "width": 1280,
     "height": 720
   }
@@ -5182,6 +5223,33 @@
   }
 },
 {
+  "model": "engine.task",
+  "pk": 34,
+  "fields": {
+    "created_date": "2025-08-01T11:44:46.343Z",
+    "updated_date": "2025-08-01T11:45:33.361Z",
+    "project": null,
+    "name": "task with frame step and gt job",
+    "mode": "interpolation",
+    "owner": [
+      "user2"
+    ],
+    "assignee": null,
+    "assignee_updated_date": null,
+    "bug_tracker": "",
+    "overlap": 5,
+    "segment_size": 10,
+    "status": "annotation",
+    "data": 33,
+    "dimension": "2d",
+    "subset": "",
+    "organization": 2,
+    "source_storage": 55,
+    "target_storage": 56,
+    "consensus_replicas": 0
+  }
+},
+{
   "model": "engine.clientfile",
   "pk": 131,
   "fields": {
@@ -6182,6 +6250,14 @@
   }
 },
 {
+  "model": "engine.clientfile",
+  "pk": 473,
+  "fields": {
+    "data": 33,
+    "file": "/home/django/data/data/33/raw/random_video_10s.mp4"
+  }
+},
+{
   "model": "engine.relatedfile",
   "pk": 1,
   "fields": {
@@ -6706,6 +6782,54 @@
     "chunks_updated_date": "2025-05-05T15:35:00.401Z",
     "type": "range",
     "frames": "[]"
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 51,
+  "fields": {
+    "task": 34,
+    "start_frame": 0,
+    "stop_frame": 9,
+    "chunks_updated_date": "2025-08-01T11:44:47.531Z",
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 52,
+  "fields": {
+    "task": 34,
+    "start_frame": 5,
+    "stop_frame": 14,
+    "chunks_updated_date": "2025-08-01T11:44:47.546Z",
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 53,
+  "fields": {
+    "task": 34,
+    "start_frame": 10,
+    "stop_frame": 19,
+    "chunks_updated_date": "2025-08-01T11:44:47.550Z",
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 54,
+  "fields": {
+    "task": 34,
+    "start_frame": 0,
+    "stop_frame": 19,
+    "chunks_updated_date": "2025-08-01T11:44:47.598Z",
+    "type": "specific_frames",
+    "frames": "37,52,97"
   }
 },
 {
@@ -7530,6 +7654,70 @@
     "status": "completed",
     "stage": "acceptance",
     "state": "completed",
+    "type": "ground_truth",
+    "parent_job": null
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 59,
+  "fields": {
+    "created_date": "2025-08-01T11:44:47.537Z",
+    "updated_date": "2025-08-01T11:44:47.537Z",
+    "segment": 51,
+    "assignee": null,
+    "assignee_updated_date": null,
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "new",
+    "type": "annotation",
+    "parent_job": null
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 60,
+  "fields": {
+    "created_date": "2025-08-01T11:44:47.547Z",
+    "updated_date": "2025-08-01T11:44:47.547Z",
+    "segment": 52,
+    "assignee": null,
+    "assignee_updated_date": null,
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "new",
+    "type": "annotation",
+    "parent_job": null
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 61,
+  "fields": {
+    "created_date": "2025-08-01T11:44:47.551Z",
+    "updated_date": "2025-08-01T11:45:33.617Z",
+    "segment": 53,
+    "assignee": null,
+    "assignee_updated_date": null,
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "in progress",
+    "type": "annotation",
+    "parent_job": null
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 62,
+  "fields": {
+    "created_date": "2025-08-01T11:44:47.600Z",
+    "updated_date": "2025-08-01T11:44:47.600Z",
+    "segment": 54,
+    "assignee": null,
+    "assignee_updated_date": null,
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "new",
     "type": "ground_truth",
     "parent_job": null
   }
@@ -8435,6 +8623,90 @@
   }
 },
 {
+  "model": "engine.label",
+  "pk": 83,
+  "fields": {
+    "task": 34,
+    "project": null,
+    "name": "cat",
+    "color": "#6080c0",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 84,
+  "fields": {
+    "task": 34,
+    "project": null,
+    "name": "dog",
+    "color": "#406040",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 85,
+  "fields": {
+    "task": 34,
+    "project": null,
+    "name": "skel",
+    "color": "#8c2f84",
+    "type": "skeleton",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 86,
+  "fields": {
+    "task": 34,
+    "project": null,
+    "name": "p1",
+    "color": "#20d603",
+    "type": "points",
+    "parent": 85
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 87,
+  "fields": {
+    "task": 34,
+    "project": null,
+    "name": "p2",
+    "color": "#e00ebb",
+    "type": "points",
+    "parent": 85
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 88,
+  "fields": {
+    "task": 34,
+    "project": null,
+    "name": "p3",
+    "color": "#0a699d",
+    "type": "points",
+    "parent": 85
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 89,
+  "fields": {
+    "task": 34,
+    "project": null,
+    "name": "skelp3",
+    "color": "#cfe6e8",
+    "type": "any",
+    "parent": null
+  }
+},
+{
   "model": "engine.skeleton",
   "pk": 1,
   "fields": {
@@ -8488,6 +8760,14 @@
   "fields": {
     "root": 68,
     "svg": "<line x1=\"45.96969985961914\" y1=\"28.54729652404785\" x2=\"31.7805118560791\" y2=\"16.04729652404785\" data-type=\"edge\" data-node-from=\"2\" data-node-to=\"1\"></line>\n<line x1=\"32.11834716796875\" y1=\"28.716217041015625\" x2=\"31.7805118560791\" y2=\"16.04729652404785\" data-type=\"edge\" data-node-from=\"3\" data-node-to=\"1\"></line>\n<line x1=\"32.11834716796875\" y1=\"28.716217041015625\" x2=\"45.96969985961914\" y2=\"28.54729652404785\" data-type=\"edge\" data-node-from=\"3\" data-node-to=\"2\"></line>\n<circle r=\"0.75\" cx=\"31.7805118560791\" cy=\"16.04729652404785\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"69\"></circle>\n<circle r=\"0.75\" cx=\"45.96969985961914\" cy=\"28.54729652404785\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"70\"></circle>\n<circle r=\"0.75\" cx=\"32.11834716796875\" cy=\"28.716217041015625\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"71\"></circle>\n<circle r=\"0.75\" cx=\"32.62510681152344\" cy=\"40.202701568603516\" data-type=\"element node\" data-element-id=\"4\" data-node-id=\"4\" data-label-id=\"72\"></circle>"
+  }
+},
+{
+  "model": "engine.skeleton",
+  "pk": 8,
+  "fields": {
+    "root": 85,
+    "svg": "<line x1=\"36.04480743408203\" y1=\"43.290340423583984\" x2=\"21.16179084777832\" y2=\"21.0494327545166\" data-type=\"edge\" data-node-from=\"3\" data-node-to=\"1\"></line>\n<line x1=\"46.24552536010742\" y1=\"17.20326042175293\" x2=\"21.16179084777832\" y2=\"21.0494327545166\" data-type=\"edge\" data-node-from=\"2\" data-node-to=\"1\"></line>\n<circle r=\"0.75\" cx=\"21.16179084777832\" cy=\"21.0494327545166\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"86\"></circle>\n<circle r=\"0.75\" cx=\"46.24552536010742\" cy=\"17.20326042175293\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"87\"></circle>\n<circle r=\"0.75\" cx=\"36.04480743408203\" cy=\"43.290340423583984\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"88\"></circle>"
   }
 },
 {
@@ -16272,6 +16552,22 @@
   }
 },
 {
+  "model": "engine.storage",
+  "pk": 55,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 56,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
   "model": "webhooks.webhook",
   "pk": 1,
   "fields": {
@@ -22525,6 +22821,35 @@
     "created_date": "2025-05-05T15:35:00.343Z",
     "updated_date": "2025-05-05T15:36:34.347Z",
     "task": 33,
+    "project": null,
+    "inherit": true,
+    "job_filter": "",
+    "iou_threshold": 0.4,
+    "oks_sigma": 0.09,
+    "line_thickness": 0.01,
+    "low_overlap_threshold": 0.8,
+    "point_size_base": "group_bbox_size",
+    "compare_line_orientation": true,
+    "line_orientation_threshold": 0.1,
+    "compare_groups": true,
+    "group_match_threshold": 0.5,
+    "check_covered_annotations": true,
+    "object_visibility_threshold": 0.05,
+    "panoptic_comparison": true,
+    "compare_attributes": true,
+    "empty_is_annotated": false,
+    "target_metric": "accuracy",
+    "target_metric_threshold": 0.7,
+    "max_validations_per_job": 0
+  }
+},
+{
+  "model": "quality_control.qualitysettings",
+  "pk": 45,
+  "fields": {
+    "created_date": "2025-08-01T11:44:46.355Z",
+    "updated_date": "2025-08-01T11:44:46.355Z",
+    "task": 34,
     "project": null,
     "inherit": true,
     "job_filter": "",

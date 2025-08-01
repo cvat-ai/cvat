@@ -1,8 +1,184 @@
 {
-  "count": 51,
+  "count": 55,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "assignee": null,
+      "assignee_updated_date": null,
+      "bug_tracker": null,
+      "consensus_replicas": 0,
+      "created_date": "2025-08-01T11:44:47.600000Z",
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "data_original_chunk_type": "video",
+      "dimension": "2d",
+      "frame_count": 3,
+      "guide_id": null,
+      "id": 62,
+      "issues": {
+        "count": 0,
+        "url": "http://localhost:8080/api/issues?job_id=62"
+      },
+      "labels": {
+        "url": "http://localhost:8080/api/labels?job_id=62"
+      },
+      "mode": "interpolation",
+      "organization": 2,
+      "parent_job_id": null,
+      "project_id": null,
+      "source_storage": {
+        "cloud_storage_id": null,
+        "id": 55,
+        "location": "local"
+      },
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "new",
+      "status": "annotation",
+      "stop_frame": 19,
+      "target_storage": {
+        "cloud_storage_id": null,
+        "id": 56,
+        "location": "local"
+      },
+      "task_id": 34,
+      "type": "ground_truth",
+      "updated_date": "2025-08-01T11:44:47.600000Z",
+      "url": "http://localhost:8080/api/jobs/62"
+    },
+    {
+      "assignee": null,
+      "assignee_updated_date": null,
+      "bug_tracker": null,
+      "consensus_replicas": 0,
+      "created_date": "2025-08-01T11:44:47.551000Z",
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "data_original_chunk_type": "video",
+      "dimension": "2d",
+      "frame_count": 10,
+      "guide_id": null,
+      "id": 61,
+      "issues": {
+        "count": 0,
+        "url": "http://localhost:8080/api/issues?job_id=61"
+      },
+      "labels": {
+        "url": "http://localhost:8080/api/labels?job_id=61"
+      },
+      "mode": "interpolation",
+      "organization": 2,
+      "parent_job_id": null,
+      "project_id": null,
+      "source_storage": {
+        "cloud_storage_id": null,
+        "id": 55,
+        "location": "local"
+      },
+      "stage": "annotation",
+      "start_frame": 10,
+      "state": "in progress",
+      "status": "annotation",
+      "stop_frame": 19,
+      "target_storage": {
+        "cloud_storage_id": null,
+        "id": 56,
+        "location": "local"
+      },
+      "task_id": 34,
+      "type": "annotation",
+      "updated_date": "2025-08-01T11:45:33.617000Z",
+      "url": "http://localhost:8080/api/jobs/61"
+    },
+    {
+      "assignee": null,
+      "assignee_updated_date": null,
+      "bug_tracker": null,
+      "consensus_replicas": 0,
+      "created_date": "2025-08-01T11:44:47.547000Z",
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "data_original_chunk_type": "video",
+      "dimension": "2d",
+      "frame_count": 10,
+      "guide_id": null,
+      "id": 60,
+      "issues": {
+        "count": 0,
+        "url": "http://localhost:8080/api/issues?job_id=60"
+      },
+      "labels": {
+        "url": "http://localhost:8080/api/labels?job_id=60"
+      },
+      "mode": "interpolation",
+      "organization": 2,
+      "parent_job_id": null,
+      "project_id": null,
+      "source_storage": {
+        "cloud_storage_id": null,
+        "id": 55,
+        "location": "local"
+      },
+      "stage": "annotation",
+      "start_frame": 5,
+      "state": "new",
+      "status": "annotation",
+      "stop_frame": 14,
+      "target_storage": {
+        "cloud_storage_id": null,
+        "id": 56,
+        "location": "local"
+      },
+      "task_id": 34,
+      "type": "annotation",
+      "updated_date": "2025-08-01T11:44:47.547000Z",
+      "url": "http://localhost:8080/api/jobs/60"
+    },
+    {
+      "assignee": null,
+      "assignee_updated_date": null,
+      "bug_tracker": null,
+      "consensus_replicas": 0,
+      "created_date": "2025-08-01T11:44:47.537000Z",
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "data_original_chunk_type": "video",
+      "dimension": "2d",
+      "frame_count": 10,
+      "guide_id": null,
+      "id": 59,
+      "issues": {
+        "count": 0,
+        "url": "http://localhost:8080/api/issues?job_id=59"
+      },
+      "labels": {
+        "url": "http://localhost:8080/api/labels?job_id=59"
+      },
+      "mode": "interpolation",
+      "organization": 2,
+      "parent_job_id": null,
+      "project_id": null,
+      "source_storage": {
+        "cloud_storage_id": null,
+        "id": 55,
+        "location": "local"
+      },
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "new",
+      "status": "annotation",
+      "stop_frame": 9,
+      "target_storage": {
+        "cloud_storage_id": null,
+        "id": 56,
+        "location": "local"
+      },
+      "task_id": 34,
+      "type": "annotation",
+      "updated_date": "2025-08-01T11:44:47.537000Z",
+      "url": "http://localhost:8080/api/jobs/59"
+    },
     {
       "assignee": null,
       "assignee_updated_date": null,
