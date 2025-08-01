@@ -235,14 +235,14 @@ html, body {
 }
 
 .cvat-bulk-progress-message {
-    margin-top: 24px;
+    margin-top: $grid-unit-size * 3;
     font-size: 18px;
     color: #333;
-    min-height: 24px;
+    min-height: $grid-unit-size * 3;
 }
 
 .cvat-bulk-progress-cancel {
-    margin-top: 24px;
+    margin-top: $grid-unit-size * 3;
 }
 
 .cvat-bulk-wrapper {

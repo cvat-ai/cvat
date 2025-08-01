@@ -84,8 +84,8 @@ export default function BulkProgress(): JSX.Element | null {
             </div>
             <Button
                 className='cvat-bulk-progress-cancel'
-                danger
                 onClick={() => dispatch(selectionActions.cancelBulkAction())}
+                type='primary'
             >
                 Cancel
             </Button>
