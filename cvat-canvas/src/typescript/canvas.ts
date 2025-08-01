@@ -23,6 +23,7 @@ interface Canvas {
     html(): HTMLDivElement;
     setup(frameData: any, objectStates: any[], zLayer?: number): void;
     setupIssueRegions(issueRegions: Record<number, { hidden: boolean; points: number[] }>): void;
+    translateFromSVG(points: number[]): number[];
     setupConflictRegions(clientID: number): number[];
     activate(clientID: number | null, attributeID?: number): void;
     highlight(clientIDs: number[] | null, severity: HighlightSeverity | null): void;
@@ -77,6 +78,10 @@ class CanvasImpl implements Canvas {
 
     public setupIssueRegions(issueRegions: Record<number, { hidden: boolean; points: number[] }>): void {
         this.model.setupIssueRegions(issueRegions);
+    }
+
+    public translateFromSVG(points: number[]): number[] {
+        return this.view.translateFromSVG(points);
     }
 
     public setupConflictRegions(clientID: number): number[] {
