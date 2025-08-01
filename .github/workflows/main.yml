@@ -72,6 +72,7 @@ jobs:
 
       - name: Instrumentation of the code then rebuilding the CVAT UI
         run: |
+          corepack enable yarn && yarn set version berry
           yarn --immutable
           yarn run coverage
 
