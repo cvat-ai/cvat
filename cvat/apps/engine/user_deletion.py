@@ -6,8 +6,7 @@ from abc import ABC, ABCMeta, abstractmethod
 from typing import TypedDict
 
 from django.db import transaction
-from django.db.models import Count, Max, Model, Q, QuerySet
-from django.db.models.functions import Coalesce
+from django.db.models import Count, Q, QuerySet
 from rest_framework.exceptions import ValidationError
 
 from cvat.apps.engine.model_utils import _ModelT
