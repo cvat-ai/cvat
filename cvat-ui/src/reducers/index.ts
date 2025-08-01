@@ -500,12 +500,22 @@ export interface ErrorState {
     reason: Error;
     shouldLog?: boolean;
     className?: string;
+    ignore?: boolean;
 }
 
 export interface NotificationState {
     message: string;
     description?: string;
     duration?: number;
+}
+
+export interface BulkOperationsErrorState extends ErrorState {
+    remainingItemsCount: number,
+    retryPayload: {
+        items: any[],
+        operation: (item: any, idx: number, total: number) => Promise<void>,
+        statusMessage: (item: any, idx: number, total: number) => string,
+    },
 }
 
 export interface NotificationsState {
@@ -660,15 +670,7 @@ export interface NotificationsState {
             deleting: null | ErrorState;
         };
         selection: {
-            bulkOperation: {
-                message: string,
-                remainingItemsCount: number,
-                retryPayload: {
-                    items: any[],
-                    operation: (item: any, idx: number, total: number) => Promise<void>,
-                    statusMessage: (item: any, idx: number, total: number) => string,
-                },
-            } | null;
+            bulkOperation: BulkOperationsErrorState | null;
         }
     };
     messages: {

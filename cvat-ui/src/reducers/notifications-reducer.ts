@@ -2063,7 +2063,15 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     ...state.errors,
                     selection: {
                         ...state.errors.selection,
-                        bulkOperation: action.payload,
+                        bulkOperation: {
+                            message: 'Bulk operation failed.',
+                            reason: action.payload.error,
+                            shouldLog: shouldLog(action.payload.error),
+                            className: 'cvat-notification-notice-bulk-operation-failed',
+                            remainingItemsCount: action.payload.remainingItemsCount,
+                            retryPayload: action.payload.retryPayload,
+                            ignore: true,
+                        },
                     },
                 },
             };
