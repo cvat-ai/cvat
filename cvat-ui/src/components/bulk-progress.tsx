@@ -4,14 +4,13 @@
 
 import React from 'react';
 import { useHistory } from 'react-router';
-import {
-    Progress, Button,
-} from 'antd';
 import { useSelector, useDispatch } from 'react-redux';
-import { selectionActions, makeBulkOperationAsync } from 'actions/selection-actions';
+import notification from 'antd/lib/notification';
+import Button from 'antd/lib/button';
+import Progress from 'antd/lib/progress';
 import { CombinedState } from 'reducers';
 import { resetErrors } from 'actions/notification-actions';
-import notification from 'antd/lib/notification';
+import { selectionActions, makeBulkOperationAsync } from 'actions/selection-actions';
 import CVATMarkdown from './common/cvat-markdown';
 
 export default function BulkProgress(): JSX.Element | null {
