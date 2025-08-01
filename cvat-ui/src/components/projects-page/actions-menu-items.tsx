@@ -78,10 +78,16 @@ export default function ProjectActionsItems(
     }, 69]);
 
     menuItems.push([{
+        key: 'edit_organization',
+        onClick: () => startEditField('organization'),
+        label: <CVATMenuEditLabel>Organization</CVATMenuEditLabel>,
+    }, 70]);
+
+    menuItems.push([{
         key: 'delete',
         onClick: onDeleteProject,
         label: 'Delete',
-    }, 70]);
+    }, 80]);
 
     menuItems.push(
         ...pluginActions.map(({ component: Component, weight }, index) => {

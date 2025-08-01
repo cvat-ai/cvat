@@ -13,6 +13,7 @@ import requests
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
+from django.db.models import Model
 from django.db.models.signals import post_delete, post_save, pre_delete, pre_save
 from django.dispatch import Signal, receiver
 
@@ -92,18 +93,38 @@ def add_to_queue(webhook, payload, redelivery=False):
     queue.enqueue_call(func=send_webhook, args=(webhook, payload, redelivery))
 
 
-def batch_add_to_queue(webhooks, data):
+def batch_add_to_queue(webhooks: list | dict, data: dict | None):
+    # webhooks batch with different events; webhooks are grouped by them
+    if isinstance(webhooks, dict):
+        for event_type, webhooks_data in webhooks.items():
+            payload = deepcopy(webhooks_data["event_data"])
+            for webhook in webhooks_data["webhooks"]:
+                add_to_queue(
+                    webhook,
+                    {
+                        **payload,
+                        "webhook_id": webhook.id,
+                        "event": event_type,
+                    },
+                )
+        return
+
     payload = deepcopy(data)
     for webhook in webhooks:
         payload["webhook_id"] = webhook.id
         add_to_queue(webhook, payload)
 
 
-def select_webhooks(instance, event):
+def select_webhooks(
+    instance: Model,
+    event: str,
+    *,
+    select_for_org: bool = True,
+    select_for_project: bool = True,
+):
     selected_webhooks = []
-    pid = project_id(instance)
-    oid = organization_id(instance)
-    if oid is not None:
+
+    if select_for_org and (oid := organization_id(instance)) is not None:
         webhooks = Webhook.objects.filter(
             is_active=True,
             events__contains=event,
@@ -112,7 +133,7 @@ def select_webhooks(instance, event):
         )
         selected_webhooks += list(webhooks)
 
-    if pid is not None:
+    if select_for_project and (pid := project_id(instance)) is not None:
         webhooks = Webhook.objects.filter(
             is_active=True,
             events__contains=event,
@@ -157,7 +178,32 @@ def pre_save_resource_event(sender, instance, **kwargs):
     if event_type not in (a[0] for a in EventTypeChoice.choices()):
         return
 
-    instance._webhooks_selected_webhooks = select_webhooks(instance, event_type)
+    # consider task and project transfers as deletion in one organization and creation in another
+    if (
+        isinstance(instance, (Project, Task))
+        and not created
+        and old_instance.organization_id != instance.organization_id
+    ):
+        instance._webhooks_selected_webhooks = {}
+        for event_, filters in {
+            event_type: {
+                "instance": instance,
+                "select_for_org": False,
+            },
+            event_name("delete", resource_name): {
+                "instance": old_instance,
+                "select_for_project": False,
+            },
+            event_name("create", resource_name): {
+                "instance": instance,
+                "select_for_project": False,
+            },
+        }.items():
+            if webhooks := select_webhooks(event=event_, **filters):
+                instance._webhooks_selected_webhooks[event_] = webhooks
+    else:
+        instance._webhooks_selected_webhooks = select_webhooks(instance, event_type)
+
     if not instance._webhooks_selected_webhooks:
         return
 
@@ -193,18 +239,35 @@ def post_save_resource_event(sender, instance, created: bool, raw: bool, **kwarg
 
     resource_name = instance.__class__.__name__.lower()
     event_type = event_name("create" if created else "update", resource_name)
+    only_one_event_type = not isinstance(selected_webhooks, dict)
 
     serializer = get_serializer(instance=instance)
 
     data = {
-        "event": event_type,
         resource_name: serializer.data,
         "sender": get_sender(instance),
     }
+    # webhooks batch with only one event type
+    if only_one_event_type:
+        data["event"] = event_type
+    else:
+        selected_webhooks = {
+            event_: {
+                "webhooks": webhooks_,
+                "event_data": deepcopy(data),
+            }
+            for event_, webhooks_ in selected_webhooks.items()
+        }
+        if (delete_event_type := event_name("delete", resource_name)) in selected_webhooks:
+            assert old_data
+            selected_webhooks[delete_event_type]["event_data"][resource_name] = old_data
 
-    if not created:
-        if diff := get_instance_diff(old_data=old_data, data=serializer.data):
-            data["before_update"] = {attr: value["old_value"] for attr, value in diff.items()}
+    if not created and (diff := get_instance_diff(old_data=old_data, data=serializer.data)):
+        before_update = {attr: value["old_value"] for attr, value in diff.items()}
+        if only_one_event_type:
+            data["before_update"] = before_update
+        elif (update_event_type := event_name("update", resource_name)) in selected_webhooks:
+            selected_webhooks[update_event_type]["event_data"]["before_update"] = before_update
 
     transaction.on_commit(
         lambda: batch_add_to_queue(selected_webhooks, data),

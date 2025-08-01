@@ -11,6 +11,7 @@ import { CVATMenuEditLabel } from 'components/common/cvat-menu-edit-label';
 
 interface MenuItemsData {
     taskId: number;
+    projectId: number | null;
     isAutomaticAnnotationEnabled: boolean;
     isConsensusEnabled: boolean;
     isMergingConsensusEnabled: boolean;
@@ -21,7 +22,7 @@ interface MenuItemsData {
     onExportDataset: () => void;
     onBackupTask: () => void;
     onRunAutoAnnotation: (() => void) | null;
-    onMoveTaskToProject: (() => void) | null;
+    onMoveTaskToProject: () => void;
     onDeleteTask: () => void;
     startEditField: (key: string) => void;
 }
@@ -30,6 +31,7 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
     const {
         startEditField,
         taskId,
+        projectId,
         pluginActions,
         isAutomaticAnnotationEnabled,
         isConsensusEnabled,
@@ -112,20 +114,27 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
         }, 80]);
     }
 
-    if (onMoveTaskToProject) {
+    menuItems.push([{ type: 'divider' }, 89]);
+
+    if (!projectId) {
         menuItems.push([{
             key: 'move_task_to_project',
             onClick: onMoveTaskToProject,
             label: 'Move to project',
         }, 90]);
+
+        menuItems.push([{
+            key: 'edit_organization',
+            onClick: () => startEditField('organization'),
+            label: <CVATMenuEditLabel>Organization</CVATMenuEditLabel>,
+        }, 100]);
     }
 
-    menuItems.push([{ type: 'divider' }, 89]);
     menuItems.push([{
         key: 'delete_task',
         onClick: onDeleteTask,
         label: 'Delete',
-    }, 100]);
+    }, 110]);
 
     menuItems.push(
         ...pluginActions.map(({ component: Component, weight }, index) => {

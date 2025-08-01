@@ -41,6 +41,9 @@ const defaultState: CloudStoragesState = {
             error: '',
         },
     },
+    updateWorkspace: {
+        instance: null,
+    },
 };
 
 export default (
@@ -347,6 +350,23 @@ export default (
                         fetching: false,
                         initialized: true,
                     },
+                },
+            };
+        }
+        case CloudStorageActionTypes.OPEN_LINKED_CLOUD_STORAGE_UPDATING_MODAL: {
+            const { instance } = action.payload;
+            return {
+                ...state,
+                updateWorkspace: {
+                    instance,
+                },
+            };
+        }
+        case CloudStorageActionTypes.CLOSE_LINKED_CLOUD_STORAGE_UPDATING_MODAL: {
+            return {
+                ...state,
+                updateWorkspace: {
+                    instance: null,
                 },
             };
         }

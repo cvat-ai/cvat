@@ -7,15 +7,26 @@ import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import Modal from 'antd/lib/modal';
 import Dropdown from 'antd/lib/dropdown';
 
-import { RQStatus, Task, User } from 'cvat-core-wrapper';
+import {
+    RQStatus, Task, User, Organization,
+} from 'cvat-core-wrapper';
 import { useDropdownEditField, usePlugins } from 'utils/hooks';
+
 import { CombinedState } from 'reducers';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
 import { modelsActions } from 'actions/models-actions';
 import { mergeConsensusJobsAsync } from 'actions/consensus-actions';
-import { deleteTaskAsync, switchMoveTaskModalVisible, updateTaskAsync } from 'actions/tasks-actions';
+
+import {
+    deleteTaskAsync, switchMoveTaskModalVisible, updateTaskAsync,
+} from 'actions/tasks-actions';
+import { cloudStoragesActions } from 'actions/cloud-storage-actions';
+import { ResourceUpdateTypes } from 'utils/enums';
 import UserSelector from 'components/task-page/user-selector';
+
+import OrganizationSelector from 'components/selectors/organization-selector';
+import { confirmTransferModal } from 'utils/modals';
 import TaskActionsItems from './actions-menu-items';
 
 interface Props {
@@ -31,9 +42,11 @@ function TaskActionsComponent(props: Props): JSX.Element {
     const {
         activeInference,
         mergingConsensus,
+        currentOrganization,
     } = useSelector((state: CombinedState) => ({
         activeInference: state.models.inferences[taskInstance.id],
         mergingConsensus: state.consensus.actions.merging,
+        currentOrganization: state.organizations.current,
     }), shallowEqual);
 
     const {
@@ -112,6 +125,26 @@ function TaskActionsComponent(props: Props): JSX.Element {
         });
     }, [taskInstance]);
 
+    const updateOrganization = useCallback((dstOrganizationId: number | null) => {
+        taskInstance.organizationId = dstOrganizationId;
+        if (
+            taskInstance.cloudStorageId ||
+            taskInstance.sourceStorage.cloudStorageId ||
+            taskInstance.targetStorage.cloudStorageId
+        ) {
+            dispatch(cloudStoragesActions.openLinkedCloudStorageUpdatingModal(taskInstance));
+        } else {
+            dispatch(updateTaskAsync(taskInstance, {}, ResourceUpdateTypes.UPDATE_ORGANIZATION));
+        }
+    }, [taskInstance]);
+
+    const onUpdateTaskOrganization = useCallback((dstOrganization: Organization | null) => {
+        stopEditField();
+        confirmTransferModal(
+            taskInstance, currentOrganization as Organization | null, dstOrganization, updateOrganization,
+        );
+    }, [taskInstance]);
+
     let menuItems;
     if (editField) {
         const fieldSelectors: Record<string, JSX.Element> = {
@@ -124,6 +157,12 @@ function TaskActionsComponent(props: Props): JSX.Element {
                     }}
                 />
             ),
+            organization: (
+                <OrganizationSelector
+                    defaultValue={currentOrganization?.slug}
+                    setNewOrganization={onUpdateTaskOrganization}
+                />
+            ),
         };
         menuItems = [{
             key: `${editField}-selector`,
@@ -133,6 +172,7 @@ function TaskActionsComponent(props: Props): JSX.Element {
         menuItems = TaskActionsItems({
             startEditField,
             taskId: taskInstance.id,
+            projectId: taskInstance.projectId,
             isAutomaticAnnotationEnabled: (
                 activeInference &&
                 ![RQStatus.FAILED, RQStatus.FINISHED].includes(activeInference.status)
@@ -146,7 +186,7 @@ function TaskActionsComponent(props: Props): JSX.Element {
             onExportDataset,
             onBackupTask,
             onRunAutoAnnotation,
-            onMoveTaskToProject: taskInstance.projectId === null ? onMoveTaskToProject : null,
+            onMoveTaskToProject,
             onDeleteTask,
         }, props);
     }
