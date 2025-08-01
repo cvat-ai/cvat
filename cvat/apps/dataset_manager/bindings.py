@@ -508,17 +508,29 @@ class CommonData(InstanceLabelData):
         anno_manager = AnnotationManager(
             self._annotation_ir, dimension=self._annotation_ir.dimension
         )
-        for shape in sorted(
-            anno_manager.to_shapes(
+
+        def sorted_shapes():
+            one_frame_shapes = []
+
+            def sort_by_z_order_and_clean():
+                yield from sorted(one_frame_shapes, key=lambda shape: shape.get("z_order", 0))
+                one_frame_shapes.clear()
+
+            for shape in anno_manager.to_shapes(
                 self.stop + 1,
                 # Skip outside, deleted and excluded frames
                 included_frames=included_frames,
                 deleted_frames=self.deleted_frames.keys(),
                 include_outside=False,
                 use_server_track_ids=self._use_server_track_ids,
-            ),
-            key=lambda shape: shape.get("z_order", 0)
-        ):
+            ):
+                if one_frame_shapes and one_frame_shapes[0]["frame"] != shape["frame"]:
+                    yield from sort_by_z_order_and_clean()
+                one_frame_shapes.append(shape)
+
+            yield from sort_by_z_order_and_clean()
+
+        for shape in sorted_shapes():
             shape_data = ''
 
             if 'track_id' in shape:

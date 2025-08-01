@@ -3,11 +3,12 @@
 #
 # SPDX-License-Identifier: MIT
 
+import heapq
 import math
 from collections.abc import Container, Sequence
 from copy import copy, deepcopy
 from itertools import chain
-from typing import Optional
+from typing import Generator, Optional
 
 import numpy as np
 from scipy.optimize import linear_sum_assignment
@@ -220,23 +221,28 @@ class AnnotationManager:
         included_frames: Sequence[int] | None = None,
         include_outside: bool = False,
         use_server_track_ids: bool = False,
-    ) -> list:
+    ) -> Generator[dict, None, None]:
+        """
+        Generates shapes ordered by frame id
+        """
         shapes = self.data.shapes
         tracks = TrackManager(self.data.tracks, dimension=self.dimension)
 
         if included_frames is not None:
-            shapes = [s for s in shapes if s["frame"] in included_frames]
+            shapes = (s for s in shapes if s["frame"] in included_frames)
 
         if deleted_frames is not None:
-            shapes = [s for s in shapes if s["frame"] not in deleted_frames]
+            shapes = (s for s in shapes if s["frame"] not in deleted_frames)
 
-        return shapes + tracks.to_shapes(
+        track_shapes = tracks.to_shapes(
             end_frame,
             included_frames=included_frames,
             deleted_frames=deleted_frames,
             include_outside=include_outside,
             use_server_track_ids=use_server_track_ids,
         )
+
+        yield from heapq.merge(shapes, track_shapes, key=lambda shape: shape["frame"])
 
     def to_tracks(self):
         tracks = self.data.tracks
@@ -495,6 +501,9 @@ class TrackManager(ObjectManager):
         include_outside: bool = False,
         use_server_track_ids: bool = False,
     ) -> list:
+        """
+        Returns a list of track shapes ordered by frame.
+        """
         shapes = []
         for idx, track in enumerate(self.objects):
             track_id = track["id"] if use_server_track_ids else idx
@@ -549,7 +558,7 @@ class TrackManager(ObjectManager):
                     }
 
             shapes.extend(track_shapes.values())
-        return shapes
+        return sorted(shapes, key=lambda shape: shape["frame"])
 
     @staticmethod
     def _get_objects_by_frame(objects, start_frame):

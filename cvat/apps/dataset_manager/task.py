@@ -1131,7 +1131,11 @@ def export_job(
     # https://github.com/cvat-ai/cvat/issues/217
     with transaction.atomic():
         job = JobAnnotation(job_id, prefetch_images=True, lock_job_in_db=True)
-        job.init_from_db(streaming=(format_name == "CVAT for video 1.1"))
+        streaming = format_name in (
+            "CVAT for video 1.1",
+            "CVAT for images 1.1",
+        )
+        job.init_from_db(streaming=streaming)
 
         exporter = make_exporter(format_name)
         with open(dst_file, "wb") as f:
