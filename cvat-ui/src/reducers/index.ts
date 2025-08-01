@@ -258,7 +258,7 @@ export interface CloudStoragesState {
     };
 }
 
-export interface SelectionStatus {
+export interface BulkActionStatus {
     message: string;
     percent: number;
 }
@@ -266,7 +266,7 @@ export interface SelectionStatus {
 export interface SelectionState {
     selected: (number | string)[];
     fetching: boolean;
-    status: { message: string; percent: number } | null;
+    status: BulkActionStatus | null;
     cancelled: boolean;
 }
 
