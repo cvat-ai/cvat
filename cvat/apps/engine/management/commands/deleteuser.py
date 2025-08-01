@@ -6,7 +6,7 @@ from django.core.management.base import BaseCommand, CommandError
 from rest_framework.exceptions import ValidationError
 
 from cvat.apps.engine.models import User
-from cvat.apps.engine.user_deletion import UserDeletionManager
+from cvat.apps.engine.user_deletion import delete_user_with_cleanup
 
 
 class Command(BaseCommand):
@@ -21,15 +21,9 @@ class Command(BaseCommand):
         dry_run = options["dry_run"]
 
         try:
-            user = User.objects.get(pk=user_id)
-        except User.DoesNotExist:
-            raise CommandError(f"User #{user_id} does not exist.")
-
-        manager = UserDeletionManager(user)
-        try:
-            deleted_resources = manager.delete_user_with_cleanup(dry_run=dry_run)
+            deleted_resources = delete_user_with_cleanup(user_id, dry_run=dry_run)
             for resource_type in deleted_resources:
                 for resource_id in deleted_resources[resource_type]:
                     self.stdout.write(f"Deleted {resource_type}: #{resource_id}")
-        except ValidationError as e:
+        except (ValidationError, User.DoesNotExist) as e:
             raise CommandError(e.detail)
