@@ -40,7 +40,7 @@ function MembersList(props: Readonly<Props>): JSX.Element {
     const content = members.length ? (
         <>
             <div className='cvat-organization-members-list'>
-                <BulkWrapper currentResourceIDs={members.map((member) => member.id)}>
+                <BulkWrapper currentResourceIds={members.map((member) => member.id)}>
                     {(selectProps) => (
                         <>
                             {members.map((member, idx) => (

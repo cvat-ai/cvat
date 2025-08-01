@@ -45,7 +45,7 @@ export default function DeployedModelsListComponent(props: Readonly<Props>): JSX
         <>
             <Row justify='center' align='top' className='cvat-resource-list-wrapper'>
                 <Col {...dimensions} className='cvat-models-list'>
-                    <BulkWrapper currentResourceIDs={models.map((m) => Number(m.id))}>
+                    <BulkWrapper currentResourceIds={models.map((m) => Number(m.id))}>
                         {(selectProps) => {
                             const renderModelRow = (instances: MLModel[]): JSX.Element => (
                                 <Row key={instances[0].id} className='cvat-models-list-row'>

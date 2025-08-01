@@ -208,7 +208,7 @@ function JobListComponent(props: Readonly<Props>): JSX.Element {
             {jobIds.length ? (
                 <div className='cvat-task-job-list'>
                     <Col className='cvat-jobs-list'>
-                        <BulkWrapper currentResourceIDs={jobIds} parentToChildrenMap={jobChildIdMapping}>
+                        <BulkWrapper currentResourceIds={jobIds} parentToChildrenMap={jobChildIdMapping}>
                             {(selectProps) => (
                                 viewedJobs
                                     .map((job: Job, idx: number) => {

@@ -174,7 +174,7 @@ export default function ProjectPageComponent(): JSX.Element {
     }
 
     const content = tasksCount ? (
-        <BulkWrapper currentResourceIDs={projectTaskIDs}>
+        <BulkWrapper currentResourceIds={projectTaskIDs}>
             {(selectProps) => (
                 <>
                     {subsets.map((subset: string) => (

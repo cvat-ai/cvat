@@ -55,7 +55,7 @@ function RequestsList(props: Readonly<Props>): JSX.Element {
             </Row>
             <Row justify='center' className='cvat-resource-list-wrapper'>
                 <Col className='cvat-requests-list' {...dimensions}>
-                    <BulkWrapper currentResourceIDs={requestIds}>
+                    <BulkWrapper currentResourceIds={requestIds}>
                         {(selectProps) => (
                             requestViews.map((request: Request) => {
                                 const isCancelled = request.id in cancelled;

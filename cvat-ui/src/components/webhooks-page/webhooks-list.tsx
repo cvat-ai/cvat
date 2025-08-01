@@ -15,7 +15,7 @@ function WebhooksList(): JSX.Element {
     return (
         <Row justify='center' align='middle' className='cvat-resource-list-wrapper'>
             <Col className='cvat-webhooks-list' md={22} lg={18} xl={16} xxl={14}>
-                <BulkWrapper currentResourceIDs={webhooks.map((webhook) => webhook.id)}>
+                <BulkWrapper currentResourceIds={webhooks.map((webhook) => webhook.id)}>
                     {(selectProps) => (
                         webhooks.map((webhook, idx) => (
                             <WebhookItem

@@ -40,10 +40,12 @@ function TasksPageComponent(props: Readonly<Props>): JSX.Element {
     const [isMounted, setIsMounted] = useState(false);
 
     const allTaskIds = useSelector((state: CombinedState) => state.tasks.current.map((t) => t.id));
+    const deletedTasks = useSelector((state: CombinedState) => state.tasks.activities.deletes);
+    const selectableTaskIds = allTaskIds.filter((id) => !deletedTasks[id]);
     const selectedCount = useSelector((state: CombinedState) => state.selection.selected.length);
     const onSelectAll = useCallback(() => {
-        dispatch(selectionActions.selectResources(allTaskIds));
-    }, [dispatch, allTaskIds]);
+        dispatch(selectionActions.selectResources(selectableTaskIds));
+    }, [dispatch, selectableTaskIds]);
 
     const updatedQuery = useResourceQuery<TasksQuery>(query);
 

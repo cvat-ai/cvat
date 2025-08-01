@@ -13,28 +13,43 @@ import BulkWrapper from '../bulk-wrapper';
 
 export interface Props {
     currentTasksIndexes: number[];
+    deletedTasks: Record<number, boolean>;
 }
 
-function TaskListComponent(props: Props): JSX.Element {
-    const { currentTasksIndexes } = props;
+function TaskListComponent(props: Readonly<Props>): JSX.Element {
+    const { currentTasksIndexes, deletedTasks } = props;
+
+    const selectableTaskIds = currentTasksIndexes.filter((id) => !deletedTasks[id]);
+    const selectableTaskIdToIndex = new Map<number, number>();
+    selectableTaskIds.forEach((id, idx) => selectableTaskIdToIndex.set(id, idx));
 
     return (
         <>
             <Row justify='center' align='middle' className='cvat-resource-list-wrapper'>
                 <Col className='cvat-tasks-list' {...dimensions}>
                     <BulkWrapper
-                        currentResourceIDs={currentTasksIndexes}
+                        currentResourceIds={selectableTaskIds}
                     >
-                        {(selectProps) => (
-                            currentTasksIndexes.map((tid: number, idx: number) => (
+                        {(selectProps) => currentTasksIndexes.map((tid: number, idx: number) => {
+                            const isDeleting = deletedTasks[tid];
+                            const selectableIndex = isDeleting ?
+                                -1 :
+                                selectableTaskIdToIndex.get(tid) ?? -1;
+                            const canSelect = !isDeleting && selectableIndex !== -1;
+
+                            const taskProps = canSelect ?
+                                selectProps(tid, selectableIndex) :
+                                { selected: false, onClick: () => false };
+
+                            return (
                                 <TaskItem
                                     key={tid}
                                     idx={idx}
                                     taskID={tid}
-                                    {...selectProps(tid, idx)}
+                                    {...taskProps}
                                 />
-                            ))
-                        )}
+                            );
+                        })}
                     </BulkWrapper>
                 </Col>
             </Row>

@@ -19,7 +19,7 @@ export interface BulkSelectProps {
 }
 
 interface BulkWrapperProps {
-    currentResourceIDs: (number | string)[];
+    currentResourceIds: (number | string)[];
     parentToChildrenMap?: Record<number, number[]>;
     children: (selectProps: (id: number | string, idx: number) => BulkSelectProps) => React.ReactNode;
 }
@@ -47,8 +47,8 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
     const handlers = {
         SELECT_ALL: (event?: KeyboardEvent) => {
             event?.preventDefault();
-            const { currentResourceIDs } = props;
-            dispatch(selectionActions.selectResources(currentResourceIDs));
+            const { currentResourceIds } = props;
+            dispatch(selectionActions.selectResources(currentResourceIds));
         },
     };
 
@@ -103,7 +103,6 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
                 'cvat-jobs-list-row',
                 'cvat-models-list-row',
                 'cvat-projects-list-row',
-                'cvat-requests-list',
             ];
             const hasResetClass = resetClasses.some((cls) => target.classList.contains(cls));
 
@@ -147,7 +146,7 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
         idx: number,
     ): BulkSelectProps => {
         const isSelected = selectedIds.includes(resourceId);
-        const { currentResourceIDs } = props;
+        const { currentResourceIds } = props;
         return {
             selected: isSelected,
             onClick: (event?: React.MouseEvent) => {
@@ -155,7 +154,7 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
                     event.preventDefault();
 
                     // Shift+Click: select range
-                    const allIds = currentResourceIDs;
+                    const allIds = currentResourceIds;
                     const clickedIndex = idx;
                     const lastIndex = lastSelectedIndexRef.current ?? idx;
                     const [start, end] = [lastIndex, clickedIndex].sort((a, b) => a - b);
