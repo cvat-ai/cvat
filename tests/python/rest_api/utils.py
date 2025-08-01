@@ -24,7 +24,7 @@ from urllib3 import HTTPResponse
 
 from shared.utils.config import USER_PASS, make_api_client, post_method
 
-DEFAULT_RETRIES = 100
+DEFAULT_RETRIES = 50
 DEFAULT_INTERVAL = 0.1
 
 
