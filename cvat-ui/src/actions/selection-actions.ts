@@ -56,6 +56,7 @@ export function makeBulkOperationAsync<T>(
             if (items.length === 1) {
                 await operation(items[0], 0, 1);
                 onSuccess?.();
+                dispatch(selectionActions.clearSelectedResources());
                 return;
             }
             dispatch(selectionActions.startBulkAction());
