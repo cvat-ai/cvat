@@ -3,11 +3,12 @@
 #
 # SPDX-License-Identifier: MIT
 
+import heapq
 import math
 from collections.abc import Container, Sequence
 from copy import copy, deepcopy
 from itertools import chain
-from typing import Optional
+from typing import Generator, Optional
 
 import numpy as np
 from scipy.optimize import linear_sum_assignment
@@ -237,6 +238,40 @@ class AnnotationManager:
             include_outside=include_outside,
             use_server_track_ids=use_server_track_ids,
         )
+
+    def to_shapes_stream(
+        self,
+        end_frame: int,
+        *,
+        deleted_frames: Sequence[int] | None = None,
+        included_frames: Sequence[int] | None = None,
+        include_outside: bool = False,
+        use_server_track_ids: bool = False,
+    ) -> Generator[dict, None, None]:
+        """
+        Generates shapes ordered by frame id
+        """
+        shapes = self.data.shapes
+        assert isinstance(shapes, Generator)
+
+        tracks = TrackManager(self.data.tracks, dimension=self.dimension)
+
+        if included_frames is not None:
+            shapes = (s for s in shapes if s["frame"] in included_frames)
+
+        if deleted_frames is not None:
+            shapes = (s for s in shapes if s["frame"] not in deleted_frames)
+
+        track_shapes = tracks.to_shapes(
+            end_frame,
+            included_frames=included_frames,
+            deleted_frames=deleted_frames,
+            include_outside=include_outside,
+            use_server_track_ids=use_server_track_ids,
+        )
+        track_shapes = sorted(track_shapes, key=lambda shape: shape["frame"])
+
+        yield from heapq.merge(shapes, track_shapes, key=lambda shape: shape["frame"])
 
     def to_tracks(self):
         tracks = self.data.tracks
