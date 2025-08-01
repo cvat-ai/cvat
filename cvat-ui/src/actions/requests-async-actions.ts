@@ -22,7 +22,7 @@ export interface RequestParams {
     location?: StorageLocation;
 }
 
-export function getRequestsAsync(query: RequestsQuery): ThunkAction {
+export function getRequestsAsync(query: Partial<RequestsQuery> = {}): ThunkAction {
     return async (dispatch, getState): Promise<void> => {
         dispatch(requestsActions.getRequests(query));
 

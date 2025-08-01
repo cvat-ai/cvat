@@ -33,7 +33,7 @@ export enum RequestsActionsTypes {
 }
 
 export const requestsActions = {
-    getRequests: (query: RequestsQuery, fetching = true) => (
+    getRequests: (query: Partial<RequestsQuery>, fetching = true) => (
         createAction(RequestsActionsTypes.GET_REQUESTS, { query, fetching })
     ),
     requestFinished: (request: Request) => createAction(RequestsActionsTypes.REQUEST_FINISHED, { request }),
