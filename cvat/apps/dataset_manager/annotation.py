@@ -221,11 +221,39 @@ class AnnotationManager:
         included_frames: Sequence[int] | None = None,
         include_outside: bool = False,
         use_server_track_ids: bool = False,
+    ) -> list:
+        shapes = self.data.shapes
+        tracks = TrackManager(self.data.tracks, dimension=self.dimension)
+
+        if included_frames is not None:
+            shapes = [s for s in shapes if s["frame"] in included_frames]
+
+        if deleted_frames is not None:
+            shapes = [s for s in shapes if s["frame"] not in deleted_frames]
+
+        return shapes + tracks.to_shapes(
+            end_frame,
+            included_frames=included_frames,
+            deleted_frames=deleted_frames,
+            include_outside=include_outside,
+            use_server_track_ids=use_server_track_ids,
+        )
+
+    def to_shapes_stream(
+        self,
+        end_frame: int,
+        *,
+        deleted_frames: Sequence[int] | None = None,
+        included_frames: Sequence[int] | None = None,
+        include_outside: bool = False,
+        use_server_track_ids: bool = False,
     ) -> Generator[dict, None, None]:
         """
         Generates shapes ordered by frame id
         """
         shapes = self.data.shapes
+        assert isinstance(shapes, Generator)
+
         tracks = TrackManager(self.data.tracks, dimension=self.dimension)
 
         if included_frames is not None:
@@ -241,6 +269,7 @@ class AnnotationManager:
             include_outside=include_outside,
             use_server_track_ids=use_server_track_ids,
         )
+        track_shapes = sorted(track_shapes, key=lambda shape: shape["frame"])
 
         yield from heapq.merge(shapes, track_shapes, key=lambda shape: shape["frame"])
 
@@ -501,9 +530,6 @@ class TrackManager(ObjectManager):
         include_outside: bool = False,
         use_server_track_ids: bool = False,
     ) -> list:
-        """
-        Returns a list of track shapes ordered by frame.
-        """
         shapes = []
         for idx, track in enumerate(self.objects):
             track_id = track["id"] if use_server_track_ids else idx
@@ -558,7 +584,7 @@ class TrackManager(ObjectManager):
                     }
 
             shapes.extend(track_shapes.values())
-        return sorted(shapes, key=lambda shape: shape["frame"])
+        return shapes
 
     @staticmethod
     def _get_objects_by_frame(objects, start_frame):
