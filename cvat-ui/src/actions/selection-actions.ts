@@ -33,7 +33,7 @@ export const selectionActions = {
     cancelBulkAction: () => createAction(
         SelectionActionsTypes.CANCEL_BULK_ACTION),
     bulkOperationFailed: (payload: {
-        message: string;
+        error: any;
         remainingItemsCount: number;
         retryPayload: {
             items: any,
@@ -77,7 +77,7 @@ export function makeBulkOperationAsync<T>(
         } catch (error) {
             const remainingItems = items.slice(processedCount);
             dispatch(selectionActions.bulkOperationFailed({
-                message: 'Bulk operation failed',
+                error,
                 remainingItemsCount: remainingItems.length,
                 retryPayload: {
                     items: remainingItems,
