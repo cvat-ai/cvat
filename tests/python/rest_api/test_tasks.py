@@ -1344,10 +1344,7 @@ class TestTaskBackups:
         # described in the reproduction steps https://github.com/cvat-ai/cvat/issues/5668
 
         task_json = next(
-            t for t in tasks
-            if t["mode"] == mode
-            if t["jobs"]["count"]
-            if not t["validation_mode"]
+            t for t in tasks if t["mode"] == mode if t["jobs"]["count"] if not t["validation_mode"]
         )
 
         task = self.client.tasks.retrieve(task_json["id"])
