@@ -1,8 +1,61 @@
 {
-  "count": 28,
+  "count": 29,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "assignee": null,
+      "assignee_updated_date": null,
+      "bug_tracker": "",
+      "consensus_enabled": false,
+      "created_date": "2025-08-01T11:44:46.343000Z",
+      "data": 33,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "data_original_chunk_type": "video",
+      "dimension": "2d",
+      "guide_id": null,
+      "id": 34,
+      "image_quality": 70,
+      "jobs": {
+        "completed": 0,
+        "count": 4,
+        "url": "http://localhost:8080/api/jobs?task_id=34",
+        "validation": 0
+      },
+      "labels": {
+        "url": "http://localhost:8080/api/labels?task_id=34"
+      },
+      "mode": "interpolation",
+      "name": "task with frame step and gt job",
+      "organization": 2,
+      "overlap": 5,
+      "owner": {
+        "first_name": "User",
+        "id": 3,
+        "last_name": "Second",
+        "url": "http://localhost:8080/api/users/3",
+        "username": "user2"
+      },
+      "project_id": null,
+      "segment_size": 10,
+      "size": 20,
+      "source_storage": {
+        "cloud_storage_id": null,
+        "id": 55,
+        "location": "local"
+      },
+      "status": "annotation",
+      "subset": "",
+      "target_storage": {
+        "cloud_storage_id": null,
+        "id": 56,
+        "location": "local"
+      },
+      "updated_date": "2025-08-01T11:45:33.361000Z",
+      "url": "http://localhost:8080/api/tasks/34",
+      "validation_mode": "gt"
+    },
     {
       "assignee": null,
       "assignee_updated_date": null,
