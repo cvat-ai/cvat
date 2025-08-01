@@ -25,5 +25,7 @@ class Command(BaseCommand):
             for resource_type in deleted_resources:
                 for resource_id in deleted_resources[resource_type]:
                     self.stdout.write(f"Deleted {resource_type}: #{resource_id}")
-        except (ValidationError, User.DoesNotExist) as e:
+        except ValidationError as e:
             raise CommandError(e.detail)
+        except User.DoesNotExist:
+            raise CommandError(f"User with ID {user_id} does not exist.")
