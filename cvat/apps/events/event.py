@@ -53,6 +53,8 @@ def record_server_event(
 ) -> None:
     payload = payload or {}
 
+    api_token_id = request_info.pop("api_token_id", None)
+
     payload_with_request_info = {
         **payload,
         "request": {
@@ -66,6 +68,7 @@ def record_server_event(
         "timestamp": str(datetime.now(timezone.utc).timestamp()),
         "source": "server",
         "payload": JSONRenderer().render(payload_with_request_info).decode("UTF-8"),
+        "api_token_id": api_token_id,
         **kwargs,
     }
 
