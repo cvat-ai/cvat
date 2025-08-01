@@ -15,7 +15,7 @@ const defaultState: OrganizationState = {
     leaving: false,
     removingMember: false,
     updatingMember: false,
-    gettingMembers: false,
+    fetchingMembers: false,
     members: [],
     membersQuery: {
         page: 1,
@@ -147,7 +147,7 @@ export default function (
             const { membersQuery } = action.payload;
             return {
                 ...state,
-                gettingMembers: true,
+                fetchingMembers: true,
                 members: [],
                 membersQuery: {
                     ...state.membersQuery,
@@ -158,14 +158,14 @@ export default function (
         case OrganizationActionsTypes.GET_ORGANIZATION_MEMBERS_SUCCESS: {
             return {
                 ...state,
-                gettingMembers: false,
+                fetchingMembers: false,
                 members: action.payload.members,
             };
         }
         case OrganizationActionsTypes.GET_ORGANIZATION_MEMBERS_FAILED: {
             return {
                 ...state,
-                gettingMembers: false,
+                fetchingMembers: false,
             };
         }
         case AuthActionTypes.LOGOUT_SUCCESS: {

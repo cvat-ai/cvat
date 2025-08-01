@@ -1026,7 +1026,7 @@ export interface OrganizationState {
     leaving: boolean;
     removingMember: boolean;
     updatingMember: boolean;
-    gettingMembers: boolean;
+    fetchingMembers: boolean;
     members: Membership[];
     membersQuery: OrganizationMembersQuery;
 }

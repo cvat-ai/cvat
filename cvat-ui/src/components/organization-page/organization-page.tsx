@@ -22,7 +22,7 @@ function OrganizationPage(): JSX.Element | null {
     const updating = useSelector((state: CombinedState) => state.organizations.updating);
     const user = useSelector((state: CombinedState) => state.auth.user);
     const members = useSelector((state: CombinedState) => state.organizations.members);
-    const membersFetching = useSelector((state: CombinedState) => state.organizations.gettingMembers);
+    const fetchingMembers = useSelector((state: CombinedState) => state.organizations.fetchingMembers);
     const query = useSelector((state: CombinedState) => state.organizations.membersQuery);
     const selectedIds = useSelector((state: CombinedState) => state.selection.selected);
 
@@ -103,7 +103,7 @@ function OrganizationPage(): JSX.Element | null {
                         onSelectAll={onSelectAll}
                     />
                     <MembersList
-                        fetching={membersFetching}
+                        fetching={fetchingMembers}
                         members={members}
                         organizationInstance={organization}
                         userInstance={user}
