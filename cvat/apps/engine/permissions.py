@@ -7,7 +7,6 @@ from __future__ import annotations
 
 from collections import namedtuple
 from collections.abc import Sequence
-from contextlib import suppress
 from typing import TYPE_CHECKING, Any, Optional, Type, Union, cast
 
 from django.conf import settings
@@ -25,6 +24,7 @@ from cvat.apps.iam.permissions import (
 )
 from cvat.apps.organizations.models import Organization
 
+from .location import StorageType, get_location_configuration
 from .models import (
     AnnotationGuide,
     CloudStorage,
@@ -88,30 +88,23 @@ class DownloadExportedExtension:
         }
 
 class ExportableResourceExtension:
-    location: Location | None
-    cloud_storage_id: int | None
+    location: Location
 
     @classmethod
     def update_scope_params(
         cls: Type[OpenPolicyAgentPermission],
         scope_params: dict[str, Any],
         *,
-        request: ExtendedRequest
+        request: ExtendedRequest,
+        db_instance: Project | Task | Job
     ):
-        scope_params['location'] = None
-        scope_params['cloud_storage_id'] = None
-
-        if request.query_params.get("location"):
-            with suppress(ValueError):
-                scope_params['location'] = Location(request.query_params.get("location"))
-                scope_params["cloud_storage_id"] = int(request.query_params.get("cloud_storage_id"))
+        location_configuration = get_location_configuration(
+            request.query_params, field_name=StorageType.TARGET, db_instance=db_instance
+        )
+        scope_params['location'] = location_configuration.location
 
     def update_resource_data(self, resource_data: dict[str, Any]):
-        is_cloud_export = bool(
-            self.location == Location.CLOUD_STORAGE and self.cloud_storage_id or
-            not self.location and self.obj.target_storage_id
-        )
-        resource_data["destination"] = "cloud_storage" if is_cloud_export else "local"
+        resource_data["destination"] = self.location
 
 
 class ServerPermission(OpenPolicyAgentPermission):
@@ -438,8 +431,10 @@ class ProjectPermission(
             cls.Scopes.EXPORT_ANNOTATIONS,
             cls.Scopes.EXPORT_BACKUP,
             cls.Scopes.EXPORT_DATASET,
-        ):
-            ExportableResourceExtension.update_scope_params.__func__(cls, params, request=request)
+        ) and obj:
+            ExportableResourceExtension.update_scope_params.__func__(
+                cls, params, request=request, db_instance=obj
+            )
 
         return params
 
@@ -670,7 +665,7 @@ class TaskPermission(
         *,
         request: ExtendedRequest,
         view: ViewSet,
-        obj: Project | None,
+        obj: Task | None,
         iam_context: IamContext | None
     ):
         params = {}
@@ -684,8 +679,10 @@ class TaskPermission(
             cls.Scopes.EXPORT_ANNOTATIONS,
             cls.Scopes.EXPORT_BACKUP,
             cls.Scopes.EXPORT_DATASET,
-        ):
-            ExportableResourceExtension.update_scope_params.__func__(cls, params, request=request)
+        ) and obj:
+            ExportableResourceExtension.update_scope_params.__func__(
+                cls, params, request=request, db_instance=obj
+            )
 
         return params
 
@@ -907,7 +904,7 @@ class JobPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
         *,
         request: ExtendedRequest,
         view: ViewSet,
-        obj: Project | None,
+        obj: Job | None,
         iam_context: IamContext | None
     ):
         params = {}
@@ -918,7 +915,9 @@ class JobPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
             )
 
         if scope in (cls.Scopes.EXPORT_ANNOTATIONS, cls.Scopes.EXPORT_DATASET):
-            ExportableResourceExtension.update_scope_params.__func__(cls, params, request=request)
+            ExportableResourceExtension.update_scope_params.__func__(
+                cls, params, request=request, db_instance=obj
+            )
 
         return params
 
