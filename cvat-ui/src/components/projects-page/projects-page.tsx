@@ -31,10 +31,12 @@ export default function ProjectsPageComponent(): JSX.Element {
     const isAnySearch = anySearch<ProjectsQuery>(query);
 
     const allProjectIds = useSelector((state: CombinedState) => state.projects.current.map((p) => p.id));
+    const deletedProjects = useSelector((state: CombinedState) => state.projects.activities.deletes);
+    const selectableProjectIds = allProjectIds.filter((id) => !deletedProjects[id]);
     const selectedCount = useSelector((state: CombinedState) => state.selection.selected.length);
     const onSelectAll = useCallback(() => {
-        dispatch(selectionActions.selectResources(allProjectIds));
-    }, [allProjectIds]);
+        dispatch(selectionActions.selectResources(selectableProjectIds));
+    }, [selectableProjectIds]);
 
     const updatedQuery = useResourceQuery<ProjectsQuery>(query, { pageSize: 12 });
 

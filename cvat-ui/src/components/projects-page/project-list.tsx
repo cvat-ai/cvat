@@ -19,6 +19,7 @@ export default function ProjectListComponent(): JSX.Element {
     const dispatch = useDispatch();
     const projectsCount = useSelector((state: CombinedState) => state.projects.count);
     const projects = useSelector((state: CombinedState) => state.projects.current);
+    const deletingProjects = useSelector((state: CombinedState) => state.projects.activities.deletes);
     const gettingQuery = useSelector((state: CombinedState) => state.projects.gettingQuery);
     const tasksQuery = useSelector((state: CombinedState) => state.projects.tasksGettingQuery);
     const { page, pageSize } = gettingQuery;
@@ -48,22 +49,37 @@ export default function ProjectListComponent(): JSX.Element {
     const projectIdToIndex = new Map<number, number>();
     projects.forEach((p, idx) => projectIdToIndex.set(p.id, idx));
 
+    const selectableProjectIds = projects.map((p) => p.id).filter((id) => !deletingProjects[id]);
+    const selectableProjectIdToIndex = new Map<number, number>();
+    selectableProjectIds.forEach((id, idx) => selectableProjectIdToIndex.set(id, idx));
+
     return (
         <>
             <Row justify='center' align='middle' className='cvat-resource-list-wrapper cvat-project-list-content'>
                 <Col className='cvat-projects-list' {...dimensions}>
-                    <BulkWrapper currentResourceIDs={projects.map((p) => p.id)}>
+                    <BulkWrapper currentResourceIDs={selectableProjectIds}>
                         {(selectProps) => {
+                            const defaultProps = { selected: false, onClick: () => false };
+
                             const renderProjectRow = (projectInstances: Project[]): JSX.Element => (
                                 <Row key={projectInstances[0].id} className='cvat-projects-list-row'>
                                     {projectInstances.map((project: Project) => {
-                                        const globalIdx = projectIdToIndex.get(project.id) ?? 0;
+                                        const isDeleting = deletingProjects[project.id];
+                                        const selectableIndex = isDeleting ?
+                                            -1 :
+                                            selectableProjectIdToIndex.get(project.id) ?? -1;
+                                        const canSelect = !isDeleting && selectableIndex !== -1;
+
+                                        const projectProps = canSelect ?
+                                            selectProps(project.id, selectableIndex) :
+                                            defaultProps;
+
                                         return (
                                             <Col span={6} key={project.id}>
                                                 <ProjectItem
                                                     key={project.id}
                                                     projectInstance={project}
-                                                    {...selectProps(project.id, globalIdx)}
+                                                    {...projectProps}
                                                 />
                                             </Col>
                                         );
