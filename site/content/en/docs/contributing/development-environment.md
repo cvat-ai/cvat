@@ -174,7 +174,9 @@ description: 'Installing a development environment for different operating syste
 - Install npm packages for UI (run the following command from CVAT root directory):
 
   ```bash
-  yarn --frozen-lockfile
+  corepack enable yarn
+  yarn set version berry
+  yarn --immutable
   ```
 
   {{% alert title="Note for Mac users" color="primary" %}}

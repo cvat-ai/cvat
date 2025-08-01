@@ -6,6 +6,7 @@ ENV TERM=xterm \
 
 # Install dependencies
 COPY package.json /tmp/
+COPY .yarnrc.yml /tmp/
 COPY yarn.lock /tmp/
 COPY cvat-core/package.json /tmp/cvat-core/
 COPY cvat-canvas/package.json /tmp/cvat-canvas/
@@ -15,7 +16,8 @@ COPY cvat-data/package.json /tmp/cvat-data/
 
 # Install common dependencies
 WORKDIR /tmp/
-RUN DISABLE_HUSKY=1 yarn --frozen-lockfile
+RUN corepack enable yarn && yarn set version berry
+RUN DISABLE_HUSKY=1 yarn install --immutable
 
 # Build source code
 COPY cvat-data/ /tmp/cvat-data/

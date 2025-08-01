@@ -25,13 +25,15 @@ description: 'Instructions on how to run all existence tests.'
    ```
 1. Install npm dependencies:
    ```
+   corepack enable yarn
+   yarn set version berry
    cd tests
-   yarn --frozen-lockfile
+   yarn --immutable
    ```
 
 If you want to get a code coverage report, instrument the code:
 ```
-yarn --frozen-lockfile
+yarn --immutable
 yarn run coverage
 ```
 
