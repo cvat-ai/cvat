@@ -11,7 +11,7 @@ import {
 } from 'actions/selection-actions';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
-import { platform } from 'utils/platform';
+import { platformInfoV2 } from 'utils/platform-checker';
 
 export interface BulkSelectProps {
     selected: boolean;
@@ -34,7 +34,7 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
     const wrapperRef = useRef<HTMLDivElement>(null);
     const [isShiftSelecting, setIsShiftSelecting] = React.useState(false);
 
-    const isMac = platform().includes('mac');
+    const isMac = platformInfoV2().toLowerCase().includes('mac');
 
     const keyMap: KeyMap = {
         SELECT_ALL: {
