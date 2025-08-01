@@ -190,6 +190,28 @@ class TestSessionAuth:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+class TestAccessTokenAuth:
+    def test_can_use_session_auth_from_config(self):
+        token = "custom pat"
+        config = Configuration(
+            host=BASE_URL,
+            access_token=token,
+        )
+
+        with ApiClient(config) as api_client:
+            with (
+                mock.patch.object(
+                    api_client.rest_client, "request", side_effect=Exception("test")
+                ) as mock_request,
+                pytest.raises(Exception, match="test"),
+            ):
+                api_client.users_api.retrieve_self()
+
+            mock_request.assert_called_once()
+            assert mock_request.call_args.kwargs["headers"]["Authorization"] == f"Bearer {token}"
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
 class TestCredentialsManagement:
     def test_can_register(self):
         username = "newuser"

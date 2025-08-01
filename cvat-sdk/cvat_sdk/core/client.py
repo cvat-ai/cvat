@@ -7,11 +7,12 @@ from __future__ import annotations
 
 import logging
 import urllib.parse
+from abc import ABCMeta
 from collections.abc import Generator, Sequence
 from contextlib import contextmanager, suppress
 from pathlib import Path
 from time import sleep
-from typing import Any, Optional, TypeVar
+from typing import Any, Optional, TypeVar, Union
 
 import attrs
 import packaging.specifiers as specifiers
@@ -56,6 +57,33 @@ class Config:
 
     cache_dir: Path = attrs.field(converter=Path, default=_DEFAULT_CACHE_DIR)
     """Directory in which to store cached server data"""
+
+
+class Credentials(metaclass=ABCMeta):
+    pass
+
+
+@attrs.define
+class BasicAuthCredentials(Credentials):
+    """
+    Represents basic authentication credentials.
+    """
+
+    user: str
+    """Username for authentication"""
+
+    password: str
+    """Password for authentication"""
+
+
+@attrs.define
+class AccessTokenCredentials(Credentials):
+    """
+    Represents API access token authentication credentials.
+    """
+
+    token: str
+    """API access token for authentication"""
 
 
 _VERSION_OBJ = pv.Version(VERSION)
@@ -200,7 +228,18 @@ class Client:
     def close(self) -> None:
         return self.__exit__(None, None, None)
 
-    def login(self, credentials: tuple[str, str]) -> None:
+    def login(self, credentials: Credentials | tuple[str, str]) -> None:
+        if self.has_credentials():
+            self.logout()
+
+        if isinstance(credentials, BasicAuthCredentials):
+            credentials = (credentials.user, credentials.password)
+        elif isinstance(credentials, AccessTokenCredentials):
+            self.api_client.configuration.access_token = credentials.token
+            return
+        elif not isinstance(credentials, tuple) or len(credentials) != 2:
+            raise TypeError(f"Unsupported credentials type: {type(credentials).__name__}")
+
         self.api_client.auth_api.create_login(
             models.LoginSerializerExRequest(username=credentials[0], password=credentials[1])
         )
@@ -212,15 +251,23 @@ class Client:
         )
 
     def has_credentials(self) -> bool:
-        return ("sessionid" in self.api_client.cookies) or ("csrftoken" in self.api_client.cookies)
+        return (
+            ("sessionid" in self.api_client.cookies)
+            or ("csrftoken" in self.api_client.cookies)
+            or self.api_client.configuration.access_token
+        )
+
+    def _clear_credentials(self):
+        self.api_client.cookies.pop("sessionid", None)
+        self.api_client.cookies.pop("csrftoken", None)
+        self.api_client.default_headers.pop("Origin", None)
+        self.api_client.default_headers.pop("X-CSRFToken", None)
+        self.api_client.configuration.access_token = None
 
     def logout(self) -> None:
         if self.has_credentials():
             self.api_client.auth_api.create_logout()
-            self.api_client.cookies.pop("sessionid", None)
-            self.api_client.cookies.pop("csrftoken", None)
-            self.api_client.default_headers.pop("Origin", None)
-            self.api_client.default_headers.pop("X-CSRFToken", None)
+            self._clear_credentials()
 
     def wait_for_completion(
         self: Client,
@@ -354,13 +401,27 @@ class CVAT_API_V2:
 
 
 def make_client(
-    host: str, *, port: Optional[int] = None, credentials: Optional[tuple[str, str]] = None
+    host: str,
+    *,
+    port: Optional[int] = None,
+    credentials: Union[Credentials, tuple[str, str], None] = None,
+    access_token: Optional[str] = None,
 ) -> Client:
+    if credentials is not None and access_token is not None:
+        raise ValueError(
+            "'credentials' and 'access_token' cannot be used together. Please use only one."
+        )
+
     url = host.rstrip("/")
     if port:
         url = f"{url}:{port}"
 
     client = Client(url=url)
+
+    if access_token is not None:
+        credentials = AccessTokenCredentials(access_token)
+
     if credentials is not None:
         client.login(credentials)
+
     return client
