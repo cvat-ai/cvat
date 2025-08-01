@@ -235,13 +235,19 @@ export default class Project {
         return result;
     }
 
-    async backup(targetStorage: Storage, useDefaultSettings: boolean, fileName?: string): Promise<string | void> {
+    async backup(
+        targetStorage: Storage,
+        useDefaultSettings: boolean,
+        fileName?: string,
+        lightweight?: boolean,
+    ): Promise<string | void> {
         const result = await PluginRegistry.apiWrapper.call(
             this,
             Project.prototype.backup,
             targetStorage,
             useDefaultSettings,
             fileName,
+            lightweight,
         );
         return result;
     }

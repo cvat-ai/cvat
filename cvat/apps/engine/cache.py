@@ -40,6 +40,7 @@ from cvat.apps.engine.cloud_provider import (
     db_storage_to_storage_instance,
     get_cloud_storage_instance,
 )
+from cvat.apps.engine.exceptions import CloudStorageMissingError
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_extractors import (
     FrameQuality,
@@ -583,7 +584,8 @@ class MediaCache:
             reader = ImageReaderWithManifest(manifest_path)
             with ExitStack() as es:
                 db_cloud_storage = db_data.cloud_storage
-                assert db_cloud_storage, "Cloud storage instance was deleted"
+                if not db_cloud_storage:
+                    raise CloudStorageMissingError("Task is no longer connected to cloud storage")
                 credentials = Credentials()
                 credentials.convert_from_db(
                     {
