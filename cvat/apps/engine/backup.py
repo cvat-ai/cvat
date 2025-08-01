@@ -707,7 +707,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         dm.task.put_job_data(db_job.id, serializer.data)
 
     @staticmethod
-    def _calculate_segment_size(jobs):
+    def _calculate_segment_size(jobs: list[dict[str, Any]]) -> tuple[int, int]:
         # The type field will be missing in backups create before the GT jobs were introduced
         jobs = [
             j for j in jobs
@@ -720,7 +720,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         return segment_size, overlap
 
     @staticmethod
-    def _parse_segment_frames(*, jobs: dict[str, Any]) -> JobFileMapping:
+    def _parse_segment_frames(*, jobs: list[dict[str, Any]]) -> JobFileMapping:
         segments = []
 
         for i, segment in enumerate(jobs):
