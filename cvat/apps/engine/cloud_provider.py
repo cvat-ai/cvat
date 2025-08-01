@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import functools
 import json
-import math
 import os
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
@@ -55,27 +54,15 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 CPU_NUMBER = get_cpu_number()
 
-def normalize_threads_number(
-    threads_number: Optional[int], number_of_files: int
-) -> int:
-    threads_number = (
+def get_max_threads_number(number_of_files: int) -> int:
+    return max(
         min(
-            CPU_NUMBER,
-            settings.CLOUD_DATA_DOWNLOADING_MAX_THREADS_NUMBER,
-            max(
-                math.ceil(number_of_files / settings.CLOUD_DATA_DOWNLOADING_NUMBER_OF_FILES_PER_THREAD), 1
+            number_of_files // settings.CLOUD_DATA_DOWNLOADING_MAX_THREADS_NUMBER_PER_CPU,
+            CPU_NUMBER * settings.CLOUD_DATA_DOWNLOADING_MAX_THREADS_NUMBER_PER_CPU,
             ),
-        )
-        if threads_number is None
-        else min(
-            threads_number,
-            CPU_NUMBER,
-            settings.CLOUD_DATA_DOWNLOADING_MAX_THREADS_NUMBER,
-        )
+        settings.CLOUD_DATA_DOWNLOADING_MAX_THREADS_NUMBER_PER_CPU,
     )
-    threads_number = max(threads_number, 1)
 
-    return threads_number
 
 class Status(str, Enum):
     AVAILABLE = 'AVAILABLE'
@@ -252,11 +239,10 @@ class _CloudStorage(ABC):
         self,
         files: list[str],
         *,
-        threads_number: Optional[int] = None,
         _use_optimal_downloading: bool = True,
     ) -> Iterator[BytesIO]:
         func = self.optimally_image_download if _use_optimal_downloading else self.download_fileobj
-        threads_number = normalize_threads_number(threads_number, len(files))
+        threads_number = get_max_threads_number(len(files))
 
         with ThreadPoolExecutor(max_workers=threads_number) as executor:
             for batch_links in take_by(files, chunk_size=threads_number):
@@ -266,10 +252,8 @@ class _CloudStorage(ABC):
         self,
         files: list[str],
         upload_dir: str,
-        *,
-        threads_number: Optional[int] = None,
     ) -> None:
-        threads_number = normalize_threads_number(threads_number, len(files))
+        threads_number = get_max_threads_number(len(files))
 
         with ThreadPoolExecutor(max_workers=threads_number) as executor:
             futures = [executor.submit(self.download_file, f, os.path.join(upload_dir, f)) for f in files]
