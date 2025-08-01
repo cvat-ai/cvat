@@ -11,6 +11,7 @@ jobs:
 
       - name: Run checks
         run: |
+          corepack enable yarn && yarn set version berry
           yarn install --immutable
 
           echo "Remark version: "`npx remark --version`

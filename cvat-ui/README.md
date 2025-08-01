@@ -9,6 +9,8 @@ This is a client UI for Computer Vision Annotation Tool based on React, Redux an
 - Installing dependencies:
 
 ```bash
+corepack enable yarn
+yarn set version berry
 yarn --immutable
 ```
 

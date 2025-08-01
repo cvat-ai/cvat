@@ -10,6 +10,8 @@ It contains the core logic of the Computer Vision Annotation Tool.
 - Dependencies installation
 
 ```bash
+corepack enable yarn
+yarn set version berry
 yarn install --immutable
 ```
 

@@ -25,6 +25,8 @@ description: 'Instructions on how to run all existence tests.'
    ```
 1. Install npm dependencies:
    ```
+   corepack enable yarn
+   yarn set version berry
    cd tests
    yarn --immutable
    ```

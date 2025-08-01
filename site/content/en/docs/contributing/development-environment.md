@@ -174,6 +174,8 @@ description: 'Installing a development environment for different operating syste
 - Install npm packages for UI (run the following command from CVAT root directory):
 
   ```bash
+  corepack enable yarn
+  yarn set version berry
   yarn --immutable
   ```
 
