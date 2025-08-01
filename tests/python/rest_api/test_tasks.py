@@ -1274,6 +1274,11 @@ class TestTaskBackups:
         task_id = next(t for t in tasks if t["validation_mode"] == "gt_pool")["id"]
         self._test_can_export_backup(task_id)
 
+    @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
+    def test_can_export_backup_for_simple_gt_job_task(self, tasks, mode):
+        task_id = next(t for t in tasks if t["mode"] == mode and t["validation_mode"] == "gt")["id"]
+        self._test_can_export_backup(task_id)
+
     def test_cannot_export_backup_for_task_without_data(self, tasks):
         task_id = next(t for t in tasks if t["jobs"]["count"] == 0)["id"]
 
@@ -1315,17 +1320,7 @@ class TestTaskBackups:
         task_id = next(t for t in tasks if t["mode"] == mode if not t["validation_mode"])["id"]
         self._test_can_restore_task_from_backup(task_id)
 
-    @pytest.mark.parametrize(
-        "mode",
-        [
-            "annotation",
-            pytest.param(
-                "interpolation",
-                marks=pytest.mark.xfail(raises=BackgroundRequestException),
-                # FIXME: fails due to invalid GT job frames serialized
-            ),
-        ],
-    )
+    @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_import_backup_with_simple_gt_job_task(self, tasks, mode):
         task_id = next(t for t in tasks if t["mode"] == mode if t["validation_mode"] == "gt")["id"]
         self._test_can_restore_task_from_backup(task_id)
