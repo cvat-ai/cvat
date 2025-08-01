@@ -44,16 +44,18 @@ class UserDeletionValidator(ABC, metaclass=AutoRegisterValidatorMeta):
 
 class NonEmptyOrgsValidator(UserDeletionValidator):
     def validate(self, user: User) -> None:
-        max_members = (
+        orgs = (
             Organization.objects.filter(owner=user)
             .annotate(members_count=Count("members"))
-            .aggregate(max_members=Coalesce(Max("members_count"), 0))["max_members"]
+            .values_list("slug", "members_count")
         )
 
-        if max_members > 1:
-            raise ValidationError(
-                "Cannot delete a user who is the owner of an organization with multiple members."
-            )
+        for org_slug, members_count in orgs:
+            if members_count > 1:
+                raise ValidationError(
+                    "Cannot delete the user, who is the owner of the organization "
+                    + f"'{org_slug}' with {members_count} members."
+                )
 
 
 class _DeletedResources(TypedDict):
