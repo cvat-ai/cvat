@@ -73,6 +73,7 @@ export default function ProjectPageComponent(): JSX.Element {
         tasksCount,
         tasksQuery,
         tasksFetching,
+        deletedTasks,
     } = useSelector((state: CombinedState) => ({
         deletes: state.projects.activities.deletes,
         updates: state.projects.activities.updates,
@@ -80,6 +81,7 @@ export default function ProjectPageComponent(): JSX.Element {
         tasksCount: state.tasks.count,
         tasksQuery: state.projects.tasksGettingQuery,
         tasksFetching: state.tasks.fetching,
+        deletedTasks: state.tasks.activities.deletes,
     }), shallowEqual);
     const [visibility, setVisibility] = useState(defaultVisibility);
 
@@ -134,9 +136,10 @@ export default function ProjectPageComponent(): JSX.Element {
     }, [deletes]);
 
     const allTaskIds = tasks.map((t) => t.id);
+    const selectableTaskIds = allTaskIds.filter((taskId) => !deletedTasks[taskId]);
     const onSelectAll = useCallback(() => {
-        dispatch(selectionActions.selectResources(allTaskIds));
-    }, [allTaskIds]);
+        dispatch(selectionActions.selectResources(selectableTaskIds));
+    }, [selectableTaskIds]);
 
     if (fechingProject || id in deletes) {
         return <Spin size='large' className='cvat-spinner' />;
@@ -150,6 +153,10 @@ export default function ProjectPageComponent(): JSX.Element {
         new Set<string>(tasks.map((task: Task) => task.subset)),
     );
     const projectTaskIDs = tasks.filter((task) => task.projectId === projectInstance.id).map((task) => task.id);
+    const selectableProjectTaskIDs = projectTaskIDs.filter((taskId) => !deletedTasks[taskId]);
+    const selectableProjectTaskIdToIndex = new Map<number, number>();
+    selectableProjectTaskIDs.forEach((taskId, idx) => selectableProjectTaskIdToIndex.set(taskId, idx));
+
     function renderTasksForSubset(
         subset: string,
         selectProps: (id: number, idx: number) => BulkSelectProps,
@@ -158,23 +165,31 @@ export default function ProjectPageComponent(): JSX.Element {
         const filteredTasks = tasks.filter(
             (task) => task.projectId === projectInstance.id && task.subset === subset,
         );
+
         return filteredTasks.map((task: Task) => {
-            const idx = tasks.findIndex((t) => t.id === task.id);
-            const { selected, onClick } = selectProps(task.id, idx);
+            const isDeleting = deletedTasks[task.id];
+            const selectableIndex = isDeleting ?
+                -1 :
+                selectableProjectTaskIdToIndex.get(task.id) ?? -1;
+            const canSelect = !isDeleting && selectableIndex !== -1;
+
+            const taskProps = canSelect ?
+                selectProps(task.id, selectableIndex) :
+                { selected: false, onClick: () => false };
+
             return (
                 <TaskItem
                     key={task.id}
                     taskID={task.id}
                     idx={tasks.indexOf(task)}
-                    selected={selected}
-                    onClick={onClick}
+                    {...taskProps}
                 />
             );
         });
     }
 
     const content = tasksCount ? (
-        <BulkWrapper currentResourceIds={projectTaskIDs}>
+        <BulkWrapper currentResourceIds={selectableProjectTaskIDs}>
             {(selectProps) => (
                 <>
                     {subsets.map((subset: string) => (
