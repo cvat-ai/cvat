@@ -11,10 +11,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   generate_github_pages:
-    permissions:
-      contents: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -55,11 +56,23 @@ jobs:
           HUGO_ENV: production
           GOOGLE_TAG_ID: G-GVSBK1DNK5
 
-      - name: Deploy
-        if: github.ref == 'refs/heads/develop'
-        uses: peaceiris/actions-gh-pages@v4
+      - name: Upload Pages artifact
+        id: pages_artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./public
-          force_orphan: true
-          cname: docs.cvat.ai
+          path: ./public
+
+  deploy:
+    if: github.ref == 'refs/heads/develop'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
+    runs-on: ubuntu-latest
+    needs: generate_github_pages
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
