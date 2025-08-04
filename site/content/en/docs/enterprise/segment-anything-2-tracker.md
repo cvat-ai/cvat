@@ -10,13 +10,20 @@ description: 'Accelerating video labeling using SAM2 model'
 Segment Anything 2 is a segmentation model that allows fast and precise selection of any object in videos or images.
 SAM2 tracking is available in two implementations:
 
-1. **Classic SAM2 Tracker (Annotation Action)**: Available for Enterprise self-hosted Basic/Premium deployments. This is implemented as an annotation action using serverless functions and requires Nuclio deployment.
+1. **Classic SAM2 Tracker (Annotation Action)**: Available for Enterprise self-hosted Basic/Premium deployments.
+This is implemented as an annotation action using serverless functions and requires Nuclio deployment.
 
-2. **AI Agent SAM2 Tracker**: Available for CVAT Online and Enterprise 2.42.0+ via auto-annotation (AA) functions that run on user-side agents. This brings SAM2 tracking capabilities to CVAT Online users who previously couldn't access this feature.
+1. **AI Agent SAM2 Tracker**: Available for CVAT Online and Enterprise 2.42.0+ via auto-annotation (AA) functions
+that run on user-side agents. This brings SAM2 tracking capabilities to CVAT Online users who previously
+couldn't access this feature.
 
-For self-hosted enterprise customers using the classic implementation, it is strongly recommended to deploy the model using a GPU. Although it is possible to use a CPU-based version, it generally performs much slower and is suitable only for handling a single parallel request. The AI agent variant runs on user hardware, providing flexibility for GPU usage without server configuration requirements.
+For self-hosted enterprise customers using the classic implementation, it is strongly recommended
+to deploy the model using a GPU. Although it is possible to use a CPU-based version,
+it generally performs much slower and is suitable only for handling a single parallel request.
+The AI agent variant runs on user hardware, providing flexibility for GPU usage without server configuration requirements.
 
-Unlike a regular tracking model, both SAM2 tracker implementations are designed to be applied to existing objects (polygons and masks) to track them forward for a specified number of frames.
+Unlike a regular tracking model, both SAM2 tracker implementations are designed to be applied
+to existing objects (polygons and masks) to track them forward for a specified number of frames.
 
 ## Platform Availability and Deployment Options
 
@@ -74,7 +81,8 @@ nuctl deploy "path/to/the/function"
 
 ### AI Agent SAM2 Tracker (CVAT Online + Enterprise 2.42.0+)
 
-The AI agent implementation enables SAM2 tracking for CVAT Online users and provides an alternative deployment method for Enterprise customers. This approach runs the tracking model on user hardware via auto-annotation (AA) functions.
+The AI agent implementation enables SAM2 tracking for CVAT Online users and provides an alternative deployment method
+for Enterprise customers. This approach runs the tracking model on user hardware via auto-annotation (AA) functions.
 
 #### Prerequisites
 
@@ -134,7 +142,8 @@ The AI agent runs as a persistent process on your hardware, providing several ad
 - **Resource Control**: You control the computational resources (CPU/GPU) used for tracking
 
 {{% alert title="Important" color="warning" %}}
-Keep the agent process running to handle tracking requests. If the agent stops, active tracking operations will fail and need to be restarted.
+Keep the agent process running to handle tracking requests.
+If the agent stops, active tracking operations will fail and need to be restarted.
 {{% /alert %}}
 
 ## Version Requirements
@@ -150,8 +159,9 @@ Both SAM2 tracker implementations provide similar user experiences with slight d
 
 ### Running the Classic SAM2 Tracker
 
-The classic tracker can be applied to any polygons and masks. To run the tracker on an object, open the object menu and click
-"Run annotation action".
+The classic tracker can be applied to any polygons and masks.
+To run the tracker on an object, open the object menu and click
+**Run annotation action**.
 
 <img src="/images/sam2_tracker_run_shape_action.png" style="max-width: 200px; padding: 16px;">
 
@@ -162,16 +172,17 @@ When the modal opened, in "Select action" list, choose **Segment Anything 2: Tra
 
 ### Running the AI Agent SAM2 Tracker
 
-Once you have registered the SAM2 AI agent and it's running, you'll see **"AI Tracker: SAM2"** as an available action in the annotation UI for video shape tracking.
+Once you have registered the SAM2 AI agent and it's running,
+you'll see **"AI Tracker: SAM2"** as an available action in the annotation UI for video shape tracking.
 
 To use the AI agent tracker:
 
 1. Create or open a CVAT task from a video file or video-like sequence of images (all images must have the same dimensions)
-2. Open one of the jobs from the task
-3. Draw a mask or polygon shape around an object
-4. Right-click the shape and choose "Run annotation action"
-5. Select **"AI Tracker: SAM2"** from the action list
-6. Specify the target frame and click **Run**
+1. Open one of the jobs from the task
+1. Draw a mask or polygon shape around an object
+1. Right-click the shape and choose "Run annotation action"
+1. Select **"AI Tracker: SAM2"** from the action list
+1. Specify the target frame and click **Run**
 
 The usage flow parallels the existing annotation action interface but utilizes the remote AI agent rather than built-in serverless functions.
 
