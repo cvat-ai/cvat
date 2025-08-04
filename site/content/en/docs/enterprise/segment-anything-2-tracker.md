@@ -20,7 +20,8 @@ couldn't access this feature.
 For self-hosted enterprise customers using the classic implementation, it is strongly recommended
 to deploy the model using a GPU. Although it is possible to use a CPU-based version,
 it generally performs much slower and is suitable only for handling a single parallel request.
-The AI agent variant runs on user hardware, providing flexibility for GPU usage without server configuration requirements.
+The AI agent variant runs on user hardware, providing flexibility for GPU usage without
+server configuration requirements.
 
 Unlike a regular tracking model, both SAM2 tracker implementations are designed to be applied
 to existing objects (polygons and masks) to track them forward for a specified number of frames.
