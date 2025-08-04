@@ -44,6 +44,8 @@ export default function CloudStorageEditorComponent(props: Props): JSX.Element {
                     if (_cloudStorage) {
                         taskMeta.cloudStorageId = _cloudStorage.id;
                         onUpdateTaskMeta(taskMeta);
+                    } else {
+                        setSearchPhrase(cloudStorageInstance ? cloudStorageInstance.displayName : '');
                     }
                 }}
                 secondary

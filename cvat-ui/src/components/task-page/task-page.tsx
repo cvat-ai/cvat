@@ -49,40 +49,37 @@ function TaskPageComponent(): JSX.Element {
     }), shallowEqual);
     const isTaskUpdating = updates[id] || jobsFetching;
 
-    const receiveTask = (): Promise<Task[]> => {
-        if (Number.isInteger(id)) {
-            let promise = core.tasks.get({ id });
-            promise = promise.then(([task]: Task[]) => {
-                if (task) {
-                    setTaskInstance(task);
-                }
-                return (task ? task.meta.get() : null);
-            }).catch((error: Error) => {
-                notification.error({
-                    message: 'Could not receive the requested task from the server',
-                    description: error.toString(),
-                });
+    const receiveTask = async (): void => {
+        if (!Number.isInteger(id)) {
+            notification.error({
+                message: 'Could not receive the requested task from the server',
+                description: `Requested task id "${id}" is not valid`,
             });
-
-            promise = promise.then((_meta: FramesMetaData) => {
-                setTaskMeta(_meta);
-                const isCloudBased = _meta && _meta.cloudStorageId;
-                return (isCloudBased ? getCloudStorageById(_meta.cloudStorageId) : null);
-            });
-
-            promise = promise.then((_cloudStorage) => {
-                setCloudStorageInstance(_cloudStorage);
-            });
-
-            return promise;
+            return;
         }
 
-        notification.error({
-            message: 'Could not receive the requested task from the server',
-            description: `Requested task id "${id}" is not valid`,
-        });
+        try {
+            const [task]: Task[] = await core.tasks.get({ id });
 
-        return Promise.reject(new Error(`Requested task id "${id}" is not valid`));
+            if (task) {
+                setTaskInstance(task);
+
+                const meta = await task.meta.get();
+                setTaskMeta(meta);
+
+                if (meta.cloudStorageId) {
+                    const cloudStorage = await getCloudStorageById(meta.cloudStorageId);
+                    setCloudStorageInstance(cloudStorage);
+                } else {
+                    setCloudStorageInstance(null);
+                }
+            }
+        } catch (error: Error) {
+            notification.error({
+                message: 'Could not receive the requested task from the server',
+                description: error.toString(),
+            });
+        }
     };
 
     useEffect(() => {

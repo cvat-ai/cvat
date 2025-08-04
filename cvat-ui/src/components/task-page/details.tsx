@@ -160,15 +160,12 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                         {assigneeSelect}
                     </Col>
                 </Row>
-                <Row>
-                    <Col span={12} />
-                    <Col>
-                        <CloudStorageEditor
-                            taskMeta={taskMeta}
-                            cloudStorageInstance={cloudStorageInstance}
-                            onUpdateTaskMeta={onUpdateTaskMeta}
-                        />
-                    </Col>
+                <Row justify='end'>
+                    <CloudStorageEditor
+                        taskMeta={taskMeta}
+                        cloudStorageInstance={cloudStorageInstance}
+                        onUpdateTaskMeta={onUpdateTaskMeta}
+                    />
                 </Row>
             </>
         );
