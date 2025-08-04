@@ -471,5 +471,5 @@ a ready-to-use SAM2 tracking function at `ai-models/tracker/sam2/func.py`.
 This function implements the tracking function protocol described above
 and can be used with the CLI commands for creating native functions and running agents.
 
-For detailed setup and usage instructions, see the 
+For detailed setup and usage instructions, see the
 {{< ilink "/docs/enterprise/segment-anything-2-tracker" "SAM2 Tracker documentation" >}}.

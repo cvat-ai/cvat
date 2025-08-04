@@ -85,12 +85,12 @@ The AI agent implementation enables SAM2 tracking for CVAT Online users and prov
 
 #### Setup Instructions
 
-1. **Clone the CVAT repository:**
+1. Clone the CVAT repository:
    ```sh
    git clone https://github.com/cvat-ai/cvat.git <CVAT_DIR>
    ```
 
-2. **Install required dependencies:**
+1. Install required dependencies:
    ```sh
    pip install cvat-cli -r <CVAT_DIR>/ai-models/tracker/sam2/requirements.txt
    ```
@@ -99,14 +99,14 @@ The AI agent implementation enables SAM2 tracking for CVAT Online users and prov
    If you encounter issues installing SAM2, refer to the [SAM2 installation guide](https://github.com/facebookresearch/sam2/blob/main/INSTALL.md#common-installation-issues) for solutions to common problems.
    {{% /alert %}}
 
-3. **Register the SAM2 function with CVAT:**
+1. Register the SAM2 function with CVAT:
    ```sh
    cvat-cli --server-host <CVAT_BASE_URL> --auth <USERNAME>:<PASSWORD> \
        function create-native "SAM2" \
        --function-file=<CVAT_DIR>/ai-models/tracker/sam2/func.py -p model_id=str:<MODEL_ID>
    ```
 
-4. **Run the AI agent:**
+1. Run the AI agent:
    ```sh
    cvat-cli --server-host <CVAT_BASE_URL> --auth <USERNAME>:<PASSWORD> \
        function run-agent <FUNCTION_ID> \

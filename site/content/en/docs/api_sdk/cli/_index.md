@@ -358,7 +358,7 @@ from the SDK, same as the `task auto-annotate` command.
 See that command's examples for information on how to implement these functions
 and specify them in the command line.
 
-For detailed SAM2 setup instructions, see the 
+For detailed SAM2 setup instructions, see the
 {{< ilink "/docs/enterprise/segment-anything-2-tracker" "SAM2 Tracker documentation" >}}.
 
 ### Delete
