@@ -19,7 +19,7 @@ import Space from 'antd/lib/space';
 import Tooltip from 'antd/lib/tooltip';
 import TargetStorageField from 'components/storage/target-storage-field';
 import CVATMarkdown from 'components/common/cvat-markdown';
-import NameTemplateTooltip from 'components/common/cvat-name-temlate-tooltip';
+import NameTemplateTooltip from 'components/common/cvat-name-template-tooltip';
 import { CombinedState } from 'reducers';
 import { exportActions, exportDatasetAsync } from 'actions/export-actions';
 import { makeBulkOperationAsync } from 'actions/bulk-actions';

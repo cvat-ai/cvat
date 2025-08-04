@@ -22,7 +22,7 @@ import {
 
 import CVATMarkdown from 'components/common/cvat-markdown';
 import TargetStorageField from 'components/storage/target-storage-field';
-import NameTemplateTooltip from 'components/common/cvat-name-temlate-tooltip';
+import NameTemplateTooltip from 'components/common/cvat-name-template-tooltip';
 
 const core = getCore();
 
