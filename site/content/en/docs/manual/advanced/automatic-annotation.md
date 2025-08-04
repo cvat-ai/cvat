@@ -81,10 +81,12 @@ papers and official documentation.
 
 Automatic annotation uses pre-installed and added models.
 
-> For self-hosted solutions,
-> you need to
-> {{< ilink "/docs/administration/advanced/installation_automatic_annotation" "install Automatic Annotation first" >}}
-> and {{< ilink "/docs/manual/advanced/models" "add models" >}}.
+{{% alert title="Note" color="primary" %}}
+For self-hosted solutions,
+you need to
+{{< ilink "/docs/administration/advanced/installation_automatic_annotation" "install Automatic Annotation first" >}}
+and {{< ilink "/docs/manual/advanced/models" "add models" >}}.
+{{% /alert %}}
 
 List of pre-installed models:
 
