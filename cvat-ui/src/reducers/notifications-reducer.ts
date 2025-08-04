@@ -27,7 +27,7 @@ import { RequestsActionsTypes } from 'actions/requests-actions';
 import { ImportActionTypes } from 'actions/import-actions';
 import { ExportActionTypes } from 'actions/export-actions';
 import { ConsensusActionTypes } from 'actions/consensus-actions';
-import { SelectionActionsTypes } from 'actions/selection-actions';
+import { BulkActionsTypes } from 'actions/bulk-actions';
 import { getInstanceType } from 'actions/common';
 
 import config from 'config';
@@ -193,8 +193,8 @@ const defaultState: NotificationsState = {
             canceling: null,
             deleting: null,
         },
-        selection: {
-            bulkOperation: null,
+        bulkOperation: {
+            processing: null,
         },
     },
     messages: {
@@ -2056,14 +2056,14 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case SelectionActionsTypes.BULK_OPERATION_FAILED: {
+        case BulkActionsTypes.BULK_OPERATION_FAILED: {
             return {
                 ...state,
                 errors: {
                     ...state.errors,
-                    selection: {
-                        ...state.errors.selection,
-                        bulkOperation: {
+                    bulkOperation: {
+                        ...state.errors.bulkOperation,
+                        processing: {
                             message: 'Bulk operation failed.',
                             reason: action.payload.error,
                             shouldLog: shouldLog(action.payload.error),

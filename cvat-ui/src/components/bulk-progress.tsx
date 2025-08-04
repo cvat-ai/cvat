@@ -19,7 +19,7 @@ export default function BulkProgress(): JSX.Element | null {
     const { fetching, status, bulkError } = useSelector((state: CombinedState) => ({
         fetching: state.bulkActions.fetching,
         status: state.bulkActions.status,
-        bulkError: state.notifications.errors.selection.bulkOperation,
+        bulkError: state.notifications.errors.bulkOperation.processing,
     }));
 
     const percent = status?.percent ?? 0;
