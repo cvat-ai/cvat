@@ -94,7 +94,7 @@ def delete_user_with_cleanup(user_id: int, dry_run: bool = True) -> _DeletedReso
 
     db_projects = list(filter_by_owner_and_org(Project.objects).select_for_update())
     db_tasks = list(filter_by_owner_and_org(Task.objects.filter(project=None)).select_for_update())
-    db_cloud_storages = filter_by_owner_and_org(CloudStorage.objects).select_for_update()
+    db_cloud_storages = list(filter_by_owner_and_org(CloudStorage.objects).select_for_update())
 
     for resource_type, db_resources in (
         ("organization", db_orgs),
@@ -108,7 +108,7 @@ def delete_user_with_cleanup(user_id: int, dry_run: bool = True) -> _DeletedReso
     if not dry_run:
         # call delete on each instance instead of qs.delete()
         # to perform custom .delete() method (e.g. query optimizations, audit logs) if any
-        for db_resource in list(db_orgs) + list(db_cloud_storages) + db_projects + db_tasks:
+        for db_resource in list(db_orgs) + db_cloud_storages + db_projects + db_tasks:
             db_resource.delete()
         user.delete()
 
