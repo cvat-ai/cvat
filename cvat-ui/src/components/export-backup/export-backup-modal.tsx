@@ -90,7 +90,7 @@ function ExportBackupModal(): JSX.Element {
         } else {
             setSelectedInstances([]);
         }
-    }, [isBulkMode, instanceType, selectedIds, allTasks, allProjects, instance]);
+    }, [isBulkMode, instanceType, allTasks, allProjects, instance]);
 
     useEffect(() => {
         let newInstanceType = '';

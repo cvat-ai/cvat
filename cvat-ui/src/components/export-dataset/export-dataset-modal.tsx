@@ -96,7 +96,7 @@ function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
         } else {
             setSelectedInstances([]);
         }
-    }, [isBulkMode, instanceType, selectedIds, allTasks, allProjects, allJobs, instance]);
+    }, [isBulkMode, instanceType, allTasks, allProjects, allJobs, instance]);
 
     const [nameTemplate, setNameTemplate] = useState('dataset_task_{{id}}');
 
