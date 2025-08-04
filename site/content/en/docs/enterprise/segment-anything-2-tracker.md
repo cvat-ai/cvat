@@ -30,7 +30,7 @@ to existing objects (polygons and masks) to track them forward for a specified n
 The following table helps you choose the appropriate SAM2 tracking implementation based on your deployment:
 
 | Feature | Classic SAM2 Tracker | AI Agent SAM2 Tracker |
-|---------|----------------------|------------------------|
+| ------- | -------------------- | --------------------- |
 | **Platform** | Enterprise self-hosted Basic/Premium | CVAT Online + Enterprise 2.42.0+ |
 | **Implementation** | Serverless function (Nuclio) | Auto-annotation function + Agent |
 | **Hardware** | Server-side GPU/CPU | User-side hardware |
@@ -104,7 +104,9 @@ for Enterprise customers. This approach runs the tracking model on user hardware
    ```
 
    {{% alert title="Note" color="info" %}}
-   If you encounter issues installing SAM2, refer to the [SAM2 installation guide](https://github.com/facebookresearch/sam2/blob/main/INSTALL.md#common-installation-issues) for solutions to common problems.
+   If you encounter issues installing SAM2, refer to the
+   [SAM2 installation guide](https://github.com/facebookresearch/sam2/blob/main/INSTALL.md#common-installation-issues)
+   for solutions to common problems.
    {{% /alert %}}
 
 1. Register the SAM2 function with CVAT:
@@ -177,14 +179,16 @@ you'll see **"AI Tracker: SAM2"** as an available action in the annotation UI fo
 
 To use the AI agent tracker:
 
-1. Create or open a CVAT task from a video file or video-like sequence of images (all images must have the same dimensions)
+1. Create or open a CVAT task from a video file or video-like sequence of images
+(all images must have the same dimensions)
 1. Open one of the jobs from the task
 1. Draw a mask or polygon shape around an object
 1. Right-click the shape and choose "Run annotation action"
 1. Select **"AI Tracker: SAM2"** from the action list
 1. Specify the target frame and click **Run**
 
-The usage flow parallels the existing annotation action interface but utilizes the remote AI agent rather than built-in serverless functions.
+The usage flow parallels the existing annotation action interface but utilizes the remote AI agent
+rather than built-in serverless functions.
 
 ### Tracking Process
 
@@ -231,10 +235,15 @@ coordinates and run the tracker again from that frame (for a single object or fo
 
 When using the AI agent implementation, keep in mind:
 
-- **Single Agent Constraint**: Only one agent can run at a time for any given tracking function. Running multiple agents may cause random failures as they compete for tracking states.
-- **Memory-based State**: Tracking states are kept in agent memory. If the agent crashes or is shut down, all tracking states are lost and active tracking processes will fail.
-- **Agent-only Usage**: Tracking functions can only be used via agents. There is no equivalent of the `cvat-cli task auto-annotate` command for tracking.
-- **Rectangle Limitation**: When using the AI Tools dialog (sidebar), only tracking functions that support rectangles will be selectable. The SAM2 tracker supports polygons and masks but not rectangles.
+- **Single Agent Constraint**: Only one agent can run at a time for any given tracking function.
+Running multiple agents may cause random failures as they compete for tracking states.
+- **Memory-based State**: Tracking states are kept in agent memory.
+If the agent crashes or is shut down, all tracking states are lost and active tracking processes will fail.
+- **Agent-only Usage**: Tracking functions can only be used via agents.
+There is no equivalent of the `cvat-cli task auto-annotate` command for tracking.
+- **Rectangle Limitation**: When using the AI Tools dialog (sidebar),
+only tracking functions that support rectangles will be selectable.
+The SAM2 tracker supports polygons and masks but not rectangles.
 - **Skeleton Tracking**: Skeletons cannot currently be tracked by either implementation.
 
 
@@ -247,6 +256,8 @@ produced for example by interactors (e.g. SAM2 or another one).
 
 ## See Also
 
-- [SAM2 Object Tracking via AI Agent (Blog, July 31, 2025)](https://www.cvat.ai/resources/blog/sam2-ai-agent-tracking) - Detailed implementation and background information
-- [Auto-annotation Functions Documentation](https://docs.cvat.ai/docs/api_sdk/sdk/auto-annotation/) - Reference for creating custom tracking functions
+- [SAM2 Object Tracking via AI Agent (Blog, July 31, 2025)](https://www.cvat.ai/resources/blog/sam2-ai-agent-tracking) -
+Detailed implementation and background information
+- [Auto-annotation Functions Documentation](https://docs.cvat.ai/docs/api_sdk/sdk/auto-annotation/) -
+Reference for creating custom tracking functions
 - [CVAT CLI Examples](https://docs.cvat.ai/docs/api_sdk/cli/#examples---functions) - Additional CLI usage examples
