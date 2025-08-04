@@ -9,6 +9,7 @@ import {
     selectionActions,
     SelectionActionsTypes,
 } from 'actions/selection-actions';
+import { CombinedState, SelectedResourceType } from 'reducers';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
 import { platformInfoV2 } from 'utils/platform-checker';
@@ -20,6 +21,7 @@ export interface BulkSelectProps {
 
 interface BulkWrapperProps {
     currentResourceIds: (number | string)[];
+    resourceType: SelectedResourceType;
     parentToChildrenMap?: Record<number, number[]>;
     children: (selectProps: (id: number | string, idx: number) => BulkSelectProps) => React.ReactNode;
 }
@@ -27,10 +29,32 @@ interface BulkWrapperProps {
 function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
     const {
         children,
+        resourceType,
     } = props;
 
     const dispatch = useDispatch();
-    const selectedIds = useSelector((state: any) => state.selection.selected);
+    const selectedIds = useSelector((state: CombinedState): (number | string)[] => {
+        switch (resourceType) {
+            case SelectedResourceType.PROJECTS:
+                return state.projects.selected;
+            case SelectedResourceType.TASKS:
+                return state.tasks.selected;
+            case SelectedResourceType.JOBS:
+                return state.jobs.selected;
+            case SelectedResourceType.REQUESTS:
+                return state.requests.selected;
+            case SelectedResourceType.MEMBERS:
+                return state.organizations.selectedMembers;
+            case SelectedResourceType.WEBHOOKS:
+                return state.webhooks.selected;
+            case SelectedResourceType.CLOUD_STORAGES:
+                return state.cloudStorages.selected;
+            case SelectedResourceType.MODELS:
+                return state.models.selected;
+            default:
+                return [];
+        }
+    });
     const wrapperRef = useRef<HTMLDivElement>(null);
     const [isShiftSelecting, setIsShiftSelecting] = React.useState(false);
 
@@ -48,7 +72,7 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
         SELECT_ALL: (event?: KeyboardEvent) => {
             event?.preventDefault();
             const { currentResourceIds } = props;
-            dispatch(selectionActions.selectResources(currentResourceIds));
+            dispatch(selectionActions.selectResources(currentResourceIds, resourceType));
         },
     };
 
@@ -159,7 +183,7 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
                     const lastIndex = lastSelectedIndexRef.current ?? idx;
                     const [start, end] = [lastIndex, clickedIndex].sort((a, b) => a - b);
                     const rangeIds = allIds.slice(start, end + 1);
-                    updateResources(rangeIds, selectionActions.selectResources);
+                    updateResources(rangeIds, (ids) => selectionActions.selectResources(ids, resourceType));
                     lastSelectedIndexRef.current ??= idx;
                     return true;
                 }
@@ -168,7 +192,9 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
                 if (isModifierPressed) {
                     updateResources(
                         [resourceId],
-                        isSelected ? selectionActions.deselectResources : selectionActions.selectResources,
+                        isSelected ?
+                            (ids) => selectionActions.deselectResources(ids, resourceType) :
+                            (ids) => selectionActions.selectResources(ids, resourceType),
                     );
 
                     lastSelectedIndexRef.current = idx;

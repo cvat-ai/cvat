@@ -13,7 +13,7 @@ import { Row, Col } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
 import Button from 'antd/lib/button';
 
-import { CombinedState, WebhooksQuery } from 'reducers';
+import { CombinedState, WebhooksQuery, SelectedResourceType } from 'reducers';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import { getWebhooksAsync } from 'actions/webhooks-actions';
 import { LeftOutlined } from '@ant-design/icons';
@@ -34,7 +34,7 @@ function WebhooksPage(): JSX.Element | null {
     const fetching = useSelector((state: CombinedState) => state.webhooks.fetching);
     const totalCount = useSelector((state: CombinedState) => state.webhooks.totalCount);
     const query = useSelector((state: CombinedState) => state.webhooks.query);
-    const bulkFetching = useSelector((state: CombinedState) => state.selection.fetching);
+    const bulkFetching = useSelector((state: CombinedState) => state.bulkActions.fetching);
 
     const projectsMatch = useRouteMatch<ProjectRouteMatch>({ path: '/projects/:id/webhooks' });
 
@@ -76,9 +76,9 @@ function WebhooksPage(): JSX.Element | null {
     }, [query]);
 
     const allWebhookIds = useSelector((state: CombinedState) => state.webhooks.current.map((w) => w.id));
-    const selectedCount = useSelector((state: CombinedState) => state.selection.selected.length);
+    const selectedCount = useSelector((state: CombinedState) => state.webhooks.selected.length);
     const onSelectAll = useCallback(() => {
-        dispatch(selectionActions.selectResources(allWebhookIds));
+        dispatch(selectionActions.selectResources(allWebhookIds, SelectedResourceType.WEBHOOKS));
     }, [allWebhookIds]);
 
     const content = totalCount ? (

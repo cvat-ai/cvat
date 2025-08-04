@@ -7,7 +7,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import jsonLogic from 'json-logic-js';
 import _ from 'lodash';
-import { CombinedState, JobsQuery } from 'reducers';
+import { CombinedState, JobsQuery, SelectedResourceType } from 'reducers';
 import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
@@ -146,13 +146,13 @@ function JobListComponent(props: Readonly<Props>): JSX.Element {
     }, []);
 
     const dispatch = useDispatch();
-    const selectedCount = useSelector((state: CombinedState) => state.selection.selected.length);
+    const selectedCount = useSelector((state: CombinedState) => state.jobs.selected.length);
     const onSelectAll = useCallback(() => {
         const allJobIds = viewedJobs.flatMap((job) => [
             job.id,
             ...(jobChildIdMapping[job.id] || []),
         ]);
-        dispatch(selectionActions.selectResources(allJobIds));
+        dispatch(selectionActions.selectResources(allJobIds, SelectedResourceType.JOBS));
     }, [dispatch, filteredJobs]);
 
     return (
@@ -208,7 +208,11 @@ function JobListComponent(props: Readonly<Props>): JSX.Element {
             {jobIds.length ? (
                 <div className='cvat-task-job-list'>
                     <Col className='cvat-jobs-list'>
-                        <BulkWrapper currentResourceIds={jobIds} parentToChildrenMap={jobChildIdMapping}>
+                        <BulkWrapper
+                            currentResourceIds={jobIds}
+                            parentToChildrenMap={jobChildIdMapping}
+                            resourceType={SelectedResourceType.JOBS}
+                        >
                             {(selectProps) => (
                                 viewedJobs
                                     .map((job: Job, idx: number) => {

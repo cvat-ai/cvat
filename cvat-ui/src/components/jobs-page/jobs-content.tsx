@@ -6,7 +6,7 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { Col, Row } from 'antd/lib/grid';
-import { CombinedState } from 'reducers';
+import { CombinedState, SelectedResourceType } from 'reducers';
 import { Job } from 'cvat-core-wrapper';
 import dimensions from 'utils/dimensions';
 import BulkWrapper from 'components/bulk-wrapper';
@@ -33,7 +33,7 @@ function JobsContentComponent(): JSX.Element {
     return (
         <Row justify='center' align='middle' className='cvat-resource-list-wrapper'>
             <Col className='cvat-jobs-page-list' {...dimensions}>
-                <BulkWrapper currentResourceIds={jobs.map((j) => j.id)}>
+                <BulkWrapper currentResourceIds={jobs.map((j) => j.id)} resourceType={SelectedResourceType.JOBS}>
                     {(selectProps) => {
                         const renderJobRow = (jobInstances: Job[]): JSX.Element => (
                             <Row key={jobInstances[0].id} className='cvat-jobs-list-row'>

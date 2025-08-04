@@ -11,7 +11,7 @@ import moment from 'moment';
 import { CombinedState } from 'reducers';
 import { Membership } from 'cvat-core-wrapper';
 import { MoreOutlined } from '@ant-design/icons';
-import { makeBulkOperationAsync } from 'actions/selection-actions';
+import { makeBulkOperationAsync } from 'actions/bulk-actions';
 import { updateOrganizationMemberAsync } from 'actions/organization-actions';
 import MemberActionsMenu from './actions-menu';
 import MemberRoleSelector from './member-role-selector';
@@ -35,7 +35,7 @@ function MemberItem(props: Readonly<Props>): JSX.Element {
     const dispatch = useDispatch();
     const memberships = useSelector((state: CombinedState) => state.organizations.members);
     const organizationInstance = useSelector((state: CombinedState) => state.organizations.current);
-    const selectedIds = useSelector((state: CombinedState) => state.selection.selected);
+    const selectedIds = useSelector((state: CombinedState) => state.organizations.selectedMembers);
     const { username: selfUserName } = useSelector((state: CombinedState) => state.auth.user || { username: '' });
     const rowClassName = `cvat-organization-member-item${selected ? ' cvat-item-selected' : ''}`;
 
@@ -43,7 +43,7 @@ function MemberItem(props: Readonly<Props>): JSX.Element {
     const onUpdateMembershipRole = (newRole: string): void => {
         const membershipToUpdate = selectedIds.includes(membershipInstance.id) ?
             memberships
-                .filter((m) => selectedIds.includes(m.id as number | string))
+                .filter((m) => selectedIds.includes(m.id))
                 .filter(canUpdateRole) :
             [membershipInstance];
 

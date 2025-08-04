@@ -12,7 +12,7 @@ import { modelsActions } from 'actions/models-actions';
 import { changeFrameAsync, updateCurrentJobAsync } from 'actions/annotation-actions';
 import { updateJobAsync } from 'actions/jobs-actions';
 import { getCVATStore } from 'cvat-store';
-import { makeBulkOperationAsync } from 'actions/selection-actions';
+import { makeBulkOperationAsync } from 'actions/bulk-actions';
 
 const core = getCore();
 

@@ -16,7 +16,7 @@ import { modelsActions } from 'actions/models-actions';
 import { mergeConsensusJobsAsync } from 'actions/consensus-actions';
 import { deleteTaskAsync, switchMoveTaskModalVisible, updateTaskAsync } from 'actions/tasks-actions';
 import UserSelector from 'components/task-page/user-selector';
-import { makeBulkOperationAsync } from 'actions/selection-actions';
+import { makeBulkOperationAsync } from 'actions/bulk-actions';
 import TaskActionsItems from './actions-menu-items';
 
 interface Props {
@@ -29,7 +29,7 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
     const { taskInstance, triggerElement, dropdownTrigger } = props;
     const dispatch = useDispatch();
 
-    const selectedIds = useSelector((state: CombinedState) => state.selection.selected);
+    const selectedIds = useSelector((state: CombinedState) => state.tasks.selected);
     const isBulkMode = selectedIds.length > 1;
     const allTasks = useSelector((state: CombinedState) => state.tasks.current);
 
@@ -118,7 +118,7 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
     }, [taskInstance, selectedIds, allTasks, stopEditField, dispatch]);
 
     const onDeleteTask = useCallback(() => {
-        const tasksToDelete = allTasks.filter((task) => selectedIds.includes(task.id as number | string));
+        const tasksToDelete = allTasks.filter((task) => selectedIds.includes(task.id));
         Modal.confirm({
             title: isBulkMode ?
                 `Delete ${tasksToDelete.length} selected tasks` :

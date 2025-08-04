@@ -43,7 +43,7 @@ export default function CloudStorageItemComponent(props: Readonly<Props>): JSX.E
     } = cloudStorage;
     const deletes = useSelector((state: CombinedState) => state.cloudStorages.activities.deletes);
     const deleted = cloudStorage.id in deletes ? deletes[cloudStorage.id] : false;
-    const selectedIds = useSelector((state: CombinedState) => state.selection.selected);
+    const selectedIds = useSelector((state: CombinedState) => state.cloudStorages.selected);
 
     const style: React.CSSProperties = {};
     if (deleted) {

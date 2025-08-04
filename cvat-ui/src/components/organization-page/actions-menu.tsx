@@ -15,7 +15,7 @@ import { MenuProps } from 'antd/lib/menu';
 import { useDispatch, useSelector } from 'react-redux';
 import { CombinedState } from 'reducers';
 import { LabelWithCountHOC } from 'components/common/label-with-count';
-import { makeBulkOperationAsync } from 'actions/selection-actions';
+import { makeBulkOperationAsync } from 'actions/bulk-actions';
 import { removeOrganizationMemberAsync } from 'actions/organization-actions';
 import { resendInvitationAsync } from 'actions/invitations-actions';
 import MemberRoleSelector from './member-role-selector';
@@ -55,7 +55,7 @@ function MemberActionsMenu(props: Readonly<MemberActionsMenuProps>): JSX.Element
     } = useDropdownEditField();
 
     const dispatch = useDispatch();
-    const selectedIds = useSelector((state: CombinedState) => state.selection.selected);
+    const selectedIds = useSelector((state: CombinedState) => state.organizations.selectedMembers);
     const isBulkMode = selectedIds.length > 1;
     const members = useSelector((state: CombinedState) => state.organizations.members);
     const organizationInstance = useSelector((state: CombinedState) => state.organizations.current) as Organization;

@@ -12,7 +12,7 @@ import { Col, Row } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
 
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
-import { CombinedState, JobsQuery } from 'reducers';
+import { CombinedState, JobsQuery, SelectedResourceType } from 'reducers';
 import { getJobsAsync } from 'actions/jobs-actions';
 import { anySearch } from 'utils/any-search';
 import { useResourceQuery } from 'utils/hooks';
@@ -30,10 +30,10 @@ function JobsPageComponent(): JSX.Element {
     const fetching = useSelector((state: CombinedState) => state.jobs.fetching);
     const count = useSelector((state: CombinedState) => state.jobs.count);
     const allJobIds = useSelector((state: CombinedState) => state.jobs.current.map((j) => j.id));
-    const selectedCount = useSelector((state: CombinedState) => state.selection.selected.length);
-    const bulkFetching = useSelector((state: CombinedState) => state.selection.fetching);
+    const selectedCount = useSelector((state: CombinedState) => state.jobs.selected.length);
+    const bulkFetching = useSelector((state: CombinedState) => state.bulkActions.fetching);
     const onSelectAll = useCallback(() => {
-        dispatch(selectionActions.selectResources(allJobIds));
+        dispatch(selectionActions.selectResources(allJobIds, SelectedResourceType.JOBS));
     }, [allJobIds]);
 
     const updatedQuery = useResourceQuery<JobsQuery>(query, { pageSize: 12 });

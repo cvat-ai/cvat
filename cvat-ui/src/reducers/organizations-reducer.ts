@@ -3,9 +3,11 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
-import { OrganizationActions, OrganizationActionsTypes } from 'actions/organization-actions';
-import { OrganizationState } from '.';
+import { AuthActionTypes } from 'actions/auth-actions';
+import { OrganizationActionsTypes } from 'actions/organization-actions';
+import { SelectionActionsTypes } from 'actions/selection-actions';
+import { AnyAction } from 'redux';
+import { OrganizationState, SelectedResourceType } from '.';
 
 const defaultState: OrganizationState = {
     initialized: false,
@@ -17,6 +19,7 @@ const defaultState: OrganizationState = {
     updatingMember: false,
     fetchingMembers: false,
     members: [],
+    selectedMembers: [],
     membersQuery: {
         page: 1,
         pageSize: 10,
@@ -28,7 +31,7 @@ const defaultState: OrganizationState = {
 
 export default function (
     state: OrganizationState = defaultState,
-    action: OrganizationActions | AuthActions,
+    action: AnyAction,
 ): OrganizationState {
     switch (action.type) {
         case OrganizationActionsTypes.ACTIVATE_ORGANIZATION: {
@@ -170,6 +173,29 @@ export default function (
         }
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return { ...defaultState };
+        }
+        case SelectionActionsTypes.DESELECT_RESOURCES: {
+            if (action.payload.resourceType === SelectedResourceType.MEMBERS) {
+                return {
+                    ...state,
+                    selectedMembers: state.selectedMembers.filter(
+                        (id: number) => !action.payload.resourceIds.includes(id),
+                    ),
+                };
+            }
+            return state;
+        }
+        case SelectionActionsTypes.SELECT_RESOURCES: {
+            if (action.payload.resourceType === SelectedResourceType.MEMBERS) {
+                return {
+                    ...state,
+                    selectedMembers: Array.from(new Set([...state.selectedMembers, ...action.payload.resourceIds])),
+                };
+            }
+            return state;
+        }
+        case SelectionActionsTypes.CLEAR_SELECTED_RESOURCES: {
+            return { ...state, selectedMembers: [] };
         }
         default:
             return state;

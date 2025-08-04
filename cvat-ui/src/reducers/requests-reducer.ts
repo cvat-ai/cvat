@@ -3,16 +3,19 @@
 // SPDX-License-Identifier: MIT
 
 import _ from 'lodash';
-import { BoundariesActions, BoundariesActionTypes } from 'actions/boundaries-actions';
-import { RequestsActionsTypes, RequestsActions } from 'actions/requests-actions';
-import { AuthActionTypes, AuthActions } from 'actions/auth-actions';
-import { RequestsState } from '.';
+import { AnyAction } from 'redux';
+import { BoundariesActionTypes } from 'actions/boundaries-actions';
+import { RequestsActionsTypes } from 'actions/requests-actions';
+import { AuthActionTypes } from 'actions/auth-actions';
+import { SelectionActionsTypes } from 'actions/selection-actions';
+import { RequestsState, SelectedResourceType } from '.';
 
 const defaultState: RequestsState = {
     initialized: false,
     fetching: false,
     requests: {},
     cancelled: {},
+    selected: [],
     query: {
         page: 1,
         pageSize: 10,
@@ -21,7 +24,7 @@ const defaultState: RequestsState = {
 
 export default function (
     state = defaultState,
-    action: RequestsActions | AuthActions | BoundariesActions,
+    action: AnyAction,
 ): RequestsState {
     switch (action.type) {
         case RequestsActionsTypes.GET_REQUESTS: {
@@ -75,6 +78,27 @@ export default function (
         case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return { ...defaultState };
+        }
+        case SelectionActionsTypes.DESELECT_RESOURCES: {
+            if (action.payload.resourceType === SelectedResourceType.REQUESTS) {
+                return {
+                    ...state,
+                    selected: state.selected.filter((id: string) => !action.payload.resourceIds.includes(id)),
+                };
+            }
+            return state;
+        }
+        case SelectionActionsTypes.SELECT_RESOURCES: {
+            if (action.payload.resourceType === SelectedResourceType.REQUESTS) {
+                return {
+                    ...state,
+                    selected: Array.from(new Set([...state.selected, ...action.payload.resourceIds])),
+                };
+            }
+            return state;
+        }
+        case SelectionActionsTypes.CLEAR_SELECTED_RESOURCES: {
+            return { ...state, selected: [] };
         }
         default: {
             return state;

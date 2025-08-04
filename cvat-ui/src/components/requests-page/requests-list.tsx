@@ -4,7 +4,7 @@
 
 import React, { useCallback } from 'react';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
-import { CombinedState, RequestsQuery } from 'reducers';
+import { CombinedState, RequestsQuery, SelectedResourceType } from 'reducers';
 
 import { Row, Col } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
@@ -41,9 +41,9 @@ function RequestsList(props: Readonly<Props>): JSX.Element {
     const requestList = Object.values(requests);
     const requestViews = setUpRequestsList(requestList, page, pageSize);
     const requestIds = requestViews.map((request) => request.id).filter((id) => !cancelled[id]);
-    const selectedCount = useSelector((state: CombinedState) => state.selection.selected.length);
+    const selectedCount = useSelector((state: CombinedState) => state.requests.selected.length);
     const onSelectAll = useCallback(() => {
-        dispatch(selectionActions.selectResources(requestIds));
+        dispatch(selectionActions.selectResources(requestIds, SelectedResourceType.REQUESTS));
     }, [requestIds]);
 
     return (
@@ -55,7 +55,7 @@ function RequestsList(props: Readonly<Props>): JSX.Element {
             </Row>
             <Row justify='center' className='cvat-resource-list-wrapper'>
                 <Col className='cvat-requests-list' {...dimensions}>
-                    <BulkWrapper currentResourceIds={requestIds}>
+                    <BulkWrapper currentResourceIds={requestIds} resourceType={SelectedResourceType.REQUESTS}>
                         {(selectProps) => (
                             requestViews.map((request: Request) => {
                                 const isCancelled = request.id in cancelled;

@@ -8,7 +8,7 @@ import Pagination from 'antd/lib/pagination';
 import Spin from 'antd/lib/spin';
 
 import { useSelector } from 'react-redux';
-import { CombinedState } from 'reducers';
+import { CombinedState, SelectedResourceType } from 'reducers';
 import { Membership } from 'cvat-core-wrapper';
 import BulkWrapper from 'components/bulk-wrapper';
 import MemberItem from './member-item';
@@ -40,7 +40,10 @@ function MembersList(props: Readonly<Props>): JSX.Element {
     const content = members.length ? (
         <>
             <div className='cvat-organization-members-list'>
-                <BulkWrapper currentResourceIds={members.map((member) => member.id)}>
+                <BulkWrapper
+                    currentResourceIds={members.map((member) => member.id)}
+                    resourceType={SelectedResourceType.MEMBERS}
+                >
                     {(selectProps) => (
                         <>
                             {members.map((member, idx) => (

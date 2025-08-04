@@ -9,7 +9,7 @@ import { Row, Col } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
 
 import { getProjectsAsync } from 'actions/projects-actions';
-import { CombinedState } from 'reducers';
+import { CombinedState, SelectedResourceType } from 'reducers';
 import { Project } from 'cvat-core-wrapper';
 import dimensions from 'utils/dimensions';
 import BulkWrapper from 'components/bulk-wrapper';
@@ -57,7 +57,7 @@ export default function ProjectListComponent(): JSX.Element {
         <>
             <Row justify='center' align='middle' className='cvat-resource-list-wrapper cvat-project-list-content'>
                 <Col className='cvat-projects-list' {...dimensions}>
-                    <BulkWrapper currentResourceIds={selectableProjectIds}>
+                    <BulkWrapper currentResourceIds={selectableProjectIds} resourceType={SelectedResourceType.PROJECTS}>
                         {(selectProps) => {
                             const defaultProps = { selected: false, onClick: () => false };
 

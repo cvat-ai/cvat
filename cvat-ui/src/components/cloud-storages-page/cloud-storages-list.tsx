@@ -7,7 +7,7 @@ import React from 'react';
 import Pagination from 'antd/lib/pagination';
 import { Row, Col } from 'antd/lib/grid';
 
-import { CloudStorage } from 'reducers';
+import { CloudStorage, SelectedResourceType } from 'reducers';
 import dimensions from 'utils/dimensions';
 import BulkWrapper from 'components/bulk-wrapper';
 import CloudStorageItemComponent from './cloud-storage-item';
@@ -44,7 +44,10 @@ export default function StoragesList(props: Readonly<Props>): JSX.Element {
         <>
             <Row justify='center' align='middle' className='cvat-resource-list-wrapper'>
                 <Col {...dimensions} className='cvat-cloud-storages-list'>
-                    <BulkWrapper currentResourceIds={storages.map((s) => s.id)}>
+                    <BulkWrapper
+                        currentResourceIds={storages.map((s) => s.id)}
+                        resourceType={SelectedResourceType.CLOUD_STORAGES}
+                    >
                         {(selectProps) => {
                             const renderStorageRow = (instances: CloudStorage[]): JSX.Element => (
                                 <Row key={instances[0].id} className='cvat-cloud-storages-list-row'>

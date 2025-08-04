@@ -16,7 +16,7 @@ import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
 import { mergeConsensusJobsAsync } from 'actions/consensus-actions';
 import { deleteJobAsync, updateJobAsync } from 'actions/jobs-actions';
-import { makeBulkOperationAsync } from 'actions/selection-actions';
+import { makeBulkOperationAsync } from 'actions/bulk-actions';
 
 import UserSelector from 'components/task-page/user-selector';
 import { JobStageSelector, JobStateSelector } from 'components/job-item/job-selectors';
@@ -44,7 +44,7 @@ function JobActionsComponent(
     const pluginActions = usePlugins((state: CombinedState) => state.plugins.components.jobActions.items, props);
     const mergingConsensus = useSelector((state: CombinedState) => state.consensus.actions.merging);
 
-    const selectedIds = useSelector((state: CombinedState) => state.selection.selected);
+    const selectedIds = useSelector((state: CombinedState) => state.jobs.selected);
     const isBulkMode = selectedIds.length > 1;
     const allJobs = useSelector((state: CombinedState) => state.jobs.current);
 

@@ -8,7 +8,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useHistory } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import Spin from 'antd/lib/spin';
-import { CombinedState, ProjectsQuery } from 'reducers';
+import { CombinedState, ProjectsQuery, SelectedResourceType } from 'reducers';
 import { getProjectsAsync } from 'actions/projects-actions';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import { anySearch } from 'utils/any-search';
@@ -26,16 +26,16 @@ export default function ProjectsPageComponent(): JSX.Element {
     const query = useSelector((state: CombinedState) => state.projects.gettingQuery);
     const tasksQuery = useSelector((state: CombinedState) => state.projects.tasksGettingQuery);
     const importing = useSelector((state: CombinedState) => state.import.projects.backup.importing);
-    const bulkFetching = useSelector((state: CombinedState) => state.selection.fetching);
+    const bulkFetching = useSelector((state: CombinedState) => state.bulkActions.fetching);
     const [isMounted, setIsMounted] = useState(false);
     const isAnySearch = anySearch<ProjectsQuery>(query);
 
     const allProjectIds = useSelector((state: CombinedState) => state.projects.current.map((p) => p.id));
     const deletedProjects = useSelector((state: CombinedState) => state.projects.activities.deletes);
     const selectableProjectIds = allProjectIds.filter((id) => !deletedProjects[id]);
-    const selectedCount = useSelector((state: CombinedState) => state.selection.selected.length);
+    const selectedCount = useSelector((state: CombinedState) => state.projects.selected.length);
     const onSelectAll = useCallback(() => {
-        dispatch(selectionActions.selectResources(selectableProjectIds));
+        dispatch(selectionActions.selectResources(selectableProjectIds, SelectedResourceType.PROJECTS));
     }, [selectableProjectIds]);
 
     const updatedQuery = useResourceQuery<ProjectsQuery>(query, { pageSize: 12 });

@@ -13,7 +13,7 @@ import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import Spin from 'antd/lib/spin';
 import notification from 'antd/lib/notification';
 
-import { CombinedState, ModelsQuery } from 'reducers';
+import { CombinedState, ModelsQuery, SelectedResourceType } from 'reducers';
 import { useResourceQuery } from 'utils/hooks';
 import { selectionActions } from 'actions/selection-actions';
 import { MLModel, ModelProviders } from 'cvat-core-wrapper';
@@ -34,7 +34,7 @@ function ModelsPageComponent(): JSX.Element {
     const dispatch = useDispatch();
     const fetching = useSelector((state: CombinedState) => state.models.fetching);
     const query = useSelector((state: CombinedState) => state.models.query);
-    const bulkFetching = useSelector((state: CombinedState) => state.selection.fetching);
+    const bulkFetching = useSelector((state: CombinedState) => state.bulkActions.fetching);
     const interactors = useSelector((state: CombinedState) => state.models.interactors);
     const detectors = useSelector((state: CombinedState) => state.models.detectors);
     const trackers = useSelector((state: CombinedState) => state.models.trackers);
@@ -68,9 +68,9 @@ function ModelsPageComponent(): JSX.Element {
     }, []);
 
     const allModelIds = models.filter((m) => m.provider !== ModelProviders.CVAT).map((m) => m.id);
-    const selectedCount = useSelector((state: CombinedState) => state.selection.selected.length);
+    const selectedCount = useSelector((state: CombinedState) => state.models.selected.length);
     const onSelectAll = useCallback(() => {
-        dispatch(selectionActions.selectResources(allModelIds));
+        dispatch(selectionActions.selectResources(allModelIds, SelectedResourceType.MODELS));
     }, [allModelIds]);
 
     const content = (totalCount && !pageOutOfBounds) ? (

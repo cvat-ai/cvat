@@ -22,7 +22,7 @@ import Input from 'antd/lib/input';
 import notification from 'antd/lib/notification';
 
 import { getCore, Project, Task } from 'cvat-core-wrapper';
-import { CombinedState, TasksQuery } from 'reducers';
+import { CombinedState, TasksQuery, SelectedResourceType } from 'reducers';
 import { getProjectTasksAsync, updateProjectAsync } from 'actions/projects-actions';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import TaskItem from 'containers/tasks-page/task-item';
@@ -59,8 +59,8 @@ export default function ProjectPageComponent(): JSX.Element {
     const id = +useParams<ParamType>().id;
     const dispatch = useDispatch();
     const history = useHistory();
-    const selectedCount = useSelector((state: CombinedState) => state.selection.selected.length);
-    const bulkFetching = useSelector((state: CombinedState) => state.selection.fetching);
+    const selectedCount = useSelector((state: CombinedState) => state.tasks.selected.length);
+    const bulkFetching = useSelector((state: CombinedState) => state.bulkActions.fetching);
 
     const [projectInstance, setProjectInstance] = useState<Project | null>(null);
     const [fechingProject, setFetchingProject] = useState(true);
@@ -138,7 +138,7 @@ export default function ProjectPageComponent(): JSX.Element {
     const allTaskIds = tasks.map((t) => t.id);
     const selectableTaskIds = allTaskIds.filter((taskId) => !deletedTasks[taskId]);
     const onSelectAll = useCallback(() => {
-        dispatch(selectionActions.selectResources(selectableTaskIds));
+        dispatch(selectionActions.selectResources(selectableTaskIds, SelectedResourceType.TASKS));
     }, [selectableTaskIds]);
 
     if (fechingProject || id in deletes) {
@@ -189,7 +189,7 @@ export default function ProjectPageComponent(): JSX.Element {
     }
 
     const content = tasksCount ? (
-        <BulkWrapper currentResourceIds={selectableProjectTaskIDs}>
+        <BulkWrapper currentResourceIds={selectableProjectTaskIDs} resourceType={SelectedResourceType.TASKS}>
             {(selectProps) => (
                 <>
                     {subsets.map((subset: string) => (

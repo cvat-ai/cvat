@@ -31,7 +31,7 @@ function ModelActionsComponent(props: Readonly<ModelActionsProps>): JSX.Element 
         ...state.models.trackers,
         ...state.models.reid,
     ]);
-    const selectedIds = useSelector((state: CombinedState) => state.selection.selected);
+    const selectedIds = useSelector((state: CombinedState) => state.models.selected);
 
     const menuPlugins = usePlugins(
         (state: CombinedState) => state.plugins.components.modelsPage.modelItem.menu.items,

@@ -11,7 +11,7 @@ import Spin from 'antd/lib/spin';
 import { Col, Row } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
 
-import { TasksQuery, CombinedState } from 'reducers';
+import { TasksQuery, CombinedState, SelectedResourceType } from 'reducers';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import TaskListContainer from 'containers/tasks-page/tasks-list';
 import { getTasksAsync } from 'actions/tasks-actions';
@@ -42,9 +42,9 @@ function TasksPageComponent(props: Readonly<Props>): JSX.Element {
     const allTaskIds = useSelector((state: CombinedState) => state.tasks.current.map((t) => t.id));
     const deletedTasks = useSelector((state: CombinedState) => state.tasks.activities.deletes);
     const selectableTaskIds = allTaskIds.filter((id) => !deletedTasks[id]);
-    const selectedCount = useSelector((state: CombinedState) => state.selection.selected.length);
+    const selectedCount = useSelector((state: CombinedState) => state.tasks.selected.length);
     const onSelectAll = useCallback(() => {
-        dispatch(selectionActions.selectResources(selectableTaskIds));
+        dispatch(selectionActions.selectResources(selectableTaskIds, SelectedResourceType.TASKS));
     }, [dispatch, selectableTaskIds]);
 
     const updatedQuery = useResourceQuery<TasksQuery>(query);

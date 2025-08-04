@@ -9,7 +9,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import Empty from 'antd/lib/empty';
 import Spin from 'antd/lib/spin';
 
-import { CombinedState } from 'reducers';
+import { CombinedState, SelectedResourceType } from 'reducers';
 import { selectionActions } from 'actions/selection-actions';
 import { getOrganizationMembersAsync } from 'actions/organization-actions';
 import TopBarComponent from './top-bar';
@@ -24,7 +24,7 @@ function OrganizationPage(): JSX.Element | null {
     const members = useSelector((state: CombinedState) => state.organizations.members);
     const fetchingMembers = useSelector((state: CombinedState) => state.organizations.fetchingMembers);
     const query = useSelector((state: CombinedState) => state.organizations.membersQuery);
-    const selectedIds = useSelector((state: CombinedState) => state.selection.selected);
+    const selectedIds = useSelector((state: CombinedState) => state.organizations.selectedMembers);
 
     const fetchMembersCallback = useCallback(() => {
         if (organization) {
@@ -50,7 +50,7 @@ function OrganizationPage(): JSX.Element | null {
 
     const allMembeshipsIds = members.map((m) => m.id);
     const onSelectAll = useCallback(() => {
-        dispatch(selectionActions.selectResources(allMembeshipsIds));
+        dispatch(selectionActions.selectResources(allMembeshipsIds, SelectedResourceType.MEMBERS));
     }, [allMembeshipsIds]);
 
     useEffect(() => {

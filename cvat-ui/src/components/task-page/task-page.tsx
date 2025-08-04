@@ -42,7 +42,7 @@ function TaskPageComponent(): JSX.Element {
         deletes: state.tasks.activities.deletes,
         updates: state.tasks.activities.updates,
         jobsFetching: state.jobs.fetching,
-        bulkFetching: state.selection.fetching,
+        bulkFetching: state.bulkActions.fetching,
     }), shallowEqual);
     const isTaskUpdating = (updates[id] || jobsFetching) && !bulkFetching;
 

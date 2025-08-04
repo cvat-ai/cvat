@@ -28,7 +28,7 @@ import invitationsReducer from './invitations-reducer';
 import requestsReducer from './requests-reducer';
 import serverAPIReducer from './server-api-reducer';
 import navigationReducer from './navigation-reducer';
-import selectionReducer from './selection-reducer';
+import bulkActionsReducer from './bulk-actions-reducer';
 
 export default function createRootReducer(): Reducer {
     return combineReducers({
@@ -56,6 +56,6 @@ export default function createRootReducer(): Reducer {
         requests: requestsReducer,
         serverAPI: serverAPIReducer,
         navigation: navigationReducer,
-        selection: selectionReducer,
+        bulkActions: bulkActionsReducer,
     });
 }

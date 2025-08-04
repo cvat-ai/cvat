@@ -10,15 +10,15 @@ import Button from 'antd/lib/button';
 import Progress from 'antd/lib/progress';
 import { CombinedState } from 'reducers';
 import { resetErrors } from 'actions/notification-actions';
-import { selectionActions, makeBulkOperationAsync } from 'actions/selection-actions';
+import { makeBulkOperationAsync, bulkActions } from 'actions/bulk-actions';
 import CVATMarkdown from './common/cvat-markdown';
 
 export default function BulkProgress(): JSX.Element | null {
     const dispatch = useDispatch();
     const history = useHistory();
     const { fetching, status, bulkError } = useSelector((state: CombinedState) => ({
-        fetching: state.selection.fetching,
-        status: state.selection.status,
+        fetching: state.bulkActions.fetching,
+        status: state.bulkActions.status,
         bulkError: state.notifications.errors.selection.bulkOperation,
     }));
 
@@ -84,7 +84,7 @@ export default function BulkProgress(): JSX.Element | null {
             </div>
             <Button
                 className='cvat-bulk-progress-cancel'
-                onClick={() => dispatch(selectionActions.cancelBulkAction())}
+                onClick={() => dispatch(bulkActions.cancelBulkAction())}
                 type='primary'
             >
                 Cancel

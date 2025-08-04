@@ -8,7 +8,7 @@ import { MenuProps } from 'antd/lib/menu';
 import { Webhook } from 'cvat-core-wrapper';
 import { CombinedState } from 'reducers';
 import { deleteWebhookAsync } from 'actions/webhooks-actions';
-import { makeBulkOperationAsync } from 'actions/selection-actions';
+import { makeBulkOperationAsync } from 'actions/bulk-actions';
 
 interface WebhookActionsMenuProps {
     webhookInstance: Webhook;
@@ -24,7 +24,7 @@ export default function WebhookActionsMenu(props: Readonly<WebhookActionsMenuPro
     const history = useHistory();
     const dispatch = useDispatch();
 
-    const selectedIds = useSelector((state: CombinedState) => state.selection.selected);
+    const selectedIds = useSelector((state: CombinedState) => state.webhooks.selected);
     const allWebhooks = useSelector((state: CombinedState) => state.webhooks.current);
     const isBulk = selectedIds.length > 1;
 

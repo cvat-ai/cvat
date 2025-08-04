@@ -16,16 +16,16 @@ import Input from 'antd/lib/input';
 import Form from 'antd/lib/form';
 import Switch from 'antd/lib/switch';
 import Space from 'antd/lib/space';
+import Tooltip from 'antd/lib/tooltip';
 import TargetStorageField from 'components/storage/target-storage-field';
 import CVATMarkdown from 'components/common/cvat-markdown';
 import NameTemplateTooltip from 'components/common/cvat-name-temlate-tooltip';
 import { CombinedState } from 'reducers';
 import { exportActions, exportDatasetAsync } from 'actions/export-actions';
+import { makeBulkOperationAsync } from 'actions/bulk-actions';
 import {
     Dumper, ProjectOrTaskOrJob, Job, Project, Storage, StorageData, StorageLocation, Task,
 } from 'cvat-core-wrapper';
-import Tooltip from 'antd/lib/tooltip';
-import { makeBulkOperationAsync } from 'actions/selection-actions';
 
 type FormValues = {
     selectedFormat: string | undefined;
@@ -65,7 +65,15 @@ function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
     const dispatch = useDispatch();
     const history = useHistory();
 
-    const selectedIds = useSelector((state: CombinedState) => state.selection.selected);
+    const selectedIds = useSelector((state: CombinedState) => {
+        if (instanceType === 'project') {
+            return state.projects.selected;
+        }
+        if (instanceType === 'task') {
+            return state.tasks.selected;
+        }
+        return [];
+    });
     const allTasks = useSelector((state: CombinedState) => state.tasks.current);
     const allProjects = useSelector((state: CombinedState) => state.projects.current);
     const allJobs = useSelector((state: CombinedState) => state.jobs.current);

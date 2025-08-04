@@ -2,13 +2,16 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
-import { WebhooksActions, WebhooksActionsTypes } from 'actions/webhooks-actions';
+import { AuthActionTypes } from 'actions/auth-actions';
+import { WebhooksActionsTypes } from 'actions/webhooks-actions';
+import { SelectionActionsTypes } from 'actions/selection-actions';
+import { AnyAction } from 'redux';
 import { omit } from 'lodash';
-import { WebhooksState } from 'reducers';
+import { WebhooksState, SelectedResourceType } from 'reducers';
 
 const defaultState: WebhooksState = {
     current: [],
+    selected: [],
     totalCount: 0,
     query: {
         page: 1,
@@ -27,7 +30,7 @@ const defaultState: WebhooksState = {
 
 export default function (
     state: WebhooksState = defaultState,
-    action: WebhooksActions | AuthActions,
+    action: AnyAction,
 ): WebhooksState {
     switch (action.type) {
         case WebhooksActionsTypes.GET_WEBHOOKS: {
@@ -90,6 +93,27 @@ export default function (
         }
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return { ...defaultState };
+        }
+        case SelectionActionsTypes.DESELECT_RESOURCES: {
+            if (action.payload.resourceType === SelectedResourceType.WEBHOOKS) {
+                return {
+                    ...state,
+                    selected: state.selected.filter((id: number) => !action.payload.resourceIds.includes(id)),
+                };
+            }
+            return state;
+        }
+        case SelectionActionsTypes.SELECT_RESOURCES: {
+            if (action.payload.resourceType === SelectedResourceType.WEBHOOKS) {
+                return {
+                    ...state,
+                    selected: Array.from(new Set([...state.selected, ...action.payload.resourceIds])),
+                };
+            }
+            return state;
+        }
+        case SelectionActionsTypes.CLEAR_SELECTED_RESOURCES: {
+            return { ...state, selected: [] };
         }
         default:
             return state;

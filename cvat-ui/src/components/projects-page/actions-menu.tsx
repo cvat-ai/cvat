@@ -14,7 +14,7 @@ import { deleteProjectAsync, updateProjectAsync } from 'actions/projects-actions
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
 import UserSelector from 'components/task-page/user-selector';
-import { makeBulkOperationAsync } from 'actions/selection-actions';
+import { makeBulkOperationAsync } from 'actions/bulk-actions';
 import ProjectActionsItems from './actions-menu-items';
 
 interface Props {
@@ -27,7 +27,7 @@ function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
     const { projectInstance, triggerElement, dropdownTrigger } = props;
     const dispatch = useDispatch();
 
-    const selectedIds = useSelector((state: CombinedState) => state.selection.selected);
+    const selectedIds = useSelector((state: CombinedState) => state.projects.selected);
     const isBulkMode = selectedIds.length > 1;
     const allProjects = useSelector((state: CombinedState) => state.projects.current);
 

@@ -11,7 +11,7 @@ import { MLModel } from 'cvat-core-wrapper';
 import { getModelsAsync } from 'actions/models-actions';
 import dimensions from 'utils/dimensions';
 import BulkWrapper from 'components/bulk-wrapper';
-import { ModelsQuery } from 'reducers';
+import { ModelsQuery, SelectedResourceType } from 'reducers';
 
 import DeployedModelItem from './deployed-model-item';
 
@@ -45,7 +45,10 @@ export default function DeployedModelsListComponent(props: Readonly<Props>): JSX
         <>
             <Row justify='center' align='top' className='cvat-resource-list-wrapper'>
                 <Col {...dimensions} className='cvat-models-list'>
-                    <BulkWrapper currentResourceIds={models.map((m) => Number(m.id))}>
+                    <BulkWrapper
+                        currentResourceIds={models.map((m) => Number(m.id))}
+                        resourceType={SelectedResourceType.MODELS}
+                    >
                         {(selectProps) => {
                             const renderModelRow = (instances: MLModel[]): JSX.Element => (
                                 <Row key={instances[0].id} className='cvat-models-list-row'>

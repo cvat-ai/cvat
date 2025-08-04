@@ -20,7 +20,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
     return {
         fetching: state.tasks.fetching,
-        bulkFetching: state.selection.fetching,
+        bulkFetching: state.bulkActions.fetching,
         query: tasks.gettingQuery,
         count: state.tasks.count,
         importing: state.import.tasks.backup.importing,

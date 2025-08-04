@@ -15,7 +15,7 @@ import Tooltip from 'antd/lib/tooltip';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 import { CombinedState } from 'reducers';
 import { exportActions, exportBackupAsync } from 'actions/export-actions';
-import { makeBulkOperationAsync } from 'actions/selection-actions';
+import { makeBulkOperationAsync } from 'actions/bulk-actions';
 import {
     getCore, Job, ProjectOrTaskOrJob, Storage, StorageData, StorageLocation,
 } from 'cvat-core-wrapper';
@@ -53,11 +53,19 @@ function ExportBackupModal(): JSX.Element {
     const [helpMessage, setHelpMessage] = useState('');
     const [nameTemplate, setNameTemplate] = useState('backup_task_{{id}}');
 
-    const selectedIds = useSelector((state: CombinedState) => state.selection.selected);
+    const instanceT = useSelector((state: CombinedState) => state.export.instanceType);
+    const selectedIds = useSelector((state: CombinedState) => {
+        if (instanceT === 'project') {
+            return state.projects.selected;
+        }
+        if (instanceT === 'task') {
+            return state.tasks.selected;
+        }
+        return [];
+    });
     const allTasks = useSelector((state: CombinedState) => state.tasks.current);
     const allProjects = useSelector((state: CombinedState) => state.projects.current);
 
-    const instanceT = useSelector((state: CombinedState) => state.export.instanceType);
     const instance = useSelector((state: CombinedState) => {
         if (!instanceT) {
             return null;

@@ -9,6 +9,7 @@ import ModelRunnerModal from 'components/model-runner-modal/model-runner-dialog'
 import MoveTaskModal from 'components/move-task-modal/move-task-modal';
 import TaskItem from 'containers/tasks-page/task-item';
 import dimensions from 'utils/dimensions';
+import { SelectedResourceType } from 'reducers';
 import BulkWrapper from '../bulk-wrapper';
 
 export interface Props {
@@ -29,6 +30,7 @@ function TaskListComponent(props: Readonly<Props>): JSX.Element {
                 <Col className='cvat-tasks-list' {...dimensions}>
                     <BulkWrapper
                         currentResourceIds={selectableTaskIds}
+                        resourceType={SelectedResourceType.TASKS}
                     >
                         {(selectProps) => currentTasksIndexes.map((tid: number, idx: number) => {
                             const isDeleting = deletedTasks[tid];

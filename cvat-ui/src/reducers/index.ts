@@ -53,6 +53,7 @@ export interface ProjectsState {
     fetching: boolean;
     count: number;
     current: Project[];
+    selected: number[];
     previews: {
         [index: number]: Preview;
     };
@@ -96,6 +97,7 @@ export interface JobsState {
     fetching: boolean;
     count: number;
     current: Job[];
+    selected: number[];
     previews: {
         [index: number]: Preview;
     };
@@ -117,6 +119,7 @@ export interface TasksState {
     gettingQuery: TasksQuery;
     count: number;
     current: Task[];
+    selected: number[];
     previews: {
         [index: number]: Preview;
     };
@@ -256,6 +259,7 @@ export interface CloudStoragesState {
             error: string;
         };
     };
+    selected: number[];
 }
 
 export interface BulkActionStatus {
@@ -263,8 +267,18 @@ export interface BulkActionStatus {
     percent: number;
 }
 
-export interface SelectionState {
-    selected: (number | string)[];
+export enum SelectedResourceType {
+    PROJECTS = 'projects',
+    TASKS = 'tasks',
+    JOBS = 'jobs',
+    REQUESTS = 'requests',
+    MEMBERS = 'members',
+    WEBHOOKS = 'webhooks',
+    CLOUD_STORAGES = 'cloudStorages',
+    MODELS = 'models',
+}
+
+export interface BulkActionsState {
     fetching: boolean;
     status: BulkActionStatus | null;
     cancelled: boolean;
@@ -493,6 +507,7 @@ export interface ModelsState {
     previews: {
         [index: string]: Preview;
     };
+    selected: (number | string)[];
 }
 
 export interface ErrorState {
@@ -1028,6 +1043,7 @@ export interface OrganizationState {
     updatingMember: boolean;
     fetchingMembers: boolean;
     members: Membership[];
+    selectedMembers: number[];
     membersQuery: OrganizationMembersQuery;
 }
 
@@ -1043,6 +1059,7 @@ export interface WebhooksQuery {
 
 export interface WebhooksState {
     current: Webhook[],
+    selected: number[];
     totalCount: number;
     fetching: boolean;
     query: WebhooksQuery;
@@ -1076,6 +1093,7 @@ export interface RequestsState {
     initialized: boolean;
     requests: Record<string, Request>;
     cancelled: Record<string, boolean>;
+    selected: string[];
     query: RequestsQuery;
 }
 
@@ -1106,7 +1124,7 @@ export interface CombinedState {
     invitations: InvitationsState;
     webhooks: WebhooksState;
     requests: RequestsState;
-    selection: SelectionState;
+    bulkActions: BulkActionsState;
     serverAPI: ServerAPIState;
     navigation: NavigationState;
 }

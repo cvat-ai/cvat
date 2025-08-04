@@ -8,7 +8,7 @@ import Dropdown from 'antd/lib/dropdown';
 import { MenuProps } from 'antd/lib/menu';
 import { Request, RQStatus } from 'cvat-core-wrapper';
 import { cancelRequestAsync } from 'actions/requests-async-actions';
-import { makeBulkOperationAsync } from 'actions/selection-actions';
+import { makeBulkOperationAsync } from 'actions/bulk-actions';
 import { CombinedState } from 'reducers';
 
 interface Props {
@@ -26,7 +26,7 @@ function RequestActionsComponent(props: Readonly<Props>): JSX.Element | null {
         renderTriggerIfEmpty = true,
     } = props;
     const dispatch = useDispatch();
-    const selectedIds = useSelector((state: CombinedState) => state.selection.selected);
+    const selectedIds = useSelector((state: CombinedState) => state.requests.selected);
     const requestsMap = useSelector((state: CombinedState) => state.requests.requests);
     const cancelled = useSelector((state: CombinedState) => state.requests.cancelled);
     const allRequests = Object.values(requestsMap);
