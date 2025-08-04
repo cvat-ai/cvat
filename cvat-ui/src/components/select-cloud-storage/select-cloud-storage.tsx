@@ -6,7 +6,6 @@ import React, { useEffect, useState } from 'react';
 import Form from 'antd/lib/form';
 import notification from 'antd/lib/notification';
 import AutoComplete from 'antd/lib/auto-complete';
-import Text from 'antd/lib/typography/Text';
 import Input from 'antd/lib/input';
 import { debounce } from 'lodash';
 import { CloudStorage } from 'reducers';
@@ -21,7 +20,7 @@ export interface Props {
     setSearchPhrase: (searchPhrase: string) => void;
     onSelectCloudStorage: (cloudStorageId: number | null) => void;
     required?: boolean;
-    secondary? : boolean;
+    label? : string;
 }
 
 async function searchCloudStorages(filter: Record<string, string>): Promise<CloudStorage[]> {
@@ -59,7 +58,7 @@ function SelectCloudStorage(props: Props): JSX.Element {
         setSearchPhrase,
         onSelectCloudStorage,
         required,
-        secondary,
+        label,
     } = props;
     const [initialList, setInitialList] = useState<CloudStorage[]>([]);
     const [list, setList] = useState<CloudStorage[]>([]);
@@ -96,14 +95,9 @@ function SelectCloudStorage(props: Props): JSX.Element {
         }
     };
 
-    let label = 'Select cloud storage';
-    if (secondary) {
-        label = <Text type='secondary'>{label}</Text>;
-    }
-
     return (
         <Form.Item
-            label={label}
+            label={label || 'Select cloud storage'}
             name={name || 'cloudStorageSelect'}
             rules={[{ required, message: 'Please, specify a cloud storage' }]}
             valuePropName='label'

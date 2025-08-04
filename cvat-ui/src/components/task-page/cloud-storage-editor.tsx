@@ -4,6 +4,7 @@
 
 import React, { useState } from 'react';
 import notification from 'antd/lib/notification';
+import Text from 'antd/lib/typography/Text';
 import { CloudStorage } from 'reducers';
 import SelectCloudStorage from 'components/select-cloud-storage/select-cloud-storage';
 import {
@@ -34,6 +35,8 @@ export default function CloudStorageEditorComponent(props: Props): JSX.Element {
 
     const [searchPhrase, setSearchPhrase] = useState(cloudStorageInstance ? cloudStorageInstance.displayName : '');
 
+    const label = <Text type='secondary'>Cloud storage</Text>;
+
     return (
         taskMeta.storage === StorageLocation.CLOUD_STORAGE && (
             <SelectCloudStorage
@@ -48,7 +51,7 @@ export default function CloudStorageEditorComponent(props: Props): JSX.Element {
                         setSearchPhrase(cloudStorageInstance ? cloudStorageInstance.displayName : '');
                     }
                 }}
-                secondary
+                label={label}
             />
         )
     );
