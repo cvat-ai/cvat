@@ -359,8 +359,8 @@ export function updateTaskAsync(
 export function updateTaskMetadataAsync(
     taskInstance: Task,
     taskMeta: FramesMetaData,
-): ThunkAction<Promise<Task>> {
-    return async (dispatch: ThunkDispatch): Promise<Task> => {
+): ThunkAction<Promise<FramesMetaData>> {
+    return async (dispatch: ThunkDispatch): Promise<FramesMetaData> => {
         try {
             dispatch(updateTask(taskInstance.id));
             const updatedMeta = await taskInstance.meta.save(taskMeta);
