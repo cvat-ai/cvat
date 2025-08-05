@@ -36,7 +36,7 @@ module.exports = {
                 "semi": "on",
                 "quotes": 2
             },
-            "globals": {
+            globals: {
                 "__ENV": "readonly",
                 "__VU": "readonly",
                 "__ITER": "readonly"
