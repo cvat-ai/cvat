@@ -21,7 +21,7 @@ export async function getCloudStorageById(id: number): Promise<CloudStorage | nu
     try {
         const [data] = await getCore().cloudStorages.get({ id });
         return data;
-    } catch (error) {
+    } catch (error: any) {
         notification.error({
             message: 'Could not fetch a cloud storage',
             description: error.toString(),
@@ -30,29 +30,31 @@ export async function getCloudStorageById(id: number): Promise<CloudStorage | nu
     return null;
 }
 
-export default function CloudStorageEditorComponent(props: Props): JSX.Element {
+export default function CloudStorageEditorComponent(props: Props): JSX.Element | null {
     const { taskMeta, cloudStorageInstance, onUpdateTaskMeta } = props;
 
     const [searchPhrase, setSearchPhrase] = useState(cloudStorageInstance ? cloudStorageInstance.displayName : '');
 
     const label = <Text type='secondary'>Cloud storage</Text>;
 
+    if (taskMeta.storage !== StorageLocation.CLOUD_STORAGE) {
+        return null;
+    }
+
     return (
-        taskMeta.storage === StorageLocation.CLOUD_STORAGE && (
-            <SelectCloudStorage
-                searchPhrase={searchPhrase}
-                cloudStorage={cloudStorageInstance}
-                setSearchPhrase={setSearchPhrase}
-                onSelectCloudStorage={(_cloudStorage: CloudStorage | null) => {
-                    if (_cloudStorage) {
-                        taskMeta.cloudStorageId = _cloudStorage.id;
-                        onUpdateTaskMeta(taskMeta);
-                    } else {
-                        setSearchPhrase(cloudStorageInstance ? cloudStorageInstance.displayName : '');
-                    }
-                }}
-                label={label}
-            />
-        )
+        <SelectCloudStorage
+            searchPhrase={searchPhrase}
+            cloudStorage={cloudStorageInstance}
+            setSearchPhrase={setSearchPhrase}
+            onSelectCloudStorage={(_cloudStorage: CloudStorage | null) => {
+                if (_cloudStorage) {
+                    taskMeta.cloudStorageId = _cloudStorage.id;
+                    onUpdateTaskMeta(taskMeta);
+                } else {
+                    setSearchPhrase(cloudStorageInstance ? cloudStorageInstance.displayName : '');
+                }
+            }}
+            label={label}
+        />
     );
 }

@@ -49,7 +49,7 @@ function TaskPageComponent(): JSX.Element {
     }), shallowEqual);
     const isTaskUpdating = updates[id] || jobsFetching;
 
-    const receiveTask = async (): void => {
+    const receiveTask = async (): Promise<void> => {
         if (!Number.isInteger(id)) {
             notification.error({
                 message: 'Could not receive the requested task from the server',
@@ -74,7 +74,7 @@ function TaskPageComponent(): JSX.Element {
                     setCloudStorageInstance(null);
                 }
             }
-        } catch (error: Error) {
+        } catch (error: any) {
             notification.error({
                 message: 'Could not receive the requested task from the server',
                 description: error.toString(),

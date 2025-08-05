@@ -20,7 +20,7 @@ export interface Props {
     setSearchPhrase: (searchPhrase: string) => void;
     onSelectCloudStorage: (cloudStorageId: number | null) => void;
     required?: boolean;
-    label? : string;
+    label?: JSX.Element;
 }
 
 async function searchCloudStorages(filter: Record<string, string>): Promise<CloudStorage[]> {
