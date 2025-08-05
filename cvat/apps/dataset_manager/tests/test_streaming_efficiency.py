@@ -84,7 +84,10 @@ class TestExtractors(TestCase):
         elif data_cls is ProjectData:
             instance_data.tasks = [Mock(id=index) for index in range(len(subsets))]
 
+        generated_item_counter = 0
+
         def mock_group_by_frame(*args, **kwargs):
+            nonlocal generated_item_counter
             for index, (item_id, subset) in enumerate(item_ids):
                 yield self._make_mock_frame(
                     data_cls=data_cls,
@@ -94,6 +97,10 @@ class TestExtractors(TestCase):
                     subset=subset,
                     frame=index,
                 )
+                generated_item_counter += 1
+
+        def number_of_generated_items():
+            return generated_item_counter
 
         instance_data.group_by_frame.side_effect = mock_group_by_frame
 
@@ -105,7 +112,9 @@ class TestExtractors(TestCase):
             }
             instance_data.get_included_frames.return_value = set(instance_data.frame_info.keys())
 
-        return instance_data
+            instance_data.group_by_frame_stream.side_effect = mock_group_by_frame
+
+        return instance_data, number_of_generated_items
 
     @mock.patch("attr.evolve", lambda x, **kwargs: x)
     def test_can_stream_efficiently_on_export(self):
@@ -120,7 +129,7 @@ class TestExtractors(TestCase):
             else:
                 item_ids = {("image", "foo"), ("another_image", "foo")}
             with self.subTest(data_cls=data_cls.__name__):
-                instance_data = self._make_mock_instance_data(data_cls, item_ids)
+                instance_data, number_of_generated_items = self._make_mock_instance_data(data_cls, item_ids)
                 extractor_cls = (
                     CVATProjectDataExtractor
                     if data_cls is ProjectData
@@ -128,40 +137,86 @@ class TestExtractors(TestCase):
                 )
                 extractor_cls = self._make_counting_data_extractor_cls(extractor_cls)
 
-                with extractor_cls(instance_data=instance_data) as extractor:
-                    dataset = StreamDataset.from_extractors(extractor, env=dm_env)
-                    # iterated over instance frame data on init
-                    assert instance_data.group_by_frame.call_count == 1
+                if data_cls is JobData:
+                    with extractor_cls(instance_data=instance_data) as extractor:
+                        dataset = StreamDataset.from_extractors(extractor, env=dm_env)
 
-                    # does not convert annotations to get various dataset properties
-                    len(dataset)
-                    list(dataset.subsets())
-                    assert extractor.item_anns_processed == 0
+                        # does not iterate items or annotations to get various dataset properties
+                        len(dataset)
+                        list(dataset.subsets())
+                        for subset in dataset.subsets():
+                            subset_dataset = dataset.get_subset(subset).as_dataset()
+                            len(subset_dataset)
+                            list(subset_dataset.subsets())
 
-                    # does not convert annotations to get various subset properties
-                    for subset in dataset.subsets():
-                        subset_dataset = dataset.get_subset(subset).as_dataset()
-                        len(subset_dataset)
-                        list(subset_dataset.subsets())
-                    assert extractor.item_anns_processed == 0
+                        assert extractor.item_anns_processed == 0
+                        assert number_of_generated_items() == 0
 
-                    # does not convert annotations to iterate items
-                    list(dataset)
-                    for subset in dataset.subsets():
-                        subset_dataset = dataset.get_subset(subset).as_dataset()
-                        list(subset_dataset)
-                    assert extractor.item_anns_processed == 0
+                        # can iterate items
+                        assert len(list(dataset)) == len(item_ids)
+                        assert instance_data.group_by_frame_stream.call_count == 1
+                        assert number_of_generated_items() == len(item_ids)
 
-                    # initiates annotations only when they are accessed
-                    list(item.annotations for item in dataset)
-                    assert extractor.item_anns_processed == len(item_ids)
+                        # iterating items again makes it to generate them again
+                        assert len(list(dataset)) == len(item_ids)
+                        assert instance_data.group_by_frame_stream.call_count == 2
+                        assert number_of_generated_items() == len(item_ids) * 2
 
-                    # does not keep annotations in memory
-                    list(item.annotations for item in dataset)
-                    assert extractor.item_anns_processed == len(item_ids) * 2
+                        # accessing items through subsets makes it to generate them again
+                        for subset in dataset.subsets():
+                            subset_dataset = dataset.get_subset(subset).as_dataset()
+                            list(subset_dataset)
 
-                    # did not iterate over instance frame data anymore
-                    assert instance_data.group_by_frame.call_count == 1
+                        assert instance_data.group_by_frame_stream.call_count == 3
+                        assert number_of_generated_items() == len(item_ids) * 3
+
+                        # did not convert annotations to iterate items
+                        assert extractor.item_anns_processed == 0
+
+                        # initiates annotations only when they are accessed
+                        list(item.annotations for item in dataset)
+                        assert extractor.item_anns_processed == len(item_ids), extractor.item_anns_processed
+
+                        # does not keep annotations in memory
+                        list(item.annotations for item in dataset)
+                        assert extractor.item_anns_processed == len(item_ids) * 2, extractor.item_anns_processed
+                else:
+                    with extractor_cls(instance_data=instance_data) as extractor:
+                        dataset = StreamDataset.from_extractors(extractor, env=dm_env)
+                        # iterated over instance frame data on init
+                        assert instance_data.group_by_frame.call_count == 1
+                        assert number_of_generated_items() == len(item_ids)
+
+                        # does not convert annotations to get various dataset properties
+                        len(dataset)
+                        list(dataset.subsets())
+                        assert extractor.item_anns_processed == 0
+
+                        # does not convert annotations to get various subset properties
+                        for subset in dataset.subsets():
+                            subset_dataset = dataset.get_subset(subset).as_dataset()
+                            len(subset_dataset)
+                            list(subset_dataset.subsets())
+                        assert extractor.item_anns_processed == 0
+
+                        # does not convert annotations to iterate items
+                        list(dataset)
+                        for subset in dataset.subsets():
+                            subset_dataset = dataset.get_subset(subset).as_dataset()
+                            list(subset_dataset)
+                        assert extractor.item_anns_processed == 0
+
+                        # initiates annotations only when they are accessed
+                        list(item.annotations for item in dataset)
+                        assert extractor.item_anns_processed == len(item_ids), extractor.item_anns_processed
+
+                        # does not keep annotations in memory
+                        list(item.annotations for item in dataset)
+                        assert extractor.item_anns_processed == len(item_ids) * 2, extractor.item_anns_processed
+
+                        # did not iterate over instance frame data anymore
+                        assert instance_data.group_by_frame.call_count == 1
+                        assert number_of_generated_items() == len(item_ids)
 
 
 class TestImporters(ApiTestBase):
