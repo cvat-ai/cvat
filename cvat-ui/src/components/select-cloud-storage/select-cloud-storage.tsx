@@ -99,6 +99,7 @@ function SelectCloudStorage(props: Props): JSX.Element {
             name={name || 'cloudStorageSelect'}
             rules={[{ required: true, message: 'Please, specify a cloud storage' }]}
             valuePropName='label'
+            colon={false}
         >
             <AutoComplete
                 onBlur={onBlur}
