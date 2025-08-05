@@ -156,11 +156,11 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                         {consensusEnabled && <CVATTag type={TagType.CONSENSUS} />}
                     </Col>
                     <Col>
-                        <Text type='secondary'>Assigned to</Text>
+                        <Text type='secondary'>Assigned to  </Text>
                         {assigneeSelect}
                     </Col>
                 </Row>
-                <Row justify='end'>
+                <Row justify='end' style={{ marginTop: '4px' }}>
                     <CloudStorageEditor
                         taskMeta={taskMeta}
                         cloudStorageInstance={cloudStorageInstance}
