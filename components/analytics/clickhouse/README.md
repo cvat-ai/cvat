@@ -31,6 +31,8 @@ Recommendations on the migrations:
 - Typically the migration should include "IF NOT EXISTS" at some point to allow idempotency
   and avoid failing the migration on an existing DB.
 
+If adding or removing columns, you might need to update the list of allowed fields in `vector.toml`.
+
 ## How to run
 
 If you need to run migrations manually, use the following command:
