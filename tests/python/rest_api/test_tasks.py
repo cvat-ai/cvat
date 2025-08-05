@@ -1568,7 +1568,7 @@ class TestWorkWithSimpleGtJobTasks:
         "task, gt_job, annotation_jobs",
         [fixture_ref(fxt_task_with_gt_job), fixture_ref(fxt_task_with_gt_job_and_frame_step)],
     )
-    def test_changing_gt_job_deleted_frames_does_not_change_task_deleted_frames(
+    def test_deleting_frames_in_gt_job_does_not_affect_task_or_annotation_job_deleted_frames(
         self, admin_user, task, gt_job, annotation_jobs
     ):
         with make_api_client(admin_user) as api_client:
@@ -1582,14 +1582,15 @@ class TestWorkWithSimpleGtJobTasks:
                 ),
             )
 
-            # Will return these frames back into the validation pool,
-            # but not change deleted frames in the simple GT job
-            # (they are computed as union of task deleted frames and validation layout
-            # disabled frames)
+            # Changing deleted frames in the GT job will modify the validation pool of the task,
+            # but will not change deleted frames of the task or other jobs.
+            # Deleted frames in the GT job are computed as union of task deleted frames and
+            # validation layout disabled frames.
+            gt_job_deleted_frames = []
             gt_job_meta, _ = api_client.jobs_api.partial_update_data_meta(
                 gt_job["id"],
                 patched_job_data_meta_write_request=models.PatchedJobDataMetaWriteRequest(
-                    deleted_frames=[]
+                    deleted_frames=gt_job_deleted_frames
                 ),
             )
             assert gt_job_meta.deleted_frames == sorted(
@@ -1601,7 +1602,7 @@ class TestWorkWithSimpleGtJobTasks:
             )
 
             task_validation_layout, _ = api_client.tasks_api.retrieve_validation_layout(task["id"])
-            assert task_validation_layout.disabled_frames == []
+            assert task_validation_layout.disabled_frames == gt_job_deleted_frames
 
             for j in annotation_jobs:
                 updated_job_meta, _ = api_client.jobs_api.retrieve_data_meta(j["id"])
@@ -1660,7 +1661,7 @@ class TestWorkWithSimpleGtJobTasks:
         "task, gt_job, annotation_jobs",
         [fixture_ref(fxt_task_with_gt_job), fixture_ref(fxt_task_with_gt_job_and_frame_step)],
     )
-    def test_can_delete_gt_job_frames_by_changing_owning_annotation_job_meta(
+    def test_deleting_frames_in_annotation_jobs_deletes_gt_job_frames(
         self, admin_user, task, gt_job, annotation_jobs
     ):
         with make_api_client(admin_user) as api_client:
