@@ -1939,9 +1939,7 @@ class ProjectCloudBackupAPINoStaticChunksTestCase(ProjectBackupAPITestCase, _Clo
         )
 
     def _export_backup(self, user, pid, expected_4xx_status_code=None):
-        query_params = None
-        if self.MAKE_LIGHTWEIGHT_BACKUP:
-            query_params = {"lightweight": self.MAKE_LIGHTWEIGHT_BACKUP}
+        query_params = {"lightweight": self.MAKE_LIGHTWEIGHT_BACKUP}
         return self._export_project_backup(
             user,
             pid,

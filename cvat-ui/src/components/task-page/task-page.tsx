@@ -70,8 +70,6 @@ function TaskPageComponent(): JSX.Element {
                 if (meta.cloudStorageId) {
                     const cloudStorage = await getCloudStorageById(meta.cloudStorageId);
                     setCloudStorageInstance(cloudStorage);
-                } else {
-                    setCloudStorageInstance(null);
                 }
             }
         } catch (error: any) {

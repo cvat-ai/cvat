@@ -19,7 +19,6 @@ export interface Props {
     name?: string[];
     setSearchPhrase: (searchPhrase: string) => void;
     onSelectCloudStorage: (cloudStorageId: number | null) => void;
-    required?: boolean;
     label?: JSX.Element;
 }
 
@@ -57,7 +56,6 @@ function SelectCloudStorage(props: Props): JSX.Element {
         name,
         setSearchPhrase,
         onSelectCloudStorage,
-        required,
         label,
     } = props;
     const [initialList, setInitialList] = useState<CloudStorage[]>([]);
@@ -99,7 +97,7 @@ function SelectCloudStorage(props: Props): JSX.Element {
         <Form.Item
             label={label || 'Select cloud storage'}
             name={name || 'cloudStorageSelect'}
-            rules={[{ required, message: 'Please, specify a cloud storage' }]}
+            rules={[{ required: true, message: 'Please, specify a cloud storage' }]}
             valuePropName='label'
         >
             <AutoComplete
