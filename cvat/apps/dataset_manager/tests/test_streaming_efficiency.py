@@ -129,7 +129,9 @@ class TestExtractors(TestCase):
             else:
                 item_ids = {("image", "foo"), ("another_image", "foo")}
             with self.subTest(data_cls=data_cls.__name__):
-                instance_data, number_of_generated_items = self._make_mock_instance_data(data_cls, item_ids)
+                instance_data, number_of_generated_items = self._make_mock_instance_data(
+                    data_cls, item_ids
+                )
                 extractor_cls = (
                     CVATProjectDataExtractor
                     if data_cls is ProjectData
@@ -175,11 +177,15 @@ class TestExtractors(TestCase):
 
                         # initiates annotations only when they are accessed
                         list(item.annotations for item in dataset)
-                        assert extractor.item_anns_processed == len(item_ids), extractor.item_anns_processed
+                        assert extractor.item_anns_processed == len(
+                            item_ids
+                        ), extractor.item_anns_processed
 
                         # does not keep annotations in memory
                         list(item.annotations for item in dataset)
-                        assert extractor.item_anns_processed == len(item_ids) * 2, extractor.item_anns_processed
+                        assert (
+                            extractor.item_anns_processed == len(item_ids) * 2
+                        ), extractor.item_anns_processed
                 else:
                     with extractor_cls(instance_data=instance_data) as extractor:
                         dataset = StreamDataset.from_extractors(extractor, env=dm_env)
@@ -208,11 +214,15 @@ class TestExtractors(TestCase):
 
                         # initiates annotations only when they are accessed
                         list(item.annotations for item in dataset)
-                        assert extractor.item_anns_processed == len(item_ids), extractor.item_anns_processed
+                        assert extractor.item_anns_processed == len(
+                            item_ids
+                        ), extractor.item_anns_processed
 
                         # does not keep annotations in memory
                         list(item.annotations for item in dataset)
-                        assert extractor.item_anns_processed == len(item_ids) * 2, extractor.item_anns_processed
+                        assert (
+                            extractor.item_anns_processed == len(item_ids) * 2
+                        ), extractor.item_anns_processed
 
                         # did not iterate over instance frame data anymore
                         assert instance_data.group_by_frame.call_count == 1
