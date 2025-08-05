@@ -51,7 +51,7 @@ allow if {
 }
 
 q_user_is_owner(user) := [
-    {"user_id": user.id},
+    {"owner_id": user.id},
 ]
 
 filter := [] if { # Django Q object to filter list of entries
