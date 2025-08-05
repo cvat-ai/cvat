@@ -692,10 +692,10 @@ class JobAnnotation:
 
             yield from yield_shapes_for_one_frame(shapes, elements)
 
-        all_shapes = generate_shapes()
-        if not streaming:
-            all_shapes = list(all_shapes)
-        self.ir_data.shapes = all_shapes
+        if streaming:
+            self.ir_data.shapes = generate_shapes
+        else:
+            self.ir_data.shapes = list(generate_shapes())
 
     def _init_tracks_from_db(self):
         # NOTE: do not use .prefetch_related() with .values() since it's useless:
