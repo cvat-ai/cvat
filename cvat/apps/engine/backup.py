@@ -577,20 +577,21 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             db_jobs = self._get_db_jobs()
             db_job_ids = (j.id for j in db_jobs)
             for db_job_id in db_job_ids:
-                annotations = dm.task.get_job_data(db_job_id, streaming=True)
-                annotations_serializer = LabeledDataSerializer(data=dict(annotations, shapes=[]))
-                annotations_serializer.is_valid(raise_exception=True)
-                annotation_data = annotations_serializer.data
+                with transaction.atomic():
+                    annotations = dm.task.get_job_data(db_job_id, streaming=True)
+                    annotations_serializer = LabeledDataSerializer(data=dict(annotations, shapes=[]))
+                    annotations_serializer.is_valid(raise_exception=True)
+                    annotation_data = annotations_serializer.data
 
-                def serialize_shapes():
-                    for shape in annotations["shapes"]:
-                        shape_serializer = LabeledShapeSerializer(data=shape)
-                        shape_serializer.is_valid(raise_exception=True)
-                        yield shape_serializer.data
+                    def serialize_shapes():
+                        for shape in annotations["shapes"]():
+                            shape_serializer = LabeledShapeSerializer(data=shape)
+                            shape_serializer.is_valid(raise_exception=True)
+                            yield shape_serializer.data
 
-                annotation_data["shapes"] = serialize_shapes()
+                    annotation_data["shapes"] = serialize_shapes()
 
-                yield self._prepare_annotations(annotation_data, self._label_mapping)
+                    yield self._prepare_annotations(annotation_data, self._label_mapping)
 
         annotations = serialize_annotations()
         target_annotations_file = os.path.join(target_dir, self.ANNOTATIONS_FILENAME) if target_dir else self.ANNOTATIONS_FILENAME
