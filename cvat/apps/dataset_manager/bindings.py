@@ -634,7 +634,8 @@ class CommonData(InstanceLabelData):
             for tag in get_tags_for_frame(frame_idx):
                 frame.tags.append(self._export_tag(tag))
 
-            yield frame
+            if include_empty or (frame.shapes or frame.labeled_shapes or frame.tags):
+                yield frame
 
     @property
     def shapes(self):
@@ -1849,10 +1850,8 @@ class CvatTaskOrJobDataExtractor(dm.SubsetBase, CvatDataExtractorBase):
         )
         self._categories = self.load_categories(self._instance_meta['labels'])
 
-        if isinstance(self._instance_data, JobData):
-            self._grouped_by_frame = self._instance_data.group_by_frame_stream(include_empty=True)
-        else:
-            self._grouped_by_frame = self._instance_data.group_by_frame(include_empty=True)
+        if not isinstance(self._instance_data, JobData):
+            self._grouped_by_frame = list(self._instance_data.group_by_frame(include_empty=True))
 
     @staticmethod
     def copy_frame_data_with_replaced_lazy_lists(frame_data: CommonData.Frame) -> CommonData.Frame:
@@ -1868,7 +1867,12 @@ class CvatTaskOrJobDataExtractor(dm.SubsetBase, CvatDataExtractorBase):
         )
 
     def __iter__(self):
-        for frame_data in self._grouped_by_frame:
+        if isinstance(self._instance_data, JobData):
+            grouped_by_frame = self._instance_data.group_by_frame_stream(include_empty=True)
+        else:
+            grouped_by_frame = self._grouped_by_frame
+
+        for frame_data in grouped_by_frame:
             # do not keep parsed lazy list data after this iteration
             frame_data = self.copy_frame_data_with_replaced_lazy_lists(frame_data)
             yield self._process_one_frame_data(frame_data)
