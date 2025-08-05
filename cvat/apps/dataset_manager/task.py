@@ -1125,9 +1125,6 @@ def export_job(
     save_images=False,
     temp_dir: str | None = None,
 ):
-    # But there is the bug with corrupted dump file in case 2 or
-    # more dump request received at the same time:
-    # https://github.com/cvat-ai/cvat/issues/217
     job = JobAnnotation(job_id, prefetch_images=True, lock_job_in_db=True)
     job.init_from_db(streaming=True)
 

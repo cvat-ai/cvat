@@ -29,6 +29,7 @@ from datumaro.plugins.data_formats.cvat.base import CvatImporter as _CvatImporte
 from defusedxml import ElementTree
 
 from cvat.apps.dataset_manager.bindings import (
+    CommonData,
     CVATProjectDataExtractor,
     CvatTaskOrJobDataExtractor,
     JobData,
@@ -840,7 +841,9 @@ def dump_as_cvat_annotation(dumper, annotations: JobData | TaskData | ProjectDat
     dumper.add_meta(annotations.meta)
 
     if isinstance(annotations, JobData):
-        grouped_by_frame = annotations.group_by_frame_stream(include_empty=True)
+        grouped_by_frame = (
+            frame.construct_frame() for frame in annotations.group_by_frame_stream()
+        )
     else:
         grouped_by_frame = annotations.group_by_frame(include_empty=True)
 
@@ -1031,7 +1034,7 @@ def dump_as_cvat_annotation(dumper, annotations: JobData | TaskData | ProjectDat
     dumper.close_root()
 
 
-def dump_as_cvat_interpolation(dumper, annotations):
+def dump_as_cvat_interpolation(dumper, annotations: CommonData | ProjectData):
     dumper.open_root()
     dumper.add_meta(annotations.meta)
 

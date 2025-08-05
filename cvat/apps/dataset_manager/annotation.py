@@ -254,7 +254,7 @@ class AnnotationManager:
         """
         Generates shapes ordered by frame id
         """
-        assert not isinstance(self.data.shapes, Callable)
+        assert isinstance(self.data.shapes, Callable)
         shapes = self.data.shapes()
 
         tracks = TrackManager(self.data.tracks, dimension=self.dimension)
