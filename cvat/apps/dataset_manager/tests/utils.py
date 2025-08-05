@@ -120,6 +120,7 @@ def ensure_extractors_efficiency(cls):
         class MockExtractor(extractor_cls):
             def __init__(self, *args, **kwargs):
                 self.ann_init_counter = 0
+                self.item_iter_counter = 0
                 super().__init__(*args, **kwargs)
 
             def _read_cvat_anno(self, *args, **kwargs):
@@ -127,6 +128,11 @@ def ensure_extractors_efficiency(cls):
                 # annotations should be initialized once per item and no more
                 assert self.ann_init_counter <= len(self)
                 return super()._read_cvat_anno(*args, **kwargs)
+
+            def __iter__(self):
+                assert self.item_iter_counter == 0
+                self.item_iter_counter += 1
+                yield from super().__iter__()
 
         return MockExtractor
 
