@@ -189,8 +189,6 @@ class MaskToPolygonTransformation:
 
 
 class SetKeyframeForEveryTrackShape(dm.ItemTransform):
-    KEEPS_SUBSETS_INTACT = True
-
     def transform_item(self, item):
         def convert_annotations():
             annotations = []

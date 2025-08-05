@@ -72,8 +72,6 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
 class RemoveBboxAnnotations(ItemTransform):
     # Boxes would have invalid (skeleton) labels, so remove them
     # TODO: find a way to import boxes
-    KEEPS_SUBSETS_INTACT = True
-
     def transform_item(self, item):
         def convert_annotations():
             return [ann for ann in item.annotations if ann.type != AnnotationType.bbox]

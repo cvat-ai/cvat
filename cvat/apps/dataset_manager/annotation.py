@@ -8,7 +8,7 @@ import math
 from collections.abc import Container, Sequence
 from copy import copy, deepcopy
 from itertools import chain
-from typing import Generator, Optional
+from typing import Generator, Optional, Callable
 
 import numpy as np
 from scipy.optimize import linear_sum_assignment
@@ -222,6 +222,7 @@ class AnnotationManager:
         include_outside: bool = False,
         use_server_track_ids: bool = False,
     ) -> list:
+        assert not isinstance(self.data.shapes, Callable)
         shapes = self.data.shapes
         tracks = TrackManager(self.data.tracks, dimension=self.dimension)
 
@@ -251,8 +252,8 @@ class AnnotationManager:
         """
         Generates shapes ordered by frame id
         """
-        shapes = self.data.shapes
-        assert isinstance(shapes, Generator)
+        assert not isinstance(self.data.shapes, Callable)
+        shapes = self.data.shapes()
 
         tracks = TrackManager(self.data.tracks, dimension=self.dimension)
 
