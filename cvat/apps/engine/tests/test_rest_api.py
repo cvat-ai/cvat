@@ -1940,7 +1940,7 @@ class ProjectCloudBackupAPINoStaticChunksTestCase(ProjectBackupAPITestCase, _Clo
 
     def _export_backup(self, user, pid, expected_4xx_status_code=None):
         query_params = None
-        if not self.MAKE_LIGHTWEIGHT_BACKUP:
+        if self.MAKE_LIGHTWEIGHT_BACKUP:
             query_params = {"lightweight": self.MAKE_LIGHTWEIGHT_BACKUP}
         return self._export_project_backup(
             user,
@@ -3418,6 +3418,7 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
                     cleanup_export_cache_directory()
                     mock_clear_export_cache.assert_called_once()
                 self.assertFalse(os.path.exists(file_path))
+                queue.finished_job_registry.remove(rq_job_ids[0], delete_job=True)
 
 
 def generate_random_image_file(filename):
