@@ -677,7 +677,8 @@ class ApiClient(object):
         return origin
 
     def update_params_for_auth(self, headers, queries, auth_settings,
-                               resource_path, method, body, request_host: str, request_auths=None):
+        resource_path, method, body, request_host: typing.Optional[str] = None, request_auths=None
+    ):
         """Updates header and query params based on authentication setting.
 
         :param headers: Header parameters dict to be updated.
