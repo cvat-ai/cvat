@@ -134,14 +134,18 @@ Typically, the first thing you do with `ApiClient` is log in.
 
 CVAT supports 3 authentication options:
 - Basic authentication, with a username and a password
+- Personal Access Token (PAT) authentication, with an access token value
 - Session authentication, with a session ID and a CSRF token
 - Token authentication, with an API key (deprecated)
 
-Token authentication requires an API key, which can be obtained after logging in
-via the `/api/auth/login` endpoint using the basic authentication credentials.
+Basic authentication doesn't require a special configuration, but for better security it's
+recommended to use other authentication options instead.
 
 Session authentication requires a session ID and a CSRF token, which can be obtained after
 logging in via the `/api/auth/login` endpoint using the basic authentication credentials.
+
+Token authentication requires an API key, which can be obtained after logging in
+via the `/api/auth/login` endpoint using the basic authentication credentials.
 
 Authentication credentials for an `ApiClient` instance can be specified in a `Configuration` object:
 
@@ -169,6 +173,19 @@ configuration = Configuration(
         "sessionAuth": "<sessionid cookie value>",
         "csrfAuth": "<csrftoken cookie value>",
     },
+    ...
+)
+with ApiClient(configuration) as api_client:
+    ...
+```
+
+{{% /tab %}}
+
+{{%tab header="Personal Access Token (PAT) authentication" %}}
+
+```python
+configuration = Configuration(
+    access_token= "<token value>",
     ...
 )
 with ApiClient(configuration) as api_client:

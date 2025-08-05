@@ -203,9 +203,16 @@ class Uploader:
     @staticmethod
     def _make_tus_uploader(api_client: ApiClient, url: str, **kwargs):
         # Add headers required by CVAT server
-        headers = {}
-        headers["Origin"] = api_client.configuration.host
-        headers.update(api_client.get_common_headers())
+        headers = api_client.get_common_headers()
+        api_client.update_params_for_auth(
+            headers=headers,
+            queries={},  # query auth is not expected
+            auth_settings=[""],
+            resource_path="",
+            method="GET",
+            request_auths=list(api_client.configuration.auth_settings().values()),
+            body="",
+        )
 
         client = _TusClient(url, headers=headers)
 
