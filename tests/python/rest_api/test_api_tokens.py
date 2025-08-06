@@ -142,8 +142,7 @@ class TestGetApiToken:
 
 class TestApiTokenListFilters(CollectionSimpleFilterTestBase):
     @pytest.fixture(scope="session")
-    @staticmethod
-    def _cleaned_api_tokens(api_tokens):
+    def _cleaned_api_tokens(self, api_tokens):
         return [filter_dict(t, drop=("private_key",)) for t in api_tokens]
 
     @pytest.fixture(autouse=True)
