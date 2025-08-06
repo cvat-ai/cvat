@@ -6,13 +6,14 @@ import os
 import tempfile
 import unittest
 from types import TracebackType
-from typing import Optional
+from typing import Callable, Optional
 from unittest.mock import patch
 
 from datumaro.components.dataset import StreamDataset
 from datumaro.util.os_util import rmfile, rmtree
 
 from cvat.apps.dataset_manager.bindings import CVATProjectDataExtractor, CvatTaskOrJobDataExtractor
+from cvat.apps.dataset_manager.task import JobAnnotation
 from cvat.apps.dataset_manager.util import current_function_name
 
 
@@ -120,7 +121,6 @@ def ensure_extractors_efficiency(cls):
         class MockExtractor(extractor_cls):
             def __init__(self, *args, **kwargs):
                 self.ann_init_counter = 0
-                self.item_iter_counter = 0
                 super().__init__(*args, **kwargs)
 
             def _read_cvat_anno(self, *args, **kwargs):
@@ -129,12 +129,27 @@ def ensure_extractors_efficiency(cls):
                 assert self.ann_init_counter <= len(self)
                 return super()._read_cvat_anno(*args, **kwargs)
 
-            def __iter__(self):
-                assert self.item_iter_counter == 0
-                self.item_iter_counter += 1
-                yield from super().__iter__()
-
         return MockExtractor
+
+    class MockJobAnnotation(JobAnnotation):
+        def _init_shapes_from_db(self, streaming: bool = False):
+            super()._init_shapes_from_db(streaming=streaming)
+            if streaming:
+                # should only generate shapes once
+                assert isinstance(self.ir_data.shapes, Callable)
+                already_iterated = False
+                shapes = self.ir_data.shapes
+
+                def mock_shapes():
+                    nonlocal already_iterated
+                    assert not already_iterated
+                    for shape in shapes:
+                        already_iterated = True
+                        yield shape
+
+                self.ir_data.shapes = mock_shapes
+            else:
+                assert isinstance(self.ir_data.shapes, list)
 
     cls = patch(
         "cvat.apps.dataset_manager.bindings.CvatTaskOrJobDataExtractor",
@@ -143,5 +158,9 @@ def ensure_extractors_efficiency(cls):
     cls = patch(
         "cvat.apps.dataset_manager.bindings.CVATProjectDataExtractor",
         make_mock_extractor(CVATProjectDataExtractor),
+    )(cls)
+    cls = patch(
+        "cvat.apps.dataset_manager.task.JobAnnotation",
+        MockJobAnnotation,
     )(cls)
     return cls

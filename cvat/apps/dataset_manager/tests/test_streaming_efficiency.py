@@ -1,5 +1,6 @@
 import os
 import tempfile
+from collections import namedtuple
 from typing import Callable, Optional
 from unittest import TestCase, mock
 from unittest.mock import MagicMock, Mock
@@ -13,6 +14,7 @@ from django.contrib.auth.models import Group, User
 from rest_framework import status
 from rq.job import Job as RQJob
 
+from cvat.apps.dataset_manager.annotation import AnnotationIR
 from cvat.apps.dataset_manager.bindings import (
     CommonData,
     CVATProjectDataExtractor,
@@ -63,6 +65,86 @@ class TestExtractors(TestCase):
 
         return CountingDataExtractor
 
+    @staticmethod
+    def _make_mock_job_data(item_ids):
+        class MockJobData(JobData):
+            def __init__(self):
+                pass
+
+        instance_data = MockJobData()
+
+        instance_data._meta = {
+            instance_data.META_FIELD: dict(
+                subset="foo",
+                labels=[
+                    ("label", dict(name="LabelName", attributes=[], type=LabelType.ANY)),
+                ],
+            ),
+        }
+
+        instance_data._db_task = Mock()
+        instance_data._db_task.id = 0
+
+        instance_data._db_data = Mock()
+        instance_data._db_data.start_frame = 0
+
+        instance_data._db_job = Mock()
+        instance_data._db_job.segment.task.id = 0
+        instance_data._db_job.segment.start_frame = 0
+        instance_data._db_job.segment.stop_frame = len(item_ids) - 1
+
+        instance_data._initialized_included_frames = {i for i in range(len(item_ids))}
+        instance_data._deleted_frames = {}
+        instance_data._use_server_track_ids = False
+        instance_data._frame_step = 1
+        instance_data._label_mapping = {
+            0: namedtuple(
+                "MockLabel",
+                ["name", "id", "color", "type"],
+            )(
+                name="LabelName",
+                id=0,
+                color="bar",
+                type="foobar",
+            ),
+        }
+
+        instance_data._frame_info = {
+            index: dict(
+                id=item_id,
+                subset=subset,
+                path="path.jpg",
+                height=100,
+                width=100,
+            )
+            for index, (item_id, subset) in enumerate(item_ids)
+        }
+
+        _shape_generator_called_number = 0
+
+        def shape_generator():
+            nonlocal _shape_generator_called_number
+            _shape_generator_called_number += 1
+            yield dict(
+                frame=0,
+                id=0,
+                type="rectangle",
+                label_id=0,
+                points=[0, 0, 0, 0],
+                rotation=0,
+                occluded=False,
+                source="manual",
+                attributes={},
+            )
+
+        def shape_generator_called_number():
+            return _shape_generator_called_number
+
+        instance_data._annotation_ir = AnnotationIR(dimension="2d")
+        instance_data._annotation_ir.shapes = shape_generator
+
+        return instance_data, shape_generator_called_number
+
     def _make_mock_instance_data(self, data_cls, item_ids):
         instance_data = MagicMock(spec_set=data_cls)
         instance_data.META_FIELD = "meta"
@@ -78,16 +160,10 @@ class TestExtractors(TestCase):
         if data_cls is TaskData:
             assert len(subsets) == 1
             instance_data.db_instance = Mock(id=0)
-        elif data_cls is JobData:
-            assert len(subsets) == 1
-            instance_data.db_instance.segment.task = Mock(id=0)
         elif data_cls is ProjectData:
             instance_data.tasks = [Mock(id=index) for index in range(len(subsets))]
 
-        generated_item_counter = 0
-
         def mock_group_by_frame(*args, **kwargs):
-            nonlocal generated_item_counter
             for index, (item_id, subset) in enumerate(item_ids):
                 yield self._make_mock_frame(
                     data_cls=data_cls,
@@ -97,10 +173,6 @@ class TestExtractors(TestCase):
                     subset=subset,
                     frame=index,
                 )
-                generated_item_counter += 1
-
-        def number_of_generated_items():
-            return generated_item_counter
 
         instance_data.group_by_frame.side_effect = mock_group_by_frame
 
@@ -112,9 +184,7 @@ class TestExtractors(TestCase):
             }
             instance_data.get_included_frames.return_value = set(instance_data.frame_info.keys())
 
-            instance_data.group_by_frame_stream.side_effect = mock_group_by_frame
-
-        return instance_data, number_of_generated_items
+        return instance_data
 
     @mock.patch("attr.evolve", lambda x, **kwargs: x)
     def test_can_stream_efficiently_on_export(self):
@@ -129,9 +199,7 @@ class TestExtractors(TestCase):
             else:
                 item_ids = {("image", "foo"), ("another_image", "foo")}
             with self.subTest(data_cls=data_cls.__name__):
-                instance_data, number_of_generated_items = self._make_mock_instance_data(
-                    data_cls, item_ids
-                )
+                instance_data = self._make_mock_instance_data(data_cls, item_ids)
                 extractor_cls = (
                     CVATProjectDataExtractor
                     if data_cls is ProjectData
@@ -140,58 +208,41 @@ class TestExtractors(TestCase):
                 extractor_cls = self._make_counting_data_extractor_cls(extractor_cls)
 
                 if data_cls is JobData:
+                    instance_data, shape_generator_called_number = self._make_mock_job_data(item_ids)
                     with extractor_cls(instance_data=instance_data) as extractor:
                         dataset = StreamDataset.from_extractors(extractor, env=dm_env)
 
-                        # does not iterate items or annotations to get various dataset properties
+                        # does not generate shapes to get various dataset properties
                         len(dataset)
                         list(dataset.subsets())
                         for subset in dataset.subsets():
                             subset_dataset = dataset.get_subset(subset).as_dataset()
                             len(subset_dataset)
                             list(subset_dataset.subsets())
+                        assert shape_generator_called_number() == 0
 
-                        assert extractor.item_anns_processed == 0
-                        assert number_of_generated_items() == 0
-
-                        # can iterate items
+                        # does not generate shapes to iterate items
                         assert len(list(dataset)) == len(item_ids)
-                        assert instance_data.group_by_frame_stream.call_count == 1
-                        assert number_of_generated_items() == len(item_ids)
+                        assert shape_generator_called_number() == 0
 
-                        # iterating items again makes it to generate them again
-                        assert len(list(dataset)) == len(item_ids)
-                        assert instance_data.group_by_frame_stream.call_count == 2
-                        assert number_of_generated_items() == len(item_ids) * 2
-
-                        # accessing items through subsets makes it to generate them again
+                        # does not generate shapes to iterate subset items
                         for subset in dataset.subsets():
                             subset_dataset = dataset.get_subset(subset).as_dataset()
                             list(subset_dataset)
+                        assert shape_generator_called_number() == 0
 
-                        assert instance_data.group_by_frame_stream.call_count == 3
-                        assert number_of_generated_items() == len(item_ids) * 3
-
-                        # did not convert annotations to iterate items
-                        assert extractor.item_anns_processed == 0
-
-                        # initiates annotations only when they are accessed
+                        # generates shapes only when annotations are accessed
                         list(item.annotations for item in dataset)
-                        assert extractor.item_anns_processed == len(
-                            item_ids
-                        ), extractor.item_anns_processed
+                        assert shape_generator_called_number() == 1
 
-                        # does not keep annotations in memory
+                        # does not keep shapes or annotations in memory
                         list(item.annotations for item in dataset)
-                        assert (
-                            extractor.item_anns_processed == len(item_ids) * 2
-                        ), extractor.item_anns_processed
+                        assert shape_generator_called_number() == 2
                 else:
                     with extractor_cls(instance_data=instance_data) as extractor:
                         dataset = StreamDataset.from_extractors(extractor, env=dm_env)
                         # iterated over instance frame data on init
                         assert instance_data.group_by_frame.call_count == 1
-                        assert number_of_generated_items() == len(item_ids)
 
                         # does not convert annotations to get various dataset properties
                         len(dataset)
@@ -226,7 +277,6 @@ class TestExtractors(TestCase):
 
                         # did not iterate over instance frame data anymore
                         assert instance_data.group_by_frame.call_count == 1
-                        assert number_of_generated_items() == len(item_ids)
 
 
 class TestImporters(ApiTestBase):
