@@ -19,7 +19,7 @@ class UserDeletionValidator(ABC):
     """
     Base class for user deletion validators.
     To add a new validator, inherit from this class and implement the `validate` method.
-    The implemented class will be automatically registered and used during user deletion.
+    Then call classmethod 'register_validator()' to enable the class as validator.
     """
 
     @classmethod
