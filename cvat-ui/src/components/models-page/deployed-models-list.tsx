@@ -38,27 +38,27 @@ export default function DeployedModelsListComponent(props: Readonly<Props>): JSX
         [],
     );
 
-    const modelIdToIndex = new Map<number, number>();
-    models.forEach((m, idx) => modelIdToIndex.set(Number(m.id), idx));
+    const modelIdToIndex = new Map<string | number, number>();
+    models.forEach((m, idx) => modelIdToIndex.set(m.id, idx));
 
     return (
         <>
             <Row justify='center' align='top' className='cvat-resource-list-wrapper'>
                 <Col {...dimensions} className='cvat-models-list'>
                     <BulkWrapper
-                        currentResourceIds={models.map((m) => Number(m.id))}
+                        currentResourceIds={models.map((m) => m.id)}
                         resourceType={SelectedResourceType.MODELS}
                     >
                         {(selectProps) => {
                             const renderModelRow = (instances: MLModel[]): JSX.Element => (
                                 <Row key={instances[0].id} className='cvat-models-list-row'>
                                     {instances.map((model: MLModel) => {
-                                        const globalIdx = modelIdToIndex.get(Number(model.id)) ?? 0;
+                                        const globalIdx = modelIdToIndex.get(model.id) ?? 0;
                                         return (
                                             <Col span={6} key={model.id}>
                                                 <DeployedModelItem
                                                     model={model}
-                                                    {...selectProps(Number(model.id), globalIdx)}
+                                                    {...selectProps(model.id, globalIdx)}
                                                 />
                                             </Col>
                                         );
