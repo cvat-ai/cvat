@@ -208,7 +208,9 @@ class TestExtractors(TestCase):
                 extractor_cls = self._make_counting_data_extractor_cls(extractor_cls)
 
                 if data_cls is JobData:
-                    instance_data, shape_generator_called_number = self._make_mock_job_data(item_ids)
+                    instance_data, shape_generator_called_number = self._make_mock_job_data(
+                        item_ids
+                    )
                     with extractor_cls(instance_data=instance_data) as extractor:
                         dataset = StreamDataset.from_extractors(extractor, env=dm_env)
 
