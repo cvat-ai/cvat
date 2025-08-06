@@ -84,7 +84,7 @@ class ApiTokensViewSet(
 
         if self.action == "list":
             perm = ApiTokenPermission.create_scope_list(self.request)
-            return perm.filter(queryset)
+            queryset = perm.filter(queryset)
 
         return queryset
 

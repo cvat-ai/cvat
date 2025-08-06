@@ -35,7 +35,7 @@ import data.utils
 #     }
 # }
 
-default allow := true
+default allow := false
 
 allow if {
     not utils.api_token.is_api_token

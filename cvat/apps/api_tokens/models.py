@@ -9,7 +9,7 @@ from datetime import timedelta
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
-from django.db.models.functions import Coalesce
+from django.db.models import functions as db_functions
 from django.utils import timezone
 from rest_framework_api_key.models import AbstractAPIKey, BaseAPIKeyManager
 
@@ -25,13 +25,12 @@ class ApiTokenManager(BaseAPIKeyManager):
         return super().is_valid(key) and not self.get_from_key(key).is_stale
 
     def get_usable_keys(self):
-        now = timezone.now()
         return (
             super()
             .get_usable_keys()
-            .exclude(expiry_date__lt=now)
-            .annotate(_last_used=Coalesce("last_used_date", "created"))
-            .filter(_last_used__gte=now - get_token_stale_period())
+            .exclude(expiry_date__lt=db_functions.Now())
+            .annotate(_last_used=db_functions.Coalesce("last_used_date", "created"))
+            .filter(_last_used__gte=db_functions.Now() - get_token_stale_period())
         )
 
     def assign_key(self, obj):
