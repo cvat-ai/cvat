@@ -177,6 +177,7 @@ class TestExtractors(TestCase):
         instance_data.group_by_frame.side_effect = mock_group_by_frame
 
         if data_cls is not ProjectData:
+            instance_data.is_stream = False
             instance_data.__len__.return_value = len(item_ids)
             instance_data.frame_info = {
                 index: dict(id=item_id, subset=subset)
