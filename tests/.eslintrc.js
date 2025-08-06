@@ -33,12 +33,13 @@ module.exports = {
                 "no-restricted-globals": "off", // required by k6, e.g. "init" context
                 "import/extensions": "off", // .js ending is ok
                 "no-prototype-builtins": "off",
+                "no-underscore-dangle": "off",
                 "quotes": 2
             },
             globals: {
-                "__ENV": "readonly",
-                "__VU": "readonly",
-                "__ITER": "readonly"
+                __ENV: "readonly",
+                __VU: "readonly",
+                __ITER: "readonly"
             },
         }
     ]
