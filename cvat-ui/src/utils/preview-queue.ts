@@ -36,8 +36,6 @@ interface PreviewRequest {
     dispatch: Dispatch;
 }
 
-const PREVIEW_REQUEST_DELAY = 100;
-
 class PreviewQueue {
     private queue: PreviewRequest[] = [];
     private isProcessing: boolean = false;
@@ -69,11 +67,6 @@ class PreviewQueue {
             this.currentRequest = request;
 
             await this.executeRequest(request);
-
-            // Small delay between requests to avoid overwhelming the server
-            await new Promise<void>((resolve) => {
-                setTimeout(() => resolve(), PREVIEW_REQUEST_DELAY);
-            });
         }
 
         this.currentRequest = null;
@@ -110,14 +103,6 @@ class PreviewQueue {
             const result = dispatch(action);
             result.then(resolve).catch(reject);
         });
-    }
-
-    public getQueueLength(): number {
-        return this.queue.length;
-    }
-
-    public isRequestProcessing(id: string): boolean {
-        return this.currentRequest?.id === id;
     }
 }
 
