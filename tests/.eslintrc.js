@@ -33,7 +33,6 @@ module.exports = {
                 "no-restricted-globals": "off", // required by k6, e.g. "init" context
                 "import/extensions": "off", // .js ending is ok
                 "no-prototype-builtins": "off",
-                "semi": "on",
                 "quotes": 2
             },
             globals: {
