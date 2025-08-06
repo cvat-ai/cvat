@@ -317,6 +317,10 @@ class CommonData(InstanceLabelData):
         self._init_meta()
 
     @property
+    def is_stream(self) -> bool:
+        return self._annotation_ir.is_stream
+
+    @property
     def rel_range(self):
         raise NotImplementedError()
 
@@ -1880,7 +1884,7 @@ class CvatTaskOrJobDataExtractor(dm.SubsetBase, CvatDataExtractorBase):
         )
         self._categories = self.load_categories(self._instance_meta['labels'])
 
-        if not isinstance(self._instance_data, JobData):
+        if not self._instance_data.is_stream:
             self._grouped_by_frame = list(self._instance_data.group_by_frame(include_empty=True))
 
     @staticmethod
@@ -1897,7 +1901,7 @@ class CvatTaskOrJobDataExtractor(dm.SubsetBase, CvatDataExtractorBase):
         )
 
     def __iter__(self):
-        if isinstance(self._instance_data, JobData):
+        if self._instance_data.is_stream:
             grouped_by_frame = self._instance_data.group_by_frame_stream()
         else:
             grouped_by_frame = self._grouped_by_frame

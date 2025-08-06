@@ -185,6 +185,10 @@ class AnnotationIR:
         self.shapes = []
         self.tracks = []
 
+    @property
+    def is_stream(self) -> bool:
+        return isinstance(self.shapes, Callable)
+
 
 class AnnotationManager:
     def __init__(self, data: AnnotationIR, *, dimension: DimensionType):
@@ -224,7 +228,7 @@ class AnnotationManager:
         include_outside: bool = False,
         use_server_track_ids: bool = False,
     ) -> list:
-        assert not isinstance(self.data.shapes, Callable)
+        assert not self.data.is_stream
         shapes = self.data.shapes
         tracks = TrackManager(self.data.tracks, dimension=self.dimension)
 
@@ -254,7 +258,7 @@ class AnnotationManager:
         """
         Generates shapes ordered by frame id
         """
-        assert isinstance(self.data.shapes, Callable)
+        assert self.data.is_stream
         shapes = self.data.shapes()
 
         tracks = TrackManager(self.data.tracks, dimension=self.dimension)
