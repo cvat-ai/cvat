@@ -175,7 +175,7 @@ description: 'Installing a development environment for different operating syste
 
   ```bash
   corepack enable yarn
-  yarn set version berry
+
   yarn --immutable
   ```
 

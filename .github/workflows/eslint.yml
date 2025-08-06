@@ -11,7 +11,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          corepack enable yarn && yarn set version berry
+          corepack enable yarn
           yarn install --immutable
           (cd tests && yarn install --immutable)
 

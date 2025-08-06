@@ -16,7 +16,7 @@ COPY cvat-data/package.json /tmp/cvat-data/
 
 # Install common dependencies
 WORKDIR /tmp/
-RUN corepack enable yarn && yarn set version berry
+RUN corepack enable yarn
 RUN DISABLE_HUSKY=1 yarn install --immutable
 
 # Build source code
