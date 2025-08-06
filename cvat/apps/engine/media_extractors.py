@@ -387,7 +387,7 @@ class DirectoryReader(ImageListReader):
         for source in source_path:
             for root, _, files in os.walk(source):
                 paths = [os.path.join(root, f) for f in files]
-                paths = filter(lambda x: get_mime(x) == 'image', paths)
+                paths = filter(lambda x: files_to_ignore(x) and get_mime(x) == 'image', paths)
                 image_paths.extend(paths)
         super().__init__(
             source_path=image_paths,
