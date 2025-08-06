@@ -27,5 +27,6 @@ export function setup() {
 
 export default function (data) {
     const randomTask = data.tasksData[__VU];
+    // eslint-disable-next-line no-unused-vars
     const taskData = tasks.getTask(data.token, randomTask);
 }
