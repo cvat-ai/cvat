@@ -149,7 +149,7 @@ from cvat.apps.engine.view_utils import (
     tus_chunk_action,
 )
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
-from cvat.apps.iam.permissions import IsAuthenticatedOrReadPublicResource, PolicyEnforcer
+from cvat.apps.iam.permissions import IsAuthenticatedOrReadPublicResource
 from cvat.apps.redis_handler.serializers import RqIdSerializer
 from utils.dataset_manifest import ImageManifestManager
 
