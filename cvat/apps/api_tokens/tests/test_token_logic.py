@@ -6,7 +6,6 @@
 
 import logging
 from datetime import timedelta
-from time import sleep
 
 from django.contrib.auth.models import Group, User
 from django.test import override_settings
@@ -43,8 +42,6 @@ class ApiTokenAutomationTest(ApiTestBase):
 
         response = self._get_request(f"/api/auth/api_tokens/{token_id}", user=self.admin)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        sleep(0.1)
 
         with override_settings(API_TOKEN_STALE_PERIOD=timedelta(seconds=0)):
             response = self._get_request(f"/api/auth/api_tokens/{token_id}", user=self.admin)
