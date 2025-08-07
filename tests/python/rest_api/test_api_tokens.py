@@ -106,6 +106,22 @@ class TestGetApiToken:
             == 0
         )
 
+    def test_can_get_self(self, api_tokens_by_username):
+        _, user_tokens = next(iter(api_tokens_by_username.items()))
+        token = user_tokens[0]
+
+        with make_api_client(access_token=token["private_key"]) as api_client:
+            received_token = json.loads(api_client.auth_api.retrieve_api_tokens_self()[1].data)
+
+        assert (
+            DeepDiff(
+                token,
+                received_token,
+                exclude_paths=["updated_date", "last_used_date", "private_key"],
+            )
+            == {}
+        )
+
     @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize("token_eol_reason", ["expired", "stale", "revoked"])
     def test_can_only_see_alive_tokens(self, token_eol_reason: str, admin_user):
@@ -166,7 +182,7 @@ class TestPatchApiToken:
 
         updated_values = {
             "name": "new name",
-            "expiry": datetime.now(timezone.utc) + timedelta(days=1),
+            "expiry_date": datetime.now(timezone.utc) + timedelta(days=1),
             "read_only": not token["read_only"],
         }
 
@@ -182,7 +198,13 @@ class TestPatchApiToken:
             )
             received_token = json.loads(response.data)
 
-        assert DeepDiff(updated_token, received_token, exclude_paths=["updated_date"])
+        updated_token["expiry_date"] = (
+            updated_token["expiry_date"].isoformat().replace("+00:00", "Z")
+        )
+        assert (
+            DeepDiff(updated_token, received_token, exclude_paths=["updated_date", "private_key"])
+            == {}
+        )
 
     def test_cannot_modify_foreign_token(self, users, api_tokens_by_username):
         token_owner, token_owner_tokens = next(iter(api_tokens_by_username.items()))
@@ -287,3 +309,21 @@ class TestTokenAuthPermissions:
             api_client.users_api.partial_update(
                 user["id"], patched_user_request=models.PatchedUserRequest(first_name="new name")
             )
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestTokenTracking:
+    def test_can_update_last_use(self, api_tokens_by_username):
+        _, user_tokens = next(iter(api_tokens_by_username.items()))
+        token = user_tokens[0]
+
+        with make_api_client(access_token=token["private_key"]) as api_client:
+            updated_token, _ = api_client.auth_api.retrieve_api_tokens_self()
+
+        old_last_used_date = token["last_used_date"]
+        if old_last_used_date is not None:
+            old_last_used_date = datetime.fromisoformat(
+                token["last_used_date"].rstrip("Z")
+            ).replace(tzinfo=timezone.utc)
+
+        assert updated_token.last_used_date != old_last_used_date

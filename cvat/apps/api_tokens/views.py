@@ -52,8 +52,6 @@ class ApiTokensViewSet(
     mixins.DestroyModelMixin,
     PartialUpdateModelMixin,
 ):
-    queryset = models.ApiToken.objects.get_usable_keys()
-
     search_fields = ("name",)
     filter_fields = list(search_fields) + [
         "id",
@@ -80,7 +78,9 @@ class ApiTokensViewSet(
             return ApiTokenWriteSerializer
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        # Get a new queryset here to avoid potentially outdated constants
+        # (e.g. staleness check date) stored in the filter expression
+        queryset = models.ApiToken.objects.get_usable_keys()
 
         if self.action == "list":
             perm = ApiTokenPermission.create_scope_list(self.request)

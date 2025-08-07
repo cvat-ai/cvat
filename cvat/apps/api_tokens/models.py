@@ -29,7 +29,15 @@ class ApiTokenManager(BaseAPIKeyManager):
             super()
             .get_usable_keys()
             .exclude(expiry_date__lt=db_functions.Now())
-            .annotate(_last_used=db_functions.Coalesce("last_used_date", "created"))
+            .annotate(
+                _last_used=db_functions.Coalesce(
+                    "last_used_date",
+                    "created",
+                    # updated_date is not included, because cases like "an unused token that's
+                    # being renamed or changed otherwise every day" look suspicious at best.
+                    # We want to track really used tokens here.
+                )
+            )
             .filter(_last_used__gte=db_functions.Now() - get_token_stale_period())
         )
 
@@ -110,6 +118,7 @@ class ApiToken(AbstractAPIKey):
         return is_updated
 
     def _is_stale(self):
+        # check comment in get_usable_keys()
         return (self.last_used_date or self.created) + get_token_stale_period() < timezone.now()
 
     _is_stale.short_description = "Is stale"  # type: ignore

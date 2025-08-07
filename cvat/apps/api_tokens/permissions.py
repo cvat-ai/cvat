@@ -128,7 +128,7 @@ class ApiTokenPermission(ApiTokenPermissionBase):
         elif self.scope == self.Scopes.VIEW:  # self
             data = {
                 "id": self.api_token.id,
-                "owner": {"id": self.obj.owner_id},
+                "owner": {"id": self.api_token.owner_id},
             }
 
         return data
