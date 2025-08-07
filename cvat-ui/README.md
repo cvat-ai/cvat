@@ -8,7 +8,8 @@ This is a client UI for Computer Vision Annotation Tool based on React, Redux an
 
 #### Migration to Yarn Modern
 
-We have updated our Yarn version from Classic to Modern. If you are still using CVAT with Yarn 1.22.22 you need to first migrate to Yarn 4.9.x:
+We have updated our Yarn version from Classic to Modern.
+If you are still using CVAT with Yarn 1.22.22 you need to first migrate to Yarn 4.9.2:
 
 ```bash
 # Remove old yarn

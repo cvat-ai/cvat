@@ -7,7 +7,8 @@ It contains the core logic of the Computer Vision Annotation Tool.
 
 ### Migration to Yarn Modern
 
-We have recently updated our Yarn version from Classic to Modern. If you are still using CVAT with Yarn 1.22 you need to first migrate to Yarn 4.9.x.:
+We have recently updated our Yarn version from Classic to Modern.
+If you are still using CVAT with Yarn 1.22 you need to first migrate to Yarn 4.9.2:
 
 ```bash
 # Remove old yarn
