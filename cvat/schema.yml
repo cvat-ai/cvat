@@ -10341,6 +10341,9 @@ components:
         function_id:
           type: string
           nullable: true
+        lightweight:
+          type: boolean
+          nullable: true
       required:
       - target
       - type

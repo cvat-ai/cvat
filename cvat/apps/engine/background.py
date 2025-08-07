@@ -38,6 +38,7 @@ from cvat.apps.engine.models import (
     RequestAction,
     RequestSubresource,
     RequestTarget,
+    StorageChoice,
     Task,
 )
 from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
@@ -181,9 +182,22 @@ class BackupExporter(AbstractExporter):
     class ExportArgs(AbstractExporter.ExportArgs):
         lightweight: bool
 
+    def is_lightweight_possible(self):
+        if isinstance(self.db_instance, Task):
+            return self.db_instance.data.storage == StorageChoice.CLOUD_STORAGE
+        if isinstance(self.db_instance, Project):
+            return Task.objects.filter(
+                project=self.db_instance, data__storage=StorageChoice.CLOUD_STORAGE
+            ).exists()
+
+        return False
+
     def init_request_args(self) -> None:
         super().init_request_args()
         lightweight = to_bool(self.request.query_params.get("lightweight", False))
+
+        if lightweight:
+            lightweight = self.is_lightweight_possible()
 
         self.export_args: BackupExporter.ExportArgs = self.ExportArgs(
             **self.export_args.to_dict(),
@@ -243,6 +257,7 @@ class BackupExporter(AbstractExporter):
                 class_name=self.target,
                 identifier=self.db_instance.name,
                 timestamp=instance_timestamp,
+                lightweight=self.export_args.lightweight,
             )
 
         return filename
