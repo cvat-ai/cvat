@@ -16,16 +16,37 @@ description: 'Installing a development environment for different operating syste
   ```
 
   ```bash
-  # Install Node.js 20 and yarn
+  # Install Node.js 20
   curl -fsSL https://deb.nodesource.com/setup_20.x | sudo bash -
   sudo apt-get install -y nodejs
-  sudo npm install --global yarn
+
+  # If you have yarn installed globally via npm, remove it
+  npm uninstall -g yarn
+  hash -r
+
+  # Ensure corepack is installed
+  sudo npm -g install corepack
+
+  # Enable yarn
+  corepack enable yarn
+  yarn --version # should output 4.9.2
   ```
 
   MacOS 10.15
 
   ```bash
   brew install git python pyenv redis curl openssl node sqlite3 geos rust
+
+  # If you have yarn installed globally via npm, remove it
+  npm uninstall -g yarn
+  hash -r
+
+  # Ensure corepack is installed
+  sudo npm -g install corepack
+
+  # Enable yarn
+  corepack enable yarn
+  yarn --version # should output 4.9.2
   ```
 
   Arch Linux
@@ -47,9 +68,21 @@ description: 'Installing a development environment for different operating syste
   ```
 
   ```bash
-  # Install Node.js, yarn and npm
+  # Install Node.js and npm
   sudo pacman -S nodejs-lts-gallium yarn npm
+
+  # If you have yarn installed globally via npm, remove it
+  sudo npm uninstall -g yarn
+  hash -r
+
+  # Ensure corepack is installed
+  sudo npm -g install corepack
+
+  # Enable new yarn
+  corepack enable yarn
+  yarn --version # should output 4.9.2
   ```
+
 
 - Install Chrome
 

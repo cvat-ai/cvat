@@ -24,9 +24,19 @@ description: 'Instructions on how to run all existence tests.'
              "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('admin', 'admin@localhost.company', '12qwaszx')\" | python3 ~/manage.py shell"
    ```
 1. Install npm dependencies:
-   ```
-   corepack enable yarn
+   ```bash
+   # If you have yarn installed globally via npm, remove it
+   sudo npm uninstall -g yarn
+   hash -r
 
+   # Ensure corepack is installed
+   sudo npm -g install corepack
+
+   # Enable yarn
+   corepack enable yarn
+   yarn --version # should output 4.9.2
+
+   # Install dependencies
    cd tests
    yarn --immutable
    ```
