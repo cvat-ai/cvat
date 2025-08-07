@@ -2811,6 +2811,15 @@ class DataMetaWriteSerializer(serializers.ModelSerializer):
 
         return requested_deleted_frames
 
+    def update(self, instance: models.Data, validated_data):
+        instance = super().update(instance, validated_data)
+        if validated_data.get("cloud_storage_id"):
+            db_task = models.Task.objects.filter(data=instance).first()
+            task_frame_provider = TaskFrameProvider(db_task)
+            task_frame_provider.invalidate_chunks(quality=FrameQuality.COMPRESSED)
+            task_frame_provider.invalidate_chunks(quality=FrameQuality.ORIGINAL)
+        return instance
+
 
 class JobDataMetaWriteSerializer(serializers.ModelSerializer):
     deleted_frames = serializers.ListField(child=serializers.IntegerField(min_value=0))

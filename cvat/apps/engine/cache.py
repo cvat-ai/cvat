@@ -495,6 +495,16 @@ class MediaCache:
             )
         )
 
+    def remove_task_chunk(
+        self, db_task: models.Task, chunk_number: int, *, quality: FrameQuality
+    ) -> None:
+        self._delete_cache_item(
+            self._make_chunk_key(db_task, chunk_number, quality=quality),
+        )
+
+    def remove_segment_preview(self, db_segment: models.Segment) -> None:
+        self._delete_cache_item(self._make_preview_key(db_segment))
+
     def remove_segment_chunk(
         self, db_segment: models.Segment, chunk_number: str, *, quality: str
     ) -> None:

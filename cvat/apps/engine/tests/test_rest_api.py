@@ -45,6 +45,7 @@ from rq.queue import Queue as RQQueue
 
 from cvat.apps.dataset_manager.tests.utils import TestDir
 from cvat.apps.dataset_manager.util import current_function_name
+from cvat.apps.engine.cache import MediaCache
 from cvat.apps.engine.cloud_provider import AWS_S3, Status
 from cvat.apps.engine.media_extractors import ValidateDimension, sort
 from cvat.apps.engine.models import (
@@ -7737,6 +7738,10 @@ class TaskChangeCloudStorageTestCase(_CloudStorageTestBase):
         return task
 
     def test_can_change_cloud_storage(self):
+        def get_cache_keys():
+            return MediaCache._cache()._cache.get_client().keys("*")
+
+        assert len(get_cache_keys()) == 0
         task = self._create_cloud_task()
         task_id = task["id"]
 
@@ -7745,6 +7750,14 @@ class TaskChangeCloudStorageTestCase(_CloudStorageTestBase):
             assert response.status_code == status.HTTP_200_OK
             assert response.json()["storage"] == "cloud_storage"
             assert response.json()["cloud_storage_id"] == self.cloud_storage_id_1
+
+            self.client.get(f"/api/tasks/{task_id}/preview")
+            for quality in ["compressed", "original"]:
+                for frame in range(task["size"]):
+                    url = f"/api/tasks/{task_id}/data?type=frame&quality={quality}&number={frame}"
+                    self.client.get(url)
+
+            assert len(get_cache_keys()) > 0
 
             response = self.client.patch(
                 f"/api/tasks/{task_id}/data/meta",
@@ -7757,6 +7770,8 @@ class TaskChangeCloudStorageTestCase(_CloudStorageTestBase):
             )
             assert response.json()["storage"] == "cloud_storage"
             assert response.json()["cloud_storage_id"] == self.cloud_storage_id_2
+
+            assert len(get_cache_keys()) == 0
 
             response = self.client.get(f"/api/tasks/{task_id}/data/meta")
             assert response.status_code == status.HTTP_200_OK
