@@ -144,7 +144,7 @@ const dimensions = {
 function RequestCard(props: Props): JSX.Element {
     const { request, disabled } = props;
     const { operation } = request;
-    const { type, lightweight } = operation;
+    const { type } = operation;
 
     const dispatch = useDispatch();
 
@@ -196,7 +196,6 @@ function RequestCard(props: Props): JSX.Element {
                         <Col className='cvat-requests-type' {...dimensions}>
                             <Text>
                                 {type.split(':').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                                {lightweight ? ' (lightweight)' : ''}
                                 {' '}
                             </Text>
                         </Col>
@@ -241,6 +240,15 @@ function RequestCard(props: Props): JSX.Element {
                                     <Row>
                                         <Col className='cvat-format-name'>
                                             <Text type='secondary'>{operation.format}</Text>
+                                        </Col>
+                                    </Row>
+                                ) : null
+                            }
+                            {
+                                operation?.lightweight ? (
+                                    <Row>
+                                        <Col className='cvat-lightweight'>
+                                            <Text type='secondary'>lightweight backup</Text>
                                         </Col>
                                     </Row>
                                 ) : null
