@@ -349,11 +349,13 @@ def build_backup_file_name(
     class_name: str,
     identifier: str | int,
     timestamp: str,
+    lightweight: bool,
 ) -> str:
     # "<project|task>_<name>_backup_<timestamp>.zip"
-    return "{}_{}_backup_{}.zip".format(
+    return "{}_{}_backup{}_{}.zip".format(
         class_name,
         identifier,
+        ("-lightweight" if lightweight else ""),
         timestamp,
     ).lower()
 

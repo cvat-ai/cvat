@@ -6,7 +6,7 @@
 import { AnyAction } from 'redux';
 import { TasksQuery } from 'reducers';
 import {
-    getCore, RQStatus, Storage, StorageLocation, Task, UpdateStatusData, Request,
+    getCore, RQStatus, Storage, StorageLocation, Task, UpdateStatusData, Request, FramesMetaData,
 } from 'cvat-core-wrapper';
 import { filterNull } from 'utils/filter-null';
 import { ThunkDispatch, ThunkAction } from 'utils/redux';
@@ -349,6 +349,23 @@ export function updateTaskAsync(
             const updated = await taskInstance.save(fields);
             dispatch(updateTaskInState(updated));
             return updated;
+        } catch (error) {
+            dispatch(updateTaskFailed(taskInstance.id, error));
+            throw error;
+        }
+    };
+}
+
+export function updateTaskMetadataAsync(
+    taskInstance: Task,
+    taskMeta: FramesMetaData,
+): ThunkAction<Promise<FramesMetaData>> {
+    return async (dispatch: ThunkDispatch): Promise<FramesMetaData> => {
+        try {
+            dispatch(updateTask(taskInstance.id));
+            const updatedMeta = await taskInstance.meta.save(taskMeta);
+            dispatch(updateTaskInState(taskInstance));
+            return updatedMeta;
         } catch (error) {
             dispatch(updateTaskFailed(taskInstance.id, error));
             throw error;

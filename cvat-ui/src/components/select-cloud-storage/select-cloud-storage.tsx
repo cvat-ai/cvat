@@ -19,6 +19,7 @@ export interface Props {
     name?: string[];
     setSearchPhrase: (searchPhrase: string) => void;
     onSelectCloudStorage: (cloudStorageId: number | null) => void;
+    label?: JSX.Element;
 }
 
 async function searchCloudStorages(filter: Record<string, string>): Promise<CloudStorage[]> {
@@ -50,7 +51,12 @@ const searchCloudStoragesWrapper = debounce((phrase, setList) => {
 
 function SelectCloudStorage(props: Props): JSX.Element {
     const {
-        searchPhrase, cloudStorage, name, setSearchPhrase, onSelectCloudStorage,
+        searchPhrase,
+        cloudStorage,
+        name,
+        setSearchPhrase,
+        onSelectCloudStorage,
+        label,
     } = props;
     const [initialList, setInitialList] = useState<CloudStorage[]>([]);
     const [list, setList] = useState<CloudStorage[]>([]);
@@ -89,10 +95,11 @@ function SelectCloudStorage(props: Props): JSX.Element {
 
     return (
         <Form.Item
-            label='Select cloud storage'
+            label={label || 'Select cloud storage'}
             name={name || 'cloudStorageSelect'}
             rules={[{ required: true, message: 'Please, specify a cloud storage' }]}
             valuePropName='label'
+            colon={false}
         >
             <AutoComplete
                 onBlur={onBlur}

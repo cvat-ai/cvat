@@ -11,6 +11,10 @@ import Notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
 import Input from 'antd/lib/input';
 import Form from 'antd/lib/form';
+import Space from 'antd/lib/space';
+import Switch from 'antd/lib/switch';
+import Tooltip from 'antd/lib/tooltip';
+import { QuestionCircleOutlined } from '@ant-design/icons';
 import { CombinedState } from 'reducers';
 import { exportActions, exportBackupAsync } from 'actions/export-actions';
 import {
@@ -26,6 +30,7 @@ type FormValues = {
     customName: string | undefined;
     targetStorage: StorageData;
     useProjectTargetStorage: boolean;
+    lightweight: boolean;
 };
 
 const initialValues: FormValues = {
@@ -35,6 +40,7 @@ const initialValues: FormValues = {
         cloudStorageId: undefined,
     },
     useProjectTargetStorage: true,
+    lightweight: true,
 };
 
 function ExportBackupModal(): JSX.Element {
@@ -47,6 +53,7 @@ function ExportBackupModal(): JSX.Element {
     const [defaultStorageLocation, setDefaultStorageLocation] = useState(StorageLocation.LOCAL);
     const [defaultStorageCloudId, setDefaultStorageCloudId] = useState<number | null>(null);
     const [helpMessage, setHelpMessage] = useState('');
+    const [lightweight, setLightweight] = useState(true);
 
     const instanceT = useSelector((state: CombinedState) => state.export.instanceType);
     const instance = useSelector((state: CombinedState) => {
@@ -81,6 +88,7 @@ function ExportBackupModal(): JSX.Element {
     const closeModal = (): void => {
         setUseDefaultStorage(true);
         setStorageLocation(StorageLocation.LOCAL);
+        setLightweight(true);
         form.resetFields();
         dispatch(exportActions.closeExportBackupModal(instance));
     };
@@ -100,6 +108,7 @@ function ExportBackupModal(): JSX.Element {
                     }),
                     useDefaultStorage,
                     values.customName ? `${values.customName}.zip` : undefined,
+                    lightweight,
                 ),
             );
             closeModal();
@@ -113,7 +122,7 @@ function ExportBackupModal(): JSX.Element {
                 className: 'cvat-notification-notice-export-backup-start',
             });
         },
-        [instance, useDefaultStorage, defaultStorageLocation, defaultStorageCloudId],
+        [instance, useDefaultStorage, defaultStorageLocation, defaultStorageCloudId, lightweight],
     );
 
     return (
@@ -149,6 +158,20 @@ function ExportBackupModal(): JSX.Element {
                     onChangeUseDefaultStorage={(value: boolean) => setUseDefaultStorage(value)}
                     onChangeLocationValue={(value: StorageLocation) => setStorageLocation(value)}
                 />
+                <Form.Item
+                    className='cvat-settings-switch-lightweight'
+                >
+                    <Space>
+                        <Switch
+                            checked={lightweight}
+                            onChange={setLightweight}
+                        />
+                        <Text strong>Use lightweight backup whenever possible</Text>
+                        <Tooltip title='If a task uses media from a cloud storage, its possible to make a backup without including media. The task restored from a lightweight backup has to be manually connected to the cloud storage.'>
+                            <QuestionCircleOutlined />
+                        </Tooltip>
+                    </Space>
+                </Form.Item>
             </Form>
         </Modal>
     );

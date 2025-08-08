@@ -244,6 +244,15 @@ function RequestCard(props: Props): JSX.Element {
                                     </Row>
                                 ) : null
                             }
+                            {
+                                operation?.lightweight ? (
+                                    <Row>
+                                        <Col className='cvat-lightweight'>
+                                            <Text type='secondary'>lightweight backup</Text>
+                                        </Col>
+                                    </Row>
+                                ) : null
+                            }
                         </Col>
                         <Col span={3} style={{ display: 'flex', justifyContent: 'end' }}>
                             {

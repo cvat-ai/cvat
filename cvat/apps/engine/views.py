@@ -58,6 +58,7 @@ from cvat.apps.engine.cache import (
     MediaCache,
 )
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
+from cvat.apps.engine.exceptions import CloudStorageMissingError
 from cvat.apps.engine.frame_provider import (
     DataWithMeta,
     FrameQuality,
@@ -586,6 +587,11 @@ class _DataGetter(metaclass=ABCMeta):
                 data=str(ex),
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+        except CloudStorageMissingError as ex:
+            return Response(
+                data=str(ex),
+                status=status.HTTP_409_CONFLICT,
+            )
 
     @abstractmethod
     def _get_chunk_response_headers(self, chunk_data: DataWithMeta) -> dict[str, str]: ...
@@ -693,6 +699,11 @@ class _JobDataGetter(_DataGetter):
                 return Response(
                     data=str(ex),
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+            except CloudStorageMissingError as ex:
+                return Response(
+                    data=str(ex),
+                    status=status.HTTP_409_CONFLICT,
                 )
         else:
             return super().__call__()

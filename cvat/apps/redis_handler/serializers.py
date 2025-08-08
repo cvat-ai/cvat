@@ -55,6 +55,7 @@ class RequestDataOperationSerializer(serializers.Serializer):
     job_id = serializers.IntegerField(required=False, allow_null=True)
     format = serializers.CharField(required=False, allow_null=True)
     function_id = serializers.CharField(required=False, allow_null=True)
+    lightweight = serializers.BooleanField(required=False, allow_null=True)
 
     def to_representation(self, rq_job: CustomRQJob) -> dict[str, Any]:
         parsed_request_id: RequestId = rq_job.parsed_id
@@ -71,6 +72,7 @@ class RequestDataOperationSerializer(serializers.Serializer):
             representation["function_id"] = LambdaRQMeta.for_job(rq_job).function_id
         elif isinstance(parsed_request_id, RequestIdWithOptionalFormat):
             representation["format"] = parsed_request_id.format
+        representation["lightweight"] = getattr(parsed_request_id, "lightweight", None)
 
         return representation
 
