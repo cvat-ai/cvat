@@ -187,7 +187,7 @@ class AnnotationIR:
 
     @property
     def is_stream(self) -> bool:
-        return isinstance(self.shapes, Callable)
+        return callable(self.shapes)
 
 
 class AnnotationManager:

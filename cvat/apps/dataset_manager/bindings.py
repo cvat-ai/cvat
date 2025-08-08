@@ -668,7 +668,7 @@ class CommonData(InstanceLabelData):
     @property
     def shapes(self):
         shapes = self._annotation_ir.shapes
-        if isinstance(shapes, Callable):
+        if callable(shapes):
             shapes = shapes()
         for shape in shapes:
             if not self._is_frame_deleted(shape["frame"]):

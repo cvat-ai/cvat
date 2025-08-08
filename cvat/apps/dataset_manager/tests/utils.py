@@ -6,7 +6,7 @@ import os
 import tempfile
 import unittest
 from types import TracebackType
-from typing import Callable, Optional
+from typing import Optional
 from unittest.mock import patch
 
 from datumaro.components.dataset import StreamDataset
@@ -136,7 +136,7 @@ def ensure_extractors_efficiency(cls):
             super()._init_shapes_from_db(streaming=streaming)
             if streaming:
                 # should only generate shapes once
-                assert isinstance(self.ir_data.shapes, Callable)
+                assert callable(self.ir_data.shapes)
                 already_iterated = False
                 shapes = self.ir_data.shapes
 
