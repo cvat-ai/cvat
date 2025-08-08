@@ -39,8 +39,10 @@ Consult the detailed guide on quality estimation in CVAT in the
 
 {{%tab header="In an existing task" %}}
 
-> For already existing tasks only the Ground Truth validation mode is available. If you want
-> to use Honeypots for your task, you will need to recreate the task.
+{{% alert title="Note" color="primary" %}}
+For already existing tasks only the Ground Truth validation mode is available. If you want
+to use Honeypots for your task, you will need to recreate the task.
+{{% /alert %}}
 
 1. Open the task page
 1. Select the `+` button next to the job list
