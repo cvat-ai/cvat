@@ -5,24 +5,6 @@
 This CVAT module is a client-side JavaScript library for management of objects, frames, logs, etc.
 It contains the core logic of the Computer Vision Annotation Tool.
 
-### Migration to Yarn Modern
-
-We have recently updated our Yarn version from Classic to Modern.
-If you are still using CVAT with Yarn 1.22 you need to first migrate to Yarn 4.9.2:
-
-```bash
-# Remove old yarn
-sudo npm uninstall -g yarn
-hash -r
-
-# Ensure corepack is installed
-sudo npm install -g corepack
-
-# Enable new yarn
-corepack enable yarn
-yarn --version # should show 4.9.2
-```
-
 ### Commands
 
 - Dependencies installation

@@ -6,24 +6,6 @@ This is a client UI for Computer Vision Annotation Tool based on React, Redux an
 
 ## Commands
 
-#### Migration to Yarn Modern
-
-We have updated our Yarn version from Classic to Modern.
-If you are still using CVAT with Yarn 1.22.22 you need to first migrate to Yarn 4.9.2:
-
-```bash
-# Remove old yarn
-sudo npm uninstall -g yarn
-hash -r
-
-# Ensure corepack is installed
-sudo npm install -g corepack
-
-# Enable new yarn
-corepack enable yarn
-yarn --version # should show 4.9.2
-```
-
 - Installing dependencies:
 ```bash
 yarn --immutable

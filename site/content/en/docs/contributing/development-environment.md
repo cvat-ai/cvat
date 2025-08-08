@@ -19,34 +19,12 @@ description: 'Installing a development environment for different operating syste
   # Install Node.js 20
   curl -fsSL https://deb.nodesource.com/setup_20.x | sudo bash -
   sudo apt-get install -y nodejs
-
-  # If you have yarn installed globally via npm, remove it
-  npm uninstall -g yarn
-  hash -r
-
-  # Ensure corepack is installed
-  sudo npm -g install corepack
-
-  # Enable yarn
-  corepack enable yarn
-  yarn --version # should output 4.9.2
   ```
 
   MacOS 10.15
 
   ```bash
   brew install git python pyenv redis curl openssl node sqlite3 geos rust
-
-  # If you have yarn installed globally via npm, remove it
-  npm uninstall -g yarn
-  hash -r
-
-  # Ensure corepack is installed
-  sudo npm -g install corepack
-
-  # Enable yarn
-  corepack enable yarn
-  yarn --version # should output 4.9.2
   ```
 
   Arch Linux
@@ -69,19 +47,26 @@ description: 'Installing a development environment for different operating syste
 
   ```bash
   # Install Node.js and npm
-  sudo pacman -S nodejs-lts-gallium yarn npm
-
-  # If you have yarn installed globally via npm, remove it
-  sudo npm uninstall -g yarn
-  hash -r
-
-  # Ensure corepack is installed
-  sudo npm -g install corepack
-
-  # Enable new yarn
-  corepack enable yarn
-  yarn --version # should output 4.9.2
+  sudo pacman -S nodejs-lts-gallium npm
   ```
+
+### Migration to Yarn Modern
+
+We have updated our Yarn version from Classic (1.x) to Modern.
+If you are still using CVAT with Yarn Classic you need to first migrate:
+
+```bash
+# If yarn --version shows 1.x
+# remove old yarn
+sudo npm uninstall -g yarn
+
+# Ensure corepack is installed
+sudo npm install -g corepack
+
+# Enable new yarn
+corepack enable yarn
+yarn --version # should show 4.x
+```
 
 
 - Install Chrome
@@ -99,7 +84,7 @@ description: 'Installing a development environment for different operating syste
 
 - Make sure to use Python 3.10.0 or higher
 
-  ```
+  ```bash
   python3 --version
   ```
 
@@ -134,7 +119,7 @@ description: 'Installing a development environment for different operating syste
   Homebrew will install FFMpeg 5.0 by default, which does not work, so you should install 4.X.
   You can install older 4.X FFMpeg using Homebrew like that:
 
-  ```
+  ```bash
   cd "$(brew --repo homebrew/core)"
   git checkout addd616edc9134f057e33694c420f4900be59db8
   brew unlink ffmpeg
@@ -145,7 +130,7 @@ description: 'Installing a development environment for different operating syste
   if you are still facing error `Running setup.py install for av ... error`, you may
   try more radical variant
 
-  ```
+  ```bash
   cd "$(brew --repo homebrew/core)"
   git checkout addd616edc9134f057e33694c420f4900be59db8
   brew uninstall ffmpeg --force
@@ -155,7 +140,7 @@ description: 'Installing a development environment for different operating syste
 
   If you faced with error `Failed building wheel for h5py`, you may need install `hdf5`
 
-  ```
+  ```bash
   brew install hdf5
   export HDF5_DIR="$(brew --prefix hdf5)"
   pip install --no-binary=h5py h5py
@@ -165,7 +150,7 @@ description: 'Installing a development environment for different operating syste
   `OSError: Could not find library geos_c or load any of its variants ['libgeos_c.so.1', 'libgeos_c.so']`.
   You may fix this using
 
-  ```
+  ```bash
   sudo ln -s /opt/homebrew/lib/libgeos_c.dylib /usr/local/lib
   ```
   {{% /alert %}}
@@ -208,7 +193,6 @@ description: 'Installing a development environment for different operating syste
 
   ```bash
   corepack enable yarn
-
   yarn --immutable
   ```
 
