@@ -10,15 +10,14 @@ description: 'Accelerating video labeling using SAM2 model'
 Segment Anything 2 is a segmentation model that allows fast and precise selection of any object in videos or images.
 SAM2 tracking is available in two implementations:
 
-1. **Classic SAM2 Tracker (Annotation Action)**: Available for Enterprise self-hosted Basic/Premium deployments.
-This is implemented as an annotation action using serverless functions and requires Nuclio deployment.
+1. **Nuclio SAM2 Tracker**: Available only for Enterprise deployments.
+This is implemented as a serverless function deployed via Nuclio framework.
 
-1. **AI Agent SAM2 Tracker**: Available for CVAT Online and Enterprise 2.42.0+ via auto-annotation (AA) functions
+1. **AI Agent SAM2 Tracker**: Available for CVAT Online and Enterprise via auto-annotation (AA) functions
 that run on user-side agents. This brings SAM2 tracking capabilities to CVAT Online users who previously
 couldn't access this feature.
 
-For self-hosted enterprise customers using the classic implementation, it is strongly recommended
-to deploy the model using a GPU. Although it is possible to use a CPU-based version,
+It is strongly recommended to deploy the model using a GPU. Although it is possible to use a CPU-based version,
 it generally performs much slower and is suitable only for handling a single parallel request.
 The AI agent variant runs on user hardware, providing flexibility for GPU usage without
 server configuration requirements.
@@ -26,34 +25,21 @@ server configuration requirements.
 Unlike a regular tracking model, both SAM2 tracker implementations are designed to be applied
 to existing objects (polygons and masks) to track them forward for a specified number of frames.
 
-## Platform Availability and Deployment Options
-
-The following table helps you choose the appropriate SAM2 tracking implementation based on your deployment:
-
-| Feature | Classic SAM2 Tracker | AI Agent SAM2 Tracker |
-| ------- | -------------------- | --------------------- |
-| **Platform** | Enterprise self-hosted Basic/Premium | CVAT Online + Enterprise 2.42.0+ |
-| **Implementation** | Serverless function (Nuclio) | Auto-annotation function + Agent |
-| **Hardware** | Server-side GPU/CPU | User-side hardware |
-| **Setup Complexity** | Requires Nuclio + Redis deployment | CLI registration + agent process |
-| **Server Control Required** | Yes | No |
-| **Isolation** | Shared server resources | Isolated user process |
-
 ## How to install
 
 Choose the installation method based on your platform and deployment needs.
 
 {{% alert title="Note" color="primary" %}}
-The classic SAM2 Tracker (annotation action) is only available in the Enterprise self-hosted version.
-The AI agent variant brings SAM2 tracking to CVAT Online and Enterprise 2.42.0+.
+Nuclio SAM2 Tracker is only available in the Enterprise version.
+The AI agent variant brings SAM2 tracking to CVAT Online and Enterprise.
 {{% /alert %}}
 
 {{% alert title="Note" color="primary" %}}
-The classic tracker requires the enhanced actions UI plugin, which is enabled by default.
+Both tracker implementations require the enhanced actions UI plugin, which is enabled by default.
 Usually, no additional steps are necessary on this.
 {{% /alert %}}
 
-### Classic SAM2 Tracker (Enterprise Self-hosted)
+### Nuclio SAM2 Tracker (CVAT Enterprise)
 
 #### Docker
 
@@ -80,7 +66,7 @@ nuctl deploy "path/to/the/function"
   --env CVAT_FUNCTIONS_REDIS_PASSWORD="<redis_password>" # if applicable
 ```
 
-### AI Agent SAM2 Tracker (CVAT Online + Enterprise 2.42.0+)
+### AI Agent SAM2 Tracker (CVAT Online + Enterprise)
 
 The AI agent implementation enables SAM2 tracking for CVAT Online users and provides an alternative deployment method
 for Enterprise customers. This approach runs the tracking model on user hardware via auto-annotation (AA) functions.
@@ -89,7 +75,7 @@ for Enterprise customers. This approach runs the tracking model on user hardware
 
 - Python 3.10 or later
 - Git
-- CVAT Online account or Enterprise 2.42.0+ instance
+- CVAT Online account or Enterprise instance
 - Optional: NVIDIA GPU with CUDA support for faster inference
 
 #### Setup Instructions
@@ -160,9 +146,9 @@ If the agent stops, active tracking operations will fail and need to be restarte
 
 Both SAM2 tracker implementations provide similar user experiences with slight differences in the UI labels.
 
-### Running the Classic SAM2 Tracker
+### Running the Nuclio SAM2 Tracker
 
-The classic tracker can be applied to any polygons and masks.
+The nuclio tracker can be applied to any polygons and masks.
 To run the tracker on an object, open the object menu and click
 **Run annotation action**.
 
@@ -214,7 +200,7 @@ Alternatively, you can use a hotkey: just press **Ctrl + E** (default shortcut) 
 This opens the actions modal. In this case, the tracker will be applied to all visible objects of suitable types
 (polygons and masks). In the action list of the opened modal, select either:
 
-- **Segment Anything 2: Tracker** (for the classic implementation)
+- **Segment Anything 2: Tracker** (for the nuclio implementation)
 - **AI Tracker: SAM2** (for the AI agent implementation)
 
 <img src="/images/sam2_tracker_run_action_modal.png" style="max-width: 500px; padding: 16px;">
