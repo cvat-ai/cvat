@@ -1274,6 +1274,11 @@ class TestTaskBackups:
         task_id = next(t for t in tasks if t["validation_mode"] == "gt_pool")["id"]
         self._test_can_export_backup(task_id)
 
+    @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
+    def test_can_export_backup_for_simple_gt_job_task(self, tasks, mode):
+        task_id = next(t for t in tasks if t["mode"] == mode and t["validation_mode"] == "gt")["id"]
+        self._test_can_export_backup(task_id)
+
     def test_cannot_export_backup_for_task_without_data(self, tasks):
         task_id = next(t for t in tasks if t["jobs"]["count"] == 0)["id"]
 
@@ -1315,17 +1320,7 @@ class TestTaskBackups:
         task_id = next(t for t in tasks if t["mode"] == mode if not t["validation_mode"])["id"]
         self._test_can_restore_task_from_backup(task_id)
 
-    @pytest.mark.parametrize(
-        "mode",
-        [
-            "annotation",
-            pytest.param(
-                "interpolation",
-                marks=pytest.mark.xfail(raises=BackgroundRequestException),
-                # FIXME: fails due to invalid GT job frames serialized
-            ),
-        ],
-    )
+    @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_import_backup_with_simple_gt_job_task(self, tasks, mode):
         task_id = next(t for t in tasks if t["mode"] == mode if t["validation_mode"] == "gt")["id"]
         self._test_can_restore_task_from_backup(task_id)
@@ -1343,9 +1338,7 @@ class TestTaskBackups:
         # Reproduces the problem with empty 'mode' in a restored task,
         # described in the reproduction steps https://github.com/cvat-ai/cvat/issues/5668
 
-        task_json = next(
-            t for t in tasks if t["mode"] == mode if t["jobs"]["count"] if not t["validation_mode"]
-        )
+        task_json = next(t for t in tasks if t["mode"] == mode if t["jobs"]["count"])
 
         task = self.client.tasks.retrieve(task_json["id"])
         jobs = task.get_jobs()
@@ -1575,7 +1568,7 @@ class TestWorkWithSimpleGtJobTasks:
         "task, gt_job, annotation_jobs",
         [fixture_ref(fxt_task_with_gt_job), fixture_ref(fxt_task_with_gt_job_and_frame_step)],
     )
-    def test_deleting_frames_in_gt_job_do_not_affect_task_or_annotation_job_deleted_frames(
+    def test_deleting_frames_in_gt_job_does_not_affect_task_or_annotation_job_deleted_frames(
         self, admin_user, task, gt_job, annotation_jobs
     ):
         with make_api_client(admin_user) as api_client:
