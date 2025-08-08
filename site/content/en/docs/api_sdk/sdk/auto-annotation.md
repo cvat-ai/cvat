@@ -284,9 +284,11 @@ A tracking function can only be used in agent mode.
 When used with a tracking function, an agent will use it
 to process requests from the AI tracking tools in the CVAT UI.
 
-> WARNING: Currently, only one agent should be run for each tracking function.
-> If multiple agents for one tracking function are run at the same time,
-> CVAT users may experience intermittent "Tracking state not found" errors when using the function.
+{{% alert title="Warning" color="warning" %}}
+Currently, only one agent should be run for each tracking function.
+If multiple agents for one tracking function are run at the same time,
+CVAT users may experience intermittent "Tracking state not found" errors when using the function.
+{{% /alert %}}
 
 A tracking function must have three attributes, `spec`, `init_tracking_state`, and `track`.
 It may also optionally have a `preprocess_image` attribute.
