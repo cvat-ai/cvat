@@ -285,8 +285,7 @@ class _TaskBackupBase(_BackupBase):
                 for attr in shape['attributes']:
                     _update_attribute(attr, label)
 
-                for _ in _prepare_shapes(shape.get('elements', []), label):
-                    pass
+                collections.deque(_prepare_shapes(shape.get('elements', []), label), maxlen=0)
 
                 self._prepare_meta(allowed_fields, shape)
                 yield shape
