@@ -5,8 +5,8 @@
     "cypress:run:chrome:canvas3d": "cypress run --headed --browser chrome --config-file cypress_canvas3d.config.js"
   },
   "dependencies": {
-    "allure-cypress": "^3.2.2",
     "@cypress/code-coverage": "^3.9.10",
+    "allure-cypress": "^3.2.2",
     "archiver": "^5.3.0",
     "cy-verify-downloads": "^0.0.5",
     "cypress": "^13.10.0",
@@ -18,5 +18,8 @@
     "fs-extra": "^10.1.0",
     "jimp": "^0.22.10"
   },
-  "version": "0.0.0"
+  "version": "0.0.0",
+  "devDependencies": {
+    "@types/k6": "^1.1.1"
+  }
 }
