@@ -383,6 +383,12 @@ analytics:
   clickhouseHost: "{{ .Release.Name }}-clickhouse"
   clickhousePort: 8123
 
+  clickhouse:
+    initializer:
+      # Startup for this service can be specified explicitly.
+      # Useful if an external clickhouse is used.
+      enabled: true
+
 vector:
   envFrom:
     - secretRef:
@@ -408,7 +414,6 @@ clickhouse:
   shards: 1
   replicaCount: 1
   extraEnvVarsSecret: cvat-analytics-secret
-  startdbScriptsSecret: cvat-clickhouse-start
   auth:
     username: user
     existingSecret: cvat-analytics-secret
