@@ -30,12 +30,7 @@ def target_url():
         for line in f:
             name, value = tuple(line.strip().split("="))
             env_data[name] = value
-
-    container_id = _run(
-        "docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' test_webhook_receiver_1"
-    )[0].strip()[1:-1]
-
-    return f'http://{container_id}:{env_data["SERVER_PORT"]}/{env_data["PAYLOAD_ENDPOINT"]}'
+    return f'http://{env_data["SERVER_HOST"]}:{env_data["SERVER_PORT"]}/{env_data["PAYLOAD_ENDPOINT"]}'
 
 
 def webhook_spec(events, project_id=None, webhook_type="organization"):
