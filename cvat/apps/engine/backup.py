@@ -10,6 +10,7 @@ import re
 import shutil
 import tempfile
 from abc import ABCMeta, abstractmethod
+from collections import deque
 from collections.abc import Collection, Iterable
 from copy import deepcopy
 from datetime import timedelta
@@ -285,7 +286,7 @@ class _TaskBackupBase(_BackupBase):
                 for attr in shape['attributes']:
                     _update_attribute(attr, label)
 
-                collections.deque(_prepare_shapes(shape.get('elements', []), label), maxlen=0)
+                deque(_prepare_shapes(shape.get('elements', []), label), maxlen=0)
 
                 self._prepare_meta(allowed_fields, shape)
                 yield shape
@@ -578,6 +579,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             for db_job_id in db_job_ids:
                 with transaction.atomic():
                     annotations = dm.task.get_job_data(db_job_id, streaming=True)
+                    assert callable(annotations["shapes"])
                     annotations_serializer = LabeledDataSerializer(data=dict(annotations, shapes=[]))
                     annotations_serializer.is_valid(raise_exception=True)
                     annotation_data = annotations_serializer.data
