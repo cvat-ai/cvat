@@ -16,10 +16,9 @@ description: 'Installing a development environment for different operating syste
   ```
 
   ```bash
-  # Install Node.js 20 and enable yarn
+  # Install Node.js 20
   curl -fsSL https://deb.nodesource.com/setup_20.x | sudo bash -
   sudo apt-get install -y nodejs
-  corepack enable yarn
   ```
 
   MacOS 10.15
