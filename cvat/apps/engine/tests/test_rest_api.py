@@ -1774,6 +1774,7 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
                                 "updated_date",
                                 "username",
                                 "project_id",
+                                "data_cloud_storage_id",
                                 "data",
                                 # backup does not store overlap explicitly
                                 "overlap",

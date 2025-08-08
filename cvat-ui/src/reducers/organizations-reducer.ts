@@ -15,6 +15,18 @@ const defaultState: OrganizationState = {
     leaving: false,
     removingMember: false,
     updatingMember: false,
+    currentArray: [],
+    currentArrayFetching: false,
+    gettingQuery: {
+        page: 1,
+        search: '',
+    },
+    count: 0,
+    nextPageUrl: null,
+    selectModal: {
+        visible: false,
+        onSelectCallback: null,
+    },
 };
 
 export default function (
@@ -136,6 +148,55 @@ export default function (
         }
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return { ...defaultState };
+        }
+        case OrganizationActionsTypes.GET_ORGANIZATIONS: {
+            const { query } = action.payload;
+            return {
+                ...state,
+                currentArrayFetching: true,
+                currentArray: [],
+                count: 0,
+                nextPageUrl: null,
+                gettingQuery: {
+                    ...defaultState.gettingQuery,
+                    ...query,
+                },
+            };
+        }
+        case OrganizationActionsTypes.GET_ORGANIZATIONS_SUCCESS: {
+            const { organizations, count, nextPageUrl } = action.payload;
+            return {
+                ...state,
+                currentArrayFetching: false,
+                count,
+                currentArray: organizations,
+                nextPageUrl: nextPageUrl || null,
+            };
+        }
+        case OrganizationActionsTypes.GET_ORGANIZATIONS_FAILED: {
+            return {
+                ...state,
+                currentArrayFetching: false,
+            };
+        }
+        case OrganizationActionsTypes.OPEN_SELECT_ORGANIZATION_MODAL: {
+            const { onSelectCallback } = action.payload;
+            return {
+                ...state,
+                selectModal: {
+                    visible: true,
+                    onSelectCallback,
+                },
+            };
+        }
+        case OrganizationActionsTypes.CLOSE_SELECT_ORGANIZATION_MODAL: {
+            return {
+                ...state,
+                selectModal: {
+                    visible: false,
+                    onSelectCallback: null,
+                },
+            };
         }
         default:
             return state;

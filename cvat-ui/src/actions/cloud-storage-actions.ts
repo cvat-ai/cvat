@@ -6,7 +6,7 @@
 import {
     ActionUnion, createAction, ThunkAction, ThunkDispatch,
 } from 'utils/redux';
-import { getCore } from 'cvat-core-wrapper';
+import { getCore, Project, Task } from 'cvat-core-wrapper';
 import { CloudStoragesQuery, CloudStorage } from 'reducers';
 import { filterNull } from 'utils/filter-null';
 
@@ -35,9 +35,11 @@ export enum CloudStorageActionTypes {
     LOAD_CLOUD_STORAGE_CONTENT = 'LOAD_CLOUD_STORAGE_CONTENT',
     LOAD_CLOUD_STORAGE_CONTENT_FAILED = 'LOAD_CLOUD_STORAGE_CONTENT_FAILED',
     LOAD_CLOUD_STORAGE_CONTENT_SUCCESS = 'LOAD_CLOUD_STORAGE_CONTENT_SUCCESS',
+    OPEN_LINKED_CLOUD_STORAGE_UPDATING_MODAL = 'OPEN_LINKED_CLOUD_STORAGE_UPDATING_MODAL',
+    CLOSE_LINKED_CLOUD_STORAGE_UPDATING_MODAL = 'CLOSE_LINKED_CLOUD_STORAGE_UPDATING_MODAL',
 }
 
-const cloudStoragesActions = {
+export const cloudStoragesActions = {
     updateCloudStoragesGettingQuery: (query: Partial<CloudStoragesQuery>) => (
         createAction(CloudStorageActionTypes.UPDATE_CLOUD_STORAGES_GETTING_QUERY, { query })
     ),
@@ -99,6 +101,12 @@ const cloudStoragesActions = {
     ),
     getCloudStoragePreviewFailed: (cloudStorageID: number, error: any) => (
         createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_PREVIEW_FAILED, { cloudStorageID, error })
+    ),
+    openLinkedCloudStorageUpdatingModal: (instance: Project | Task) => (
+        createAction(CloudStorageActionTypes.OPEN_LINKED_CLOUD_STORAGE_UPDATING_MODAL, { instance })
+    ),
+    closeLinkedCloudStorageUpdatingModal: () => (
+        createAction(CloudStorageActionTypes.CLOSE_LINKED_CLOUD_STORAGE_UPDATING_MODAL)
     ),
 };
 
