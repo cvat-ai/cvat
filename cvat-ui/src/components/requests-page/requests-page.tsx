@@ -20,7 +20,6 @@ export default function RequestsPageComponent(): JSX.Element {
     const { fetching, query, requests } = useSelector((state: CombinedState) => state.requests);
 
     const count = Object.keys(requests).length;
-
     const updatedQuery = useResourceQuery<RequestsQuery>(query);
 
     useEffect(() => {

@@ -50,7 +50,7 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                 <TaskActionsComponent
                     taskInstance={taskInstance}
                     triggerElement={(
-                        <Button size='middle' className='cvat-task-page-actions-button'>
+                        <Button size='middle' className='cvat-task-page-actions-button cvat-actions-menu-button'>
                             <Text className='cvat-text-color'>Actions</Text>
                             <MoreOutlined className='cvat-menu-icon' />
                         </Button>

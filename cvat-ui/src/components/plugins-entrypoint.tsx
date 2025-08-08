@@ -12,6 +12,7 @@ import { modelsActions } from 'actions/models-actions';
 import { changeFrameAsync, updateCurrentJobAsync } from 'actions/annotation-actions';
 import { updateJobAsync } from 'actions/jobs-actions';
 import { getCVATStore } from 'cvat-store';
+import { makeBulkOperationAsync } from 'actions/bulk-actions';
 
 const core = getCore();
 
@@ -26,6 +27,7 @@ export type PluginActionCreators = {
     removeUICallback: typeof pluginActions['removeUICallback'],
     updateCurrentJobAsync: typeof updateCurrentJobAsync,
     updateJobAsync: typeof updateJobAsync,
+    makeBulkOperationAsync: typeof makeBulkOperationAsync,
 };
 
 export interface ComponentBuilderArgs {
@@ -70,6 +72,7 @@ function PluginEntrypoint(): null {
                             changeFrameAsync,
                             updateCurrentJobAsync,
                             updateJobAsync,
+                            makeBulkOperationAsync,
                             getModelsSuccess: modelsActions.getModelsSuccess,
                             addUICallback: pluginActions.addUICallback,
                             removeUICallback: pluginActions.removeUICallback,

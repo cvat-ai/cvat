@@ -13,17 +13,18 @@ import { Row, Col } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
 import Button from 'antd/lib/button';
 
-import { CombinedState, WebhooksQuery } from 'reducers';
+import { CombinedState, WebhooksQuery, SelectedResourceType } from 'reducers';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import { getWebhooksAsync } from 'actions/webhooks-actions';
 import { LeftOutlined } from '@ant-design/icons';
 import { useResourceQuery } from 'utils/hooks';
+import { selectionActions } from 'actions/selection-actions';
 import WebhooksList from './webhooks-list';
 import TopBar from './top-bar';
 import EmptyWebhooksListComponent from './empty-list';
 
 interface ProjectRouteMatch {
-    id?: string | undefined;
+    id?: string;
 }
 
 function WebhooksPage(): JSX.Element | null {
@@ -33,12 +34,13 @@ function WebhooksPage(): JSX.Element | null {
     const fetching = useSelector((state: CombinedState) => state.webhooks.fetching);
     const totalCount = useSelector((state: CombinedState) => state.webhooks.totalCount);
     const query = useSelector((state: CombinedState) => state.webhooks.query);
+    const bulkFetching = useSelector((state: CombinedState) => state.bulkActions.fetching);
 
     const projectsMatch = useRouteMatch<ProjectRouteMatch>({ path: '/projects/:id/webhooks' });
 
     const [onCreateParams, setOnCreateParams] = useState<string | null>(null);
     const onCreateWebhook = useCallback(() => {
-        history.push(`/webhooks/create?${onCreateParams || ''}`);
+        history.push(`/webhooks/create?${onCreateParams ?? ''}`);
     }, [onCreateParams]);
 
     const goBackContent = (
@@ -56,7 +58,7 @@ function WebhooksPage(): JSX.Element | null {
     const updatedQuery = useResourceQuery<WebhooksQuery>(query);
 
     useEffect(() => {
-        if (projectsMatch && projectsMatch.params.id) {
+        if (projectsMatch?.params.id) {
             const { id } = projectsMatch.params;
             setOnCreateParams(`projectId=${id}`);
             dispatch(getWebhooksAsync({ ...updatedQuery, projectId: +id }));
@@ -72,6 +74,12 @@ function WebhooksPage(): JSX.Element | null {
             search: updateHistoryFromQuery(query),
         });
     }, [query]);
+
+    const allWebhookIds = useSelector((state: CombinedState) => state.webhooks.current.map((w) => w.id));
+    const selectedCount = useSelector((state: CombinedState) => state.webhooks.selected.length);
+    const onSelectAll = useCallback(() => {
+        dispatch(selectionActions.selectResources(allWebhookIds, SelectedResourceType.WEBHOOKS));
+    }, [allWebhookIds]);
 
     const content = totalCount ? (
         <>
@@ -104,6 +112,8 @@ function WebhooksPage(): JSX.Element | null {
                 query={updatedQuery}
                 onCreateWebhook={onCreateWebhook}
                 goBackContent={goBackContent}
+                selectedCount={selectedCount}
+                onSelectAll={onSelectAll}
                 onApplySearch={(search: string | null) => {
                     dispatch(
                         getWebhooksAsync({
@@ -132,7 +142,7 @@ function WebhooksPage(): JSX.Element | null {
                     );
                 }}
             />
-            { fetching ? (
+            { fetching && !bulkFetching ? (
                 <div className='cvat-empty-webhooks-list'>
                     <Spin size='large' className='cvat-spinner' />
                 </div>

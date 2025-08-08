@@ -11,6 +11,7 @@ import {
     QualityConflict, FramesMetaData, RQStatus, Event, Invitation, SerializedAPISchema,
     Request, JobValidationLayout, QualitySettings, TaskValidationLayout, ObjectState,
     ConsensusSettings, AboutData, ShapeType, ObjectType,
+    Membership,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
@@ -52,6 +53,7 @@ export interface ProjectsState {
     fetching: boolean;
     count: number;
     current: Project[];
+    selected: number[];
     previews: {
         [index: number]: Preview;
     };
@@ -95,6 +97,7 @@ export interface JobsState {
     fetching: boolean;
     count: number;
     current: Job[];
+    selected: number[];
     previews: {
         [index: number]: Preview;
     };
@@ -116,6 +119,7 @@ export interface TasksState {
     gettingQuery: TasksQuery;
     count: number;
     current: Task[];
+    selected: number[];
     previews: {
         [index: number]: Preview;
     };
@@ -255,6 +259,29 @@ export interface CloudStoragesState {
             error: string;
         };
     };
+    selected: number[];
+}
+
+export interface BulkActionStatus {
+    message: string;
+    percent: number;
+}
+
+export enum SelectedResourceType {
+    PROJECTS = 'projects',
+    TASKS = 'tasks',
+    JOBS = 'jobs',
+    REQUESTS = 'requests',
+    MEMBERS = 'members',
+    WEBHOOKS = 'webhooks',
+    CLOUD_STORAGES = 'cloudStorages',
+    MODELS = 'models',
+}
+
+export interface BulkActionsState {
+    fetching: boolean;
+    status: BulkActionStatus | null;
+    cancelled: boolean;
 }
 
 export enum SupportedPlugins {
@@ -480,6 +507,7 @@ export interface ModelsState {
     previews: {
         [index: string]: Preview;
     };
+    selected: (number | string)[];
 }
 
 export interface ErrorState {
@@ -487,12 +515,22 @@ export interface ErrorState {
     reason: Error;
     shouldLog?: boolean;
     className?: string;
+    ignore?: boolean;
 }
 
 export interface NotificationState {
     message: string;
     description?: string;
     duration?: number;
+}
+
+export interface BulkOperationsErrorState extends ErrorState {
+    remainingItemsCount: number;
+    retryPayload: {
+        items: any[];
+        operation: (item: any, idx: number, total: number) => Promise<void>;
+        statusMessage: (item: any, idx: number, total: number) => string;
+    };
 }
 
 export interface NotificationsState {
@@ -645,6 +683,9 @@ export interface NotificationsState {
             fetching: null | ErrorState;
             canceling: null | ErrorState;
             deleting: null | ErrorState;
+        };
+        bulkOperation: {
+            processing: BulkOperationsErrorState | null;
         }
     };
     messages: {
@@ -1000,6 +1041,10 @@ export interface OrganizationState {
     leaving: boolean;
     removingMember: boolean;
     updatingMember: boolean;
+    fetchingMembers: boolean;
+    members: Membership[];
+    selectedMembers: number[];
+    membersQuery: OrganizationMembersQuery;
 }
 
 export interface WebhooksQuery {
@@ -1014,9 +1059,15 @@ export interface WebhooksQuery {
 
 export interface WebhooksState {
     current: Webhook[],
+    selected: number[];
     totalCount: number;
     fetching: boolean;
     query: WebhooksQuery;
+    activities: {
+        deletes: {
+            [webhookId: number]: boolean; // deleted (deleting if in dictionary)
+        };
+    }
 }
 
 export interface InvitationsQuery {
@@ -1041,7 +1092,8 @@ export interface RequestsState {
     fetching: boolean;
     initialized: boolean;
     requests: Record<string, Request>;
-    disabled: Record<string, boolean>;
+    cancelled: Record<string, boolean>;
+    selected: string[];
     query: RequestsQuery;
 }
 
@@ -1072,6 +1124,7 @@ export interface CombinedState {
     invitations: InvitationsState;
     webhooks: WebhooksState;
     requests: RequestsState;
+    bulkActions: BulkActionsState;
     serverAPI: ServerAPIState;
     navigation: NavigationState;
 }
