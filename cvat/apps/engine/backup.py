@@ -10,6 +10,7 @@ import re
 import shutil
 import tempfile
 from abc import ABCMeta, abstractmethod
+from collections import deque
 from collections.abc import Collection, Iterable
 from copy import deepcopy
 from datetime import timedelta
@@ -54,6 +55,7 @@ from cvat.apps.engine.serializers import (
     DataSerializer,
     JobWriteSerializer,
     LabeledDataSerializer,
+    LabeledShapeSerializer,
     LabelSerializer,
     ProjectReadSerializer,
     SegmentSerializer,
@@ -284,9 +286,10 @@ class _TaskBackupBase(_BackupBase):
                 for attr in shape['attributes']:
                     _update_attribute(attr, label)
 
-                _prepare_shapes(shape.get('elements', []), label)
+                deque(_prepare_shapes(shape.get('elements', []), label), maxlen=0)
 
                 self._prepare_meta(allowed_fields, shape)
+                yield shape
 
         def _prepare_tracks(tracks, parent_label=''):
             for track in tracks:
@@ -308,7 +311,7 @@ class _TaskBackupBase(_BackupBase):
                 _update_attribute(attr, label)
             self._prepare_meta(allowed_fields, tag)
 
-        _prepare_shapes(annotations['shapes'])
+        annotations['shapes'] = _prepare_shapes(annotations['shapes'])
         _prepare_tracks(annotations['tracks'])
 
         return annotations
@@ -574,10 +577,22 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             db_jobs = self._get_db_jobs()
             db_job_ids = (j.id for j in db_jobs)
             for db_job_id in db_job_ids:
-                annotations = dm.task.get_job_data(db_job_id)
-                annotations_serializer = LabeledDataSerializer(data=annotations)
-                annotations_serializer.is_valid(raise_exception=True)
-                yield self._prepare_annotations(annotations_serializer.data, self._label_mapping)
+                with transaction.atomic():
+                    annotations = dm.task.get_job_data(db_job_id, streaming=True)
+                    assert callable(annotations["shapes"])
+                    annotations_serializer = LabeledDataSerializer(data=dict(annotations, shapes=[]))
+                    annotations_serializer.is_valid(raise_exception=True)
+                    annotation_data = annotations_serializer.data
+
+                    def serialize_shapes():
+                        for shape in annotations["shapes"]():
+                            shape_serializer = LabeledShapeSerializer(data=shape)
+                            shape_serializer.is_valid(raise_exception=True)
+                            yield shape_serializer.data
+
+                    annotation_data["shapes"] = serialize_shapes()
+
+                    yield self._prepare_annotations(annotation_data, self._label_mapping)
 
         annotations = serialize_annotations()
         target_annotations_file = os.path.join(target_dir, self.ANNOTATIONS_FILENAME) if target_dir else self.ANNOTATIONS_FILENAME
@@ -701,6 +716,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
 
     def _create_annotations(self, db_job, annotations):
         self._prepare_annotations(annotations, self._labels_mapping)
+        annotations["shapes"] = list(annotations["shapes"])
 
         serializer = LabeledDataSerializer(data=annotations)
         serializer.is_valid(raise_exception=True)
