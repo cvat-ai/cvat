@@ -169,8 +169,8 @@ To use the AI agent tracker:
 1. Create or open a CVAT task from a video file or video-like sequence of images
 (all images must have the same dimensions)
 1. Open one of the jobs from the task
-1. Draw a mask or polygon shape around an object
-1. Right-click the shape and choose "Run annotation action"
+1. Draw a mask or polygon around an object
+1. Right-click the object and choose "Run annotation action"
 1. Select **"AI Tracker: SAM2"** from the action list
 1. Specify the target frame and click **Run**
 
