@@ -13,6 +13,7 @@ from datumaro.components.dataset import StreamDataset
 from datumaro.util.os_util import rmfile, rmtree
 
 from cvat.apps.dataset_manager.bindings import CVATProjectDataExtractor, CvatTaskOrJobDataExtractor
+from cvat.apps.dataset_manager.task import JobAnnotation
 from cvat.apps.dataset_manager.util import current_function_name
 
 
@@ -130,6 +131,26 @@ def ensure_extractors_efficiency(cls):
 
         return MockExtractor
 
+    class MockJobAnnotation(JobAnnotation):
+        def _init_shapes_from_db(self, streaming: bool = False):
+            super()._init_shapes_from_db(streaming=streaming)
+            if streaming:
+                # should only generate shapes once
+                assert callable(self.ir_data.shapes)
+                already_iterated = False
+                shapes = self.ir_data.shapes
+
+                def mock_shapes():
+                    nonlocal already_iterated
+                    assert not already_iterated
+                    for shape in shapes:
+                        already_iterated = True
+                        yield shape
+
+                self.ir_data.shapes = mock_shapes
+            else:
+                assert isinstance(self.ir_data.shapes, list)
+
     cls = patch(
         "cvat.apps.dataset_manager.bindings.CvatTaskOrJobDataExtractor",
         make_mock_extractor(CvatTaskOrJobDataExtractor),
@@ -137,5 +158,9 @@ def ensure_extractors_efficiency(cls):
     cls = patch(
         "cvat.apps.dataset_manager.bindings.CVATProjectDataExtractor",
         make_mock_extractor(CVATProjectDataExtractor),
+    )(cls)
+    cls = patch(
+        "cvat.apps.dataset_manager.task.JobAnnotation",
+        MockJobAnnotation,
     )(cls)
     return cls
