@@ -1,3 +1,6 @@
+# Copyright (C) CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
 import time
 import pty
 import os
@@ -5,7 +8,6 @@ import sys
 import pathlib
 
 import requests
-from rich.console import Console
 from plumbum import local, FG
 
 from perfkit.config import (
@@ -14,11 +16,11 @@ from perfkit.config import (
     DOCKER_COMPOSE_FILE_WITH_CPUSET,
     CVAT_SERVER_SERVICE,
 )
-from perfkit.console_print import print_info, print_success, exit_with_error, print_error
+from perfkit.console_print import print_info, print_success, exit_with_error, print_error, console
 from perfkit.k6_profile import K6Profile
 
 
-console = Console()
+WAIT_FOR_CLUSTER = 10
 
 docker = local["docker"]
 docker_compose = docker["compose", "-f", DOCKER_COMPOSE_FILE, "-f", DOCKER_COMPOSE_FILE_WITH_CPUSET]
@@ -75,7 +77,7 @@ def start_cluster(
         f'echo "{admin_code}" | python3 ~/manage.py shell',
     ]
     exec_cmd()
-    time.sleep(10)
+    time.sleep(WAIT_FOR_CLUSTER)
 
 
 def stop_cluster(compose_file: pathlib.Path = DOCKER_COMPOSE_FILE) -> None:

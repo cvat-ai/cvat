@@ -1,3 +1,6 @@
+# Copyright (C) CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
 from pathlib import Path
 from typing import List, Union, Optional
 
@@ -48,8 +51,6 @@ class K6Profile:
             "--tag",
             f"testid={self.test_file.name}",
             "--summary-export=/output/summary.json",
-            # "--no-connection-reuse",
-            # "--no-vu-connection-reuse",
             *self.args,
             str(self.test_file),
         ]

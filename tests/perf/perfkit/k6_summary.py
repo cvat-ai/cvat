@@ -1,10 +1,14 @@
+# Copyright (C) CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
 from dataclasses import dataclass, asdict
 import json
 import pathlib
+from typing import Self
 from perfkit.console_print import print_error
 
 
-@dataclass
+@dataclass(kw_only=True)
 class K6MetricStats:
     avg: float | None = None
     max: float | None = None
@@ -28,7 +32,7 @@ class K6MetricStats:
 class K6Summary:
     metrics: dict[str, K6MetricStats]
 
-    def __add__(self, other: "K6Summary") -> "K6Summary":
+    def __add__(self, other: Self) -> Self:
         if self.metrics.keys() != other.metrics.keys():
             raise ValueError("Metric keys mismatch between summaries")
 
@@ -53,7 +57,7 @@ class K6Summary:
             new_metrics[metric_name] = combined
         return K6Summary(metrics=new_metrics)
 
-    def __truediv__(self, divisor: float) -> "K6Summary":
+    def __truediv__(self, divisor: float | int) -> Self:
         if divisor == 0:
             raise ZeroDivisionError()
 
@@ -67,7 +71,7 @@ class K6Summary:
 
         return K6Summary(metrics=new_metrics)
 
-    def compare(self, other: "K6Summary", allowed_deltas: dict[str, dict[str, float]]) -> bool:
+    def compare(self, other: Self, allowed_deltas: dict[str, dict[str, float]]) -> bool:
         consistent = True
 
         for metric_name, fields in allowed_deltas.items():

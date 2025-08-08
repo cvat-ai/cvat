@@ -1,8 +1,11 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
 import { check } from 'k6';
 import http from 'k6/http';
 
 import { defaultTaskSpec } from '../default-specs.js';
-import { BASE_URL } from '../../variables/variables.js';
+import { BASE_URL } from '../../variables/constants.js';
 
 function createTask(authKey) {
     const { taskSpec } = defaultTaskSpec({

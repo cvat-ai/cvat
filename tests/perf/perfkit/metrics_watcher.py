@@ -1,10 +1,11 @@
+# Copyright (C) CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
 import threading
 import time
 import psutil
 from typing import Callable
-from rich.console import Console
-
-console = Console()
+from console_print import console
 
 
 def start_metrics_watcher(

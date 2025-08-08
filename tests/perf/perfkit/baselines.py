@@ -1,13 +1,15 @@
+# Copyright (C) CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
 import json
 from plumbum import local
-from rich.console import Console
 
 from perfkit.config import BASELINE_FILE
 from perfkit.k6_summary import K6Summary
+from perfkit.console_print import console
 
 
 git = local["git"]
-console = Console()
 
 
 def _get_last_commit_id() -> str:
@@ -55,8 +57,8 @@ def resolve_commit_by_alias(baselines: dict, alias: str) -> str:
     return commit_value
 
 
-def resolve_test_baseline(baselines: dict, test_key: str, commit: str) -> dict:
+def resolve_test_baseline(baselines: dict, test_key: str, commit: str) -> dict | None:
     test_baselines = baselines.get(test_key, {})
     if commit not in test_baselines:
-        raise RuntimeError(f"no test with specified key: {test_key}")
+        return None
     return test_baselines[commit]

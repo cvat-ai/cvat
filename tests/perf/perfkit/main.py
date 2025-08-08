@@ -1,12 +1,12 @@
-import time
+# Copyright (C) CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
 import threading
-import json
 from pathlib import Path
 from typing import Optional
 import datetime
 
 import typer
-from rich.console import Console
 from rich.table import Table
 
 from perfkit.cluster import run_k6_docker, stop_k6_docker, stop_cluster, start_cluster
@@ -18,16 +18,15 @@ from perfkit.baselines import (
     resolve_commit_by_alias,
     resolve_test_baseline,
 )
-from perfkit.comparison_report import get_comparison_table, build_report
-from perfkit.console_print import exit_with_error, print_info, print_success
-from perfkit.config import ALLOWED_DELTAS, K6_OUTPUT_SUMMARY_JSON
+from perfkit.comparison_report import get_comparison_table, build_report, ReportRow
+from perfkit.console_print import exit_with_error, print_info, print_success, console
+from perfkit.config import K6_OUTPUT_SUMMARY_JSON
 from perfkit.k6_profile import warmup_profile, K6Profile
 from perfkit.k6_summary import K6Summary, parse_k6_summary
 
 
 DEFAULT_RUNS = 3
 
-console = Console()
 app = typer.Typer(help="Performance CLI Tool for K6-based tests")
 golden_app = typer.Typer(name="golden", help="Commands to manage a file with the baselines.")
 app.add_typer(golden_app)
@@ -39,7 +38,6 @@ app.add_typer(golden_app)
 def run_golden(
     test_file: str = typer.Argument(..., help="K6 test script to run"),
     runs: int = typer.Option(DEFAULT_RUNS, help="Number of runs"),
-    # commit: Optional[str] = typer.Option(None, help="Product version or commit hash. Default is the last commit."),
     save_baseline: bool = typer.Option(
         True, help="Save result as baseline. Be default prints it into the console."
     ),
@@ -57,7 +55,6 @@ def run_golden(
             return
         print_info(f"run {i + 1}/{runs}...")
         start_cluster()
-        time.sleep(1)
         stop_metrics = start_metrics_watcher(max_alerts=20, on_threshold_exceeded=interrupt_test)
         print_info("starting warmup")
         exit_code = run_k6_docker(warmup_profile)
@@ -128,14 +125,27 @@ def run_regression(
         assert commit_value
         return commit_value
 
+    def dump_report_to_file(test_key: str, comp_report: list[ReportRow]):
+        report_file = Path(f"regression-report-{test_key}.txt")
+        with report_file.open("a+") as f:
+            f.write(f"Regression Report for test: {test_key} | {datetime.datetime.now()}\n\n")
+            f.write(
+                "{:<40} {:>10} {:>10} {:>10} {:>6}\n".format(
+                    "Metric", "Baseline", "Actual", "Delta", "Status"
+                )
+            )
+            f.write("-" * 80 + "\n")
+            for row in comparison_report:
+                f.write("{:<40} {:>10} {:>10} {:>10} {:>6}\n".format(*row))
+            f.write("\n")
+
     test_key = Path(test_file).stem
     baselines = load_baselines()
-
     commit_value = resolve_commit()
+
     # check test entry exists
-    try:
-        baseline = resolve_test_baseline(baselines, test_key, commit_value)
-    except RuntimeError:
+    baselines = resolve_test_baseline(baselines, test_key, commit_value)
+    if baselines is None:
         exit_with_error(f"No baseline for test {test_key}'")
     if not reuse_cluster:
         stop_cluster()
@@ -152,20 +162,7 @@ def run_regression(
     )
 
     console.print(get_comparison_table(comparison_report))
-
-    report_file = Path(f"regression-report-{test_key}.txt")
-    with report_file.open("a+") as f:
-        f.write(f"Regression Report for test: {test_key} | {datetime.datetime.now()}\n\n")
-        f.write(
-            "{:<40} {:>10} {:>10} {:>10} {:>6}\n".format(
-                "Metric", "Baseline", "Actual", "Delta", "Status"
-            )
-        )
-        f.write("-" * 80 + "\n")
-        for row in comparison_report:
-            f.write("{:<40} {:>10} {:>10} {:>10} {:>6}\n".format(*row))
-        f.write("\n")
-
+    dump_report_to_file(test_key, comparison_report)
     if failed:
         exit_with_error("Performance regression detected", bold=True)
     else:
@@ -191,12 +188,12 @@ def add_alias(commit: str, alias: str):
 def remove_alias(alias: str):
     data = load_baselines()
     aliases = data.get("aliases", {})
-    if alias in aliases:
-        del aliases[alias]
-        save_baselines(data)
-        print_success(f"Alias '{alias}' removed")
-    else:
+    if alias not in aliases:
         exit_with_error(f"Alias '{alias}' not found")
+
+    del aliases[alias]
+    save_baselines(data)
+    print_success(f"Alias '{alias}' removed")
 
 
 @golden_app.command("show")
@@ -205,7 +202,7 @@ def show():
     if not data:
         print_info("no golden baselines in a file. Try to `run-golden`")
         return typer.Exit(0)
-    aliases = data.get("aliases", {})
+    aliases = data.pop("aliases", {})
     table = Table(title="Golden Profiles")
 
     table.add_column("Test File", style="bold")
@@ -216,8 +213,6 @@ def show():
     table.add_column("P95(ms)", justify="right")
 
     for test_file, commits in data.items():
-        if test_file == "aliases":
-            continue
         for commit, metrics in commits.items():
             alias = next((k for k, v in aliases.items() if v == commit), "-")
 

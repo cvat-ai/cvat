@@ -1,5 +1,7 @@
+# Copyright (C) CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
 from setuptools import setup, find_packages
-from pathlib import Path
 
 
 def load_requirements(path: str) -> list[str]:

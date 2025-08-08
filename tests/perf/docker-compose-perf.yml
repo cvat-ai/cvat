@@ -6,39 +6,38 @@ include:
     - ../../components/serverless/docker-compose.serverless.yml
     - ../docker-compose.minio.yml
     - ../docker-compose.file_share.yml
-    # - docker-compose-perf-cpuset.yml
 services:
   perf-k6:
     image: grafana/k6:latest
     container_name: perf_k6
     entrypoint:
-    - k6
+      - k6
     working_dir: /scripts
     user: root
     volumes:
-    - ./scripts:/scripts
-    - ./output:/output
+      - ./scripts:/scripts
+      - ./output:/output
     ports:
-    - 6565:6565
+      - 6565:6565
     network_mode: host
   perf-prometheus:
     image: prom/prometheus:latest
     ports:
-    - 9190:9090
+      - 9190:9090
     volumes:
-    - ./prometheus:/etc/prometheus
+      - ./prometheus:/etc/prometheus
     command:
-    - --config.file=/etc/prometheus/prometheus.yml
-    - --web.enable-remote-write-receiver
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --web.enable-remote-write-receiver
   perf-grafana:
     image: grafana/grafana:latest
     user: root
     ports:
-    - 3000:3000
+      - 3000:3000
     volumes:
-    - grafana-data:/var/lib/grafana
+      - grafana-data:/var/lib/grafana
     environment:
-    - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
 
 volumes:
   grafana-data:

@@ -1,6 +1,6 @@
 
 
-## Testing Machine Prepartion
+## Testing Machine Preparation
 ### Prerequisites
 - You must have **root access**.
 - It's better to use **Intel** CPUs.

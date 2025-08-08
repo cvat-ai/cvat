@@ -1,3 +1,7 @@
+# Copyright (C) CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+from typing import NoReturn
 from rich.console import Console
 import typer
 
@@ -5,7 +9,7 @@ import typer
 console = Console()
 
 
-def exit_with_error(msg: str, bold: bool = False) -> None:
+def exit_with_error(msg: str, bold: bool = False) -> NoReturn:
     color = "bold red" if bold else "red"
     console.print(f"[{color}]{msg}[/{color}]")
     raise typer.Exit(1)

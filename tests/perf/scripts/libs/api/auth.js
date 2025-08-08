@@ -1,6 +1,9 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
 import http from 'k6/http';
 import { check } from 'k6';
-import { BASE_URL } from '../../variables/variables.js';
+import { BASE_URL } from '../../variables/constants.js';
 
 function login(username, password) {
     const response = http.post(`${BASE_URL}auth/login`, JSON.stringify({

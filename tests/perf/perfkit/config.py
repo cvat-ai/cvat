@@ -1,3 +1,6 @@
+# Copyright (C) CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).parent.parent

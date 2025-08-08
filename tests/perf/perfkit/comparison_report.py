@@ -1,3 +1,6 @@
+# Copyright (C) CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
 from rich.table import Table
 
 from perfkit.config import ALLOWED_DELTAS
@@ -13,7 +16,7 @@ ReportRow = tuple[str, str, str, str, str]
 
 def build_report(
     k6_output_summary: K6Summary, baseline: dict[str, dict[str, float]]
-) -> tuple[list, bool]:
+) -> tuple[list[ReportRow], bool]:
     report: list[ReportRow] = []
     failed = False
 
@@ -41,19 +44,15 @@ def build_report(
             try:
                 baseline_value = baseline[metric_name][stat_name]
             except KeyError:
-                # add_report_row(metric_stat)
                 continue
             if baseline_value == 0:
                 continue
 
             allowed_delta: float | None = None
-            if metric_name in ALLOWED_DELTAS and stat_name in ALLOWED_DELTAS[metric_name]:
-                allowed_delta = ALLOWED_DELTAS[metric_name][stat_name]
-            else:
-                # add_report_row(metric_stat, baseline_value, stat_value)
+            if metric_name not in ALLOWED_DELTAS and stat_name not in ALLOWED_DELTAS[metric_name]:
                 continue
+            allowed_delta = ALLOWED_DELTAS[metric_name][stat_name]
 
-            assert allowed_delta
             delta = (stat_value - baseline_value) / baseline_value
             passed = abs(delta) <= allowed_delta
             if not passed:
