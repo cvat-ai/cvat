@@ -179,7 +179,9 @@ with ApiClient(configuration) as api_client:
 
 {{%tab header="Token authentication (deprecated)" %}}
 
-> This authentication option is deprecated and will be removed in future.
+{{% alert title="Warning" color="warning" %}}
+This authentication option is deprecated and will be removed in future.
+{{% /alert %}}
 
 ```python
 configuration = Configuration(
@@ -220,7 +222,9 @@ api_client.set_default_header("Origin", api_client.build_origin_header())
 
 {{%tab header="Token authentication (deprecated)" %}}
 
-> This authentication option is deprecated and will be removed in future.
+{{% alert title="Warning" color="warning" %}}
+This authentication option is deprecated and will be removed in future.
+{{% /alert %}}
 
 ```python
 from cvat_sdk.api_client import models

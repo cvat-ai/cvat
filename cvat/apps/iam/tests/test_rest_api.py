@@ -2,7 +2,9 @@
 # Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
+import base64
 
+from allauth.account.models import EmailAddress
 from allauth.account.views import EmailVerificationSentView
 from django.contrib.auth.models import User
 from django.test import override_settings
@@ -164,3 +166,45 @@ class UserRegisterAPITestCase(ApiTestBase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("sessionid", response.cookies)
         self.assertIn("csrftoken", response.cookies)
+
+    def _authenticate_with_basic_auth(self, *, should_be_authorized: bool):
+        credentials_str = f'{self.user_data["username"]}:{self.user_data["password1"]}'
+        response = self.client.get(
+            "/api/users/self",
+            format="json",
+            headers={
+                "Authorization": f"Basic {base64.b64encode(credentials_str.encode()).decode()}",
+            },
+        )
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK if should_be_authorized else status.HTTP_401_UNAUTHORIZED,
+        )
+
+    @override_settings(
+        ACCOUNT_EMAIL_REQUIRED=True,
+        ACCOUNT_EMAIL_VERIFICATION="mandatory",
+        EMAIL_BACKEND="django.core.mail.backends.console.EmailBackend",
+        ROOT_URLCONF=__name__,
+    )
+    def test_basic_authentication_respects_email_confirmation(self):
+        response = self._run_api_v2_user_register(self.user_data)
+        self._check_response(
+            response,
+            {
+                "first_name": "test_first",
+                "last_name": "test_last",
+                "username": "test_username",
+                "email": "test_email@test.com",
+                "email_verification_required": True,
+                "key": None,
+            },
+        )
+        db_user = User.objects.get(email=self.user_data["email"])
+        db_email_address = EmailAddress.objects.get_for_user(db_user, self.user_data["email"])
+        self.assertFalse(db_email_address.verified)
+        self._authenticate_with_basic_auth(should_be_authorized=False)
+
+        db_email_address.verified = True
+        db_email_address.save()
+        self._authenticate_with_basic_auth(should_be_authorized=True)
