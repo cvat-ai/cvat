@@ -26,7 +26,9 @@ class TestGetResources:
             ]:
                 endpoint = "/".join(endpoint.split("_"))
 
-            if endpoint == "annotations":
+            if endpoint == "api_tokens":
+                endpoint = "auth/api_tokens"
+            elif endpoint == "annotations":
                 objects = json.load(f)
                 for jid, annotations in objects["job"].items():
                     response = config.get_method("admin1", f"jobs/{jid}/annotations").json()
