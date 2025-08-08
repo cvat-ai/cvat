@@ -219,7 +219,9 @@ In the top right corner, near the nickname, click on the arrow > manage plan > *
 
 ## Adding and removing team members
 
-> **Solo plan** is **for personal use only**, you cannot add or remove team members.
+{{% alert title="Note" color="primary" %}}
+**Solo plan** is **for personal use only**, you cannot add or remove team members.
+{{% /alert %}}
 
 **Team plan** is for collaboration. To add members to your
 {{< ilink "/docs/manual/advanced/organization" "Organization" >}},
