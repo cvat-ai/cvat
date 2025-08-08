@@ -52,7 +52,7 @@ class ApiTokensViewSet(
     mixins.DestroyModelMixin,
     PartialUpdateModelMixin,
 ):
-    queryset = models.ApiToken.objects.none() # for API schema only
+    queryset = models.ApiToken.objects.none()  # for API schema only
 
     search_fields = ("name",)
     filter_fields = list(search_fields) + [
