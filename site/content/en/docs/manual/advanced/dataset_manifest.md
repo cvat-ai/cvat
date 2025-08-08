@@ -116,9 +116,11 @@ pip install -U pip
 pip install -r utils/dataset_manifest/requirements.in
 ```
 
-> Please note that if used with video this way, the results may be different from what
-> would the server decode. It is related to the ffmpeg library version. For this reason,
-> using the Docker-based version of the tool is recommended.
+{{% alert title="Note" color="primary" %}}
+Please note that if used with video this way, the results may be different from what
+would the server decode. It is related to the ffmpeg library version. For this reason,
+using the Docker-based version of the tool is recommended.
+{{% /alert %}}
 
 ### Examples
 
@@ -161,8 +163,10 @@ docker run -it --rm -u "$(id -u)":"$(id -g)" \
 The dataset manifest files are text files in JSONL format. These files have 2 sub-formats:
 _for video_ and _for images and 3d data_.
 
-> Each top-level entry enclosed in curly braces must use 1 string, no empty strings is allowed.
-> The formatting in the descriptions below is only for demonstration.
+{{% alert title="Note" color="primary" %}}
+Each top-level entry enclosed in curly braces must use 1 string, no empty strings is allowed.
+The formatting in the descriptions below is only for demonstration.
+{{% /alert %}}
 
 #### Dataset manifest for video
 

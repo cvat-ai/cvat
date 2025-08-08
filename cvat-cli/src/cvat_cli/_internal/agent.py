@@ -17,7 +17,7 @@ from collections import OrderedDict
 from collections.abc import Generator, Iterator, Sequence
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 import attrs
 import cvat_sdk.auto_annotation as cvataa
@@ -32,6 +32,7 @@ from cvat_sdk.auto_annotation.driver import (
 )
 from cvat_sdk.datasets.caching import make_cache_manager
 from cvat_sdk.exceptions import ApiException
+from typing_extensions import TypeAlias
 
 from .common import CriticalError, FunctionLoader
 
@@ -90,6 +91,20 @@ class _RecoverableExecutor:
             raise
 
 
+_TrackingStateIdGenerator: TypeAlias = Callable[[], str]
+
+
+def _default_tracking_state_id_generator() -> str:
+    # This is defined as a separate function so that tests can monkeypatch it
+    # in order to get deterministic state IDs.
+    return secrets.token_urlsafe(32)
+
+
+_current_function: cvataa.AutoAnnotationFunction
+_tracking_states: _TrackingStateContainer
+_tracking_state_id_generator: _TrackingStateIdGenerator
+
+
 @attrs.define
 class _ExtendedTrackingState:
     inner_state: Any  # the state produced by the AA function
@@ -104,7 +119,7 @@ class _TrackingStateContainer:
         self._id_to_ext_state: OrderedDict[str, _ExtendedTrackingState] = OrderedDict()
 
     def store(self, state: Any, shape_type: str, task_id: int, image_dims: tuple[int, int]) -> str:
-        state_id = secrets.token_urlsafe(32)
+        state_id = _tracking_state_id_generator()
         self._id_to_ext_state[state_id] = _ExtendedTrackingState(
             inner_state=state,
             original_shape_type=shape_type,
@@ -143,17 +158,16 @@ class _TrackingStateContainer:
             self._id_to_ext_state.popitem(last=False)
 
 
-_current_function: cvataa.AutoAnnotationFunction
-_tracking_states: _TrackingStateContainer
-
-
-def _worker_init(function_loader: FunctionLoader):
+def _worker_init(function_loader: FunctionLoader, state_id_generator):
     global _current_function
     _current_function = function_loader.load()
 
     if isinstance(_current_function.spec, cvataa.TrackingFunctionSpec):
         global _tracking_states
         _tracking_states = _TrackingStateContainer()
+
+        global _tracking_state_id_generator
+        _tracking_state_id_generator = state_id_generator
 
 
 def _worker_job_get_function_spec():
@@ -923,7 +937,10 @@ def run_agent(
     client: Client, function_loader: FunctionLoader, function_id: int, *, burst: bool
 ) -> None:
     with (
-        _RecoverableExecutor(initializer=_worker_init, initargs=[function_loader]) as executor,
+        _RecoverableExecutor(
+            initializer=_worker_init,
+            initargs=[function_loader, _default_tracking_state_id_generator],
+        ) as executor,
         tempfile.TemporaryDirectory() as cache_dir,
     ):
         client.config.cache_dir = Path(cache_dir, "cache")

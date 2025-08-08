@@ -114,19 +114,25 @@ On the {{< ilink "/docs/manual/advanced/projects#projects-page" "projects" >}}, 
 {{< ilink "/docs/manual/basics/tasks-page" "tasks" >}}, {{< ilink "/docs/manual/basics/jobs-page" "jobs" >}},
 and {{< ilink "/docs/manual/basics/cloud-storages" "cloud storage" >}} pages, you can use sorting and filters.
 
-> The applied filter and sorting will be displayed in the URL of your browser,
-> Thus, you can share the page with sorting and filter applied.
+{{% alert title="Note" color="primary" %}}
+The applied filter and sorting will be displayed in the URL of your browser,
+Thus, you can share the page with sorting and filter applied.
+{{% /alert %}}
 
 ### Sort by
 
 You can sort by the following parameters:
-- Jobs list: ID, assignee, updated date, [stage][stage], [state][state], task ID, project ID,
+- Jobs list: ID, assignee, updated date, {{< ilink "/docs/manual/basics/vocabulary#stage" "stage" >}},
+{{< ilink "/docs/manual/basics/vocabulary#state" "state" >}}, task ID, project ID,
 task name, project name.
-- Tasks list or tasks list on project page: ID, owner, status, assignee, updated date, [subset][subset], [mode][mode],
-[dimension][dimension], project ID, name, project name.
+- Tasks list or tasks list on project page: ID, owner, status, assignee, updated date,
+{{< ilink "/docs/manual/basics/vocabulary#subset" "subset" >}},
+{{< ilink "/docs/manual/basics/vocabulary#mode" "mode">}},
+{{< ilink "/docs/manual/basics/vocabulary#dimension" "dimension">}}, project ID, name, project name.
 - Projects list: ID, assignee, owner, status, name, updated date.
-- Cloud storages list: ID, provider type, updated date, display name, [resource][resource],
-[credentials][credentials], owner, description.
+- Cloud storages list: ID, provider type, updated date, display name,
+{{< ilink "/docs/manual/basics/vocabulary#resource" "resource" >}},
+{{< ilink "/docs/manual/basics/vocabulary#credentials" "credentials" >}}, owner, description.
 
 To apply sorting, drag the parameter to the top area above the horizontal bar.
 The parameters below the horizontal line will not be applied.
@@ -157,10 +163,3 @@ To select the time, you can select the hours and minutes using the scrolling lis
 Or you can select the current date and time by clicking the `Now` button.
 To apply, click `Ok`.
 
-[state]: /docs/manual/basics/vocabulary/#state
-[stage]: /docs/manual/basics/vocabulary/#stage
-[subset]: /docs/manual/basics/vocabulary/#subset
-[resource]: /docs/manual/basics/vocabulary/#resource
-[credentials]: /docs/manual/basics/vocabulary/#credentials
-[mode]: /docs/manual/basics/vocabulary/#mode
-[dimension]: /docs/manual/basics/vocabulary/#dimension

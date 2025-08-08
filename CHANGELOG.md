@@ -16,6 +16,65 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.43.0'></a>
+## \[2.43.0\] - 2025-08-07
+
+### Added
+
+- Django command to remove user with all resources `python manage.py deleteuser <user_id>`
+  (<https://github.com/cvat-ai/cvat/pull/9686>)
+
+### Changed
+
+- Better validation of fields specified in raw labels editor
+  (<https://github.com/cvat-ai/cvat/pull/9677>)
+
+- Optimized preview requests for Projects, Tasks, Jobs, etc. — now sent sequentially to reduce load on the server
+  (<https://github.com/cvat-ai/cvat_enterprise/pull/9692>)
+
+### Fixed
+
+- Issue dialogs appear outside the visible area when the issue is located near the right or bottom edges of the frame
+  (<https://github.com/cvat-ai/cvat/pull/9642>)
+
+- Job meta could include `deleted_frames` outside the job
+  (<https://github.com/cvat-ai/cvat/pull/9690>)
+
+<a id='changelog-2.42.0'></a>
+## \[2.42.0\] - 2025-07-29
+
+### Added
+
+- \[SDK, CLI\] Added an auto-annotation function interface for tracker
+  functions, and agent support for it
+  (<https://github.com/cvat-ai/cvat/pull/9579>)
+
+- \[SDK\] `TaskDataset` now supports tasks with video chunks when created
+  with `MediaDownloadPolicy.PRELOAD_ALL`; this also means that agents can
+  process interactive detection requests on such tasks
+  (<https://github.com/cvat-ai/cvat/pull/9579>)
+
+- Support for cgroup v2 to calculate the number of threads when downloading images from cloud storages
+  (<https://github.com/cvat-ai/cvat/pull/9668>)
+
+### Fixed
+
+- Bump Python runtime version for Segment Anything interactor Nuclio function from 3.8 to 3.10
+  (<https://github.com/cvat-ai/cvat/pull/9593>)
+
+- User could not log in if an email used for the invitation had a different case
+  than the one used during manual registration
+  (<https://github.com/cvat-ai/cvat/pull/9629>)
+
+- Fixed downloading images only in 1 thread when preparing chunks in case of using cloud storage
+  (<https://github.com/cvat-ai/cvat/pull/9668>)
+
+### Security
+
+- Added missing email verification check when Basic HTTP authentication is used
+  and server is configured to require email verification (`ACCOUNT_EMAIL_VERIFICATION` == `mandatory`)
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-fxgh-m76j-242q>)
+
 <a id='changelog-2.41.0'></a>
 ## \[2.41.0\] - 2025-07-09
 
