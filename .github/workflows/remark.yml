@@ -11,7 +11,8 @@ jobs:
 
       - name: Run checks
         run: |
-          yarn install --frozen-lockfile
+          corepack enable yarn
+          yarn install --immutable
 
           echo "Remark version: "`npx remark --version`
           npx remark --quiet --frail -i .remarkignore .
