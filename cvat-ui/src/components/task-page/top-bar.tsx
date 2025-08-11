@@ -15,10 +15,11 @@ import { Task } from 'cvat-core-wrapper';
 
 interface DetailsComponentProps {
     taskInstance: Task;
+    onUpdateTask: (task: Task) => Promise<void>;
 }
 
 export default function DetailsComponent(props: DetailsComponentProps): JSX.Element {
-    const { taskInstance } = props;
+    const { taskInstance, onUpdateTask } = props;
     const history = useHistory();
 
     return (
@@ -49,6 +50,7 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
             <Col>
                 <TaskActionsComponent
                     taskInstance={taskInstance}
+                    onUpdateTask={onUpdateTask}
                     triggerElement={(
                         <Button size='middle' className='cvat-task-page-actions-button cvat-actions-menu-button'>
                             <Text className='cvat-text-color'>Actions</Text>

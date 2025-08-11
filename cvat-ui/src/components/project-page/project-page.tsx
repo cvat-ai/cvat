@@ -141,6 +141,12 @@ export default function ProjectPageComponent(): JSX.Element {
         dispatch(selectionActions.selectResources(selectableTaskIds, SelectedResourceType.TASKS));
     }, [selectableTaskIds]);
 
+    const onUpdateProject = useCallback(async (project: Project) => {
+        dispatch(updateProjectAsync(project)).then((updatedProject: Project) => {
+            setProjectInstance(updatedProject);
+        });
+    }, []);
+
     if (fechingProject || id in deletes) {
         return <Spin size='large' className='cvat-spinner' />;
     }
@@ -243,13 +249,9 @@ export default function ProjectPageComponent(): JSX.Element {
                     opacity: 0.7,
                 } : {}}
             >
-                <ProjectTopBar projectInstance={projectInstance} />
+                <ProjectTopBar projectInstance={projectInstance} onUpdateProject={onUpdateProject} />
                 <DetailsComponent
-                    onUpdateProject={(project: Project) => {
-                        dispatch(updateProjectAsync(project)).then((updatedProject: Project) => {
-                            setProjectInstance(updatedProject);
-                        });
-                    }}
+                    onUpdateProject={onUpdateProject}
                     project={projectInstance}
                 />
                 <Row justify='space-between' align='middle' className='cvat-project-page-tasks-bar'>

@@ -23,10 +23,13 @@ interface Props {
     taskInstance: Task;
     triggerElement: JSX.Element;
     dropdownTrigger?: ('click' | 'hover' | 'contextMenu')[];
+    onUpdateTask?: (task: Task) => void;
 }
 
 function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
-    const { taskInstance, triggerElement, dropdownTrigger } = props;
+    const {
+        taskInstance, triggerElement, dropdownTrigger, onUpdateTask,
+    } = props;
     const dispatch = useDispatch();
 
     const selectedIds = useSelector((state: CombinedState) => state.tasks.selected);
@@ -99,7 +102,9 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
 
     const onUpdateTaskAssignee = useCallback(async (assignee: User | null) => {
         const allTaskIDs = selectedIds.includes(taskInstance.id) ? selectedIds : [taskInstance.id];
-        const tasksToUpdate = allTasks.filter((task) => allTaskIDs.includes(task.id));
+        const tasksToUpdate = selectedIds.includes(taskInstance.id) ?
+            allTasks.filter((task) => allTaskIDs.includes(task.id)) :
+            [taskInstance];
         const tasksNeedingUpdate = tasksToUpdate.filter((task) => task.assignee?.id !== assignee?.id);
 
         stopEditField();
@@ -111,7 +116,11 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
             tasksNeedingUpdate,
             async (task) => {
                 task.assignee = assignee;
-                await dispatch(updateTaskAsync(task, { assignee }));
+                if (onUpdateTask && task.id === taskInstance.id) {
+                    onUpdateTask(task);
+                } else {
+                    await dispatch(updateTaskAsync(task, { assignee }));
+                }
             },
             (task, idx, total) => `Updating assignee for task #${task.id} (${idx + 1}/${total})`,
         ));

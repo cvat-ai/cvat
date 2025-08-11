@@ -21,10 +21,13 @@ interface Props {
     projectInstance: Project;
     triggerElement: JSX.Element;
     dropdownTrigger?: ('click' | 'hover' | 'contextMenu')[];
+    onUpdateProject?: (project: Project) => Promise<void>;
 }
 
 function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
-    const { projectInstance, triggerElement, dropdownTrigger } = props;
+    const {
+        projectInstance, triggerElement, dropdownTrigger, onUpdateProject,
+    } = props;
     const dispatch = useDispatch();
 
     const selectedIds = useSelector((state: CombinedState) => state.projects.selected);
@@ -58,7 +61,10 @@ function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
         const allProjectIDs = selectedIds.includes(projectInstance.id) ?
             selectedIds :
             [projectInstance.id, ...selectedIds];
-        const projectsToUpdate = allProjects.filter((project) => allProjectIDs.includes(project.id));
+
+        const projectsToUpdate = selectedIds.includes(projectInstance.id) ?
+            allProjects.filter((project) => allProjectIDs.includes(project.id)) :
+            [projectInstance];
 
         const projectsNeedingUpdate = projectsToUpdate.filter((project) => project.assignee?.id !== assignee?.id);
 
@@ -71,7 +77,11 @@ function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
             projectsNeedingUpdate,
             async (project) => {
                 project.assignee = assignee;
-                await dispatch(updateProjectAsync(project));
+                if (onUpdateProject && project.id === projectInstance.id) {
+                    onUpdateProject(project);
+                } else {
+                    await dispatch(updateProjectAsync(project));
+                }
             },
             (project, idx, total) => `Updating assignee for project #${project.id} (${idx + 1}/${total})`,
         ));
