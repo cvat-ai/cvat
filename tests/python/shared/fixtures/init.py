@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 CVAT_ROOT_DIR = next(dir.parent for dir in Path(__file__).parents if dir.name == "tests")
 CVAT_DB_DIR = ASSETS_DIR / "cvat_db"
+KUBE_CLICKHOUSE_INIT_SCRIPTS_DIR = "/docker-entrypoint-initdb.d"
 PREFIX = "test"
 
 CONTAINER_NAME_FILES = ["docker-compose.tests.yml"]
@@ -191,6 +192,11 @@ def docker_exec_clickhouse_db(command):
     _run(["docker", "exec", f"{PREFIX}_cvat_clickhouse_1"] + command)
 
 
+def kube_copy_to_clickhouse_db(src_path: Path, dst_path: Path):
+    pod_name = _kube_get_clichouse_pod_name()
+    _run(["kubectl", "cp", str(src_path), f"{pod_name}:{dst_path}"])
+
+
 def kube_exec_clickhouse_db(command):
     pod_name = _kube_get_clichouse_pod_name()
     _run(["kubectl", "exec", pod_name, "--"] + command)
@@ -245,7 +251,8 @@ def kube_restore_clickhouse_db():
         [
             "/bin/sh",
             "-c",
-            'clickhouse-client --query "DROP TABLE IF EXISTS ${CLICKHOUSE_DB}.events;" && /bin/sh /docker-entrypoint-startdb.d/init.sh',
+            'clickhouse-client --query "DROP TABLE IF EXISTS ${CLICKHOUSE_DB}.events;"'
+            f" && /bin/sh {KUBE_CLICKHOUSE_INIT_SCRIPTS_DIR}/init.sh",
         ]
     )
 
@@ -520,6 +527,10 @@ def kube_start(cvat_db_dir):
     kube_cp(cvat_db_dir / "data.json", f"{server_pod_name}:/tmp/data.json")
 
     wait_for_services()
+
+    kube_copy_to_clickhouse_db(
+        CVAT_ROOT_DIR / "components" / "analytics" / "clickhouse", KUBE_CLICKHOUSE_INIT_SCRIPTS_DIR
+    )
 
     kube_exec_cvat("python manage.py loaddata /tmp/data.json")
 
