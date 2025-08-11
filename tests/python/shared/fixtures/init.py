@@ -531,6 +531,7 @@ def kube_start(cvat_db_dir):
     kube_copy_to_clickhouse_db(
         CVAT_ROOT_DIR / "components" / "analytics" / "clickhouse", KUBE_CLICKHOUSE_INIT_SCRIPTS_DIR
     )
+    kube_exec_clickhouse_db(["ls", "-la", f"{KUBE_CLICKHOUSE_INIT_SCRIPTS_DIR}/"])
     kube_exec_clickhouse_db(
         [
             "mv",
