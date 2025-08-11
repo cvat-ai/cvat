@@ -531,6 +531,10 @@ def kube_start(cvat_db_dir):
     kube_copy_to_clickhouse_db(
         CVAT_ROOT_DIR / "components" / "analytics" / "clickhouse", KUBE_CLICKHOUSE_INIT_SCRIPTS_DIR
     )
+    kube_exec_clickhouse_db(
+        f"mv '{KUBE_CLICKHOUSE_INIT_SCRIPTS_DIR}/clickhouse/*' '{KUBE_CLICKHOUSE_INIT_SCRIPTS_DIR}'"
+        f"&& rm '{KUBE_CLICKHOUSE_INIT_SCRIPTS_DIR}/clickhouse'"
+    )
 
     kube_exec_cvat("python manage.py loaddata /tmp/data.json")
 
