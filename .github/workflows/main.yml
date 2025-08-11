@@ -320,6 +320,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
             node-version: '22.x'
+            # NOTE: corepack is not bundled after Node 25
+            # https://nodejs.org/docs/v22.18.0/api/corepack.html#corepack
 
       - name: Download CVAT server image
         uses: actions/download-artifact@v4
