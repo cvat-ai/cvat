@@ -6,9 +6,10 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { Col, Row } from 'antd/lib/grid';
-import { CombinedState } from 'reducers';
+import { CombinedState, SelectedResourceType } from 'reducers';
 import { Job } from 'cvat-core-wrapper';
 import dimensions from 'utils/dimensions';
+import BulkWrapper from 'components/bulk-wrapper';
 import JobCard from './job-card';
 
 function JobsContentComponent(): JSX.Element {
@@ -26,20 +27,33 @@ function JobsContentComponent(): JSX.Element {
         [],
     );
 
+    const jobIdToIndex = new Map<number, number>();
+    jobs.forEach((j, idx) => jobIdToIndex.set(j.id, idx));
+
     return (
         <Row justify='center' align='middle' className='cvat-resource-list-wrapper'>
             <Col className='cvat-jobs-page-list' {...dimensions}>
-                {groupedJobs.map(
-                    (jobInstances: Job[]): JSX.Element => (
-                        <Row key={jobInstances[0].id}>
-                            {jobInstances.map((job: Job) => (
-                                <Col span={6} key={job.id}>
-                                    <JobCard job={job} key={job.id} />
-                                </Col>
-                            ))}
-                        </Row>
-                    ),
-                )}
+                <BulkWrapper currentResourceIds={jobs.map((j) => j.id)} resourceType={SelectedResourceType.JOBS}>
+                    {(selectProps) => {
+                        const renderJobRow = (jobInstances: Job[]): JSX.Element => (
+                            <Row key={jobInstances[0].id} className='cvat-jobs-list-row'>
+                                {jobInstances.map((job: Job) => {
+                                    const globalIdx = jobIdToIndex.get(job.id) ?? 0;
+                                    return (
+                                        <Col span={6} key={job.id}>
+                                            <JobCard
+                                                key={job.id}
+                                                job={job}
+                                                {...selectProps(job.id, globalIdx)}
+                                            />
+                                        </Col>
+                                    );
+                                })}
+                            </Row>
+                        );
+                        return groupedJobs.map(renderJobRow);
+                    }}
+                </BulkWrapper>
             </Col>
         </Row>
     );

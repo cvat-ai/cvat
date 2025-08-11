@@ -13,6 +13,8 @@ CVAT can use models from the following sources:
 - [Pre-installed models](#models).
 - Models integrated from [Hugging Face and Roboflow](#adding-models-from-hugging-face-and-roboflow).
 - {{< ilink "/docs/manual/advanced/serverless-tutorial" "Self-hosted models deployed with Nuclio" >}}.
+- {{< ilink "/docs/enterprise/segment-anything-2-tracker" "AI agent functions (SAM2 tracking)" >}}
+for CVAT Online and Enterprise.
 
 The following table describes the available options:
 
@@ -21,6 +23,7 @@ The following table describes the available options:
 | **Price**                                   | Free                   | See [Pricing](https://www.cvat.ai/pricing/cvat-online) |
 | **Models**                                  | You have to add models | You can use pre-installed models                       |
 | **Hugging Face & Roboflow <br>integration** | Not supported          | Supported                                              |
+| **AI Agent Functions**                      | Supported (Enterprise) | Supported (SAM2 tracking available)                   |
 
 See:
 
@@ -81,10 +84,12 @@ papers and official documentation.
 
 Automatic annotation uses pre-installed and added models.
 
-> For self-hosted solutions,
-> you need to
-> {{< ilink "/docs/administration/advanced/installation_automatic_annotation" "install Automatic Annotation first" >}}
-> and {{< ilink "/docs/manual/advanced/models" "add models" >}}.
+{{% alert title="Note" color="primary" %}}
+For self-hosted solutions,
+you need to
+{{< ilink "/docs/administration/advanced/installation_automatic_annotation" "install Automatic Annotation first" >}}
+and {{< ilink "/docs/manual/advanced/models" "add models" >}}.
+{{% /alert %}}
 
 List of pre-installed models:
 

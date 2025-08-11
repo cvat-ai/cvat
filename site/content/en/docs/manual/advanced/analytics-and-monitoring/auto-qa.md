@@ -75,8 +75,10 @@ Ground Truth jobs and Quality settings. Ground Truth jobs are configured at the 
 In this section, we explain how to set up a Ground Truth job.
 Read more about quality settings [here](#annotation-quality-settings).
 
-> A **Ground truth** job is considered **configured**
-> if it is at the **acceptance** stage and in the **completed** state.
+{{% alert title="Note" color="primary" %}}
+A **Ground truth** job is considered **configured**
+if it is at the **acceptance** stage and in the **completed** state.
+{{% /alert %}}
 
 A _configured_ Ground Truth job is required for all quality computations in CVAT.
 
@@ -98,8 +100,10 @@ A _configured_ Ground Truth job is required for all quality computations in CVAT
 {{% /tab %}}
 
 {{%tab header="In an existing task" %}}
-> For already existing tasks only the Ground Truth validation mode is available. If you want
-> to use Honeypots for your task, you will need to recreate the task.
+{{% alert title="Note" color="primary" %}}
+For already existing tasks only the Ground Truth validation mode is available. If you want
+to use Honeypots for your task, you will need to recreate the task.
+{{% /alert %}}
 
 1. Open the task page
 2. Click **+**.
