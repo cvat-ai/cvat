@@ -536,7 +536,7 @@ def kube_start(cvat_db_dir):
             "/bin/sh",
             "-c",
             f"mv "
-            f"'{KUBE_CLICKHOUSE_INIT_SCRIPTS_DIR}/clickhouse/*' "
+            f"{KUBE_CLICKHOUSE_INIT_SCRIPTS_DIR}/clickhouse/* "
             f"'{KUBE_CLICKHOUSE_INIT_SCRIPTS_DIR}/'",
         ]
     )
