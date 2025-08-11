@@ -1838,6 +1838,27 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
             }
 
+            // Handle alwaysShowDirection configuration changes
+            if (configuration.alwaysShowDirection && !this.configuration.alwaysShowDirection) {
+                // Show direction arrows for all polygon/polyline shapes
+                for (const clientID in this.drawnStates) {
+                    const state = this.drawnStates[clientID];
+                    if ((state.shapeType === 'polygon' || state.shapeType === 'polyline') && 
+                        +clientID !== activeElement.clientID) {
+                        this.showDirection(state, this.svgShapes[+clientID] as SVG.Polygon | SVG.PolyLine);
+                    }
+                }
+            } else if (configuration.alwaysShowDirection === false && this.configuration.alwaysShowDirection) {
+                // Hide direction arrows for non-active polygon/polyline shapes
+                for (const clientID in this.drawnStates) {
+                    const state = this.drawnStates[clientID];
+                    if ((state.shapeType === 'polygon' || state.shapeType === 'polyline') && 
+                        +clientID !== activeElement.clientID) {
+                        this.hideDirection(this.svgShapes[+clientID] as SVG.Polygon | SVG.PolyLine);
+                    }
+                }
+            }
+
             const recreateText = configuration.textContent !== this.configuration.textContent;
             const updateTextPosition = configuration.displayAllText !== this.configuration.displayAllText ||
                 configuration.textFontSize !== this.configuration.textFontSize ||
@@ -2661,6 +2682,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.updateTextPosition(this.svgTexts[state.clientID]);
             }
 
+            // Show direction arrows for polygons and polylines if alwaysShowDirection is enabled
+            if (this.configuration.alwaysShowDirection && 
+                (state.shapeType === 'polygon' || state.shapeType === 'polyline')) {
+                this.showDirection(state, this.svgShapes[state.clientID] as SVG.Polygon | SVG.PolyLine);
+            }
+
             this.drawnStates[state.clientID] = this.saveState(state);
         }
     }
@@ -2855,13 +2882,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         if (state.shapeType !== 'mask') {
             const showDirection = (): void => {
-                if (['polygon', 'polyline'].includes(state.shapeType)) {
+                if (['polygon', 'polyline'].includes(state.shapeType) && !this.configuration.alwaysShowDirection) {
                     this.showDirection(state, shape as SVG.Polygon | SVG.PolyLine);
                 }
             };
 
             const hideDirection = (): void => {
-                if (['polygon', 'polyline'].includes(state.shapeType)) {
+                if (['polygon', 'polyline'].includes(state.shapeType) && !this.configuration.alwaysShowDirection) {
                     this.hideDirection(shape as SVG.Polygon | SVG.PolyLine);
                 }
             };

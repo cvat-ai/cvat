@@ -98,6 +98,7 @@ export interface Configuration {
     outlinedBorders?: string | false;
     resetZoom?: boolean;
     hideEditedObject?: boolean;
+    alwaysShowDirection?: boolean;
 }
 
 export interface BrushTool {

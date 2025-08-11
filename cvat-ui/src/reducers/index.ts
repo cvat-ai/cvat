@@ -925,6 +925,7 @@ export interface WorkspaceSettingsState {
     textPosition: 'auto' | 'center';
     textContent: string;
     showTagsOnFrame: boolean;
+    showPolygonDirectionAlways: boolean;
 }
 
 export interface ShapesSettingsState {

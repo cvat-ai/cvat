@@ -19,6 +19,7 @@ import {
     switchTextPosition,
     switchTextContent,
     switchShowingTagsOnFrame,
+    switchShowingPolygonDirectionAlways,
     switchAdaptiveZoom,
 } from 'actions/settings-actions';
 
@@ -41,6 +42,7 @@ interface StateToProps {
     textPosition: 'auto' | 'center';
     textContent: string;
     showTagsOnFrame: boolean;
+    showPolygonDirectionAlways: boolean;
 }
 
 interface DispatchToProps {
@@ -58,6 +60,7 @@ interface DispatchToProps {
     onChangeTextPosition(position: 'auto' | 'center'): void;
     onChangeTextContent(textContent: string[]): void;
     onSwitchShowingTagsOnFrame(enabled: boolean): void;
+    onSwitchShowingPolygonDirectionAlways(enabled: boolean): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -77,6 +80,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         textPosition,
         textContent,
         showTagsOnFrame,
+        showPolygonDirectionAlways,
     } = workspace;
 
     return {
@@ -94,6 +98,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         textPosition,
         textContent,
         showTagsOnFrame,
+        showPolygonDirectionAlways,
     };
 }
 
@@ -112,6 +117,7 @@ const mapDispatchToProps: DispatchToProps = {
     onChangeTextPosition: switchTextPosition,
     onChangeTextContent: switchTextContent,
     onSwitchShowingTagsOnFrame: switchShowingTagsOnFrame,
+    onSwitchShowingPolygonDirectionAlways: switchShowingPolygonDirectionAlways,
 };
 
 function WorkspaceSettingsContainer(props: StateToProps & DispatchToProps): JSX.Element {
