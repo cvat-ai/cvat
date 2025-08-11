@@ -5,8 +5,9 @@ ENV TERM=xterm \
     LC_ALL='C.UTF-8'
 
 # Install dependencies
-COPY package.json /tmp/
+RUN npm install -g corepack
 COPY .yarnrc.yml /tmp/
+COPY package.json /tmp/
 COPY yarn.lock /tmp/
 COPY cvat-core/package.json /tmp/cvat-core/
 COPY cvat-canvas/package.json /tmp/cvat-canvas/
@@ -16,7 +17,6 @@ COPY cvat-data/package.json /tmp/cvat-data/
 
 # Install common dependencies
 WORKDIR /tmp/
-RUN npm install -g corepack && corepack enable yarn
 RUN DISABLE_HUSKY=1 yarn install --immutable
 
 # Build source code
