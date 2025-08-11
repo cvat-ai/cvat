@@ -5,7 +5,7 @@ import threading
 import time
 import psutil
 from typing import Callable
-from console_print import console
+from perfkit.console_print import console
 
 
 def start_metrics_watcher(
