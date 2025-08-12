@@ -55,7 +55,7 @@ RUN curl -sL https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.gz --outpu
 
 COPY utils/dataset_manifest/requirements.txt /tmp/utils/dataset_manifest/requirements.txt
 
-ARG AV_VERSION=14.4.0
+ARG AV_VERSION=15.0.0
 
 # Since we're using pip-compile-multi, each dependency can only be listed in
 # one requirements file. In the case of PyAV, that should be
@@ -70,6 +70,11 @@ RUN --mount=type=cache,target=/root/.cache/pip/http-v2 \
         # Work around https://github.com/PyAV-Org/PyAV/issues/1140
         pip install setuptools wheel 'cython<3'; \
         python3 -m pip wheel --no-binary=av --no-build-isolation \
+            -r /tmp/utils/dataset_manifest/requirements.txt \
+            -w /tmp/wheelhouse; \
+    elif [ "$AV_MAJOR" -ge 15 ]; then \
+        # without this env var fails because it is not a virtual environment
+        GITHUB_ACTIONS=true python3 -m pip wheel --no-binary=av \
             -r /tmp/utils/dataset_manifest/requirements.txt \
             -w /tmp/wheelhouse; \
     else \
