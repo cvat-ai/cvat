@@ -22,7 +22,9 @@ Each element contains:
   - assignee
 - menu to navigate to a task, project, or bug tracker.
 
-> To open the job in a new tab, click on the job by holding `Ctrl`.
+{{% alert title="Note" color="primary" %}}
+To open the job in a new tab, click on the job by holding `Ctrl`.
+{{% /alert %}}
 
 In the upper left corner, there is a search bar, using which you can find the job by assignee, stage, state, etc.
 In the upper right corner, there are {{< ilink "/docs/manual/advanced/filter#sort-by" "sorting" >}},
@@ -30,7 +32,9 @@ In the upper right corner, there are {{< ilink "/docs/manual/advanced/filter#sor
 
 ## Filter
 
-> Applying a filter disables the {{< ilink "/docs/manual/advanced/filter#quick-filters" "quick filter" >}}.
+{{% alert title="Note" color="primary" %}}
+Applying a filter disables the {{< ilink "/docs/manual/advanced/filter#quick-filters" "quick filter" >}}.
+{{% /alert %}}
 
 The filter works similarly to the filters for annotation,
 you can create rules from [properties](#supported-properties-for-jobs-list),

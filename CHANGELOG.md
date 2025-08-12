@@ -16,6 +16,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.43.0'></a>
+## \[2.43.0\] - 2025-08-07
+
+### Added
+
+- Django command to remove user with all resources `python manage.py deleteuser <user_id>`
+  (<https://github.com/cvat-ai/cvat/pull/9686>)
+
+### Changed
+
+- Better validation of fields specified in raw labels editor
+  (<https://github.com/cvat-ai/cvat/pull/9677>)
+
+- Optimized preview requests for Projects, Tasks, Jobs, etc. — now sent sequentially to reduce load on the server
+  (<https://github.com/cvat-ai/cvat_enterprise/pull/9692>)
+
+### Fixed
+
+- Issue dialogs appear outside the visible area when the issue is located near the right or bottom edges of the frame
+  (<https://github.com/cvat-ai/cvat/pull/9642>)
+
+- Job meta could include `deleted_frames` outside the job
+  (<https://github.com/cvat-ai/cvat/pull/9690>)
+
 <a id='changelog-2.42.0'></a>
 ## \[2.42.0\] - 2025-07-29
 

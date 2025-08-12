@@ -163,7 +163,12 @@ Cypress.Commands.add('inviteMembersToOrganization', (members) => {
 Cypress.Commands.add('removeMemberFromOrganization', (username) => {
     cy.contains('.cvat-organization-member-item-username', username)
         .parents('.cvat-organization-member-item')
-        .find('.cvat-organization-member-item-remove')
+        .find('.cvat-organization-actions-button')
+        .click();
+    cy.get('.cvat-organization-membership-actions-menu')
+        .should('exist')
+        .and('be.visible')
+        .contains('Delete')
         .click();
     cy.get('.cvat-modal-organization-member-remove')
         .contains('button', 'Yes, remove')

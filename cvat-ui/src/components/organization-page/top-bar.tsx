@@ -30,7 +30,12 @@ import {
 } from 'actions/organization-actions';
 import { OrganizationMembersQuery } from 'reducers';
 import { Organization, User } from 'cvat-core-wrapper';
-import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
+import {
+    SortingComponent,
+    ResourceFilterHOC,
+    defaultVisibility,
+    ResourceSelectionInfo,
+} from 'components/resource-sorting-filtering';
 
 import InvitationModal from './invitation-modal';
 
@@ -46,6 +51,8 @@ export interface Props {
     onApplySearch: (search: string | null) => void;
     onApplyFilter: (filter: string | null) => void;
     onApplySorting: (sort: string | null) => void;
+    selectedCount: number;
+    onSelectAll: () => void;
 }
 
 export enum MenuActions {
@@ -60,7 +67,7 @@ const FilteringComponent = ResourceFilterHOC(
 function OrganizationTopBar(props: Readonly<Props>): JSX.Element {
     const {
         organizationInstance, userInstance, fetchMembers, query,
-        onApplyFilter, onApplySearch, onApplySorting,
+        onApplyFilter, onApplySearch, onApplySorting, selectedCount, onSelectAll,
     } = props;
     const {
         owner, createdDate, description, updatedDate, slug, name, contact,
@@ -341,6 +348,7 @@ function OrganizationTopBar(props: Readonly<Props>): JSX.Element {
                         className='cvat-organization-page-search-bar'
                         placeholder='Search ...'
                     />
+                    <ResourceSelectionInfo selectedCount={selectedCount} onSelectAll={onSelectAll} />
                 </Col>
                 <Col>
                     <SortingComponent
