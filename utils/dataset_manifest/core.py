@@ -35,7 +35,10 @@ class VideoStreamReader:
             for packet in container.demux(video_stream):
                 for frame in packet.decode():
                     # check type of first frame
-                    if not frame.pict_type.name == "I":
+                    if (
+                        av.__version__ < "14" and not frame.pict_type.name == "I"
+                        or av.__version__ >= "14" and not frame.pict_type == av.video.frame.PictureType.I
+                    ):
                         raise InvalidVideoError("The first frame is not a key frame")
 
                     # get video resolution

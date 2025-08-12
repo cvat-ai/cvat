@@ -558,9 +558,9 @@ class _AvVideoReading:
         try:
             yield container
         finally:
-            # fixes a memory leak in input container closing
-            # https://github.com/PyAV-Org/PyAV/issues/1117
             if av.__version__ < "14":
+                # fixes a memory leak in input container closing
+                # https://github.com/PyAV-Org/PyAV/issues/1117
                 for stream in container.streams:
                     context = stream.codec_context
                     if context and context.is_open:
@@ -1042,6 +1042,11 @@ class Mpeg4ChunkWriter(IChunkWriter):
         video_stream.pix_fmt = "yuv420p"
         video_stream.width = w
         video_stream.height = h
+
+        if av.__version__ >= "14":
+            video_stream.profile = options["profile"]
+            options = {k: options[k] for k in options if k != "profile"}
+
         video_stream.options = options
 
         return video_stream
