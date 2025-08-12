@@ -22661,11 +22661,29 @@
   "fields": {
     "prefix": "UODahKbn",
     "hashed_key": "md5$damuD8CQt8fOi6Tnn2TWYF$48aacd12520f4ac63e1132bc2ffe79fa",
-    "created": "2000-01-01T01:00:00.000Z",
+    "created": "2000-01-01T01:00:00Z",
     "name": "test stale token",
     "revoked": false,
     "expiry_date": null,
     "updated_date": "2010-01-01T15:07:32.016Z",
+    "last_used_date": null,
+    "read_only": true,
+    "owner": [
+      "admin2"
+    ]
+  }
+},
+{
+  "model": "api_tokens.apitoken",
+  "pk": 7,
+  "fields": {
+    "prefix": "gIUANJCa",
+    "hashed_key": "md5$gsxukSI2wEfdrmol6icK4T$c38c40fd30f6be101875be1a3df25746",
+    "created": "2025-08-12T10:30:10.206Z",
+    "name": "test readonly key",
+    "revoked": false,
+    "expiry_date": null,
+    "updated_date": "2025-08-12T10:30:10.206Z",
     "last_used_date": null,
     "read_only": true,
     "owner": [

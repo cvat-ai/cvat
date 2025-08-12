@@ -568,6 +568,7 @@ def api_tokens():
         3: "XQRwNl8D.N5EYCzdyWdroeVVfJylkquAmBqgt9Kw2",  # nosec
         4: "waUchCLi.wWxJTdYBt6R8auMse86bwHobMomjQvEB",  # nosec
         5: "2HVbBoWR.ZJqJtm3TEKEkjqZwyoL7Ig71LVvKRj79",  # nosec
+        7: "gIUANJCa.W4Y101GNS8wOyFcncvxMZjTEnU7dzAUF",  # nosec
     }
 
     for api_token in data.raw_data:

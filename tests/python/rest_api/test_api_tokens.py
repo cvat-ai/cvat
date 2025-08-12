@@ -11,7 +11,7 @@ from pytest_cases import parametrize
 
 from shared.utils.config import make_api_client
 
-from .utils import CollectionSimpleFilterTestBase
+from .utils import CollectionSimpleFilterTestBase, export_backup, export_dataset
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -249,7 +249,7 @@ class TestDeleteApiToken:
 
 
 class TestTokenAuthPermissions:
-    # Some operations are not allowed with token auth for security reasons
+    # Some operations are not allowed with token auth for security reasons, even if not read only
 
     def test_cannot_change_password_when_using_token_auth(self, admin_user, api_tokens_by_username):
         token = next(t for t in api_tokens_by_username[admin_user] if not t["read_only"])
@@ -309,6 +309,60 @@ class TestTokenAuthPermissions:
             api_client.users_api.partial_update(
                 user["id"], patched_user_request=models.PatchedUserRequest(first_name="new name")
             )
+
+    @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
+    @parametrize("is_readonly", [True, False])
+    @parametrize("export_type", ["annotations", "dataset", "backup"])
+    def test_token_can_export_project(
+        self, admin_user, api_tokens_by_username, projects, export_type, is_readonly
+    ):
+        token = next(t for t in api_tokens_by_username[admin_user] if t["read_only"] == is_readonly)
+
+        project_id = next(p["id"] for p in projects if p["tasks"]["count"] > 0)
+
+        with make_api_client(access_token=token["private_key"]) as api_client:
+            if export_type in ("annotations", "dataset"):
+                export_dataset(
+                    api_client.projects_api, id=project_id, save_images=(export_type == "dataset")
+                )
+            elif export_type == "backup":
+                export_backup(api_client.projects_api, id=project_id)
+
+    @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
+    @parametrize("is_readonly", [True, False])
+    @parametrize("export_type", ["annotations", "dataset", "backup"])
+    def test_token_can_export_task(
+        self, admin_user, api_tokens_by_username, tasks, export_type, is_readonly
+    ):
+        token = next(t for t in api_tokens_by_username[admin_user] if t["read_only"] == is_readonly)
+
+        task_id = next(p["id"] for p in tasks if p["size"] > 0)
+
+        with make_api_client(access_token=token["private_key"]) as api_client:
+            if export_type in ("annotations", "dataset"):
+                export_dataset(
+                    api_client.tasks_api, id=task_id, save_images=(export_type == "dataset")
+                )
+            elif export_type == "backup":
+                export_backup(api_client.tasks_api, id=task_id)
+
+    @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
+    @parametrize("is_readonly", [True, False])
+    @parametrize("export_type", ["annotations", "dataset"])
+    def test_token_can_export_jobs(
+        self, admin_user, api_tokens_by_username, jobs, export_type, is_readonly
+    ):
+        token = next(t for t in api_tokens_by_username[admin_user] if t["read_only"] == is_readonly)
+
+        job_id = next(p["id"] for p in jobs)
+
+        with make_api_client(access_token=token["private_key"]) as api_client:
+            if export_type in ("annotations", "dataset"):
+                export_dataset(
+                    api_client.jobs_api, id=job_id, save_images=(export_type == "dataset")
+                )
+            elif export_type == "backup":
+                export_backup(api_client.jobs_api, id=job_id)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")

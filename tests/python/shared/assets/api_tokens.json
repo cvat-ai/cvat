@@ -1,8 +1,18 @@
 {
-  "count": 3,
+  "count": 4,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "created_date": "2025-08-12T10:30:10.206000Z",
+      "expiry_date": null,
+      "id": 7,
+      "last_used_date": null,
+      "name": "test readonly key",
+      "owner": 18,
+      "read_only": true,
+      "updated_date": "2025-08-12T10:30:10.206000Z"
+    },
     {
       "created_date": "2025-07-17T16:19:46.576000Z",
       "expiry_date": null,
