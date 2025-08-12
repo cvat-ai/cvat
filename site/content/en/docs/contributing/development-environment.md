@@ -16,10 +16,10 @@ description: 'Installing a development environment for different operating syste
   ```
 
   ```bash
-  # Install Node.js 20 and enable yarn
+  # Install Node.js 20
   curl -fsSL https://deb.nodesource.com/setup_20.x | sudo bash -
   sudo apt-get install -y nodejs
-  corepack enable yarn
+  sudo npm -g install corepack # ensure corepack is installed
   ```
 
   MacOS 10.15
@@ -49,6 +49,7 @@ description: 'Installing a development environment for different operating syste
   ```bash
   # Install Node.js and npm
   sudo pacman -S nodejs-lts-gallium npm
+  sudo npm -g install corepack # ensure corepack is installed
   ```
 
 ### Migration to Yarn Modern
@@ -65,7 +66,6 @@ sudo npm uninstall -g yarn
 sudo npm install -g corepack
 
 # Enable new yarn
-corepack enable yarn
 yarn --version # should show 4.x
 ```
 
