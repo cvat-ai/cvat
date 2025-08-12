@@ -358,9 +358,7 @@ services:
       cvat_clickhouse:
         condition: service_healthy
     networks:
-      cvat:
-        aliases:
-          - clickhouse
+      - cvat
     volumes:
       - ./components/analytics/clickhouse/:/docker-entrypoint-initdb.d/:ro
     entrypoint:
