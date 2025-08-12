@@ -36,10 +36,9 @@ class VideoStreamReader:
                 for frame in packet.decode():
                     # check type of first frame
                     if (
-                        av.__version__ < "14"
-                        and not frame.pict_type.name == "I"
-                        or av.__version__ >= "14"
-                        and not frame.pict_type == av.video.frame.PictureType.I
+                        frame.pict_type.name != "I"
+                        if av.__version__ < "14"
+                        else frame.pict_type != av.video.frame.PictureType.I
                     ):
                         raise InvalidVideoError("The first frame is not a key frame")
 
