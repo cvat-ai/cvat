@@ -17,7 +17,7 @@ import AnnotationGuide from './guide';
 export default class Project {
     public readonly id: number;
     public name: string;
-    public assignee: User;
+    public assignee: User | null;
     public bugTracker: string;
     public readonly status: ProjectStatus;
     public readonly guideId: number | null;

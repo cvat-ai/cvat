@@ -12,7 +12,7 @@ import Spin from 'antd/lib/spin';
 import notification from 'antd/lib/notification';
 
 import { getInferenceStatusAsync } from 'actions/models-actions';
-import { updateJobAsync } from 'actions/jobs-actions';
+import { updateJobAsync, jobsActions } from 'actions/jobs-actions';
 import {
     getCore, Task, Job, FramesMetaData,
 } from 'cvat-core-wrapper';
@@ -42,27 +42,24 @@ function TaskPageComponent(): JSX.Element {
         deletes,
         updates,
         jobsFetching,
+        bulkFetching,
     } = useSelector((state: CombinedState) => ({
         deletes: state.tasks.activities.deletes,
         updates: state.tasks.activities.updates,
         jobsFetching: state.jobs.fetching,
+        bulkFetching: state.bulkActions.fetching,
     }), shallowEqual);
-    const isTaskUpdating = updates[id] || jobsFetching;
+    const isTaskUpdating = (updates[id] || jobsFetching) && !bulkFetching;
 
     const receiveTask = async (): Promise<void> => {
-        if (!Number.isInteger(id)) {
-            notification.error({
-                message: 'Could not receive the requested task from the server',
-                description: `Requested task id "${id}" is not valid`,
-            });
-            return;
-        }
-
         try {
             const [task]: Task[] = await core.tasks.get({ id });
 
             if (task) {
                 setTaskInstance(task);
+                dispatch(jobsActions.getJobsSuccess(
+                    Object.assign([...task.jobs], { count: task.jobs.length })),
+                );
 
                 const meta = await task.meta.get();
                 setTaskMeta(meta);
@@ -132,7 +129,7 @@ function TaskPageComponent(): JSX.Element {
                 className='cvat-task-details-wrapper'
             >
                 <Col span={22} xl={18} xxl={14}>
-                    <TopBarComponent taskInstance={taskInstance} />
+                    <TopBarComponent taskInstance={taskInstance} onUpdateTask={onUpdateTask} />
                     <DetailsComponent
                         task={taskInstance}
                         onUpdateTask={onUpdateTask}
