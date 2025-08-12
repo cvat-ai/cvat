@@ -86,7 +86,11 @@ allow if {
 
 allow if {
     utils.api_token.is_api_token
-    input.scope in {utils.CREATE, utils.UPDATE, utils.DELETE}
+    input.scope in {
+        utils.CREATE, utils.UPDATE,
+        utils.DELETE, utils.DELETE_ANNOTATIONS,
+        utils.IMPORT_DATASET, utils.IMPORT_BACKUP, utils.IMPORT_ANNOTATIONS
+    }
     not input.auth.token.read_only
 }
 

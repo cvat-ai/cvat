@@ -1,6 +1,9 @@
+import csv
 import json
 from contextlib import ExitStack
 from datetime import datetime, timedelta, timezone
+from io import StringIO
+from time import sleep
 
 import pytest
 from cvat_sdk.api_client import exceptions, models
@@ -11,7 +14,7 @@ from pytest_cases import parametrize
 
 from shared.utils.config import make_api_client
 
-from .utils import CollectionSimpleFilterTestBase, export_backup, export_dataset
+from .utils import CollectionSimpleFilterTestBase, export_backup, export_dataset, export_events
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -381,3 +384,27 @@ class TestTokenTracking:
             ).replace(tzinfo=timezone.utc)
 
         assert updated_token.last_used_date != old_last_used_date
+
+    @pytest.mark.usefixtures("restore_redis_inmem_per_function")
+    def test_can_record_token_use_in_audit_logs(self, admin_user, api_tokens_by_username, tasks):
+        token = next(t for t in api_tokens_by_username[admin_user] if not t["read_only"])
+
+        task_id = next(p["id"] for p in tasks if p["size"] > 0)
+
+        with make_api_client(access_token=token["private_key"]) as api_client:
+            api_client.tasks_api.partial_update(
+                task_id, patched_task_write_request=models.PatchedTaskWriteRequest(name="newname")
+            )
+
+            # clickhouse updates are not immediate, vector has buffering on sinks
+            # potentially unstable, should probably be improved
+            sleep(5)
+
+            events_csv = export_events(api_client, api_version=2, task_id=task_id)
+            csv_reader = csv.DictReader(StringIO(events_csv.decode()))
+            rows = list(csv_reader)
+            assert rows[-2]["api_token_id"] == str(token["id"])
+            assert rows[-2]["scope"] == "update:task"
+            assert rows[-2]["task_id"] == str(task_id)
+            assert rows[-2]["obj_name"] == "name"
+            assert rows[-2]["obj_val"] == "newname"

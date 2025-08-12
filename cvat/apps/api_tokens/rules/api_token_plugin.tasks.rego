@@ -87,7 +87,10 @@ allow if {
 allow if {
     utils.api_token.is_api_token
     input.scope in {
-        utils.CREATE, utils.CREATE_IN_PROJECT, utils.UPDATE, utils.DELETE, utils.UPLOAD_DATA
+        utils.CREATE, utils.CREATE_IN_PROJECT,
+        utils.UPDATE, utils.UPLOAD_DATA,
+        utils.DELETE, utils.DELETE_ANNOTATIONS,
+        utils.IMPORT_DATASET, utils.IMPORT_BACKUP, utils.IMPORT_ANNOTATIONS
     }
     not input.auth.token.read_only
 }
