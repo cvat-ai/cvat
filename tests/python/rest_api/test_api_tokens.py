@@ -226,6 +226,25 @@ class TestPatchApiToken:
                 patched_api_token_write_request=models.PatchedApiTokenWriteRequest(name="new name"),
             )
 
+    def test_cannot_modify_expired_token(self, admin_user):
+        with make_api_client(admin_user) as api_client:
+            token_id = api_client.auth_api.create_api_tokens(
+                api_token_write_request=models.ApiTokenWriteRequest(
+                    name="test token",
+                    expiry_date=datetime.now(timezone.utc) - timedelta(seconds=1),
+                )
+            )[0].id
+
+            with pytest.raises(
+                exceptions.NotFoundException, match="No ApiToken matches the given query"
+            ):
+                api_client.auth_api.partial_update_api_tokens(
+                    token_id,
+                    patched_api_token_write_request=models.PatchedApiTokenWriteRequest(
+                        expiry_date=datetime.now(timezone.utc) + timedelta(days=1)
+                    ),
+                )
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestDeleteApiToken:
