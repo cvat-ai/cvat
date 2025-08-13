@@ -42,6 +42,8 @@ def add_baseline(k6_summary_output: K6Summary, test_key: str, alias: str | None 
 
     baseline_content[test_key][commit_id] = k6_summary_output.as_dict()
     if alias is not None:
+        if "aliases" not in baseline_content:
+            baseline_content["aliases"] = {}
         baseline_content["aliases"][alias] = commit_id
     save_baselines(baseline_content)
     console.print(f"[green] Baseline added for test '{test_key}' for commit '{commit_id}'[/green]")

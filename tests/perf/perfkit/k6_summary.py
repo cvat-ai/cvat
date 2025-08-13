@@ -5,6 +5,7 @@ from dataclasses import dataclass, asdict
 import json
 import pathlib
 from perfkit.console_print import print_error
+from typing import Union
 
 
 @dataclass(kw_only=True)
@@ -55,6 +56,11 @@ class K6Summary:
                 # else leave it as None
             new_metrics[metric_name] = combined
         return K6Summary(metrics=new_metrics)
+
+    def __radd__(self, other: Union["K6Summary", int]):
+        if isinstance(other, int) and other == 0:
+            return self
+        return self.__add__(other)
 
     def __truediv__(self, divisor: float | int) -> "K6Summary":
         if divisor == 0:

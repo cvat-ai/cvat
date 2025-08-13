@@ -36,8 +36,9 @@ app.add_typer(golden_app)
     "run-golden", help="Run and record golden test execution that will be used for comparison."
 )
 def run_golden(
-    test_file: str = typer.Argument(..., help="K6 test script to run"),
-    runs: int = typer.Option(DEFAULT_RUNS, help="Number of runs"),
+    test_file: str = typer.Argument(..., help="K6 test script to run."),
+    runs: int = typer.Option(DEFAULT_RUNS, help="Number of runs."),
+    alias: str = typer.Option(..., help="Alias name for commit."),
     save_baseline: bool = typer.Option(
         True, help="Save result as baseline. Be default prints it into the console."
     ),
@@ -85,15 +86,15 @@ def run_golden(
             )
         assert k6_output_metrics
 
-    # k6_summary_averaged = sum(k6_metrics_total) / runs
+    k6_summary_averaged = sum(k6_metrics_total) / runs
 
     if save_baseline:
         test_key = Path(test_file).stem
-        add_baseline(k6_output_metrics, test_key)
-        print_success(f"✅ Saved baseline for {test_key}")
+        add_baseline(k6_summary_averaged, test_key, alias)
+        print_success(f"✅ Saved baseline for `{alias}` -> `{test_key}`")
     else:
         print_info("📊 Golden run complete. Results not saved.")
-        console.print_json(data=k6_output_metrics.as_dict())
+        console.print_json(data=k6_summary_averaged.as_dict())
 
 
 @app.command("run-regression", help="Run regression test and compare it with the baseline.")
