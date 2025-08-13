@@ -25,7 +25,7 @@ class TestPostWebhooks:
         "is_active": True,
         "project_id": 1,
         "secret": "secret",
-        "target_url": "http://example.com",
+        "target_url": "http://webhooks.internal",
         "type": "project",
     }
 
@@ -36,7 +36,7 @@ class TestPostWebhooks:
         "events": ["create:task", "delete:task"],
         "is_active": True,
         "secret": "secret",
-        "target_url": "http://example.com",
+        "target_url": "http://webhooks.internal",
         "type": "organization",
     }
 
