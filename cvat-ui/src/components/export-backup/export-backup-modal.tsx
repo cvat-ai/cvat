@@ -11,6 +11,8 @@ import Notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
 import Input from 'antd/lib/input';
 import Form from 'antd/lib/form';
+import Space from 'antd/lib/space';
+import Switch from 'antd/lib/switch';
 import Tooltip from 'antd/lib/tooltip';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 import { CombinedState } from 'reducers';
@@ -30,6 +32,7 @@ type FormValues = {
     customName: string | undefined;
     targetStorage: StorageData;
     useProjectTargetStorage: boolean;
+    lightweight: boolean;
 };
 
 const initialValues: FormValues = {
@@ -39,6 +42,7 @@ const initialValues: FormValues = {
         cloudStorageId: undefined,
     },
     useProjectTargetStorage: true,
+    lightweight: true,
 };
 
 function ExportBackupModal(): JSX.Element {
@@ -51,6 +55,7 @@ function ExportBackupModal(): JSX.Element {
     const [defaultStorageLocation, setDefaultStorageLocation] = useState(StorageLocation.LOCAL);
     const [defaultStorageCloudId, setDefaultStorageCloudId] = useState<number | undefined>(undefined);
     const [helpMessage, setHelpMessage] = useState('');
+    const [lightweight, setLightweight] = useState(true);
     const [nameTemplate, setNameTemplate] = useState('backup_task_{{id}}');
 
     const instanceT = useSelector((state: CombinedState) => state.export.instanceType);
@@ -119,6 +124,7 @@ function ExportBackupModal(): JSX.Element {
     const closeModal = (): void => {
         setUseDefaultStorage(true);
         setStorageLocation(StorageLocation.LOCAL);
+        setLightweight(true);
         form.resetFields();
         if (instance) {
             dispatch(exportActions.closeExportBackupModal(instance));
@@ -145,6 +151,7 @@ function ExportBackupModal(): JSX.Element {
                                 }),
                                 false,
                                 backupName,
+                                lightweight,
                             ),
                         );
                     },
@@ -179,6 +186,7 @@ function ExportBackupModal(): JSX.Element {
                         }),
                         useDefaultStorage,
                         customName,
+                        lightweight,
                     ),
                 );
                 closeModal();
@@ -203,6 +211,7 @@ function ExportBackupModal(): JSX.Element {
             useDefaultStorage,
             defaultStorageLocation,
             defaultStorageCloudId,
+            lightweight,
         ],
     );
 
@@ -279,6 +288,20 @@ function ExportBackupModal(): JSX.Element {
                     onChangeLocationValue={(value: StorageLocation) => setStorageLocation(value)}
                     disableSwitch={isBulkMode}
                 />
+                <Form.Item
+                    className='cvat-settings-switch-lightweight'
+                >
+                    <Space>
+                        <Switch
+                            checked={lightweight}
+                            onChange={setLightweight}
+                        />
+                        <Text strong>Use lightweight backup whenever possible</Text>
+                        <Tooltip title='If a task uses media from a cloud storage, its possible to make a backup without including media. The task restored from a lightweight backup has to be manually connected to the cloud storage.'>
+                            <QuestionCircleOutlined />
+                        </Tooltip>
+                    </Space>
+                </Form.Item>
             </Form>
         </Modal>
     );

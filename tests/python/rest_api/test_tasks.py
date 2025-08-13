@@ -1288,7 +1288,8 @@ class TestTaskBackups:
         assert "Backup of a task without data is not allowed" in str(capture.value.body)
 
     @pytest.mark.with_external_services
-    def test_can_export_and_import_backup_task_with_cloud_storage(self, tasks):
+    @pytest.mark.parametrize("lightweight_backup", [True, False])
+    def test_can_export_and_import_backup_task_with_cloud_storage(self, tasks, lightweight_backup):
         cloud_storage_content = ["image_case_65_1.png", "image_case_65_2.png"]
         task_spec = {
             "name": "Task with files from cloud storage",
@@ -1309,11 +1310,11 @@ class TestTaskBackups:
         task = self.client.tasks.retrieve(task_id)
 
         filename = self.tmp_dir / f"cloud_task_{task.id}_backup.zip"
-        task.download_backup(filename)
+        task.download_backup(filename, lightweight=lightweight_backup)
 
         assert filename.is_file()
         assert filename.stat().st_size > 0
-        self._test_can_restore_task_from_backup(task_id)
+        self._test_can_restore_task_from_backup(task_id, lightweight_backup=lightweight_backup)
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_import_backup(self, tasks, mode):
@@ -1360,24 +1361,32 @@ class TestTaskBackups:
 
         self._test_can_restore_task_from_backup(task["id"])
 
-    def _test_can_restore_task_from_backup(self, task_id: int):
+    def _test_can_restore_task_from_backup(self, task_id: int, lightweight_backup: bool = False):
         old_task = self.client.tasks.retrieve(task_id)
         (_, response) = self.client.api_client.tasks_api.retrieve(task_id)
         task_json = json.loads(response.data)
 
         filename = self.tmp_dir / f"task_{old_task.id}_backup.zip"
-        old_task.download_backup(filename)
+        old_task.download_backup(filename, lightweight=lightweight_backup)
 
         new_task = self.client.tasks.create_from_backup(filename)
 
         old_meta = json.loads(old_task.api.retrieve_data_meta(old_task.id)[1].data)
         new_meta = json.loads(new_task.api.retrieve_data_meta(new_task.id)[1].data)
+
+        exclude_regex_paths = [r"root\['chunks_updated_date'\]"]  # must be different
+
+        if old_meta["storage"] == "cloud_storage":
+            assert new_meta["storage"] == ("cloud_storage" if lightweight_backup else "local")
+            assert new_meta["cloud_storage_id"] is None
+            exclude_regex_paths.extend([r"root\['cloud_storage_id'\]", r"root\['storage'\]"])
+
         assert (
             DeepDiff(
                 old_meta,
                 new_meta,
                 ignore_order=True,
-                exclude_regex_paths=[r"root\['chunks_updated_date'\]"],  # must be different
+                exclude_regex_paths=exclude_regex_paths,
             )
             == {}
         )
@@ -1394,7 +1403,7 @@ class TestTaskBackups:
                     old_job_meta,
                     new_job_meta,
                     ignore_order=True,
-                    exclude_regex_paths=[r"root\['chunks_updated_date'\]"],  # must be different
+                    exclude_regex_paths=exclude_regex_paths,
                 )
                 == {}
             )
