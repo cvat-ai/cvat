@@ -143,8 +143,8 @@ def run_regression(
     commit_value = resolve_commit()
 
     # check test entry exists
-    baselines = resolve_test_baseline(baselines, test_key, commit_value)
-    if baselines is None:
+    baseline_for_test = resolve_test_baseline(baselines, test_key, commit_value)
+    if baseline_for_test is None:
         exit_with_error(f"No baseline for test {test_key}'")
     if not reuse_cluster:
         stop_cluster()
@@ -157,7 +157,7 @@ def run_regression(
     if not reuse_cluster:
         stop_cluster()
     comparison_report, failed = build_report(
-        parse_k6_summary(K6_OUTPUT_SUMMARY_JSON), baselines[test_key][commit_value]
+        parse_k6_summary(K6_OUTPUT_SUMMARY_JSON), baseline_for_test
     )
 
     console.print(get_comparison_table(comparison_report))

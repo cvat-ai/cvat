@@ -47,7 +47,9 @@ def build_report(
                 continue
 
             allowed_delta: float | None = None
-            if metric_name not in ALLOWED_DELTAS and stat_name not in ALLOWED_DELTAS[metric_name]:
+            if metric_name not in ALLOWED_DELTAS:
+                continue
+            if stat_name not in ALLOWED_DELTAS[metric_name]:
                 continue
             allowed_delta = ALLOWED_DELTAS[metric_name][stat_name]
 
