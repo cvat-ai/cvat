@@ -1,6 +1,5 @@
 import pytest
-
-from perfkit.k6_summary import K6Summary, K6MetricStats
+from perfkit.k6_summary import K6MetricStats, K6Summary
 
 
 def test_empty_summary_creation():

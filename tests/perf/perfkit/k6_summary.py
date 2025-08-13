@@ -1,11 +1,12 @@
 # Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
-from dataclasses import dataclass, asdict
 import json
 import pathlib
-from perfkit.console_print import print_error
+from dataclasses import asdict, dataclass
 from typing import Union
+
+from perfkit.console_print import print_error
 
 
 @dataclass(kw_only=True)

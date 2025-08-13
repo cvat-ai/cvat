@@ -1,29 +1,27 @@
 # Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
+import datetime
 import threading
 from pathlib import Path
 from typing import Optional
-import datetime
 
 import typer
-from rich.table import Table
-
-from perfkit.cluster import run_k6_docker, stop_k6_docker, stop_cluster, start_cluster
-from perfkit.metrics_watcher import start_metrics_watcher
 from perfkit.baselines import (
     add_baseline,
     load_baselines,
-    save_baselines,
     resolve_commit_by_alias,
     resolve_test_baseline,
+    save_baselines,
 )
-from perfkit.comparison_report import get_comparison_table, build_report, ReportRow
-from perfkit.console_print import exit_with_error, print_info, print_success, console
+from perfkit.cluster import run_k6_docker, start_cluster, stop_cluster, stop_k6_docker
+from perfkit.comparison_report import ReportRow, build_report, get_comparison_table
 from perfkit.config import K6_OUTPUT_SUMMARY_JSON
-from perfkit.k6_profile import warmup_profile, K6Profile
+from perfkit.console_print import console, exit_with_error, print_info, print_success
+from perfkit.k6_profile import K6Profile, warmup_profile
 from perfkit.k6_summary import K6Summary, parse_k6_summary
-
+from perfkit.metrics_watcher import start_metrics_watcher
+from rich.table import Table
 
 DEFAULT_RUNS = 3
 

@@ -3,8 +3,9 @@
 # SPDX-License-Identifier: MIT
 import threading
 import time
-import psutil
 from typing import Callable
+
+import psutil
 from perfkit.console_print import console
 
 

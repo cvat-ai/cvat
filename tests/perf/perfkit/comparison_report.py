@@ -1,11 +1,9 @@
 # Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
-from rich.table import Table
-
 from perfkit.config import ALLOWED_DELTAS
 from perfkit.k6_summary import K6Summary
-
+from rich.table import Table
 
 MISSING = "MISSING"
 OK = "✅"

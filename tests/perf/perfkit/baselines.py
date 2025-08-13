@@ -2,12 +2,11 @@
 #
 # SPDX-License-Identifier: MIT
 import json
-from plumbum import local
 
 from perfkit.config import BASELINE_FILE
-from perfkit.k6_summary import K6Summary
 from perfkit.console_print import console
-
+from perfkit.k6_summary import K6Summary
+from plumbum import local
 
 git = local["git"]
 

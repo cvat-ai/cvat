@@ -1,9 +1,8 @@
 # Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
-from rich.console import Console
 import typer
-
+from rich.console import Console
 
 console = Console()
 

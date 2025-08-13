@@ -18,7 +18,8 @@ grep ^processor /proc/cpuinfo
 
 ### Edit Kernel Boot Parameters
 
-Add the following to GRUB or kernelstub to isolate testing cores and disable interrupts on them (replace `2-15` with your cores that need to be removed from the scheduler):
+Add the following to GRUB or kernelstub to isolate testing cores and disable
+interrupts on them (replace `2-15` with your cores that need to be removed from the scheduler):
 
 ```
 isolcpus=2-15 nohz_full=2-15 rcu_nocbs=2-15 \

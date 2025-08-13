@@ -1,24 +1,22 @@
 # Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
-import time
-import pty
 import os
-import sys
 import pathlib
+import pty
+import sys
+import time
 
 import requests
-from plumbum import local, FG
-
 from perfkit.config import (
-    URL_SERVER_ABOUT,
+    CVAT_SERVER_SERVICE,
     DOCKER_COMPOSE_FILE,
     DOCKER_COMPOSE_FILE_WITH_CPUSET,
-    CVAT_SERVER_SERVICE,
+    URL_SERVER_ABOUT,
 )
-from perfkit.console_print import print_info, print_success, exit_with_error, print_error, console
+from perfkit.console_print import console, exit_with_error, print_error, print_info, print_success
 from perfkit.k6_profile import K6Profile
-
+from plumbum import FG, local
 
 WAIT_FOR_CLUSTER = 10
 

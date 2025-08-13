@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 from pathlib import Path
-from typing import List, Union, Optional
+from typing import List, Optional, Union
 
 from perfkit.config import PROMETHEUS_URL
 
