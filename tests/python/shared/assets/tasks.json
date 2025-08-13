@@ -11,6 +11,7 @@
       "created_date": "2025-08-01T11:44:46.343000Z",
       "data": 33,
       "data_chunk_size": 72,
+      "data_cloud_storage_id": null,
       "data_compressed_chunk_type": "imageset",
       "data_original_chunk_type": "video",
       "dimension": "2d",
@@ -29,6 +30,7 @@
       "mode": "interpolation",
       "name": "task with frame step and gt job",
       "organization": 2,
+      "organization_id": 2,
       "overlap": 5,
       "owner": {
         "first_name": "User",
