@@ -5,7 +5,8 @@
 
 import { CloudStorageActions, CloudStorageActionTypes } from 'actions/cloud-storage-actions';
 import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
-import { CloudStoragesState, CloudStorage } from '.';
+import { SelectionActionsTypes, SelectionActions } from 'actions/selection-actions';
+import { CloudStoragesState, CloudStorage, SelectedResourceType } from '.';
 
 const defaultState: CloudStoragesState = {
     initialized: false,
@@ -44,11 +45,12 @@ const defaultState: CloudStoragesState = {
     updateWorkspace: {
         instance: null,
     },
+    selected: [],
 };
 
 export default (
     state: CloudStoragesState = defaultState,
-    action: CloudStorageActions | AuthActions,
+    action: CloudStorageActions | AuthActions | SelectionActions,
 ): CloudStoragesState => {
     switch (action.type) {
         case CloudStorageActionTypes.UPDATE_CLOUD_STORAGES_GETTING_QUERY:
@@ -372,6 +374,27 @@ export default (
         }
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return { ...defaultState };
+        }
+        case SelectionActionsTypes.SELECT_RESOURCES: {
+            if (action.payload.resourceType === SelectedResourceType.CLOUD_STORAGES) {
+                return {
+                    ...state,
+                    selected: Array.from(new Set([...state.selected, ...action.payload.resourceIds as number[]])),
+                };
+            }
+            return state;
+        }
+        case SelectionActionsTypes.DESELECT_RESOURCES: {
+            if (action.payload.resourceType === SelectedResourceType.CLOUD_STORAGES) {
+                return {
+                    ...state,
+                    selected: state.selected.filter((id) => !action.payload.resourceIds.includes(id)),
+                };
+            }
+            return state;
+        }
+        case SelectionActionsTypes.CLEAR_SELECTED_RESOURCES: {
+            return { ...state, selected: [] };
         }
         default:
             return state;

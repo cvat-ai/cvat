@@ -345,9 +345,17 @@ class RequestIdWithOptionalFormat(RequestId):
 
 
 @attrs.frozen(kw_only=True, slots=False)
+class RequestIdWithOptionalLightweight(RequestId):
+    lightweight: bool | None = attrs.field(
+        converter=lambda x: x if x is None else bool(x), default=None
+    )
+
+
+@attrs.frozen(kw_only=True, slots=False)
 class ExportRequestId(
     RequestIdWithOptionalSubresource,  # subresource is optional because export queue works also with events
     RequestIdWithOptionalFormat,
+    RequestIdWithOptionalLightweight,
 ):
     ACTION_DEFAULT_VALUE: ClassVar[str] = "export"
     ACTION_ALLOWED_VALUES: ClassVar[tuple[str]] = (ACTION_DEFAULT_VALUE,)

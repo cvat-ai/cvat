@@ -19,16 +19,25 @@ import OrganizationSelector from 'components/selectors/organization-selector';
 import { ResourceUpdateTypes } from 'utils/enums';
 import { confirmTransferModal } from 'utils/modals';
 
+import { makeBulkOperationAsync } from 'actions/bulk-actions';
 import ProjectActionsItems from './actions-menu-items';
 
 interface Props {
     projectInstance: Project;
     triggerElement: JSX.Element;
+    dropdownTrigger?: ('click' | 'hover' | 'contextMenu')[];
+    onUpdateProject?: (project: Project) => Promise<void>;
 }
 
-function ProjectActionsComponent(props: Props): JSX.Element {
-    const { projectInstance, triggerElement } = props;
+function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
+    const {
+        projectInstance, triggerElement, dropdownTrigger, onUpdateProject,
+    } = props;
     const dispatch = useDispatch();
+
+    const selectedIds = useSelector((state: CombinedState) => state.projects.selected);
+    const isBulkMode = selectedIds.length > 1;
+    const allProjects = useSelector((state: CombinedState) => state.projects.current);
 
     const pluginActions = usePlugins((state: CombinedState) => state.plugins.components.projectActions.items, props);
 
@@ -55,21 +64,35 @@ function ProjectActionsComponent(props: Props): JSX.Element {
         dispatch(exportActions.openExportBackupModal(projectInstance));
     }, [projectInstance]);
 
-    const onDeleteProject = useCallback((): void => {
-        Modal.confirm({
-            title: `The project ${projectInstance.id} will be deleted`,
-            content: 'All related data (images, annotations) will be lost. Continue?',
-            className: 'cvat-modal-confirm-remove-project',
-            onOk: () => {
-                dispatch(deleteProjectAsync(projectInstance));
+    const onUpdateProjectAssignee = useCallback((assignee: User | null) => {
+        const allProjectIDs = selectedIds.includes(projectInstance.id) ?
+            selectedIds :
+            [projectInstance.id, ...selectedIds];
+
+        const projectsToUpdate = selectedIds.includes(projectInstance.id) ?
+            allProjects.filter((project) => allProjectIDs.includes(project.id)) :
+            [projectInstance];
+
+        const projectsNeedingUpdate = projectsToUpdate.filter((project) => project.assignee?.id !== assignee?.id);
+
+        stopEditField();
+        if (projectsNeedingUpdate.length === 0) {
+            return;
+        }
+
+        dispatch(makeBulkOperationAsync(
+            projectsNeedingUpdate,
+            async (project) => {
+                project.assignee = assignee;
+                if (onUpdateProject && project.id === projectInstance.id) {
+                    onUpdateProject(project);
+                } else {
+                    await dispatch(updateProjectAsync(project));
+                }
             },
-            okButtonProps: {
-                type: 'primary',
-                danger: true,
-            },
-            okText: 'Delete',
-        });
-    }, [projectInstance]);
+            (project, idx, total) => `Updating assignee for project #${project.id} (${idx + 1}/${total})`,
+        ));
+    }, [projectInstance, selectedIds, allProjects, stopEditField, dispatch]);
 
     const updateOrganization = useCallback((dstOrganizationId: number | null) => {
         projectInstance.organizationId = dstOrganizationId;
@@ -90,19 +113,41 @@ function ProjectActionsComponent(props: Props): JSX.Element {
         );
     }, [projectInstance]);
 
-    const onUpdateProjectAssignee = useCallback((assignee: User | null) => {
-        projectInstance.assignee = assignee;
-        dispatch(updateProjectAsync(projectInstance)).then(stopEditField);
-    }, [projectInstance]);
-
+    const onDeleteProject = useCallback((): void => {
+        const projectsToDelete = allProjects.filter((project) => selectedIds.includes(project.id));
+        Modal.confirm({
+            title: isBulkMode ?
+                `Delete ${projectsToDelete.length} selected projects` :
+                `The project ${projectInstance.id} will be deleted`,
+            content: isBulkMode ?
+                'All related data (images, annotations) for all selected projects will be lost. Continue?' :
+                'All related data (images, annotations) will be lost. Continue?',
+            className: 'cvat-modal-confirm-remove-project',
+            onOk: () => {
+                setTimeout(() => {
+                    dispatch(makeBulkOperationAsync(
+                        projectsToDelete.length ? projectsToDelete : [projectInstance],
+                        async (project) => {
+                            await dispatch(deleteProjectAsync(project));
+                        },
+                        (project, idx, total) => `Deleting project #${project.id} (${idx + 1}/${total})`,
+                    ));
+                }, 0);
+            },
+            okButtonProps: {
+                type: 'primary',
+                danger: true,
+            },
+            okText: isBulkMode ? 'Delete selected' : 'Delete',
+        });
+    }, [projectInstance, allProjects, selectedIds, isBulkMode]);
     let menuItems;
     if (editField) {
         const fieldSelectors: Record<string, JSX.Element> = {
             assignee: (
                 <UserSelector
-                    value={projectInstance.assignee}
+                    value={isBulkMode ? null : projectInstance.assignee}
                     onSelect={(value: User | null): void => {
-                        if (projectInstance.assignee?.id === value?.id) return;
                         onUpdateProjectAssignee(value);
                     }}
                 />
@@ -127,13 +172,14 @@ function ProjectActionsComponent(props: Props): JSX.Element {
             onImportDataset,
             onBackupProject,
             onDeleteProject,
+            selectedIds,
         }, props);
     }
 
     return (
         <Dropdown
             destroyPopupOnHide
-            trigger={['click']}
+            trigger={dropdownTrigger || ['click']}
             open={dropdownOpen}
             onOpenChange={onOpenChange}
             menu={{

@@ -58,6 +58,7 @@ from cvat.apps.engine.cache import (
     MediaCache,
 )
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
+from cvat.apps.engine.exceptions import CloudStorageMissingError
 from cvat.apps.engine.frame_provider import (
     DataWithMeta,
     FrameQuality,
@@ -586,6 +587,11 @@ class _DataGetter(metaclass=ABCMeta):
                 data=str(ex),
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+        except CloudStorageMissingError as ex:
+            return Response(
+                data=str(ex),
+                status=status.HTTP_409_CONFLICT,
+            )
 
     @abstractmethod
     def _get_chunk_response_headers(self, chunk_data: DataWithMeta) -> dict[str, str]: ...
@@ -693,6 +699,11 @@ class _JobDataGetter(_DataGetter):
                 return Response(
                     data=str(ex),
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+            except CloudStorageMissingError as ex:
+                return Response(
+                    data=str(ex),
+                    status=status.HTTP_409_CONFLICT,
                 )
         else:
             return super().__call__()
@@ -1982,11 +1993,12 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         if db_job.type == models.JobType.GROUND_TRUTH:
             deleted_frames.update(db_data.validation_layout.disabled_frames)
 
-        # Filter data with segment size
-        db_data.deleted_frames = sorted(filter(
-            lambda frame: frame >= start_frame and frame <= stop_frame,
-            deleted_frames,
-        ))
+        # Keep only frames from the job segment
+        task_frame_provider = TaskFrameProvider(db_task)
+        segment_rel_frame_set = set(
+            map(task_frame_provider.get_rel_frame_number, db_segment.frame_set)
+        )
+        db_data.deleted_frames = sorted(deleted_frames.intersection(segment_rel_frame_set))
 
         db_data.start_frame = data_start_frame
         db_data.stop_frame = data_stop_frame

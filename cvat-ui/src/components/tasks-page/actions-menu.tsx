@@ -27,16 +27,25 @@ import UserSelector from 'components/task-page/user-selector';
 
 import OrganizationSelector from 'components/selectors/organization-selector';
 import { confirmTransferModal } from 'utils/modals';
+import { makeBulkOperationAsync } from 'actions/bulk-actions';
 import TaskActionsItems from './actions-menu-items';
 
 interface Props {
     taskInstance: Task;
     triggerElement: JSX.Element;
+    dropdownTrigger?: ('click' | 'hover' | 'contextMenu')[];
+    onUpdateTask?: (task: Task) => void;
 }
 
-function TaskActionsComponent(props: Props): JSX.Element {
-    const { taskInstance, triggerElement } = props;
+function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
+    const {
+        taskInstance, triggerElement, dropdownTrigger, onUpdateTask,
+    } = props;
     const dispatch = useDispatch();
+
+    const selectedIds = useSelector((state: CombinedState) => state.tasks.selected);
+    const isBulkMode = selectedIds.length > 1;
+    const allTasks = useSelector((state: CombinedState) => state.tasks.current);
 
     const pluginActions = usePlugins((state: CombinedState) => state.plugins.components.taskActions.items, props);
     const {
@@ -104,26 +113,60 @@ function TaskActionsComponent(props: Props): JSX.Element {
         }
     }, [taskInstance.id]);
 
-    const onUpdateTaskAssignee = useCallback((assignee: User | null) => {
-        taskInstance.assignee = assignee;
-        dispatch(updateTaskAsync(taskInstance, { assignee })).then(stopEditField);
-    }, [taskInstance]);
+    const onUpdateTaskAssignee = useCallback(async (assignee: User | null) => {
+        const allTaskIDs = selectedIds.includes(taskInstance.id) ? selectedIds : [taskInstance.id];
+        const tasksToUpdate = selectedIds.includes(taskInstance.id) ?
+            allTasks.filter((task) => allTaskIDs.includes(task.id)) :
+            [taskInstance];
+        const tasksNeedingUpdate = tasksToUpdate.filter((task) => task.assignee?.id !== assignee?.id);
+
+        stopEditField();
+        if (tasksNeedingUpdate.length === 0) {
+            return;
+        }
+
+        await dispatch(makeBulkOperationAsync(
+            tasksNeedingUpdate,
+            async (task) => {
+                task.assignee = assignee;
+                if (onUpdateTask && task.id === taskInstance.id) {
+                    onUpdateTask(task);
+                } else {
+                    await dispatch(updateTaskAsync(task, { assignee }));
+                }
+            },
+            (task, idx, total) => `Updating assignee for task #${task.id} (${idx + 1}/${total})`,
+        ));
+    }, [taskInstance, selectedIds, allTasks, stopEditField, dispatch]);
 
     const onDeleteTask = useCallback(() => {
+        const tasksToDelete = allTasks.filter((task) => selectedIds.includes(task.id));
         Modal.confirm({
-            title: `The task ${taskInstance.id} will be deleted`,
-            content: 'All related data (images, annotations) will be lost. Continue?',
+            title: isBulkMode ?
+                `Delete ${tasksToDelete.length} selected tasks` :
+                `The task ${taskInstance.id} will be deleted`,
+            content: isBulkMode ?
+                'All related data (images, annotations) for all selected tasks will be lost. Continue?' :
+                'All related data (images, annotations) will be lost. Continue?',
             className: 'cvat-modal-confirm-delete-task',
             onOk: () => {
-                dispatch(deleteTaskAsync(taskInstance));
+                setTimeout(() => {
+                    dispatch(makeBulkOperationAsync(
+                        tasksToDelete.length ? tasksToDelete : [taskInstance],
+                        async (task) => {
+                            await dispatch(deleteTaskAsync(task));
+                        },
+                        (task, idx, total) => `Deleting task #${task.id} (${idx + 1}/${total})`,
+                    ));
+                }, 0);
             },
             okButtonProps: {
                 type: 'primary',
                 danger: true,
             },
-            okText: 'Delete',
+            okText: isBulkMode ? 'Delete selected' : 'Delete',
         });
-    }, [taskInstance]);
+    }, [taskInstance, allTasks, selectedIds, isBulkMode]);
 
     const updateOrganization = useCallback((dstOrganizationId: number | null) => {
         taskInstance.organizationId = dstOrganizationId;
@@ -150,9 +193,8 @@ function TaskActionsComponent(props: Props): JSX.Element {
         const fieldSelectors: Record<string, JSX.Element> = {
             assignee: (
                 <UserSelector
-                    value={taskInstance.assignee}
+                    value={isBulkMode ? null : taskInstance.assignee}
                     onSelect={(value: User | null): void => {
-                        if (taskInstance.assignee?.id === value?.id) return;
                         onUpdateTaskAssignee(value);
                     }}
                 />
@@ -188,13 +230,14 @@ function TaskActionsComponent(props: Props): JSX.Element {
             onRunAutoAnnotation,
             onMoveTaskToProject,
             onDeleteTask,
+            selectedIds,
         }, props);
     }
 
     return (
         <Dropdown
             destroyPopupOnHide
-            trigger={['click']}
+            trigger={dropdownTrigger || ['click']}
             open={dropdownOpen}
             onOpenChange={onOpenChange}
             menu={{

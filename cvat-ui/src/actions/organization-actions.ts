@@ -4,10 +4,12 @@
 // SPDX-License-Identifier: MIT
 
 import { Store } from 'antd/lib/form/interface';
-import { getCore, Organization, User } from 'cvat-core-wrapper';
+import {
+    getCore, Membership, Organization, User,
+} from 'cvat-core-wrapper';
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { filterNull } from 'utils/filter-null';
-import { OrganizationsQuery } from 'reducers';
+import { OrganizationsQuery, OrganizationMembersQuery } from 'reducers';
 
 const core = getCore();
 
@@ -42,6 +44,9 @@ export enum OrganizationActionsTypes {
     GET_ORGANIZATIONS_FAILED = 'GET_ORGANIZATIONS_FAILED',
     OPEN_SELECT_ORGANIZATION_MODAL = 'OPEN_SELECT_ORGANIZATION_MODAL',
     CLOSE_SELECT_ORGANIZATION_MODAL = 'CLOSE_SELECT_ORGANIZATION_MODAL',
+    GET_ORGANIZATION_MEMBERS = 'GET_ORGANIZATION_MEMBERS',
+    GET_ORGANIZATION_MEMBERS_SUCCESS = 'GET_ORGANIZATION_MEMBERS_SUCCESS',
+    GET_ORGANIZATION_MEMBERS_FAILED = 'GET_ORGANIZATION_MEMBERS_FAILED',
 }
 
 export const organizationActions = {
@@ -109,6 +114,15 @@ export const organizationActions = {
         onSelectCallback: (org: Organization | null) => void,
     ) => createAction(OrganizationActionsTypes.OPEN_SELECT_ORGANIZATION_MODAL, { onSelectCallback }),
     closeSelectOrganizationModal: () => createAction(OrganizationActionsTypes.CLOSE_SELECT_ORGANIZATION_MODAL, {}),
+    getOrganizationMembers: (membersQuery: OrganizationMembersQuery) => createAction(
+        OrganizationActionsTypes.GET_ORGANIZATION_MEMBERS, { membersQuery },
+    ),
+    getOrganizationMembersSuccess: (members: Membership[]) => createAction(
+        OrganizationActionsTypes.GET_ORGANIZATION_MEMBERS_SUCCESS, { members },
+    ),
+    getOrganizationMembersFailed: (error: any) => createAction(
+        OrganizationActionsTypes.GET_ORGANIZATION_MEMBERS_FAILED, { error },
+    ),
 };
 
 export function activateOrganizationAsync(): ThunkAction {
@@ -237,14 +251,12 @@ export function leaveOrganizationAsync(
 export function removeOrganizationMemberAsync(
     organization: any,
     { user, id }: { user: User; id: number },
-    onFinish: () => void,
 ): ThunkAction {
     return async function (dispatch) {
         dispatch(organizationActions.removeOrganizationMember());
         try {
             await organization.deleteMembership(id);
             dispatch(organizationActions.removeOrganizationMemberSuccess());
-            onFinish();
         } catch (error) {
             dispatch(organizationActions.removeOrganizationMemberFailed(user.username, error));
         }
@@ -255,14 +267,12 @@ export function updateOrganizationMemberAsync(
     organization: any,
     { user, id }: { user: User; id: number },
     role: string,
-    onFinish: () => void,
 ): ThunkAction {
     return async function (dispatch) {
         dispatch(organizationActions.updateOrganizationMember());
         try {
             await organization.updateMembership(id, role);
             dispatch(organizationActions.updateOrganizationMemberSuccess());
-            onFinish();
         } catch (error) {
             dispatch(organizationActions.updateOrganizationMemberFailed(user.username, role, error));
         }
@@ -280,6 +290,22 @@ export function getOrganizationsAsync(query: Partial<OrganizationsQuery> = {}): 
             dispatch(organizationActions.getOrganizationsSuccess(array, result.count, result.next));
         } catch (error) {
             dispatch(organizationActions.getOrganizationsFailed(error));
+        }
+    };
+}
+
+export function getOrganizationMembersAsync(
+    organization: Organization,
+    membersQuery: OrganizationMembersQuery,
+): ThunkAction {
+    return async function (dispatch) {
+        dispatch(organizationActions.getOrganizationMembers(membersQuery));
+        try {
+            const filteredQuery = filterNull(membersQuery);
+            const members = await organization.members(filteredQuery);
+            dispatch(organizationActions.getOrganizationMembersSuccess(members));
+        } catch (error) {
+            dispatch(organizationActions.getOrganizationMembersFailed(error));
         }
     };
 }
