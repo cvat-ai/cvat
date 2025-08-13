@@ -29,11 +29,11 @@ export enum JobsActionTypes {
     DELETE_JOB_FAILED = 'DELETE_JOB_FAILED',
 }
 
-interface JobsList extends Array<any> {
+export interface JobsList extends Array<Job> {
     count: number;
 }
 
-const jobsActions = {
+export const jobsActions = {
     getJobs: (query: Partial<JobsQuery>, fetchingTimestamp: number) => (
         createAction(JobsActionTypes.GET_JOBS, { query, fetchingTimestamp })
     ),
