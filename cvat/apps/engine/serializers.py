@@ -1797,6 +1797,17 @@ class SegmentSerializer(serializers.ModelSerializer):
         fields = ('start_frame', 'stop_frame', 'jobs', 'type', 'frames')
         read_only_fields = fields
 
+    def to_representation(self, instance: models.Segment):
+        data = super().to_representation(instance)
+
+        if instance.type == models.SegmentType.SPECIFIC_FRAMES:
+            task_frame_provider = TaskFrameProvider(instance.task)
+            data["frames"] = sorted(map(task_frame_provider.get_rel_frame_number, data["frames"]))
+        else:
+            data.pop("frames")
+
+        return data
+
 class ClientFileSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.ClientFile
