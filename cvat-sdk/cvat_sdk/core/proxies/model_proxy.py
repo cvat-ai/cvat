@@ -366,6 +366,7 @@ class DownloadBackupMixin(_ExportMixin):
         pbar: Optional[ProgressReporter] = None,
         location: Optional[str] = None,
         cloud_storage_id: Optional[int] = None,
+        lightweight: bool = False,
     ) -> None:
         """
         Create a resource backup and download it locally or upload to a cloud storage.
@@ -394,6 +395,7 @@ class DownloadBackupMixin(_ExportMixin):
             status_check_period=status_check_period,
             location=location,
             cloud_storage_id=cloud_storage_id,
+            lightweight=lightweight,
         )
 
         self._client.logger.info(

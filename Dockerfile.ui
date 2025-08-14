@@ -5,6 +5,8 @@ ENV TERM=xterm \
     LC_ALL='C.UTF-8'
 
 # Install dependencies
+RUN npm install -g corepack
+COPY .yarnrc.yml /tmp/
 COPY package.json /tmp/
 COPY yarn.lock /tmp/
 COPY cvat-core/package.json /tmp/cvat-core/
@@ -15,7 +17,7 @@ COPY cvat-data/package.json /tmp/cvat-data/
 
 # Install common dependencies
 WORKDIR /tmp/
-RUN DISABLE_HUSKY=1 yarn --frozen-lockfile
+RUN DISABLE_HUSKY=1 yarn install --immutable
 
 # Build source code
 COPY cvat-data/ /tmp/cvat-data/

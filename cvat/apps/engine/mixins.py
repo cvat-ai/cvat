@@ -366,6 +366,9 @@ class BackupMixin:
                 enum=Location.list()),
             OpenApiParameter('cloud_storage_id', description='Storage id',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
+            OpenApiParameter('lightweight',
+                description='Makes a lightweight backup (without media files) for tasks whose media is located in cloud storage',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False, default=True),
         ],
         request=OpenApiTypes.NONE,
         responses={

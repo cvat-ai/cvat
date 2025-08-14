@@ -8,6 +8,7 @@ import {
     ShapeType, StorageLocation, LabelType,
     ShareFileType, Source, TaskMode, TaskStatus,
     CloudStorageCredentialsType, CloudStorageProviderType, ObjectType,
+    DataStorageLocation,
 } from './enums';
 import { Camelized, CamelizedV2 } from './type-utils';
 
@@ -483,6 +484,8 @@ export interface SerializedFramesMetaData {
     size: number;
     start_frame: number;
     stop_frame: number;
+    storage: DataStorageLocation;
+    cloud_storage_id: number | null;
 }
 
 export interface SerializedAPISchema {

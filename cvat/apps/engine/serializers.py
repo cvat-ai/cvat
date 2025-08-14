@@ -35,7 +35,12 @@ from rest_framework import exceptions, serializers
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import field_validation, models
-from cvat.apps.engine.cloud_provider import Credentials, Status, get_cloud_storage_instance
+from cvat.apps.engine.cloud_provider import (
+    Credentials,
+    Status,
+    db_storage_to_storage_instance,
+    get_cloud_storage_instance,
+)
 from cvat.apps.engine.frame_provider import FrameQuality, TaskFrameProvider
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.model_utils import bulk_create
@@ -2308,6 +2313,7 @@ class TaskReadListSerializer(serializers.ListSerializer):
 
         return super().to_representation(data)
 
+
 class TaskReadSerializer(serializers.ModelSerializer):
     data_chunk_size = serializers.ReadOnlyField(source='data.chunk_size', required=False)
     data_compressed_chunk_type = serializers.ReadOnlyField(source='data.compressed_chunk_type', required=False)
@@ -2443,7 +2449,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
     # pylint: disable=no-self-use
     @transaction.atomic
-    def update(self, instance, validated_data):
+    def update(self, instance: models.Task, validated_data):
         instance.name = validated_data.get('name', instance.name)
         instance.owner_id = validated_data.get('owner_id', instance.owner_id)
         instance.bug_tracker = validated_data.get('bug_tracker', instance.bug_tracker)
@@ -2746,6 +2752,8 @@ class DataMetaReadSerializer(serializers.ModelSerializer):
             'frames',
             'deleted_frames',
             'included_frames',
+            'storage',
+            'cloud_storage_id',
         )
         read_only_fields = fields
         extra_kwargs = {
@@ -2763,21 +2771,36 @@ class DataMetaReadSerializer(serializers.ModelSerializer):
         }
 
 class DataMetaWriteSerializer(serializers.ModelSerializer):
-    deleted_frames = serializers.ListField(child=serializers.IntegerField(min_value=0))
+    deleted_frames = serializers.ListField(child=serializers.IntegerField(min_value=0), required=False)
+    cloud_storage_id = serializers.IntegerField(required=False, allow_null=True)
 
     class Meta:
         model = models.Data
-        fields = ('deleted_frames',)
+        fields = ('deleted_frames', 'cloud_storage_id')
 
-    def update(self, instance: models.Data, validated_data: dict[str, Any]) -> models.Data:
-        requested_deleted_frames = validated_data['deleted_frames']
+    def validate_cloud_storage_id(self, cloud_storage_id: int):
+        try:
+            db_storage: models.CloudStorage = models.CloudStorage.objects.get(id=cloud_storage_id)
+            storage = db_storage_to_storage_instance(db_storage)
+            storage_status = storage.get_status()
+            if storage_status != Status.AVAILABLE:
+                raise serializers.ValidationError(
+                    f"The specified cloud storage '{db_storage.display_name}' is not available."
+                )
+        except models.CloudStorage.DoesNotExist:
+            raise serializers.ValidationError(
+                f"The specified cloud storage {cloud_storage_id} does not exist."
+            )
 
+        return cloud_storage_id
+
+    def validate_deleted_frames(self, requested_deleted_frames: list[int]):
         requested_deleted_frames_set = set(requested_deleted_frames)
         if len(requested_deleted_frames_set) != len(requested_deleted_frames):
             raise serializers.ValidationError("Deleted frames cannot repeat")
 
         unknown_requested_deleted_frames = (
-            requested_deleted_frames_set.difference(range(instance.size))
+            requested_deleted_frames_set.difference(range(self.instance.size))
         )
         if unknown_requested_deleted_frames:
             raise serializers.ValidationError(
@@ -2786,10 +2809,10 @@ class DataMetaWriteSerializer(serializers.ModelSerializer):
                 )
             )
 
-        validation_layout = getattr(instance, 'validation_layout', None)
+        validation_layout = getattr(self.instance, 'validation_layout', None)
         if validation_layout and validation_layout.mode == models.ValidationMode.GT_POOL:
             gt_frame_set = set(validation_layout.frames)
-            changed_deleted_frames = requested_deleted_frames_set.difference(instance.deleted_frames)
+            changed_deleted_frames = requested_deleted_frames_set.difference(self.instance.deleted_frames)
             if not gt_frame_set.isdisjoint(changed_deleted_frames):
                 raise serializers.ValidationError(
                     f"When task validation mode is {models.ValidationMode.GT_POOL}, "
@@ -2797,7 +2820,17 @@ class DataMetaWriteSerializer(serializers.ModelSerializer):
                     "GT job's api/jobs/{id}/data/meta endpoint"
                 )
 
-        return super().update(instance, validated_data)
+        return requested_deleted_frames
+
+    def update(self, instance: models.Data, validated_data):
+        instance = super().update(instance, validated_data)
+        if validated_data.get("cloud_storage_id"):
+            db_task = models.Task.objects.filter(data=instance).first()
+            task_frame_provider = TaskFrameProvider(db_task)
+            task_frame_provider.invalidate_chunks(quality=FrameQuality.COMPRESSED)
+            task_frame_provider.invalidate_chunks(quality=FrameQuality.ORIGINAL)
+        return instance
+
 
 class JobDataMetaWriteSerializer(serializers.ModelSerializer):
     deleted_frames = serializers.ListField(child=serializers.IntegerField(min_value=0))
@@ -3565,6 +3598,7 @@ def _update_related_storages(
         storage_instance.location = new_location or storage_instance.location
         storage_instance.cloud_storage_id = new_cloud_storage_id
         storage_instance.save()
+
 
 def _configure_related_storages(validated_data: dict[str, Any]) -> dict[str, Optional[models.Storage]]:
     storages = {

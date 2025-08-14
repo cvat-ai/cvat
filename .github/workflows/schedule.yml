@@ -256,7 +256,7 @@ jobs:
       - name: Run tests
         run: |
           cd ./tests
-          yarn --frozen-lockfile
+          yarn --immutable
 
           shopt -s extglob
           if [[ ${{ matrix.specs }} == canvas3d_* ]]; then
