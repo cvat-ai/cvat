@@ -34,7 +34,7 @@ class K6Summary:
     metrics: dict[str, K6MetricStats]
 
     def __add__(self, other: "K6Summary") -> "K6Summary":
-        if self.metrics.keys() != other.metrics.keys():
+        if set(self.metrics.keys()) != set(other.metrics.keys()):
             raise ValueError("Metric keys mismatch between summaries")
 
         new_metrics: dict[str, K6MetricStats] = {}

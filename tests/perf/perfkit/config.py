@@ -11,7 +11,7 @@ URL_SERVER_ABOUT = f"{BASE_URL}/server/about"
 CVAT_SERVER_SERVICE = "cvat_server"
 K6_PERF_SERVICE = "k6-perf"
 
-BASELINE_FILE = Path.home() / ".perf_baselines.json"
+BASELINE_FILE = ROOT_DIR / "baselines.json"
 
 DOCKER_COMPOSE_FILE = ROOT_DIR / "docker-compose-perf.yml"
 DOCKER_COMPOSE_FILE_WITH_CPUSET = ROOT_DIR / "docker-compose-perf-cpuset.yml"
