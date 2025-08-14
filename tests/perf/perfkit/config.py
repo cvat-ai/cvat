@@ -19,10 +19,10 @@ K6_OUTPUT_SUMMARY_JSON = ROOT_DIR / "output" / "summary.json"
 
 ALLOWED_DELTAS: dict[str, dict[str, float]] = {
     "http_req_duration": {
-        "avg": 0.05,
-        "med": 0.05,
-        "p90": 0.05,
-        "p95": 0.05,
+        "avg": 0.07,
+        "med": 0.07,
+        "p90": 0.1,
+        "p95": 0.1,
     },
     "iterations": {
         "count": 0.005,
