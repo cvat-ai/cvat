@@ -45,6 +45,7 @@ function AnnotationMenuComponent(): JSX.Element {
     const history = useHistory();
     const jobInstance = useSelector((state: CombinedState) => state.annotation.job.instance as Job);
     const [jobState, setJobState] = useState(jobInstance.state);
+    const { stopFrame } = jobInstance;
 
     useEffect(() => {
         setJobState(jobInstance.state);
