@@ -235,14 +235,10 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ${{
-            contains(matrix.pattern, 'not')
-              && 'allure-results-tests-api'
-              || format(
-                  'allure-results-tests-api-{0}-cache-{1}',
-                  matrix.pattern, matrix.allow_cache
-                )
-            }}
+          name: format(
+              'allure-results-tests-api-{0}-cache-{1}',
+              matrix.pattern,matrix.allow_cache
+            )
           path: tests/python/allure-results
 
   unit_testing:
