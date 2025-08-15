@@ -72,7 +72,8 @@ jobs:
 
       - name: Instrumentation of the code then rebuilding the CVAT UI
         run: |
-          yarn --frozen-lockfile
+          corepack enable yarn
+          yarn --immutable
           yarn run coverage
 
       - name: CVAT UI. Build and push
@@ -319,6 +320,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
             node-version: '22.x'
+            # NOTE: corepack is not bundled after Node 25
+            # https://nodejs.org/docs/v22.18.0/api/corepack.html#corepack
 
       - name: Download CVAT server image
         uses: actions/download-artifact@v4
@@ -371,7 +374,8 @@ jobs:
         run: |
           docker exec -i cvat_server /bin/bash -c "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
           cd ./tests
-          yarn --frozen-lockfile
+          corepack enable yarn
+          yarn --immutable
 
           if [[ ${{ matrix.specs }} == canvas3d_* ]]; then
             npx cypress run \
