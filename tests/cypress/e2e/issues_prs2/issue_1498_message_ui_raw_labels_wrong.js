@@ -107,7 +107,7 @@ context('Message in UI when raw labels are wrong.', () => {
                 });
         });
         it('Label "attributes input_type" is incorrect.', () => {
-            const inputTypes = ['select radio', 'textt', 'nnumber'];
+            const inputTypes = ['select radio', 'textt', 'nnumber']; // spellchecker:disable-line
             const taskRawAttrTypeNumber = JSON.parse(JSON.stringify(taskRaw));
             for (const type of inputTypes) {
                 taskRawAttrTypeNumber[0].attributes[0].input_type = type;

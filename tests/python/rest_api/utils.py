@@ -24,6 +24,9 @@ from urllib3 import HTTPResponse
 
 from shared.utils.config import USER_PASS, make_api_client, post_method
 
+DEFAULT_RETRIES = 50
+DEFAULT_INTERVAL = 0.1
+
 
 def initialize_export(endpoint: Endpoint, *, expect_forbidden: bool = False, **kwargs) -> str:
     (_, response) = endpoint.call_with_http_info(
@@ -47,8 +50,8 @@ def wait_background_request(
     api_client: ApiClient,
     rq_id: str,
     *,
-    max_retries: int = 50,
-    interval: float = 0.1,
+    max_retries: int = DEFAULT_RETRIES,
+    interval: float = DEFAULT_INTERVAL,
 ) -> tuple[models.Request, HTTPResponse]:
     for _ in range(max_retries):
         (background_request, response) = api_client.requests_api.retrieve(rq_id)
@@ -70,8 +73,8 @@ def wait_and_download_v2(
     api_client: ApiClient,
     rq_id: str,
     *,
-    max_retries: int = 50,
-    interval: float = 0.1,
+    max_retries: int = DEFAULT_RETRIES,
+    interval: float = DEFAULT_INTERVAL,
 ) -> bytes:
     background_request, _ = wait_background_request(
         api_client, rq_id, max_retries=max_retries, interval=interval
@@ -79,10 +82,16 @@ def wait_and_download_v2(
 
     # return downloaded file in case of local downloading
     assert background_request.result_url
-    response = requests.get(
-        background_request.result_url,
-        auth=(api_client.configuration.username, api_client.configuration.password),
+    headers = api_client.get_common_headers()
+    api_client.update_params_for_auth(
+        headers=headers,
+        queries={},
+        auth_settings=api_client.configuration.auth_settings(),
+        resource_path="",
+        method="GET",
+        body=None,
     )
+    response = requests.get(background_request.result_url, headers=headers)
     assert response.status_code == HTTPStatus.OK, f"Status: {response.status_code}"
     return response.content
 
@@ -90,8 +99,8 @@ def wait_and_download_v2(
 def export_v2(
     endpoint: Endpoint,
     *,
-    max_retries: int = 50,
-    interval: float = 0.1,
+    max_retries: int = DEFAULT_RETRIES,
+    interval: float = DEFAULT_INTERVAL,
     expect_forbidden: bool = False,
     wait_result: bool = True,
     download_result: bool = True,
@@ -136,7 +145,7 @@ def export_dataset(
     *,
     save_images: bool,
     max_retries: int = 300,
-    interval: float = 0.1,
+    interval: float = DEFAULT_INTERVAL,
     format: str = "CVAT for images 1.1",  # pylint: disable=redefined-builtin
     **kwargs,
 ) -> Optional[bytes]:
@@ -170,8 +179,8 @@ def export_job_dataset(username: str, *args, **kwargs) -> Optional[bytes]:
 def export_backup(
     api: Union[ProjectsApi, TasksApi],
     *,
-    max_retries: int = 50,
-    interval: float = 0.1,
+    max_retries: int = DEFAULT_RETRIES,
+    interval: float = DEFAULT_INTERVAL,
     **kwargs,
 ) -> Optional[bytes]:
     endpoint = api.create_backup_export_endpoint
@@ -191,8 +200,8 @@ def export_task_backup(username: str, *args, **kwargs) -> Optional[bytes]:
 def import_resource(
     endpoint: Endpoint,
     *,
-    max_retries: int = 50,
-    interval: float = 0.1,
+    max_retries: int = DEFAULT_RETRIES,
+    interval: float = DEFAULT_INTERVAL,
     expect_forbidden: bool = False,
     wait_result: bool = True,
     **kwargs,
@@ -238,8 +247,8 @@ def import_resource(
 def import_backup(
     api: Union[ProjectsApi, TasksApi],
     *,
-    max_retries: int = 50,
-    interval: float = 0.1,
+    max_retries: int = DEFAULT_RETRIES,
+    interval: float = DEFAULT_INTERVAL,
     **kwargs,
 ):
     endpoint = api.create_backup_endpoint
@@ -553,3 +562,52 @@ def get_cloud_storage_content(username: str, cloud_storage_id: int, manifest: Op
 
         (data, _) = api_client.cloudstorages_api.retrieve_content_v2(cloud_storage_id, **kwargs)
         return [f"{f['name']}{'/' if str(f['type']) == 'DIR' else ''}" for f in data["content"]]
+
+
+def export_events(
+    api_client: ApiClient,
+    *,
+    api_version: int,
+    max_retries: int = 100,
+    interval: float = 0.1,
+    **kwargs,
+) -> Optional[bytes]:
+    if api_version == 1:
+        endpoint = api_client.events_api.list_endpoint
+        query_id = ""
+        for _ in range(max_retries):
+            (_, response) = endpoint.call_with_http_info(
+                **kwargs, query_id=query_id, _parse_response=False
+            )
+            if response.status == HTTPStatus.CREATED:
+                break
+            assert response.status == HTTPStatus.ACCEPTED
+            if not query_id:
+                response_json = json.loads(response.data)
+                query_id = response_json["query_id"]
+            sleep(interval)
+
+        assert response.status == HTTPStatus.CREATED
+
+        (_, response) = endpoint.call_with_http_info(
+            **kwargs, query_id=query_id, action="download", _parse_response=False
+        )
+        assert response.status == HTTPStatus.OK
+
+        return response.data
+
+    assert api_version == 2
+
+    request_id, response = api_client.events_api.create_export(**kwargs, _check_status=False)
+    assert response.status == HTTPStatus.ACCEPTED
+
+    if "location" in kwargs and "cloud_storage_id" in kwargs:
+        background_request, response = wait_background_request(
+            api_client, rq_id=request_id.rq_id, max_retries=max_retries, interval=interval
+        )
+        assert background_request.result_url is None
+        return None
+
+    return wait_and_download_v2(
+        api_client, rq_id=request_id.rq_id, max_retries=max_retries, interval=interval
+    )

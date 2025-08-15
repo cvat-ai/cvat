@@ -95,9 +95,10 @@ tasks in advanced computer vision projects.
 CVAT has an automated labeling features, enhancing the annotation process significantly,
 potentially speeding it up by up to 10 times.
 
-> **Note:**
-> For more information,
-> see {{< ilink "/docs/manual/advanced/ai-tools" "**OpenCV and AI Tools**" >}}
+{{% alert title="Note" color="primary" %}}
+For more information,
+see {{< ilink "/docs/manual/advanced/ai-tools" "**OpenCV and AI Tools**" >}}
+{{% /alert %}}
 
 Below is a detailed table of the supported algorithms and the platforms they operate on:
 
@@ -116,8 +117,6 @@ Below is a detailed table of the supported algorithms and the platforms they ope
 | [Text Detection v4](https://github.com/cvat-ai/cvat/tree/develop/serverless/openvino/omz/intel/text-detection-0004/nuclio)                          | Detector   | OpenVINO   | ✔️          |             |
 | [SiamMask](https://github.com/cvat-ai/cvat/tree/develop/serverless/pytorch/foolwood/siammask/nuclio)                                                | Tracker    | PyTorch    | ✔️          | ✔️          |
 | [TransT](https://github.com/cvat-ai/cvat/tree/develop/serverless/pytorch/dschoerk/transt/nuclio)                                                    | Tracker    | PyTorch    | ✔️          | ✔️          |
-| [f-BRS](https://github.com/cvat-ai/cvat/tree/develop/serverless/pytorch/saic-vul/fbrs/nuclio)                                                       | Interactor | PyTorch    | ✔️          |             |
-| [HRNet](https://github.com/cvat-ai/cvat/tree/develop/serverless/pytorch/saic-vul/hrnet/nuclio)                                                      | Interactor | PyTorch    |             | ✔️          |
 | [Inside-Outside Guidance](https://github.com/cvat-ai/cvat/tree/develop/serverless/pytorch/shiyinzhang/iog/nuclio)                                   | Interactor | PyTorch    | ✔️          |             |
 | [Faster RCNN](https://github.com/cvat-ai/cvat/tree/develop/serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio)                              | Detector   | TensorFlow | ✔️          | ✔️          |
 | [RetinaNet](https://github.com/cvat-ai/cvat/tree/develop/serverless/pytorch/facebookresearch/detectron2/retinanet_r101/nuclio)                      | Detector   | PyTorch    | ✔️          | ✔️          |
@@ -161,8 +160,10 @@ CVAT is a global tool, trusted and utilized by teams worldwide.
 Below is a list of key companies that contribute significantly to our
 product support or are an integral part of our ecosystem.
 
-> **Note:** If you're using CVAT, we'd love to
-> hear from you at [contact@cvat.ai](mailto:contact+github@cvat.ai).
+{{% alert title="Note" color="primary" %}}
+If you're using CVAT, we'd love to
+hear from you at [contact@cvat.ai](mailto:contact+github@cvat.ai).
+{{% /alert %}}
 
 <!--lint disable maximum-line-length-->
 

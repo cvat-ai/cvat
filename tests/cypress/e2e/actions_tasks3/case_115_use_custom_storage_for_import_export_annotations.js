@@ -45,7 +45,7 @@ context('Import and export annotations: specify source and target storage in mod
         name: `Case ${caseId}`,
         label: labelName,
         attrName: 'color',
-        attrVaue: 'red',
+        attrValue: 'red',
         multiAttrParams: false,
     };
 
@@ -73,7 +73,7 @@ context('Import and export annotations: specify source and target storage in mod
             project.name,
             project.label,
             project.attrName,
-            project.attrVaue,
+            project.attrValue,
             project.multiAttrParams,
         );
     });

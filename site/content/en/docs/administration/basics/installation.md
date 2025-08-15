@@ -29,28 +29,29 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   Ubuntu please read [the answer](https://askubuntu.com/questions/183775/how-do-i-open-a-terminal).
 
 - Type commands below into the terminal window to install Docker and Docker Compose. More
-  instructions can be found [here](https://docs.docker.com/install/linux/docker-ce/ubuntu/).
+  instructions can be found [here](https://docs.docker.com/engine/install/ubuntu/).
 
   ```shell
+  # Add Docker's official GPG key:
   sudo apt-get update
-  sudo apt-get --no-install-recommends install -y \
-    apt-transport-https \
-    ca-certificates \
-    curl \
-    gnupg-agent \
-    software-properties-common
-  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-  sudo add-apt-repository \
-    "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
-    $(lsb_release -cs) \
-    stable"
+  sudo apt-get install ca-certificates curl
+  sudo install -m 0755 -d /etc/apt/keyrings
+  sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+  sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+  # Add the repository to Apt sources:
+  echo \
+    "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+    $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | \
+    sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
   sudo apt-get update
-  sudo apt-get --no-install-recommends install -y \
-    docker-ce docker-ce-cli containerd.io docker-compose-plugin
+
+  # Install the Docker packages.
+  sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
   ```
 
 - (Optional) To avoid prefacing Docker commands with `sudo`,
-  you can perform the [post-installation steps](https://docs.docker.com/install/linux/linux-postinstall/).
+  you can perform the [post-installation steps](https://docs.docker.com/engine/install/linux-postinstall/).
   This involves creating a Unix group named `docker` and
   adding your current user to this group.
 
@@ -117,7 +118,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   install it as well. Type commands below in a terminal window:
 
   ```shell
-  curl https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+  sudo curl https://dl-ssl.google.com/linux/linux_signing_key.pub -o /etc/apt/trusted.gpg.d/google.asc
   sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
   sudo apt-get update
   sudo apt-get --no-install-recommends install -y google-chrome-stable
@@ -542,7 +543,9 @@ Then, use the `docker-compose.https.yml` file to override the base `docker-compo
 docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
 ```
 
-> In the firewall, ports 80 and 443 must be open for inbound connections from any
+{{% alert title="Note" color="primary" %}}
+In the firewall, ports 80 and 443 must be open for inbound connections from any
+{{% /alert %}}
 
 Then, the CVAT instance will be available at your domain on ports 443 (HTTPS) and 80 (HTTP, redirects to 443).
 

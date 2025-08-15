@@ -6,11 +6,11 @@
 
 context('Move a task between projects.', () => {
     const caseID = 94;
-    const firtsProject = {
-        name: `Firts project case ${caseID}`,
+    const firstProject = {
+        name: `First project case ${caseID}`,
         label: 'car',
         attrName: 'color',
-        attrVaue: 'red',
+        attrValue: 'red',
         multiAttrParams: false,
     };
 
@@ -18,7 +18,7 @@ context('Move a task between projects.', () => {
         name: `Second project case ${caseID}`,
         label: 'bicycle',
         attrName: 'color',
-        attrVaue: 'red',
+        attrValue: 'red',
         multiAttrParams: false,
     };
 
@@ -54,7 +54,7 @@ context('Move a task between projects.', () => {
             color,
             posX,
             posY,
-            firtsProject.label,
+            firstProject.label,
             imagesCount,
         );
         cy.createZipArchive(directoryToArchive, archivePath);
@@ -65,39 +65,39 @@ context('Move a task between projects.', () => {
     beforeEach(() => {
         cy.goToProjectsList();
         cy.createProjects(
-            firtsProject.name,
-            firtsProject.label,
-            firtsProject.attrName,
-            firtsProject.attrVaue,
-            firtsProject.multiAttrParams,
+            firstProject.name,
+            firstProject.label,
+            firstProject.attrName,
+            firstProject.attrValue,
+            firstProject.multiAttrParams,
         );
         cy.createProjects(
             secondProject.name,
             secondProject.label,
             secondProject.attrName,
-            secondProject.attrVaue,
+            secondProject.attrValue,
             secondProject.multiAttrParams,
         );
-        cy.openProject(firtsProject.name);
+        cy.openProject(firstProject.name);
         cy.createAnnotationTask(
             taskName,
-            firtsProject.label,
-            firtsProject.attrName,
-            firtsProject.attrVaue,
+            firstProject.label,
+            firstProject.attrName,
+            firstProject.attrValue,
             archiveName,
             multiAttrParams,
             advancedConfigurationParams,
             forProject,
             attachToProject.no,
-            firtsProject.name,
+            firstProject.name,
         );
     });
 
     afterEach(() => {
         cy.goToProjectsList();
         cy.get('.cvat-spinner').should('not.exist');
-        cy.openProject(firtsProject.name);
-        cy.deleteProjectViaActions(firtsProject.name);
+        cy.openProject(firstProject.name);
+        cy.deleteProjectViaActions(firstProject.name);
         cy.get('.cvat-spinner').should('not.exist');
         cy.openProject(secondProject.name);
         cy.deleteProjectViaActions(secondProject.name);
@@ -106,7 +106,7 @@ context('Move a task between projects.', () => {
     describe(`Testing "Case ${caseID}"`, () => {
         it('Check not able to move a task from one project to another.', () => {
             checkTask(secondProject.name, 'not.exist');
-            checkTask(firtsProject.name, 'exist');
+            checkTask(firstProject.name, 'exist');
             cy.contains('.cvat-item-open-task-actions', 'Actions').click();
             cy.get('.cvat-actions-menu')
                 .should('be.visible')
@@ -117,24 +117,24 @@ context('Move a task between projects.', () => {
 
         it.skip('Move a task between projects from a project.', () => {
             checkTask(secondProject.name, 'not.exist');
-            checkTask(firtsProject.name, 'exist');
-            cy.movingTask(taskName, secondProject.name, firtsProject.label, secondProject.label);
-            checkTask(firtsProject.name, 'not.exist');
+            checkTask(firstProject.name, 'exist');
+            cy.movingTask(taskName, secondProject.name, firstProject.label, secondProject.label);
+            checkTask(firstProject.name, 'not.exist');
             checkTask(secondProject.name, 'exist');
         });
 
         it.skip('Move a task between projects from task list.', () => {
             cy.goToTaskList();
-            cy.movingTask(taskName, secondProject.name, firtsProject.label, secondProject.label);
-            checkTask(firtsProject.name, 'not.exist');
+            cy.movingTask(taskName, secondProject.name, firstProject.label, secondProject.label);
+            checkTask(firstProject.name, 'not.exist');
             checkTask(secondProject.name, 'exist');
         });
 
         it.skip('Move a task between projects from a task.', () => {
             cy.goToTaskList();
             cy.openTask(taskName);
-            cy.movingTask(taskName, secondProject.name, firtsProject.label, secondProject.label, true);
-            checkTask(firtsProject.name, 'not.exist');
+            cy.movingTask(taskName, secondProject.name, firstProject.label, secondProject.label, true);
+            checkTask(firstProject.name, 'not.exist');
             checkTask(secondProject.name, 'exist');
         });
     });

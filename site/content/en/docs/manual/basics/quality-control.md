@@ -39,8 +39,10 @@ Consult the detailed guide on quality estimation in CVAT in the
 
 {{%tab header="In an existing task" %}}
 
-> For already existing tasks only the Ground Truth validation mode is available. If you want
-> to use Honeypots for your task, you will need to recreate the task.
+{{% alert title="Note" color="primary" %}}
+For already existing tasks only the Ground Truth validation mode is available. If you want
+to use Honeypots for your task, you will need to recreate the task.
+{{% /alert %}}
 
 1. Open the task page
 1. Select the `+` button next to the job list
@@ -62,9 +64,11 @@ Consult the detailed guide on quality estimation in CVAT in the
 
 ## How to enable immediate job feedback
 
-> **Note**: This feature requires a configured validation set in the task. Learn more
-> in [How to enable quality control](#how-to-enable-quality-control) and in the
-> {{< ilink "/docs/manual/advanced/analytics-and-monitoring/auto-qa#configuring-quality-estimation" "full guide" >}}.
+{{% alert title="Note" color="primary" %}}
+This feature requires a configured validation set in the task. Learn more
+in [How to enable quality control](#how-to-enable-quality-control) and in the
+{{< ilink "/docs/manual/advanced/analytics-and-monitoring/auto-qa#configuring-quality-estimation" "full guide" >}}.
+{{% /alert %}}
 
 1. Open the task **Actions** menu > **Quality control** > **Settings**
 1. Set **Max validations per job** to above zero. 3 is a good starting number

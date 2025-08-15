@@ -304,14 +304,14 @@ function SingleShapeSidebar(): JSX.Element {
 
             savingRef.current = true;
 
-            appDispatch(finishCurrentJobAsync()).then(() => {
+            appDispatch(finishCurrentJobAsync(() => {
                 message.open({
                     duration: 1,
                     type: 'success',
                     content: 'You tagged the job as completed',
                     className: 'cvat-annotation-job-finished-success',
                 });
-            }).finally(() => {
+            })).finally(() => {
                 appDispatch(setNavigationType(NavigationType.REGULAR));
                 dispatch(actionCreators.switchAutoNextFrame(false));
                 savingRef.current = false;
@@ -635,7 +635,7 @@ function SingleShapeSidebar(): JSX.Element {
                 </Col>
             </Row>
             { isPolylabel && (
-                <Row className='cvat-single-shape-annotation-sidebar-predefined-pounts-count-checkbox'>
+                <Row className='cvat-single-shape-annotation-sidebar-predefined-points-count-checkbox'>
                     <Col>
                         <Checkbox
                             checked={state.pointsCountIsPredefined}

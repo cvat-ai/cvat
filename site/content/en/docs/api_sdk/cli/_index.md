@@ -341,11 +341,25 @@ with the CVAT Enterprise or CVAT Cloud.
       -p model_name=str:fasterrcnn_resnet50_fpn_v2
   ```
 
+- Create and run an SAM2 tracking function:
+
+  ```
+  cvat-cli function create-native "SAM2" \
+      --function-file=<CVAT_DIR>/ai-models/tracker/sam2/func.py \
+      -p model_id=str:facebook/sam2.1-hiera-tiny
+  cvat-cli function run-agent <ID printed by previous command> \
+      --function-file=<CVAT_DIR>/ai-models/tracker/sam2/func.py \
+      -p model_id=str:facebook/sam2.1-hiera-tiny
+  ```
+
 These commands accept functions that implement the
 {{< ilink "/docs/api_sdk/sdk/auto-annotation" "auto-annotation function interface" >}}
 from the SDK, same as the `task auto-annotate` command.
 See that command's examples for information on how to implement these functions
 and specify them in the command line.
+
+For detailed SAM2 setup instructions, see the
+{{< ilink "/docs/enterprise/segment-anything-2-tracker" "SAM2 Tracker documentation" >}}.
 
 ### Delete
 

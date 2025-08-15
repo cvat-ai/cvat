@@ -163,7 +163,6 @@ jobs:
         id: run_tests
         run: |
           pytest tests/python/
-          ONE_RUNNING_JOB_IN_QUEUE_PER_USER="true" pytest tests/python/rest_api/test_queues.py
           CVAT_ALLOW_STATIC_CACHE="true" pytest -k "TestTaskData" tests/python
 
       - name: Creating a log file from cvat containers
@@ -309,7 +308,8 @@ jobs:
         run: |
           docker exec -i cvat_server /bin/bash -c "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
           cd ./tests
-          yarn --frozen-lockfile
+          corepack enable yarn
+          yarn --immutable
 
           if [[ ${{ matrix.specs }} == canvas3d_* ]]; then
             npx cypress run \

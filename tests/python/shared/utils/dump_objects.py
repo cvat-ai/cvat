@@ -81,6 +81,8 @@ def main():
 
         if asset_name == "annotations":
             continue  # this will be handled at the end
+        if endpoint == "api/tokens":
+            endpoint = "auth/api_tokens"
 
         response = get_method("admin1", endpoint, page_size="all")
 

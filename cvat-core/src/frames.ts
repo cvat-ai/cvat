@@ -101,6 +101,8 @@ export class FramesMetaData {
     public frameStep: number;
     public chunkCount: number;
     public chunksUpdatedDate: string;
+    public storage: string;
+    public cloudStorageId: number | null;
 
     #updateTrigger: FieldUpdateTrigger;
 
@@ -116,6 +118,8 @@ export class FramesMetaData {
             start_frame: undefined,
             stop_frame: undefined,
             chunks_updated_date: undefined,
+            storage: undefined,
+            cloud_storage_id: undefined,
         };
 
         this.#updateTrigger = new FieldUpdateTrigger();
@@ -196,6 +200,16 @@ export class FramesMetaData {
                 },
                 chunksUpdatedDate: {
                     get: () => data.chunks_updated_date,
+                },
+                storage: {
+                    get: () => data.storage,
+                },
+                cloudStorageId: {
+                    get: () => data.cloud_storage_id,
+                    set: (cloudStorageId) => {
+                        this.#updateTrigger.update('cloudStorageId');
+                        data.cloud_storage_id = cloudStorageId;
+                    },
                 },
             }),
         );
@@ -682,10 +696,11 @@ export function getFramesMeta(type: 'job' | 'task', id: number, forceReload = fa
     return frameMetaCache[id];
 }
 
-function saveJobMeta(meta: FramesMetaData, jobID: number): Promise<FramesMetaData> {
-    frameMetaCache[jobID] = new Promise<FramesMetaData>((resolve, reject) => {
-        serverProxy.frames.saveMeta('job', jobID, {
+function saveMeta(meta: FramesMetaData, session: 'job' | 'task', id: number): Promise<FramesMetaData> {
+    const newMeta = new Promise<FramesMetaData>((resolve, reject) => {
+        serverProxy.frames.saveMeta(session, id, {
             deleted_frames: Object.keys(meta.deletedFrames).map((frame) => +frame),
+            cloud_storage_id: meta.cloudStorageId,
         }).then((serverMeta) => {
             const updatedMetaData = new FramesMetaData({
                 ...serverMeta,
@@ -693,12 +708,18 @@ function saveJobMeta(meta: FramesMetaData, jobID: number): Promise<FramesMetaDat
             });
             resolve(updatedMetaData);
         }).catch((error) => {
-            frameMetaCache[jobID] = Promise.resolve(meta);
+            if (session === 'job') {
+                frameMetaCache[id] = Promise.resolve(meta);
+            }
             reject(error);
         });
     });
 
-    return frameMetaCache[jobID];
+    if (session === 'job') {
+        frameMetaCache[id] = newMeta;
+    }
+
+    return newMeta;
 }
 
 async function refreshJobCacheIfOutdated(jobID: number): Promise<void> {
@@ -938,14 +959,14 @@ export async function restoreFrame(jobID: number, frame: number): Promise<void> 
     delete meta.deletedFrames[frame];
 }
 
-export async function patchMeta(jobID: number): Promise<FramesMetaData> {
-    const meta = await frameMetaCache[jobID];
-    const updatedFields = meta.getUpdated();
-
+export async function patchMeta(id: number, meta?: FramesMetaData, session: 'job' | 'task' = 'job'): Promise<FramesMetaData> {
+    const oldMeta = (session === 'job' ? await frameMetaCache[id] : meta);
+    const updatedFields = oldMeta.getUpdated();
+    let newMeta = null;
     if (Object.keys(updatedFields).length) {
-        await saveJobMeta(meta, jobID);
+        newMeta = await saveMeta(oldMeta, session, id);
     }
-    const newMeta = await frameMetaCache[jobID];
+    newMeta = (session === 'job' ? await frameMetaCache[id] : newMeta);
     return newMeta;
 }
 

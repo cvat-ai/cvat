@@ -28,11 +28,13 @@ Immediate feedback settings, such as `Target metric`, `Target metric threshold`,
 This feature is considered enabled if the `Max validations per job` is above 0. You can change
 the parameters any time.
 
-> **Note**: This feature requires a configured validation set in the task. Read more
-> in the
-> {{< ilink "/docs/manual/basics/quality-control#how-to-enable-quality-control" "quality overview" >}}
-> section or in the
-> {{< ilink "/docs/manual/advanced/analytics-and-monitoring/auto-qa#configuring-quality-estimation" "full guide" >}}.
+{{% alert title="Note" color="primary" %}}
+This feature requires a configured validation set in the task. Read more
+in the
+{{< ilink "/docs/manual/basics/quality-control#how-to-enable-quality-control" "quality overview" >}}
+section or in the
+{{< ilink "/docs/manual/advanced/analytics-and-monitoring/auto-qa#configuring-quality-estimation" "full guide" >}}.
+{{% /alert %}}
 
 1. Open the task **Actions** menu > **Quality control** > **Settings**
 
@@ -53,8 +55,10 @@ the parameters any time.
 
 Each assignee gets no more than the specified number of validation attempts.
 
-> **Note**: this functionality is only available in regular annotation jobs. For instance,
-> it's not possible to use it in Ground Truth jobs.
+{{% alert title="Note" color="primary" %}}
+This functionality is only available in regular annotation jobs. For instance,
+it's not possible to use it in Ground Truth jobs.
+{{% /alert %}}
 
 ### Available feedbacks
 
@@ -69,13 +73,15 @@ There are three types of feedbacks available for different cases:
 
 ## Additional details
 
-> Immediate feedback has a default timeout of 20 seconds.
-> Feedback may be unavailable for large jobs or when there are too many immediate feedback requests.
-> In this case annotators do not see any feedback dialogs and annotate jobs as
-> if the feature was disabled.
+{{% alert title="Note" color="primary" %}}
+Immediate feedback has a default timeout of 20 seconds.
+Feedback may be unavailable for large jobs or when there are too many immediate feedback requests.
+In this case annotators do not see any feedback dialogs and annotate jobs as
+if the feature was disabled.
 
-> The number of attempts does not decrease for staff members who have access to a job
-> with ground truth annotations. For instance, if you're trying to test this feature as the task
-> owner, you may be confused if you see the number of attempts doesn't decrease.
+The number of attempts does not decrease for staff members who have access to a job
+with ground truth annotations. For instance, if you're trying to test this feature as the task
+owner, you may be confused if you see the number of attempts doesn't decrease.
 
-> The number of attempts resets when the job assignee is updated.
+The number of attempts resets when the job assignee is updated.
+{{% /alert %}}

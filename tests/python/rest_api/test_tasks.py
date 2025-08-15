@@ -53,7 +53,7 @@ from rest_api.utils import (
 from shared.fixtures.init import container_exec_cvat
 from shared.tasks.interface import ITaskSpec
 from shared.tasks.types import SourceDataType
-from shared.tasks.utils import parse_frame_step
+from shared.tasks.utils import parse_frame_step, to_rel_frames
 from shared.utils.config import (
     delete_method,
     get_method,
@@ -1274,6 +1274,11 @@ class TestTaskBackups:
         task_id = next(t for t in tasks if t["validation_mode"] == "gt_pool")["id"]
         self._test_can_export_backup(task_id)
 
+    @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
+    def test_can_export_backup_for_simple_gt_job_task(self, tasks, mode):
+        task_id = next(t for t in tasks if t["mode"] == mode and t["validation_mode"] == "gt")["id"]
+        self._test_can_export_backup(task_id)
+
     def test_cannot_export_backup_for_task_without_data(self, tasks):
         task_id = next(t for t in tasks if t["jobs"]["count"] == 0)["id"]
 
@@ -1283,7 +1288,8 @@ class TestTaskBackups:
         assert "Backup of a task without data is not allowed" in str(capture.value.body)
 
     @pytest.mark.with_external_services
-    def test_can_export_and_import_backup_task_with_cloud_storage(self, tasks):
+    @pytest.mark.parametrize("lightweight_backup", [True, False])
+    def test_can_export_and_import_backup_task_with_cloud_storage(self, tasks, lightweight_backup):
         cloud_storage_content = ["image_case_65_1.png", "image_case_65_2.png"]
         task_spec = {
             "name": "Task with files from cloud storage",
@@ -1304,15 +1310,20 @@ class TestTaskBackups:
         task = self.client.tasks.retrieve(task_id)
 
         filename = self.tmp_dir / f"cloud_task_{task.id}_backup.zip"
-        task.download_backup(filename)
+        task.download_backup(filename, lightweight=lightweight_backup)
 
         assert filename.is_file()
         assert filename.stat().st_size > 0
-        self._test_can_restore_task_from_backup(task_id)
+        self._test_can_restore_task_from_backup(task_id, lightweight_backup=lightweight_backup)
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_import_backup(self, tasks, mode):
-        task_id = next(t for t in tasks if t["mode"] == mode)["id"]
+        task_id = next(t for t in tasks if t["mode"] == mode if not t["validation_mode"])["id"]
+        self._test_can_restore_task_from_backup(task_id)
+
+    @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
+    def test_can_import_backup_with_simple_gt_job_task(self, tasks, mode):
+        task_id = next(t for t in tasks if t["mode"] == mode if t["validation_mode"] == "gt")["id"]
         self._test_can_restore_task_from_backup(task_id)
 
     def test_can_import_backup_with_honeypot_task(self, tasks):
@@ -1328,7 +1339,7 @@ class TestTaskBackups:
         # Reproduces the problem with empty 'mode' in a restored task,
         # described in the reproduction steps https://github.com/cvat-ai/cvat/issues/5668
 
-        task_json = next(t for t in tasks if t["mode"] == mode and t["jobs"]["count"])
+        task_json = next(t for t in tasks if t["mode"] == mode if t["jobs"]["count"])
 
         task = self.client.tasks.retrieve(task_json["id"])
         jobs = task.get_jobs()
@@ -1350,24 +1361,32 @@ class TestTaskBackups:
 
         self._test_can_restore_task_from_backup(task["id"])
 
-    def _test_can_restore_task_from_backup(self, task_id: int):
+    def _test_can_restore_task_from_backup(self, task_id: int, lightweight_backup: bool = False):
         old_task = self.client.tasks.retrieve(task_id)
         (_, response) = self.client.api_client.tasks_api.retrieve(task_id)
         task_json = json.loads(response.data)
 
         filename = self.tmp_dir / f"task_{old_task.id}_backup.zip"
-        old_task.download_backup(filename)
+        old_task.download_backup(filename, lightweight=lightweight_backup)
 
         new_task = self.client.tasks.create_from_backup(filename)
 
         old_meta = json.loads(old_task.api.retrieve_data_meta(old_task.id)[1].data)
         new_meta = json.loads(new_task.api.retrieve_data_meta(new_task.id)[1].data)
+
+        exclude_regex_paths = [r"root\['chunks_updated_date'\]"]  # must be different
+
+        if old_meta["storage"] == "cloud_storage":
+            assert new_meta["storage"] == ("cloud_storage" if lightweight_backup else "local")
+            assert new_meta["cloud_storage_id"] is None
+            exclude_regex_paths.extend([r"root\['cloud_storage_id'\]", r"root\['storage'\]"])
+
         assert (
             DeepDiff(
                 old_meta,
                 new_meta,
                 ignore_order=True,
-                exclude_regex_paths=[r"root\['chunks_updated_date'\]"],  # must be different
+                exclude_regex_paths=exclude_regex_paths,
             )
             == {}
         )
@@ -1384,7 +1403,7 @@ class TestTaskBackups:
                     old_job_meta,
                     new_job_meta,
                     ignore_order=True,
-                    exclude_regex_paths=[r"root\['chunks_updated_date'\]"],  # must be different
+                    exclude_regex_paths=exclude_regex_paths,
                 )
                 == {}
             )
@@ -1471,6 +1490,23 @@ class TestWorkWithSimpleGtJobTasks:
 
         yield task, gt_job, annotation_jobs
 
+    @fixture
+    def fxt_task_with_gt_job_and_frame_step(
+        self, tasks, jobs
+    ) -> Generator[dict[str, Any], None, None]:
+        task_id = 34
+
+        gt_job = next(j for j in jobs if j["type"] == "ground_truth" if j["task_id"] == task_id)
+
+        task = tasks[gt_job["task_id"]]
+
+        annotation_jobs = sorted(
+            [j for j in jobs if j["task_id"] == task["id"] if j["id"] != gt_job["id"]],
+            key=lambda j: j["start_frame"],
+        )
+
+        yield task, gt_job, annotation_jobs
+
     @parametrize("task, gt_job, annotation_jobs", [fixture_ref(fxt_task_with_gt_job)])
     def test_gt_job_annotations_are_not_present_in_task_annotation_export(
         self, tmp_path, admin_user, task, gt_job, annotation_jobs
@@ -1504,20 +1540,109 @@ class TestWorkWithSimpleGtJobTasks:
             assert not annotation_source.shapes
             assert not annotation_source.tracks
 
-    @parametrize("task, gt_job, annotation_jobs", [fixture_ref(fxt_task_with_gt_job)])
-    def test_can_exclude_and_restore_gt_frames_via_gt_job_meta(
+    @parametrize(
+        "task, gt_job, annotation_jobs",
+        [fixture_ref(fxt_task_with_gt_job), fixture_ref(fxt_task_with_gt_job_and_frame_step)],
+    )
+    def test_deleted_frames_in_jobs_contain_only_job_frames(
         self, admin_user, task, gt_job, annotation_jobs
     ):
         with make_api_client(admin_user) as api_client:
             task_meta, _ = api_client.tasks_api.retrieve_data_meta(task["id"])
+            frame_step = parse_frame_step(task_meta.frame_filter)
+
+            api_client.tasks_api.partial_update_data_meta(
+                task["id"],
+                patched_data_meta_write_request=models.PatchedDataMetaWriteRequest(
+                    deleted_frames=list(range(task["size"]))
+                ),
+            )
+
+            gt_job_meta, _ = api_client.jobs_api.retrieve_data_meta(gt_job["id"])
+            assert gt_job_meta.deleted_frames == sorted(
+                to_rel_frames(
+                    gt_job_meta.included_frames,
+                    frame_step=frame_step,
+                    task_start_frame=task_meta.start_frame,
+                )
+            )
+
+            for j in annotation_jobs:
+                updated_job_meta, _ = api_client.jobs_api.retrieve_data_meta(j["id"])
+                assert updated_job_meta.deleted_frames == list(
+                    range(j["start_frame"], j["stop_frame"] + 1)
+                )
+
+    @parametrize(
+        "task, gt_job, annotation_jobs",
+        [fixture_ref(fxt_task_with_gt_job), fixture_ref(fxt_task_with_gt_job_and_frame_step)],
+    )
+    def test_deleting_frames_in_gt_job_does_not_affect_task_or_annotation_job_deleted_frames(
+        self, admin_user, task, gt_job, annotation_jobs
+    ):
+        with make_api_client(admin_user) as api_client:
+            task_meta, _ = api_client.tasks_api.retrieve_data_meta(task["id"])
+            frame_step = parse_frame_step(task_meta.frame_filter)
+
+            api_client.tasks_api.partial_update_data_meta(
+                task["id"],
+                patched_data_meta_write_request=models.PatchedDataMetaWriteRequest(
+                    deleted_frames=list(range(task["size"]))
+                ),
+            )
+
+            # Changing deleted frames in the GT job will modify the validation pool of the task,
+            # but will not change deleted frames of the task or other jobs.
+            # Deleted frames in the GT job are computed as union of task deleted frames and
+            # validation layout disabled frames.
+            gt_job_deleted_frames = []
+            gt_job_meta, _ = api_client.jobs_api.partial_update_data_meta(
+                gt_job["id"],
+                patched_job_data_meta_write_request=models.PatchedJobDataMetaWriteRequest(
+                    deleted_frames=gt_job_deleted_frames
+                ),
+            )
+            assert gt_job_meta.deleted_frames == sorted(
+                to_rel_frames(
+                    gt_job_meta.included_frames,
+                    frame_step=frame_step,
+                    task_start_frame=task_meta.start_frame,
+                )
+            )
+
+            task_validation_layout, _ = api_client.tasks_api.retrieve_validation_layout(task["id"])
+            assert task_validation_layout.disabled_frames == gt_job_deleted_frames
+
+            for j in annotation_jobs:
+                updated_job_meta, _ = api_client.jobs_api.retrieve_data_meta(j["id"])
+                assert updated_job_meta.deleted_frames == list(
+                    range(j["start_frame"], j["stop_frame"] + 1)
+                )
+
+    @parametrize(
+        "task, gt_job, annotation_jobs",
+        [fixture_ref(fxt_task_with_gt_job), fixture_ref(fxt_task_with_gt_job_and_frame_step)],
+    )
+    def test_can_exclude_and_restore_gt_frames_via_gt_job_meta(
+        self, admin_user, task, gt_job, annotation_jobs
+    ):
+        with make_api_client(admin_user) as api_client:
+            task_meta, _ = api_client.tasks_api.partial_update_data_meta(
+                task["id"],
+                patched_data_meta_write_request=models.PatchedDataMetaWriteRequest(
+                    deleted_frames=list(range(0, task["size"], 2))
+                ),
+            )
             gt_job_meta, _ = api_client.jobs_api.retrieve_data_meta(gt_job["id"])
             frame_step = parse_frame_step(task_meta.frame_filter)
 
-            for deleted_gt_frames in [
-                [i]
-                for i in range(gt_job_meta["start_frame"], gt_job["stop_frame"] + 1)
-                if gt_job_meta.start_frame + i * frame_step in gt_job_meta.included_frames
-            ] + [[]]:
+            gt_frames = to_rel_frames(
+                gt_job_meta.included_frames,
+                frame_step=frame_step,
+                task_start_frame=task_meta.start_frame,
+            )
+
+            for deleted_gt_frames in [[f] for f in gt_frames] + [[]]:
                 updated_gt_job_meta, _ = api_client.jobs_api.partial_update_data_meta(
                     gt_job["id"],
                     patched_job_data_meta_write_request=models.PatchedJobDataMetaWriteRequest(
@@ -1525,28 +1650,44 @@ class TestWorkWithSimpleGtJobTasks:
                     ),
                 )
 
-                assert updated_gt_job_meta.deleted_frames == deleted_gt_frames
+                # The excluded GT frames must be excluded only from the GT job
+                assert updated_gt_job_meta.deleted_frames == sorted(
+                    set(deleted_gt_frames + task_meta.deleted_frames).intersection(gt_frames)
+                )
 
-                # the excluded GT frames must be excluded only from the GT job
                 updated_task_meta, _ = api_client.tasks_api.retrieve_data_meta(task["id"])
-                assert updated_task_meta.deleted_frames == []
+                assert updated_task_meta.deleted_frames == task_meta.deleted_frames
 
                 for j in annotation_jobs:
                     updated_job_meta, _ = api_client.jobs_api.retrieve_data_meta(j["id"])
-                    assert updated_job_meta.deleted_frames == []
+                    assert updated_job_meta.deleted_frames == [
+                        f
+                        for f in task_meta.deleted_frames
+                        if j["start_frame"] <= f <= j["stop_frame"]
+                    ]
 
-    @parametrize("task, gt_job, annotation_jobs", [fixture_ref(fxt_task_with_gt_job)])
-    def test_can_delete_gt_frames_by_changing_job_meta_in_owning_annotation_job(
+    @parametrize(
+        "task, gt_job, annotation_jobs",
+        [fixture_ref(fxt_task_with_gt_job), fixture_ref(fxt_task_with_gt_job_and_frame_step)],
+    )
+    def test_deleting_frames_in_annotation_jobs_deletes_gt_job_frames(
         self, admin_user, task, gt_job, annotation_jobs
     ):
         with make_api_client(admin_user) as api_client:
-            task_meta, _ = api_client.tasks_api.retrieve_data_meta(task["id"])
+            task_meta, _ = api_client.tasks_api.partial_update_data_meta(
+                task["id"],
+                patched_data_meta_write_request=models.PatchedDataMetaWriteRequest(
+                    deleted_frames=list(range(0, task["size"], 2))
+                ),
+            )
             gt_job_meta, _ = api_client.jobs_api.retrieve_data_meta(gt_job["id"])
             frame_step = parse_frame_step(task_meta.frame_filter)
 
-            gt_frames = [
-                (f - gt_job_meta.start_frame) // frame_step for f in gt_job_meta.included_frames
-            ]
+            gt_frames = to_rel_frames(
+                gt_job_meta.included_frames,
+                frame_step=frame_step,
+                task_start_frame=task_meta.start_frame,
+            )
             deleted_gt_frame = gt_frames[0]
 
             annotation_job = next(
@@ -1554,19 +1695,31 @@ class TestWorkWithSimpleGtJobTasks:
                 for j in annotation_jobs
                 if j["start_frame"] <= deleted_gt_frame <= j["stop_frame"]
             )
-            api_client.jobs_api.partial_update_data_meta(
+            updated_job_meta, _ = api_client.jobs_api.partial_update_data_meta(
                 annotation_job["id"],
                 patched_job_data_meta_write_request=models.PatchedJobDataMetaWriteRequest(
                     deleted_frames=[deleted_gt_frame]
                 ),
             )
+            assert updated_job_meta.deleted_frames == [deleted_gt_frame]
 
-            # in this case deleted frames are deleted everywhere
-            updated_gt_job_meta, _ = api_client.jobs_api.retrieve_data_meta(gt_job["id"])
-            assert updated_gt_job_meta.deleted_frames == [deleted_gt_frame]
+            updated_task_deleted_frames = sorted(
+                [deleted_gt_frame]
+                + [
+                    f
+                    for f in task_meta.deleted_frames
+                    if not (annotation_job["start_frame"] <= f <= annotation_job["stop_frame"])
+                ]
+            )
 
+            # in this case deleted frames are deleted both in the task and in the GT job
             updated_task_meta, _ = api_client.tasks_api.retrieve_data_meta(task["id"])
-            assert updated_task_meta.deleted_frames == [deleted_gt_frame]
+            assert updated_task_meta.deleted_frames == updated_task_deleted_frames
+
+            updated_gt_job_meta, _ = api_client.jobs_api.retrieve_data_meta(gt_job["id"])
+            assert updated_gt_job_meta.deleted_frames == [
+                f for f in updated_task_deleted_frames if f in gt_frames
+            ]
 
 
 @pytest.mark.usefixtures("restore_db_per_function")

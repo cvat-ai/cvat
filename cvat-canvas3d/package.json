@@ -10,16 +10,15 @@
   "author": "CVAT.ai",
   "license": "MIT",
   "browserslist": [
-    "Chrome >= 63",
-    "Firefox > 102",
+    "Chrome >= 99",
+    "Firefox >= 110",
     "not IE 11",
     "> 2%"
   ],
-  "devDependencies": {},
   "dependencies": {
-    "cvat-core": "link:./../cvat-core",
     "@types/three": "^0.156.0",
     "camera-controls": "^1.25.3",
+    "cvat-core": "link:./../cvat-core",
     "three": "^0.156.1"
   }
 }

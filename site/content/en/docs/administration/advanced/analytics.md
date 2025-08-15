@@ -24,7 +24,9 @@ on admin page by `Has access to analytics` checkbox.
 
 ![CVAT Analytics](/images/analytics_menu.jpg)
 
-> Note: CVAT analytics and monitoring are available only for on-prem solution.
+{{% alert title="Note" color="primary" %}}
+CVAT analytics and monitoring are available only for on-prem solution.
+{{% /alert %}}
 
 See:
 
@@ -54,10 +56,12 @@ The CVAT analytics is based on Vector, ClickHouse, and Grafana.
 CVAT and its analytics module can be set up locally, for
 self-hosted solution analytics are enabled by default.
 
-> For detailed CVAT installation instructions, see
-> {{< ilink "/docs/administration/basics/installation" "Installation Guide" >}}
-> or refer to the [CVAT Course](https://www.youtube.com/playlist?list=PL0to7Ng4PuuYQT4eXlHb_oIlq_RPeuasN)
-> for installation videos.
+{{% alert title="Note" color="primary" %}}
+For detailed CVAT installation instructions, see
+{{< ilink "/docs/administration/basics/installation" "Installation Guide" >}}
+or refer to the [CVAT Course](https://www.youtube.com/playlist?list=PL0to7Ng4PuuYQT4eXlHb_oIlq_RPeuasN)
+for installation videos.
+{{% /alert %}}
 
 All analytics-related features will be launched when you
 start CVAT containers with the following command:
@@ -397,9 +401,11 @@ GROUP BY time
 ORDER BY time
 ```
 
-> **Note**, that by default the updated configuration will not be saved
-> and will be reset to the default parameters after you restart the
-> container.
+{{% alert title="Note" color="primary" %}}
+By default the updated configuration will not be saved
+and will be reset to the default parameters after you restart the
+container.
+{{% /alert %}}
 
 To save the updated configuration, do the following:
 

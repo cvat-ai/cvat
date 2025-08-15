@@ -72,7 +72,8 @@ jobs:
 
       - name: Instrumentation of the code then rebuilding the CVAT UI
         run: |
-          yarn --frozen-lockfile
+          corepack enable yarn
+          yarn --immutable
           yarn run coverage
 
       - name: CVAT UI. Build and push
@@ -187,8 +188,6 @@ jobs:
           CVAT_ALLOW_STATIC_CACHE: ${{ matrix.allow_cache }}
         run: |
           pytest tests/python/ -k "${{ matrix.pattern }}" --cov --cov-report=json --alluredir=tests/python/allure-results
-          ONE_RUNNING_JOB_IN_QUEUE_PER_USER="true" pytest tests/python/rest_api/test_queues.py --cov --cov-report=json
-
           for COVERAGE_FILE in `find -name "coverage*.json" -type f -printf "%f\n"`; do mv ${COVERAGE_FILE} "${COVERAGE_FILE%%.*}_0.json"; done
 
       - name: Uploading code coverage results as an artifact
@@ -321,6 +320,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
             node-version: '22.x'
+            # NOTE: corepack is not bundled after Node 25
+            # https://nodejs.org/docs/v22.18.0/api/corepack.html#corepack
 
       - name: Download CVAT server image
         uses: actions/download-artifact@v4
@@ -373,7 +374,8 @@ jobs:
         run: |
           docker exec -i cvat_server /bin/bash -c "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
           cd ./tests
-          yarn --frozen-lockfile
+          corepack enable yarn
+          yarn --immutable
 
           if [[ ${{ matrix.specs }} == canvas3d_* ]]; then
             npx cypress run \
@@ -518,8 +520,9 @@ jobs:
             LOGS_DIR: "${{ github.workspace }}/rest_api_testing"
         run: |
           mkdir ${LOGS_DIR}
-          kubectl logs $(kubectl get pods -l component=server -o 'jsonpath={.items[0].metadata.name}') >${LOGS_DIR}/cvat_server.log
-          kubectl logs $(kubectl get pods -l component=worker-utils -o 'jsonpath={.items[0].metadata.name}') >${LOGS_DIR}/cvat_workers.log
+          for backend_pod in $(kubectl get pods -l tier=backend -o 'jsonpath={.items[*].metadata.name}'); do
+            kubectl logs ${backend_pod} >${LOGS_DIR}/${backend_pod}.log
+          done
           kubectl logs $(kubectl get pods -l app.kubernetes.io/name=traefik -o 'jsonpath={.items[0].metadata.name}') >${LOGS_DIR}/traefik.log
 
       - name: Uploading "cvat" container logs as an artifact

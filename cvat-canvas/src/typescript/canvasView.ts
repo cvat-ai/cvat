@@ -45,6 +45,7 @@ import {
 export interface CanvasView {
     html(): HTMLDivElement;
     setupConflictRegions(clientID: number): number[];
+    translateFromSVG(points: number[]): number[];
 }
 
 export class CanvasViewImpl implements CanvasView, Listener {
@@ -419,7 +420,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             // if object view was not changed by canvas and points accepted as is without any changes
             // the view will not be updated during objects setup if we just set points as is here
             // that is why we need to set points to an empty array (something that can't normally come from CVAT)
-            // I do not think it can be easily fixed now, hovewer in the future we should refactor code
+            // I do not think it can be easily fixed now, however in the future we should refactor code
             if (Number.isInteger(state.parentID)) {
                 const { elements } = this.drawnStates[state.parentID];
                 const drawnElement = elements.find((el) => el.clientID === state.clientID);
@@ -500,7 +501,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         if (objects && typeof duration !== 'undefined') {
             if (this.mode === Mode.GROUP && objects.length > 1) {
                 this.mode = Mode.IDLE;
-                this.canvas.dispatchEvent(new CustomEvent('canvas.groupped', {
+                this.canvas.dispatchEvent(new CustomEvent('canvas.grouped', {
                     bubbles: false,
                     cancelable: true,
                     detail: {
@@ -1881,12 +1882,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
 
             this.activate(activeElement);
-            this.editHandler.configurate(this.configuration);
-            this.drawHandler.configurate(this.configuration);
-            this.masksHandler.configurate(this.configuration);
-            this.autoborderHandler.configurate(this.configuration);
-            this.interactionHandler.configurate(this.configuration);
-            this.sliceHandler.configurate(this.configuration);
+            this.editHandler.configure(this.configuration);
+            this.drawHandler.configure(this.configuration);
+            this.masksHandler.configure(this.configuration);
+            this.autoborderHandler.configure(this.configuration);
+            this.interactionHandler.configure(this.configuration);
+            this.sliceHandler.configure(this.configuration);
             this.transformCanvas();
 
             // remove if exist and not enabled
@@ -2239,6 +2240,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
         cx = box.x + (box.width) / 2;
         cy = box.y;
         return [cx, cy];
+    }
+
+    public translateFromSVG(point: number[]): number[] {
+        return translateFromSVG(this.content, point);
     }
 
     private redrawBitmap(): void {
