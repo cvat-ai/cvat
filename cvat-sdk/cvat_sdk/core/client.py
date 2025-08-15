@@ -245,10 +245,9 @@ class Client:
         )
         assert "sessionid" in self.api_client.cookies
         assert "csrftoken" in self.api_client.cookies
-        self.api_client.set_default_header("Origin", self.api_client.build_origin_header())
-        self.api_client.set_default_header(
-            "X-CSRFToken", self.api_client.cookies["csrftoken"].value
-        )
+        self.api_client.configuration.api_key["csrfHeaderAuth"] = self.api_client.cookies[
+            "csrftoken"
+        ].value
 
     def has_credentials(self) -> bool:
         return (
@@ -260,8 +259,7 @@ class Client:
     def _clear_credentials(self):
         self.api_client.cookies.pop("sessionid", None)
         self.api_client.cookies.pop("csrftoken", None)
-        self.api_client.default_headers.pop("Origin", None)
-        self.api_client.default_headers.pop("X-CSRFToken", None)
+        self.api_client.configuration.api_key.pop("csrfHeaderAuth", None)
         self.api_client.configuration.access_token = None
 
     def logout(self) -> None:

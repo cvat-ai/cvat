@@ -27,17 +27,12 @@ class Downloader:
     def __init__(self, client: Client):
         self._client = client
 
-    def _build_request_headers(self) -> dict[str, str]:
+    def _make_request_headers(self) -> dict[str, str]:
         headers = self._client.api_client.get_common_headers()
-        self._client.api_client.update_params_for_auth(
-            headers=headers,
-            queries={},  # query auth is not expected
-            auth_settings=[""],
-            resource_path="",
-            method="GET",
-            request_auths=list(self._client.api_client.configuration.auth_settings().values()),
-            body="",
-        )
+        query_params = []
+        self._client.api_client.update_params_for_auth(headers=headers, queries=query_params)
+        assert not query_params  # query auth is not expected
+
         return headers
 
     def download_file(
@@ -61,7 +56,7 @@ class Downloader:
 
         response = self._client.api_client.rest_client.GET(
             url,
-            headers=self._build_request_headers(),
+            headers=self._make_request_headers(),
             _request_timeout=timeout,
             _parse_response=False,
         )
@@ -111,7 +106,7 @@ class Downloader:
         response = client.api_client.rest_client.request(
             method=endpoint.settings["http_method"],
             url=url,
-            headers=self._build_request_headers(),
+            headers=self._make_request_headers(),
         )
 
         client.logger.debug("STATUS %s", response.status)
