@@ -1317,11 +1317,9 @@ class TestTaskBackups:
         assert filename.stat().st_size > 0
 
         if lightweight_backup and os.getenv("CVAT_ALLOW_STATIC_CACHE") != "true":
-            with zipfile.ZipFile(filename, 'r') as zf:
+            with zipfile.ZipFile(filename, "r") as zf:
                 files_in_data = [
-                    os.path.split(name)[1]
-                    for name in zf.namelist()
-                    if name.startswith("data")
+                    os.path.split(name)[1] for name in zf.namelist() if name.startswith("data")
                 ]
                 assert files_in_data == ["manifest.jsonl"]
 
