@@ -1288,10 +1288,6 @@ class TestTaskBackups:
 
         assert "Backup of a task without data is not allowed" in str(capture.value.body)
 
-    @pytest.mark.skipif(
-        os.getenv("CVAT_ALLOW_STATIC_CACHE") == "true",
-        reason="Lightweight backup does not work with CVAT_ALLOW_STATIC_CACHE",
-    )
     @pytest.mark.with_external_services
     @pytest.mark.parametrize("lightweight_backup", [True, False])
     def test_can_export_and_import_backup_task_with_cloud_storage(self, tasks, lightweight_backup):
@@ -1319,6 +1315,16 @@ class TestTaskBackups:
 
         assert filename.is_file()
         assert filename.stat().st_size > 0
+
+        if lightweight_backup and os.getenv("CVAT_ALLOW_STATIC_CACHE") != "true":
+            with zipfile.ZipFile(filename, 'r') as zf:
+                files_in_data = [
+                    os.path.split(name)[1]
+                    for name in zf.namelist()
+                    if name.startswith("data")
+                ]
+                assert files_in_data == ["manifest.jsonl"]
+
         self._test_can_restore_task_from_backup(task_id, lightweight_backup=lightweight_backup)
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
@@ -1385,6 +1391,10 @@ class TestTaskBackups:
             assert new_meta["storage"] == ("cloud_storage" if lightweight_backup else "local")
             assert new_meta["cloud_storage_id"] is None
             exclude_regex_paths.extend([r"root\['cloud_storage_id'\]", r"root\['storage'\]"])
+        elif old_meta["cloud_storage_id"] is not None:
+            # static cache
+            assert new_meta["cloud_storage_id"] is None
+            exclude_regex_paths.extend([r"root\['cloud_storage_id'\]"])
 
         assert (
             DeepDiff(
