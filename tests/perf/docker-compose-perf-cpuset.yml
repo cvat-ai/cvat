@@ -1,0 +1,51 @@
+
+
+services:
+  cvat_server:
+    cpuset: 2,4,6,8,10
+  cvat_db:
+    cpuset: 2,4,6,8,10
+  cvat_redis_inmem:
+    cpuset: 2,4,6,8,10
+  cvat_redis_ondisk:
+    cpuset: 2,4,6,8,10
+  cvat_worker_utils:
+    cpuset: 2,4,6,8,10
+  cvat_worker_export:
+    cpuset: 2,4,6,8,10
+  cvat_worker_import:
+    cpuset: 2,4,6,8,10
+  cvat_worker_annotation:
+    cpuset: 2,4,6,8,10
+  cvat_worker_webhooks:
+    cpuset: 2,4,6,8,10
+  cvat_worker_quality_reports:
+    cpuset: 2,4,6,8,10
+  cvat_worker_chunks:
+    cpuset: 2,4,6,8,10
+  cvat_worker_consensus:
+    cpuset: 2,4,6,8,10
+  cvat_ui:
+    cpuset: 2,4,6,8,10
+  traefik:
+    cpuset: 2,4,6,8,10
+  cvat_opa:
+    cpuset: 2,4,6,8,10
+  cvat_clickhouse:
+    cpuset: 2,4,6,8,10
+  cvat_vector:
+    cpuset: 2,4,6,8,10
+  cvat_grafana:
+    cpuset: 2,4,6,8,10
+  minio:
+    cpuset: 2,4,6,8,10
+  mc:
+    cpuset: 2,4,6,8,10
+  nuclio:
+    cpuset: 2,4,6,8,10
+  perf-k6:
+    cpuset: 2,4,6,8,10
+  perf-prometheus:
+    cpuset: "0"
+  perf-grafana:
+    cpuset: "0"

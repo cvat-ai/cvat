@@ -50,6 +50,7 @@ yarn-error.log*
 node_modules
 /*env*/
 /.*env*
+perfkit.egg-info/
 
 # Ignore all js dists
 cvat-data/dist
