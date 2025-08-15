@@ -1288,6 +1288,10 @@ class TestTaskBackups:
 
         assert "Backup of a task without data is not allowed" in str(capture.value.body)
 
+    @pytest.mark.skipif(
+        os.getenv("CVAT_ALLOW_STATIC_CACHE") == "true",
+        reason="Lightweight backup does not work with CVAT_ALLOW_STATIC_CACHE",
+    )
     @pytest.mark.with_external_services
     @pytest.mark.parametrize("lightweight_backup", [True, False])
     def test_can_export_and_import_backup_task_with_cloud_storage(self, tasks, lightweight_backup):
