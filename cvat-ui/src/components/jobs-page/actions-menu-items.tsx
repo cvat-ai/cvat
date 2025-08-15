@@ -7,7 +7,7 @@ import { MenuProps } from 'antd/lib/menu';
 import { LoadingOutlined } from '@ant-design/icons';
 import { usePlugins } from 'utils/hooks';
 import { CVATMenuEditLabel } from 'components/common/cvat-menu-edit-label';
-import { LabelWithCountHOC } from 'components/common/label-with-count';
+import { LabelWithCountHOF } from 'components/common/label-with-count';
 
 interface MenuItemsData {
     jobId: number;
@@ -46,7 +46,7 @@ export default function JobActionsItems(
     const isBulkMode = selectedIds.length > 1;
     const bulkAllowedKeys = ['edit_assignee', 'edit_state', 'edit_stage', 'export_job', 'delete'];
     const isDisabled = (key: string): boolean => isBulkMode && !bulkAllowedKeys.includes(key);
-    const withCount = LabelWithCountHOC(selectedIds, bulkAllowedKeys);
+    const withCount = LabelWithCountHOF(selectedIds, bulkAllowedKeys);
 
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
 

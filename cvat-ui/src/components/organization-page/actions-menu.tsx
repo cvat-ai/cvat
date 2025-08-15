@@ -14,7 +14,7 @@ import { CVATMenuEditLabel } from 'components/common/cvat-menu-edit-label';
 import { MenuProps } from 'antd/lib/menu';
 import { useDispatch, useSelector } from 'react-redux';
 import { CombinedState } from 'reducers';
-import { LabelWithCountHOC } from 'components/common/label-with-count';
+import { LabelWithCountHOF } from 'components/common/label-with-count';
 import { makeBulkOperationAsync } from 'actions/bulk-actions';
 import { removeOrganizationMemberAsync } from 'actions/organization-actions';
 import { resendInvitationAsync } from 'actions/invitations-actions';
@@ -83,7 +83,7 @@ function MemberActionsMenu(props: Readonly<MemberActionsMenuProps>): JSX.Element
         [MenuKeys.REMOVE_MEMBER]: membershipsToAct.filter(canRemoveMembership),
     };
 
-    const withCount = LabelWithCountHOC(selectedIds, bulkKeys, actionsApplicable);
+    const withCount = LabelWithCountHOF(selectedIds, bulkKeys, actionsApplicable);
 
     const handleRemoveMembership = (): void => {
         const membershipsToRemove = actionsApplicable[MenuKeys.REMOVE_MEMBER];

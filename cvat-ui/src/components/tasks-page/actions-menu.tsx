@@ -42,22 +42,22 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
         taskInstance, triggerElement, dropdownTrigger, onUpdateTask,
     } = props;
     const dispatch = useDispatch();
-
-    const selectedIds = useSelector((state: CombinedState) => state.tasks.selected);
-    const isBulkMode = selectedIds.length > 1;
-    const allTasks = useSelector((state: CombinedState) => state.tasks.current);
-
     const pluginActions = usePlugins((state: CombinedState) => state.plugins.components.taskActions.items, props);
     const {
         activeInference,
         mergingConsensus,
         currentOrganization,
+        selectedIds,
+        currentTasks,
     } = useSelector((state: CombinedState) => ({
         activeInference: state.models.inferences[taskInstance.id],
         mergingConsensus: state.consensus.actions.merging,
-        currentOrganization: state.organizations.current,
+        currentOrganization: state.organizations.current as Organization | null,
+        selectedIds: state.tasks.selected,
+        currentTasks: state.tasks.current,
     }), shallowEqual);
 
+    const isBulkMode = selectedIds.length > 1;
     const {
         dropdownOpen,
         editField,
@@ -113,20 +113,24 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
         }
     }, [taskInstance.id]);
 
-    const onUpdateTaskAssignee = useCallback(async (assignee: User | null) => {
-        const allTaskIDs = selectedIds.includes(taskInstance.id) ? selectedIds : [taskInstance.id];
+    const collectObjectsForBulkUpdate = useCallback((): Task[] => {
+        const taskIdsToUpdate = selectedIds.includes(taskInstance.id) ? selectedIds : [taskInstance.id];
         const tasksToUpdate = selectedIds.includes(taskInstance.id) ?
-            allTasks.filter((task) => allTaskIDs.includes(task.id)) :
-            [taskInstance];
-        const tasksNeedingUpdate = tasksToUpdate.filter((task) => task.assignee?.id !== assignee?.id);
+            currentTasks.filter((task) => taskIdsToUpdate.includes(task.id)) : [taskInstance];
+        return tasksToUpdate;
+    }, [selectedIds, currentTasks, taskInstance]);
 
+    const onUpdateTaskAssignee = useCallback(async (assignee: User | null) => {
         stopEditField();
-        if (tasksNeedingUpdate.length === 0) {
+        const tasksToUpdate = collectObjectsForBulkUpdate()
+            .filter((task) => task.assignee?.id !== assignee?.id);
+
+        if (tasksToUpdate.length === 0) {
             return;
         }
 
         await dispatch(makeBulkOperationAsync(
-            tasksNeedingUpdate,
+            tasksToUpdate,
             async (task) => {
                 task.assignee = assignee;
                 if (onUpdateTask && task.id === taskInstance.id) {
@@ -137,10 +141,10 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
             },
             (task, idx, total) => `Updating assignee for task #${task.id} (${idx + 1}/${total})`,
         ));
-    }, [taskInstance, selectedIds, allTasks, stopEditField, dispatch]);
+    }, [taskInstance, stopEditField, dispatch, collectObjectsForBulkUpdate]);
 
     const onDeleteTask = useCallback(() => {
-        const tasksToDelete = allTasks.filter((task) => selectedIds.includes(task.id));
+        const tasksToDelete = currentTasks.filter((task) => selectedIds.includes(task.id));
         Modal.confirm({
             title: isBulkMode ?
                 `Delete ${tasksToDelete.length} selected tasks` :
@@ -166,27 +170,51 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
             },
             okText: isBulkMode ? 'Delete selected' : 'Delete',
         });
-    }, [taskInstance, allTasks, selectedIds, isBulkMode]);
+    }, [taskInstance, currentTasks, selectedIds, isBulkMode]);
 
-    const updateOrganization = useCallback((dstOrganizationId: number | null) => {
-        taskInstance.organizationId = dstOrganizationId;
-        if (
-            taskInstance.cloudStorageId ||
-            taskInstance.sourceStorage.cloudStorageId ||
-            taskInstance.targetStorage.cloudStorageId
-        ) {
-            dispatch(cloudStoragesActions.openLinkedCloudStorageUpdatingModal(taskInstance));
-        } else {
-            dispatch(updateTaskAsync(taskInstance, {}, ResourceUpdateTypes.UPDATE_ORGANIZATION));
+    const updateOrganization = useCallback((newOrganizationId: number | null, tasksToUpdate: Task[]) => {
+        function doBulkUpdate(): void {
+            dispatch(makeBulkOperationAsync(
+                tasksToUpdate,
+                async (task) => {
+                    task.organizationId = newOrganizationId;
+                    if (onUpdateTask && task.id === taskInstance.id) {
+                        onUpdateTask(task);
+                    } else {
+                        await dispatch(updateTaskAsync(taskInstance, {}, ResourceUpdateTypes.UPDATE_ORGANIZATION));
+                    }
+                },
+                (task, idx, total) => `Updating organization for task #${task.id} (${idx + 1}/${total})`,
+            ));
         }
-    }, [taskInstance]);
 
-    const onUpdateTaskOrganization = useCallback((dstOrganization: Organization | null) => {
+        if (
+            tasksToUpdate.some((task) => {
+                const { sourceStorage, targetStorage } = task;
+                return !!sourceStorage.cloudStorageId || !!targetStorage.cloudStorageId;
+            })
+        ) {
+            dispatch(cloudStoragesActions.openLinkedCloudStorageUpdatingModal(tasksToUpdate, doBulkUpdate));
+        } else {
+            doBulkUpdate();
+        }
+    }, [dispatch]);
+
+    const onUpdateTaskOrganization = useCallback((newOrganization: Organization | null) => {
         stopEditField();
+
+        const tasksToUpdate = collectObjectsForBulkUpdate();
+        if (tasksToUpdate.length === 0) {
+            return;
+        }
+
         confirmTransferModal(
-            taskInstance, currentOrganization as Organization | null, dstOrganization, updateOrganization,
+            tasksToUpdate,
+            currentOrganization,
+            newOrganization,
+            () => updateOrganization(newOrganization?.id ?? null, tasksToUpdate),
         );
-    }, [taskInstance]);
+    }, [currentOrganization, stopEditField, collectObjectsForBulkUpdate, updateOrganization]);
 
     let menuItems;
     if (editField) {
@@ -194,14 +222,12 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
             assignee: (
                 <UserSelector
                     value={isBulkMode ? null : taskInstance.assignee}
-                    onSelect={(value: User | null): void => {
-                        onUpdateTaskAssignee(value);
-                    }}
+                    onSelect={onUpdateTaskAssignee}
                 />
             ),
             organization: (
                 <OrganizationSelector
-                    defaultValue={currentOrganization?.slug}
+                    defaultValue={isBulkMode ? undefined : currentOrganization?.slug}
                     setNewOrganization={onUpdateTaskOrganization}
                 />
             ),

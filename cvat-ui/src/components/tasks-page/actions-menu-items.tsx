@@ -6,7 +6,7 @@ import React from 'react';
 import { LoadingOutlined } from '@ant-design/icons';
 import { MenuProps } from 'antd/lib/menu';
 import { usePlugins } from 'utils/hooks';
-import { LabelWithCountHOC } from 'components/common/label-with-count';
+import { LabelWithCountHOF } from 'components/common/label-with-count';
 import { CVATMenuEditLabel } from '../common/cvat-menu-edit-label';
 
 interface MenuItemsData {
@@ -28,10 +28,13 @@ interface MenuItemsData {
     selectedIds: number[];
 }
 
+const bulkAllowedKeys = ['edit_assignee', 'backup_task', 'export_task_dataset', 'delete_task', 'edit_organization'];
+
 export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuProps: unknown): MenuProps['items'] {
     const {
         startEditField,
         taskId,
+        selectedIds,
         projectId,
         pluginActions,
         isAutomaticAnnotationEnabled,
@@ -45,14 +48,11 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
         onRunAutoAnnotation,
         onMoveTaskToProject,
         onDeleteTask,
-        selectedIds,
     } = menuItemsData;
 
     const isBulkMode = selectedIds.length > 1;
-    const bulkAllowedKeys = ['edit_assignee', 'backup_task', 'export_task_dataset', 'delete_task'];
     const isDisabled = (key: string): boolean => isBulkMode && !bulkAllowedKeys.includes(key);
-    const withCount = LabelWithCountHOC(selectedIds, bulkAllowedKeys);
-
+    const withCount = LabelWithCountHOF(selectedIds, bulkAllowedKeys);
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
 
     menuItems.push([{
@@ -142,7 +142,11 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
         menuItems.push([{
             key: 'edit_organization',
             onClick: () => startEditField('organization'),
-            label: <CVATMenuEditLabel>Organization</CVATMenuEditLabel>,
+            label: (
+                <CVATMenuEditLabel>
+                    {withCount('Organization', 'edit_organization')}
+                </CVATMenuEditLabel>
+            ),
         }, 100]);
     }
 
