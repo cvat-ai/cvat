@@ -4,7 +4,11 @@
 // SPDX-License-Identifier: MIT
 
 import { Store } from 'antd/lib/form/interface';
-import { getCore, User } from 'cvat-core-wrapper';
+import {
+    getCore, Membership, Organization, User,
+} from 'cvat-core-wrapper';
+import { OrganizationMembersQuery } from 'reducers';
+import { filterNull } from 'utils/filter-null';
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 
 const core = getCore();
@@ -35,6 +39,9 @@ export enum OrganizationActionsTypes {
     UPDATE_ORGANIZATION_MEMBER = 'UPDATE_ORGANIZATION_MEMBER',
     UPDATE_ORGANIZATION_MEMBER_SUCCESS = 'UPDATE_ORGANIZATION_MEMBER_SUCCESS',
     UPDATE_ORGANIZATION_MEMBER_FAILED = 'UPDATE_ORGANIZATION_MEMBER_FAILED',
+    GET_ORGANIZATION_MEMBERS = 'GET_ORGANIZATION_MEMBERS',
+    GET_ORGANIZATION_MEMBERS_SUCCESS = 'GET_ORGANIZATION_MEMBERS_SUCCESS',
+    GET_ORGANIZATION_MEMBERS_FAILED = 'GET_ORGANIZATION_MEMBERS_FAILED',
 }
 
 const organizationActions = {
@@ -90,6 +97,15 @@ const organizationActions = {
     updateOrganizationMemberSuccess: () => createAction(OrganizationActionsTypes.UPDATE_ORGANIZATION_MEMBER_SUCCESS),
     updateOrganizationMemberFailed: (username: string, role: string, error: any) => createAction(
         OrganizationActionsTypes.UPDATE_ORGANIZATION_MEMBER_FAILED, { username, role, error },
+    ),
+    getOrganizationMembers: (membersQuery: OrganizationMembersQuery) => createAction(
+        OrganizationActionsTypes.GET_ORGANIZATION_MEMBERS, { membersQuery },
+    ),
+    getOrganizationMembersSuccess: (members: Membership[]) => createAction(
+        OrganizationActionsTypes.GET_ORGANIZATION_MEMBERS_SUCCESS, { members },
+    ),
+    getOrganizationMembersFailed: (error: any) => createAction(
+        OrganizationActionsTypes.GET_ORGANIZATION_MEMBERS_FAILED, { error },
     ),
 };
 
@@ -219,14 +235,12 @@ export function leaveOrganizationAsync(
 export function removeOrganizationMemberAsync(
     organization: any,
     { user, id }: { user: User; id: number },
-    onFinish: () => void,
 ): ThunkAction {
     return async function (dispatch) {
         dispatch(organizationActions.removeOrganizationMember());
         try {
             await organization.deleteMembership(id);
             dispatch(organizationActions.removeOrganizationMemberSuccess());
-            onFinish();
         } catch (error) {
             dispatch(organizationActions.removeOrganizationMemberFailed(user.username, error));
         }
@@ -237,16 +251,30 @@ export function updateOrganizationMemberAsync(
     organization: any,
     { user, id }: { user: User; id: number },
     role: string,
-    onFinish: () => void,
 ): ThunkAction {
     return async function (dispatch) {
         dispatch(organizationActions.updateOrganizationMember());
         try {
             await organization.updateMembership(id, role);
             dispatch(organizationActions.updateOrganizationMemberSuccess());
-            onFinish();
         } catch (error) {
             dispatch(organizationActions.updateOrganizationMemberFailed(user.username, role, error));
+        }
+    };
+}
+
+export function getOrganizationMembersAsync(
+    organization: Organization,
+    membersQuery: OrganizationMembersQuery,
+): ThunkAction {
+    return async function (dispatch) {
+        dispatch(organizationActions.getOrganizationMembers(membersQuery));
+        try {
+            const filteredQuery = filterNull(membersQuery);
+            const members = await organization.members(filteredQuery);
+            dispatch(organizationActions.getOrganizationMembersSuccess(members));
+        } catch (error) {
+            dispatch(organizationActions.getOrganizationMembersFailed(error));
         }
     };
 }

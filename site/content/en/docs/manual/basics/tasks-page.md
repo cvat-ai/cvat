@@ -32,7 +32,9 @@ In the upper right corner, there are {{< ilink "/docs/manual/advanced/filter#sor
 
 ## Filter
 
-> Applying a filter disables the {{< ilink "/docs/manual/advanced/filter#quick-filters" "quick filter" >}}.
+{{% alert title="Note" color="primary" %}}
+Applying a filter disables the {{< ilink "/docs/manual/advanced/filter#quick-filters" "quick filter" >}}.
+{{% /alert %}}
 
 The filter works similarly to the filters for annotation,
 you can create rules from [properties](#supported-properties-for-tasks-list),

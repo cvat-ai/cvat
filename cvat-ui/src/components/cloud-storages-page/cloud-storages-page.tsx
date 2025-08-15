@@ -10,11 +10,12 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Row } from 'antd/lib/grid';
 import Spin from 'antd/lib/spin';
 
-import { CloudStoragesQuery, CombinedState } from 'reducers';
+import { CloudStoragesQuery, CombinedState, SelectedResourceType } from 'reducers';
 import { getCloudStoragesAsync } from 'actions/cloud-storage-actions';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import { anySearch } from 'utils/any-search';
 import { useResourceQuery } from 'utils/hooks';
+import { selectionActions } from 'actions/selection-actions';
 import CloudStoragesListComponent from './cloud-storages-list';
 import EmptyListComponent from './empty-list';
 import TopBarComponent from './top-bar';
@@ -27,6 +28,7 @@ export default function StoragesPageComponent(): JSX.Element {
     const fetching = useSelector((state: CombinedState) => state.cloudStorages.fetching);
     const current = useSelector((state: CombinedState) => state.cloudStorages.current);
     const query = useSelector((state: CombinedState) => state.cloudStorages.gettingQuery);
+    const bulkFetching = useSelector((state: CombinedState) => state.bulkActions.fetching);
 
     const updatedQuery = useResourceQuery<CloudStoragesQuery>(query, { pageSize: 12 });
 
@@ -52,6 +54,12 @@ export default function StoragesPageComponent(): JSX.Element {
         },
         [query],
     );
+
+    const allStorageIds = useSelector((state: CombinedState) => state.cloudStorages.current.map((s) => s.id));
+    const selectedCount = useSelector((state: CombinedState) => state.cloudStorages.selected.length);
+    const onSelectAll = useCallback(() => {
+        dispatch(selectionActions.selectResources(allStorageIds, SelectedResourceType.CLOUD_STORAGES));
+    }, [allStorageIds]);
 
     const isAnySearch = anySearch<CloudStoragesQuery>(query);
 
@@ -98,8 +106,10 @@ export default function StoragesPageComponent(): JSX.Element {
                     );
                 }}
                 query={updatedQuery}
+                selectedCount={selectedCount}
+                onSelectAll={onSelectAll}
             />
-            { fetching ? (
+            { fetching && !bulkFetching ? (
                 <Row className='cvat-cloud-storages-page' justify='center' align='middle'>
                     <Spin size='large' />
                 </Row>
