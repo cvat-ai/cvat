@@ -284,9 +284,11 @@ A tracking function can only be used in agent mode.
 When used with a tracking function, an agent will use it
 to process requests from the AI tracking tools in the CVAT UI.
 
-> WARNING: Currently, only one agent should be run for each tracking function.
-> If multiple agents for one tracking function are run at the same time,
-> CVAT users may experience intermittent "Tracking state not found" errors when using the function.
+{{% alert title="Warning" color="warning" %}}
+Currently, only one agent should be run for each tracking function.
+If multiple agents for one tracking function are run at the same time,
+CVAT users may experience intermittent "Tracking state not found" errors when using the function.
+{{% /alert %}}
 
 A tracking function must have three attributes, `spec`, `init_tracking_state`, and `track`.
 It may also optionally have a `preprocess_image` attribute.
@@ -463,3 +465,13 @@ except it uses torchvision's keypoint detection models and produces skeleton ann
 Keypoints which the model marks as invisible will be marked as occluded in CVAT.
 
 Refer to that function's description for usage instructions and parameter information.
+
+### SAM2 Tracking Function
+
+For users who want to implement SAM2-based tracking, the CVAT repository includes
+a ready-to-use SAM2 tracking function at `ai-models/tracker/sam2/func.py`.
+This function implements the tracking function protocol described above
+and can be used with the CLI commands for creating native functions and running agents.
+
+For detailed setup and usage instructions, see the
+{{< ilink "/docs/enterprise/segment-anything-2-tracker" "SAM2 Tracker documentation" >}}.
