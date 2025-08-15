@@ -77,47 +77,55 @@ class TestClientUsecases:
         assert (version.major, version.minor) >= (2, 0)
 
 
-def test_can_make_client_with_pat_auth(api_tokens_by_username):
-    user, token = next((u, t) for u, ts in api_tokens_by_username.items() for t in ts)
-    host, port = BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)
+class TestClientFactory:
+    def test_can_make_client_with_pat_auth(self, api_tokens_by_username):
+        user, token = next((u, t) for u, ts in api_tokens_by_username.items() for t in ts)
+        host, port = BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)
 
-    with make_client(host=host, port=port, access_token=token["private_key"]) as client:
-        assert client.users.retrieve_current_user().username == user
+        with make_client(host=host, port=port, access_token=token["private_key"]) as client:
+            assert client.users.retrieve_current_user().username == user
 
+    def test_can_strip_trailing_slash_in_hostname(self, admin_user: str):
+        host, port = BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)
 
-def test_can_strip_trailing_slash_in_hostname_in_make_client(admin_user: str):
-    host, port = BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)
+        with make_client(host=host + "/", port=port, credentials=(admin_user, USER_PASS)) as client:
+            assert client.api_map.host == BASE_URL
 
-    with make_client(host=host + "/", port=port, credentials=(admin_user, USER_PASS)) as client:
-        assert client.api_map.host == BASE_URL
+    def test_can_strip_trailing_slash_in_hostname_in_client_ctor(self, admin_user: str):
+        with Client(url=BASE_URL + "/") as client:
+            client.login((admin_user, USER_PASS))
+            assert client.api_map.host == BASE_URL
 
+    def test_can_detect_server_schema_if_not_provided(self):
+        host, port = BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)
+        client = make_client(host=host, port=int(port))
+        assert client.api_map.host == "http://" + host + ":" + port
 
-def test_can_strip_trailing_slash_in_hostname_in_client_ctor(admin_user: str):
-    with Client(url=BASE_URL + "/") as client:
-        client.login((admin_user, USER_PASS))
-        assert client.api_map.host == BASE_URL
+    def test_can_fail_to_detect_server_schema_if_not_provided(self):
+        host, port = BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)
+        with pytest.raises(InvalidHostException) as capture:
+            make_client(host=host, port=int(port) + 1)
 
+        assert capture.match(r"Failed to detect host schema automatically")
 
-def test_can_detect_server_schema_if_not_provided():
-    host, port = BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)
-    client = make_client(host=host, port=int(port))
-    assert client.api_map.host == "http://" + host + ":" + port
+    def test_can_reject_invalid_server_schema(self):
+        host, port = BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)
+        with pytest.raises(InvalidHostException) as capture:
+            make_client(host="ftp://" + host, port=int(port) + 1)
 
+        assert capture.match(r"Invalid url schema 'ftp'")
 
-def test_can_fail_to_detect_server_schema_if_not_provided():
-    host, port = BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)
-    with pytest.raises(InvalidHostException) as capture:
-        make_client(host=host, port=int(port) + 1)
+    def test_can_use_server_url(self, admin_user):
+        with make_client(BASE_URL, credentials=(admin_user, USER_PASS)):
+            pass
 
-    assert capture.match(r"Failed to detect host schema automatically")
+    def test_cannot_use_server_url_with_port_and_port_parameter(self):
+        with pytest.raises(ValueError, match="Please specify only one port"):
+            make_client(BASE_URL, port=1)
 
-
-def test_can_reject_invalid_server_schema():
-    host, port = BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)
-    with pytest.raises(InvalidHostException) as capture:
-        make_client(host="ftp://" + host, port=int(port) + 1)
-
-    assert capture.match(r"Invalid url schema 'ftp'")
+    def test_cannot_use_both_credentials_and_access_token(self):
+        with pytest.raises(ValueError, match="'credentials' and 'access_token' cannot"):
+            make_client(BASE_URL, credentials=("name", "pass"), access_token="token")
 
 
 @pytest.mark.parametrize("raise_exception", (True, False))

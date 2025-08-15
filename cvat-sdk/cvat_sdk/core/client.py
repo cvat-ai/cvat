@@ -13,6 +13,7 @@ from contextlib import contextmanager, suppress
 from pathlib import Path
 from time import sleep
 from typing import Any, Optional, TypeVar, Union
+from urllib.parse import urlsplit
 
 import attrs
 import packaging.specifiers as specifiers
@@ -405,13 +406,37 @@ def make_client(
     credentials: Union[Credentials, tuple[str, str], None] = None,
     access_token: Optional[str] = None,
 ) -> Client:
+    """
+    Create a Client object with the specified parameters.
+
+    Passing 'credentials' or 'access_token' allows to authenticate the client immediately.
+    These parameters cannot be used together.
+
+    Parameters:
+    :param host: allows to specify the server url. Can include scheme and port.
+    :param port: allows to specify the server port. Cannot be used together with a host
+      that contains a port component (e.g. localhost:80).
+    :param credentials: will automatically log in the client with the specified credentials.
+    :param access_token: a Personal Access Token (PAT) to be used for authentication.
+
+    Returns: a new Client object
+    """
+
     if credentials is not None and access_token is not None:
         raise ValueError(
             "'credentials' and 'access_token' cannot be used together. Please use only one."
         )
 
     url = host.rstrip("/")
+
     if port:
+        parsed_url = urlsplit(("https://" if "://" not in url else "") + host)
+        if port and parsed_url.port:
+            raise ValueError(
+                "The 'host' with a port and the 'port' argument cannot be used together. "
+                "Please specify only one port."
+            )
+
         url = f"{url}:{port}"
 
     client = Client(url=url)

@@ -24,7 +24,7 @@ from cvat_sdk import make_client, models
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 
 # Create a Client instance bound to a local server and authenticate using basic auth
-with make_client(host="http://localhost", credentials=('user', 'password')) as client:
+with make_client("http://localhost", credentials=('user', 'password')) as client:
     # Let's create a new task.
 
     # Fill in task parameters first.
@@ -107,7 +107,7 @@ You can create and start using a `Client` instance this way:
 ```python
 from cvat_sdk import make_client
 
-with make_client('https://app.cvat.ai', credentials=('user', 'password')) as client:
+with make_client("https://app.cvat.ai", credentials=("user", "password")) as client:
     ...
 ```
 
@@ -122,8 +122,8 @@ from cvat_sdk import Config, Client
 config = Config()
 # set up some config fields ...
 
-with Client('https://app.cvat.ai', config=config) as client:
-    client.login(('user', 'password'))
+with Client("https://app.cvat.ai", config=config) as client:
+    client.login(("user", "password"))
     ...
 ```
 
@@ -156,7 +156,7 @@ recommended to use a Personal Access Token (PAT) instead, if possible.
 ```python
 from cvat_sdk import make_client
 
-with make_client('https://app.cvat.ai', credentials=('user', 'password')) as client:
+with make_client("https://app.cvat.ai", credentials=("user", "password")) as client:
     ...
 ```
 
@@ -165,15 +165,34 @@ with make_client('https://app.cvat.ai', credentials=('user', 'password')) as cli
 {{%tab header="Personal Access Token (PAT) authentication" %}}
 
 ```python
-from cvat_sdk import make_client, AccessTokenCredentials
+from cvat_sdk import make_client
 
-with make_client('https://app.cvat.ai', access_token='token') as client:
+with make_client("https://app.cvat.ai", access_token="token") as client:
     ...
 ```
 
 {{% /tab %}}
 
 {{< /tabpane >}}
+
+With the `make_client()` function, the `Client` object create will perform authentication
+automatically for you. If you want more fine-grained control over the requests,
+there are several methods available:
+- `client.login()` - logs the user in using the specified credentials
+- `client.logout()` - logs the user out
+- `client.has_credentials()` - allows to check whether the `client` object is authenticated
+
+Example:
+```python
+from cvat_sdk.core.client import Client, AccessTokenCredentials
+
+with Client("https://app.cvat.ai") as client:
+    client.login(AccessTokenCredentials("token"))
+    # ...
+```
+
+If the `Client` is used as a context manager (with the `with` keyword), it automatically calls
+`logout()` before exiting.
 
 ### Users and organizations
 
