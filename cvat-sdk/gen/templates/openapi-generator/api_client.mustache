@@ -484,10 +484,21 @@ class ApiClient(object):
 
         return self.pool.apply_async(self.__call_api, (), kwds=params)
 
-    def request(self, method, url, query_params=None, headers=None,
-                post_params=None, body=None, *, _parse_response=True,
-                _request_timeout=None, _check_status=True):
+    def request(
+        self,
+        method: str,
+        url: str,
+        query_params: typing.Optional[list[tuple[str, typing.Any]]] = None,
+        headers: typing.Optional[dict[str, typing.Any]] = None,
+        post_params: typing.Optional[typing.Union[list[typing.Any] | dict]] = None,
+        body: typing.Optional[typing.Any] = None,
+        *,
+        _parse_response: bool = True,
+        _request_timeout: typing.Optional[typing.Union[float, tuple[float, float]]] = None,
+        _check_status: bool = True,
+    ):
         """Makes the HTTP request using RESTClient."""
+
         if method == "GET":
             return self.rest_client.GET(url,
                                         query_params=query_params,
