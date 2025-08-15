@@ -681,6 +681,9 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                         bugTracker: 'bug_tracker',
                         projectId: 'project_id',
                         assignee: 'assignee_id',
+                        organizationId: 'organization_id',
+                        sourceStorage: 'source_storage',
+                        targetStorage: 'target_storage',
                     }),
                 };
 
@@ -741,6 +744,9 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             }
             if (typeof this.subset !== 'undefined') {
                 taskSpec.subset = this.subset;
+            }
+            if (typeof this.organizationId !== 'undefined') {
+                taskSpec.organization_id = this.organizationId;
             }
 
             if (this.targetStorage) {

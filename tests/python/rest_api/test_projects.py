@@ -1565,3 +1565,58 @@ class TestPatchProject:
             project_id,
             expected_status=HTTPStatus.OK if is_allow else HTTPStatus.FORBIDDEN,
         )
+
+    @pytest.mark.parametrize(
+        "from_org, to_org",
+        [
+            (True, True),
+            (True, False),
+            (False, True),
+        ],
+    )
+    def test_project_can_be_transferred_to_different_workspace(
+        self,
+        from_org: bool,
+        to_org: bool,
+        organizations,
+        find_users,
+    ):
+        src_org, dst_org, user = None, None, None
+        org_owners = {o["owner"]["username"] for o in organizations}
+        regular_users = {u["username"] for u in find_users(privilege="user")}
+
+        for u in regular_users & org_owners:
+            src_org, dst_org = None, None
+            for org in organizations:
+                if from_org and not src_org and u == org["owner"]["username"]:
+                    src_org = org
+                    continue
+                if to_org and not dst_org and u == org["owner"]["username"]:
+                    dst_org = org
+                    break
+            if (from_org and src_org or not from_org) and (to_org and dst_org or not to_org):
+                user = u
+                break
+
+        assert user, "Could not find a user matching the filters"
+        assert (
+            from_org and src_org or not from_org and not src_org
+        ), "Could not find a source org matching the filters"
+        assert (
+            to_org and dst_org or not to_org and not dst_org
+        ), "Could not find a destination org matching the filters"
+
+        src_org_id = src_org["id"] if src_org else src_org
+        dst_org_id = dst_org["id"] if dst_org else dst_org
+
+        with make_api_client(user) as api_client:
+            (project, response) = api_client.projects_api.create(
+                {"name": "Project to be transferred to another workspace"},
+                **({"org_id": src_org_id} if src_org_id else {}),
+            )
+            assert response.status == HTTPStatus.CREATED
+
+            project_details, _ = api_client.projects_api.partial_update(
+                project.id, patched_project_write_request={"organization_id": dst_org_id}
+            )
+            assert project_details.organization_id == dst_org_id

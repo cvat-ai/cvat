@@ -7,13 +7,18 @@ import { useDispatch, useSelector } from 'react-redux';
 import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
 
-import { Project, User } from 'cvat-core-wrapper';
+import { Organization, Project, User } from 'cvat-core-wrapper';
 import { useDropdownEditField, usePlugins } from 'utils/hooks';
 import { CombinedState } from 'reducers';
 import { deleteProjectAsync, updateProjectAsync } from 'actions/projects-actions';
+import { cloudStoragesActions } from 'actions/cloud-storage-actions';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
 import UserSelector from 'components/task-page/user-selector';
+import OrganizationSelector from 'components/selectors/organization-selector';
+import { ResourceUpdateTypes } from 'utils/enums';
+import { confirmTransferModal } from 'utils/modals';
+
 import { makeBulkOperationAsync } from 'actions/bulk-actions';
 import ProjectActionsItems from './actions-menu-items';
 
@@ -44,6 +49,8 @@ function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
         onOpenChange,
         onMenuClick,
     } = useDropdownEditField();
+
+    const currentOrganization = useSelector((state: CombinedState) => state.organizations.current);
 
     const onExportDataset = useCallback(() => {
         dispatch(exportActions.openExportDatasetModal(projectInstance));
@@ -87,6 +94,25 @@ function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
         ));
     }, [projectInstance, selectedIds, allProjects, stopEditField, dispatch]);
 
+    const updateOrganization = useCallback((dstOrganizationId: number | null) => {
+        projectInstance.organizationId = dstOrganizationId;
+        if (
+            projectInstance.sourceStorage.cloudStorageId ||
+            projectInstance.targetStorage.cloudStorageId
+        ) {
+            dispatch(cloudStoragesActions.openLinkedCloudStorageUpdatingModal(projectInstance));
+        } else {
+            dispatch(updateProjectAsync(projectInstance, ResourceUpdateTypes.UPDATE_ORGANIZATION));
+        }
+    }, [projectInstance]);
+
+    const onUpdateProjectOrganization = useCallback((dstOrganization: Organization | null) => {
+        stopEditField();
+        confirmTransferModal(
+            projectInstance, currentOrganization as Organization | null, dstOrganization, updateOrganization,
+        );
+    }, [projectInstance]);
+
     const onDeleteProject = useCallback((): void => {
         const projectsToDelete = allProjects.filter((project) => selectedIds.includes(project.id));
         Modal.confirm({
@@ -124,6 +150,12 @@ function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
                     onSelect={(value: User | null): void => {
                         onUpdateProjectAssignee(value);
                     }}
+                />
+            ),
+            organization: (
+                <OrganizationSelector
+                    defaultValue={currentOrganization?.slug}
+                    setNewOrganization={onUpdateProjectOrganization}
                 />
             ),
         };

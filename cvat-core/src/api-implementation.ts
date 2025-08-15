@@ -32,7 +32,7 @@ import Webhook from './webhook';
 import { ArgumentError } from './exceptions';
 import {
     AnalyticsEventsFilter, QualityConflictsFilter,
-    SerializedAsset, ConsensusSettingsFilter,
+    SerializedAsset, ConsensusSettingsFilter, SerializedOrganization,
 } from './server-response-types';
 import QualityReport from './quality-report';
 import AboutData from './about';
@@ -332,11 +332,19 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         checkFilter(filter, {
             search: isString,
             filter: isString,
+            page: isInteger,
+            page_size: isInteger,
+            sort: isString,
         });
 
-        const organizationsData = await serverProxy.organizations.get(filter);
-        const organizations = organizationsData.map((organizationData) => new Organization(organizationData));
-        return organizations;
+        const organizationsPage = await serverProxy.organizations.get(filter);
+        const results = organizationsPage.results.map((org_) => new Organization(org_));
+        Object.assign(results, {
+            count: organizationsPage.count,
+            next: organizationsPage.next,
+        });
+
+        return results as PaginatedResource<SerializedOrganization>;
     });
     implementationMixin(cvat.organizations.activate, (organization) => {
         checkObjectType('organization', organization, null, Organization);

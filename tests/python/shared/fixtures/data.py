@@ -246,6 +246,7 @@ def users_by_name(users):
 
 @pytest.fixture(scope="session")
 def jobs_by_org(tasks, jobs):
+    # FUTURE-FIXME: should be based on organizations to include orgs without jobs too
     data = {}
     for job in jobs:
         data.setdefault(tasks[job["task_id"]]["organization"], []).append(job)

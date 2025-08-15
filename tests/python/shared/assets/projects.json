@@ -16,6 +16,7 @@
       },
       "name": "project 4",
       "organization": 2,
+      "organization_id": 2,
       "owner": {
         "first_name": "User",
         "id": 3,
@@ -53,6 +54,7 @@
       },
       "name": "project assigned to org owner",
       "organization": 2,
+      "organization_id": 2,
       "owner": {
         "first_name": "Admin",
         "id": 1,
@@ -98,6 +100,7 @@
       },
       "name": "project assigned to user4",
       "organization": 2,
+      "organization_id": 2,
       "owner": {
         "first_name": "Admin",
         "id": 1,
@@ -137,6 +140,7 @@
       },
       "name": "project with subsets",
       "organization": null,
+      "organization_id": null,
       "owner": {
         "first_name": "Admin",
         "id": 1,
@@ -179,6 +183,7 @@
       },
       "name": "project with attributes 2",
       "organization": null,
+      "organization_id": null,
       "owner": {
         "first_name": "Admin",
         "id": 1,
@@ -218,6 +223,7 @@
       },
       "name": "project with attributes",
       "organization": null,
+      "organization_id": null,
       "owner": {
         "first_name": "Admin",
         "id": 1,
@@ -257,6 +263,7 @@
       },
       "name": "project7",
       "organization": 2,
+      "organization_id": 2,
       "owner": {
         "first_name": "Admin",
         "id": 1,
@@ -302,6 +309,7 @@
       },
       "name": "project 6",
       "organization": 2,
+      "organization_id": 2,
       "owner": {
         "first_name": "User",
         "id": 4,
@@ -341,6 +349,7 @@
       },
       "name": "project with video data",
       "organization": null,
+      "organization_id": null,
       "owner": {
         "first_name": "Admin",
         "id": 1,
@@ -386,6 +395,7 @@
       },
       "name": "admin1_project",
       "organization": null,
+      "organization_id": null,
       "owner": {
         "first_name": "Admin",
         "id": 1,
@@ -431,6 +441,7 @@
       },
       "name": "user1_project",
       "organization": null,
+      "organization_id": null,
       "owner": {
         "first_name": "User",
         "id": 2,
@@ -470,6 +481,7 @@
       },
       "name": "project5",
       "organization": 2,
+      "organization_id": 2,
       "owner": {
         "first_name": "Admin",
         "id": 1,
@@ -509,6 +521,7 @@
       },
       "name": "project4",
       "organization": 2,
+      "organization_id": 2,
       "owner": {
         "first_name": "Admin",
         "id": 1,
@@ -546,6 +559,7 @@
       },
       "name": "project 3",
       "organization": 2,
+      "organization_id": 2,
       "owner": {
         "first_name": "User",
         "id": 3,
@@ -583,6 +597,7 @@
       },
       "name": "project2",
       "organization": 2,
+      "organization_id": 2,
       "owner": {
         "first_name": "User",
         "id": 10,
@@ -630,6 +645,7 @@
       },
       "name": "project1",
       "organization": null,
+      "organization_id": null,
       "owner": {
         "first_name": "User",
         "id": 10,
