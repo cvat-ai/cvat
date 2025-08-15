@@ -8,7 +8,7 @@ import operator
 from collections.abc import Iterable, Iterator
 from functools import reduce
 from textwrap import dedent
-from typing import Any, Optional, Type
+from typing import Any, Optional
 
 from django.db import models
 from django.db.models import Q
@@ -133,14 +133,14 @@ class JsonLogicFilter(filters.BaseFilterBackend):
     )
 
     def _build_Q(self, rules, lookup_fields, *, parent_op: str | None = None):
-        def _validate_arg(arg: Any, *, allowed_type: Type, allow_empty: bool = False):
+        def _validate_arg(arg: Any, *, allowed_type: type):
             assert allowed_type in (list, dict)
 
-            if isinstance(arg, allowed_type) and (allow_empty or bool(arg)):
+            if isinstance(arg, allowed_type) and bool(arg):
                 return
 
             allowed_type_suffix = allowed_type.__name__
-            non_empty_suffix = "non-empty " if not allow_empty else ""
+            non_empty_suffix = "non-empty "
             invalid_value_suffix = f"got '{arg}' of type '{type(arg).__name__}'"
 
             if parent_op:
