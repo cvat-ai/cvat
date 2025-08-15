@@ -4,4 +4,4 @@ rich==13.7.1
 pyyaml==6.0.1
 pytest==8.3.0
 plumbum==1.9.0
-requests==2.32.2
+requests==2.32.4
