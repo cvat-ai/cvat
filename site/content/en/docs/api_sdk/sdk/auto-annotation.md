@@ -179,15 +179,15 @@ that these objects must follow.
 - `image` (`PIL.Image.Image`).
   Contains image data.
 
-`detect` must return a list of `LabeledShapeRequest` objects,
-representing shapes found in the image.
+`detect` must return a sequence of `LabeledImageRequest` and/or `LabeledShapeRequest` objects,
+representing tags/shapes found in the image.
 See the docstring of `DetectionFunctionSpec` for more information on the constraints
 that these objects must follow.
 
 The same AA function may be used with any dataset that contain labels with the same name
 as the AA function's specification.
 The way it works is that the driver matches labels between the spec and the dataset,
-and replaces the label IDs in the shape objects with those defined in the dataset.
+and replaces the label IDs in the tag & shape objects with those defined in the dataset.
 
 For example, suppose the AA function's spec defines the following labels:
 
@@ -246,6 +246,7 @@ The following helpers are available for use in `detect`:
 
 | Name        | Model type               | Fixed attributes              |
 | ----------- | ------------------------ | ----------------------------- |
+| `tag`       | `LabeledImageRequest`    | `frame=0`                     |
 | `shape`     | `LabeledShapeRequest`    | `frame=0`                     |
 | `mask`      | `LabeledShapeRequest`    | `frame=0`, `type="mask"`      |
 | `polygon`   | `LabeledShapeRequest`    | `frame=0`, `type="polygon"`   |
@@ -409,38 +410,33 @@ if it detects that the function violated the detection function protocol.
 This layer includes several predefined detection functions.
 You can use them as-is, or as a base on which to build your own.
 
-Each function is implemented as a module
-to allow usage via the CLI `auto-annotate` command.
-Therefore, in order to use it from the SDK,
-you'll need to import the corresponding module.
-
-### `cvat_sdk.auto_annotation.functions.torchvision_detection`
-
-This AA function uses object detection models from
+These AA functions use models from the
 the [torchvision](https://pytorch.org/vision/stable/index.html) library.
-It produces rectangle annotations.
-
-To use it, install CVAT SDK with the `pytorch` extra:
+To use them, install CVAT SDK with the `pytorch` extra:
 
 ```
 $ pip install "cvat-sdk[pytorch]"
 ```
 
+Each function is implemented as a dedicated module
+to allow usage via the CLI `auto-annotate` command.
+
 Usage from Python:
 
 ```python
-from cvat_sdk.auto_annotation.functions.torchvision_detection import create as create_torchvision
+from cvat_sdk.auto_annotation.functions.torchvision_<task> import create as create_torchvision
 annotate_task(<client>, <task ID>, create_torchvision(<model name>, ...))
 ```
 
 Usage from the CLI:
 
 ```bash
-cvat-cli auto-annotate "<task ID>" --function-module cvat_sdk.auto_annotation.functions.torchvision_detection \
+cvat-cli auto-annotate "<task ID>" \
+      --function-module "cvat_sdk.auto_annotation.functions.torchvision_<task>" \
       -p model_name=str:"<model name>" ...
 ```
 
-The `create` function accepts the following parameters:
+The `create` function in each module accepts the following parameters:
 
 - `model_name` (`str`) - the name of the model, such as `fasterrcnn_resnet50_fpn_v2`.
   This parameter is required.
@@ -450,21 +446,31 @@ The `create` function accepts the following parameters:
 It also accepts arbitrary additional parameters,
 which are passed directly to the model constructor.
 
+The following section describe each available function.
+
+### `cvat_sdk.auto_annotation.function.torchvision_classification`
+
+This AA function uses torchvision's classification models.
+It produces tag annotations.
+For each frame, the function will output one tag whose label has the highest probability,
+as long as that probability is greater or equal to the input confidence threshold.
+If it is lower, the function will output nothing.
+
+### `cvat_sdk.auto_annotation.functions.torchvision_detection`
+
+This AA function uses torchvision's object detection models.
+It produces rectangle annotations.
+
 ### `cvat_sdk.auto_annotation.functions.torchvision_instance_segmentation`
 
-This AA function is analogous to `torchvision_detection`,
-except it uses torchvision's instance segmentation models and produces mask
-or polygon annotations (depending on the value of `conv_mask_to_poly`).
-
-Refer to that function's description for usage instructions and parameter information.
+This AA function uses torchvision's instance segmentation models.
+It produces mask or polygon annotations (depending on the value of `conv_mask_to_poly`).
 
 ### `cvat_sdk.auto_annotation.functions.torchvision_keypoint_detection`
 
-This AA function is analogous to `torchvision_detection`,
-except it uses torchvision's keypoint detection models and produces skeleton annotations.
+This AA function uses torchvision's keypoint detection models.
+It produces skeleton annotations.
 Keypoints which the model marks as invisible will be marked as occluded in CVAT.
-
-Refer to that function's description for usage instructions and parameter information.
 
 ### SAM2 Tracking Function
 
