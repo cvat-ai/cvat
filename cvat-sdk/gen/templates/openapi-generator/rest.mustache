@@ -80,7 +80,7 @@ class RESTClientObject(object):
         query_params: typing.Optional[list[tuple[str, typing.Any]]] = None,
         headers: typing.Optional[dict[str, typing.Any]] = None,
         body: typing.Optional[typing.Any] = None,
-        post_params: typing.Optional[typing.Union[list[typing.Any] | dict]] = None,
+        post_params: typing.Optional[typing.Union[list[typing.Any], dict]] = None,
         *,
         _parse_response: bool = True,
         _request_timeout: typing.Optional[typing.Union[float, tuple[float, float]]] = None,
