@@ -195,14 +195,10 @@ jobs:
       - name: Uploading code coverage results as an artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{
-            contains(matrix.pattern, 'not')
-              && 'coverage_results_rest_api'
-              || format(
-                  'coverage_results_rest_api-{0}-cache-{1}',
-                  matrix.pattern, matrix.allow_cache
-                )
-            }}
+          name: ${{format(
+            'coverage_results_rest_api-{0}-cache-{1}',
+            matrix.pattern, matrix.allow_cache
+            )}}
           path: |
             coverage*.json
 
@@ -221,24 +217,20 @@ jobs:
         if: failure() && steps.run_tests.conclusion == 'failure'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{
-            contains(matrix.pattern, 'not')
-              && 'rest_api_container_logs'
-              || format(
-                  'rest_api_container_logs-{0}-cache-{1}',
-                  matrix.pattern, matrix.allow_cache
-                )
-            }}
+          name: ${{format(
+              'rest_api_container_logs-{0}-cache-{1}',
+              matrix.pattern, matrix.allow_cache
+            )}}
           path: "${{ github.workspace }}/rest_api_testing"
 
       - name: Upload allure results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: format(
+          name: ${{format(
               'allure-results-tests-api-{0}-cache-{1}',
               matrix.pattern,matrix.allow_cache
-            )
+            )}}
           path: tests/python/allure-results
 
   unit_testing:
