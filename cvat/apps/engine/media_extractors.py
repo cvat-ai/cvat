@@ -39,10 +39,13 @@ from cvat.apps.engine.utils import rotate_image
 # see: https://stackoverflow.com/questions/42462431/oserror-broken-data-stream-when-reading-image-file
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
+from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.mime_types import mimetypes
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 
 ORIENTATION_EXIF_TAG = 274
+
+slogger = ServerLogManager(__name__)
 
 class ORIENTATION(IntEnum):
     NORMAL_HORIZONTAL=1
@@ -969,7 +972,10 @@ class ZipCompressedChunkWriter(ZipChunkWriter):
             for idx, (image, path, _) in enumerate(images):
                 if self._dimension == DimensionType.DIM_2D:
                     if compress_frames:
-                        w, h, image_buf = self._compress_image(image, self._image_quality)
+                        try:
+                            w, h, image_buf = self._compress_image(image, self._image_quality)
+                        except Exception as ex:
+                            raise RuntimeError("Exception occurred during image compression %s" % path) from ex
                     else:
                         assert isinstance(image, io.IOBase)
                         image_buf = io.BytesIO(image.read())
