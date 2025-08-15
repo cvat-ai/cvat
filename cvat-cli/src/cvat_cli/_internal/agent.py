@@ -176,7 +176,7 @@ def _worker_job_get_function_spec():
 
 def _worker_job_detect(
     context: _DetectionFunctionContextImpl, image: PIL.Image.Image
-) -> list[cvataa.TagOrShape]:
+) -> list[cvataa.DetectionAnnotation]:
     return _current_function.detect(context, image)
 
 
@@ -820,11 +820,11 @@ class _Agent:
 
         for sample_index, sample in enumerate(ds.samples):
             context = self._create_detection_function_context(ar_params, sample.frame_name)
-            tags_and_shapes = self._executor.result(
+            annotations = self._executor.result(
                 self._executor.submit(_worker_job_detect, context, sample.media.load_image())
             )
 
-            tags, shapes = mapper.validate_and_remap(tags_and_shapes, sample.frame_index)
+            tags, shapes = mapper.validate_and_remap(annotations, sample.frame_index)
             all_annotations.tags.extend(tags)
             all_annotations.shapes.extend(shapes)
 
@@ -847,11 +847,11 @@ class _Agent:
 
         context = self._create_detection_function_context(ar_params, sample.frame_name)
 
-        tags_and_shapes = self._executor.result(
+        annotations = self._executor.result(
             self._executor.submit(_worker_job_detect, context, sample.media.load_image())
         )
 
-        tags, shapes = mapper.validate_and_remap(tags_and_shapes, sample.frame_index)
+        tags, shapes = mapper.validate_and_remap(annotations, sample.frame_index)
         return {"annotations": models.PatchedLabeledDataRequest(tags=tags, shapes=shapes)}
 
     def _calculate_result_for_tracking_ar(self, ar_id: str, ar_params) -> dict[str, Any]:

@@ -19,10 +19,10 @@ from cvat_sdk.datasets.task_dataset import TaskDataset
 from ..attributes import attribute_value_validator
 from .exceptions import BadFunctionError
 from .interface import (
+    DetectionAnnotation,
     DetectionFunction,
     DetectionFunctionContext,
     DetectionFunctionSpec,
-    TagOrShape,
 )
 
 
@@ -345,15 +345,15 @@ class _AnnotationMapper:
 
     def _remap_attributes(
         self,
-        tors: Union[TagOrShape, models.SubLabeledShapeRequest],
+        annotation: Union[DetectionAnnotation, models.SubLabeledShapeRequest],
         label_id_mapping: _SublabelIdMapping,
     ) -> None:
         seen_attr_ids = set()
 
-        if hasattr(tors, "attributes"):
-            tors.attributes[:] = [
+        if hasattr(annotation, "attributes"):
+            annotation.attributes[:] = [
                 attribute
-                for attribute in tors.attributes
+                for attribute in annotation.attributes
                 if self._remap_attribute(attribute, label_id_mapping, seen_attr_ids)
             ]
 
@@ -432,37 +432,39 @@ class _AnnotationMapper:
             if getattr(shape, "elements", None):
                 raise BadFunctionError("function output non-skeleton shape with elements")
 
-    def _remap_tors(self, tors: TagOrShape, ds_frame: int, object_type: str) -> bool:
-        if hasattr(tors, "id"):
+    def _remap_annotation(
+        self, annotation: DetectionAnnotation, ds_frame: int, object_type: str
+    ) -> bool:
+        if hasattr(annotation, "id"):
             raise BadFunctionError(f"function output {object_type} with preset id")
 
-        if hasattr(tors, "source"):
+        if hasattr(annotation, "source"):
             raise BadFunctionError(f"function output {object_type} with preset source")
-        tors.source = "auto"
+        annotation.source = "auto"
 
-        if tors.frame != 0:
+        if annotation.frame != 0:
             raise BadFunctionError(
-                f"function output {object_type} with unexpected frame number ({tors.frame})"
+                f"function output {object_type} with unexpected frame number ({annotation.frame})"
             )
 
-        tors.frame = ds_frame
+        annotation.frame = ds_frame
 
         try:
-            label_id_mapping = self._spec_id_mapping[tors.label_id]
+            label_id_mapping = self._spec_id_mapping[annotation.label_id]
         except KeyError:
             raise BadFunctionError(
-                f"function output {object_type} with unknown label ID ({tors.label_id})"
+                f"function output {object_type} with unknown label ID ({annotation.label_id})"
             )
 
         if not label_id_mapping:
             return False
 
-        tors.label_id = label_id_mapping.id
+        annotation.label_id = label_id_mapping.id
 
-        self._remap_attributes(tors, label_id_mapping)
+        self._remap_attributes(annotation, label_id_mapping)
 
         if object_type == "shape":
-            shape = cast(models.LabeledShapeRequest, tors)
+            shape = cast(models.LabeledShapeRequest, annotation)
 
             if not self._are_label_types_compatible(
                 shape.type.value, label_id_mapping.expected_type
@@ -472,7 +474,7 @@ class _AnnotationMapper:
                     f" (expected {label_id_mapping.expected_type!r})"
                 )
 
-            if tors.type.value == "mask" and self._conv_mask_to_poly:
+            if annotation.type.value == "mask" and self._conv_mask_to_poly:
                 raise BadFunctionError("function output mask shape despite conv_mask_to_poly=True")
 
             self._remap_elements(shape, ds_frame, label_id_mapping)
@@ -487,22 +489,22 @@ class _AnnotationMapper:
 
     def validate_and_remap(
         self,
-        tags_and_shapes: Sequence[TagOrShape],
+        annotations: Sequence[DetectionAnnotation],
         ds_frame: int,
     ) -> tuple[list[models.LabeledImageRequest], list[models.LabeledShapeRequest]]:
         tags = []
         shapes = []
 
-        for tors in tags_and_shapes:
-            if isinstance(tors, models.LabeledImageRequest):
-                if self._remap_tors(tors, ds_frame, "tag"):
-                    tags.append(tors)
-            elif isinstance(tors, models.LabeledShapeRequest):
-                if self._remap_tors(tors, ds_frame, "shape"):
-                    shapes.append(tors)
+        for annotation in annotations:
+            if isinstance(annotation, models.LabeledImageRequest):
+                if self._remap_annotation(annotation, ds_frame, "tag"):
+                    tags.append(annotation)
+            elif isinstance(annotation, models.LabeledShapeRequest):
+                if self._remap_annotation(annotation, ds_frame, "shape"):
+                    shapes.append(annotation)
             else:
                 raise BadFunctionError(
-                    f"function output an object of type {type(tors).__name__!r} "
+                    f"function output an object of type {type(annotation).__name__!r} "
                     f"(expected {models.LabeledImageRequest.__name__!r} "
                     f"or {models.LabeledShapeRequest.__name__!r})"
                 )
@@ -597,7 +599,7 @@ def annotate_task(
 
     with pbar.task(total=len(dataset.samples), unit="samples"):
         for sample in pbar.iter(dataset.samples):
-            frame_tags_and_shapes = function.detect(
+            frame_annotations = function.detect(
                 # https://github.com/pylint-dev/pylint/issues/9013
                 # pylint: disable-next=abstract-class-instantiated
                 _DetectionFunctionContextImpl(
@@ -608,7 +610,7 @@ def annotate_task(
                 sample.media.load_image(),
             )
             frame_tags, frame_shapes = mapper.validate_and_remap(
-                frame_tags_and_shapes, sample.frame_index
+                frame_annotations, sample.frame_index
             )
             tags.extend(frame_tags)
             shapes.extend(frame_shapes)

@@ -174,15 +174,15 @@ class DetectionFunctionContext(metaclass=abc.ABCMeta):
         """
 
 
-TagOrShape: TypeAlias = Union[models.LabeledImageRequest, models.LabeledShapeRequest]
+DetectionAnnotation: TypeAlias = Union[models.LabeledImageRequest, models.LabeledShapeRequest]
 
 
 class DetectionFunction(AutoAnnotationFunction, Protocol):
     """
     The interface that an auto-annotation detection function must implement.
 
-    A detection function is supposed to accept an image and return a sequence of tags and/or shapes
-    describing objects in that image.
+    A detection function is supposed to accept an image and return a sequence of annotations
+    (tags and/or shapes) describing objects in that image.
 
     Since the same function could be used with multiple datasets, it needs some way
     to refer to labels without using dataset-specific label IDs. The way this is
@@ -204,7 +204,7 @@ class DetectionFunction(AutoAnnotationFunction, Protocol):
 
     def detect(
         self, context: DetectionFunctionContext, image: PIL.Image.Image
-    ) -> Sequence[TagOrShape]:
+    ) -> Sequence[DetectionAnnotation]:
         """
         Detects objects on the supplied image and returns the results.
 
@@ -233,7 +233,7 @@ class DetectionFunction(AutoAnnotationFunction, Protocol):
 
         It's recommended to use the helper factory functions
         (tag, shape, rectangle, skeleton, keypoint, etc.)
-        to create the tag & shape objects, as they are more concise than the model
+        to create the annotation objects, as they are more concise than the model
         constructors and help to follow some of the constraints.
 
         The function must not retain any references to the returned objects,
