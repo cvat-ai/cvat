@@ -36,6 +36,8 @@ class TestClientUsecases:
     def test_can_login_with_basic_auth(self):
         self.client.login(BasicAuthCredentials(self.user, USER_PASS))
 
+        assert self.client.users.retrieve_current_user().username == self.user
+
         assert self.client.has_credentials()
 
     def test_can_fail_to_login_with_basic_auth(self):
@@ -49,13 +51,19 @@ class TestClientUsecases:
 
         assert not self.client.has_credentials()
 
-    def test_can_login_with_pat_auth(self):
-        self.client.login(AccessTokenCredentials("CustomToken"))
+    def test_can_login_with_pat_auth(self, api_tokens_by_username):
+        user, token = next((u, t) for u, ts in api_tokens_by_username.items() for t in ts)
+
+        self.client.login(AccessTokenCredentials(token["private_key"]))
+
+        assert self.client.users.retrieve_current_user().username == user
 
         assert self.client.has_credentials()
 
-    def test_can_logout_after_pat_login(self):
-        self.client.login(AccessTokenCredentials("CustomToken"))
+    def test_can_logout_after_pat_login(self, api_tokens):
+        token = next(t for t in api_tokens)
+
+        self.client.login(AccessTokenCredentials(token["private_key"]))
 
         self.client.logout()
 
@@ -67,6 +75,14 @@ class TestClientUsecases:
         version = self.client.get_server_version()
 
         assert (version.major, version.minor) >= (2, 0)
+
+
+def test_can_make_client_with_pat_auth(api_tokens_by_username):
+    user, token = next((u, t) for u, ts in api_tokens_by_username.items() for t in ts)
+    host, port = BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)
+
+    with make_client(host=host, port=port, access_token=token["private_key"]) as client:
+        assert client.users.retrieve_current_user().username == user
 
 
 def test_can_strip_trailing_slash_in_hostname_in_make_client(admin_user: str):

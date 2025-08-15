@@ -97,8 +97,8 @@ class TestCliMisc(TestCliBase):
         assert personal_task_id in all_task_ids
         assert org_task_id in all_task_ids
 
-    def test_can_use_api_token_env_variable(self, monkeypatch: pytest.MonkeyPatch):
-        token = "CustomToken"
+    def test_can_use_api_token_env_variable(self, monkeypatch: pytest.MonkeyPatch, api_tokens):
+        token = next(t for t in api_tokens)["private_key"]
 
         from cvat_sdk.api_client.rest import RESTClientObject
 
@@ -115,7 +115,7 @@ class TestCliMisc(TestCliBase):
 
         monkeypatch.setenv("CVAT_ACCESS_TOKEN", token)
         monkeypatch.setattr(RESTClientObject, "request", patched_request)
-        self.run_cli("task", "ls", authenticate=False, expected_code=1)
+        self.run_cli("task", "ls", authenticate=False)
 
         assert calls
 
