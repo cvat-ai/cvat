@@ -264,9 +264,11 @@ services:
     container_name: traefik
     restart: always
     ports:
+     # - 443:443
       - 8080:8080
       - 8090:8090
     environment:
+      TRAEFIK_LOG_LEVEL: DEBUG
       CVAT_HOST: ${CVAT_HOST:-localhost}
       DJANGO_LOG_VIEWER_HOST: grafana
       DJANGO_LOG_VIEWER_PORT: 3000
@@ -287,6 +289,7 @@ services:
 
       TRAEFIK_LOG_FORMAT: json
       TRAEFIK_ENTRYPOINTS_web_ADDRESS: :8080
+     # TRAEFIK_PROVIDERS_FILE_FILENAME: /etc/traefik/certs.yml
       TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT: "false"
       TRAEFIK_PROVIDERS_DOCKER_NETWORK: cvat
       TRAEFIK_PROVIDERS_FILE_DIRECTORY: /etc/traefik/rules
@@ -298,9 +301,16 @@ services:
     #   traefik.http.routers.dashboard.entrypoints: dashboard
     #   traefik.http.routers.dashboard.service: api@internal
     #   traefik.http.routers.dashboard.rule: Host(`${CVAT_HOST:-localhost}`)
+    ##volumes:
+     ## - /var/run/docker.sock:/var/run/docker.sock:ro
+     ## - ./components/analytics/grafana_conf.yml:/etc/traefik/rules/grafana_conf.yml:ro
+     ## - /etc/traefik-certs/certs.yml:/etc/traefik/certs.yml:ro
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./components/analytics/grafana_conf.yml:/etc/traefik/rules/grafana_conf.yml:ro
+     ## - /etc/ssl/certs/stinger_cvrez_cz.crt:/etc/ssl/certs/stinger_cvrez_cz.crt:ro
+     ## - /etc/ssl/private/stinger_cvrez_cz.key:/etc/ssl/private/stinger_cvrez_cz.key:ro
+     ## - ./certs.yml:/etc/traefik/certs.yml:ro
     networks:
       - cvat
     logging:
