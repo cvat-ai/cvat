@@ -12,9 +12,8 @@ from typing import TYPE_CHECKING, Any, Optional, Union, cast
 from django.conf import settings
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied, ValidationError
-from rq.job import Job as RQJob
 
-from cvat.apps.engine.rq import RQId, is_rq_job_owner
+from cvat.apps.engine.rq import ExportRequestId
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import is_dataset_export
 from cvat.apps.iam.permissions import (
@@ -48,16 +47,19 @@ def _get_key(d: dict[str, Any], key_path: Union[str, Sequence[str]]) -> Optional
     return d
 
 class DownloadExportedExtension:
-    rq_job_id: RQId | None
+    rq_job_id: ExportRequestId | None
 
     class Scopes(StrEnum):
         DOWNLOAD_EXPORTED_FILE = 'download:exported_file'
 
     @staticmethod
     def extend_params_with_rq_job_details(*, request: ExtendedRequest, params: dict[str, Any]) -> None:
+        # prevent importing from partially initialized module
+        from cvat.apps.redis_handler.background import AbstractExporter
+
         if rq_id := request.query_params.get("rq_id"):
             try:
-                params["rq_job_id"] = RQId.parse(rq_id)
+                params["rq_job_id"] = ExportRequestId.parse_and_validate_queue(rq_id, expected_queue=AbstractExporter.QUEUE_NAME, try_legacy_format=True)
                 return
             except Exception:
                 raise ValidationError("Unexpected request id format")
@@ -90,9 +92,9 @@ class ServerPermission(OpenPolicyAgentPermission):
         super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + '/server/allow'
 
-    @staticmethod
-    def get_scopes(request: ExtendedRequest, view: ViewSet, obj: None):
-        Scopes = __class__.Scopes
+    @classmethod
+    def _get_scopes(cls, request: ExtendedRequest, view: ViewSet, obj: None):
+        Scopes = cls.Scopes
         return [{
             ('annotation_formats', 'GET'): Scopes.VIEW,
             ('about', 'GET'): Scopes.VIEW,
@@ -126,9 +128,9 @@ class UserPermission(OpenPolicyAgentPermission):
         super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + '/users/allow'
 
-    @staticmethod
-    def get_scopes(request: ExtendedRequest, view: ViewSet, obj: User | None):
-        Scopes = __class__.Scopes
+    @classmethod
+    def _get_scopes(cls, request: ExtendedRequest, view: ViewSet, obj: User | None):
+        Scopes = cls.Scopes
         return [{
             'list': Scopes.LIST,
             'self': Scopes.VIEW,
@@ -140,27 +142,21 @@ class UserPermission(OpenPolicyAgentPermission):
     @classmethod
     def create_scope_view(cls, iam_context: dict[str, Any], user_id: int | str):
         obj = namedtuple('User', ['id'])(id=int(user_id))
-        return cls(**iam_context, scope=__class__.Scopes.VIEW, obj=obj)
+        return cls(**iam_context, scope=cls.Scopes.VIEW, obj=obj)
 
     def get_resource(self):
         data = None
-        organization = self.payload['input']['auth']['organization']
         if self.obj:
             data = {
                 'id': self.obj.id
             }
-        elif self.scope == __class__.Scopes.VIEW: # self
+        elif self.scope == self.Scopes.VIEW: # self
             data = {
                 'id': self.user_id
             }
 
         if data:
-            data.update({
-                'membership': {
-                    'role': organization['user']['role']
-                        if organization else None
-                }
-            })
+            data['membership'] = { 'role': self.org_role if self.org_id else None }
 
         return data
 
@@ -195,15 +191,15 @@ class CloudStoragePermission(OpenPolicyAgentPermission):
         if not iam_context and request:
             iam_context = get_iam_context(request, obj)
 
-        return cls(**iam_context, obj=obj, scope=__class__.Scopes.VIEW)
+        return cls(**iam_context, obj=obj, scope=cls.Scopes.VIEW)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + '/cloudstorages/allow'
 
-    @staticmethod
-    def get_scopes(request: ExtendedRequest, view: ViewSet, obj: CloudStorage | None):
-        Scopes = __class__.Scopes
+    @classmethod
+    def _get_scopes(cls, request: ExtendedRequest, view: ViewSet, obj: CloudStorage | None):
+        Scopes = cls.Scopes
         return [{
             'list': Scopes.LIST,
             'create': Scopes.CREATE,
@@ -241,21 +237,21 @@ class ProjectPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
     obj: Optional[Project]
 
     class Scopes(StrEnum):
-        LIST = 'list'
         CREATE = 'create'
         DELETE = 'delete'
+        EXPORT_ANNOTATIONS = 'export:annotations'
+        EXPORT_BACKUP = 'export:backup'
+        EXPORT_DATASET = 'export:dataset'
+        IMPORT_BACKUP = 'import:backup'
+        IMPORT_DATASET = 'import:dataset'
+        LIST = 'list'
         UPDATE = 'update'
-        UPDATE_OWNER = 'update:owner'
         UPDATE_ASSIGNEE = 'update:assignee'
+        UPDATE_ASSOCIATED_STORAGE = 'update:associated_storage'
         UPDATE_DESC = 'update:desc'
         UPDATE_ORG = 'update:organization'
-        UPDATE_ASSOCIATED_STORAGE = 'update:associated_storage'
+        UPDATE_OWNER = 'update:owner'
         VIEW = 'view'
-        IMPORT_DATASET = 'import:dataset'
-        EXPORT_ANNOTATIONS = 'export:annotations'
-        EXPORT_DATASET = 'export:dataset'
-        EXPORT_BACKUP = 'export:backup'
-        IMPORT_BACKUP = 'import:backup'
 
     @classmethod
     def create(cls, request: ExtendedRequest, view: ViewSet, obj: Project | None, iam_context: dict[str, Any]) -> list[OpenPolicyAgentPermission]:
@@ -272,10 +268,6 @@ class ProjectPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
                 self = cls.create_base_perm(request, view, scope, iam_context, obj,
                     assignee_id=assignee_id, **scope_params)
                 permissions.append(self)
-
-            if view.action == 'tasks':
-                perm = TaskPermission.create_scope_list(request, iam_context)
-                permissions.append(perm)
 
             owner = request.data.get('owner_id') or request.data.get('owner')
             if owner:
@@ -305,16 +297,15 @@ class ProjectPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
         super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + '/projects/allow'
 
-    @staticmethod
-    def get_scopes(request: ExtendedRequest, view: ViewSet, obj: Project | None):
-        Scopes = __class__.Scopes
+    @classmethod
+    def _get_scopes(cls, request: ExtendedRequest, view: ViewSet, obj: Project | None):
+        Scopes = cls.Scopes
         scope = {
             ('list', 'GET'): Scopes.LIST,
             ('create', 'POST'): Scopes.CREATE,
             ('destroy', 'DELETE'): Scopes.DELETE,
             ('partial_update', 'PATCH'): Scopes.UPDATE,
             ('retrieve', 'GET'): Scopes.VIEW,
-            ('tasks', 'GET'): Scopes.VIEW,
             ('dataset', 'POST'): Scopes.IMPORT_DATASET,
             ('append_dataset_chunk', 'HEAD'): Scopes.IMPORT_DATASET,
             ('append_dataset_chunk', 'PATCH'): Scopes.IMPORT_DATASET,
@@ -335,7 +326,7 @@ class ProjectPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
 
         scopes = []
         if scope == Scopes.UPDATE:
-            scopes.extend(__class__.get_per_field_update_scopes(request, {
+            scopes.extend(cls.get_per_field_update_scopes(request, {
                 'owner_id': Scopes.UPDATE_OWNER,
                 'assignee_id': Scopes.UPDATE_ASSIGNEE,
                 'name': Scopes.UPDATE_DESC,
@@ -361,7 +352,7 @@ class ProjectPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
         if not iam_context and request:
             iam_context = get_iam_context(request, project)
 
-        return cls(**iam_context, obj=project, scope=__class__.Scopes.VIEW)
+        return cls(**iam_context, obj=project, scope=cls.Scopes.VIEW)
 
     @classmethod
     def create_scope_create(cls, request: ExtendedRequest, org_id: int | None):
@@ -383,7 +374,7 @@ class ProjectPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
             org_owner_id=getattr(organization.owner, 'id', None)
                 if organization else None,
             org_role=getattr(membership, 'role', None),
-            scope=__class__.Scopes.CREATE)
+            scope=cls.Scopes.CREATE)
 
     def get_resource(self):
         data = None
@@ -398,7 +389,7 @@ class ProjectPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
             if DownloadExportedExtension.Scopes.DOWNLOAD_EXPORTED_FILE == self.scope:
                 self.extend_resource_with_rq_job_details(data)
 
-        elif self.scope in [__class__.Scopes.CREATE, __class__.Scopes.IMPORT_BACKUP]:
+        elif self.scope in [self.Scopes.CREATE, self.Scopes.IMPORT_BACKUP]:
             data = {
                 "id": None,
                 "owner": { "id": self.user_id },
@@ -416,32 +407,32 @@ class TaskPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
     obj: Optional[Task]
 
     class Scopes(StrEnum):
-        LIST = 'list'
         CREATE = 'create'
         CREATE_IN_PROJECT = 'create@project'
-        VIEW = 'view'
-        UPDATE = 'update'
-        UPDATE_DESC = 'update:desc'
-        UPDATE_ORGANIZATION = 'update:organization'
-        UPDATE_ASSIGNEE = 'update:assignee'
-        UPDATE_PROJECT = 'update:project'
-        UPDATE_OWNER = 'update:owner'
-        UPDATE_ASSOCIATED_STORAGE = 'update:associated_storage'
         DELETE = 'delete'
-        VIEW_ANNOTATIONS = 'view:annotations'
-        UPDATE_ANNOTATIONS = 'update:annotations'
         DELETE_ANNOTATIONS = 'delete:annotations'
-        IMPORT_ANNOTATIONS = 'import:annotations'
         EXPORT_ANNOTATIONS = 'export:annotations'
-        EXPORT_DATASET = 'export:dataset'
-        VIEW_METADATA = 'view:metadata'
-        UPDATE_METADATA = 'update:metadata'
-        VIEW_DATA = 'view:data'
-        UPLOAD_DATA = 'upload:data'
-        IMPORT_BACKUP = 'import:backup'
         EXPORT_BACKUP = 'export:backup'
-        VIEW_VALIDATION_LAYOUT = 'view:validation_layout'
+        EXPORT_DATASET = 'export:dataset'
+        IMPORT_ANNOTATIONS = 'import:annotations'
+        IMPORT_BACKUP = 'import:backup'
+        LIST = 'list'
+        UPDATE = 'update'
+        UPDATE_ANNOTATIONS = 'update:annotations'
+        UPDATE_ASSIGNEE = 'update:assignee'
+        UPDATE_ASSOCIATED_STORAGE = 'update:associated_storage'
+        UPDATE_DESC = 'update:desc'
+        UPDATE_METADATA = 'update:metadata'
+        UPDATE_ORGANIZATION = 'update:organization'
+        UPDATE_OWNER = 'update:owner'
+        UPDATE_PROJECT = 'update:project'
         UPDATE_VALIDATION_LAYOUT = 'update:validation_layout'
+        UPLOAD_DATA = 'upload:data'
+        VIEW = 'view'
+        VIEW_ANNOTATIONS = 'view:annotations'
+        VIEW_DATA = 'view:data'
+        VIEW_METADATA = 'view:metadata'
+        VIEW_VALIDATION_LAYOUT = 'view:validation_layout'
 
     @classmethod
     def create(cls, request: ExtendedRequest, view: ViewSet, obj: Task | None, iam_context: dict[str, Any]) -> list[OpenPolicyAgentPermission]:
@@ -454,14 +445,14 @@ class TaskPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
             for scope in cls.get_scopes(request, view, obj):
                 params = { 'project_id': project_id, 'assignee_id': assignee_id }
 
-                if scope == __class__.Scopes.UPDATE_ORGANIZATION:
+                if scope == cls.Scopes.UPDATE_ORGANIZATION:
                     org_id = request.data.get('organization')
                     if obj is not None and obj.project is not None:
                         raise ValidationError('Cannot change the organization for '
                             'a task inside a project')
                     # FIX IT: TaskPermission doesn't have create_scope_create method
                     permissions.append(TaskPermission.create_scope_create(request, org_id))
-                elif scope == __class__.Scopes.UPDATE_OWNER:
+                elif scope == cls.Scopes.UPDATE_OWNER:
                     params['owner_id'] = owner
 
                 if DownloadExportedExtension.Scopes.DOWNLOAD_EXPORTED_FILE == scope:
@@ -469,10 +460,6 @@ class TaskPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
 
                 self = cls.create_base_perm(request, view, scope, iam_context, obj, **params)
                 permissions.append(self)
-
-            if view.action == 'jobs':
-                perm = JobPermission.create_scope_list(request, iam_context)
-                permissions.append(perm)
 
             if owner:
                 perm = UserPermission.create_scope_view(iam_context, owner)
@@ -508,22 +495,22 @@ class TaskPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
     def create_scope_view(cls, request: ExtendedRequest, task: int | Task, iam_context: dict[str, Any] | None = None):
         if isinstance(task, int):
             try:
-                task = Task.objects.get(id=task)
+                task = Task.objects.select_related("organization").get(id=task)
             except Task.DoesNotExist as ex:
                 raise ValidationError(str(ex))
 
         if not iam_context and request:
             iam_context = get_iam_context(request, task)
 
-        return cls(**iam_context, obj=task, scope=__class__.Scopes.VIEW)
+        return cls(**iam_context, obj=task, scope=cls.Scopes.VIEW)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + '/tasks/allow'
 
-    @staticmethod
-    def get_scopes(request: ExtendedRequest, view: ViewSet, obj: Task | None) -> list[Scopes]:
-        Scopes = __class__.Scopes
+    @classmethod
+    def _get_scopes(cls, request: ExtendedRequest, view: ViewSet, obj: Task | None) -> list[Scopes]:
+        Scopes = cls.Scopes
         scope = {
             ('list', 'GET'): Scopes.LIST,
             ('create', 'POST'): Scopes.CREATE,
@@ -546,7 +533,6 @@ class TaskPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
             ('data', 'POST'): Scopes.UPLOAD_DATA,
             ('append_data_chunk', 'PATCH'): Scopes.UPLOAD_DATA,
             ('append_data_chunk', 'HEAD'): Scopes.UPLOAD_DATA,
-            ('jobs', 'GET'): Scopes.VIEW,
             ('import_backup', 'POST'): Scopes.IMPORT_BACKUP,
             ('append_backup_chunk', 'PATCH'): Scopes.IMPORT_BACKUP,
             ('append_backup_chunk', 'HEAD'): Scopes.IMPORT_BACKUP,
@@ -570,7 +556,7 @@ class TaskPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
             scopes.append(scope)
 
         elif scope == Scopes.UPDATE:
-            scopes.extend(__class__.get_per_field_update_scopes(request, {
+            scopes.extend(cls.get_per_field_update_scopes(request, {
                 'owner_id': Scopes.UPDATE_OWNER,
                 'assignee_id': Scopes.UPDATE_ASSIGNEE,
                 'project_id': Scopes.UPDATE_PROJECT,
@@ -606,7 +592,7 @@ class TaskPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
             obj = Task.objects.get(id=task_id)
         except Task.DoesNotExist as ex:
             raise ValidationError(str(ex))
-        return cls(**iam_context, obj=obj, scope=__class__.Scopes.VIEW_DATA)
+        return cls(**iam_context, obj=obj, scope=cls.Scopes.VIEW_DATA)
 
     def get_resource(self):
         data = None
@@ -627,9 +613,9 @@ class TaskPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
                 self.extend_resource_with_rq_job_details(data)
 
         elif self.scope in [
-            __class__.Scopes.CREATE,
-            __class__.Scopes.CREATE_IN_PROJECT,
-            __class__.Scopes.IMPORT_BACKUP
+            self.Scopes.CREATE,
+            self.Scopes.CREATE_IN_PROJECT,
+            self.Scopes.IMPORT_BACKUP
         ]:
             project = None
             if self.project_id:
@@ -664,24 +650,24 @@ class JobPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
 
     class Scopes(StrEnum):
         CREATE = 'create'
-        LIST = 'list'
-        VIEW = 'view'
-        UPDATE = 'update'
-        UPDATE_ASSIGNEE = 'update:assignee'
-        UPDATE_STAGE = 'update:stage'
-        UPDATE_STATE = 'update:state'
         DELETE = 'delete'
-        VIEW_ANNOTATIONS = 'view:annotations'
-        UPDATE_ANNOTATIONS = 'update:annotations'
         DELETE_ANNOTATIONS = 'delete:annotations'
-        IMPORT_ANNOTATIONS = 'import:annotations'
         EXPORT_ANNOTATIONS = 'export:annotations'
         EXPORT_DATASET = 'export:dataset'
+        IMPORT_ANNOTATIONS = 'import:annotations'
+        LIST = 'list'
+        UPDATE = 'update'
+        UPDATE_ANNOTATIONS = 'update:annotations'
+        UPDATE_ASSIGNEE = 'update:assignee'
+        UPDATE_METADATA = 'update:metadata'
+        UPDATE_STAGE = 'update:stage'
+        UPDATE_STATE = 'update:state'
+        UPDATE_VALIDATION_LAYOUT = 'update:validation_layout'
+        VIEW = 'view'
+        VIEW_ANNOTATIONS = 'view:annotations'
         VIEW_DATA = 'view:data'
         VIEW_METADATA = 'view:metadata'
-        UPDATE_METADATA = 'update:metadata'
         VIEW_VALIDATION_LAYOUT = 'view:validation_layout'
-        UPDATE_VALIDATION_LAYOUT = 'update:validation_layout'
 
     @classmethod
     def create(cls, request: ExtendedRequest, view: ViewSet, obj: Job | None, iam_context: dict[str, Any]) -> list[OpenPolicyAgentPermission]:
@@ -691,7 +677,7 @@ class JobPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
             for scope in cls.get_scopes(request, view, obj):
                 scope_params = {}
 
-                if scope == __class__.Scopes.CREATE:
+                if scope == cls.Scopes.CREATE:
                     scope_params['task_id'] = task_id
 
                     if task_id:
@@ -710,10 +696,6 @@ class JobPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
 
                 self = cls.create_base_perm(request, view, scope, iam_context, obj, **scope_params)
                 permissions.append(self)
-
-            if view.action == 'issues':
-                perm = IssuePermission.create_scope_list(request, iam_context)
-                permissions.append(perm)
 
             assignee_id = request.data.get('assignee')
             if assignee_id:
@@ -750,16 +732,16 @@ class JobPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
         if not iam_context and request:
             iam_context = get_iam_context(request, job)
 
-        return cls(**iam_context, obj=job, scope=__class__.Scopes.VIEW)
+        return cls(**iam_context, obj=job, scope=cls.Scopes.VIEW)
 
     def __init__(self, **kwargs):
         self.task_id = kwargs.pop('task_id', None)
         super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + '/jobs/allow'
 
-    @staticmethod
-    def get_scopes(request: ExtendedRequest, view: ViewSet, obj: Job | None):
-        Scopes = __class__.Scopes
+    @classmethod
+    def _get_scopes(cls, request: ExtendedRequest, view: ViewSet, obj: Job | None):
+        Scopes = cls.Scopes
         scope = {
             ('list', 'GET'): Scopes.LIST,
             ('create', 'POST'): Scopes.CREATE,
@@ -776,7 +758,6 @@ class JobPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
             ('data', 'GET'): Scopes.VIEW_DATA,
             ('metadata','GET'): Scopes.VIEW_METADATA,
             ('metadata','PATCH'): Scopes.UPDATE_METADATA,
-            ('issues', 'GET'): Scopes.VIEW,
             ('initiate_dataset_export', 'POST'): Scopes.EXPORT_DATASET if is_dataset_export(request) else Scopes.EXPORT_ANNOTATIONS,
             ('preview', 'GET'): Scopes.VIEW,
             ('validation_layout', 'GET'): Scopes.VIEW_VALIDATION_LAYOUT,
@@ -788,7 +769,7 @@ class JobPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
 
         scopes = []
         if scope == Scopes.UPDATE:
-            scopes.extend(__class__.get_per_field_update_scopes(request, {
+            scopes.extend(cls.get_per_field_update_scopes(request, {
                 'assignee': Scopes.UPDATE_ASSIGNEE,
                 'stage': Scopes.UPDATE_STAGE,
                 'state': Scopes.UPDATE_STATE,
@@ -833,7 +814,7 @@ class JobPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
             if DownloadExportedExtension.Scopes.DOWNLOAD_EXPORTED_FILE == self.scope:
                 self.extend_resource_with_rq_job_details(data)
 
-        elif self.scope == __class__.Scopes.CREATE:
+        elif self.scope == self.Scopes.CREATE:
             if self.task_id is None:
                 raise ValidationError("task_id is not specified")
             task = Task.objects.get(id=self.task_id)
@@ -883,9 +864,9 @@ class CommentPermission(OpenPolicyAgentPermission):
         super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + '/comments/allow'
 
-    @staticmethod
-    def get_scopes(request: ExtendedRequest, view: ViewSet, obj: Comment | None):
-        Scopes = __class__.Scopes
+    @classmethod
+    def _get_scopes(cls, request: ExtendedRequest, view: ViewSet, obj: Comment | None):
+        Scopes = cls.Scopes
         return [{
             'list': Scopes.LIST,
             'create': Scopes.CREATE_IN_ISSUE,
@@ -930,7 +911,7 @@ class CommentPermission(OpenPolicyAgentPermission):
                 "id": self.obj.id,
                 "owner": { "id": getattr(self.obj.owner, 'id', None) }
             })
-        elif self.scope.startswith(__class__.Scopes.CREATE):
+        elif self.scope.startswith(self.Scopes.CREATE):
             try:
                 db_issue = Issue.objects.get(id=self.issue_id)
             except Issue.DoesNotExist as ex:
@@ -974,16 +955,15 @@ class IssuePermission(OpenPolicyAgentPermission):
         super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + '/issues/allow'
 
-    @staticmethod
-    def get_scopes(request: ExtendedRequest, view: ViewSet, obj: Issue | None):
-        Scopes = __class__.Scopes
+    @classmethod
+    def _get_scopes(cls, request: ExtendedRequest, view: ViewSet, obj: Issue | None):
+        Scopes = cls.Scopes
         return [{
             'list': Scopes.LIST,
             'create': Scopes.CREATE_IN_JOB,
             'destroy': Scopes.DELETE,
             'partial_update': Scopes.UPDATE,
             'retrieve': Scopes.VIEW,
-            'comments': Scopes.VIEW,
         }[view.action]]
 
     def get_resource(self):
@@ -1021,7 +1001,7 @@ class IssuePermission(OpenPolicyAgentPermission):
                 "owner": { "id": self.obj.owner_id },
                 "assignee": { "id": self.obj.assignee_id }
             })
-        elif self.scope.startswith(__class__.Scopes.CREATE):
+        elif self.scope.startswith(self.Scopes.CREATE):
             job_id = self.job_id
             try:
                 db_job = Job.objects.get(id=job_id)
@@ -1047,7 +1027,7 @@ class LabelPermission(OpenPolicyAgentPermission):
 
     @classmethod
     def create(cls, request: ExtendedRequest, view: ViewSet, obj: Label | None, iam_context: dict[str, Any]) -> list[OpenPolicyAgentPermission]:
-        Scopes = __class__.Scopes
+        Scopes = cls.Scopes
 
         permissions = []
         if view.basename == 'label':
@@ -1100,9 +1080,9 @@ class LabelPermission(OpenPolicyAgentPermission):
         super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + '/labels/allow'
 
-    @staticmethod
-    def get_scopes(request: ExtendedRequest, view: ViewSet, obj: Label | None):
-        Scopes = __class__.Scopes
+    @classmethod
+    def _get_scopes(cls, request: ExtendedRequest, view: ViewSet, obj: Label | None):
+        Scopes = cls.Scopes
         return [{
             'list': Scopes.LIST,
             'destroy': Scopes.DELETE,
@@ -1162,9 +1142,9 @@ class AnnotationGuidePermission(OpenPolicyAgentPermission):
         super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + '/annotationguides/allow'
 
-    @staticmethod
-    def get_scopes(request: ExtendedRequest, view: ViewSet, obj: AnnotationGuide | None):
-        Scopes = __class__.Scopes
+    @classmethod
+    def _get_scopes(cls, request: ExtendedRequest, view: ViewSet, obj: AnnotationGuide | None):
+        Scopes = cls.Scopes
         return [{
             'create': Scopes.CREATE,
             'destroy': Scopes.DELETE,
@@ -1185,7 +1165,7 @@ class AnnotationGuidePermission(OpenPolicyAgentPermission):
                 },
                 'organization': { 'id': self.obj.organization_id }
             })
-        elif self.scope == __class__.Scopes.CREATE:
+        elif self.scope == self.Scopes.CREATE:
             db_target = None
             if self.project_id is not None:
                 try:
@@ -1216,7 +1196,7 @@ class GuideAssetPermission(OpenPolicyAgentPermission):
 
     @classmethod
     def create(cls, request: ExtendedRequest, view: ViewSet, obj: AnnotationGuide | None, iam_context: dict[str, Any]) -> list[OpenPolicyAgentPermission]:
-        Scopes = __class__.Scopes
+        Scopes = cls.Scopes
         permissions = []
 
         if view.basename == 'asset':
@@ -1241,50 +1221,15 @@ class GuideAssetPermission(OpenPolicyAgentPermission):
 
         return permissions
 
-    @staticmethod
-    def get_scopes(request: ExtendedRequest, view: ViewSet, obj: AnnotationGuide | None):
-        Scopes = __class__.Scopes
+    @classmethod
+    def _get_scopes(cls, request: ExtendedRequest, view: ViewSet, obj: AnnotationGuide | None):
+        Scopes = cls.Scopes
         return [{
             'create': Scopes.CREATE,
             'destroy': Scopes.DELETE,
             'retrieve': Scopes.VIEW,
         }[view.action]]
 
-
-class RequestPermission(OpenPolicyAgentPermission):
-    class Scopes(StrEnum):
-        LIST = 'list'
-        VIEW = 'view'
-        CANCEL = 'cancel'
-
-    @classmethod
-    def create(cls, request: ExtendedRequest, view: ViewSet, obj: RQJob | None, iam_context: dict) -> list[OpenPolicyAgentPermission]:
-        permissions = []
-        if view.basename == 'request':
-            for scope in cls.get_scopes(request, view, obj):
-                if scope != cls.Scopes.LIST:
-                    user_id = request.user.id
-                    if not is_rq_job_owner(obj, user_id):
-                        raise PermissionDenied('You don\'t have permission to perform this action')
-
-        return permissions
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.url = settings.IAM_OPA_DATA_URL + '/requests/allow'
-
-    @staticmethod
-    def get_scopes(request: ExtendedRequest, view: ViewSet, obj: RQJob | None) -> list[Scopes]:
-        Scopes = __class__.Scopes
-        return [{
-            ('list', 'GET'): Scopes.LIST,
-            ('retrieve', 'GET'): Scopes.VIEW,
-            ('cancel', 'POST'): Scopes.CANCEL,
-        }[(view.action, request.method)]]
-
-
-    def get_resource(self):
-        return None
 
 def get_cloud_storage_for_import_or_export(
     storage_id: int, *, request: ExtendedRequest, is_default: bool = False

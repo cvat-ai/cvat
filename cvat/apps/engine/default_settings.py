@@ -19,6 +19,13 @@ When enabled, this option can increase data access speed and reduce server load,
 but significantly increase disk space occupied by tasks.
 """
 
+CVAT_CACHE_ITEM_MAX_SIZE = 500 * 1024 * 1024
+"""
+Kvrocks limits the item size to 512 MB, which results “Connection reset” exception.
+Let's check the data size and raise an understandable exception instead of the redis-py exception
+Sets the maximum size in bytes of a data chunk item stored on redis_ondisk
+"""
+
 CVAT_CHUNK_CREATE_TIMEOUT = 50
 """
 Sets the chunk preparation timeout in seconds after which the backend will respond with 429 code.
@@ -97,3 +104,5 @@ if MAX_CONSENSUS_REPLICAS < 1:
     raise ImproperlyConfigured(f"MAX_CONSENSUS_REPLICAS must be >= 1, got {MAX_CONSENSUS_REPLICAS}")
 
 DEFAULT_DB_BULK_CREATE_BATCH_SIZE = int(os.getenv("CVAT_DEFAULT_DB_BULK_CREATE_BATCH_SIZE", 5000))
+
+DEFAULT_DB_ANNO_CHUNK_SIZE = int(os.getenv("CVAT_DEFAULT_DB_ANNO_CHUNK_SIZE", 2000))

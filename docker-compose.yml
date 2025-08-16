@@ -63,11 +63,8 @@ services:
 
   cvat_redis_ondisk:
     container_name: cvat_redis_ondisk
-    image: apache/kvrocks:2.7.0
+    image: apache/kvrocks:2.12.1
     restart: always
-    command: [
-      "--dir", "/var/lib/kvrocks/data"
-    ]
     # The kvrocks image a) has a healthcheck command, and b) has a root process
     # that doesn't reap children, so it's susceptible to the problem described here:
     # <https://stackoverflow.com/a/77109064>. Kvrocks also uses a tiny timeout for
@@ -75,13 +72,16 @@ services:
     # Use a separate init process as a workaround.
     init: true
     volumes:
-      - cvat_cache_db:/var/lib/kvrocks/data
+      - cvat_cache_db:/var/lib/kvrocks
     networks:
       - cvat
+    command: [
+      "--compact-cron", "0 3 * * *",
+      ]
 
   cvat_server:
     container_name: cvat_server
-    image: cvat/server:${CVAT_VERSION:-dev}
+    image: cvat/server:${CVAT_VERSION:-v2.41.0}
     restart: always
     depends_on:
       <<: *backend-deps
@@ -116,16 +116,16 @@ services:
         aliases:
           - cvat-server
 
-  cvat_utils:
-    container_name: cvat_utils
-    image: cvat/server:${CVAT_VERSION:-dev}
+  cvat_worker_utils:
+    container_name: cvat_worker_utils
+    image: cvat/server:${CVAT_VERSION:-v2.41.0}
     restart: always
     depends_on: *backend-deps
     environment:
       <<: *backend-env
       CVAT_REDIS_INMEM_PASSWORD: ''
       NUMPROCS: 1
-    command: run utils
+    command: run worker notifications cleaning
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -135,13 +135,13 @@ services:
 
   cvat_worker_import:
     container_name: cvat_worker_import
-    image: cvat/server:${CVAT_VERSION:-dev}
+    image: cvat/server:${CVAT_VERSION:-v2.41.0}
     restart: always
     depends_on: *backend-deps
     environment:
       <<: *backend-env
       NUMPROCS: 2
-    command: run worker.import
+    command: run worker import
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -151,13 +151,13 @@ services:
 
   cvat_worker_export:
     container_name: cvat_worker_export
-    image: cvat/server:${CVAT_VERSION:-dev}
+    image: cvat/server:${CVAT_VERSION:-v2.41.0}
     restart: always
     depends_on: *backend-deps
     environment:
       <<: [*backend-env, *clickhouse-env]
       NUMPROCS: 2
-    command: run worker.export
+    command: run worker export
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -167,13 +167,13 @@ services:
 
   cvat_worker_annotation:
     container_name: cvat_worker_annotation
-    image: cvat/server:${CVAT_VERSION:-dev}
+    image: cvat/server:${CVAT_VERSION:-v2.41.0}
     restart: always
     depends_on: *backend-deps
     environment:
       <<: *backend-env
       NUMPROCS: 1
-    command: run worker.annotation
+    command: run worker annotation
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -183,13 +183,13 @@ services:
 
   cvat_worker_webhooks:
     container_name: cvat_worker_webhooks
-    image: cvat/server:${CVAT_VERSION:-dev}
+    image: cvat/server:${CVAT_VERSION:-v2.41.0}
     restart: always
     depends_on: *backend-deps
     environment:
       <<: *backend-env
       NUMPROCS: 1
-    command: run worker.webhooks
+    command: run worker webhooks
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -199,13 +199,13 @@ services:
 
   cvat_worker_quality_reports:
     container_name: cvat_worker_quality_reports
-    image: cvat/server:${CVAT_VERSION:-dev}
+    image: cvat/server:${CVAT_VERSION:-v2.41.0}
     restart: always
     depends_on: *backend-deps
     environment:
       <<: *backend-env
       NUMPROCS: 1
-    command: run worker.quality_reports
+    command: run worker quality_reports
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -215,13 +215,13 @@ services:
 
   cvat_worker_chunks:
     container_name: cvat_worker_chunks
-    image: cvat/server:${CVAT_VERSION:-dev}
+    image: cvat/server:${CVAT_VERSION:-v2.41.0}
     restart: always
     depends_on: *backend-deps
     environment:
       <<: *backend-env
       NUMPROCS: 2
-    command: run worker.chunks
+    command: run worker chunks
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -231,13 +231,13 @@ services:
 
   cvat_worker_consensus:
     container_name: cvat_worker_consensus
-    image: cvat/server:${CVAT_VERSION:-dev}
+    image: cvat/server:${CVAT_VERSION:-v2.41.0}
     restart: always
     depends_on: *backend-deps
     environment:
       <<: *backend-env
       NUMPROCS: 1
-    command: run worker.consensus
+    command: run worker consensus
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -247,7 +247,7 @@ services:
 
   cvat_ui:
     container_name: cvat_ui
-    image: cvat/ui:${CVAT_VERSION:-dev}
+    image: cvat/ui:${CVAT_VERSION:-v2.41.0}
     restart: always
     depends_on:
       - cvat_server
@@ -377,9 +377,8 @@ services:
       GF_AUTH_ANONYMOUS_ENABLED: true
       GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
       GF_AUTH_DISABLE_LOGIN_FORM: true
-      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: grafana-clickhouse-datasource
       GF_SERVER_ROOT_URL: http://${CVAT_HOST:-localhost}/analytics
-      GF_INSTALL_PLUGINS: https://github.com/grafana/clickhouse-datasource/releases/download/v4.0.8/grafana-clickhouse-datasource-4.0.8.linux_amd64.zip;grafana-clickhouse-datasource
+      GF_INSTALL_PLUGINS: 'grafana-clickhouse-datasource 4.8.2'
       GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/all_events.json
     volumes:
       - ./components/analytics/grafana/dashboards/:/var/lib/grafana/dashboards/:ro

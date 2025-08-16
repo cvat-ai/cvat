@@ -8,6 +8,7 @@ from pyunpack import Archive
 
 from cvat.apps.dataset_manager.bindings import GetCVATDataExtractor, detect_dataset
 from cvat.apps.dataset_manager.util import make_zip_archive
+from cvat.apps.engine.models import SourceType
 
 from .registry import dm_env, exporter, importer
 
@@ -15,6 +16,7 @@ from .registry import dm_env, exporter, importer
 def _import_to_task(dataset, instance_data):
     tracks = {}
     label_cat = dataset.categories()[dm.AnnotationType.label]
+    import_source = SourceType.FILE.value
 
     for item in dataset:
         # NOTE: MOT frames start from 1
@@ -43,7 +45,7 @@ def _import_to_task(dataset, instance_data):
                         group=0,
                         frame=frame_number,
                         attributes=attributes,
-                        source="manual",
+                        source=import_source,
                     )
                 )
                 continue
@@ -57,13 +59,13 @@ def _import_to_task(dataset, instance_data):
                 z_order=ann.z_order,
                 frame=frame_number,
                 attributes=attributes,
-                source="manual",
+                source=import_source,
             )
 
             # build trajectories as lists of shapes in track dict
             if track_id not in tracks:
                 tracks[track_id] = instance_data.Track(
-                    label_cat.items[ann.label].name, 0, "manual", []
+                    label_cat.items[ann.label].name, 0, import_source, []
                 )
             tracks[track_id].shapes.append(shape)
 
@@ -99,7 +101,7 @@ def _import_to_task(dataset, instance_data):
 @exporter(name="MOT", ext="ZIP", version="1.1")
 def _export(dst_file, temp_dir, instance_data, save_images=False):
     with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
-        dataset = dm.Dataset.from_extractors(extractor, env=dm_env)
+        dataset = dm.StreamDataset.from_extractors(extractor, env=dm_env)
 
         dataset.export(temp_dir, "mot_seq_gt", save_media=save_images)
 

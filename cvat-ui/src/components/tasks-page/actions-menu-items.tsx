@@ -3,16 +3,18 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { LoadingOutlined } from '@ant-design/icons';
 import { MenuProps } from 'antd/lib/menu';
 import { usePlugins } from 'utils/hooks';
+import { CVATMenuEditLabel } from 'components/common/cvat-menu-edit-label';
 
 interface MenuItemsData {
+    taskId: number;
     isAutomaticAnnotationEnabled: boolean;
+    isConsensusEnabled: boolean;
     isMergingConsensusEnabled: boolean;
     pluginActions: ReturnType<typeof usePlugins>;
-    onOpenQualityControl: () => void;
-    onOpenConsensusManagement: (() => void) | null;
     onMergeConsensusJobs: (() => void) | null;
     onOpenBugTracker: (() => void) | null;
     onUploadAnnotations: () => void;
@@ -21,15 +23,17 @@ interface MenuItemsData {
     onRunAutoAnnotation: (() => void) | null;
     onMoveTaskToProject: (() => void) | null;
     onDeleteTask: () => void;
+    startEditField: (key: string) => void;
 }
 
 export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuProps: unknown): MenuProps['items'] {
     const {
+        startEditField,
+        taskId,
         pluginActions,
         isAutomaticAnnotationEnabled,
+        isConsensusEnabled,
         isMergingConsensusEnabled,
-        onOpenQualityControl,
-        onOpenConsensusManagement,
         onMergeConsensusJobs,
         onUploadAnnotations,
         onExportDataset,
@@ -76,17 +80,26 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
     }, 40]);
 
     menuItems.push([{
-        key: 'quality_control',
-        onClick: onOpenQualityControl,
-        label: 'Quality control',
+        key: 'edit_assignee',
+        onClick: () => startEditField('assignee'),
+        label: <CVATMenuEditLabel>Assignee</CVATMenuEditLabel>,
     }, 50]);
 
-    if (onOpenConsensusManagement) {
+    menuItems.push([{
+        key: 'view-analytics',
+        label: <Link to={`/tasks/${taskId}/analytics`}>View analytics</Link>,
+    }, 60]);
+
+    menuItems.push([{
+        key: 'quality_control',
+        label: <Link to={`/tasks/${taskId}/quality-control`}>Quality control</Link>,
+    }, 70]);
+
+    if (isConsensusEnabled) {
         menuItems.push([{
             key: 'consensus_management',
-            onClick: onOpenConsensusManagement,
-            label: 'Consensus management',
-        }, 55]);
+            label: <Link to={`/tasks/${taskId}/consensus`}>Consensus management</Link>,
+        }, 75]);
     }
 
     if (onMergeConsensusJobs) {
@@ -96,7 +109,7 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
             label: 'Merge consensus jobs',
             disabled: isMergingConsensusEnabled,
             itemIcon: isMergingConsensusEnabled ? <LoadingOutlined /> : undefined,
-        }, 60]);
+        }, 80]);
     }
 
     if (onMoveTaskToProject) {
@@ -104,15 +117,15 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
             key: 'move_task_to_project',
             onClick: onMoveTaskToProject,
             label: 'Move to project',
-        }, 70]);
+        }, 90]);
     }
 
-    menuItems.push([{ type: 'divider' }, 79]);
+    menuItems.push([{ type: 'divider' }, 89]);
     menuItems.push([{
         key: 'delete_task',
         onClick: onDeleteTask,
         label: 'Delete',
-    }, 80]);
+    }, 100]);
 
     menuItems.push(
         ...pluginActions.map(({ component: Component, weight }, index) => {

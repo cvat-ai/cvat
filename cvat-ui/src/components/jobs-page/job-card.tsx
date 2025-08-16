@@ -19,7 +19,7 @@ import JobActionsComponent from './actions-menu';
 const useCardHeight = useCardHeightHOC({
     containerClassName: 'cvat-jobs-page',
     siblingClassNames: ['cvat-jobs-page-pagination', 'cvat-jobs-page-top-bar'],
-    paddings: 64,
+    paddings: 80,
     minHeight: 200,
     numberOfRows: 3,
 });

@@ -16,6 +16,7 @@
 [![server pulls][docker-server-pulls-img]][docker-server-image-url]
 [![ui pulls][docker-ui-pulls-img]][docker-ui-image-url]
 [![DOI][doi-img]][doi-url]
+[![Status][status-img]][status-url]
 
 CVAT is an interactive video and image annotation
 tool for computer vision. It is used by tens of thousands of users and
@@ -151,7 +152,7 @@ For more information about the supported formats, see:
 <!--lint disable maximum-line-length-->
 
 | Annotation format                                                                                | Import | Export |
-|--------------------------------------------------------------------------------------------------| ------ | ------ |
+| ------------------------------------------------------------------------------------------------ | ------ | ------ |
 | [CVAT for images](https://docs.cvat.ai/docs/manual/advanced/xml_format/#annotation)              | ✔️     | ✔️     |
 | [CVAT for a video](https://docs.cvat.ai/docs/manual/advanced/xml_format/#interpolation)          | ✔️     | ✔️     |
 | [Datumaro](https://github.com/cvat-ai/datumaro)                                                  | ✔️     | ✔️     |
@@ -176,10 +177,10 @@ For more information about the supported formats, see:
 | [LFW](http://vis-www.cs.umass.edu/lfw/)                                                          | ✔️     | ✔️     |
 | [Supervisely Point Cloud Format](https://docs.supervise.ly/data-organization/00_ann_format_navi) | ✔️     | ✔️     |
 | [Ultralytics YOLO Detection](https://docs.ultralytics.com/datasets/detect/)                      | ✔️     | ✔️     |
-| [Ultralytics YOLO Oriented Bounding Boxes](https://docs.ultralytics.com/datasets/obb/)                     | ✔️     | ✔️     |
-| [Ultralytics YOLO Segmentation](https://docs.ultralytics.com/datasets/segment/)                            | ✔️     | ✔️     |
-| [Ultralytics YOLO Pose](https://docs.ultralytics.com/datasets/pose/)                                       | ✔️     | ✔️     |
-| [Ultralytics YOLO Classification](https://docs.ultralytics.com/datasets/classify/)                         | ✔️     | ✔️     |
+| [Ultralytics YOLO Oriented Bounding Boxes](https://docs.ultralytics.com/datasets/obb/)           | ✔️     | ✔️     |
+| [Ultralytics YOLO Segmentation](https://docs.ultralytics.com/datasets/segment/)                  | ✔️     | ✔️     |
+| [Ultralytics YOLO Pose](https://docs.ultralytics.com/datasets/pose/)                             | ✔️     | ✔️     |
+| [Ultralytics YOLO Classification](https://docs.ultralytics.com/datasets/classify/)               | ✔️     | ✔️     |
 
 <!--lint enable maximum-line-length-->
 
@@ -248,7 +249,7 @@ If it's a bug, please add the steps to reproduce it.
 [#cvat](https://stackoverflow.com/search?q=%23cvat) tag on StackOverflow is one more way to ask
 questions and get our support.
 
-[contact@cvat.ai](mailto:contact+github@cvat.ai) to reach out to us if you need commercial support.
+[Use our website](https://www.cvat.ai/contact-us/enterprise) to reach out to us if you need commercial support.
 
 ## Links
 
@@ -274,3 +275,5 @@ questions and get our support.
 [doi-url]: https://zenodo.org/badge/latestdoi/139156354
 [discord-img]: https://img.shields.io/discord/1000789942802337834?label=discord
 [discord-url]: https://discord.gg/fNR3eXfk6C
+[status-img]: https://uptime.betterstack.com/status-badges/v2/monitor/1yl3h.svg
+[status-url]: https://status.cvat.ai

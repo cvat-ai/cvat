@@ -13,6 +13,10 @@
     padding: $grid-unit-size * 3;
     background: $background-color-1;
     text-align: initial;
+
+    .cvat-project-search-field {
+        width: 100%;
+    }
 }
 
 .cvat-create-webhook-page {

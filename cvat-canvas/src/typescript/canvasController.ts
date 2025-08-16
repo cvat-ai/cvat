@@ -43,7 +43,7 @@ export interface CanvasController {
     mode: Mode;
     geometry: Geometry;
 
-    zoom(x: number, y: number, direction: number): void;
+    zoom(x: number, y: number, deltaY: number): void;
     draw(drawData: DrawData): void;
     edit(editData: MasksEditData | PolyEditData): void;
     enableDrag(x: number, y: number): void;
@@ -61,8 +61,8 @@ export class CanvasControllerImpl implements CanvasController {
         this.model = model;
     }
 
-    public zoom(x: number, y: number, direction: number): void {
-        this.model.zoom(x, y, direction);
+    public zoom(x: number, y: number, deltaY: number): void {
+        this.model.zoom(x, y, deltaY);
     }
 
     public fit(): void {

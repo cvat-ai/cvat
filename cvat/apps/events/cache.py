@@ -36,9 +36,9 @@ class DeleteCache:
 
 
 def get_cache():
-    from .handlers import request_id
+    from .handlers import request_info
 
-    return DeleteCache(request_id())
+    return DeleteCache(request_info()["id"])
 
 
 def clear_cache():

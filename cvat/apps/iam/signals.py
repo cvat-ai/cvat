@@ -15,7 +15,10 @@ def register_groups(sender, **kwargs):
 
 if settings.IAM_TYPE == "BASIC":
 
-    def create_user(sender, instance, created, **kwargs):
+    def create_user(sender, instance, created: bool, raw: bool, **kwargs):
+        if created and raw:
+            return
+
         from allauth.account import app_settings as allauth_settings
         from allauth.account.models import EmailAddress
 

@@ -43,6 +43,7 @@ from .utils import (
     export_dataset,
     export_project_backup,
     export_project_dataset,
+    import_project_backup,
 )
 
 
@@ -110,13 +111,11 @@ class TestGetProjects:
         self, projects, is_project_staff, find_users, role
     ):
         user, pid = next(
-            (
-                (user, project["id"])
-                for user in find_users(role=role, exclude_privilege="admin")
-                for project in projects
-                if project["organization"] == user["org"]
-                and not is_project_staff(user["id"], project["id"])
-            )
+            (user, project["id"])
+            for user in find_users(role=role, exclude_privilege="admin")
+            for project in projects
+            if project["organization"] == user["org"]
+            and not is_project_staff(user["id"], project["id"])
         )
 
         self._test_response_403(user["username"], pid)
@@ -126,13 +125,11 @@ class TestGetProjects:
         self, find_users, projects, is_project_staff, role
     ):
         user, pid = next(
-            (
-                (user, project["id"])
-                for user in find_users(role=role, exclude_privilege="admin")
-                for project in projects
-                if project["organization"] == user["org"]
-                and not is_project_staff(user["id"], project["id"])
-            )
+            (user, project["id"])
+            for user in find_users(role=role, exclude_privilege="admin")
+            for project in projects
+            if project["organization"] == user["org"]
+            and not is_project_staff(user["id"], project["id"])
         )
 
         self._test_response_200(user["username"], pid)
@@ -142,13 +139,11 @@ class TestGetProjects:
         self, projects, find_users, is_project_staff, role
     ):
         user, pid = next(
-            (
-                (user, project["id"])
-                for user in find_users(role=role, exclude_privilege="admin")
-                for project in projects
-                if project["organization"] == user["org"]
-                and is_project_staff(user["id"], project["id"])
-            )
+            (user, project["id"])
+            for user in find_users(role=role, exclude_privilege="admin")
+            for project in projects
+            if project["organization"] == user["org"]
+            and is_project_staff(user["id"], project["id"])
         )
 
         self._test_response_200(user["username"], pid)
@@ -346,11 +341,15 @@ class TestGetPostProjectBackup:
         self._test_can_get_project_backup(user["username"], project["id"])
 
     def test_can_get_backup_project_when_some_tasks_have_no_data(self):
-        project = next((p for p in self.projects if 0 < p["tasks"]["count"]))
+        project = next(p for p in self.projects if 0 < p["tasks"]["count"])
 
         # add empty task to project
+        org_id = project["organization"]
         response = post_method(
-            "admin1", "tasks", {"name": "empty_task", "project_id": project["id"]}
+            "admin1",
+            "tasks",
+            {"name": "empty_task", "project_id": project["id"]},
+            **({"org_id": org_id} if org_id else {}),
         )
         assert response.status_code == HTTPStatus.CREATED
 
@@ -379,7 +378,7 @@ class TestGetPostProjectBackup:
         self._test_can_get_project_backup("admin1", project["id"])
 
     def test_can_get_backup_for_empty_project(self):
-        empty_project = next((p for p in self.projects if 0 == p["tasks"]["count"]))
+        empty_project = next(p for p in self.projects if 0 == p["tasks"]["count"])
         self._test_can_get_project_backup("admin1", empty_project["id"])
 
     def test_admin_can_get_project_backup_and_create_project_by_backup(self, admin_user: str):
@@ -389,15 +388,7 @@ class TestGetPostProjectBackup:
         tmp_file = io.BytesIO(backup)
         tmp_file.name = "dataset.zip"
 
-        import_data = {
-            "project_file": tmp_file,
-        }
-
-        with make_api_client(admin_user) as api_client:
-            (_, response) = api_client.projects_api.create_backup(
-                backup_write_request=deepcopy(import_data), _content_type="multipart/form-data"
-            )
-            assert response.status == HTTPStatus.ACCEPTED
+        import_project_backup(admin_user, tmp_file)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -630,7 +621,7 @@ class TestImportExportDatasetProject:
             (_, response) = api_client.projects_api.create_dataset(
                 id=project_id,
                 format=format_name,
-                dataset_write_request=deepcopy(data),
+                dataset_file_request={"dataset_file": data},
                 _content_type="multipart/form-data",
             )
             assert response.status == HTTPStatus.ACCEPTED
@@ -670,11 +661,7 @@ class TestImportExportDatasetProject:
         tmp_file = io.BytesIO(dataset)
         tmp_file.name = "dataset.zip"
 
-        import_data = {
-            "dataset_file": tmp_file,
-        }
-
-        self._test_import_project(admin_user, project_id, "CVAT 1.1", import_data)
+        self._test_import_project(admin_user, project_id, "CVAT 1.1", tmp_file)
 
     @pytest.mark.parametrize(
         "export_format, import_format",
@@ -712,11 +699,8 @@ class TestImportExportDatasetProject:
 
         tmp_file = io.BytesIO(dataset)
         tmp_file.name = "dataset.zip"
-        import_data = {
-            "dataset_file": tmp_file,
-        }
 
-        self._test_import_project(admin_user, project_id, import_format, import_data)
+        self._test_import_project(admin_user, project_id, import_format, tmp_file)
 
     @pytest.mark.parametrize("format_name", ("Datumaro 1.0", "ImageNet 1.0", "PASCAL VOC 1.1"))
     def test_can_import_export_dataset_with_some_format(self, format_name: str):
@@ -735,11 +719,7 @@ class TestImportExportDatasetProject:
         tmp_file = io.BytesIO(dataset)
         tmp_file.name = "dataset.zip"
 
-        import_data = {
-            "dataset_file": tmp_file,
-        }
-
-        self._test_import_project(username, project_id, format_name, import_data)
+        self._test_import_project(username, project_id, format_name, tmp_file)
 
     @pytest.mark.parametrize("username, pid", [("admin1", 8)])
     @pytest.mark.parametrize(
@@ -801,11 +781,7 @@ class TestImportExportDatasetProject:
         tmp_file = io.BytesIO(dataset)
         tmp_file.name = "dataset.zip"
 
-        import_data = {
-            "dataset_file": tmp_file,
-        }
-
-        self._test_import_project(username, project_id, "CVAT 1.1", import_data)
+        self._test_import_project(username, project_id, "CVAT 1.1", tmp_file)
 
         response = get_method(username, f"tasks", project_id=project_id)
         assert response.status_code == HTTPStatus.OK
@@ -915,11 +891,7 @@ class TestImportExportDatasetProject:
 
         with io.BytesIO(dataset) as tmp_file:
             tmp_file.name = "dataset.zip"
-            import_data = {
-                "dataset_file": tmp_file,
-            }
-
-            self._test_import_project(admin_user, project_id, "CVAT 1.1", import_data)
+            self._test_import_project(admin_user, project_id, "CVAT 1.1", tmp_file)
 
     @pytest.mark.parametrize(
         "dimension, format_name",
@@ -972,14 +944,12 @@ class TestImportExportDatasetProject:
                 )
             )
 
-            import_data = {"dataset_file": dataset_file}
-
             with pytest.raises(exceptions.ApiException, match="Dataset file should be zip archive"):
                 self._test_import_project(
                     admin_user,
                     project.id,
                     format_name=format_name,
-                    data=import_data,
+                    data=dataset_file,
                 )
 
     @pytest.mark.parametrize(
@@ -1378,13 +1348,11 @@ class TestGetProjectPreview:
         self, projects, is_project_staff, find_users, role
     ):
         user, pid = next(
-            (
-                (user, project["id"])
-                for user in find_users(role=role, exclude_privilege="admin")
-                for project in projects
-                if project["organization"] == user["org"]
-                and not is_project_staff(user["id"], project["id"])
-            )
+            (user, project["id"])
+            for user in find_users(role=role, exclude_privilege="admin")
+            for project in projects
+            if project["organization"] == user["org"]
+            and not is_project_staff(user["id"], project["id"])
         )
 
         self._test_response_403(user["username"], pid)
@@ -1394,14 +1362,12 @@ class TestGetProjectPreview:
         self, find_users, projects, is_project_staff, role
     ):
         user, pid = next(
-            (
-                (user, project["id"])
-                for user in find_users(role=role, exclude_privilege="admin")
-                for project in projects
-                if project["organization"] == user["org"]
-                and not is_project_staff(user["id"], project["id"])
-                and project["tasks"]["count"] > 0
-            )
+            (user, project["id"])
+            for user in find_users(role=role, exclude_privilege="admin")
+            for project in projects
+            if project["organization"] == user["org"]
+            and not is_project_staff(user["id"], project["id"])
+            and project["tasks"]["count"] > 0
         )
 
         self._test_response_200(user["username"], pid)

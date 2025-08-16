@@ -20,6 +20,7 @@ const defaultState: ProjectsState = {
     previews: {},
     gettingQuery: {
         page: 1,
+        pageSize: 12,
         id: null,
         search: null,
         filter: null,
@@ -27,6 +28,7 @@ const defaultState: ProjectsState = {
     },
     tasksGettingQuery: {
         page: 1,
+        pageSize: 10,
         id: null,
         search: null,
         filter: null,
@@ -40,6 +42,7 @@ const defaultState: ProjectsState = {
             id: null,
             error: '',
         },
+        updates: {},
     },
 };
 
@@ -203,6 +206,49 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
                         fetching: false,
                         initialized: true,
                     },
+                },
+            };
+        }
+        case ProjectsActionTypes.UPDATE_PROJECT: {
+            const { projectId } = action.payload;
+            return {
+                ...state,
+                fetching: true,
+                activities: {
+                    ...state.activities,
+                    updates: {
+                        ...state.activities.updates,
+                        [projectId]: true,
+                    },
+                },
+            };
+        }
+        case ProjectsActionTypes.UPDATE_PROJECT_SUCCESS: {
+            const { project } = action.payload;
+            const { updates } = state.activities;
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    updates: omit(updates, project.id),
+                },
+                current: state.current.map((projectInstance) => {
+                    if (projectInstance.id === project.id) {
+                        return project;
+                    }
+                    return projectInstance;
+                }),
+                fetching: false,
+            };
+        }
+        case ProjectsActionTypes.UPDATE_PROJECT_FAILED: {
+            const { projectId } = action.payload;
+            const { updates } = state.activities;
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    updates: omit(updates, projectId),
                 },
             };
         }
