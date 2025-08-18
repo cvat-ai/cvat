@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, Optional
 from cvat_sdk.api_client.api_client import Endpoint
 from cvat_sdk.core.helpers import expect_status
 from cvat_sdk.core.progress import NullProgressReporter, ProgressReporter
-from cvat_sdk.core.utils import atomic_writer
+from cvat_sdk.core.utils import atomic_writer, normalize_filename
 
 if TYPE_CHECKING:
     from cvat_sdk.core.client import Client
@@ -34,14 +34,17 @@ class Downloader:
         *,
         timeout: int = 60,
         pbar: Optional[ProgressReporter] = None,
-    ) -> None:
+    ) -> Path:
         """
         Downloads the file from url into a temporary file, then renames it to the requested name.
+        If output_path is a directory, saves the file into the directory with
+        the server-defined name.
         """
 
         CHUNK_SIZE = 10 * 2**20
 
-        assert not output_path.exists()
+        if output_path.exists() and not output_path.is_dir():
+            raise FileExistsError(output_path)
 
         if pbar is None:
             pbar = NullProgressReporter()
@@ -57,6 +60,17 @@ class Downloader:
                 file_size = int(response.headers.get("Content-Length", 0))
             except ValueError:
                 file_size = None
+
+            if output_path.is_dir():
+                content_disposition = next(
+                    part.strip()
+                    for part in response.headers.get("Content-Disposition", "").split(";")
+                    if part.strip().startswith("filename=")
+                )
+
+                filename = Path(content_disposition.split("=", maxsplit=1)[1].strip('"'))
+                filename = filename.with_stem(normalize_filename(filename.stem))
+                output_path /= filename.name
 
             with (
                 atomic_writer(output_path, "wb") as fd,
@@ -75,6 +89,8 @@ class Downloader:
 
                     pbar.advance(len(chunk))
                     fd.write(chunk)
+
+                return output_path
 
     def prepare_file(
         self,
