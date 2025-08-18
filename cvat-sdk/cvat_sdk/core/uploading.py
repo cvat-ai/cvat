@@ -201,13 +201,16 @@ class Uploader:
         )
 
     @staticmethod
-    def _make_tus_uploader(api_client: ApiClient, url: str, **kwargs):
-        # Add headers required by CVAT server
-        headers = {}
-        headers["Origin"] = api_client.configuration.host
-        headers.update(api_client.get_common_headers())
+    def _make_request_headers(api_client: ApiClient):
+        headers = api_client.get_common_headers()
+        query_params = []
+        api_client.update_params_for_auth(headers=headers, queries=query_params, method="POST")
+        assert not query_params  # query auth is not expected
+        return headers
 
-        client = _TusClient(url, headers=headers)
+    @classmethod
+    def _make_tus_uploader(cls, api_client: ApiClient, url: str, **kwargs):
+        client = _TusClient(url, headers=cls._make_request_headers(api_client))
 
         return _MyTusUploader(client=client, api_client=api_client, **kwargs)
 
@@ -230,7 +233,7 @@ class Uploader:
             query_params=query_params,
             headers={
                 "Upload-Start": "",
-                **self._client.api_client.get_common_headers(),
+                **self._make_request_headers(self._client.api_client),
             },
         )
         expect_status(202, response)
@@ -241,7 +244,7 @@ class Uploader:
             url,
             headers={
                 "Upload-Finish": "",
-                **self._client.api_client.get_common_headers(),
+                **self._make_request_headers(self._client.api_client),
             },
             query_params=query_params,
             post_params=fields,
@@ -342,7 +345,7 @@ class DataUploader(Uploader):
                     headers={
                         "Content-Type": "multipart/form-data",
                         "Upload-Multiple": "",
-                        **self._client.api_client.get_common_headers(),
+                        **self._make_request_headers(self._client.api_client),
                     },
                 )
                 expect_status(200, response)

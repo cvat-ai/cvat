@@ -134,14 +134,18 @@ Typically, the first thing you do with `ApiClient` is log in.
 
 CVAT supports 3 authentication options:
 - Basic authentication, with a username and a password
+- Personal Access Token (PAT) authentication, with an access token value
 - Session authentication, with a session ID and a CSRF token
 - Token authentication, with an API key (deprecated)
 
-Token authentication requires an API key, which can be obtained after logging in
-via the `/api/auth/login` endpoint using the basic authentication credentials.
+Basic authentication doesn't require a special configuration, but for better security it's
+recommended to use other authentication options instead.
 
 Session authentication requires a session ID and a CSRF token, which can be obtained after
 logging in via the `/api/auth/login` endpoint using the basic authentication credentials.
+
+Token authentication requires an API key, which can be obtained after logging in
+via the `/api/auth/login` endpoint using the basic authentication credentials.
 
 Authentication credentials for an `ApiClient` instance can be specified in a `Configuration` object:
 
@@ -153,6 +157,19 @@ Authentication credentials for an `ApiClient` instance can be specified in a `Co
 configuration = Configuration(
     username='YOUR_USERNAME',
     password='YOUR_PASSWORD',
+    ...
+)
+with ApiClient(configuration) as api_client:
+    ...
+```
+
+{{% /tab %}}
+
+{{%tab header="Personal Access Token (PAT) authentication" %}}
+
+```python
+configuration = Configuration(
+    access_token= "<token value>",
     ...
 )
 with ApiClient(configuration) as api_client:
@@ -584,6 +601,7 @@ with ApiClient(
         while (chunk := response.read(8192)):
             output_file.write(chunk)
 ```
+
 ### Different versions of API endpoints
 #### The cloudstorages/id/content REST API endpoint
 
@@ -641,3 +659,70 @@ with ApiClient(
     pprint(files) # ['sub/image_1.jpg', 'image_2.jpg']
 
 ```
+
+### Sending custom requests
+
+In some cases, you might need to send a custom request while using the `ApiClient`.
+Typically, it's desirable to make this request using the same configuration
+and authentication parameters as regular requests sent via the `ApiClient` instance.
+
+One particularly useful example for this is dataset export. When exporting a dataset,
+you receive a download URL from the server after the file is prepared
+(see example in [receiving data](#receiving-data)). This URL requires authentication,
+but it can't be made via the regular `ApiClient` endpoint methods.
+
+There are several options to make such a custom request via an `ApiClient` instance:
+- use `api_client.call_api()`
+- use `api_client.request()` or `api_client.rest_client` methods
+  together with `api_client.update_params_for_auth()`
+
+{{< tabpane text=true >}}
+
+{{% tab header="Using api_client.call_api()" %}}
+
+This option provides higher-level interface and allows better integration with other
+`ApiClient`-related interfaces, such as `Endpoint`.
+
+```python
+from urllib.parse import parse_qsl, urlparse
+
+with ApiClient(...) as api_client:
+    parsed_url = urlparse("<custom URL>")
+    query_params = parse_qsl(parsed_url.query)
+    _, response = api_client.call_api(
+        parsed_url.path,
+        method="GET",
+        query_params=query_params,
+        _parse_response=False,
+    )
+
+    # process response.data ...
+```
+
+{{% /tab %}}
+
+{{% tab header="Using api_client.request()" %}}
+
+This option provides a lower-level interface and allows more customization. It can be useful if
+you need an API similar to what the famous `requests` library provides or want to send the request
+with a custom backend. In this case you will need to get the request headers from the `ApiClient`
+instance to preserve existing authentication.
+
+```python
+with ApiClient(...) as api_client:
+    headers = api_client.get_common_headers()
+    api_client.update_params_for_auth(headers=headers, queries=[], method="GET")
+
+    response = api_client.request(
+        "GET",
+        "<custom URL>",
+        headers=headers,
+        _parse_response=False,
+    )
+
+    # process response.data ...
+```
+
+{{% /tab %}}
+
+{{< /tabpane >}}
