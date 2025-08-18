@@ -11,16 +11,21 @@ function defaultTaskSpec({
     frameFilter,
     segmentSize,
     validationParams,
+    projectID,
 }) {
     const taskSpec = {
         labels: [
             { name: labelName, attributes: [], type: labelType || 'any' },
         ],
         name: taskName,
-        project_id: null,
+        project_id: projectID || null,
         source_storage: { location: 'local' },
         target_storage: { location: 'local' },
     };
+    if (projectID) {
+        delete taskSpec.labels;
+        // can only have labels in one place
+    }
 
     if (segmentSize) {
         taskSpec.segment_size = segmentSize;
