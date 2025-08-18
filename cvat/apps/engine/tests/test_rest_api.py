@@ -1789,7 +1789,23 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
                     original_tasks = self._get_tasks_for_project(user, original_project["id"])
                     imported_tasks = self._get_tasks_for_project(user, imported_project["id"])
                     for original_task, imported_task in zip(original_tasks, imported_tasks):
-                        self._compare_tasks(original_task, imported_task)
+                        compare_objects(
+                            self=self,
+                            obj1=original_task,
+                            obj2=imported_task,
+                            ignore_keys=(
+                                "id",
+                                "url",
+                                "created_date",
+                                "updated_date",
+                                "username",
+                                "project_id",
+                                "data_cloud_storage_id",
+                                "data",
+                                # backup does not store overlap explicitly
+                                "overlap",
+                            ),
+                        )
 
     def test_api_v2_projects_id_export_admin(self):
         self._run_api_v2_projects_id_export_import(self.admin)

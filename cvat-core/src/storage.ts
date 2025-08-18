@@ -36,6 +36,17 @@ export class Storage {
             }),
         );
     }
+
+    isCloudLinked(): boolean {
+        return this.location === StorageLocation.CLOUD_STORAGE;
+    }
+
+    static buildLocalStorage(): Storage {
+        return new Storage({
+            location: StorageLocation.LOCAL,
+        });
+    }
+
     toJSON(): StorageJsonData {
         return {
             location: this.location,

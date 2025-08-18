@@ -746,6 +746,86 @@ class _JobDataGetter(_DataGetter):
         }),
     partial_update=extend_schema(
         summary='Update a task',
+        examples=[
+            OpenApiExample(
+                "Update task properties",
+                value={
+                    "name": "string",
+                    "owner_id": 0,
+                    "assignee_id": 0,
+                    "bug_tracker": "string",
+                    "subset": "string",
+                    "target_storage": {
+                        "location": "cloud_storage",
+                        "cloud_storage_id": 0
+                    },
+                    "source_storage": {
+                        "location": "cloud_storage",
+                        "cloud_storage_id": 0
+                    }
+                },
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Update task labels",
+                value={
+                    "labels": [
+                        {
+                            "name": "string",
+                            "color": "string",
+                            "attributes": [],
+                            "deleted": False,
+                            "type": "any",
+                            "svg": "string",
+                            "sublabels": [{
+                                "name": "string",
+                                "color": "string",
+                                "attributes": [],
+                                "type": "any",
+                                "has_parent": True
+                            }],
+                        }
+                    ],
+                },
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Move task to a project",
+                value={
+                    "project_id": 0,
+                },
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Transfer task to personal sandbox",
+                value={
+                    "organization_id": None,
+                },
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Transfer task to organization",
+                value={
+                    "organization_id": 1,
+                },
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Transfer a storage linked task to an organization and detach storages",
+                value={
+                    "organization_id": 1,
+                    "source_storage": {
+                        "location": models.Location.LOCAL,
+                        "cloud_storage_id": None,
+                    },
+                    "target_storage": {
+                        "location": models.Location.LOCAL,
+                        "cloud_storage_id": None,
+                    },
+                },
+                request_only=True,
+            )
+        ],
         request=TaskWriteSerializer(partial=True),
         responses={
             '200': TaskReadSerializer, # check TaskWriteSerializer.to_representation
