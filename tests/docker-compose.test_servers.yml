@@ -23,4 +23,4 @@ services:
     networks:
       cvat:
         aliases:
-          - webhooks
+          - webhooks.internal

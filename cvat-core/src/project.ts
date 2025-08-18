@@ -17,18 +17,18 @@ import AnnotationGuide from './guide';
 export default class Project {
     public readonly id: number;
     public name: string;
-    public assignee: User;
+    public organizationId: number | null;
+    public assignee: User | null;
     public bugTracker: string;
+    public sourceStorage: Storage;
+    public targetStorage: Storage;
     public readonly status: ProjectStatus;
     public readonly guideId: number | null;
-    public readonly organization: string | null;
     public readonly owner: User;
     public readonly createdDate: string;
     public readonly updatedDate: string;
     public readonly subsets: string[];
     public readonly dimension: DimensionType;
-    public readonly sourceStorage: Storage;
-    public readonly targetStorage: Storage;
     public labels: Label[];
     public annotations: {
         exportDataset: (
@@ -57,7 +57,7 @@ export default class Project {
             status: undefined,
             assignee: undefined,
             guide_id: undefined,
-            organization: undefined,
+            organization_id: undefined,
             owner: undefined,
             bug_tracker: undefined,
             created_date: undefined,
@@ -129,8 +129,16 @@ export default class Project {
                 guideId: {
                     get: () => data.guide_id,
                 },
-                organization: {
-                    get: () => data.organization,
+                organizationId: {
+                    get: () => data.organization_id,
+                    set: (organizationId) => {
+                        if ((Number.isInteger(organizationId) && organizationId > 0) || organizationId === null) {
+                            updateTrigger.update('organizationId');
+                            data.organization_id = organizationId;
+                        } else {
+                            throw new ArgumentError('Value must be a positive integer or null');
+                        }
+                    },
                 },
                 bugTracker: {
                     get: () => data.bug_tracker,
@@ -199,9 +207,23 @@ export default class Project {
                 },
                 sourceStorage: {
                     get: () => data.source_storage,
+                    set: (storage) => {
+                        if (!(storage instanceof Storage)) {
+                            throw new ArgumentError('Value must be an instance of the Storage class');
+                        }
+                        updateTrigger.update('sourceStorage');
+                        data.source_storage = storage;
+                    },
                 },
                 targetStorage: {
                     get: () => data.target_storage,
+                    set: (storage) => {
+                        if (!(storage instanceof Storage)) {
+                            throw new ArgumentError('Value must be an instance of the Storage class');
+                        }
+                        updateTrigger.update('targetStorage');
+                        data.target_storage = storage;
+                    },
                 },
                 _internalData: {
                     get: () => data,
@@ -235,13 +257,19 @@ export default class Project {
         return result;
     }
 
-    async backup(targetStorage: Storage, useDefaultSettings: boolean, fileName?: string): Promise<string | void> {
+    async backup(
+        targetStorage: Storage,
+        useDefaultSettings: boolean,
+        fileName?: string,
+        lightweight?: boolean,
+    ): Promise<string | void> {
         const result = await PluginRegistry.apiWrapper.call(
             this,
             Project.prototype.backup,
             targetStorage,
             useDefaultSettings,
             fileName,
+            lightweight,
         );
         return result;
     }

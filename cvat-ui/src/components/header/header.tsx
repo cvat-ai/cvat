@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { connect } from 'react-redux';
 import { useHistory, useLocation } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
@@ -29,24 +29,23 @@ import Button from 'antd/lib/button';
 import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
 import Text from 'antd/lib/typography/Text';
-import notification from 'antd/lib/notification';
 
 import config from 'config';
 
-import { Organization, getCore } from 'cvat-core-wrapper';
+import { Organization } from 'cvat-core-wrapper';
 import ChangePasswordDialog from 'components/change-password-modal/change-password-modal';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import CVATLogo from 'components/common/cvat-logo';
 import { switchSettingsModalVisible as switchSettingsModalVisibleAction } from 'actions/settings-actions';
 import { logoutAsync, authActions } from 'actions/auth-actions';
 import { shortcutsActions, registerComponentShortcuts } from 'actions/shortcuts-actions';
+import { getOrganizationsAsync, organizationActions } from 'actions/organization-actions';
 import { AboutState, CombinedState } from 'reducers';
 import { useIsMounted, usePlugins } from 'utils/hooks';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
 import { subKeyMap } from 'utils/component-subkeymap';
 import SettingsModal from './settings-modal/settings-modal';
-import OrganizationsSearch from './organizations-search';
 
 interface StateToProps {
     user: any;
@@ -63,6 +62,10 @@ interface StateToProps {
     isModelsPluginActive: boolean;
     organizationFetching: boolean;
     currentOrganization: any | null;
+    organizationsList: Organization[];
+    organizationsListFetching: boolean;
+    organizationsListSearch: string;
+    organizationsListPage: number;
 }
 
 interface DispatchToProps {
@@ -70,9 +73,9 @@ interface DispatchToProps {
     switchSettingsModalVisible: (visible: boolean) => void;
     switchShortcutsModalVisible: (visible: boolean) => void;
     switchChangePasswordModalVisible: (visible: boolean) => void;
+    fetchOrganizations: () => void;
+    openSelectOrganizationModal: (onSelectOrgCallback: (org: Organization | null) => void) => void;
 }
-
-const core = getCore();
 
 const componentShortcuts = {
     SWITCH_SHORTCUTS: {
@@ -103,7 +106,16 @@ function mapStateToProps(state: CombinedState): StateToProps {
         about,
         shortcuts: { normalizedKeyMap, keyMap, visibleShortcutsHelp: shortcutsModalVisible },
         settings: { showDialog: settingsModalVisible },
-        organizations: { fetching: organizationFetching, current: currentOrganization },
+        organizations: {
+            fetching: organizationFetching,
+            current: currentOrganization,
+            currentArray: organizationsList,
+            currentArrayFetching: organizationsListFetching,
+            gettingQuery: {
+                search: organizationsListSearch,
+                page: organizationsListPage,
+            },
+        },
         serverAPI: {
             configuration: {
                 isPasswordChangeEnabled: renderChangePasswordItem,
@@ -126,6 +138,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
         isModelsPluginActive: list.MODELS,
         organizationFetching,
         currentOrganization,
+        organizationsList,
+        organizationsListFetching,
+        organizationsListSearch,
+        organizationsListPage,
     };
 }
 
@@ -140,6 +156,14 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         ),
         switchChangePasswordModalVisible: (visible: boolean): void => dispatch(
             authActions.switchChangePasswordModalVisible(visible),
+        ),
+        fetchOrganizations: (): void => dispatch(
+            getOrganizationsAsync({}),
+        ),
+        openSelectOrganizationModal: (
+            onSelectOrgCallback: (org: Organization | null) => void,
+        ): void => dispatch(
+            organizationActions.openSelectOrganizationModal(onSelectOrgCallback),
         ),
     };
 }
@@ -161,9 +185,15 @@ function HeaderComponent(props: Props): JSX.Element {
         isModelsPluginActive,
         organizationFetching,
         currentOrganization,
+        organizationsList,
+        organizationsListFetching,
+        organizationsListSearch,
+        organizationsListPage,
         switchSettingsModalVisible,
         switchShortcutsModalVisible,
         switchChangePasswordModalVisible,
+        fetchOrganizations,
+        openSelectOrganizationModal,
     } = props;
 
     const {
@@ -171,36 +201,11 @@ function HeaderComponent(props: Props): JSX.Element {
     } = config;
 
     const isMounted = useIsMounted();
-    const [listFetching, setListFetching] = useState(false);
-    const [organizationsList, setOrganizationList] = useState<Organization[] | null>(null);
-
-    const searchCallback = useCallback((search?: string): Promise<Organization[]> => new Promise((resolve, reject) => {
-        const promise = core.organizations.get(search ? { search } : {});
-
-        setListFetching(true);
-        promise.then((organizations: Organization[]) => {
-            resolve(organizations);
-        }).catch((error: unknown) => {
-            reject(error);
-        }).finally(() => {
-            if (isMounted()) {
-                setListFetching(false);
-            }
-        });
-    }), []);
 
     useEffect(() => {
-        searchCallback().then((organizations: Organization[]) => {
-            if (isMounted()) {
-                setOrganizationList(organizations);
-            }
-        }).catch((error: unknown) => {
-            setOrganizationList([]);
-            notification.error({
-                message: 'Could not receive a list of organizations',
-                description: error instanceof Error ? error.message : '',
-            });
-        });
+        if (isMounted()) {
+            fetchOrganizations();
+        }
     }, []);
 
     const history = useHistory();
@@ -291,8 +296,10 @@ function HeaderComponent(props: Props): JSX.Element {
         }
     };
 
-    const setNewOrganization = (organization: any): void => {
-        if (!currentOrganization || currentOrganization.slug !== organization.slug) {
+    const setNewOrganization = (organization: Organization | null): void => {
+        if (currentOrganization && !organization) {
+            resetOrganization();
+        } else if (organization && (!currentOrganization || currentOrganization.slug !== organization.slug)) {
             localStorage.setItem('currentOrganization', organization.slug);
             if (/\d+/.test(window.location.pathname)) {
                 // a resource is opened (task/job/etc.)
@@ -321,9 +328,9 @@ function HeaderComponent(props: Props): JSX.Element {
 
     menuItems.push([{
         key: 'organization',
-        icon: organizationFetching || listFetching ? <LoadingOutlined /> : <TeamOutlined />,
+        icon: organizationFetching || organizationsListFetching ? <LoadingOutlined /> : <TeamOutlined />,
         label: 'Organization',
-        disabled: organizationFetching || listFetching,
+        disabled: organizationFetching || organizationsListFetching,
         children: [
             ...(currentOrganization ? [{
                 key: 'open_organization',
@@ -348,20 +355,7 @@ function HeaderComponent(props: Props): JSX.Element {
                 key: 'switch_organization',
                 label: 'Switch organization',
                 onClick: () => {
-                    Modal.confirm({
-                        title: 'Select an organization',
-                        okButtonProps: {
-                            style: { display: 'none' },
-                        },
-                        content: (
-                            <OrganizationsSearch
-                                defaultOrganizationList={organizationsList}
-                                resetOrganization={resetOrganization}
-                                searchOrganizations={searchCallback}
-                                setNewOrganization={setNewOrganization}
-                            />
-                        ),
-                    });
+                    openSelectOrganizationModal(setNewOrganization);
                 },
             }] : []),
             ...(!!organizationsList && viewType === 'menu' ? [{
@@ -557,6 +551,11 @@ function HeaderComponent(props: Props): JSX.Element {
                         className: 'cvat-header-menu',
                     }}
                     className='cvat-header-menu-user-dropdown'
+                    onOpenChange={(open: boolean) => {
+                        if (open && (organizationsListSearch || organizationsListPage !== 1)) {
+                            fetchOrganizations();
+                        }
+                    }}
                 >
                     <span>
                         <UserOutlined className='cvat-header-dropdown-icon' />

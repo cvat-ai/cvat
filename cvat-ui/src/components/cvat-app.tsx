@@ -30,6 +30,7 @@ import ExportBackupModal from 'components/export-backup/export-backup-modal';
 import ImportDatasetModal from 'components/import-dataset/import-dataset-modal';
 import ImportBackupModal from 'components/import-backup/import-backup-modal';
 import UploadFileStatusModal from 'components/common/upload-file-status-modal';
+import SelectCSUpdatingSchemeModal from 'components/update-linked-cs-modal/select-cs-updating-scheme-modal';
 
 import JobsPageComponent from 'components/jobs-page/jobs-page';
 import ModelsPageComponent from 'components/models-page/models-page';
@@ -83,6 +84,8 @@ import QualityControlPage from './quality-control/quality-control-page';
 import AnalyticsReportPage from './analytics-report/analytics-report-page';
 import ConsensusManagementPage from './consensus-management-page/consensus-management-page';
 import InvitationWatcher from './invitation-watcher/invitation-watcher';
+import SelectOrganizationModal from './select-organization-modal/select-organization-modal';
+import BulkProgress from './bulk-progress';
 
 interface CVATAppProps {
     loadFormats: () => void;
@@ -353,7 +356,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             return;
         }
 
-        if (user == null || !user.isVerified || !user.id) {
+        if (user == null || !user.isVerified || !user?.id) {
             return;
         }
 
@@ -384,7 +387,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
     private showMessages(): void {
         const { notifications, resetMessages, history } = this.props;
-
         function showMessage(notificationState: NotificationState): void {
             notification.info({
                 message: (
@@ -393,7 +395,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                 description: notificationState?.description && (
                     <CVATMarkdown history={history}>{notificationState?.description}</CVATMarkdown>
                 ),
-                duration: notificationState.duration || null,
+                duration: notificationState.duration ?? null,
             });
         }
 
@@ -451,12 +453,11 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             for (const what of Object.keys((notifications as any).errors[where])) {
                 const error = (notifications as any).errors[where][what] as ErrorState;
                 shown = shown || !!error;
-                if (error) {
+                if (error && !error.ignore) {
                     showError(error.message, error.reason, error.shouldLog, error.className);
                 }
             }
         }
-
         if (shown) {
             resetErrors();
         }
@@ -575,7 +576,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         <Redirect
                                             push
                                             to={{
-                                                pathname: queryParams.get('next') || '/tasks',
+                                                pathname: queryParams.get('next') ?? '/tasks',
                                                 search: authParams ? new URLSearchParams(authParams).toString() : '',
                                             }}
                                         />
@@ -586,6 +587,9 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                     <ImportBackupModal />
                                     <InvitationWatcher />
                                     <UploadFileStatusModal />
+                                    <SelectCSUpdatingSchemeModal />
+                                    <SelectOrganizationModal />
+                                    <BulkProgress />
                                     {/* eslint-disable-next-line */}
                                     <a id='downloadAnchor' target='_blank' style={{ display: 'none' }} download />
                                 </Layout.Content>

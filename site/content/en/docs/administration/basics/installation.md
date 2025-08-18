@@ -38,7 +38,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   sudo install -m 0755 -d /etc/apt/keyrings
   sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
   sudo chmod a+r /etc/apt/keyrings/docker.asc
-  
+
   # Add the repository to Apt sources:
   echo \
     "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
@@ -543,7 +543,9 @@ Then, use the `docker-compose.https.yml` file to override the base `docker-compo
 docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
 ```
 
-> In the firewall, ports 80 and 443 must be open for inbound connections from any
+{{% alert title="Note" color="primary" %}}
+In the firewall, ports 80 and 443 must be open for inbound connections from any
+{{% /alert %}}
 
 Then, the CVAT instance will be available at your domain on ports 443 (HTTPS) and 80 (HTTP, redirects to 443).
 

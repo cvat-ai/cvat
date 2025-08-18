@@ -19,6 +19,7 @@ import {
     restoreFrame,
     getCachedChunks,
     getJobFrameNumbers,
+    getFramesMeta,
     clear as clearFrames,
     findFrame,
     getContextImage,
@@ -680,6 +681,9 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                         bugTracker: 'bug_tracker',
                         projectId: 'project_id',
                         assignee: 'assignee_id',
+                        organizationId: 'organization_id',
+                        sourceStorage: 'source_storage',
+                        targetStorage: 'target_storage',
                     }),
                 };
 
@@ -740,6 +744,9 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             }
             if (typeof this.subset !== 'undefined') {
                 taskSpec.subset = this.subset;
+            }
+            if (typeof this.organizationId !== 'undefined') {
+                taskSpec.organization_id = this.organizationId;
             }
 
             if (this.targetStorage) {
@@ -848,8 +855,15 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             targetStorage: Parameters<typeof TaskClass.prototype.backup>[0],
             useDefaultSettings: Parameters<typeof TaskClass.prototype.backup>[1],
             fileName: Parameters<typeof TaskClass.prototype.backup>[2],
+            lightweight: Parameters<typeof TaskClass.prototype.backup>[3],
         ): ReturnType<typeof TaskClass.prototype.backup> {
-            const rqID = await serverProxy.tasks.backup(this.id, targetStorage, useDefaultSettings, fileName);
+            const rqID = await serverProxy.tasks.backup(
+                this.id,
+                targetStorage,
+                useDefaultSettings,
+                fileName,
+                lightweight,
+            );
             return rqID;
         },
     });
@@ -975,6 +989,23 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             this: TaskClass,
         ): ReturnType<typeof TaskClass.prototype.frames.save> {
             return Promise.all(this.jobs.map((job) => patchMeta(job.id)));
+        },
+    });
+
+    Object.defineProperty(Task.prototype.meta.get, 'implementation', {
+        value: async function saveFramesImplementation(
+            this: TaskClass,
+        ): ReturnType<typeof TaskClass.prototype.meta.get> {
+            return getFramesMeta('task', this.id).then((_meta) => _meta);
+        },
+    });
+
+    Object.defineProperty(Task.prototype.meta.save, 'implementation', {
+        value: async function saveFramesImplementation(
+            this: TaskClass,
+            meta: Parameters<typeof TaskClass.prototype.meta.save>[0],
+        ): ReturnType<typeof TaskClass.prototype.meta.save> {
+            return patchMeta(this.id, meta, 'task').then((_meta) => _meta);
         },
     });
 

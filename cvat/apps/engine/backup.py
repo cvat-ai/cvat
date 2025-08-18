@@ -64,6 +64,7 @@ from cvat.apps.engine.serializers import (
 from cvat.apps.engine.task import JobFileMapping
 from cvat.apps.engine.task import create_thread as create_task
 from cvat.apps.engine.utils import av_scan_paths
+from utils.dataset_manifest import ImageManifestManager
 
 slogger = ServerLogManager(__name__)
 
@@ -369,7 +370,7 @@ class _ExporterBase(metaclass=ABCMeta):
 class TaskExporter(_ExporterBase, _TaskBackupBase):
     ModelClass: ClassVar[models.Task] = models.Task
 
-    def __init__(self, pk, version=Version.V1):
+    def __init__(self, pk, version=Version.V1, *, lightweight: bool):
         super().__init__(logger=slogger.task[pk])
 
         self._db_task: models.Task = (
@@ -385,6 +386,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         db_labels = (self._db_task.project if self._db_task.project_id else self._db_task).label_set.all().prefetch_related(
             'attributespec_set')
         self._label_mapping = _get_label_mapping(db_labels)
+        self._lightweight = lightweight
 
     def _write_annotation_guide(self, zip_object, target_dir=None):
         annotation_guide = self._db_task.annotation_guide if hasattr(self._db_task, 'annotation_guide') else None
@@ -424,19 +426,22 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             assert self._db_task.dimension != models.DimensionType.DIM_3D, "Cloud storage cannot contain 3d images"
             assert not hasattr(self._db_data, 'video'), "Only images can be stored in cloud storage"
             assert self._db_data.related_files.count() == 0, "No related images can be stored in cloud storage"
-            media_files = [im.path for im in self._db_data.images.all()]
-            cloud_storage_instance = db_storage_to_storage_instance(self._db_data.cloud_storage)
-            with tempfile.TemporaryDirectory() as tmp_dir:
-                cloud_storage_instance.bulk_download_to_dir(files=media_files, upload_dir=tmp_dir)
-                self._write_files(
-                    source_dir=tmp_dir,
-                    zip_object=zip_object,
-                    files=[
-                        os.path.join(tmp_dir, file)
-                        for file in media_files
-                    ],
-                    target_dir=target_data_dir,
-                )
+
+            if not self._lightweight:
+                media_files = [im.path for im in self._db_data.images.all()]
+                cloud_storage_instance = db_storage_to_storage_instance(self._db_data.cloud_storage)
+                with tempfile.TemporaryDirectory() as tmp_dir:
+                    cloud_storage_instance.bulk_download_to_dir(files=media_files, upload_dir=tmp_dir)
+                    self._write_files(
+                        source_dir=tmp_dir,
+                        zip_object=zip_object,
+                        files=[
+                            os.path.join(tmp_dir, file)
+                            for file in media_files
+                        ],
+                        target_dir=target_data_dir,
+                    )
+
             self._write_files(
                 source_dir=self._db_data.get_upload_dirname(),
                 zip_object=zip_object,
@@ -556,7 +561,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 ]
                 data['validation_layout'] = validation_params
 
-            if self._db_data.storage == StorageChoice.CLOUD_STORAGE:
+            if self._db_data.storage == StorageChoice.CLOUD_STORAGE and not self._lightweight :
                 data["storage"] = StorageChoice.LOCAL
 
             return self._prepare_data_meta(data)
@@ -707,7 +712,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         dm.task.put_job_data(db_job.id, serializer.data)
 
     @staticmethod
-    def _calculate_segment_size(jobs):
+    def _calculate_segment_size(jobs: list[dict[str, Any]]) -> tuple[int, int]:
         # The type field will be missing in backups create before the GT jobs were introduced
         jobs = [
             j for j in jobs
@@ -720,7 +725,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         return segment_size, overlap
 
     @staticmethod
-    def _parse_segment_frames(*, jobs: dict[str, Any]) -> JobFileMapping:
+    def _parse_segment_frames(*, jobs: list[dict[str, Any]]) -> JobFileMapping:
         segments = []
 
         for i, segment in enumerate(jobs):
@@ -887,12 +892,20 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         if validation_params:
             data['validation_params'] = validation_params
 
+        if data["storage"] == StorageChoice.CLOUD_STORAGE:
+            if data['client_files'] != [self.MEDIA_MANIFEST_FILENAME]:
+                raise ValidationError(f"Expected {self.MEDIA_MANIFEST_FILENAME} in backup files")
+
+            manifest = ImageManifestManager(os.path.join(self._db_task.data.get_upload_dirname(), self.MEDIA_MANIFEST_FILENAME))
+            data['server_files'] = list(manifest.data)
+
         create_task(self._db_task.pk, data.copy(), is_backup_restore=True)
         self._db_task.refresh_from_db()
         db_data.refresh_from_db()
 
         db_data.deleted_frames = data_serializer.initial_data.get('deleted_frames', [])
-        db_data.storage = StorageChoice.LOCAL
+        if db_data.storage != StorageChoice.CLOUD_STORAGE:
+            db_data.storage = StorageChoice.LOCAL
         db_data.save(update_fields=['storage', 'deleted_frames'])
 
         if not validation_params:
@@ -971,13 +984,14 @@ class _ProjectBackupBase(_BackupBase):
 class ProjectExporter(_ExporterBase, _ProjectBackupBase):
     ModelClass: ClassVar[models.Project] = models.Project
 
-    def __init__(self, pk, version=Version.V1):
+    def __init__(self, pk, *, lightweight: bool, version: Version = Version.V1):
         super().__init__(logger=slogger.project[pk])
         self._db_project = self.ModelClass.objects.prefetch_related('tasks', 'annotation_guide__assets').select_related('annotation_guide').get(pk=pk)
         self._version = version
 
         db_labels = self._db_project.label_set.all().prefetch_related('attributespec_set')
         self._label_mapping = _get_label_mapping(db_labels)
+        self._lightweight = lightweight
 
     def _write_annotation_guide(self, zip_object, target_dir=None):
         annotation_guide = self._db_project.annotation_guide if hasattr(self._db_project, 'annotation_guide') else None
@@ -986,7 +1000,11 @@ class ProjectExporter(_ExporterBase, _ProjectBackupBase):
     def _write_tasks(self, zip_object):
         for idx, db_task in enumerate(self._db_project.tasks.all().order_by('id')):
             if db_task.data is not None:
-                TaskExporter(db_task.id, self._version).export_to(zip_object, self.TASKNAME_TEMPLATE.format(idx))
+                TaskExporter(
+                    db_task.id,
+                    self._version,
+                    lightweight=self._lightweight,
+                ).export_to(zip_object, self.TASKNAME_TEMPLATE.format(idx))
 
     def _write_manifest(self, zip_object):
         def serialize_project():
@@ -1100,6 +1118,8 @@ def create_backup(
     Exporter: Type[ProjectExporter | TaskExporter],
     logger: Logger,
     cache_ttl: timedelta,
+    *,
+    lightweight: bool = None,
 ):
     db_instance = Exporter.get_object(instance_id)
     instance_type = db_instance.__class__.__name__
@@ -1108,7 +1128,8 @@ def create_backup(
     output_path = ExportCacheManager.make_backup_file_path(
         instance_id=db_instance.id,
         instance_type=instance_type,
-        instance_timestamp=instance_timestamp
+        instance_timestamp=instance_timestamp,
+        lightweight=lightweight,
     )
 
     try:
@@ -1125,7 +1146,7 @@ def create_backup(
 
         with TmpDirManager.get_tmp_directory_for_export(instance_type=instance_type) as tmp_dir:
             temp_file = os.path.join(tmp_dir, 'dump')
-            exporter = Exporter(db_instance.id)
+            exporter = Exporter(db_instance.id, lightweight=lightweight)
             exporter.export_to(temp_file)
 
             with get_export_cache_lock(
