@@ -266,11 +266,6 @@ Cypress.Commands.add('assignProjectToUser', (user) => {
         });
 });
 
-Cypress.Commands.add('closeNotification', (className) => {
-    cy.get(className).find('span[aria-label="close"]').click();
-    cy.get(className).should('not.exist');
-});
-
 Cypress.Commands.add('movingTask', (taskName, projectName, labelMappingFrom, labelMappingTo, fromTaskPage) => {
     cy.clickInTaskMenu('Move to project', fromTaskPage, taskName);
     cy.get('.cvat-task-move-modal').find('.cvat-project-search-field').click();
