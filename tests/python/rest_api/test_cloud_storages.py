@@ -5,6 +5,7 @@
 
 import io
 import json
+from copy import deepcopy
 from functools import partial
 from http import HTTPStatus
 from typing import Any, Optional
@@ -185,9 +186,7 @@ class TestPostCloudStorage:
             response_json = json.loads(response.data)
 
             assert (
-                DeepDiff(
-                    self._SPEC, response_json, ignore_order=True, exclude_paths=self._EXCLUDE_PATHS
-                )
+                DeepDiff(spec, response_json, ignore_order=True, exclude_paths=self._EXCLUDE_PATHS)
                 == {}
             )
 
@@ -228,6 +227,37 @@ class TestPostCloudStorage:
             self._test_can_create(username, self._SPEC, org_id=org_id)
         else:
             self._test_cannot_create(username, self._SPEC, org_id=org_id)
+
+    def test_anonymous_access(self, users):
+        username = [u for u in users if "user" in u["groups"]][0]["username"]
+        spec = deepcopy(self._SPEC)
+
+        # set anonymous access and try to access the public bucket
+        spec.update(
+            {
+                "credentials_type": "ANONYMOUS_ACCESS",
+                "resource": "public",
+            }
+        )
+        spec.pop("key", None)
+        spec.pop("secret_key", None)
+
+        self._test_can_create(username, spec)
+
+    def test_env_credentials(self, users, monkeypatch):
+        username = [u for u in users if "user" in u["groups"]][0]["username"]
+
+        spec = deepcopy(self._SPEC)
+        # completely remove credentials, these should then be pulled from environment
+        spec.update(
+            {
+                "credentials_type": "ENV_CREDS",
+            }
+        )
+        spec.pop("key", None)
+        spec.pop("secret_key", None)
+
+        self._test_can_create(username, spec)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
