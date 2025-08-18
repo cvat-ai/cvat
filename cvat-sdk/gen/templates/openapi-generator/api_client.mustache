@@ -822,11 +822,6 @@ class Endpoint(object):
         """
 
         self.settings = settings
-
-        # A custom extension for Personal Access Token (PAT) support
-        if 'sessionAuth' in self.settings.get('auth', []):
-            self.settings['auth'].append('accessTokenAuth')
-
         self.params_map = params_map
         self.params_map['all'].extend([
             '_async_call',
