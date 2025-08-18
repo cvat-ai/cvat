@@ -173,10 +173,8 @@ class JsonLogicFilter(filters.BaseFilterBackend):
                 [self._build_Q(arg, lookup_fields, parent_op=op) for arg in args],
             )
         elif op == "!":
-            _validate_arg(args, allowed_type=dict)
             return ~self._build_Q(args, lookup_fields, parent_op=op)
         elif op == "!!":
-            _validate_arg(args, allowed_type=dict)
             return self._build_Q(args, lookup_fields, parent_op=op)
         elif op == "var":
             return Q(**{args + "__isnull": False})
