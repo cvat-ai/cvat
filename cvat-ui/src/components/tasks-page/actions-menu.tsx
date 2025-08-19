@@ -174,17 +174,21 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
         });
     }, [taskInstance, currentTasks, selectedIds, isBulkMode]);
 
-    const updateOrganization = useCallback((newOrganizationId: number | null, tasksToUpdate: Task[]) => {
-        function doBulkUpdate(): void {
+    const onUpdateTaskOrganization = useCallback((newOrganization: Organization | null) => {
+        stopEditField();
+
+        const tasksToUpdate = onUpdateTask ? [taskInstance] : collectObjectsForBulkUpdate();
+        const updateCurrent = () => {
+            taskInstance.organizationId = newOrganization?.id ?? null;
+            onUpdateTask!(taskInstance);
+        };
+
+        const updateBulk = () => {
             dispatch(makeBulkOperationAsync(
                 tasksToUpdate,
                 async (task) => {
-                    task.organizationId = newOrganizationId;
-                    if (onUpdateTask && task.id === taskInstance.id) {
-                        onUpdateTask(task);
-                    } else {
-                        await dispatch(updateTaskAsync(task, {}, ResourceUpdateTypes.UPDATE_ORGANIZATION));
-                    }
+                    task.organizationId = newOrganization?.id ?? null;
+                    await dispatch(updateTaskAsync(task, {}, ResourceUpdateTypes.UPDATE_ORGANIZATION));
                 },
                 (task, idx, total) => `Updating organization for task #${task.id} (${idx + 1}/${total})`,
             )).then((processedCount: number) => {
@@ -194,35 +198,29 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
                     dispatch(getTasksAsync(tasksQuery, false));
                 }
             });
-        }
-
-        if (
-            tasksToUpdate.some((task) => {
-                const { sourceStorage, targetStorage } = task;
-                return !!sourceStorage.cloudStorageId || !!targetStorage.cloudStorageId;
-            })
-        ) {
-            dispatch(cloudStoragesActions.openLinkedCloudStorageUpdatingModal(tasksToUpdate, doBulkUpdate));
-        } else {
-            doBulkUpdate();
-        }
-    }, [dispatch, tasksQuery]);
-
-    const onUpdateTaskOrganization = useCallback((newOrganization: Organization | null) => {
-        stopEditField();
-
-        const tasksToUpdate = collectObjectsForBulkUpdate();
-        if (tasksToUpdate.length === 0) {
-            return;
-        }
+        };
 
         confirmTransferModal(
             tasksToUpdate,
             currentOrganization,
             newOrganization,
-            () => updateOrganization(newOrganization?.id ?? null, tasksToUpdate),
+            () => {
+                const updateFunction = onUpdateTask ? updateCurrent : updateBulk;
+                if (
+                    tasksToUpdate.some((task) => {
+                        const { sourceStorage, targetStorage } = task;
+                        return !!sourceStorage.cloudStorageId || !!targetStorage.cloudStorageId;
+                    })
+                ) {
+                    dispatch(
+                        cloudStoragesActions.openLinkedCloudStorageUpdatingModal(tasksToUpdate, updateFunction),
+                    );
+                } else {
+                    updateFunction();
+                }
+            },
         );
-    }, [currentOrganization, stopEditField, collectObjectsForBulkUpdate, updateOrganization]);
+    }, [currentOrganization, taskInstance, stopEditField, onUpdateTask, collectObjectsForBulkUpdate]);
 
     let menuItems;
     if (editField) {

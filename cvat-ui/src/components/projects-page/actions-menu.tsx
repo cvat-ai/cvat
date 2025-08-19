@@ -81,39 +81,47 @@ function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
     }, [selectedIds, currentProjects, projectInstance]);
 
     const onUpdateProjectAssignee = useCallback((assignee: User | null) => {
-        const projectsToUpdate = collectObjectsForBulkUpdate()
-            .filter((project) => project.assignee?.id !== assignee?.id);
-
         stopEditField();
-        if (projectsToUpdate.length === 0) {
-            return;
-        }
 
-        dispatch(makeBulkOperationAsync(
-            projectsToUpdate,
-            async (project) => {
-                project.assignee = assignee;
-                if (onUpdateProject && project.id === projectInstance.id) {
-                    onUpdateProject(project);
-                } else {
-                    await dispatch(updateProjectAsync(project));
-                }
-            },
-            (project, idx, total) => `Updating assignee for project #${project.id} (${idx + 1}/${total})`,
-        ));
-    }, [projectInstance, stopEditField, dispatch, collectObjectsForBulkUpdate, onUpdateProject]);
+        if (onUpdateProject) {
+            // details page
+            projectInstance.assignee = assignee;
+            onUpdateProject(projectInstance);
+        } else {
+            const projectsToUpdate = collectObjectsForBulkUpdate()
+                .filter((project) => project.assignee?.id !== assignee?.id);
 
-    const updateOrganization = useCallback((newOrganizationId: number | null, projectsToUpdate: Project[]) => {
-        function doBulkUpdate(): void {
+            if (projectsToUpdate.length === 0) {
+                return;
+            }
+
             dispatch(makeBulkOperationAsync(
                 projectsToUpdate,
                 async (project) => {
-                    project.organizationId = newOrganizationId;
-                    if (onUpdateProject && project.id === projectInstance.id) {
-                        onUpdateProject(project);
-                    } else {
-                        await dispatch(updateProjectAsync(project, ResourceUpdateTypes.UPDATE_ORGANIZATION));
-                    }
+                    project.assignee = assignee;
+                    await dispatch(updateProjectAsync(project));
+                },
+                (project, idx, total) => `Updating assignee for project #${project.id} (${idx + 1}/${total})`,
+            ));
+        }
+    }, [projectInstance, stopEditField, dispatch, collectObjectsForBulkUpdate, onUpdateProject]);
+
+    const onUpdateProjectOrganization = useCallback((newOrganization: Organization | null) => {
+        stopEditField();
+
+        const projectsToUpdate = onUpdateProject ? [projectInstance] : collectObjectsForBulkUpdate();
+        const updateCurrent = () => {
+            const [project] = projectsToUpdate;
+            project.organizationId = newOrganization?.id ?? null;
+            onUpdateProject!(project);
+        };
+
+        const updateBulk = () => {
+            dispatch(makeBulkOperationAsync(
+                projectsToUpdate,
+                async (project) => {
+                    project.organizationId = newOrganization?.id ?? null;
+                    await dispatch(updateProjectAsync(project, ResourceUpdateTypes.UPDATE_ORGANIZATION));
                 },
                 (project, idx, total) => `Updating organization for project #${project.id} (${idx + 1}/${total})`,
             )).then((processedCount: number) => {
@@ -123,35 +131,29 @@ function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
                     dispatch(getProjectsAsync(projectsQuery, tasksQuery));
                 }
             });
-        }
-
-        if (
-            projectsToUpdate.some((project) => {
-                const { sourceStorage, targetStorage } = project;
-                return !!sourceStorage.cloudStorageId || !!targetStorage.cloudStorageId;
-            })
-        ) {
-            dispatch(cloudStoragesActions.openLinkedCloudStorageUpdatingModal(projectsToUpdate, doBulkUpdate));
-        } else {
-            doBulkUpdate();
-        }
-    }, [dispatch]);
-
-    const onUpdateProjectOrganization = useCallback((newOrganization: Organization | null) => {
-        stopEditField();
-
-        const projectsToUpdate = collectObjectsForBulkUpdate();
-        if (projectsToUpdate.length === 0) {
-            return;
-        }
+        };
 
         confirmTransferModal(
             projectsToUpdate,
             currentOrganization,
             newOrganization,
-            () => updateOrganization(newOrganization?.id ?? null, projectsToUpdate),
+            () => {
+                const updateFunction = onUpdateProject ? updateCurrent : updateBulk;
+                if (
+                    projectsToUpdate.some((project) => {
+                        const { sourceStorage, targetStorage } = project;
+                        return !!sourceStorage.cloudStorageId || !!targetStorage.cloudStorageId;
+                    })
+                ) {
+                    dispatch(
+                        cloudStoragesActions.openLinkedCloudStorageUpdatingModal(projectsToUpdate, updateFunction),
+                    );
+                } else {
+                    updateFunction();
+                }
+            },
         );
-    }, [currentOrganization, stopEditField, collectObjectsForBulkUpdate, updateOrganization]);
+    }, [currentOrganization, projectInstance, stopEditField, onUpdateProject, collectObjectsForBulkUpdate]);
 
     const onDeleteProject = useCallback((): void => {
         const projectsToDelete = currentProjects.filter((project) => selectedIds.includes(project.id));
