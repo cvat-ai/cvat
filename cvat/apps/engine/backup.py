@@ -427,27 +427,42 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             assert not hasattr(self._db_data, 'video'), "Only images can be stored in cloud storage"
             assert self._db_data.related_files.count() == 0, "No related images can be stored in cloud storage"
 
-            if not self._lightweight:
-                media_files = [im.path for im in self._db_data.images.all()]
-                cloud_storage_instance = db_storage_to_storage_instance(self._db_data.cloud_storage)
-                with tempfile.TemporaryDirectory() as tmp_dir:
-                    cloud_storage_instance.bulk_download_to_dir(files=media_files, upload_dir=tmp_dir)
-                    self._write_files(
-                        source_dir=tmp_dir,
-                        zip_object=zip_object,
-                        files=[
-                            os.path.join(tmp_dir, file)
-                            for file in media_files
-                        ],
-                        target_dir=target_data_dir,
-                    )
+            data_dir = self._db_data.get_upload_dirname()
 
-            self._write_files(
-                source_dir=self._db_data.get_upload_dirname(),
-                zip_object=zip_object,
-                files=[self._db_data.get_manifest_path()],
-                target_dir=target_data_dir,
-            )
+            if self._lightweight:
+                self._write_files(
+                    source_dir=data_dir,
+                    zip_object=zip_object,
+                    files=[self._db_data.get_manifest_path()],
+                    target_dir=target_data_dir,
+                )
+            else:
+                self._write_directory(
+                    source_dir=data_dir,
+                    zip_object=zip_object,
+                    target_dir=target_data_dir,
+                    exclude_files=[self.MEDIA_MANIFEST_INDEX_FILENAME]
+                )
+
+                media_files_to_download = [
+                    im.path
+                    for im in self._db_data.images.all()
+                    if not os.path.exists(os.path.join(data_dir, im.path))
+                ]
+
+                if media_files_to_download:
+                    cloud_storage_instance = db_storage_to_storage_instance(self._db_data.cloud_storage)
+                    with tempfile.TemporaryDirectory() as tmp_dir:
+                        cloud_storage_instance.bulk_download_to_dir(files=media_files_to_download, upload_dir=tmp_dir)
+                        self._write_files(
+                            source_dir=tmp_dir,
+                            zip_object=zip_object,
+                            files=[
+                                os.path.join(tmp_dir, file)
+                                for file in media_files_to_download
+                            ],
+                            target_dir=target_data_dir,
+                        )
         else:
             raise NotImplementedError
 

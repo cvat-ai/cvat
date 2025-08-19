@@ -597,6 +597,9 @@ def create_thread(
     if (
         db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM and
         not settings.MEDIA_CACHE_ALLOW_STATIC_CACHE
+    ) or (
+        # static cache can not be initialized on lightweight backup restore
+        is_data_in_cloud and is_backup_restore and db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM
     ):
         db_data.storage_method = models.StorageMethodChoice.CACHE
 
