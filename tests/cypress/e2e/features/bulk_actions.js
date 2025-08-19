@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
-/// <reference types="../../support/index.d.ts" />
 
 import { defaultTaskSpec } from '../../support/default-specs';
 
