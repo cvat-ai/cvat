@@ -56,6 +56,7 @@ context('This is your test project title', () => {
             ...projectSpec,
             name: stringID(i, projectName),
         });
+        createProject(1).then(({ projectID }) => projects.push(projectID)); // empty project
         createProject(2).then(({ projectID }) => {
             // default task with 1 job
             createTaskInProject(1, projectID, { taskName, labelName, serverFiles });
@@ -63,19 +64,48 @@ context('This is your test project title', () => {
             // default task with 2 jobs
             createTaskInProject(2, projectID, {
                 taskName, labelName, serverFiles, segmentSize: framesPerJob,
+            }).then(({ taskID }) => {
+                cy.visit(`/tasks/${taskID}`);
             });
             projects.push(projectID);
         });
-        createProject(1).then(({ projectID }) => projects.push(projectID)); // empty project
     });
 
     after(() => {
         projects.forEach(cy.headlessDeleteProject);
     });
 
-    describe('This is your test suite title', () => {
-        it('This is your test case two title', () => {
-            // cy.
+    describe('Bulk-change object attributes, confirm UI state', () => {
+        context('Project page, change tasks', () => {
+            const njobs = 2;
+            it('"Select all", all items are selected, "Deselect" button is visible', () => {
+                cy.get('.cvat-item-selected').should('not.exist');
+                cy.get('.cvat-resource-select-all-button')
+                    .should('be.visible')
+                    .and('have.text', 'Select all')
+                    .click();
+                cy.get('.cvat-item-selected')
+                    .should('exist')
+                    .its('length')
+                    .should('eq', njobs);
+                cy.get('.cvat-resource-deselect-button')
+                    .should('be.visible')
+                    .and('have.text', 'Deselect');
+                cy.get('.cvat-resource-selection-count')
+                    .should('be.visible')
+                    .and('have.text', `Selected: ${njobs}`);
+            });
+            it('Bulk-change assignees, ensure successful', () => {
+                cy.get('.cvat-item-selected').first().within(() => {
+                    cy.get('.cvat-actions-menu-button').click({ force: true });
+                });
+                cy.get('.ant-dropdown').within(() => {
+                    cy.contains(`Assignee (${njobs})`).click();
+                    cy.get('.cvat-user-search-field').type('admin', { delay: 0 }); // type all at once
+                    cy.get('.cvat-user-search-field').type('{enter}');
+                });
+                cy.get('.cvat-bulk-progress-wrapper').should('be.visible');
+            });
         });
     });
 });
