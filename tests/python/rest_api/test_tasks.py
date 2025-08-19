@@ -26,7 +26,6 @@ from typing import Any, Optional
 
 import numpy as np
 import pytest
-from attr.converters import to_bool
 from cvat_sdk import exceptions
 from cvat_sdk.api_client import models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
@@ -1326,10 +1325,6 @@ class TestTaskBackups:
                 }
 
             expected_media = {"manifest.jsonl"}
-            if to_bool(os.getenv("CVAT_ALLOW_STATIC_CACHE")):
-                # FIXME: remove extra media files
-                expected_media.update(cloud_storage_content)
-
             assert files_in_data == expected_media
 
         self._test_can_restore_task_from_backup(task_id, lightweight_backup=lightweight_backup)

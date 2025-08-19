@@ -713,13 +713,14 @@ def create_thread(
     is_media_sorted = False
 
     if is_data_in_cloud:
+        is_packed_media = any(v for k, v in media.items() if k != 'image')
         if (
             # Download remote data if local storage is requested
             # TODO: maybe move into cache building to fail faster on invalid task configurations
             db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM or
 
             # Packed media must be downloaded for task creation
-            any(v for k, v in media.items() if k != 'image')
+            is_packed_media
         ):
             update_status("Downloading input media")
 
@@ -743,7 +744,8 @@ def create_thread(
             del filtered_data
 
             is_data_in_cloud = False
-            db_data.storage = models.StorageChoice.LOCAL
+            if is_packed_media:
+                db_data.storage = models.StorageChoice.LOCAL
         else:
             manifest = ImageManifestManager(db_data.get_manifest_path())
 
