@@ -13,6 +13,17 @@ function defaultTaskSpec({
     validationParams,
     projectID,
 }) {
+    cy.task('log', {
+        labelName,
+        labelType,
+        taskName,
+        serverFiles,
+        startFrame,
+        frameFilter,
+        segmentSize,
+        validationParams,
+        projectID,
+    });
     const taskSpec = {
         labels: [
             { name: labelName, attributes: [], type: labelType || 'any' },
@@ -22,7 +33,7 @@ function defaultTaskSpec({
         source_storage: { location: 'local' },
         target_storage: { location: 'local' },
     };
-    if (projectID) {
+    if (projectID && taskSpec.labels) {
         delete taskSpec.labels;
         // can only have labels in one place
     }

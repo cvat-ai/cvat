@@ -33,26 +33,40 @@ context('This is your test project title', () => {
         }],
     };
     const projects = [];
-    const augmentName = ((obj, suffix) => ({ ...obj, name: obj.name.concat(suffix) }));
     before(() => {
         cy.visit('/auth/login');
         cy.headlessLogin();
 
-        const ntasks = 2;
-        const nprojects = 2;
-        for (let i = 1; i <= nprojects; i++) {
-            const pspec = augmentName(projectSpec, `_${i}`);
-            cy.headlessCreateProject(pspec).then(({ projectID }) => {
-                const { taskSpec, dataSpec, extras } = defaultTaskSpec({
-                    labelName, taskName, serverFiles, projectID,
-                });
-                for (let j = 1; j <= ntasks; j++) {
-                    const tspec = augmentName(taskSpec, `_${j}`);
-                    cy.headlessCreateTask(tspec, dataSpec, extras);
-                }
-                projects.push(projectID);
+        /* minimal setup:
+            two projects:
+                one with which with two tasks,
+                    one of which with two jobs
+        */
+        const framesPerJob = 1;
+        const stringID = (i, str) => str.concat(`_${i}`);
+        const createTaskInProject = (i, projectID, taskParams) => {
+            const { taskSpec, dataSpec, extras } = defaultTaskSpec({
+                ...taskParams,
+                projectID,
+                taskName: stringID(i, taskParams.taskName),
             });
-        }
+            return cy.headlessCreateTask(taskSpec, dataSpec, extras);
+        };
+        const createProject = (i) => cy.headlessCreateProject({
+            ...projectSpec,
+            name: stringID(i, projectName),
+        });
+        createProject(2).then(({ projectID }) => {
+            // default task with 1 job
+            createTaskInProject(1, projectID, { taskName, labelName, serverFiles });
+
+            // default task with 2 jobs
+            createTaskInProject(2, projectID, {
+                taskName, labelName, serverFiles, segmentSize: framesPerJob,
+            });
+            projects.push(projectID);
+        });
+        createProject(1).then(({ projectID }) => projects.push(projectID)); // empty project
     });
 
     after(() => {
@@ -61,7 +75,7 @@ context('This is your test project title', () => {
 
     describe('This is your test suite title', () => {
         it('This is your test case two title', () => {
-
+            // cy.
         });
     });
 });
