@@ -111,9 +111,8 @@ function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
 
         const projectsToUpdate = onUpdateProject ? [projectInstance] : collectObjectsForBulkUpdate();
         const updateCurrent = () => {
-            const [project] = projectsToUpdate;
-            project.organizationId = newOrganization?.id ?? null;
-            onUpdateProject!(project);
+            projectInstance.organizationId = newOrganization?.id ?? null;
+            onUpdateProject!(projectInstance);
         };
 
         const updateBulk = () => {
