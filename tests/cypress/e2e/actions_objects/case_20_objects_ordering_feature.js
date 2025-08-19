@@ -5,7 +5,9 @@
 
 /// <reference types="cypress" />
 
-import { taskName, labelName, attrName } from '../../support/const';
+import {
+    taskName, labelName, attrName, textDefaultValue,
+} from '../../support/const';
 
 context('Objects ordering feature', () => {
     const caseId = '20';
@@ -24,51 +26,68 @@ context('Objects ordering feature', () => {
         points: 'By 2 Points',
         type: 'Shape',
         labelName,
-        firstX: createRectangleShape2Points.firstX + 300,
+        firstX: createRectangleShape2Points.firstX + 100,
         firstY: createRectangleShape2Points.firstY,
-        secondX: createRectangleShape2Points.secondX + 300,
+        secondX: createRectangleShape2Points.secondX + 100,
         secondY: createRectangleShape2Points.secondY,
     };
 
     const createRectangleShape2PointsDifferentLabel = {
         points: 'By 2 Points',
         type: 'Shape',
-        labelName: labelName + "_2",
-        firstX: createRectangleShape2Points.firstX - 100,
+        labelName: '0',
+        firstX: createRectangleShape2Points.firstX + 300,
         firstY: createRectangleShape2Points.firstY,
-        secondX: createRectangleShape2Points.secondX - 100,
+        secondX: createRectangleShape2Points.secondX + 300,
         secondY: createRectangleShape2Points.secondY,
     };
 
     function checkSideBarItemOrdering(ordering) {
         const cvatObjectsSidebarStateItemIdList1 = [];
-        cy.get('.cvat-objects-sidebar-state-item').then(($cvatObjectsSidebarStateItemId) => {
-            for (let i = 0; i < $cvatObjectsSidebarStateItemId.length; i++) {
-                cvatObjectsSidebarStateItemIdList1.push(Number($cvatObjectsSidebarStateItemId[i].id.match(/\d+$/)));
-                console.log($cvatObjectsSidebarStateItemId)
-            }
-            const idAscent = cvatObjectsSidebarStateItemIdList1.reduce((previousValue, currentValue) => (
-                !(previousValue > currentValue)
-            ));
-            if (ordering === 'ascent' || ordering === 'label') {
-                /* eslint-disable-next-line */
-                expect(idAscent).to.be.true; // expected true to be true (ascent)
-            } else {
-                /* eslint-disable-next-line */
-                expect(idAscent).to.be.false; // expected false to be false (descent)
-            }
-        });
+        cy.get(`.cvat-objects-sidebar-state-item ${ordering === 'label' ? '.ant-select-selection-item' : ''}`).then(
+            ($cvatObjectsSidebarStateItemId) => {
+                for (let i = 0; i < $cvatObjectsSidebarStateItemId.length; i++) {
+                    cvatObjectsSidebarStateItemIdList1.push(
+                        ordering === 'label' ?
+                            $cvatObjectsSidebarStateItemId[i].getAttribute('title') :
+                            Number($cvatObjectsSidebarStateItemId[i].id.match(/\d+$/)),
+                    );
+                }
+
+                if (ordering === 'ascent' || ordering === 'label') {
+                    /* eslint-disable-next-line */
+                    const idAscent = cvatObjectsSidebarStateItemIdList1.every((value, index) => index === 0 || value >= cvatObjectsSidebarStateItemIdList1[index - 1],
+                    );
+                    /* eslint-disable-next-line */
+                    expect(idAscent).to.be.true; // expected true to be true (ascent)
+                } else {
+                    /* eslint-disable-next-line */
+                    const idDescent = cvatObjectsSidebarStateItemIdList1.every((value, index) => index === 0 || value <= cvatObjectsSidebarStateItemIdList1[index - 1],
+                    );
+                    /* eslint-disable-next-line */
+                    expect(idDescent).to.be.true; // expected false to be false (descent)
+                }
+            });
     }
 
     before(() => {
-        cy.openTaskJob(taskName);
+        cy.openTask(taskName);
+        cy.addNewLabel({ name: '0' }, [
+            {
+                name: attrName,
+                type: 'Text',
+                mutable: true,
+                values: textDefaultValue,
+            },
+        ]);
+        cy.openJob();
     });
 
     describe(`Testing case "${caseId}"`, () => {
         it('Create a couple of shapes.', () => {
             cy.createRectangle(createRectangleShape2Points);
+            cy.createRectangle(createRectangleShape2PointsDifferentLabel);
             cy.createRectangle(createRectangleShape2PointsSecond);
-            cy.createRectangle(createRectangleShape2PointsDifferentLabel)
             checkSideBarItemOrdering('ascent');
         });
 
@@ -84,6 +103,16 @@ context('Objects ordering feature', () => {
 
         it('Sort objects by "Updated time". Change something in the first object. This object now in the top', () => {
             cy.sidebarItemSortBy('Updated time');
+
+            cy.get('#cvat_canvas_shape_2').trigger('mousemove');
+            cy.get('#cvat_canvas_shape_2').rightclick();
+            cy.get('.cvat-canvas-context-menu').within(() => {
+                cy.contains('.cvat-objects-sidebar-state-item-collapse', 'DETAILS').click();
+                cy.contains('.cvat-object-item-attribute-wrapper', attrName).within(() => {
+                    cy.get('.cvat-object-item-text-attribute').clear();
+                });
+            });
+
             cy.get('#cvat_canvas_shape_1').trigger('mousemove');
             cy.get('#cvat_canvas_shape_1').rightclick();
             cy.get('.cvat-canvas-context-menu').within(() => {
@@ -92,6 +121,7 @@ context('Objects ordering feature', () => {
                     cy.get('.cvat-object-item-text-attribute').clear();
                 });
             });
+
             cy.get('.cvat-canvas-container').click(); // Hide context menu
             checkSideBarItemOrdering('ascent');
         });
