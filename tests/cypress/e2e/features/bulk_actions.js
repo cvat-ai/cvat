@@ -153,11 +153,7 @@ context('Bulk actions in UI', () => {
                     .should('have.length', nobjs);
             });
 
-            // TODO: coverage for bulk export of jobs (not implemented yet)
-        });
-
-        context('Bulk deletion', () => {
-
+            // TODO: coverage for bulk export, bulk deletion of jobs (not implemented yet)
         });
     });
 });
