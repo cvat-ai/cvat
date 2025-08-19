@@ -64,8 +64,8 @@ context('This is your test project title', () => {
             // default task with 2 jobs
             createTaskInProject(2, projectID, {
                 taskName, labelName, serverFiles, segmentSize: framesPerJob,
-            }).then(({ taskID }) => {
-                cy.visit(`/tasks/${taskID}`);
+            }).then(() => {
+                cy.visit(`/projects/${projectID}`);
             });
             projects.push(projectID);
         });
@@ -95,9 +95,10 @@ context('This is your test project title', () => {
                     .should('be.visible')
                     .and('have.text', `Selected: ${njobs}`);
             });
+
             it('Bulk-change assignees, ensure successful', () => {
                 cy.get('.cvat-item-selected').first().within(() => {
-                    cy.get('.cvat-actions-menu-button').click({ force: true });
+                    cy.get('.cvat-actions-menu-button').click();
                 });
                 cy.get('.ant-dropdown').within(() => {
                     cy.contains(`Assignee (${njobs})`).click();
@@ -105,6 +106,15 @@ context('This is your test project title', () => {
                     cy.get('.cvat-user-search-field').type('{enter}');
                 });
                 cy.get('.cvat-bulk-progress-wrapper').should('be.visible');
+
+                // Navigate to task with 2 jobs
+                cy.get('.cvat-item-open-task-button').first().click();
+            });
+        });
+
+        context('Task page, change jobs', () => {
+            it('Ensure task was assigned to admin', () => {
+                cy.get('[value="admin"]').should('exist');
             });
         });
     });
