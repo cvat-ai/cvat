@@ -48,7 +48,7 @@ export function makeBulkOperationAsync<T>(
                 await operation(items[0], 0, 1);
                 onSuccess?.();
                 dispatch(selectionActions.clearSelectedResources());
-                return;
+                return 1;
             }
             dispatch(bulkActions.startBulkAction());
             for (let i = 0; i < items.length; i++) {
@@ -79,6 +79,8 @@ export function makeBulkOperationAsync<T>(
         } finally {
             dispatch(bulkActions.finishBulkAction());
         }
+
+        return processedCount;
     };
 }
 

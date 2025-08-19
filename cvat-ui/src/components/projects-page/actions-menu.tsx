@@ -10,7 +10,7 @@ import Modal from 'antd/lib/modal';
 import { Organization, Project, User } from 'cvat-core-wrapper';
 import { useDropdownEditField, usePlugins } from 'utils/hooks';
 import { CombinedState } from 'reducers';
-import { deleteProjectAsync, updateProjectAsync } from 'actions/projects-actions';
+import { deleteProjectAsync, getProjectsAsync, updateProjectAsync } from 'actions/projects-actions';
 import { cloudStoragesActions } from 'actions/cloud-storage-actions';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
@@ -41,10 +41,14 @@ function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
         selectedIds,
         currentProjects,
         currentOrganization,
+        projectsQuery,
+        tasksQuery,
     } = useSelector((state: CombinedState) => ({
         selectedIds: state.projects.selected,
         currentProjects: state.projects.current,
         currentOrganization: state.organizations.current as Organization | null,
+        projectsQuery: state.projects.gettingQuery,
+        tasksQuery: state.tasks.gettingQuery,
     }), shallowEqual);
 
     const isBulkMode = selectedIds.length > 1;
@@ -112,7 +116,13 @@ function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
                     }
                 },
                 (project, idx, total) => `Updating organization for project #${project.id} (${idx + 1}/${total})`,
-            ));
+            )).then((processedCount: number) => {
+                if (processedCount) {
+                    // as for some projects org has changed
+                    // we need to fetch new projects corresponding to the current org
+                    dispatch(getProjectsAsync(projectsQuery, tasksQuery));
+                }
+            });
         }
 
         if (

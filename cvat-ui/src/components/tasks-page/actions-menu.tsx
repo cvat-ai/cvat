@@ -19,7 +19,7 @@ import { modelsActions } from 'actions/models-actions';
 import { mergeConsensusJobsAsync } from 'actions/consensus-actions';
 
 import {
-    deleteTaskAsync, switchMoveTaskModalVisible, updateTaskAsync,
+    deleteTaskAsync, getTasksAsync, switchMoveTaskModalVisible, updateTaskAsync,
 } from 'actions/tasks-actions';
 import { cloudStoragesActions } from 'actions/cloud-storage-actions';
 import { ResourceUpdateTypes } from 'utils/enums';
@@ -49,12 +49,14 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
         currentOrganization,
         selectedIds,
         currentTasks,
+        tasksQuery,
     } = useSelector((state: CombinedState) => ({
         activeInference: state.models.inferences[taskInstance.id],
         mergingConsensus: state.consensus.actions.merging,
         currentOrganization: state.organizations.current as Organization | null,
         selectedIds: state.tasks.selected,
         currentTasks: state.tasks.current,
+        tasksQuery: state.tasks.gettingQuery,
     }), shallowEqual);
 
     const isBulkMode = selectedIds.length > 1;
@@ -181,11 +183,17 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
                     if (onUpdateTask && task.id === taskInstance.id) {
                         onUpdateTask(task);
                     } else {
-                        await dispatch(updateTaskAsync(taskInstance, {}, ResourceUpdateTypes.UPDATE_ORGANIZATION));
+                        await dispatch(updateTaskAsync(task, {}, ResourceUpdateTypes.UPDATE_ORGANIZATION));
                     }
                 },
                 (task, idx, total) => `Updating organization for task #${task.id} (${idx + 1}/${total})`,
-            ));
+            )).then((processedCount: number) => {
+                if (processedCount) {
+                    // as for some tasks org has changed
+                    // we need to fetch new tasks corresponding to the current org
+                    dispatch(getTasksAsync(tasksQuery, false));
+                }
+            });
         }
 
         if (
@@ -198,7 +206,7 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
         } else {
             doBulkUpdate();
         }
-    }, [dispatch]);
+    }, [dispatch, tasksQuery]);
 
     const onUpdateTaskOrganization = useCallback((newOrganization: Organization | null) => {
         stopEditField();
