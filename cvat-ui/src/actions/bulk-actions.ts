@@ -43,13 +43,15 @@ export function makeBulkOperationAsync<T>(
 ) {
     return async (dispatch: ThunkDispatch, getState: () => CombinedState) => {
         let processedCount = 0;
+
+        if (items.length === 1) {
+            await operation(items[0], 0, 1);
+            onSuccess?.();
+            dispatch(selectionActions.clearSelectedResources());
+            return 1;
+        }
+
         try {
-            if (items.length === 1) {
-                await operation(items[0], 0, 1);
-                onSuccess?.();
-                dispatch(selectionActions.clearSelectedResources());
-                return 1;
-            }
             dispatch(bulkActions.startBulkAction());
             for (let i = 0; i < items.length; i++) {
                 if (getState().bulkActions.cancelled) {
