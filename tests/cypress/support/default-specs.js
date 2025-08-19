@@ -13,17 +13,6 @@ function defaultTaskSpec({
     validationParams,
     projectID,
 }) {
-    cy.task('log', {
-        labelName,
-        labelType,
-        taskName,
-        serverFiles,
-        startFrame,
-        frameFilter,
-        segmentSize,
-        validationParams,
-        projectID,
-    });
     const taskSpec = {
         labels: [
             { name: labelName, attributes: [], type: labelType || 'any' },
