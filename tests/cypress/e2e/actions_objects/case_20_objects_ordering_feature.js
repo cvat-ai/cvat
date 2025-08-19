@@ -30,16 +30,27 @@ context('Objects ordering feature', () => {
         secondY: createRectangleShape2Points.secondY,
     };
 
+    const createRectangleShape2PointsDifferentLabel = {
+        points: 'By 2 Points',
+        type: 'Shape',
+        labelName: labelName + "_2",
+        firstX: createRectangleShape2Points.firstX - 100,
+        firstY: createRectangleShape2Points.firstY,
+        secondX: createRectangleShape2Points.secondX - 100,
+        secondY: createRectangleShape2Points.secondY,
+    };
+
     function checkSideBarItemOrdering(ordering) {
         const cvatObjectsSidebarStateItemIdList1 = [];
         cy.get('.cvat-objects-sidebar-state-item').then(($cvatObjectsSidebarStateItemId) => {
             for (let i = 0; i < $cvatObjectsSidebarStateItemId.length; i++) {
                 cvatObjectsSidebarStateItemIdList1.push(Number($cvatObjectsSidebarStateItemId[i].id.match(/\d+$/)));
+                console.log($cvatObjectsSidebarStateItemId)
             }
             const idAscent = cvatObjectsSidebarStateItemIdList1.reduce((previousValue, currentValue) => (
                 !(previousValue > currentValue)
             ));
-            if (ordering === 'ascent') {
+            if (ordering === 'ascent' || ordering === 'label') {
                 /* eslint-disable-next-line */
                 expect(idAscent).to.be.true; // expected true to be true (ascent)
             } else {
@@ -57,6 +68,7 @@ context('Objects ordering feature', () => {
         it('Create a couple of shapes.', () => {
             cy.createRectangle(createRectangleShape2Points);
             cy.createRectangle(createRectangleShape2PointsSecond);
+            cy.createRectangle(createRectangleShape2PointsDifferentLabel)
             checkSideBarItemOrdering('ascent');
         });
 
@@ -64,6 +76,12 @@ context('Objects ordering feature', () => {
             cy.sidebarItemSortBy('ID - descent');
             checkSideBarItemOrdering('descent');
         });
+
+        it('Sort object by "Label".', () => {
+            cy.sidebarItemSortBy('Label');
+            checkSideBarItemOrdering('label');
+        });
+
         it('Sort objects by "Updated time". Change something in the first object. This object now in the top', () => {
             cy.sidebarItemSortBy('Updated time');
             cy.get('#cvat_canvas_shape_1').trigger('mousemove');

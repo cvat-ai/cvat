@@ -297,8 +297,14 @@ function sortAndMap(objectStates: ObjectState[], ordering: StatesOrdering): numb
         sorted = [...objectStates].sort((a: any, b: any): number => b.clientID - a.clientID);
     } else if (ordering === StatesOrdering.UPDATED) {
         sorted = [...objectStates].sort((a: any, b: any): number => b.updated - a.updated);
-    } else {
+    } else if (ordering === StatesOrdering.Z_ORDER){
         sorted = [...objectStates].sort((a: any, b: any): number => a.zOrder - b.zOrder);
+    } else {
+        sorted = [...objectStates].sort((a: ObjectState, b: any): number => {
+            if(a.label.name < b.label.name) { return -1; }
+            if(a.label.name > b.label.name) { return 1; }
+            return a.clientID - b.clientID;
+        });
     }
 
     return sorted.map((state: any) => state.clientID);
