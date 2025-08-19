@@ -7,7 +7,7 @@
 
 import { defaultTaskSpec } from '../../support/default-specs';
 
-context('This is your test project title', () => {
+context('Bulk actions in UI', () => {
     const taskName = 'task_bulk_actions';
     const projectName = 'project_bulk_actions';
     const serverFiles = ['smallArchive.zip'];
@@ -76,8 +76,8 @@ context('This is your test project title', () => {
     });
 
     describe('Bulk-change object attributes, confirm UI state', () => {
+        const nobjs = 2;
         context('Project page, change tasks', () => {
-            const njobs = 2;
             it('"Select all", all items are selected, "Deselect" button is visible', () => {
                 cy.get('.cvat-item-selected').should('not.exist');
                 cy.get('.cvat-resource-select-all-button')
@@ -87,21 +87,21 @@ context('This is your test project title', () => {
                 cy.get('.cvat-item-selected')
                     .should('exist')
                     .its('length')
-                    .should('eq', njobs);
+                    .should('eq', nobjs);
                 cy.get('.cvat-resource-deselect-button')
                     .should('be.visible')
                     .and('have.text', 'Deselect');
                 cy.get('.cvat-resource-selection-count')
                     .should('be.visible')
-                    .and('have.text', `Selected: ${njobs}`);
+                    .and('have.text', `Selected: ${nobjs}`);
             });
 
-            it('Bulk-change assignees, ensure successful', () => {
+            it('Bulk-change assignees', () => {
                 cy.get('.cvat-item-selected').first().within(() => {
                     cy.get('.cvat-actions-menu-button').click();
                 });
                 cy.get('.ant-dropdown').within(() => {
-                    cy.contains(`Assignee (${njobs})`).click();
+                    cy.contains(`Assignee (${nobjs})`).click();
                     cy.get('.cvat-user-search-field').type('admin', { delay: 0 }); // type all at once
                     cy.get('.cvat-user-search-field').type('{enter}');
                 });
@@ -116,6 +116,48 @@ context('This is your test project title', () => {
             it('Ensure task was assigned to admin', () => {
                 cy.get('[value="admin"]').should('exist');
             });
+
+            it('Bulk-change assignees', () => {
+                cy.contains('Select all').click();
+                cy.get('.cvat-item-selected').first().within(() => {
+                    cy.get('.cvat-actions-menu-button').click();
+                });
+                cy.get('.ant-dropdown').within(() => {
+                    cy.contains(`Assignee (${nobjs})`).click();
+                    cy.get('.cvat-user-search-field').type('admin', { delay: 0 }); // all at once
+                    cy.get('.cvat-user-search-field').type('{enter}');
+                });
+                cy.get('.cvat-bulk-progress-wrapper').should('be.visible');
+
+                cy.get('.cvat-job-assignee-selector').each(($el) => {
+                    cy.wrap($el).find('[value="admin"]').should('exist');
+                });
+            });
+
+            it('Bulk-change state', () => {
+                cy.contains('Select all').click();
+                cy.get('.cvat-item-selected').first().within(() => {
+                    cy.get('.cvat-actions-menu-button').click();
+                });
+                cy.get('.ant-dropdown').within(() => {
+                    cy.contains(`State (${nobjs})`).click();
+                    cy.get('.cvat-job-item-state').click();
+
+                    // state is new by default, so pick second option (=in progress)
+                    cy.get('.ant-select-selection-search').type('{downarrow}');
+                    cy.get('.ant-select-selection-search').type('{enter}');
+                });
+                cy.get('.cvat-bulk-progress-wrapper').should('be.visible');
+
+                cy.get('.ant-select-selection-item[title="in progress"]')
+                    .should('have.length', nobjs);
+            });
+
+            // TODO: coverage for bulk export of jobs (not implemented yet)
+        });
+
+        context('Bulk deletion', () => {
+
         });
     });
 });
