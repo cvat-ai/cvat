@@ -4,6 +4,7 @@
 
 import React, { useCallback } from 'react';
 import { useDispatch, useSelector, shallowEqual } from 'react-redux';
+import { useHistory } from 'react-router';
 import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
 
@@ -26,7 +27,7 @@ interface Props {
     projectInstance: Project;
     triggerElement: JSX.Element;
     dropdownTrigger?: ('click' | 'hover' | 'contextMenu')[];
-    onUpdateProject?: (project: Project) => Promise<void>;
+    onUpdateProject?: (project: Project) => Promise<Project>;
 }
 
 function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
@@ -34,6 +35,7 @@ function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
         projectInstance, triggerElement, dropdownTrigger, onUpdateProject,
     } = props;
 
+    const history = useHistory();
     const dispatch = useDispatch();
     const pluginActions = usePlugins((state: CombinedState) => state.plugins.components.projectActions.items, props);
 
@@ -112,7 +114,9 @@ function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
         const projectsToUpdate = onUpdateProject ? [projectInstance] : collectObjectsForBulkUpdate();
         const updateCurrent = () => {
             projectInstance.organizationId = newOrganization?.id ?? null;
-            onUpdateProject!(projectInstance);
+            onUpdateProject!(projectInstance).then(() => {
+                history.push('/projects');
+            });
         };
 
         const updateBulk = () => {

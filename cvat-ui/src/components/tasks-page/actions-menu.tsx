@@ -4,6 +4,7 @@
 
 import React, { useCallback } from 'react';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
+import { useHistory } from 'react-router';
 import Modal from 'antd/lib/modal';
 import Dropdown from 'antd/lib/dropdown';
 
@@ -34,13 +35,14 @@ interface Props {
     taskInstance: Task;
     triggerElement: JSX.Element;
     dropdownTrigger?: ('click' | 'hover' | 'contextMenu')[];
-    onUpdateTask?: (task: Task) => void;
+    onUpdateTask?: (task: Task) => Promise<Task>;
 }
 
 function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
     const {
         taskInstance, triggerElement, dropdownTrigger, onUpdateTask,
     } = props;
+    const history = useHistory();
     const dispatch = useDispatch();
     const pluginActions = usePlugins((state: CombinedState) => state.plugins.components.taskActions.items, props);
     const {
@@ -180,7 +182,9 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
         const tasksToUpdate = onUpdateTask ? [taskInstance] : collectObjectsForBulkUpdate();
         const updateCurrent = () => {
             taskInstance.organizationId = newOrganization?.id ?? null;
-            onUpdateTask!(taskInstance);
+            onUpdateTask!(taskInstance).then(() => {
+                history.push('/tasks');
+            });
         };
 
         const updateBulk = () => {

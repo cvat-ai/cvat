@@ -98,11 +98,13 @@ function TaskPageComponent(): JSX.Element {
         return <TaskNotFoundComponent />;
     }
 
-    const onUpdateTask = (task: Task): Promise<void> => (
-        dispatch(updateTaskAsync(task, {})).then((updatedTask: Task) => {
+    const onUpdateTask = (task: Task): Promise<Task> => {
+        const promise = dispatch(updateTaskAsync(task, {}));
+        promise.then((updatedTask: Task) => {
             setTaskInstance(updatedTask);
-        })
-    );
+        });
+        return promise;
+    };
 
     const onUpdateTaskMeta = (meta: FramesMetaData): Promise<void> => (
         dispatch(updateTaskMetadataAsync(taskInstance, meta)).then((updatedMeta: FramesMetaData) => {
