@@ -19,7 +19,7 @@ const core = getCore();
 
 interface DetailsComponentProps {
     project: Project;
-    onUpdateProject: (project: Project) => void;
+    onUpdateProject: (project: Project) => Promise<Project>;
 }
 
 export default function DetailsComponent(props: DetailsComponentProps): JSX.Element {

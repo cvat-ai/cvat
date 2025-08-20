@@ -102,8 +102,11 @@ export const cloudStoragesActions = {
     getCloudStoragePreviewFailed: (cloudStorageID: number, error: any) => (
         createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_PREVIEW_FAILED, { cloudStorageID, error })
     ),
-    openLinkedCloudStorageUpdatingModal: (instance: Project | Task) => (
-        createAction(CloudStorageActionTypes.OPEN_LINKED_CLOUD_STORAGE_UPDATING_MODAL, { instance })
+    openLinkedCloudStorageUpdatingModal: (
+        instances: Project[] | Task[],
+        onUpdate: () => void,
+    ) => (
+        createAction(CloudStorageActionTypes.OPEN_LINKED_CLOUD_STORAGE_UPDATING_MODAL, { instances, onUpdate })
     ),
     closeLinkedCloudStorageUpdatingModal: () => (
         createAction(CloudStorageActionTypes.CLOSE_LINKED_CLOUD_STORAGE_UPDATING_MODAL)

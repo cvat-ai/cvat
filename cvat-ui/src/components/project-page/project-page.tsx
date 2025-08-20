@@ -141,10 +141,12 @@ export default function ProjectPageComponent(): JSX.Element {
         dispatch(selectionActions.selectResources(selectableTaskIds, SelectedResourceType.TASKS));
     }, [selectableTaskIds]);
 
-    const onUpdateProject = useCallback(async (project: Project) => {
-        dispatch(updateProjectAsync(project)).then((updatedProject: Project) => {
+    const onUpdateProject = useCallback((project: Project) => {
+        const promise = dispatch(updateProjectAsync(project));
+        promise.then((updatedProject: Project) => {
             setProjectInstance(updatedProject);
         });
+        return promise;
     }, []);
 
     if (fechingProject || id in deletes) {
