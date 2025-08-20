@@ -12,7 +12,7 @@ export const textDefaultValue = 'Some default value for type Text';
 export const advancedConfigurationParams = false;
 export const multiAttrParams = false;
 
-it('Prepare to testing', () => {
+it('Prepare to testing canvas3d', () => {
     cy.visit('/auth/login');
     cy.login();
     cy.get('.cvat-tasks-page').should('exist');

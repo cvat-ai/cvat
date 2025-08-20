@@ -15,7 +15,7 @@ export const multiAttrParams = {
     type: 'Text',
 };
 
-it('Prepare to testing', () => {
+it('Prepare to testing projects', () => {
     cy.visit('/auth/login');
     cy.login();
     cy.goToProjectsList();
