@@ -5,7 +5,9 @@
 
 import './styles.scss';
 import React, { useState, useEffect, useCallback } from 'react';
-import { connect, useDispatch, useSelector } from 'react-redux';
+import {
+    connect, shallowEqual, useDispatch, useSelector,
+} from 'react-redux';
 import { useHistory } from 'react-router';
 import Modal from 'antd/lib/modal';
 import Notification from 'antd/lib/notification';
@@ -24,7 +26,8 @@ import { CombinedState } from 'reducers';
 import { exportActions, exportDatasetAsync } from 'actions/export-actions';
 import { makeBulkOperationAsync } from 'actions/bulk-actions';
 import {
-    Dumper, ProjectOrTaskOrJob, Job, Project, Storage, StorageData, StorageLocation, Task,
+    Dumper, ProjectOrTaskOrJob, Job, Project,
+    Storage, StorageData, StorageLocation, Task,
 } from 'cvat-core-wrapper';
 
 type FormValues = {
@@ -47,13 +50,9 @@ const initialValues: FormValues = {
 };
 
 function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
-    const {
-        dumpers,
-        instance,
-    } = props;
+    const { dumpers, instance } = props;
 
     const [instanceType, setInstanceType] = useState('');
-
     const [useDefaultTargetStorage, setUseDefaultTargetStorage] = useState(true);
     const [form] = Form.useForm();
     const [targetStorage, setTargetStorage] = useState<StorageData>({
@@ -69,16 +68,25 @@ function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
         if (instanceType === 'project') {
             return state.projects.selected;
         }
+
         if (instanceType === 'task') {
             return state.tasks.selected;
         }
+
+        if (instanceType === 'job') {
+            return state.jobs.selected;
+        }
+
         return [];
     });
-    const allTasks = useSelector((state: CombinedState) => state.tasks.current);
-    const allProjects = useSelector((state: CombinedState) => state.projects.current);
-    const allJobs = useSelector((state: CombinedState) => state.jobs.current);
-    const isBulkMode = selectedIds.length > 1;
 
+    const { allTasks, allProjects, allJobs } = useSelector((state: CombinedState) => ({
+        allTasks: state.tasks.current,
+        allProjects: state.projects.current,
+        allJobs: state.jobs.current,
+    }), shallowEqual);
+
+    const isBulkMode = selectedIds.length > 1;
     const [selectedInstances, setSelectedInstances] = useState<ProjectOrTaskOrJob[]>([]);
     useEffect(() => {
         if (isBulkMode) {
