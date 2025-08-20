@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
+/// <reference types="../../support/index.d.ts" />
 
 import { defaultTaskSpec } from '../../support/default-specs';
 
@@ -32,6 +33,7 @@ context('Bulk actions in UI', () => {
         }],
     };
     const projects = [];
+    const nobjs = 2;
     before(() => {
         cy.visit('/auth/login');
         cy.headlessLogin();
@@ -75,7 +77,6 @@ context('Bulk actions in UI', () => {
     });
 
     describe('Bulk-change object attributes, confirm UI state', () => {
-        const nobjs = 2;
         context('Project page, change tasks', () => {
             it('"Select all", all items are selected, "Deselect" button is visible', () => {
                 cy.get('.cvat-item-selected').should('not.exist');
@@ -151,8 +152,33 @@ context('Bulk actions in UI', () => {
                 cy.get('.ant-select-selection-item[title="in progress"]')
                     .should('have.length', nobjs);
             });
+        });
+    });
 
-            // TODO: coverage for bulk export, bulk deletion of jobs (not implemented yet)
+    describe('Bulk export', () => {
+        it('Bulk-export job annotations', () => {
+            cy.contains('Select all').click();
+            cy.get('.cvat-item-selected').first().within(() => {
+                cy.get('.cvat-actions-menu-button').click();
+            });
+            cy.contains(`Export annotations (${nobjs})`)
+                .should('be.visible')
+                .click();
+
+            cy.get('.cvat-modal-export-job')
+                .should('exist').and('be.visible')
+                .find('.ant-modal-header')
+                .should('have.text', `Export ${nobjs} jobs as datasets`);
+            cy.get('.cvat-modal-export-job').contains('button', 'OK').click();
+
+            cy.get('.cvat-notification-notice-export-job-start')
+                .should('be.visible');
+            cy.closeNotification('.cvat-notification-notice-export-job-start');
+
+            cy.get(':visible:contains("Export is finished")')
+                .should('have.length', nobjs);
+            // cy.contains only yields the first
+            // https://docs.cypress.io/api/commands/contains#Single-Element
         });
     });
 });
