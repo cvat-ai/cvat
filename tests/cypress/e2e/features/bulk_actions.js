@@ -34,24 +34,31 @@ context('Bulk actions in UI', () => {
     };
     const projects = [];
     const nobjs = 2;
+    const framesPerJob = 1;
+    const stringID = (i, str) => str.concat(`_${i}`);
+    const createTaskInProject = (i, projectID, taskParams) => {
+        const { taskSpec, dataSpec, extras } = defaultTaskSpec({
+            ...taskParams,
+            projectID,
+            taskName: stringID(i, taskParams.taskName),
+        });
+        return cy.headlessCreateTask(taskSpec, dataSpec, extras);
+    };
+    const createProject = (i) => cy.headlessCreateProject({
+        ...projectSpec,
+        name: stringID(i, projectName),
+    });
+    function getBulkActionsMenu() {
+        cy.contains('Select all').click();
+        cy.get('.cvat-item-selected').first().within(() => {
+            cy.get('.cvat-actions-menu-button').click();
+        });
+        return cy.get('.ant-dropdown');
+    }
     before(() => {
         cy.visit('/auth/login');
         cy.headlessLogin();
-        const framesPerJob = 1;
 
-        const stringID = (i, str) => str.concat(`_${i}`);
-        const createTaskInProject = (i, projectID, taskParams) => {
-            const { taskSpec, dataSpec, extras } = defaultTaskSpec({
-                ...taskParams,
-                projectID,
-                taskName: stringID(i, taskParams.taskName),
-            });
-            return cy.headlessCreateTask(taskSpec, dataSpec, extras);
-        };
-        const createProject = (i) => cy.headlessCreateProject({
-            ...projectSpec,
-            name: stringID(i, projectName),
-        });
         createProject(1).then(({ projectID }) => projects.push(projectID)); // empty project
         createProject(2).then(({ projectID }) => {
             // default task with 1 job
@@ -113,11 +120,7 @@ context('Bulk actions in UI', () => {
             });
 
             it('Bulk-change assignees', () => {
-                cy.contains('Select all').click();
-                cy.get('.cvat-item-selected').first().within(() => {
-                    cy.get('.cvat-actions-menu-button').click();
-                });
-                cy.get('.ant-dropdown').within(() => {
+                getBulkActionsMenu().within(() => {
                     cy.contains(`Assignee (${nobjs})`).click();
                     cy.get('.cvat-user-search-field').type('admin', { delay: 0 }); // all at once
                     cy.get('.cvat-user-search-field').type('{enter}');
@@ -130,11 +133,7 @@ context('Bulk actions in UI', () => {
             });
 
             it('Bulk-change state', () => {
-                cy.contains('Select all').click();
-                cy.get('.cvat-item-selected').first().within(() => {
-                    cy.get('.cvat-actions-menu-button').click();
-                });
-                cy.get('.ant-dropdown').within(() => {
+                getBulkActionsMenu().within(() => {
                     cy.contains(`State (${nobjs})`).click();
                     cy.get('.cvat-job-item-state').click();
 
@@ -152,13 +151,11 @@ context('Bulk actions in UI', () => {
 
     describe('Bulk export', () => {
         it('Bulk-export job annotations', () => {
-            cy.contains('Select all').click();
-            cy.get('.cvat-item-selected').first().within(() => {
-                cy.get('.cvat-actions-menu-button').click();
+            getBulkActionsMenu().within(() => {
+                cy.contains(`Export annotations (${nobjs})`)
+                    .should('be.visible')
+                    .click();
             });
-            cy.contains(`Export annotations (${nobjs})`)
-                .should('be.visible')
-                .click();
 
             cy.get('.cvat-modal-export-job')
                 .should('exist').and('be.visible')
@@ -185,11 +182,7 @@ context('Bulk actions in UI', () => {
         });
 
         it('Delete all projects, ensure deletion', () => {
-            cy.contains('Select all').should('be.visible').click();
-            cy.get('.cvat-item-selected').first().within(() => {
-                cy.get('.cvat-actions-menu-button').click();
-            });
-            cy.get('.ant-dropdown').within(() => {
+            getBulkActionsMenu().within(() => {
                 cy.contains(`Delete (${nobjs})`).click();
             });
 
