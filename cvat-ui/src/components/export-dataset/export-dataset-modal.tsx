@@ -70,22 +70,24 @@ function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
         allProjects,
         allJobs,
     } = useSelector((state: CombinedState) => {
-        let ids: number[] = [];
+        const getSelectedIds = (): number[] => {
+            if (instanceType === 'project') {
+                return state.projects.selected;
+            }
 
-        if (instanceType === 'project') {
-            ids = state.projects.selected;
-        }
+            if (instanceType === 'task') {
+                return state.tasks.selected;
+            }
 
-        if (instanceType === 'task') {
-            ids = state.tasks.selected;
-        }
+            if (instanceType === 'job') {
+                return state.jobs.selected;
+            }
 
-        if (instanceType === 'job') {
-            ids = state.jobs.selected;
-        }
+            return [];
+        };
 
         return {
-            selectedIds: ids,
+            selectedIds: getSelectedIds(),
             allTasks: state.tasks.current,
             allProjects: state.projects.current,
             allJobs: state.jobs.current,
