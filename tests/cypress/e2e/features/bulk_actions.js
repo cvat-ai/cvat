@@ -37,13 +37,8 @@ context('Bulk actions in UI', () => {
     before(() => {
         cy.visit('/auth/login');
         cy.headlessLogin();
-
-        /* minimal setup:
-            two projects:
-                one with which with two tasks,
-                    one of which with two jobs
-        */
         const framesPerJob = 1;
+
         const stringID = (i, str) => str.concat(`_${i}`);
         const createTaskInProject = (i, projectID, taskParams) => {
             const { taskSpec, dataSpec, extras } = defaultTaskSpec({
@@ -179,6 +174,38 @@ context('Bulk actions in UI', () => {
                 .should('have.length', nobjs);
             // cy.contains only yields the first
             // https://docs.cypress.io/api/commands/contains#Single-Element
+
+            cy.get('.ant-notification-notice').should('not.exist');
+        });
+    });
+
+    describe('Delete all tasks', () => {
+        before(() => {
+            cy.goBack();
+        });
+
+        it('Delete all projects, ensure deletion', () => {
+            cy.contains('Select all').should('be.visible').click();
+            cy.get('.cvat-item-selected').first().within(() => {
+                cy.get('.cvat-actions-menu-button').click();
+            });
+            cy.get('.ant-dropdown').within(() => {
+                cy.contains(`Delete (${nobjs})`).click();
+            });
+
+            cy.get('.cvat-modal-confirm-delete-task')
+                .should('be.visible').within(() => {
+                    cy.contains(`Delete ${nobjs} selected tasks`);
+                    cy.contains('Delete selected')
+                        .should('be.visible')
+                        .click();
+                });
+            cy.get('.cvat-bulk-progress-wrapper').should('be.visible');
+            cy.get('.cvat-tasks-list-item').each(($el) => {
+                cy.wrap($el)
+                    .invoke('attr', 'style')
+                    .should('include', 'pointer-events: none');
+            });
         });
     });
 });
