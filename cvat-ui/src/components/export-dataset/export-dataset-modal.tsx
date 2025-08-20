@@ -64,27 +64,33 @@ function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
     const dispatch = useDispatch();
     const history = useHistory();
 
-    const selectedIds = useSelector((state: CombinedState) => {
+    const {
+        selectedIds,
+        allTasks,
+        allProjects,
+        allJobs,
+    } = useSelector((state: CombinedState) => {
+        let ids: number[] = [];
+
         if (instanceType === 'project') {
-            return state.projects.selected;
+            ids = state.projects.selected;
         }
 
         if (instanceType === 'task') {
-            return state.tasks.selected;
+            ids = state.tasks.selected;
         }
 
         if (instanceType === 'job') {
-            return state.jobs.selected;
+            ids = state.jobs.selected;
         }
 
-        return [];
-    });
-
-    const { allTasks, allProjects, allJobs } = useSelector((state: CombinedState) => ({
-        allTasks: state.tasks.current,
-        allProjects: state.projects.current,
-        allJobs: state.jobs.current,
-    }), shallowEqual);
+        return {
+            selectedIds: ids,
+            allTasks: state.tasks.current,
+            allProjects: state.projects.current,
+            allJobs: state.jobs.current,
+        };
+    }, shallowEqual);
 
     const isBulkMode = selectedIds.length > 1;
     const [selectedInstances, setSelectedInstances] = useState<ProjectOrTaskOrJob[]>([]);
