@@ -260,7 +260,8 @@ export interface CloudStoragesState {
         };
     };
     updateWorkspace: {
-        instance: Task | Project | null,
+        instances: Task[] | Project[] | null,
+        onUpdate: (() => void) | null;
     }
     selected: number[];
 }
