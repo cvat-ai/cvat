@@ -49,6 +49,7 @@ context('Bulk actions in UI', () => {
         name: stringID(i, projectName),
     });
     function getBulkActionsMenu() {
+        cy.get('.cvat-bulk-wrapper').should('exist').and('be.visible');
         cy.contains('Select all').click();
         cy.get('.cvat-item-selected').first().within(() => {
             cy.get('.cvat-actions-menu-button').click();
@@ -82,6 +83,9 @@ context('Bulk actions in UI', () => {
         context('Project page, change tasks', () => {
             it('"Select all", all items are selected, "Deselect" button is visible', () => {
                 cy.get('.cvat-item-selected').should('not.exist');
+                cy.get('.cvat-bulk-wrapper')
+                    .should('exist')
+                    .and('be.visible');
                 cy.get('.cvat-resource-select-all-button')
                     .should('be.visible')
                     .and('have.text', 'Select all')
