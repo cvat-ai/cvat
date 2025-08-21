@@ -40,6 +40,7 @@ from cvat.apps.engine.cloud_provider import (
     db_storage_to_storage_instance,
     get_cloud_storage_instance,
 )
+from cvat.apps.engine.exceptions import CloudStorageMissingError
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_extractors import (
     FrameQuality,
@@ -494,6 +495,16 @@ class MediaCache:
             )
         )
 
+    def remove_task_chunk(
+        self, db_task: models.Task, chunk_number: int, *, quality: FrameQuality
+    ) -> None:
+        self._delete_cache_item(
+            self._make_chunk_key(db_task, chunk_number, quality=quality),
+        )
+
+    def remove_segment_preview(self, db_segment: models.Segment) -> None:
+        self._delete_cache_item(self._make_preview_key(db_segment))
+
     def remove_segment_chunk(
         self, db_segment: models.Segment, chunk_number: str, *, quality: str
     ) -> None:
@@ -583,7 +594,8 @@ class MediaCache:
             reader = ImageReaderWithManifest(manifest_path)
             with ExitStack() as es:
                 db_cloud_storage = db_data.cloud_storage
-                assert db_cloud_storage, "Cloud storage instance was deleted"
+                if not db_cloud_storage:
+                    raise CloudStorageMissingError("Task is no longer connected to cloud storage")
                 credentials = Credentials()
                 credentials.convert_from_db(
                     {

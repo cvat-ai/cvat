@@ -1650,7 +1650,9 @@ class TestGetJobPreview:
             (user["username"], job["id"])
             for user in users
             for org in organizations
-            for job in jobs_by_org[org["id"]]
+            for job in jobs_by_org.get(
+                org["id"], []
+            )  # jobs_by_org does not include orgs without jobs
             if is_job_staff(user["id"], job["id"])
         )
         self._test_get_job_preview_200(username, job_id)
@@ -1671,7 +1673,9 @@ class TestGetJobPreview:
             (user["username"], job["id"])
             for user in users
             for org in organizations
-            for job in jobs_by_org[org["id"]]
+            for job in jobs_by_org.get(
+                org["id"], []
+            )  # jobs_by_org does not include orgs without jobs
             if user["id"] not in org_staff(org["id"]) and not is_job_staff(user["id"], job["id"])
         )
         self._test_get_job_preview_403(username, job_id)

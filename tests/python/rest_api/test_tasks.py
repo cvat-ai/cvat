@@ -26,6 +26,7 @@ from typing import Any, Optional
 
 import numpy as np
 import pytest
+from attr.converters import to_bool
 from cvat_sdk import exceptions
 from cvat_sdk.api_client import models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
@@ -1088,7 +1089,8 @@ class TestPatchTaskLabel:
             for user, task in product(users, tasks)
             if not is_task_staff(user["id"], task["id"])
             and task["organization"]
-            and is_org_member(user["id"], task["organization"] and task["project_id"] is None)
+            and is_org_member(user["id"], task["organization"])
+            and task["project_id"] is None
         )
 
         new_label = {"name": "new name"}
@@ -1274,6 +1276,11 @@ class TestTaskBackups:
         task_id = next(t for t in tasks if t["validation_mode"] == "gt_pool")["id"]
         self._test_can_export_backup(task_id)
 
+    @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
+    def test_can_export_backup_for_simple_gt_job_task(self, tasks, mode):
+        task_id = next(t for t in tasks if t["mode"] == mode and t["validation_mode"] == "gt")["id"]
+        self._test_can_export_backup(task_id)
+
     def test_cannot_export_backup_for_task_without_data(self, tasks):
         task_id = next(t for t in tasks if t["jobs"]["count"] == 0)["id"]
 
@@ -1283,7 +1290,8 @@ class TestTaskBackups:
         assert "Backup of a task without data is not allowed" in str(capture.value.body)
 
     @pytest.mark.with_external_services
-    def test_can_export_and_import_backup_task_with_cloud_storage(self, tasks):
+    @pytest.mark.parametrize("lightweight_backup", [True, False])
+    def test_can_export_and_import_backup_task_with_cloud_storage(self, tasks, lightweight_backup):
         cloud_storage_content = ["image_case_65_1.png", "image_case_65_2.png"]
         task_spec = {
             "name": "Task with files from cloud storage",
@@ -1304,28 +1312,34 @@ class TestTaskBackups:
         task = self.client.tasks.retrieve(task_id)
 
         filename = self.tmp_dir / f"cloud_task_{task.id}_backup.zip"
-        task.download_backup(filename)
+        task.download_backup(filename, lightweight=lightweight_backup)
 
         assert filename.is_file()
         assert filename.stat().st_size > 0
-        self._test_can_restore_task_from_backup(task_id)
+
+        if lightweight_backup:
+            with zipfile.ZipFile(filename, "r") as zf:
+                files_in_data = {
+                    name.split("data/", maxsplit=1)[1]
+                    for name in zf.namelist()
+                    if name.startswith("data/")
+                }
+
+            expected_media = {"manifest.jsonl"}
+            if to_bool(os.getenv("CVAT_ALLOW_STATIC_CACHE")):
+                # FIXME: remove extra media files
+                expected_media.update(cloud_storage_content)
+
+            assert files_in_data == expected_media
+
+        self._test_can_restore_task_from_backup(task_id, lightweight_backup=lightweight_backup)
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_import_backup(self, tasks, mode):
         task_id = next(t for t in tasks if t["mode"] == mode if not t["validation_mode"])["id"]
         self._test_can_restore_task_from_backup(task_id)
 
-    @pytest.mark.parametrize(
-        "mode",
-        [
-            "annotation",
-            pytest.param(
-                "interpolation",
-                marks=pytest.mark.xfail(raises=BackgroundRequestException),
-                # FIXME: fails due to invalid GT job frames serialized
-            ),
-        ],
-    )
+    @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_import_backup_with_simple_gt_job_task(self, tasks, mode):
         task_id = next(t for t in tasks if t["mode"] == mode if t["validation_mode"] == "gt")["id"]
         self._test_can_restore_task_from_backup(task_id)
@@ -1343,9 +1357,7 @@ class TestTaskBackups:
         # Reproduces the problem with empty 'mode' in a restored task,
         # described in the reproduction steps https://github.com/cvat-ai/cvat/issues/5668
 
-        task_json = next(
-            t for t in tasks if t["mode"] == mode if t["jobs"]["count"] if not t["validation_mode"]
-        )
+        task_json = next(t for t in tasks if t["mode"] == mode if t["jobs"]["count"])
 
         task = self.client.tasks.retrieve(task_json["id"])
         jobs = task.get_jobs()
@@ -1367,24 +1379,36 @@ class TestTaskBackups:
 
         self._test_can_restore_task_from_backup(task["id"])
 
-    def _test_can_restore_task_from_backup(self, task_id: int):
+    def _test_can_restore_task_from_backup(self, task_id: int, lightweight_backup: bool = False):
         old_task = self.client.tasks.retrieve(task_id)
         (_, response) = self.client.api_client.tasks_api.retrieve(task_id)
         task_json = json.loads(response.data)
 
         filename = self.tmp_dir / f"task_{old_task.id}_backup.zip"
-        old_task.download_backup(filename)
+        old_task.download_backup(filename, lightweight=lightweight_backup)
 
         new_task = self.client.tasks.create_from_backup(filename)
 
         old_meta = json.loads(old_task.api.retrieve_data_meta(old_task.id)[1].data)
         new_meta = json.loads(new_task.api.retrieve_data_meta(new_task.id)[1].data)
+
+        exclude_regex_paths = [r"root\['chunks_updated_date'\]"]  # must be different
+
+        if old_meta["storage"] == "cloud_storage":
+            assert new_meta["storage"] == ("cloud_storage" if lightweight_backup else "local")
+            assert new_meta["cloud_storage_id"] is None
+            exclude_regex_paths.extend([r"root\['cloud_storage_id'\]", r"root\['storage'\]"])
+        elif old_meta["cloud_storage_id"] is not None:
+            # static cache
+            assert new_meta["cloud_storage_id"] is None
+            exclude_regex_paths.extend([r"root\['cloud_storage_id'\]"])
+
         assert (
             DeepDiff(
                 old_meta,
                 new_meta,
                 ignore_order=True,
-                exclude_regex_paths=[r"root\['chunks_updated_date'\]"],  # must be different
+                exclude_regex_paths=exclude_regex_paths,
             )
             == {}
         )
@@ -1401,7 +1425,7 @@ class TestTaskBackups:
                     old_job_meta,
                     new_job_meta,
                     ignore_order=True,
-                    exclude_regex_paths=[r"root\['chunks_updated_date'\]"],  # must be different
+                    exclude_regex_paths=exclude_regex_paths,
                 )
                 == {}
             )
@@ -1441,8 +1465,10 @@ class TestTaskBackups:
                     r"root\['assignee'\]",  # id, depends on the situation
                     r"root\['owner'\]",  # id, depends on the situation
                     r"root\['data'\]",  # id, must be different
-                    r"root\['organization'\]",  # depends on the task setup
+                    r"root\['organization'\]",  # depends on the task setup, deprecated field
+                    r"root\['organization_id'\]",  # depends on the task setup
                     r"root\['project_id'\]",  # should be dropped
+                    r"root\['data_cloud_storage_id'\]",  # should be dropped
                     r"root(\['.*'\])*\['url'\]",  # depends on the task id
                     r"root\['data_compressed_chunk_type'\]",  # depends on the server configuration
                     r"root\['source_storage'\]",  # should be dropped
@@ -1575,7 +1601,7 @@ class TestWorkWithSimpleGtJobTasks:
         "task, gt_job, annotation_jobs",
         [fixture_ref(fxt_task_with_gt_job), fixture_ref(fxt_task_with_gt_job_and_frame_step)],
     )
-    def test_deleting_frames_in_gt_job_do_not_affect_task_or_annotation_job_deleted_frames(
+    def test_deleting_frames_in_gt_job_does_not_affect_task_or_annotation_job_deleted_frames(
         self, admin_user, task, gt_job, annotation_jobs
     ):
         with make_api_client(admin_user) as api_client:
@@ -2736,6 +2762,100 @@ class TestPatchTask:
             task_id,
             expected_status=HTTPStatus.OK if is_allow else HTTPStatus.FORBIDDEN,
         )
+
+    # TODO: Test assignee reset
+    # TODO: Test owner update
+    # TODO: Test source/target/data storage reset
+    @pytest.mark.parametrize(
+        "from_org, to_org",
+        [
+            (True, True),
+            (True, False),
+            (False, True),
+        ],
+    )
+    def test_task_can_be_transferred_to_different_workspace(
+        self,
+        from_org: bool,
+        to_org: bool,
+        organizations,
+        find_users,
+    ):
+        src_org, dst_org, user = None, None, None
+        org_owners = {o["owner"]["username"] for o in organizations}
+        regular_users = {u["username"] for u in find_users(privilege="user")}
+
+        for u in regular_users & org_owners:
+            src_org, dst_org = None, None
+            for org in organizations:
+                if from_org and not src_org and u == org["owner"]["username"]:
+                    src_org = org
+                    continue
+                if to_org and not dst_org and u == org["owner"]["username"]:
+                    dst_org = org
+                    break
+            if (from_org and src_org or not from_org) and (to_org and dst_org or not to_org):
+                user = u
+                break
+
+        assert user, "Could not find a user matching the filters"
+        assert (
+            from_org and src_org or not from_org and not src_org
+        ), "Could not find a source org matching the filters"
+        assert (
+            to_org and dst_org or not to_org and not dst_org
+        ), "Could not find a destination org matching the filters"
+
+        src_org_id = src_org["id"] if src_org else src_org
+        dst_org_id = dst_org["id"] if dst_org else dst_org
+
+        task_spec = {
+            "name": "Task to be transferred to another workspace",
+            "labels": [
+                {
+                    "name": "car",
+                }
+            ],
+        }
+        data_spec = {
+            "image_quality": 75,
+            "use_cache": True,
+            "server_files": ["images/image_1.jpg"],
+        }
+        (task_id, _) = create_task(
+            user, task_spec, data_spec, **({"org_id": src_org_id} if src_org_id else {})
+        )
+
+        with make_api_client(user) as api_client:
+            task_details, _ = api_client.tasks_api.partial_update(
+                task_id, patched_task_write_request={"organization_id": dst_org_id}
+            )
+            assert task_details.organization_id == dst_org_id
+
+    def test_cannot_transfer_task_from_project_to_different_workspace(
+        self,
+        filter_tasks,
+        find_users,
+    ):
+        task, user = None, None
+
+        filtered_users = {u["username"] for u in find_users(privilege="user")}
+        for t in filter_tasks(exclude_project_id=None):
+            user = t["owner"]["username"]
+            if user in filtered_users:
+                task = t
+                break
+
+        assert task and user
+
+        with make_api_client(user) as api_client:
+            _, response = api_client.tasks_api.partial_update(
+                task["id"],
+                patched_task_write_request={"organization_id": None},
+                _check_status=False,
+                _parse_response=False,
+            )
+            assert response.status == HTTPStatus.BAD_REQUEST
 
 
 @pytest.mark.usefixtures("restore_db_per_function")

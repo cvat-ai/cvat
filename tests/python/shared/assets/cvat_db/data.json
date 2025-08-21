@@ -473,8 +473,8 @@
   "model": "sites.site",
   "pk": 1,
   "fields": {
-    "domain": "example.com",
-    "name": "example.com"
+    "domain": "webhooks.internal",
+    "name": "webhooks.internal"
   }
 },
 {
@@ -544,6 +544,23 @@
     },
     "owner": [
       "user7"
+    ]
+  }
+},
+{
+  "model": "organizations.organization",
+  "pk": 3,
+  "fields": {
+    "created_date": "2021-12-14T19:51:38.667Z",
+    "updated_date": "2021-12-14T19:51:38.667Z",
+    "slug": "org3",
+    "name": "Organization #3",
+    "description": "",
+    "contact": {
+      "email": "org3@cvat.org"
+    },
+    "owner": [
+      "user1"
     ]
   }
 },
@@ -740,6 +757,19 @@
     "is_active": true,
     "joined_date": "2023-09-15T07:53:52.116Z",
     "role": "maintainer"
+  }
+},
+{
+  "model": "organizations.membership",
+  "pk": 16,
+  "fields": {
+    "user": [
+      "user1"
+    ],
+    "organization": 3,
+    "is_active": true,
+    "joined_date": "2021-12-14T18:45:40.172Z",
+    "role": "owner"
   }
 },
 {
@@ -16573,7 +16603,7 @@
   "fields": {
     "created_date": "2022-09-28T12:16:28.311Z",
     "updated_date": "2022-09-28T12:16:28.311Z",
-    "target_url": "http://example.com/",
+    "target_url": "http://webhooks.internal/",
     "description": "",
     "events": "delete:task,update:task,create:task,update:job",
     "type": "project",
@@ -16594,7 +16624,7 @@
   "fields": {
     "created_date": "2022-09-28T12:18:12.412Z",
     "updated_date": "2022-09-28T12:18:12.412Z",
-    "target_url": "http://example.com/",
+    "target_url": "http://webhooks.internal/",
     "description": "",
     "events": "delete:comment,update:issue,update:comment,update:job,update:project,delete:task,create:comment,delete:issue,update:task,create:task,create:issue",
     "type": "project",
@@ -16615,7 +16645,7 @@
   "fields": {
     "created_date": "2022-09-28T12:19:49.744Z",
     "updated_date": "2022-09-28T12:19:49.744Z",
-    "target_url": "http://example.com",
+    "target_url": "http://webhooks.internal",
     "description": "",
     "events": "update:issue,delete:issue,create:issue,update:project",
     "type": "project",
@@ -16636,7 +16666,7 @@
   "fields": {
     "created_date": "2022-09-29T08:00:48.440Z",
     "updated_date": "2022-09-29T08:00:48.441Z",
-    "target_url": "http://example.com/",
+    "target_url": "http://webhooks.internal/",
     "description": "",
     "events": "delete:task,create:task,update:issue,update:membership,create:comment,delete:comment,update:job,update:comment,create:project,delete:invitation,create:invitation,update:project,update:task,delete:membership,delete:issue,delete:project,update:organization,create:issue",
     "type": "organization",

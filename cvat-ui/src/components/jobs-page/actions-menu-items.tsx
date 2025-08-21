@@ -3,11 +3,11 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { MenuProps } from 'antd/lib/menu';
 import { LoadingOutlined } from '@ant-design/icons';
 import { usePlugins } from 'utils/hooks';
 import { CVATMenuEditLabel } from 'components/common/cvat-menu-edit-label';
+import { LabelWithCountHOF } from 'components/common/label-with-count';
 
 interface MenuItemsData {
     jobId: number;
@@ -21,6 +21,7 @@ interface MenuItemsData {
     onMergeConsensusJob: (() => void) | null;
     onDeleteJob: (() => void) | null;
     startEditField: (key: string) => void;
+    selectedIds: number[];
 }
 
 export default function JobActionsItems(
@@ -39,19 +40,27 @@ export default function JobActionsItems(
         onExportAnnotations,
         onMergeConsensusJob,
         onDeleteJob,
+        selectedIds = [],
     } = menuItemsData;
+
+    const isBulkMode = selectedIds.length > 1;
+    const bulkAllowedKeys = ['edit_assignee', 'edit_state', 'edit_stage', 'export_job', 'delete'];
+    const isDisabled = (key: string): boolean => isBulkMode && !bulkAllowedKeys.includes(key);
+    const withCount = LabelWithCountHOF(selectedIds, bulkAllowedKeys);
 
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
 
     menuItems.push([{
         key: 'task',
-        label: <Link to={`/tasks/${taskId}`}>Go to the task</Link>,
+        label: withCount('Go to the task', 'task', `/tasks/${taskId}`),
+        disabled: isDisabled('task'),
     }, 0]);
 
     if (projectId) {
         menuItems.push([{
             key: 'project',
-            label: <Link to={`/projects/${projectId}`}>Go to the project</Link>,
+            label: withCount('Go to the project', 'project', `/projects/${projectId}`),
+            disabled: isDisabled('project'),
         }, 10]);
     }
 
@@ -59,28 +68,31 @@ export default function JobActionsItems(
         menuItems.push([{
             key: 'bug_tracker',
             onClick: onOpenBugTracker,
-            label: 'Go to the bug tracker',
+            label: withCount('Go to the bug tracker', 'bug_tracker'),
+            disabled: isDisabled('bug_tracker'),
         }, 20]);
     }
 
     menuItems.push([{
         key: 'import_job',
         onClick: onImportAnnotations,
-        label: 'Import annotations',
+        label: withCount('Import annotations', 'import_job'),
+        disabled: isDisabled('import_job'),
     }, 30]);
 
     menuItems.push([{
         key: 'export_job',
         onClick: onExportAnnotations,
-        label: 'Export annotations',
+        label: withCount('Export annotations', 'export_job'),
+        disabled: isDisabled('export_job'),
     }, 40]);
 
     if (onMergeConsensusJob) {
         menuItems.push([{
             key: 'merge_specific_consensus_jobs',
             onClick: onMergeConsensusJob,
-            label: 'Merge consensus job',
-            disabled: isMergingConsensusEnabled,
+            label: withCount('Merge consensus job', 'merge_specific_consensus_jobs'),
+            disabled: isMergingConsensusEnabled || isDisabled('merge_specific_consensus_jobs'),
             itemIcon: isMergingConsensusEnabled ? <LoadingOutlined /> : undefined,
         }, 50]);
     }
@@ -88,24 +100,28 @@ export default function JobActionsItems(
     menuItems.push([{
         key: 'edit_assignee',
         onClick: () => startEditField('assignee'),
-        label: <CVATMenuEditLabel>Assignee</CVATMenuEditLabel>,
+        label: <CVATMenuEditLabel>{withCount('Assignee', 'edit_assignee')}</CVATMenuEditLabel>,
+        disabled: isDisabled('edit_assignee'),
     }, 60]);
 
     menuItems.push([{
         key: 'edit_state',
         onClick: () => startEditField('state'),
-        label: <CVATMenuEditLabel>State</CVATMenuEditLabel>,
+        label: <CVATMenuEditLabel>{withCount('State', 'edit_state')}</CVATMenuEditLabel>,
+        disabled: isDisabled('edit_state'),
     }, 70]);
 
     menuItems.push([{
         key: 'edit_stage',
         onClick: () => startEditField('stage'),
-        label: <CVATMenuEditLabel>Stage</CVATMenuEditLabel>,
+        label: <CVATMenuEditLabel>{withCount('Stage', 'edit_stage')}</CVATMenuEditLabel>,
+        disabled: isDisabled('edit_stage'),
     }, 80]);
 
     menuItems.push([{
         key: 'view-analytics',
-        label: <Link to={`/tasks/${taskId}/jobs/${jobId}/analytics`}>View analytics</Link>,
+        label: withCount('View analytics', 'view-analytics', `/tasks/${taskId}/jobs/${jobId}/analytics`),
+        disabled: isDisabled('view-analytics'),
     }, 90]);
 
     if (onDeleteJob) {
@@ -113,7 +129,8 @@ export default function JobActionsItems(
         menuItems.push([{
             key: 'delete',
             onClick: onDeleteJob,
-            label: 'Delete',
+            label: withCount('Delete', 'delete'),
+            disabled: isDisabled('delete'),
         }, 100]);
     }
 
@@ -124,5 +141,7 @@ export default function JobActionsItems(
         }),
     );
 
-    return menuItems.sort((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1]).map((menuItem) => menuItem[0]);
+    // Sort and return menu items
+    const sortedMenuItems = menuItems.toSorted((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1]);
+    return sortedMenuItems.map((menuItem) => menuItem[0]);
 }

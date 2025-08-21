@@ -211,3 +211,48 @@ html, body {
         margin-bottom: $grid-unit-size * 2;
     }
 }
+
+.cvat-item-selected {
+    border: 2px solid $border-color-hover !important;
+}
+
+.cvat-item-list-selected {
+    user-select: none;
+}
+
+.cvat-bulk-progress-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(255,255,255,70%);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.cvat-bulk-progress-message {
+    margin-top: $grid-unit-size * 3;
+    font-size: 18px;
+    color: #333;
+    min-height: $grid-unit-size * 3;
+}
+
+.cvat-bulk-progress-cancel {
+    margin-top: $grid-unit-size * 3;
+}
+
+.cvat-bulk-wrapper {
+    width: 100%;
+
+    &.cvat-shift-selecting {
+        user-select: none;
+
+        * {
+            user-select: none !important;
+        }
+    }
+}
