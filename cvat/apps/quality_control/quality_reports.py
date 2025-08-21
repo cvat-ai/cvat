@@ -11,6 +11,7 @@ from collections import Counter
 from collections.abc import Hashable, Sequence
 from contextlib import suppress
 from copy import deepcopy
+from enum import Enum, auto
 from functools import cached_property, lru_cache, partial
 from io import StringIO
 from typing import Any, Callable, ClassVar, TypeVar, Union, cast
@@ -1038,10 +1039,35 @@ def match_segments(
     return matches, mispred, a_unmatched, b_unmatched
 
 
-def oks(a, b, sigma=0.1, bbox=None, scale=None, visibility_a=None, visibility_b=None):
+class OksPointMatchingMode(Enum):
+    contiguous = auto()
+    binary = auto()
+
+
+def oks(
+    a: dm.Points,
+    b: dm.Points,
+    *,
+    sigma: float | Sequence[float] = 0.1,
+    bbox: datumaro.util.annotation_util.BboxIntCoords | None = None,
+    scale: float | None = None,
+    visibility_a: bool | Sequence[bool] | None = None,
+    visibility_b: bool | Sequence[bool] | None = None,
+    point_matching_mode: OksPointMatchingMode = OksPointMatchingMode.contiguous,
+):
     """
     Object Keypoint Similarity metric.
     https://cocodataset.org/#keypoints-eval
+
+    OKS = sum((ai_vis == bi_vis) * P(ai = bi)) / count(a_or_b_visible)
+
+    point_matching_mode = contiguous:
+    P_contiguous = e ^ (- ||ai - bi||^2 / (2 * sigma^2 * scale)
+
+    point_matching_mode = binary:
+    - a rectified version of the point matching kernel, equivalent to ||ai - bi|| <= r
+    P_strict = P_contiguous >= e ^-0.5
+    e ^ -0.5 == ||ai - bi||^2 = sigma^2 * scale
     """
 
     p1 = np.array(a.points).reshape((-1, 2))
@@ -1065,11 +1091,23 @@ def oks(a, b, sigma=0.1, bbox=None, scale=None, visibility_a=None, visibility_b=
         scale = bbox[2] * bbox[3]
 
     dists = np.linalg.norm(p1 - p2, axis=1)
-    return np.sum(
+
+    # We scale sigma by 2 for historical reasons. It was supposed to improve probability for points
+    # on the sigma boundary (0.88), so that there was a bigger and more "natural" OKS threshold
+    # value: for example, if there's just 1 point in the skeleton, we'd have OKS = 0.6
+    # at the 1 sigma distance. A typical threshold is 0.8-0.9 though, so the skeleton wouldn't
+    # be matched. Probably, it should be removed to match the classic formula, but the OKS
+    # should be reviewed in such case.
+    prob = (
         visibility_a
         * visibility_b
         * np.exp((visibility_a == visibility_b) * (-(dists**2) / (2 * scale * (2 * sigma) ** 2)))
-    ) / np.sum(visibility_a | visibility_b, dtype=float)
+    )
+
+    if point_matching_mode == OksPointMatchingMode.binary:
+        prob = prob >= 0.60653066  # e ^ -0.5
+
+    return np.sum(prob) / np.sum(visibility_a | visibility_b, dtype=float)
 
 
 @define(kw_only=True)
