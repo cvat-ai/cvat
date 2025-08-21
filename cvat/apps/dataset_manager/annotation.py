@@ -8,7 +8,7 @@ import math
 from collections.abc import Container, Sequence
 from copy import copy, deepcopy
 from itertools import chain
-from typing import Iterable, Optional
+from typing import Generator, Iterable, Optional
 
 import numpy as np
 from scipy.optimize import linear_sum_assignment
