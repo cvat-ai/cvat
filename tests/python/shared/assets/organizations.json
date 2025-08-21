@@ -1,8 +1,26 @@
 {
-  "count": 2,
+  "count": 3,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "contact": {
+        "email": "org3@cvat.org"
+      },
+      "created_date": "2021-12-14T19:51:38.667000Z",
+      "description": "",
+      "id": 3,
+      "name": "Organization #3",
+      "owner": {
+        "first_name": "User",
+        "id": 2,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/2",
+        "username": "user1"
+      },
+      "slug": "org3",
+      "updated_date": "2021-12-14T19:51:38.667000Z"
+    },
     {
       "contact": {
         "email": "org2@cvat.org"

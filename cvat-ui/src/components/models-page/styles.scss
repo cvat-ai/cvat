@@ -27,7 +27,7 @@
     flex-wrap: wrap;
     overflow-y: auto;
 
-    > div {
+    .cvat-models-list-row {
         width: 100%;
         margin-bottom: $grid-unit-size;
 

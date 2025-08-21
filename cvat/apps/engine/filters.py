@@ -113,6 +113,10 @@ class OrderingFilter(filters.OrderingFilter):
         )
 
 
+class FilterParsingError(Exception):
+    pass
+
+
 class JsonLogicFilter(filters.BaseFilterBackend):
     Rules = dict[str, Any]
     filter_param = "filter"
@@ -128,37 +132,69 @@ class JsonLogicFilter(filters.BaseFilterBackend):
         )
     )
 
-    def _build_Q(self, rules, lookup_fields):
+    def _build_Q(self, rules, lookup_fields, *, parent_op: str | None = None):
+        def _validate_arg(arg: Any, *, allowed_type: type):
+            assert allowed_type in (list, dict)
+
+            if isinstance(arg, allowed_type) and bool(arg):
+                return
+
+            allowed_type_suffix = allowed_type.__name__
+            non_empty_suffix = "non-empty "
+            invalid_value_suffix = f"got '{arg}' of type '{type(arg).__name__}'"
+
+            if parent_op:
+                message = (
+                    f"operation '{op}' requires "
+                    f"a {non_empty_suffix}{allowed_type_suffix} argument, "
+                    f"{invalid_value_suffix}"
+                )
+            else:
+                message = (
+                    f"expected a {non_empty_suffix}{allowed_type_suffix} value, "
+                    f"{invalid_value_suffix}"
+                )
+
+            raise FilterParsingError(message)
+
+        def _get_lookup_field(filter_term: str) -> str:
+            try:
+                return lookup_fields[filter_term]
+            except KeyError:
+                raise FilterParsingError(f"term '{filter_term}' is not supported")
+
+        _validate_arg(rules, allowed_type=dict)
         op, args = next(iter(rules.items()))
+
         if op in ["or", "and"]:
+            _validate_arg(args, allowed_type=list)
             return reduce(
                 {"or": operator.or_, "and": operator.and_}[op],
-                [self._build_Q(arg, lookup_fields) for arg in args],
+                [self._build_Q(arg, lookup_fields, parent_op=op) for arg in args],
             )
         elif op == "!":
-            return ~self._build_Q(args, lookup_fields)
+            return ~self._build_Q(args, lookup_fields, parent_op=op)
         elif op == "!!":
-            return self._build_Q(args, lookup_fields)
+            return self._build_Q(args, lookup_fields, parent_op=op)
         elif op == "var":
             return Q(**{args + "__isnull": False})
         elif op in ["==", "<", ">", "<=", ">="] and len(args) == 2:
-            var = lookup_fields[args[0]["var"]]
+            var = _get_lookup_field(args[0]["var"])
             q_var = var + {"==": "", "<": "__lt", "<=": "__lte", ">": "__gt", ">=": "__gte"}[op]
             return Q(**{q_var: args[1]})
         elif op == "in":
             if isinstance(args[0], dict):
-                var = lookup_fields[args[0]["var"]]
+                var = _get_lookup_field(args[0]["var"])
                 return Q(**{var + "__in": args[1]})
             else:
-                var = lookup_fields[args[1]["var"]]
+                var = _get_lookup_field(args[1]["var"])
                 return Q(**{var + "__contains": args[0]})
         elif op == "<=" and len(args) == 3:
-            var = lookup_fields[args[1]["var"]]
+            _validate_arg(args, allowed_type=list)
+            var = _get_lookup_field(args[1]["var"])
             return Q(**{var + "__gte": args[0]}) & Q(**{var + "__lte": args[2]})
         else:
-            raise ValidationError(
-                f"filter: {op} operation with {args} arguments is not implemented"
-            )
+            raise FilterParsingError(f"operation '{op}' with arguments '{args}' is not supported")
 
     def parse_query(self, json_rules: str, *, raise_on_empty: bool = True) -> Rules:
         try:
@@ -175,8 +211,8 @@ class JsonLogicFilter(filters.BaseFilterBackend):
     ) -> QuerySet:
         try:
             q_object = self._build_Q(parsed_rules, lookup_fields)
-        except KeyError as ex:
-            raise ValidationError(f"filter: {str(ex)} term is not supported")
+        except FilterParsingError as e:
+            raise ValidationError(f"filter: {str(e)}") from e
 
         return queryset.filter(q_object)
 

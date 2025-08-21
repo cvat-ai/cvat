@@ -83,6 +83,8 @@ spec:
           {{- with concat .Values.cvat.backend.additionalVolumeMounts $localValues.additionalVolumeMounts }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
+          securityContext:
+            runAsNonRoot: true
       initContainers:
         {{- if .Values.cvat.backend.permissionFix.enabled }}
         - name: user-data-permission-fix

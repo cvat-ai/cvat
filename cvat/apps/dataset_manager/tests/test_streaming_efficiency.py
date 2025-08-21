@@ -468,7 +468,12 @@ class TestImporters(ApiTestBase):
         mock_current_job.return_value = Mock(spec=RQJob, meta=dict())
         mock_current_job.return_value.save_meta = lambda: None
 
-        with TmpDirManager.get_tmp_directory() as temp_dir:
+        from cvat.apps.engine.rq import AbstractRQMeta
+
+        with (
+            TmpDirManager.get_tmp_directory() as temp_dir,
+            mock.patch.object(AbstractRQMeta, "save", return_value=None),
+        ):
             fake_file_name = os.path.join(temp_dir, "fake.zip")
             open(fake_file_name, "w").close()
             import_dataset_as_project(fake_file_name, self.project_id, "dummy_format 1.0", True)

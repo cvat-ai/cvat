@@ -8,8 +8,7 @@ import math
 from collections.abc import Container, Sequence
 from copy import copy, deepcopy
 from itertools import chain
-from types import GeneratorType
-from typing import Generator, Optional
+from typing import Iterable, Optional
 
 import numpy as np
 from scipy.optimize import linear_sum_assignment
@@ -26,7 +25,7 @@ class AnnotationIR:
         self.dimension = dimension
         if data:
             self.tags = getattr(data, "tags", []) or data["tags"]
-            self.shapes: list | Generator = getattr(data, "shapes", []) or data["shapes"]
+            self.shapes: Iterable = getattr(data, "shapes", []) or data["shapes"]
             self.tracks = getattr(data, "tracks", []) or data["tracks"]
 
     def add_tag(self, tag):
@@ -186,7 +185,7 @@ class AnnotationIR:
 
     @property
     def is_stream(self) -> bool:
-        return isinstance(self.shapes, GeneratorType)
+        return not isinstance(self.shapes, list)
 
 
 class AnnotationManager:

@@ -693,7 +693,16 @@ class JobAnnotation:
             yield from yield_shapes_for_one_frame(shapes, elements)
 
         if streaming:
-            self.ir_data.shapes = generate_shapes()
+            assert transaction.get_connection().in_atomic_block
+            shapes = generate_shapes()
+            # starting generation to initialise db-side cursor
+            buffer = []
+            try:
+                buffer.append(next(shapes))
+            except StopIteration:
+                pass
+
+            self.ir_data.shapes = itertools.chain(buffer, shapes)
         else:
             self.ir_data.shapes = list(generate_shapes())
 

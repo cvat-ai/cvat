@@ -123,8 +123,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         resetErrors: (): void => dispatch(resetErrors()),
         resetMessages: (): void => dispatch(resetMessages()),
         loadOrganization: (): void => dispatch(activateOrganizationAsync()),
-        initInvitations: (): void => dispatch(getInvitationsAsync({ page: 1 }, true)),
-        initRequests: (): void => dispatch(getRequestsAsync({ page: 1 })),
+        initInvitations: (): void => dispatch(getInvitationsAsync({}, true)),
+        initRequests: (): void => dispatch(getRequestsAsync()),
         loadServerAPISchema: (): void => dispatch(getServerAPISchemaAsync()),
         onChangeLocation: (from: string, to: string): void => dispatch(navigationActions.changeLocation(from, to)),
     };
