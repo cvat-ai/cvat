@@ -11,8 +11,9 @@ jobs:
 
       - name: Install dependencies
         run: |
-          yarn install --frozen-lockfile
-          (cd tests && yarn install --frozen-lockfile)
+          corepack enable yarn
+          yarn install --immutable
+          (cd tests && yarn install --immutable)
 
       - name: Run checks
         run: |
