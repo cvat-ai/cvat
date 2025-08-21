@@ -584,13 +584,13 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             for db_job_id in db_job_ids:
                 with transaction.atomic():
                     annotations = dm.task.get_job_data(db_job_id, streaming=True)
-                    assert callable(annotations["shapes"])
+                    assert not isinstance(annotations["shapes"], list)
                     annotations_serializer = LabeledDataSerializer(data=dict(annotations, shapes=[]))
                     annotations_serializer.is_valid(raise_exception=True)
                     annotation_data = annotations_serializer.data
 
                     def serialize_shapes():
-                        for shape in annotations["shapes"]():
+                        for shape in annotations["shapes"]:
                             shape_serializer = LabeledShapeSerializer(data=shape)
                             shape_serializer.is_valid(raise_exception=True)
                             yield shape_serializer.data
