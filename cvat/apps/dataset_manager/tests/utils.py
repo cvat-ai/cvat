@@ -5,7 +5,7 @@
 import os
 import tempfile
 import unittest
-from types import TracebackType
+from types import GeneratorType, TracebackType
 from typing import Optional
 from unittest.mock import patch
 
@@ -136,18 +136,17 @@ def ensure_extractors_efficiency(cls):
             super()._init_shapes_from_db(streaming=streaming)
             if streaming:
                 # should only generate shapes once
-                assert callable(self.ir_data.shapes)
+                assert isinstance(self.ir_data.shapes, GeneratorType)
                 already_iterated = False
-                shapes = self.ir_data.shapes
 
-                def mock_shapes():
-                    nonlocal already_iterated
-                    assert not already_iterated
-                    for shape in shapes:
+                class SinglePass:
+                    def __iter__(_):
+                        nonlocal already_iterated
+                        assert not already_iterated
                         already_iterated = True
-                        yield shape
+                        return self.ir_data.shapes
 
-                self.ir_data.shapes = mock_shapes
+                self.ir_data.shapes = SinglePass()
             else:
                 assert isinstance(self.ir_data.shapes, list)
 

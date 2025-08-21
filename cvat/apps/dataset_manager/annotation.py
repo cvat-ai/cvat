@@ -8,7 +8,8 @@ import math
 from collections.abc import Container, Sequence
 from copy import copy, deepcopy
 from itertools import chain
-from typing import Callable, Generator, Optional
+from types import GeneratorType
+from typing import Generator, Optional
 
 import numpy as np
 from scipy.optimize import linear_sum_assignment
@@ -25,9 +26,7 @@ class AnnotationIR:
         self.dimension = dimension
         if data:
             self.tags = getattr(data, "tags", []) or data["tags"]
-            self.shapes: list | Callable[[], Generator] = (
-                getattr(data, "shapes", []) or data["shapes"]
-            )
+            self.shapes: list | Generator = getattr(data, "shapes", []) or data["shapes"]
             self.tracks = getattr(data, "tracks", []) or data["tracks"]
 
     def add_tag(self, tag):
@@ -187,7 +186,7 @@ class AnnotationIR:
 
     @property
     def is_stream(self) -> bool:
-        return callable(self.shapes)
+        return isinstance(self.shapes, GeneratorType)
 
 
 class AnnotationManager:
@@ -259,7 +258,7 @@ class AnnotationManager:
         Generates shapes ordered by frame id
         """
         assert self.data.is_stream
-        shapes = self.data.shapes()
+        shapes = self.data.shapes
 
         tracks = TrackManager(self.data.tracks, dimension=self.dimension)
 
