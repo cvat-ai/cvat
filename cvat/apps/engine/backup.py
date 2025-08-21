@@ -437,12 +437,14 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                     target_dir=target_data_dir,
                 )
             else:
-                self._write_directory(
-                    source_dir=data_dir,
-                    zip_object=zip_object,
-                    target_dir=target_data_dir,
-                    exclude_files=[self.MEDIA_MANIFEST_INDEX_FILENAME]
-                )
+                files_for_local_copy = [self._db_data.get_manifest_path()]
+                media_files_to_download = []
+                for im in self._db_data.images.all():
+                    local_path = os.path.join(data_dir, im.path)
+                    if os.path.exists(local_path):
+                        files_for_local_copy.append(local_path)
+                    else:
+                        media_files_to_download.append(im.path)
 
                 media_files_to_download = [
                     im.path
@@ -463,6 +465,13 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                             ],
                             target_dir=target_data_dir,
                         )
+
+                self._write_files(
+                    source_dir=data_dir,
+                    zip_object=zip_object,
+                    files= files_for_local_copy,
+                    target_dir=target_data_dir,
+                )
         else:
             raise NotImplementedError
 
