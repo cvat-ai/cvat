@@ -116,7 +116,9 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
                 'rc-virtual-list',
             ];
             const hasKeepClass = keepClasses.some((cls) => target.classList.contains(cls) || target.closest(`.${cls}`));
-            if (hasKeepClass) return;
+            if (hasKeepClass) {
+                return;
+            }
 
             const modal = document.querySelector('.ant-modal');
             if (modal && (modal as HTMLElement).offsetParent !== null) return;
@@ -202,18 +204,22 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
                 }
 
                 // Watch for click on menu inside the card
-                if (event) {
+                // Consider only selected items, if menu inside not selected card, selection will be reset
+                if (event && isSelected) {
                     const keepParentClasses = [
                         'cvat-actions-menu-button',
                         'ant-dropdown-menu',
                         'ant-select-selector',
                     ];
+
                     let hasAllowedParentClass = false;
                     let parent = (event.target as HTMLElement);
                     let depth = 0;
+
                     const hasParentClass = (element: HTMLElement | null): boolean => (
                         !!element && keepParentClasses.some((cls) => element.classList.contains(cls))
                     );
+
                     while (parent && depth < 5) {
                         if (hasParentClass(parent)) {
                             hasAllowedParentClass = true;
@@ -226,7 +232,10 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
                         }
                         depth += 1;
                     }
-                    if (hasAllowedParentClass) return true;
+
+                    if (hasAllowedParentClass) {
+                        return true;
+                    }
                 }
 
                 // Regular click: reset selection

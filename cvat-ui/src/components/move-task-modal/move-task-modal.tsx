@@ -27,7 +27,7 @@ const core = getCore();
 function MoveTaskModal({
     onUpdateTask,
 }: {
-    onUpdateTask?: (task: Task) => Promise<void>,
+    onUpdateTask?: (task: Task) => Promise<Task>;
 }): JSX.Element {
     const dispatch = useDispatch();
     const visible = useSelector((state: CombinedState) => state.tasks.moveTask.modalVisible);
