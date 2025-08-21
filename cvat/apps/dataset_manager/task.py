@@ -693,7 +693,7 @@ class JobAnnotation:
             yield from yield_shapes_for_one_frame(shapes, elements)
 
         if streaming:
-            self.ir_data.shapes = generate_shapes
+            self.ir_data.shapes = generate_shapes()
         else:
             self.ir_data.shapes = list(generate_shapes())
 
