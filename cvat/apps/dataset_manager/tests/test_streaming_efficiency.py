@@ -120,11 +120,11 @@ class TestExtractors(TestCase):
             for index, (item_id, subset) in enumerate(item_ids)
         }
 
-        _shape_generator_called_number = 0
+        _shape_generator_was_iterated = False
 
         def shape_generator():
-            nonlocal _shape_generator_called_number
-            _shape_generator_called_number += 1
+            nonlocal _shape_generator_was_iterated
+            _shape_generator_was_iterated = True
             yield dict(
                 frame=0,
                 id=0,
@@ -137,13 +137,13 @@ class TestExtractors(TestCase):
                 attributes={},
             )
 
-        def shape_generator_called_number():
-            return _shape_generator_called_number
+        def shape_generator_was_iterated():
+            return _shape_generator_was_iterated
 
         instance_data._annotation_ir = AnnotationIR(dimension="2d")
-        instance_data._annotation_ir.shapes = shape_generator
+        instance_data._annotation_ir.shapes = shape_generator()
 
-        return instance_data, shape_generator_called_number
+        return instance_data, shape_generator_was_iterated
 
     def _make_mock_instance_data(self, data_cls, item_ids):
         instance_data = MagicMock(spec_set=data_cls)
@@ -209,9 +209,7 @@ class TestExtractors(TestCase):
                 extractor_cls = self._make_counting_data_extractor_cls(extractor_cls)
 
                 if data_cls is JobData:
-                    instance_data, shape_generator_called_number = self._make_mock_job_data(
-                        item_ids
-                    )
+                    instance_data, shape_generator_was_iterated = self._make_mock_job_data(item_ids)
                     with extractor_cls(instance_data=instance_data) as extractor:
                         dataset = StreamDataset.from_extractors(extractor, env=dm_env)
 
@@ -222,25 +220,27 @@ class TestExtractors(TestCase):
                             subset_dataset = dataset.get_subset(subset).as_dataset()
                             len(subset_dataset)
                             list(subset_dataset.subsets())
-                        assert shape_generator_called_number() == 0
+                        assert not shape_generator_was_iterated()
 
                         # does not generate shapes to iterate items
                         assert len(list(dataset)) == len(item_ids)
-                        assert shape_generator_called_number() == 0
+                        assert not shape_generator_was_iterated()
 
                         # does not generate shapes to iterate subset items
                         for subset in dataset.subsets():
                             subset_dataset = dataset.get_subset(subset).as_dataset()
                             list(subset_dataset)
-                        assert shape_generator_called_number() == 0
+                        assert not shape_generator_was_iterated()
 
                         # generates shapes only when annotations are accessed
-                        list(item.annotations for item in dataset)
-                        assert shape_generator_called_number() == 1
+                        annotations = list(item.annotations for item in dataset)
+                        assert any(annotations), annotations
+                        assert shape_generator_was_iterated()
 
                         # does not keep shapes or annotations in memory
-                        list(item.annotations for item in dataset)
-                        assert shape_generator_called_number() == 2
+                        # annotations can be accessed only once
+                        annotations = list(item.annotations for item in dataset)
+                        assert not any(annotations), annotations
                 else:
                     with extractor_cls(instance_data=instance_data) as extractor:
                         dataset = StreamDataset.from_extractors(extractor, env=dm_env)
