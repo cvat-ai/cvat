@@ -446,12 +446,6 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                     else:
                         media_files_to_download.append(im.path)
 
-                media_files_to_download = [
-                    im.path
-                    for im in self._db_data.images.all()
-                    if not os.path.exists(os.path.join(data_dir, im.path))
-                ]
-
                 if media_files_to_download:
                     cloud_storage_instance = db_storage_to_storage_instance(self._db_data.cloud_storage)
                     with tempfile.TemporaryDirectory() as tmp_dir:
