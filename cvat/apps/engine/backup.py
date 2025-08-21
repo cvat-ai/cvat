@@ -463,7 +463,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 self._write_files(
                     source_dir=data_dir,
                     zip_object=zip_object,
-                    files= files_for_local_copy,
+                    files=files_for_local_copy,
                     target_dir=target_data_dir,
                 )
         else:
