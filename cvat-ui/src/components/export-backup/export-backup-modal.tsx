@@ -4,7 +4,7 @@
 
 import './styles.scss';
 import React, { useState, useEffect, useCallback } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector, useDispatch, shallowEqual } from 'react-redux';
 import { useHistory } from 'react-router';
 import Modal from 'antd/lib/modal';
 import Notification from 'antd/lib/notification';
@@ -58,25 +58,30 @@ function ExportBackupModal(): JSX.Element {
     const [lightweight, setLightweight] = useState(true);
     const [nameTemplate, setNameTemplate] = useState('backup_task_{{id}}');
 
-    const instanceT = useSelector((state: CombinedState) => state.export.instanceType);
-    const selectedIds = useSelector((state: CombinedState) => {
-        if (instanceT === 'project') {
-            return state.projects.selected;
+    const {
+        selectedIds,
+        allTasks,
+        allProjects,
+        instance,
+    } = useSelector((state: CombinedState) => {
+        const stateInstanceType = state.export.instanceType;
+        let localSelectedIds: number[] = [];
+        if (stateInstanceType === 'project') {
+            localSelectedIds = state.projects.selected;
+        } else if (stateInstanceType === 'task') {
+            localSelectedIds = state.tasks.selected;
         }
-        if (instanceT === 'task') {
-            return state.tasks.selected;
+        let modalInstance: Exclude<ProjectOrTaskOrJob, Job> | null = null;
+        if (stateInstanceType) {
+            modalInstance = state.export[`${stateInstanceType}s` as 'projects' | 'tasks']?.backup?.modalInstance ?? null;
         }
-        return [];
-    });
-    const allTasks = useSelector((state: CombinedState) => state.tasks.current);
-    const allProjects = useSelector((state: CombinedState) => state.projects.current);
-
-    const instance = useSelector((state: CombinedState) => {
-        if (!instanceT) {
-            return null;
-        }
-        return state.export[`${instanceT}s` as 'projects' | 'tasks']?.backup?.modalInstance ?? null;
-    });
+        return {
+            selectedIds: localSelectedIds,
+            allTasks: state.tasks.current,
+            allProjects: state.projects.current,
+            instance: modalInstance,
+        };
+    }, shallowEqual);
 
     const isBulkMode = selectedIds.length > 1;
 

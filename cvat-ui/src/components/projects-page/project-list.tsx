@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector, useDispatch, shallowEqual } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
 
@@ -17,11 +17,19 @@ import ProjectItem from './project-item';
 
 export default function ProjectListComponent(): JSX.Element {
     const dispatch = useDispatch();
-    const projectsCount = useSelector((state: CombinedState) => state.projects.count);
-    const projects = useSelector((state: CombinedState) => state.projects.current);
-    const deletingProjects = useSelector((state: CombinedState) => state.projects.activities.deletes);
-    const gettingQuery = useSelector((state: CombinedState) => state.projects.gettingQuery);
-    const tasksQuery = useSelector((state: CombinedState) => state.projects.tasksGettingQuery);
+    const {
+        projectsCount,
+        projects,
+        deletingProjects,
+        gettingQuery,
+        tasksQuery,
+    } = useSelector((state: CombinedState) => ({
+        projectsCount: state.projects.count,
+        projects: state.projects.current,
+        deletingProjects: state.projects.activities.deletes,
+        gettingQuery: state.projects.gettingQuery,
+        tasksQuery: state.projects.tasksGettingQuery,
+    }), shallowEqual);
     const { page, pageSize } = gettingQuery;
 
     const changePage = useCallback((_page: number, _pageSize: number) => {
