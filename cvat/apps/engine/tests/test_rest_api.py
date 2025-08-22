@@ -1887,6 +1887,10 @@ class ProjectCloudBackupAPINoStaticChunksTestCase(ProjectBackupAPITestCase, _Clo
         cls._create_media()
         cls._create_projects()
 
+        if cls.MAKE_LIGHTWEIGHT_BACKUP or settings.MEDIA_CACHE_ALLOW_STATIC_CACHE:
+            # should not load anything from CS anymore
+            cls.mock_aws._download_fileobj_to_stream = None
+
     @classmethod
     def tearDownClass(cls):
         cls._stop_aws_patch()
@@ -1971,6 +1975,12 @@ class ProjectCloudBackupAPIStaticChunksTestCase(ProjectCloudBackupAPINoStaticChu
 
 
 class ProjectCloudBackupLightWeightTestCase(ProjectCloudBackupAPINoStaticChunksTestCase):
+    MAKE_LIGHTWEIGHT_BACKUP = True
+
+
+class ProjectCloudBackupAPIStaticChunksLightWeightTestCase(
+    ProjectCloudBackupAPIStaticChunksTestCase
+):
     MAKE_LIGHTWEIGHT_BACKUP = True
 
 
