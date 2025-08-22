@@ -155,7 +155,7 @@ class EventWithExceptionInfo extends Event {
         }
     }
 
-    public dump(): any {
+    public dump(): SerializedEvent {
         const body = super.dump();
         const client = detect();
         body.payload = JSON.stringify({

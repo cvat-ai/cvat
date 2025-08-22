@@ -4,10 +4,19 @@
 // SPDX-License-Identifier: MIT
 
 import JSZip from 'jszip';
+import { DimensionType } from './cvat-data';
 
-onmessage = (e) => {
+interface UnzipMessage {
+    start: number;
+    end: number;
+    block: ArrayBuffer;
+    dimension: DimensionType;
+    dimension2D: DimensionType;
+}
+
+onmessage = (e: MessageEvent<UnzipMessage>) => {
     let errored = false;
-    function handleError(error): void {
+    function handleError(error: unknown): void {
         try {
             if (!errored) {
                 postMessage({ error });
