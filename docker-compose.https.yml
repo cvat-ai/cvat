@@ -19,14 +19,15 @@ services:
       TRAEFIK_ENTRYPOINTS_web_HTTP_REDIRECTIONS_ENTRYPOINT_TO: websecure
       TRAEFIK_ENTRYPOINTS_web_HTTP_REDIRECTIONS_ENTRYPOINT_SCHEME: https
       TRAEFIK_ENTRYPOINTS_websecure_ADDRESS: :443
-      TRAEFIK_CERTIFICATESRESOLVERS_lets-encrypt_ACME_EMAIL: "${ACME_EMAIL:?Please set the ACME_EMAIL env variable}"
-      TRAEFIK_CERTIFICATESRESOLVERS_lets-encrypt_ACME_TLSCHALLENGE: "true"
-      TRAEFIK_CERTIFICATESRESOLVERS_lets-encrypt_ACME_STORAGE: /letsencrypt/acme.json
+     # TRAEFIK_CERTIFICATESRESOLVERS_lets-encrypt_ACME_EMAIL: "${ACME_EMAIL:?Please set the ACME_EMAIL env variable}"
+     # TRAEFIK_CERTIFICATESRESOLVERS_lets-encrypt_ACME_TLSCHALLENGE: "true"
+     # TRAEFIK_CERTIFICATESRESOLVERS_lets-encrypt_ACME_STORAGE: /letsencrypt/acme.json
     ports:
       - 80:80
       - 443:443
     volumes:
-      - cvat_letsencrypt:/letsencrypt
+      - ./certs:/certs
+      - ./tls.yml:/etc/traefik/rules/tls.yml
 
-volumes:
-  cvat_letsencrypt:
+#volumes:
+#  cvat_letsencrypt:

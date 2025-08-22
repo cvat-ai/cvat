@@ -3,7 +3,7 @@ CUSTOM_CVAT_NAME=my-cvat
 
 # this will enable CVAT-UI to communicate with backend
 # and allows proper CSRF Trusted origin. Without this you won't be able to visit admin page or use ML backend
-export CVAT_HOST=stinger.ad.ujv.cz
+export CVAT_HOST=stinger.cvrez.cz
 
 echo "Using CVAT_HOST=$CVAT_HOST"
 
