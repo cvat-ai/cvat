@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
-/// <reference types="../../support/index.d.ts" />
 
 import { defaultTaskSpec } from '../../support/default-specs';
 
@@ -56,6 +55,11 @@ context('Bulk actions in UI', () => {
         });
         return cy.get('.ant-dropdown');
     }
+    function assignToAdmin() {
+        cy.contains(`Assignee (${nobjs})`).click();
+        cy.get('.cvat-user-search-field').type('admin', { delay: 0 }); // all at once
+        return cy.get('.cvat-user-search-field').type('{enter}');
+    }
     before(() => {
         cy.visit('/auth/login');
         cy.headlessLogin();
@@ -94,22 +98,17 @@ context('Bulk actions in UI', () => {
                     .should('exist')
                     .its('length')
                     .should('eq', nobjs);
-                cy.get('.cvat-resource-deselect-button')
-                    .should('be.visible')
-                    .and('have.text', 'Deselect');
                 cy.get('.cvat-resource-selection-count')
                     .should('be.visible')
                     .and('have.text', `Selected: ${nobjs}`);
+                cy.get('.cvat-resource-deselect-button')
+                    .should('be.visible')
+                    .and('have.text', 'Deselect').click();
             });
 
             it('Bulk-change assignees', () => {
-                cy.get('.cvat-item-selected').first().within(() => {
-                    cy.get('.cvat-actions-menu-button').click();
-                });
-                cy.get('.ant-dropdown').within(() => {
-                    cy.contains(`Assignee (${nobjs})`).click();
-                    cy.get('.cvat-user-search-field').type('admin', { delay: 0 }); // type all at once
-                    cy.get('.cvat-user-search-field').type('{enter}');
+                getBulkActionsMenu().within(() => {
+                    assignToAdmin();
                 });
                 cy.get('.cvat-bulk-progress-wrapper').should('be.visible');
 
@@ -125,9 +124,7 @@ context('Bulk actions in UI', () => {
 
             it('Bulk-change assignees', () => {
                 getBulkActionsMenu().within(() => {
-                    cy.contains(`Assignee (${nobjs})`).click();
-                    cy.get('.cvat-user-search-field').type('admin', { delay: 0 }); // all at once
-                    cy.get('.cvat-user-search-field').type('{enter}');
+                    assignToAdmin();
                 });
                 cy.get('.cvat-bulk-progress-wrapper').should('be.visible');
 
