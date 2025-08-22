@@ -4,7 +4,7 @@
 
 import './styles.scss';
 import React, { useCallback, useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector, shallowEqual } from 'react-redux';
 import {
     useHistory, useRouteMatch,
 } from 'react-router';
@@ -30,11 +30,23 @@ interface ProjectRouteMatch {
 function WebhooksPage(): JSX.Element | null {
     const dispatch = useDispatch();
     const history = useHistory();
-    const organization = useSelector((state: CombinedState) => state.organizations.current);
-    const fetching = useSelector((state: CombinedState) => state.webhooks.fetching);
-    const totalCount = useSelector((state: CombinedState) => state.webhooks.totalCount);
-    const query = useSelector((state: CombinedState) => state.webhooks.query);
-    const bulkFetching = useSelector((state: CombinedState) => state.bulkActions.fetching);
+    const {
+        organization,
+        fetching,
+        totalCount,
+        query,
+        bulkFetching,
+        allWebhookIds,
+        selectedCount,
+    } = useSelector((state: CombinedState) => ({
+        organization: state.organizations.current,
+        fetching: state.webhooks.fetching,
+        totalCount: state.webhooks.totalCount,
+        query: state.webhooks.query,
+        bulkFetching: state.bulkActions.fetching,
+        allWebhookIds: state.webhooks.current.map((w) => w.id),
+        selectedCount: state.webhooks.selected.length,
+    }), shallowEqual);
 
     const projectsMatch = useRouteMatch<ProjectRouteMatch>({ path: '/projects/:id/webhooks' });
 
@@ -75,8 +87,6 @@ function WebhooksPage(): JSX.Element | null {
         });
     }, [query]);
 
-    const allWebhookIds = useSelector((state: CombinedState) => state.webhooks.current.map((w) => w.id));
-    const selectedCount = useSelector((state: CombinedState) => state.webhooks.selected.length);
     const onSelectAll = useCallback(() => {
         dispatch(selectionActions.selectResources(allWebhookIds, SelectedResourceType.WEBHOOKS));
     }, [allWebhookIds]);

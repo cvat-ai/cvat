@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector, shallowEqual } from 'react-redux';
 import React, { useEffect, useState, useCallback } from 'react';
 import { useHistory } from 'react-router';
 import Spin from 'antd/lib/spin';
@@ -39,10 +39,12 @@ function TasksPageComponent(props: Readonly<Props>): JSX.Element {
     const history = useHistory();
     const [isMounted, setIsMounted] = useState(false);
 
-    const allTaskIds = useSelector((state: CombinedState) => state.tasks.current.map((t) => t.id));
-    const deletedTasks = useSelector((state: CombinedState) => state.tasks.activities.deletes);
+    const { allTaskIds, deletedTasks, selectedCount } = useSelector((state: CombinedState) => ({
+        allTaskIds: state.tasks.current.map((t) => t.id),
+        deletedTasks: state.tasks.activities.deletes,
+        selectedCount: state.tasks.selected.length,
+    }), shallowEqual);
     const selectableTaskIds = allTaskIds.filter((id) => !deletedTasks[id]);
-    const selectedCount = useSelector((state: CombinedState) => state.tasks.selected.length);
     const onSelectAll = useCallback(() => {
         dispatch(selectionActions.selectResources(selectableTaskIds, SelectedResourceType.TASKS));
     }, [dispatch, selectableTaskIds]);
