@@ -645,10 +645,9 @@ with ApiClient(
 
 ### Sending custom requests
 
-In some cases, you might need to send a custom request while using the `ApiClient`.
+Sometimes you might need sending a custom request while using the `ApiClient`.
 Typically, it's desirable to make this request using the same configuration
 and authentication parameters as regular requests sent via the `ApiClient` instance.
-
 One particularly useful example for this is dataset export. When exporting a dataset,
 you receive a download URL from the server after the file is prepared
 (see example in [receiving data](#receiving-data)). This URL requires authentication,
@@ -656,8 +655,10 @@ but it can't be made via the regular `ApiClient` endpoint methods.
 
 There are several options to make such a custom request via an `ApiClient` instance:
 - use `api_client.call_api()`
-- use `api_client.request()` or `api_client.rest_client` methods
-  together with `api_client.update_params_for_auth()`
+- use `api_client.request()`
+
+Alternatively, it's also possible to make a request using a custom backend for requests, while
+keeping the existing authentication of the `ApiClient`.
 
 {{< tabpane text=true >}}
 
@@ -686,10 +687,11 @@ with ApiClient(...) as api_client:
 
 {{% tab header="Using api_client.request()" %}}
 
-This option provides a lower-level interface and allows more customization. It can be useful if
-you need an API similar to what the famous `requests` library provides or want to send the request
-with a custom backend. In this case you will need to get the request headers from the `ApiClient`
-instance to preserve existing authentication.
+This option provides a low-level interface and allows more customization. It can be useful
+if you need to reuse the existing connection configuration of the `ApiClient`
+instance, such as connection pool, timeouts, etc. In order to keep the existing
+authentication parameters of the `ApiClient` instance, you
+can use the functions `api_client.get_common_headers()` and `api_client.update_params_for_auth()`.
 
 ```python
 with ApiClient(...) as api_client:
@@ -704,6 +706,27 @@ with ApiClient(...) as api_client:
     )
 
     # process response.data ...
+```
+
+{{% /tab %}}
+
+{{% tab header="Using a custom backend" %}}
+
+It is possible make a custom request using your own backend - for example, using the `requests`
+library. In order to keep the existing authentication parameters of the `ApiClient` instance, you
+can use the functions `api_client.get_common_headers()` and `api_client.update_params_for_auth()`.
+
+```python
+import requests
+
+with ApiClient(...) as api_client:
+    headers = api_client.get_common_headers()
+    query_params = []
+    api_client.update_params_for_auth(headers=headers, queries=query_params, method="GET")
+
+    response = requests.get("<custom URL>", headers=headers)
+
+    # process the response ...
 ```
 
 {{% /tab %}}
