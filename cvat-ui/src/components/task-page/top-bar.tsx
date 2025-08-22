@@ -15,7 +15,7 @@ import { Task } from 'cvat-core-wrapper';
 
 interface DetailsComponentProps {
     taskInstance: Task;
-    onUpdateTask: (task: Task) => Promise<void>;
+    onUpdateTask: (task: Task) => Promise<Task>;
 }
 
 export default function DetailsComponent(props: DetailsComponentProps): JSX.Element {
