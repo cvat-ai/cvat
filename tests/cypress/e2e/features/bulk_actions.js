@@ -51,9 +51,12 @@ context('Bulk actions in UI', () => {
         ...projectSpec,
         name: stringID(i, projectName),
     });
-    function getBulkActionsMenu() {
+    function selectAll() {
         cy.get('.cvat-bulk-wrapper').should('exist').and('be.visible');
         cy.contains('Select all').click();
+    }
+    function getBulkActionsMenu() {
+        selectAll();
         cy.get('.cvat-item-selected').first().within(() => {
             cy.get('.cvat-actions-menu-button').click();
         });
@@ -113,6 +116,7 @@ context('Bulk actions in UI', () => {
                 cy.get('.cvat-resource-deselect-button')
                     .should('be.visible')
                     .and('have.text', 'Deselect').click();
+                cy.get('.cvat-item-selected').should('not.exist');
             });
 
             it('Bulk-change assignees', () => {
