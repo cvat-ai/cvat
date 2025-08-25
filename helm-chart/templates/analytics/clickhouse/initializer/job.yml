@@ -27,7 +27,7 @@ spec:
       containers:
         - name: clickhouse
           image: {{ .Values.clickhouse.image.registry }}/{{ .Values.clickhouse.image.repository }}:{{ .Values.clickhouse.image.tag }}
-          imagePullPolicy: Never
+          imagePullPolicy: IfNotPresent
           command: ["/bin/bash", "/init-scripts/init.sh"]
           volumeMounts:
             - name: init-scripts-volume
