@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import glob
 import hashlib
 import mimetypes
 import os
@@ -55,10 +54,6 @@ def is_image(media_file):
     )
 
 
-def _list_and_join(root):
-    yield from glob.iglob(os.path.join(root, "*"))
-
-
 def _prepare_context_list(files, base_dir):
     return sorted(os.path.relpath(x, base_dir) for x in filter(is_image, files))
 
@@ -99,104 +94,107 @@ def _detect_related_images_2D(image_paths: Sequence[str], root_path: str) -> Dic
     return related_images
 
 
-def _detect_related_images_3D(image_paths: Sequence[str], root_path: str) -> Dict[str, List[str]]:
+def _detect_related_images_3D(file_paths: Sequence[str], root_path: str) -> Dict[str, List[str]]:
     """
-    Possible 3D formats are:
+    Supported 3D formats:
 
+    1. KITTI RAW
+    Homepage: https://www.cvlibs.net/datasets/kitti/raw_data.php
+    Example: https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/kitti_dataset/kitti_raw
+
+    Layout:
     velodyne_points/
         data/
-            image_01.bin
-    IMAGE_00/ # any number?
+            <scene name>.bin # should be .pcd at this point
+    IMAGE_00/ # any number (00 - 03 originally)
         data/
-            image_01.png
+            <scene name>.<image ext>
+
+    2. Supervisely Point Cloud
+    Homepage: https://docs.supervisely.com/customization-and-integration/00_ann_format_navi
+    Example: https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/sly_pointcloud_dataset/ds0
 
     pointcloud/
-        00001.pcd
+        <pcd name>.pcd
     related_images/
-        00001_pcd/
-            image_01.png # or other image
+        <pcd name>_pcd/
+            <any image name>.<image ext>
 
-    Default formats:
-    - Option 1:
+    3. Custom 1
     data/
-        image.pcd
-        image.png
+        <scene name>.pcd
+        <scene name>.<image ext>
 
-    - Option 2:
+    4. Custom 2
     data/
-       image_1/
-           image_1.pcd
-           context_1.png
-           context_2.jpg
+       <pcd name>/
+           <pcd name>.pcd
+           <any image name>.<image ext>
     """
+    # There's no point in disallowing multiple layouts simultaneously, but mixing is
+    # unlikely to be encountered
 
-    related_images = {}
-    latest_dirname = ""
-    dirname_files = []
-    related_images_exist = False
-    velodyne_context_images_dirs = []
+    file_paths = [os.path.relpath(p, root_path) for p in file_paths]
 
-    for image_path in sorted(image_paths):
-        rel_image_path = os.path.relpath(image_path, root_path)
-        name = os.path.splitext(os.path.basename(image_path))[0]
-        dirname = os.path.dirname(image_path)
-        related_images_dirname = os.path.normpath(os.path.join(dirname, "..", "related_images"))
-        related_images[rel_image_path] = []
+    scenes: Dict[str, str] = {
+        os.path.splitext(p)[0]: p for p in file_paths if p.lower().endswith(".pcd")
+    }  # { scene name -> scene path }
 
-        if latest_dirname != dirname:
-            # Update some data applicable for a subset of paths (within the current dirname)
-            latest_dirname = dirname
-            related_images_exist = os.path.isdir(related_images_dirname)
-            dirname_files = list(_list_and_join(dirname))
-            velodyne_context_images_dirs = [
-                directory
-                for directory in _list_and_join(os.path.normpath(os.path.join(dirname, "..", "..")))
-                if os.path.isdir(os.path.join(directory, "data"))
-                and re.search(r"image_\d.*", directory, re.IGNORECASE)
-            ]
+    related_images: Dict[str, List[str]] = {}  # { scene_name -> [related images] }
+    for image_path in file_paths:
+        image_name, image_ext = os.path.splitext(image_path)
+        if image_ext.lower() == ".pcd":
+            continue
 
-        filtered_dirname_files = list(filter(lambda x: x != image_path, dirname_files))
-        if len(filtered_dirname_files) and os.path.basename(dirname) == name:
-            # default format (option 2)
-            related_images[rel_image_path].extend(
-                _prepare_context_list(filtered_dirname_files, root_path)
+        if image_name in scenes:
+            # Custom 1
+            related_images.setdefault(scenes[image_name], []).append(image_path)
+            continue
+
+        parsed_path = Path(image_path)
+        parents = parsed_path.parents
+        if not parents:
+            # TODO: maybe add logging
+            continue
+
+        scene_name = str(parents[0] / parents[0].name)
+        if parents and scene_name in scenes:
+            # Custom 2
+            related_images.setdefault(scenes[scene_name], []).append(image_path)
+            continue
+
+        scene_stem = parents[0].name.rsplit("_", maxsplit=1)[0]
+        if (
+            len(parents) >= 2
+            and parents[1].name == "related_images"
+            and (scene_name := str(parents[1].parent / "pointcloud" / scene_stem))
+            and scene_name in scenes
+        ):
+            # Supervisely Point Cloud
+            related_images.setdefault(scenes[scene_name], []).append(image_path)
+            continue
+
+        if (
+            len(parents) >= 2
+            and parents[0].name == "data"
+            and (re.match(r"image_\d+", parents[1].name, re.IGNORECASE))
+            and (
+                scene_name := str(parents[1].parent / "velodyne_points" / "data" / parsed_path.stem)
             )
-        else:
-            filtered_dirname_files = list(
-                filter(
-                    lambda x: os.path.splitext(os.path.basename(x))[0] == name,
-                    filtered_dirname_files,
-                )
-            )
-            if len(filtered_dirname_files):
-                # default format (option 1)
-                related_images[rel_image_path].extend(
-                    _prepare_context_list(filtered_dirname_files, root_path)
-                )
+            and scene_name in scenes
+        ):
+            # KITTI RAW
+            related_images.setdefault(scenes[scene_name], []).append(image_path)
+            continue
 
-        if related_images_exist:
-            related_images_dirname = os.path.join(
-                related_images_dirname, "_".join(os.path.basename(image_path).rsplit(".", 1))
-            )
-            if os.path.isdir(related_images_dirname):
-                related_images[rel_image_path].extend(
-                    _prepare_context_list(_list_and_join(related_images_dirname), root_path)
-                )
+        # TODO: maybe add logging for unmatched related images
 
-        if dirname.endswith(os.path.join("velodyne_points", "data")):
-            # velodynepoints format
-            for context_images_dir in velodyne_context_images_dirs:
-                context_files = _list_and_join(os.path.join(context_images_dir, "data"))
-                context_files = list(
-                    filter(
-                        lambda x: os.path.splitext(os.path.basename(x))[0] == name, context_files
-                    )
-                )
-                related_images[rel_image_path].extend(
-                    _prepare_context_list(context_files, root_path)
-                )
+    related_images = {
+        scene_path: _prepare_context_list(scene_related, "")
+        for scene_path, scene_related in related_images.items()
+        if scene_related
+    }
 
-        related_images[rel_image_path].sort()
     return related_images
 
 
