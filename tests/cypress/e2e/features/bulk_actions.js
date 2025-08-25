@@ -55,11 +55,13 @@ context('Bulk actions in UI', () => {
         });
         return cy.get('.ant-dropdown');
     }
+
     function assignToAdmin() {
         cy.contains(`Assignee (${nobjs})`).click();
         cy.get('.cvat-user-search-field').type('admin', { delay: 0 }); // all at once
         return cy.get('.cvat-user-search-field').type('{enter}');
     }
+
     before(() => {
         cy.visit('/auth/login');
         cy.headlessLogin();
