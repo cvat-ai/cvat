@@ -282,6 +282,7 @@ class TaskExportDataset:
             "filename",
             type=str,
             nargs="?",
+            default="",
             help="output file or directory (default: current directory)",
         )
         parser.add_argument(
@@ -316,10 +317,10 @@ class TaskExportDataset:
         status_check_period: int,
         include_images: bool,
     ) -> None:
-        if filename is None:
+        if not filename:
             filename = os.getcwd()
 
-        if filename[-1:] in ("/", "\\") and not os.path.exists(filename):
+        if filename.endswith((os.sep, os.altsep or os.sep)):
             os.makedirs(filename, exist_ok=True)
 
         client.tasks.retrieve(obj_id=task_id).export_dataset(
@@ -377,6 +378,7 @@ class TaskBackup:
             "filename",
             type=str,
             nargs="?",
+            default="",
             help="output file or directory (default: current directory)",
         )
         parser.add_argument(
@@ -390,10 +392,10 @@ class TaskBackup:
     def execute(
         self, client: Client, *, task_id: int, filename: str, status_check_period: int
     ) -> None:
-        if filename is None:
+        if not filename:
             filename = os.getcwd()
 
-        if filename[-1:] in ("/", "\\") and not os.path.exists(filename):
+        if filename.endswith((os.sep, os.altsep or os.sep)):
             os.makedirs(filename, exist_ok=True)
 
         client.tasks.retrieve(obj_id=task_id).download_backup(
