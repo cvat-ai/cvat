@@ -2,12 +2,15 @@
 #
 # SPDX-License-Identifier: MIT
 
+import glob
 import hashlib
 import mimetypes
 import os
 import re
 from enum import Enum
+from pathlib import Path
 from random import shuffle
+from typing import Dict, List, Sequence
 
 import cv2 as cv
 from av import VideoFrame
@@ -53,79 +56,80 @@ def is_image(media_file):
 
 
 def _list_and_join(root):
-    files = os.listdir(root)
-    for f in files:
-        yield os.path.join(root, f)
+    yield from glob.iglob(os.path.join(root, "*"))
 
 
 def _prepare_context_list(files, base_dir):
     return sorted(os.path.relpath(x, base_dir) for x in filter(is_image, files))
 
 
-# Expected 2D format is:
-# data/
-#   00001.png
-#   related_images/
-#     00001_png/
-#       context_image_1.jpeg
-#       context_image_2.png
-def _detect_related_images_2D(image_paths, root_path):
+def _detect_related_images_2D(image_paths: Sequence[str], root_path: str) -> Dict[str, List[str]]:
+    """
+    Expected 2D format is:
+
+    data/
+      00001.png
+      related_images/
+        00001_png/
+          context_image_1.jpeg
+          context_image_2.png
+    """
+
+    image_paths = (os.path.relpath(p, root_path) for p in image_paths)
+
+    regular_images = set()
     related_images = {}
-    latest_dirname = ""
-    related_images_exist = False
+    for image_path in image_paths:
+        parents = Path(image_path).parents
+        if len(parents) >= 2 and parents[1].name == "related_images":
+            regular_image_path = parents[2] / ".".join(parents[0].name.rsplit("_", maxsplit=1))
+            related_images.setdefault(str(regular_image_path), []).append(image_path)
+        else:
+            regular_images.add(image_path)
 
-    for image_path in sorted(image_paths):
-        rel_image_path = os.path.relpath(image_path, root_path)
-        dirname = os.path.dirname(image_path)
-        related_images_dirname = os.path.join(dirname, "related_images")
-        related_images[rel_image_path] = []
+    related_images = {
+        image_path: _prepare_context_list(image_related, "")
+        for image_path, image_related in related_images.items()
+        if image_related
+        if image_path in regular_images
+    }
 
-        if latest_dirname == dirname and not related_images_exist:
-            continue
-        elif latest_dirname != dirname:
-            # Update some data applicable for a subset of paths (within the current dirname)
-            latest_dirname = dirname
-            related_images_exist = os.path.isdir(related_images_dirname)
+    # TODO: maybe add logging for unmatched related images
 
-        if related_images_exist:
-            related_images_dirname = os.path.join(
-                related_images_dirname, "_".join(os.path.basename(image_path).rsplit(".", 1))
-            )
-
-            if os.path.isdir(related_images_dirname):
-                related_images[rel_image_path] = _prepare_context_list(
-                    _list_and_join(related_images_dirname), root_path
-                )
     return related_images
 
 
-# Possible 3D formats are:
-# velodyne_points/
-#     data/
-#         image_01.bin
-# IMAGE_00 # any number?
-#     data/
-#         image_01.png
-#
-# pointcloud/
-#     00001.pcd
-# related_images/
-#     00001_pcd/
-#         image_01.png # or other image
-#
-# Default formats
-# Option 1
-# data/
-#     image.pcd
-#     image.png
-#
-# Option 2
-# data/
-#    image_1/
-#        image_1.pcd
-#        context_1.png
-#        context_2.jpg
-def _detect_related_images_3D(image_paths, root_path):
+def _detect_related_images_3D(image_paths: Sequence[str], root_path: str) -> Dict[str, List[str]]:
+    """
+    Possible 3D formats are:
+
+    velodyne_points/
+        data/
+            image_01.bin
+    IMAGE_00/ # any number?
+        data/
+            image_01.png
+
+    pointcloud/
+        00001.pcd
+    related_images/
+        00001_pcd/
+            image_01.png # or other image
+
+    Default formats:
+    - Option 1:
+    data/
+        image.pcd
+        image.png
+
+    - Option 2:
+    data/
+       image_1/
+           image_1.pcd
+           context_1.png
+           context_2.jpg
+    """
+
     related_images = {}
     latest_dirname = ""
     dirname_files = []
@@ -196,26 +200,33 @@ def _detect_related_images_3D(image_paths, root_path):
     return related_images
 
 
-# This function is expected to be called only for images tasks
-# image_path is expected to be a list of absolute path to images
-# root_path is expected to be a string (dataset root)
-def detect_related_images(image_paths, root_path):
-    data_are_2d = False
-    data_are_3d = False
+def detect_related_images(image_paths: Sequence[str], root_path: str) -> Dict[str, List[str]]:
+    """
+    This function is expected to be called only for image-based tasks.
+
+    image_path is expected to be a list of absolute path to images.
+
+    root_path is expected to be a string (dataset root).
+
+    Returns: a dict {regular image path -> [related images]}
+    """
 
     # First of all need to define data type we are working with
+    data_is_2d = False
+    data_is_3d = False
     for image_path in image_paths:
         # .bin files are expected to be converted to .pcd before this code
         if os.path.splitext(image_path)[1].lower() == ".pcd":
-            data_are_3d = True
+            data_is_3d = True
         else:
-            data_are_2d = True
-    assert not (data_are_3d and data_are_2d), "Combined data types 2D and 3D are not supported"
+            data_is_2d = True
+    assert not (data_is_3d and data_is_2d), "Combined data types 2D and 3D are not supported"
 
-    if data_are_2d:
+    if data_is_2d:
         return _detect_related_images_2D(image_paths, root_path)
-    elif data_are_3d:
+    elif data_is_3d:
         return _detect_related_images_3D(image_paths, root_path)
+
     return {}
 
 

@@ -915,8 +915,8 @@ def create_thread(
 
     related_images = {}
     if isinstance(extractor, MEDIA_TYPES['image']['extractor']):
-        extractor.filter(lambda x: not re.search(r'(^|{0})related_images{0}'.format(os.sep), x))
         related_images = detect_related_images(extractor.absolute_source_paths, upload_dir)
+        extractor.filter(lambda x: not re.search(r'(^|{0})related_images{0}'.format(os.sep), x))
 
     if validate_dimension.dimension != models.DimensionType.DIM_3D and (
         (
