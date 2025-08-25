@@ -35,11 +35,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 from rq.job import JobStatus as RQJobStatus
 
 from cvat.apps.engine import models
-from cvat.apps.engine.cloud_provider import (
-    Credentials,
-    db_storage_to_storage_instance,
-    get_cloud_storage_instance,
-)
+from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.engine.exceptions import CloudStorageMissingError
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_extractors import (
@@ -596,21 +592,7 @@ class MediaCache:
                 db_cloud_storage = db_data.cloud_storage
                 if not db_cloud_storage:
                     raise CloudStorageMissingError("Task is no longer connected to cloud storage")
-                credentials = Credentials()
-                credentials.convert_from_db(
-                    {
-                        "type": db_cloud_storage.credentials_type,
-                        "value": db_cloud_storage.credentials,
-                    }
-                )
-                details = {
-                    "resource": db_cloud_storage.resource,
-                    "credentials": credentials,
-                    "specific_attributes": db_cloud_storage.get_specific_attributes(),
-                }
-                cloud_storage_instance = get_cloud_storage_instance(
-                    cloud_provider=db_cloud_storage.provider_type, **details
-                )
+                cloud_storage_instance = db_storage_to_storage_instance(db_cloud_storage)
 
                 tmp_dir = es.enter_context(tempfile.TemporaryDirectory(prefix="cvat"))
                 files_to_download = []
