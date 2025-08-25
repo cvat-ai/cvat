@@ -10,6 +10,8 @@ from contextlib import closing
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
+import urllib3
+
 from cvat_sdk.api_client.api_client import Endpoint
 from cvat_sdk.core.helpers import expect_status
 from cvat_sdk.core.progress import NullProgressReporter, ProgressReporter
@@ -26,6 +28,32 @@ class Downloader:
 
     def __init__(self, client: Client):
         self._client = client
+
+    @staticmethod
+    def _get_server_filename(response: urllib3.HTTPResponse) -> str:
+        content_disposition = next(
+            (
+                filename
+                for part in response.headers.get("Content-Disposition", "").split(";")
+                if (filename := part.strip()) and filename.startswith("filename=")
+            ),
+            None,
+        )
+
+        filename = None
+        if content_disposition:
+            filename_parts = content_disposition.split("=", maxsplit=1)
+            if len(filename_parts) == 2:
+                filename = filename_parts[1].strip('"')
+                filename = Path(filename).name
+
+        if not filename:
+            raise Exception(
+                "Can't find the output filename in the server response, "
+                "please try to specify the output filename explicitly"
+            )
+
+        return filename
 
     def download_file(
         self,
@@ -64,13 +92,7 @@ class Downloader:
                 file_size = None
 
             if output_path.is_dir():
-                content_disposition = next(
-                    part.strip()
-                    for part in response.headers.get("Content-Disposition", "").split(";")
-                    if part.strip().startswith("filename=")
-                )
-                output_path /= Path(content_disposition.split("=", maxsplit=1)[1].strip('"')).name
-
+                output_path /= self._get_server_filename(response)
                 if output_path.exists():
                     raise FileExistsError(output_path)
 
