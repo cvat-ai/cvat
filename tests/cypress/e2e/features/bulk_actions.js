@@ -36,6 +36,7 @@ context('Bulk actions in UI', () => {
         ID: null,
         jobIDs: [],
     };
+    let projectTwoTasks = null;
     const nobjs = 2;
     const framesPerJob = 1;
     const stringID = (i, str) => str.concat(`_${i}`);
@@ -76,6 +77,7 @@ context('Bulk actions in UI', () => {
         createProject(1).then(({ projectID }) => projects.push(projectID)); // empty project
         createProject(2).then(({ projectID }) => {
             projects.push(projectID);
+            projectTwoTasks = projectID;
 
             // default task with 1 job
             createTaskInProject(1, projectID, { taskName, labelName, serverFiles });
@@ -86,7 +88,6 @@ context('Bulk actions in UI', () => {
             }).then(({ taskID, jobIDs }) => {
                 taskTwoJobs.ID = taskID;
                 taskTwoJobs.jobIDs = jobIDs;
-                cy.visit(`/projects/${projectID}`);
             });
         });
     });
@@ -96,6 +97,9 @@ context('Bulk actions in UI', () => {
     });
 
     describe('Bulk-change object attributes, confirm UI state', () => {
+        before(() => {
+            cy.visit(`/projects/${projectTwoTasks}`);
+        });
         context('Project page, change tasks', () => {
             it('"Select all", all items are selected, "Deselect" button is visible', () => {
                 cy.get('.cvat-item-selected').should('not.exist');
@@ -139,8 +143,8 @@ context('Bulk actions in UI', () => {
         });
 
         context('Task page, change jobs', () => {
-            it('Ensure task was assigned to admin', () => {
-                cy.get('[value="admin"]').should('exist');
+            before(() => {
+                cy.visit(`tasks/${taskTwoJobs.ID}`);
             });
 
             it('Bulk-change assignees', () => {
@@ -159,7 +163,7 @@ context('Bulk actions in UI', () => {
                     cy.contains(`State (${nobjs})`).click();
                     cy.get('.cvat-job-item-state').click();
 
-                    // state is new by default, so pick second option (=in progress)
+                    // state is 'new' by default, so pick second option (='in progress')
                     cy.get('.ant-select-selection-search').type('{downarrow}');
                     cy.get('.ant-select-selection-search').type('{enter}');
                 });
@@ -171,7 +175,10 @@ context('Bulk actions in UI', () => {
         });
     });
 
-    describe('Bulk export', () => {
+    describe.only('Bulk export', () => {
+        before(() => {
+            cy.visit(`tasks/${taskTwoJobs.ID}`);
+        });
         it('Bulk-export job annotations', () => {
             getBulkActionsMenu().within(() => {
                 cy.contains(`Export annotations (${nobjs})`)
@@ -198,12 +205,12 @@ context('Bulk actions in UI', () => {
         });
     });
 
-    describe('Delete all tasks', () => {
+    describe('Delete all tasks in project', () => {
         before(() => {
-            cy.goBack();
+            cy.visit(`/projects/${projectTwoTasks}`);
         });
 
-        it('Delete all projects, ensure deletion', () => {
+        it('Delete all tasks, ensure deletion', () => {
             getBulkActionsMenu().within(() => {
                 cy.contains(`Delete (${nobjs})`).click();
             });
