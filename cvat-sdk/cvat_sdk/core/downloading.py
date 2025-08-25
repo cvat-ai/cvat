@@ -45,7 +45,7 @@ class Downloader:
 
         CHUNK_SIZE = 10 * 2**20
 
-        if output_path.exists() and not output_path.is_dir():
+        if output_path.is_file():
             raise FileExistsError(output_path)
 
         if pbar is None:
@@ -70,6 +70,9 @@ class Downloader:
                     if part.strip().startswith("filename=")
                 )
                 output_path /= Path(content_disposition.split("=", maxsplit=1)[1].strip('"')).name
+
+                if output_path.exists():
+                    raise FileExistsError(output_path)
 
             with (
                 atomic_writer(output_path, "wb") as fd,
