@@ -32,6 +32,10 @@ context('Bulk actions in UI', () => {
         }],
     };
     const projects = [];
+    const taskTwoJobs = {
+        ID: null,
+        jobIDs: [],
+    };
     const nobjs = 2;
     const framesPerJob = 1;
     const stringID = (i, str) => str.concat(`_${i}`);
@@ -68,16 +72,19 @@ context('Bulk actions in UI', () => {
 
         createProject(1).then(({ projectID }) => projects.push(projectID)); // empty project
         createProject(2).then(({ projectID }) => {
+            projects.push(projectID);
+
             // default task with 1 job
             createTaskInProject(1, projectID, { taskName, labelName, serverFiles });
 
             // default task with 2 jobs
             createTaskInProject(2, projectID, {
                 taskName, labelName, serverFiles, segmentSize: framesPerJob,
-            }).then(() => {
+            }).then(({ taskID, jobIDs }) => {
+                taskTwoJobs.ID = taskID;
+                taskTwoJobs.jobIDs = jobIDs;
                 cy.visit(`/projects/${projectID}`);
             });
-            projects.push(projectID);
         });
     });
 
@@ -115,7 +122,15 @@ context('Bulk actions in UI', () => {
                 cy.get('.cvat-bulk-progress-wrapper').should('be.visible');
 
                 // Navigate to task with 2 jobs
-                cy.get('.cvat-item-open-task-button').first().click();
+                cy.visit(`tasks/${taskTwoJobs.ID}`);
+                cy.get('.cvat-spinner').should('not.exist');
+                cy.get('.cvat-task-details').should('exist');
+
+                // Ensure task was assigned to admin
+                cy.get('.cvat-user-search-field').first()
+                    .should('exist').within(() => {
+                        cy.get('[value="admin"]');
+                    });
             });
         });
 
