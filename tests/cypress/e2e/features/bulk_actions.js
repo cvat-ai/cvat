@@ -46,6 +46,7 @@ context('Bulk actions in UI', () => {
             projectID,
             taskName: stringID(i, taskParams.taskName),
         });
+        delete taskSpec.labels; // can only have labels or project_id
         return cy.headlessCreateTask(taskSpec, dataSpec, extras);
     };
     const createProject = (i) => cy.headlessCreateProject({
@@ -94,6 +95,7 @@ context('Bulk actions in UI', () => {
 
     after(() => {
         projects.forEach(cy.headlessDeleteProject);
+        cy.headlessLogout();
     });
 
     describe('Bulk-change object attributes, confirm UI state', () => {
@@ -175,7 +177,7 @@ context('Bulk actions in UI', () => {
         });
     });
 
-    describe.only('Bulk export', () => {
+    describe('Bulk export', () => {
         before(() => {
             cy.visit(`tasks/${taskTwoJobs.ID}`);
         });

@@ -22,10 +22,6 @@ function defaultTaskSpec({
         source_storage: { location: 'local' },
         target_storage: { location: 'local' },
     };
-    if (projectID && taskSpec.labels) {
-        delete taskSpec.labels;
-        // can only have labels in one place
-    }
 
     if (segmentSize) {
         taskSpec.segment_size = segmentSize;
