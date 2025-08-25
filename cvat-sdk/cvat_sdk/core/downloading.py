@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, Optional
 from cvat_sdk.api_client.api_client import Endpoint
 from cvat_sdk.core.helpers import expect_status
 from cvat_sdk.core.progress import NullProgressReporter, ProgressReporter
-from cvat_sdk.core.utils import atomic_writer, normalize_filename
+from cvat_sdk.core.utils import atomic_writer
 
 if TYPE_CHECKING:
     from cvat_sdk.core.client import Client
@@ -67,10 +67,7 @@ class Downloader:
                     for part in response.headers.get("Content-Disposition", "").split(";")
                     if part.strip().startswith("filename=")
                 )
-
-                filename = Path(content_disposition.split("=", maxsplit=1)[1].strip('"'))
-                filename = filename.with_stem(normalize_filename(filename.stem))
-                output_path /= filename.name
+                output_path /= Path(content_disposition.split("=", maxsplit=1)[1].strip('"')).name
 
             with (
                 atomic_writer(output_path, "wb") as fd,

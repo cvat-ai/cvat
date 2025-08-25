@@ -7,8 +7,6 @@ from __future__ import annotations
 import contextlib
 import itertools
 import os
-import re
-import unicodedata
 from collections.abc import Generator, Sequence
 from typing import IO, Any, BinaryIO, Literal, TextIO, Union, overload
 
@@ -70,17 +68,3 @@ def atomic_writer(
     except:
         os.unlink(tmp_path)
         raise
-
-
-def normalize_filename(s: str) -> str:
-    # adapted from
-    # https://docs.djangoproject.com/en/2.1/_modules/django/utils/text/#slugify
-    """
-    Normalizes string, converts to lowercase, removes non-alpha characters,
-    and converts spaces to hyphens. Preserves dots.
-    """
-    s = unicodedata.normalize("NFKD", s).encode("ascii", "ignore")
-    s = s.decode()
-    s = re.sub(r"[^\w\s\-\.]", "", s).strip().lower()
-    s = re.sub(r"[-\s]+", "-", s)
-    return s
