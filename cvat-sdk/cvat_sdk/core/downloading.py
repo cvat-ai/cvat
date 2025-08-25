@@ -39,6 +39,8 @@ class Downloader:
         Downloads the file from url into a temporary file, then renames it to the requested name.
         If output_path is a directory, saves the file into the directory with
         the server-defined name.
+
+        Returns: path to the downloaded file
         """
 
         CHUNK_SIZE = 10 * 2**20
@@ -135,7 +137,7 @@ class Downloader:
         query_params: Optional[dict[str, Any]] = None,
         pbar: Optional[ProgressReporter] = None,
         status_check_period: Optional[int] = None,
-    ):
+    ) -> Path:
         client = self._client
 
         if status_check_period is None:
@@ -149,4 +151,4 @@ class Downloader:
         )
 
         assert export_request.result_url, "Result url was not found in server response"
-        self.download_file(export_request.result_url, output_path=filename, pbar=pbar)
+        return self.download_file(export_request.result_url, output_path=filename, pbar=pbar)
