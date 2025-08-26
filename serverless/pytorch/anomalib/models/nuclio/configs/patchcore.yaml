@@ -1,0 +1,10 @@
+model:
+  class_path: anomalib.models.Patchcore
+  init_args:
+    backbone: wide_resnet50_2
+    layers:
+      - layer2
+      - layer3
+    pre_trained: true
+    coreset_sampling_ratio: 0.1
+    num_neighbors: 9
