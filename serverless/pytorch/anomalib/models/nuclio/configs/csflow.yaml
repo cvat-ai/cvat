@@ -1,0 +1,16 @@
+model:
+  class_path: anomalib.models.Csflow
+  init_args:
+    cross_conv_hidden_channels: 1024
+    n_coupling_blocks: 4
+    clamp: 3
+    num_channels: 3
+
+trainer:
+  max_epochs: 240
+  callbacks:
+    - class_path: lightning.pytorch.callbacks.EarlyStopping
+      init_args:
+        patience: 3
+        monitor: pixel_AUROC
+        mode: max

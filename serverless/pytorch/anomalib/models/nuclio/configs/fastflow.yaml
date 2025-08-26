@@ -1,0 +1,17 @@
+model:
+  class_path: anomalib.models.Fastflow
+  init_args:
+    backbone: resnet18
+    pre_trained: true
+    flow_steps: 8
+    conv3x3_only: false
+    hidden_ratio: 1.0
+
+trainer:
+  max_epochs: 500
+  callbacks:
+    - class_path: lightning.pytorch.callbacks.EarlyStopping
+      init_args:
+        patience: 3
+        monitor: pixel_AUROC
+        mode: max

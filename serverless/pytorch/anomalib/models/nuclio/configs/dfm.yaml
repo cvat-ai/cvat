@@ -1,0 +1,9 @@
+model:
+  class_path: anomalib.models.Dfm
+  init_args:
+    backbone: resnet50
+    layer: layer3
+    pre_trained: true
+    pooling_kernel_size: 4
+    pca_level: 0.97
+    score_type: fre
