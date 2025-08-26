@@ -969,7 +969,12 @@ class ZipCompressedChunkWriter(ZipChunkWriter):
             for idx, (image, path, _) in enumerate(images):
                 if self._dimension == DimensionType.DIM_2D:
                     if compress_frames:
-                        w, h, image_buf = self._compress_image(image, self._image_quality)
+                        try:
+                            w, h, image_buf = self._compress_image(image, self._image_quality)
+                        except Exception as ex:
+                            raise RuntimeError(
+                                f"Exception occurred during compression of image {os.path.basename(path)!r}"
+                            ) from ex
                     else:
                         assert isinstance(image, io.IOBase)
                         image_buf = io.BytesIO(image.read())
