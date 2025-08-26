@@ -2,23 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 import APITasks from '../../libs/api/tasks.js';
-
-function randomString(length) {
-    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    return Array.from({ length }, () => chars.charAt(Math.floor(Math.random() * chars.length))).join('');
-}
-
-function randomInt(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-function randomEnum(values) {
-    return values[Math.floor(Math.random() * values.length)];
-}
-
-function randomBool() {
-    return Math.random() > 0.5
-}
+import APITus from '../../libs/api/tus.js';
+import { randomBool, randomEnum, randomInt, randomString } from '../../utils/random.js'
 
 const BUG_TRACKER_FAKE_URL = "https://jira.example.com/browse/PROJ-123"
 const LABEL_TYPES = ['rectangle', 'polygon', 'polyline', 'points', 'cuboid'];
@@ -76,12 +61,12 @@ export function updateRandomTask(authKey, taskId, projectId, assigneeId) {
             : undefined,
         labels: randomBool()
             ? [
-                  {
-                      name: `label_${randomString(5)}`,
-                      type: randomEnum(LABEL_TYPES),
-                      attributes: [],
-                  },
-              ]
+                {
+                    name: `label_${randomString(5)}`,
+                    type: randomEnum(LABEL_TYPES),
+                    attributes: [],
+                },
+            ]
             : undefined,
         subset: randomString(10),
     };
@@ -96,4 +81,13 @@ export function updateRandomTask(authKey, taskId, projectId, assigneeId) {
     return APITasks.patchTask(authKey, taskId, filteredUpdates);
 }
 
-export default { createRandomTask, updateRandomTask }
+function addRandomData(authKey, taskId, binaryData, filesCount) {
+    let filesData = [];
+    for (var i = 0; i < filesCount; i++) {
+        filesData[i] = { name: randomString(10), bytes: binaryData }
+    }
+    APITus.tusUploadFiles(authKey, taskId, filesData, { image_quality: 70 })
+}
+
+
+export default { createRandomTask, updateRandomTask, addRandomData }

@@ -5,7 +5,7 @@ import http from 'k6/http';
 import { validateResponse } from '../../utils/validation.js';
 import { BASE_URL } from '../../variables/constants.js';
 
-export function createTask(authKey, taskSpec) {
+function createTask(authKey, taskSpec) {
     const response = http.post(`${BASE_URL}/tasks`, JSON.stringify(taskSpec), {
         headers: {
             Authorization: `Token ${authKey}`,
@@ -17,7 +17,7 @@ export function createTask(authKey, taskSpec) {
     }
 }
 
-export function patchTask(authKey, taskId, taskUpdatesSpec) {
+function patchTask(authKey, taskId, taskUpdatesSpec) {
     const response = http.patch(
         `${BASE_URL}/tasks/${taskId}`,
         JSON.stringify(taskUpdatesSpec),
@@ -68,4 +68,10 @@ function deleteTask(authKey, taskId) {
     validateResponse(response, 204, "Delete Task")
 }
 
-export default { createTask, getTask, getTasks, patchTask, deleteTask };
+export default {
+    createTask,
+    getTask,
+    getTasks,
+    patchTask,
+    deleteTask
+};
