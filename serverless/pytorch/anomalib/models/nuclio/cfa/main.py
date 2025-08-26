@@ -2,9 +2,10 @@ import json
 import base64
 from PIL import Image
 import io
-from cfa.model_handler import ModelHandler
+from model_handler import CfaModelHandler as ModelHandler
 import torch
 import os
+import time
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -23,7 +24,7 @@ def init_context(context):
     context.logger.info("Init context...100%")
 
 def handler(context, event):
-    context.logger.info("Run Uflow model")
+    context.logger.info("Run Cfa model")
 
     try:
 
@@ -36,7 +37,14 @@ def handler(context, event):
         image = Image.open(buf)
         context.logger.info("Image loaded successfully")
 
+        # Start timing the inference
+        inference_start_time = time.time()
         result = context.user_data.model.infer(image, ckpt_path=keyword)
+        inference_end_time = time.time()
+
+        # Calculate and log inference time
+        inference_duration = inference_end_time - inference_start_time
+        context.logger.info(f"Inference completed in {inference_duration:.4f} seconds")
 
         return context.Response(body=json.dumps(result),
             headers={},

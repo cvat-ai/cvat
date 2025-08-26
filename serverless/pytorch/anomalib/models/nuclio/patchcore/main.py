@@ -2,7 +2,7 @@ import json
 import base64
 from PIL import Image
 import io
-from patchcore.model_handler import ModelHandler
+from model_handler import PatchcoreModelHandler as ModelHandler
 import torch
 import os
 

@@ -2,7 +2,7 @@ import json
 import base64
 from PIL import Image
 import io
-from model_handler import UflowModelHandler as ModelHandler
+from model_handler import CsflowModelHandler as ModelHandler
 import torch
 import os
 
@@ -26,6 +26,7 @@ def handler(context, event):
     context.logger.info("Run Uflow model")
 
     try:
+
         data = event.body
 
         keyword = data.get("keyword", None)
@@ -50,3 +51,4 @@ def handler(context, event):
             content_type='application/json',
             status_code=500
         )
+
