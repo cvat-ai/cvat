@@ -39,13 +39,10 @@ from cvat.apps.engine.utils import rotate_image
 # see: https://stackoverflow.com/questions/42462431/oserror-broken-data-stream-when-reading-image-file
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
-from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.mime_types import mimetypes
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 
 ORIENTATION_EXIF_TAG = 274
-
-slogger = ServerLogManager(__name__)
 
 class ORIENTATION(IntEnum):
     NORMAL_HORIZONTAL=1
