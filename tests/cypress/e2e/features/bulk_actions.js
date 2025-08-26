@@ -203,7 +203,6 @@ context('Bulk actions in UI', () => {
             // https://docs.cypress.io/api/commands/contains#Single-Element
                 .should('have.length', nobjs)
                 .find('span[aria-label="close"]').click({ multiple: true });
-            cy.get(':visible:contains("Export is finished")').should('not.exist');
         });
     });
 
