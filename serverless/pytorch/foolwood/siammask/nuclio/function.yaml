@@ -57,7 +57,7 @@ spec:
       workerAvailabilityTimeoutMilliseconds: 10000
       attributes:
         maxRequestBodySize: 33554432 # 32MB
-        port: 32759
+        port: 32764
 
   platform:
     attributes:
