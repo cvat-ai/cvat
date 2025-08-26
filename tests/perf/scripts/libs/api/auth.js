@@ -1,6 +1,9 @@
 // Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
+
+/// <reference types="k6"/>
+
 import http from 'k6/http';
 import { check } from 'k6';
 import { BASE_URL } from '../../variables/constants.js';
