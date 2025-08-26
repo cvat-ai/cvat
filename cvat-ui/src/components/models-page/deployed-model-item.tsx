@@ -170,7 +170,6 @@ export default function DeployedModelItem(props: Readonly<Props>): JSX.Element {
                         size='small'
                         className={cardClassName}
                         hoverable
-                        onClick={onOpenModel}
                     >
                         <Meta
                             title={(
