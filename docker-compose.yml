@@ -252,7 +252,7 @@ services:
       - cvat_server
     labels:
       traefik.enable: "true"
-      traefik.http.services.cvat-ui.loadbalancer.server.port: "80"
+      traefik.http.services.cvat-ui.loadbalancer.server.port: "8000"
       traefik.http.routers.cvat-ui.rule: Host(`${CVAT_HOST:-localhost}`)
       traefik.http.routers.cvat-ui.entrypoints: web
     networks:
