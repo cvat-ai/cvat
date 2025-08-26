@@ -629,7 +629,7 @@ class JobAnnotation:
         serializer = serializers.LabeledImageSerializerFromDB(db_tags, many=True)
         self.ir_data.tags = serializer.data
 
-    def _init_shapes_from_db(self, streaming: bool = False):
+    def _init_shapes_from_db(self, *, streaming: bool = False):
         db_shapes = (
             dotdict(row)
             for row in self.db_job.labeledshape_set.values(
@@ -1084,7 +1084,7 @@ class TaskAnnotation:
 
 @silk_profile(name="GET job data")
 @transaction.atomic
-def get_job_data(pk, streaming: bool = False):
+def get_job_data(pk, *, streaming: bool = False):
     annotation = JobAnnotation(pk)
     annotation.init_from_db(streaming=streaming)
 

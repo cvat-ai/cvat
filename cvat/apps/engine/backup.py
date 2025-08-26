@@ -585,6 +585,8 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 with transaction.atomic():
                     annotations = dm.task.get_job_data(db_job_id, streaming=True)
                     assert not isinstance(annotations["shapes"], list)
+                    # Django many=True fields can only handle the list type
+                    # we're using a generator here, so it's processed separately
                     annotations_serializer = LabeledDataSerializer(data=dict(annotations, shapes=[]))
                     annotations_serializer.is_valid(raise_exception=True)
                     annotation_data = annotations_serializer.data
@@ -721,6 +723,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
 
     def _create_annotations(self, db_job, annotations):
         self._prepare_annotations(annotations, self._labels_mapping)
+        assert not isinstance(annotations["shapes"], list)
         annotations["shapes"] = list(annotations["shapes"])
 
         serializer = LabeledDataSerializer(data=annotations)
