@@ -563,7 +563,7 @@ CVAT_LOG_IMPORT_ERRORS = to_bool(os.getenv("CVAT_LOG_IMPORT_ERRORS", False))
 if os.getenv("DJANGO_LOG_SERVER_HOST"):
     LOGGING["loggers"]["vector"]["handlers"] += ["vector"]
 
-DATA_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024  # 100 MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 3 * 1024 * 1024 * 1024  # 3 GB
 DATA_UPLOAD_MAX_NUMBER_FIELDS = None  # this django check disabled
 DATA_UPLOAD_MAX_NUMBER_FILES = None
 
@@ -754,9 +754,9 @@ IMPORT_CACHE_FAILED_TTL = timedelta(days=30)
 IMPORT_CACHE_SUCCESS_TTL = timedelta(hours=1)
 IMPORT_CACHE_CLEAN_DELAY = timedelta(hours=12)
 
-ASSET_MAX_SIZE_MB = 10
+ASSET_MAX_SIZE_MB = 4000
 ASSET_SUPPORTED_TYPES = ("image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf")
-ASSET_MAX_IMAGE_SIZE = 1920
+ASSET_MAX_IMAGE_SIZE = 4000
 ASSET_MAX_COUNT_PER_GUIDE = 30
 
 SMOKESCREEN_ENABLED = True

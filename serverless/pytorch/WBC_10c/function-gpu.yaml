@@ -1,0 +1,52 @@
+metadata:
+  name: yolo-pytorch-wbc-10c
+  namespace: nuclio
+  annotations:
+    name: WBC 10-Class Auto Annotator
+    type: detector
+    spec: |
+      [
+        { "id": 0, "name": "bands", "type": "rectangle" },
+        { "id": 1, "name": "basophils", "type": "rectangle" },
+        { "id": 2, "name": "blasts", "type": "rectangle" },
+        { "id": 3, "name": "eosinophils", "type": "rectangle" },
+        { "id": 4, "name": "lymphocytes", "type": "rectangle" },
+        { "id": 5, "name": "metamyelocytes", "type": "rectangle" },
+        { "id": 6, "name": "monocytes", "type": "rectangle" },
+        { "id": 7, "name": "myelocytes", "type": "rectangle" },
+        { "id": 8, "name": "neutrophils", "type": "rectangle" },
+        { "id": 9, "name": "promyelocytes", "type": "rectangle" },
+        { "id": 10, "name": "unclassified", "type": "rectangle" }
+      ]
+
+spec:
+  runtime: python:3.10
+  handler: main:handler
+  description: Custom WBC 10-Class Detector using Ultralytics YOLO
+  minReplicas: 1
+  maxReplicas: 1
+  resources:
+    limits:
+      nvidia.com/gpu: 1
+
+  build:
+    baseImage: nvidia/cuda:12.3.2-cudnn9-devel-ubuntu22.04
+    commands:
+      - apt-get update && apt-get install -y --no-install-recommends python3.10 python3-pip python-is-python3 libgl1 libglib2.0-0
+      - pip install numpy opencv-python Pillow ultralytics
+      - pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+
+  mounts:
+    - volume:
+        name: model-volume
+        hostPath:
+          path: /home/medprime/Desktop/cvat/serverless/pytorch/WBC_10c
+      mountPath: /opt/nuclio
+
+  triggers:
+    myHttpTrigger:
+      maxWorkers: 1
+      kind: http
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432

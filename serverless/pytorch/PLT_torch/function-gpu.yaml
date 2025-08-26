@@ -1,0 +1,45 @@
+metadata:
+  name: yolo-pytorch-1824
+  namespace: nuclio
+  annotations:
+    name: Platelet YOLO (PyTorch)
+    type: detector
+    spec: |
+      [
+        { "id": 0, "name": "agg_platelet", "type": "rectangle" },
+        { "id": 1, "name": "giant_platelet", "type": "rectangle" },
+        { "id": 2, "name": "platelet", "type": "rectangle" }
+      ]
+
+spec:
+  runtime: python:3.10
+  handler: main:handler
+  description: Custom Platelet Detector using Ultralytics YOLO
+  minReplicas: 1
+  maxReplicas: 1
+  resources:
+    limits:
+      nvidia.com/gpu: 1
+
+  build:
+    baseImage: nvidia/cuda:12.3.2-cudnn9-devel-ubuntu22.04
+    commands:
+      - apt-get update && apt-get install -y --no-install-recommends python3.10 python3-pip python-is-python3 libgl1 libglib2.0-0
+      # Install all required libraries, including ultralytics
+      - pip install numpy opencv-python Pillow ultralytics
+      - pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+
+  mounts:
+    - volume:
+        name: model-volume
+        hostPath:
+          path: /home/medprime/Desktop/cvat/serverless/onnx/plt/ # Your directory
+      mountPath: /opt/nuclio
+
+  triggers:
+    myHttpTrigger:
+      maxWorkers: 1
+      kind: http
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432
