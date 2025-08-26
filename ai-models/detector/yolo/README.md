@@ -14,11 +14,11 @@ Zero-shot models, such as YOLO-World and YOLOE, are not supported.
 
 The AA function supports models solving the following tasks:
 
-* classification
-* instance segmentation
-* object detection
-* oriented object detection
-* pose estimation
+- classification
+- instance segmentation
+- object detection
+- oriented object detection
+- pose estimation
 
 To use this with CVAT CLI, use the following options:
 
@@ -35,10 +35,10 @@ pretrained models.
 
 This function also supports the following options:
 
-* `-p device=str:<device>` - the PyTorch device, such as `cuda`, on which to run the model.
+- `-p device=str:<device>` - the PyTorch device, such as `cuda`, on which to run the model.
   By default, `cpu` is used.
 
-* `-p keypoint_names_path=str:<path>` - path to a file with names of keypoints.
+- `-p keypoint_names_path=str:<path>` - path to a file with names of keypoints.
   Only valid for pose estimation models.
   By default, the 17 keypoint names from the COCO dataset (`nose`, `left_eye`, `right_eye`, etc.)
   will be used.

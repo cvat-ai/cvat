@@ -24,14 +24,14 @@ class YoloFunction(abc.ABC):
         )
 
     @abc.abstractmethod
-    def _label_spec(self, name: str, id: int) -> models.PatchedLabelRequest: ...
+    def _label_spec(self, name: str, id_: int) -> models.PatchedLabelRequest: ...
 
 
 class YoloFunctionWithSimpleLabel(YoloFunction):
     LABEL_TYPE: ClassVar[str]
 
-    def _label_spec(self, name: str, id: int) -> models.PatchedLabelRequest:
-        return cvataa.label_spec(name, id, type=self.LABEL_TYPE)
+    def _label_spec(self, name: str, id_: int) -> models.PatchedLabelRequest:
+        return cvataa.label_spec(name, id_, type=self.LABEL_TYPE)
 
 
 class YoloClassificationFunction(YoloFunctionWithSimpleLabel):
@@ -143,10 +143,10 @@ class YoloPoseEstimationFunction(YoloFunctionWithShapes):
                 if stripped_line
             ]
 
-    def _label_spec(self, name: str, id: int) -> models.PatchedLabelRequest:
+    def _label_spec(self, name: str, id_: int) -> models.PatchedLabelRequest:
         return cvataa.skeleton_label_spec(
             name,
-            id,
+            id_,
             [
                 cvataa.keypoint_spec(kp_name, kp_id)
                 for kp_id, kp_name in enumerate(self._keypoint_names)
