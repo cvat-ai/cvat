@@ -972,7 +972,9 @@ class ZipCompressedChunkWriter(ZipChunkWriter):
                         try:
                             w, h, image_buf = self._compress_image(image, self._image_quality)
                         except Exception as ex:
-                            raise RuntimeError("Exception occurred during image compression %s" % path) from ex
+                            raise RuntimeError(
+                                f"Exception occurred during compression of image {os.path.basename(path)!r}"
+                            ) from ex
                     else:
                         assert isinstance(image, io.IOBase)
                         image_buf = io.BytesIO(image.read())
