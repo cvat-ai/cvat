@@ -25,7 +25,7 @@ class AnnotationIR:
         self.dimension = dimension
         if data:
             self.tags = getattr(data, "tags", []) or data["tags"]
-            self.shapes: Iterable = getattr(data, "shapes", []) or data["shapes"]
+            self.shapes: list | Iterable = getattr(data, "shapes", []) or data["shapes"]
             self.tracks = getattr(data, "tracks", []) or data["tracks"]
 
     def add_tag(self, tag):
