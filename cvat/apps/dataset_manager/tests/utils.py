@@ -132,7 +132,7 @@ def ensure_extractors_efficiency(cls):
         return MockExtractor
 
     class MockJobAnnotation(JobAnnotation):
-        def _init_shapes_from_db(self, streaming: bool = False):
+        def _init_shapes_from_db(self, *, streaming: bool = False):
             super()._init_shapes_from_db(streaming=streaming)
             if streaming:
                 # should only generate shapes once

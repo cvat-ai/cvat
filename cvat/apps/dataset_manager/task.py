@@ -1134,7 +1134,7 @@ def export_job(
     save_images=False,
     temp_dir: str | None = None,
 ):
-    job = JobAnnotation(job_id, prefetch_images=True, lock_job_in_db=True)
+    job = JobAnnotation(job_id, prefetch_images=True)
     job.init_from_db(streaming=True)
 
     exporter = make_exporter(format_name)

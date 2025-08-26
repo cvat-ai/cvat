@@ -667,10 +667,7 @@ class CommonData(InstanceLabelData):
 
     @property
     def shapes(self):
-        shapes = self._annotation_ir.shapes
-        if callable(shapes):
-            shapes = shapes()
-        for shape in shapes:
+        for shape in self._annotation_ir.shapes:
             if not self._is_frame_deleted(shape["frame"]):
                 yield self._export_labeled_shape(shape)
 
