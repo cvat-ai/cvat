@@ -26,7 +26,9 @@ Each button is responsible for a menu `Actions` specific function:
   Some task labels can be matched with the target project labels.
 - `Organization` - moving a task between your personal workspace or organizations.
   Only available for individual tasks (not tasks in a project). Please, refer to the
-  {{< ilink "/docs/manual/advanced/organization#transfer-tasks-and-projects-between-organizations" "Transfer between organizations" >}}
+  {{< ilink
+  "/docs/manual/advanced/organization#transfer-tasks-and-projects-between-organizations"
+  "Transfer between organizations" >}}
   section for details.
 - `Delete` — delete task.
 
