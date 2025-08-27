@@ -24,6 +24,8 @@ Each button is responsible for a menu `Actions` specific function:
 - `Move to project` — Moving a task to a project (you can move only a task that does not belong to any project).
   In case of a label mismatch, you can create or delete necessary labels in the project/task.
   Some task labels can be matched with the target project labels.
+- `Transfer ownership` — move a task between your personal workspace and an organization.
+  Only the task owner can transfer a task.
 - `Delete` — delete task.
 
 In the upper left corner, there is a search bar, using which you can find the task by assignee, task name etc.

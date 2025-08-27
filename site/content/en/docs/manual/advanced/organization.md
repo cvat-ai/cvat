@@ -90,6 +90,20 @@ from drop-down list.
 
 !["Select organization" window](/images/select_org.png)
 
+## Transfer ownership of tasks and projects
+
+You can move tasks or projects between your personal workspace and an organization.
+
+To transfer a resource:
+
+1. Open the task or project.
+2. In the **Actions** menu, select **Transfer ownership**.
+3. Choose the destination workspace and confirm.
+
+<!-- TODO: add screenshot -->
+
+Only the resource owner can transfer a task or project.
+
 ## Organization page
 
 **Organization page** is a place, where you can edit the **Organization** information
