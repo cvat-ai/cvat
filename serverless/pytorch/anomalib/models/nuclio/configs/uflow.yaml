@@ -1,0 +1,19 @@
+model:
+  class_path: anomalib.models.Uflow
+  init_args:
+    flow_steps: 4
+    permute_soft: false
+    affine_clamp: 2.0
+    affine_subnet_channels_ratio: 1.0
+    backbone: mcait # official: mcait, other extractors tested: resnet18, wide_resnet50_2. Could use others...
+
+# PL Trainer Args. Don't add extra parameter here.
+trainer:
+  max_epochs: 200
+  log_every_n_steps: 50
+  callbacks:
+    - class_path: lightning.pytorch.callbacks.EarlyStopping
+      init_args:
+        patience: 20
+        monitor: pixel_AUROC
+        mode: max

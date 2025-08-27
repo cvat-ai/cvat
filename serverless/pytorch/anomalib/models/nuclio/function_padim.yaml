@@ -1,8 +1,8 @@
 metadata:
-  name: uflow
+  name: padim
   namespace: cvat
   annotations:
-    name: uflow
+    name: padim
     type: detector
     spec: |
       [
@@ -10,9 +10,9 @@ metadata:
       ]
 
 spec:
-  description: uflow from Anomalib
+  description: padim from Anomalib
   runtime: 'python:3.11'
-  handler: uflow.main:handler
+  handler: padim.main:handler
   eventTimeout: 3000s
 
   build:
@@ -28,7 +28,6 @@ spec:
         - kind: WORKDIR
           value: /opt/nuclio
 
-
   triggers:
     myHttpTrigger:
       numWorkers: 2
@@ -36,7 +35,7 @@ spec:
       workerAvailabilityTimeoutMilliseconds: 300000
       attributes:
         maxRequestBodySize: 33554432 # 32MB
-        port: 32760
+        port: 32756
 
   platform:
     attributes:

@@ -1,0 +1,25 @@
+model:
+  class_path: anomalib.models.Cflow
+  init_args:
+    backbone: wide_resnet50_2
+    layers:
+      - layer2
+      - layer3
+      - layer4
+    pre_trained: true
+    fiber_batch_size: 64
+    decoder: freia-cflow
+    condition_vector: 128
+    coupling_blocks: 8
+    clamp_alpha: 1.9
+    permute_soft: false
+    lr: 0.0001
+
+trainer:
+  max_epochs: 50
+  callbacks:
+    - class_path: lightning.pytorch.callbacks.EarlyStopping
+      init_args:
+        patience: 2
+        monitor: pixel_AUROC
+        mode: max
