@@ -43,7 +43,7 @@ class Downloader:
         if not stem or len(ext) < 2:
             return None
 
-        if filename.startswith(".") or re.search(r"[^A-Za-z0-9_\-\.]", filename):
+        if filename.startswith(".") or re.search(r"[^A-Za-z0-9_\-\. ]", filename):
             return None
 
         return filename
