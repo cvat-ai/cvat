@@ -7,9 +7,12 @@ from __future__ import annotations
 
 import json
 from contextlib import closing
+import os
 from pathlib import Path
+import re
 from typing import TYPE_CHECKING, Any, Optional
 
+from cvat_sdk.core.exceptions import CvatSdkException
 import urllib3
 
 from cvat_sdk.api_client.api_client import Endpoint
@@ -29,26 +32,42 @@ class Downloader:
     def __init__(self, client: Client):
         self._client = client
 
-    @staticmethod
-    def _get_server_filename(response: urllib3.HTTPResponse) -> str:
+    @classmethod
+    def _validate_filename(cls, filename: str) -> str | None:
+        # Allow only meaningful and valid filenames for the user OS.
+
+        if len(filename) > 254:
+            return None
+
+        stem, ext = os.path.splitext(filename)
+        if not stem or len(ext) < 2:
+            return None
+
+        if filename.startswith(".") or re.search(r"[^A-Za-z0-9_\-\.]", filename):
+            return None
+
+        return filename
+
+    @classmethod
+    def _get_server_filename(cls, response: urllib3.HTTPResponse) -> str:
+        # Header format specification:
+        # https://datatracker.ietf.org/doc/html/rfc2616#section-19.5.1
         content_disposition = next(
             (
-                filename
+                parameter
                 for part in response.headers.get("Content-Disposition", "").split(";")
-                if (filename := part.strip()) and filename.startswith("filename=")
+                if (parameter := part.strip()) and parameter.lower().startswith("filename=")
             ),
             None,
         )
 
         filename = None
         if content_disposition:
-            filename_parts = content_disposition.split("=", maxsplit=1)
-            if len(filename_parts) == 2:
-                filename = filename_parts[1].strip('"')
-                filename = Path(filename).name
+            filename = content_disposition.split("=", maxsplit=1)[1].strip('"')
+            filename = cls._validate_filename(filename)
 
         if not filename:
-            raise Exception(
+            raise CvatSdkException(
                 "Can't find the output filename in the server response, "
                 "please try to specify the output filename explicitly"
             )
