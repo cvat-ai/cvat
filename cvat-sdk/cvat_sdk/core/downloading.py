@@ -6,16 +6,16 @@
 from __future__ import annotations
 
 import json
-from contextlib import closing
 import os
-from pathlib import Path
 import re
+from contextlib import closing
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
-from cvat_sdk.core.exceptions import CvatSdkException
 import urllib3
 
 from cvat_sdk.api_client.api_client import Endpoint
+from cvat_sdk.core.exceptions import CvatSdkException
 from cvat_sdk.core.helpers import expect_status
 from cvat_sdk.core.progress import NullProgressReporter, ProgressReporter
 from cvat_sdk.core.utils import atomic_writer
