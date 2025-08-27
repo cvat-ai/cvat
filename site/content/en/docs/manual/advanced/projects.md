@@ -80,8 +80,10 @@ Here you can do the following:
      section.
    - `Backup project` - make a backup of the project read more in the
      {{< ilink "/docs/manual/advanced/backup" "backup" >}} section.
-   - `Transfer ownership` - move the project between your personal workspace and an organization.
-     Only the project owner can transfer a project.
+   - `Organization` - move the project between your personal workspace or organizations.
+     Please, refer to the
+     {{< ilink "/docs/manual/advanced/organization#transfer-tasks-and-projects-between-organizations" "Transfer between organizations" >}}
+     section for details.
    - `Delete` - remove the project and all related tasks.
 1. Change issue tracker or open issue tracker if it is specified.
 1. Change labels and skeleton.
