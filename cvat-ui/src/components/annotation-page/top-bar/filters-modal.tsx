@@ -16,6 +16,11 @@ import Menu from 'antd/lib/menu';
 import Button from 'antd/lib/button';
 import Modal from 'antd/lib/modal';
 import { CombinedState } from 'reducers';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import GlobalHotKeys from 'utils/mousetrap-react';
+import { subKeyMap } from 'utils/component-subkeymap';
+import { ShortcutScope } from 'utils/enums';
+
 import { Label } from 'cvat-core-wrapper';
 import { changeAnnotationsFilters, fetchAnnotationsAsync, showFilters } from 'actions/annotation-actions';
 
@@ -73,10 +78,22 @@ const getAttributesSubfields = (labels: Label[]): Record<string, any> => {
     return subfields;
 };
 
+const componentShortcuts = {
+    TOGGLE_FILTER: {
+        name: 'Toggle active filter',
+        description: 'Toggles active filter',
+        sequences: ['ctrl+alt+f'],
+        scope: ShortcutScope.ANNOTATION_PAGE,
+    },
+};
+
+registerComponentShortcuts(componentShortcuts);
+
 function FiltersModalComponent(): JSX.Element {
     const labels = useSelector((state: CombinedState) => state.annotation.job.labels);
     const activeFilters = useSelector((state: CombinedState) => state.annotation.annotations.filters);
     const visible = useSelector((state: CombinedState) => state.annotation.filtersPanelVisible);
+    const keyMap = useSelector((state: CombinedState) => state.shortcuts.keyMap);
     const [config, setConfig] = useState<Config>(AntdConfig);
 
     const dispatch = useDispatch();
@@ -265,74 +282,90 @@ function FiltersModalComponent(): JSX.Element {
         </Menu>
     );
 
+    const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
+        TOGGLE_FILTER: (event: KeyboardEvent | undefined) => {
+            event?.preventDefault();
+            if (activeFilters.length) {
+                applyFilters([]);
+            } else {
+                if (!filters.length) return;
+                const filter = filters[0];
+                applyFilters([filter.logic]);
+            }
+        },
+    };
+
     return (
-        <Modal
-            className={visible ? 'cvat-filters-modal cvat-filters-modal-visible' : 'cvat-filters-modal'}
-            open={visible}
-            closable={false}
-            width={800}
-            destroyOnClose
-            centered
-            onCancel={() => dispatch(showFilters(false))}
-            footer={[
-                <Button
-                    key='clear'
-                    disabled={!activeFilters.length}
-                    onClick={() => applyFilters([])}
-                    className='cvat-filters-modal-clear-button'
-                >
-                    Clear filters
-                </Button>,
-                <Button
-                    key='cancel'
-                    onClick={() => dispatch(showFilters(false))}
-                    className='cvat-filters-modal-cancel-button'
-                >
-                    Cancel
-                </Button>,
-                <Button
-                    key='submit'
-                    type='primary'
-                    disabled={!isModalConfirmable()}
-                    onClick={confirmModal}
-                    className='cvat-filters-modal-submit-button'
-                >
-                    Submit
-                </Button>,
-            ]}
-        >
-            <div
-                key='used'
-                className='cvat-recently-used-filters-wrapper'
-                style={{ display: filters.length ? 'inline-block' : 'none' }}
-            >
-                <Popover
-                    destroyTooltipOnHide
-                    trigger='click'
-                    placement='top'
-                    overlayInnerStyle={{ padding: 0 }}
-                    overlayClassName='cvat-recently-used-filters-dropdown'
-                    content={menu}
-                >
+        <>
+            <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
+            <Modal
+                className={visible ? 'cvat-filters-modal cvat-filters-modal-visible' : 'cvat-filters-modal'}
+                open={visible}
+                closable={false}
+                width={800}
+                destroyOnClose
+                centered
+                onCancel={() => dispatch(showFilters(false))}
+                footer={[
                     <Button
-                        type='text'
-                        className='cvat-filters-modal-recently-used-button'
+                        key='clear'
+                        disabled={!activeFilters.length}
+                        onClick={() => applyFilters([])}
+                        className='cvat-filters-modal-clear-button'
                     >
-                        Recently used
-                        {' '}
-                        <DownOutlined />
-                    </Button>
-                </Popover>
-            </div>
-            { !!config.fields && (
-                <Query
-                    {...config}
-                    value={immutableTree as ImmutableTree}
-                    onChange={onChange}
-                    renderBuilder={renderBuilder}
-                />
-            )}
-        </Modal>
+                        Clear filters
+                    </Button>,
+                    <Button
+                        key='cancel'
+                        onClick={() => dispatch(showFilters(false))}
+                        className='cvat-filters-modal-cancel-button'
+                    >
+                        Cancel
+                    </Button>,
+                    <Button
+                        key='submit'
+                        type='primary'
+                        disabled={!isModalConfirmable()}
+                        onClick={confirmModal}
+                        className='cvat-filters-modal-submit-button'
+                    >
+                        Submit
+                    </Button>,
+                ]}
+            >
+                <div
+                    key='used'
+                    className='cvat-recently-used-filters-wrapper'
+                    style={{ display: filters.length ? 'inline-block' : 'none' }}
+                >
+                    <Popover
+                        destroyTooltipOnHide
+                        trigger='click'
+                        placement='top'
+                        overlayInnerStyle={{ padding: 0 }}
+                        overlayClassName='cvat-recently-used-filters-dropdown'
+                        content={menu}
+                    >
+                        <Button
+                            type='text'
+                            className='cvat-filters-modal-recently-used-button'
+                        >
+                            Recently used
+                            {' '}
+                            <DownOutlined />
+                        </Button>
+                    </Popover>
+                </div>
+                { !!config.fields && (
+                    <Query
+                        {...config}
+                        value={immutableTree as ImmutableTree}
+                        onChange={onChange}
+                        renderBuilder={renderBuilder}
+                    />
+                )}
+            </Modal>
+        </>
     );
 }
 
