@@ -51,7 +51,7 @@ from cvat.apps.engine.utils import av_scan_paths, format_list, get_path_size, ta
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS, make_requests_session
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, is_manifest
 from utils.dataset_manifest.core import VideoManifestValidator, is_dataset_manifest
-from utils.dataset_manifest.utils import detect_related_images
+from utils.dataset_manifest.utils import find_related_images
 
 from .cloud_provider import db_storage_to_storage_instance
 
@@ -545,6 +545,29 @@ def _create_task_manifest_from_cloud_data(
     )
     manifest.create()
 
+def _find_and_filter_related_images(
+    extractor: IMediaReader,
+    *,
+    upload_dir: str
+) -> dict[str, list[str]]:
+    regular_images, related_images = find_related_images(
+        extractor.absolute_source_paths,
+        scene_paths=(
+            p for p in extractor.absolute_source_paths
+            if not re.search(r'(^|{0})related_images{0}'.format(os.sep), p)
+            # backward compatibility
+        )
+    )
+
+    # extractor.filter() uses absolute paths, so we pass them
+    extractor.filter(lambda p: p in regular_images)
+
+    # manifest requires relative files as they would be in the task data, so update the paths
+    return {
+        os.path.relpath(k, upload_dir): [os.path.relpath(ri, upload_dir) for ri in k_ris]
+        for k, k_ris in related_images.items()
+    }
+
 @transaction.atomic
 def create_thread(
     db_task: Union[int, models.Task],
@@ -874,7 +897,6 @@ def create_thread(
                 all([f'{i}/' not in server_files_exclude for i in Path(x).relative_to(upload_dir).parents])
         )
 
-    validate_dimension = ValidateDimension()
     if isinstance(extractor, MEDIA_TYPES['zip']['extractor']):
         extractor.extract()
 
@@ -883,6 +905,7 @@ def create_thread(
         db_data.storage == models.StorageChoice.SHARE and
         isinstance(extractor, MEDIA_TYPES['zip']['extractor'])
     ):
+        # 3d media on CS is only supported as an archive, so the data must be already downloaded
         validate_dimension.set_path(upload_dir)
         validate_dimension.validate()
 
@@ -895,30 +918,22 @@ def create_thread(
             f"same as other tasks in project ({db_task.project.tasks.first().dimension})"
         )
 
-    if validate_dimension.dimension == models.DimensionType.DIM_3D:
-        db_task.dimension = models.DimensionType.DIM_3D
+    db_task.dimension = validate_dimension.dimension
 
-        keys_of_related_files = validate_dimension.related_files.keys()
-        absolute_keys_of_related_files = [os.path.join(upload_dir, f) for f in keys_of_related_files]
-        # When a task is created, the sorting method can be random and in this case, reinitialization will be with correct sorting
-        # but when a task is restored from a backup, a random sorting is changed to predefined and we need to manually sort files
-        # in the correct order.
-        source_files = absolute_keys_of_related_files if not is_backup_restore else \
-            [item for item in extractor.absolute_source_paths if item in absolute_keys_of_related_files]
+    if validate_dimension.dimension == models.DimensionType.DIM_3D:
         extractor.reconcile(
-            source_files=source_files,
+            source_files=extractor.absolute_source_paths,
             step=db_data.get_frame_step(),
             start=db_data.start_frame,
             stop=data['stop_frame'],
-            dimension=models.DimensionType.DIM_3D,
+            dimension=validate_dimension.dimension,
         )
 
     related_images = {}
     if isinstance(extractor, MEDIA_TYPES['image']['extractor']):
-        related_images = detect_related_images(extractor.absolute_source_paths, upload_dir)
-        extractor.filter(lambda x: not re.search(r'(^|{0})related_images{0}'.format(os.sep), x))
+        related_images = _find_and_filter_related_images(extractor, upload_dir=upload_dir)
 
-    if validate_dimension.dimension != models.DimensionType.DIM_3D and (
+    if job_file_mapping or (
         (
             not isinstance(extractor, MEDIA_TYPES['video']['extractor']) and
             is_backup_restore and
@@ -936,14 +951,13 @@ def create_thread(
                 not isinstance(extractor, MEDIA_TYPES['video']['extractor'])
             )
         )
-    ) or job_file_mapping:
-        # We should sort media_files according to the manifest content sequence
-        # and we should do this in general after validation step for 3D data
-        # and after filtering from related_images
+    ):
         if job_file_mapping:
+            # Sort media_files according to the requested file order
             sorted_media_files = itertools.chain.from_iterable(job_file_mapping)
 
         else:
+            # Sort media_files according to the manifest file order
             if manifest is None:
                 if not manifest_file or not os.path.isfile(os.path.join(manifest_root, manifest_file)):
                     raise FileNotFoundError(

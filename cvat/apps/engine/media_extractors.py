@@ -512,17 +512,19 @@ class ZipReader(ImageListReader):
         return self._zip_source.filename
 
     def get_path(self, i):
-        if self._zip_source.filename:
-            prefix = self._get_extract_prefix()
-            return os.path.join(prefix, self._source_path[i])
-        else: # necessary for mime_type definition
-            return self._source_path[i]
+        prefix = self._get_extract_prefix()
+        return os.path.join(prefix, self._source_path[i])
 
     def __contains__(self, media_file):
         return super().__contains__(os.path.relpath(media_file, self._get_extract_prefix()))
 
     def _get_extract_prefix(self):
         return self.extract_dir or os.path.dirname(self._zip_source.filename)
+
+    def filter(self, callback):
+        prefix = self._get_extract_prefix()
+        updated_callback = lambda p: callback(os.path.join(prefix, p))
+        return super().filter(updated_callback)
 
     def reconcile(self, source_files, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D, sorting_method=None):
         if source_files:
@@ -1209,11 +1211,10 @@ MEDIA_TYPES = {
 }
 
 class ValidateDimension:
-
     def __init__(self, path=None):
         self.dimension = DimensionType.DIM_2D
         self.path = path
-        self.related_files = {}
+        self.pcd_files = {}
         self.image_files = {}
         self.converted_files = []
 
@@ -1298,7 +1299,7 @@ class ValidateDimension:
             if file_extension == ".bin":
                 path = self.bin_operation(file_path, actual_path)
                 pcd_files[file_name] = path
-                self.related_files[path] = []
+                self.pcd_files[path] = []
 
             elif file_extension == ".pcd":
                 path = ValidateDimension.pcd_operation(file_path, actual_path)
@@ -1306,7 +1307,7 @@ class ValidateDimension:
                     self.image_files[file_name] = file_path
                 else:
                     pcd_files[file_name] = path
-                    self.related_files[path] = []
+                    self.pcd_files[path] = []
             else:
                 if _is_image(file_path):
                     self.image_files[file_name] = file_path
@@ -1325,5 +1326,5 @@ class ValidateDimension:
 
             self.process_files(root, actual_path, files)
 
-        if len(self.related_files.keys()):
+        if self.pcd_files:
             self.dimension = DimensionType.DIM_3D
