@@ -12,6 +12,9 @@ import Random from '../../utils/random';
 
 import { ADMIN_PASSWORD, ADMIN_USERNAME } from '../../variables/constants.js';
 
+const N_PROJECTS = 100;
+const N_PER_USER = 20;
+
 export const options = {
     scenarios: {
         // What does each VU do?
@@ -25,17 +28,17 @@ export const options = {
             preAllocatedVUs: 10,
             maxVUs: 100,
         },
+        getProjects: {
+            exec: 'TestGetProjects',
+            executor: 'constant-arrival-rate',
+            duration: '30s',
+            rate: 1,
+            timeUnit: '5s',
+            preAllocatedVUs: 5,
+            maxVUs: 6,
+        },
     },
 };
-
-function createProjects(token, count) {
-    const projects = [];
-    for (let i = 0; i < count; i++) {
-        const projectID = APIProjects.createProject(token);
-        projects.push(projectID);
-    }
-    return projects;
-}
 
 export function setup() {
     const token = APIAuth.login(ADMIN_USERNAME, ADMIN_PASSWORD);
@@ -47,4 +50,9 @@ export function TestGetProject(data) {
     const resources = [];
     const randomProject = data.resources[__VU % data.resources.length];
     const projectData = APIProjects.getProject(data.token, randomProject);
+}
+
+export function TestGetProjects(data) {
+    const randomProjects = Random.randomSample(data.resources, N_PER_USER);
+    const projectsData = APIProjects.listProjects(data.token, randomProjects);
 }
