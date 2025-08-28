@@ -8,7 +8,7 @@
 import APIProjects from '../../libs/api/projects.js';
 import APIAuth from '../../libs/api/auth.js';
 import ProjectsLib from '../../libs/fixtures/projects.js';
-import Random from '../../utils/random';
+import Random from '../../utils/random.js';
 
 import { ADMIN_PASSWORD, ADMIN_USERNAME } from '../../variables/constants.js';
 
@@ -19,15 +19,15 @@ export const options = {
     scenarios: {
         // What does each VU do?
 
-        getProject: {
-            exec: 'TestGetProject',
-            executor: 'constant-arrival-rate',
-            duration: '30s',
-            rate: 5,
-            timeUnit: '1s',
-            preAllocatedVUs: 10,
-            maxVUs: 100,
-        },
+        // getProject: {
+        //     exec: 'TestGetProject',
+        //     executor: 'constant-arrival-rate',
+        //     duration: '30s',
+        //     rate: 5,
+        //     timeUnit: '1s',
+        //     preAllocatedVUs: 10,
+        //     maxVUs: 100,
+        // },
         getProjects: {
             exec: 'TestGetProjects',
             executor: 'constant-arrival-rate',
@@ -47,7 +47,6 @@ export function setup() {
 }
 
 export function TestGetProject(data) {
-    const resources = [];
     const randomProject = data.resources[__VU % data.resources.length];
     const projectData = APIProjects.getProject(data.token, randomProject);
 }
@@ -55,4 +54,5 @@ export function TestGetProject(data) {
 export function TestGetProjects(data) {
     const randomProjects = Random.randomSample(data.resources, N_PER_USER);
     const projectsData = APIProjects.listProjects(data.token, randomProjects);
+    console.log(projectsData); // TODO: stash pop verbose flag from local git
 }
