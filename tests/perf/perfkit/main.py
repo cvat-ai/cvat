@@ -145,7 +145,7 @@ def run_regression(
     # check test entry exists
     baseline_for_test = resolve_test_baseline(baselines, test_key, commit_value)
     if baseline_for_test is None:
-        exit_with_error(f"No baseline for test {test_key}'")
+        exit_with_error(f"No baseline for test '{test_key}'")
     if not reuse_cluster:
         stop_cluster()
     start_cluster()

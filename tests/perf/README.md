@@ -130,11 +130,11 @@ perfkit golden show
 
 To record a baseline:
 ```bash
-perfkit run-golden --runs 1 /tests/regression/tasks.js
+perfkit run-golden --runs 1 tests/regression/tasks.js
 ```
 
 To run regression test:
 ```bash
-perfkit run-regression --commit <commit-id> /tests/regression/tasks.js
+perfkit run-regression --commit <commit-id> tests/regression/tasks.js
 ```
 
