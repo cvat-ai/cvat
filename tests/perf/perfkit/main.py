@@ -112,7 +112,7 @@ def run_regression(
         commit_value: str | None = None
         if commit is not None:
             commit_value = commit
-        elif alias:
+        elif alias is not None:
             try:
                 commit_value = resolve_commit_by_alias(baselines, alias)
             except RuntimeError as err:
