@@ -489,6 +489,7 @@ def defaultdict_to_regular(d):
 @contextmanager
 def transaction_with_repeatable_read():
     with transaction.atomic():
-        connection.cursor().execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;")
-        connection.cursor().execute("SET TRANSACTION READ ONLY;")
+        if connection.vendor != "sqlite":
+            connection.cursor().execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;")
+            connection.cursor().execute("SET TRANSACTION READ ONLY;")
         yield
