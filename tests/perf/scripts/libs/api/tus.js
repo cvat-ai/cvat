@@ -141,7 +141,7 @@ function tusUploadFiles(
         group.forEach((f, i) => {
             formData[`client_files[${i}]`] = http.file(f.bytes, f.name);
         });
-        Object.assign(formData, { image_quality: finishOpts.image_quality });
+        formData['image_quality'] = finishOpts.image_quality;
 
         const res = http.post(url, formData, {
             headers: {
