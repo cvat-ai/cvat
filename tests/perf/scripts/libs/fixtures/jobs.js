@@ -25,9 +25,9 @@ export function createRandomJob(authToken, taskId, assigneeId = null) {
 
     let payload = {
         assignee: assigneeId,
-        stage: stage,
-        state: state,
-        type: type,
+        stage,
+        state,
+        type,
         task_id: taskId,
     };
 
