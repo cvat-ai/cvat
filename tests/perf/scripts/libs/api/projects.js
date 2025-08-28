@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+/// <reference types="../../types.d.ts" />
 /// <reference types="k6" />
 
 import { check } from 'k6';
@@ -9,7 +10,15 @@ import http from 'k6/http';
 
 import { BASE_URL } from '../../variables/constants.js';
 
-function createProject(authKey, projectSpec) {
+function createProject(authKey) {
+    const projectSpec = {
+        name: 'testProject',
+        labels: [{
+            name: 'cat',
+            type: 'rectangle',
+            attributes: [],
+        }],
+    };
     const response = http.post(`${BASE_URL}projects`, JSON.stringify(projectSpec), {
         headers: {
             Authorization: `Token ${authKey}`,
