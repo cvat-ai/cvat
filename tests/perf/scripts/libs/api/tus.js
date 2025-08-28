@@ -6,9 +6,7 @@ import encoding from "k6/encoding";
 import { validateResponse } from '../../utils/validation.js';
 import { BASE_URL } from '../../variables/constants.js';
 
-function toBase64(str) {
-    return encoding.b64encode(str);
-}
+const MAX_REQUEST_SIZE = 50 * 1024 * 1024; // 50 MB threshold
 
 function tusUploadInit(authKey, taskId, filePath, fileSize) {
     let res = http.post(`${BASE_URL}/tasks/${taskId}/data/`, null,
@@ -16,7 +14,7 @@ function tusUploadInit(authKey, taskId, filePath, fileSize) {
             headers: {
                 Authorization: `Token ${authKey}`,
                 "Upload-Length": `${fileSize}`,
-                "Upload-Metadata": `filename ${toBase64(filePath)}`,
+                "Upload-Metadata": `filename ${encoding.b64encode(filePath)}`,
             }
         }
     )
@@ -89,7 +87,6 @@ function tusUploadSingleFile(authKey, taskId, file) {
     }
 }
 
-const MAX_REQUEST_SIZE = 50 * 1024 * 1024; // 50 MB threshold
 
 function splitFilesByRequests(files) {
     const bulk = [];

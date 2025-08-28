@@ -59,15 +59,15 @@ export function setup() {
     return { token, tasksData: createdTasks };
 }
 
-export function TestGetTask (data) {
+export function TestGetTask(data) {
     APITasks.getTask(data.token, getRandomTaskId(data.tasksData));
 }
 
-export function TestCreateTask (data) {
+export function TestCreateTask(data) {
     const taskId = TasksLib.createRandomTask(data.token);
     APITasks.deleteTask(data.token, taskId)
 }
 
-export function TestUpdateTask (data) {
+export function TestUpdateTask(data) {
     TasksLib.updateRandomTask(data.token, getRandomTaskId(data.tasksData))
 }

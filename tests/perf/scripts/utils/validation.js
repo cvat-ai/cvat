@@ -21,7 +21,7 @@ export function validateResponse(response, expectedStatus, requestDescription) {
         console.error(` Request failed: ${requestDescription}`);
         console.error(` Expected status: ${expectedStatus}, got: ${response.status}`);
         console.error(` Request details:`);
-        console.error(` Method: ${response.request.method }`);
+        console.error(` Method: ${response.request.method}`);
         console.error(` URL: ${response.request.url}`);
         console.error(` Headers: ${JSON.stringify(response.request?.headers || {}, null, 2)}`);
         console.error(` Body: ${response.request?.body || 'no body'}`);

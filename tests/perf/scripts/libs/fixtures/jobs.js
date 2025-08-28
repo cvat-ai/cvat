@@ -52,4 +52,4 @@ export function createRandomJob(authToken, taskId, assigneeId = null) {
     return APIJobs.createJob(authToken, payload);
 }
 
-export default {createRandomJob}
+export default { createRandomJob }
