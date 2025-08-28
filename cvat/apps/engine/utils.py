@@ -17,7 +17,7 @@ import traceback
 import urllib.parse
 from collections import defaultdict, namedtuple
 from collections.abc import Generator, Iterable, Mapping, Sequence
-from contextlib import nullcontext, suppress
+from contextlib import contextmanager, nullcontext, suppress
 from itertools import islice
 from multiprocessing import cpu_count
 from pathlib import Path
@@ -29,6 +29,7 @@ from av import VideoFrame
 from datumaro.util.os_util import walk
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.db import connection, transaction
 from django.utils.http import urlencode
 from django_rq.queues import DjangoRQ
 from django_sendfile import sendfile as _sendfile
@@ -483,3 +484,11 @@ def defaultdict_to_regular(d):
     if isinstance(d, defaultdict):
         d = {k: defaultdict_to_regular(v) for k, v in d.items()}
     return d
+
+
+@contextmanager
+def transaction_with_repeatable_read():
+    with transaction.atomic():
+        connection.cursor().execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;")
+        connection.cursor().execute("SET TRANSACTION READ ONLY;")
+        yield

@@ -30,7 +30,7 @@ from cvat.apps.engine import models, serializers
 from cvat.apps.engine.log import DatasetLogManager
 from cvat.apps.engine.model_utils import add_prefetch_fields, bulk_create, get_cached
 from cvat.apps.engine.plugins import plugin_decorator
-from cvat.apps.engine.utils import av_scan_paths, take_by
+from cvat.apps.engine.utils import av_scan_paths, take_by, transaction_with_repeatable_read
 from cvat.apps.events.handlers import handle_annotations_change
 from cvat.apps.profiler import silk_profile
 
@@ -1124,7 +1124,7 @@ def delete_job_data(pk, *, db_job: models.Job | None = None):
     annotation.delete()
 
 
-@transaction.atomic
+@transaction_with_repeatable_read()
 def export_job(
     job_id: int,
     dst_file: str,
