@@ -41,9 +41,6 @@ os.makedirs(PROJECTS_ROOT, exist_ok=True)
 SHARE_ROOT = os.path.join(BASE_DIR, "share")
 os.makedirs(SHARE_ROOT, exist_ok=True)
 
-MODELS_ROOT = os.path.join(DATA_ROOT, "models")
-os.makedirs(MODELS_ROOT, exist_ok=True)
-
 LOGS_ROOT = os.path.join(BASE_DIR, "logs")
 os.makedirs(LOGS_ROOT, exist_ok=True)
 
