@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: MIT
 import APITasks from '../../libs/api/tasks.js';
 import APITus from '../../libs/api/tus.js';
-import { randomBool, randomEnum, randomInt, randomString } from '../../utils/random.js'
+import { randomBool } from '../../utils/random.js'
+import { randomIntBetween, randomString, randomItem } from "https://jslib.k6.io/k6-utils/1.4.0/index.js";
 
 const BUG_TRACKER_FAKE_URL = "https://jira.example.com/browse/PROJ-123"
 const LABEL_TYPES = ['rectangle', 'polygon', 'polyline', 'points', 'cuboid'];
@@ -17,7 +18,7 @@ function createRandomTask(authKey, projectId, ownerId) {
         labels: [
             {
                 name: `label_${randomString(5)}`,
-                type: randomEnum(LABEL_TYPES),
+                type: randomItem(LABEL_TYPES),
                 attributes: [
                     {
                         name: 'occluded',
@@ -36,8 +37,8 @@ function createRandomTask(authKey, projectId, ownerId) {
                 ]
             }
         ],
-        overlap: randomEnum(overlapChoices),
-        segment_size: randomInt(10, 50),
+        overlap: randomItem(overlapChoices),
+        segment_size: randomIntBetween(10, 50),
         bug_tracker: BUG_TRACKER_FAKE_URL,
         target_storage: {
             location: "local"
@@ -57,13 +58,13 @@ export function updateRandomTask(authKey, taskId, projectId, assigneeId) {
         assignee_id: assigneeId,
         project_id: projectId,
         bug_tracker: randomBool()
-            ? `http://bugs.example.com/${randomInt(100, 999)}`
+            ? `http://bugs.example.com/${randomIntBetween(100, 999)}`
             : undefined,
         labels: randomBool()
             ? [
                 {
                     name: `label_${randomString(5)}`,
-                    type: randomEnum(LABEL_TYPES),
+                    type: randomItem(LABEL_TYPES),
                     attributes: [],
                 },
             ]
