@@ -1,11 +1,42 @@
 services:
   cvat_server:
+    environment:
+      EMAIL_HOST_USER: ${EMAIL_HOST_USER}
+      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD}
+      EMAIL_HOST: ${EMAIL_HOST:-smtp.gmail.com}
+      EMAIL_PORT: ${EMAIL_PORT:-587}
+      EMAIL_USE_TLS: ${EMAIL_USE_TLS:-True}
+      EMAIL_BACKEND: ${EMAIL_BACKEND:-django.core.mail.backends.smtp.EmailBackend}
+      EMAIL_FROM: ${EMAIL_FROM:-no-reply@example.com}
+      SITE_ID: ${SITE_ID:-3}
+      DJANGO_SETTINGS_MODULE: cvat.settings.email_settings
     volumes:
       - cvat_share:/home/django/share:ro
       - ./cvat/settings/email_settings.py:/home/django/cvat/settings/email_settings.py
       - ./cvat/apps/organizations/serializers.py:/home/django/cvat/apps/organizations/serializers.py
 
+  cvat_worker_utils:
+    environment:
+      EMAIL_HOST_USER: ${EMAIL_HOST_USER}
+      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD}
+      EMAIL_HOST: ${EMAIL_HOST:-smtp.gmail.com}
+      EMAIL_PORT: ${EMAIL_PORT:-587}
+      EMAIL_USE_TLS: ${EMAIL_USE_TLS:-True}
+      EMAIL_BACKEND: ${EMAIL_BACKEND:-django.core.mail.backends.smtp.EmailBackend}
+      EMAIL_FROM: ${EMAIL_FROM:-no-reply@example.com}
+      SITE_ID: ${SITE_ID:-3}
+      DJANGO_SETTINGS_MODULE: cvat.settings.email_settings
+
   cvat_worker_import:
+    environment:
+      EMAIL_HOST_USER: ${EMAIL_HOST_USER}
+      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD}
+      EMAIL_HOST: ${EMAIL_HOST:-smtp.gmail.com}
+      EMAIL_PORT: ${EMAIL_PORT:-587}
+      EMAIL_USE_TLS: ${EMAIL_USE_TLS:-True}
+      EMAIL_BACKEND: ${EMAIL_BACKEND:-django.core.mail.backends.smtp.EmailBackend}
+      EMAIL_FROM: ${EMAIL_FROM:-no-reply@example.com}
+      SITE_ID: ${SITE_ID:-3}
     volumes:
       - cvat_share:/home/django/share:ro
   cvat_worker_export:
@@ -22,6 +53,5 @@ volumes:
   cvat_share:
     driver_opts:
       type: none
-      device: /data/projects/sienz/
+      device: /data/
       o: bind
-
