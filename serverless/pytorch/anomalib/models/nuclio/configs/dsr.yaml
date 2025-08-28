@@ -1,0 +1,9 @@
+model:
+  class_path: anomalib.models.Dsr
+  init_args:
+    latent_anomaly_strength: 0.2
+    upsampling_train_ratio: 0.7
+
+# PL Trainer Args. Don't add extra parameter here.
+trainer:
+  max_epochs: 700

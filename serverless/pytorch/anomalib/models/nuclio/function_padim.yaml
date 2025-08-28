@@ -1,8 +1,8 @@
 metadata:
-  name: cfa
+  name: padim
   namespace: cvat
   annotations:
-    name: cfa
+    name: padim
     type: detector
     spec: |
       [
@@ -10,13 +10,13 @@ metadata:
       ]
 
 spec:
-  description: cfa from Anomalib
+  description: padim from Anomalib
   runtime: 'python:3.11'
-  handler: main:handler
+  handler: padim.main:handler
   eventTimeout: 3000s
 
   build:
-    image: cvat.pth.anomalib.cfa
+    image: cvat.pth.anomalib_aux.models
     baseImage: anomalib-base:ubuntu22.04  # Base with proper GL libraries
 
     directives:
@@ -43,4 +43,3 @@ spec:
         name: always
         maximumRetryCount: 3
       mountMode: volume
-

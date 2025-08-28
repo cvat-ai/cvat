@@ -1,0 +1,18 @@
+model:
+  class_path: anomalib.models.Cfa
+  init_args:
+    backbone: wide_resnet50_2
+    gamma_c: 1
+    gamma_d: 1
+    num_nearest_neighbors: 3
+    num_hard_negative_features: 3
+    radius: 1.0e-05
+
+trainer:
+  max_epochs: 500
+  callbacks:
+    - class_path: lightning.pytorch.callbacks.EarlyStopping
+      init_args:
+        patience: 5
+        monitor: pixel_AUROC
+        mode: max

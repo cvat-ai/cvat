@@ -1,0 +1,16 @@
+model:
+  class_path: anomalib.models.Draem
+  init_args:
+    beta: [0.1, 1.0]
+    enable_sspcab: false
+    sspcab_lambda: 0.1
+    anomaly_source_path: null
+
+trainer:
+  max_epochs: 700
+  callbacks:
+    - class_path: lightning.pytorch.callbacks.EarlyStopping
+      init_args:
+        patience: 20
+        monitor: pixel_AUROC
+        mode: max

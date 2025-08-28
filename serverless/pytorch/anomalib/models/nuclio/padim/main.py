@@ -2,7 +2,7 @@ import json
 import base64
 from PIL import Image
 import io
-from model_handler import ModelHandler
+from model_handler import PadimModelHandler as ModelHandler
 import torch
 import os
 
@@ -26,12 +26,17 @@ def handler(context, event):
     context.logger.info("Run Uflow model")
 
     try:
+
         data = event.body
+
+        keyword = data.get("keyword", None)
+        print(f"ckpt_Path: {keyword}")
+
         buf = io.BytesIO(base64.b64decode(data["image"]))
         image = Image.open(buf)
         context.logger.info("Image loaded successfully")
 
-        result = context.user_data.model.infer(image)
+        result = context.user_data.model.infer(image, ckpt_path=keyword)
 
         return context.Response(body=json.dumps(result),
             headers={},
@@ -46,25 +51,4 @@ def handler(context, event):
             content_type='application/json',
             status_code=500
         )
-
-    # data = event.body
-    # buf = io.BytesIO(base64.b64decode(data["image"]))
-    # image = Image.open(buf)
-
-    # mask = context.user_data.model.infer(image)
-
-    # print('So far so good! Inference was completed.')
-
-    # result = {
-    #         "confidence": None,
-    #         "label": 0,
-    #         "mask": mask.tolist(),
-    #         "type": "mask",
-    #     }
-
-    # return context.Response(body=json.dumps(result),
-    #     headers={},
-    #     content_type='application/json',
-    #     status_code=200
-    # )
 

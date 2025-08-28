@@ -55,7 +55,14 @@ class ModelHandler:
         target_size = image.size
         return cv.resize(mask, target_size, interpolation=cv.INTER_NEAREST)
 
-    def infer(self, image, threshold=0.5):
+    def infer(self, image, threshold=0.5, ckpt_path=None):
+
+        if ckpt_path is not None:
+            self.pth_path = ckpt_path
+            print(f'Using checkpoint path: {self.pth_path}')
+        else:
+            print('No checkpoint path provided, using default.')
+
 
         transform = T.Compose([
             T.Resize(288),

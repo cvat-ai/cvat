@@ -10,13 +10,13 @@ metadata:
       ]
 
 spec:
-  description: patchcore from Anomalib
+  description: patchcore Anomalib
   runtime: 'python:3.11'
-  handler: main:handler
+  handler: patchcore.main:handler
   eventTimeout: 3000s
 
   build:
-    image: cvat.pth.anomalib.patchcore
+    image: cvat.pth.anomalib_aux.models
     baseImage: anomalib-base:ubuntu22.04  # Base with proper GL libraries
 
     directives:

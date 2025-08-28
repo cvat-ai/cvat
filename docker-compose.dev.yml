@@ -23,12 +23,12 @@ services:
     environment:
       # Use this with CVAT_DEBUG_ENABLED to avoid server response timeouts
       CVAT_DEBUG_ENABLED: '${CVAT_DEBUG_ENABLED:-no}'
-      CVAT_DEBUG_PORT: '9090'
+      CVAT_DEBUG_PORT: '9099'
       # If 'yes', wait for a debugger connection on startup
       CVAT_DEBUG_WAIT: '${CVAT_DEBUG_WAIT_CLIENT:-no}'
       COVERAGE_PROCESS_START:
     ports:
-      - '127.0.0.1:9090:9090'
+      - '127.0.0.1:9099:9099'
 
   cvat_worker_export:
     environment:

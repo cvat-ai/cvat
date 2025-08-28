@@ -40,7 +40,7 @@ spec:
         - kind: RUN
           value: git clone https://github.com/foolwood/SiamMask.git
         - kind: RUN
-          value: pip install Cython colorama 'numpy<1.20' requests fire matplotlib numba scipy h5py pandas tqdm tensorboardX 'opencv-python-headless<4.9.10' torch torchvision jsonpickle
+          value: pip install Cython colorama 'numpy<1.20' requests fire matplotlib numba scipy h5py pandas tqdm tensorboardX 'opencv-python-headless<4.9.10' torch==2.5.1 torchvision jsonpickle
         - kind: RUN
           value: conda install -y gcc_linux-64
         - kind: RUN
@@ -57,6 +57,7 @@ spec:
       workerAvailabilityTimeoutMilliseconds: 10000
       attributes:
         maxRequestBodySize: 33554432 # 32MB
+        port: 32764
 
   platform:
     attributes:

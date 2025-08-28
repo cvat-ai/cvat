@@ -1,0 +1,10 @@
+model:
+  class_path: anomalib.models.Padim
+  init_args:
+    layers:
+      - layer1
+      - layer2
+      - layer3
+    backbone: resnet18
+    pre_trained: true
+    n_features: null

@@ -1,4 +1,5 @@
-FROM cvat/server:local
+ARG CVAT_VERSION=v2.35.0
+FROM cvat/server:${CVAT_VERSION}
 
 ENV DJANGO_SETTINGS_MODULE=cvat.settings.testing
 USER root

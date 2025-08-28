@@ -4,7 +4,13 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-
+        {
+            "name": "Python Debugger: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal"
+        },
         {
             "name": "REST API tests: Attach to server",
             "type": "debugpy",
@@ -271,7 +277,8 @@
             "django": true,
             "cwd": "${workspaceFolder}",
             "args": [
-                "-i", "1"
+                "-i",
+                "1"
             ],
             "env": {
                 "DJANGO_LOG_SERVER_HOST": "localhost",
@@ -488,8 +495,10 @@
             "python": "${command:python.interpreterPath}",
             "program": "${workspaceFolder}/cvat-sdk/gen/postprocess.py",
             "args": [
-                "--schema", "${workspaceFolder}/cvat/schema.yml",
-                "--input-path", "${workspaceFolder}/cvat-sdk/cvat_sdk/"
+                "--schema",
+                "${workspaceFolder}/cvat/schema.yml",
+                "--input-path",
+                "${workspaceFolder}/cvat-sdk/cvat_sdk/"
             ],
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal"
@@ -503,8 +512,10 @@
             "python": "${command:python.interpreterPath}",
             "program": "${workspaceFolder}/site/process_sdk_docs.py",
             "args": [
-                "--input-dir", "${workspaceFolder}/cvat-sdk/docs/",
-                "--site-root", "${workspaceFolder}/site/",
+                "--input-dir",
+                "${workspaceFolder}/cvat-sdk/docs/",
+                "--site-root",
+                "${workspaceFolder}/site/",
             ],
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal"
