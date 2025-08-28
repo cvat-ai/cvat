@@ -7,11 +7,17 @@
 
 import APIProjects from '../../libs/api/projects.js';
 import APIAuth from '../../libs/api/auth.js';
+import ProjectsLib from '../../libs/fixtures/projects.js';
+import Random from '../../utils/random';
+
 import { ADMIN_PASSWORD, ADMIN_USERNAME } from '../../variables/constants.js';
 
 export const options = {
     scenarios: {
-        test: {
+        // What does each VU do?
+
+        getProject: {
+            exec: 'TestGetProject',
             executor: 'constant-arrival-rate',
             duration: '30s',
             rate: 5,
@@ -33,11 +39,12 @@ function createProjects(token, count) {
 
 export function setup() {
     const token = APIAuth.login(ADMIN_USERNAME, ADMIN_PASSWORD);
-    const createdProjects = createProjects(token, 30);
+    const createdProjects = ProjectsLib.createProjects(token, N_PROJECTS);
     return { token, resources: createdProjects };
 }
 
-export default function (data) {
+export function TestGetProject(data) {
+    const resources = [];
     const randomProject = data.resources[__VU % data.resources.length];
     const projectData = APIProjects.getProject(data.token, randomProject);
 }
