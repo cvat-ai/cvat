@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 import io
+import itertools
 import mimetypes
 import os
 import re
@@ -425,7 +426,6 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         elif self._db_data.storage == StorageChoice.CLOUD_STORAGE:
             assert self._db_task.dimension != models.DimensionType.DIM_3D, "Cloud storage cannot contain 3d images"
             assert not hasattr(self._db_data, 'video'), "Only images can be stored in cloud storage"
-            assert self._db_data.related_files.count() == 0, "No related images can be stored in cloud storage"
 
             data_dir = self._db_data.get_upload_dirname()
 
@@ -439,12 +439,20 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             else:
                 files_for_local_copy = [self._db_data.get_manifest_path()]
                 media_files_to_download = []
-                for im in self._db_data.images.all():
-                    local_path = os.path.join(data_dir, im.path)
+                for media_file in itertools.chain(
+                    self._db_data.images.all(),
+                    self._db_data.related_files.all()
+                ):
+                    if isinstance(media_file, models.RelatedFile):
+                        media_path = os.path.relpath(str(media_file.path), data_dir)
+                    else:
+                        media_path = media_file.path
+
+                    local_path = os.path.join(data_dir, media_path)
                     if os.path.exists(local_path):
                         files_for_local_copy.append(local_path)
                     else:
-                        media_files_to_download.append(im.path)
+                        media_files_to_download.append(media_path)
 
                 if media_files_to_download:
                     cloud_storage_instance = db_storage_to_storage_instance(self._db_data.cloud_storage)
@@ -914,8 +922,15 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
             if data['client_files'] != [self.MEDIA_MANIFEST_FILENAME]:
                 raise ValidationError(f"Expected {self.MEDIA_MANIFEST_FILENAME} in backup files")
 
-            manifest = ImageManifestManager(os.path.join(self._db_task.data.get_upload_dirname(), self.MEDIA_MANIFEST_FILENAME))
-            data['server_files'] = list(manifest.data)
+            manifest = ImageManifestManager(
+                os.path.join(self._db_task.data.get_upload_dirname(), self.MEDIA_MANIFEST_FILENAME)
+            )
+            data['server_files'] = []
+            for _, manifest_entry in manifest:
+                data['server_files'].append(manifest_entry.full_name)
+                data['server_files'].extend(
+                    manifest_entry.get("meta", {}).get("related_images", [])
+                )
 
         create_task(self._db_task.pk, data.copy(), is_backup_restore=True)
         self._db_task.refresh_from_db()
