@@ -21,9 +21,11 @@ def clear_db(client: clickhouse_connect.driver.client.Client):
     client.query(f"DROP TABLE IF EXISTS {client.database}.events;")
 
 
-def migration_000_initial(client: clickhouse_connect.driver.client.Client):
-    client.query(f"CREATE DATABASE IF NOT EXISTS {client.database};")
+def create_db(client: clickhouse_connect.driver.client.Client, db_name: str):
+    client.query(f"CREATE DATABASE IF NOT EXISTS {db_name};")
 
+
+def migration_000_initial(client: clickhouse_connect.driver.client.Client):
     client.query(
         textwrap.dedent(
             """\
@@ -73,17 +75,23 @@ def main(args: list[str] | None = None) -> int:
     )
     parsed_args = parser.parse_args(args)
 
+    db_name = parsed_args.db or os.getenv(CLICKHOUSE_DB_ENV_VAR)
+
     with clickhouse_connect.get_client(
         host=parsed_args.host or os.getenv(CLICKHOUSE_HOST_ENV_VAR),
         port=parsed_args.port or os.getenv(CLICKHOUSE_PORT_ENV_VAR),
-        database=parsed_args.db or os.getenv(CLICKHOUSE_DB_ENV_VAR),
         username=parsed_args.user or os.getenv(CLICKHOUSE_USER_ENV_VAR),
         password=parsed_args.password or os.getenv(CLICKHOUSE_PASSWORD_ENV_VAR),
     ) as client:
         if parsed_args.clear:
+            client.database = db_name
+
             print("Clearing the DB")
             clear_db(client)
             print("done")
+
+        create_db(client, db_name)
+        client.database = db_name
 
         for migration_func in migrations:
             print("Applying migration", migration_func.__name__)
