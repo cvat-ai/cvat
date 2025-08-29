@@ -44,10 +44,13 @@ function TasksPageComponent(props: Readonly<Props>): JSX.Element {
         deletedTasks: state.tasks.activities.deletes,
         selectedCount: state.tasks.selected.length,
     }), shallowEqual);
-    const selectableTaskIds = currentTasks.map((t) => t.id).filter((id) => !deletedTasks[id]);
+
     const onSelectAll = useCallback(() => {
-        dispatch(selectionActions.selectResources(selectableTaskIds, SelectedResourceType.TASKS));
-    }, [dispatch, selectableTaskIds]);
+        dispatch(selectionActions.selectResources(
+            currentTasks.map((t) => t.id).filter((id) => !deletedTasks[id]),
+            SelectedResourceType.TASKS,
+        ));
+    }, [currentTasks, deletedTasks]);
 
     const updatedQuery = useResourceQuery<TasksQuery>(query);
 

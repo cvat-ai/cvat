@@ -136,11 +136,12 @@ export default function ProjectPageComponent(): JSX.Element {
         }
     }, [deletes]);
 
-    const allTaskIds = tasks.map((t) => t.id);
-    const selectableTaskIds = allTaskIds.filter((taskId) => !deletedTasks[taskId]);
     const onSelectAll = useCallback(() => {
-        dispatch(selectionActions.selectResources(selectableTaskIds, SelectedResourceType.TASKS));
-    }, [selectableTaskIds]);
+        dispatch(selectionActions.selectResources(
+            tasks.map((t) => t.id).filter((taskId) => !deletedTasks[taskId]),
+            SelectedResourceType.TASKS,
+        ));
+    }, [tasks, deletedTasks]);
 
     const onUpdateProject = useCallback((project: Project) => {
         const promise = dispatch(updateProjectAsync(project));

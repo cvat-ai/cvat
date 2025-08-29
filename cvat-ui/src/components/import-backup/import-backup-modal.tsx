@@ -36,10 +36,15 @@ function ImportBackupModal(): JSX.Element {
     const [form] = Form.useForm();
     const [file, setFile] = useState<File | null>(null);
     const { instanceType, modalVisible } = useSelector((state: CombinedState) => {
-        const { instanceType: instanceT } = state.import;
+        const instanceT = state.import.instanceType;
         let visible = false;
-        if (instanceT && ['project', 'task'].includes(instanceT)) {
-            visible = state.import[`${instanceT}s` as 'projects' | 'tasks'].backup.modalVisible;
+
+        if (instanceT === 'project') {
+            visible = state.import.projects.backup.modalVisible;
+        }
+
+        if (instanceT === 'task') {
+            visible = state.import.tasks.backup.modalVisible;
         }
 
         return { instanceType: instanceT, modalVisible: visible };
