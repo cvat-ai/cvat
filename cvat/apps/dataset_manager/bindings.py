@@ -1887,8 +1887,9 @@ class CvatTaskOrJobDataExtractor(dm.SubsetBase, CvatDataExtractorBase):
             grouped_by_frame = self._grouped_by_frame
 
         for frame_data in grouped_by_frame:
-            # do not keep parsed lazy list data after this iteration
-            frame_data = self.copy_frame_data_with_replaced_lazy_lists(frame_data)
+            if not self._instance_data.is_stream:
+                # do not keep parsed lazy list data after this iteration
+                frame_data = self.copy_frame_data_with_replaced_lazy_lists(frame_data)
             yield self._process_one_frame_data(frame_data)
 
     def __len__(self):
