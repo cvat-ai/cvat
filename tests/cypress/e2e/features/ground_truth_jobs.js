@@ -82,7 +82,7 @@ context('Ground truth jobs', () => {
     let taskID = null;
 
     // With seed = 1, frameCount = 4, totalFrames = 100 - predefined ground truth frames are:
-    const groundTruthFrames = [10, 23, 71, 87];
+    const groundTruthFrames = [10, 23, 72, 88];
 
     function checkRectangleAndObjectMenu(rectangle, isGroundTruthJob = false) {
         if (isGroundTruthJob) {
@@ -174,7 +174,7 @@ context('Ground truth jobs', () => {
             cy.createJob({
                 ...jobOptions,
                 frameCount: 4,
-                seed: 1,
+                randomSeed: 1,
             });
             cy.url().then((url) => {
                 groundTruthJobID = Number(url.split('/').slice(-1)[0].split('?')[0]);
@@ -436,7 +436,7 @@ context('Ground truth jobs', () => {
                     frame_count: 4,
                     type: 'ground_truth',
                     frame_selection_method: 'random_uniform',
-                    seed: 1,
+                    random_seed: 1,
                 }).then((jobResponse) => {
                     groundTruthJobID = jobResponse.jobID;
                     return cy.headlessCreateObjects(groundTruthFrames.map((frame, index) => {

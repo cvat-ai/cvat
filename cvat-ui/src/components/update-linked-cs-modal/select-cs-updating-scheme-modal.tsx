@@ -60,7 +60,7 @@ function SelectCSUpdatingSchemeModal(): JSX.Element | null {
                                     : Transfer and unlink from a cloud storage.
                                 </div>
                                 <div>
-                                    <strong>Move & Auto-match</strong>
+                                    <strong>Move & Auto Match</strong>
                                     : Transfer and attempt to auto-link with a similar cloud storage
                                      in the target workspace. A similar cloud storage is defined
                                      by comparing the whole cloud storage configuration except credentials
@@ -114,7 +114,7 @@ function SelectCSUpdatingSchemeModal(): JSX.Element | null {
                             onUpdate();
                         }}
                     >
-                        Move & auto match
+                        Move & Auto match
                     </Button>
                 ),
             ]}
