@@ -26,7 +26,6 @@ from typing import Any, Optional
 
 import numpy as np
 import pytest
-from attr.converters import to_bool
 from cvat_sdk import exceptions
 from cvat_sdk.api_client import models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
@@ -1317,20 +1316,17 @@ class TestTaskBackups:
         assert filename.is_file()
         assert filename.stat().st_size > 0
 
-        if lightweight_backup:
-            with zipfile.ZipFile(filename, "r") as zf:
-                files_in_data = {
-                    name.split("data/", maxsplit=1)[1]
-                    for name in zf.namelist()
-                    if name.startswith("data/")
-                }
+        with zipfile.ZipFile(filename, "r") as zf:
+            files_in_data = {
+                name.split("data/", maxsplit=1)[1]
+                for name in zf.namelist()
+                if name.startswith("data/")
+            }
 
-            expected_media = {"manifest.jsonl"}
-            if to_bool(os.getenv("CVAT_ALLOW_STATIC_CACHE")):
-                # FIXME: remove extra media files
-                expected_media.update(cloud_storage_content)
-
-            assert files_in_data == expected_media
+        expected_media = {"manifest.jsonl"}
+        if not lightweight_backup:
+            expected_media.update(cloud_storage_content)
+        assert files_in_data == expected_media
 
         self._test_can_restore_task_from_backup(task_id, lightweight_backup=lightweight_backup)
 
@@ -1398,10 +1394,6 @@ class TestTaskBackups:
             assert new_meta["storage"] == ("cloud_storage" if lightweight_backup else "local")
             assert new_meta["cloud_storage_id"] is None
             exclude_regex_paths.extend([r"root\['cloud_storage_id'\]", r"root\['storage'\]"])
-        elif old_meta["cloud_storage_id"] is not None:
-            # static cache
-            assert new_meta["cloud_storage_id"] is None
-            exclude_regex_paths.extend([r"root\['cloud_storage_id'\]"])
 
         assert (
             DeepDiff(

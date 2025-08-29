@@ -117,7 +117,7 @@ export const createJobAsync = (data: JobData): ThunkAction<Promise<Job>> => asyn
     try {
         const extras = {
             frame_selection_method: data.frameSelectionMethod,
-            seed: data.seed,
+            random_seed: data.randomSeed,
             frame_count: data.frameCount,
             frames_per_job_count: data.framesPerJobCount,
         };

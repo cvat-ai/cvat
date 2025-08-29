@@ -147,7 +147,7 @@ COPY --from=build-smokescreen /tmp/smokescreen /usr/local/bin/smokescreen
 # Add a non-root user
 ENV USER=${USER}
 ENV HOME /home/${USER}
-RUN adduser --shell /bin/bash --disabled-password --gecos "" ${USER}
+RUN adduser --uid=1000 --shell /bin/bash --disabled-password --gecos "" ${USER}
 
 ARG CLAM_AV="no"
 RUN if [ "$CLAM_AV" = "yes" ]; then \
@@ -204,8 +204,9 @@ RUN if [ "${COVERAGE_PROCESS_START}" ]; then \
         echo "import coverage; coverage.process_startup()" > /opt/venv/lib/python3.10/site-packages/coverage_subprocess.pth; \
     fi
 
-# RUN all commands below as 'django' user
-USER ${USER}
+# RUN all commands below as 'django' user.
+# Use numeric UID/GID so that the image is compatible with the Kubernetes runAsNonRoot setting.
+USER 1000:1000
 WORKDIR ${HOME}
 
 RUN mkdir -p data share keys logs /tmp/supervisord static
