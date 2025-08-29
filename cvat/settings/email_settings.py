@@ -16,9 +16,8 @@ EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.Email
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = os.getenv('EMAIL_PORT', 587)
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', True)
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'sara.silva@digitalsense.ai')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', 'voeupjleluxyjpti')
-EMAIL_FROM = os.getenv('EMAIL_FROM', 'noreply@digitalsense.ai')
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'no-reply@example.com')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', 'hereGoesTheEmailAppPassword')
+EMAIL_FROM = os.getenv('EMAIL_FROM', 'no-reply@example.com')
 
-SITE_ID = 3
-
+SITE_ID = int(os.getenv("SITE_ID", 3))

@@ -28,5 +28,7 @@ services:
       - "host.docker.internal:host-gateway"
 
   cvat_worker_annotation:
+    environment:
+      CVAT_SERVERLESS: 1
     extra_hosts:
       - "host.docker.internal:host-gateway"
