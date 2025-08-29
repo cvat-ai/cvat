@@ -48,8 +48,6 @@ class TestExtractors(TestCase):
         mock.tags = []
         mock.height = 10
         mock.width = 10
-        if hasattr(mock, "_replace"):
-            mock._replace.return_value = mock
         return mock
 
     @staticmethod
