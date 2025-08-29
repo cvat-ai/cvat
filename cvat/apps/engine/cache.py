@@ -730,7 +730,7 @@ class MediaCache:
 
             for frame_id, frame_media in media:
                 if truncate_common_filename_prefix:
-                    # Truncate prefixes of the per-frame basis
+                    # Truncate RI prefixes on the per-frame basis
                     common_prefix = os.path.commonpath(os.path.dirname(m[1]) for m in frame_media)
 
                     frame_media = [
