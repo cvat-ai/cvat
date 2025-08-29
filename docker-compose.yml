@@ -27,8 +27,6 @@ x-backend-deps: &backend-deps
     condition: service_started
   cvat_clickhouse:
     condition: service_started
-  cvat_clickhouse_init:
-    condition: service_completed_successfully
 
 x-clickhouse-env: &clickhouse-env
   CLICKHOUSE_HOST: clickhouse
@@ -342,40 +340,6 @@ services:
           - clickhouse
     volumes:
       - cvat_events_db:/var/lib/clickhouse/
-    healthcheck:
-      test: ["CMD", "clickhouse-client", "--query", "SELECT 1"]
-      interval: 3s
-      timeout: 300s
-      retries: 3
-
-  cvat_clickhouse_init:
-    container_name: cvat_clickhouse_init
-    image: clickhouse/clickhouse-server:23.11-alpine
-    restart: "no"
-    environment:
-      <<: *clickhouse-env
-    depends_on:
-      cvat_clickhouse:
-        condition: service_healthy
-    networks:
-      - cvat
-    volumes:
-      - ./components/analytics/clickhouse/:/docker-entrypoint-initdb.d/:ro
-    entrypoint:
-      # https://github.com/ClickHouse/ClickHouse/blob/master/programs/client/clickhouse-client.xml
-      - /bin/bash
-      - -c
-      - |
-        mkdir -p /etc/clickhouse-client
-        cat << EOF > /etc/clickhouse-client/config.xml
-        <config>
-          <user>$${CLICKHOUSE_USER}</user>
-          <password>$${CLICKHOUSE_PASSWORD}</password>
-          <host>$${CLICKHOUSE_HOST}</host>
-          <port>9000</port><!-- https://clickhouse.com/docs/guides/sre/network-ports -->
-        </config>
-        EOF
-        bash "/docker-entrypoint-initdb.d/init.sh"
 
   cvat_vector:
     container_name: cvat_vector

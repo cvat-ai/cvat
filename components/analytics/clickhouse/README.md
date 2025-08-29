@@ -10,22 +10,21 @@ This directory contains migrations for the Clickhouse DB used by CVAT.
 
 ## Implementation details
 
-The directory contains initialization scripts for the Clickhouse instance.
-Only the main script `init.sh` is an executable shell script. The migration files
-are also shell scripts inside, but they have the `.cmf` extension, which stands
-for "clickhouse migration file". We use a custom extension to avoid automatic execution
-of these files by Clickhouse.
-
 The Clickhouse documentation explains options to customize DB loading here:
 <https://clickhouse.com/docs/install/docker#how-to-extend-image>
 In the default Docker image, Clickhouse only runs these files if the DB is not initialized.
-This is not the desired behavior for us, so we run the migrations on each start in a separate
-initialization job. Therefore **make sure the migrations can be safely called multiple times**
+This is not the desired behavior for us, because it doesn't allow us to add new migrations
+added after the DB is initialized. Instead, we run the migrations on each start using a custom
+script. Therefore **make sure the migrations can be safely called multiple times**
 on an existing DB.
+
+The directory contains scripts for the Clickhouse instance:
+- `init.py`: initializes the DB and applies required migrations
 
 ## Adding a migration
 
-To add a migration, create a new `NNN-<custom name>.cmf` file in this directory.
+To add a migration, create a new `migration_NNN_<custom name>` function in the `init.py` script
+and add it to the list of migrations.
 
 Recommendations on the migrations:
 - **Make sure the migrations can be safely called multiple times**
