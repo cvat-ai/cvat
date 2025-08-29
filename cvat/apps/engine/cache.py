@@ -21,7 +21,6 @@ from typing import Any, Callable, Optional, Union, overload
 
 import attrs
 import av
-import cv2
 import django_rq
 import PIL.Image
 import PIL.ImageOps
@@ -583,7 +582,7 @@ class MediaCache:
         frame_ids: Sequence[int],
         *,
         manifest_path: str,
-    ):
+    ) -> Generator[tuple[PIL.Image.Image, str, str], None, None]:
         db_data = db_task.data
 
         if os.path.isfile(manifest_path) and db_data.storage == models.StorageChoice.CLOUD_STORAGE:
@@ -648,6 +647,98 @@ class MediaCache:
                 media = map(load_image, media)
 
             yield from media
+
+    @classmethod
+    def _read_raw_context_images(
+        cls,
+        db_data: models.Data,
+        frame_ids: Sequence[int],
+        *,
+        truncate_common_filename_prefix: bool = True,
+    ) -> Generator[tuple[int, tuple[PIL.Image.Image, str, str]], None, None]:
+        data_upload_dir = db_data.get_upload_dirname()
+
+        def _validate_ri_path(path: str) -> str:
+            if os.path.isabs(path):
+                if not path.startswith(data_upload_dir + os.sep):
+                    raise Exception("Invalid related image path")
+
+                path = os.path.relpath(path, data_upload_dir)
+            else:
+                if not os.path.normpath(os.path.join(data_upload_dir, path)).startswith(
+                    data_upload_dir + os.sep
+                ):
+                    raise Exception("Invalid related image path")
+
+            return path
+
+        manifest_path = db_data.get_manifest_path()
+
+        with ExitStack() as es:
+            media = []
+
+            if (
+                os.path.isfile(manifest_path)
+                and db_data.storage == models.StorageChoice.CLOUD_STORAGE
+            ):
+                reader = ImageReaderWithManifest(manifest_path)
+
+                db_cloud_storage = db_data.cloud_storage
+                if not db_cloud_storage:
+                    raise CloudStorageMissingError("Task is no longer connected to cloud storage")
+                cloud_storage_client = db_storage_to_storage_instance(db_cloud_storage)
+
+                tmp_dir = es.enter_context(tempfile.TemporaryDirectory(prefix="cvat"))
+                files_to_download = []
+                for frame_id, frame in zip(
+                    frame_ids, reader.iterate_frames(frame_ids), strict=True
+                ):
+                    frame_media = []
+
+                    for related_image in frame.get("meta", {}).get("related_images", []):
+                        path = _validate_ri_path(related_image)
+                        output_path = os.path.join(tmp_dir, path)
+
+                        files_to_download.append(path)
+                        frame_media.append((output_path, path, None))
+
+                    media.append((frame_id, frame_media))
+
+                cloud_storage_client.bulk_download_to_dir(files_to_download, upload_dir=tmp_dir)
+            else:
+                ThroughModel = models.RelatedFile.images.through
+
+                db_related_files = (
+                    ThroughModel.objects.filter(
+                        relatedfile__data=db_data, image__frame__in=frame_ids
+                    )
+                    .order_by("image__frame", "relatedfile__path")
+                    .values_list("image__frame", "relatedfile__path")
+                )
+
+                media = []
+                raw_data_dir = db_data.get_raw_data_dirname()
+                for frame_id, frame_ris in groupby(db_related_files, key=lambda v: v[0]):
+                    frame_media = []
+
+                    for frame_ri_file in frame_ris:
+                        path = _validate_ri_path(frame_ri_file[1])
+                        source_path = os.path.join(raw_data_dir, path)
+                        frame_media.append((source_path, path, None))
+
+                    media.append((frame_id, frame_media))
+
+            for frame_id, frame_media in media:
+                if truncate_common_filename_prefix:
+                    # Truncate prefixes of the per-frame basis
+                    common_prefix = os.path.commonpath(os.path.dirname(m[1]) for m in frame_media)
+
+                    frame_media = [
+                        (m[0], os.path.relpath(m[1], common_prefix), m[2]) for m in frame_media
+                    ]
+
+                for m in frame_media:
+                    yield frame_id, load_image(m)
 
     @staticmethod
     def _read_raw_frames(
@@ -943,24 +1034,31 @@ class MediaCache:
             db_data = models.Data.objects.get(pk=db_data)
 
         zip_buffer = io.BytesIO()
+        mime_type = ""
 
-        related_images = db_data.related_files.filter(images__frame=frame_number).all()
-        if not related_images:
-            return zip_buffer, ""
+        with (
+            closing(self._read_raw_context_images(db_data, frame_ids=[frame_number])) as ri_iter,
+            zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file,
+        ):
+            for _, (image, path, _) in ri_iter:
+                name = os.path.splitext(path)[0]
 
-        with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
-            common_path = os.path.commonpath([str(x.path) for x in related_images])
-            for related_image in related_images:
-                path = os.path.realpath(str(related_image.path))
-                name = os.path.relpath(str(related_image.path), common_path)
-                image = cv2.imread(path)
-                success, result = cv2.imencode(".JPEG", image)
-                if not success:
-                    raise Exception('Failed to encode image to ".jpeg" format')
-                zip_file.writestr(f"{name}.jpg", result.tobytes())
+                try:
+                    if image.mode != "RGB" and image.mode != "L":
+                        image = image.convert("RGB")
+
+                    image_file = io.BytesIO()
+                    image.save(image_file, format="JPEG", quality=100, optimize=True)
+                    image_file.seek(0)
+                except OSError as e:
+                    raise Exception('Failed to encode image to ".jpeg" format') from e
+
+                zip_file.writestr(f"{name}.jpg", image_file.getbuffer())
+
+                if not mime_type:
+                    mime_type = "application/zip"
 
         zip_buffer.seek(0)
-        mime_type = "application/zip"
         return zip_buffer, mime_type
 
 

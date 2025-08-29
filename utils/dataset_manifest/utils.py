@@ -214,7 +214,7 @@ def find_related_images(
     dataset_paths: Sequence[str],
     *,
     root_path: Optional[str] = None,
-    scene_paths: Optional[Collection[str]] = None
+    scene_paths: Optional[Collection[str]] = None,
 ) -> Tuple[Set[str], Dict[str, List[str]]]:
     """
     Finds related images for scenes in the dataset.

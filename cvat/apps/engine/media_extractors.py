@@ -909,7 +909,11 @@ class ZipChunkWriter(IChunkWriter):
             image_buf.seek(0, 0)
             return io.BytesIO(image_buf.read()), self.POINT_CLOUD_EXT, w, h
 
-    def save_as_chunk(self, images: Iterator[tuple[Image.Image|io.IOBase|str, str, str]], chunk_path: str):
+    def save_as_chunk(
+        self,
+        images: Iterator[tuple[Image.Image|io.IOBase|str, str, str]],
+        chunk_path: str | io.IOBase,
+    ):
         with zipfile.ZipFile(chunk_path, 'x') as zip_chunk:
             for idx, (image, path, _) in enumerate(images):
                 ext = os.path.splitext(path)[1].replace('.', '')
@@ -964,8 +968,11 @@ class ZipCompressedChunkWriter(ZipChunkWriter):
     def save_as_chunk(
         self,
         images: Iterator[tuple[Image.Image|io.IOBase|str, str, str]],
-        chunk_path: str, *, compress_frames: bool = True, zip_compress_level: int = 0
-    ):
+        chunk_path: str | io.IOBase,
+        *,
+        compress_frames: bool = True,
+        zip_compress_level: int = 0,
+    ) -> list[tuple[int, int]]:
         image_sizes = []
         with zipfile.ZipFile(chunk_path, 'x', compresslevel=zip_compress_level) as zip_chunk:
             for idx, (image, path, _) in enumerate(images):

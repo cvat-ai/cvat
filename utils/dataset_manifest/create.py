@@ -80,10 +80,11 @@ def main():
             sources,
             root_path=abs_root,
             scene_paths=(
-                p for p in sources
-                if not re.search(r'(^|{0})related_images{0}'.format(os.sep), p)
+                p
+                for p in sources
+                if not re.search(r"(^|{0})related_images{0}".format(os.sep), p)
                 # backward compatibility
-            )
+            ),
         )
         sources = [p for p in sources if os.path.relpath(p, abs_root) in scene_paths]
         meta = {k: {"related_images": related_images[k]} for k in related_images}
