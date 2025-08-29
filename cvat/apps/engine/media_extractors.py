@@ -512,25 +512,46 @@ class ZipReader(ImageListReader):
         return self._zip_source.filename
 
     def get_path(self, i):
+        path = self._source_path[i]
+
         prefix = self._get_extract_prefix()
-        return os.path.join(prefix, self._source_path[i])
+        if prefix is not None:
+            path = os.path.join(prefix, path)
+
+        return path
 
     def __contains__(self, media_file):
-        return super().__contains__(os.path.relpath(media_file, self._get_extract_prefix()))
+        path = media_file
 
-    def _get_extract_prefix(self):
-        return self.extract_dir or os.path.dirname(self._zip_source.filename)
+        prefix = self._get_extract_prefix()
+        if prefix is not None:
+            path = os.path.relpath(media_file, path)
+
+        return super().__contains__(path)
+
+    def _get_extract_prefix(self) -> str | None:
+        if self.extract_dir is not None:
+            return self.extract_dir
+
+        if self._zip_source.filename is not None:
+            return os.path.dirname(self._zip_source.filename)
+
+        return None
 
     def filter(self, callback):
         prefix = self._get_extract_prefix()
-        updated_callback = lambda p: callback(os.path.join(prefix, p))
+        if prefix is not None:
+            updated_callback = lambda p: callback(os.path.join(prefix, p))
+        else:
+            updated_callback = callback
+
         return super().filter(updated_callback)
 
     def reconcile(self, source_files, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D, sorting_method=None):
-        if source_files:
+        prefix = self._get_extract_prefix()
+        if source_files and prefix is not None:
             # file list is expected to be a processed output of self.get_path()
             # which returns files with the output directory prefix
-            prefix = self._get_extract_prefix()
             source_files = [os.path.relpath(fn, prefix) for fn in source_files]
 
         super().reconcile(
