@@ -5,7 +5,7 @@
 import abc
 import math
 from collections.abc import Iterable
-from typing import ClassVar
+from typing import ClassVar, Optional
 
 import cvat_sdk.auto_annotation as cvataa
 import cvat_sdk.models as models
@@ -126,7 +126,9 @@ DEFAULT_KEYPOINT_NAMES = [
 
 
 class YoloPoseEstimationFunction(YoloFunctionWithShapes):
-    def __init__(self, model: YOLO, device: str, *, keypoint_names_path: str = None) -> None:
+    def __init__(
+        self, model: YOLO, device: str, *, keypoint_names_path: Optional[str] = None
+    ) -> None:
         if keypoint_names_path is None:
             self._keypoint_names = DEFAULT_KEYPOINT_NAMES
         else:
