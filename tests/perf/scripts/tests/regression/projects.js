@@ -54,5 +54,5 @@ export function TestGetProject(data) {
 export function TestGetProjects(data) {
     const randomProjects = Random.randomSample(data.resources, N_PER_USER);
     const projectsData = APIProjects.listProjects(data.token, randomProjects);
-    console.log(projectsData); // TODO: stash pop verbose flag from local git
+    console.log(projectsData);
 }
