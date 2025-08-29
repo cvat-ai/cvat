@@ -107,7 +107,7 @@ def run_regression(
         False, help="Reuse existing cluster. Cluster won't be shutdown after test."
     ),
     no_warmup: bool = typer.Option(False, help="Disable warmup for test execution."),
-    verbose: bool = typer.Option(False, help="Show js console output")
+    verbose: bool = typer.Option(False, help="Show js console output"),
 ):
 
     def resolve_commit() -> str:
