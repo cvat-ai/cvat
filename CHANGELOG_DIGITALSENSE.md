@@ -8,9 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Created API export file. [PR #23]
 - Added all possible anomalib models for detection. [PR #24]
 - Email configuration support through environment variables for SMTP authentication and user verification. [PR #25]
-
 
 ### Changed
 - Updated files to utilize environment variables. [PR #22]
