@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import Modal from 'antd/lib/modal';
 import Form, { RuleObject } from 'antd/lib/form';
 import Text from 'antd/lib/typography/Text';
@@ -35,13 +35,16 @@ const initialValues: FormValues = {
 function ImportBackupModal(): JSX.Element {
     const [form] = Form.useForm();
     const [file, setFile] = useState<File | null>(null);
-    const instanceType = useSelector((state: CombinedState) => state.import.instanceType);
-    const modalVisible = useSelector((state: CombinedState) => {
-        if (instanceType && ['project', 'task'].includes(instanceType)) {
-            return state.import[`${instanceType}s` as 'projects' | 'tasks'].backup.modalVisible;
+    const { instanceType, modalVisible } = useSelector((state: CombinedState) => {
+        const { instanceType: instanceT } = state.import;
+        let visible = false;
+        if (instanceT && ['project', 'task'].includes(instanceT)) {
+            visible = state.import[`${instanceT}s` as 'projects' | 'tasks'].backup.modalVisible;
         }
-        return false;
-    });
+
+        return { instanceType: instanceT, modalVisible: visible };
+    }, shallowEqual);
+
     const dispatch = useDispatch();
     const [selectedSourceStorage, setSelectedSourceStorage] = useState<StorageData>({
         location: StorageLocation.LOCAL,

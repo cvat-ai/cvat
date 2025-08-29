@@ -59,9 +59,6 @@ export default function ProjectPageComponent(): JSX.Element {
     const id = +useParams<ParamType>().id;
     const dispatch = useDispatch();
     const history = useHistory();
-    const selectedCount = useSelector((state: CombinedState) => state.tasks.selected.length);
-    const bulkFetching = useSelector((state: CombinedState) => state.bulkActions.fetching);
-
     const [projectInstance, setProjectInstance] = useState<Project | null>(null);
     const [fechingProject, setFetchingProject] = useState(true);
     const mounted = useRef(false);
@@ -74,6 +71,8 @@ export default function ProjectPageComponent(): JSX.Element {
         tasksQuery,
         tasksFetching,
         deletedTasks,
+        selectedCount,
+        bulkFetching,
     } = useSelector((state: CombinedState) => ({
         deletes: state.projects.activities.deletes,
         updates: state.projects.activities.updates,
@@ -82,6 +81,8 @@ export default function ProjectPageComponent(): JSX.Element {
         tasksQuery: state.projects.tasksGettingQuery,
         tasksFetching: state.tasks.fetching,
         deletedTasks: state.tasks.activities.deletes,
+        selectedCount: state.tasks.selected.length,
+        bulkFetching: state.bulkActions.fetching,
     }), shallowEqual);
     const [visibility, setVisibility] = useState(defaultVisibility);
 

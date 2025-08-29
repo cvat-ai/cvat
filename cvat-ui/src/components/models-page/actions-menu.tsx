@@ -9,7 +9,7 @@ import { MLModel, ModelProviders } from 'cvat-core-wrapper';
 import { usePlugins } from 'utils/hooks';
 import { CombinedState } from 'reducers';
 import { MenuProps } from 'antd/lib/menu';
-import { useSelector } from 'react-redux';
+import { shallowEqual, useSelector } from 'react-redux';
 
 interface ModelActionsProps {
     model: MLModel;
@@ -25,13 +25,26 @@ function ModelActionsComponent(props: Readonly<ModelActionsProps>): JSX.Element 
         dropdownTrigger,
         renderTriggerIfEmpty = true,
     } = props;
-    const allModels = useSelector((state: CombinedState) => [
-        ...state.models.interactors,
-        ...state.models.detectors,
-        ...state.models.trackers,
-        ...state.models.reid,
-    ]);
-    const selectedIds = useSelector((state: CombinedState) => state.models.selected);
+    const {
+        interactors,
+        detectors,
+        trackers,
+        reid,
+        selectedIds,
+    } = useSelector((state: CombinedState) => ({
+        interactors: state.models.interactors,
+        detectors: state.models.detectors,
+        trackers: state.models.trackers,
+        reid: state.models.reid,
+        selectedIds: state.models.selected,
+    }), shallowEqual);
+
+    const allModels = [
+        ...interactors,
+        ...detectors,
+        ...trackers,
+        ...reid,
+    ];
 
     const menuPlugins = usePlugins(
         (state: CombinedState) => state.plugins.components.modelsPage.modelItem.menu.items,
