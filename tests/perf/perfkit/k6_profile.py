@@ -40,8 +40,8 @@ class K6Profile:
             result.extend(["-e", f"{key}={val}"])
         return result
 
-    def build_run_cmd(self) -> List[str]:
-        return [
+    def build_run_cmd(self, verbose=False) -> List[str]:
+        args = [
             "run",
             *self._build_env_list(),
             "--out",
@@ -54,6 +54,9 @@ class K6Profile:
             *self.args,
             str(self.test_file),
         ]
+        if verbose:
+            args.insert(1, "--verbose")
+        return args
 
     def __repr__(self):
         return f"<K6Config file={self.test_file.name} args={self.args} env={list(self.env_vars.keys())}>"

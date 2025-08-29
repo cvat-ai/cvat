@@ -40,6 +40,7 @@ def run_golden(
     save_baseline: bool = typer.Option(
         True, help="Save result as baseline. Be default prints it into the console."
     ),
+    verbose: bool = typer.Option(False, help="Show JS console output"),
 ):
     test_invalid = threading.Event()
     k6_metrics_total: list[K6Summary] = []
@@ -61,7 +62,7 @@ def run_golden(
             exit_with_error(f"warmup finished with an error. exit_code: {exit_code}")
         print_success("warmup completed")
         print_info(f"🚀 running test: {test_file}")
-        exit_code = run_k6_docker(K6Profile(test_file))
+        exit_code = run_k6_docker(K6Profile(test_file), verbose=verbose)
         if exit_code != 0:
             exit_with_error("K6 execution finished with an error.")
         k6_summary_metrics = parse_k6_summary(K6_OUTPUT_SUMMARY_JSON)
@@ -106,6 +107,7 @@ def run_regression(
         False, help="Reuse existing cluster. Cluster won't be shutdown after test."
     ),
     no_warmup: bool = typer.Option(False, help="Disable warmup for test execution."),
+    verbose: bool = typer.Option(False, help="Show js console output")
 ):
 
     def resolve_commit() -> str:
@@ -152,7 +154,7 @@ def run_regression(
     stop_metrics = start_metrics_watcher()
     if not no_warmup:
         run_k6_docker(warmup_profile)
-    run_k6_docker(K6Profile(test_file))
+    run_k6_docker(K6Profile(test_file), verbose=verbose)
     stop_metrics()
     if not reuse_cluster:
         stop_cluster()
