@@ -530,18 +530,21 @@ def _create_task_manifest_from_cloud_data(
     sorted_media: list[str],
     manifest: ImageManifestManager,
     dimension: models.DimensionType = models.DimensionType.DIM_2D,
-    *,
-    stop_frame: Optional[int] = None,
 ) -> None:
-    if stop_frame is None:
-        stop_frame = len(sorted_media) - 1
+    regular_images, related_images = find_related_images(sorted_media)
+    sorted_media = [f for f in sorted_media if f in regular_images]
+
     cloud_storage_instance = db_storage_to_storage_instance(db_storage)
     content_generator = cloud_storage_instance.bulk_download_to_memory(sorted_media)
 
     manifest.link(
         sources=content_generator,
+        meta={
+            k: {'related_images': related_images[k] }
+            for k in related_images
+        },
         DIM_3D=dimension == models.DimensionType.DIM_3D,
-        stop=stop_frame,
+        stop=len(sorted_media) - 1,
     )
     manifest.create()
 
