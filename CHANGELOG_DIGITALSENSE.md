@@ -9,13 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Added all possible anomalib models for detection. [PR #24]
+- Email configuration support through environment variables for SMTP authentication and user verification. [PR #25]
 
 
 ### Changed
 - Updated files to utilize environment variables. [PR #22]
+- Enhanced docker-compose.override.yml and example.env to load email settings from environment variables with fallback defaults. [PR #25]
 
 ### Fixed
 - Fixed Task creating changing cvat base docker image to version v2.35.0 [PR #21]
+- Fixed SITE_ID type conversion issue in email_settings.py that was causing container restart problems. [PR #25]
 
 =======
 
