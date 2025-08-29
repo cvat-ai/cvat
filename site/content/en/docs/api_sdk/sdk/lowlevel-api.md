@@ -724,7 +724,7 @@ with ApiClient(...) as api_client:
     query_params = []
     api_client.update_params_for_auth(headers=headers, queries=query_params, method="GET")
 
-    response = requests.get("<custom URL>", headers=headers)
+    response = requests.get("<custom URL>", params=query_params, headers=headers)
 
     # process the response ...
 ```

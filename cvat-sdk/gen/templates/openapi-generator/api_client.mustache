@@ -490,7 +490,7 @@ class ApiClient(object):
         url: str,
         query_params: typing.Optional[list[tuple[str, typing.Any]]] = None,
         headers: typing.Optional[dict[str, typing.Any]] = None,
-        post_params: typing.Optional[typing.Union[list[typing.Any] | dict]] = None,
+        post_params: typing.Optional[typing.Union[list, dict]] = None,
         body: typing.Optional[typing.Any] = None,
         *,
         _parse_response: bool = True,
