@@ -28,7 +28,7 @@ export default function ProjectsPageComponent(): JSX.Element {
         tasksQuery,
         importing,
         bulkFetching,
-        allProjectIds,
+        currentProjects,
         deletedProjects,
         selectedCount,
     } = useSelector((state: CombinedState) => ({
@@ -38,14 +38,15 @@ export default function ProjectsPageComponent(): JSX.Element {
         tasksQuery: state.projects.tasksGettingQuery,
         importing: state.import.projects.backup.importing,
         bulkFetching: state.bulkActions.fetching,
-        allProjectIds: state.projects.current.map((p) => p.id),
+        currentProjects: state.projects.current,
         deletedProjects: state.projects.activities.deletes,
         selectedCount: state.projects.selected.length,
     }), shallowEqual);
     const [isMounted, setIsMounted] = useState(false);
     const isAnySearch = anySearch<ProjectsQuery>(query);
 
-    const selectableProjectIds = allProjectIds.filter((id) => !deletedProjects[id]);
+    const selectableProjectIds = currentProjects
+        .map((p) => p.id).filter((id) => !deletedProjects[id]);
     const onSelectAll = useCallback(() => {
         dispatch(selectionActions.selectResources(selectableProjectIds, SelectedResourceType.PROJECTS));
     }, [selectableProjectIds]);

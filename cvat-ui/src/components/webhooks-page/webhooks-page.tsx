@@ -36,7 +36,7 @@ function WebhooksPage(): JSX.Element | null {
         totalCount,
         query,
         bulkFetching,
-        allWebhookIds,
+        currentWebhooks,
         selectedCount,
     } = useSelector((state: CombinedState) => ({
         organization: state.organizations.current,
@@ -44,7 +44,7 @@ function WebhooksPage(): JSX.Element | null {
         totalCount: state.webhooks.totalCount,
         query: state.webhooks.query,
         bulkFetching: state.bulkActions.fetching,
-        allWebhookIds: state.webhooks.current.map((w) => w.id),
+        currentWebhooks: state.webhooks.current,
         selectedCount: state.webhooks.selected.length,
     }), shallowEqual);
 
@@ -88,8 +88,11 @@ function WebhooksPage(): JSX.Element | null {
     }, [query]);
 
     const onSelectAll = useCallback(() => {
-        dispatch(selectionActions.selectResources(allWebhookIds, SelectedResourceType.WEBHOOKS));
-    }, [allWebhookIds]);
+        dispatch(selectionActions.selectResources(
+            currentWebhooks.map((w) => w.id),
+            SelectedResourceType.WEBHOOKS),
+        );
+    }, [currentWebhooks]);
 
     const content = totalCount ? (
         <>
