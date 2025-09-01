@@ -54,7 +54,7 @@ function listProjects(authKey, params = {}) {
 }
 
 function updateProject(authKey, projectId, updateSpec) {
-    const response = http.put(`${BASE_URL}projects/${projectId}`, JSON.stringify(updateSpec), {
+    const response = http.patch(`${BASE_URL}projects/${projectId}`, JSON.stringify(updateSpec), {
         headers: {
             Authorization: `Token ${authKey}`,
             'Content-Type': 'application/json',

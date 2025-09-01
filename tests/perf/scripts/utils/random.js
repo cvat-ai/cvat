@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { randomItem } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js';
+import { randomItem, randomIntBetween } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js';
 
 /**
  * Returns a random sample of `count` unique elements from `arr` using Fisher-Yates shuffle.
@@ -26,6 +26,32 @@ function randomSample(arr, count) {
     return shuffled.slice(0, count);
 }
 
-export default {
+function randomBool() {
+    return Math.random() > 0.5;
+}
+
+/**
+ * Returns a random subset of key-value pairs `kv`
+ * @param {Object} kv - Updated fields to send to a PATCH endpoint.
+ * @returns {Object} - Same object with randomly picked fields
+ */
+function randomUpdate(kv) {
+    const update = new Map();
+    for (const [k, v] of Object.entries(kv)) {
+        if (randomBool()) {
+            update.set(k, v);
+        }
+    }
+    return { ...update };
+}
+
+function randomBugTracker() {
+    return `http://bugs.example.com/${randomIntBetween(100, 999)}`;
+}
+
+export {
+    randomBugTracker,
+    randomUpdate,
+    randomBool,
     randomSample,
 };
