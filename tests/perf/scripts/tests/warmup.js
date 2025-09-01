@@ -6,7 +6,7 @@ import TasksLib from '../libs/fixtures/tasks.js';
 import APIAuth from '../libs/api/auth.js';
 import { ADMIN_PASSWORD, ADMIN_USERNAME } from '../variables/constants.js';
 
-const TOTAL_DURATION = "10s";
+const TOTAL_DURATION = '10s';
 
 export const options = {
     scenarios: {
@@ -50,7 +50,7 @@ function createTasks(token, count) {
 }
 
 function getRandomTaskId(tasks) {
-    return tasks[__VU % tasks.length]
+    return tasks[__VU % tasks.length];
 }
 
 export function setup() {
@@ -65,9 +65,9 @@ export function TestGetTask(data) {
 
 export function TestCreateTask(data) {
     const taskId = TasksLib.createRandomTask(data.token);
-    APITasks.deleteTask(data.token, taskId)
+    APITasks.deleteTask(data.token, taskId);
 }
 
 export function TestUpdateTask(data) {
-    TasksLib.updateRandomTask(data.token, getRandomTaskId(data.tasksData))
+    TasksLib.updateRandomTask(data.token, getRandomTaskId(data.tasksData));
 }

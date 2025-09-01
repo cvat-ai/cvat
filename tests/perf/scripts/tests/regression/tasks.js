@@ -6,7 +6,7 @@ import TasksLib from '../../libs/fixtures/tasks.js';
 import APIAuth from '../../libs/api/auth.js';
 import { ADMIN_PASSWORD, ADMIN_USERNAME } from '../../variables/constants.js';
 
-const TOTAL_DURATION = "30s";
+const TOTAL_DURATION = '1s';
 
 export const options = {
     scenarios: {
@@ -25,42 +25,42 @@ export const options = {
             // constant arrival rate.
             maxVUs: 100,
         },
-        create_task: {
-            exec: 'TestCreateTask',
-            executor: 'constant-arrival-rate',
-            duration: TOTAL_DURATION,
-            rate: 5,
-            timeUnit: '1s',
-            preAllocatedVUs: 10,
-            maxVUs: 100,
-        },
-        update_tasks: {
-            exec: 'TestUpdateTask',
-            executor: 'constant-arrival-rate',
-            duration: TOTAL_DURATION,
-            rate: 5,
-            timeUnit: '1s',
-            preAllocatedVUs: 10,
-            maxVUs: 100,
-        },
+        // create_task: {
+        //     exec: 'TestCreateTask',
+        //     executor: 'constant-arrival-rate',
+        //     duration: TOTAL_DURATION,
+        //     rate: 5,
+        //     timeUnit: '1s',
+        //     preAllocatedVUs: 10,
+        //     maxVUs: 100,
+        // },
+        // update_tasks: {
+        //     exec: 'TestUpdateTask',
+        //     executor: 'constant-arrival-rate',
+        //     duration: TOTAL_DURATION,
+        //     rate: 5,
+        //     timeUnit: '1s',
+        //     preAllocatedVUs: 10,
+        //     maxVUs: 100,
+        // },
     },
 };
 
-const imagePath = "/data/images/image_1.jpg";
-const imageBinary = open(imagePath, "b", imagePath)
+const imagePath = '/data/images/image_1.jpg';
+const sampleImageBinary = open(imagePath, 'b', imagePath);
 
 function createTasks(token, count) {
     const createdTasks = [];
     for (let i = 0; i < count; i++) {
         const taskId = TasksLib.createRandomTask(token);
-        TasksLib.addRandomData(token, taskId, imageBinary, 3);
+        TasksLib.addRandomData(token, taskId, sampleImageBinary, 5);
         createdTasks.push(taskId);
     }
     return createdTasks;
 }
 
 function getRandomTaskId(tasks) {
-    return tasks[__VU % tasks.length]
+    return tasks[__VU % tasks.length];
 }
 
 export function setup() {
@@ -75,10 +75,12 @@ export function TestGetTasks(data) {
 }
 
 export function TestCreateTask(data) {
-    const taskId = TasksLib.createRandomTask(data.token);
-    APITasks.deleteTask(data.token, taskId)
+    const { token } = data;
+    const taskId = TasksLib.createRandomTask(token);
+    TasksLib.addRandomData(token, taskId, sampleImageBinary, 3);
+    APITasks.deleteTask(token, taskId);
 }
 
 export function TestUpdateTask(data) {
-    TasksLib.updateRandomTask(data.token, getRandomTaskId(data.tasksData))
+    TasksLib.updateRandomTask(data.token, getRandomTaskId(data.tasksData));
 }

@@ -2,28 +2,28 @@
 //
 // SPDX-License-Identifier: MIT
 import http from 'k6/http';
-import encoding from "k6/encoding";
+import encoding from 'k6/encoding';
 import { validateResponse } from '../../utils/validation.js';
 import { BASE_URL } from '../../variables/constants.js';
 
 const MAX_REQUEST_SIZE = 50 * 1024 * 1024; // 50 MB threshold
 
 function tusUploadInit(authKey, taskId, filePath, fileSize) {
-    let res = http.post(`${BASE_URL}/tasks/${taskId}/data/`, null,
+    const res = http.post(`${BASE_URL}/tasks/${taskId}/data/`, null,
         {
             headers: {
                 Authorization: `Token ${authKey}`,
-                "Upload-Length": `${fileSize}`,
-                "Upload-Metadata": `filename ${encoding.b64encode(filePath)}`,
-            }
-        }
-    )
-    validateResponse(res, 201, "Task data Upload-Start")
-    return res
+                'Upload-Length': `${fileSize}`,
+                'Upload-Metadata': `filename ${encoding.b64encode(filePath)}`,
+            },
+        },
+    );
+    validateResponse(res, 201, 'Task data Upload-Start');
+    return res;
 }
 
-function tusUploadFinish(authKey, taskId, finishOpts) {
-    const url = `${BASE_URL}/tasks/${taskId}/data/`
+function tusUploadFinish(authKey, taskId, finishOpts, fileName) {
+    const url = `${BASE_URL}/tasks/${taskId}/data/?file=${fileName}`;
     const res = http.post(url, JSON.stringify(finishOpts), {
         headers: {
             Authorization: `Token ${authKey}`,
@@ -31,8 +31,7 @@ function tusUploadFinish(authKey, taskId, finishOpts) {
             'Content-Type': 'application/json',
         },
     });
-
-    validateResponse(res, 202, "Task data Upload-Finish")
+    validateResponse(res, 202, 'Task data Upload-Finish');
     return res;
 }
 
@@ -47,26 +46,26 @@ export function tusUploadFile(authKey, taskId, fileName, fileData) {
     // 1. Upload-Init
     let res = tusUploadInit(authKey, taskId, fileName, fileSize);
     // 2. Create upload URL (CVAT sends Location header)
-    const uploadUrl = res.headers["Location"];
+    const uploadUrl = res.headers.Location;
     if (!uploadUrl) {
-        throw new Error("CVAT did not return upload URL in Location header");
+        throw new Error('CVAT did not return upload URL in Location header');
     }
     // 3. Send file chunks (we’ll send it in one go here)
     res = http.patch(uploadUrl, fileData, {
         headers: {
             Authorization: `Token ${authKey}`,
-            "Upload-Offset": "0",
-            "Content-Type": "application/offset+octet-stream",
+            'Upload-Offset': '0',
+            'Content-Type': 'application/offset+octet-stream',
         },
     });
-    validateResponse(res, 204, "Task data Upload-Chunk")
-    tusUploadFinish(authKey, taskId, fileName, { image_quality: 70, client_files: [] });
+    validateResponse(res, 204, 'Task data Upload-Chunk');
+    tusUploadFinish(authKey, taskId, { image_quality: 70 }, fileName);
 }
 
 // Single large file with TUS (Upload-Length + PATCH)
 function tusUploadSingleFile(authKey, taskId, file) {
     const size = file.bytes.byteLength;
-    let res = tusUploadInit(authKey, taskId, file.name, size)
+    let res = tusUploadInit(authKey, taskId, file.name, size);
     const uploadUrl = res.headers.Location;
     let offset = 0;
     const CHUNK_SIZE = 10 * 1024 * 1024;
@@ -82,11 +81,10 @@ function tusUploadSingleFile(authKey, taskId, file) {
                 'Content-Type': 'application/offset+octet-stream',
             },
         });
-        validateResponse(res, 204, "Upload Patch")
+        validateResponse(res, 204, 'Upload Patch');
         offset = Number(res.headers['Upload-Offset']);
     }
 }
-
 
 function splitFilesByRequests(files) {
     const bulk = [];
@@ -120,7 +118,7 @@ function splitFilesByRequests(files) {
 function tusUploadFiles(
     authKey,
     taskId,
-    files,      // [{ name: "a.jpg", bytes: ArrayBuffer }, ...]
+    files, // [{ name: "a.jpg", bytes: ArrayBuffer }, ...]
     finishOpts, // { image_quality, sorting_method, ... }
 ) {
     const url = `${BASE_URL}/tasks/${taskId}/data`;
@@ -138,7 +136,7 @@ function tusUploadFiles(
         group.forEach((f, i) => {
             formData[`client_files[${i}]`] = http.file(f.bytes, f.name);
         });
-        formData['image_quality'] = finishOpts.image_quality;
+        formData.image_quality = finishOpts.image_quality;
 
         const res = http.post(url, formData, {
             headers: {
@@ -146,7 +144,7 @@ function tusUploadFiles(
                 'Upload-Multiple': '',
             },
         });
-        validateResponse(res, 200, "Upload-Multiple");
+        validateResponse(res, 200, 'Upload-Multiple');
     }
 
     // ---- Large files via TUS
@@ -157,5 +155,4 @@ function tusUploadFiles(
     tusUploadFinish(authKey, taskId, finishOpts);
 }
 
-
-export default { tusUploadFiles, tusUploadFile }
+export default { tusUploadFiles, tusUploadFile };

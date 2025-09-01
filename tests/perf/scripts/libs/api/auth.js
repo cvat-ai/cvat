@@ -10,12 +10,12 @@ function login(username, password) {
         username,
         password,
     }),
-        {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
-    if (validateResponse(response, 200, "Authentication")) {
+    {
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    });
+    if (validateResponse(response, 200, 'Authentication')) {
         return response.json().key;
     }
 }

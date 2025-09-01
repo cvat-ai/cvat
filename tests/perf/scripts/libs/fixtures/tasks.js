@@ -1,20 +1,20 @@
 // Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
-import APITasks from '../../libs/api/tasks.js';
-import APITus from '../../libs/api/tus.js';
-import { randomBool } from '../../utils/random.js'
-import { randomIntBetween, randomString, randomItem } from "https://jslib.k6.io/k6-utils/1.4.0/index.js";
+import { randomIntBetween, randomString, randomItem } from 'https://jslib.k6.io/k6-utils/1.4.0/index.js';
+import APITasks from '../api/tasks.js';
+import APITus from '../api/tus.js';
+import { randomBool } from '../../utils/random.js';
 
-const BUG_TRACKER_FAKE_URL = "https://jira.example.com/browse/PROJ-123"
+const BUG_TRACKER_FAKE_URL = 'https://jira.example.com/browse/PROJ-123';
 const LABEL_TYPES = ['rectangle', 'polygon', 'polyline', 'points', 'cuboid'];
 
 function createRandomTask(authKey, projectId, ownerId) {
     const overlapChoices = [0, 2, 5, 10];
     const taskSpec = {
         name: `task_${randomString(8)}`,
-        projectId: projectId,
-        ownerId: ownerId,
+        projectId,
+        ownerId,
         labels: [
             {
                 name: `label_${randomString(5)}`,
@@ -33,23 +33,23 @@ function createRandomTask(authKey, projectId, ownerId) {
                         input_type: 'select',
                         default_value: 'high',
                         values: ['low', 'medium', 'high'],
-                    }
-                ]
-            }
+                    },
+                ],
+            },
         ],
         overlap: randomItem(overlapChoices),
-        segment_size: randomIntBetween(10, 50),
+        segment_size: 1,
         bug_tracker: BUG_TRACKER_FAKE_URL,
         target_storage: {
-            location: "local"
+            location: 'local',
         },
         source_storage: {
-            location: "local"
+            location: 'local',
         },
         subset: randomString(10),
     };
 
-    return APITasks.createTask(authKey, taskSpec)
+    return APITasks.createTask(authKey, taskSpec);
 }
 
 export function updateRandomTask(authKey, taskId, projectId, assigneeId) {
@@ -57,18 +57,18 @@ export function updateRandomTask(authKey, taskId, projectId, assigneeId) {
         name: `updated_${randomString(8)}`,
         assignee_id: assigneeId,
         project_id: projectId,
-        bug_tracker: randomBool()
-            ? `http://bugs.example.com/${randomIntBetween(100, 999)}`
-            : undefined,
-        labels: randomBool()
-            ? [
+        bug_tracker: randomBool() ?
+            `http://bugs.example.com/${randomIntBetween(100, 999)}` :
+            undefined,
+        labels: randomBool() ?
+            [
                 {
                     name: `label_${randomString(5)}`,
                     type: randomItem(LABEL_TYPES),
                     attributes: [],
                 },
-            ]
-            : undefined,
+            ] :
+            undefined,
         subset: randomString(10),
     };
 
@@ -83,12 +83,11 @@ export function updateRandomTask(authKey, taskId, projectId, assigneeId) {
 }
 
 function addRandomData(authKey, taskId, binaryData, filesCount) {
-    let filesData = [];
-    for (var i = 0; i < filesCount; i++) {
-        filesData[i] = { name: randomString(10), bytes: binaryData }
+    const filesData = [];
+    for (let i = 0; i < filesCount; i++) {
+        filesData[i] = { name: `${randomString(10)}.png`, bytes: binaryData };
     }
-    APITus.tusUploadFiles(authKey, taskId, filesData, { image_quality: 70 })
+    APITus.tusUploadFiles(authKey, taskId, filesData, { image_quality: 70 });
 }
 
-
-export default { createRandomTask, updateRandomTask, addRandomData }
+export default { createRandomTask, updateRandomTask, addRandomData };

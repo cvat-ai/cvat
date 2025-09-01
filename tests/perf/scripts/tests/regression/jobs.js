@@ -6,47 +6,45 @@ import JobsLib from '../../libs/fixtures/jobs.js';
 import APIAuth from '../../libs/api/auth.js';
 import { ADMIN_PASSWORD, ADMIN_USERNAME } from '../../variables/constants.js';
 
-const TOTAL_DURATION = "1s";
+const TOTAL_DURATION = '5s';
 
 export const options = {
     scenarios: {
         createJobs: {
-            exec: 'TestCreateJobs',
+            exec: 'TestCreateGTJob',
             executor: 'constant-arrival-rate',
-            // How long the test lasts
             duration: TOTAL_DURATION,
-            // How many iterations per timeUnit
-            rate: 15,
-            // Start `rate` iterations per second
+            rate: 5,
             timeUnit: '1s',
-            // Pre-allocate 2 VUs before starting the test
             preAllocatedVUs: 10,
-            // Spin up a maximum of 50 VUs to sustain the defined
-            // constant arrival rate.
             maxVUs: 100,
         },
     },
 };
 
-function createTasks(token, count) {
+const IMAGE_PATH = '/data/images/image_1.jpg';
+const SAMPLE_IMAGE_BINARY = open(IMAGE_PATH, 'b', IMAGE_PATH);
+const DEFAULT_IMAGES_COUNT = 5;
+
+function createTasks(token, count, imagesCount) {
     const createdTasks = [];
     for (let i = 0; i < count; i++) {
         const taskId = TasksLib.createRandomTask(token);
+        TasksLib.addRandomData(token, taskId, SAMPLE_IMAGE_BINARY, imagesCount);
         createdTasks.push(taskId);
     }
     return createdTasks;
 }
 
-function getRandomTaskId(tasks) {
-    return tasks[__VU % tasks.length]
-}
-
 export function setup() {
     const token = APIAuth.login(ADMIN_USERNAME, ADMIN_PASSWORD);
-    const createdTasks = createTasks(token, 30);
+    const createdTasks = createTasks(token, 1, DEFAULT_IMAGES_COUNT);
     return { token, tasksData: createdTasks };
 }
 
-export function TestCreateJobs(data) {
-    JobsLib.createRandomJob(data.token, getRandomTaskId(data.tasksData))
+export function TestCreateGTJob(data) {
+    const { token } = data;
+    const taskID = TasksLib.createRandomTask(token);
+    TasksLib.addRandomData(token, taskID, SAMPLE_IMAGE_BINARY, DEFAULT_IMAGES_COUNT);
+    JobsLib.createRandomJob(token, taskID, DEFAULT_IMAGES_COUNT);
 }
