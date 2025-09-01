@@ -1862,34 +1862,10 @@ class CvatTaskOrJobDataExtractor(dm.SubsetBase, CvatDataExtractorBase):
             subset=self._instance_meta['subset'],
         )
         self._categories = self.load_categories(self._instance_meta['labels'])
-
-        if not self._instance_data.is_stream:
-            self._grouped_by_frame = list(self._instance_data.group_by_frame(include_empty=True))
-
-    @staticmethod
-    def copy_frame_data_with_replaced_lazy_lists(frame_data: CommonData.Frame) -> CommonData.Frame:
-        return attr.evolve(
-            frame_data,
-            labeled_shapes=[
-                (
-                    shape._replace(points=shape.points.lazy_copy())
-                    if isinstance(shape.points, LazyList) and not shape.points.is_parsed
-                    else shape
-                )
-                for shape in frame_data.labeled_shapes
-            ]
-        )
+        assert self._instance_data.is_stream
 
     def __iter__(self):
-        if self._instance_data.is_stream:
-            grouped_by_frame = self._instance_data.group_by_frame_stream()
-        else:
-            grouped_by_frame = self._grouped_by_frame
-
-        for frame_data in grouped_by_frame:
-            if not self._instance_data.is_stream:
-                # do not keep parsed lazy list data after this iteration
-                frame_data = self.copy_frame_data_with_replaced_lazy_lists(frame_data)
+        for frame_data in self._instance_data.group_by_frame_stream():
             yield self._process_one_frame_data(frame_data)
 
     def __len__(self):

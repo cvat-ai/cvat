@@ -840,12 +840,7 @@ def dump_as_cvat_annotation(dumper, annotations: JobData | TaskData | ProjectDat
     dumper.open_root()
     dumper.add_meta(annotations.meta)
 
-    if isinstance(annotations, JobData):
-        grouped_by_frame = annotations.group_by_frame_stream()
-    else:
-        grouped_by_frame = annotations.group_by_frame(include_empty=True)
-
-    for frame_annotation in grouped_by_frame:
+    for frame_annotation in annotations.group_by_frame_stream():
         frame_id = frame_annotation.frame
         image_attrs = OrderedDict([("id", str(frame_id)), ("name", frame_annotation.name)])
         if isinstance(annotations, ProjectData):
@@ -866,10 +861,6 @@ def dump_as_cvat_annotation(dumper, annotations: JobData | TaskData | ProjectDat
         # do not keep parsed lazy list data after this iteration
         if isinstance(annotations, ProjectData):
             frame_annotation = CVATProjectDataExtractor.copy_frame_data_with_replaced_lazy_lists(
-                frame_annotation
-            )
-        else:
-            frame_annotation = CvatTaskOrJobDataExtractor.copy_frame_data_with_replaced_lazy_lists(
                 frame_annotation
             )
 
