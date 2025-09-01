@@ -69,5 +69,5 @@ export function TestCreateTask(data) {
 }
 
 export function TestUpdateTask(data) {
-    TasksLib.updateRandomTask(data.token, getRandomTaskId(data.tasksData));
+    TasksLib.updateTaskRandomly(data.token, getRandomTaskId(data.tasksData));
 }

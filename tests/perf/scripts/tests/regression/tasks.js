@@ -1,6 +1,7 @@
 // Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
+import { sleep } from 'k6';
 import APITasks from '../../libs/api/tasks.js';
 import TasksLib from '../../libs/fixtures/tasks.js';
 import APIAuth from '../../libs/api/auth.js';
@@ -77,7 +78,8 @@ export function TestGetTasks(data) {
 export function TestCreateTask(data) {
     const { token } = data;
     const taskId = TasksLib.createRandomTask(token);
-    TasksLib.addRandomData(token, taskId, sampleImageBinary, 3);
+    TasksLib.addRandomData(token, taskId, sampleImageBinary, 5);
+    sleep(0.5);
     APITasks.deleteTask(token, taskId);
 }
 
