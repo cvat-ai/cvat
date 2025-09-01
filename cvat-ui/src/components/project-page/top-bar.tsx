@@ -15,7 +15,7 @@ import ActionsMenu from 'components/projects-page/actions-menu';
 
 interface DetailsComponentProps {
     projectInstance: Project;
-    onUpdateProject: (project: Project) => Promise<void>;
+    onUpdateProject: (project: Project) => Promise<Project>;
 }
 
 export default function ProjectTopBar(props: DetailsComponentProps): JSX.Element {

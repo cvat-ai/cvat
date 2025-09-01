@@ -43,7 +43,8 @@ const defaultState: CloudStoragesState = {
         },
     },
     updateWorkspace: {
-        instance: null,
+        instances: null,
+        onUpdate: null,
     },
     selected: [],
 };
@@ -356,11 +357,12 @@ export default (
             };
         }
         case CloudStorageActionTypes.OPEN_LINKED_CLOUD_STORAGE_UPDATING_MODAL: {
-            const { instance } = action.payload;
+            const { instances, onUpdate } = action.payload;
             return {
                 ...state,
                 updateWorkspace: {
-                    instance,
+                    instances,
+                    onUpdate,
                 },
             };
         }
@@ -368,7 +370,8 @@ export default (
             return {
                 ...state,
                 updateWorkspace: {
-                    instance: null,
+                    instances: null,
+                    onUpdate: null,
                 },
             };
         }

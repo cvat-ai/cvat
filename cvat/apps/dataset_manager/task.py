@@ -629,8 +629,8 @@ class JobAnnotation:
         serializer = serializers.LabeledImageSerializerFromDB(db_tags, many=True)
         self.ir_data.tags = serializer.data
 
-    def _init_shapes_from_db(self):
-        db_shapes = [
+    def _init_shapes_from_db(self, *, streaming: bool = False):
+        db_shapes = (
             dotdict(row)
             for row in self.db_job.labeledshape_set.values(
                 "id",
@@ -648,38 +648,63 @@ class JobAnnotation:
             )
             .order_by("frame")
             .iterator(chunk_size=settings.DEFAULT_DB_ANNO_CHUNK_SIZE)
-        ]
+        )
 
         labeledshape_attributes = _receive_attributes_from_db(
             self.db_job.labeledshapeattributeval_set,
             "shape_id",
         )
 
-        shapes = {}
-        elements = {}
-        for db_shape in db_shapes:
-            db_shape.attributes = labeledshape_attributes[db_shape.id]
-            self._extend_attributes(
-                db_shape.attributes, self.db_attributes[db_shape.label_id]["all"].values()
-            )
-            if db_shape["type"] == str(models.ShapeType.SKELETON):
-                # skeletons themselves should not have points as they consist of other elements
-                # here we ensure that it was initialized correctly
-                db_shape["points"] = []
+        def yield_shapes_for_one_frame(shapes: dict, elements):
+            for shape_id, shape_elements in elements.items():
+                shapes[shape_id].elements = shape_elements
 
-            if db_shape.parent is None:
-                db_shape.elements = []
-                shapes[db_shape.id] = db_shape
-            else:
-                if db_shape.parent not in elements:
-                    elements[db_shape.parent] = []
-                elements[db_shape.parent].append(db_shape)
+            serializer = serializers.LabeledShapeSerializerFromDB(list(shapes.values()), many=True)
+            yield from serializer.data
 
-        for shape_id, shape_elements in elements.items():
-            shapes[shape_id].elements = shape_elements
+            shapes.clear()
+            elements.clear()
 
-        serializer = serializers.LabeledShapeSerializerFromDB(list(shapes.values()), many=True)
-        self.ir_data.shapes = serializer.data
+        def generate_shapes():
+            shapes = {}
+            elements = {}
+
+            for db_shape in db_shapes:
+                if shapes and next(iter(shapes.values())).frame != db_shape.frame:
+                    yield from yield_shapes_for_one_frame(shapes, elements)
+
+                db_shape.attributes = labeledshape_attributes[db_shape.id]
+                self._extend_attributes(
+                    db_shape.attributes, self.db_attributes[db_shape.label_id]["all"].values()
+                )
+                if db_shape["type"] == str(models.ShapeType.SKELETON):
+                    # skeletons themselves should not have points as they consist of other elements
+                    # here we ensure that it was initialized correctly
+                    db_shape["points"] = []
+
+                if db_shape.parent is None:
+                    db_shape.elements = []
+                    shapes[db_shape.id] = db_shape
+                else:
+                    if db_shape.parent not in elements:
+                        elements[db_shape.parent] = []
+                    elements[db_shape.parent].append(db_shape)
+
+            yield from yield_shapes_for_one_frame(shapes, elements)
+
+        if streaming:
+            assert transaction.get_connection().in_atomic_block
+            shapes = generate_shapes()
+            # starting generation to initialise db-side cursor
+            buffer = []
+            try:
+                buffer.append(next(shapes))
+            except StopIteration:
+                pass
+
+            self.ir_data.shapes = itertools.chain(buffer, shapes)
+        else:
+            self.ir_data.shapes = list(generate_shapes())
 
     def _init_tracks_from_db(self):
         # NOTE: do not use .prefetch_related() with .values() since it's useless:
@@ -773,9 +798,9 @@ class JobAnnotation:
     def _init_version_from_db(self):
         self.ir_data.version = 0  # FIXME: should be removed in the future
 
-    def init_from_db(self):
+    def init_from_db(self, streaming: bool = False):
         self._init_tags_from_db()
-        self._init_shapes_from_db()
+        self._init_shapes_from_db(streaming=streaming)
         self._init_tracks_from_db()
         self._init_version_from_db()
 
@@ -1059,9 +1084,9 @@ class TaskAnnotation:
 
 @silk_profile(name="GET job data")
 @transaction.atomic
-def get_job_data(pk):
+def get_job_data(pk, *, streaming: bool = False):
     annotation = JobAnnotation(pk)
-    annotation.init_from_db()
+    annotation.init_from_db(streaming=streaming)
 
     return annotation.data
 
