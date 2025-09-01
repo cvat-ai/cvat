@@ -81,6 +81,7 @@ Cypress.Commands.add('openProject', (projectName) => {
 Cypress.Commands.add('openProjectByID', (projectID) => {
     cy.visit(`/projects/${projectID}`);
     cy.get('.cvat-spinner').should('not.exist');
+    cy.get('.cvat-project-details').should('exist').and('be.visible');
 });
 
 Cypress.Commands.add('openProjectActions', (projectName) => {

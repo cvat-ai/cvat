@@ -90,11 +90,6 @@ context('Basic markdown pipeline', () => {
     });
 
     describe('Markdown text can be bounded to the project', () => {
-        function openProject() {
-            cy.visit(`/projects/${projectID}`);
-            cy.get('.cvat-project-details').should('exist').and('be.visible');
-        }
-
         function openGuide() {
             cy.get('.cvat-md-guide-control-wrapper button').click();
             cy.url().should('to.match', /\/projects\/\d+\/guide/);
@@ -122,7 +117,7 @@ context('Basic markdown pipeline', () => {
         }
 
         function setupGuide(value) {
-            openProject();
+            cy.openProjectByID(projectID);
             openGuide();
             updatePlainText(value);
         }
