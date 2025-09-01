@@ -5,10 +5,10 @@ import http from 'k6/http';
 import { validateResponse } from '../../utils/validation.js';
 import { BASE_URL } from '../../variables/constants.js';
 
-function createJob(authKey, jobSpec) {
+function createJob(token, jobSpec) {
     const response = http.post(`${BASE_URL}/jobs`, JSON.stringify(jobSpec), {
         headers: {
-            Authorization: `Token ${authKey}`,
+            Authorization: `Token ${token}`,
             'Content-Type': 'application/json',
         },
     });
@@ -17,10 +17,10 @@ function createJob(authKey, jobSpec) {
     }
 }
 
-function listJobs(authKey) {
+function listJobs(token) {
     const response = http.get(`${BASE_URL}/jobs`, {
         headers: {
-            Authorization: `Token ${authKey}`,
+            Authorization: `Token ${token}`,
             'Content-Type': 'application/json',
         },
     });
@@ -29,4 +29,16 @@ function listJobs(authKey) {
     }
 }
 
-export default { createJob, listJobs };
+function getJobDetails(token, jobID) {
+    const response = http.get(`${BASE_URL}/jobs/${jobID}`, {
+        headers: {
+            Authorization: `Token ${token}`,
+            'Content-Type': 'application/json',
+        },
+    });
+    if (validateResponse(response, 200, 'Get Job Details')) {
+        return response.json();
+    }
+}
+
+export default { createJob, listJobs, getJobDetails };

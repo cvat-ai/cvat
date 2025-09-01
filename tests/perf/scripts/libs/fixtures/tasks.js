@@ -9,7 +9,7 @@ import { randomBool } from '../../utils/random.js';
 const BUG_TRACKER_FAKE_URL = 'https://jira.example.com/browse/PROJ-123';
 const LABEL_TYPES = ['rectangle', 'polygon', 'polyline', 'points', 'cuboid'];
 
-function createRandomTask(authKey, projectId, ownerId) {
+function createRandomTask(token, projectId, ownerId) {
     const overlapChoices = [0, 2, 5, 10];
     const taskSpec = {
         name: `task_${randomString(8)}`,
@@ -49,10 +49,10 @@ function createRandomTask(authKey, projectId, ownerId) {
         subset: randomString(10),
     };
 
-    return APITasks.createTask(authKey, taskSpec);
+    return APITasks.createTask(token, taskSpec);
 }
 
-export function updateRandomTask(authKey, taskId, projectId, assigneeId) {
+export function updateRandomTask(token, taskId, projectId, assigneeId) {
     const possibleUpdates = {
         name: `updated_${randomString(8)}`,
         assignee_id: assigneeId,
@@ -79,15 +79,15 @@ export function updateRandomTask(authKey, taskId, projectId, assigneeId) {
             filteredUpdates[key] = value;
         }
     }
-    return APITasks.patchTask(authKey, taskId, filteredUpdates);
+    return APITasks.patchTask(token, taskId, filteredUpdates);
 }
 
-function addRandomData(authKey, taskId, binaryData, filesCount) {
+function addRandomData(token, taskId, binaryData, filesCount) {
     const filesData = [];
     for (let i = 0; i < filesCount; i++) {
         filesData[i] = { name: `${randomString(10)}.png`, bytes: binaryData };
     }
-    APITus.tusUploadFiles(authKey, taskId, filesData, { image_quality: 70 });
+    APITus.tusUploadFiles(token, taskId, filesData, { image_quality: 70 });
 }
 
 export default { createRandomTask, updateRandomTask, addRandomData };

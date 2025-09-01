@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 import TasksLib from '../../libs/fixtures/tasks.js';
-import JobsLib from '../../libs/fixtures/jobs.js';
+import JobsAPI from '../../libs/api/jobs.js';
 import APIAuth from '../../libs/api/auth.js';
 import { ADMIN_PASSWORD, ADMIN_USERNAME } from '../../variables/constants.js';
 
@@ -10,8 +10,8 @@ const TOTAL_DURATION = '5s';
 
 export const options = {
     scenarios: {
-        createJobs: {
-            exec: 'TestCreateGTJob',
+        getJobs: {
+            exec: 'TestGetJobs',
             executor: 'constant-arrival-rate',
             duration: TOTAL_DURATION,
             rate: 5,
@@ -24,7 +24,7 @@ export const options = {
 
 const IMAGE_PATH = '/data/images/image_1.jpg';
 const SAMPLE_IMAGE_BINARY = open(IMAGE_PATH, 'b', IMAGE_PATH);
-const DEFAULT_IMAGES_COUNT = 5;
+const DEFAULT_IMAGES_COUNT = 2000;
 
 function createTasks(token, count, imagesCount) {
     const createdTasks = [];
@@ -42,9 +42,6 @@ export function setup() {
     return { token, tasksData: createdTasks };
 }
 
-export function TestCreateGTJob(data) {
-    const { token } = data;
-    const taskID = TasksLib.createRandomTask(token);
-    TasksLib.addRandomData(token, taskID, SAMPLE_IMAGE_BINARY, DEFAULT_IMAGES_COUNT);
-    JobsLib.createRandomJob(token, taskID, DEFAULT_IMAGES_COUNT);
+export function TestGetJobs(data) {
+    JobsAPI.listJobs(data.token);
 }

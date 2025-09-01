@@ -8,11 +8,11 @@ import { BASE_URL } from '../../variables/constants.js';
 
 const MAX_REQUEST_SIZE = 50 * 1024 * 1024; // 50 MB threshold
 
-function tusUploadInit(authKey, taskId, filePath, fileSize) {
+function tusUploadInit(token, taskId, filePath, fileSize) {
     const res = http.post(`${BASE_URL}/tasks/${taskId}/data/`, null,
         {
             headers: {
-                Authorization: `Token ${authKey}`,
+                Authorization: `Token ${token}`,
                 'Upload-Length': `${fileSize}`,
                 'Upload-Metadata': `filename ${encoding.b64encode(filePath)}`,
             },
@@ -22,11 +22,11 @@ function tusUploadInit(authKey, taskId, filePath, fileSize) {
     return res;
 }
 
-function tusUploadFinish(authKey, taskId, finishOpts, fileName) {
+function tusUploadFinish(token, taskId, finishOpts, fileName) {
     const url = `${BASE_URL}/tasks/${taskId}/data/?file=${fileName}`;
     const res = http.post(url, JSON.stringify(finishOpts), {
         headers: {
-            Authorization: `Token ${authKey}`,
+            Authorization: `Token ${token}`,
             'Upload-Finish': '',
             'Content-Type': 'application/json',
         },
@@ -37,14 +37,14 @@ function tusUploadFinish(authKey, taskId, finishOpts, fileName) {
 
 /**
  * Uploads a local file to a CVAT task via TUS protocol. Uses a single batch.
- * @param {string} authKey
+ * @param {string} token
  * @param {string} taskId
  * @param {string} fileName
  */
-export function tusUploadFile(authKey, taskId, fileName, fileData) {
+export function tusUploadFile(token, taskId, fileName, fileData) {
     const fileSize = fileData.byteLength;
     // 1. Upload-Init
-    let res = tusUploadInit(authKey, taskId, fileName, fileSize);
+    let res = tusUploadInit(token, taskId, fileName, fileSize);
     // 2. Create upload URL (CVAT sends Location header)
     const uploadUrl = res.headers.Location;
     if (!uploadUrl) {
@@ -53,19 +53,19 @@ export function tusUploadFile(authKey, taskId, fileName, fileData) {
     // 3. Send file chunks (we’ll send it in one go here)
     res = http.patch(uploadUrl, fileData, {
         headers: {
-            Authorization: `Token ${authKey}`,
+            Authorization: `Token ${token}`,
             'Upload-Offset': '0',
             'Content-Type': 'application/offset+octet-stream',
         },
     });
     validateResponse(res, 204, 'Task data Upload-Chunk');
-    tusUploadFinish(authKey, taskId, { image_quality: 70 }, fileName);
+    tusUploadFinish(token, taskId, { image_quality: 70 }, fileName);
 }
 
 // Single large file with TUS (Upload-Length + PATCH)
-function tusUploadSingleFile(authKey, taskId, file) {
+function tusUploadSingleFile(token, taskId, file) {
     const size = file.bytes.byteLength;
-    let res = tusUploadInit(authKey, taskId, file.name, size);
+    let res = tusUploadInit(token, taskId, file.name, size);
     const uploadUrl = res.headers.Location;
     let offset = 0;
     const CHUNK_SIZE = 10 * 1024 * 1024;
@@ -75,7 +75,7 @@ function tusUploadSingleFile(authKey, taskId, file) {
 
         res = http.patch(uploadUrl, chunk, {
             headers: {
-                Authorization: `Token ${authKey}`,
+                Authorization: `Token ${token}`,
                 'Tus-Resumable': '1.0.0',
                 'Upload-Offset': String(offset),
                 'Content-Type': 'application/offset+octet-stream',
@@ -116,7 +116,7 @@ function splitFilesByRequests(files) {
 }
 
 function tusUploadFiles(
-    authKey,
+    token,
     taskId,
     files, // [{ name: "a.jpg", bytes: ArrayBuffer }, ...]
     finishOpts, // { image_quality, sorting_method, ... }
@@ -140,7 +140,7 @@ function tusUploadFiles(
 
         const res = http.post(url, formData, {
             headers: {
-                Authorization: `Token ${authKey}`,
+                Authorization: `Token ${token}`,
                 'Upload-Multiple': '',
             },
         });
@@ -149,10 +149,10 @@ function tusUploadFiles(
 
     // ---- Large files via TUS
     for (const f of separate) {
-        tusUploadSingleFile(authKey, taskId, f);
+        tusUploadSingleFile(token, taskId, f);
     }
 
-    tusUploadFinish(authKey, taskId, finishOpts);
+    tusUploadFinish(token, taskId, finishOpts);
 }
 
 export default { tusUploadFiles, tusUploadFile };

@@ -5,28 +5,28 @@ import http from 'k6/http';
 import { validateResponse } from '../../utils/validation.js';
 import { BASE_URL } from '../../variables/constants.js';
 
-function getDefaultHeaders(authKey) {
+function getDefaultHeaders(token) {
     return {
-        Authorization: `Token ${authKey}`,
+        Authorization: `Token ${token}`,
         'Content-Type': 'application/json',
     };
 }
 
-function createTask(authKey, taskSpec) {
+function createTask(token, taskSpec) {
     const response = http.post(`${BASE_URL}/tasks`, JSON.stringify(taskSpec), {
-        headers: getDefaultHeaders(authKey),
+        headers: getDefaultHeaders(token),
     });
     if (validateResponse(response, 201, 'Create Task')) {
         return response.json().id;
     }
 }
 
-function patchTask(authKey, taskId, taskUpdatesSpec) {
+function patchTask(token, taskId, taskUpdatesSpec) {
     const response = http.patch(
         `${BASE_URL}/tasks/${taskId}`,
         JSON.stringify(taskUpdatesSpec),
         {
-            headers: getDefaultHeaders(authKey),
+            headers: getDefaultHeaders(token),
         },
     );
 
@@ -35,27 +35,27 @@ function patchTask(authKey, taskId, taskUpdatesSpec) {
     }
 }
 
-function getTask(authKey, taskId) {
+function getTask(token, taskId) {
     const response = http.get(`${BASE_URL}/tasks/${taskId}`, {
-        headers: getDefaultHeaders(authKey),
+        headers: getDefaultHeaders(token),
     });
     if (validateResponse(response, 200, 'Get Task')) {
         return response.json();
     }
 }
 
-function getTasks(authKey) {
+function getTasks(token) {
     const response = http.get(`${BASE_URL}/tasks`, {
-        headers: getDefaultHeaders(authKey),
+        headers: getDefaultHeaders(token),
     });
     if (validateResponse(response, 200, 'Get Tasks')) {
         return response.json();
     }
 }
 
-function deleteTask(authKey, taskId) {
+function deleteTask(token, taskId) {
     const response = http.del(`${BASE_URL}/tasks/${taskId}`, JSON.stringify({}), {
-        headers: getDefaultHeaders(authKey),
+        headers: getDefaultHeaders(token),
     });
     validateResponse(response, 204, 'Delete Task');
 }
