@@ -198,7 +198,7 @@ class AnnotationManager:
         tags.merge(data.tags, start_frame, overlap)
 
         if data.is_stream:
-            assert self.data.is_stream or isinstance(self.data.shapes, list)
+            assert self.data.is_stream or not self.data.shapes
             shapes_manager = ShapeManager(self.data.shapes, dimension=self.dimension)
             self.data.shapes = shapes_manager.merge_stream(data.shapes, start_frame, overlap)
         else:
@@ -308,7 +308,6 @@ class StreamMerger:
             return self._make_key() < other._make_key()
 
     def __init__(self, merge_objects: Callable):
-        # heap: first object frame, generator index, first object id, first object, object generator
         self._iterators: list[Iterator] = []
         self._merge_objects = merge_objects
 
@@ -324,7 +323,6 @@ class StreamMerger:
         return next(self._generator)
 
     def _generator_impl(self) -> Generator[dict, None, None]:
-        # heap: first object frame, iterator index, first object id, first object, object generator
         heap: list[StreamMerger.HeapElem] = []
 
         for iterator_index, iterator in enumerate(self._iterators):
@@ -412,7 +410,7 @@ class ObjectManager:
         return self.objects
 
     def merge(self, objects, start_frame, overlap):
-        assert isinstance(objects, list)
+        assert isinstance(objects, list) and isinstance(self.objects, list)
         # 1. Split objects on two parts: new and which can be intersected
         # with existing objects.
         new_objects = [obj for obj in objects if obj["frame"] >= start_frame + overlap]
