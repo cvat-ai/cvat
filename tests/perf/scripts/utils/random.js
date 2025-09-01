@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { randomItem } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js';
+
 /**
  * Returns a random sample of `count` unique elements from `arr` using Fisher-Yates shuffle.
  * @param {Array} arr - The source array.
@@ -11,6 +13,9 @@
 function randomSample(arr, count) {
     if (count >= arr.length) {
         return [...arr];
+    }
+    if (count === 1) {
+        return randomItem(arr);
     }
     // Fisher-Yates shuffle
     const shuffled = [...arr];

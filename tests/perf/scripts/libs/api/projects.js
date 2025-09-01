@@ -10,15 +10,7 @@ import http from 'k6/http';
 
 import { BASE_URL } from '../../variables/constants.js';
 
-function createProject(authKey) {
-    const projectSpec = {
-        name: 'testProject',
-        labels: [{
-            name: 'cat',
-            type: 'rectangle',
-            attributes: [],
-        }],
-    };
+function createProject(authKey, projectSpec) {
     const response = http.post(`${BASE_URL}projects`, JSON.stringify(projectSpec), {
         headers: {
             Authorization: `Token ${authKey}`,

@@ -19,21 +19,21 @@ export const options = {
     scenarios: {
         // What does each VU do?
 
-        // getProject: {
-        //     exec: 'TestGetProject',
-        //     executor: 'constant-arrival-rate',
-        //     duration: '30s',
-        //     rate: 5,
-        //     timeUnit: '1s',
-        //     preAllocatedVUs: 10,
-        //     maxVUs: 100,
-        // },
+        getProject: {
+            exec: 'TestGetProject',
+            executor: 'constant-arrival-rate',
+            duration: '30s',
+            rate: 5,
+            timeUnit: '1s',
+            preAllocatedVUs: 10,
+            maxVUs: 100,
+        },
         getProjects: {
             exec: 'TestGetProjects',
             executor: 'constant-arrival-rate',
             duration: '30s',
             rate: 1,
-            timeUnit: '5s',
+            timeUnit: '1s',
             preAllocatedVUs: 5,
             maxVUs: 6,
         },
@@ -54,5 +54,7 @@ export function TestGetProject(data) {
 export function TestGetProjects(data) {
     const randomProjects = Random.randomSample(data.resources, N_PER_USER);
     const projectsData = APIProjects.listProjects(data.token, randomProjects);
-    console.log(projectsData);
+}
+
+export function TestUpdateProject(data) {
 }
