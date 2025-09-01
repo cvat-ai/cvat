@@ -70,9 +70,7 @@ context('Basic markdown pipeline', () => {
             }).then((taskResponse) => {
                 taskID = taskResponse.taskID;
                 [jobID] = taskResponse.jobIDs;
-
-                cy.visit(`/tasks/${taskID}`);
-                cy.get('.cvat-task-details').should('exist').and('be.visible');
+                cy.openTaskByID(taskID);
                 cy.assignTaskToUser(additionalUsers.taskAssignee.username);
                 cy.assignJobToUser(jobID, additionalUsers.jobAssignee.username);
             });
