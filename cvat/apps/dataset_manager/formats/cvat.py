@@ -841,9 +841,7 @@ def dump_as_cvat_annotation(dumper, annotations: JobData | TaskData | ProjectDat
     dumper.add_meta(annotations.meta)
 
     if isinstance(annotations, JobData):
-        grouped_by_frame = (
-            frame.construct_frame() for frame in annotations.group_by_frame_stream()
-        )
+        grouped_by_frame = annotations.group_by_frame_stream()
     else:
         grouped_by_frame = annotations.group_by_frame(include_empty=True)
 
