@@ -326,13 +326,29 @@ class TestTaskUsecases(TestDatasetExport):
             path = self.tmp_path / f"dataset-{i}.zip"
             fxt_new_task.export_dataset(
                 format_name="CVAT for images 1.1",
-                filename=self.tmp_path / f"dataset-{i}.zip",
+                filename=path,
                 include_images=False,
                 pbar=pbar,
             )
             assert self.stdout.getvalue() == ""
             assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
             assert path.is_file()
+
+    def test_can_download_dataset_with_server_filename(self, fxt_new_task: Task):
+        pbar_out = io.StringIO()
+        pbar = make_pbar(file=pbar_out)
+
+        output_dir = self.tmp_path
+        output_path = fxt_new_task.export_dataset(
+            format_name="CVAT for images 1.1",
+            filename=output_dir,
+            include_images=False,
+            pbar=pbar,
+        )
+        assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
+        assert output_path.is_relative_to(output_dir)
+        assert output_path.is_file()
+        assert self.stdout.getvalue() == ""
 
     def test_can_download_backup(self, fxt_new_task: Task):
         pbar_out = io.StringIO()
@@ -345,6 +361,20 @@ class TestTaskUsecases(TestDatasetExport):
 
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert path.is_file()
+        assert self.stdout.getvalue() == ""
+
+    def test_can_download_backup_with_server_filename(self, fxt_new_task: Task):
+        pbar_out = io.StringIO()
+        pbar = make_pbar(file=pbar_out)
+
+        task_id = fxt_new_task.id
+        output_dir = self.tmp_path
+        task = self.client.tasks.retrieve(task_id)
+        output_path = task.download_backup(filename=output_dir, pbar=pbar)
+
+        assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
+        assert output_path.is_relative_to(output_dir)
+        assert output_path.is_file()
         assert self.stdout.getvalue() == ""
 
     def test_can_download_preview(self, fxt_new_task: Task):
