@@ -6,11 +6,11 @@ import TasksLib from '../../libs/fixtures/tasks.js';
 import APIAuth from '../../libs/api/auth.js';
 import { ADMIN_PASSWORD, ADMIN_USERNAME } from '../../variables/constants.js';
 
-const TOTAL_DURATION = '1s';
+const TOTAL_DURATION = '30s';
 
 export const options = {
     scenarios: {
-        get_task: {
+        getTasks: {
             exec: 'TestGetTasks',
             executor: 'constant-arrival-rate',
             // How long the test lasts
@@ -25,24 +25,24 @@ export const options = {
             // constant arrival rate.
             maxVUs: 100,
         },
-        // create_task: {
-        //     exec: 'TestCreateTask',
-        //     executor: 'constant-arrival-rate',
-        //     duration: TOTAL_DURATION,
-        //     rate: 5,
-        //     timeUnit: '1s',
-        //     preAllocatedVUs: 10,
-        //     maxVUs: 100,
-        // },
-        // update_tasks: {
-        //     exec: 'TestUpdateTask',
-        //     executor: 'constant-arrival-rate',
-        //     duration: TOTAL_DURATION,
-        //     rate: 5,
-        //     timeUnit: '1s',
-        //     preAllocatedVUs: 10,
-        //     maxVUs: 100,
-        // },
+        createTasks: {
+            exec: 'TestCreateTask',
+            executor: 'constant-arrival-rate',
+            duration: TOTAL_DURATION,
+            rate: 5,
+            timeUnit: '1s',
+            preAllocatedVUs: 10,
+            maxVUs: 100,
+        },
+        updateTasks: {
+            exec: 'TestUpdateTask',
+            executor: 'constant-arrival-rate',
+            duration: TOTAL_DURATION,
+            rate: 5,
+            timeUnit: '1s',
+            preAllocatedVUs: 10,
+            maxVUs: 100,
+        },
     },
 };
 
@@ -82,5 +82,5 @@ export function TestCreateTask(data) {
 }
 
 export function TestUpdateTask(data) {
-    TasksLib.updateRandomTask(data.token, getRandomTaskId(data.tasksData));
+    TasksLib.updateTaskRandomly(data.token, getRandomTaskId(data.tasksData));
 }

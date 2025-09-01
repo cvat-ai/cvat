@@ -52,7 +52,7 @@ function createRandomTask(token, projectId, ownerId) {
     return APITasks.createTask(token, taskSpec);
 }
 
-export function updateRandomTask(token, taskId, projectId, assigneeId) {
+function updateTaskRandomly(token, taskId, projectId, assigneeId) {
     const possibleUpdates = {
         name: `updated_${randomString(8)}`,
         assignee_id: assigneeId,
@@ -90,4 +90,4 @@ function addRandomData(token, taskId, binaryData, filesCount) {
     APITus.tusUploadFiles(token, taskId, filesData, { image_quality: 70 });
 }
 
-export default { createRandomTask, updateRandomTask, addRandomData };
+export default { createRandomTask, updateTaskRandomly, addRandomData };
