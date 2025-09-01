@@ -5,6 +5,8 @@ ENV TERM=xterm \
     LC_ALL='C.UTF-8'
 
 # Install dependencies
+RUN npm install -g corepack
+COPY .yarnrc.yml /tmp/
 COPY package.json /tmp/
 COPY yarn.lock /tmp/
 COPY cvat-core/package.json /tmp/cvat-core/
@@ -15,7 +17,7 @@ COPY cvat-data/package.json /tmp/cvat-data/
 
 # Install common dependencies
 WORKDIR /tmp/
-RUN DISABLE_HUSKY=1 yarn --frozen-lockfile
+RUN DISABLE_HUSKY=1 yarn install --immutable
 
 # Build source code
 COPY cvat-data/ /tmp/cvat-data/
@@ -34,7 +36,7 @@ DISABLE_SOURCE_MAPS="${DISABLE_SOURCE_MAPS}" \
 UI_APP_CONFIG="${UI_APP_CONFIG}" \
 SOURCE_MAPS_TOKEN="${SOURCE_MAPS_TOKEN}" yarn run build:cvat-ui
 
-FROM nginx:1.28.0-alpine3.21-slim
+FROM nginxinc/nginx-unprivileged:1.28.0-alpine3.21-slim
 
 # Replace default.conf configuration to remove unnecessary rules
 COPY cvat-ui/react_nginx.conf /etc/nginx/conf.d/default.conf

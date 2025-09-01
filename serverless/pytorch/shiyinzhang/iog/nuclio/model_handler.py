@@ -20,7 +20,7 @@ class ModelHandler:
         self.net = Network(nInputChannels=5, num_classes=1, backbone='resnet101',
             output_stride=16, sync_bn=None, freeze_bn=False)
 
-        pretrain_dict = torch.load(model_path)
+        pretrain_dict = torch.load(model_path, weights_only=True)
         self.net.load_state_dict(pretrain_dict)
         self.net.to(self.device)
         self.net.eval()

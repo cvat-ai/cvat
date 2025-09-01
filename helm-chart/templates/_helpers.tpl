@@ -125,7 +125,7 @@ The name of the service account to use for backend pods
 - name: DJANGO_LOG_SERVER_HOST
   value: "{{ .Release.Name }}-vector"
 - name: DJANGO_LOG_SERVER_PORT
-  value: "80"
+  value: "8282"
 - name: CLICKHOUSE_HOST
   valueFrom:
     secretKeyRef:

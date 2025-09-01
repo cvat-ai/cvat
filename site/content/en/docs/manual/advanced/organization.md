@@ -90,6 +90,33 @@ from drop-down list.
 
 !["Select organization" window](/images/select_org.png)
 
+### Transfer tasks and projects between organizations
+
+You can move high-level resources (projects and individual tasks) between organizations and the personal workspace.
+
+To transfer a resource:
+
+1. Open the **Actions** menu of the corresponding task or project.
+2. In the **Actions** menu, select **Organization** (only visible if the resource can be transferred).
+3. Choose the destination workspace in the selector.
+4. A dialog will open. Confirm the transfer.
+5. If the resource has attached to a cloud storage, choose how CVAT should handle it:
+   - The current cloud storages will be detached anyway as they are not available in another workspace.
+   - **Move & Detach**: After transferring, you can set a new cloud storage manually
+   (only applicable for data source cloud storage in a task).
+   Source and target cloud storages cannot be setup this way.
+   - **Move & Auto Match**: During the transfer, CVAT will try finding a
+   cloud storage, matching similar parameters in the target workspace.
+   This option is only available if the resource has source or target cloud storage configured.
+
+
+<img src="/images/project_org_transfer_1.png" style="max-width: 600px; padding: 16px;">
+<br />
+<img src="/images/project_org_transfer_2.png" style="max-width: 250px; padding: 16px;">
+
+<img src="/images/project_org_transfer_3.png" style="max-width: 350px; padding: 16px;">
+
+
 ## Organization page
 
 **Organization page** is a place, where you can edit the **Organization** information

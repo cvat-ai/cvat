@@ -548,6 +548,23 @@
   }
 },
 {
+  "model": "organizations.organization",
+  "pk": 3,
+  "fields": {
+    "created_date": "2021-12-14T19:51:38.667Z",
+    "updated_date": "2021-12-14T19:51:38.667Z",
+    "slug": "org3",
+    "name": "Organization #3",
+    "description": "",
+    "contact": {
+      "email": "org3@cvat.org"
+    },
+    "owner": [
+      "user1"
+    ]
+  }
+},
+{
   "model": "organizations.membership",
   "pk": 1,
   "fields": {
@@ -740,6 +757,19 @@
     "is_active": true,
     "joined_date": "2023-09-15T07:53:52.116Z",
     "role": "maintainer"
+  }
+},
+{
+  "model": "organizations.membership",
+  "pk": 16,
+  "fields": {
+    "user": [
+      "user1"
+    ],
+    "organization": 3,
+    "is_active": true,
+    "joined_date": "2021-12-14T18:45:40.172Z",
+    "role": "owner"
   }
 },
 {

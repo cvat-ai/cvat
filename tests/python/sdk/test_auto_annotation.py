@@ -178,6 +178,7 @@ class TestTaskAutoAnnotation:
                 "Auto-annotation test task",
                 labels=[
                     models.PatchedLabelRequest(name="person"),
+                    models.PatchedLabelRequest(name="person-tag", type="tag"),
                     models.PatchedLabelRequest(name="person-rect", type="rectangle"),
                     models.PatchedLabelRequest(name="person-mask", type="mask"),
                     models.PatchedLabelRequest(name="person-poly", type="polygon"),
@@ -280,6 +281,8 @@ class TestTaskAutoAnnotation:
         )
 
         annotations = self.task.get_annotations()
+        assert not annotations.tags
+        assert not annotations.tracks
 
         shapes = sorted(annotations.shapes, key=lambda shape: shape.frame)
 
@@ -293,6 +296,42 @@ class TestTaskAutoAnnotation:
 
         assert shapes[0].points[0] != shapes[1].points[0]
         assert shapes[0].points[3] != shapes[1].points[3]
+
+    def test_detection_tag(self):
+        spec = cvataa.DetectionFunctionSpec(
+            labels=[
+                cvataa.label_spec("person-tag", 123, type="tag"),
+                cvataa.label_spec("person", 456),
+            ],
+        )
+
+        def detect(
+            context: cvataa.DetectionFunctionContext, image: PIL.Image.Image
+        ) -> list[models.LabeledImageRequest]:
+            return [
+                cvataa.tag(123) if context.frame_name == "1.png" else cvataa.tag(456),
+            ]
+
+        cvataa.annotate_task(
+            self.client,
+            self.task.id,
+            namespace(spec=spec, detect=detect),
+            clear_existing=True,
+        )
+
+        annotations = self.task.get_annotations()
+        assert not annotations.shapes
+        assert not annotations.tracks
+
+        tags = sorted(annotations.tags, key=lambda tag: tag.frame)
+
+        assert len(tags) == 2
+
+        for i, tag in enumerate(tags):
+            assert tag.frame == i
+
+        assert self.task_labels_by_id[tags[0].label_id].name == "person-tag"
+        assert self.task_labels_by_id[tags[1].label_id].name == "person"
 
     def test_detection_skeleton(self):
         spec = cvataa.DetectionFunctionSpec(
@@ -792,6 +831,12 @@ class TestTaskAutoAnnotation:
         with pytest.raises(cvataa.BadFunctionError, match=exc_match):
             cvataa.annotate_task(self.client, self.task.id, namespace(spec=spec, detect=detect))
 
+    def test_neither_shape_nor_tag(self):
+        self._test_bad_function_detect(
+            lambda context, image: [...],
+            "an object of type",
+        )
+
     def test_preset_shape_id(self):
         self._test_bad_function_detect(
             lambda context, image: [
@@ -944,6 +989,12 @@ class TestTaskAutoAnnotation:
             r"shape of type 'ellipse' \(expected 'rectangle'\)",
         )
 
+    def test_tag_instead_of_shape(self):
+        self._test_bad_function_detect(
+            lambda context, image: [cvataa.tag(124)],
+            r"tag \(expected shape of type 'rectangle'\)",
+        )
+
     def test_attribute_val_with_unknown_id(self):
         self._test_bad_function_detect(
             lambda context, image: [
@@ -1037,6 +1088,29 @@ class TestTaskAutoAnnotation:
 if torchvision_models is not None:
     import torch
     import torch.nn as nn
+
+    class FakeTorchvisionClassifier(nn.Module):
+        def __init__(self, label_id: int) -> None:
+            super().__init__()
+            self._label_id = label_id
+
+        def forward(self, images: torch.Tensor) -> torch.Tensor:
+            assert isinstance(images, torch.Tensor)
+
+            probs = [0.0] * 1000
+            # Since the function does a softmax operation over the output,
+            # we can't test edge cases by making the final probability exactly 0.75.
+            # With this value the final probability is ~0.77.
+            probs[self._label_id] = 8.1
+
+            return torch.tensor([probs for image in images])
+
+    def fake_get_classification_model(name: str, weights, test_param):
+        assert test_param == "expected_value"
+
+        car_mirror_label_id = weights.meta["categories"].index("car mirror")
+
+        return FakeTorchvisionClassifier(label_id=car_mirror_label_id)
 
     class FakeTorchvisionDetector(nn.Module):
         def __init__(self, label_id: int) -> None:
@@ -1177,6 +1251,41 @@ class TestAutoAnnotationFunctions:
 
         task_labels = self.task.get_labels()
         self.task_labels_by_id = {label.id: label for label in task_labels}
+
+    def test_torchvision_classification(self, monkeypatch: pytest.MonkeyPatch):
+        self._create_task([models.PatchedLabelRequest(name="car mirror", type="tag")])
+
+        monkeypatch.setattr(torchvision_models, "get_model", fake_get_classification_model)
+
+        import cvat_sdk.auto_annotation.functions.torchvision_classification as tc
+
+        func = tc.create("resnet50", "IMAGENET1K_V2", test_param="expected_value")
+
+        cvataa.annotate_task(
+            self.client,
+            self.task.id,
+            func,
+            allow_unmatched_labels=True,
+            conf_threshold=0.75,
+        )
+
+        annotations = self.task.get_annotations()
+
+        assert len(annotations.tags) == 1
+        assert self.task_labels_by_id[annotations.tags[0].label_id].name == "car mirror"
+
+        cvataa.annotate_task(
+            self.client,
+            self.task.id,
+            func,
+            allow_unmatched_labels=True,
+            conf_threshold=0.9,
+            clear_existing=True,
+        )
+
+        annotations = self.task.get_annotations()
+
+        assert len(annotations.tags) == 0
 
     def test_torchvision_detection(self, monkeypatch: pytest.MonkeyPatch):
         self._create_task([models.PatchedLabelRequest(name="car", type="rectangle")])
