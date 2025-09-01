@@ -31,6 +31,7 @@ from rest_api._test_base import TestTasksBase
 from rest_api.utils import create_task, get_cloud_storage_content, wait_until_task_is_created
 from shared.tasks.enums import SourceDataType
 from shared.tasks.interface import ITaskSpec
+from shared.tasks.types import ImagesTaskSpec
 from shared.tasks.utils import parse_frame_step
 from shared.utils.config import get_method, make_api_client, patch_method, post_method
 from shared.utils.helpers import (
@@ -1897,6 +1898,52 @@ class TestTaskData(TestTasksBase):
                         must_be_identical=(
                             task_spec.source_data_type == SourceDataType.images
                             and quality == "original"
+                        ),
+                    )
+
+    @pytest.mark.timeout(
+        # This test has to check all the task chunks availability, it can make many requests
+        timeout=300
+    )
+    @parametrize("task_spec, task_id", TestTasksBase._tests_with_related_files_cases)
+    def test_can_get_task_related_file_chunks(self, task_spec: ImagesTaskSpec, task_id: int):
+        with make_api_client(self._USERNAME) as api_client:
+            (task, _) = api_client.tasks_api.retrieve(task_id)
+            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+
+            if task_spec.source_data_type == SourceDataType.images:
+                assert task.data_original_chunk_type == "imageset"
+                assert task.data_compressed_chunk_type == "imageset"
+            else:
+                assert False
+
+            for task_frame_id in range(task.size):
+                expected_related_images = task_spec.get_related_files(task_frame_id)
+                assert task_meta.frames[task_frame_id].related_files == len(expected_related_images)
+
+                (_, response) = api_client.tasks_api.retrieve_data(
+                    task_id, type="context_image", number=task_frame_id, _parse_response=False
+                )
+
+                chunk_file = io.BytesIO(response.data)
+                if zipfile.is_zipfile(chunk_file):
+                    with zipfile.ZipFile(chunk_file, "r") as chunk_archive:
+                        chunk_images = {
+                            name: np.array(Image.open(io.BytesIO(chunk_archive.read(name))))
+                            for name in chunk_archive.namelist()
+                        }
+                else:
+                    assert False
+
+                assert sorted(chunk_images.keys()) == sorted(expected_related_images.keys())
+
+                for ri_name in chunk_images:
+                    self._compare_images(
+                        Image.open(io.BytesIO(expected_related_images[ri_name])),
+                        chunk_images[ri_name],
+                        must_be_identical=(
+                            True
+                            # there's some conversion for images, but in the test it should be True
                         ),
                     )
 

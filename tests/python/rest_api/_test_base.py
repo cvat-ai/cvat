@@ -1,5 +1,7 @@
 import io
 import math
+import os
+from collections.abc import Mapping
 from contextlib import closing
 from functools import partial
 from typing import Generator, Optional, Sequence
@@ -29,6 +31,7 @@ class TestTasksBase:
         *,
         frame_count: Optional[int] = 10,
         image_files: Optional[Sequence[io.BytesIO]] = None,
+        related_files: Optional[Mapping[int, Sequence[io.BytesIO]]] = None,
         start_frame: Optional[int] = None,
         stop_frame: Optional[int] = None,
         step: Optional[int] = None,
@@ -89,11 +92,19 @@ class TestTasksBase:
         def get_frame(i: int) -> bytes:
             return images_data[i]
 
+        if related_files is not None:
+
+            def get_related_files(i: int) -> Mapping[str, bytes]:
+                frame_ri = related_files.get(i)
+                common_prefix = os.path.commonpath(os.path.dirname(f.name) for f in frame_ri)
+                return {os.path.relpath(f.name, common_prefix): f.getvalue() for f in frame_ri}
+
         task_id, _ = create_task(self._USERNAME, spec=task_params, data=data_params)
         yield ImagesTaskSpec(
             models.TaskWriteRequest._from_openapi_data(**task_params),
             models.DataRequest._from_openapi_data(**data_params),
             get_frame=get_frame,
+            get_related_files=get_related_files if related_files else None,
             size=resulting_task_size,
         ), task_id
 
@@ -375,6 +386,58 @@ class TestTasksBase:
         )
 
     @fixture(scope="class")
+    @parametrize(
+        "cloud_storage_id",
+        [pytest.param(2, marks=[pytest.mark.with_external_services, pytest.mark.timeout(60)])],
+    )
+    def fxt_cloud_images_task_with_related_images(
+        self, request: pytest.FixtureRequest, cloud_storages, cloud_storage_id: int
+    ) -> Generator[tuple[ITaskSpec, int], None, None]:
+        cloud_storage = cloud_storages[cloud_storage_id]
+        s3_client = s3.make_client(bucket=cloud_storage["resource"])
+
+        image_files = generate_image_files(5)
+
+        def _upload_file(file: io.IOBase):
+            s3_client.create_file(data=file, filename=file.name)
+            request.addfinalizer(partial(s3_client.remove_file, filename=file.name))
+
+        related_files = []
+
+        for image in image_files:
+            image.name = f"test/{image.name}"
+            image.seek(0)
+            _upload_file(image)
+
+            image_related_files = generate_image_files(3)
+            related_files.append(image_related_files)
+
+            for i, related_file in enumerate(image_related_files):
+                assert related_file.name.endswith(".jpeg")
+                related_file.name = "{}/related_images/{}/{}".format(
+                    os.path.dirname(image.name),
+                    os.path.basename(image.name).replace(".", "_"),
+                    related_file.name.replace(".jpeg", ".jpg"),  # must be .jpg
+                )
+                related_file.seek(0)
+                _upload_file(related_file)
+
+        server_files = [f.name for f in image_files] + [
+            f.name for rfs in related_files for f in rfs
+        ]
+
+        for image in image_files:
+            image.seek(0)
+
+        yield from self._image_task_fxt_base(
+            request,
+            image_files=image_files,
+            related_files=dict(enumerate(related_files)),
+            server_files=server_files,
+            cloud_storage_id=cloud_storage_id,
+        )
+
+    @fixture(scope="class")
     @parametrize("start_frame, step", [(2, 3)])
     @parametrize("frame_selection_method", ["random_uniform", "random_per_job", "manual"])
     def fxt_uploaded_images_task_with_gt_and_segments_start_step(
@@ -548,6 +611,15 @@ class TestTasksBase:
         fixture_ref("fxt_uploaded_images_task_with_gt_and_segments_and_consensus"),
     ]
 
+    _tests_with_cloud_storage_cases = [
+        fixture_ref("fxt_cloud_images_task_with_honeypots_and_changed_real_frames"),
+        fixture_ref("fxt_cloud_images_task_with_related_images"),
+    ]
+
+    _tests_with_related_files_cases = [
+        fixture_ref("fxt_cloud_images_task_with_related_images"),
+    ]
+
     # Keep in mind that these fixtures are generated eagerly
     # (before each depending test or group of tests),
     # e.g. a failing task creation in one the fixtures will fail all the depending tests cases.
@@ -562,6 +634,8 @@ class TestTasksBase:
         ]
         + _tasks_with_honeypots_cases
         + _tasks_with_simple_gt_job_cases
-        + _tasks_with_consensus_cases,
+        + _tasks_with_consensus_cases
+        + _tests_with_cloud_storage_cases
+        + _tests_with_related_files_cases,
         key=lambda fxt_ref: fxt_ref.fixture,
     )
