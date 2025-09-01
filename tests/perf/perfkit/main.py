@@ -89,7 +89,11 @@ def run_golden(
     if save_baseline:
         test_key = Path(test_file).stem
         add_baseline(k6_summary_averaged, test_key, alias)
-        print_success(f"✅ Saved baseline for `{alias}` -> `{test_key}`")
+        print_success(
+            "✅ Saved baseline for {}".format(
+                f"`{alias}` -> `{test_key}`" if alias else f"`{test_key}`"
+            )
+        )
     else:
         print_info("📊 Golden run complete. Results not saved.")
         console.print_json(data=k6_summary_averaged.as_dict())

@@ -19,6 +19,7 @@ function createTask(token, taskSpec) {
     if (validateResponse(response, 201, 'Create Task')) {
         return response.json().id;
     }
+    return null;
 }
 
 function patchTask(token, taskId, taskUpdatesSpec) {
@@ -33,6 +34,7 @@ function patchTask(token, taskId, taskUpdatesSpec) {
     if (validateResponse(response, 200, 'Patch Task')) {
         return response.json();
     }
+    return null;
 }
 
 function getTask(token, taskId) {
@@ -42,6 +44,7 @@ function getTask(token, taskId) {
     if (validateResponse(response, 200, 'Get Task')) {
         return response.json();
     }
+    return null;
 }
 
 function getTasks(token) {
@@ -51,13 +54,14 @@ function getTasks(token) {
     if (validateResponse(response, 200, 'Get Tasks')) {
         return response.json();
     }
+    return null;
 }
 
 function deleteTask(token, taskId) {
     const response = http.del(`${BASE_URL}/tasks/${taskId}`, JSON.stringify({}), {
         headers: getDefaultHeaders(token),
     });
-    validateResponse(response, 204, 'Delete Task');
+    return validateResponse(response, 204, 'Delete Task');
 }
 
 export default {

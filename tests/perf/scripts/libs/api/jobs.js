@@ -15,6 +15,7 @@ function createJob(token, jobSpec) {
     if (validateResponse(response, 201, 'Create Job')) {
         return response.json().id;
     }
+    return null;
 }
 
 function listJobs(token) {
@@ -27,6 +28,7 @@ function listJobs(token) {
     if (validateResponse(response, 200, 'List Jobs')) {
         return response.json();
     }
+    return null;
 }
 
 function getJobDetails(token, jobID) {
@@ -39,6 +41,7 @@ function getJobDetails(token, jobID) {
     if (validateResponse(response, 200, 'Get Job Details')) {
         return response.json();
     }
+    return null;
 }
 
 export default { createJob, listJobs, getJobDetails };

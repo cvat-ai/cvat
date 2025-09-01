@@ -18,6 +18,7 @@ function login(username, password) {
     if (validateResponse(response, 200, 'Authentication')) {
         return response.json().key;
     }
+    return null;
 }
 
 export default { login };
