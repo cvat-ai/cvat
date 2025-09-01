@@ -142,7 +142,8 @@ Before starting, ensure that the following prerequisites are met:
 
      follow the instructions in the [Docker documentation](https://www.docker.com/blog/how-to-use-your-own-registry-2)
 
-     Please note that on MacOS default registry port of 5000 is in use by ControlCenter application. In this case you can just expose registry using different port (for example 5001)
+     Please note that on MacOS default registry port of 5000 is in use by ControlCenter application.
+     In this case you can just expose registry using different port (for example 5001)
      in that case you should run registry container with this command
      ```shell
      docker run -d -p 5001:5000 --name registry registry:2
