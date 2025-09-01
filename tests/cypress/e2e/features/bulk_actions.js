@@ -131,10 +131,7 @@ context('Bulk actions in UI', () => {
                 });
                 cy.get('.cvat-bulk-progress-wrapper').should('be.visible');
 
-                // Navigate to task with 2 jobs
                 cy.openTaskByID(taskTwoJobs.ID);
-                cy.get('.cvat-spinner').should('not.exist');
-                cy.get('.cvat-task-details').should('exist');
 
                 // Ensure task was assigned to admin
                 cy.get('.cvat-user-search-field').first()
