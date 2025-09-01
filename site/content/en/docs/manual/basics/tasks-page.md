@@ -24,6 +24,12 @@ Each button is responsible for a menu `Actions` specific function:
 - `Move to project` — Moving a task to a project (you can move only a task that does not belong to any project).
   In case of a label mismatch, you can create or delete necessary labels in the project/task.
   Some task labels can be matched with the target project labels.
+- `Organization` - moving a task between your personal workspace or organizations.
+  Only available for individual tasks (not tasks in a project). Please, refer to the
+  {{< ilink
+  "/docs/manual/advanced/organization#transfer-tasks-and-projects-between-organizations"
+  "Transfer between organizations" >}}
+  section for details.
 - `Delete` — delete task.
 
 In the upper left corner, there is a search bar, using which you can find the task by assignee, task name etc.
@@ -32,7 +38,9 @@ In the upper right corner, there are {{< ilink "/docs/manual/advanced/filter#sor
 
 ## Filter
 
-> Applying a filter disables the {{< ilink "/docs/manual/advanced/filter#quick-filters" "quick filter" >}}.
+{{% alert title="Note" color="primary" %}}
+Applying a filter disables the {{< ilink "/docs/manual/advanced/filter#quick-filters" "quick filter" >}}.
+{{% /alert %}}
 
 The filter works similarly to the filters for annotation,
 you can create rules from [properties](#supported-properties-for-tasks-list),

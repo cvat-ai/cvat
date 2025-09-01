@@ -73,13 +73,15 @@ There are three types of feedbacks available for different cases:
 
 ## Additional details
 
-> Immediate feedback has a default timeout of 20 seconds.
-> Feedback may be unavailable for large jobs or when there are too many immediate feedback requests.
-> In this case annotators do not see any feedback dialogs and annotate jobs as
-> if the feature was disabled.
+{{% alert title="Note" color="primary" %}}
+Immediate feedback has a default timeout of 20 seconds.
+Feedback may be unavailable for large jobs or when there are too many immediate feedback requests.
+In this case annotators do not see any feedback dialogs and annotate jobs as
+if the feature was disabled.
 
-> The number of attempts does not decrease for staff members who have access to a job
-> with ground truth annotations. For instance, if you're trying to test this feature as the task
-> owner, you may be confused if you see the number of attempts doesn't decrease.
+The number of attempts does not decrease for staff members who have access to a job
+with ground truth annotations. For instance, if you're trying to test this feature as the task
+owner, you may be confused if you see the number of attempts doesn't decrease.
 
-> The number of attempts resets when the job assignee is updated.
+The number of attempts resets when the job assignee is updated.
+{{% /alert %}}

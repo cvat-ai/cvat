@@ -353,7 +353,7 @@ Axios.interceptors.request.use((reqConfig) => {
 });
 
 Axios.interceptors.response.use((response) => {
-    if (isResourceURL(response.config.url) &&
+    if (isResourceURL(response.config.url) && response.config.method === 'get' &&
         'organization' in (response.data || {})
     ) {
         const newOrgId: number | null = response.data.organization;
@@ -995,12 +995,14 @@ async function backupTask(
     targetStorage: Storage,
     useDefaultSettings: boolean,
     fileName?: string,
+    lightweight?: boolean,
 ): Promise<string | void> {
     const { backendAPI } = config;
     const params: Params = {
         ...enableOrganization(),
         ...configureStorage(targetStorage, useDefaultSettings),
         ...(fileName ? { filename: fileName } : {}),
+        ...(typeof lightweight === 'boolean' ? { lightweight } : {}),
     };
     const url = `${backendAPI}/tasks/${id}/backup/export`;
 
@@ -1075,6 +1077,7 @@ async function backupProject(
     targetStorage: Storage,
     useDefaultSettings: boolean,
     fileName?: string,
+    lightweight?: boolean,
 ): Promise<string | void> {
     const { backendAPI } = config;
     // keep current default params to 'freeze" them during this request
@@ -1082,6 +1085,7 @@ async function backupProject(
         ...enableOrganization(),
         ...configureStorage(targetStorage, useDefaultSettings),
         ...(fileName ? { filename: fileName } : {}),
+        ...(typeof lightweight === 'boolean' ? { lightweight } : {}),
     };
 
     const url = `${backendAPI}/projects/${id}/backup/export`;
@@ -1961,13 +1965,14 @@ async function getOrganizations(filter) {
         response = await Axios.get(`${backendAPI}/organizations`, {
             params: {
                 ...filter,
+                page_size: filter.page_size || 10,
+                sort: filter.sort || 'slug',
             },
         });
     } catch (errorData) {
         throw generateError(errorData);
     }
-
-    return response.data.results;
+    return response.data;
 }
 
 async function createOrganization(data: SerializedOrganization): Promise<SerializedOrganization> {

@@ -23,8 +23,18 @@ from cvat.apps.iam.utils import get_dummy_or_regular_user
 
 
 class RegisterSerializerEx(RegisterSerializer):
-    first_name = serializers.CharField(required=False)
-    last_name = serializers.CharField(required=False)
+    # workaround for https://github.com/iMerica/dj-rest-auth/issues/707
+    email = serializers.EmailField(
+        required=allauth_settings.EMAIL_REQUIRED, max_length=allauth_settings.EMAIL_MAX_LENGTH
+    )
+
+    first_name = serializers.CharField(
+        required=False, max_length=User._meta.get_field("first_name").max_length
+    )
+    last_name = serializers.CharField(
+        required=False, max_length=User._meta.get_field("last_name").max_length
+    )
+
     email_verification_required = serializers.SerializerMethodField()
     key = serializers.SerializerMethodField()
 

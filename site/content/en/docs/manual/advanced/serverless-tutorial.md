@@ -889,7 +889,6 @@ Deploying serverless/pytorch/shiyinzhang/iog function...
   NAMESPACE |                      NAME                      | PROJECT | STATE | NODE PORT | REPLICAS
   nuclio    | openvino-dextr                                 | cvat    | ready |     49154 | 1/1
   nuclio    | pth-foolwood-siammask                          | cvat    | ready |     49155 | 1/1
-  nuclio    | pth-saic-vul-fbrs                              | cvat    | ready |     49156 | 1/1
   nuclio    | pth-facebookresearch-detectron2-retinanet-r101 | cvat    | ready |     49155 | 1/1
   nuclio    | pth-shiyinzhang-iog                            | cvat    | ready |     49159 | 1/1
 ```
