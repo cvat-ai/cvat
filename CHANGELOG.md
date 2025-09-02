@@ -16,6 +16,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.44.1'></a>
+## \[2.44.1\] - 2025-09-02
+
+### Fixed
+
+- Attribute/label input fields are not disabled when the object is locked
+  (<https://github.com/cvat-ai/cvat/pull/9783>)
+
 <a id='changelog-2.44.0'></a>
 ## \[2.44.0\] - 2025-09-01
 
