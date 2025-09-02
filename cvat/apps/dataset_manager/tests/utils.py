@@ -5,7 +5,7 @@
 import os
 import tempfile
 import unittest
-from types import GeneratorType, TracebackType
+from types import TracebackType
 from typing import Optional
 from unittest.mock import patch
 
