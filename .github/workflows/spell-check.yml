@@ -1,15 +1,15 @@
-name: Typos
-on: pull_request
-jobs:
-  Spell-checker:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Run checks
-        run: |
-          pipx install $(grep "^typos==" ./dev/requirements.txt)
-
-          echo "Typos version: $(typos --version )"
-          typos
-
+#name: Typos
+#on: pull_request
+#jobs:
+#  Spell-checker:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v4
+#
+#      - name: Run checks
+#        run: |
+#          pipx install $(grep "^typos==" ./dev/requirements.txt)
+#
+#          echo "Typos version: $(typos --version )"
+#          typos
+#

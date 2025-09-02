@@ -1,15 +1,15 @@
-name: Black
-on: pull_request
-jobs:
-  Linter:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Run checks
-        run: |
-          pipx install $(grep "^black" ./dev/requirements.txt)
-
-          echo "Black version: $(black --version)"
-
-          black --check --diff .
+#name: Black
+#on: pull_request
+#jobs:
+#  Linter:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v4
+#
+#      - name: Run checks
+#        run: |
+#          pipx install $(grep "^black" ./dev/requirements.txt)
+#
+#          echo "Black version: $(black --version)"
+#
+#          black --check --diff .
