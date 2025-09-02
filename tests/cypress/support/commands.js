@@ -494,7 +494,7 @@ Cypress.Commands.add('openTask', (taskName, projectSubsetFieldValue) => {
 });
 
 Cypress.Commands.add('openTaskById', (taskId) => {
-    cy.visit(`tasks/${taskId}`);
+    cy.visit(`/tasks/${taskId}`);
     cy.get('.cvat-spinner').should('not.exist');
     cy.get('.cvat-task-details').should('exist').and('be.visible');
 });
