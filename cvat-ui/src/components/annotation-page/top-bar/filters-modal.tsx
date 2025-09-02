@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector, shallowEqual } from 'react-redux';
 import {
     Builder, Config, ImmutableTree, JsonLogicTree, Query, Utils as QbUtils, AntdConfig, AntdWidgets,
 } from '@react-awesome-query-builder/antd';
@@ -74,9 +74,14 @@ const getAttributesSubfields = (labels: Label[]): Record<string, any> => {
 };
 
 function FiltersModalComponent(): JSX.Element {
-    const labels = useSelector((state: CombinedState) => state.annotation.job.labels);
-    const activeFilters = useSelector((state: CombinedState) => state.annotation.annotations.filters);
-    const visible = useSelector((state: CombinedState) => state.annotation.filtersPanelVisible);
+    const { labels, activeFilters, visible } = useSelector(
+        (state: CombinedState) => ({
+            labels: state.annotation.job.labels,
+            activeFilters: state.annotation.annotations.filters,
+            visible: state.annotation.filtersPanelVisible,
+        }),
+        shallowEqual,
+    );
     const [config, setConfig] = useState<Config>(AntdConfig);
 
     const dispatch = useDispatch();
