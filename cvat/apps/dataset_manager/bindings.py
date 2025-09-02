@@ -1862,10 +1862,14 @@ class CvatTaskOrJobDataExtractor(dm.SubsetBase, CvatDataExtractorBase):
             subset=self._instance_meta['subset'],
         )
         self._categories = self.load_categories(self._instance_meta['labels'])
-        assert self._instance_data.is_stream
 
     def __iter__(self):
-        for frame_data in self._instance_data.group_by_frame_stream():
+        if self._instance_data.is_stream:
+            grouped_by_frame = self._instance_data.group_by_frame_stream()
+        else:
+            grouped_by_frame = self._instance_data.group_by_frame(include_empty=True)
+
+        for frame_data in grouped_by_frame:
             yield self._process_one_frame_data(frame_data)
 
     def __len__(self):
