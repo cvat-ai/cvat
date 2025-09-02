@@ -600,9 +600,12 @@ class CommonData(InstanceLabelData):
 
         get_tags_for_frame = get_anns_for_frame(
             sorted(
-                tag
-                for tag in self._annotation_ir.tags
-                if tag['frame'] in included_frames
+                (
+                    tag
+                    for tag in self._annotation_ir.tags
+                    if tag['frame'] in included_frames
+                ),
+                key=lambda tag: tag['frame']
             )
         )
 
