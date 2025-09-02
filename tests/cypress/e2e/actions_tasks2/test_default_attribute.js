@@ -79,7 +79,7 @@ context('Test default value for an attribute', () => {
     describe('Test can change default attribute', () => {
         it('Can change default attribute value on task page', () => {
             const newDefaultValue = 'third';
-            cy.openTaskByID(taskID);
+            cy.openTaskById(taskID);
             cy.get('.cvat-constructor-viewer-item').within(() => {
                 cy.get('[aria-label="edit"]').click();
             });

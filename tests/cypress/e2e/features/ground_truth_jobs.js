@@ -126,7 +126,7 @@ context('Ground truth jobs', () => {
                 [jobID] = taskResponse.jobIDs;
             }
         }).then(() => {
-            cy.openTaskByID(taskID);
+            cy.openTaskById(taskID);
         });
     }
 

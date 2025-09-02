@@ -70,7 +70,7 @@ context('Basic markdown pipeline', () => {
             }).then((taskResponse) => {
                 taskID = taskResponse.taskID;
                 [jobID] = taskResponse.jobIDs;
-                cy.openTaskByID(taskID);
+                cy.openTaskById(taskID);
                 cy.assignTaskToUser(additionalUsers.taskAssignee.username);
                 cy.assignJobToUser(jobID, additionalUsers.jobAssignee.username);
             });
@@ -117,7 +117,7 @@ context('Basic markdown pipeline', () => {
         }
 
         function setupGuide(value) {
-            cy.openProjectByID(projectID);
+            cy.openProjectById(projectID);
             openGuide();
             updatePlainText(value);
         }
