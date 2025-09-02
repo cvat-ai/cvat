@@ -31,7 +31,6 @@ from defusedxml import ElementTree
 from cvat.apps.dataset_manager.bindings import (
     CommonData,
     CVATProjectDataExtractor,
-    CvatTaskOrJobDataExtractor,
     JobData,
     NoMediaInAnnotationFileError,
     ProjectData,
