@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
+/// <reference types="k6" />
+
 import { randomString, randomItem } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js';
 import { randomBool, randomBugTracker, randomUpdate } from '../../utils/random.js';
 import { SHAPE_TYPES, BUG_TRACKER_FAKE_URL, ADMIN_ID } from './const.js';

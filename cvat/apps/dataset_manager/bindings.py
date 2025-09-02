@@ -257,30 +257,28 @@ class CommonData(InstanceLabelData):
         group: int | None = 0
         id: int | None = None
 
-    class Frame(NamedTuple):
-        idx: int
-        id: int
-        frame: int
-        name: str
-        width: int
-        height: int
-        labeled_shapes: Sequence[CommonData.LabeledShape]
-        tags: Sequence[CommonData.Tag]
-        shapes: Sequence[CommonData.Shape]
-        labels: Mapping[int, CommonData.Label]
-        subset: str
-        task_id: int
+    @attrs
+    class Frame:
+        idx: int = attrib()
+        id: int = attrib()
+        frame: int = attrib()
+        name: str = attrib()
+        width: int = attrib()
+        height: int = attrib()
+        labeled_shapes: Sequence[CommonData.LabeledShape] = attrib(default=None)
+        tags: Sequence[CommonData.Tag] = attrib(default=None)
+        shapes: Sequence[CommonData.Shape] = attrib(default=None)
+        labels: Mapping[int, CommonData.Label] = attrib(default=None)
+        subset: str = attrib(default=None)
+        task_id: int = attrib(default=None)
+        _annotation_getter: Callable[[CommonData.Frame], None] | None = attrib(default=None)
 
-    class LazyFrame(NamedTuple):
-        idx: int
-        id: int
-        frame: int
-        name: str
-        width: int
-        height: int
-        subset: str
-        task_id: int
-        construct_frame: Callable[[], CommonData.Frame]
+        def __getattribute__(self, name):
+            if name in ("labeled_shapes", "tags", "shapes", "labels"):
+                if self._annotation_getter is not None:
+                    getter, self._annotation_getter = self._annotation_getter, None
+                    getter(self)
+            return object.__getattribute__(self, name)
 
     class Label(NamedTuple):
         id: int
@@ -559,7 +557,7 @@ class CommonData(InstanceLabelData):
 
         return iter(frames.values())
 
-    def group_by_frame_stream(self) -> Generator[CommonData.LazyFrame, None, None]:
+    def group_by_frame_stream(self) -> Generator[CommonData.Frame, None, None]:
         included_frames = self.get_included_frames()
         anno_manager = AnnotationManager(
             self._annotation_ir, dimension=self._annotation_ir.dimension
@@ -608,22 +606,11 @@ class CommonData(InstanceLabelData):
             )
         )
 
-        def construct_frame(frame_idx: int) -> CommonData.Frame:
-            frame_info = self._frame_info[frame_idx]
-            frame = CommonData.Frame(
-                idx=frame_idx,
-                id=frame_info.get("id", 0),
-                subset=frame_info["subset"],
-                frame=self.abs_frame_id(frame_idx),
-                name=frame_info["path"],
-                height=frame_info["height"],
-                width=frame_info["width"],
-                labeled_shapes=[],
-                tags=[],
-                shapes=[],
-                labels={},
-                task_id=self._db_task.id,
-            )
+        def fill_annotations(frame: CommonData.Frame) -> None:
+            frame.labeled_shapes = []
+            frame.tags = []
+            frame.shapes = []
+            frame.labels = {}
             for shape in sorted(
                 get_shapes_for_frame(frame_idx),
                 key=lambda shape: shape.get("z_order", 0),
@@ -649,11 +636,9 @@ class CommonData(InstanceLabelData):
             for tag in get_tags_for_frame(frame_idx):
                 frame.tags.append(self._export_tag(tag))
 
-            return frame
-
         for frame_idx in sorted(set(self._frame_info) & included_frames):
             frame_info = self._frame_info[frame_idx]
-            yield CommonData.LazyFrame(
+            yield CommonData.Frame(
                 idx=frame_idx,
                 id=frame_info.get("id", 0),
                 subset=frame_info["subset"],
@@ -662,7 +647,7 @@ class CommonData(InstanceLabelData):
                 height=frame_info["height"],
                 width=frame_info["width"],
                 task_id=self._db_task.id,
-                construct_frame=partial(construct_frame, frame_idx),
+                annotation_getter=fill_annotations,
             )
 
     @property
@@ -1798,7 +1783,7 @@ class CvatDataExtractorBase(CVATDataExtractorMixin):
             for is_video in [task.mode == 'interpolation']
         }
 
-    def _process_one_frame_data(self, frame_data: CommonData.Frame | ProjectData.Frame | CommonData.LazyFrame) -> dm.DatasetItem:
+    def _process_one_frame_data(self, frame_data: CommonData.Frame | ProjectData.Frame) -> dm.DatasetItem:
         dm_media_args = {
             'path': frame_data.name + self._ext_per_task[frame_data.task_id],
             'ext': self._ext_per_task[frame_data.task_id] or frame_data.name.rsplit(osp.extsep, maxsplit=1)[1],
@@ -1855,7 +1840,7 @@ class CvatDataExtractorBase(CVATDataExtractorMixin):
 
         return dm_item
 
-    def _read_cvat_anno(self, cvat_frame_anno: CommonData.Frame | ProjectData.Frame | CommonData.LazyFrame, labels: list):
+    def _read_cvat_anno(self, cvat_frame_anno: CommonData.Frame | ProjectData.Frame, labels: list):
         categories = self.categories()
         label_cat = categories[dm.AnnotationType.label]
         def map_label(name, parent=''): return label_cat.find(name, parent)[0]
@@ -1863,9 +1848,6 @@ class CvatDataExtractorBase(CVATDataExtractorMixin):
             label.get('parent', '') + label['name']: label['attributes']
             for _, label in labels
         }
-
-        if isinstance(cvat_frame_anno, CommonData.LazyFrame):
-            cvat_frame_anno = cvat_frame_anno.construct_frame()
 
         return self.convert_annotations(cvat_frame_anno,
             label_attrs, map_label, self._format_type, self._dimension)
@@ -1886,7 +1868,8 @@ class CvatTaskOrJobDataExtractor(dm.SubsetBase, CvatDataExtractorBase):
 
     @staticmethod
     def copy_frame_data_with_replaced_lazy_lists(frame_data: CommonData.Frame) -> CommonData.Frame:
-        return frame_data._replace(
+        return attr.evolve(
+            frame_data,
             labeled_shapes=[
                 (
                     shape._replace(points=shape.points.lazy_copy())
@@ -1904,7 +1887,7 @@ class CvatTaskOrJobDataExtractor(dm.SubsetBase, CvatDataExtractorBase):
             grouped_by_frame = self._grouped_by_frame
 
         for frame_data in grouped_by_frame:
-            if not isinstance(frame_data, CommonData.LazyFrame):
+            if not self._instance_data.is_stream:
                 # do not keep parsed lazy list data after this iteration
                 frame_data = self.copy_frame_data_with_replaced_lazy_lists(frame_data)
             yield self._process_one_frame_data(frame_data)

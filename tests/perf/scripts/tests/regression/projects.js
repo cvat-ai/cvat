@@ -2,8 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-/// <reference types="k6"/>
-/// <reference types="../../types.d.ts" />
+/// <reference types="k6" />
 
 import APIProjects from '../../libs/api/projects.js';
 import APIAuth from '../../libs/api/auth.js';

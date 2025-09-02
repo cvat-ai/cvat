@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 import Card from 'antd/lib/card';
@@ -41,9 +41,15 @@ export default function CloudStorageItemComponent(props: Readonly<Props>): JSX.E
         updatedDate,
         description,
     } = cloudStorage;
-    const deletes = useSelector((state: CombinedState) => state.cloudStorages.activities.deletes);
+
+    const {
+        deletes,
+        selectedIds,
+    } = useSelector((state: CombinedState) => ({
+        deletes: state.cloudStorages.activities.deletes,
+        selectedIds: state.cloudStorages.selected,
+    }), shallowEqual);
     const deleted = cloudStorage.id in deletes ? deletes[cloudStorage.id] : false;
-    const selectedIds = useSelector((state: CombinedState) => state.cloudStorages.selected);
 
     const style: React.CSSProperties = {};
     if (deleted) {

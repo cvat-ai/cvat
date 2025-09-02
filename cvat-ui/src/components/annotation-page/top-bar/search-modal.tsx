@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import Modal from 'antd/lib/modal';
 import Text from 'antd/lib/typography/Text';
 import AutoComplete from 'antd/lib/auto-complete';
@@ -26,9 +26,15 @@ function SearchFramesModal(): JSX.Element {
     const dispatch = useDispatch();
     const [searchTerm, setSearchTerm] = useState('');
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-    const visible = useSelector((state: CombinedState) => state.annotation.search.visible);
-    const meta = useSelector((state: CombinedState) => state.annotation.job.meta);
-    const frameNumbers = useSelector((state: CombinedState) => state.annotation.job.frameNumbers);
+    const {
+        visible,
+        meta,
+        frameNumbers,
+    } = useSelector((state: CombinedState) => ({
+        visible: state.annotation.search.visible,
+        meta: state.annotation.job.meta,
+        frameNumbers: state.annotation.job.frameNumbers,
+    }), shallowEqual);
 
     const [searchData, setSearchData] = useState<SearchResult[]>([]);
     useEffect(() => {
