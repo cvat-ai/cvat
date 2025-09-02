@@ -1,54 +1,6 @@
 name: linters
 on: pull_request
 
-# Define reusable cache setup at the top level
-#x-cache-setup: &cache-setup
-#  - name: Get yarn cache directory path
-#    id: yarn-cache-dir-path
-#    run: |
-#      echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
-#      echo "version=$(node --version)" >> $GITHUB_OUTPUT
-#  - name: Cache yarn cache
-#    uses: actions/cache@v4
-#    id: cache-yarn-cache
-#    with:
-#      path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-#      key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-#      restore-keys: |
-#        ${{ runner.os }}-yarn-
-
-# Define cache for regular jobs (just node_modules)
-x-cache-node-modules: &cache-node-modules-basic
-  - name: Get yarn version
-    id: yarn-version
-    run: |
-      echo "version=$(node --version)" >> $GITHUB_OUTPUT
-  - name: Cache node_modules
-    id: cache-node-modules
-    uses: actions/cache@v4
-    with:
-      path: node_modules
-      key: ${{ runner.os }}-${{ steps.yarn-version.outputs.version }}-nodemodules-${{ hashFiles('**/yarn.lock') }}
-      restore-keys: |
-        ${{ runner.os }}-${{ steps.yarn-version.outputs.version }}-nodemodules-
-
-# Define cache for eslint job (includes tests/node_modules)
-x-cache-node-modules-with-tests: &cache-node-modules-with-tests
-  - name: Get yarn version
-    id: yarn-version
-    run: |
-      echo "version=$(node --version)" >> $GITHUB_OUTPUT
-  - name: Cache node_modules
-    id: cache-node-modules
-    uses: actions/cache@v4
-    with:
-      path: |
-        node_modules
-        tests/node_modules
-      key: ${{ runner.os }}-${{ steps.yarn-version.outputs.version }}-nodemodules-${{ hashFiles('**/yarn.lock') }}
-      restore-keys: |
-        ${{ runner.os }}-${{ steps.yarn-version.outputs.version }}-nodemodules-
-
 jobs:
   bandit:
     runs-on: ubuntu-latest
@@ -156,7 +108,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup Regal
-        uses: StyraInc/setup-regal@v1
+        uses: StyraInc/setup-regal@33a142b1189004e0f14bf42b15972c67eecce776
         with:
           version: v0.21.3
       - run: regal lint --format=github cvat/apps/*/rules
@@ -180,8 +132,21 @@ jobs:
         with:
           node-version: '22.x'
           cache: 'yarn'
-#      - <<: *cache-setup
-      - <<: *cache-node-modules-with-tests
+
+      - name: Get yarn version
+        id: yarn-version
+        run: |
+          echo "version=$(node --version)" >> $GITHUB_OUTPUT
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            tests/node_modules
+          key: ${{ runner.os }}-${{ steps.yarn-version.outputs.version }}-nodemodules-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ steps.yarn-version.outputs.version }}-nodemodules-
       - name: Install dependencies
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: |
@@ -201,8 +166,19 @@ jobs:
         with:
           node-version: '22.x'
           cache: 'yarn'
-#      - <<: *cache-setup
-      - <<: *cache-node-modules-basic
+
+      - name: Get yarn version
+        id: yarn-version
+        run: |
+          echo "version=$(node --version)" >> $GITHUB_OUTPUT
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-${{ steps.yarn-version.outputs.version }}-nodemodules-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ steps.yarn-version.outputs.version }}-nodemodules-
       - name: Install dependencies
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: |
@@ -222,8 +198,19 @@ jobs:
         with:
           node-version: '22.x'
           cache: 'yarn'
-#      - <<: *cache-setup
-      - <<: *cache-node-modules-basic
+
+      - name: Get yarn version
+        id: yarn-version
+        run: |
+          echo "version=$(node --version)" >> $GITHUB_OUTPUT
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-${{ steps.yarn-version.outputs.version }}-nodemodules-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ steps.yarn-version.outputs.version }}-nodemodules-
       - name: Install dependencies
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: |
