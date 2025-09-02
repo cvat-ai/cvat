@@ -83,7 +83,7 @@ export function TestCreateProject(data) {
 }
 
 export function TestUpdateProject(data) {
-    const newProject = ProjectsLib.updateProjectRandomly(
+    ProjectsLib.updateProjectRandomly(
         data.token,
         getRandomProjectID(data.projects),
     );
