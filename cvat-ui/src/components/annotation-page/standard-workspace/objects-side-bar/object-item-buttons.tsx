@@ -98,6 +98,8 @@ const classes = {
     },
 };
 
+const disabledStyle = { opacity: 0.5, pointerEvents: 'none' as const };
+
 function NavigateFirstKeyframe(props: Props): JSX.Element {
     const { navigateFirstKeyframe } = props;
     return navigateFirstKeyframe ? (
@@ -155,14 +157,16 @@ function SwitchLock(props: Props): JSX.Element {
 
 function SwitchOccluded(props: Props): JSX.Element {
     const {
-        switchOccludedShortcut, occluded, unsetOccluded, setOccluded,
+        switchOccludedShortcut, locked, occluded, unsetOccluded, setOccluded,
     } = props;
+
+    const style = locked ? disabledStyle : {};
     return (
         <CVATTooltip title={`Switch occluded property ${switchOccludedShortcut}`}>
             {occluded ? (
-                <TeamOutlined {...classes.occluded.enabled} onClick={unsetOccluded} />
+                <TeamOutlined {...classes.occluded.enabled} onClick={unsetOccluded} style={style} />
             ) : (
-                <UserOutlined {...classes.occluded.disabled} onClick={setOccluded} />
+                <UserOutlined {...classes.occluded.disabled} onClick={setOccluded} style={style} />
             )}
         </CVATTooltip>
     );
@@ -170,14 +174,16 @@ function SwitchOccluded(props: Props): JSX.Element {
 
 function SwitchPinned(props: Props): JSX.Element {
     const {
-        switchPinnedShortcut, pinned, pin, unpin,
+        switchPinnedShortcut, locked, pinned, pin, unpin,
     } = props;
+
+    const style = locked ? disabledStyle : {};
     return (
         <CVATTooltip title={`Switch pinned property ${switchPinnedShortcut}`}>
             {pinned ? (
-                <PushpinFilled {...classes.pinned.enabled} onClick={unpin} />
+                <PushpinFilled {...classes.pinned.enabled} onClick={unpin} style={style} />
             ) : (
-                <PushpinOutlined {...classes.pinned.disabled} onClick={pin} />
+                <PushpinOutlined {...classes.pinned.disabled} onClick={pin} style={style} />
             )}
         </CVATTooltip>
     );
@@ -185,15 +191,16 @@ function SwitchPinned(props: Props): JSX.Element {
 
 function SwitchHidden(props: Props): JSX.Element {
     const {
-        switchHiddenShortcut, hidden, hiddenDisabled, show, hide,
+        switchHiddenShortcut, locked, hidden, hiddenDisabled, show, hide,
     } = props;
-    const hiddenStyle = hiddenDisabled ? { opacity: 0.5, pointerEvents: 'none' as const } : {};
+
+    const style = hiddenDisabled || locked ? disabledStyle : {};
     return (
         <CVATTooltip title={`Switch hidden property ${switchHiddenShortcut}`}>
             {hidden ? (
-                <EyeInvisibleFilled {...classes.hidden.enabled} onClick={show} style={hiddenStyle} />
+                <EyeInvisibleFilled {...classes.hidden.enabled} onClick={show} style={style} />
             ) : (
-                <EyeOutlined {...classes.hidden.disabled} onClick={hide} style={hiddenStyle} />
+                <EyeOutlined {...classes.hidden.disabled} onClick={hide} style={style} />
             )}
         </CVATTooltip>
     );
@@ -201,9 +208,10 @@ function SwitchHidden(props: Props): JSX.Element {
 
 function SwitchOutside(props: Props): JSX.Element {
     const {
-        outside, switchOutsideShortcut, outsideDisabled, unsetOutside, setOutside,
+        outside, locked, switchOutsideShortcut, outsideDisabled, unsetOutside, setOutside,
     } = props;
-    const outsideStyle = outsideDisabled ? { opacity: 0.5, pointerEvents: 'none' as const } : {};
+
+    const style = outsideDisabled || locked ? disabledStyle : {};
     return (
         <CVATTooltip title={`Switch outside property ${switchOutsideShortcut}`}>
             {outside ? (
@@ -211,10 +219,10 @@ function SwitchOutside(props: Props): JSX.Element {
                     {...classes.outside.enabled}
                     component={ObjectOutsideIcon}
                     onClick={unsetOutside}
-                    style={outsideStyle}
+                    style={style}
                 />
             ) : (
-                <SelectOutlined {...classes.outside.disabled} onClick={setOutside} style={outsideStyle} />
+                <SelectOutlined {...classes.outside.disabled} onClick={setOutside} style={style} />
             )}
         </CVATTooltip>
     );
@@ -222,15 +230,16 @@ function SwitchOutside(props: Props): JSX.Element {
 
 function SwitchKeyframe(props: Props): JSX.Element {
     const {
-        keyframe, switchKeyFrameShortcut, keyframeDisabled, unsetKeyframe, setKeyframe,
+        keyframe, locked, switchKeyFrameShortcut, keyframeDisabled, unsetKeyframe, setKeyframe,
     } = props;
-    const keyframeStyle = keyframeDisabled ? { opacity: 0.5, pointerEvents: 'none' as const } : {};
+
+    const style = keyframeDisabled || locked ? disabledStyle : {};
     return (
         <CVATTooltip title={`Switch keyframe property ${switchKeyFrameShortcut}`}>
             {keyframe ? (
-                <StarFilled style={keyframeStyle} onClick={unsetKeyframe} {...classes.keyframe.enabled} />
+                <StarFilled style={style} onClick={unsetKeyframe} {...classes.keyframe.enabled} />
             ) : (
-                <StarOutlined style={keyframeStyle} onClick={setKeyframe} {...classes.keyframe.disabled} />
+                <StarOutlined style={style} onClick={setKeyframe} {...classes.keyframe.disabled} />
             )}
         </CVATTooltip>
     );
