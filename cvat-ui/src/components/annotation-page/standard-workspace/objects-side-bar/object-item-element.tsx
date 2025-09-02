@@ -24,6 +24,7 @@ function ObjectItemElementComponent(props: OwnProps): JSX.Element {
     const {
         clientID, parentID, readonly, onMouseLeave,
     } = props;
+
     const dispatch = useDispatch();
     const {
         states,
@@ -34,12 +35,13 @@ function ObjectItemElementComponent(props: OwnProps): JSX.Element {
         activatedElementId: state.annotation.annotations.activatedElementID,
         colorBy: state.settings.shapes.colorBy,
     }), shallowEqual);
+
     const activate = useCallback(() => {
         dispatch(activateObject(parentID, clientID, null));
     }, [parentID, clientID]);
+
     const state = states.find((_state: ObjectState) => _state.clientID === parentID);
     const element = state.elements.find((_element: ObjectState) => _element.clientID === clientID);
-
     const elementColor = getColor(element, colorBy);
     const elementClassName = element.clientID === activatedElementId ?
         'cvat-objects-sidebar-state-item-elements cvat-objects-sidebar-state-active-element' :
@@ -64,7 +66,7 @@ function ObjectItemElementComponent(props: OwnProps): JSX.Element {
             <ObjectButtonsContainer readonly={readonly} clientID={element.clientID} />
             {!!element.label.attributes.length && (
                 <ItemDetailsContainer
-                    readonly={readonly}
+                    readonly={readonly || element.lock}
                     parentID={parentID}
                     clientID={clientID}
                 />

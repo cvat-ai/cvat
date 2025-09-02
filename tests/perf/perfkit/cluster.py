@@ -101,7 +101,6 @@ def run_k6_docker(k6_conf: K6Profile, tty_output: bool = False, silent: bool = F
     docker_cmd: list[str] = k6_conf.build_run_cmd()
     cmd = docker_compose["run", "--rm", "perf-k6"][docker_cmd]
     if tty_output:
-        # print_info(f"🚀 running in pseudo-terminal: {' '.join(cmd.formulate())}")
         exit_status = _run_in_pty(cmd.formulate())
         code = os.waitstatus_to_exitcode(exit_status)
     else:
