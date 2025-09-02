@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
@@ -66,12 +66,18 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
     const [providerType, setProviderType] = useState<ProviderType | null>(null);
     const [credentialsType, setCredentialsType] = useState<CredentialsType | null>(null);
     const [selectedRegion, setSelectedRegion] = useState<string | undefined>(undefined);
-    const newCloudStorageId = useSelector((state: CombinedState) => state.cloudStorages.activities.creates.id);
-    const attaching = useSelector((state: CombinedState) => state.cloudStorages.activities.creates.attaching);
-    const updating = useSelector((state: CombinedState) => state.cloudStorages.activities.updates.updating);
-    const updatedCloudStorageId = useSelector(
-        (state: CombinedState) => state.cloudStorages.activities.updates.cloudStorageID,
-    );
+    const {
+        newCloudStorageId,
+        attaching,
+        updating,
+        updatedCloudStorageId,
+    } = useSelector((state: CombinedState) => ({
+        newCloudStorageId: state.cloudStorages.activities.creates.id,
+        attaching: state.cloudStorages.activities.creates.attaching,
+        updating: state.cloudStorages.activities.updates.updating,
+        updatedCloudStorageId: state.cloudStorages.activities.updates.cloudStorageID,
+    }), shallowEqual);
+
     const loading = cloudStorage ? updating : attaching;
     const fakeCredentialsData = {
         accountName: 'X'.repeat(24),
