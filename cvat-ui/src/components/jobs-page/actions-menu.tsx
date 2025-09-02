@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
 
@@ -42,11 +42,16 @@ function JobActionsComponent(
     const dispatch = useDispatch();
 
     const pluginActions = usePlugins((state: CombinedState) => state.plugins.components.jobActions.items, props);
-    const mergingConsensus = useSelector((state: CombinedState) => state.consensus.actions.merging);
-
-    const selectedIds = useSelector((state: CombinedState) => state.jobs.selected);
+    const {
+        mergingConsensus,
+        selectedIds,
+        allJobs,
+    } = useSelector((state: CombinedState) => ({
+        mergingConsensus: state.consensus.actions.merging,
+        selectedIds: state.jobs.selected,
+        allJobs: state.jobs.current,
+    }), shallowEqual);
     const isBulkMode = selectedIds.length > 1;
-    const allJobs = useSelector((state: CombinedState) => state.jobs.current);
 
     const {
         dropdownOpen,
