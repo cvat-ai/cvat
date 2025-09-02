@@ -81,7 +81,7 @@ services:
 
   cvat_server:
     container_name: cvat_server
-    image: cvat/server:${CVAT_VERSION:-dev}
+    image: cvat/server:${CVAT_VERSION:-v2.44.1}
     restart: always
     depends_on:
       <<: *backend-deps
@@ -117,7 +117,7 @@ services:
 
   cvat_worker_utils:
     container_name: cvat_worker_utils
-    image: cvat/server:${CVAT_VERSION:-dev}
+    image: cvat/server:${CVAT_VERSION:-v2.44.1}
     restart: always
     depends_on: *backend-deps
     environment:
@@ -134,7 +134,7 @@ services:
 
   cvat_worker_import:
     container_name: cvat_worker_import
-    image: cvat/server:${CVAT_VERSION:-dev}
+    image: cvat/server:${CVAT_VERSION:-v2.44.1}
     restart: always
     depends_on: *backend-deps
     environment:
@@ -150,7 +150,7 @@ services:
 
   cvat_worker_export:
     container_name: cvat_worker_export
-    image: cvat/server:${CVAT_VERSION:-dev}
+    image: cvat/server:${CVAT_VERSION:-v2.44.1}
     restart: always
     depends_on: *backend-deps
     environment:
@@ -166,7 +166,7 @@ services:
 
   cvat_worker_annotation:
     container_name: cvat_worker_annotation
-    image: cvat/server:${CVAT_VERSION:-dev}
+    image: cvat/server:${CVAT_VERSION:-v2.44.1}
     restart: always
     depends_on: *backend-deps
     environment:
@@ -182,7 +182,7 @@ services:
 
   cvat_worker_webhooks:
     container_name: cvat_worker_webhooks
-    image: cvat/server:${CVAT_VERSION:-dev}
+    image: cvat/server:${CVAT_VERSION:-v2.44.1}
     restart: always
     depends_on: *backend-deps
     environment:
@@ -198,7 +198,7 @@ services:
 
   cvat_worker_quality_reports:
     container_name: cvat_worker_quality_reports
-    image: cvat/server:${CVAT_VERSION:-dev}
+    image: cvat/server:${CVAT_VERSION:-v2.44.1}
     restart: always
     depends_on: *backend-deps
     environment:
@@ -214,7 +214,7 @@ services:
 
   cvat_worker_chunks:
     container_name: cvat_worker_chunks
-    image: cvat/server:${CVAT_VERSION:-dev}
+    image: cvat/server:${CVAT_VERSION:-v2.44.1}
     restart: always
     depends_on: *backend-deps
     environment:
@@ -230,7 +230,7 @@ services:
 
   cvat_worker_consensus:
     container_name: cvat_worker_consensus
-    image: cvat/server:${CVAT_VERSION:-dev}
+    image: cvat/server:${CVAT_VERSION:-v2.44.1}
     restart: always
     depends_on: *backend-deps
     environment:
@@ -246,7 +246,7 @@ services:
 
   cvat_ui:
     container_name: cvat_ui
-    image: cvat/ui:${CVAT_VERSION:-dev}
+    image: cvat/ui:${CVAT_VERSION:-v2.44.1}
     restart: always
     depends_on:
       - cvat_server
