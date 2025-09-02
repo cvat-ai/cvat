@@ -6,7 +6,7 @@
 import './styles.scss';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useHistory } from 'react-router';
-import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import Spin from 'antd/lib/spin';
 import { Col, Row } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
@@ -26,15 +26,28 @@ function JobsPageComponent(): JSX.Element {
     const dispatch = useDispatch();
     const history = useHistory();
     const [isMounted, setIsMounted] = useState(false);
-    const query = useSelector((state: CombinedState) => state.jobs.query);
-    const fetching = useSelector((state: CombinedState) => state.jobs.fetching);
-    const count = useSelector((state: CombinedState) => state.jobs.count);
-    const allJobIds = useSelector((state: CombinedState) => state.jobs.current.map((j) => j.id));
-    const selectedCount = useSelector((state: CombinedState) => state.jobs.selected.length);
-    const bulkFetching = useSelector((state: CombinedState) => state.bulkActions.fetching);
+    const {
+        query,
+        fetching,
+        count,
+        currentJobs,
+        selectedCount,
+        bulkFetching,
+    } = useSelector((state: CombinedState) => ({
+        query: state.jobs.query,
+        fetching: state.jobs.fetching,
+        count: state.jobs.count,
+        currentJobs: state.jobs.current,
+        selectedCount: state.jobs.selected.length,
+        bulkFetching: state.bulkActions.fetching,
+    }), shallowEqual);
+
     const onSelectAll = useCallback(() => {
-        dispatch(selectionActions.selectResources(allJobIds, SelectedResourceType.JOBS));
-    }, [allJobIds]);
+        dispatch(selectionActions.selectResources(
+            currentJobs.map((j) => j.id),
+            SelectedResourceType.JOBS,
+        ));
+    }, [currentJobs]);
 
     const updatedQuery = useResourceQuery<JobsQuery>(query, { pageSize: 12 });
 

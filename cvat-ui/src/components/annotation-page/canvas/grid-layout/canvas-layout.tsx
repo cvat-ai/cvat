@@ -6,7 +6,7 @@ import './styles.scss';
 import 'react-grid-layout/css/styles.css';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { shallowEqual, useSelector } from 'react-redux';
 import RGL, { WidthProvider } from 'react-grid-layout';
 import PropTypes from 'prop-types';
 import { isEqual } from 'lodash';
@@ -142,9 +142,15 @@ const fitLayout = (type: DimensionType, layoutConfig: ItemLayout[]): ItemLayout[
 };
 
 function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
-    const relatedFiles = useSelector((state: CombinedState) => state.annotation.player.frame.relatedFiles);
-    const canvasInstance = useSelector((state: CombinedState) => state.annotation.canvas.instance);
-    const canvasBackgroundColor = useSelector((state: CombinedState) => state.settings.player.canvasBackgroundColor);
+    const {
+        relatedFiles,
+        canvasInstance,
+        canvasBackgroundColor,
+    } = useSelector((state: CombinedState) => ({
+        relatedFiles: state.annotation.player.frame.relatedFiles,
+        canvasInstance: state.annotation.canvas.instance,
+        canvasBackgroundColor: state.settings.player.canvasBackgroundColor,
+    }), shallowEqual);
 
     const computeRowHeight = (): number => {
         const container = window.document.getElementsByClassName('cvat-annotation-header')[0];
