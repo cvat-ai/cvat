@@ -36,7 +36,7 @@ app.add_typer(golden_app)
 def run_golden(
     test_file: str = typer.Argument(..., help="K6 test script to run."),
     runs: int = typer.Option(DEFAULT_RUNS, help="Number of runs."),
-    alias: str = typer.Option(..., help="Alias name for commit."),
+    alias: str = typer.Option(None, help="Alias name for commit."),
     save_baseline: bool = typer.Option(
         True, help="Save result as baseline. Be default prints it into the console."
     ),
@@ -89,7 +89,11 @@ def run_golden(
     if save_baseline:
         test_key = Path(test_file).stem
         add_baseline(k6_summary_averaged, test_key, alias)
-        print_success(f"✅ Saved baseline for `{alias}` -> `{test_key}`")
+        print_success(
+            "✅ Saved baseline for {}".format(
+                f"`{alias}` -> `{test_key}`" if alias else f"`{test_key}`"
+            )
+        )
     else:
         print_info("📊 Golden run complete. Results not saved.")
         console.print_json(data=k6_summary_averaged.as_dict())
@@ -102,17 +106,13 @@ def run_regression(
     alias: Optional[str] = typer.Option(
         None, help="Named alias to baseline (e.g. 'latest-release')"
     ),
-    reuse_cluster: bool = typer.Option(
-        False, help="Reuse existing cluster. Cluster won't be shutdown after test."
-    ),
-    no_warmup: bool = typer.Option(False, help="Disable warmup for test execution."),
 ):
 
     def resolve_commit() -> str:
         commit_value: str | None = None
         if commit is not None:
             commit_value = commit
-        elif alias:
+        elif alias is not None:
             try:
                 commit_value = resolve_commit_by_alias(baselines, alias)
             except RuntimeError as err:
@@ -145,17 +145,14 @@ def run_regression(
     # check test entry exists
     baseline_for_test = resolve_test_baseline(baselines, test_key, commit_value)
     if baseline_for_test is None:
-        exit_with_error(f"No baseline for test {test_key}'")
-    if not reuse_cluster:
-        stop_cluster()
+        exit_with_error(f"No baseline for test '{test_key}'")
+    stop_cluster()
     start_cluster()
     stop_metrics = start_metrics_watcher()
-    if not no_warmup:
-        run_k6_docker(warmup_profile)
+    run_k6_docker(warmup_profile)
     run_k6_docker(K6Profile(test_file))
     stop_metrics()
-    if not reuse_cluster:
-        stop_cluster()
+    stop_cluster()
     comparison_report, failed = build_report(
         parse_k6_summary(K6_OUTPUT_SUMMARY_JSON), baseline_for_test
     )
@@ -166,6 +163,24 @@ def run_regression(
         exit_with_error("Performance regression detected", bold=True)
     else:
         print_success("All metrics within acceptable range", bold=True)
+
+
+@app.command("run", help="Run test and print metrics into console.")
+def run(
+    test_file: str = typer.Argument(..., help="K6 test file."),
+    reuse_cluster: bool = typer.Option(
+        False, help="Reuse existing cluster. Cluster won't be shutdown after test."
+    ),
+    no_warmup: bool = typer.Option(False, help="Disable warmup for test execution."),
+):
+    if not reuse_cluster:
+        stop_cluster()
+    start_cluster()
+    if not no_warmup:
+        run_k6_docker(warmup_profile)
+    run_k6_docker(K6Profile(test_file))
+    if not reuse_cluster:
+        stop_cluster()
 
 
 @app.command()
