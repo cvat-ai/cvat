@@ -4,7 +4,7 @@
 
 import './styles.scss';
 import React, { useState, useEffect, useCallback } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector, useDispatch, shallowEqual } from 'react-redux';
 import { useHistory } from 'react-router';
 import Modal from 'antd/lib/modal';
 import Notification from 'antd/lib/notification';
@@ -20,6 +20,7 @@ import { exportActions, exportBackupAsync } from 'actions/export-actions';
 import { makeBulkOperationAsync } from 'actions/bulk-actions';
 import {
     getCore, Job, ProjectOrTaskOrJob, Storage, StorageData, StorageLocation,
+    Project, Task,
 } from 'cvat-core-wrapper';
 
 import CVATMarkdown from 'components/common/cvat-markdown';
@@ -58,28 +59,34 @@ function ExportBackupModal(): JSX.Element {
     const [lightweight, setLightweight] = useState(true);
     const [nameTemplate, setNameTemplate] = useState('backup_task_{{id}}');
 
-    const instanceT = useSelector((state: CombinedState) => state.export.instanceType);
-    const selectedIds = useSelector((state: CombinedState) => {
-        if (instanceT === 'project') {
-            return state.projects.selected;
-        }
-        if (instanceT === 'task') {
-            return state.tasks.selected;
-        }
-        return [];
-    });
-    const allTasks = useSelector((state: CombinedState) => state.tasks.current);
-    const allProjects = useSelector((state: CombinedState) => state.projects.current);
+    const {
+        selectedIds,
+        allTasks,
+        allProjects,
+        instance,
+    } = useSelector((state: CombinedState) => {
+        const instanceT = state.export.instanceType;
+        const result = {
+            allTasks: state.tasks.current,
+            allProjects: state.projects.current,
+            selectedIds: [] as number[],
+            instance: null as (Project | Task | null),
+        };
 
-    const instance = useSelector((state: CombinedState) => {
-        if (!instanceT) {
-            return null;
+        if (instanceT === 'project') {
+            result.selectedIds = state.projects.selected;
+            result.instance = state.export.projects?.backup?.modalInstance ?? null;
         }
-        return state.export[`${instanceT}s` as 'projects' | 'tasks']?.backup?.modalInstance ?? null;
-    });
+
+        if (instanceT === 'task') {
+            result.selectedIds = state.tasks.selected;
+            result.instance = state.export.tasks?.backup?.modalInstance ?? null;
+        }
+
+        return result;
+    }, shallowEqual);
 
     const isBulkMode = selectedIds.length > 1;
-
     const [selectedInstances, setSelectedInstances] = useState<Exclude<ProjectOrTaskOrJob, Job>[]>([]);
     useEffect(() => {
         if (isBulkMode) {

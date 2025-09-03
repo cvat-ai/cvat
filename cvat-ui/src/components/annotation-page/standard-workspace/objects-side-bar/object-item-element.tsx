@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import Text from 'antd/lib/typography/Text';
 
 import { ObjectState } from 'cvat-core-wrapper';
@@ -24,18 +24,26 @@ function ObjectItemElementComponent(props: OwnProps): JSX.Element {
     const {
         clientID, parentID, readonly, onMouseLeave,
     } = props;
+
     const dispatch = useDispatch();
-    const states = useSelector((state: CombinedState) => state.annotation.annotations.states);
-    const activatedElementID = useSelector((state: CombinedState) => state.annotation.annotations.activatedElementID);
-    const colorBy = useSelector((state: CombinedState) => state.settings.shapes.colorBy);
+    const {
+        states,
+        activatedElementId,
+        colorBy,
+    } = useSelector((state: CombinedState) => ({
+        states: state.annotation.annotations.states,
+        activatedElementId: state.annotation.annotations.activatedElementID,
+        colorBy: state.settings.shapes.colorBy,
+    }), shallowEqual);
+
     const activate = useCallback(() => {
         dispatch(activateObject(parentID, clientID, null));
     }, [parentID, clientID]);
+
     const state = states.find((_state: ObjectState) => _state.clientID === parentID);
     const element = state.elements.find((_element: ObjectState) => _element.clientID === clientID);
-
     const elementColor = getColor(element, colorBy);
-    const elementClassName = element.clientID === activatedElementID ?
+    const elementClassName = element.clientID === activatedElementId ?
         'cvat-objects-sidebar-state-item-elements cvat-objects-sidebar-state-active-element' :
         'cvat-objects-sidebar-state-item-elements';
 
@@ -58,7 +66,7 @@ function ObjectItemElementComponent(props: OwnProps): JSX.Element {
             <ObjectButtonsContainer readonly={readonly} clientID={element.clientID} />
             {!!element.label.attributes.length && (
                 <ItemDetailsContainer
-                    readonly={readonly}
+                    readonly={readonly || element.lock}
                     parentID={parentID}
                     clientID={clientID}
                 />
