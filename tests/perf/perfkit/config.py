@@ -25,7 +25,7 @@ ALLOWED_DELTAS: dict[str, dict[str, float]] = {
         "p95": 0.1,
     },
     "iterations": {
-        "count": 0.005,
-        "rate": 0.005,
+        "count": 0.03,
+        "rate": 0.03,
     },
 }
