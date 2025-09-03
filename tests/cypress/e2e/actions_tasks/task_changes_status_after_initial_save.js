@@ -53,9 +53,7 @@ context('Task status updated after initial save.', () => {
 
     describe(`Testing "${labelName}"`, () => {
         it('State of the created task should be "new".', () => {
-            cy.intercept('GET', `/tasks/${taskID}`).as('visitTaskPage');
             cy.openTaskById(taskID);
-            cy.wait('@visitTaskPage');
             cy.get('.cvat-job-item .cvat-job-item-state .ant-select-selection-item').invoke('text').should('equal', 'new');
         });
 
