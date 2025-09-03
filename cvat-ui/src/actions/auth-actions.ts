@@ -32,6 +32,9 @@ export enum AuthActionTypes {
     RESET_PASSWORD = 'RESET_PASSWORD_CONFIRM',
     RESET_PASSWORD_SUCCESS = 'RESET_PASSWORD_CONFIRM_SUCCESS',
     RESET_PASSWORD_FAILED = 'RESET_PASSWORD_CONFIRM_FAILED',
+    UPDATE_USER = 'UPDATE_USER',
+    UPDATE_USER_SUCCESS = 'UPDATE_USER_SUCCESS',
+    UPDATE_USER_FAILED = 'UPDATE_USER_FAILED',
 }
 
 export const authActions = {
@@ -61,6 +64,9 @@ export const authActions = {
     resetPassword: () => createAction(AuthActionTypes.RESET_PASSWORD),
     resetPasswordSuccess: () => createAction(AuthActionTypes.RESET_PASSWORD_SUCCESS),
     resetPasswordFailed: (error: any) => createAction(AuthActionTypes.RESET_PASSWORD_FAILED, { error }),
+    updateUser: () => createAction(AuthActionTypes.UPDATE_USER),
+    updateUserSuccess: (user: User) => createAction(AuthActionTypes.UPDATE_USER_SUCCESS, { user }),
+    updateUserFailed: (error: any) => createAction(AuthActionTypes.UPDATE_USER_FAILED, { error }),
 };
 
 export type AuthActions = ActionUnion<typeof authActions>;
@@ -174,5 +180,21 @@ export const resetPasswordAsync = (
         dispatch(authActions.resetPasswordSuccess());
     } catch (error) {
         dispatch(authActions.resetPasswordFailed(error));
+    }
+};
+
+export const updateUserAsync = (
+    userInstance: User,
+    fields: Parameters<User['save']>[0],
+): ThunkAction => async (dispatch) => {
+    dispatch(authActions.updateUser());
+
+    try {
+        const updatedUser = await userInstance.save(fields);
+
+        dispatch(authActions.updateUserSuccess(updatedUser));
+    } catch (error) {
+        dispatch(authActions.updateUserFailed(error));
+        throw error;
     }
 };

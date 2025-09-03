@@ -3,10 +3,12 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+
 import Form from 'antd/lib/form';
 import { LockOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
+import { Row } from 'antd/es/grid';
 
 import { validateConfirmation, validatePassword } from 'components/register-page/register-form';
 
@@ -17,11 +19,11 @@ export interface ChangePasswordData {
 }
 
 interface Props {
-    fetching: boolean;
     onSubmit(loginData: ChangePasswordData): void;
+    onCancel(): void;
 }
 
-function ChangePasswordFormComponent({ fetching, onSubmit }: Props): JSX.Element {
+function ChangePasswordFormComponent({ onSubmit, onCancel }: Props): JSX.Element {
     return (
         <Form onFinish={onSubmit} className='cvat-change-password-form'>
             <Form.Item
@@ -79,15 +81,21 @@ function ChangePasswordFormComponent({ fetching, onSubmit }: Props): JSX.Element
             </Form.Item>
 
             <Form.Item>
-                <Button
-                    type='primary'
-                    htmlType='submit'
-                    className='cvat-change-password-form-button'
-                    loading={fetching}
-                    disabled={fetching}
-                >
-                    Submit
-                </Button>
+                <Row justify='end'>
+                    <Button
+                        className='cvat-change-password-cancel-button'
+                        onClick={onCancel}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        type='primary'
+                        htmlType='submit'
+                        className='cvat-change-password-form-button'
+                    >
+                        Submit
+                    </Button>
+                </Row>
             </Form.Item>
         </Form>
     );

@@ -12,7 +12,6 @@ import { MenuProps } from 'antd/lib/menu';
 import {
     SettingOutlined,
     InfoCircleOutlined,
-    EditOutlined,
     LoadingOutlined,
     LogoutOutlined,
     GithubOutlined,
@@ -33,7 +32,6 @@ import Text from 'antd/lib/typography/Text';
 import config from 'config';
 
 import { Organization } from 'cvat-core-wrapper';
-import ChangePasswordDialog from 'components/change-password-modal/change-password-modal';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import CVATLogo from 'components/common/cvat-logo';
 import { switchSettingsModalVisible as switchSettingsModalVisibleAction } from 'actions/settings-actions';
@@ -57,7 +55,6 @@ interface StateToProps {
     changePasswordDialogShown: boolean;
     changePasswordFetching: boolean;
     logoutFetching: boolean;
-    renderChangePasswordItem: boolean;
     isAnalyticsPluginActive: boolean;
     isModelsPluginActive: boolean;
     organizationFetching: boolean;
@@ -116,11 +113,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 page: organizationsListPage,
             },
         },
-        serverAPI: {
-            configuration: {
-                isPasswordChangeEnabled: renderChangePasswordItem,
-            },
-        },
     } = state;
 
     return {
@@ -133,7 +125,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         changePasswordDialogShown,
         changePasswordFetching,
         logoutFetching,
-        renderChangePasswordItem,
         isAnalyticsPluginActive: list.ANALYTICS,
         isModelsPluginActive: list.MODELS,
         organizationFetching,
@@ -176,11 +167,9 @@ function HeaderComponent(props: Props): JSX.Element {
         about,
         keyMap,
         logoutFetching,
-        changePasswordFetching,
         settingsModalVisible,
         shortcutsModalVisible,
         switchSettingsShortcut,
-        renderChangePasswordItem,
         isAnalyticsPluginActive,
         isModelsPluginActive,
         organizationFetching,
@@ -191,7 +180,6 @@ function HeaderComponent(props: Props): JSX.Element {
         organizationsListPage,
         switchSettingsModalVisible,
         switchShortcutsModalVisible,
-        switchChangePasswordModalVisible,
         fetchOrganizations,
         openSelectOrganizationModal,
     } = props;
@@ -324,6 +312,15 @@ function HeaderComponent(props: Props): JSX.Element {
         }, 0]);
     }
 
+    menuItems.push([{
+        key: 'profile',
+        icon: <UserOutlined />,
+        onClick: (): void => {
+            history.push('/profile');
+        },
+        label: 'Profile',
+    }, 10]);
+
     const viewType: 'menu' | 'list' = (organizationsList?.length || 0) > 5 ? 'list' : 'menu';
 
     menuItems.push([{
@@ -372,7 +369,7 @@ function HeaderComponent(props: Props): JSX.Element {
                 label: organization.slug,
             }))] : []),
         ],
-    }, 10]);
+    }, 20]);
 
     menuItems.push([{
         key: 'settings',
@@ -380,25 +377,14 @@ function HeaderComponent(props: Props): JSX.Element {
         onClick: () => switchSettingsModalVisible(true),
         title: `Press ${switchSettingsShortcut} to switch`,
         label: 'Settings',
-    }, 20]);
+    }, 30]);
 
     menuItems.push([{
         key: 'about',
         icon: <InfoCircleOutlined />,
         onClick: () => showAboutModal(),
         label: 'About',
-    }, 30]);
-
-    if (renderChangePasswordItem) {
-        menuItems.push([{
-            key: 'change_password',
-            icon: changePasswordFetching ? <LoadingOutlined /> : <EditOutlined />,
-            className: 'cvat-header-menu-change-password',
-            onClick: () => switchChangePasswordModalVisible(true),
-            label: 'Change password',
-            disabled: changePasswordFetching,
-        }, 40]);
-    }
+    }, 40]);
 
     menuItems.push([{
         key: 'logout',
@@ -578,9 +564,6 @@ function HeaderComponent(props: Props): JSX.Element {
                 </Dropdown>
             </div>
             <SettingsModal visible={settingsModalVisible} onClose={closeSettings} />
-            {renderChangePasswordItem && (
-                <ChangePasswordDialog onClose={() => switchChangePasswordModalVisible(false)} />
-            )}
         </Layout.Header>
     );
 }

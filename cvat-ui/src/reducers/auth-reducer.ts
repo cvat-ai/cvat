@@ -136,6 +136,22 @@ export default function (state = defaultState, action: AuthActions | BoundariesA
                 ...state,
                 fetching: false,
             };
+        case AuthActionTypes.UPDATE_USER:
+            return {
+                ...state,
+                fetching: true,
+            };
+        case AuthActionTypes.UPDATE_USER_SUCCESS:
+            return {
+                ...state,
+                fetching: false,
+                user: action.payload.user,
+            };
+        case AuthActionTypes.UPDATE_USER_FAILED:
+            return {
+                ...state,
+                fetching: false,
+            };
         case BoundariesActionTypes.RESET_AFTER_ERROR: {
             return { ...defaultState };
         }
