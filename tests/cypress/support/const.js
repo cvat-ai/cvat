@@ -33,33 +33,3 @@ export const multiAttrParams = {
     values: 'Attr value 2',
     type: 'Text',
 };
-
-it('Prepare for testing', () => {
-    cy.visit('/auth/login');
-    cy.login();
-    cy.get('.cvat-tasks-page').should('exist');
-    const listItems = [];
-    cy.document().find('.cvat-item-task-name').each(($el) => {
-        cy.wrap($el).invoke('text').then((text) => {
-            listItems.push(text);
-        });
-    }); // NOTE:  chaining off of .each is not recommended by docs
-    cy.then(() => {
-        if (listItems.indexOf(taskName) === -1) {
-            cy.task('log', "A task doesn't exist. Creating.");
-            cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
-            cy.createZipArchive(directoryToArchive, archivePath);
-            cy.createAnnotationTask(
-                taskName,
-                labelName,
-                attrName,
-                textDefaultValue,
-                archiveName,
-                multiAttrParams,
-                advancedConfigurationParams,
-            );
-        } else {
-            cy.task('log', 'The task exists. Skipping creation.');
-        }
-    });
-});

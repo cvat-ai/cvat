@@ -28,3 +28,6 @@ Cypress.on('uncaught:exception', (err) => {
     }
     return true;
 });
+
+// Setup
+require('./setup');

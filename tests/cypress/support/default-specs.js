@@ -5,9 +5,11 @@
 function defaultTaskSpec({
     labelName,
     labelType,
+    attributes,
     taskName,
     serverFiles,
     startFrame,
+    stopFrame,
     frameFilter,
     segmentSize,
     validationParams,
@@ -36,6 +38,9 @@ function defaultTaskSpec({
     };
     if (startFrame) {
         dataSpec.start_frame = startFrame;
+    }
+    if (stopFrame) {
+        dataSpec.stop_frame = stopFrame;
     }
     if (frameFilter) {
         dataSpec.frame_filter = frameFilter;
