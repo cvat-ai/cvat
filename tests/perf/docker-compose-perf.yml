@@ -17,6 +17,7 @@ services:
     volumes:
       - ./scripts:/scripts
       - ./output:/output
+      - ../mounted_file_share:/data
     ports:
       - 6565:6565
     network_mode: host

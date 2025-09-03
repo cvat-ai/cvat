@@ -1,41 +1,73 @@
 // Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
-import { check } from 'k6';
 import http from 'k6/http';
-
-import { defaultTaskSpec } from '../default-specs.js';
+import { validateResponse } from '../../utils/validation.js';
 import { BASE_URL } from '../../variables/constants.js';
 
-function createTask(authKey) {
-    const { taskSpec } = defaultTaskSpec({
-        taskName: 'testTask',
-        labelName: 'cat',
-        labelType: 'rectangle',
-    });
-    const response = http.post(`${BASE_URL}tasks`, JSON.stringify(taskSpec), {
-        headers: {
-            Authorization: `Token ${authKey}`,
-            'Content-Type': 'application/json',
-        },
-    });
-    check(response, {
-        'is status 201': (r) => r.status === 201,
-    });
-    return response.json().id;
+function getDefaultHeaders(token) {
+    return {
+        Authorization: `Token ${token}`,
+        'Content-Type': 'application/json',
+    };
 }
 
-function getTask(authKey, taskId) {
-    const response = http.get(`${BASE_URL}tasks/${taskId}`, {
-        headers: {
-            Authorization: `Token ${authKey}`,
-            'Content-Type': 'application/json',
-        },
+function createTask(token, taskSpec) {
+    const response = http.post(`${BASE_URL}/tasks`, JSON.stringify(taskSpec), {
+        headers: getDefaultHeaders(token),
     });
-    check(response, {
-        'is status 200': (r) => r.status === 200,
-    });
-    return response.json();
+    if (validateResponse(response, 201, 'Create Task')) {
+        return response.json().id;
+    }
+    return null;
 }
 
-export default { createTask, getTask };
+function patchTask(token, taskId, taskUpdatesSpec) {
+    const response = http.patch(
+        `${BASE_URL}/tasks/${taskId}`,
+        JSON.stringify(taskUpdatesSpec),
+        {
+            headers: getDefaultHeaders(token),
+        },
+    );
+
+    if (validateResponse(response, 200, 'Patch Task')) {
+        return response.json();
+    }
+    return null;
+}
+
+function getTask(token, taskId) {
+    const response = http.get(`${BASE_URL}/tasks/${taskId}`, {
+        headers: getDefaultHeaders(token),
+    });
+    if (validateResponse(response, 200, 'Get Task')) {
+        return response.json();
+    }
+    return null;
+}
+
+function getTasks(token) {
+    const response = http.get(`${BASE_URL}/tasks`, {
+        headers: getDefaultHeaders(token),
+    });
+    if (validateResponse(response, 200, 'Get Tasks')) {
+        return response.json();
+    }
+    return null;
+}
+
+function deleteTask(token, taskId) {
+    const response = http.del(`${BASE_URL}/tasks/${taskId}`, JSON.stringify({}), {
+        headers: getDefaultHeaders(token),
+    });
+    return validateResponse(response, 204, 'Delete Task');
+}
+
+export default {
+    createTask,
+    getTask,
+    getTasks,
+    patchTask,
+    deleteTask,
+};
