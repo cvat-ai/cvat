@@ -16,7 +16,7 @@ import { defaultTaskSpec } from './default-specs';
 before('Prepare for testing', () => {
     cy.visit('/auth/login');
     const attributes = [
-        { name: attrName, values: textDefaultValue, type: 'Text' },
+        { name: attrName, values: textDefaultValue, type: 'text' },
         { ...multiAttrParams },
     ];
     const { taskSpec, dataSpec, extras } = defaultTaskSpec({
@@ -25,8 +25,6 @@ before('Prepare for testing', () => {
         attributes,
         serverFiles: ['image_main_task.zip'],
         segmentSize: advancedConfigurationParams.segmentSize,
-
-        // 👇 not sure about this, so help me god
         startFrame: advancedConfigurationParams.startFrame,
         stopFrame: advancedConfigurationParams.stopFrame,
         frameFilter: `step=${advancedConfigurationParams.frameStep}`,
