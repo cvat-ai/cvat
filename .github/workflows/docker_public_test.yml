@@ -21,17 +21,6 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Set up secret file
-        env:
-          DEBUG_USER: ${{ secrets.DOCKERHUB_USERNAME }}
-          DEBUG_PASSWORD: ${{ secrets.DOCKERHUB_TOKEN }}
-        run: |
-          echo $DEBUG_USER >> secrets.txt
-          echo $DEBUG_PASSWORD >> secrets.txt
-
-      - name: Run tmate
-        uses: mxschmitt/action-tmate@v3
-
       - name: Package Helm chart
         working-directory: helm-chart
         run: |
