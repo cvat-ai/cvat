@@ -17,7 +17,7 @@ export const options = {
             // How long the test lasts
             duration: TOTAL_DURATION,
             // How many iterations per timeUnit
-            rate: 5,
+            rate: 3,
             // Start `rate` iterations per second
             timeUnit: '1s',
             // Pre-allocate 2 VUs before starting the test
@@ -30,7 +30,7 @@ export const options = {
             exec: 'TestCreateTask',
             executor: 'constant-arrival-rate',
             duration: TOTAL_DURATION,
-            rate: 5,
+            rate: 2,
             timeUnit: '1s',
             preAllocatedVUs: 10,
             maxVUs: 100,
@@ -39,7 +39,7 @@ export const options = {
             exec: 'TestUpdateTask',
             executor: 'constant-arrival-rate',
             duration: TOTAL_DURATION,
-            rate: 5,
+            rate: 2,
             timeUnit: '1s',
             preAllocatedVUs: 10,
             maxVUs: 100,

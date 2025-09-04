@@ -100,7 +100,7 @@ context('Bulk actions in UI', () => {
 
     describe('Bulk-change object attributes, confirm UI state', () => {
         before(() => {
-            cy.visit(`/projects/${projectTwoTasks}`);
+            cy.openProjectById(projectTwoTasks);
         });
         context('Project page, change tasks', () => {
             it('"Select all", all items are selected, "Deselect" button is visible', () => {
@@ -131,10 +131,7 @@ context('Bulk actions in UI', () => {
                 });
                 cy.get('.cvat-bulk-progress-wrapper').should('be.visible');
 
-                // Navigate to task with 2 jobs
-                cy.visit(`tasks/${taskTwoJobs.ID}`);
-                cy.get('.cvat-spinner').should('not.exist');
-                cy.get('.cvat-task-details').should('exist');
+                cy.openTaskById(taskTwoJobs.ID);
 
                 // Ensure task was assigned to admin
                 cy.get('.cvat-user-search-field').first()
@@ -146,7 +143,7 @@ context('Bulk actions in UI', () => {
 
         context('Task page, change jobs', () => {
             before(() => {
-                cy.visit(`tasks/${taskTwoJobs.ID}`);
+                cy.openTaskById(taskTwoJobs.ID);
             });
 
             it('Bulk-change assignees', () => {
@@ -179,7 +176,7 @@ context('Bulk actions in UI', () => {
 
     describe('Bulk export', () => {
         before(() => {
-            cy.visit(`tasks/${taskTwoJobs.ID}`);
+            cy.openTaskById(taskTwoJobs.ID);
         });
         it('Bulk-export job annotations', () => {
             getBulkActionsMenu().within(() => {
@@ -208,7 +205,7 @@ context('Bulk actions in UI', () => {
 
     describe('Delete all tasks in project', () => {
         before(() => {
-            cy.visit(`/projects/${projectTwoTasks}`);
+            cy.openProjectById(projectTwoTasks);
         });
 
         it('Delete all tasks, ensure deletion', () => {
