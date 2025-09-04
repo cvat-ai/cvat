@@ -412,7 +412,7 @@ class TestTasksBase:
             image_related_files = generate_image_files(3)
             related_files.append(image_related_files)
 
-            for i, related_file in enumerate(image_related_files):
+            for related_file in image_related_files:
                 assert related_file.name.endswith(".jpeg")
                 related_file.name = "{}/related_images/{}/{}".format(
                     os.path.dirname(image.name),

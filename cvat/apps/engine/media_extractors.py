@@ -9,7 +9,6 @@ import io
 import itertools
 import os
 import shutil
-import struct
 import sysconfig
 import tempfile
 import zipfile
