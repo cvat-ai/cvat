@@ -1,9 +1,12 @@
 name: Finalize release
+
 on:
   workflow_dispatch:
 jobs:
   main:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.discover.outputs.version }}
     steps:
       - name: Discover pending release
         id: discover
@@ -107,3 +110,40 @@ jobs:
               --target=master \
               --title="v$NEW_VERSION" \
               --notes-file=-
+  helm:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    needs: main
+    permissions:
+      id-token: write   # This is required for requesting the JWT for OIDC
+    steps:
+
+      - uses: actions/checkout@v4
+        with:
+          ref: "release-${{ needs.main.outputs.version }}"
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: v3.14.4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4.3.1
+        with:
+          aws-region: us-east-1  #nb! Public ECR always uses us-east-1 for auth
+          role-to-assume: arn:aws:iam::${{ secrets.AWSACCOUNTID }}:role/${{ secrets.AWSGITHUBACTIONSROLE }}
+          role-session-name: github-actions
+
+      - name: Authenticate Helm with Public ECR
+        run: |
+          aws ecr-public get-login-password --region us-east-1 \
+          | helm registry login --username AWS --password-stdin public.ecr.aws
+
+      - name: Package Helm chart
+        working-directory: helm-chart
+        run: |
+          helm dependency update && helm package . --version ${{ needs.main.outputs.version }} && mv cvat-*.tgz ../
+          echo "CHART_FILE=$(ls ../cvat-*.tgz | xargs basename)" >> $GITHUB_ENV
+      - name: Push Helm chart to ECR
+        run: |
+          helm push ${{ env.CHART_FILE }} oci://public.ecr.aws/b8u7h5e8
