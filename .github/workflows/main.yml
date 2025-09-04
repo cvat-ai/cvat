@@ -372,7 +372,7 @@ jobs:
                 --headed \
                 --browser chrome \
                 --config-file cypress_canvas3d.config.js \
-                --spec cypress/e2e/setup/setup_canvas3d.js
+                --spec 'cypress/e2e/setup/setup_canvas3d.js';
             npx cypress run \
               --headed \
               --browser chrome \
@@ -383,8 +383,7 @@ jobs:
                 --headed \
                 --browser chrome \
                 --config-file cypress_canvas3d.config.js \
-                --spec cypress/e2e/setup/setup.js
-            // TODO: add setup_projects.js when refactored
+                --spec 'cypress/e2e/setup/setup.js'; # TODO: add setup_projects.js when refactored
             npx cypress run \
               --browser chrome \
               --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
