@@ -114,8 +114,6 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: true
     needs: main
-    permissions:
-      id-token: write   # This is required for requesting the JWT for OIDC
     steps:
 
       - uses: actions/checkout@v4
@@ -126,24 +124,19 @@ jobs:
         uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4
         with:
           version: v3.14.4
-      # v4.3.1
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a
+       # v3
+      - name: Log in to Docker Hub
+        uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d
         with:
-          aws-region: us-east-1  #nb! Public ECR always uses us-east-1 for auth
-          role-to-assume: arn:aws:iam::${{ secrets.AWSACCOUNTID }}:role/${{ secrets.AWSGITHUBACTIONSROLE }}
-          role-session-name: github-actions
-
-      - name: Authenticate Helm with Public ECR
-        run: |
-          aws ecr-public get-login-password --region us-east-1 \
-          | helm registry login --username AWS --password-stdin public.ecr.aws
+          username: ${{ secrets.DOCKERHUB_RW_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_RW_TOKEN }}
 
       - name: Package Helm chart
         working-directory: helm-chart
         run: |
           helm dependency update && helm package . --version ${{ needs.main.outputs.version }} && mv cvat-*.tgz ../
           echo "CHART_FILE=$(ls ../cvat-*.tgz | xargs basename)" >> $GITHUB_ENV
-      - name: Push Helm chart to ECR
+
+      - name: Push Helm chart to Docker Hub
         run: |
-          helm push ${{ env.CHART_FILE }} oci://public.ecr.aws/b8u7h5e8
+          helm push ${{ env.CHART_FILE }} oci://registry-1.docker.io/cvat

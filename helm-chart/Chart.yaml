@@ -1,5 +1,5 @@
 apiVersion: v2
-name: cvat
+name: cvat_helm
 kubeVersion: ">= 1.19.0-0"
 description: A Helm chart for Kubernetes
 
