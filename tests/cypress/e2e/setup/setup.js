@@ -10,10 +10,14 @@ import {
     taskName, labelName, attrName,
     textDefaultValue,
     multiAttrParams, advancedConfigurationParams,
-} from './const';
-import { defaultTaskSpec } from './default-specs';
+} from '../../support/const';
+import { defaultTaskSpec } from '../../support/default-specs';
 
-before('Prepare for testing', () => {
+it('Prepare for testing', () => {
+    cy.log('Seeding shared data');
+    // FIXME: this should run once before every npx cypress run, not before every spec
+    // still the only obvious solution is to run npx cypress run twice
+    // double run can serve as a proof of concept and as a minimally feasible solution
     cy.visit('/auth/login');
     const attributes = [
         { name: attrName, values: textDefaultValue, type: 'text' },

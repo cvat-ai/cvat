@@ -3,8 +3,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-/// <reference types="cypress" />
-
 export const labelName = 'Main task';
 export const taskName = `New annotation task for ${labelName}`;
 export const attrName = `Attr for ${labelName}`;
