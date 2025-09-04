@@ -13,7 +13,7 @@ from PIL import Image
 from pytest_cases import fixture, fixture_ref, parametrize
 
 import shared.utils.s3 as s3
-from rest_api.utils import calc_end_frame, create_task, unique
+from rest_api.utils import calc_end_frame, create_task, iter_exclude, unique
 from shared.tasks.enums import SourceDataType
 from shared.tasks.interface import ITaskSpec
 from shared.tasks.types import ImagesTaskSpec, VideoTaskSpec
@@ -417,7 +417,7 @@ class TestTasksBase:
                 related_file.name = "{}/related_images/{}/{}".format(
                     os.path.dirname(image.name),
                     os.path.basename(image.name).replace(".", "_"),
-                    related_file.name.replace(".jpeg", ".jpg"),  # must be .jpg
+                    related_file.name,
                 )
                 related_file.seek(0)
                 _upload_file(related_file)
@@ -432,6 +432,54 @@ class TestTasksBase:
         yield from self._image_task_fxt_base(
             request,
             image_files=image_files,
+            related_files=dict(enumerate(related_files)),
+            server_files=server_files,
+            cloud_storage_id=cloud_storage_id,
+        )
+
+    @fixture(scope="class")
+    @parametrize(
+        "cloud_storage_id",
+        [pytest.param(1, marks=[pytest.mark.with_external_services, pytest.mark.timeout(60)])],
+    )
+    def fxt_cloud_pcd_task_with_related_images(
+        self, request: pytest.FixtureRequest, cloud_storages, cloud_storage_id: int
+    ) -> Generator[tuple[ITaskSpec, int], None, None]:
+        cloud_storage = cloud_storages[cloud_storage_id]
+        s3_client = s3.make_client(bucket=cloud_storage["resource"])
+
+        server_files = [
+            "test_3d_with_related/pointcloud/000001.pcd",
+            "test_3d_with_related/pointcloud/000002.pcd",
+            "test_3d_with_related/pointcloud/000003.pcd",
+            "test_3d_with_related/related_images/000001_pcd/000001.png",
+            "test_3d_with_related/related_images/000002_pcd/000002.png",
+            "test_3d_with_related/related_images/000003_pcd/000003.png",
+        ]
+
+        pcd_files = []
+        for filename in [
+            "test_3d_with_related/pointcloud/000001.pcd",
+            "test_3d_with_related/pointcloud/000002.pcd",
+            "test_3d_with_related/pointcloud/000003.pcd",
+        ]:
+            pcd_file = io.BytesIO(s3_client.download_fileobj(filename))
+            pcd_file.name = filename
+            pcd_files.append(pcd_file)
+
+        related_files = []
+        for filename in [
+            "test_3d_with_related/related_images/000001_pcd/000001.png",
+            "test_3d_with_related/related_images/000002_pcd/000002.png",
+            "test_3d_with_related/related_images/000003_pcd/000003.png",
+        ]:
+            ri_file = io.BytesIO(s3_client.download_fileobj(filename))
+            ri_file.name = os.path.basename(filename)
+            related_files.append([ri_file])
+
+        yield from self._image_task_fxt_base(
+            request,
+            image_files=pcd_files,
             related_files=dict(enumerate(related_files)),
             server_files=server_files,
             cloud_storage_id=cloud_storage_id,
@@ -618,6 +666,11 @@ class TestTasksBase:
 
     _tests_with_related_files_cases = [
         fixture_ref("fxt_cloud_images_task_with_related_images"),
+        fixture_ref("fxt_cloud_pcd_task_with_related_images"),
+    ]
+
+    _3d_task_cases = [
+        fixture_ref("fxt_cloud_pcd_task_with_related_images"),
     ]
 
     # Keep in mind that these fixtures are generated eagerly
@@ -638,4 +691,12 @@ class TestTasksBase:
         + _tests_with_cloud_storage_cases
         + _tests_with_related_files_cases,
         key=lambda fxt_ref: fxt_ref.fixture,
+    )
+
+    _2d_task_cases = list(
+        iter_exclude(
+            _all_task_cases,
+            excludes=set(v.fixture for v in _3d_task_cases),
+            key=lambda v: v.fixture,
+        )
     )

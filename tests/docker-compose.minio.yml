@@ -48,7 +48,8 @@ services:
       TEST_BUCKET: "test"
       IMPORT_EXPORT_BUCKET: "importexportbucket"
     volumes:
-      - ./tests/cypress/e2e/actions_tasks/assets/case_65_manifest/:/storage
+      - ./tests/cypress/e2e/actions_tasks/assets/case_65_manifest/:/mnt/case_65_manifest:ro
+      - ./tests/mounted_file_share/test_3d_with_related/:/mnt/test_3d_with_related:ro
     networks:
       - cvat
     entrypoint: >
@@ -63,10 +64,10 @@ services:
           else
             FULL_PATH=$${BUCKET}
           fi
-          $${MC_PATH} cp --recursive /storage/ $${FULL_PATH};
+          $${MC_PATH} cp --recursive /mnt/ $${FULL_PATH};
           for i in 1 2;
           do
-              $${MC_PATH} cp /storage/manifest.jsonl $${FULL_PATH}/manifest_$${i}.jsonl;
+              $${MC_PATH} cp /mnt/test_3d_with_related/manifest.jsonl $${FULL_PATH}/manifest_$${i}.jsonl;
           done;
       done;
       $${MC_PATH} policy set public $${MINIO_ALIAS}/$${PUBLIC_BUCKET};

@@ -14,6 +14,7 @@ from copy import deepcopy
 from functools import partial
 from http import HTTPStatus
 from itertools import chain, groupby, product
+from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Optional
 
@@ -1793,7 +1794,7 @@ class TestTaskData(TestTasksBase):
         # This test has to check all the task frames availability, it can make many requests
         timeout=300
     )
-    @parametrize("task_spec, task_id", TestTasksBase._all_task_cases)
+    @parametrize("task_spec, task_id", TestTasksBase._2d_task_cases)
     def test_can_get_task_frames(self, task_spec: ITaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
@@ -1837,7 +1838,7 @@ class TestTaskData(TestTasksBase):
         # This test has to check all the task chunks availability, it can make many requests
         timeout=300
     )
-    @parametrize("task_spec, task_id", TestTasksBase._all_task_cases)
+    @parametrize("task_spec, task_id", TestTasksBase._2d_task_cases)
     def test_can_get_task_chunks(self, task_spec: ITaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             (task, _) = api_client.tasks_api.retrieve(task_id)
@@ -1929,23 +1930,25 @@ class TestTaskData(TestTasksBase):
                 if zipfile.is_zipfile(chunk_file):
                     with zipfile.ZipFile(chunk_file, "r") as chunk_archive:
                         chunk_images = {
-                            name: np.array(Image.open(io.BytesIO(chunk_archive.read(name))))
+                            name: Image.open(io.BytesIO(chunk_archive.read(name)))
                             for name in chunk_archive.namelist()
                         }
                 else:
                     assert False
 
-                assert sorted(chunk_images.keys()) == sorted(expected_related_images.keys())
+                assert sorted(osp.splitext(p)[0] for p in chunk_images) == sorted(
+                    osp.splitext(p)[0] for p in expected_related_images
+                )
 
-                for ri_name in chunk_images:
-                    self._compare_images(
-                        Image.open(io.BytesIO(expected_related_images[ri_name])),
-                        chunk_images[ri_name],
-                        must_be_identical=(
-                            True
-                            # there's some conversion for images, but in the test it should be True
-                        ),
-                    )
+                for ri_filename in expected_related_images:
+                    chunk_ri = chunk_images[str(Path(ri_filename).with_suffix(".jpg"))]
+                    assert chunk_ri.mode == "RGB"
+
+                    expected_ri = Image.open(io.BytesIO(expected_related_images[ri_filename]))
+                    if expected_ri.mode != "RGB":
+                        expected_ri = expected_ri.convert("RGB")
+
+                    self._compare_images(expected_ri, chunk_ri, must_be_identical=False)
 
     @pytest.mark.timeout(
         # This test has to check all the task meta availability, it can make many requests
@@ -2119,7 +2122,7 @@ class TestTaskData(TestTasksBase):
         # This test has to check all the job frames availability, it can make many requests
         timeout=300
     )
-    @parametrize("task_spec, task_id", TestTasksBase._all_task_cases)
+    @parametrize("task_spec, task_id", TestTasksBase._2d_task_cases)
     def test_can_get_job_frames(self, task_spec: ITaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             jobs = sorted(
@@ -2169,7 +2172,7 @@ class TestTaskData(TestTasksBase):
         # This test has to check all the job chunks availability, it can make many requests
         timeout=300
     )
-    @parametrize("task_spec, task_id", TestTasksBase._all_task_cases)
+    @parametrize("task_spec, task_id", TestTasksBase._2d_task_cases)
     @parametrize("indexing", ["absolute", "relative"])
     def test_can_get_job_chunks(self, task_spec: ITaskSpec, task_id: int, indexing: str):
         _placeholder_image = Image.fromarray(np.zeros((1, 1, 3), dtype=np.uint8))

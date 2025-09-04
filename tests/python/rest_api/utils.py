@@ -510,6 +510,7 @@ def calc_end_frame(start_frame: int, stop_frame: int, frame_step: int) -> int:
 
 
 _T = TypeVar("_T")
+_T2 = TypeVar("_T2")
 
 
 def unique(
@@ -556,3 +557,14 @@ def get_cloud_storage_content(username: str, cloud_storage_id: int, manifest: Op
 
         (data, _) = api_client.cloudstorages_api.retrieve_content_v2(cloud_storage_id, **kwargs)
         return [f"{f['name']}{'/' if str(f['type']) == 'DIR' else ''}" for f in data["content"]]
+
+
+def iter_exclude(
+    it: Iterable[_T], excludes: Iterable[_T2], *, key: Optional[Callable[[_T], _T2]] = None
+) -> Iterable[_T]:
+    excludes = set(excludes)
+
+    if not key:
+        key = lambda v: v
+
+    return (v for v in it if key(v) not in excludes)
