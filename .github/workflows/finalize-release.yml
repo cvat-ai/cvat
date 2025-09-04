@@ -135,7 +135,7 @@ jobs:
         working-directory: helm-chart
         run: |
           helm dependency update && helm package . --version ${{ needs.main.outputs.version }} && mv cvat-*.tgz ../
-          echo "CHART_FILE=$(ls ../cvat_*.tgz | xargs basename)" >> $GITHUB_ENV
+          echo "CHART_FILE=$(ls ../cvat-*.tgz | xargs basename)" >> $GITHUB_ENV
 
       - name: Push Helm chart to Docker Hub
         run: |
