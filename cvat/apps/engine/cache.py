@@ -660,13 +660,14 @@ class MediaCache:
             yield from media
 
     @classmethod
-    def _read_raw_context_images(
+    def read_raw_context_images(
         cls,
         db_data: models.Data,
         frame_ids: Sequence[int],
         *,
-        truncate_common_filename_prefix: bool = True,
-    ) -> Generator[tuple[int, tuple[PIL.Image.Image, str, str]], None, None]:
+        truncate_common_filename_prefix: bool = True,  # should be done on the UI, probably
+        decode: bool = True,
+    ) -> Generator[tuple[int, tuple[PIL.Image.Image | str, str, str]], None, None]:
         data_upload_dir = db_data.get_upload_dirname()
 
         def _validate_ri_path(path: str) -> str:
@@ -749,7 +750,10 @@ class MediaCache:
                     ]
 
                 for m in frame_media:
-                    yield frame_id, load_image(m)
+                    if decode:
+                        m = load_image(m)
+
+                    yield frame_id, m
 
     @staticmethod
     def _read_raw_frames(
@@ -1048,7 +1052,7 @@ class MediaCache:
         mime_type = ""
 
         with (
-            closing(self._read_raw_context_images(db_data, frame_ids=[frame_number])) as ri_iter,
+            closing(self.read_raw_context_images(db_data, frame_ids=[frame_number])) as ri_iter,
             zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file,
         ):
             for _, (image, path, _) in ri_iter:
