@@ -40,4 +40,4 @@ jobs:
 #todo change hardcoded --version to ${{ needs.main.outputs.version }}
       - name: Push Helm chart to Docker Hub
         run: |
-          helm push ${{ env.CHART_FILE }} oci://registry-1.docker.io/cvat/helm-charts
+          helm push ${{ env.CHART_FILE }} oci://registry-1.docker.io/cvat
