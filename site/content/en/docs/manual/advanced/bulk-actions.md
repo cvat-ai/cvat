@@ -35,7 +35,7 @@ jobs, without needing to update each resource individually.
    - **Ctrl(Cmd for Mac)+Click:** Select or deselect individual resources by holding the Ctrl key and clicking on them.
    - **Shift+Click:** Select a range of resources by clicking the first item, holding Shift, and clicking the last item
    in the range.
-   - **Select All Button:** Use the "Sel ect All" button in the top bar to select all resources on the current page.
+   - **Select All Button:** Use the "Select All" button in the top bar to select all resources on the current page.
    - **Click:** Click anywhere outside the selected resources to reset the selection.
 {{% alert title="Note" color="primary" %}}
 Selection is limited to visible resources according to the current page size, filtering, and sorting options.
