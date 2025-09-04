@@ -37,6 +37,7 @@ from cvat.apps.engine.models import CloudProviderChoice, CredentialsTypeChoice, 
 from cvat.apps.engine.rq import ExportRQMeta
 from cvat.apps.engine.utils import get_cpu_number, take_by
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS
+from utils.dataset_manifest.utils import InvalidPcdError, PcdReader
 
 
 class NamedBytesIO(BytesIO):
@@ -403,12 +404,33 @@ class _HeaderFirstImageDownloader(HeaderFirstDownloader):
             f'{round(min(self.chunk_size, full_object_size) / full_object_size):.0%}'
         )
 
+class _HeaderFirstPcdDownloader(HeaderFirstDownloader):
+    def try_parse_header(self, header, *, key):
+        pcd_parser = PcdReader()
+        file = NamedBytesIO(header)
+
+        try:
+            if key.endswith(".bin"):
+                pcd_parser.parse_bin_header(file)
+            elif key.endswith(".pcd"):
+                parameters = pcd_parser.parse_pcd_header(file, verify_version=True)
+                if not parameters.get("WIDTH") or not parameters.get("HEIGHT"):
+                    raise InvalidPcdError("invalid scene size")
+            else:
+                assert False
+
+            return True
+        except InvalidPcdError as e:
+            raise Exception(f"Failed to read point cloud file '{key}'") from e
+
 
 class HeaderFirstMediaDownloader:
     @staticmethod
     def create(dimension: DimensionType, **kwargs) -> HeaderFirstDownloader:
         if dimension == DimensionType.DIM_2D:
             downloader = _HeaderFirstImageDownloader(**kwargs)
+        elif dimension == DimensionType.DIM_3D:
+            downloader = _HeaderFirstPcdDownloader(**kwargs)
         else:
             assert False
 

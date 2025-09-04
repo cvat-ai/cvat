@@ -529,8 +529,9 @@ def _create_task_manifest_from_cloud_data(
     db_storage: models.CloudStorage,
     sorted_media: list[str],
     manifest: ImageManifestManager,
-    dimension: models.DimensionType = models.DimensionType.DIM_2D,
 ) -> None:
+    dimension = ValidateDimension().detect_dimension_for_paths(sorted_media)
+
     regular_images, related_images = find_related_images(sorted_media)
     sorted_media = [f for f in sorted_media if f in regular_images]
 
@@ -913,9 +914,10 @@ def create_thread(
         db_data.storage == models.StorageChoice.SHARE and
         isinstance(extractor, MEDIA_TYPES['zip']['extractor'])
     ):
-        # 3d media on CS is only supported as an archive, so the data must be already downloaded
         validate_dimension.set_path(upload_dir)
         validate_dimension.validate()
+    else:
+        validate_dimension.detect_dimension_for_paths(extractor.absolute_source_paths)
 
     if (db_task.project is not None and
         db_task.project.tasks.count() > 1 and
@@ -1145,7 +1147,7 @@ def create_thread(
                     if not image_path.endswith(f"{image_info['name']}{image_info['extension']}"):
                         raise ValidationError('Incorrect file mapping to manifest content')
 
-                    if db_task.dimension == models.DimensionType.DIM_2D and (
+                    if (
                         image_info.get('width') is not None and
                         image_info.get('height') is not None
                     ):

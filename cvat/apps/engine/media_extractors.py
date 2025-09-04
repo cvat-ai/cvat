@@ -41,6 +41,9 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 from cvat.apps.engine.mime_types import mimetypes
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
+from utils.dataset_manifest.utils import InvalidPcdError
+from utils.dataset_manifest.utils import MediaDimension as _MediaDimension
+from utils.dataset_manifest.utils import PcdReader, detect_media_dimension
 
 ORIENTATION_EXIF_TAG = 274
 
@@ -1239,120 +1242,102 @@ MEDIA_TYPES = {
 }
 
 class ValidateDimension:
-    def __init__(self, path=None):
+    def __init__(self, path: str | None = None):
         self.dimension = DimensionType.DIM_2D
         self.path = path
-        self.pcd_files = {}
-        self.image_files = {}
+        self.pcd_files = []
+        self.image_files = []
         self.converted_files = []
+        self.unknown_files = []
 
     @staticmethod
-    def get_pcd_properties(fp, verify_version=False):
-        kv = {}
-        pcd_version = ["0.7", "0.6", "0.5", "0.4", "0.3", "0.2", "0.1",
-                       ".7", ".6", ".5", ".4", ".3", ".2", ".1"]
+    def get_pcd_properties(
+        fp: str | io.RawIOBase, verify_version: bool = False
+    ) -> dict[str, str] | None:
         try:
-            for line in fp:
-                line = line.decode("utf-8")
-                if line.startswith("#"):
-                    continue
-                k, v = line.split(" ", maxsplit=1)
-                kv[k] = v.strip()
-                if "DATA" in line:
-                    break
-            if verify_version:
-                if "VERSION" in kv and kv["VERSION"] in pcd_version:
-                    return True
-                return None
-            return kv
-        except AttributeError:
+            return PcdReader.parse_pcd_header(fp, verify_version=verify_version)
+        except InvalidPcdError:
             return None
 
     @staticmethod
     def convert_bin_to_pcd(path, delete_source=True):
-        def write_header(fileObj, width, height):
-            fileObj.writelines(f'{line}\n' for line in [
-                'VERSION 0.7',
-                'FIELDS x y z intensity',
-                'SIZE 4 4 4 4',
-                'TYPE F F F F',
-                'COUNT 1 1 1 1',
-                f'WIDTH {width}',
-                f'HEIGHT {height}',
-                'VIEWPOINT 0 0 0 1 0 0 0',
-                f'POINTS {width * height}',
-                'DATA binary',
-            ])
-
-
-        list_pcd = []
-        with open(path, "rb") as f:
-            size_float = 4
-            byte = f.read(size_float * 4)
-            while byte:
-                x, y, z, intensity = struct.unpack("ffff", byte)
-                list_pcd.append([x, y, z, intensity])
-                byte = f.read(size_float * 4)
-        np_pcd = np.asarray(list_pcd)
-        pcd_filename = path.replace(".bin", ".pcd")
-        with open(pcd_filename, "w") as f:
-            write_header(f, np_pcd.shape[0], 1)
-        with open(pcd_filename, "ab") as f:
-            f.write(np_pcd.astype('float32').tobytes())
-        if delete_source:
-            os.remove(path)
-        return pcd_filename
+        return PcdReader.convert_bin_to_pcd(path, delete_source=delete_source)
 
     def set_path(self, path):
         self.path = path
 
-    def bin_operation(self, file_path, actual_path):
-        pcd_path = ValidateDimension.convert_bin_to_pcd(file_path)
+    def bin_operation(self, file_path: str, dataset_root: str) -> str:
+        pcd_path = self.convert_bin_to_pcd(file_path)
         self.converted_files.append(pcd_path)
-        return pcd_path.split(actual_path)[-1][1:]
+        return os.path.relpath(pcd_path, dataset_root)
 
-    @staticmethod
-    def pcd_operation(file_path, actual_path):
-        with open(file_path, "rb") as file:
-            is_pcd = ValidateDimension.get_pcd_properties(file, verify_version=True)
-        return file_path.split(actual_path)[-1][1:] if is_pcd else file_path
+    def pcd_operation(self, file_path: str, dataset_root: str) -> str | None:
+        if self.get_pcd_properties(file_path, verify_version=True) is None:
+            return None
 
-    def process_files(self, root, actual_path, files):
-        pcd_files = {}
+        return os.path.relpath(file_path, dataset_root)
 
-        for file in files:
-            file_name, file_extension = os.path.splitext(file)
-            file_path = os.path.abspath(os.path.join(root, file))
+    def _process_files(self, current_dir: str, dataset_root: str, filenames: Sequence[str]):
+        for filename in filenames:
+            ext = os.path.splitext(filename)[1].lower()
 
-            if file_extension == ".bin":
-                path = self.bin_operation(file_path, actual_path)
-                pcd_files[file_name] = path
-                self.pcd_files[path] = []
+            file_path = os.path.abspath(os.path.join(current_dir, filename))
 
-            elif file_extension == ".pcd":
-                path = ValidateDimension.pcd_operation(file_path, actual_path)
-                if path == file_path:
-                    self.image_files[file_name] = file_path
+            if ext == ".bin":
+                path = self.bin_operation(file_path, dataset_root)
+                self.pcd_files.append(path)
+            elif ext == ".pcd":
+                path = self.pcd_operation(file_path, dataset_root)
+                if path is None:
+                    self.unknown_files.append(file_path)
                 else:
-                    pcd_files[file_name] = path
-                    self.pcd_files[path] = []
+                    self.pcd_files.append(path)
             else:
                 if _is_image(file_path):
-                    self.image_files[file_name] = file_path
-        return pcd_files
+                    self.image_files.append(file_path)
 
     def validate(self):
-        """
-            Validate the directory structure for kitty and point cloud format.
-        """
+        "Detect media dimension and convert all point clouds into the .pcd format"
+
         if not self.path:
             return
-        actual_path = self.path
-        for root, _, files in os.walk(actual_path):
-            if not files_to_ignore(root):
+
+        root = self.path
+        for dirpath, _, filenames in os.walk(root):
+            if not files_to_ignore(dirpath):
                 continue
 
-            self.process_files(root, actual_path, files)
+            self._process_files(dirpath, root, filenames)
 
         if self.pcd_files:
             self.dimension = DimensionType.DIM_3D
+
+    def detect_dimension_for_paths(self, paths: Sequence[str]) -> DimensionType:
+        detected_dimensions = detect_media_dimension(paths)
+        if (
+            _MediaDimension.dim_2d in detected_dimensions and
+            _MediaDimension.dim_3d in detected_dimensions
+        ):
+            # Point clouds can have related images
+            detected_dimensions.remove(_MediaDimension.dim_2d)
+
+        result = []
+        for dim in detected_dimensions:
+            if dim == _MediaDimension.dim_2d:
+                result.append(DimensionType.DIM_2D)
+            elif dim == _MediaDimension.dim_3d:
+                result.append(DimensionType.DIM_3D)
+            else:
+                assert False, f"Unknown dimension {dim}"
+
+        if len(result) > 1:
+            raise ValidationError(
+                "Input data must have only one dimension, found {}".format(
+                    ", ".join(str(d) for d in result)
+                )
+            )
+
+        assert len(result) == 1
+        self.dimension = next(iter(result))
+
+        return self.dimension

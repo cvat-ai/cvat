@@ -43,6 +43,7 @@ from cvat.apps.engine.media_extractors import (
     ImageReaderWithManifest,
     Mpeg4ChunkWriter,
     Mpeg4CompressedChunkWriter,
+    ValidateDimension,
     VideoReader,
     VideoReaderWithManifest,
     ZipChunkWriter,
@@ -582,7 +583,7 @@ class MediaCache:
         frame_ids: Sequence[int],
         *,
         manifest_path: str,
-    ) -> Generator[tuple[PIL.Image.Image, str, str], None, None]:
+    ) -> Generator[tuple[PIL.Image.Image | str, str, str], None, None]:
         db_data = db_task.data
 
         if os.path.isfile(manifest_path) and db_data.storage == models.StorageChoice.CLOUD_STORAGE:
@@ -612,7 +613,19 @@ class MediaCache:
                         slogger.cloud_storage[db_cloud_storage.id].warning(
                             "Hash sums of files {} do not match".format(file_name)
                         )
-                    yield load_image(media_item)
+
+                    if db_task.dimension == models.DimensionType.DIM_2D:
+                        media_item = load_image(media_item)
+                    elif db_task.dimension == models.DimensionType.DIM_3D and (
+                        media_item[0].endswith(".bin")
+                    ):
+                        media_item = (
+                            ValidateDimension().convert_bin_to_pcd(media_item[0]),
+                            *media_item[1:],
+                        )
+
+                    yield media_item
+
         else:
             requested_frame_iter = iter(frame_ids)
             next_requested_frame_id = next(requested_frame_iter, None)
