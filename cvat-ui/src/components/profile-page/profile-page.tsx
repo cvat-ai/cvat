@@ -20,14 +20,14 @@ import SecurityContent from './security-content';
 const { Title } = Typography;
 
 function ProfilePageComponent(): JSX.Element {
-    const user = useSelector((state: CombinedState) => state.auth.user);
-    const fetching = useSelector((state: CombinedState) => state.auth.fetching);
-    const isPasswordChangeEnabled = useSelector(
-        (state: CombinedState) => state.serverAPI.configuration.isPasswordChangeEnabled,
-    );
+    const { user, fetching, isPasswordChangeEnabled } = useSelector((state: CombinedState) => ({
+        user: state.auth.user,
+        fetching: state.auth.fetching,
+        isPasswordChangeEnabled: state.serverAPI.configuration.isPasswordChangeEnabled,
+    }));
 
     const supportedTabs = isPasswordChangeEnabled ? ['profile', 'security'] : ['profile'];
-    const [activeTab, setActiveTab] = useState(getTabFromHash(supportedTabs) || 'profile');
+    const [activeTab, setActiveTab] = useState(getTabFromHash(supportedTabs));
 
     const menuItems = [
         {
@@ -47,7 +47,7 @@ function ProfilePageComponent(): JSX.Element {
     }, []);
 
     useEffect(() => {
-        const onHashChange = (): void => setActiveTab(getTabFromHash(supportedTabs) || 'profile');
+        const onHashChange = (): void => setActiveTab(getTabFromHash(supportedTabs));
         window.addEventListener('hashchange', onHashChange);
         return (): void => window.removeEventListener('hashchange', onHashChange);
     }, [supportedTabs]);
@@ -88,13 +88,14 @@ function ProfilePageComponent(): JSX.Element {
                     <Row>
                         <Col span={6}>
                             <Menu
+                                className='cvat-profile-page-navigation-menu'
                                 selectedKeys={[activeTab]}
                                 mode='inline'
                                 items={menuItems}
                                 onClick={({ key }) => onMenuClick(key)}
                             />
                         </Col>
-                        <Col span={18} style={{ paddingLeft: 24 }}>
+                        <Col span={18} className='cvat-profile-page-content'>
                             {renderContent()}
                         </Col>
                     </Row>

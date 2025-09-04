@@ -7,3 +7,17 @@
 .cvat-change-password-form-button {
     margin-left: $grid-unit-size;
 }
+
+.cvat-profile-page-navigation-menu {
+    border-radius: $grid-unit-size;
+}
+
+.cvat-profile-page-content {
+    padding-left: $grid-unit-size * 3;
+
+    .ant-form {
+        >.ant-form-item:last-child {
+            margin-bottom: 0;
+        }
+    }
+}
