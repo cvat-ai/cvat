@@ -591,7 +591,7 @@ class MediaCache:
                 db_cloud_storage = db_data.cloud_storage
                 if not db_cloud_storage:
                     raise CloudStorageMissingError("Task is no longer connected to cloud storage")
-                cloud_storage_instance = db_storage_to_storage_instance(db_cloud_storage)
+                storage_client = db_storage_to_storage_instance(db_cloud_storage)
 
                 tmp_dir = es.enter_context(tempfile.TemporaryDirectory(prefix="cvat"))
                 files_to_download = []
@@ -605,9 +605,7 @@ class MediaCache:
                     checksums.append(item.get("checksum", None))
                     media.append((fs_filename, fs_filename, None))
 
-                cloud_storage_instance.bulk_download_to_dir(
-                    files=files_to_download, upload_dir=tmp_dir
-                )
+                storage_client.bulk_download_to_dir(files=files_to_download, upload_dir=tmp_dir)
 
                 for checksum, media_item in zip(checksums, media):
                     if checksum and not md5_hash(media_item[1]) == checksum:
@@ -686,7 +684,7 @@ class MediaCache:
                 db_cloud_storage = db_data.cloud_storage
                 if not db_cloud_storage:
                     raise CloudStorageMissingError("Task is no longer connected to cloud storage")
-                cloud_storage_client = db_storage_to_storage_instance(db_cloud_storage)
+                storage_client = db_storage_to_storage_instance(db_cloud_storage)
 
                 tmp_dir = es.enter_context(tempfile.TemporaryDirectory(prefix="cvat"))
                 files_to_download = []
@@ -704,7 +702,7 @@ class MediaCache:
 
                     media.append((frame_id, frame_media))
 
-                cloud_storage_client.bulk_download_to_dir(files_to_download, upload_dir=tmp_dir)
+                storage_client.bulk_download_to_dir(files_to_download, upload_dir=tmp_dir)
             else:
                 ThroughModel = models.RelatedFile.images.through
 

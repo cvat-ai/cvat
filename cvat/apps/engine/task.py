@@ -53,7 +53,7 @@ from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, i
 from utils.dataset_manifest.core import VideoManifestValidator, is_dataset_manifest
 from utils.dataset_manifest.utils import find_related_images
 
-from .cloud_provider import db_storage_to_storage_instance
+from .cloud_provider import HeaderFirstMediaDownloader, db_storage_to_storage_instance
 
 slogger = ServerLogManager(__name__)
 
@@ -534,8 +534,13 @@ def _create_task_manifest_from_cloud_data(
     regular_images, related_images = find_related_images(sorted_media)
     sorted_media = [f for f in sorted_media if f in regular_images]
 
-    cloud_storage_instance = db_storage_to_storage_instance(db_storage)
-    content_generator = cloud_storage_instance.bulk_download_to_memory(sorted_media)
+    storage_client = db_storage_to_storage_instance(db_storage)
+    content_generator = storage_client.bulk_download_to_memory(
+        sorted_media,
+        object_downloader=HeaderFirstMediaDownloader.create(
+            dimension=dimension, client=storage_client
+        ).download,
+    )
 
     manifest.link(
         sources=content_generator,
@@ -543,7 +548,7 @@ def _create_task_manifest_from_cloud_data(
             k: {'related_images': related_images[k] }
             for k in related_images
         },
-        DIM_3D=dimension == models.DimensionType.DIM_3D,
+        DIM_3D=(dimension == models.DimensionType.DIM_3D),
         stop=len(sorted_media) - 1,
     )
     manifest.create()
