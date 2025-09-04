@@ -16,7 +16,7 @@ jobs:
           version: v3.14.4
 
       - name: Log in to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d
         with:
           username: ${{ secrets.DOCKERHUB_RW_USERNAME }}
           password: ${{ secrets.DOCKERHUB_RW_TOKEN }}
