@@ -45,7 +45,7 @@ function SecurityContent(): JSX.Element {
                                 </Typography.Text>
                             </Col>
                             <Col>
-                                <Button onClick={onShowForm} type='primary'>
+                                <Button className='cvat-security-password-change-button' onClick={onShowForm} type='primary'>
                                     Change password
                                 </Button>
                             </Col>
