@@ -532,7 +532,13 @@ def _create_task_manifest_from_cloud_data(
 ) -> None:
     dimension = ValidateDimension().detect_dimension_for_paths(sorted_media)
 
-    regular_images, related_images = find_related_images(sorted_media)
+    regular_images, related_images = find_related_images(
+        sorted_media,
+        scene_paths=(
+            lambda p: not re.search(r'(^|{0})related_images{0}'.format(os.sep), p)
+            # backward compatibility
+        )
+    )
     sorted_media = [f for f in sorted_media if f in regular_images]
 
     storage_client = db_storage_to_storage_instance(db_storage)
@@ -562,8 +568,7 @@ def _find_and_filter_related_images(
     regular_images, related_images = find_related_images(
         extractor.absolute_source_paths,
         scene_paths=(
-            p for p in extractor.absolute_source_paths
-            if not re.search(r'(^|{0})related_images{0}'.format(os.sep), p)
+            lambda p: not re.search(r'(^|{0})related_images{0}'.format(os.sep), p)
             # backward compatibility
         )
     )

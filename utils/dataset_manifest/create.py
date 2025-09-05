@@ -80,9 +80,7 @@ def main():
             sources,
             root_path=abs_root,
             scene_paths=(
-                p
-                for p in sources
-                if not re.search(r"(^|{0})related_images{0}".format(os.sep), p)
+                lambda p: not re.search(r"(^|{0})related_images{0}".format(os.sep), p)
                 # backward compatibility
             ),
         )

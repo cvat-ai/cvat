@@ -8,6 +8,7 @@ import mimetypes
 import os
 import re
 import struct
+from collections.abc import Callable
 from enum import Enum
 from pathlib import Path
 from random import shuffle
@@ -81,7 +82,7 @@ def _prepare_context_list(files, base_dir):
 def _find_related_images_2D(
     dataset_paths: Sequence[str],
     *,
-    scene_paths: Optional[Collection[str]] = None,
+    scene_paths: Optional[Union[Callable[[str], bool], Collection[str]]] = None,
 ) -> Tuple[Set[str], Dict[str, List[str]]]:
     """
     Expected 2D format is:
@@ -101,7 +102,12 @@ def _find_related_images_2D(
         if len(parents) >= 2 and parents[1].name == "related_images":
             regular_image_path = parents[2] / ".".join(parents[0].name.rsplit("_", maxsplit=1))
             related_images.setdefault(str(regular_image_path), []).append(image_path)
-        elif scene_paths is None or image_path in scene_paths:
+        elif (
+            scene_paths is None
+            or callable(scene_paths)
+            and scene_paths(image_path)
+            or image_path in scene_paths
+        ):
             regular_images.add(image_path)
 
     related_images = {
@@ -119,7 +125,7 @@ def _find_related_images_2D(
 def _find_related_images_3D(
     dataset_paths: Sequence[str],
     *,
-    scene_paths: Optional[Collection[str]] = None,
+    scene_paths: Optional[Union[Callable[[str], bool], Collection[str]]] = None,
 ) -> Tuple[List[str], Dict[str, List[str]]]:
     """
     Supported 3D formats:
@@ -169,7 +175,7 @@ def _find_related_images_3D(
         os.path.splitext(p)[0]: p
         for p in dataset_paths
         if p.lower().endswith((".pcd", ".bin"))
-        if scene_paths is None or p in scene_paths
+        if scene_paths is None or callable(scene_paths) and scene_paths(p) or p in scene_paths
     }  # { scene name -> scene path }
 
     related_images: Dict[str, List[str]] = {}  # { scene_name -> [related images] }
@@ -234,7 +240,7 @@ def find_related_images(
     dataset_paths: Sequence[str],
     *,
     root_path: Optional[str] = None,
-    scene_paths: Optional[Collection[str]] = None,
+    scene_paths: Optional[Union[Callable[[str], bool], Collection[str]]] = None,
 ) -> Tuple[Set[str], Dict[str, List[str]]]:
     """
     Finds related images for scenes in the dataset.
@@ -242,6 +248,7 @@ def find_related_images(
     :param dataset_paths: a list of file paths in the dataset
     :param root_path: Optional. If specified, the resulting paths will be relative to this path
     :param scene_paths: Optional. If specified, the results will only include scenes from this list
+        or matching this function.
 
     Returns: a 2-tuple (scene paths, related_images)
         scene_paths - a list of scene paths found;
@@ -251,16 +258,16 @@ def find_related_images(
     if root_path:
         dataset_paths = [os.path.relpath(p, root_path) for p in dataset_paths]
 
-        if scene_paths is not None:
+        if scene_paths is not None and not callable(scene_paths):
             scene_paths = (os.path.relpath(p, root_path) for p in scene_paths)
 
-    if scene_paths and not isinstance(scene_paths, set):
+    if scene_paths and not isinstance(scene_paths, set) and not callable(scene_paths):
         scene_paths = set(scene_paths)
 
-    dimensions = detect_media_dimension(scene_paths or dataset_paths)
+    dimensions = detect_media_dimension(not callable(scene_paths) and scene_paths or dataset_paths)
     has_2d_data = MediaDimension.dim_2d in dimensions
     has_3d_data = MediaDimension.dim_3d in dimensions
-    if scene_paths is not None and has_3d_data and has_2d_data:
+    if scene_paths is not None and not callable(scene_paths) and has_3d_data and has_2d_data:
         raise ValueError("Combined data types 2D and 3D are not supported")
 
     if has_3d_data:
