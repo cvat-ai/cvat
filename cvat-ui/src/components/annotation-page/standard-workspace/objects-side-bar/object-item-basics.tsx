@@ -112,7 +112,7 @@ function ItemTopComponent(props: Props): JSX.Element {
             <Col span={12}>
                 <CVATTooltip title='Change current label'>
                     <LabelSelector
-                        disabled={readonly || shapeType === ShapeType.SKELETON}
+                        disabled={locked || readonly || shapeType === ShapeType.SKELETON}
                         size='small'
                         labels={labels}
                         value={labelID}
@@ -144,8 +144,8 @@ function ItemTopComponent(props: Props): JSX.Element {
                         menu={ItemMenu({
                             jobInstance,
                             readonly,
-                            serverID,
                             locked,
+                            serverID,
                             shapeType,
                             objectType,
                             color,

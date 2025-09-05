@@ -294,31 +294,8 @@ cvat:
       enabled: false
     defaultStorage:
       enabled: false
-    server:
-      additionalVolumes:
-        - name: cvat-backend-data
-          persistentVolumeClaim:
-            claimName: my-claim-name
-    worker:
-      export:
-        additionalVolumes:
-          - name: cvat-backend-data
-            persistentVolumeClaim:
-              claimName: my-claim-name
-      import:
-        additionalVolumes:
-          - name: cvat-backend-data
-            persistentVolumeClaim:
-              claimName: my-claim-name
-      annotation:
-        additionalVolumes:
-          - name: cvat-backend-data
-            persistentVolumeClaim:
-              claimName: my-claim-name
-    utils:
-      additionalVolumes:
-        - name: cvat-backend-data
-          persistentVolumeClaim:
-            claimName: my-claim-name
-
+    additionalVolumes:
+      - name: cvat-backend-data
+        persistentVolumeClaim:
+          claimName: my-claim-name
 ```

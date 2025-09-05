@@ -16,6 +16,105 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.44.1'></a>
+## \[2.44.1\] - 2025-09-02
+
+### Fixed
+
+- Attribute/label input fields are not disabled when the object is locked
+  (<https://github.com/cvat-ai/cvat/pull/9783>)
+
+<a id='changelog-2.44.0'></a>
+## \[2.44.0\] - 2025-09-01
+
+### Added
+
+- Introduced bulk actions to perform operations on multiple selected resources at once
+  - Multi-select resources using click with Ctrl, Shift or using Select all button at the top bar
+  - Supported resources: Tasks, Jobs, Projects, Requests, Organization members, Webhooks, Cloud Storages
+  - Supported operations: Export, Backup, Delete, Download, Change: Assignee, State, Stage, Role
+  (<https://github.com/cvat-ai/cvat/pull/9582>)
+
+- \[SDK\] Auto-annotation functions are now able to output tags
+  (<https://github.com/cvat-ai/cvat/pull/9671>)
+
+- Now it is possible to move projects and tasks between organizations
+  (<https://github.com/cvat-ai/cvat/pull/9528>)
+
+- Improved validation errors for invalid json filter queries
+  (<https://github.com/cvat-ai/cvat/pull/9703>)
+
+- \[SDK, CLI\] Support for exporting with server-generated filename
+  (<https://github.com/cvat-ai/cvat/pull/9732>)
+
+- Organization transfer now supported as a bulk action
+  (<https://github.com/cvat-ai/cvat/pull/9727>)
+
+- Ability to replace cloud storage for tasks.
+  (<https://github.com/cvat-ai/cvat/pull/9535>)
+
+- Lightweight backup option in Export backup dialog (excludes media for cloud-storage tasks).
+  (<https://github.com/cvat-ai/cvat/pull/9535>)
+
+### Changed
+
+- Updated Yarn version from 1.22.22 to 4.9.2
+  (<https://github.com/cvat-ai/cvat/pull/9688>)
+
+- \[SDK\] simplified sending of custom requests with `ApiClient`, added documentation
+  and improved related APIs. Documented using foreign libraries for sending requests.
+  (<https://github.com/cvat-ai/cvat/pull/9730>)
+
+- \[CLI\] `task backup` and `task export-dataset` now download files with the server-generated
+  filenames by default
+  (<https://github.com/cvat-ai/cvat/pull/9732>)
+- \[CLI\] `task backup` and `task export-dataset` now always export files locally,
+  regardless of the default export location on the server
+  (<https://github.com/cvat-ai/cvat/pull/9732>)
+
+- The cvat/server Docker image is now configured with a numeric UID
+  rather than a username
+  (<https://github.com/cvat-ai/cvat/pull/9743>)
+
+- The frontend container no longer runs as root
+  (<https://github.com/cvat-ai/cvat/pull/9746>)
+
+- \[Helm\] The Clickhouse, PostgreSQL and Redis containers now use
+  the images from the Bitnami Legacy repository by default
+  (<https://github.com/cvat-ai/cvat/pull/9754>)
+
+- \[Compose, Helm\] The Vector container now runs as a non-root user
+  (<https://github.com/cvat-ai/cvat/pull/9755>)
+
+- \[Helm\] The Kvrocks container now has overridden UID/GID, making
+  it compatible with the `runAsNonRoot` security context setting
+
+- Made the error message when a particular image cannot be saved
+  to a compressed chunk more useful
+  (<https://github.com/cvat-ai/cvat/pull/9724>)
+
+- When registering a user, the server will now reject overly long email,
+  first name and last name fields, instead of truncating them
+  (<https://github.com/cvat-ai/cvat/pull/9767>)
+
+### Removed
+
+- Removed deprecated `seed` parameter in job creation in favor of `random_seed`
+  (<https://github.com/cvat-ai/cvat/pull/9744>)
+
+### Fixed
+
+- Invalid GT job frame numbers in backups of video tasks with custom start/stop frame or frame step
+  (<https://github.com/cvat-ai/cvat/pull/9695>)
+
+- Server error in GT job creation if the `random_per_job` frame selection method
+  was used with the `seed` parameter.
+  (<https://github.com/cvat-ai/cvat/pull/9744>)
+
+- \[Helm\] A useless `/models` directory is no longer created in the main
+  data volume
+  (<https://github.com/cvat-ai/cvat/pull/9773>)
+
 <a id='changelog-2.43.0'></a>
 ## \[2.43.0\] - 2025-08-07
 

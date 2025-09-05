@@ -18,7 +18,7 @@ import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
 import { isEqual } from 'lodash';
 import { CombinedState } from 'reducers';
-import { useSelector } from 'react-redux';
+import { shallowEqual, useSelector } from 'react-redux';
 import { useResetShortcutsOnUnmount } from 'utils/hooks';
 
 interface InputElementParameters {
@@ -32,7 +32,7 @@ interface InputElementParameters {
 
 const componentShortcuts: Record<string, KeyMapItem> = {};
 
-const makeKey = (index: number) => `AAM_SET_ATTR_VALUE_${index}`;
+const makeKey = (index: number): string => `AAM_SET_ATTR_VALUE_${index}`;
 
 for (const idx of Array.from({ length: 10 }, (_, i) => i)) {
     componentShortcuts[makeKey(idx)] = {
@@ -211,9 +211,10 @@ interface ListProps {
 
 function AttrValuesList(props: ListProps): JSX.Element | null {
     const { inputType, values, onChange } = props;
-
-    const { keyMap } = useSelector((state: CombinedState) => state.shortcuts);
-    const { normalizedKeyMap } = useSelector((state: CombinedState) => state.shortcuts);
+    const { keyMap, normalizedKeyMap } = useSelector((state: CombinedState) => ({
+        keyMap: state.shortcuts.keyMap,
+        normalizedKeyMap: state.shortcuts.normalizedKeyMap,
+    }), shallowEqual);
 
     const sortedValues = ['true', 'false'];
     const filteredValues = values.filter((value: string): boolean => value !== config.UNDEFINED_ATTRIBUTE_VALUE);
