@@ -917,11 +917,13 @@ def create_thread(
     validate_dimension = ValidateDimension()
     if db_data.storage == models.StorageChoice.LOCAL or (
         db_data.storage == models.StorageChoice.SHARE and
-        isinstance(extractor, MEDIA_TYPES['zip']['extractor'])
+        isinstance(extractor, (
+            MEDIA_TYPES['archive']['extractor'], MEDIA_TYPES['zip']['extractor']
+        ))
     ):
         validate_dimension.set_path(upload_dir)
         validate_dimension.validate()
-    else:
+    elif not isinstance(extractor, MEDIA_TYPES['video']['extractor']):
         validate_dimension.detect_dimension_for_paths(extractor.absolute_source_paths)
 
     if (db_task.project is not None and
