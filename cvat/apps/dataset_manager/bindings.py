@@ -1598,15 +1598,15 @@ class MediaProvider3D(MediaProvider):
         "{source_id -> {frame_id -> [ri, ...]}}"
 
         for source_id, source in sources.items():
+            source_ris = self._ri_per_source.setdefault(source_id, {})
+
             db_related_files = (
                 ThroughModel.objects.filter(relatedfile__data=source.db_task.data)
                 .order_by("image__frame", "relatedfile__path")
                 .values_list("image__frame", "relatedfile__path")
             )
             for frame_idx, ri_path in db_related_files:
-                self._ri_per_source.setdefault(source_id, {}).setdefault(
-                    frame_idx, []
-                ).append(ri_path)
+                source_ris.setdefault(frame_idx, []).append(ri_path)
 
     def unload(self) -> None:
         self._unload_source()
@@ -1619,7 +1619,7 @@ class MediaProvider3D(MediaProvider):
 
         related_image_paths = [
             osp.relpath(str(ri_path), upload_dir)
-            for ri_path in self._ri_per_source[source_id][frame_id]
+            for ri_path in self._ri_per_source[source_id].get(frame_id, [])
         ]
 
         def get_pcd_bytes():
