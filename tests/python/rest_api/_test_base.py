@@ -449,19 +449,19 @@ class TestTasksBase:
         s3_client = s3.make_client(bucket=cloud_storage["resource"])
 
         server_files = [
-            "test_3d_with_related/pointcloud/000001.pcd",
-            "test_3d_with_related/pointcloud/000002.pcd",
-            "test_3d_with_related/pointcloud/000003.pcd",
-            "test_3d_with_related/related_images/000001_pcd/000001.png",
-            "test_3d_with_related/related_images/000002_pcd/000002.png",
-            "test_3d_with_related/related_images/000003_pcd/000003.png",
+            "pcd_with_related/pointcloud/000001.pcd",
+            "pcd_with_related/pointcloud/000002.pcd",
+            "pcd_with_related/pointcloud/000003.pcd",
+            "pcd_with_related/related_images/000001_pcd/000001.png",
+            "pcd_with_related/related_images/000002_pcd/000002.png",
+            "pcd_with_related/related_images/000003_pcd/000003.png",
         ]
 
         pcd_files = []
         for filename in [
-            "test_3d_with_related/pointcloud/000001.pcd",
-            "test_3d_with_related/pointcloud/000002.pcd",
-            "test_3d_with_related/pointcloud/000003.pcd",
+            "pcd_with_related/pointcloud/000001.pcd",
+            "pcd_with_related/pointcloud/000002.pcd",
+            "pcd_with_related/pointcloud/000003.pcd",
         ]:
             pcd_file = io.BytesIO(s3_client.download_fileobj(filename))
             pcd_file.name = filename
@@ -469,9 +469,9 @@ class TestTasksBase:
 
         related_files = []
         for filename in [
-            "test_3d_with_related/related_images/000001_pcd/000001.png",
-            "test_3d_with_related/related_images/000002_pcd/000002.png",
-            "test_3d_with_related/related_images/000003_pcd/000003.png",
+            "pcd_with_related/related_images/000001_pcd/000001.png",
+            "pcd_with_related/related_images/000002_pcd/000002.png",
+            "pcd_with_related/related_images/000003_pcd/000003.png",
         ]:
             ri_file = io.BytesIO(s3_client.download_fileobj(filename))
             ri_file.name = os.path.basename(filename)

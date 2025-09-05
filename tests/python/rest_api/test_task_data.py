@@ -534,9 +534,9 @@ class TestPostTaskData:
     @pytest.mark.parametrize(
         "use_cache, cloud_storage_id, manifest, use_bucket_content, org",
         [
-            (True, 1, "manifest.jsonl", False, ""),  # public bucket
-            (True, 2, "sub/manifest.jsonl", True, "org2"),  # private bucket
-            (True, 2, "sub/manifest.jsonl", True, "org2"),  # private bucket
+            (True, 1, "images_with_manifest/manifest.jsonl", False, ""),  # public bucket
+            (True, 2, "sub/images_with_manifest/manifest.jsonl", True, "org2"),  # private bucket
+            (True, 2, "sub/images_with_manifest/manifest.jsonl", True, "org2"),  # private bucket
             (True, 1, None, False, ""),
             (True, 2, None, True, "org2"),
             (True, 2, None, True, "org2"),
@@ -558,7 +558,10 @@ class TestPostTaskData:
                 self._USERNAME, cloud_storage_id, manifest
             )
         else:
-            cloud_storage_content = ["image_case_65_1.png", "image_case_65_2.png"]
+            cloud_storage_content = [
+                "images_with_manifest/image_case_65_1.png",
+                "images_with_manifest/image_case_65_2.png",
+            ]
         if manifest:
             cloud_storage_content.append(manifest)
 
@@ -772,8 +775,8 @@ class TestPostTaskData:
     @pytest.mark.parametrize(
         "storage_id, manifest",
         [
-            (1, "manifest.jsonl"),  # public bucket
-            (2, "sub/manifest.jsonl"),  # private bucket
+            (1, "images_with_manifest/manifest.jsonl"),  # public bucket
+            (2, "sub/images_with_manifest/manifest.jsonl"),  # private bucket
         ],
     )
     @pytest.mark.parametrize(
