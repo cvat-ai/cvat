@@ -10,14 +10,19 @@ import {
 } from '@react-awesome-query-builder/antd';
 
 import { omit } from 'lodash';
-import { DownOutlined } from '@ant-design/icons';
+import { DownOutlined, ExportOutlined, ImportOutlined, EditOutlined } from '@ant-design/icons';
 import Popover from 'antd/lib/popover';
 import Menu from 'antd/lib/menu';
 import Button from 'antd/lib/button';
 import Modal from 'antd/lib/modal';
+import Input from 'antd/lib/input';
+import Space from 'antd/lib/space';
+import Divider from 'antd/lib/divider';
+import message from 'antd/lib/message';
 import { CombinedState } from 'reducers';
 import { Label } from 'cvat-core-wrapper';
 import { changeAnnotationsFilters, fetchAnnotationsAsync, showFilters } from 'actions/annotation-actions';
+import { toClipboard } from 'utils/to-clipboard';
 
 const { FieldDropdown } = AntdWidgets;
 
@@ -87,6 +92,8 @@ function FiltersModalComponent(): JSX.Element {
     const dispatch = useDispatch();
     const [immutableTree, setImmutableTree] = useState<ImmutableTree>(defaultTree);
     const [filters, setFilters] = useState([] as StoredFilter[]);
+    const [showTextEditor, setShowTextEditor] = useState(false);
+    const [filterTextInput, setFilterTextInput] = useState('');
 
     useEffect(() => {
         const initialConfig = {
@@ -191,6 +198,29 @@ function FiltersModalComponent(): JSX.Element {
     useEffect(() => {
         if (visible) {
             try {
+                // First check if there's a filter in URL parameters
+                const urlParams = new URLSearchParams(window.location.search);
+                const urlFilter = urlParams.get('filter');
+                
+                if (urlFilter) {
+                    try {
+                        const filterLogic = JSON.parse(decodeURIComponent(urlFilter));
+                        const tree = QbUtils.loadFromJsonLogic(filterLogic, config);
+                        if (tree) {
+                            const validatedTree = QbUtils.checkTree(tree, config);
+                            setImmutableTree(validatedTree);
+                            // Remove the filter parameter from URL to prevent repeated loading
+                            urlParams.delete('filter');
+                            const newURL = `${window.location.pathname}${urlParams.toString() ? `?${urlParams.toString()}` : ''}`;
+                            window.history.replaceState({}, '', newURL);
+                            return;
+                        }
+                    } catch (urlError) {
+                        console.warn('Failed to load filter from URL:', urlError);
+                    }
+                }
+                
+                // Fall back to active filters
                 if (activeFilters.length) {
                     const tree = QbUtils.loadFromJsonLogic(activeFilters[0], config);
                     if (tree) {
@@ -206,12 +236,77 @@ function FiltersModalComponent(): JSX.Element {
                 setImmutableTree(defaultTree);
             }
         }
-    }, [visible]);
+    }, [visible, config]);
 
     const applyFilters = (filtersData: object[]): void => {
         dispatch(changeAnnotationsFilters(filtersData));
         dispatch(fetchAnnotationsAsync());
         dispatch(showFilters(false));
+    };
+
+    const exportCurrentFilter = (): void => {
+        const currentFilter = QbUtils.jsonLogicFormat(immutableTree, config).logic;
+        if (currentFilter && Object.keys(currentFilter).length > 0) {
+            const filterData = {
+                version: '1.0',
+                timestamp: new Date().toISOString(),
+                filter: currentFilter,
+                humanReadable: QbUtils.queryString(immutableTree, config),
+            };
+            toClipboard(JSON.stringify(filterData, null, 2));
+            message.success('Filter exported to clipboard');
+        } else {
+            message.warning('No filter to export');
+        }
+    };
+
+    const importFilterFromText = (): void => {
+        if (!filterTextInput.trim()) {
+            message.warning('Please enter filter data to import');
+            return;
+        }
+
+        try {
+            const importData = JSON.parse(filterTextInput);
+            let filterLogic;
+
+            // Support both new format with metadata and old format (raw logic)
+            if (importData.filter) {
+                filterLogic = importData.filter;
+            } else {
+                filterLogic = importData;
+            }
+
+            const tree = QbUtils.loadFromJsonLogic(filterLogic, config);
+            if (tree) {
+                const validatedTree = QbUtils.checkTree(tree, config);
+                setImmutableTree(validatedTree);
+                setShowTextEditor(false);
+                setFilterTextInput('');
+                message.success('Filter imported successfully');
+            } else {
+                message.error('Invalid filter format');
+            }
+        } catch (error) {
+            message.error('Failed to parse filter data. Please check the JSON format.');
+        }
+    };
+
+    const generateShareableURL = (): void => {
+        const currentFilter = QbUtils.jsonLogicFormat(immutableTree, config).logic;
+        if (currentFilter && Object.keys(currentFilter).length > 0) {
+            try {
+                const filterParam = encodeURIComponent(JSON.stringify(currentFilter));
+                const currentURL = new URL(window.location.href);
+                currentURL.searchParams.set('filter', filterParam);
+                toClipboard(currentURL.toString());
+                message.success('Shareable URL copied to clipboard');
+            } catch (error) {
+                message.error('Failed to generate shareable URL');
+            }
+        } else {
+            message.warning('No filter to share');
+        }
     };
 
     const confirmModal = (): void => {
@@ -280,6 +375,36 @@ function FiltersModalComponent(): JSX.Element {
             centered
             onCancel={() => dispatch(showFilters(false))}
             footer={[
+                <Space key='left-actions' style={{ flex: 1, justifyContent: 'flex-start' }}>
+                    <Button
+                        key='export'
+                        icon={<ExportOutlined />}
+                        disabled={!isModalConfirmable()}
+                        onClick={exportCurrentFilter}
+                        className='cvat-filters-modal-export-button'
+                        title='Export filter to clipboard'
+                    >
+                        Export
+                    </Button>
+                    <Button
+                        key='share-url'
+                        disabled={!isModalConfirmable()}
+                        onClick={generateShareableURL}
+                        className='cvat-filters-modal-share-button'
+                        title='Generate shareable URL'
+                    >
+                        Share URL
+                    </Button>
+                    <Button
+                        key='import'
+                        icon={<ImportOutlined />}
+                        onClick={() => setShowTextEditor(!showTextEditor)}
+                        className='cvat-filters-modal-import-button'
+                        title='Import filter from text'
+                    >
+                        Import
+                    </Button>
+                </Space>,
                 <Button
                     key='clear'
                     disabled={!activeFilters.length}
@@ -329,6 +454,41 @@ function FiltersModalComponent(): JSX.Element {
                     </Button>
                 </Popover>
             </div>
+            
+            {showTextEditor && (
+                <>
+                    <Divider>Import Filter</Divider>
+                    <div className='cvat-filters-text-editor'>
+                        <Input.TextArea
+                            value={filterTextInput}
+                            onChange={(e) => setFilterTextInput(e.target.value)}
+                            placeholder='Paste filter JSON here...'
+                            autoSize={{ minRows: 4, maxRows: 8 }}
+                            className='cvat-filters-text-input'
+                        />
+                        <div style={{ marginTop: 8, textAlign: 'right' }}>
+                            <Space>
+                                <Button 
+                                    onClick={() => {
+                                        setShowTextEditor(false);
+                                        setFilterTextInput('');
+                                    }}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button 
+                                    type='primary' 
+                                    onClick={importFilterFromText}
+                                    disabled={!filterTextInput.trim()}
+                                >
+                                    Apply Filter
+                                </Button>
+                            </Space>
+                        </div>
+                    </div>
+                </>
+            )}
+            
             { !!config.fields && (
                 <Query
                     {...config}
