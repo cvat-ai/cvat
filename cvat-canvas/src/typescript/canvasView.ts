@@ -3188,19 +3188,24 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     });
                 }
                 if (withAttr) {
-                    Object.keys(attributes).forEach((attrID: string, idx: number) => {
-                        const values = `${attributes[attrID] === undefinedAttrValue ?
-                            '' : attributes[attrID]}`.split('\n');
-                        const parent = block.tspan(`${attrNames[attrID]}: `)
-                            .attr({ attrID, dy: idx === 0 ? '1.25em' : '1em', x: 0 })
-                            .addClass('cvat_canvas_text_attribute');
-                        values.forEach((attrLine: string, index: number) => {
-                            parent
-                                .tspan(attrLine)
-                                .attr({
-                                    dy: index === 0 ? 0 : '1em',
-                                });
-                        });
+                    // Use label.attributes order instead of Object.keys(attributes) order
+                    // to match the order defined in the label constructor
+                    state.label.attributes.forEach((attr: any, idx: number) => {
+                        const attrID = String(attr.id);
+                        if (attrID in attributes) {
+                            const values = `${attributes[attrID] === undefinedAttrValue ?
+                                '' : attributes[attrID]}`.split('\n');
+                            const parent = block.tspan(`${attrNames[attrID]}: `)
+                                .attr({ attrID, dy: idx === 0 ? '1.25em' : '1em', x: 0 })
+                                .addClass('cvat_canvas_text_attribute');
+                            values.forEach((attrLine: string, index: number) => {
+                                parent
+                                    .tspan(attrLine)
+                                    .attr({
+                                        dy: index === 0 ? 0 : '1em',
+                                    });
+                            });
+                        }
                     });
                 }
             })
