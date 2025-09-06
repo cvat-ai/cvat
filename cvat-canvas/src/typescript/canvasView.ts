@@ -3188,9 +3188,30 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     });
                 }
                 if (withAttr) {
-                    // Use label.attributes order instead of Object.keys(attributes) order
-                    // to match the order defined in the label constructor
-                    state.label.attributes.forEach((attr: any, idx: number) => {
+                    // Apply selective display filtering if enabled
+                    let attributesToShow = state.label.attributes;
+                    
+                    if (this.configuration.enableSelectiveDisplay) {
+                        // Check if this label should be shown
+                        const selectiveLabels = this.configuration.selectiveLabels || [];
+                        const selectiveAttributes = this.configuration.selectiveAttributes || {};
+                        
+                        if (selectiveLabels.length > 0 && !selectiveLabels.includes(state.label.id)) {
+                            attributesToShow = []; // Don't show any attributes for this label
+                        } else {
+                            const allowedAttributeIds = selectiveAttributes[state.label.id];
+                            if (allowedAttributeIds && allowedAttributeIds.length > 0) {
+                                attributesToShow = state.label.attributes.filter(
+                                    (attr: any) => allowedAttributeIds.includes(attr.id)
+                                );
+                            } else if (selectiveLabels.length > 0) {
+                                attributesToShow = []; // Label is selected but no attributes specified
+                            }
+                        }
+                    }
+                    
+                    // Use filtered attributes and maintain order defined in the label constructor
+                    attributesToShow.forEach((attr: any, idx: number) => {
                         const attrID = String(attr.id);
                         if (attrID in attributes) {
                             const values = `${attributes[attrID] === undefinedAttrValue ?

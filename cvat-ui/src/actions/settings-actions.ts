@@ -59,6 +59,10 @@ export enum SettingsActionTypes {
     DISABLE_IMAGE_FILTER = 'DISABLE_IMAGE_FILTER',
     RESET_IMAGE_FILTERS = 'RESET_IMAGE_FILTERS',
     CHANGE_SHAPES_ORIENTATION_VISIBILITY = 'CHANGE_SHAPES_ORIENTATION_VISIBILITY',
+    // Selective display actions
+    SWITCH_SELECTIVE_DISPLAY = 'SWITCH_SELECTIVE_DISPLAY',
+    SET_SELECTIVE_LABELS = 'SET_SELECTIVE_LABELS',
+    SET_SELECTIVE_ATTRIBUTES = 'SET_SELECTIVE_ATTRIBUTES',
 }
 
 export function changeShapesOpacity(opacity: number): AnyAction {
@@ -511,4 +515,33 @@ export function updateCachedSettings(settings: CombinedState['settings'], shortc
     };
 
     localStorage.setItem('clientSettings', JSON.stringify(settingsForSaving));
+}
+
+// Selective display action creators
+export function switchSelectiveDisplay(enabled: boolean): AnyAction {
+    return {
+        type: SettingsActionTypes.SWITCH_SELECTIVE_DISPLAY,
+        payload: {
+            enableSelectiveDisplay: enabled,
+        },
+    };
+}
+
+export function setSelectiveLabels(labelIds: number[]): AnyAction {
+    return {
+        type: SettingsActionTypes.SET_SELECTIVE_LABELS,
+        payload: {
+            selectiveLabels: labelIds,
+        },
+    };
+}
+
+export function setSelectiveAttributes(labelId: number, attributeIds: number[]): AnyAction {
+    return {
+        type: SettingsActionTypes.SET_SELECTIVE_ATTRIBUTES,
+        payload: {
+            labelId,
+            attributeIds,
+        },
+    };
 }
