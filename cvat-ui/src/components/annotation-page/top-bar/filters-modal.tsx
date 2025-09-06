@@ -23,6 +23,14 @@ import { CombinedState } from 'reducers';
 import { Label } from 'cvat-core-wrapper';
 import { changeAnnotationsFilters, fetchAnnotationsAsync, showFilters } from 'actions/annotation-actions';
 import { toClipboard } from 'utils/to-clipboard';
+import {
+    createFilterExportData,
+    extractFilterLogic,
+    validateFilterData,
+    createShareableURL,
+    extractFilterFromURL,
+    cleanFilterFromURL,
+} from 'utils/filter-export-import';
 
 const { FieldDropdown } = AntdWidgets;
 
@@ -198,20 +206,17 @@ function FiltersModalComponent(): JSX.Element {
     // Check for URL filter parameters on component mount and apply them automatically
     useEffect(() => {
         if (config.fields) {
-            const urlParams = new URLSearchParams(window.location.search);
-            const urlFilter = urlParams.get('filter');
+            const filterLogic = extractFilterFromURL();
             
-            if (urlFilter) {
+            if (filterLogic) {
                 try {
-                    const filterLogic = JSON.parse(decodeURIComponent(urlFilter));
                     const tree = QbUtils.loadFromJsonLogic(filterLogic, config);
                     if (tree && QbUtils.isValidTree(tree, config)) {
                         // Automatically apply the filter from URL without opening the modal
                         applyFilters([filterLogic]);
                         
                         // Remove the filter parameter from URL to prevent repeated loading
-                        urlParams.delete('filter');
-                        const newURL = `${window.location.pathname}${urlParams.toString() ? `?${urlParams.toString()}` : ''}`;
+                        const newURL = cleanFilterFromURL();
                         window.history.replaceState({}, '', newURL);
                     }
                 } catch (urlError) {
@@ -251,12 +256,8 @@ function FiltersModalComponent(): JSX.Element {
     const exportCurrentFilter = (): void => {
         const currentFilter = QbUtils.jsonLogicFormat(immutableTree, config).logic;
         if (currentFilter && Object.keys(currentFilter).length > 0) {
-            const filterData = {
-                version: '1.0',
-                timestamp: new Date().toISOString(),
-                filter: currentFilter,
-                humanReadable: QbUtils.queryString(immutableTree, config),
-            };
+            const humanReadable = QbUtils.queryString(immutableTree, config) || '';
+            const filterData = createFilterExportData(currentFilter, humanReadable);
             toClipboard(JSON.stringify(filterData, null, 2));
             message.success('Filter exported to clipboard');
         } else {
@@ -270,24 +271,26 @@ function FiltersModalComponent(): JSX.Element {
             return;
         }
 
+        if (!validateFilterData(filterTextInput)) {
+            message.error('Failed to parse filter data. Please check the JSON format.');
+            return;
+        }
+
         try {
             const importData = JSON.parse(filterTextInput);
-            let filterLogic;
+            const filterLogic = extractFilterLogic(importData);
 
-            // Support both new format with metadata and old format (raw logic)
-            if (importData.filter) {
-                filterLogic = importData.filter;
-            } else {
-                filterLogic = importData;
-            }
-
-            const tree = QbUtils.loadFromJsonLogic(filterLogic, config);
-            if (tree) {
-                const validatedTree = QbUtils.checkTree(tree, config);
-                setImmutableTree(validatedTree);
-                setShowTextEditor(false);
-                setFilterTextInput('');
-                message.success('Filter imported successfully');
+            if (filterLogic) {
+                const tree = QbUtils.loadFromJsonLogic(filterLogic, config);
+                if (tree) {
+                    const validatedTree = QbUtils.checkTree(tree, config);
+                    setImmutableTree(validatedTree);
+                    setShowTextEditor(false);
+                    setFilterTextInput('');
+                    message.success('Filter imported successfully');
+                } else {
+                    message.error('Invalid filter format');
+                }
             } else {
                 message.error('Invalid filter format');
             }
@@ -300,10 +303,8 @@ function FiltersModalComponent(): JSX.Element {
         const currentFilter = QbUtils.jsonLogicFormat(immutableTree, config).logic;
         if (currentFilter && Object.keys(currentFilter).length > 0) {
             try {
-                const filterParam = encodeURIComponent(JSON.stringify(currentFilter));
-                const currentURL = new URL(window.location.href);
-                currentURL.searchParams.set('filter', filterParam);
-                toClipboard(currentURL.toString());
+                const shareableURL = createShareableURL(currentFilter);
+                toClipboard(shareableURL);
                 message.success('Shareable URL copied to clipboard');
             } catch (error) {
                 message.error('Failed to generate shareable URL');
