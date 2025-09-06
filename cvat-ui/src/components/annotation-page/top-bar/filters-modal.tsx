@@ -195,32 +195,36 @@ function FiltersModalComponent(): JSX.Element {
         window.localStorage.setItem(FILTERS_HISTORY, JSON.stringify(filters));
     }, [filters]);
 
+    // Check for URL filter parameters on component mount and apply them automatically
+    useEffect(() => {
+        if (config.fields) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlFilter = urlParams.get('filter');
+            
+            if (urlFilter) {
+                try {
+                    const filterLogic = JSON.parse(decodeURIComponent(urlFilter));
+                    const tree = QbUtils.loadFromJsonLogic(filterLogic, config);
+                    if (tree && QbUtils.isValidTree(tree, config)) {
+                        // Automatically apply the filter from URL without opening the modal
+                        applyFilters([filterLogic]);
+                        
+                        // Remove the filter parameter from URL to prevent repeated loading
+                        urlParams.delete('filter');
+                        const newURL = `${window.location.pathname}${urlParams.toString() ? `?${urlParams.toString()}` : ''}`;
+                        window.history.replaceState({}, '', newURL);
+                    }
+                } catch (urlError) {
+                    console.warn('Failed to load filter from URL:', urlError);
+                }
+            }
+        }
+    }, [config]);
+
     useEffect(() => {
         if (visible) {
             try {
-                // First check if there's a filter in URL parameters
-                const urlParams = new URLSearchParams(window.location.search);
-                const urlFilter = urlParams.get('filter');
-                
-                if (urlFilter) {
-                    try {
-                        const filterLogic = JSON.parse(decodeURIComponent(urlFilter));
-                        const tree = QbUtils.loadFromJsonLogic(filterLogic, config);
-                        if (tree) {
-                            const validatedTree = QbUtils.checkTree(tree, config);
-                            setImmutableTree(validatedTree);
-                            // Remove the filter parameter from URL to prevent repeated loading
-                            urlParams.delete('filter');
-                            const newURL = `${window.location.pathname}${urlParams.toString() ? `?${urlParams.toString()}` : ''}`;
-                            window.history.replaceState({}, '', newURL);
-                            return;
-                        }
-                    } catch (urlError) {
-                        console.warn('Failed to load filter from URL:', urlError);
-                    }
-                }
-                
-                // Fall back to active filters
+                // Load current active filters to display in modal
                 if (activeFilters.length) {
                     const tree = QbUtils.loadFromJsonLogic(activeFilters[0], config);
                     if (tree) {
