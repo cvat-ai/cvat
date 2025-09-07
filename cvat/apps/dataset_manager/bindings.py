@@ -521,7 +521,7 @@ class CommonData(InstanceLabelData):
             return get
 
         get_shapes_for_frame = get_anns_for_frame(
-            anno_manager.to_shapes_stream(
+            anno_manager.to_shapes(
                 self.stop + 1,
                 # Skip outside, deleted and excluded frames
                 included_frames=included_frames,

@@ -197,14 +197,13 @@ class AnnotationManager:
         tags = TagManager(self.data.tags, dimension=self.dimension)
         tags.merge(data.tags, start_frame, overlap)
 
+        shapes_manager = ShapeManager(self.data.shapes, dimension=self.dimension)
         if data.is_stream:
             assert self.data.is_stream or not self.data.shapes
-            shapes_manager = ShapeManager(self.data.shapes, dimension=self.dimension)
             self.data.shapes = shapes_manager.merge_stream(data.shapes, start_frame, overlap)
         else:
             assert not self.data.is_stream
-            shapes = ShapeManager(self.data.shapes, dimension=self.dimension)
-            shapes.merge(data.shapes, start_frame, overlap)
+            shapes_manager.merge(data.shapes, start_frame, overlap)
 
         tracks = TrackManager(self.data.tracks, dimension=self.dimension)
         tracks.merge(data.tracks, start_frame, overlap)
@@ -231,40 +230,11 @@ class AnnotationManager:
         included_frames: Sequence[int] | None = None,
         include_outside: bool = False,
         use_server_track_ids: bool = False,
-    ) -> list:
-        assert not self.data.is_stream
-        shapes = self.data.shapes
-        tracks = TrackManager(self.data.tracks, dimension=self.dimension)
-
-        if included_frames is not None:
-            shapes = [s for s in shapes if s["frame"] in included_frames]
-
-        if deleted_frames is not None:
-            shapes = [s for s in shapes if s["frame"] not in deleted_frames]
-
-        return shapes + tracks.to_shapes(
-            end_frame,
-            included_frames=included_frames,
-            deleted_frames=deleted_frames,
-            include_outside=include_outside,
-            use_server_track_ids=use_server_track_ids,
-        )
-
-    def to_shapes_stream(
-        self,
-        end_frame: int,
-        *,
-        deleted_frames: Sequence[int] | None = None,
-        included_frames: Sequence[int] | None = None,
-        include_outside: bool = False,
-        use_server_track_ids: bool = False,
     ) -> Generator[dict, None, None]:
         """
         Generates shapes ordered by frame id
         """
         shapes = self.data.shapes
-        if not self.data.is_stream:
-            shapes = sorted(shapes, key=lambda shape: shape["frame"])
 
         tracks = TrackManager(self.data.tracks, dimension=self.dimension)
 
@@ -281,6 +251,10 @@ class AnnotationManager:
             include_outside=include_outside,
             use_server_track_ids=use_server_track_ids,
         )
+
+        if not self.data.is_stream:
+            shapes = sorted(shapes, key=lambda shape: shape["frame"])
+
         track_shapes = sorted(track_shapes, key=lambda shape: shape["frame"])
 
         yield from heapq.merge(shapes, track_shapes, key=lambda shape: shape["frame"])
