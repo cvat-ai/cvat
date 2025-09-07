@@ -490,74 +490,7 @@ class CommonData(InstanceLabelData):
             type=label.type
         )
 
-    def group_by_frame(self, include_empty: bool = False):
-        frames = {}
-        def get_frame(idx):
-            frame_info = self._frame_info[idx]
-            frame = self.abs_frame_id(idx)
-            if frame not in frames:
-                frames[frame] = CommonData.Frame(
-                    idx=idx,
-                    id=frame_info.get("id", 0),
-                    subset=frame_info["subset"],
-                    frame=frame,
-                    name=frame_info["path"],
-                    height=frame_info["height"],
-                    width=frame_info["width"],
-                    labeled_shapes=[],
-                    tags=[],
-                    shapes=[],
-                    labels={},
-                    task_id=self._db_task.id,
-                )
-            return frames[frame]
-
-        included_frames = self.get_included_frames()
-
-        if include_empty:
-            for idx in sorted(set(self._frame_info) & included_frames):
-                get_frame(idx)
-
-        anno_manager = AnnotationManager(
-            self._annotation_ir, dimension=self._annotation_ir.dimension
-        )
-        for shape in sorted(
-            anno_manager.to_shapes(
-                self.stop + 1,
-                # Skip outside, deleted and excluded frames
-                included_frames=included_frames,
-                deleted_frames=self.deleted_frames.keys(),
-                include_outside=False,
-                use_server_track_ids=self._use_server_track_ids,
-            ),
-            key=lambda shape: shape.get("z_order", 0)
-        ):
-            shape_data = ''
-
-            if 'track_id' in shape:
-                if shape['outside']:
-                    continue
-                exported_shape = self._export_tracked_shape(shape)
-            else:
-                exported_shape = self._export_labeled_shape(shape)
-                shape_data = self._export_shape(shape)
-
-            get_frame(shape['frame']).labeled_shapes.append(exported_shape)
-
-            if shape_data:
-                get_frame(shape['frame']).shapes.append(shape_data)
-                for label in self._label_mapping.values():
-                    label = self._export_label(label)
-                    get_frame(shape['frame']).labels.update({label.id: label})
-
-        for tag in self._annotation_ir.tags:
-            if tag['frame'] not in included_frames:
-                continue
-            get_frame(tag['frame']).tags.append(self._export_tag(tag))
-
-        return iter(frames.values())
-
-    def group_by_frame_stream(self) -> Generator[CommonData.Frame, None, None]:
+    def group_by_frame(self, include_empty: bool = False) -> Generator[CommonData.Frame, None, None]:
         included_frames = self.get_included_frames()
         anno_manager = AnnotationManager(
             self._annotation_ir, dimension=self._annotation_ir.dimension
@@ -615,7 +548,7 @@ class CommonData(InstanceLabelData):
             frame.shapes = []
             frame.labels = {}
             for shape in sorted(
-                get_shapes_for_frame(frame_idx),
+                get_shapes_for_frame(frame.idx),
                 key=lambda shape: shape.get("z_order", 0),
             ):
                 shape_data = ''
@@ -636,12 +569,12 @@ class CommonData(InstanceLabelData):
                         label = self._export_label(label)
                         frame.labels.update({label.id: label})
 
-            for tag in get_tags_for_frame(frame_idx):
+            for tag in get_tags_for_frame(frame.idx):
                 frame.tags.append(self._export_tag(tag))
 
         for frame_idx in sorted(set(self._frame_info) & included_frames):
             frame_info = self._frame_info[frame_idx]
-            yield CommonData.Frame(
+            frame = CommonData.Frame(
                 idx=frame_idx,
                 id=frame_info.get("id", 0),
                 subset=frame_info["subset"],
@@ -652,6 +585,12 @@ class CommonData(InstanceLabelData):
                 task_id=self._db_task.id,
                 annotation_getter=fill_annotations,
             )
+            if not include_empty:
+                assert not self._annotation_ir.is_stream
+                if not (frame.labeled_shapes or frame.tags or frame.labels or frame.shapes):
+                    continue
+            yield frame
+
 
     @property
     def shapes(self):
@@ -1867,12 +1806,7 @@ class CvatTaskOrJobDataExtractor(dm.SubsetBase, CvatDataExtractorBase):
         self._categories = self.load_categories(self._instance_meta['labels'])
 
     def __iter__(self):
-        if self._instance_data.is_stream:
-            grouped_by_frame = self._instance_data.group_by_frame_stream()
-        else:
-            grouped_by_frame = self._instance_data.group_by_frame(include_empty=True)
-
-        for frame_data in grouped_by_frame:
+        for frame_data in self._instance_data.group_by_frame(include_empty=True):
             yield self._process_one_frame_data(frame_data)
 
     def __len__(self):

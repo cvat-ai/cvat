@@ -5,7 +5,7 @@
 import './styles.scss';
 import React, { useEffect } from 'react';
 import { useHistory } from 'react-router';
-import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import Spin from 'antd/lib/spin';
 import { CombinedState, InvitationsQuery } from 'reducers';
 import { useIsMounted, useResourceQuery } from 'utils/hooks';
@@ -19,9 +19,11 @@ export default function InvitationsPageComponent(): JSX.Element {
     const history = useHistory();
     const isMounted = useIsMounted();
 
-    const fetching = useSelector((state: CombinedState) => state.invitations.fetching);
-    const query = useSelector((state: CombinedState) => state.invitations.query);
-    const count = useSelector((state: CombinedState) => state.invitations.count);
+    const { fetching, query, count } = useSelector((state: CombinedState) => ({
+        fetching: state.invitations.fetching,
+        query: state.invitations.query,
+        count: state.invitations.count,
+    }), shallowEqual);
 
     const updatedQuery = useResourceQuery<InvitationsQuery>(query);
 

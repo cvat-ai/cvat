@@ -34,14 +34,15 @@ function RequestsList(props: Readonly<Props>): JSX.Element {
     const dispatch = useDispatch();
     const { query, count } = props;
     const { page, pageSize } = query;
-    const { requests, cancelled } = useSelector((state: CombinedState) => ({
-        requests: state.requests.requests, cancelled: state.requests.cancelled,
+    const { requests, cancelled, selectedCount } = useSelector((state: CombinedState) => ({
+        requests: state.requests.requests,
+        cancelled: state.requests.cancelled,
+        selectedCount: state.requests.selected.length,
     }), shallowEqual);
 
     const requestList = Object.values(requests);
     const requestViews = setUpRequestsList(requestList, page, pageSize);
     const requestIds = requestViews.map((request) => request.id).filter((id) => !cancelled[id]);
-    const selectedCount = useSelector((state: CombinedState) => state.requests.selected.length);
     const onSelectAll = useCallback(() => {
         dispatch(selectionActions.selectResources(requestIds, SelectedResourceType.REQUESTS));
     }, [requestIds]);

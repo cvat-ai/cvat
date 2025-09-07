@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector, useDispatch, shallowEqual } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
 
@@ -21,8 +21,10 @@ export default function InvitationsListComponent(props: Props): JSX.Element {
     const { query } = props;
 
     const dispatch = useDispatch();
-    const invitations = useSelector((state: CombinedState) => state.invitations.current);
-    const totalCount = useSelector((state: CombinedState) => state.invitations.count);
+    const { invitations, totalCount } = useSelector((state: CombinedState) => ({
+        invitations: state.invitations.current,
+        totalCount: state.invitations.count,
+    }), shallowEqual);
 
     const onAccept = useCallback((invitationKey) => (
         dispatch(acceptInvitationAsync(invitationKey, (orgSlug: string) => {
