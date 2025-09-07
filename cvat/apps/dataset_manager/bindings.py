@@ -490,16 +490,7 @@ class CommonData(InstanceLabelData):
             type=label.type
         )
 
-    def group_by_frame(self, include_empty: bool = False):
-        assert not self._annotation_ir.is_stream
-
-        return (
-            frame
-            for frame in self.group_by_frame_stream()
-            if include_empty or frame.labeled_shapes or frame.tags or frame.labels or frame.shapes
-        )
-
-    def group_by_frame_stream(self) -> Generator[CommonData.Frame, None, None]:
+    def group_by_frame(self, include_empty: bool = False) -> Generator[CommonData.Frame, None, None]:
         included_frames = self.get_included_frames()
         anno_manager = AnnotationManager(
             self._annotation_ir, dimension=self._annotation_ir.dimension
@@ -583,7 +574,7 @@ class CommonData(InstanceLabelData):
 
         for frame_idx in sorted(set(self._frame_info) & included_frames):
             frame_info = self._frame_info[frame_idx]
-            yield CommonData.Frame(
+            frame = CommonData.Frame(
                 idx=frame_idx,
                 id=frame_info.get("id", 0),
                 subset=frame_info["subset"],
@@ -594,6 +585,12 @@ class CommonData(InstanceLabelData):
                 task_id=self._db_task.id,
                 annotation_getter=fill_annotations,
             )
+            if not include_empty:
+                assert not self._annotation_ir.is_stream
+                if not (frame.labeled_shapes or frame.tags or frame.labels or frame.shapes):
+                    continue
+            yield frame
+
 
     @property
     def shapes(self):
@@ -1827,7 +1824,7 @@ class CvatTaskOrJobDataExtractor(dm.SubsetBase, CvatDataExtractorBase):
 
     def __iter__(self):
         if self._instance_data.is_stream:
-            grouped_by_frame = self._instance_data.group_by_frame_stream()
+            grouped_by_frame = self._instance_data.group_by_frame(include_empty=True)
         else:
             grouped_by_frame = self._grouped_by_frame
 
