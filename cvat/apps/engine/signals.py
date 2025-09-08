@@ -18,7 +18,7 @@ from .models import Asset, CloudStorage, Data, Job, Profile, Project, StatusChoi
 # into a file inside removed directory.
 
 
-@receiver(post_save, sender=Job, dispatch_uid=__name__ + ".save_job_handler")
+@receiver(post_save, sender=Job)
 def __save_job_handler(instance, created, raw: bool, **kwargs):
     # no need to update task status for newly created jobs
     if created:
@@ -37,7 +37,7 @@ def __save_job_handler(instance, created, raw: bool, **kwargs):
         db_task.save(update_fields=["status", "updated_date"])
 
 
-@receiver(post_save, sender=User, dispatch_uid=__name__ + ".save_user_handler")
+@receiver(post_save, sender=User)
 def __save_user_handler(instance: User, created: bool, raw: bool, **kwargs):
     if created and raw:
         return
@@ -55,11 +55,7 @@ def __save_user_handler(instance: User, created: bool, raw: bool, **kwargs):
         instance.profile.save()
 
 
-@receiver(
-    m2m_changed,
-    sender=User.groups.through,
-    dispatch_uid=__name__ + ".m2m_user_groups_change_handler",
-)
+@receiver(m2m_changed, sender=User.groups.through)
 def __m2m_user_groups_change_handler(sender, instance: User, action: str, **kwargs):
     if action == "post_add":
         is_admin = instance.groups.filter(name=settings.IAM_ADMIN_ROLE).exists()
@@ -68,21 +64,21 @@ def __m2m_user_groups_change_handler(sender, instance: User, action: str, **kwar
             instance.profile.save()
 
 
-@receiver(post_delete, sender=Project, dispatch_uid=__name__ + ".delete_project_handler")
+@receiver(post_delete, sender=Project)
 def __delete_project_handler(instance, **kwargs):
     transaction.on_commit(
         functools.partial(shutil.rmtree, instance.get_dirname(), ignore_errors=True)
     )
 
 
-@receiver(post_delete, sender=Asset, dispatch_uid=__name__ + ".__delete_asset_handler")
+@receiver(post_delete, sender=Asset)
 def __delete_asset_handler(instance, **kwargs):
     transaction.on_commit(
         functools.partial(shutil.rmtree, instance.get_asset_dir(), ignore_errors=True)
     )
 
 
-@receiver(post_delete, sender=Task, dispatch_uid=__name__ + ".delete_task_handler")
+@receiver(post_delete, sender=Task)
 def __delete_task_handler(instance, **kwargs):
     transaction.on_commit(
         functools.partial(shutil.rmtree, instance.get_dirname(), ignore_errors=True)
@@ -98,21 +94,21 @@ def __delete_task_handler(instance, **kwargs):
         pass  # probably the project has been deleted
 
 
-@receiver(post_delete, sender=Job, dispatch_uid=__name__ + ".delete_job_handler")
+@receiver(post_delete, sender=Job)
 def __delete_job_handler(instance, **kwargs):
     transaction.on_commit(
         functools.partial(shutil.rmtree, instance.get_dirname(), ignore_errors=True)
     )
 
 
-@receiver(post_delete, sender=Data, dispatch_uid=__name__ + ".delete_data_handler")
+@receiver(post_delete, sender=Data)
 def __delete_data_handler(instance, **kwargs):
     transaction.on_commit(
         functools.partial(shutil.rmtree, instance.get_data_dirname(), ignore_errors=True)
     )
 
 
-@receiver(post_delete, sender=CloudStorage, dispatch_uid=__name__ + ".delete_cloudstorage_handler")
+@receiver(post_delete, sender=CloudStorage)
 def __delete_cloudstorage_handler(instance, **kwargs):
     transaction.on_commit(
         functools.partial(shutil.rmtree, instance.get_storage_dirname(), ignore_errors=True)

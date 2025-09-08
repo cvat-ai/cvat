@@ -235,6 +235,8 @@ class AnnotationManager:
         Generates shapes ordered by frame id
         """
         shapes = self.data.shapes
+        if not self.data.is_stream:
+            shapes = sorted(shapes, key=lambda shape: shape["frame"])
 
         tracks = TrackManager(self.data.tracks, dimension=self.dimension)
 

@@ -143,7 +143,8 @@ def _kube_get_redis_inmem_pod_name():
 
 
 def _kube_get_redis_ondisk_pod_name():
-    return _kube_get_pod_name("app.kubernetes.io/name=cvat,tier=kvrocks")
+    helm_chart_name = os.getenv("HELM_CHART_NAME", "cvat")
+    return _kube_get_pod_name(f"app.kubernetes.io/name={helm_chart_name},tier=kvrocks")
 
 
 def docker_cp(source, target):
