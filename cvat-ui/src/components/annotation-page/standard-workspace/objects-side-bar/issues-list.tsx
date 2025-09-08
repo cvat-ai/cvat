@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector, useDispatch, shallowEqual } from 'react-redux';
 import Icon, {
     LeftOutlined, RightOutlined, EyeInvisibleFilled, EyeOutlined,
     CheckCircleFilled, CheckCircleOutlined,
@@ -26,18 +26,33 @@ import { ShowGroundTruthIcon } from 'icons';
 
 export default function LabelsListComponent(): JSX.Element {
     const dispatch = useDispatch();
-    const frame = useSelector((state: CombinedState): number => state.annotation.player.frame.number);
-    const frameIssues = useSelector((state: CombinedState): Issue[] => state.review.frameIssues);
-    const frameConflicts = useSelector((state: CombinedState) => state.review.frameConflicts);
-    const showGroundTruth = useSelector((state: CombinedState) => state.settings.shapes.showGroundTruth);
-    const issues = useSelector((state: CombinedState): Issue[] => state.review.issues);
-    const conflicts = useSelector((state: CombinedState) => state.review.conflicts);
-    const issuesHidden = useSelector((state: CombinedState) => state.review.issuesHidden);
-    const issuesResolvedHidden = useSelector((state: CombinedState) => state.review.issuesResolvedHidden);
-    const highlightedConflict = useSelector((state: CombinedState) => state.annotation.annotations.highlightedConflict);
-    const workspace = useSelector((state: CombinedState) => state.annotation.workspace);
-    const ready = useSelector((state: CombinedState) => state.annotation.canvas.ready);
-    const activeControl = useSelector((state: CombinedState) => state.annotation.canvas.activeControl);
+    const {
+        frame,
+        frameIssues,
+        frameConflicts,
+        showGroundTruth,
+        issues,
+        conflicts,
+        issuesHidden,
+        issuesResolvedHidden,
+        highlightedConflict,
+        workspace,
+        ready,
+        activeControl,
+    } = useSelector((state: CombinedState) => ({
+        frame: state.annotation.player.frame.number,
+        frameIssues: state.review.frameIssues,
+        frameConflicts: state.review.frameConflicts,
+        showGroundTruth: state.settings.shapes.showGroundTruth,
+        issues: state.review.issues,
+        conflicts: state.review.conflicts,
+        issuesHidden: state.review.issuesHidden,
+        issuesResolvedHidden: state.review.issuesResolvedHidden,
+        highlightedConflict: state.annotation.annotations.highlightedConflict,
+        workspace: state.annotation.workspace,
+        ready: state.annotation.canvas.ready,
+        activeControl: state.annotation.canvas.activeControl,
+    }), shallowEqual);
 
     let frames = issues
         .filter((issue: Issue) => !issuesResolvedHidden || !issue.resolved)
