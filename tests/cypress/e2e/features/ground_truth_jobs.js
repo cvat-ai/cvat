@@ -126,8 +126,7 @@ context('Ground truth jobs', () => {
                 [jobID] = taskResponse.jobIDs;
             }
         }).then(() => {
-            cy.visit(`/tasks/${taskID}`);
-            cy.get('.cvat-task-details').should('exist').and('be.visible');
+            cy.openTaskById(taskID);
         });
     }
 
