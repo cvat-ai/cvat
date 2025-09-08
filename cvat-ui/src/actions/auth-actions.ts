@@ -66,7 +66,7 @@ export const authActions = {
     resetPasswordFailed: (error: any) => createAction(AuthActionTypes.RESET_PASSWORD_FAILED, { error }),
     updateUser: () => createAction(AuthActionTypes.UPDATE_USER),
     updateUserSuccess: (user: User) => createAction(AuthActionTypes.UPDATE_USER_SUCCESS, { user }),
-    updateUserFailed: (error: any) => createAction(AuthActionTypes.UPDATE_USER_FAILED, { error }),
+    updateUserFailed: (error: unknown) => createAction(AuthActionTypes.UPDATE_USER_FAILED, { error }),
 };
 
 export type AuthActions = ActionUnion<typeof authActions>;

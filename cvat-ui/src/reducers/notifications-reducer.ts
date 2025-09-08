@@ -53,6 +53,7 @@ const defaultState: NotificationsState = {
             changePassword: null,
             requestPasswordReset: null,
             resetPassword: null,
+            updateUser: null,
         },
         serverAPI: {
             fetching: null,
@@ -409,6 +410,22 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.auth,
                         resetPassword: {
                             message: 'Could not set new password on the server.',
+                            reason: action.payload.error,
+                            shouldLog: shouldLog(action.payload.error),
+                        },
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.UPDATE_USER_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    auth: {
+                        ...state.errors.auth,
+                        updateUser: {
+                            message: 'Could not update user information.',
                             reason: action.payload.error,
                             shouldLog: shouldLog(action.payload.error),
                         },

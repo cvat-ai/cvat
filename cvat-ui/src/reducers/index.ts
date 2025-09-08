@@ -547,6 +547,7 @@ export interface NotificationsState {
             changePassword: null | ErrorState;
             requestPasswordReset: null | ErrorState;
             resetPassword: null | ErrorState;
+            updateUser: null | ErrorState;
         };
         serverAPI: {
             fetching: null | ErrorState;
