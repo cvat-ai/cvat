@@ -2,20 +2,21 @@
 //
 // SPDX-License-Identifier: MIT
 
-import './styles.scss';
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector } from 'react-redux';
-import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { CombinedState } from 'reducers';
-import { getTabFromHash } from 'utils/location-utils';
-import CVATLoadingSpinner from 'components/common/loading-spinner';
 
+import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { Col, Row } from 'antd/lib/grid';
 import Typography from 'antd/lib/typography';
 import Menu from 'antd/lib/menu';
+
+import { getTabFromHash } from 'utils/location-utils';
+import CVATLoadingSpinner from 'components/common/loading-spinner';
 import ProfileContent from './profile-content';
 import SecurityContent from './security-content';
+
+import './styles.scss';
 
 const { Title } = Typography;
 
