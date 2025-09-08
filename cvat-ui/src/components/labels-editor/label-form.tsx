@@ -93,9 +93,7 @@ export default class LabelForm extends React.Component<Props> {
         // Get the actual current order from form values (not from fieldInstances)
         const currentAttributes = this.formRef.current?.getFieldValue('attributes') || [];
         
-        // Debug: log the order comparison
-        console.log('values.attributes:', values.attributes);
-        console.log('currentAttributes:', currentAttributes);
+        // Compare attribute order for validation
         
         onSubmit({
             name: values.name,
@@ -489,9 +487,7 @@ export default class LabelForm extends React.Component<Props> {
         if (this.formRef.current && index > 0) {
             const attributes = this.formRef.current.getFieldValue('attributes');
             if (Array.isArray(attributes) && index < attributes.length) {
-                console.log('Before moveUp:', attributes.map(a => a.name));
                 const reorderedAttributes = arrayMove(attributes, index, index - 1);
-                console.log('After moveUp:', reorderedAttributes.map(a => a.name));
                 this.formRef.current.setFieldsValue({
                     attributes: reorderedAttributes,
                 });
@@ -505,9 +501,7 @@ export default class LabelForm extends React.Component<Props> {
         if (this.formRef.current) {
             const attributes = this.formRef.current.getFieldValue('attributes');
             if (Array.isArray(attributes) && index >= 0 && index < attributes.length - 1) {
-                console.log('Before moveDown:', attributes.map(a => a.name));
                 const reorderedAttributes = arrayMove(attributes, index, index + 1);
-                console.log('After moveDown:', reorderedAttributes.map(a => a.name));
                 this.formRef.current.setFieldsValue({
                     attributes: reorderedAttributes,
                 });
@@ -754,7 +748,7 @@ export default class LabelForm extends React.Component<Props> {
                                             element = this.renderDefaultValueInput(fieldInstance);
                                         }
                                     } catch (error) {
-                                        console.error('Error rendering attribute input:', error);
+                                        // Error rendering attribute input
                                         element = <Input placeholder='Error rendering input' disabled />;
                                     }
 
@@ -782,7 +776,7 @@ export default class LabelForm extends React.Component<Props> {
                 try {
                     return this.renderAttribute(fieldInstance, index, totalCount);
                 } catch (error) {
-                    console.error('Error rendering attribute:', error, fieldInstance);
+                    // Error rendering attribute
                     return null;
                 }
             });
