@@ -319,9 +319,12 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         });
 
         circle.addEventListener('contextmenu', () => {
-            this.setState({
-                contextMenuElement: elementID,
-            });
+            const { activeTool } = this.state;
+            if (activeTool !== 'join' || !this.findNotFinishedEdge()) {
+                this.setState({
+                    contextMenuElement: elementID,
+                });
+            }
         });
 
         circle.addEventListener('mouseout', () => {
@@ -577,6 +580,16 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         return null;
     }
 
+    private cancelNotFinishedEdge(): void {
+        const { activeTool } = this.state;
+        if (activeTool === 'join') {
+            const shape = this.findNotFinishedEdge();
+            if (shape) {
+                shape.remove();
+            }
+        }
+    }
+
     public submit(): SkeletonConfiguration | null {
         try {
             return this.wrappedSubmit();
@@ -600,12 +613,13 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
 
     public wrappedSubmit(): SkeletonConfiguration {
         const svg = this.svgRef.current;
-
-        if (!svg) throw new Error('SVG reference is null');
+        if (!svg) {
+            throw new Error('SVG reference is null');
+        }
 
         const sublabels = Object.values(this.labels);
-
         let elements = 0;
+        this.cancelNotFinishedEdge();
         Array.from(svg.children as any as SVGElement[]).forEach((child: SVGElement) => {
             const dataType = child.getAttribute('data-type');
             if (dataType && dataType.includes('element')) {
