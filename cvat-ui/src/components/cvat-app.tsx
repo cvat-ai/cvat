@@ -396,6 +396,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                     <CVATMarkdown history={history}>{notificationState?.description}</CVATMarkdown>
                 ),
                 duration: notificationState.duration ?? null,
+                className: notificationState.className,
             });
         }
 
