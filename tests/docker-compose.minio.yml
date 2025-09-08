@@ -60,16 +60,15 @@ services:
       do
           if [ $${BUCKET} == $${MINIO_ALIAS}/$${PRIVATE_BUCKET} ]
           then
-            FULL_PATH=$${BUCKET}/sub
+            FULL_PATH=$${BUCKET}/sub;
           else
-            FULL_PATH=$${BUCKET}
+            FULL_PATH=$${BUCKET};
           fi
           $${MC_PATH} cp --recursive /mnt/ $${FULL_PATH};
           for i in 1 2;
           do
-              $${MC_PATH} cp /mnt/manifest.jsonl $${FULL_PATH}/manifest_$${i}.jsonl;
+              $${MC_PATH} cp /mnt/images_with_manifest/manifest.jsonl $${FULL_PATH}/images_with_manifest/manifest_$${i}.jsonl;
           done;
       done;
       $${MC_PATH} policy set public $${MINIO_ALIAS}/$${PUBLIC_BUCKET};
-      exit 0;
       "
