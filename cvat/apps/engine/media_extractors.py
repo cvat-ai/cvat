@@ -1241,9 +1241,8 @@ MEDIA_TYPES = {
 }
 
 class ValidateDimension:
-    def __init__(self, path: str | None = None):
+    def __init__(self):
         self.dimension = DimensionType.DIM_2D
-        self.path = path
         self.pcd_files = []
         self.image_files = []
         self.converted_files = []
@@ -1261,9 +1260,6 @@ class ValidateDimension:
     @staticmethod
     def convert_bin_to_pcd(path, delete_source=True):
         return PcdReader.convert_bin_to_pcd(path, delete_source=delete_source)
-
-    def set_path(self, path):
-        self.path = path
 
     def bin_operation(self, file_path: str, dataset_root: str) -> str:
         pcd_path = self.convert_bin_to_pcd(file_path)
@@ -1295,13 +1291,10 @@ class ValidateDimension:
                 if _is_image(file_path):
                     self.image_files.append(file_path)
 
-    def validate(self):
+    def validate(self, path: str):
         "Detect media dimension and convert all point clouds into the .pcd format"
 
-        if not self.path:
-            return
-
-        root = self.path
+        root = path
         for dirpath, _, filenames in os.walk(root):
             if not files_to_ignore(dirpath):
                 continue

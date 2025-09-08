@@ -921,8 +921,7 @@ def create_thread(
             MEDIA_TYPES['archive']['extractor'], MEDIA_TYPES['zip']['extractor']
         ))
     ):
-        validate_dimension.set_path(upload_dir)
-        validate_dimension.validate()
+        validate_dimension.validate(upload_dir)
     elif not isinstance(extractor, MEDIA_TYPES['video']['extractor']):
         validate_dimension.detect_dimension_for_paths(extractor.absolute_source_paths)
 

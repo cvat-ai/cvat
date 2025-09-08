@@ -836,24 +836,24 @@ class TestPostTaskData:
     @pytest.mark.with_external_services
     @pytest.mark.parametrize("cloud_storage_id", [1])
     @pytest.mark.parametrize(
-        "manifest, filename_pattern, sub_dir, task_size",
+        "manifest, filename_pattern, sub_dir, task_size, expected_error",
         [
-            ("manifest.jsonl", "*", True, 3),  # public bucket
-            ("manifest.jsonl", "test/*", True, 3),
-            ("manifest.jsonl", "test/sub*1.jpeg", True, 1),
-            ("manifest.jsonl", "*image*.jpeg", True, 3),
-            ("manifest.jsonl", "wrong_pattern", True, 0),
-            ("abc_manifest.jsonl", "[a-c]*.jpeg", False, 2),
-            ("abc_manifest.jsonl", "[d]*.jpeg", False, 1),
-            ("abc_manifest.jsonl", "[e-z]*.jpeg", False, 0),
-            (None, "*", True, 5),
-            (None, "test/*", True, 3),
-            (None, "test/sub*1.jpeg", True, 1),
-            (None, "*image*.jpeg", True, 3),
-            (None, "wrong_pattern", True, 0),
-            (None, "[a-c]*.jpeg", False, 2),
-            (None, "[d]*.jpeg", False, 1),
-            (None, "[e-z]*.jpeg", False, 0),
+            ("manifest.jsonl", "*", True, 3, ""),  # public bucket
+            ("manifest.jsonl", "test/*", True, 3, ""),
+            ("manifest.jsonl", "test/sub*1.jpeg", True, 1, ""),
+            ("manifest.jsonl", "*image*.jpeg", True, 3, ""),
+            ("manifest.jsonl", "wrong_pattern", True, 0, "No media data found"),
+            ("abc_manifest.jsonl", "[a-c]*.jpeg", False, 2, ""),
+            ("abc_manifest.jsonl", "[d]*.jpeg", False, 1, ""),
+            ("abc_manifest.jsonl", "[e-z]*.jpeg", False, 0, "No media data found"),
+            (None, "*", True, 0, "Combined media types are not supported"),
+            (None, "test/*", True, 3, ""),
+            (None, "test/sub*1.jpeg", True, 1, ""),
+            (None, "*image*.jpeg", True, 3, ""),
+            (None, "wrong_pattern", True, 0, "No media data found"),
+            (None, "[a-c]*.jpeg", False, 2, ""),
+            (None, "[d]*.jpeg", False, 1, ""),
+            (None, "[e-z]*.jpeg", False, 0, "No media data found"),
         ],
     )
     def test_create_task_with_file_pattern(
@@ -863,6 +863,7 @@ class TestPostTaskData:
         filename_pattern,
         sub_dir,
         task_size,
+        expected_error,
         cloud_storages,
         request,
     ):
@@ -936,7 +937,7 @@ class TestPostTaskData:
                 assert task.size == task_size
         else:
             rq_job_details = self._test_cannot_create_task(self._USERNAME, task_spec, data_spec)
-            assert "No media data found" in rq_job_details.message
+            assert expected_error and expected_error in rq_job_details.message
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize("use_manifest", [True, False])

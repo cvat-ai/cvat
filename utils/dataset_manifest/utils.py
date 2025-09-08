@@ -261,19 +261,70 @@ def find_related_images(
         if scene_paths is not None and not callable(scene_paths):
             scene_paths = (os.path.relpath(p, root_path) for p in scene_paths)
 
-    if scene_paths and not isinstance(scene_paths, set) and not callable(scene_paths):
+    if scene_paths is not None and not isinstance(scene_paths, set) and not callable(scene_paths):
         scene_paths = set(scene_paths)
 
-    dimensions = detect_media_dimension(not callable(scene_paths) and scene_paths or dataset_paths)
-    has_2d_data = MediaDimension.dim_2d in dimensions
-    has_3d_data = MediaDimension.dim_3d in dimensions
-    if scene_paths is not None and not callable(scene_paths) and has_3d_data and has_2d_data:
-        raise ValueError("Combined data types 2D and 3D are not supported")
+    has_images = False
+    has_pcd = False
+    has_videos = False
+    for p in (
+        callable(scene_paths) and filter(scene_paths, dataset_paths) or scene_paths or dataset_paths
+    ):
+        if is_image(p):
+            has_images |= True
+        elif is_video(p):
+            has_videos |= True
+        elif is_point_cloud(p):
+            has_pcd |= True
 
-    if has_3d_data:
-        return _find_related_images_3D(dataset_paths, scene_paths=scene_paths)
+    if has_videos and (has_pcd or has_images):
+        raise ValueError(
+            "Combined media types are not supported, found: {}".format(
+                ", ".join(
+                    (["video"] if has_videos else [])
+                    + (["images"] if has_images else [])
+                    + (["3d point clouds"] if has_pcd else [])
+                )
+            )
+        )
+
+    if has_pcd:
+        # get all found scenes and RIs to avoid complaining about excluded scenes
+        scenes, related_images = _find_related_images_3D(dataset_paths)
+
+        unknown_files = set(dataset_paths)
+        unknown_files.difference_update(scenes)
+        unknown_files.difference_update(ri for ris in related_images.values() for ri in ris)
+
+        if any(is_image(f) for f in unknown_files):
+            raise ValueError(
+                "Combined media types are not supported, found: {}".format(
+                    ", ".join(
+                        (["video"] if has_videos else [])
+                        + (["images"] if has_images else [])
+                        + (["3d point clouds"] if has_pcd else [])
+                    )
+                )
+            )
+
+        # Apply the scene filter
+        if scene_paths is not None:
+            if callable(scene_paths):
+                scene_paths = set(p for p in scenes if scene_paths(p))
+            else:
+                scene_paths.intersection_update(scenes)
+
+            scenes = sorted(scene_paths)
+
+            related_images = {
+                scene: scene_ris
+                for scene, scene_ris in related_images.items()
+                if scene in scene_paths
+            }
     else:
-        return _find_related_images_2D(dataset_paths, scene_paths=scene_paths)
+        scenes, related_images = _find_related_images_2D(dataset_paths, scene_paths=scene_paths)
+
+    return scenes, related_images
 
 
 class MediaDimension(str, Enum):
