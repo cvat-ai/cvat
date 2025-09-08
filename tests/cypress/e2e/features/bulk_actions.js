@@ -195,11 +195,7 @@ context('Bulk actions in UI', () => {
                 .should('be.visible');
             cy.closeNotification('.cvat-notification-notice-export-job-start');
 
-            cy.get(':visible:contains("Export is finished")')
-            // cy.contains only yields the first
-            // https://docs.cypress.io/api/commands/contains#Single-Element
-                .should('have.length', nobjs)
-                .find('span[aria-label="close"]').click({ multiple: true });
+            cy.closeNotification('.cvat-notification-notice-export-job-finished', nobjs);
         });
     });
 
