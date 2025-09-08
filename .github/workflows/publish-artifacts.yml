@@ -58,7 +58,6 @@ jobs:
   helm:
     runs-on: ubuntu-latest
     continue-on-error: true
-    needs: main
     steps:
       - uses: actions/checkout@v4
        # v4.3.1
