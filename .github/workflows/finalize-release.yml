@@ -1,12 +1,9 @@
 name: Finalize release
-
 on:
   workflow_dispatch:
 jobs:
   main:
     runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.discover.outputs.version }}
     steps:
       - name: Discover pending release
         id: discover
