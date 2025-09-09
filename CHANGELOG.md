@@ -16,6 +16,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.44.2'></a>
+## \[2.44.2\] - 2025-09-08
+
+### Fixed
+
+- User may create a skeleton with invalid structure in configurator, leads to UI crash
+  (<https://github.com/cvat-ai/cvat/pull/9784>)
+
+- Crash on job export if the job contains tags or is not the first job in the task
+  (<https://github.com/cvat-ai/cvat/pull/9790>)
+
 <a id='changelog-2.44.1'></a>
 ## \[2.44.1\] - 2025-09-02
 

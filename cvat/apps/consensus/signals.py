@@ -9,11 +9,7 @@ from cvat.apps.consensus.models import ConsensusSettings
 from cvat.apps.engine.models import Task
 
 
-@receiver(
-    post_save,
-    sender=Task,
-    dispatch_uid=__name__ + ".save_task-initialize_consensus_settings",
-)
+@receiver(post_save, sender=Task)
 def __save_task__initialize_consensus_settings(instance: Task, created: bool, raw: bool, **kwargs):
     # Initializes default quality settings for the task
     # this is done in a signal to decouple this component from the engine app
