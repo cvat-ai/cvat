@@ -220,13 +220,28 @@ class _CloudStorage(ABC):
 
     def bulk_download_to_dir(
         self,
-        files: list[str],
+        files: list[str | tuple[str, str]],
         upload_dir: str,
     ) -> None:
+        """
+        :param files: a list of filenames or (storage filename, output filename) pairs
+        :param upload_dir: the output directory
+        """
+
         threads_number = get_max_threads_number(len(files))
 
         with ThreadPoolExecutor(max_workers=threads_number) as executor:
-            futures = [executor.submit(self.download_file, f, os.path.join(upload_dir, f)) for f in files]
+            futures = []
+            for f in files:
+                if isinstance(f, tuple):
+                    key, output_path = f
+                else:
+                    key = f
+                    output_path = f
+
+                output_path = os.path.join(upload_dir, output_path)
+                futures.append(executor.submit(self.download_file, key, output_path))
+
             done, _ = wait(futures, return_when=FIRST_EXCEPTION)
             for future in done:
                 if ex := future.exception():
