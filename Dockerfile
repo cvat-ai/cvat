@@ -164,9 +164,9 @@ RUN if [ "$CLAM_AV" = "yes" ]; then \
 # Install wheels from the build image
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:${PATH}"
-# setuptools should be uninstalled after updating google-cloud-storage
-# https://github.com/googleapis/python-storage/issues/740
-RUN python -m pip install --upgrade setuptools
+# Prevent security scanners from finding vulnerabilities in whatever version of setuptools
+# is included in Ubuntu by default.
+RUN python -m pip uninstall -y setuptools
 ARG PIP_VERSION
 ARG PIP_DISABLE_PIP_VERSION_CHECK=1
 
