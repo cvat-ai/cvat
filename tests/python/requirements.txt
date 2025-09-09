@@ -6,7 +6,7 @@ pytest-timeout==2.1.0
 pytest-cov==4.1.0
 pytest-xdist==3.5.0
 requests==2.32.4
-deepdiff==7.0.1
+deepdiff==8.6.1
 boto3==1.35.95
 Pillow==10.3.0
 python-dateutil==2.8.2

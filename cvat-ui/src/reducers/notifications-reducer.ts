@@ -570,6 +570,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         dataset: {
                             message: 'Export is finished',
                             duration: config.REQUEST_SUCCESS_NOTIFICATION_DURATION,
+                            className: `cvat-notification-notice-export-${instanceType.split(' ')[0]}-finished`,
                             description,
                         },
                     },
