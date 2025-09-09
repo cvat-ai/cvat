@@ -1100,23 +1100,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case AnnotationActionTypes.UPDATE_CURRENT_JOB_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    annotation: {
-                        ...state.errors.annotation,
-                        saving: {
-                            message: 'Could not update annotation job',
-                            reason: action.payload.error,
-                            shouldLog: !(action.payload.error instanceof ServerError),
-                            className: 'cvat-notification-notice-update-current-job-failed',
-                        },
-                    },
-                },
-            };
-        }
         case AnnotationActionTypes.UPDATE_ANNOTATIONS_FAILED: {
             return {
                 ...state,
