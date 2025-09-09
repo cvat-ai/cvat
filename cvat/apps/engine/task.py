@@ -938,7 +938,11 @@ def create_thread(
 
     if validate_dimension.dimension == models.DimensionType.DIM_3D:
         extractor.reconcile(
-            source_files=extractor.absolute_source_paths,
+            source_files=[
+                # We always work with .pcd files instead of .bin
+                (os.path.splitext(p)[0] + ".pcd") if p.endswith(".bin") else p
+                for p in extractor.absolute_source_paths
+            ],
             step=db_data.get_frame_step(),
             start=db_data.start_frame,
             stop=data['stop_frame'],

@@ -355,7 +355,7 @@ class ImageListReader(IMediaReader):
         with Image.open(self._source_path[i]) as img:
             return image_size_within_orientation(img)
 
-    def reconcile(self, source_files, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D, sorting_method=None):
+    def reconcile(self, source_files, step=1, start=0, stop=None, dimension=None, sorting_method=None):
         # FIXME
         ImageListReader.__init__(self,
             source_path=source_files,
@@ -363,8 +363,8 @@ class ImageListReader(IMediaReader):
             start=start,
             stop=stop,
             sorting_method=sorting_method if sorting_method else self._sorting_method,
+            dimension=dimension if dimension else self._dimension,
         )
-        self._dimension = dimension
 
     @property
     def absolute_source_paths(self):
@@ -500,7 +500,7 @@ class ZipReader(ImageListReader):
     def get_image_size(self, i):
         if self._dimension == DimensionType.DIM_3D:
             with open(self.get_path(i), 'rb') as f:
-                properties = ValidateDimension.get_pcd_properties(f)
+                properties = PcdReader.parse_pcd_header(f)
                 return int(properties["WIDTH"]),  int(properties["HEIGHT"])
         with Image.open(io.BytesIO(self._zip_source.read(self._source_path[i]))) as img:
             return image_size_within_orientation(img)
@@ -527,7 +527,7 @@ class ZipReader(ImageListReader):
 
         prefix = self._get_extract_prefix()
         if prefix is not None:
-            path = os.path.relpath(media_file, path)
+            path = os.path.relpath(media_file, prefix)
 
         return super().__contains__(path)
 
@@ -549,7 +549,7 @@ class ZipReader(ImageListReader):
 
         return super().filter(updated_callback)
 
-    def reconcile(self, source_files, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D, sorting_method=None):
+    def reconcile(self, source_files, step=1, start=0, stop=None, dimension=None, sorting_method=None):
         prefix = self._get_extract_prefix()
         if source_files and prefix is not None:
             # file list is expected to be a processed output of self.get_path()

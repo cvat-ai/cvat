@@ -267,12 +267,24 @@ class Dataset3DImagesReader(DatasetImagesReader):
             "extension": extension,
         }
 
-        properties = PcdReader.parse_pcd_header(image, verify_version=True)
+        meta = (self._meta or {}).get(img_name, {})
+
+        if img_name.endswith(".bin"):
+            pcd_image = io.BytesIO()
+            PcdReader.convert_bin_to_pcd_file(image, output_file=pcd_image)
+            pcd_image.seek(0)
+
+            meta["original_name"] = img_name
+            image_properties["extension"] = ".pcd"
+        else:
+            pcd_image = image
+
+        properties = PcdReader.parse_pcd_header(pcd_image, verify_version=True)
         image_properties["width"] = int(properties["WIDTH"])
         image_properties["height"] = int(properties["HEIGHT"])
 
-        if self._meta and img_name in self._meta:
-            image_properties["meta"] = self._meta[img_name]
+        if meta:
+            image_properties["meta"] = meta
 
         if self._use_image_hash:
             image_properties["checksum"] = md5_hash(image)
@@ -648,7 +660,7 @@ class ImageManifestManager(_ManifestManager):
             json_line = json.dumps({key: value}, separators=(",", ":"))
             file.write(f"{json_line}\n")
 
-    def _write_core_part(self, file: io.IOBase, obj: Iterable[dict[str, Any]], _tqdm):
+    def _write_core_part(self, file: io.TextIOBase, obj: Iterable[dict[str, Any]], _tqdm):
         it = obj
 
         if _tqdm:
@@ -877,6 +889,9 @@ class _DatasetManifestStructureValidator(_BaseManifestValidator):
             raise InvalidManifestError("Incorrect width field")
         if not isinstance(_dict["height"], int):
             raise InvalidManifestError("Incorrect height field")
+
+        # TODO: add related image path validation
+        # TODO: add pcd .bin file meta validation
 
 
 def is_manifest(full_manifest_path):

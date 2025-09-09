@@ -578,13 +578,11 @@ class MediaCache:
         )
 
     @staticmethod
-    def _read_raw_images(
-        db_task: models.Task,
-        frame_ids: Sequence[int],
-        *,
-        manifest_path: str,
+    def read_raw_images(
+        db_task: models.Task, frame_ids: Sequence[int], *, decode: bool = True
     ) -> Generator[tuple[PIL.Image.Image | str, str, str], None, None]:
         db_data = db_task.data
+        manifest_path = db_data.get_manifest_path()
 
         if os.path.isfile(manifest_path) and db_data.storage == models.StorageChoice.CLOUD_STORAGE:
             reader = ImageReaderWithManifest(manifest_path)
@@ -595,34 +593,44 @@ class MediaCache:
                 storage_client = db_storage_to_storage_instance(db_cloud_storage)
 
                 tmp_dir = es.enter_context(tempfile.TemporaryDirectory(prefix="cvat"))
-                files_to_download = []
+                files_to_download: list[tuple[str, str]] = []  # (storage filename, output filename)
                 checksums = []
                 media = []
                 for item in reader.iterate_frames(frame_ids):
-                    file_name = f"{item['name']}{item['extension']}"
-                    fs_filename = os.path.join(tmp_dir, file_name)
+                    task_filename = f"{item['name']}{item['extension']}"
+                    storage_filename = item.get("meta", {}).get("original_name", task_filename)
+                    fs_filename = os.path.join(tmp_dir, task_filename)
+                    files_to_download.append((storage_filename, fs_filename))
 
-                    files_to_download.append(file_name)
                     checksums.append(item.get("checksum", None))
                     media.append((fs_filename, fs_filename, None))
 
                 storage_client.bulk_download_to_dir(files=files_to_download, upload_dir=tmp_dir)
 
-                for checksum, media_item in zip(checksums, media):
+                for (storage_filename, _), checksum, media_item in zip(
+                    files_to_download, checksums, media
+                ):
                     if checksum and not md5_hash(media_item[1]) == checksum:
                         slogger.cloud_storage[db_cloud_storage.id].warning(
-                            "Hash sums of files {} do not match".format(file_name)
+                            "Hash sums of files {} do not match".format(media_item[1])
                         )
 
-                    if db_task.dimension == models.DimensionType.DIM_2D:
-                        media_item = load_image(media_item)
-                    elif db_task.dimension == models.DimensionType.DIM_3D and (
-                        media_item[0].endswith(".bin")
+                    if db_task.dimension == models.DimensionType.DIM_3D and (
+                        storage_filename.endswith(".bin")
                     ):
                         media_item = (
-                            ValidateDimension().convert_bin_to_pcd(media_item[0]),
+                            ValidateDimension().convert_bin_to_pcd(
+                                media_item[0],
+                                delete_source=(
+                                    False
+                                    # one file can be used several times for honeypots
+                                ),
+                            ),
                             *media_item[1:],
                         )
+
+                    if db_task.dimension == models.DimensionType.DIM_2D and decode:
+                        media_item = load_image(media_item)
 
                     yield media_item
 
@@ -654,7 +662,7 @@ class MediaCache:
 
             assert next_requested_frame_id is None
 
-            if db_task.dimension == models.DimensionType.DIM_2D:
+            if db_task.dimension == models.DimensionType.DIM_2D and decode:
                 media = map(load_image, media)
 
             yield from media
@@ -758,7 +766,7 @@ class MediaCache:
     @staticmethod
     def _read_raw_frames(
         db_task: Union[models.Task, int], frame_ids: Sequence[int]
-    ) -> Generator[tuple[Union[av.VideoFrame, PIL.Image.Image], str, str], None, None]:
+    ) -> Generator[tuple[Union[av.VideoFrame, PIL.Image.Image, str], str, str], None, None]:
         if isinstance(db_task, int):
             db_task = models.Task.objects.get(pk=db_task)
 
@@ -769,11 +777,10 @@ class MediaCache:
 
         db_data = db_task.data
 
-        manifest_path = db_data.get_manifest_path()
-
         if hasattr(db_data, "video"):
             source_path = os.path.join(db_data.get_raw_data_dirname(), db_data.video.path)
 
+            manifest_path = db_data.get_manifest_path()
             reader = VideoReaderWithManifest(
                 manifest_path=manifest_path,
                 source_path=source_path,
@@ -797,7 +804,7 @@ class MediaCache:
 
                 yield from reader.iterate_frames(frame_filter=frame_ids)
         else:
-            yield from MediaCache._read_raw_images(db_task, frame_ids, manifest_path=manifest_path)
+            yield from MediaCache.read_raw_images(db_task, frame_ids)
 
     def prepare_segment_chunk(
         self, db_segment: Union[models.Segment, int], chunk_number: int, *, quality: FrameQuality

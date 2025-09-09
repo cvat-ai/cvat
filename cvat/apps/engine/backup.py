@@ -12,6 +12,7 @@ import shutil
 import tempfile
 from abc import ABCMeta, abstractmethod
 from collections.abc import Collection, Iterable
+from contextlib import closing
 from copy import deepcopy
 from datetime import timedelta
 from enum import Enum
@@ -45,6 +46,7 @@ from cvat.apps.dataset_manager.views import (
     retry_current_rq_job,
 )
 from cvat.apps.engine import models
+from cvat.apps.engine.cache import MediaCache
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import DataChoice, StorageChoice, StorageMethodChoice
@@ -424,7 +426,6 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 target_dir=target_data_dir,
             )
         elif self._db_data.storage == StorageChoice.CLOUD_STORAGE:
-            assert self._db_task.dimension != models.DimensionType.DIM_3D, "Cloud storage cannot contain 3d images"
             assert not hasattr(self._db_data, 'video'), "Only images can be stored in cloud storage"
 
             data_dir = self._db_data.get_upload_dirname()
@@ -438,15 +439,10 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 )
             else:
                 files_for_local_copy = [self._db_data.get_manifest_path()]
+
                 media_files_to_download = []
-                for media_file in itertools.chain(
-                    self._db_data.images.all(),
-                    self._db_data.related_files.all()
-                ):
-                    if isinstance(media_file, models.RelatedFile):
-                        media_path = os.path.relpath(str(media_file.path), data_dir)
-                    else:
-                        media_path = media_file.path
+                for media_file in self._db_data.related_files.all():
+                    media_path = os.path.relpath(str(media_file.path), data_dir)
 
                     local_path = os.path.join(data_dir, media_path)
                     if os.path.exists(local_path):
@@ -454,10 +450,25 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                     else:
                         media_files_to_download.append(media_path)
 
+                frame_ids_to_download = []
+                frame_names_to_download = []
+                for media_file in self._db_data.images.all():
+                    media_path = media_file.path
+
+                    local_path = os.path.join(data_dir, media_path)
+                    if os.path.exists(local_path):
+                        files_for_local_copy.append(local_path)
+                    else:
+                        frame_ids_to_download.append(media_file.frame)
+                        frame_names_to_download.append(media_file.path)
+
                 if media_files_to_download:
-                    cloud_storage_instance = db_storage_to_storage_instance(self._db_data.cloud_storage)
+                    storage_client = db_storage_to_storage_instance(self._db_data.cloud_storage)
                     with tempfile.TemporaryDirectory() as tmp_dir:
-                        cloud_storage_instance.bulk_download_to_dir(files=media_files_to_download, upload_dir=tmp_dir)
+                        storage_client.bulk_download_to_dir(
+                            files=media_files_to_download, upload_dir=tmp_dir
+                        )
+
                         self._write_files(
                             source_dir=tmp_dir,
                             zip_object=zip_object,
@@ -465,6 +476,24 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                                 os.path.join(tmp_dir, file)
                                 for file in media_files_to_download
                             ],
+                            target_dir=target_data_dir,
+                        )
+
+                    media_cache = MediaCache()
+                    with closing(iter(media_cache.read_raw_images(
+                        self._db_task, frame_ids=frame_ids_to_download, decode=False,
+                    ))) as frame_iter:
+                        # Avoid closing the frame iter before the files are copied
+                        downloaded_paths = []
+                        for _ in frame_ids_to_download:
+                            downloaded_paths.append(next(frame_iter)[1])
+
+                        tmp_dir = downloaded_paths[0].removesuffix(frame_names_to_download[0])
+
+                        self._write_files(
+                            source_dir=tmp_dir,
+                            zip_object=zip_object,
+                            files=downloaded_paths,
                             target_dir=target_data_dir,
                         )
 

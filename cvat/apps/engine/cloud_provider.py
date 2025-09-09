@@ -423,16 +423,21 @@ class _HeaderFirstPcdDownloader(HeaderFirstDownloader):
     def try_parse_header(self, header, *, key):
         pcd_parser = PcdReader()
         file = NamedBytesIO(header)
+        file_ext = os.path.splitext(key)[1].lower()
 
         try:
-            if key.endswith(".bin"):
+            if file_ext == ".bin":
+                # We need to ensure the file is a valid .bin file
                 pcd_parser.parse_bin_header(file)
-            elif key.endswith(".pcd"):
+
+                # but we need the whole file for the next operations (getting frame size etc.)
+                return False
+            elif file_ext == ".pcd":
                 parameters = pcd_parser.parse_pcd_header(file, verify_version=True)
                 if not parameters.get("WIDTH") or not parameters.get("HEIGHT"):
                     raise InvalidPcdError("invalid scene size")
             else:
-                assert False
+                raise InvalidPcdError(f"The '{file_ext}' file format is not supported")
 
             return True
         except InvalidPcdError as e:

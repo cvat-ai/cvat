@@ -398,7 +398,7 @@ class TestTasksBase:
 
         image_files = generate_image_files(5)
 
-        def _upload_file(file: io.IOBase):
+        def _upload_file(file: io.RawIOBase):
             s3_client.create_file(data=file, filename=file.name)
             request.addfinalizer(partial(s3_client.remove_file, filename=file.name))
 

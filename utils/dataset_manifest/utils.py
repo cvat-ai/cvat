@@ -8,7 +8,7 @@ import mimetypes
 import os
 import re
 import struct
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from enum import Enum
 from pathlib import Path
 from random import shuffle
@@ -67,7 +67,9 @@ def is_image(media_file: str) -> bool:
     return (
         data_type is not None
         and data_type.startswith("image")
-        and not data_type.startswith(("image/svg", "image/x.point-cloud-data"))
+        and not data_type.startswith(
+            ("image/svg", "image/x.point-cloud-data", "image/x.kitti-velodyne")
+        )
     )
 
 
@@ -75,8 +77,10 @@ def is_point_cloud(media_file: str) -> bool:
     return os.path.splitext(media_file)[1].lower() in (".pcd", ".bin")
 
 
-def _prepare_context_list(files, base_dir):
-    return sorted(os.path.relpath(x, base_dir) for x in filter(is_image, files))
+def _prepare_context_list(files: Iterable[str], base_dir: Optional[str] = None):
+    return sorted(
+        os.path.relpath(x, base_dir) if base_dir is not None else x for x in filter(is_image, files)
+    )
 
 
 def _find_related_images_2D(
@@ -111,7 +115,7 @@ def _find_related_images_2D(
             regular_images.add(image_path)
 
     related_images = {
-        image_path: _prepare_context_list(image_related, "")
+        image_path: _prepare_context_list(image_related)
         for image_path, image_related in related_images.items()
         if image_related
         if image_path in regular_images
@@ -126,7 +130,7 @@ def _find_related_images_3D(
     dataset_paths: Sequence[str],
     *,
     scene_paths: Optional[Union[Callable[[str], bool], Collection[str]]] = None,
-) -> Tuple[List[str], Dict[str, List[str]]]:
+) -> Tuple[Set[str], Dict[str, List[str]]]:
     """
     Supported 3D formats:
 
@@ -228,7 +232,7 @@ def _find_related_images_3D(
         # TODO: maybe add logging for unmatched related images
 
     related_images = {
-        scene_path: _prepare_context_list(scene_related, "")
+        scene_path: _prepare_context_list(scene_related)
         for scene_path, scene_related in related_images.items()
         if scene_related
     }
@@ -270,12 +274,12 @@ def find_related_images(
     for p in (
         callable(scene_paths) and filter(scene_paths, dataset_paths) or scene_paths or dataset_paths
     ):
-        if is_image(p):
+        if is_point_cloud(p):
+            has_pcd |= True
+        elif is_image(p):
             has_images |= True
         elif is_video(p):
             has_videos |= True
-        elif is_point_cloud(p):
-            has_pcd |= True
 
     if has_videos and (has_pcd or has_images):
         raise ValueError(
@@ -297,13 +301,17 @@ def find_related_images(
         unknown_files.difference_update(ri for ris in related_images.values() for ri in ris)
 
         if any(is_image(f) for f in unknown_files):
+            has_images = True
             raise ValueError(
-                "Combined media types are not supported, found: {}".format(
+                "Combined media types are not supported, found: {}. Scenes: {}. Unknown files: {}".format(
                     ", ".join(
                         (["video"] if has_videos else [])
                         + (["images"] if has_images else [])
                         + (["3d point clouds"] if has_pcd else [])
-                    )
+                    ),
+                    ", ".join(sorted(scenes)),
+                    ", ".join(sorted(unknown_files)[:5])
+                    + ("..." if len(unknown_files) > 5 else ""),
                 )
             )
 
@@ -399,7 +407,7 @@ class PcdReader:
 
     @classmethod
     def parse_pcd_header(
-        cls, fp: Union[os.PathLike[str], io.IOBase], *, verify_version: bool = False
+        cls, fp: Union[os.PathLike[str], io.RawIOBase], *, verify_version: bool = False
     ) -> Dict[str, str]:
         if not hasattr(fp, "read"):
             with open(fp, "rb") as file:
@@ -432,7 +440,7 @@ class PcdReader:
         return properties
 
     @classmethod
-    def parse_bin_header(cls, fp: Union[os.PathLike[str], io.IOBase]) -> dict[str, float]:
+    def parse_bin_header(cls, fp: Union[os.PathLike[str], io.RawIOBase]) -> dict[str, float]:
         if not hasattr(fp, "read"):
             with open(fp, "rb") as f:
                 return cls.parse_bin_header(f)
@@ -456,7 +464,29 @@ class PcdReader:
         return properties
 
     @classmethod
-    def convert_bin_to_pcd(cls, path: str, *, delete_source: bool = True) -> str:
+    def convert_bin_to_pcd(
+        cls, path: Union[os.PathLike[str], io.RawIOBase], *, delete_source: bool = True
+    ) -> str:
+        pcd_file = io.BytesIO()
+        cls.convert_bin_to_pcd_file(path, output_file=pcd_file)
+
+        pcd_filename = os.path.splitext(path)[0] + ".pcd"
+        with open(pcd_filename, "wb") as f:
+            f.write(pcd_file.getbuffer())
+
+        if delete_source:
+            os.remove(path)
+
+        return pcd_filename
+
+    @classmethod
+    def convert_bin_to_pcd_file(
+        cls, fp: Union[os.PathLike[str], io.RawIOBase], *, output_file: io.RawIOBase
+    ):
+        if not hasattr(fp, "read"):
+            with open(fp, "rb") as file:
+                return cls.convert_bin_to_pcd_file(file, output_file=output_file)
+
         def write_header(file_obj: io.TextIOBase, width: int, height: int):
             file_obj.writelines(
                 f"{line}\n"
@@ -475,22 +505,18 @@ class PcdReader:
             )
 
         list_pcd = []
-        with open(path, "rb") as f:
-            size_float = 4
-            byte = f.read(size_float * 4)
-            while byte:
-                x, y, z, intensity = struct.unpack("ffff", byte)
-                list_pcd.append([x, y, z, intensity])
-                byte = f.read(size_float * 4)
+        size_float = 4
+        byte = fp.read(size_float * 4)
+        while byte:
+            x, y, z, intensity = struct.unpack("ffff", byte)
+            list_pcd.append([x, y, z, intensity])
+            byte = fp.read(size_float * 4)
         np_pcd = np.asarray(list_pcd)
 
-        pcd_filename = os.path.splitext(path)[0] + ".pcd"
-        with open(pcd_filename, "w") as f:
-            write_header(f, np_pcd.shape[0], 1)
-        with open(pcd_filename, "ab") as f:
-            f.write(np_pcd.astype("float32").tobytes())
+        output_file_as_text = io.TextIOWrapper(output_file, newline="\n")
+        write_header(output_file_as_text, np_pcd.shape[0], 1)
+        output_file_as_text.detach()
 
-        if delete_source:
-            os.remove(path)
+        output_file.write(np_pcd.astype("float32").tobytes())
 
-        return pcd_filename
+        return output_file
