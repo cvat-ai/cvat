@@ -1351,8 +1351,16 @@ Cypress.Commands.add('setJobStage', (jobID, stage) => {
     cy.get('.cvat-spinner').should('not.exist');
 });
 
-Cypress.Commands.add('closeNotification', (className) => {
-    cy.get(className).find('span[aria-label="close"]').click();
+Cypress.Commands.add('closeNotification', (className, numOfNotifications = 1) => {
+    cy.get(className)
+        .should('have.length', numOfNotifications)
+        .find('span[aria-label="close"]')
+        .then(($elements) => {
+            // Click in reverse order to avoid re-render instability
+            for (let i = $elements.length - 1; i >= 0; i--) {
+                cy.wrap($elements[i]).click();
+            }
+        });
     cy.get(className).should('not.exist');
 });
 

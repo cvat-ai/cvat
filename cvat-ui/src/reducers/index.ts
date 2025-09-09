@@ -526,6 +526,7 @@ export interface NotificationState {
     message: string;
     description?: string;
     duration?: number;
+    className?: string;
 }
 
 export interface BulkOperationsErrorState extends ErrorState {
