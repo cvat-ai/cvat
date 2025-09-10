@@ -2,12 +2,6 @@
 
 This application implements support for Personal API Access Tokens (PAT).
 
-## Installation
-
-Install packages from the `requirements/` directory.
-
-Build the server and run the containers.
-
 ## Configuration
 
 Check `default_settings.py` for the list of configurable variables.
