@@ -1213,6 +1213,3 @@ def create_backup(
     except Exception:
         log_exception(logger)
         raise
-
-def get_backup_dirname():
-    return TmpDirManager.TMP_ROOT
