@@ -1158,7 +1158,7 @@ async function restoreProject(storage: Storage, file: File | string): Promise<st
 async function createTask(
     taskSpec: Partial<SerializedTask>,
     taskDataSpec: any,
-    onUpdate: (request: UpdateStatusData) => void,
+    onUpdate: (updateData: UpdateStatusData) => void,
 ): Promise<{ taskID: number, rqID: string }> {
     const { backendAPI, origin } = config;
     // keep current default params to 'freeze" them during this request

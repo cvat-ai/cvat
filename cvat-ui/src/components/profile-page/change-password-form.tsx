@@ -8,7 +8,7 @@ import Form from 'antd/lib/form';
 import { LockOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
-import { Row } from 'antd/es/grid';
+import { Row } from 'antd/lib/grid';
 
 import { ChangePasswordData } from 'reducers';
 import { validateConfirmation, validatePassword } from 'components/register-page/register-form';
