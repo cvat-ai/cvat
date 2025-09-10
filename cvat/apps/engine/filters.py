@@ -8,7 +8,7 @@ import operator
 from collections.abc import Iterable, Iterator
 from functools import reduce
 from textwrap import dedent
-from typing import Any, Optional, Type
+from typing import Any, Optional
 
 from django.db import models
 from django.db.models import Q
