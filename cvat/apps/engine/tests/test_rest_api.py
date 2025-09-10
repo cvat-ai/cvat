@@ -75,7 +75,7 @@ from cvat.apps.engine.tests.utils import (
     get_paginated_collection,
 )
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
-from utils.dataset_manifest.utils import find_related_images
+from utils.dataset_manifest.utils import PcdReader, find_related_images
 
 from .utils import check_annotation_response, compare_objects
 
@@ -3617,12 +3617,11 @@ class TaskDataAPITestCase(ApiTestBase):
 
         filename = "test_rotated_90_video.mp4"
         path = os.path.join(os.path.dirname(__file__), "assets", "test_rotated_90_video.mp4")
-        container = av.open(path, "r")
-        for frame in container.decode(video=0):
-            # pyav ignores rotation record in metadata when decoding frames
-            img_sizes = [(frame.height, frame.width)] * container.streams.video[0].frames
-            break
-        container.close()
+        with av.open(path, "r") as container:
+            for frame in container.decode(video=0):
+                # pyav ignores rotation record in metadata when decoding frames
+                img_sizes = [(frame.height, frame.width)] * container.streams.video[0].frames
+                break
         cls._share_image_sizes[filename] = img_sizes
 
         filename = os.path.join("videos", "test_video_1.mp4")
@@ -3645,13 +3644,16 @@ class TaskDataAPITestCase(ApiTestBase):
         filename = "test_pointcloud_pcd.zip"
         path = os.path.join(os.path.dirname(__file__), "assets", filename)
         image_sizes = []
-        # container = av.open(path, 'r')
-        zip_file = zipfile.ZipFile(path)
-        for info in zip_file.namelist():
-            if info.rsplit(".", maxsplit=1)[-1] == "pcd":
+        with zipfile.ZipFile(path) as zip_file:
+            for info in zip_file.namelist():
+                if not info.endswith(".pcd"):
+                    continue
+
                 with zip_file.open(info, "r") as file:
-                    data = ValidateDimension.get_pcd_properties(file)
-                    image_sizes.append((int(data["WIDTH"]), int(data["HEIGHT"])))
+                    pcd_properties = ValidateDimension.get_pcd_properties(file)
+
+                image_sizes.append((int(pcd_properties["WIDTH"]), int(pcd_properties["HEIGHT"])))
+
         cls._share_image_sizes[filename] = image_sizes
 
         filename = "test_rar.rar"
@@ -3669,30 +3671,18 @@ class TaskDataAPITestCase(ApiTestBase):
         filename = "test_velodyne_points.zip"
         path = os.path.join(os.path.dirname(__file__), "assets", filename)
         image_sizes = []
+        with zipfile.ZipFile(path) as zip_file:
+            for info in zip_file.namelist():
+                if not info.endswith(".bin"):
+                    continue
 
-        # create zip instance
-        zip_file = zipfile.ZipFile(path, mode="a")
+                with zip_file.open(info, "r") as bin_file:
+                    pcd_file = io.BytesIO()
+                    PcdReader.convert_bin_to_pcd_file(bin_file, output_file=pcd_file)
+                    pcd_file.seek(0)
 
-        source_path = []
-        root_path = os.path.abspath(os.path.split(path)[0])
-
-        for info in zip_file.namelist():
-            if os.path.splitext(info)[1][1:] == "bin":
-                zip_file.extract(info, root_path)
-                bin_path = os.path.abspath(os.path.join(root_path, info))
-                source_path.append(ValidateDimension.convert_bin_to_pcd(bin_path))
-
-        for path in source_path:
-            zip_file.write(path, os.path.abspath(path.replace(root_path, "")))
-
-        for info in zip_file.namelist():
-            if os.path.splitext(info)[1][1:] == "pcd":
-                with zip_file.open(info, "r") as file:
-                    data = ValidateDimension.get_pcd_properties(file)
-                    image_sizes.append((int(data["WIDTH"]), int(data["HEIGHT"])))
-
-        root_path = os.path.abspath(os.path.join(root_path, filename.split(".")[0]))
-        shutil.rmtree(root_path, ignore_errors=True)
+                pcd_properties = ValidateDimension.get_pcd_properties(pcd_file)
+                image_sizes.append((int(pcd_properties["WIDTH"]), int(pcd_properties["HEIGHT"])))
 
         cls._share_image_sizes[filename] = image_sizes
 
