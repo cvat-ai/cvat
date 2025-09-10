@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, shallowEqual } from 'react-redux';
 import { CombinedState } from 'reducers';
 
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
@@ -25,7 +25,7 @@ function ProfilePageComponent(): JSX.Element {
         user: state.auth.user,
         fetching: state.auth.fetching,
         isPasswordChangeEnabled: state.serverAPI.configuration.isPasswordChangeEnabled,
-    }));
+    }), shallowEqual);
 
     const supportedTabs = isPasswordChangeEnabled ? ['profile', 'security'] : ['profile'];
     const [activeTab, setActiveTab] = useState(getTabFromHash(supportedTabs));
