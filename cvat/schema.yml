@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.43.1
+  version: 2.44.4
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -5505,6 +5505,60 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PatchedTaskWriteRequest'
+            examples:
+              UpdateTaskProperties:
+                value:
+                  name: string
+                  owner_id: 0
+                  assignee_id: 0
+                  bug_tracker: string
+                  subset: string
+                  target_storage:
+                    location: cloud_storage
+                    cloud_storage_id: 0
+                  source_storage:
+                    location: cloud_storage
+                    cloud_storage_id: 0
+                summary: Update task properties
+              UpdateTaskLabels:
+                value:
+                  labels:
+                  - name: string
+                    color: string
+                    attributes: []
+                    deleted: false
+                    type: any
+                    svg: string
+                    sublabels:
+                    - name: string
+                      color: string
+                      attributes: []
+                      type: any
+                      has_parent: true
+                summary: Update task labels
+              MoveTaskToAProject:
+                value:
+                  project_id: 0
+                summary: Move task to a project
+              TransferTaskToPersonalSandbox:
+                value:
+                  organization_id: null
+                summary: Transfer task to personal sandbox
+              TransferTaskToOrganization:
+                value:
+                  organization_id: 1
+                summary: Transfer task to organization
+              TransferAStorageLinkedTaskToAnOrganizationAndDetachStorages:
+                value:
+                  organization_id: 1
+                  source_storage:
+                    location: local
+                    cloud_storage_id: null
+                  target_storage:
+                    location: local
+                    cloud_storage_id: null
+                summary: Transfer a storage linked task to an organization and detach
+                  storages
       security:
       - tokenAuth: []
       - accessTokenAuth: []
@@ -8545,10 +8599,6 @@ components:
             The same value will produce the same frame sets.
             Applicable only to random frame selection methods.
             By default, a random value is used.
-        seed:
-          type: integer
-          minimum: 0
-          description: Deprecated. Use random_seed instead.
         frames:
           type: array
           items:
@@ -9868,6 +9918,10 @@ components:
           allOf:
           - $ref: '#/components/schemas/StorageRequest'
           writeOnly: true
+        organization_id:
+          type: integer
+          writeOnly: true
+          nullable: true
     PatchedQualitySettingsRequest:
       type: object
       properties:
@@ -10077,12 +10131,12 @@ components:
           type: string
           maxLength: 64
         target_storage:
-          allOf:
-          - $ref: '#/components/schemas/StorageRequest'
-          nullable: true
+          $ref: '#/components/schemas/StorageRequest'
         source_storage:
-          allOf:
-          - $ref: '#/components/schemas/StorageRequest'
+          $ref: '#/components/schemas/StorageRequest'
+        organization_id:
+          type: integer
+          writeOnly: true
           nullable: true
     PatchedUserRequest:
       type: object
@@ -10225,6 +10279,11 @@ components:
           nullable: true
           maxLength: 16
         organization:
+          type: integer
+          readOnly: true
+          nullable: true
+          deprecated: true
+        organization_id:
           type: integer
           readOnly: true
           nullable: true
@@ -10671,10 +10730,13 @@ components:
         email:
           type: string
           format: email
+          maxLength: 254
         first_name:
           type: string
+          maxLength: 150
         last_name:
           type: string
+          maxLength: 150
         email_verification_required:
           type: boolean
           readOnly: true
@@ -10695,6 +10757,7 @@ components:
           type: string
           format: email
           minLength: 1
+          maxLength: 254
         password1:
           type: string
           writeOnly: true
@@ -10706,9 +10769,11 @@ components:
         first_name:
           type: string
           minLength: 1
+          maxLength: 150
         last_name:
           type: string
           minLength: 1
+          maxLength: 150
       required:
       - password1
       - password2
@@ -11255,17 +11320,21 @@ components:
           minimum: 0
           nullable: true
           readOnly: true
-        data_compressed_chunk_type:
-          allOf:
-          - $ref: '#/components/schemas/ChunkType'
-          readOnly: true
-        guide_id:
-          type: integer
-          nullable: true
         data_original_chunk_type:
           allOf:
           - $ref: '#/components/schemas/ChunkType'
           readOnly: true
+        data_compressed_chunk_type:
+          allOf:
+          - $ref: '#/components/schemas/ChunkType'
+          readOnly: true
+        data_cloud_storage_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        guide_id:
+          type: integer
+          nullable: true
         size:
           type: integer
           maximum: 2147483647
@@ -11284,10 +11353,15 @@ components:
         subset:
           type: string
           readOnly: true
+        organization_id:
+          type: integer
+          readOnly: true
+          nullable: true
         organization:
           type: integer
           readOnly: true
           nullable: true
+          deprecated: true
         target_storage:
           allOf:
           - $ref: '#/components/schemas/Storage'
@@ -11398,13 +11472,9 @@ components:
           type: string
           maxLength: 64
         target_storage:
-          allOf:
-          - $ref: '#/components/schemas/StorageRequest'
-          nullable: true
+          $ref: '#/components/schemas/StorageRequest'
         source_storage:
-          allOf:
-          - $ref: '#/components/schemas/StorageRequest'
-          nullable: true
+          $ref: '#/components/schemas/StorageRequest'
         consensus_replicas:
           type: integer
           minimum: 0

@@ -1789,7 +1789,23 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
                     original_tasks = self._get_tasks_for_project(user, original_project["id"])
                     imported_tasks = self._get_tasks_for_project(user, imported_project["id"])
                     for original_task, imported_task in zip(original_tasks, imported_tasks):
-                        self._compare_tasks(original_task, imported_task)
+                        compare_objects(
+                            self=self,
+                            obj1=original_task,
+                            obj2=imported_task,
+                            ignore_keys=(
+                                "id",
+                                "url",
+                                "created_date",
+                                "updated_date",
+                                "username",
+                                "project_id",
+                                "data_cloud_storage_id",
+                                "data",
+                                # backup does not store overlap explicitly
+                                "overlap",
+                            ),
+                        )
 
     def test_api_v2_projects_id_export_admin(self):
         self._run_api_v2_projects_id_export_import(self.admin)
@@ -1870,6 +1886,10 @@ class ProjectCloudBackupAPINoStaticChunksTestCase(ProjectBackupAPITestCase, _Clo
         cls.cloud_storage_id = cls._create_cloud_storage()
         cls._create_media()
         cls._create_projects()
+
+        if cls.MAKE_LIGHTWEIGHT_BACKUP or settings.MEDIA_CACHE_ALLOW_STATIC_CACHE:
+            # should not load anything from CS anymore
+            cls.mock_aws._download_fileobj_to_stream = None
 
     @classmethod
     def tearDownClass(cls):
@@ -1955,6 +1975,12 @@ class ProjectCloudBackupAPIStaticChunksTestCase(ProjectCloudBackupAPINoStaticChu
 
 
 class ProjectCloudBackupLightWeightTestCase(ProjectCloudBackupAPINoStaticChunksTestCase):
+    MAKE_LIGHTWEIGHT_BACKUP = True
+
+
+class ProjectCloudBackupAPIStaticChunksLightWeightTestCase(
+    ProjectCloudBackupAPIStaticChunksTestCase
+):
     MAKE_LIGHTWEIGHT_BACKUP = True
 
 

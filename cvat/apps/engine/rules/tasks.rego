@@ -249,7 +249,7 @@ allow if {
 allow if {
     input.scope in {
         utils.UPDATE_OWNER, utils.UPDATE_ASSIGNEE, utils.UPDATE_PROJECT,
-        utils.DELETE, utils.UPDATE_ORG
+        utils.DELETE
     }
     utils.is_sandbox
     is_project_staff
@@ -266,7 +266,7 @@ allow if {
 allow if {
     input.scope in {
         utils.UPDATE_OWNER, utils.UPDATE_ASSIGNEE, utils.UPDATE_PROJECT,
-        utils.DELETE, utils.UPDATE_ORG, utils.UPDATE_ASSOCIATED_STORAGE
+        utils.DELETE, utils.UPDATE_ASSOCIATED_STORAGE
     }
     utils.is_sandbox
     is_task_owner
@@ -276,7 +276,7 @@ allow if {
 allow if {
     input.scope in {
         utils.UPDATE_OWNER, utils.UPDATE_ASSIGNEE, utils.UPDATE_PROJECT,
-        utils.DELETE, utils.UPDATE_ORG, utils.UPDATE_ASSOCIATED_STORAGE
+        utils.DELETE, utils.UPDATE_ASSOCIATED_STORAGE
     }
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
@@ -286,7 +286,7 @@ allow if {
 allow if {
     input.scope in {
         utils.UPDATE_OWNER, utils.UPDATE_ASSIGNEE, utils.UPDATE_PROJECT,
-        utils.DELETE, utils.UPDATE_ORG, utils.UPDATE_ASSOCIATED_STORAGE
+        utils.DELETE, utils.UPDATE_ASSOCIATED_STORAGE
     }
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)
@@ -304,7 +304,7 @@ allow if {
 allow if {
     input.scope in {
         utils.UPDATE_OWNER, utils.UPDATE_ASSIGNEE, utils.UPDATE_PROJECT,
-        utils.DELETE, utils.UPDATE_ORG
+        utils.DELETE
     }
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)

@@ -460,8 +460,8 @@ class TestWebhookIssueEvents:
         assert payload["before_update"]["position"] == issue["position"]
         assert payload["issue"]["position"] == patch_data["position"]
 
-    def test_webhook_create_and_delete_issue(self, organizations, jobs, tasks):
-        org_id = list(organizations)[0]["id"]
+    @pytest.mark.parametrize("org_id", (2,))
+    def test_webhook_create_and_delete_issue(self, org_id: int, jobs, tasks):
         job_id = next(job["id"] for job in jobs if tasks[job["task_id"]]["organization"] == org_id)
         events = ["create:issue", "delete:issue"]
 

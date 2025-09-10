@@ -6,7 +6,7 @@
 import './styles.scss';
 import React, { useCallback, useEffect } from 'react';
 import { useHistory } from 'react-router';
-import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import moment from 'moment';
 import { getModelsAsync } from 'actions/models-actions';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
@@ -32,14 +32,27 @@ function setUpModelsList(models: MLModel[], newPage: number, pageSize: number): 
 function ModelsPageComponent(): JSX.Element {
     const history = useHistory();
     const dispatch = useDispatch();
-    const fetching = useSelector((state: CombinedState) => state.models.fetching);
-    const query = useSelector((state: CombinedState) => state.models.query);
-    const bulkFetching = useSelector((state: CombinedState) => state.bulkActions.fetching);
-    const interactors = useSelector((state: CombinedState) => state.models.interactors);
-    const detectors = useSelector((state: CombinedState) => state.models.detectors);
-    const trackers = useSelector((state: CombinedState) => state.models.trackers);
-    const reid = useSelector((state: CombinedState) => state.models.reid);
-    const totalCount = useSelector((state: CombinedState) => state.models.totalCount);
+    const {
+        fetching,
+        query,
+        bulkFetching,
+        interactors,
+        detectors,
+        trackers,
+        reid,
+        totalCount,
+        selectedCount,
+    } = useSelector((state: CombinedState) => ({
+        fetching: state.models.fetching,
+        query: state.models.query,
+        bulkFetching: state.bulkActions.fetching,
+        interactors: state.models.interactors,
+        detectors: state.models.detectors,
+        trackers: state.models.trackers,
+        reid: state.models.reid,
+        totalCount: state.models.totalCount,
+        selectedCount: state.models.selected.length,
+    }), shallowEqual);
 
     const updatedQuery = useResourceQuery<ModelsQuery>(query, { pageSize: 12 });
 
@@ -67,11 +80,12 @@ function ModelsPageComponent(): JSX.Element {
         }
     }, []);
 
-    const allModelIds = models.filter((m) => m.provider !== ModelProviders.CVAT).map((m) => m.id);
-    const selectedCount = useSelector((state: CombinedState) => state.models.selected.length);
     const onSelectAll = useCallback(() => {
-        dispatch(selectionActions.selectResources(allModelIds, SelectedResourceType.MODELS));
-    }, [allModelIds]);
+        dispatch(selectionActions.selectResources(
+            models.filter((m) => m.provider !== ModelProviders.CVAT).map((m) => m.id),
+            SelectedResourceType.MODELS,
+        ));
+    }, [models]);
 
     const content = (totalCount && !pageOutOfBounds) ? (
         <DeployedModelsList query={updatedQuery} models={models} totalCount={totalCount} />

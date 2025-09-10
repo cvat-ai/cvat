@@ -59,9 +59,6 @@ export default function ProjectPageComponent(): JSX.Element {
     const id = +useParams<ParamType>().id;
     const dispatch = useDispatch();
     const history = useHistory();
-    const selectedCount = useSelector((state: CombinedState) => state.tasks.selected.length);
-    const bulkFetching = useSelector((state: CombinedState) => state.bulkActions.fetching);
-
     const [projectInstance, setProjectInstance] = useState<Project | null>(null);
     const [fechingProject, setFetchingProject] = useState(true);
     const mounted = useRef(false);
@@ -74,6 +71,8 @@ export default function ProjectPageComponent(): JSX.Element {
         tasksQuery,
         tasksFetching,
         deletedTasks,
+        selectedCount,
+        bulkFetching,
     } = useSelector((state: CombinedState) => ({
         deletes: state.projects.activities.deletes,
         updates: state.projects.activities.updates,
@@ -82,6 +81,8 @@ export default function ProjectPageComponent(): JSX.Element {
         tasksQuery: state.projects.tasksGettingQuery,
         tasksFetching: state.tasks.fetching,
         deletedTasks: state.tasks.activities.deletes,
+        selectedCount: state.tasks.selected.length,
+        bulkFetching: state.bulkActions.fetching,
     }), shallowEqual);
     const [visibility, setVisibility] = useState(defaultVisibility);
 
@@ -135,16 +136,19 @@ export default function ProjectPageComponent(): JSX.Element {
         }
     }, [deletes]);
 
-    const allTaskIds = tasks.map((t) => t.id);
-    const selectableTaskIds = allTaskIds.filter((taskId) => !deletedTasks[taskId]);
     const onSelectAll = useCallback(() => {
-        dispatch(selectionActions.selectResources(selectableTaskIds, SelectedResourceType.TASKS));
-    }, [selectableTaskIds]);
+        dispatch(selectionActions.selectResources(
+            tasks.map((t) => t.id).filter((taskId) => !deletedTasks[taskId]),
+            SelectedResourceType.TASKS,
+        ));
+    }, [tasks, deletedTasks]);
 
-    const onUpdateProject = useCallback(async (project: Project) => {
-        dispatch(updateProjectAsync(project)).then((updatedProject: Project) => {
+    const onUpdateProject = useCallback((project: Project) => {
+        const promise = dispatch(updateProjectAsync(project));
+        promise.then((updatedProject: Project) => {
             setProjectInstance(updatedProject);
         });
+        return promise;
     }, []);
 
     if (fechingProject || id in deletes) {

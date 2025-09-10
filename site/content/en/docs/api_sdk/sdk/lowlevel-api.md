@@ -584,6 +584,7 @@ with ApiClient(
         while (chunk := response.read(8192)):
             output_file.write(chunk)
 ```
+
 ### Different versions of API endpoints
 #### The cloudstorages/id/content REST API endpoint
 
@@ -641,3 +642,93 @@ with ApiClient(
     pprint(files) # ['sub/image_1.jpg', 'image_2.jpg']
 
 ```
+
+### Sending custom requests
+
+Sometimes you might need sending a custom request while using the `ApiClient`.
+Typically, it's desirable to make this request using the same configuration
+and authentication parameters as regular requests sent via the `ApiClient` instance.
+One particularly useful example for this is dataset export. When exporting a dataset,
+you receive a download URL from the server after the file is prepared
+(see example in [receiving data](#receiving-data)). This URL requires authentication,
+but it can't be made via the regular `ApiClient` endpoint methods.
+
+There are several options to make such a custom request via an `ApiClient` instance:
+- use `api_client.call_api()`
+- use `api_client.request()`
+
+Alternatively, it's also possible to make a request using a custom backend for requests, while
+keeping the existing authentication of the `ApiClient`.
+
+{{< tabpane text=true >}}
+
+{{% tab header="Using api_client.call_api()" %}}
+
+This option provides higher-level interface and allows better integration with other
+`ApiClient`-related interfaces, such as `Endpoint`.
+
+```python
+from urllib.parse import parse_qsl, urlparse
+
+with ApiClient(...) as api_client:
+    parsed_url = urlparse("<custom URL>")
+    query_params = parse_qsl(parsed_url.query)
+    _, response = api_client.call_api(
+        parsed_url.path,
+        method="GET",
+        query_params=query_params,
+        _parse_response=False,
+    )
+
+    # process response.data ...
+```
+
+{{% /tab %}}
+
+{{% tab header="Using api_client.request()" %}}
+
+This option provides a low-level interface and allows more customization. It can be useful
+if you need to reuse the existing connection configuration of the `ApiClient`
+instance, such as connection pool, timeouts, etc. In order to keep the existing
+authentication parameters of the `ApiClient` instance, you
+can use the functions `api_client.get_common_headers()` and `api_client.update_params_for_auth()`.
+
+```python
+with ApiClient(...) as api_client:
+    headers = api_client.get_common_headers()
+    api_client.update_params_for_auth(headers=headers, queries=[], method="GET")
+
+    response = api_client.request(
+        "GET",
+        "<custom URL>",
+        headers=headers,
+        _parse_response=False,
+    )
+
+    # process response.data ...
+```
+
+{{% /tab %}}
+
+{{% tab header="Using a custom backend" %}}
+
+It is possible make a custom request using your own backend - for example, using the `requests`
+library. In order to keep the existing authentication parameters of the `ApiClient` instance, you
+can use the functions `api_client.get_common_headers()` and `api_client.update_params_for_auth()`.
+
+```python
+import requests
+
+with ApiClient(...) as api_client:
+    headers = api_client.get_common_headers()
+    query_params = []
+    api_client.update_params_for_auth(headers=headers, queries=query_params, method="GET")
+
+    response = requests.get("<custom URL>", params=query_params, headers=headers)
+
+    # process the response ...
+```
+
+{{% /tab %}}
+
+{{< /tabpane >}}

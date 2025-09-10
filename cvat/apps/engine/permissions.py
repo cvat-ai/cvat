@@ -19,6 +19,7 @@ from cvat.apps.engine.utils import is_dataset_export
 from cvat.apps.iam.permissions import (
     OpenPolicyAgentPermission,
     StrEnum,
+    build_iam_context,
     get_iam_context,
     get_membership,
 )
@@ -285,7 +286,7 @@ class ProjectPermission(
         UPDATE_ASSIGNEE = 'update:assignee'
         UPDATE_ASSOCIATED_STORAGE = 'update:associated_storage'
         UPDATE_DESC = 'update:desc'
-        UPDATE_ORG = 'update:organization'
+        UPDATE_ORGANIZATION = 'update:organization'
         UPDATE_OWNER = 'update:owner'
         VIEW = 'view'
 
@@ -295,10 +296,33 @@ class ProjectPermission(
         if view.basename == 'project':
             assignee_id = request.data.get('assignee_id') or request.data.get('assignee')
 
-            for scope in cls.get_scopes(request, view, obj):
+            scopes = cls.get_scopes(request, view, obj)
+
+            if cls.Scopes.UPDATE_ORGANIZATION in scopes:
+                # consider this case as deleting a project in the org A and creating a new one in the org B
+                permissions.append(cls.create_base_perm(
+                    request, view, cls.Scopes.DELETE, iam_context, obj, assignee_id=assignee_id
+                ))
+
+                if dst_org_id := request.data['organization_id']:
+                    try:
+                        dst_org = Organization.objects.get(pk=dst_org_id)
+                    except Organization.DoesNotExist:
+                        raise ValidationError("Invalid org id")
+                    dst_iam_context = get_iam_context(request, dst_org)
+                else:
+                    # do not use here get_iam_context since it checks also org_id/org_slug query params and X-Organization header
+                    dst_iam_context = build_iam_context(request, None, None)
+                permissions.append(cls.create_base_perm(
+                    request, view, cls.Scopes.CREATE, dst_iam_context, assignee_id=assignee_id
+                ))
+                scopes.remove(cls.Scopes.UPDATE_ORGANIZATION)
+
+            for scope in scopes:
                 scope_params = cls.get_scope_specific_params(
                     scope=scope, request=request, view=view, obj=obj, iam_context=iam_context
                 )
+
                 self = cls.create_base_perm(request, view, scope, iam_context, obj,
                     assignee_id=assignee_id, **scope_params)
                 permissions.append(self)
@@ -366,7 +390,7 @@ class ProjectPermission(
                 'name': Scopes.UPDATE_DESC,
                 'labels': Scopes.UPDATE_DESC,
                 'bug_tracker': Scopes.UPDATE_DESC,
-                'organization': Scopes.UPDATE_ORG,
+                'organization_id': Scopes.UPDATE_ORGANIZATION,
                 'source_storage': Scopes.UPDATE_ASSOCIATED_STORAGE,
                 'target_storage': Scopes.UPDATE_ASSOCIATED_STORAGE,
             }))
@@ -513,17 +537,32 @@ class TaskPermission(
             assignee_id = request.data.get('assignee_id') or request.data.get('assignee')
             owner = request.data.get('owner_id') or request.data.get('owner')
 
-            for scope in cls.get_scopes(request, view, obj):
+            scopes = cls.get_scopes(request, view, obj)
+
+            if cls.Scopes.UPDATE_ORGANIZATION in scopes:
+                # consider this case as deleting a task in the org A and creating a new one in the org B
+                permissions.append(cls.create_base_perm(
+                    request, view, cls.Scopes.DELETE, iam_context, obj, project_id=project_id, assignee_id=assignee_id
+                ))
+
+                if dst_org_id := request.data['organization_id']:
+                    try:
+                        dst_org = Organization.objects.get(pk=dst_org_id)
+                    except Organization.DoesNotExist:
+                        raise ValidationError("Invalid org id")
+                    dst_iam_context = get_iam_context(request, dst_org)
+                else: # sandbox
+                    # do not use here get_iam_context since it checks also org_id/org_slug query params and X-Organization header
+                    dst_iam_context = build_iam_context(request, None, None)
+                permissions.append(cls.create_base_perm(
+                    request, view, cls.Scopes.CREATE, dst_iam_context, project_id=project_id, assignee_id=assignee_id
+                ))
+                scopes.remove(cls.Scopes.UPDATE_ORGANIZATION)
+
+            for scope in scopes:
                 params = { 'project_id': project_id, 'assignee_id': assignee_id }
 
-                if scope == cls.Scopes.UPDATE_ORGANIZATION:
-                    org_id = request.data.get('organization')
-                    if obj is not None and obj.project is not None:
-                        raise ValidationError('Cannot change the organization for '
-                            'a task inside a project')
-                    # FIX IT: TaskPermission doesn't have create_scope_create method
-                    permissions.append(TaskPermission.create_scope_create(request, org_id))
-                elif scope == cls.Scopes.UPDATE_OWNER:
+                if scope == cls.Scopes.UPDATE_OWNER:
                     params['owner_id'] = owner
 
                 params.update(cls.get_scope_specific_params(
@@ -636,7 +675,7 @@ class TaskPermission(
                 'labels': Scopes.UPDATE_DESC,
                 'bug_tracker': Scopes.UPDATE_DESC,
                 'subset': Scopes.UPDATE_DESC,
-                'organization': Scopes.UPDATE_ORGANIZATION,
+                'organization_id': Scopes.UPDATE_ORGANIZATION,
                 'source_storage': Scopes.UPDATE_ASSOCIATED_STORAGE,
                 'target_storage': Scopes.UPDATE_ASSOCIATED_STORAGE,
             }))

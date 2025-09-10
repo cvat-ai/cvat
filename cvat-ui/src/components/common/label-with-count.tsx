@@ -5,7 +5,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-export function LabelWithCountHOC<T>(
+export function LabelWithCountHOF<T>(
     selectedIds: (number | string)[],
     bulkKeys: string[],
     instances?: Record<string, T[]>,

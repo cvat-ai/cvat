@@ -72,7 +72,7 @@ export interface SerializedProject {
     updated_date: string;
     dimension: DimensionType;
     name: string;
-    organization: number | null;
+    organization_id: number | null;
     guide_id: number | null;
     owner: SerializedUser;
     source_storage: SerializedStorage | null;
@@ -97,6 +97,7 @@ export interface SerializedTask {
     data_chunk_size: number | null;
     data_compressed_chunk_type: ChunkType
     data_original_chunk_type: ChunkType;
+    data_cloud_storage_id: number | null;
     dimension: DimensionType;
     id: number;
     image_quality: number;
@@ -109,7 +110,7 @@ export interface SerializedTask {
     labels: { count: number; url: string; };
     mode: TaskMode | '';
     name: string;
-    organization: number | null;
+    organization_id: number | null;
     overlap: number | null;
     owner: SerializedUser;
     project_id: number | null;

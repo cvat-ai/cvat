@@ -23,6 +23,7 @@ On the **Requests** page, requests are displayed as cards. Each card contains th
   - **Finished Date**
   - **Result Expiration Date**
 - **Annotations Format**
+- **Lightweight backup** (shown for backup requests created with the lightweight option)
 - **Menu** to download the result or cancel a `Queued` job
 
 {{% alert title="Note" color="primary" %}}

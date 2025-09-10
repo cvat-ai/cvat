@@ -493,6 +493,12 @@ Cypress.Commands.add('openTask', (taskName, projectSubsetFieldValue) => {
     }
 });
 
+Cypress.Commands.add('openTaskById', (taskId) => {
+    cy.visit(`/tasks/${taskId}`);
+    cy.get('.cvat-spinner').should('not.exist');
+    cy.get('.cvat-task-details').should('exist').and('be.visible');
+});
+
 Cypress.Commands.add('saveJob', (method = 'PATCH', status = 200, as = 'saveJob') => {
     cy.intercept(method, '/api/jobs/**').as(as);
     cy.clickSaveAnnotationView();
@@ -1333,8 +1339,16 @@ Cypress.Commands.add('setJobStage', (jobID, stage) => {
     cy.get('.cvat-spinner').should('not.exist');
 });
 
-Cypress.Commands.add('closeNotification', (className) => {
-    cy.get(className).find('span[aria-label="close"]').click();
+Cypress.Commands.add('closeNotification', (className, numOfNotifications = 1) => {
+    cy.get(className)
+        .should('have.length', numOfNotifications)
+        .find('span[aria-label="close"]')
+        .then(($elements) => {
+            // Click in reverse order to avoid re-render instability
+            for (let i = $elements.length - 1; i >= 0; i--) {
+                cy.wrap($elements[i]).click();
+            }
+        });
     cy.get(className).should('not.exist');
 });
 
@@ -1546,7 +1560,7 @@ Cypress.Commands.add('createJob', (options = {
     frameSelectionMethod: 'Random',
     quantity: null,
     frameCount: null,
-    seed: null,
+    randomSeed: null,
     fromTaskPage: true,
 }) => {
     const {
@@ -1554,7 +1568,7 @@ Cypress.Commands.add('createJob', (options = {
         frameSelectionMethod,
         quantity,
         frameCount,
-        seed,
+        randomSeed,
         fromTaskPage,
     } = options;
 
@@ -1587,9 +1601,9 @@ Cypress.Commands.add('createJob', (options = {
         cy.get('.cvat-input-frame-count').type(frameCount);
     }
 
-    if (seed) {
+    if (randomSeed) {
         cy.get('.cvat-input-seed').clear();
-        cy.get('.cvat-input-seed').type(seed);
+        cy.get('.cvat-input-seed').type(randomSeed);
     }
 
     cy.contains('button', 'Submit').click();

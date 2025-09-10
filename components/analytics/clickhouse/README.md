@@ -12,31 +12,26 @@ This directory contains migrations for the Clickhouse DB used by CVAT.
 
 The Clickhouse documentation explains options to customize DB loading here:
 <https://clickhouse.com/docs/install/docker#how-to-extend-image>
+In the default Docker image, Clickhouse only runs these files if the DB is not initialized.
+This is not the desired behavior for us, because it doesn't allow us to add new migrations
+added after the DB is initialized. Instead, we run the migrations on each start using a custom
+script. Therefore **make sure the migrations can be safely called multiple times**
+on an existing DB.
 
-Migrations are mounted into the container into the `/docker-entrypoint-initdb.d` directory.
-There, only the main script `init.sh` is an executable shell script. The migration files
-are also shell scripts inside, but they have the `.cmf` extension, which stands
-for "clickhouse migration file". We use a custom extension to avoid automatic execution
-of these files by Clickhouse.
-
-**Please note that Clickhouse only runs these files if the DB is not initialized.**
+The directory contains scripts for the Clickhouse instance:
+- `init.py`: initializes the DB and applies required migrations
 
 ## Adding a migration
 
-To add a migration, create a new `NNN-<custom name>.cmf` file in this directory.
+To add a migration, create a new `migration_NNN_<custom name>` function in the `init.py` script
+and add it to the list of migrations.
 
 Recommendations on the migrations:
-- Avoid heavy data migrations as much as possible. In most cases changing only the table
+- **Make sure the migrations can be safely called multiple times**
+  and do not fail on repeated calls on the initialized DB.
+  Typically, this can be achieved by using "IF NOT EXISTS" at some point.
+- Avoid heavy data migrations as much as possible. In most cases, changing only the table
   columns should be enough and you won't need a data migration.
-- Typically the migration should include "IF NOT EXISTS" at some point to allow idempotency
-  and avoid failing the migration on an existing DB.
 
-If adding or removing columns, you might need to update the list of allowed fields in `vector.toml`.
-
-## How to run
-
-If you need to run migrations manually, use the following command:
-
-```bash
-docker exec -it cvat_clickhouse bash /docker-entrypoint-initdb.d/init.sh
-```
+As follows from the recommendations above, the current implementation is limited
+to simple migrations only.

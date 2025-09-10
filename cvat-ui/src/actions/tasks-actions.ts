@@ -12,6 +12,7 @@ import { filterNull } from 'utils/filter-null';
 import { ThunkDispatch, ThunkAction } from 'utils/redux';
 
 import { ValidationMode } from 'components/create-task-page/quality-configuration-form';
+import { ResourceUpdateTypes } from 'utils/enums';
 import { getInferenceStatusAsync } from './models-actions';
 import { updateRequestProgress } from './requests-actions';
 
@@ -262,7 +263,7 @@ ThunkAction {
             description.subset = data.subset;
         }
         if (data.cloudStorageId) {
-            description.cloud_storage_id = data.cloudStorageId;
+            description.data_cloud_storage_id = data.cloudStorageId;
         }
         if (data.advanced.consensusReplicas) {
             description.consensus_replicas = +data.advanced.consensusReplicas;
@@ -305,7 +306,7 @@ ThunkAction {
                             message = 'Unknown status received';
                         }
                     }
-                    onProgress?.(`${message} ${progress ? `${Math.floor(progress * 100)}%` : ''}. ${helperMessage}`);
+                    onProgress?.(`${message}${progress ? ` ${Math.floor(progress * 100)}%` : ''}. ${helperMessage}`);
                     if (updateData instanceof Request) updateRequestProgress(updateData, dispatch);
                 },
             });
@@ -329,12 +330,13 @@ function updateTask(taskId: number): AnyAction {
     };
 }
 
-function updateTaskFailed(taskId: number, error: any): AnyAction {
+function updateTaskFailed(taskId: number, error: any, updateType?: ResourceUpdateTypes): AnyAction {
     return {
         type: TasksActionTypes.UPDATE_TASK_FAILED,
         payload: {
             taskId,
             error,
+            updateType,
         },
     };
 }
@@ -342,6 +344,7 @@ function updateTaskFailed(taskId: number, error: any): AnyAction {
 export function updateTaskAsync(
     taskInstance: Task,
     fields: Parameters<Task['save']>[0],
+    updateType?: ResourceUpdateTypes,
 ): ThunkAction<Promise<Task>> {
     return async (dispatch: ThunkDispatch): Promise<Task> => {
         try {
@@ -350,7 +353,7 @@ export function updateTaskAsync(
             dispatch(updateTaskInState(updated));
             return updated;
         } catch (error) {
-            dispatch(updateTaskFailed(taskInstance.id, error));
+            dispatch(updateTaskFailed(taskInstance.id, error, updateType));
             throw error;
         }
     };

@@ -10,6 +10,7 @@ import re
 import shutil
 import tempfile
 from abc import ABCMeta, abstractmethod
+from collections import deque
 from collections.abc import Collection, Iterable
 from copy import deepcopy
 from datetime import timedelta
@@ -54,6 +55,7 @@ from cvat.apps.engine.serializers import (
     DataSerializer,
     JobWriteSerializer,
     LabeledDataSerializer,
+    LabeledShapeSerializer,
     LabelSerializer,
     ProjectReadSerializer,
     SegmentSerializer,
@@ -63,7 +65,7 @@ from cvat.apps.engine.serializers import (
 )
 from cvat.apps.engine.task import JobFileMapping
 from cvat.apps.engine.task import create_thread as create_task
-from cvat.apps.engine.utils import av_scan_paths
+from cvat.apps.engine.utils import av_scan_paths, transaction_with_repeatable_read
 from utils.dataset_manifest import ImageManifestManager
 
 slogger = ServerLogManager(__name__)
@@ -285,9 +287,10 @@ class _TaskBackupBase(_BackupBase):
                 for attr in shape['attributes']:
                     _update_attribute(attr, label)
 
-                _prepare_shapes(shape.get('elements', []), label)
+                deque(_prepare_shapes(shape.get('elements', []), label), maxlen=0)
 
                 self._prepare_meta(allowed_fields, shape)
+                yield shape
 
         def _prepare_tracks(tracks, parent_label=''):
             for track in tracks:
@@ -309,7 +312,7 @@ class _TaskBackupBase(_BackupBase):
                 _update_attribute(attr, label)
             self._prepare_meta(allowed_fields, tag)
 
-        _prepare_shapes(annotations['shapes'])
+        annotations['shapes'] = _prepare_shapes(annotations['shapes'])
         _prepare_tracks(annotations['tracks'])
 
         return annotations
@@ -427,27 +430,45 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             assert not hasattr(self._db_data, 'video'), "Only images can be stored in cloud storage"
             assert self._db_data.related_files.count() == 0, "No related images can be stored in cloud storage"
 
-            if not self._lightweight:
-                media_files = [im.path for im in self._db_data.images.all()]
-                cloud_storage_instance = db_storage_to_storage_instance(self._db_data.cloud_storage)
-                with tempfile.TemporaryDirectory() as tmp_dir:
-                    cloud_storage_instance.bulk_download_to_dir(files=media_files, upload_dir=tmp_dir)
-                    self._write_files(
-                        source_dir=tmp_dir,
-                        zip_object=zip_object,
-                        files=[
-                            os.path.join(tmp_dir, file)
-                            for file in media_files
-                        ],
-                        target_dir=target_data_dir,
-                    )
+            data_dir = self._db_data.get_upload_dirname()
 
-            self._write_files(
-                source_dir=self._db_data.get_upload_dirname(),
-                zip_object=zip_object,
-                files=[self._db_data.get_manifest_path()],
-                target_dir=target_data_dir,
-            )
+            if self._lightweight:
+                self._write_files(
+                    source_dir=data_dir,
+                    zip_object=zip_object,
+                    files=[self._db_data.get_manifest_path()],
+                    target_dir=target_data_dir,
+                )
+            else:
+                files_for_local_copy = [self._db_data.get_manifest_path()]
+                media_files_to_download = []
+                for im in self._db_data.images.all():
+                    local_path = os.path.join(data_dir, im.path)
+                    if os.path.exists(local_path):
+                        files_for_local_copy.append(local_path)
+                    else:
+                        media_files_to_download.append(im.path)
+
+                if media_files_to_download:
+                    cloud_storage_instance = db_storage_to_storage_instance(self._db_data.cloud_storage)
+                    with tempfile.TemporaryDirectory() as tmp_dir:
+                        cloud_storage_instance.bulk_download_to_dir(files=media_files_to_download, upload_dir=tmp_dir)
+                        self._write_files(
+                            source_dir=tmp_dir,
+                            zip_object=zip_object,
+                            files=[
+                                os.path.join(tmp_dir, file)
+                                for file in media_files_to_download
+                            ],
+                            target_dir=target_data_dir,
+                        )
+
+                self._write_files(
+                    source_dir=data_dir,
+                    zip_object=zip_object,
+                    files=files_for_local_copy,
+                    target_dir=target_data_dir,
+                )
         else:
             raise NotImplementedError
 
@@ -561,7 +582,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 ]
                 data['validation_layout'] = validation_params
 
-            if self._db_data.storage == StorageChoice.CLOUD_STORAGE and not self._lightweight :
+            if self._db_data.storage == StorageChoice.CLOUD_STORAGE and not self._lightweight:
                 data["storage"] = StorageChoice.LOCAL
 
             return self._prepare_data_meta(data)
@@ -579,10 +600,24 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             db_jobs = self._get_db_jobs()
             db_job_ids = (j.id for j in db_jobs)
             for db_job_id in db_job_ids:
-                annotations = dm.task.get_job_data(db_job_id)
-                annotations_serializer = LabeledDataSerializer(data=annotations)
-                annotations_serializer.is_valid(raise_exception=True)
-                yield self._prepare_annotations(annotations_serializer.data, self._label_mapping)
+                with transaction_with_repeatable_read():
+                    annotations = dm.task.get_job_data(db_job_id, streaming=True)
+                    assert not isinstance(annotations["shapes"], list)
+                    # Django many=True fields can only handle the list type
+                    # we're using a generator here, so it's processed separately
+                    annotations_serializer = LabeledDataSerializer(data=dict(annotations, shapes=[]))
+                    annotations_serializer.is_valid(raise_exception=True)
+                    annotation_data = annotations_serializer.data
+
+                    def serialize_shapes():
+                        for shape in annotations["shapes"]:
+                            shape_serializer = LabeledShapeSerializer(data=shape)
+                            shape_serializer.is_valid(raise_exception=True)
+                            yield shape_serializer.data
+
+                    annotation_data["shapes"] = serialize_shapes()
+
+                    yield self._prepare_annotations(annotation_data, self._label_mapping)
 
         annotations = serialize_annotations()
         target_annotations_file = os.path.join(target_dir, self.ANNOTATIONS_FILENAME) if target_dir else self.ANNOTATIONS_FILENAME
@@ -706,6 +741,8 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
 
     def _create_annotations(self, db_job, annotations):
         self._prepare_annotations(annotations, self._labels_mapping)
+        assert not isinstance(annotations["shapes"], list)
+        annotations["shapes"] = list(annotations["shapes"])
 
         serializer = LabeledDataSerializer(data=annotations)
         serializer.is_valid(raise_exception=True)

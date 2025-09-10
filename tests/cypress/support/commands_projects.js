@@ -78,6 +78,12 @@ Cypress.Commands.add('openProject', (projectName) => {
     cy.get('.cvat-project-details').should('exist');
 });
 
+Cypress.Commands.add('openProjectById', (projectId) => {
+    cy.visit(`/projects/${projectId}`);
+    cy.get('.cvat-spinner').should('not.exist');
+    cy.get('.cvat-project-details').should('exist').and('be.visible');
+});
+
 Cypress.Commands.add('openProjectActions', (projectName) => {
     cy.contains('.cvat-projects-project-item-title', projectName)
         .parents('.cvat-projects-project-item-card')
@@ -264,11 +270,6 @@ Cypress.Commands.add('assignProjectToUser', (user) => {
         .within(() => {
             cy.get(`.ant-select-item-option[title="${user}"]`).click();
         });
-});
-
-Cypress.Commands.add('closeNotification', (className) => {
-    cy.get(className).find('span[aria-label="close"]').click();
-    cy.get(className).should('not.exist');
 });
 
 Cypress.Commands.add('movingTask', (taskName, projectName, labelMappingFrom, labelMappingTo, fromTaskPage) => {

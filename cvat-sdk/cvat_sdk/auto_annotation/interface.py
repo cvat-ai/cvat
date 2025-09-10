@@ -4,10 +4,11 @@
 
 import abc
 from collections.abc import Sequence, Set
-from typing import Optional, Protocol, TypeVar
+from typing import Optional, Protocol, TypeVar, Union
 
 import attrs
 import PIL.Image
+from typing_extensions import TypeAlias
 
 import cvat_sdk.models as models
 
@@ -173,12 +174,15 @@ class DetectionFunctionContext(metaclass=abc.ABCMeta):
         """
 
 
+DetectionAnnotation: TypeAlias = Union[models.LabeledImageRequest, models.LabeledShapeRequest]
+
+
 class DetectionFunction(AutoAnnotationFunction, Protocol):
     """
     The interface that an auto-annotation detection function must implement.
 
-    A detection function is supposed to accept an image and return a list of shapes
-    describing objects in that image.
+    A detection function is supposed to accept an image and return a sequence of annotations
+    (tags and/or shapes) describing objects in that image.
 
     Since the same function could be used with multiple datasets, it needs some way
     to refer to labels without using dataset-specific label IDs. The way this is
@@ -200,14 +204,15 @@ class DetectionFunction(AutoAnnotationFunction, Protocol):
 
     def detect(
         self, context: DetectionFunctionContext, image: PIL.Image.Image
-    ) -> list[models.LabeledShapeRequest]:
+    ) -> Sequence[DetectionAnnotation]:
         """
         Detects objects on the supplied image and returns the results.
 
         The supplied context will contain information about the current image.
 
-        The returned LabeledShapeRequest objects must follow general constraints
-        imposed by the data model (such as the number of points in a shape),
+        The returned LabeledImageRequest and LabeledShapeRequest objects
+        must follow the general constraints imposed by the data model
+        (such as the number of points in a shape),
         as well as the following additional constraints:
 
         * The id attribute must not be set.
@@ -226,8 +231,9 @@ class DetectionFunction(AutoAnnotationFunction, Protocol):
           except that the label_id of a sub-shape must equal one of the sublabel IDs
           of the label of its parent shape.
 
-        It's recommended to use the helper factory functions (shape, rectangle, skeleton,
-        keypoint) to create the shape objects, as they are more concise than the model
+        It's recommended to use the helper factory functions
+        (tag, shape, rectangle, skeleton, keypoint, etc.)
+        to create the annotation objects, as they are more concise than the model
         constructors and help to follow some of the constraints.
 
         The function must not retain any references to the returned objects,
@@ -487,6 +493,11 @@ def text_attribute_spec(name: str, id: int, **kwargs) -> models.AttributeRequest
 
 
 # annotation factories
+
+
+def tag(label_id: int, **kwargs) -> models.LabeledImageRequest:
+    """Helper factory function for LabeledImageRequest with frame=0."""
+    return models.LabeledImageRequest(label_id=label_id, frame=0, **kwargs)
 
 
 def shape(label_id: int, **kwargs) -> models.LabeledShapeRequest:

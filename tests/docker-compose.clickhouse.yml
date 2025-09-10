@@ -1,5 +1,0 @@
-services:
-  cvat_clickhouse:
-    volumes:
-      - ./components/analytics/clickhouse/:/docker-entrypoint-initdb.d/:ro
-      - cvat_events_db:/var/lib/clickhouse/

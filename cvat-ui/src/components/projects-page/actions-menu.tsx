@@ -3,17 +3,23 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector, shallowEqual } from 'react-redux';
+import { useHistory } from 'react-router';
 import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
 
-import { Project, User } from 'cvat-core-wrapper';
+import { Organization, Project, User } from 'cvat-core-wrapper';
 import { useDropdownEditField, usePlugins } from 'utils/hooks';
 import { CombinedState } from 'reducers';
-import { deleteProjectAsync, updateProjectAsync } from 'actions/projects-actions';
+import { deleteProjectAsync, getProjectsAsync, updateProjectAsync } from 'actions/projects-actions';
+import { cloudStoragesActions } from 'actions/cloud-storage-actions';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
 import UserSelector from 'components/task-page/user-selector';
+import OrganizationSelector from 'components/selectors/organization-selector';
+import { ResourceUpdateTypes } from 'utils/enums';
+import { confirmTransferModal } from 'utils/modals';
+
 import { makeBulkOperationAsync } from 'actions/bulk-actions';
 import ProjectActionsItems from './actions-menu-items';
 
@@ -21,21 +27,33 @@ interface Props {
     projectInstance: Project;
     triggerElement: JSX.Element;
     dropdownTrigger?: ('click' | 'hover' | 'contextMenu')[];
-    onUpdateProject?: (project: Project) => Promise<void>;
+    onUpdateProject?: (project: Project) => Promise<Project>;
 }
 
 function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
     const {
         projectInstance, triggerElement, dropdownTrigger, onUpdateProject,
     } = props;
+
+    const history = useHistory();
     const dispatch = useDispatch();
-
-    const selectedIds = useSelector((state: CombinedState) => state.projects.selected);
-    const isBulkMode = selectedIds.length > 1;
-    const allProjects = useSelector((state: CombinedState) => state.projects.current);
-
     const pluginActions = usePlugins((state: CombinedState) => state.plugins.components.projectActions.items, props);
 
+    const {
+        selectedIds,
+        currentProjects,
+        currentOrganization,
+        projectsQuery,
+        tasksQuery,
+    } = useSelector((state: CombinedState) => ({
+        selectedIds: state.projects.selected,
+        currentProjects: state.projects.current,
+        currentOrganization: state.organizations.current as Organization | null,
+        projectsQuery: state.projects.gettingQuery,
+        tasksQuery: state.tasks.gettingQuery,
+    }), shallowEqual);
+
+    const isBulkMode = selectedIds.length > 1;
     const {
         dropdownOpen,
         editField,
@@ -57,38 +75,91 @@ function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
         dispatch(exportActions.openExportBackupModal(projectInstance));
     }, [projectInstance]);
 
-    const onUpdateProjectAssignee = useCallback((assignee: User | null) => {
-        const allProjectIDs = selectedIds.includes(projectInstance.id) ?
-            selectedIds :
-            [projectInstance.id, ...selectedIds];
-
+    const collectObjectsForBulkUpdate = useCallback((): Project[] => {
+        const projectIdsToUpdate = selectedIds.includes(projectInstance.id) ? selectedIds : [projectInstance.id];
         const projectsToUpdate = selectedIds.includes(projectInstance.id) ?
-            allProjects.filter((project) => allProjectIDs.includes(project.id)) :
-            [projectInstance];
+            currentProjects.filter((project) => projectIdsToUpdate.includes(project.id)) : [projectInstance];
+        return projectsToUpdate;
+    }, [selectedIds, currentProjects, projectInstance]);
 
-        const projectsNeedingUpdate = projectsToUpdate.filter((project) => project.assignee?.id !== assignee?.id);
-
+    const onUpdateProjectAssignee = useCallback((assignee: User | null) => {
         stopEditField();
-        if (projectsNeedingUpdate.length === 0) {
-            return;
-        }
 
-        dispatch(makeBulkOperationAsync(
-            projectsNeedingUpdate,
-            async (project) => {
-                project.assignee = assignee;
-                if (onUpdateProject && project.id === projectInstance.id) {
-                    onUpdateProject(project);
-                } else {
+        if (onUpdateProject) {
+            // details page
+            projectInstance.assignee = assignee;
+            onUpdateProject(projectInstance);
+        } else {
+            const projectsToUpdate = collectObjectsForBulkUpdate()
+                .filter((project) => project.assignee?.id !== assignee?.id);
+
+            if (projectsToUpdate.length === 0) {
+                return;
+            }
+
+            dispatch(makeBulkOperationAsync(
+                projectsToUpdate,
+                async (project) => {
+                    project.assignee = assignee;
                     await dispatch(updateProjectAsync(project));
+                },
+                (project, idx, total) => `Updating assignee for project #${project.id} (${idx + 1}/${total})`,
+            ));
+        }
+    }, [projectInstance, stopEditField, dispatch, collectObjectsForBulkUpdate, onUpdateProject]);
+
+    const onUpdateProjectOrganization = useCallback((newOrganization: Organization | null) => {
+        stopEditField();
+
+        const projectsToUpdate = onUpdateProject ? [projectInstance] : collectObjectsForBulkUpdate();
+        const updateCurrent = () => {
+            projectInstance.organizationId = newOrganization?.id ?? null;
+            onUpdateProject!(projectInstance).then(() => {
+                history.push('/projects');
+            });
+        };
+
+        const updateBulk = () => {
+            dispatch(makeBulkOperationAsync(
+                projectsToUpdate,
+                async (project) => {
+                    project.organizationId = newOrganization?.id ?? null;
+                    await dispatch(updateProjectAsync(project, ResourceUpdateTypes.UPDATE_ORGANIZATION));
+                },
+                (project, idx, total) => `Updating organization for project #${project.id} (${idx + 1}/${total})`,
+            )).then((processedCount: number) => {
+                if (processedCount) {
+                    // as for some projects org has changed
+                    // we need to fetch new projects corresponding to the current org
+                    dispatch(getProjectsAsync(projectsQuery, tasksQuery));
+                }
+            });
+        };
+
+        confirmTransferModal(
+            projectsToUpdate,
+            currentOrganization,
+            newOrganization,
+            () => {
+                const updateFunction = onUpdateProject ? updateCurrent : updateBulk;
+                if (
+                    projectsToUpdate.some((project) => {
+                        const { sourceStorage, targetStorage } = project;
+                        return !!sourceStorage.cloudStorageId || !!targetStorage.cloudStorageId;
+                    })
+                ) {
+                    dispatch(
+                        cloudStoragesActions.openLinkedCloudStorageUpdatingModal(projectsToUpdate, updateFunction),
+                    );
+                } else {
+                    updateFunction();
                 }
             },
-            (project, idx, total) => `Updating assignee for project #${project.id} (${idx + 1}/${total})`,
-        ));
-    }, [projectInstance, selectedIds, allProjects, stopEditField, dispatch]);
+        );
+    }, [currentOrganization, projectInstance, stopEditField, onUpdateProject, collectObjectsForBulkUpdate]);
 
     const onDeleteProject = useCallback((): void => {
-        const projectsToDelete = allProjects.filter((project) => selectedIds.includes(project.id));
+        const projectsToDelete = currentProjects.filter((project) => selectedIds.includes(project.id));
         Modal.confirm({
             title: isBulkMode ?
                 `Delete ${projectsToDelete.length} selected projects` :
@@ -114,16 +185,20 @@ function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
             },
             okText: isBulkMode ? 'Delete selected' : 'Delete',
         });
-    }, [projectInstance, allProjects, selectedIds, isBulkMode]);
+    }, [projectInstance, currentProjects, selectedIds, isBulkMode]);
     let menuItems;
     if (editField) {
         const fieldSelectors: Record<string, JSX.Element> = {
             assignee: (
                 <UserSelector
                     value={isBulkMode ? null : projectInstance.assignee}
-                    onSelect={(value: User | null): void => {
-                        onUpdateProjectAssignee(value);
-                    }}
+                    onSelect={onUpdateProjectAssignee}
+                />
+            ),
+            organization: (
+                <OrganizationSelector
+                    defaultValue={currentOrganization?.slug}
+                    setNewOrganization={onUpdateProjectOrganization}
                 />
             ),
         };

@@ -259,6 +259,10 @@ export interface CloudStoragesState {
             error: string;
         };
     };
+    updateWorkspace: {
+        instances: Task[] | Project[] | null,
+        onUpdate: (() => void) | null;
+    }
     selected: number[];
 }
 
@@ -522,6 +526,7 @@ export interface NotificationState {
     message: string;
     description?: string;
     duration?: number;
+    className?: string;
 }
 
 export interface BulkOperationsErrorState extends ErrorState {
@@ -1032,6 +1037,11 @@ export interface OrganizationMembersQuery {
     pageSize: number;
 }
 
+export interface OrganizationsQuery {
+    page: number;
+    search: string;
+}
+
 export interface OrganizationState {
     current?: Organization | null;
     initialized: boolean;
@@ -1042,6 +1052,18 @@ export interface OrganizationState {
     removingMember: boolean;
     updatingMember: boolean;
     fetchingMembers: boolean;
+
+    gettingQuery: OrganizationsQuery;
+    currentArray: Organization[];
+    currentArrayFetching: boolean;
+    count: number;
+    nextPageUrl: string | null;
+
+    selectModal: {
+        visible: boolean;
+        onSelectCallback: ((org: Organization | null) => void) | null;
+    };
+
     members: Membership[];
     selectedMembers: number[];
     membersQuery: OrganizationMembersQuery;
