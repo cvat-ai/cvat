@@ -51,7 +51,7 @@ function ProfilePageComponent(): JSX.Element {
         const onHashChange = (): void => setActiveTab(getTabFromHash(supportedTabs));
         window.addEventListener('hashchange', onHashChange);
         return (): void => window.removeEventListener('hashchange', onHashChange);
-    }, [supportedTabs]);
+    }, []);
 
     useEffect(() => {
         window.history.replaceState(null, '', `#${activeTab}`);
