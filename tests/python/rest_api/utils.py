@@ -551,12 +551,28 @@ def invite_user_to_org(
         return invitation
 
 
-def get_cloud_storage_content(username: str, cloud_storage_id: int, manifest: Optional[str] = None):
-    with make_api_client(username) as api_client:
-        kwargs = {"manifest_path": manifest} if manifest else {}
+def get_cloud_storage_content(
+    username: str,
+    cloud_storage_id: int,
+    *,
+    manifest: Optional[str] = None,
+    prefix: Optional[str] = None,
+) -> list[str]:
+    kwargs = {}
 
+    if manifest is not None:
+        kwargs["manifest_path"] = manifest
+
+    if prefix is not None:
+        kwargs["prefix"] = prefix
+
+    prefix = (prefix or "").rstrip("/") + "/"
+
+    with make_api_client(username) as api_client:
         (data, _) = api_client.cloudstorages_api.retrieve_content_v2(cloud_storage_id, **kwargs)
-        return [f"{f['name']}{'/' if str(f['type']) == 'DIR' else ''}" for f in data["content"]]
+        return [
+            f"{prefix}{f['name']}{'/' if str(f['type']) == 'DIR' else ''}" for f in data["content"]
+        ]
 
 
 def iter_exclude(

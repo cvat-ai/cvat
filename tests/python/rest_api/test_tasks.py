@@ -1316,9 +1316,6 @@ class TestTaskBackups:
         filename = self.tmp_dir / f"cloud_task_{task.id}_backup.zip"
         task.download_backup(filename, lightweight=lightweight_backup)
 
-        assert filename.is_file()
-        assert filename.stat().st_size > 0
-
         with zipfile.ZipFile(filename, "r") as zf:
             files_in_data = {
                 name.split("data/", maxsplit=1)[1]

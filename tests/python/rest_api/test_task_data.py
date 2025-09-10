@@ -532,35 +532,42 @@ class TestPostTaskData:
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(
-        "use_cache, cloud_storage_id, manifest, use_bucket_content, org",
+        "use_cache, cloud_storage_id, manifest, use_bucket_content",
         [
-            (True, 1, "images_with_manifest/manifest.jsonl", False, ""),  # public bucket
-            (True, 2, "sub/images_with_manifest/manifest.jsonl", True, "org2"),  # private bucket
-            (True, 2, "sub/images_with_manifest/manifest.jsonl", True, "org2"),  # private bucket
-            (True, 1, None, False, ""),
-            (True, 2, None, True, "org2"),
-            (True, 2, None, True, "org2"),
-            (False, 1, None, False, ""),
-            (False, 2, None, True, "org2"),
-            (False, 2, None, True, "org2"),
+            (True, 1, "images_with_manifest/manifest.jsonl", False),  # public bucket
+            (True, 2, "sub/images_with_manifest/manifest.jsonl", True),  # private bucket
+            (False, 1, "images_with_manifest/manifest.jsonl", False),  # public bucket
+            (False, 2, "sub/images_with_manifest/manifest.jsonl", True),  # private bucket
+            (True, 1, None, False),
+            (True, 2, None, True),
+            (False, 1, None, False),
+            (False, 2, None, True),
         ],
     )
     def test_create_task_with_cloud_storage_files(
         self,
         use_cache: bool,
         cloud_storage_id: int,
+        cloud_storages,
         manifest: str,
         use_bucket_content: bool,
-        org: str,
     ):
+        org_id = cloud_storages[cloud_storage_id]["organization"]
+        bucket_prefix = "sub/" if cloud_storage_id == 2 else ""
         if use_bucket_content:
             cloud_storage_content = get_cloud_storage_content(
-                self._USERNAME, cloud_storage_id, manifest
+                self._USERNAME,
+                cloud_storage_id,
+                manifest=manifest,
+                prefix=bucket_prefix,
             )
+            cloud_storage_content = [
+                p for p in cloud_storage_content if "images_with_manifest/" in p
+            ]
         else:
             cloud_storage_content = [
-                "images_with_manifest/image_case_65_1.png",
-                "images_with_manifest/image_case_65_2.png",
+                f"{bucket_prefix}images_with_manifest/image_case_65_1.png",
+                f"{bucket_prefix}images_with_manifest/image_case_65_2.png",
             ]
         if manifest:
             cloud_storage_content.append(manifest)
@@ -581,7 +588,7 @@ class TestPostTaskData:
             "server_files": cloud_storage_content,
         }
 
-        kwargs = {"org": org} if org else {}
+        kwargs = {"org_id": org_id} if org_id else {}
         create_task(self._USERNAME, task_spec, data_spec, **kwargs)
 
     def _create_task_with_cloud_data(

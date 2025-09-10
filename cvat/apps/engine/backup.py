@@ -479,6 +479,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                             target_dir=target_data_dir,
                         )
 
+                if frame_ids_to_download:
                     media_cache = MediaCache()
                     with closing(iter(media_cache.read_raw_images(
                         self._db_task, frame_ids=frame_ids_to_download, decode=False,
