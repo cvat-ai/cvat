@@ -6,6 +6,7 @@
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { RegisterData } from 'components/register-page/register-form';
 import { getCore, User } from 'cvat-core-wrapper';
+import { ChangePasswordData } from 'reducers';
 
 const cvat = getCore();
 
@@ -142,14 +143,18 @@ export const authenticatedAsync = (): ThunkAction => async (dispatch) => {
 };
 
 export const changePasswordAsync = (
-    oldPassword: string,
-    newPassword1: string,
-    newPassword2: string,
+    changePasswordData: ChangePasswordData,
+    onSuccess?: () => void,
 ): ThunkAction => async (dispatch) => {
     dispatch(authActions.changePassword());
 
+    const { oldPassword, newPassword1, newPassword2 } = changePasswordData;
     try {
         await cvat.server.changePassword(oldPassword, newPassword1, newPassword2);
+
+        if (onSuccess) {
+            onSuccess();
+        }
         dispatch(authActions.changePasswordSuccess());
     } catch (error) {
         dispatch(authActions.changePasswordFailed(error));

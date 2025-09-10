@@ -10,13 +10,8 @@ import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
 import { Row } from 'antd/es/grid';
 
+import { ChangePasswordData } from 'reducers';
 import { validateConfirmation, validatePassword } from 'components/register-page/register-form';
-
-export interface ChangePasswordData {
-    oldPassword: string;
-    newPassword1: string;
-    newPassword2: string;
-}
 
 interface Props {
     onSubmit(loginData: ChangePasswordData): void;

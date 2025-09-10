@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 
 import { Col, Row } from 'antd/lib/grid';
@@ -10,24 +10,24 @@ import Card from 'antd/lib/card';
 import Typography from 'antd/lib/typography';
 import Button from 'antd/lib/button';
 
+import { ChangePasswordData } from 'reducers';
 import { changePasswordAsync } from 'actions/auth-actions';
-import ChangePasswordForm, { ChangePasswordData } from './change-password-form';
+import ChangePasswordForm from './change-password-form';
 
 function SecurityContent(): JSX.Element {
     const dispatch = useDispatch();
     const [showForm, setShowForm] = useState(false);
 
-    const onChangePassword = (data: ChangePasswordData): void => {
-        dispatch(changePasswordAsync(data.oldPassword, data.newPassword1, data.newPassword2));
-        setShowForm(false);
-    };
-
-    const onShowForm = (): void => {
+    const onShowForm = useCallback((): void => {
         setShowForm(true);
-    };
+    }, []);
 
-    const onCancelForm = (): void => {
+    const onCancelForm = useCallback((): void => {
         setShowForm(false);
+    }, []);
+
+    const onChangePassword = (data: ChangePasswordData): void => {
+        dispatch(changePasswordAsync(data, onCancelForm));
     };
 
     return (

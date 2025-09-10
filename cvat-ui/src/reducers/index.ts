@@ -26,6 +26,12 @@ export interface AuthState {
     hasEmailVerificationBeenSent: boolean;
 }
 
+export interface ChangePasswordData {
+    oldPassword: string;
+    newPassword1: string;
+    newPassword2: string;
+}
+
 export interface ProjectsQuery {
     page: number;
     pageSize: number;

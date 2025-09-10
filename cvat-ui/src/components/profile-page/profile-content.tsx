@@ -2,8 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { isEqual } from 'lodash';
 import { CombinedState } from 'reducers';
 
 import Form from 'antd/lib/form';
@@ -14,13 +15,19 @@ import Button from 'antd/lib/button';
 
 import { updateUserAsync } from 'actions/auth-actions';
 
+interface ProfileFormValues {
+    username?: string;
+    email?: string;
+    firstName?: string;
+    lastName?: string;
+}
+
 function ProfileContent(): JSX.Element {
     const user = useSelector((state: CombinedState) => state.auth.user);
     const dispatch = useDispatch();
     const [form] = Form.useForm();
-    const [hasChanges, setHasChanges] = useState(false);
 
-    const initialValues = {
+    const initialValues: ProfileFormValues = {
         username: user?.username,
         email: user?.email,
         firstName: user?.firstName,
@@ -31,27 +38,21 @@ function ProfileContent(): JSX.Element {
         form.setFieldsValue(initialValues);
     }, [user, form]);
 
-    const onValuesChange = (changedValues: any, allValues: any): void => {
+    const onFinish = async (values: ProfileFormValues): Promise<void> => {
         const currentEditableValues = {
-            firstName: allValues.firstName,
-            lastName: allValues.lastName,
+            firstName: values.firstName,
+            lastName: values.lastName,
         };
         const initialEditableValues = {
             firstName: initialValues.firstName,
             lastName: initialValues.lastName,
         };
-
-        const hasFormChanges = JSON.stringify(currentEditableValues) !== JSON.stringify(initialEditableValues);
-        setHasChanges(hasFormChanges);
-    };
-
-    const onFinish = async (values: any): Promise<void> => {
-        if (user && hasChanges) {
+        const hasFormChanges = !isEqual(currentEditableValues, initialEditableValues);
+        if (user && hasFormChanges) {
             await dispatch(updateUserAsync(user, {
                 firstName: values.firstName,
                 lastName: values.lastName,
             }));
-            setHasChanges(false);
         }
     };
 
@@ -62,7 +63,6 @@ function ProfileContent(): JSX.Element {
                     form={form}
                     layout='vertical'
                     onFinish={onFinish}
-                    onValuesChange={onValuesChange}
                     initialValues={initialValues}
                 >
                     <Row gutter={16}>
