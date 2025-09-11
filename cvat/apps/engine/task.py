@@ -536,7 +536,7 @@ def _create_task_manifest_from_cloud_data(
         sorted_media,
         scene_paths=(
             lambda p: not re.search(r'(^|{0})related_images{0}'.format(os.sep), p)
-            # backward compatibility
+            # backward compatibility, deprecated in https://github.com/cvat-ai/cvat/pull/9757
         )
     )
     sorted_media = [f for f in sorted_media if f in regular_images]
