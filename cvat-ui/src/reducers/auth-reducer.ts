@@ -101,11 +101,6 @@ export default function (state = defaultState, action: AuthActions | BoundariesA
                 ...state,
                 fetching: false,
             };
-        case AuthActionTypes.SWITCH_CHANGE_PASSWORD_DIALOG:
-            return {
-                ...state,
-                showChangePasswordDialog: action.payload.visible,
-            };
         case AuthActionTypes.REQUEST_PASSWORD_RESET:
             return {
                 ...state,

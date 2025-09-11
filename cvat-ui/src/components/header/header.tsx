@@ -35,7 +35,7 @@ import { Organization } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import CVATLogo from 'components/common/cvat-logo';
 import { switchSettingsModalVisible as switchSettingsModalVisibleAction } from 'actions/settings-actions';
-import { logoutAsync, authActions } from 'actions/auth-actions';
+import { logoutAsync } from 'actions/auth-actions';
 import { shortcutsActions, registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { getOrganizationsAsync, organizationActions } from 'actions/organization-actions';
 import { AboutState, CombinedState } from 'reducers';
@@ -53,7 +53,6 @@ interface StateToProps {
     settingsModalVisible: boolean;
     shortcutsModalVisible: boolean;
     changePasswordDialogShown: boolean;
-    changePasswordFetching: boolean;
     logoutFetching: boolean;
     isAnalyticsPluginActive: boolean;
     isModelsPluginActive: boolean;
@@ -69,7 +68,6 @@ interface DispatchToProps {
     onLogout: () => void;
     switchSettingsModalVisible: (visible: boolean) => void;
     switchShortcutsModalVisible: (visible: boolean) => void;
-    switchChangePasswordModalVisible: (visible: boolean) => void;
     fetchOrganizations: () => void;
     openSelectOrganizationModal: (onSelectOrgCallback: (org: Organization | null) => void) => void;
 }
@@ -96,7 +94,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         auth: {
             user,
             fetching: logoutFetching,
-            fetching: changePasswordFetching,
             showChangePasswordDialog: changePasswordDialogShown,
         },
         plugins: { list },
@@ -123,7 +120,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         settingsModalVisible,
         shortcutsModalVisible,
         changePasswordDialogShown,
-        changePasswordFetching,
         logoutFetching,
         isAnalyticsPluginActive: list.ANALYTICS,
         isModelsPluginActive: list.MODELS,
@@ -144,9 +140,6 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         ),
         switchSettingsModalVisible: (visible: boolean): void => dispatch(
             switchSettingsModalVisibleAction(visible),
-        ),
-        switchChangePasswordModalVisible: (visible: boolean): void => dispatch(
-            authActions.switchChangePasswordModalVisible(visible),
         ),
         fetchOrganizations: (): void => dispatch(
             getOrganizationsAsync({}),
