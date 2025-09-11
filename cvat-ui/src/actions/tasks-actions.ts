@@ -306,7 +306,7 @@ ThunkAction {
                             message = 'Unknown status received';
                         }
                     }
-                    onProgress?.(`${message} ${progress ? `${Math.floor(progress * 100)}%` : ''}. ${helperMessage}`);
+                    onProgress?.(`${message}${progress ? ` ${Math.floor(progress * 100)}%` : ''}. ${helperMessage}`);
                     if (updateData instanceof Request) updateRequestProgress(updateData, dispatch);
                 },
             });
