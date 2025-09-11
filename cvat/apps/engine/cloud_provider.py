@@ -403,10 +403,7 @@ class _HeaderFirstImageDownloader(HeaderFirstDownloader):
     def try_parse_header(self, header, *, key):
         image_parser = ImageFile.Parser()
         image_parser.feed(header)
-        try:
-            return image_parser.image
-        except OSError as e:
-            raise Exception(f"Failed to read the image '{key}'") from e
+        return image_parser.image
 
     def log_header_miss(self, file, *, key):
         full_object_size = len(file.getvalue())
@@ -419,29 +416,41 @@ class _HeaderFirstImageDownloader(HeaderFirstDownloader):
             f'{round(min(self.chunk_size, full_object_size) / full_object_size):.0%}'
         )
 
+    def download(self, key):
+        try:
+            return super().download(key)
+        except Image.UnidentifiedImageError as e:
+            # PIL also can raise many OSErrors, but it's quite a broad class
+            # for the general capturing here. The precise info will be available in the logs
+            raise Exception(f"Failed to read the image file '{key}'") from e
+
+
 class _HeaderFirstPcdDownloader(HeaderFirstDownloader):
     def try_parse_header(self, header, *, key):
         pcd_parser = PcdReader()
         file = NamedBytesIO(header)
         file_ext = os.path.splitext(key)[1].lower()
 
+        if file_ext == ".bin":
+            # We need to ensure the file is a valid .bin file
+            pcd_parser.parse_bin_header(file)
+
+            # but we need the whole file for the next operations (getting frame size etc.)
+            return False
+        elif file_ext == ".pcd":
+            parameters = pcd_parser.parse_pcd_header(file, verify_version=True)
+            if not parameters.get("WIDTH") or not parameters.get("HEIGHT"):
+                raise InvalidPcdError("invalid scene size")
+        else:
+            raise InvalidPcdError(f"The '{file_ext}' file format is not supported")
+
+        return True
+
+    def download(self, key):
         try:
-            if file_ext == ".bin":
-                # We need to ensure the file is a valid .bin file
-                pcd_parser.parse_bin_header(file)
-
-                # but we need the whole file for the next operations (getting frame size etc.)
-                return False
-            elif file_ext == ".pcd":
-                parameters = pcd_parser.parse_pcd_header(file, verify_version=True)
-                if not parameters.get("WIDTH") or not parameters.get("HEIGHT"):
-                    raise InvalidPcdError("invalid scene size")
-            else:
-                raise InvalidPcdError(f"The '{file_ext}' file format is not supported")
-
-            return True
+            return super().download(key)
         except InvalidPcdError as e:
-            raise Exception(f"Failed to read point cloud file '{key}'") from e
+            raise Exception(f"Failed to read point cloud file '{key}': {e}") from e
 
 
 class HeaderFirstMediaDownloader:

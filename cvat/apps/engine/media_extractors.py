@@ -40,7 +40,7 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 from cvat.apps.engine.mime_types import mimetypes
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
-from utils.dataset_manifest.utils import InvalidPcdError
+from utils.dataset_manifest.errors import InvalidPcdError
 from utils.dataset_manifest.utils import MediaDimension as _MediaDimension
 from utils.dataset_manifest.utils import PcdReader, detect_media_dimension
 
@@ -1246,31 +1246,31 @@ class ValidateDimension:
         self.pcd_files = []
         self.image_files = []
         self.converted_files = []
-        self.unknown_files = []
 
     @staticmethod
     def get_pcd_properties(
-        fp: str | io.RawIOBase, verify_version: bool = False
+        fp: str | io.RawIOBase, *, verify_version: bool = False
     ) -> dict[str, str] | None:
-        try:
-            return PcdReader.parse_pcd_header(fp, verify_version=verify_version)
-        except InvalidPcdError:
-            return None
+        return PcdReader.parse_pcd_header(fp, verify_version=verify_version)
 
     @staticmethod
     def convert_bin_to_pcd(path, delete_source=True):
         return PcdReader.convert_bin_to_pcd(path, delete_source=delete_source)
 
     def bin_operation(self, file_path: str, dataset_root: str) -> str:
-        pcd_path = self.convert_bin_to_pcd(file_path)
-        self.converted_files.append(pcd_path)
-        return os.path.relpath(pcd_path, dataset_root)
+        try:
+            pcd_path = self.convert_bin_to_pcd(file_path)
+            self.converted_files.append(pcd_path)
+            return os.path.relpath(pcd_path, dataset_root)
+        except InvalidPcdError as e:
+            raise ValidationError(f"Could not read pcd file '{os.path.basename(file_path)}': {e}")
 
     def pcd_operation(self, file_path: str, dataset_root: str) -> str | None:
-        if self.get_pcd_properties(file_path, verify_version=True) is None:
-            return None
-
-        return os.path.relpath(file_path, dataset_root)
+        try:
+            self.get_pcd_properties(file_path, verify_version=True)
+            return os.path.relpath(file_path, dataset_root)
+        except InvalidPcdError as e:
+            raise ValidationError(f"Could not read pcd file '{os.path.basename(file_path)}': {e}")
 
     def _process_files(self, current_dir: str, dataset_root: str, filenames: Sequence[str]):
         for filename in filenames:
@@ -1283,10 +1283,7 @@ class ValidateDimension:
                 self.pcd_files.append(path)
             elif ext == ".pcd":
                 path = self.pcd_operation(file_path, dataset_root)
-                if path is None:
-                    self.unknown_files.append(file_path)
-                else:
-                    self.pcd_files.append(path)
+                self.pcd_files.append(path)
             else:
                 if _is_image(file_path):
                     self.image_files.append(file_path)

@@ -19,7 +19,7 @@ from typing import Any, Callable, Optional, Union
 import av
 from PIL import Image
 
-from .errors import InvalidManifestError, InvalidVideoError
+from .errors import InvalidImageError, InvalidManifestError, InvalidPcdError, InvalidVideoError
 from .types import NamedBytesIO
 from .utils import PcdReader, SortingMethod, md5_hash, rotate_image, sort
 
@@ -216,13 +216,16 @@ class DatasetImagesReader:
             "extension": extension,
         }
 
-        img = Image.open(image, mode="r")
-        width, height = img.width, img.height
-        orientation = img.getexif().get(274, 1)
-        if orientation > 4:
-            width, height = height, width
-        image_properties["width"] = width
-        image_properties["height"] = height
+        try:
+            img = Image.open(image, mode="r")
+            width, height = img.width, img.height
+            orientation = img.getexif().get(274, 1)
+            if orientation > 4:
+                width, height = height, width
+            image_properties["width"] = width
+            image_properties["height"] = height
+        except (OSError, Image.UnidentifiedImageError) as e:
+            raise InvalidImageError(f"failed to parse image file '{img_name}'") from e
 
         if self._meta and img_name in self._meta:
             image_properties["meta"] = self._meta[img_name]
@@ -269,19 +272,22 @@ class Dataset3DImagesReader(DatasetImagesReader):
 
         meta = (self._meta or {}).get(img_name, {})
 
-        if img_name.endswith(".bin"):
-            pcd_image = io.BytesIO()
-            PcdReader.convert_bin_to_pcd_file(image, output_file=pcd_image)
-            pcd_image.seek(0)
+        try:
+            if extension.lower() == ".bin":
+                pcd_image = io.BytesIO()
+                PcdReader.convert_bin_to_pcd_file(image, output_file=pcd_image)
+                pcd_image.seek(0)
 
-            meta["original_name"] = img_name
-            image_properties["extension"] = ".pcd"
-        else:
-            pcd_image = image
+                meta["original_name"] = img_name
+                image_properties["extension"] = ".pcd"
+            else:
+                pcd_image = image
 
-        properties = PcdReader.parse_pcd_header(pcd_image, verify_version=True)
-        image_properties["width"] = int(properties["WIDTH"])
-        image_properties["height"] = int(properties["HEIGHT"])
+            properties = PcdReader.parse_pcd_header(pcd_image, verify_version=True)
+            image_properties["width"] = int(properties["WIDTH"])
+            image_properties["height"] = int(properties["HEIGHT"])
+        except InvalidPcdError as e:
+            raise InvalidPcdError(f"failed to parse pcd file '{img_name}': {e}") from e
 
         if meta:
             image_properties["meta"] = meta

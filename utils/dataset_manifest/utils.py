@@ -20,6 +20,8 @@ from av import VideoFrame
 from natsort import os_sorted
 from PIL import Image
 
+from .errors import InvalidPcdError
+
 
 def rotate_image(image, angle):
     height, width = image.shape[:2]
@@ -303,13 +305,14 @@ def find_related_images(
         if any(is_image(f) for f in unknown_files):
             has_images = True
             raise ValueError(
-                "Combined media types are not supported, found: {}. Scenes: {}. Unknown files: {}".format(
+                "Combined media types are not supported, found: {}. "
+                "Scenes: {}. Unknown files: {}".format(
                     ", ".join(
                         (["video"] if has_videos else [])
                         + (["images"] if has_images else [])
                         + (["3d point clouds"] if has_pcd else [])
                     ),
-                    ", ".join(sorted(scenes)),
+                    ", ".join(sorted(scenes)[:5]) + ("..." if len(scenes) > 5 else ""),
                     ", ".join(sorted(unknown_files)[:5])
                     + ("..." if len(unknown_files) > 5 else ""),
                 )
@@ -383,10 +386,6 @@ def sort(images, sorting_method=SortingMethod.LEXICOGRAPHICAL, func=None):
         raise NotImplementedError()
 
 
-class InvalidPcdError(Exception):
-    pass
-
-
 class PcdReader:
     ALLOWED_VERSIONS = (
         "0.7",
@@ -434,8 +433,9 @@ class PcdReader:
                 break
 
         if verify_version:
-            if properties.get("VERSION", None) not in cls.ALLOWED_VERSIONS:
-                raise InvalidPcdError("Unsupported pcd version")
+            version = properties.get("VERSION", None)
+            if version not in cls.ALLOWED_VERSIONS:
+                raise InvalidPcdError("Unsupported pcd version{}".format(f" {version}" or ""))
 
         return properties
 
@@ -447,8 +447,9 @@ class PcdReader:
 
         properties = {}
         size_float = 4
-        buffer = fp.read(size_float * 4)
-        if not buffer:
+        line_size = 4 * size_float
+        buffer = fp.read(line_size)
+        if not buffer or len(buffer) != line_size:
             raise InvalidPcdError("failed to parse bin pcd header")
 
         try:
@@ -506,11 +507,13 @@ class PcdReader:
 
         list_pcd = []
         size_float = 4
-        byte = fp.read(size_float * 4)
-        while byte:
-            x, y, z, intensity = struct.unpack("ffff", byte)
+        line_size = 4 * size_float
+        while buffer := fp.read(line_size):
+            if len(buffer) != line_size:
+                raise InvalidPcdError(f"failed to parse bin pcd point at pos {fp.tell()}")
+
+            x, y, z, intensity = struct.unpack("ffff", buffer)
             list_pcd.append([x, y, z, intensity])
-            byte = fp.read(size_float * 4)
         np_pcd = np.asarray(list_pcd)
 
         output_file_as_text = io.TextIOWrapper(output_file, newline="\n")
