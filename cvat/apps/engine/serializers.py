@@ -2516,7 +2516,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer, OrgTransf
     def create(self, validated_data):
         project_id = validated_data.get("project_id")
         if validated_data.get("label_set") and project_id:
-            raise serializers.ValidationError('Project must have only one of Label set or project_id')
+            raise serializers.ValidationError('Task must have only one of Label set or project_id')
 
         project = None
         if project_id:
