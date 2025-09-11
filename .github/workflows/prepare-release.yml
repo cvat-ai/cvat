@@ -47,8 +47,10 @@ jobs:
           git checkout -b "release-${{ inputs.newVersion }}"
 
       - name: Collect changelog
-        run:
-          pipx run scriv collect --version="${{ inputs.newVersion }}"
+        run: |
+          if ls changelog.d/*.md >/dev/null 2>&1; then
+            pipx run scriv collect --version='${{ inputs.newVersion }}'
+          fi
 
       - name: Set the new version
         run:
