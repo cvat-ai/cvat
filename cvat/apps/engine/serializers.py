@@ -2515,8 +2515,6 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer, OrgTransf
     @transaction.atomic
     def create(self, validated_data):
         project_id = validated_data.get("project_id")
-        if not (validated_data.get("label_set") or project_id):
-            raise serializers.ValidationError('Label set or project_id must be present')
         if validated_data.get("label_set") and project_id:
             raise serializers.ValidationError('Project must have only one of Label set or project_id')
 
