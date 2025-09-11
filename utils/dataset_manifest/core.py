@@ -896,9 +896,6 @@ class _DatasetManifestStructureValidator(_BaseManifestValidator):
         if not isinstance(_dict["height"], int):
             raise InvalidManifestError("Incorrect height field")
 
-        # TODO: add related image path validation
-        # TODO: add pcd .bin file meta validation
-
 
 def is_manifest(full_manifest_path):
     return is_video_manifest(full_manifest_path) or is_dataset_manifest(full_manifest_path)
