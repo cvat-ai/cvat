@@ -17,6 +17,7 @@ from unittest import TestCase
 from urllib.parse import urlencode
 
 import av
+import django.test
 import django_rq
 import numpy as np
 from django.conf import settings
@@ -27,6 +28,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.test import APITestCase
 from scipy.optimize import linear_sum_assignment
+
+from cvat.apps.engine.models import User
 
 T = TypeVar("T")
 
@@ -47,7 +50,7 @@ def logging_disabled():
 
 
 class ForceLogin:
-    def __init__(self, user, client):
+    def __init__(self, user: User, client: django.test.Client):
         self.user = user
         self.client = client
 
@@ -137,13 +140,13 @@ class ApiTestBase(APITestCase):
         self.client = self.client_class()
 
     def _get_request(
-        self, path: str, user: str, *, query_params: dict[str, Any] | None = None
+        self, path: str, user: User, *, query_params: dict[str, Any] | None = None
     ) -> Response:
         with ForceLogin(user, self.client):
             response = self.client.get(path, data=query_params)
         return response
 
-    def _delete_request(self, path: str, user: str):
+    def _delete_request(self, path: str, user: User):
         with ForceLogin(user, self.client):
             response = self.client.delete(path)
         return response
@@ -151,7 +154,7 @@ class ApiTestBase(APITestCase):
     def _post_request(
         self,
         path: str,
-        user: str,
+        user: User,
         *,
         format: str = "json",  # pylint: disable=redefined-builtin
         query_params: dict[str, Any] = None,
@@ -174,7 +177,7 @@ class ApiTestBase(APITestCase):
     def _put_request(
         self,
         url: str,
-        user: str,
+        user: User,
         *,
         format: str = "json",  # pylint: disable=redefined-builtin
         data: dict[str, Any] | None = None,
@@ -185,7 +188,7 @@ class ApiTestBase(APITestCase):
 
     def _check_request_status(
         self,
-        user: str,
+        user: User,
         rq_id: str,
         *,
         expected_4xx_status_code: int | None = None,
@@ -203,7 +206,7 @@ class ApiTestBase(APITestCase):
 class ImportApiTestBase(ApiTestBase):
     def _import(
         self,
-        user: str,
+        user: User,
         api_path: str,
         file_content: BytesIO,
         *,
@@ -229,15 +232,15 @@ class ImportApiTestBase(ApiTestBase):
 
     def _import_project_dataset(
         self,
-        user: str,
-        projetc_id: int,
+        user: User,
+        project_id: int,
         file_content: BytesIO,
         query_params: str = None,
         expected_4xx_status_code: int | None = None,
     ):
         return self._import(
             user,
-            f"/api/projects/{projetc_id}/dataset",
+            f"/api/projects/{project_id}/dataset",
             file_content,
             through_field="dataset_file",
             query_params=query_params,
@@ -246,7 +249,7 @@ class ImportApiTestBase(ApiTestBase):
 
     def _import_task_annotations(
         self,
-        user: str,
+        user: User,
         task_id: int,
         file_content: BytesIO,
         query_params: str = None,
@@ -263,7 +266,7 @@ class ImportApiTestBase(ApiTestBase):
 
     def _import_job_annotations(
         self,
-        user: str,
+        user: User,
         job_id: int,
         file_content: BytesIO,
         query_params: str = None,
@@ -280,7 +283,7 @@ class ImportApiTestBase(ApiTestBase):
 
     def _import_project_backup(
         self,
-        user: str,
+        user: User,
         file_content: BytesIO,
         query_params: str = None,
         expected_4xx_status_code: int | None = None,
@@ -300,7 +303,7 @@ class ImportApiTestBase(ApiTestBase):
 
     def _import_task_backup(
         self,
-        user: str,
+        user: User,
         file_content: BytesIO,
         query_params: str = None,
         expected_4xx_status_code: int | None = None,
@@ -322,7 +325,7 @@ class ImportApiTestBase(ApiTestBase):
 class ExportApiTestBase(ApiTestBase):
     def _export(
         self,
-        user: str,
+        user: User,
         api_path: str,
         *,
         query_params: dict[str, Any] | None = None,
@@ -367,7 +370,7 @@ class ExportApiTestBase(ApiTestBase):
 
     def _export_task_backup(
         self,
-        user: str,
+        user: User,
         task_id: int,
         *,
         query_params: dict | None = None,
@@ -386,7 +389,7 @@ class ExportApiTestBase(ApiTestBase):
 
     def _export_project_backup(
         self,
-        user: str,
+        user: User,
         project_id: int,
         *,
         query_params: dict | None = None,
@@ -405,7 +408,7 @@ class ExportApiTestBase(ApiTestBase):
 
     def _export_project_dataset(
         self,
-        user: str,
+        user: User,
         project_id: int,
         *,
         query_params: dict,
@@ -426,7 +429,7 @@ class ExportApiTestBase(ApiTestBase):
 
     def _export_project_annotations(
         self,
-        user: str,
+        user: User,
         project_id: int,
         *,
         query_params: dict,
@@ -447,7 +450,7 @@ class ExportApiTestBase(ApiTestBase):
 
     def _export_task_dataset(
         self,
-        user: str,
+        user: User,
         task_id: int,
         *,
         query_params: dict,
@@ -468,7 +471,7 @@ class ExportApiTestBase(ApiTestBase):
 
     def _export_task_annotations(
         self,
-        user: str,
+        user: User,
         task_id: int,
         *,
         query_params: dict,
@@ -489,7 +492,7 @@ class ExportApiTestBase(ApiTestBase):
 
     def _export_job_dataset(
         self,
-        user: str,
+        user: User,
         job_id: int,
         *,
         query_params: dict,
@@ -510,7 +513,7 @@ class ExportApiTestBase(ApiTestBase):
 
     def _export_job_annotations(
         self,
-        user: str,
+        user: User,
         job_id: int,
         *,
         query_params: dict,
