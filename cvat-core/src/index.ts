@@ -73,25 +73,32 @@ export default interface CVATCore {
             type: enums.ShareFileType;
         }[]>;
         formats: () => Promise<AnnotationFormats>;
-        userAgreements: typeof serverProxy.server.userAgreements,
-        register: any; // TODO: add types later
-        login: any;
-        logout: any;
-        changePassword: any;
-        requestPasswordReset: any;
-        resetPassword: any;
-        authenticated: any;
-        healthCheck: any;
-        request: any;
-        setAuthData: any;
-        installedApps: any;
+        userAgreements: typeof serverProxy.server.userAgreements;
+        register: (
+            username: string,
+            firstName: string,
+            lastName: string,
+            email: string,
+            password: string,
+            userConfirmations: Record<string, string>,
+        ) => Promise<User>;
+        login: typeof serverProxy.server.login;
+        logout: typeof serverProxy.server.logout;
+        changePassword: typeof serverProxy.server.changePassword;
+        requestPasswordReset: typeof serverProxy.server.requestPasswordReset;
+        resetPassword: typeof serverProxy.server.resetPassword;
+        authenticated: typeof serverProxy.server.authenticated;
+        healthCheck: typeof serverProxy.server.healthCheck;
+        request: typeof serverProxy.server.request;
+        setAuthData: typeof serverProxy.server.setAuthData;
+        installedApps: typeof serverProxy.server.installedApps;
         apiSchema: typeof serverProxy.server.apiSchema;
     };
     assets: {
-        create: any;
+        create: typeof serverProxy.assets.create;
     };
     users: {
-        get: any;
+        get: typeof serverProxy.users.get;
     };
     jobs: {
         get: (filter: {
@@ -127,15 +134,15 @@ export default interface CVATCore {
                 filter?: string;
             }
         ) => Promise<PaginatedResource<Project>>;
-        searchNames: any;
+        searchNames: typeof serverProxy.projects.searchNames;
     };
     cloudStorages: {
-        get: any;
+        get: typeof serverProxy.cloudStorages.get;
     };
     organizations: {
-        get: any;
-        activate: any;
-        deactivate: any;
+        get: typeof serverProxy.organizations.get;
+        activate: (organization: Organization) => void;
+        deactivate: () => void;
         acceptInvitation: (key: string) => Promise<string>;
         declineInvitation: (key: string) => Promise<void>;
         invitations: (filter: {
@@ -144,7 +151,7 @@ export default interface CVATCore {
         }) => Promise<Invitation[] & { count: number }>;
     };
     webhooks: {
-        get: any;
+        get: typeof serverProxy.webhooks.get;
     };
     consensus: {
         settings: {
@@ -167,7 +174,7 @@ export default interface CVATCore {
         };
     };
     frames: {
-        getMeta: any;
+        getMeta: typeof serverProxy.frames.getMeta;
     };
     requests: {
         list: () => Promise<PaginatedResource<Request>>;

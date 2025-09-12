@@ -8,6 +8,7 @@ import serverProxy from './server-proxy';
 import { WebhookSourceType, WebhookContentType } from './enums';
 import { isEnum } from './common';
 import { ArgumentError } from './exceptions';
+import { SerializedUser } from './server-response-types';
 
 interface RawWebhookData {
     id?: number;
@@ -21,7 +22,7 @@ interface RawWebhookData {
     enable_ssl: boolean;
     description?: string;
     is_active?: boolean;
-    owner?: any;
+    owner?: SerializedUser | User;
     created_date?: string;
     updated_date?: string;
     last_delivery_date?: string;
@@ -77,8 +78,8 @@ export default class Webhook {
             }
         }
 
-        if (data.owner) {
-            data.owner = new User(data.owner);
+        if (data.owner && !(data.owner instanceof User)) {
+            data.owner = new User(data.owner as SerializedUser);
         }
 
         Object.defineProperties(
