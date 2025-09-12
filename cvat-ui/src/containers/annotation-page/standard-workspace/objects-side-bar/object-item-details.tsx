@@ -9,6 +9,7 @@ import ObjectItemDetails, { SizeType } from 'components/annotation-page/standard
 import { updateAnnotationsAsync, collapseObjectItems } from 'actions/annotation-actions';
 import { connect } from 'react-redux';
 import { ThunkDispatch } from 'utils/redux';
+import { orderAttributesByJobConfig, filterAttributesForDisplay, shouldShowLabel, SelectiveDisplaySettings } from 'utils/attributes';
 
 interface OwnProps {
     readonly: boolean;
@@ -20,6 +21,9 @@ interface StateToProps {
     collapsed: boolean;
     state: ObjectState | null;
     workspace: Workspace;
+    jobLabels: any[];
+    jobAttributes: Record<number, any[]>;
+    selectiveDisplaySettings: SelectiveDisplaySettings;
 }
 
 interface DispatchToProps {
@@ -47,16 +51,33 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
                 collapsedAll,
                 collapsed: statesCollapsed,
             },
+            job: { labels: jobLabels, attributes: jobAttributes },
             workspace,
+        },
+        settings: {
+            workspace: {
+                enableSelectiveDisplay,
+                selectiveLabels,
+                selectiveAttributes,
+            },
         },
     } = state;
 
     const collapsed = typeof statesCollapsed[clientID as number] === 'undefined' ? collapsedAll : statesCollapsed[clientID];
 
+    const selectiveDisplaySettings: SelectiveDisplaySettings = {
+        enableSelectiveDisplay,
+        selectiveLabels,
+        selectiveAttributes,
+    };
+
     return {
         collapsed,
         state: objectState,
         workspace,
+        jobLabels,
+        jobAttributes,
+        selectiveDisplaySettings,
     };
 }
 
@@ -113,6 +134,12 @@ class ObjectItemDetailsContainer extends React.PureComponent<Props> {
         collapseOrExpand(state, !collapsed);
     };
 
+    private getSortedAttributes = (attributes: any[], labelId: number): any[] => {
+        const { jobAttributes, selectiveDisplaySettings } = this.props;
+        const sortedAttributes = orderAttributesByJobConfig(jobAttributes, labelId, attributes);
+        return filterAttributesForDisplay(sortedAttributes, labelId, selectiveDisplaySettings);
+    };
+
     public render(): JSX.Element | null {
         const {
             readonly, collapsed, state, workspace,
@@ -136,7 +163,7 @@ class ObjectItemDetailsContainer extends React.PureComponent<Props> {
                     collapse={this.collapse}
                     changeAttribute={this.changeAttribute}
                     values={{ ...state.attributes }}
-                    attributes={[...state.label.attributes]}
+                    attributes={this.getSortedAttributes(state.label.attributes, state.label.id)}
                     changeSize={this.changeSize}
                     sizeParams={sizeParams}
                 />

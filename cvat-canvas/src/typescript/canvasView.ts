@@ -1838,7 +1838,27 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
             }
 
-            const recreateText = configuration.textContent !== this.configuration.textContent;
+            // Handle selective display changes
+            if (configuration.enableSelectiveDisplay !== this.configuration.enableSelectiveDisplay ||
+                JSON.stringify(configuration.selectiveLabels) !== JSON.stringify(this.configuration.selectiveLabels) ||
+                JSON.stringify(configuration.selectiveAttributes) !== JSON.stringify(this.configuration.selectiveAttributes)) {
+                
+                // If displayAllText is enabled, update all text elements based on selective display
+                if (configuration.displayAllText) {
+                    for (const clientID in this.drawnStates) {
+                        if (+clientID in this.svgTexts) {
+                            this.deleteText(+clientID);
+                        }
+                        // Re-add text with new selective display settings
+                        this.svgTexts[clientID] = this.addText(this.drawnStates[clientID]);
+                    }
+                }
+            }
+
+            const recreateText = configuration.textContent !== this.configuration.textContent ||
+                configuration.enableSelectiveDisplay !== this.configuration.enableSelectiveDisplay ||
+                JSON.stringify(configuration.selectiveLabels) !== JSON.stringify(this.configuration.selectiveLabels) ||
+                JSON.stringify(configuration.selectiveAttributes) !== JSON.stringify(this.configuration.selectiveAttributes);
             const updateTextPosition = configuration.displayAllText !== this.configuration.displayAllText ||
                 configuration.textFontSize !== this.configuration.textFontSize ||
                 configuration.textPosition !== this.configuration.textPosition ||
@@ -3188,19 +3208,45 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     });
                 }
                 if (withAttr) {
-                    Object.keys(attributes).forEach((attrID: string, idx: number) => {
-                        const values = `${attributes[attrID] === undefinedAttrValue ?
-                            '' : attributes[attrID]}`.split('\n');
-                        const parent = block.tspan(`${attrNames[attrID]}: `)
-                            .attr({ attrID, dy: idx === 0 ? '1.25em' : '1em', x: 0 })
-                            .addClass('cvat_canvas_text_attribute');
-                        values.forEach((attrLine: string, index: number) => {
-                            parent
-                                .tspan(attrLine)
-                                .attr({
-                                    dy: index === 0 ? 0 : '1em',
-                                });
-                        });
+                    // Apply selective display filtering if enabled
+                    let attributesToShow = state.label.attributes;
+                    
+                    if (this.configuration.enableSelectiveDisplay) {
+                        // Check if this label should be shown
+                        const selectiveLabels = this.configuration.selectiveLabels || [];
+                        const selectiveAttributes = this.configuration.selectiveAttributes || {};
+                        
+                        if (selectiveLabels.length > 0 && !selectiveLabels.includes(state.label.id)) {
+                            attributesToShow = []; // Don't show any attributes for this label
+                        } else {
+                            const allowedAttributeIds = selectiveAttributes[state.label.id];
+                            if (allowedAttributeIds && allowedAttributeIds.length > 0) {
+                                attributesToShow = state.label.attributes.filter(
+                                    (attr: any) => allowedAttributeIds.includes(attr.id)
+                                );
+                            } else if (selectiveLabels.length > 0) {
+                                attributesToShow = []; // Label is selected but no attributes specified
+                            }
+                        }
+                    }
+                    
+                    // Use filtered attributes and maintain order defined in the label constructor
+                    attributesToShow.forEach((attr: any, idx: number) => {
+                        const attrID = String(attr.id);
+                        if (attrID in attributes) {
+                            const values = `${attributes[attrID] === undefinedAttrValue ?
+                                '' : attributes[attrID]}`.split('\n');
+                            const parent = block.tspan(`${attrNames[attrID]}: `)
+                                .attr({ attrID, dy: idx === 0 ? '1.25em' : '1em', x: 0 })
+                                .addClass('cvat_canvas_text_attribute');
+                            values.forEach((attrLine: string, index: number) => {
+                                parent
+                                    .tspan(attrLine)
+                                    .attr({
+                                        dy: index === 0 ? 0 : '1em',
+                                    });
+                            });
+                        }
                     });
                 }
             })

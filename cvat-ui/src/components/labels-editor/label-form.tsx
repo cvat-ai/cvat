@@ -5,7 +5,7 @@
 
 import React, { RefObject } from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import Icon, { DeleteOutlined, PlusCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import Icon, { DeleteOutlined, PlusCircleOutlined, ExclamationCircleOutlined, UpOutlined, DownOutlined } from '@ant-design/icons';
 import Input from 'antd/lib/input';
 import Button from 'antd/lib/button';
 import Checkbox from 'antd/lib/checkbox';
@@ -33,6 +33,19 @@ export enum AttributeType {
     TEXT = 'TEXT',
     NUMBER = 'NUMBER',
 }
+
+// Safe utility function to move array elements
+const arrayMove = <T>(array: T[], from: number, to: number): T[] => {
+    if (!Array.isArray(array) || from < 0 || to < 0 || from >= array.length || to >= array.length || from === to) {
+        return array;
+    }
+    const result = [...array];
+    const [removed] = result.splice(from, 1);
+    result.splice(to, 0, removed);
+    return result;
+};
+
+
 
 interface Props {
     label: LabelOptColor | null;
@@ -77,12 +90,17 @@ export default class LabelForm extends React.Component<Props> {
             }
         }
 
+        // Get the actual current order from form values (not from fieldInstances)
+        const currentAttributes = this.formRef.current?.getFieldValue('attributes') || [];
+        
+        // Compare attribute order for validation
+        
         onSubmit({
             name: values.name,
             id: label ? label.id : idGenerator(),
             color: values.color,
             type: values.type || label?.type || LabelType.ANY,
-            attributes: (values.attributes || []).map((attribute: Store) => {
+            attributes: currentAttributes.map((attribute: Store) => {
                 let attrValues: string | string[] = attribute.values;
                 if (!Array.isArray(attrValues)) {
                     if (attribute.type === AttributeType.NUMBER) {
@@ -121,9 +139,10 @@ export default class LabelForm extends React.Component<Props> {
     private addAttribute = (): void => {
         if (this.formRef.current) {
             const attributes = this.formRef.current.getFieldValue('attributes');
+            const safeAttributes = Array.isArray(attributes) ? attributes : [];
             this.formRef.current.setFieldsValue({
                 attributes: [
-                    ...(attributes || []),
+                    ...safeAttributes,
                     {
                         id: idGenerator(),
                         type: AttributeType.SELECT,
@@ -139,8 +158,9 @@ export default class LabelForm extends React.Component<Props> {
     private removeAttribute = (key: number): void => {
         if (this.formRef.current) {
             const attributes = this.formRef.current.getFieldValue('attributes');
+            const safeAttributes = Array.isArray(attributes) ? attributes : [];
             this.formRef.current.setFieldsValue({
-                attributes: attributes.filter((_: any, id: number) => id !== key),
+                attributes: safeAttributes.filter((_: any, id: number) => id !== key),
             });
         }
     };
@@ -148,7 +168,8 @@ export default class LabelForm extends React.Component<Props> {
     /* eslint-disable class-methods-use-this */
     private renderAttributeNameInput(fieldInstance: any, attr: any): JSX.Element {
         const { key } = fieldInstance;
-        const attrNames = this.formRef.current?.getFieldValue('attributes')
+        const attributes = this.formRef.current?.getFieldValue('attributes');
+        const attrNames = (attributes && Array.isArray(attributes) ? attributes : [])
             .filter((_attr: any) => _attr.id !== attr.id).map((_attr: any) => _attr.name);
 
         return (
@@ -191,16 +212,18 @@ export default class LabelForm extends React.Component<Props> {
                         disabled={locked}
                         onChange={(value: AttributeType) => {
                             const attrs = this.formRef.current?.getFieldValue('attributes');
-                            if (value === AttributeType.CHECKBOX) {
-                                attrs[key].values = ['false'];
-                            } else if (value === AttributeType.TEXT && !attrs[key].values.length) {
-                                attrs[key].values = '';
-                            } else if (value === AttributeType.NUMBER || attr.type === AttributeType.CHECKBOX) {
-                                attrs[key].values = [];
+                            if (attrs && Array.isArray(attrs) && attrs[key]) {
+                                if (value === AttributeType.CHECKBOX) {
+                                    attrs[key].values = ['false'];
+                                } else if (value === AttributeType.TEXT && !attrs[key].values.length) {
+                                    attrs[key].values = '';
+                                } else if (value === AttributeType.NUMBER || attr.type === AttributeType.CHECKBOX) {
+                                    attrs[key].values = [];
+                                }
+                                this.formRef.current?.setFieldsValue({
+                                    attributes: attrs,
+                                });
                             }
-                            this.formRef.current?.setFieldsValue({
-                                attributes: attrs,
-                            });
                         }}
                     >
                         <Select.Option value={AttributeType.SELECT} className='cvat-attribute-type-input-select'>
@@ -230,14 +253,18 @@ export default class LabelForm extends React.Component<Props> {
         const existingValues = attr.values;
 
         const validator = (_: any, values: string[]): Promise<void> => {
-            if (locked && existingValues) {
-                if (!equalArrayHead(existingValues, values)) {
+            // Safe validation with proper checks
+            const safeValues = Array.isArray(values) ? values : [];
+            const safeExistingValues = Array.isArray(existingValues) ? existingValues : [];
+            
+            if (locked && safeExistingValues.length > 0) {
+                if (!equalArrayHead(safeExistingValues, safeValues)) {
                     return Promise.reject(new Error('You can only append new values'));
                 }
             }
 
-            for (const value of values) {
-                if (!patterns.validateAttributeValue.pattern.test(value)) {
+            for (const value of safeValues) {
+                if (value && typeof value === 'string' && !patterns.validateAttributeValue.pattern.test(value)) {
                     return Promise.reject(new Error(`Invalid attribute value: "${value}"`));
                 }
             }
@@ -266,7 +293,10 @@ export default class LabelForm extends React.Component<Props> {
                         dropdownStyle={{ display: 'none' }}
                         tagRender={(props) => {
                             const attrs = this.formRef.current?.getFieldValue('attributes');
-                            const isDefault = props.value === attrs[key].default_value;
+                            // Triple check for safety
+                            const safeAttrs = attrs && Array.isArray(attrs) ? attrs : [];
+                            const currentAttr = safeAttrs[key];
+                            const isDefault = currentAttr && props.value === currentAttr.default_value;
                             return (
                                 <CVATTooltip
                                     placement='bottom'
@@ -282,16 +312,21 @@ export default class LabelForm extends React.Component<Props> {
                                         }}
                                         color={isDefault ? 'blue' : undefined}
                                         onClose={() => {
-                                            if (isDefault) {
-                                                attrs[key].default_value = undefined;
+                                            if (isDefault && currentAttr) {
+                                                currentAttr.default_value = undefined;
+                                                this.formRef.current?.setFieldsValue({
+                                                    attributes: safeAttrs,
+                                                });
                                             }
                                             props.onClose();
                                         }}
                                         onClick={() => {
-                                            attrs[key].default_value = props.value;
-                                            this.formRef.current?.setFieldsValue({
-                                                attributes: attrs,
-                                            });
+                                            if (currentAttr) {
+                                                currentAttr.default_value = props.value;
+                                                this.formRef.current?.setFieldsValue({
+                                                    attributes: safeAttrs,
+                                                });
+                                            }
                                         }}
                                         closable={props.closable}
                                     >
@@ -447,45 +482,64 @@ export default class LabelForm extends React.Component<Props> {
         );
     }
 
-    private renderAttribute = (fieldInstance: any): JSX.Element | null => {
-        const { key } = fieldInstance;
-        const attr = this.formRef.current?.getFieldValue('attributes')[key];
+    // Safe attribute reordering methods - simple approach
+    private moveAttributeUp = (index: number): void => {
+        if (this.formRef.current && index > 0) {
+            const attributes = this.formRef.current.getFieldValue('attributes');
+            if (Array.isArray(attributes) && index < attributes.length) {
+                const reorderedAttributes = arrayMove(attributes, index, index - 1);
+                this.formRef.current.setFieldsValue({
+                    attributes: reorderedAttributes,
+                });
+                // Force re-render
+                this.forceUpdate();
+            }
+        }
+    };
 
-        return attr ? (
-            <Form.Item noStyle key={key} shouldUpdate>
-                {() => (
-                    <Row
-                        justify='space-between'
-                        align='top'
-                        cvat-attribute-id={attr.id}
-                        className='cvat-attribute-inputs-wrapper'
+    private moveAttributeDown = (index: number): void => {
+        if (this.formRef.current) {
+            const attributes = this.formRef.current.getFieldValue('attributes');
+            if (Array.isArray(attributes) && index >= 0 && index < attributes.length - 1) {
+                const reorderedAttributes = arrayMove(attributes, index, index + 1);
+                this.formRef.current.setFieldsValue({
+                    attributes: reorderedAttributes,
+                });
+                // Force re-render
+                this.forceUpdate();
+            }
+        }
+    };
+
+    private renderReorderButtons = (index: number, totalCount: number): JSX.Element => {
+        return (
+            <div className='cvat-attribute-reorder-buttons' style={{ display: 'flex', flexDirection: 'column' }}>
+                <CVATTooltip title='Move attribute up'>
+                    <Button
+                        type='text'
+                        size='small'
+                        disabled={index === 0}
+                        onClick={() => this.moveAttributeUp(index)}
+                        className='cvat-move-attribute-up'
+                        style={{ padding: '2px', minWidth: '24px', height: '24px' }}
                     >
-                        <Col span={5}>{this.renderAttributeNameInput(fieldInstance, attr)}</Col>
-                        <Col span={4}>{this.renderAttributeTypeInput(fieldInstance, attr)}</Col>
-                        <Col span={6}>
-                            {((): JSX.Element => {
-                                const currentFieldValue = this.formRef.current?.getFieldValue('attributes')[key];
-                                const type = currentFieldValue.type || AttributeType.SELECT;
-                                let element = null;
-                                if ([AttributeType.SELECT, AttributeType.RADIO].includes(type)) {
-                                    element = this.renderAttributeValuesInput(fieldInstance, attr);
-                                } else if (type === AttributeType.CHECKBOX) {
-                                    element = this.renderBooleanValueInput(fieldInstance);
-                                } else if (type === AttributeType.NUMBER) {
-                                    element = this.renderNumberRangeInput(fieldInstance, attr);
-                                } else {
-                                    element = this.renderDefaultValueInput(fieldInstance);
-                                }
-
-                                return element;
-                            })()}
-                        </Col>
-                        <Col span={5}>{this.renderMutableAttributeInput(fieldInstance, attr)}</Col>
-                        <Col span={2}>{this.renderDeleteAttributeButton(fieldInstance, attr)}</Col>
-                    </Row>
-                )}
-            </Form.Item>
-        ) : null;
+                        <UpOutlined />
+                    </Button>
+                </CVATTooltip>
+                <CVATTooltip title='Move attribute down'>
+                    <Button
+                        type='text'
+                        size='small'
+                        disabled={index === totalCount - 1}
+                        onClick={() => this.moveAttributeDown(index)}
+                        className='cvat-move-attribute-down'
+                        style={{ padding: '2px', minWidth: '24px', height: '24px' }}
+                    >
+                        <DownOutlined />
+                    </Button>
+                </CVATTooltip>
+            </div>
+        );
     };
 
     private renderLabelNameInput(): JSX.Element {
@@ -629,25 +683,152 @@ export default class LabelForm extends React.Component<Props> {
         );
     }
 
+    // Extremely safe attribute renderer with reordering capability
+    private renderAttribute = (fieldInstance: any, index: number, totalCount: number): JSX.Element | null => {
+        if (!fieldInstance) return null;
+        
+        const { key } = fieldInstance;
+        if (key === undefined || key === null) return null;
+
+        const attributes = this.formRef.current?.getFieldValue('attributes');
+        
+        // Multiple layers of defensive checks
+        if (!attributes) return null;
+        if (!Array.isArray(attributes)) return null;
+        if (index >= attributes.length) return null;
+        if (index < 0) return null;
+        
+        const attr = attributes[index];
+        if (!attr) return null;
+
+        return (
+            <Form.Item noStyle key={`attr-${key}-${index}`} shouldUpdate>
+                {() => {
+                    // Re-check attributes on each render
+                    const currentAttributes = this.formRef.current?.getFieldValue('attributes');
+                    if (!currentAttributes || !Array.isArray(currentAttributes) || !currentAttributes[index]) {
+                        return null;
+                    }
+                    
+                    const currentAttr = currentAttributes[index];
+                    
+                    return (
+                        <Row
+                            justify='space-between'
+                            align='top'
+                            cvat-attribute-id={currentAttr.id}
+                            className='cvat-attribute-inputs-wrapper'
+                            style={{ 
+                                marginBottom: '12px',
+                                padding: '8px',
+                                border: '1px solid #f0f0f0',
+                                borderRadius: '6px'
+                            }}
+                        >
+                            <Col span={1}>
+                                {totalCount > 1 ? this.renderReorderButtons(index, totalCount) : null}
+                            </Col>
+                            <Col span={4}>{this.renderAttributeNameInput(fieldInstance, currentAttr)}</Col>
+                            <Col span={4}>{this.renderAttributeTypeInput(fieldInstance, currentAttr)}</Col>
+                            <Col span={6}>
+                                {((): JSX.Element => {
+                                    const safeAttributes = this.formRef.current?.getFieldValue('attributes');
+                                    const safeFieldValue = safeAttributes && Array.isArray(safeAttributes) && safeAttributes[index] ? safeAttributes[index] : null;
+                                    const type = safeFieldValue?.type || AttributeType.SELECT;
+                                    
+                                    let element = null;
+                                    try {
+                                        if ([AttributeType.SELECT, AttributeType.RADIO].includes(type)) {
+                                            element = this.renderAttributeValuesInput(fieldInstance, currentAttr);
+                                        } else if (type === AttributeType.CHECKBOX) {
+                                            element = this.renderBooleanValueInput(fieldInstance);
+                                        } else if (type === AttributeType.NUMBER) {
+                                            element = this.renderNumberRangeInput(fieldInstance, currentAttr);
+                                        } else {
+                                            element = this.renderDefaultValueInput(fieldInstance);
+                                        }
+                                    } catch (error) {
+                                        // Error rendering attribute input
+                                        element = <Input placeholder='Error rendering input' disabled />;
+                                    }
+
+                                    return element || <Input placeholder='Unknown attribute type' disabled />;
+                                })()}
+                            </Col>
+                            <Col span={4}>{this.renderMutableAttributeInput(fieldInstance, currentAttr)}</Col>
+                            <Col span={2}>{this.renderDeleteAttributeButton(fieldInstance, currentAttr)}</Col>
+                        </Row>
+                    );
+                }}
+            </Form.Item>
+        );
+    };
+
     private renderAttributes() {
-        return (fieldInstances: any[]): (JSX.Element | null)[] => fieldInstances.map(this.renderAttribute);
+        return (fieldInstances: any[]): (JSX.Element | null)[] => {
+            if (!fieldInstances || !Array.isArray(fieldInstances)) {
+                return [];
+            }
+
+            const totalCount = fieldInstances.length;
+
+            return fieldInstances.map((fieldInstance, index) => {
+                try {
+                    return this.renderAttribute(fieldInstance, index, totalCount);
+                } catch (error) {
+                    // Error rendering attribute
+                    return null;
+                }
+            });
+        };
     }
 
     // eslint-disable-next-line react/sort-comp
     public componentDidMount(): void {
         const { label } = this.props;
-        if (this.formRef.current && label && label.attributes.length) {
+        if (this.formRef.current && label && label.attributes && Array.isArray(label.attributes) && label.attributes.length) {
             const convertedAttributes = label.attributes.map(
-                (attribute: SerializedAttribute): Store => ({
-                    ...attribute,
-                    values:
-                        attribute.input_type.toUpperCase() === 'NUMBER' ? attribute.values.join(';') : attribute.values,
-                    type: attribute.input_type.toUpperCase(),
-                }),
+                (attribute: SerializedAttribute): Store => {
+                    // Extremely safe handling of values
+                    const safeAttribute = attribute || {};
+                    let values = safeAttribute.values;
+                    
+                    // Ensure values is always a valid array or string
+                    if (!values) {
+                        values = safeAttribute.input_type && safeAttribute.input_type.toUpperCase() === 'NUMBER' ? '' : [];
+                    } else if (safeAttribute.input_type && safeAttribute.input_type.toUpperCase() === 'NUMBER') {
+                        // For NUMBER type, convert array to semicolon-separated string
+                        if (Array.isArray(values)) {
+                            values = values.filter(v => v != null).join(';');
+                        } else {
+                            values = String(values || '');
+                        }
+                    } else {
+                        // For other types, ensure it's an array
+                        if (!Array.isArray(values)) {
+                            values = values ? [String(values)] : [];
+                        } else {
+                            // Filter out null/undefined values from array
+                            values = values.filter(v => v != null);
+                        }
+                    }
+
+                    return {
+                        id: safeAttribute.id || '',
+                        name: safeAttribute.name || '',
+                        mutable: safeAttribute.mutable || false,
+                        default_value: safeAttribute.default_value || '',
+                        values,
+                        type: safeAttribute.input_type ? safeAttribute.input_type.toUpperCase() : AttributeType.SELECT,
+                    };
+                },
             );
 
+            // Remove input_type from attributes
             for (const attr of convertedAttributes) {
-                delete attr.input_type;
+                if ('input_type' in attr) {
+                    delete attr.input_type;
+                }
             }
 
             this.formRef.current.setFieldsValue({ attributes: convertedAttributes });
@@ -666,14 +847,18 @@ export default class LabelForm extends React.Component<Props> {
                     name: label?.name || '',
                     type: label?.type || (isSkeleton ? LabelType.SKELETON : LabelType.ANY),
                     color: label?.color || undefined,
-                    attributes: (label?.attributes || []).map((attr) => ({
-                        id: attr.id,
-                        name: attr.name,
-                        type: attr.input_type,
-                        values: attr.values,
-                        mutable: attr.mutable,
-                        default_value: attr.default_value,
-                    })),
+                    attributes: (label?.attributes && Array.isArray(label.attributes) ? label.attributes : []).map((attr) => {
+                        // Safely handle attribute properties
+                        const safeAttr = attr || {};
+                        return {
+                            id: safeAttr.id || '',
+                            name: safeAttr.name || '',
+                            type: safeAttr.input_type || 'select',
+                            values: safeAttr.values || [],
+                            mutable: safeAttr.mutable || false,
+                            default_value: safeAttr.default_value || '',
+                        };
+                    }),
                 }}
                 onFinish={this.handleSubmit}
                 layout='vertical'

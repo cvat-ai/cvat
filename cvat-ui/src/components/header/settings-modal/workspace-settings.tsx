@@ -32,6 +32,11 @@ interface Props {
     textPosition: 'center' | 'auto';
     textContent: string;
     showTagsOnFrame: boolean;
+    // Selective display props
+    enableSelectiveDisplay: boolean;
+    selectiveLabels: number[];
+    selectiveAttributes: Record<number, number[]>;
+    jobLabels: any[];
     onSwitchAutoSave(enabled: boolean): void;
     onChangeAutoSaveInterval(interval: number): void;
     onChangeAAMZoomMargin(margin: number): void;
@@ -46,6 +51,10 @@ interface Props {
     onChangeTextPosition(position: 'auto' | 'center'): void;
     onChangeTextContent(textContent: string[]): void;
     onSwitchShowingTagsOnFrame(enabled: boolean): void;
+    // Selective display functions
+    onSwitchSelectiveDisplay(enabled: boolean): void;
+    onSetSelectiveLabels(labelIds: number[]): void;
+    onSetSelectiveAttributes(labelId: number, attributeIds: number[]): void;
 }
 
 function WorkspaceSettingsComponent(props: Props): JSX.Element {
@@ -64,6 +73,11 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
         textPosition,
         textContent,
         showTagsOnFrame,
+        // Selective display props
+        enableSelectiveDisplay,
+        selectiveLabels,
+        selectiveAttributes,
+        jobLabels,
         onSwitchAutoSave,
         onChangeAutoSaveInterval,
         onChangeAAMZoomMargin,
@@ -78,6 +92,10 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
         onChangeTextPosition,
         onChangeTextContent,
         onSwitchShowingTagsOnFrame,
+        // Selective display actions
+        onSwitchSelectiveDisplay,
+        onSetSelectiveLabels,
+        onSetSelectiveAttributes,
     } = props;
 
     const minAutoSaveInterval = 1;
@@ -156,6 +174,80 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                     </Text>
                 </Col>
             </Row>
+            {/* Selective Display Settings */}
+            <Row className='cvat-workspace-settings-selective-display cvat-player-setting'>
+                <Col span={24}>
+                    <Checkbox
+                        className='cvat-text-color'
+                        checked={enableSelectiveDisplay}
+                        onChange={(event: CheckboxChangeEvent): void => {
+                            onSwitchSelectiveDisplay(event.target.checked);
+                        }}
+                    >
+                        Enable selective object details display
+                    </Checkbox>
+                </Col>
+                <Col span={24}>
+                    <Text type='secondary'>
+                        Show details only for selected labels and attributes
+                    </Text>
+                </Col>
+            </Row>
+            {enableSelectiveDisplay && jobLabels.length > 0 && (
+                <>
+                    <Row className='cvat-workspace-settings-selective-labels cvat-player-setting'>
+                        <Col span={24}>
+                            <Text>Select labels to show</Text>
+                        </Col>
+                        <Col span={24}>
+                            <Select
+                                className='cvat-workspace-settings-selective-labels-select'
+                                mode='multiple'
+                                placeholder='Select labels to display'
+                                value={selectiveLabels}
+                                onChange={onSetSelectiveLabels}
+                                style={{ width: '100%' }}
+                            >
+                                {jobLabels.map((label: any) => (
+                                    <Select.Option key={label.id} value={label.id}>
+                                        {label.name}
+                                    </Select.Option>
+                                ))}
+                            </Select>
+                        </Col>
+                    </Row>
+                    {selectiveLabels.map((labelId: number) => {
+                        const label = jobLabels.find((l: any) => l.id === labelId);
+                        if (!label || !label.attributes || label.attributes.length === 0) return null;
+                        
+                        return (
+                            <Row key={labelId} className='cvat-workspace-settings-selective-attributes cvat-player-setting'>
+                                <Col span={24}>
+                                    <Text>{`Attributes for "${label.name}"`}</Text>
+                                </Col>
+                                <Col span={24}>
+                                    <Select
+                                        className='cvat-workspace-settings-selective-attributes-select'
+                                        mode='multiple'
+                                        placeholder={`Select attributes for ${label.name}`}
+                                        value={selectiveAttributes[labelId] || []}
+                                        onChange={(attributeIds: number[]) => {
+                                            onSetSelectiveAttributes(labelId, attributeIds);
+                                        }}
+                                        style={{ width: '100%' }}
+                                    >
+                                        {label.attributes.map((attr: any) => (
+                                            <Select.Option key={attr.id} value={attr.id}>
+                                                {attr.name}
+                                            </Select.Option>
+                                        ))}
+                                    </Select>
+                                </Col>
+                            </Row>
+                        );
+                    })}
+                </>
+            )}
             <Row className='cvat-workspace-settings-text-settings cvat-player-setting'>
                 <Col span={24}>
                     <Text>Content of a text</Text>
