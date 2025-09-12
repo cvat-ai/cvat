@@ -106,6 +106,9 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      securityContext:
+        fsGroup: 999
+        fsGroupChangePolicy: "OnRootMismatch"
   {{- if .Values.cvat.kvrocks.defaultStorage.enabled }}
   volumeClaimTemplates:
   - metadata:
