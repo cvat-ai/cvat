@@ -550,9 +550,9 @@ class _AvVideoReading:
     def read_av_container(
         self, source: Union[str, io.BytesIO]
     ) -> Generator[av.container.InputContainer, None, None]:
+        assert isinstance(source, (str, io.BytesIO)), type(source)
         if isinstance(source, io.BytesIO):
             source.seek(0) # required for re-reading
-
         container = av.open(source)
         try:
             yield container
