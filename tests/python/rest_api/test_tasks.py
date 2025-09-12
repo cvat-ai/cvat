@@ -1191,12 +1191,12 @@ class TestWorkWithTask:
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(
         "cloud_storage_id, manifest",
-        [(1, "manifest.jsonl")],  # public bucket
+        [(1, "images_with_manifest/manifest.jsonl")],  # public bucket
     )
     def test_work_with_task_containing_non_stable_cloud_storage_files(
         self, cloud_storage_id, manifest, cloud_storages, request
     ):
-        image_name = "image_case_65_1.png"
+        image_name = "images_with_manifest/image_case_65_1.png"
         cloud_storage_content = [image_name, manifest]
 
         task_spec = {
@@ -1290,8 +1290,11 @@ class TestTaskBackups:
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize("lightweight_backup", [True, False])
-    def test_can_export_and_import_backup_task_with_cloud_storage(self, tasks, lightweight_backup):
-        cloud_storage_content = ["image_case_65_1.png", "image_case_65_2.png"]
+    def test_can_export_and_import_backup_task_with_cloud_storage(self, lightweight_backup):
+        cloud_storage_content = [
+            "images_with_manifest/image_case_65_1.png",
+            "images_with_manifest/image_case_65_2.png",
+        ]
         task_spec = {
             "name": "Task with files from cloud storage",
             "labels": [
@@ -1312,9 +1315,6 @@ class TestTaskBackups:
 
         filename = self.tmp_dir / f"cloud_task_{task.id}_backup.zip"
         task.download_backup(filename, lightweight=lightweight_backup)
-
-        assert filename.is_file()
-        assert filename.stat().st_size > 0
 
         with zipfile.ZipFile(filename, "r") as zf:
             files_in_data = {

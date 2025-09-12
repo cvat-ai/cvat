@@ -4,7 +4,7 @@
 
 import io
 from contextlib import closing
-from typing import Callable, ClassVar
+from typing import Callable, ClassVar, Optional
 
 import attrs
 from PIL import Image
@@ -33,6 +33,9 @@ class ImagesTaskSpec(TaskSpecBase):
     source_data_type: ClassVar[SourceDataType] = SourceDataType.images
 
     _get_frame: Callable[[int], bytes] = attrs.field(kw_only=True)
+    get_related_files: Optional[Callable[[int], dict[str, bytes]]] = attrs.field(
+        kw_only=True, default=None
+    )
 
     def read_frame(self, i: int) -> Image.Image:
         return Image.open(io.BytesIO(self._get_frame(i)))

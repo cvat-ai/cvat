@@ -28,7 +28,7 @@ context('Tests source & target storage for backups.', () => {
     const cloudStorageData = {
         displayName: 'Demo bucket',
         resource: 'public',
-        manifest: 'manifest.jsonl',
+        manifest: 'images_with_manifest/manifest.jsonl',
         endpointUrl: Cypress.config('minioUrl'),
     };
 

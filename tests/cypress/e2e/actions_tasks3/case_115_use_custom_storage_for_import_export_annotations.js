@@ -37,7 +37,7 @@ context('Import and export annotations: specify source and target storage in mod
     const cloudStorageData = {
         displayName: 'Demo bucket',
         resource: 'public',
-        manifest: 'manifest.jsonl',
+        manifest: 'images_with_manifest/manifest.jsonl',
         endpointUrl: Cypress.config('minioUrl'),
     };
 

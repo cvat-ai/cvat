@@ -9,9 +9,21 @@ class BasicError(Exception):
     """
 
 
+class InvalidImageError(BasicError):
+    """
+    Indicates an invalid image
+    """
+
+
 class InvalidVideoError(BasicError):
     """
     Indicates an invalid video frame
+    """
+
+
+class InvalidPcdError(Exception):
+    """
+    Indicates an invalid point cloud
     """
 
 

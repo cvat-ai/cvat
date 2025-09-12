@@ -18,7 +18,7 @@ context('Cloud storage.', () => {
     ];
 
     const dummyData = {
-        manifest: 'manifest.jsonl',
+        manifest: 'images_with_manifest/manifest.jsonl',
         resource: 'container',
         display_name: 'Demonstration container',
         prefix: 'GCS_prefix',
