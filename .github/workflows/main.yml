@@ -425,8 +425,6 @@ jobs:
   helm_rest_api_testing:
     needs: build
     runs-on: ubuntu-latest
-    env:
-      HELM_CHART_NAME: "cvat-helm"
     steps:
       - uses: actions/checkout@v4
 

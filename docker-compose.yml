@@ -25,6 +25,8 @@ x-backend-deps: &backend-deps
     condition: service_started
   cvat_db:
     condition: service_started
+  cvat_clickhouse:
+    condition: service_started
 
 x-clickhouse-env: &clickhouse-env
   CLICKHOUSE_HOST: clickhouse
@@ -329,7 +331,7 @@ services:
   cvat_clickhouse:
     container_name: cvat_clickhouse
     image: clickhouse/clickhouse-server:23.11-alpine
-    restart: always
+    restart: "always"
     environment:
       <<: *clickhouse-env
     networks:
@@ -337,7 +339,6 @@ services:
         aliases:
           - clickhouse
     volumes:
-      - ./components/analytics/clickhouse/init.sh:/docker-entrypoint-initdb.d/init.sh:ro
       - cvat_events_db:/var/lib/clickhouse/
 
   cvat_vector:

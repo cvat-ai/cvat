@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 CVAT_ROOT_DIR = next(dir.parent for dir in Path(__file__).parents if dir.name == "tests")
 CVAT_DB_DIR = ASSETS_DIR / "cvat_db"
+CLICKHOUSE_INIT_SCRIPT = "components/analytics/clickhouse/init.py"
 PREFIX = "test"
 
 CONTAINER_NAME_FILES = ["docker-compose.tests.yml"]
@@ -143,8 +144,7 @@ def _kube_get_redis_inmem_pod_name():
 
 
 def _kube_get_redis_ondisk_pod_name():
-    helm_chart_name = os.getenv("HELM_CHART_NAME", "cvat")
-    return _kube_get_pod_name(f"app.kubernetes.io/name={helm_chart_name},tier=kvrocks")
+    return _kube_get_pod_name("app.kubernetes.io/name=cvat,tier=kvrocks")
 
 
 def docker_cp(source, target):
@@ -231,21 +231,21 @@ def kube_restore_db():
 
 
 def docker_restore_clickhouse_db():
-    docker_exec_clickhouse_db(
+    docker_exec_cvat(
         [
             "/bin/sh",
             "-c",
-            'clickhouse-client --query "DROP TABLE IF EXISTS ${CLICKHOUSE_DB}.events;" && /docker-entrypoint-initdb.d/init.sh',
+            f'python "{CLICKHOUSE_INIT_SCRIPT}" --clear',
         ]
     )
 
 
 def kube_restore_clickhouse_db():
-    kube_exec_clickhouse_db(
+    kube_exec_cvat(
         [
             "/bin/sh",
             "-c",
-            'clickhouse-client --query "DROP TABLE IF EXISTS ${CLICKHOUSE_DB}.events;" && /bin/sh /docker-entrypoint-initdb.d/init.sh',
+            f'python "{CLICKHOUSE_INIT_SCRIPT}" --clear',
         ]
     )
 
