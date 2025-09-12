@@ -678,33 +678,28 @@ def create_xml_dumper(file_object):
             self._level += 1
             self._add_version()
 
-        def _add_meta(self, meta):
+        def _add_kv_pairs(self, pairs):
             self._level += 1
-            for k, v in meta.items():
-                if isinstance(v, OrderedDict):
+            for k, v in pairs:
+                self._indent()
+                self.xmlgen.startElement(k, {})
+
+                if isinstance(v, dict):
+                    self._add_kv_pairs(v.items())
                     self._indent()
-                    self.xmlgen.startElement(k, {})
-                    self._add_meta(v)
-                    self._indent()
-                    self.xmlgen.endElement(k)
                 elif isinstance(v, list):
+                    self._add_kv_pairs(v)
                     self._indent()
-                    self.xmlgen.startElement(k, {})
-                    for tup in v:
-                        self._add_meta(OrderedDict([tup]))
-                    self._indent()
-                    self.xmlgen.endElement(k)
                 else:
-                    self._indent()
-                    self.xmlgen.startElement(k, {})
                     self.xmlgen.characters(v)
-                    self.xmlgen.endElement(k)
+
+                self.xmlgen.endElement(k)
             self._level -= 1
 
         def add_meta(self, meta):
             self._indent()
             self.xmlgen.startElement("meta", {})
-            self._add_meta(meta)
+            self._add_kv_pairs(meta.items())
             self._indent()
             self.xmlgen.endElement("meta")
 
