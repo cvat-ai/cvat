@@ -12,10 +12,10 @@ from typing import Optional
 import pytest
 from cvat_sdk import Client, models
 from cvat_sdk.api_client import exceptions
+from cvat_sdk.api_client.rest import RESTClientObject
 from cvat_sdk.core.exceptions import BackgroundRequestException
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from cvat_sdk.core.proxies.types import Location
-from cvat_sdk.core.uploading import Uploader, _MyTusUploader
 from PIL import Image
 from pytest_cases import fixture_ref, parametrize
 
@@ -470,17 +470,18 @@ class TestTaskUsecases(TestDatasetExport):
     def test_can_create_from_backup_in_chunks(
         self, monkeypatch: pytest.MonkeyPatch, fxt_new_task: Task, fxt_backup_file: Path
     ):
-        monkeypatch.setattr(Uploader, "_CHUNK_SIZE", 100)
+        monkeypatch.setattr("cvat_sdk.core.uploading.TUS_CHUNK_SIZE", 100)
 
         num_requests = 0
-        original_do_request = _MyTusUploader._do_request
+        original_request = RESTClientObject.request
 
-        def counting_do_request(uploader):
+        def counting_request(self, method, *args, headers, **kwargs):
             nonlocal num_requests
-            num_requests += 1
-            original_do_request(uploader)
+            if method.upper() == "PATCH" and "Upload-Offset" in headers:
+                num_requests += 1
+            return original_request(self, method, *args, headers=headers, **kwargs)
 
-        monkeypatch.setattr(_MyTusUploader, "_do_request", counting_do_request)
+        monkeypatch.setattr(RESTClientObject, "request", counting_request)
 
         self._test_can_create_from_backup(fxt_new_task, fxt_backup_file)
 
