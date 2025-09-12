@@ -26,6 +26,12 @@ export interface AuthState {
     hasEmailVerificationBeenSent: boolean;
 }
 
+export interface ChangePasswordData {
+    oldPassword: string;
+    newPassword1: string;
+    newPassword2: string;
+}
+
 export interface ProjectsQuery {
     page: number;
     pageSize: number;
@@ -548,6 +554,7 @@ export interface NotificationsState {
             changePassword: null | ErrorState;
             requestPasswordReset: null | ErrorState;
             resetPassword: null | ErrorState;
+            updateUser: null | ErrorState;
         };
         serverAPI: {
             fetching: null | ErrorState;

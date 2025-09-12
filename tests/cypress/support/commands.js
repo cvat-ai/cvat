@@ -748,15 +748,21 @@ Cypress.Commands.add('createPolygon', (createPolygonParams) => {
     cy.checkObjectParameters(createPolygonParams, 'POLYGON');
 });
 
-Cypress.Commands.add('openSettings', () => {
+Cypress.Commands.add('clickUserMenuItem', (itemName, verify) => {
     cy.get('.cvat-header-menu-user-dropdown').click();
     cy.get('.cvat-header-menu')
         .should('exist')
         .and('be.visible')
         .find('[role="menuitem"]')
-        .filter(':contains("Settings")')
+        .filter(`:contains("${itemName}")`)
         .click();
-    cy.get('.cvat-settings-modal').should('be.visible');
+    verify();
+});
+
+Cypress.Commands.add('openSettings', () => {
+    cy.clickUserMenuItem('Settings', () => {
+        cy.get('.cvat-settings-modal').should('be.visible');
+    });
 });
 
 Cypress.Commands.add('closeSettings', () => {
@@ -764,6 +770,12 @@ Cypress.Commands.add('closeSettings', () => {
         cy.contains('button', 'Close').click();
     });
     cy.get('.cvat-settings-modal').should('not.be.visible');
+});
+
+Cypress.Commands.add('openProfile', () => {
+    cy.clickUserMenuItem('Profile', () => {
+        cy.get('.cvat-profile-page').should('be.visible');
+    });
 });
 
 Cypress.Commands.add('changeWorkspace', (mode) => {
