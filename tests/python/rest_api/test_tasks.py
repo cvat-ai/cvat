@@ -439,6 +439,16 @@ class TestPostTasks:
                 assert task.assignee is None
                 assert task.assignee_updated_date is None
 
+    def test_can_create_without_labels(self, admin_user):
+        task_spec = {"name": "test task without labels"}
+
+        with make_api_client(admin_user) as api_client:
+            (task, _) = api_client.tasks_api.create(task_write_request=task_spec)
+
+            (labels, _) = api_client.labels_api.list(task_id=task.id)
+
+            assert labels.count == 0
+
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetData:
