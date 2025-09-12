@@ -37,13 +37,14 @@ FROM build-image-base AS build-image-av
 ARG PREFIX=/opt/ffmpeg
 ARG PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig
 
-ENV FFMPEG_VERSION=4.3.1 \
-    OPENH264_VERSION=2.1.1
+ARG OPENH264_VERSION=2.6.0
 
 WORKDIR /tmp/openh264
 RUN curl -sL https://github.com/cisco/openh264/archive/v${OPENH264_VERSION}.tar.gz --output - | \
     tar -zx --strip-components=1 && \
     make -j5 && make install-shared PREFIX=${PREFIX} && make clean
+
+ARG FFMPEG_VERSION=7.1.1
 
 WORKDIR /tmp/ffmpeg
 RUN curl -sL https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.gz --output - | \
@@ -54,20 +55,33 @@ RUN curl -sL https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.gz --outpu
 
 COPY utils/dataset_manifest/requirements.txt /tmp/utils/dataset_manifest/requirements.txt
 
+ARG AV_VERSION=15.0.0
+
 # Since we're using pip-compile-multi, each dependency can only be listed in
 # one requirements file. In the case of PyAV, that should be
 # `dataset_manifest/requirements.txt`. Make sure it's actually there,
 # and then remove everything else.
 RUN grep -q '^av==' /tmp/utils/dataset_manifest/requirements.txt
-RUN sed -i '/^av==/!d' /tmp/utils/dataset_manifest/requirements.txt
-
-# Work around https://github.com/PyAV-Org/PyAV/issues/1140
-RUN pip install setuptools wheel 'cython<3'
+RUN echo 'av==${AV_VERSION}' > /tmp/utils/dataset_manifest/requirements.txt
 
 RUN --mount=type=cache,target=/root/.cache/pip/http-v2 \
-    python3 -m pip wheel --no-binary=av --no-build-isolation \
-    -r /tmp/utils/dataset_manifest/requirements.txt \
-    -w /tmp/wheelhouse
+    AV_MAJOR=$(echo $AV_VERSION | cut -d. -f1) && \
+    if [ "$AV_MAJOR" -le 10 ]; then \
+        # Work around https://github.com/PyAV-Org/PyAV/issues/1140
+        pip install setuptools wheel 'cython<3'; \
+        python3 -m pip wheel --no-binary=av --no-build-isolation \
+            -r /tmp/utils/dataset_manifest/requirements.txt \
+            -w /tmp/wheelhouse; \
+    elif [ "$AV_MAJOR" -ge 15 ]; then \
+        # without this env var fails because it is not a virtual environment
+        GITHUB_ACTIONS=true python3 -m pip wheel --no-binary=av \
+            -r /tmp/utils/dataset_manifest/requirements.txt \
+            -w /tmp/wheelhouse; \
+    else \
+        python3 -m pip wheel --no-binary=av \
+            -r /tmp/utils/dataset_manifest/requirements.txt \
+            -w /tmp/wheelhouse; \
+    fi
 
 # This stage builds wheels for all dependencies (except PyAV)
 FROM build-image-base AS build-image
