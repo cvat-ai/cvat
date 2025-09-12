@@ -5,7 +5,7 @@
 
 import _ from 'lodash';
 import { AnyAction } from 'redux';
-import { ThunkAction } from 'utils/redux';
+import { ThunkAction, ActionWithPayload } from 'utils/redux';
 import {
     GridColor, ColorBy, SettingsState, ToolsBlockerState,
     CombinedState,
@@ -49,6 +49,7 @@ export enum SettingsActionTypes {
     SWITCH_INTELLIGENT_POLYGON_CROP = 'SWITCH_INTELLIGENT_POLYGON_CROP',
     SWITCH_SHOWNIG_INTERPOLATED_TRACKS = 'SWITCH_SHOWNIG_INTERPOLATED_TRACKS',
     SWITCH_SHOWING_OBJECTS_TEXT_ALWAYS = 'SWITCH_SHOWING_OBJECTS_TEXT_ALWAYS',
+    SWITCH_SHOWING_POLYGON_DIRECTION_ALWAYS = 'SWITCH_SHOWING_POLYGON_DIRECTION_ALWAYS',
     CHANGE_CANVAS_BACKGROUND_COLOR = 'CHANGE_CANVAS_BACKGROUND_COLOR',
     SWITCH_SETTINGS_DIALOG = 'SWITCH_SETTINGS_DIALOG',
     SET_SETTINGS = 'SET_SETTINGS',
@@ -411,6 +412,15 @@ export function switchShowingTagsOnFrame(showTagsOnFrame: boolean): AnyAction {
     };
 }
 
+export function switchShowingPolygonDirectionAlways(showPolygonDirectionAlways: boolean): ActionWithPayload<SettingsActionTypes.SWITCH_SHOWING_POLYGON_DIRECTION_ALWAYS, { showPolygonDirectionAlways: boolean }> {
+    return {
+        type: SettingsActionTypes.SWITCH_SHOWING_POLYGON_DIRECTION_ALWAYS,
+        payload: {
+            showPolygonDirectionAlways,
+        },
+    };
+}
+
 export function enableImageFilter(filter: ImageFilter, options: object | null = null): AnyAction {
     return {
         type: SettingsActionTypes.ENABLE_IMAGE_FILTER,
@@ -438,7 +448,7 @@ export function resetImageFilters(): AnyAction {
 }
 
 export function restoreSettingsAsync(): ThunkAction {
-    return async (dispatch, getState): Promise<void> => {
+    return async (dispatch: any, getState: () => CombinedState): Promise<void> => {
         const state: CombinedState = getState();
         const { settings, shortcuts } = state;
 
@@ -455,7 +465,7 @@ export function restoreSettingsAsync(): ThunkAction {
         } as Pick<SettingsState, 'player' | 'workspace' | 'imageFilters'>;
 
         Object.entries(_.pick(newSettings, ['player', 'workspace'])).forEach(([sectionKey, section]) => {
-            Object.keys(section).forEach((key) => {
+            Object.keys(section as Record<string, any>).forEach((key) => {
                 const setValue = loadedSettings[sectionKey]?.[key];
                 if (setValue !== undefined) {
                     Object.defineProperty(newSettings[sectionKey as 'player' | 'workspace'], key, { value: setValue });

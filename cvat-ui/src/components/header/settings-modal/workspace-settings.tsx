@@ -32,6 +32,7 @@ interface Props {
     textPosition: 'center' | 'auto';
     textContent: string;
     showTagsOnFrame: boolean;
+    showPolygonDirectionAlways: boolean;
     onSwitchAutoSave(enabled: boolean): void;
     onChangeAutoSaveInterval(interval: number): void;
     onChangeAAMZoomMargin(margin: number): void;
@@ -46,6 +47,7 @@ interface Props {
     onChangeTextPosition(position: 'auto' | 'center'): void;
     onChangeTextContent(textContent: string[]): void;
     onSwitchShowingTagsOnFrame(enabled: boolean): void;
+    onSwitchShowingPolygonDirectionAlways(enabled: boolean): void;
 }
 
 function WorkspaceSettingsComponent(props: Props): JSX.Element {
@@ -64,6 +66,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
         textPosition,
         textContent,
         showTagsOnFrame,
+        showPolygonDirectionAlways,
         onSwitchAutoSave,
         onChangeAutoSaveInterval,
         onChangeAAMZoomMargin,
@@ -78,6 +81,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
         onChangeTextPosition,
         onChangeTextContent,
         onSwitchShowingTagsOnFrame,
+        onSwitchShowingPolygonDirectionAlways,
     } = props;
 
     const minAutoSaveInterval = 1;
@@ -109,10 +113,10 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                         max={maxAutoSaveInterval}
                         step={1}
                         value={Math.round(autoSaveInterval / (60 * 1000))}
-                        onChange={(value: number | undefined | string): void => {
-                            if (typeof value !== 'undefined') {
+                        onChange={(value: number | null): void => {
+                            if (typeof value === 'number') {
                                 onChangeAutoSaveInterval(
-                                    Math.floor(clamp(+value, minAutoSaveInterval, maxAutoSaveInterval)) * 60 * 1000,
+                                    Math.floor(clamp(value, minAutoSaveInterval, maxAutoSaveInterval)) * 60 * 1000,
                                 );
                             }
                         }}
@@ -196,7 +200,11 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                 <Col span={12}>
                     <InputNumber
                         className='cvat-workspace-settings-text-size'
-                        onChange={onChangeTextFontSize}
+                        onChange={(value: number | null): void => {
+                            if (typeof value === 'number') {
+                                onChangeTextFontSize(value);
+                            }
+                        }}
                         min={8}
                         max={20}
                         value={textFontSize}
@@ -271,6 +279,22 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                     <Text type='secondary'>Show frame tags in the corner of the workspace</Text>
                 </Col>
             </Row>
+            <Row className='cvat-workspace-settings-show-polygon-direction-always cvat-player-setting'>
+                <Col span={24}>
+                    <Checkbox
+                        className='cvat-text-color'
+                        checked={showPolygonDirectionAlways}
+                        onChange={(event: CheckboxChangeEvent): void => {
+                            onSwitchShowingPolygonDirectionAlways(event.target.checked);
+                        }}
+                    >
+                        Always show polygon direction
+                    </Checkbox>
+                </Col>
+                <Col span={24}>
+                    <Text type='secondary'>Show direction arrows and initial points for polygons and polylines at all times</Text>
+                </Col>
+            </Row>
             <Row className='cvat-workspace-settings-aam-zoom-margin cvat-player-setting'>
                 <Col>
                     <Text className='cvat-text-color'> Attribute annotation mode (AAM) zoom margin </Text>
@@ -278,9 +302,9 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                         min={minAAMMargin}
                         max={maxAAMMargin}
                         value={aamZoomMargin}
-                        onChange={(value: number | undefined | string): void => {
-                            if (typeof value !== 'undefined') {
-                                onChangeAAMZoomMargin(Math.floor(clamp(+value, minAAMMargin, maxAAMMargin)));
+                        onChange={(value: number | null): void => {
+                            if (typeof value === 'number') {
+                                onChangeAAMZoomMargin(Math.floor(clamp(value, minAAMMargin, maxAAMMargin)));
                             }
                         }}
                     />
@@ -293,10 +317,10 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                         min={minControlPointsSize}
                         max={maxControlPointsSize}
                         value={controlPointsSize}
-                        onChange={(value: number | undefined | string): void => {
-                            if (typeof value !== 'undefined') {
+                        onChange={(value: number | null): void => {
+                            if (typeof value === 'number') {
                                 onChangeControlPointsSize(
-                                    Math.floor(clamp(+value, minControlPointsSize, maxControlPointsSize)),
+                                    Math.floor(clamp(value, minControlPointsSize, maxControlPointsSize)),
                                 );
                             }
                         }}

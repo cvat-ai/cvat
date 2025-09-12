@@ -91,7 +91,7 @@ interface StateToProps {
     gridSize: number;
     gridColor: GridColor;
     gridOpacity: number;
-    activeLabelID: number;
+    activeLabelID: number | null;
     activeObjectType: ObjectType;
     brightnessLevel: number;
     contrastLevel: number;
@@ -115,6 +115,7 @@ interface StateToProps {
     switchableAutomaticBordering: boolean;
     keyMap: KeyMap;
     showTagsOnFrame: boolean;
+    showPolygonDirectionAlways: boolean;
     conflicts: QualityConflict[];
     showGroundTruth: boolean;
     highlightedConflict: QualityConflict | null;
@@ -197,6 +198,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 controlPointsSize,
                 textPosition,
                 textContent,
+                showPolygonDirectionAlways,
             },
             shapes: {
                 opacity, colorBy, selectedOpacity, outlined, outlineColor, showBitmap, showProjections, showGroundTruth,
@@ -238,6 +240,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         smoothImage,
         aamZoomMargin,
         showObjectsTextAlways,
+        showPolygonDirectionAlways,
         textFontSize,
         controlPointsSize,
         textPosition,
@@ -365,7 +368,7 @@ type Props = StateToProps & DispatchToProps;
 
 class CanvasWrapperComponent extends React.PureComponent<Props> {
     private debouncedUpdate = debounce(this.updateCanvas.bind(this), 250, { leading: true });
-    private canvasTipsRef = React.createRef<CanvasTipsComponent>();
+    private canvasTipsRef = React.createRef() as React.RefObject<any>;
 
     public componentDidMount(): void {
         const {
@@ -373,6 +376,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             adaptiveZoom,
             intelligentPolygonCrop,
             showObjectsTextAlways,
+            showPolygonDirectionAlways,
             workspace,
             showProjections,
             selectedOpacity,
@@ -414,6 +418,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             textPosition,
             textContent,
             resetZoom,
+            alwaysShowDirection: showPolygonDirectionAlways,
         });
 
         this.initialSetup();
@@ -514,7 +519,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
             const highlightedObjects = (highlightedConflict?.annotationConflicts || [])
                 .map((conflict: AnnotationConflict) => annotations
-                    .find((state) => state.serverID === conflict.serverID && state.objectType === conflict.type),
+                    .find((state: any) => state.serverID === conflict.serverID && state.objectType === conflict.type),
                 ).filter((state: ObjectState | undefined) => !!state) as ObjectState[];
             const highlightedClientIDs = highlightedObjects.map((state) => state?.clientID) as number[];
 
@@ -992,7 +997,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                                     const imageData = ctx.getImageData(0, 0, renderWidth, renderHeight);
 
                                     const newImageData = imageFilters
-                                        .reduce((oldImageData, activeImageModifier) => activeImageModifier
+                                        .reduce((oldImageData: any, activeImageModifier: any) => activeImageModifier
                                             .modifier.processImage(oldImageData, frame), imageData);
                                     const newImageBitmap = await createImageBitmap(newImageData);
                                     return {
@@ -1128,7 +1133,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         return (
             <>
                 <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
-                <CanvasTipsComponent ref={this.canvasTipsRef} />
+                {React.createElement(CanvasTipsComponent as any, { ref: this.canvasTipsRef })}
                 {
                     !canvasIsReady && (
                         <div className='cvat-spinner-container'>

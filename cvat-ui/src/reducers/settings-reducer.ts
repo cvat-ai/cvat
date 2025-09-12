@@ -47,6 +47,7 @@ const defaultState: SettingsState = {
             buttonVisible: false,
         },
         showTagsOnFrame: true,
+        showPolygonDirectionAlways: false,
     },
     player: {
         canvasBackgroundColor: '#ffffff',
@@ -417,6 +418,15 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 workspace: {
                     ...state.workspace,
                     showTagsOnFrame: action.payload.showTagsOnFrame,
+                },
+            };
+        }
+        case SettingsActionTypes.SWITCH_SHOWING_POLYGON_DIRECTION_ALWAYS: {
+            return {
+                ...state,
+                workspace: {
+                    ...state.workspace,
+                    showPolygonDirectionAlways: action.payload.showPolygonDirectionAlways,
                 },
             };
         }
