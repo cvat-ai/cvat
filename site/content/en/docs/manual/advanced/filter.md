@@ -106,6 +106,66 @@ The `Cancel` button undoes the filter. The `Clear filter` button removes the fil
 
 Once applied filter automatically appears in `Recent used` list. Maximum length of the list is 10.
 
+## Filter Export, Import, and Sharing
+
+CVAT provides advanced features for sharing and reusing annotation filters across team members and sessions.
+
+### Export Filters
+
+You can export your current filter configuration to share with team members:
+
+1. Create and configure your filter rules as needed
+2. Click the `Export` button in the filter modal
+3. The filter will be copied to your clipboard as a JSON object with metadata
+4. Share this JSON with your team members via email, chat, or documentation
+
+The exported filter includes:
+- Filter logic in JSONLogic format
+- Human-readable description of the filter
+- Version information and timestamp
+- Metadata for compatibility checking
+
+### Import Filters
+
+To use a filter shared by a team member:
+
+1. Click the `Import` button in the filter modal
+2. Paste the filter JSON data in the text editor that appears
+3. Click `Apply Filter` to load and apply the imported filter
+
+The import feature supports:
+- **New format**: Complete filter objects with metadata
+- **Legacy format**: Raw filter logic for backward compatibility
+- **Validation**: Automatic checking of filter format and compatibility
+
+### Share via URL
+
+For quick sharing, you can generate a shareable URL:
+
+1. Configure your filter
+2. Click the `Share URL` button
+3. A URL with embedded filter parameters is copied to your clipboard
+4. When someone visits this URL, the filter is automatically applied
+
+{{% alert title="Note" color="primary" %}}
+URL-based filter sharing automatically applies filters when the page loads,
+making it perfect for sharing specific annotation views with team members.
+{{% /alert %}}
+
+### Text-Based Filter Editor
+
+For advanced users, CVAT provides a text-based editor for direct filter manipulation:
+
+1. Click the `Import` button to open the text editor
+2. Enter or edit filter JSON directly
+3. The editor supports syntax validation and error reporting
+4. Use `Apply Filter` to test your custom filter logic
+
+This feature is particularly useful for:
+- Creating complex filter combinations
+- Debugging filter logic
+- Batch processing of filter configurations
+
 ---
 
 ## Sort and filter lists

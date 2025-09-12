@@ -9,7 +9,10 @@
     "type-check": "tsc --noEmit",
     "type-check:watch": "yarn run type-check --watch",
     "lint": "eslint './src/**/*.{ts,tsx}'",
-    "lint:fix": "eslint './src/**/*.{ts,tsx}' --fix"
+    "lint:fix": "eslint './src/**/*.{ts,tsx}' --fix",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "browserslist": [
     "Chrome >= 99",
