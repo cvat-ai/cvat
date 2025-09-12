@@ -36,6 +36,8 @@ interface Props {
     propagateShortcut: string;
     toBackgroundShortcut: string;
     toForegroundShortcut: string;
+    moveToPreviousLayerShortcut: string;
+    moveToNextLayerShortcut: string;
     removeShortcut: string;
     sliceShortcut: string;
     runAnnotationsActionShortcut: string;
@@ -47,7 +49,9 @@ interface Props {
     createURL(): void;
     switchOrientation(): void;
     toBackground(): void;
+    moveToPreviousLayer(): void;
     toForeground(): void;
+    moveToNextLayer(): void;
     resetCuboidPerspective(): void;
     runAnnotationAction(): void;
     edit(): void;
@@ -73,6 +77,8 @@ function ItemTopComponent(props: Props): JSX.Element {
         propagateShortcut,
         toBackgroundShortcut,
         toForegroundShortcut,
+        moveToPreviousLayerShortcut,
+        moveToNextLayerShortcut,
         removeShortcut,
         sliceShortcut,
         runAnnotationsActionShortcut,
@@ -86,6 +92,8 @@ function ItemTopComponent(props: Props): JSX.Element {
         switchOrientation,
         toBackground,
         toForeground,
+        moveToPreviousLayer,
+        moveToNextLayer,
         resetCuboidPerspective,
         runAnnotationAction,
         edit,
@@ -157,6 +165,8 @@ function ItemTopComponent(props: Props): JSX.Element {
                             propagateShortcut,
                             toBackgroundShortcut,
                             toForegroundShortcut,
+                            moveToPreviousLayerShortcut,
+                            moveToNextLayerShortcut,
                             removeShortcut,
                             sliceShortcut,
                             runAnnotationsActionShortcut,
@@ -168,6 +178,8 @@ function ItemTopComponent(props: Props): JSX.Element {
                             switchOrientation,
                             toBackground,
                             toForeground,
+                            moveToPreviousLayer,
+                            moveToNextLayer,
                             resetCuboidPerspective,
                             setColorPickerVisible,
                             edit,
