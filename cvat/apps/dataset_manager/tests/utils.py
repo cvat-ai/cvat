@@ -5,7 +5,7 @@
 import os
 import tempfile
 import unittest
-from types import GeneratorType, TracebackType
+from types import TracebackType
 from typing import Optional
 from unittest.mock import patch
 
@@ -134,21 +134,29 @@ def ensure_extractors_efficiency(cls):
     class MockJobAnnotation(JobAnnotation):
         def _init_shapes_from_db(self, *, streaming: bool = False):
             super()._init_shapes_from_db(streaming=streaming)
+
+            assert isinstance(self.ir_data.shapes, list) != streaming
+
             if streaming:
                 # should only generate shapes once
-                assert isinstance(self.ir_data.shapes, GeneratorType)
+                shapes = self.ir_data.shapes
+
                 already_iterated = False
 
                 class SinglePass:
-                    def __iter__(_):
+                    def __iter__(self):
+                        return self
+
+                    def __next__(self):
                         nonlocal already_iterated
                         assert not already_iterated
-                        already_iterated = True
-                        return self.ir_data.shapes
+                        try:
+                            return next(shapes)
+                        except StopIteration:
+                            already_iterated = True
+                            raise
 
                 self.ir_data.shapes = SinglePass()
-            else:
-                assert isinstance(self.ir_data.shapes, list)
 
     cls = patch(
         "cvat.apps.dataset_manager.bindings.CvatTaskOrJobDataExtractor",
