@@ -10,6 +10,7 @@ module.exports = defineConfig({
     e2e: {
         ...baseConfig.e2e,
         specPattern: [
+            'cypress/e2e/setup/setup_canvas3d.js',
             'cypress/e2e/auth_page.js',
             'cypress/e2e/canvas3d_functionality/*.js',
             'cypress/e2e/canvas3d_functionality_2/*.js',

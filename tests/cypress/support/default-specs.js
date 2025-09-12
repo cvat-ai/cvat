@@ -5,18 +5,31 @@
 function defaultTaskSpec({
     labelName,
     labelType,
+    attributes,
     taskName,
     serverFiles,
     startFrame,
+    stopFrame,
     frameFilter,
     segmentSize,
     validationParams,
     projectID,
 }) {
+    const convertedAttrs = [];
+    if (attributes !== undefined) {
+        for (const attr of attributes) {
+            convertedAttrs.push({
+                name: attr.name,
+                default_value: attr.values,
+                input_type: attr.type.toLowerCase(),
+                mutable: false,
+                values: [],
+            });
+            // TODO: segregate all field mapping logic to a separate interface
+        }
+    }
     const taskSpec = {
-        labels: [
-            { name: labelName, attributes: [], type: labelType || 'any' },
-        ],
+        labels: [{ name: labelName, attributes: convertedAttrs, type: labelType || 'any' }],
         name: taskName,
         project_id: projectID || null,
         source_storage: { location: 'local' },
@@ -36,6 +49,9 @@ function defaultTaskSpec({
     };
     if (startFrame) {
         dataSpec.start_frame = startFrame;
+    }
+    if (stopFrame) {
+        dataSpec.stop_frame = stopFrame;
     }
     if (frameFilter) {
         dataSpec.frame_filter = frameFilter;
