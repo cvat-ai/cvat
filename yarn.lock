@@ -4355,14 +4355,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:^1.8.2":
-  version: 1.8.2
-  resolution: "axios@npm:1.8.2"
+"axios@npm:^1.12.0":
+  version: 1.12.1
+  resolution: "axios@npm:1.12.1"
   dependencies:
     follow-redirects: "npm:^1.15.6"
-    form-data: "npm:^4.0.0"
+    form-data: "npm:^4.0.4"
     proxy-from-env: "npm:^1.1.0"
-  checksum: 10c0/d8c2969e4642dc6d39555ac58effe06c051ba7aac2bd40cad7a9011c019fb2f16ee011c5a6906cb25b8a4f87258c359314eb981f852e60ad445ecaeb793c7aa2
+  checksum: 10c0/eda4dff56c02d13b950fd9487b678ac197ce5f21dfc98df73632df29e45d8dd24602a34e8d9b6e016d84a41ef7fd7fc4a7618060a72cc536b91cda1eaa9cd907
   languageName: node
   linkType: hard
 
@@ -5671,7 +5671,7 @@ __metadata:
   resolution: "cvat-core@workspace:cvat-core"
   dependencies:
     "@babel/preset-typescript": "npm:^7.23.3"
-    axios: "npm:^1.8.2"
+    axios: "npm:^1.12.0"
     axios-retry: "npm:^4.0.0"
     babel-plugin-transform-import-meta: "npm:^2.2.1"
     cvat-data: "link:./../cvat-data"
