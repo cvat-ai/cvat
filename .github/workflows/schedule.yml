@@ -144,10 +144,12 @@ jobs:
 
       - name: REST API and SDK tests
         run: |
-          pytest -vv tests/python/ --alluredir=tests/python/allure-results
+          echo 'Run 1: without cache'
+          pytest -vvv tests/python/ --alluredir=tests/python/allure-results
           pytest tests/python/ --stop-services
 
-          CVAT_ALLOW_STATIC_CACHE="true" pytest tests/python
+          echo 'Run 2: with cache'
+          CVAT_ALLOW_STATIC_CACHE="true" pytest -vvv tests/python
           pytest tests/python/ --stop-services
 
       - name: Upload allure results for REST API tests
