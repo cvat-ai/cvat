@@ -144,7 +144,7 @@ jobs:
 
       - name: REST API and SDK tests
         run: |
-          pytest tests/python/ --alluredir=tests/python/allure-results
+          pytest -vv tests/python/ --alluredir=tests/python/allure-results
           pytest tests/python/ --stop-services
 
           CVAT_ALLOW_STATIC_CACHE="true" pytest tests/python
