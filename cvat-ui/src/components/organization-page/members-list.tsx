@@ -7,13 +7,10 @@ import React from 'react';
 import Pagination from 'antd/lib/pagination';
 import Spin from 'antd/lib/spin';
 
-import { useDispatch, useSelector } from 'react-redux';
-import { CombinedState } from 'reducers';
-import {
-    removeOrganizationMemberAsync, updateOrganizationMemberAsync,
-} from 'actions/organization-actions';
-import { resendInvitationAsync } from 'actions/invitations-actions';
+import { useSelector, shallowEqual } from 'react-redux';
+import { CombinedState, SelectedResourceType } from 'reducers';
 import { Membership } from 'cvat-core-wrapper';
+import BulkWrapper from 'components/bulk-wrapper';
 import MemberItem from './member-item';
 import EmptyListComponent from './empty-list';
 
@@ -28,14 +25,19 @@ export interface Props {
     fetchMembers: () => void;
 }
 
-function MembersList(props: Props): JSX.Element {
+function MembersList(props: Readonly<Props>): JSX.Element {
     const {
-        organizationInstance, fetching, members, pageSize, pageNumber, fetchMembers, onPageChange,
+        fetching, members, pageSize, pageNumber, fetchMembers, onPageChange,
     } = props;
-    const dispatch = useDispatch();
-    const inviting = useSelector((state: CombinedState) => state.organizations.inviting);
-    const updatingMember = useSelector((state: CombinedState) => state.organizations.updatingMember);
-    const removingMember = useSelector((state: CombinedState) => state.organizations.removingMember);
+    const {
+        inviting,
+        updatingMember,
+        removingMember,
+    } = useSelector((state: CombinedState) => ({
+        inviting: state.organizations.inviting,
+        updatingMember: state.organizations.updatingMember,
+        removingMember: state.organizations.removingMember,
+    }), shallowEqual);
 
     if (fetching || inviting || updatingMember || removingMember) {
         return <Spin className='cvat-spinner' />;
@@ -44,40 +46,23 @@ function MembersList(props: Props): JSX.Element {
     const content = members.length ? (
         <>
             <div className='cvat-organization-members-list'>
-                {members.map(
-                    (member: Membership): JSX.Element => (
-                        <MemberItem
-                            key={member.user.id}
-                            membershipInstance={member}
-                            onRemoveMembership={() => {
-                                dispatch(
-                                    removeOrganizationMemberAsync(organizationInstance, member, () => {
-                                        fetchMembers();
-                                    }),
-                                );
-                            }}
-                            onUpdateMembershipRole={(role: string) => {
-                                dispatch(
-                                    updateOrganizationMemberAsync(organizationInstance, member, role, () => {
-                                        fetchMembers();
-                                    }),
-                                );
-                            }}
-                            onResendInvitation={(key: string) => {
-                                dispatch(
-                                    resendInvitationAsync(organizationInstance, key),
-                                );
-                            }}
-                            onDeleteInvitation={() => {
-                                dispatch(
-                                    removeOrganizationMemberAsync(organizationInstance, member, () => {
-                                        fetchMembers();
-                                    }),
-                                );
-                            }}
-                        />
-                    ),
-                )}
+                <BulkWrapper
+                    currentResourceIds={members.map((member) => member.id)}
+                    resourceType={SelectedResourceType.MEMBERS}
+                >
+                    {(selectProps) => (
+                        <>
+                            {members.map((member, idx) => (
+                                <MemberItem
+                                    key={member.id}
+                                    membershipInstance={member}
+                                    fetchMembers={fetchMembers}
+                                    {...selectProps(member.id, idx)}
+                                />
+                            ))}
+                        </>
+                    )}
+                </BulkWrapper>
             </div>
             <div className='cvat-organization-members-pagination-block'>
                 <Pagination

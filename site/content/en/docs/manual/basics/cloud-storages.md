@@ -27,7 +27,9 @@ In the upper right corner, there are {{< ilink "/docs/manual/advanced/filter#sor
 
 ## Filter
 
-> Applying the filter disables the {{< ilink "/docs/manual/advanced/filter#quick-filters" "quick filters" >}}.
+{{% alert title="Note" color="primary" %}}
+Applying the filter disables the {{< ilink "/docs/manual/advanced/filter#quick-filters" "quick filters" >}}.
+{{% /alert %}}
 
 The filter works similarly to the filters for annotation,
 you can create rules from [properties](#supported-properties-for-jobs-list),

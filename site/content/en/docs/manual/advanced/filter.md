@@ -114,8 +114,10 @@ On the {{< ilink "/docs/manual/advanced/projects#projects-page" "projects" >}}, 
 {{< ilink "/docs/manual/basics/tasks-page" "tasks" >}}, {{< ilink "/docs/manual/basics/jobs-page" "jobs" >}},
 and {{< ilink "/docs/manual/basics/cloud-storages" "cloud storage" >}} pages, you can use sorting and filters.
 
-> The applied filter and sorting will be displayed in the URL of your browser,
-> Thus, you can share the page with sorting and filter applied.
+{{% alert title="Note" color="primary" %}}
+The applied filter and sorting will be displayed in the URL of your browser,
+Thus, you can share the page with sorting and filter applied.
+{{% /alert %}}
 
 ### Sort by
 

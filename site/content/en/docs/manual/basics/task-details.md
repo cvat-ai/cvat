@@ -24,6 +24,7 @@ The next actions are available on this page:
     In the list of users, you will only see the users of the
     {{< ilink "/docs/manual/advanced/organization" "organization" >}}
     where the task is created.
+1. **Cloud storage** — view the cloud storage attached to the task and change it to another attached storage if needed.
 
 **Jobs** is a list of all jobs for a particular task. Here you can find the next data:
 - Jobs name with a hyperlink to it.

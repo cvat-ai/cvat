@@ -22,7 +22,6 @@ import {
     SerializedRequest, SerializedJobValidationLayout, SerializedTaskValidationLayout, SerializedConsensusSettingsData,
 } from './server-response-types';
 import { PaginatedResource, UpdateStatusData } from './core-types';
-import { Request } from './request';
 import { Storage } from './storage';
 import { SerializedEvent } from './event';
 import { RQStatus, StorageLocation, WebhookSourceType } from './enums';
@@ -353,7 +352,7 @@ Axios.interceptors.request.use((reqConfig) => {
 });
 
 Axios.interceptors.response.use((response) => {
-    if (isResourceURL(response.config.url) &&
+    if (isResourceURL(response.config.url) && response.config.method === 'get' &&
         'organization' in (response.data || {})
     ) {
         const newOrgId: number | null = response.data.organization;
@@ -995,12 +994,14 @@ async function backupTask(
     targetStorage: Storage,
     useDefaultSettings: boolean,
     fileName?: string,
+    lightweight?: boolean,
 ): Promise<string | void> {
     const { backendAPI } = config;
     const params: Params = {
         ...enableOrganization(),
         ...configureStorage(targetStorage, useDefaultSettings),
         ...(fileName ? { filename: fileName } : {}),
+        ...(typeof lightweight === 'boolean' ? { lightweight } : {}),
     };
     const url = `${backendAPI}/tasks/${id}/backup/export`;
 
@@ -1075,6 +1076,7 @@ async function backupProject(
     targetStorage: Storage,
     useDefaultSettings: boolean,
     fileName?: string,
+    lightweight?: boolean,
 ): Promise<string | void> {
     const { backendAPI } = config;
     // keep current default params to 'freeze" them during this request
@@ -1082,6 +1084,7 @@ async function backupProject(
         ...enableOrganization(),
         ...configureStorage(targetStorage, useDefaultSettings),
         ...(fileName ? { filename: fileName } : {}),
+        ...(typeof lightweight === 'boolean' ? { lightweight } : {}),
     };
 
     const url = `${backendAPI}/projects/${id}/backup/export`;
@@ -1155,7 +1158,7 @@ async function restoreProject(storage: Storage, file: File | string): Promise<st
 async function createTask(
     taskSpec: Partial<SerializedTask>,
     taskDataSpec: any,
-    onUpdate: (request: Request | UpdateStatusData) => void,
+    onUpdate: (updateData: UpdateStatusData) => void,
 ): Promise<{ taskID: number, rqID: string }> {
     const { backendAPI, origin } = config;
     // keep current default params to 'freeze" them during this request
@@ -1500,6 +1503,19 @@ async function getUsers(filter = { page_size: 'all' }): Promise<SerializedUser[]
     }
 
     return response.data.results;
+}
+
+async function updateUser(id: number, userData: Partial<SerializedUser>): Promise<SerializedUser> {
+    const { backendAPI } = config;
+
+    let response = null;
+    try {
+        response = await Axios.patch(`${backendAPI}/users/${id}`, userData);
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+
+    return response.data;
 }
 
 function getPreview(instance: 'projects' | 'tasks' | 'jobs' | 'cloudstorages' | 'functions') {
@@ -1961,13 +1977,14 @@ async function getOrganizations(filter) {
         response = await Axios.get(`${backendAPI}/organizations`, {
             params: {
                 ...filter,
+                page_size: filter.page_size || 10,
+                sort: filter.sort || 'slug',
             },
         });
     } catch (errorData) {
         throw generateError(errorData);
     }
-
-    return response.data.results;
+    return response.data;
 }
 
 async function createOrganization(data: SerializedOrganization): Promise<SerializedOrganization> {
@@ -2468,6 +2485,7 @@ export default Object.freeze({
     users: Object.freeze({
         get: getUsers,
         self: getSelf,
+        update: updateUser,
     }),
 
     frames: Object.freeze({

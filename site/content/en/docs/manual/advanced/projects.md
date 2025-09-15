@@ -15,7 +15,9 @@ In the upper right corner there are {{< ilink "/docs/manual/advanced/filter#sort
 
 ## Filter
 
-> Applying a filter disables the {{< ilink "/docs/manual/advanced/filter#quick-filters" "quick filters" >}}.
+{{% alert title="Note" color="primary" %}}
+Applying a filter disables the {{< ilink "/docs/manual/advanced/filter#quick-filters" "quick filters" >}}.
+{{% /alert %}}
 
 The filter works similarly to the filters for annotation,
 you can create rules from [properties](#supported-properties-for-projects-list),
@@ -78,6 +80,12 @@ Here you can do the following:
      section.
    - `Backup project` - make a backup of the project read more in the
      {{< ilink "/docs/manual/advanced/backup" "backup" >}} section.
+   - `Organization` - move the project between your personal workspace or organizations.
+     Please, refer to the
+     {{< ilink
+     "/docs/manual/advanced/organization#transfer-tasks-and-projects-between-organizations"
+     "Transfer between organizations" >}}
+     section for details.
    - `Delete` - remove the project and all related tasks.
 1. Change issue tracker or open issue tracker if it is specified.
 1. Change labels and skeleton.

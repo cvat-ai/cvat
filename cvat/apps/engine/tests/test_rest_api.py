@@ -45,6 +45,7 @@ from rq.queue import Queue as RQQueue
 
 from cvat.apps.dataset_manager.tests.utils import TestDir
 from cvat.apps.dataset_manager.util import current_function_name
+from cvat.apps.engine.cache import MediaCache
 from cvat.apps.engine.cloud_provider import AWS_S3, Status
 from cvat.apps.engine.media_extractors import ValidateDimension, sort
 from cvat.apps.engine.models import (
@@ -1714,6 +1715,31 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
 
         return sorted(response.data["results"], key=lambda task: task["name"])
 
+    def _compare_tasks(self, original_task, imported_task):
+        compare_objects(
+            self=self,
+            obj1=original_task,
+            obj2=imported_task,
+            ignore_keys=(
+                "id",
+                "url",
+                "created_date",
+                "updated_date",
+                "username",
+                "project_id",
+                "data",
+                # backup does not store overlap explicitly
+                "overlap",
+            ),
+        )
+
+    def _export_backup(self, user, pid, expected_4xx_status_code=None):
+        return self._export_project_backup(
+            user,
+            pid,
+            expected_4xx_status_code=expected_4xx_status_code,
+        )
+
     def _run_api_v2_projects_id_export_import(self, user):
         for project in self.projects:
             expected_4xx_status_code = None
@@ -1724,7 +1750,7 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
                 expected_4xx_status_code = status.HTTP_403_FORBIDDEN
 
             pid = project.id
-            response = self._export_project_backup(
+            response = self._export_backup(
                 user, pid, expected_4xx_status_code=expected_4xx_status_code
             )
 
@@ -1774,6 +1800,7 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
                                 "updated_date",
                                 "username",
                                 "project_id",
+                                "data_cloud_storage_id",
                                 "data",
                                 # backup does not store overlap explicitly
                                 "overlap",
@@ -1793,30 +1820,9 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
         self._run_api_v2_projects_id_export_import(None)
 
 
-@override_settings(MEDIA_CACHE_ALLOW_STATIC_CACHE=False)
-class ProjectCloudBackupAPINoStaticChunksTestCase(ProjectBackupAPITestCase):
+class _CloudStorageTestBase(ApiTestBase):
     @classmethod
-    def setUpTestData(cls):
-        create_db_users(cls)
-        cls.client = APIClient()
-        cls._create_cloud_storage()
-        cls._create_media()
-        cls._create_projects()
-
-    @classmethod
-    def _create_cloud_storage(cls):
-        data = {
-            "provider_type": "AWS_S3_BUCKET",
-            "resource": "test",
-            "display_name": "Bucket",
-            "credentials_type": "KEY_SECRET_KEY_PAIR",
-            "key": "minio_access_key",
-            "secret_key": "minio_secret_key",
-            "specific_attributes": "endpoint_url=http://minio:9000",
-            "description": "Some description",
-            "manifests": [],
-        }
-
+    def _start_aws_patch(cls):
         class MockAWS(AWS_S3):
             _files = {}
 
@@ -1836,10 +1842,28 @@ class ProjectCloudBackupAPINoStaticChunksTestCase(ProjectBackupAPITestCase):
             def _download_fileobj_to_stream(self, key: str, stream: BinaryIO, /):
                 stream.write(self._files[key])
 
-        cls.mock_aws = MockAWS
+        cls._aws_patch = mock.patch("cvat.apps.engine.cloud_provider.AWS_S3", MockAWS)
+        cls._aws_patch.start()
 
-        cls.aws_patch = mock.patch("cvat.apps.engine.cloud_provider.AWS_S3", MockAWS)
-        cls.aws_patch.start()
+        return MockAWS
+
+    @classmethod
+    def _stop_aws_patch(cls):
+        cls._aws_patch.stop()
+
+    @classmethod
+    def _create_cloud_storage(cls):
+        data = {
+            "provider_type": "AWS_S3_BUCKET",
+            "resource": "test",
+            "display_name": "Bucket",
+            "credentials_type": "KEY_SECRET_KEY_PAIR",
+            "key": "minio_access_key",
+            "secret_key": "minio_secret_key",
+            "specific_attributes": "endpoint_url=http://minio:9000",
+            "description": "Some description",
+            "manifests": [],
+        }
 
         with ForceLogin(cls.owner, cls.client):
             response = cls.client.post("/api/cloudstorages", data=data, format="json")
@@ -1847,12 +1871,46 @@ class ProjectCloudBackupAPINoStaticChunksTestCase(ProjectBackupAPITestCase):
                 response.status_code,
                 response.content,
             )
-            cls.cloud_storage_id = response.json()["id"]
+            return response.json()["id"]
+
+
+@override_settings(MEDIA_CACHE_ALLOW_STATIC_CACHE=False)
+class ProjectCloudBackupAPINoStaticChunksTestCase(ProjectBackupAPITestCase, _CloudStorageTestBase):
+    MAKE_LIGHTWEIGHT_BACKUP = False
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+        cls.client = APIClient()
+        cls.mock_aws = cls._start_aws_patch()
+        cls.cloud_storage_id = cls._create_cloud_storage()
+        cls._create_media()
+        cls._create_projects()
+
+        if cls.MAKE_LIGHTWEIGHT_BACKUP or settings.MEDIA_CACHE_ALLOW_STATIC_CACHE:
+            # should not load anything from CS anymore
+            cls.mock_aws._download_fileobj_to_stream = None
 
     @classmethod
     def tearDownClass(cls):
-        cls.aws_patch.stop()
+        cls._stop_aws_patch()
         super().tearDownClass()
+
+    def _compare_tasks(self, original_task, imported_task):
+        super()._compare_tasks(original_task, imported_task)
+
+        expected_location = "local"
+        if self.MAKE_LIGHTWEIGHT_BACKUP:
+            original_meta_response = self._get_request(
+                f"/api/tasks/{original_task['id']}/data/meta", self.admin
+            )
+            expected_location = original_meta_response.data["storage"]
+
+        imported_meta_response = self._get_request(
+            f"/api/tasks/{imported_task['id']}/data/meta", self.admin
+        )
+        self.assertEqual(imported_meta_response.data["storage"], expected_location)
+        self.assertEqual(imported_meta_response.data["cloud_storage_id"], None)
 
     @classmethod
     def _create_media(cls):
@@ -1901,10 +1959,29 @@ class ProjectCloudBackupAPINoStaticChunksTestCase(ProjectBackupAPITestCase):
             ]
         )
 
+    def _export_backup(self, user, pid, expected_4xx_status_code=None):
+        query_params = {"lightweight": self.MAKE_LIGHTWEIGHT_BACKUP}
+        return self._export_project_backup(
+            user,
+            pid,
+            expected_4xx_status_code=expected_4xx_status_code,
+            query_params=query_params,
+        )
+
 
 @override_settings(MEDIA_CACHE_ALLOW_STATIC_CACHE=True)
 class ProjectCloudBackupAPIStaticChunksTestCase(ProjectCloudBackupAPINoStaticChunksTestCase):
     pass
+
+
+class ProjectCloudBackupLightWeightTestCase(ProjectCloudBackupAPINoStaticChunksTestCase):
+    MAKE_LIGHTWEIGHT_BACKUP = True
+
+
+class ProjectCloudBackupAPIStaticChunksLightWeightTestCase(
+    ProjectCloudBackupAPIStaticChunksTestCase
+):
+    MAKE_LIGHTWEIGHT_BACKUP = True
 
 
 class ProjectExportAPITestCase(ExportApiTestBase):
@@ -3324,38 +3401,49 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
         user = self.admin
 
         TASK_CACHE_TTL = timedelta(hours=1)
-        with (
-            mock.patch("cvat.apps.dataset_manager.views.TASK_CACHE_TTL", new=TASK_CACHE_TTL),
-            mock.patch("cvat.apps.dataset_manager.views.TTL_CONSTS", new={"task": TASK_CACHE_TTL}),
-            mock.patch(
-                "cvat.apps.dataset_manager.cron.clear_export_cache",
-                side_effect=clear_export_cache,
-            ) as mock_clear_export_cache,
-        ):
-            cleanup_export_cache_directory()
-            mock_clear_export_cache.assert_not_called()
-
-            self._export_task_backup(user, task_id, download_locally=False)
-
-            queue: RQQueue = django_rq.get_queue(settings.CVAT_QUEUES.EXPORT_DATA.value)
-            rq_job_ids = queue.finished_job_registry.get_job_ids()
-            self.assertEqual(len(rq_job_ids), 1)
-            job: RQJob | None = queue.fetch_job(rq_job_ids[0])
-            self.assertFalse(job is None)
-            file_path = job.return_value()
-            self.assertTrue(os.path.isfile(file_path))
-
+        for lightweight_backup in [True, False]:
             with (
+                self.subTest(lightweight_backup=lightweight_backup),
+                mock.patch("cvat.apps.dataset_manager.views.TASK_CACHE_TTL", new=TASK_CACHE_TTL),
                 mock.patch(
-                    "cvat.apps.dataset_manager.views.TASK_CACHE_TTL", new=timedelta(seconds=0)
+                    "cvat.apps.dataset_manager.views.TTL_CONSTS", new={"task": TASK_CACHE_TTL}
                 ),
                 mock.patch(
-                    "cvat.apps.dataset_manager.views.TTL_CONSTS", new={"task": timedelta(seconds=0)}
-                ),
+                    "cvat.apps.dataset_manager.cron.clear_export_cache",
+                    side_effect=clear_export_cache,
+                ) as mock_clear_export_cache,
             ):
                 cleanup_export_cache_directory()
-                mock_clear_export_cache.assert_called_once()
-            self.assertFalse(os.path.exists(file_path))
+                mock_clear_export_cache.assert_not_called()
+
+                self._export_task_backup(
+                    user,
+                    task_id,
+                    download_locally=False,
+                    query_params={"lightweight": lightweight_backup},
+                )
+
+                queue: RQQueue = django_rq.get_queue(settings.CVAT_QUEUES.EXPORT_DATA.value)
+                rq_job_ids = queue.finished_job_registry.get_job_ids()
+                self.assertEqual(len(rq_job_ids), 1)
+                job: RQJob | None = queue.fetch_job(rq_job_ids[0])
+                self.assertFalse(job is None)
+                file_path = job.return_value()
+                self.assertTrue(os.path.isfile(file_path))
+
+                with (
+                    mock.patch(
+                        "cvat.apps.dataset_manager.views.TASK_CACHE_TTL", new=timedelta(seconds=0)
+                    ),
+                    mock.patch(
+                        "cvat.apps.dataset_manager.views.TTL_CONSTS",
+                        new={"task": timedelta(seconds=0)},
+                    ),
+                ):
+                    cleanup_export_cache_directory()
+                    mock_clear_export_cache.assert_called_once()
+                self.assertFalse(os.path.exists(file_path))
+                queue.finished_job_registry.remove(rq_job_ids[0], delete_job=True)
 
 
 def generate_random_image_file(filename):
@@ -7604,3 +7692,144 @@ class TaskAnnotation2DContext(ApiTestBase):
                 "/api/tasks/%s/data" % task_id, self.admin, query_params=query_params
             )
             self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+class TaskChangeCloudStorageTestCase(_CloudStorageTestBase):
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+        cls.client = APIClient()
+        cls.mock_aws = cls._start_aws_patch()
+        cls.cloud_storage_id_1 = cls._create_cloud_storage()
+        cls.cloud_storage_id_2 = cls._create_cloud_storage()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._stop_aws_patch()
+        super().tearDownClass()
+
+    def _create_cloud_task(self):
+        data = {
+            "name": "my cloud task #1",
+            "owner_id": self.owner.id,
+            "overlap": 0,
+            "segment_size": 100,
+            "labels": [{"name": "person"}],
+        }
+
+        for file in [
+            generate_random_image_file("test_1.jpg")[1],
+            generate_random_image_file("test_2.jpg")[1],
+        ]:
+            self.mock_aws.create_file(file.name, file.getvalue())
+
+        image_data = {
+            "server_files[0]": "test_1.jpg",
+            "server_files[1]": "test_2.jpg",
+            "image_quality": 75,
+            "cloud_storage_id": self.cloud_storage_id_1,
+            "storage": StorageChoice.CLOUD_STORAGE,
+        }
+        return self._create_task(data, image_data)
+
+    def _create_local_task(self):
+        data = {
+            "name": "my local task #1",
+            "owner_id": self.owner.id,
+            "overlap": 0,
+            "segment_size": 100,
+            "labels": [{"name": "person"}],
+        }
+
+        image_data = {
+            "client_files[0]": generate_random_image_file("test_1.jpg")[1],
+            "client_files[1]": generate_random_image_file("test_2.jpg")[1],
+            "client_files[2]": generate_random_image_file("test_3.jpg")[1],
+            "image_quality": 75,
+        }
+        return self._create_task(data, image_data)
+
+    def _create_task(self, data, image_data):
+        with ForceLogin(self.owner, self.client):
+            response = self.client.post("/api/tasks", data=data, format="json")
+            assert response.status_code == status.HTTP_201_CREATED, response.status_code
+            tid = response.data["id"]
+
+            response = self.client.post("/api/tasks/%s/data" % tid, data=image_data)
+            assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
+
+            response = self.client.get("/api/tasks/%s" % tid)
+            task = response.data
+
+        return task
+
+    def test_can_change_cloud_storage(self):
+        def get_cache_keys():
+            return MediaCache._cache()._cache.get_client().keys("*")
+
+        assert len(get_cache_keys()) == 0
+        task = self._create_cloud_task()
+        task_id = task["id"]
+
+        with ForceLogin(self.owner, self.client):
+            response = self.client.get(f"/api/tasks/{task_id}/data/meta")
+            assert response.status_code == status.HTTP_200_OK
+            assert response.json()["storage"] == "cloud_storage"
+            assert response.json()["cloud_storage_id"] == self.cloud_storage_id_1
+
+            self.client.get(f"/api/tasks/{task_id}/preview")
+            for quality in ["compressed", "original"]:
+                for frame in range(task["size"]):
+                    url = f"/api/tasks/{task_id}/data?type=frame&quality={quality}&number={frame}"
+                    self.client.get(url)
+
+            assert len(get_cache_keys()) > 0
+
+            response = self.client.patch(
+                f"/api/tasks/{task_id}/data/meta",
+                data=dict(cloud_storage_id=self.cloud_storage_id_2),
+                format="json",
+            )
+            assert response.status_code == status.HTTP_200_OK, (
+                response.status_code,
+                response.content,
+            )
+            assert response.json()["storage"] == "cloud_storage"
+            assert response.json()["cloud_storage_id"] == self.cloud_storage_id_2
+
+            assert len(get_cache_keys()) == 0
+
+            response = self.client.get(f"/api/tasks/{task_id}/data/meta")
+            assert response.status_code == status.HTTP_200_OK
+            assert response.json()["storage"] == "cloud_storage"
+            assert response.json()["cloud_storage_id"] == self.cloud_storage_id_2
+
+    def test_can_not_change_to_not_existing_cloud_storage(self):
+        task = self._create_cloud_task()
+        task_id = task["id"]
+
+        with ForceLogin(self.owner, self.client):
+            response = self.client.patch(
+                f"/api/tasks/{task_id}/data/meta", data=dict(cloud_storage_id=9999), format="json"
+            )
+            assert response.status_code == status.HTTP_400_BAD_REQUEST, (
+                response.status_code,
+                response.content,
+            )
+
+    def test_can_not_change_to_not_available_cloud_storage(self):
+        task = self._create_cloud_task()
+        task_id = task["id"]
+
+        self.mock_aws.get_status = lambda _: Status.FORBIDDEN
+
+        with ForceLogin(self.owner, self.client):
+            response = self.client.patch(
+                f"/api/tasks/{task_id}/data/meta",
+                data=dict(cloud_storage_id=self.cloud_storage_id_2),
+                format="json",
+            )
+            assert response.status_code == status.HTTP_400_BAD_REQUEST, (
+                response.status_code,
+                response.content,
+            )

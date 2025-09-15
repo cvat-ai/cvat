@@ -6,6 +6,7 @@
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { RegisterData } from 'components/register-page/register-form';
 import { getCore, User } from 'cvat-core-wrapper';
+import { ChangePasswordData } from 'reducers';
 
 const cvat = getCore();
 
@@ -25,13 +26,15 @@ export enum AuthActionTypes {
     CHANGE_PASSWORD = 'CHANGE_PASSWORD',
     CHANGE_PASSWORD_SUCCESS = 'CHANGE_PASSWORD_SUCCESS',
     CHANGE_PASSWORD_FAILED = 'CHANGE_PASSWORD_FAILED',
-    SWITCH_CHANGE_PASSWORD_DIALOG = 'SWITCH_CHANGE_PASSWORD_DIALOG',
     REQUEST_PASSWORD_RESET = 'REQUEST_PASSWORD_RESET',
     REQUEST_PASSWORD_RESET_SUCCESS = 'REQUEST_PASSWORD_RESET_SUCCESS',
     REQUEST_PASSWORD_RESET_FAILED = 'REQUEST_PASSWORD_RESET_FAILED',
     RESET_PASSWORD = 'RESET_PASSWORD_CONFIRM',
     RESET_PASSWORD_SUCCESS = 'RESET_PASSWORD_CONFIRM_SUCCESS',
     RESET_PASSWORD_FAILED = 'RESET_PASSWORD_CONFIRM_FAILED',
+    UPDATE_USER = 'UPDATE_USER',
+    UPDATE_USER_SUCCESS = 'UPDATE_USER_SUCCESS',
+    UPDATE_USER_FAILED = 'UPDATE_USER_FAILED',
 }
 
 export const authActions = {
@@ -52,15 +55,15 @@ export const authActions = {
     changePassword: () => createAction(AuthActionTypes.CHANGE_PASSWORD),
     changePasswordSuccess: () => createAction(AuthActionTypes.CHANGE_PASSWORD_SUCCESS),
     changePasswordFailed: (error: any) => createAction(AuthActionTypes.CHANGE_PASSWORD_FAILED, { error }),
-    switchChangePasswordModalVisible: (visible: boolean) => (
-        createAction(AuthActionTypes.SWITCH_CHANGE_PASSWORD_DIALOG, { visible })
-    ),
     requestPasswordReset: () => createAction(AuthActionTypes.REQUEST_PASSWORD_RESET),
     requestPasswordResetSuccess: () => createAction(AuthActionTypes.REQUEST_PASSWORD_RESET_SUCCESS),
     requestPasswordResetFailed: (error: any) => createAction(AuthActionTypes.REQUEST_PASSWORD_RESET_FAILED, { error }),
     resetPassword: () => createAction(AuthActionTypes.RESET_PASSWORD),
     resetPasswordSuccess: () => createAction(AuthActionTypes.RESET_PASSWORD_SUCCESS),
     resetPasswordFailed: (error: any) => createAction(AuthActionTypes.RESET_PASSWORD_FAILED, { error }),
+    updateUser: () => createAction(AuthActionTypes.UPDATE_USER),
+    updateUserSuccess: (user: User) => createAction(AuthActionTypes.UPDATE_USER_SUCCESS, { user }),
+    updateUserFailed: (error: unknown) => createAction(AuthActionTypes.UPDATE_USER_FAILED, { error }),
 };
 
 export type AuthActions = ActionUnion<typeof authActions>;
@@ -136,14 +139,18 @@ export const authenticatedAsync = (): ThunkAction => async (dispatch) => {
 };
 
 export const changePasswordAsync = (
-    oldPassword: string,
-    newPassword1: string,
-    newPassword2: string,
+    changePasswordData: ChangePasswordData,
+    onSuccess?: () => void,
 ): ThunkAction => async (dispatch) => {
     dispatch(authActions.changePassword());
 
+    const { oldPassword, newPassword1, newPassword2 } = changePasswordData;
     try {
         await cvat.server.changePassword(oldPassword, newPassword1, newPassword2);
+
+        if (onSuccess) {
+            onSuccess();
+        }
         dispatch(authActions.changePasswordSuccess());
     } catch (error) {
         dispatch(authActions.changePasswordFailed(error));
@@ -174,5 +181,21 @@ export const resetPasswordAsync = (
         dispatch(authActions.resetPasswordSuccess());
     } catch (error) {
         dispatch(authActions.resetPasswordFailed(error));
+    }
+};
+
+export const updateUserAsync = (
+    userInstance: User,
+    fields: Parameters<User['save']>[0],
+): ThunkAction => async (dispatch) => {
+    dispatch(authActions.updateUser());
+
+    try {
+        const updatedUser = await userInstance.save(fields);
+
+        dispatch(authActions.updateUserSuccess(updatedUser));
+    } catch (error) {
+        dispatch(authActions.updateUserFailed(error));
+        throw error;
     }
 };
