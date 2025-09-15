@@ -358,7 +358,7 @@ class HeaderFirstDownloader(ABC):
         self,
         *,
         client: _CloudStorage,
-        chunk_size: int = 1500, # standard ethernet MTU size
+        chunk_size: int = 65536,
     ):
         self.client = client
         self.chunk_size = chunk_size

@@ -21,8 +21,6 @@
 
 - Related image detection for 2d and 3d media in all 5 supported layouts
   (<https://github.com/cvat-ai/cvat/pull/9757>)
-- Improved performance of file downloading during task creation from cloud storage
-  (<https://github.com/cvat-ai/cvat/pull/9757>)
 - Improved documentation about supported task file layouts with related images
   (<https://github.com/cvat-ai/cvat/pull/9757>)
 - Improved error messages for invalid media in task creation
