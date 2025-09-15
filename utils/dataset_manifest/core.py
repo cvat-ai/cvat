@@ -18,8 +18,8 @@ from typing import Any, Callable, Optional, Union
 import av
 from PIL import Image
 
-from .errors import InvalidManifestError, InvalidVideoError
 from ._types import NamedBytesIO
+from .errors import InvalidManifestError, InvalidVideoError
 from .utils import SortingMethod, md5_hash, rotate_image, sort
 
 
