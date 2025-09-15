@@ -29,12 +29,15 @@ class AnnotationIR:
             self.tracks = getattr(data, "tracks", []) or data["tracks"]
 
     def add_tag(self, tag):
+        assert not self.is_stream, "Not allowed to add annotations when streaming"
         self.tags.append(tag)
 
     def add_shape(self, shape):
+        assert not self.is_stream, "Not allowed to add annotations when streaming"
         self.shapes.append(shape)
 
     def add_track(self, track):
+        assert not self.is_stream, "Not allowed to add annotations when streaming"
         self.tracks.append(track)
 
     @property
@@ -60,6 +63,7 @@ class AnnotationIR:
         self.tracks = data["tracks"]
 
     def serialize(self):
+        assert not self.is_stream, "Not implemented for streaming"
         serializer = LabeledDataSerializer(data=self.data)
         if serializer.is_valid(raise_exception=True):
             return serializer.data
@@ -159,6 +163,7 @@ class AnnotationIR:
         return track
 
     def slice(self, start, stop):
+        assert not self.is_stream, "Not allowed to slice when streaming"
         # makes a data copy from specified frame interval
         splitted_data = AnnotationIR(self.dimension)
         splitted_data.tags = [
@@ -290,14 +295,6 @@ class StreamMerger:
         self._iterators.append(it)
 
     def __iter__(self):
-        return self
-
-    def __next__(self):
-        if not hasattr(self, "_generator"):
-            self._generator = self._generator_impl()
-        return next(self._generator)
-
-    def _generator_impl(self) -> Generator[dict, None, None]:
         heap: list[StreamMerger.HeapElem] = []
 
         for iterator_index, iterator in enumerate(self._iterators):
@@ -307,31 +304,37 @@ class StreamMerger:
             except StopIteration:
                 continue
 
-        while heap:
-            frame_id = heap[0].first_item["frame"]
-            objects_grouped_by_iterator_index = [(heap[0].iterator_index, [])]
+        # make it impossible to iterate again or to add more sources
+        del self._iterators
 
-            while heap and heap[0].first_item["frame"] == frame_id:
-                elem: StreamMerger.HeapElem = heapq.heappop(heap)
-                if objects_grouped_by_iterator_index[-1][0] != elem.iterator_index:
-                    objects_grouped_by_iterator_index.append((elem.iterator_index, []))
-                objects_grouped_by_iterator_index[-1][1].append(elem.first_item)
+        def generator():
+            while heap:
+                frame_id = heap[0].first_item["frame"]
+                objects_grouped_by_iterator_index = [(heap[0].iterator_index, [])]
 
-                try:
-                    next_element = next(elem.iterator)
-                    heapq.heappush(
-                        heap,
-                        StreamMerger.HeapElem(next_element, elem.iterator, elem.iterator_index),
-                    )
-                except StopIteration:
-                    pass
+                while heap and heap[0].first_item["frame"] == frame_id:
+                    elem: StreamMerger.HeapElem = heapq.heappop(heap)
+                    if objects_grouped_by_iterator_index[-1][0] != elem.iterator_index:
+                        objects_grouped_by_iterator_index.append((elem.iterator_index, []))
+                    objects_grouped_by_iterator_index[-1][1].append(elem.first_item)
 
-            result_objects = objects_grouped_by_iterator_index[0][1]
-            for _, int_objects in objects_grouped_by_iterator_index[1:]:
-                new_objects = self._merge_objects(int_objects, result_objects)
-                result_objects.extend(new_objects)
+                    try:
+                        next_element = next(elem.iterator)
+                        heapq.heappush(
+                            heap,
+                            StreamMerger.HeapElem(next_element, elem.iterator, elem.iterator_index),
+                        )
+                    except StopIteration:
+                        pass
 
-            yield from result_objects
+                result_objects = objects_grouped_by_iterator_index[0][1]
+                for _, int_objects in objects_grouped_by_iterator_index[1:]:
+                    new_objects = self._merge_objects(int_objects, result_objects)
+                    result_objects.extend(new_objects)
+
+                yield from result_objects
+
+        return generator()
 
 
 class ObjectManager:
