@@ -10,10 +10,11 @@ import json
 import os
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
-from concurrent.futures import FIRST_EXCEPTION, ThreadPoolExecutor, wait
+from concurrent.futures import FIRST_EXCEPTION, Future, ThreadPoolExecutor, wait
 from enum import Enum
 from io import BytesIO
 from pathlib import Path
+from queue import Queue
 from typing import Any, BinaryIO, Callable, Optional, TypeVar
 
 import boto3
@@ -204,7 +205,7 @@ class _CloudStorage(ABC):
     def _download_range_of_bytes(self, key: str, /, *, stop_byte: int, start_byte: int):
         pass
 
-    def optimally_image_download(self, key: str, /, *, chunk_size: int = 65536) -> NamedBytesIO:
+    def optimally_image_download(self, key: str, /, *, chunk_size: int = 1500) -> NamedBytesIO:
         """
         Method downloads image by the following approach:
         Firstly we try to download the first N bytes of image which will be enough for determining image properties.
@@ -212,7 +213,7 @@ class _CloudStorage(ABC):
 
         Args:
             key (str): File on the bucket
-            chunk_size (int, optional): The number of first bytes to download. Defaults to 65536 (64kB).
+            chunk_size (int, optional): The number of first bytes to download.
 
         Returns:
             BytesIO: Buffer with image
@@ -244,9 +245,21 @@ class _CloudStorage(ABC):
         func = self.optimally_image_download if _use_optimal_downloading else self.download_fileobj
         threads_number = get_max_threads_number(len(files))
 
+        queue: Queue[Future] = Queue(maxsize=threads_number)
+        input_iter = iter(files)
         with ThreadPoolExecutor(max_workers=threads_number) as executor:
-            for batch_links in take_by(files, chunk_size=threads_number):
-                yield from executor.map(func, batch_links)
+            while not queue.empty() or input_iter is not None:
+                while not queue.full() and input_iter is not None:
+                    next_job_params = next(input_iter, None)
+                    if next_job_params is None:
+                        input_iter = None
+                        break
+
+                    next_job = executor.submit(func, next_job_params)
+                    queue.put(next_job)
+
+                top_job = queue.get()
+                yield top_job.result()
 
     def bulk_download_to_dir(
         self,
