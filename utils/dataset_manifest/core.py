@@ -19,7 +19,7 @@ import av
 from PIL import Image
 
 from .errors import InvalidManifestError, InvalidVideoError
-from .types import NamedBytesIO
+from ._types import NamedBytesIO
 from .utils import SortingMethod, md5_hash, rotate_image, sort
 
 
