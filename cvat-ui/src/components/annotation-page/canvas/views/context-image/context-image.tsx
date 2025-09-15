@@ -9,18 +9,20 @@ import PropTypes from 'prop-types';
 import notification from 'antd/lib/notification';
 import Spin from 'antd/lib/spin';
 import Text from 'antd/lib/typography/Text';
-import { SettingOutlined } from '@ant-design/icons';
+import { ReloadOutlined, SettingOutlined } from '@ant-design/icons';
 
 import CVATTooltop from 'components/common/cvat-tooltip';
 import { CombinedState } from 'reducers';
 import ContextImageSelector from './context-image-selector';
+import { useCanvasControl } from './model';
 
 interface Props {
     offset: number[];
+    fullscreenKey?: string;
 }
 
 function ContextImage(props: Props): JSX.Element {
-    const { offset } = props;
+    const { offset, fullscreenKey } = props;
     const defaultFrameOffset = (offset[0] || 0);
     const defaultContextImageOffset = (offset[1] || 0);
 
@@ -44,6 +46,18 @@ function ContextImage(props: Props): JSX.Element {
 
     const [hasError, setHasError] = useState<boolean>(false);
     const [showSelector, setShowSelector] = useState<boolean>(false);
+
+    const {
+        canvasStyle,
+        handleContextMenu,
+        handleMouseDown,
+        handleMouseLeave,
+        handleMouseMove,
+        handleMouseUp,
+        handleZoomChange,
+        resetColorSetting,
+        wrapperRef,
+    } = useCanvasControl(canvasRef, fullscreenKey);
 
     useEffect(() => {
         let unmounted = false;
@@ -89,7 +103,12 @@ function ContextImage(props: Props): JSX.Element {
 
     const contextImageName = Object.keys(contextImageData).sort()[contextImageOffset];
     return (
-        <div className='cvat-context-image-wrapper'>
+        <div
+            className='cvat-context-image-wrapper'
+            onWheel={handleZoomChange}
+            ref={wrapperRef}
+            onMouseLeave={handleMouseLeave}
+        >
             <div className='cvat-context-image-header'>
                 { relatedFiles > 1 && (
                     <SettingOutlined
@@ -99,6 +118,10 @@ function ContextImage(props: Props): JSX.Element {
                         }}
                     />
                 )}
+                <ReloadOutlined
+                    className='cvat-context-image-reset-button'
+                    onClick={resetColorSetting}
+                />
                 <div className='cvat-context-image-title'>
                     <CVATTooltop title={contextImageName}>
                         <Text>{contextImageName}</Text>
@@ -109,8 +132,18 @@ function ContextImage(props: Props): JSX.Element {
                 (!fetching && contextImageOffset >= Object.keys(contextImageData).length)) && <Text> No data </Text>}
             { fetching && <Spin size='small' /> }
             {
-                contextImageOffset < Object.keys(contextImageData).length &&
-                <canvas ref={canvasRef} />
+                contextImageOffset < Object.keys(contextImageData).length && (
+                    <div className='draggable-wrapper'>
+                        <canvas
+                            ref={canvasRef}
+                            onMouseDown={handleMouseDown}
+                            onMouseMove={handleMouseMove}
+                            onMouseUp={handleMouseUp}
+                            onContextMenu={handleContextMenu}
+                            style={canvasStyle}
+                        />
+                    </div>
+                )
             }
             { showSelector && (
                 <ContextImageSelector
