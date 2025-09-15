@@ -98,4 +98,4 @@ def generate_manifest(path: str) -> None:
         "/local",
         "/local",
     ]
-    subprocess.check_output(command)
+    subprocess.check_output(command, stderr=subprocess.STDOUT)
