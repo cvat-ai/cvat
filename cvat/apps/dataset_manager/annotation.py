@@ -8,7 +8,7 @@ import math
 from collections.abc import Container, Sequence
 from copy import copy, deepcopy
 from itertools import chain
-from typing import Callable, Generator, Iterator, Optional
+from typing import Callable, Generator, Iterable, Iterator, Optional
 
 import numpy as np
 from scipy.optimize import linear_sum_assignment
@@ -25,7 +25,7 @@ class AnnotationIR:
         self.dimension = dimension
         if data:
             self.tags = getattr(data, "tags", []) or data["tags"]
-            self.shapes: list | Iterator = getattr(data, "shapes", []) or data["shapes"]
+            self.shapes: list | Iterable = getattr(data, "shapes", []) or data["shapes"]
             self.tracks = getattr(data, "tracks", []) or data["tracks"]
 
     def add_tag(self, tag):
