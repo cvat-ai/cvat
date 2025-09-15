@@ -99,7 +99,7 @@ def generate_manifest(path: str) -> None:
         "/local",
     ]
     try:
-        subprocess.check_output(command)
+        subprocess.check_output(command, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
         print(e.stderr.decode("utf-8"))
 
