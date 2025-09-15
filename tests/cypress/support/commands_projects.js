@@ -261,7 +261,7 @@ Cypress.Commands.add('deleteProjectViaActions', (projectName) => {
 Cypress.Commands.add('assignProjectToUser', (user) => {
     cy.intercept('GET', `/api/users?**search=${user}**`).as('searchUsers');
     cy.intercept('GET', '/api/labels?**').as('getLabels');
-    cy.intercept('PATCH', 'api/projects**').as('patchProject');
+    cy.intercept('PATCH', '/api/projects/**').as('patchProject');
     cy.get('.cvat-project-details').within(() => {
         cy.get('.cvat-user-search-field').click();
         cy.get('.cvat-user-search-field').type(user);
