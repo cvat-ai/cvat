@@ -75,6 +75,3 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      securityContext:
-        fsGroup: 1000
-        fsGroupChangePolicy: "OnRootMismatch"

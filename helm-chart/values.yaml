@@ -148,7 +148,7 @@ cvat:
     tag: dev
     imagePullPolicy: Always
     permissionFix:
-      enabled: false
+      enabled: true
     service:
       annotations: {}
       spec:
