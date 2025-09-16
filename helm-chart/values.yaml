@@ -420,7 +420,6 @@ clickhouse:
   shards: 1
   replicaCount: 1
   extraEnvVarsSecret: cvat-analytics-secret
-  initdbScriptsSecret: cvat-clickhouse-init
   auth:
     username: user
     existingSecret: cvat-analytics-secret
