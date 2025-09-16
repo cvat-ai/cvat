@@ -297,12 +297,12 @@ class StreamMerger:
     def __iter__(self):
         heap: list[StreamMerger.HeapElem] = []
 
-        for iterator_index, iterator in enumerate(self._iterators):
-            try:
-                next_element = next(iterator)
+        def push_iterator_to_heap(iterator, iterator_index):
+            if next_element := next(iterator, None):
                 heapq.heappush(heap, StreamMerger.HeapElem(next_element, iterator, iterator_index))
-            except StopIteration:
-                continue
+
+        for iterator_index, iterator in enumerate(self._iterators):
+            push_iterator_to_heap(iterator, iterator_index)
 
         # make it impossible to iterate again or to add more sources
         del self._iterators
@@ -318,14 +318,7 @@ class StreamMerger:
                         objects_grouped_by_iterator_index.append((elem.iterator_index, []))
                     objects_grouped_by_iterator_index[-1][1].append(elem.first_item)
 
-                    try:
-                        next_element = next(elem.iterator)
-                        heapq.heappush(
-                            heap,
-                            StreamMerger.HeapElem(next_element, elem.iterator, elem.iterator_index),
-                        )
-                    except StopIteration:
-                        pass
+                    push_iterator_to_heap(elem.iterator, elem.iterator_index)
 
                 result_objects = objects_grouped_by_iterator_index[0][1]
                 for _, int_objects in objects_grouped_by_iterator_index[1:]:
