@@ -24,6 +24,7 @@ import QualityReport, { QualitySummary } from 'cvat-core/src/quality-report';
 import QualityConflict, { AnnotationConflict, ConflictSeverity } from 'cvat-core/src/quality-conflict';
 import QualitySettings, { TargetMetric, QualitySettingsSaveFields } from 'cvat-core/src/quality-settings';
 import ConsensusSettings from 'cvat-core/src/consensus-settings';
+import ApiToken from 'cvat-core/src/api-token';
 import { FramesMetaData, FrameData } from 'cvat-core/src/frames';
 import { ServerError, RequestError } from 'cvat-core/src/exceptions';
 import {
@@ -101,6 +102,7 @@ export {
     QualityConflict,
     QualitySettings,
     ConsensusSettings,
+    ApiToken,
     TargetMetric,
     AnnotationConflict,
     ConflictSeverity,

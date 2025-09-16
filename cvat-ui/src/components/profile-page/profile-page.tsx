@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useSelector, shallowEqual } from 'react-redux';
+import { useSelector, useDispatch, shallowEqual } from 'react-redux';
 import { CombinedState } from 'reducers';
 
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
@@ -13,21 +13,23 @@ import Menu from 'antd/lib/menu';
 
 import { getTabFromHash } from 'utils/location-utils';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
+import { getApiTokensAsync } from 'actions/auth-actions';
 import ProfileContent from './profile-content';
 import SecurityContent from './security-content';
 
 import './styles.scss';
 
 const { Title } = Typography;
+const supportedTabs = ['profile', 'security'];
 
 function ProfilePageComponent(): JSX.Element {
+    const dispatch = useDispatch();
     const { user, fetching, isPasswordChangeEnabled } = useSelector((state: CombinedState) => ({
         user: state.auth.user,
-        fetching: state.auth.fetching,
+        fetching: state.auth.fetching || state.auth.apiTokens.fetching,
         isPasswordChangeEnabled: state.serverAPI.configuration.isPasswordChangeEnabled,
     }), shallowEqual);
 
-    const supportedTabs = isPasswordChangeEnabled ? ['profile', 'security'] : ['profile'];
     const [activeTab, setActiveTab] = useState(getTabFromHash(supportedTabs));
 
     const menuItems = [
@@ -36,11 +38,11 @@ function ProfilePageComponent(): JSX.Element {
             icon: <UserOutlined />,
             label: 'Profile',
         },
-        ...(isPasswordChangeEnabled ? [{
+        {
             key: 'security',
             icon: <LockOutlined />,
             label: 'Security',
-        }] : []),
+        },
     ];
 
     const onMenuClick = useCallback((key: string): void => {
@@ -57,10 +59,16 @@ function ProfilePageComponent(): JSX.Element {
         window.history.replaceState(null, '', `#${activeTab}`);
     }, [activeTab]);
 
+    useEffect(() => {
+        if (user) {
+            dispatch(getApiTokensAsync({}));
+        }
+    }, [user]);
+
     const renderContent = (): JSX.Element => {
         switch (activeTab) {
             case 'security':
-                return <SecurityContent />;
+                return <SecurityContent isPasswordChangeEnabled={isPasswordChangeEnabled} />;
             case 'profile':
             default:
                 return <ProfileContent />;

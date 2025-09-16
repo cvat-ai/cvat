@@ -23,6 +23,7 @@ import {
 } from './common';
 
 import User from './user';
+import ApiToken from './api-token';
 import { AnnotationFormats } from './annotation-formats';
 import { Task, Job } from './session';
 import Project from './project';
@@ -187,6 +188,43 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
 
         users = users.map((user) => new User(user));
         return users;
+    });
+
+    implementationMixin(cvat.apiTokens.get, async (filter) => {
+        checkFilter(filter, {
+            id: isInteger,
+            page: isInteger,
+            page_size: isInteger,
+            filter: isString,
+            sort: isString,
+            search: isString,
+            name: isString,
+            owner: isInteger,
+            read_only: isBoolean,
+            created_date: isString,
+            updated_date: isString,
+            expiry_date: isString,
+            last_used_date: isString,
+        });
+
+        const result = await serverProxy.apiTokens.get(filter);
+        const tokens = result.map((tokenData) => new ApiToken(tokenData));
+        Object.assign(tokens, { count: result.count });
+        return tokens as PaginatedResource<ApiToken>;
+    });
+
+    implementationMixin(cvat.apiTokens.create, async (tokenData) => {
+        const result = await serverProxy.apiTokens.create(tokenData);
+        return new ApiToken(result);
+    });
+
+    implementationMixin(cvat.apiTokens.update, async (id, tokenData) => {
+        const result = await serverProxy.apiTokens.update(id, tokenData);
+        return new ApiToken(result);
+    });
+
+    implementationMixin(cvat.apiTokens.revoke, async (id) => {
+        await serverProxy.apiTokens.revoke(id);
     });
 
     implementationMixin(cvat.jobs.get, async (

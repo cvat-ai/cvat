@@ -27,6 +27,7 @@ import { BaseShapesAction } from './annotations-actions/base-shapes-action';
 import QualityReport from './quality-report';
 import QualityConflict from './quality-conflict';
 import QualitySettings from './quality-settings';
+import ApiToken from './api-token';
 import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
 import { Request } from './request';
 
@@ -175,6 +176,28 @@ function build(): CVATCore {
         users: {
             async get(filter = {}) {
                 const result = await PluginRegistry.apiWrapper(cvat.users.get, filter);
+                return result;
+            },
+        },
+        apiTokens: {
+            async get(filter = {}) {
+                const result = await PluginRegistry.apiWrapper(cvat.apiTokens.get, filter);
+                return result;
+            },
+            async create(tokenData) {
+                const result = await PluginRegistry.apiWrapper(cvat.apiTokens.create, tokenData);
+                return result;
+            },
+            async update(id, tokenData) {
+                const result = await PluginRegistry.apiWrapper(cvat.apiTokens.update, id, tokenData);
+                return result;
+            },
+            async revoke(id) {
+                const result = await PluginRegistry.apiWrapper(cvat.apiTokens.revoke, id);
+                return result;
+            },
+            async self() {
+                const result = await PluginRegistry.apiWrapper(cvat.apiTokens.self);
                 return result;
             },
         },
@@ -462,6 +485,7 @@ function build(): CVATCore {
             QualitySettings,
             QualityConflict,
             QualityReport,
+            ApiToken,
             Request,
             FramesMetaData,
             JobValidationLayout,

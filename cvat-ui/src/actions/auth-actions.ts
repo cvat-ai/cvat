@@ -5,8 +5,9 @@
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { RegisterData } from 'components/register-page/register-form';
-import { getCore, User } from 'cvat-core-wrapper';
+import { getCore, User, ApiToken } from 'cvat-core-wrapper';
 import { ChangePasswordData } from 'reducers';
+import { APIApiTokensFilter } from 'cvat-core/src/server-response-types';
 
 const cvat = getCore();
 
@@ -35,6 +36,18 @@ export enum AuthActionTypes {
     UPDATE_USER = 'UPDATE_USER',
     UPDATE_USER_SUCCESS = 'UPDATE_USER_SUCCESS',
     UPDATE_USER_FAILED = 'UPDATE_USER_FAILED',
+    GET_API_TOKENS = 'GET_API_TOKENS',
+    GET_API_TOKENS_SUCCESS = 'GET_API_TOKENS_SUCCESS',
+    GET_API_TOKENS_FAILED = 'GET_API_TOKENS_FAILED',
+    CREATE_API_TOKEN = 'CREATE_API_TOKEN',
+    CREATE_API_TOKEN_SUCCESS = 'CREATE_API_TOKEN_SUCCESS',
+    CREATE_API_TOKEN_FAILED = 'CREATE_API_TOKEN_FAILED',
+    UPDATE_API_TOKEN = 'UPDATE_API_TOKEN',
+    UPDATE_API_TOKEN_SUCCESS = 'UPDATE_API_TOKEN_SUCCESS',
+    UPDATE_API_TOKEN_FAILED = 'UPDATE_API_TOKEN_FAILED',
+    REVOKE_API_TOKEN = 'REVOKE_API_TOKEN',
+    REVOKE_API_TOKEN_SUCCESS = 'REVOKE_API_TOKEN_SUCCESS',
+    REVOKE_API_TOKEN_FAILED = 'REVOKE_API_TOKEN_FAILED',
 }
 
 export const authActions = {
@@ -64,6 +77,20 @@ export const authActions = {
     updateUser: () => createAction(AuthActionTypes.UPDATE_USER),
     updateUserSuccess: (user: User) => createAction(AuthActionTypes.UPDATE_USER_SUCCESS, { user }),
     updateUserFailed: (error: unknown) => createAction(AuthActionTypes.UPDATE_USER_FAILED, { error }),
+    getApiTokens: () => createAction(AuthActionTypes.GET_API_TOKENS),
+    getApiTokensSuccess: (tokens: ApiToken[]) => createAction(AuthActionTypes.GET_API_TOKENS_SUCCESS, { tokens }),
+    getApiTokensFailed: (error: any) => createAction(AuthActionTypes.GET_API_TOKENS_FAILED, { error }),
+    createApiToken: () => createAction(AuthActionTypes.CREATE_API_TOKEN),
+    createApiTokenSuccess: (token: ApiToken) => createAction(AuthActionTypes.CREATE_API_TOKEN_SUCCESS, { token }),
+    createApiTokenFailed: (error: any) => createAction(AuthActionTypes.CREATE_API_TOKEN_FAILED, { error }),
+    updateApiToken: () => createAction(AuthActionTypes.UPDATE_API_TOKEN),
+    updateApiTokenSuccess: (token: ApiToken) => createAction(AuthActionTypes.UPDATE_API_TOKEN_SUCCESS, { token }),
+    updateApiTokenFailed: (error: any) => createAction(AuthActionTypes.UPDATE_API_TOKEN_FAILED, { error }),
+    revokeApiToken: () => createAction(AuthActionTypes.REVOKE_API_TOKEN),
+    revokeApiTokenSuccess: (tokenId: number) => (
+        createAction(AuthActionTypes.REVOKE_API_TOKEN_SUCCESS, { tokenId })
+    ),
+    revokeApiTokenFailed: (error: any) => createAction(AuthActionTypes.REVOKE_API_TOKEN_FAILED, { error }),
 };
 
 export type AuthActions = ActionUnion<typeof authActions>;
@@ -196,6 +223,63 @@ export const updateUserAsync = (
         dispatch(authActions.updateUserSuccess(updatedUser));
     } catch (error) {
         dispatch(authActions.updateUserFailed(error));
+        throw error;
+    }
+};
+
+export const getApiTokensAsync = (filter: APIApiTokensFilter = {}): ThunkAction => async (dispatch) => {
+    dispatch(authActions.getApiTokens());
+
+    try {
+        const tokens = await cvat.apiTokens.get(filter);
+        dispatch(authActions.getApiTokensSuccess(tokens));
+    } catch (error) {
+        dispatch(authActions.getApiTokensFailed(error));
+    }
+};
+
+export const createApiTokenAsync = (tokenData: {
+    name: string;
+    expiry_date?: string | null;
+    read_only?: boolean;
+}): ThunkAction<Promise<ApiToken>> => async (dispatch) => {
+    dispatch(authActions.createApiToken());
+
+    try {
+        const token = await cvat.apiTokens.create(tokenData);
+        dispatch(authActions.createApiTokenSuccess(token));
+        return token;
+    } catch (error) {
+        dispatch(authActions.createApiTokenFailed(error));
+        throw error;
+    }
+};
+
+export const updateApiTokenAsync = (id: number, tokenData: {
+    name?: string;
+    expiry_date?: string | null;
+    read_only?: boolean;
+}): ThunkAction<Promise<ApiToken>> => async (dispatch) => {
+    dispatch(authActions.updateApiToken());
+
+    try {
+        const token = await cvat.apiTokens.update(id, tokenData);
+        dispatch(authActions.updateApiTokenSuccess(token));
+        return token;
+    } catch (error) {
+        dispatch(authActions.updateApiTokenFailed(error));
+        throw error;
+    }
+};
+
+export const revokeApiTokenAsync = (id: number): ThunkAction => async (dispatch) => {
+    dispatch(authActions.revokeApiToken());
+
+    try {
+        await cvat.apiTokens.revoke(id);
+        dispatch(authActions.revokeApiTokenSuccess(id));
+    } catch (error) {
+        dispatch(authActions.revokeApiTokenFailed(error));
         throw error;
     }
 };
