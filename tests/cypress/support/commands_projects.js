@@ -266,13 +266,13 @@ Cypress.Commands.add('assignProjectToUser', (user) => {
         cy.get('.cvat-user-search-field').click();
         cy.get('.cvat-user-search-field').type(user);
     });
-    cy.wait("@searchUsers");
+    cy.wait('@searchUsers');
     cy.get('.cvat-user-search-dropdown')
         .not('.ant-select-dropdown-hidden')
         .within(() => {
             cy.get(`.ant-select-item-option[title="${user}"]`).click();
         });
-    cy.wait(["@patchProject", "@getLabels"]);
+    cy.wait(['@patchProject', '@getLabels']);
 });
 
 Cypress.Commands.add('movingTask', (taskName, projectName, labelMappingFrom, labelMappingTo, fromTaskPage) => {
