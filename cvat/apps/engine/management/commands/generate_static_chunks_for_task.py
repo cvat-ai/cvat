@@ -58,8 +58,5 @@ class Command(BaseCommand):
     def _cleanup_static_cache(data: models.Data) -> None:
         for folder in (data.get_compressed_cache_dirname(), data.get_original_cache_dirname()):
             if os.path.exists(folder):
-                try:
-                    shutil.rmtree(folder)
-                except Exception:
-                    pass
+                shutil.rmtree(folder)
             os.makedirs(folder)

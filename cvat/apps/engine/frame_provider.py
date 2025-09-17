@@ -20,7 +20,6 @@ from typing import Any, Callable, Generic, Optional, TypeVar, Union, overload
 import av
 import cv2
 import numpy as np
-from django.conf import settings
 from django.db.models import prefetch_related_objects
 from PIL import Image
 from rest_framework.exceptions import ValidationError
