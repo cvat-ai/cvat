@@ -453,7 +453,6 @@ jobs:
       - name: Load images
         run: |
           eval $(minikube -p minikube docker-env)
-          aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
           docker load --input /tmp/cvat_server/image.tar
           docker load --input /tmp/cvat_ui/image.tar
           docker image ls -a
