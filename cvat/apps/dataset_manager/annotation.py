@@ -8,7 +8,7 @@ import math
 from collections.abc import Container, Sequence
 from copy import copy, deepcopy
 from itertools import chain
-from typing import Generator, Iterable, Optional
+from typing import Callable, Generator, Iterable, Iterator, Optional
 
 import numpy as np
 from scipy.optimize import linear_sum_assignment
@@ -29,12 +29,15 @@ class AnnotationIR:
             self.tracks = getattr(data, "tracks", []) or data["tracks"]
 
     def add_tag(self, tag):
+        assert not self.is_stream, "Not allowed to add annotations when streaming"
         self.tags.append(tag)
 
     def add_shape(self, shape):
+        assert not self.is_stream, "Not allowed to add annotations when streaming"
         self.shapes.append(shape)
 
     def add_track(self, track):
+        assert not self.is_stream, "Not allowed to add annotations when streaming"
         self.tracks.append(track)
 
     @property
@@ -60,6 +63,7 @@ class AnnotationIR:
         self.tracks = data["tracks"]
 
     def serialize(self):
+        assert not self.is_stream, "Not implemented for streaming"
         serializer = LabeledDataSerializer(data=self.data)
         if serializer.is_valid(raise_exception=True):
             return serializer.data
@@ -159,6 +163,7 @@ class AnnotationIR:
         return track
 
     def slice(self, start, stop):
+        assert not self.is_stream, "Not allowed to slice when streaming"
         # makes a data copy from specified frame interval
         splitted_data = AnnotationIR(self.dimension)
         splitted_data.tags = [
@@ -197,8 +202,13 @@ class AnnotationManager:
         tags = TagManager(self.data.tags, dimension=self.dimension)
         tags.merge(data.tags, start_frame, overlap)
 
-        shapes = ShapeManager(self.data.shapes, dimension=self.dimension)
-        shapes.merge(data.shapes, start_frame, overlap)
+        shapes_manager = ShapeManager(self.data.shapes, dimension=self.dimension)
+        if data.is_stream:
+            assert self.data.is_stream or not self.data.shapes
+            self.data.shapes = shapes_manager.merge_stream(data.shapes, start_frame, overlap)
+        else:
+            assert not self.data.is_stream
+            shapes_manager.merge(data.shapes, start_frame, overlap)
 
         tracks = TrackManager(self.data.tracks, dimension=self.dimension)
         tracks.merge(data.tracks, start_frame, overlap)
@@ -225,40 +235,11 @@ class AnnotationManager:
         included_frames: Sequence[int] | None = None,
         include_outside: bool = False,
         use_server_track_ids: bool = False,
-    ) -> list:
-        assert not self.data.is_stream
-        shapes = self.data.shapes
-        tracks = TrackManager(self.data.tracks, dimension=self.dimension)
-
-        if included_frames is not None:
-            shapes = [s for s in shapes if s["frame"] in included_frames]
-
-        if deleted_frames is not None:
-            shapes = [s for s in shapes if s["frame"] not in deleted_frames]
-
-        return shapes + tracks.to_shapes(
-            end_frame,
-            included_frames=included_frames,
-            deleted_frames=deleted_frames,
-            include_outside=include_outside,
-            use_server_track_ids=use_server_track_ids,
-        )
-
-    def to_shapes_stream(
-        self,
-        end_frame: int,
-        *,
-        deleted_frames: Sequence[int] | None = None,
-        included_frames: Sequence[int] | None = None,
-        include_outside: bool = False,
-        use_server_track_ids: bool = False,
     ) -> Generator[dict, None, None]:
         """
         Generates shapes ordered by frame id
         """
         shapes = self.data.shapes
-        if not self.data.is_stream:
-            shapes = sorted(shapes, key=lambda shape: shape["frame"])
 
         tracks = TrackManager(self.data.tracks, dimension=self.dimension)
 
@@ -275,6 +256,10 @@ class AnnotationManager:
             include_outside=include_outside,
             use_server_track_ids=use_server_track_ids,
         )
+
+        if not self.data.is_stream:
+            shapes = sorted(shapes, key=lambda shape: shape["frame"])
+
         track_shapes = sorted(track_shapes, key=lambda shape: shape["frame"])
 
         yield from heapq.merge(shapes, track_shapes, key=lambda shape: shape["frame"])
@@ -284,6 +269,65 @@ class AnnotationManager:
         shapes = ShapeManager(self.data.shapes, dimension=self.dimension)
 
         return tracks + shapes.to_tracks()
+
+
+class StreamMerger:
+    class HeapElem:
+        def __init__(self, first_item: dict, iterator: Iterator, iterator_index: int):
+            self.first_item = first_item
+            self.iterator = iterator
+            self.iterator_index = iterator_index
+
+        def _make_key(self):
+            return (
+                self.first_item["frame"],
+                self.iterator_index,
+            )
+
+        def __lt__(self, other):
+            return self._make_key() < other._make_key()
+
+    def __init__(self, merge_objects: Callable):
+        self._iterators: list[Iterator] = []
+        self._merge_objects = merge_objects
+
+    def add(self, it: Iterator[dict]):
+        self._iterators.append(it)
+
+    def __iter__(self):
+        heap: list[StreamMerger.HeapElem] = []
+
+        def push_iterator_to_heap(iterator, iterator_index):
+            if next_element := next(iterator, None):
+                heapq.heappush(heap, StreamMerger.HeapElem(next_element, iterator, iterator_index))
+
+        for iterator_index, iterator in enumerate(self._iterators):
+            push_iterator_to_heap(iterator, iterator_index)
+
+        # make it impossible to iterate again or to add more sources
+        del self._iterators
+
+        def generator():
+            while heap:
+                frame_id = heap[0].first_item["frame"]
+                objects_grouped_by_iterator_index = [(heap[0].iterator_index, [])]
+
+                while heap and heap[0].first_item["frame"] == frame_id:
+                    elem: StreamMerger.HeapElem = heapq.heappop(heap)
+                    if objects_grouped_by_iterator_index[-1][0] != elem.iterator_index:
+                        objects_grouped_by_iterator_index.append((elem.iterator_index, []))
+                    objects_grouped_by_iterator_index[-1][1].append(elem.first_item)
+
+                    push_iterator_to_heap(elem.iterator, elem.iterator_index)
+
+                result_objects = objects_grouped_by_iterator_index[0][1]
+                for _, int_objects in objects_grouped_by_iterator_index[1:]:
+                    new_objects = self._merge_objects(int_objects, result_objects)
+                    result_objects.extend(new_objects)
+
+                yield from result_objects
+
+        return generator()
 
 
 class ObjectManager:
@@ -304,7 +348,7 @@ class ObjectManager:
         return objects_by_frame
 
     @staticmethod
-    def _get_cost_threshold():
+    def _get_cost_threshold() -> float:
         raise NotImplementedError()
 
     @staticmethod
@@ -318,7 +362,26 @@ class ObjectManager:
     def _modify_unmatched_object(self, obj, end_frame):
         raise NotImplementedError()
 
+    def merge_stream(self, objects: Iterator[dict], start_frame: int, overlap: int):
+        assert not isinstance(objects, list)
+
+        if isinstance(self.objects, list):
+            assert not self.objects
+
+            def merge_objects(int_objects: list, old_objects: list):
+                return self._merge_objects_on_one_frame(
+                    int_objects, old_objects, start_frame, overlap
+                )
+
+            self.objects = StreamMerger(merge_objects)
+
+        assert isinstance(self.objects, StreamMerger)
+
+        self.objects.add(objects)
+        return self.objects
+
     def merge(self, objects, start_frame, overlap):
+        assert isinstance(objects, list) and isinstance(self.objects, list)
         # 1. Split objects on two parts: new and which can be intersected
         # with existing objects.
         new_objects = [obj for obj in objects if obj["frame"] >= start_frame + overlap]
@@ -344,44 +407,59 @@ class ObjectManager:
         # 4. Build cost matrix for each frame and find correspondence using
         # Hungarian algorithm. In this case min_cost_thresh is stronger
         # because we compare only on one frame.
-        min_cost_thresh = self._get_cost_threshold()
         for frame in int_objects_by_frame:
             if frame in old_objects_by_frame:
                 int_objects = int_objects_by_frame[frame]
                 old_objects = old_objects_by_frame[frame]
-                cost_matrix = np.empty(shape=(len(int_objects), len(old_objects)), dtype=float)
-                # 5.1 Construct cost matrix for the frame.
-                for i, int_obj in enumerate(int_objects):
-                    for j, old_obj in enumerate(old_objects):
-                        cost_matrix[i][j] = 1 - self._calc_objects_similarity(
-                            int_obj, old_obj, start_frame, overlap, self.dimension
-                        )
-
-                # 6. Find optimal solution using Hungarian algorithm.
-                row_ind, col_ind = linear_sum_assignment(cost_matrix)
-                old_objects_indexes = list(range(0, len(old_objects)))
-                int_objects_indexes = list(range(0, len(int_objects)))
-                for i, j in zip(row_ind, col_ind):
-                    # Reject the solution if the cost is too high. Remember
-                    # inside int_objects_indexes objects which were handled.
-                    if cost_matrix[i][j] <= min_cost_thresh:
-                        old_objects[j] = self._unite_objects(int_objects[i], old_objects[j])
-                        int_objects_indexes[i] = -1
-                        old_objects_indexes[j] = -1
-
-                # 7. Add all new objects which were not processed.
-                for i in int_objects_indexes:
-                    if i != -1:
-                        self.objects.append(int_objects[i])
-
-                # 8. Modify all old objects which were not processed
-                # (e.g. generate a shape with outside=True at the end).
-                for j in old_objects_indexes:
-                    if j != -1:
-                        self._modify_unmatched_object(old_objects[j], start_frame + overlap)
+                new_objects = self._merge_objects_on_one_frame(
+                    int_objects, old_objects, start_frame, overlap
+                )
+                self.objects.extend(new_objects)
             else:
                 # We don't have old objects on the frame. Let's add all new ones.
                 self.objects.extend(int_objects_by_frame[frame])
+
+    def _merge_objects_on_one_frame(
+        self, int_objects: list, old_objects: list, start_frame: int, overlap: int
+    ):
+        # 4. Build cost matrix for each frame and find correspondence using
+        # Hungarian algorithm. In this case min_cost_thresh is stronger
+        # because we compare only on one frame.
+        new_objects = []
+
+        min_cost_thresh = self._get_cost_threshold()
+        cost_matrix = np.empty(shape=(len(int_objects), len(old_objects)), dtype=float)
+        # 5.1 Construct cost matrix for the frame.
+        for i, int_obj in enumerate(int_objects):
+            for j, old_obj in enumerate(old_objects):
+                cost_matrix[i][j] = 1 - self._calc_objects_similarity(
+                    int_obj, old_obj, start_frame, overlap, self.dimension
+                )
+
+        # 6. Find optimal solution using Hungarian algorithm.
+        row_ind, col_ind = linear_sum_assignment(cost_matrix)
+        old_objects_indexes = list(range(0, len(old_objects)))
+        int_objects_indexes = list(range(0, len(int_objects)))
+        for i, j in zip(row_ind, col_ind):
+            # Reject the solution if the cost is too high. Remember
+            # inside int_objects_indexes objects which were handled.
+            if cost_matrix[i][j] <= min_cost_thresh:
+                old_objects[j] = self._unite_objects(int_objects[i], old_objects[j])
+                int_objects_indexes[i] = -1
+                old_objects_indexes[j] = -1
+
+        # 7. Add all new objects which were not processed.
+        for i in int_objects_indexes:
+            if i != -1:
+                new_objects.append(int_objects[i])
+
+        # 8. Modify all old objects which were not processed
+        # (e.g. generate a shape with outside=True at the end).
+        for j in old_objects_indexes:
+            if j != -1:
+                self._modify_unmatched_object(old_objects[j], start_frame + overlap)
+
+        return new_objects
 
     def clear_frames(self, frames: Container[int]):
         new_objects = [obj for obj in self.objects if obj["frame"] not in frames]
