@@ -488,6 +488,10 @@ jobs:
         run: |
           pip3 install --user cvat-sdk/ cvat-cli/ -r tests/python/requirements.txt
 
+      - name: Run tmate
+        uses: mxschmitt/action-tmate@v3
+
+
       - name: Wait for CVAT to be ready
         run: |
           max_tries=60
