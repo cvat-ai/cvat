@@ -42,4 +42,5 @@ encoding.only_fields = [
     "org_id",
     "org_slug",
     "payload",
+    "api_token_id",
 ]
