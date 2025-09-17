@@ -17,6 +17,10 @@
 
 ### Deprecated
 
+- Excessive filtering for media files containing "related_images" in the path during task creation.
+  Only the actual related images wrt. the input media layout will be filtered out in the future.
+  (<https://github.com/cvat-ai/cvat/pull/9757>)
+
 ### Fixed
 
 - Related image detection for 2d and 3d media in all 5 supported layouts
