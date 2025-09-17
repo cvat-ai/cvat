@@ -1532,6 +1532,8 @@ def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader
         _rq_job: rq.job.Job = attrs.field(factory=rq.get_current_job)
 
         def update_progress(self, progress: float):
+            if not self._rq_job:
+                return
             progress_animation = '|/-\\'
 
             status_message = 'CVAT is preparing data chunks'

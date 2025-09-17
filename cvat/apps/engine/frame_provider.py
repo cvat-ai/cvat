@@ -490,7 +490,6 @@ class SegmentFrameProvider(IFrameProvider):
         self._loaders: dict[FrameQuality, _ChunkLoader] = {}
         if (
             db_data.storage_method == models.StorageMethodChoice.CACHE
-            or not settings.MEDIA_CACHE_ALLOW_STATIC_CACHE
             # TODO: separate handling, extract cache creation logic from media cache
         ):
             cache = MediaCache()
