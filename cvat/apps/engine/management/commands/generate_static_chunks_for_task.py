@@ -12,7 +12,7 @@ from django.db import transaction
 
 from cvat.apps.engine import models
 from cvat.apps.engine.media_extractors import MEDIA_TYPES, VideoReader
-from cvat.apps.engine.task import _create_static_chunks
+from cvat.apps.engine.task import create_static_chunks
 
 
 class Command(BaseCommand):
@@ -50,7 +50,7 @@ class Command(BaseCommand):
 
         data.storage_method = models.StorageMethodChoice.FILE_SYSTEM
         self._cleanup_static_cache(data)
-        _create_static_chunks(task, media_extractor=extractor, upload_dir=data.get_upload_dirname())
+        create_static_chunks(task, media_extractor=extractor, upload_dir=data.get_upload_dirname())
 
         self.stdout.write(f"Task #{task_id}: switched to static cache.")
 
