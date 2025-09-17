@@ -4,12 +4,10 @@
 // SPDX-License-Identifier: MIT
 
 import { SerializedUser } from './server-response-types';
+import { UserSaveFields } from './server-request-types';
 import PluginRegistry from './plugins';
 import { fieldsToSnakeCase } from './common';
-import { Camelized } from './type-utils';
 import serverProxy from './server-proxy';
-
-export type UserSaveFields = Partial<Pick<Camelized<SerializedUser>, 'firstName' | 'lastName'>>;
 
 export default class User {
     public readonly id: number;

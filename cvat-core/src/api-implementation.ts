@@ -213,11 +213,6 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         return tokens as PaginatedResource<ApiToken>;
     });
 
-    implementationMixin(cvat.apiTokens.create, async (tokenData) => {
-        const result = await serverProxy.apiTokens.create(tokenData);
-        return new ApiToken(result);
-    });
-
     implementationMixin(cvat.apiTokens.update, async (id, tokenData) => {
         const result = await serverProxy.apiTokens.update(id, tokenData);
         return new ApiToken(result);

@@ -1,0 +1,80 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+import React, { useState, useCallback } from 'react';
+import Modal from 'antd/lib/modal';
+import Input from 'antd/lib/input';
+import Button from 'antd/lib/button';
+import Typography from 'antd/lib/typography';
+import Space from 'antd/lib/space';
+import { CopyOutlined } from '@ant-design/icons';
+import { ApiToken } from 'cvat-core-wrapper';
+import { toClipboard } from 'utils/to-clipboard';
+
+interface Props {
+    visible: boolean;
+    token: ApiToken;
+    onClose: () => void;
+}
+
+function ApiTokenCreatedModal({
+    visible, token, onClose,
+}: Props): JSX.Element {
+    const [copied, setCopied] = useState(false);
+    const { value: tokenValue } = token;
+
+    const handleCopyToClipboard = useCallback(async (): Promise<void> => {
+        toClipboard(tokenValue ?? '');
+        setCopied(true);
+    }, [tokenValue]);
+
+    const handleClose = useCallback((): void => {
+        setCopied(false);
+        onClose();
+    }, [onClose]);
+
+    return (
+        <Modal
+            title='Your token is ready'
+            open={visible}
+            onCancel={handleClose}
+            footer={[
+                <Button key='close' type='primary' onClick={handleClose}>
+                    I have saved my token
+                </Button>,
+            ]}
+            width={500}
+            className='cvat-api-token-created-modal'
+            maskClosable={false}
+        >
+            <Space direction='vertical' size='large' style={{ width: '100%' }}>
+                <div className='cvat-api-token-created-modal-content'>
+                    <Typography.Text type='secondary'>
+                        Make sure to copy your new personal access token now.
+                        <br />
+                        You won&apos;t be able to see it again!
+                    </Typography.Text>
+                    <Space.Compact style={{ width: '100%' }}>
+                        <Input
+                            value={token.value}
+                            readOnly
+                            style={{ flex: 1 }}
+                            className='cvat-api-token-value-input'
+                        />
+                        <Button
+                            type={copied ? 'default' : 'primary'}
+                            icon={<CopyOutlined />}
+                            onClick={handleCopyToClipboard}
+                            className='cvat-api-token-copy-button'
+                        >
+                            {copied ? 'Copied!' : 'Copy'}
+                        </Button>
+                    </Space.Compact>
+                </div>
+            </Space>
+        </Modal>
+    );
+}
+
+export default React.memo(ApiTokenCreatedModal);

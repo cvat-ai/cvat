@@ -96,18 +96,7 @@ export default interface CVATCore {
     };
     apiTokens: {
         get: (filter: APIApiTokensFilter) => Promise<PaginatedResource<ApiToken>>;
-        create: (tokenData: {
-            name: string;
-            expiry_date?: string | null;
-            read_only?: boolean;
-        }) => Promise<ApiToken>;
-        update: (id: number, tokenData: {
-            name?: string;
-            expiry_date?: string | null;
-            read_only?: boolean;
-        }) => Promise<ApiToken>;
         revoke: (id: number) => Promise<void>;
-        self: () => Promise<ApiToken>;
     };
     jobs: {
         get: (filter: {

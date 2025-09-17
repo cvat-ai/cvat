@@ -22,6 +22,7 @@ import {
     SerializedRequest, SerializedJobValidationLayout, SerializedTaskValidationLayout, SerializedConsensusSettingsData,
     SerializedApiTokenData, APIApiTokensFilter,
 } from './server-response-types';
+import { APIApiTokenSaveFields } from './server-request-types';
 import { PaginatedResource, UpdateStatusData } from './core-types';
 import { Storage } from './storage';
 import { SerializedEvent } from './event';
@@ -593,11 +594,7 @@ async function getApiTokens(filter: APIApiTokensFilter = {}): Promise<Serialized
     return response.data.results;
 }
 
-async function createApiToken(tokenData: {
-    name: string;
-    expiry_date?: string | null;
-    read_only?: boolean;
-}): Promise<SerializedApiTokenData> {
+async function createApiToken(tokenData: SerializedApiTokenData): Promise<SerializedApiTokenData> {
     const { backendAPI } = config;
 
     let response = null;
@@ -612,7 +609,7 @@ async function createApiToken(tokenData: {
 
 async function updateApiToken(
     id: number,
-    tokenData: SerializedApiTokenData,
+    tokenData: APIApiTokenSaveFields,
 ): Promise<SerializedApiTokenData> {
     const { backendAPI } = config;
 

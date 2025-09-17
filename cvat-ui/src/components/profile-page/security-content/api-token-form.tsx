@@ -10,32 +10,34 @@ import Checkbox from 'antd/lib/checkbox';
 import Button from 'antd/lib/button';
 import { Row, Col } from 'antd/lib/grid';
 import Typography from 'antd/lib/typography';
+import moment from 'moment';
+import { ApiTokenSaveFields, ApiToken } from 'cvat-core-wrapper';
 
 interface Props {
-    onSubmit: (data: {
-        label: string;
-        expirationDate: string | null;
-        readOnly: boolean;
-    }) => void;
+    onSubmit: (data: ApiTokenSaveFields) => void;
     onCancel: () => void;
     submitting?: boolean;
+    token: ApiToken | null;
 }
 
 interface FormData {
-    label: string;
+    name: string;
     expirationDate: moment.Moment | null;
     isReadOnly: boolean;
 }
 
-function CreateApiTokenForm({ onSubmit, onCancel, submitting = false }: Props): JSX.Element {
+function CreateApiTokenForm({
+    onSubmit, onCancel, submitting = false, token,
+}: Props): JSX.Element {
     const [form] = Form.useForm<FormData>();
+    const isEditing = !!token;
 
     const handleSubmit = async (): Promise<void> => {
         try {
             const values = await form.validateFields();
             onSubmit({
-                label: values.label,
-                expirationDate: values.expirationDate ? values.expirationDate.toISOString() : null,
+                name: values.name,
+                expiryDate: values.expirationDate ? values.expirationDate.toISOString() : null,
                 readOnly: values.isReadOnly,
             });
         } catch (error) {
@@ -43,19 +45,26 @@ function CreateApiTokenForm({ onSubmit, onCancel, submitting = false }: Props): 
         }
     };
 
+    const initialValues = {
+        name: token?.name || '',
+        expirationDate: token?.expiryDate ? moment(token.expiryDate) : null,
+        isReadOnly: token?.readOnly || false,
+    };
+
     return (
         <Form
             form={form}
             layout='vertical'
-            className='cvat-create-api-token-form'
-            initialValues={{
-                isReadOnly: false,
-            }}
+            className='cvat-api-token-form'
+            initialValues={initialValues}
         >
-            <Typography.Title level={4}>Create API Token</Typography.Title>
+            <Typography.Title level={4}>
+                {isEditing ? 'Edit API Token' : 'Create API Token'}
+            </Typography.Title>
             <Form.Item
+                className='cvat-api-token-form-name'
                 label='Token Name'
-                name='label'
+                name='name'
                 rules={[
                     { required: true, message: 'Please enter a token name' },
                     { min: 3, message: 'Token name must be at least 3 characters' },
@@ -65,17 +74,19 @@ function CreateApiTokenForm({ onSubmit, onCancel, submitting = false }: Props): 
                 <Input placeholder='Enter a descriptive name for this token' />
             </Form.Item>
             <Form.Item
+                className='cvat-api-token-form-expiration-date'
                 label='Expiration Date'
                 name='expirationDate'
-                help='Leave empty for a token that never expires (not recommended)'
+                help='Leave this field empty if you dont want token to expire'
             >
                 <DatePicker
                     style={{ width: '100%' }}
                     placeholder='Select expiration date'
-                    disabledDate={(current) => current && current.isBefore(new Date(), 'day')}
+                    // disabledDate={(current) => current && current.valueOf() < Date.now()}
                 />
             </Form.Item>
             <Form.Item
+                className='cvat-api-token-form-read-only'
                 name='isReadOnly'
                 valuePropName='checked'
             >
@@ -85,17 +96,22 @@ function CreateApiTokenForm({ onSubmit, onCancel, submitting = false }: Props): 
             </Form.Item>
             <Row gutter={8} justify='end'>
                 <Col>
-                    <Button onClick={onCancel} disabled={submitting}>
+                    <Button
+                        className='cvat-api-token-form-cancel'
+                        onClick={onCancel}
+                        disabled={submitting}
+                    >
                         Cancel
                     </Button>
                 </Col>
                 <Col>
                     <Button
+                        className='cvat-api-token-form-submit'
                         type='primary'
                         onClick={handleSubmit}
                         loading={submitting}
                     >
-                        Save
+                        {isEditing ? 'Update' : 'Save'}
                     </Button>
                 </Col>
             </Row>

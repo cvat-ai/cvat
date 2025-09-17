@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useSelector, useDispatch, shallowEqual } from 'react-redux';
+import { useSelector, shallowEqual } from 'react-redux';
 import { CombinedState } from 'reducers';
 
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
@@ -13,9 +13,8 @@ import Menu from 'antd/lib/menu';
 
 import { getTabFromHash } from 'utils/location-utils';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
-import { getApiTokensAsync } from 'actions/auth-actions';
 import ProfileContent from './profile-content';
-import SecurityContent from './security-content';
+import SecurityContent from './security-content/security-content';
 
 import './styles.scss';
 
@@ -23,7 +22,6 @@ const { Title } = Typography;
 const supportedTabs = ['profile', 'security'];
 
 function ProfilePageComponent(): JSX.Element {
-    const dispatch = useDispatch();
     const { user, fetching, isPasswordChangeEnabled } = useSelector((state: CombinedState) => ({
         user: state.auth.user,
         fetching: state.auth.fetching || state.auth.apiTokens.fetching,
@@ -58,12 +56,6 @@ function ProfilePageComponent(): JSX.Element {
     useEffect(() => {
         window.history.replaceState(null, '', `#${activeTab}`);
     }, [activeTab]);
-
-    useEffect(() => {
-        if (user) {
-            dispatch(getApiTokensAsync({}));
-        }
-    }, [user]);
 
     const renderContent = (): JSX.Element => {
         switch (activeTab) {

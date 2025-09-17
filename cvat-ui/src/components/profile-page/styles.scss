@@ -21,3 +21,25 @@
         }
     }
 }
+
+.cvat-api-token-form {
+    h4 {
+        margin: 0;
+        margin-bottom: $grid-unit-size;
+    }
+
+    .cvat-api-token-form-expiration-date {
+        margin-bottom: $grid-unit-size * 5;
+    }
+}
+
+.cvat-api-token-created-modal-content {
+    .ant-typography, .cvat-api-token-value-input {
+        display: block;
+        margin-bottom: $grid-unit-size * 3;
+    }
+
+    .ant-typography {
+        margin-top: $grid-unit-size;
+    }
+}

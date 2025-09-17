@@ -15,8 +15,9 @@ import {
 } from 'cvat-core/src/labels';
 import {
     SerializedAttribute, SerializedLabel, SerializedAPISchema,
-    OrganizationMembersFilter, AnalyticsEventsFilter,
+    OrganizationMembersFilter, AnalyticsEventsFilter, SerializedApiTokenData,
 } from 'cvat-core/src/server-response-types';
+import { ApiTokenSaveFields } from 'cvat-core/src/server-request-types';
 import { UpdateStatusData } from 'cvat-core/src/core-types';
 import { Job, Task } from 'cvat-core/src/session';
 import Project from 'cvat-core/src/project';
@@ -123,6 +124,7 @@ export {
 export type {
     SerializedAttribute,
     SerializedLabel,
+    SerializedApiTokenData,
     StorageData,
     APIWrapperEnterOptions,
     QualitySummary,
@@ -137,4 +139,5 @@ export type {
     MinimalShape,
     InteractorResults,
     TrackerResults,
+    ApiTokenSaveFields,
 };

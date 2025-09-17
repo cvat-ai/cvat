@@ -5,9 +5,11 @@
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { RegisterData } from 'components/register-page/register-form';
-import { getCore, User, ApiToken } from 'cvat-core-wrapper';
+import {
+    getCore, User, ApiToken, ApiTokenSaveFields,
+} from 'cvat-core-wrapper';
 import { ChangePasswordData } from 'reducers';
-import { APIApiTokensFilter } from 'cvat-core/src/server-response-types';
+import { APIApiTokensFilter, SerializedApiTokenData } from 'cvat-core/src/server-response-types';
 
 const cvat = getCore();
 
@@ -238,16 +240,25 @@ export const getApiTokensAsync = (filter: APIApiTokensFilter = {}): ThunkAction 
     }
 };
 
-export const createApiTokenAsync = (tokenData: {
-    name: string;
-    expiry_date?: string | null;
-    read_only?: boolean;
-}): ThunkAction<Promise<ApiToken>> => async (dispatch) => {
+export const createApiTokenAsync = (
+    tokenData: ApiTokenSaveFields,
+    onSuccess?: (token: ApiToken) => void,
+): ThunkAction<Promise<ApiToken>> => async (dispatch) => {
     dispatch(authActions.createApiToken());
 
     try {
-        const token = await cvat.apiTokens.create(tokenData);
+        const data: Partial<SerializedApiTokenData> = {
+            name: tokenData.name,
+            expiry_date: tokenData.expiryDate,
+            read_only: tokenData.readOnly,
+        };
+
+        let token = new cvat.classes.ApiToken(data);
+        token = await token.save();
+
         dispatch(authActions.createApiTokenSuccess(token));
+        if (onSuccess) onSuccess(token);
+
         return token;
     } catch (error) {
         dispatch(authActions.createApiTokenFailed(error));
@@ -255,16 +266,19 @@ export const createApiTokenAsync = (tokenData: {
     }
 };
 
-export const updateApiTokenAsync = (id: number, tokenData: {
-    name?: string;
-    expiry_date?: string | null;
-    read_only?: boolean;
-}): ThunkAction<Promise<ApiToken>> => async (dispatch) => {
+export const updateApiTokenAsync = (
+    token: ApiToken,
+    tokenData: ApiTokenSaveFields,
+    onSuccess?: (token: ApiToken) => void,
+): ThunkAction<Promise<ApiToken>> => async (dispatch) => {
     dispatch(authActions.updateApiToken());
 
     try {
-        const token = await cvat.apiTokens.update(id, tokenData);
+        await token.save(tokenData);
+
         dispatch(authActions.updateApiTokenSuccess(token));
+        if (onSuccess) onSuccess(token);
+
         return token;
     } catch (error) {
         dispatch(authActions.updateApiTokenFailed(error));
@@ -272,12 +286,16 @@ export const updateApiTokenAsync = (id: number, tokenData: {
     }
 };
 
-export const revokeApiTokenAsync = (id: number): ThunkAction => async (dispatch) => {
+export const revokeApiTokenAsync = (
+    id: number,
+    onSuccess?: () => void,
+): ThunkAction => async (dispatch) => {
     dispatch(authActions.revokeApiToken());
 
     try {
         await cvat.apiTokens.revoke(id);
         dispatch(authActions.revokeApiTokenSuccess(id));
+        if (onSuccess) onSuccess();
     } catch (error) {
         dispatch(authActions.revokeApiTokenFailed(error));
         throw error;

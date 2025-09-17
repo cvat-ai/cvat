@@ -184,10 +184,6 @@ function build(): CVATCore {
                 const result = await PluginRegistry.apiWrapper(cvat.apiTokens.get, filter);
                 return result;
             },
-            async create(tokenData) {
-                const result = await PluginRegistry.apiWrapper(cvat.apiTokens.create, tokenData);
-                return result;
-            },
             async update(id, tokenData) {
                 const result = await PluginRegistry.apiWrapper(cvat.apiTokens.update, id, tokenData);
                 return result;
