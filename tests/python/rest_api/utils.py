@@ -82,10 +82,13 @@ def wait_and_download_v2(
 
     # return downloaded file in case of local downloading
     assert background_request.result_url
-    response = requests.get(
-        background_request.result_url,
-        auth=(api_client.configuration.username, api_client.configuration.password),
-    )
+
+    headers = api_client.get_common_headers()
+    query_params = []
+    api_client.update_params_for_auth(headers=headers, queries=query_params)
+    assert not query_params  # query auth is not expected
+
+    response = requests.get(background_request.result_url, headers=headers)
     assert response.status_code == HTTPStatus.OK, f"Status: {response.status_code}"
     return response.content
 

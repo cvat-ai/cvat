@@ -53,6 +53,7 @@ const defaultState: NotificationsState = {
             changePassword: null,
             requestPasswordReset: null,
             resetPassword: null,
+            updateUser: null,
         },
         serverAPI: {
             fetching: null,
@@ -416,6 +417,22 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
+        case AuthActionTypes.UPDATE_USER_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    auth: {
+                        ...state.errors.auth,
+                        updateUser: {
+                            message: 'Could not update user information.',
+                            reason: action.payload.error,
+                            shouldLog: shouldLog(action.payload.error),
+                        },
+                    },
+                },
+            };
+        }
         case ServerAPIActionTypes.GET_SERVER_API_SCHEMA_FAILED: {
             return {
                 ...state,
@@ -570,6 +587,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         dataset: {
                             message: 'Export is finished',
                             duration: config.REQUEST_SUCCESS_NOTIFICATION_DURATION,
+                            className: `cvat-notification-notice-export-${instanceType.split(' ')[0]}-finished`,
                             description,
                         },
                     },
@@ -1094,23 +1112,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             reason: action.payload.error,
                             shouldLog: shouldLog(action.payload.error),
                             className: 'cvat-notification-notice-save-annotations-failed',
-                        },
-                    },
-                },
-            };
-        }
-        case AnnotationActionTypes.UPDATE_CURRENT_JOB_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    annotation: {
-                        ...state.errors.annotation,
-                        saving: {
-                            message: 'Could not update annotation job',
-                            reason: action.payload.error,
-                            shouldLog: !(action.payload.error instanceof ServerError),
-                            className: 'cvat-notification-notice-update-current-job-failed',
                         },
                     },
                 },

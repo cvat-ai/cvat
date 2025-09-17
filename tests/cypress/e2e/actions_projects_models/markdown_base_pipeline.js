@@ -70,9 +70,7 @@ context('Basic markdown pipeline', () => {
             }).then((taskResponse) => {
                 taskID = taskResponse.taskID;
                 [jobID] = taskResponse.jobIDs;
-
-                cy.visit(`/tasks/${taskID}`);
-                cy.get('.cvat-task-details').should('exist').and('be.visible');
+                cy.openTaskById(taskID);
                 cy.assignTaskToUser(additionalUsers.taskAssignee.username);
                 cy.assignJobToUser(jobID, additionalUsers.jobAssignee.username);
             });
@@ -92,11 +90,6 @@ context('Basic markdown pipeline', () => {
     });
 
     describe('Markdown text can be bounded to the project', () => {
-        function openProject() {
-            cy.visit(`/projects/${projectID}`);
-            cy.get('.cvat-project-details').should('exist').and('be.visible');
-        }
-
         function openGuide() {
             cy.get('.cvat-md-guide-control-wrapper button').click();
             cy.url().should('to.match', /\/projects\/\d+\/guide/);
@@ -124,7 +117,7 @@ context('Basic markdown pipeline', () => {
         }
 
         function setupGuide(value) {
-            openProject();
+            cy.openProjectById(projectID);
             openGuide();
             updatePlainText(value);
         }

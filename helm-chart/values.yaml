@@ -396,15 +396,21 @@ vector:
   dataDir: "/vector-data-dir"
   containerPorts:
     - name: http
-      containerPort: 80
+      containerPort: 8282
       protocol: TCP
   service:
     ports:
       - name: http
-        port: 80
+        port: 8282
         protocol: TCP
   image:
     tag: "0.26.0-alpine"
+  securityContext:
+    runAsNonRoot: true
+
+    # Workaround for <https://github.com/vectordotdev/vector/issues/1599>.
+    runAsUser: 1000
+    runAsGroup: 1000
 
 clickhouse:
   # Set to false in case of external db usage
@@ -414,7 +420,6 @@ clickhouse:
   shards: 1
   replicaCount: 1
   extraEnvVarsSecret: cvat-analytics-secret
-  initdbScriptsSecret: cvat-clickhouse-init
   auth:
     username: user
     existingSecret: cvat-analytics-secret

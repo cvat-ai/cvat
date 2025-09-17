@@ -7,7 +7,7 @@ import React from 'react';
 import Pagination from 'antd/lib/pagination';
 import Spin from 'antd/lib/spin';
 
-import { useSelector } from 'react-redux';
+import { useSelector, shallowEqual } from 'react-redux';
 import { CombinedState, SelectedResourceType } from 'reducers';
 import { Membership } from 'cvat-core-wrapper';
 import BulkWrapper from 'components/bulk-wrapper';
@@ -29,9 +29,15 @@ function MembersList(props: Readonly<Props>): JSX.Element {
     const {
         fetching, members, pageSize, pageNumber, fetchMembers, onPageChange,
     } = props;
-    const inviting = useSelector((state: CombinedState) => state.organizations.inviting);
-    const updatingMember = useSelector((state: CombinedState) => state.organizations.updatingMember);
-    const removingMember = useSelector((state: CombinedState) => state.organizations.removingMember);
+    const {
+        inviting,
+        updatingMember,
+        removingMember,
+    } = useSelector((state: CombinedState) => ({
+        inviting: state.organizations.inviting,
+        updatingMember: state.organizations.updatingMember,
+        removingMember: state.organizations.removingMember,
+    }), shallowEqual);
 
     if (fetching || inviting || updatingMember || removingMember) {
         return <Spin className='cvat-spinner' />;

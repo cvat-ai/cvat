@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.43.1
+  version: 2.44.4
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -10285,10 +10285,13 @@ components:
         email:
           type: string
           format: email
+          maxLength: 254
         first_name:
           type: string
+          maxLength: 150
         last_name:
           type: string
+          maxLength: 150
         email_verification_required:
           type: boolean
           readOnly: true
@@ -10309,6 +10312,7 @@ components:
           type: string
           format: email
           minLength: 1
+          maxLength: 254
         password1:
           type: string
           writeOnly: true
@@ -10320,9 +10324,11 @@ components:
         first_name:
           type: string
           minLength: 1
+          maxLength: 150
         last_name:
           type: string
           minLength: 1
+          maxLength: 150
       required:
       - password1
       - password2
