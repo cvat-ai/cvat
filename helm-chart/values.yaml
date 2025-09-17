@@ -145,7 +145,7 @@ cvat:
         extraArgs: []
     replicas: 1
     image: cvat/server
-    tag: v2.44.3
+    tag: v2.45.0
     imagePullPolicy: Always
     permissionFix:
       enabled: true
@@ -167,7 +167,7 @@ cvat:
   frontend:
     replicas: 1
     image: cvat/ui
-    tag: v2.44.3
+    tag: v2.45.0
     imagePullPolicy: Always
     labels: {}
     #  test: test
@@ -420,7 +420,6 @@ clickhouse:
   shards: 1
   replicaCount: 1
   extraEnvVarsSecret: cvat-analytics-secret
-  initdbScriptsSecret: cvat-clickhouse-init
   auth:
     username: user
     existingSecret: cvat-analytics-secret
