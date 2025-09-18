@@ -105,7 +105,7 @@ def _find_related_images_2D(
     related_images = {}
     for image_path in dataset_paths:
         parents = Path(image_path).parents
-        if len(parents) >= 2 and parents[1].name == "related_images":
+        if len(parents) >= 3 and parents[1].name == "related_images":
             regular_image_path = parents[2] / ".".join(parents[0].name.rsplit("_", maxsplit=1))
             related_images.setdefault(str(regular_image_path), []).append(image_path)
         elif (
