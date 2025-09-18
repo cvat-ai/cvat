@@ -41,7 +41,7 @@ from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, NotFound, PermissionDenied, ValidationError
 from rest_framework.parsers import MultiPartParser
-from rest_framework.permissions import SAFE_METHODS
+from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rq.job import Job as RQJob
@@ -150,7 +150,7 @@ from cvat.apps.engine.view_utils import (
     tus_chunk_action,
 )
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
-from cvat.apps.iam.permissions import IsAuthenticatedOrReadPublicResource, PolicyEnforcer
+from cvat.apps.iam.permissions import IsAuthenticatedOrReadPublicResource
 from cvat.apps.redis_handler.serializers import RqIdSerializer
 from utils.dataset_manifest import ImageManifestManager
 
@@ -2757,9 +2757,14 @@ class AssetsViewSet(
         super().check_object_permissions(request, obj.guide)
 
     def get_permissions(self):
+        permissions = super().get_permissions()
+
         if self.action == 'retrieve':
-            return [IsAuthenticatedOrReadPublicResource(), PolicyEnforcer()]
-        return super().get_permissions()
+            permissions = [IsAuthenticatedOrReadPublicResource()] + [
+                p for p in permissions if not isinstance(p, IsAuthenticated)
+            ]
+
+        return permissions
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
