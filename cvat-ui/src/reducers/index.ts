@@ -559,6 +559,10 @@ export interface NotificationsState {
             requestPasswordReset: null | ErrorState;
             resetPassword: null | ErrorState;
             updateUser: null | ErrorState;
+            getApiTokens: null | ErrorState;
+            createApiToken: null | ErrorState;
+            updateApiToken: null | ErrorState;
+            revokeApiToken: null | ErrorState;
         };
         serverAPI: {
             fetching: null | ErrorState;
