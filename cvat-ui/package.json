@@ -67,5 +67,11 @@
     "redux-devtools-extension": "^2.13.9",
     "redux-logger": "^4.0.0",
     "redux-thunk": "^2.3.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.28.4",
+    "@types/babel__core": "^7",
+    "webpack": "^5.101.3",
+    "webpack-cli": "^6.0.1"
   }
 }
