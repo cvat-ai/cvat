@@ -4,6 +4,19 @@
 
 @import 'base';
 
+.cvat-profile-page {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+
+    .cvat-profile-page-wrapper {
+        flex-grow: 1;
+        overflow-y: auto;
+        align-items: start;
+    }
+}
+
 .cvat-change-password-form-button {
     margin-left: $grid-unit-size;
 }
