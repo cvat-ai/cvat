@@ -11,15 +11,9 @@ import re
 import sys
 from glob import glob
 
-from tqdm import tqdm
-
-if __name__ == "__main__":
-    # fix types.py import
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    sys.path.append(base_dir)
-
 from dataset_manifest.core import ImageManifestManager, VideoManifestManager
 from dataset_manifest.utils import SortingMethod, find_related_images, is_image, is_video
+from tqdm import tqdm
 
 
 def get_args():
