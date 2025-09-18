@@ -62,8 +62,10 @@ The action menu contains:
 
   ![Window with options and parameters for object propagation](/images/image053.jpg)
 
-- **To background** - moves the object to the background. The keyboard shortcut **-** or **\_**
-- **To foreground** - moves the object to the foreground. The keyboard shortcut **+** or **=**
+- **To background** - moves the object to the background. The keyboard shortcut **-**
+- **To foreground** - moves the object to the foreground. The keyboard shortcut **=**
+- **Move to previous layer** - Moves the object one layer backward. Keyboard shortcut: **_**
+- **Move to next layer** - Moves the object one layer forward. Keyboard shortcut: **+**
 - **Change instance color**- choosing a color using the color picker (available only in instance mode).
 
   ![Object's action menu with "Change instance color" option and a color picker](/images/image153.jpg)
