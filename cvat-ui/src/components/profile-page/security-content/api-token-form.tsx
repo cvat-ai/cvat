@@ -26,7 +26,7 @@ interface FormData {
     isReadOnly: boolean;
 }
 
-function CreateApiTokenForm({
+function ApiTokenForm({
     onSubmit, onCancel, submitting = false, token,
 }: Props): JSX.Element {
     const [form] = Form.useForm<FormData>();
@@ -119,4 +119,4 @@ function CreateApiTokenForm({
     );
 }
 
-export default React.memo(CreateApiTokenForm);
+export default React.memo(ApiTokenForm);

@@ -22,7 +22,7 @@ import {
 } from 'actions/auth-actions';
 import CVATTable from 'components/common/cvat-table';
 import { ApiToken, ApiTokenSaveFields } from 'cvat-core-wrapper';
-import CreateApiTokenForm from './api-token-form';
+import ApiTokenForm from './api-token-form';
 import ApiTokenCreatedModal from './api-token-created-modal';
 
 interface RowData {
@@ -209,7 +209,7 @@ function ApiTokensCard(): JSX.Element {
         <>
             <Card className='cvat-security-api-tokens-card'>
                 {showCreateTokenForm ? (
-                    <CreateApiTokenForm
+                    <ApiTokenForm
                         onSubmit={onSubmitTokenForm}
                         onCancel={onCancelCreateTokenForm}
                         submitting={fetching}

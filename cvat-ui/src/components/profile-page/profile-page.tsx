@@ -14,7 +14,7 @@ import Menu from 'antd/lib/menu';
 import { getTabFromHash } from 'utils/location-utils';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import dimensions from 'utils/dimensions';
-import ProfileContent from './profile-content';
+import ProfileContent from './profile-content/profile-content';
 import SecurityContent from './security-content/security-content';
 
 import './styles.scss';
