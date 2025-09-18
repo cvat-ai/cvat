@@ -13,6 +13,7 @@ import Menu from 'antd/lib/menu';
 
 import { getTabFromHash } from 'utils/location-utils';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
+import dimensions from 'utils/dimensions';
 import ProfileContent from './profile-content';
 import SecurityContent from './security-content/security-content';
 
@@ -70,22 +71,21 @@ function ProfilePageComponent(): JSX.Element {
     return (
         <div className='cvat-profile-page'>
             { fetching ? <CVATLoadingSpinner size='large' /> : null }
+            <Row justify='center' align='middle'>
+                <Col {...dimensions}>
+                    <Title level={1}>
+                        {`Welcome, ${user?.username}`}
+                    </Title>
+                </Col>
+            </Row>
             <Row justify='center' align='middle' className='cvat-profile-page-wrapper'>
                 <Col
-                    md={22}
-                    lg={18}
-                    xl={16}
-                    xxl={14}
+                    {...dimensions}
                     style={fetching ? {
                         pointerEvents: 'none',
                         opacity: 0.7,
                     } : {}}
                 >
-                    <Row>
-                        <Title level={1}>
-                            {`Welcome, ${user?.username}`}
-                        </Title>
-                    </Row>
                     <Row>
                         <Col span={6}>
                             <Menu

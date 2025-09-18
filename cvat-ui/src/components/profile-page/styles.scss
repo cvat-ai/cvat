@@ -22,6 +22,8 @@
 }
 
 .cvat-profile-page-navigation-menu {
+    position: sticky;
+    top: 0;
     border-radius: $grid-unit-size;
 }
 
