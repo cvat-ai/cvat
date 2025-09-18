@@ -13,6 +13,7 @@ import Tag from 'antd/lib/tag';
 import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
 import { MoreOutlined, PlusOutlined } from '@ant-design/icons';
+import type { ColumnType } from 'antd/lib/table';
 
 import { CombinedState } from 'reducers';
 import {
@@ -23,6 +24,16 @@ import CVATTable from 'components/common/cvat-table';
 import { ApiToken, ApiTokenSaveFields } from 'cvat-core-wrapper';
 import CreateApiTokenForm from './api-token-form';
 import ApiTokenCreatedModal from './api-token-created-modal';
+
+interface RowData {
+    key: number;
+    name: string;
+    readOnly: boolean;
+    createdDate: string;
+    expiryDate: string | null;
+    lastUsedDate: string | null;
+    actions: ApiToken;
+}
 
 function ApiTokensCard(): JSX.Element {
     const dispatch = useDispatch();
@@ -36,14 +47,14 @@ function ApiTokensCard(): JSX.Element {
         fetching: state.auth.apiTokens.fetching,
     }), shallowEqual);
 
-    const tableData = apiTokens.map((token: ApiToken) => ({
+    const tableData: RowData[] = apiTokens.map((token: ApiToken) => ({
         key: token.id,
         name: token.name,
         readOnly: token.readOnly,
         createdDate: token.createdDate,
         expiryDate: token.expiryDate,
         lastUsedDate: token.lastUsedDate,
-        actions: token.id,
+        actions: token,
     }));
 
     useEffect(() => {
@@ -104,19 +115,19 @@ function ApiTokensCard(): JSX.Element {
         setNewToken(null);
     }, []);
 
-    const apiTokenColumns = [
+    const apiTokenColumns: ColumnType<RowData>[] = [
         {
             title: 'Name',
             dataIndex: 'name',
             key: 'name',
-            sorter: (a: ApiToken, b: ApiToken) => a.name.localeCompare(b.name),
+            sorter: (a: RowData, b: RowData) => a.name.localeCompare(b.name),
         },
         {
             title: 'Permissions',
             dataIndex: 'readOnly',
             key: 'readOnly',
             align: 'center' as const,
-            sorter: (a: ApiToken, b: ApiToken) => {
+            sorter: (a: RowData, b: RowData) => {
                 if (a.readOnly === b.readOnly) return 0;
                 return a.readOnly ? -1 : 1;
             },
@@ -124,7 +135,7 @@ function ApiTokensCard(): JSX.Element {
                 { text: 'Read Only', value: true },
                 { text: 'Read/Write', value: false },
             ],
-            onFilter: (value: boolean | Key, record: ApiToken) => record.readOnly === value,
+            onFilter: (value: boolean | Key, record: RowData) => record.readOnly === value,
             render: (readOnly: boolean) => (
                 <Tag color={readOnly ? 'blue' : 'green'}>
                     {readOnly ? 'Read Only' : 'Read/Write'}
@@ -135,52 +146,53 @@ function ApiTokensCard(): JSX.Element {
             title: 'Created',
             dataIndex: 'createdDate',
             key: 'createdDate',
-            sorter: (a: ApiToken, b: ApiToken) => new Date(a.createdDate).getTime() - new Date(b.createdDate).getTime(),
+            sorter: (a: RowData, b: RowData) => new Date(a.createdDate).getTime() - new Date(b.createdDate).getTime(),
             render: (date: string) => new Date(date).toLocaleDateString(),
         },
         {
             title: 'Expires',
             dataIndex: 'expiryDate',
             key: 'expiryDate',
-            sorter: (a: ApiToken, b: ApiToken) => {
+            sorter: (a: RowData, b: RowData) => {
                 if (!a.expiryDate && !b.expiryDate) return 0;
                 if (!a.expiryDate) return 1;
                 if (!b.expiryDate) return -1;
                 return new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime();
             },
-            render: (date: string) => (date ? new Date(date).toLocaleDateString() : 'Never'),
+            render: (date: string | null) => (date ? new Date(date).toLocaleDateString() : 'Never'),
         },
         {
             title: 'Last Used',
             dataIndex: 'lastUsedDate',
             key: 'lastUsedDate',
-            sorter: (a: ApiToken, b: ApiToken) => {
+            sorter: (a: RowData, b: RowData) => {
                 if (!a.lastUsedDate && !b.lastUsedDate) return 0;
                 if (!a.lastUsedDate) return 1;
                 if (!b.lastUsedDate) return -1;
                 return new Date(a.lastUsedDate).getTime() - new Date(b.lastUsedDate).getTime();
             },
-            render: (date: string) => (date ? new Date(date).toLocaleDateString() : 'Never'),
+            render: (date: string | null) => (date ? new Date(date).toLocaleDateString() : 'Never'),
         },
         {
             title: 'Actions',
+            dataIndex: 'actions',
             key: 'actions',
             align: 'center' as const,
             width: 80,
-            render: (_: unknown, record: ApiToken) => (
+            render: (token: ApiToken) => (
                 <Dropdown
                     menu={{
                         items: [
                             {
                                 key: 'edit',
                                 label: 'Edit',
-                                onClick: () => onEditToken(record),
+                                onClick: () => onEditToken(token),
                             },
                             { type: 'divider' },
                             {
                                 key: 'revoke',
                                 label: 'Revoke',
-                                onClick: () => onRevokeToken(record),
+                                onClick: () => onRevokeToken(token),
                             },
                         ],
                     }}
