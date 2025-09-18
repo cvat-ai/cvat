@@ -3,12 +3,14 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useState, useCallback } from 'react';
+
 import Modal from 'antd/lib/modal';
 import Input from 'antd/lib/input';
 import Button from 'antd/lib/button';
 import Typography from 'antd/lib/typography';
 import Space from 'antd/lib/space';
 import { CopyOutlined } from '@ant-design/icons';
+
 import { ApiToken } from 'cvat-core-wrapper';
 import { toClipboard } from 'utils/to-clipboard';
 

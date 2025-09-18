@@ -16,12 +16,12 @@ import { MoreOutlined, PlusOutlined } from '@ant-design/icons';
 import type { ColumnType } from 'antd/lib/table';
 
 import { CombinedState } from 'reducers';
+import { ApiToken, ApiTokenSaveFields } from 'cvat-core-wrapper';
 import {
     createApiTokenAsync, getApiTokensAsync,
     updateApiTokenAsync, revokeApiTokenAsync,
 } from 'actions/auth-actions';
 import CVATTable from 'components/common/cvat-table';
-import { ApiToken, ApiTokenSaveFields } from 'cvat-core-wrapper';
 import ApiTokenForm from './api-token-form';
 import ApiTokenCreatedModal from './api-token-created-modal';
 

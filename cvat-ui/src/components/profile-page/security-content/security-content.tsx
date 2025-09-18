@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-
 import PasswordChangeCard from './password-change-card';
 import ApiTokensCard from './api-tokens-card';
 

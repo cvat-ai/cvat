@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+import moment from 'moment';
+
 import Form from 'antd/lib/form';
 import Input from 'antd/lib/input';
 import DatePicker from 'antd/lib/date-picker';
@@ -10,7 +12,7 @@ import Checkbox from 'antd/lib/checkbox';
 import Button from 'antd/lib/button';
 import { Row, Col } from 'antd/lib/grid';
 import Typography from 'antd/lib/typography';
-import moment from 'moment';
+
 import { ApiTokenSaveFields, ApiToken } from 'cvat-core-wrapper';
 
 interface Props {
