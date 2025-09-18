@@ -576,22 +576,20 @@ async function authenticated(): Promise<boolean> {
     return true;
 }
 
-async function getApiTokens(filter: APIApiTokensFilter = {}): Promise<SerializedApiTokenData[] & { count: number }> {
+async function getApiTokens(filter: APIApiTokensFilter = {}): Promise<PaginatedResource<SerializedRequest>> {
     const { backendAPI } = config;
 
     let response = null;
     try {
-        response = await Axios.get(`${backendAPI}/auth/api_tokens`, {
-            params: {
-                ...filter,
-            },
+        response = await fetchAll(`${backendAPI}/auth/api_tokens`, {
+            ...filter,
         });
     } catch (errorData) {
         throw generateError(errorData);
     }
 
-    response.data.results.count = response.data.count;
-    return response.data.results;
+    response.results.count = response.count;
+    return response.results;
 }
 
 async function createApiToken(tokenData: SerializedApiTokenData): Promise<SerializedApiTokenData> {

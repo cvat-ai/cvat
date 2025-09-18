@@ -27,6 +27,7 @@
 
 .cvat-profile-page-content {
     padding-left: $grid-unit-size * 3;
+    padding-bottom: $grid-unit-size * 2;
 
     .ant-form {
         >.ant-form-item:last-child {
@@ -54,5 +55,15 @@
 
     .ant-typography {
         margin-top: $grid-unit-size;
+    }
+}
+
+.cvat-security-api-tokens-card {
+    .ant-pagination {
+        margin-bottom: 0;
+    }
+
+    .ant-card-body {
+        padding-bottom: $grid-unit-size;
     }
 }

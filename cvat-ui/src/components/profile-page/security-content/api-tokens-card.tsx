@@ -120,6 +120,7 @@ function ApiTokensCard(): JSX.Element {
             title: 'Name',
             dataIndex: 'name',
             key: 'name',
+            width: 250,
             sorter: (a: RowData, b: RowData) => a.name.localeCompare(b.name),
         },
         {
@@ -178,7 +179,7 @@ function ApiTokensCard(): JSX.Element {
             dataIndex: 'actions',
             key: 'actions',
             align: 'center' as const,
-            width: 80,
+            width: 60,
             render: (token: ApiToken) => (
                 <Dropdown
                     menu={{
