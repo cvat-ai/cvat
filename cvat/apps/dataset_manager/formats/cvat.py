@@ -31,7 +31,6 @@ from defusedxml import ElementTree
 from cvat.apps.dataset_manager.bindings import (
     CommonData,
     CVATProjectDataExtractor,
-    CvatTaskOrJobDataExtractor,
     JobData,
     NoMediaInAnnotationFileError,
     ProjectData,
@@ -856,10 +855,6 @@ def dump_as_cvat_annotation(dumper, annotations: JobData | TaskData | ProjectDat
         # do not keep parsed lazy list data after this iteration
         if isinstance(annotations, ProjectData):
             frame_annotation = CVATProjectDataExtractor.copy_frame_data_with_replaced_lazy_lists(
-                frame_annotation
-            )
-        else:
-            frame_annotation = CvatTaskOrJobDataExtractor.copy_frame_data_with_replaced_lazy_lists(
                 frame_annotation
             )
 

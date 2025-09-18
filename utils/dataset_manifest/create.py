@@ -13,7 +13,13 @@ from glob import glob
 
 from tqdm import tqdm
 
-from utils import SortingMethod, detect_related_images, is_image, is_video
+if __name__ == "__main__":
+    # fix types.py import
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    sys.path.append(base_dir)
+
+from dataset_manifest.core import ImageManifestManager, VideoManifestManager
+from dataset_manifest.utils import SortingMethod, find_related_images, is_image, is_video
 
 
 def get_args():
@@ -71,14 +77,20 @@ def main():
                 sys.exit(str(ex))
             sources = list(filter(is_image, glob(source, recursive=True)))
 
-        sources = list(filter(lambda x: "related_images{}".format(os.sep) not in x, sources))
-
         # If the source is a glob expression, we need additional processing
         abs_root = source
         while abs_root and re.search(r"[*?\[\]]", abs_root):
             abs_root = os.path.split(abs_root)[0]
 
-        related_images = detect_related_images(sources, abs_root)
+        scene_paths, related_images = find_related_images(
+            sources,
+            root_path=abs_root,
+            scene_paths=(
+                lambda p: not re.search(r"(^|{0})related_images{0}".format(os.sep), p)
+                # backward compatibility, deprecated in https://github.com/cvat-ai/cvat/pull/9757
+            ),
+        )
+        sources = [p for p in sources if os.path.relpath(p, abs_root) in scene_paths]
         meta = {k: {"related_images": related_images[k]} for k in related_images}
         try:
             assert len(sources), "A images was not found"
@@ -119,8 +131,4 @@ def main():
 
 
 if __name__ == "__main__":
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    sys.path.append(base_dir)
-    from dataset_manifest.core import ImageManifestManager, VideoManifestManager
-
     main()
