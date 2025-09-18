@@ -1519,21 +1519,19 @@ def create_thread(
         settings.MEDIA_CACHE_ALLOW_STATIC_CACHE and
         db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM
     ):
-        create_static_chunks(db_task, media_extractor=extractor, upload_dir=upload_dir)
+        _create_static_chunks(db_task, media_extractor=extractor, upload_dir=upload_dir)
 
     # Prepare the preview image and save it in the cache
     if not (is_data_in_cloud and is_backup_restore):
         TaskFrameProvider(db_task=db_task).get_preview()
 
-def create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader, upload_dir: str):
+def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader, upload_dir: str):
     @attrs.define
     class _ChunkProgressUpdater:
         _call_counter: int = attrs.field(default=0, init=False)
         _rq_job: rq.job.Job = attrs.field(factory=rq.get_current_job)
 
         def update_progress(self, progress: float):
-            if not self._rq_job:
-                return
             progress_animation = '|/-\\'
 
             status_message = 'CVAT is preparing data chunks'
