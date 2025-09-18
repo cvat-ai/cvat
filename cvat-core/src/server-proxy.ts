@@ -20,9 +20,10 @@ import {
     SerializedQualitySettingsData, APIQualitySettingsFilter, SerializedQualityConflictData, APIQualityConflictsFilter,
     SerializedQualityReportData, APIQualityReportsFilter, APIAnalyticsEventsFilter, APIConsensusSettingsFilter,
     SerializedRequest, SerializedJobValidationLayout, SerializedTaskValidationLayout, SerializedConsensusSettingsData,
+    SerializedApiTokenData, APIApiTokensFilter,
 } from './server-response-types';
+import { APIApiTokenSaveFields } from './server-request-types';
 import { PaginatedResource, UpdateStatusData } from './core-types';
-import { Request } from './request';
 import { Storage } from './storage';
 import { SerializedEvent } from './event';
 import { RQStatus, StorageLocation, WebhookSourceType } from './enums';
@@ -573,6 +574,74 @@ async function authenticated(): Promise<boolean> {
     }
 
     return true;
+}
+
+async function getApiTokens(filter: APIApiTokensFilter = {}): Promise<PaginatedResource<SerializedRequest>> {
+    const { backendAPI } = config;
+
+    let response = null;
+    try {
+        response = await fetchAll(`${backendAPI}/auth/api_tokens`, {
+            ...filter,
+        });
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+
+    response.results.count = response.count;
+    return response.results;
+}
+
+async function createApiToken(tokenData: SerializedApiTokenData): Promise<SerializedApiTokenData> {
+    const { backendAPI } = config;
+
+    let response = null;
+    try {
+        response = await Axios.post(`${backendAPI}/auth/api_tokens`, tokenData);
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+
+    return response.data;
+}
+
+async function updateApiToken(
+    id: number,
+    tokenData: APIApiTokenSaveFields,
+): Promise<SerializedApiTokenData> {
+    const { backendAPI } = config;
+
+    let response = null;
+    try {
+        response = await Axios.patch(`${backendAPI}/auth/api_tokens/${id}`, tokenData);
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+
+    return response.data;
+}
+
+async function revokeApiToken(id: number): Promise<void> {
+    const { backendAPI } = config;
+
+    try {
+        await Axios.delete(`${backendAPI}/auth/api_tokens/${id}`);
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function getSelfApiToken(): Promise<SerializedApiTokenData> {
+    const { backendAPI } = config;
+
+    let response = null;
+    try {
+        response = await Axios.get(`${backendAPI}/auth/api_tokens/self`);
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+
+    return response.data;
 }
 
 async function healthCheck(
@@ -1159,7 +1228,7 @@ async function restoreProject(storage: Storage, file: File | string): Promise<st
 async function createTask(
     taskSpec: Partial<SerializedTask>,
     taskDataSpec: any,
-    onUpdate: (request: Request | UpdateStatusData) => void,
+    onUpdate: (updateData: UpdateStatusData) => void,
 ): Promise<{ taskID: number, rqID: string }> {
     const { backendAPI, origin } = config;
     // keep current default params to 'freeze" them during this request
@@ -1504,6 +1573,19 @@ async function getUsers(filter = { page_size: 'all' }): Promise<SerializedUser[]
     }
 
     return response.data.results;
+}
+
+async function updateUser(id: number, userData: Partial<SerializedUser>): Promise<SerializedUser> {
+    const { backendAPI } = config;
+
+    let response = null;
+    try {
+        response = await Axios.patch(`${backendAPI}/users/${id}`, userData);
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+
+    return response.data;
 }
 
 function getPreview(instance: 'projects' | 'tasks' | 'jobs' | 'cloudstorages' | 'functions') {
@@ -2473,6 +2555,15 @@ export default Object.freeze({
     users: Object.freeze({
         get: getUsers,
         self: getSelf,
+        update: updateUser,
+    }),
+
+    apiTokens: Object.freeze({
+        get: getApiTokens,
+        create: createApiToken,
+        update: updateApiToken,
+        revoke: revokeApiToken,
+        self: getSelfApiToken,
     }),
 
     frames: Object.freeze({

@@ -5,9 +5,9 @@
 
 import React from 'react';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
+import dayjs from 'dayjs';
 import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
-import moment from 'moment';
 import { CombinedState } from 'reducers';
 import { Membership } from 'cvat-core-wrapper';
 import { MoreOutlined } from '@ant-design/icons';
@@ -92,11 +92,11 @@ function MemberItem(props: Readonly<Props>): JSX.Element {
                     <Col span={8} className='cvat-organization-member-item-dates'>
                         {invitation ? (
                             <Text type='secondary'>
-                                {`Invited ${moment(invitation.createdDate).fromNow()}`}
+                                {`Invited ${dayjs(invitation.createdDate).fromNow()}`}
                                 {invitation.owner && ` by ${invitation.owner.username}`}
                             </Text>
                         ) : null}
-                        {joinedDate ? <Text type='secondary'>{`Joined ${moment(joinedDate).fromNow()}`}</Text> : <Text type='secondary'>Invitation pending</Text>}
+                        {joinedDate ? <Text type='secondary'>{`Joined ${dayjs(joinedDate).fromNow()}`}</Text> : <Text type='secondary'>Invitation pending</Text>}
                     </Col>
                     <Col span={3} className='cvat-organization-member-item-role'>
                         <MemberRoleSelector

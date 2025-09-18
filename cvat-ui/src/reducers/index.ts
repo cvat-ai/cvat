@@ -10,7 +10,7 @@ import {
     Webhook, MLModel, Organization, Job, Task, Project, Label, User,
     QualityConflict, FramesMetaData, RQStatus, Event, Invitation, SerializedAPISchema,
     Request, JobValidationLayout, QualitySettings, TaskValidationLayout, ObjectState,
-    ConsensusSettings, AboutData, ShapeType, ObjectType,
+    ConsensusSettings, AboutData, ShapeType, ObjectType, ApiToken,
     Membership,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
@@ -24,6 +24,16 @@ export interface AuthState {
     user: User | null;
     showChangePasswordDialog: boolean;
     hasEmailVerificationBeenSent: boolean;
+    apiTokens: {
+        fetching: boolean;
+        current: ApiToken[];
+    };
+}
+
+export interface ChangePasswordData {
+    oldPassword: string;
+    newPassword1: string;
+    newPassword2: string;
 }
 
 export interface ProjectsQuery {
@@ -548,6 +558,11 @@ export interface NotificationsState {
             changePassword: null | ErrorState;
             requestPasswordReset: null | ErrorState;
             resetPassword: null | ErrorState;
+            updateUser: null | ErrorState;
+            getApiTokens: null | ErrorState;
+            createApiToken: null | ErrorState;
+            updateApiToken: null | ErrorState;
+            revokeApiToken: null | ErrorState;
         };
         serverAPI: {
             fetching: null | ErrorState;

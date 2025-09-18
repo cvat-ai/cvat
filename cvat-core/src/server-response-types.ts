@@ -41,6 +41,17 @@ export interface ProjectsFilter extends APICommonFilterParams {
     id?: number;
 }
 
+export interface APIApiTokensFilter extends APICommonFilterParams {
+    id?: number;
+    owner?: number;
+    created_date?: string;
+    updated_date?: string;
+    expiry_date?: string;
+    last_used_date?: string;
+    read_only?: boolean;
+    name?: string;
+}
+
 export interface SerializedUser {
     url: string;
     id: number;
@@ -390,6 +401,18 @@ export interface SerializedInvitationData {
     expired: boolean;
     organization: number;
     organization_info: SerializedOrganization;
+}
+
+export interface SerializedApiTokenData {
+    id: number;
+    name: string;
+    created_date: string;
+    updated_date: string;
+    expiry_date: string | null;
+    last_used_date: string | null;
+    read_only: boolean;
+    owner: number;
+    value?: string;
 }
 
 export interface SerializedShape {

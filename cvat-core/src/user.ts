@@ -4,6 +4,10 @@
 // SPDX-License-Identifier: MIT
 
 import { SerializedUser } from './server-response-types';
+import { UserSaveFields } from './server-request-types';
+import PluginRegistry from './plugins';
+import { fieldsToSnakeCase } from './common';
+import serverProxy from './server-proxy';
 
 export default class User {
     public readonly id: number;
@@ -106,4 +110,24 @@ export default class User {
             has_analytics_access: this.hasAnalyticsAccess,
         };
     }
+
+    public async save(fields: UserSaveFields = {}): Promise<User> {
+        const result = await PluginRegistry.apiWrapper.call(this, User.prototype.save, fields);
+        return result;
+    }
 }
+
+Object.defineProperties(User.prototype.save, {
+    implementation: {
+        writable: false,
+        enumerable: false,
+        value: async function implementation(
+            fields: Parameters<typeof User.prototype.save>[0],
+        ): Promise<User> {
+            const data = fieldsToSnakeCase(fields);
+
+            const result = await serverProxy.users.update(this.id, data);
+            return new User(result);
+        },
+    },
+});

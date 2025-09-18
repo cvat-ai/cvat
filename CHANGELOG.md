@@ -16,6 +16,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.45.0'></a>
+## \[2.45.0\] - 2025-09-17
+
+### Added
+
+- Basic user profile page that allows to change personal info, change password
+  (<https://github.com/cvat-ai/cvat/pull/9789>)
+
+- \[Helm\] Set fsGroup for the Kvrocks pod to GID of the user the process runs as
+  (<https://github.com/cvat-ai/cvat/pull/9823>)
+
+### Fixed
+
+- Fixed spacing in task creation status messages
+  (<https://github.com/cvat-ai/cvat/pull/9812>)
+
+- Unaccepted organization invitations could not be deleted
+  (<https://github.com/cvat-ai/cvat/pull/9819>)
+
+- \[SDK\] Fixed the `torchvision_instance_segmentation` AA function
+  returning invalid polygons in cases when the underlying model detects a very
+  small object
+  (<https://github.com/cvat-ai/cvat/pull/9820>)
+
+- Reduced RAM usage during task export
+  (<https://github.com/cvat-ai/cvat/pull/9782>)
+
 <a id='changelog-2.44.2'></a>
 ## \[2.44.2\] - 2025-09-08
 

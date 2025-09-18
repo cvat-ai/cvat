@@ -13,6 +13,10 @@ const defaultState: AuthState = {
     user: null,
     showChangePasswordDialog: false,
     hasEmailVerificationBeenSent: false,
+    apiTokens: {
+        fetching: false,
+        current: [],
+    },
 };
 
 export default function (state = defaultState, action: AuthActions | BoundariesActions): AuthState {
@@ -101,11 +105,6 @@ export default function (state = defaultState, action: AuthActions | BoundariesA
                 ...state,
                 fetching: false,
             };
-        case AuthActionTypes.SWITCH_CHANGE_PASSWORD_DIALOG:
-            return {
-                ...state,
-                showChangePasswordDialog: action.payload.visible,
-            };
         case AuthActionTypes.REQUEST_PASSWORD_RESET:
             return {
                 ...state,
@@ -135,6 +134,82 @@ export default function (state = defaultState, action: AuthActions | BoundariesA
             return {
                 ...state,
                 fetching: false,
+            };
+        case AuthActionTypes.UPDATE_USER:
+            return {
+                ...state,
+                fetching: true,
+            };
+        case AuthActionTypes.UPDATE_USER_SUCCESS:
+            return {
+                ...state,
+                fetching: false,
+                user: action.payload.user,
+            };
+        case AuthActionTypes.UPDATE_USER_FAILED:
+            return {
+                ...state,
+                fetching: false,
+            };
+        case AuthActionTypes.GET_API_TOKENS:
+        case AuthActionTypes.CREATE_API_TOKEN:
+        case AuthActionTypes.UPDATE_API_TOKEN:
+        case AuthActionTypes.REVOKE_API_TOKEN:
+            return {
+                ...state,
+                apiTokens: {
+                    ...state.apiTokens,
+                    fetching: true,
+                },
+            };
+        case AuthActionTypes.GET_API_TOKENS_SUCCESS:
+            return {
+                ...state,
+                apiTokens: {
+                    fetching: false,
+                    current: action.payload.tokens,
+                },
+            };
+        case AuthActionTypes.CREATE_API_TOKEN_SUCCESS:
+            return {
+                ...state,
+                apiTokens: {
+                    fetching: false,
+                    current: [...state.apiTokens.current, action.payload.token],
+                },
+            };
+        case AuthActionTypes.UPDATE_API_TOKEN_SUCCESS: {
+            const updatedToken = action.payload.token;
+            return {
+                ...state,
+                apiTokens: {
+                    fetching: false,
+                    current: state.apiTokens.current.map((token) => (
+                        token.id === updatedToken.id ? updatedToken : token
+                    )),
+                },
+            };
+        }
+        case AuthActionTypes.REVOKE_API_TOKEN_SUCCESS: {
+            const { tokenId } = action.payload;
+            return {
+                ...state,
+                apiTokens: {
+                    fetching: false,
+                    current: state.apiTokens.current.filter((token) => token.id !== tokenId),
+                },
+            };
+        }
+        case AuthActionTypes.GET_API_TOKENS_FAILED:
+        case AuthActionTypes.CREATE_API_TOKEN_FAILED:
+        case AuthActionTypes.UPDATE_API_TOKEN_FAILED:
+        case AuthActionTypes.REVOKE_API_TOKEN_FAILED:
+            return {
+                ...state,
+                apiTokens: {
+                    ...state.apiTokens,
+                    fetching: false,
+                },
             };
         case BoundariesActionTypes.RESET_AFTER_ERROR: {
             return { ...defaultState };

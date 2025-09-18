@@ -16,13 +16,18 @@ context('Register user, change password, login with new password', () => {
     const newPassword = 'bYdOk8#eEd';
     const secondNewPassword = 'ndTh48@yVY';
 
-    function changePassword(myUserName, myPassword, myNewPassword) {
-        cy.get('.cvat-right-header')
-            .find('.cvat-header-menu-user-dropdown')
-            .should('have.text', myUserName)
+    function changePassword(myPassword, myNewPassword) {
+        cy.openProfile();
+        cy.get('.cvat-profile-page-navigation-menu')
+            .should('exist')
+            .and('be.visible')
+            .find('[role="menuitem"]')
+            .filter(':contains("Security")')
             .click();
-        cy.get('.cvat-header-menu-change-password').click();
-        cy.get('.cvat-modal-change-password').within(() => {
+        cy.get('.cvat-security-password-card').should('exist').and('be.visible');
+        cy.get('.cvat-security-password-change-button').should('exist').and('be.visible').click();
+        cy.get('.cvat-change-password-form').should('exist').and('be.visible');
+        cy.get('.cvat-change-password-form').within(() => {
             cy.get('#oldPassword').type(myPassword);
             cy.get('#newPassword1').type(myNewPassword);
             cy.get('#newPassword2').type(myNewPassword);
@@ -36,7 +41,6 @@ context('Register user, change password, login with new password', () => {
     });
 
     after(() => {
-        cy.get('.cvat-modal-change-password').find('[aria-label="Close"]').click();
         cy.logout();
         cy.getAuthKey().then((authKey) => {
             cy.deleteUsers(authKey, [userName]);
@@ -46,13 +50,13 @@ context('Register user, change password, login with new password', () => {
     describe(`Testing "Case ${caseId}"`, () => {
         it('Register user, change password', () => {
             cy.userRegistration(firstName, lastName, userName, emailAddr, password);
-            changePassword(userName, password, newPassword);
+            changePassword(password, newPassword);
             cy.contains('New password has been saved.').should('exist');
             cy.logout();
 
             cy.login(userName, newPassword);
 
-            changePassword(userName, incorrectCurrentPassword, secondNewPassword);
+            changePassword(incorrectCurrentPassword, secondNewPassword);
             cy.get('.cvat-notification-notice-change-password-failed').should('exist');
             cy.closeNotification('.cvat-notification-notice-change-password-failed');
         });

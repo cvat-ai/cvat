@@ -169,7 +169,7 @@ function CVATTable(props: Props): JSX.Element {
 
     return (
         <div className='cvat-table-wrapper'>
-            <Row justify='space-between' align='middle'>
+            <Row align='middle'>
                 <Col>
                     <Space align='center'>
                         {!!tableTitle && <Text strong className='cvat-text-color cvat-table-header'>{tableTitle}</Text> }
@@ -181,8 +181,10 @@ function CVATTable(props: Props): JSX.Element {
                                 onClick={downloadCSV}
                             />
                         ) }
-                        { !!renderExtraActions && renderExtraActions() }
                     </Space>
+                </Col>
+                <Col flex='auto'>
+                    { !!renderExtraActions && renderExtraActions() }
                 </Col>
                 <Col>
                     <Space align='center'>
