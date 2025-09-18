@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import moment from 'moment';
+import dayjs from 'dayjs';
 
 import Form from 'antd/lib/form';
 import Input from 'antd/lib/input';
@@ -49,7 +49,7 @@ function ApiTokenForm({
 
     const initialValues = {
         name: token?.name || '',
-        expirationDate: token?.expiryDate ? moment(token.expiryDate) : null,
+        expirationDate: token?.expiryDate ? dayjs(token.expiryDate) : null,
         isReadOnly: token?.readOnly || false,
     };
 
