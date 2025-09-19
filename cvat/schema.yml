@@ -7179,9 +7179,8 @@ components:
           readOnly: true
         name:
           type: string
-          description: A free-form name for the API key. Need not be unique. 50 characters
-            max.
-          maxLength: 50
+          readOnly: true
+          description: A free-form name for the API token.
         created_date:
           type: string
           format: date-time
@@ -7193,21 +7192,23 @@ components:
         expiry_date:
           type: string
           format: date-time
+          readOnly: true
           nullable: true
           title: Expires
-          description: Once API key expires, clients cannot use it anymore.
+          description: Once API token expires, clients cannot use it anymore.
         last_used_date:
           type: string
           format: date-time
+          readOnly: true
           nullable: true
         read_only:
           type: boolean
-        owner:
-          type: integer
           readOnly: true
+        owner:
+          $ref: '#/components/schemas/BasicUser'
         value:
           type: string
-          description: The raw value of the token. Must be saved by the user, shown
+          description: The raw value of the token. Must be saved by the user, returned
             only once
     ApiTokenWriteRequest:
       type: object
@@ -7215,15 +7216,16 @@ components:
         name:
           type: string
           minLength: 1
-          description: A free-form name for the API key. Need not be unique. 50 characters
-            max.
+          description: A free-form name for the API token. Doesn't have to be unique
           maxLength: 50
         expiry_date:
           type: string
           format: date-time
           nullable: true
           title: Expires
-          description: Once API key expires, clients cannot use it anymore.
+          description: |
+            Once API token expires, clients cannot use it anymore.
+            If not set, the token will not expire.
         read_only:
           type: boolean
       required:
@@ -9647,15 +9649,16 @@ components:
         name:
           type: string
           minLength: 1
-          description: A free-form name for the API key. Need not be unique. 50 characters
-            max.
+          description: A free-form name for the API token. Doesn't have to be unique
           maxLength: 50
         expiry_date:
           type: string
           format: date-time
           nullable: true
           title: Expires
-          description: Once API key expires, clients cannot use it anymore.
+          description: |
+            Once API token expires, clients cannot use it anymore.
+            If not set, the token will not expire.
         read_only:
           type: boolean
     PatchedCloudStorageWriteRequest:
