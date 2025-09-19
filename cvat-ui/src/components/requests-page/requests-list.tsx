@@ -4,6 +4,7 @@
 
 import React, { useCallback } from 'react';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
+import dayjs from 'dayjs';
 import { CombinedState, RequestsQuery, SelectedResourceType } from 'reducers';
 
 import { Row, Col } from 'antd/lib/grid';
@@ -12,7 +13,6 @@ import Pagination from 'antd/lib/pagination';
 import { Request } from 'cvat-core-wrapper';
 import { requestsActions } from 'actions/requests-actions';
 
-import moment from 'moment';
 import dimensions from 'utils/dimensions';
 import { ResourceSelectionInfo } from 'components/resource-sorting-filtering';
 import BulkWrapper from 'components/bulk-wrapper';
@@ -26,7 +26,7 @@ interface Props {
 
 function setUpRequestsList(requests: Request[], newPage: number, pageSize: number): Request[] {
     const displayRequests = [...requests];
-    displayRequests.sort((a, b) => moment(b.createdDate).valueOf() - moment(a.createdDate).valueOf());
+    displayRequests.sort((a, b) => dayjs(b.createdDate).valueOf() - dayjs(a.createdDate).valueOf());
     return displayRequests.slice((newPage - 1) * pageSize, newPage * pageSize);
 }
 

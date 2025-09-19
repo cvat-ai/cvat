@@ -8,7 +8,7 @@ import React, {
 } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import moment from 'moment';
+import dayjs from 'dayjs';
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import Modal from 'antd/lib/modal';
@@ -289,8 +289,8 @@ function OrganizationTopBar(props: Readonly<Props>): JSX.Element {
                                 {contact.location}
                             </Text>
                         </div>
-                        <Text type='secondary'>{`Created ${moment(createdDate).format('MMMM Do YYYY')}`}</Text>
-                        <Text type='secondary'>{`Updated ${moment(updatedDate).fromNow()}`}</Text>
+                        <Text type='secondary'>{`Created ${dayjs(createdDate).format('MMMM Do YYYY')}`}</Text>
+                        <Text type='secondary'>{`Updated ${dayjs(updatedDate).fromNow()}`}</Text>
                     </div>
                 </Col>
                 <Col span={12} className='cvat-organization-top-bar-buttons-block'>

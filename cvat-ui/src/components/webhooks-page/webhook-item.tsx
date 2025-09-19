@@ -4,7 +4,7 @@
 
 import './styles.scss';
 import React, { useCallback, useState } from 'react';
-import moment from 'moment';
+import dayjs from 'dayjs';
 import { Col, Row } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
@@ -56,8 +56,8 @@ function WebhookItem(props: Readonly<WebhookItemProps>): JSX.Element | null {
         id, description, updatedDate, createdDate, owner, targetURL, events,
     } = webhookInstance;
 
-    const updated = moment(updatedDate).fromNow();
-    const created = moment(createdDate).format('MMMM Do YYYY');
+    const updated = dayjs(updatedDate).fromNow();
+    const created = dayjs(createdDate).format('MMMM Do YYYY');
     const username = owner ? owner.username : null;
 
     const { lastStatus } = webhookInstance;

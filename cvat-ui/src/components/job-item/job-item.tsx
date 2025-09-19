@@ -7,8 +7,8 @@ import './styles.scss';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
+import dayjs, { Dayjs } from 'dayjs';
 import PropTypes from 'prop-types';
-import moment from 'moment';
 import { Col, Row } from 'antd/lib/grid';
 import Card from 'antd/lib/card';
 import Text from 'antd/lib/typography/Text';
@@ -30,7 +30,7 @@ import CVATTag, { TagType } from 'components/common/cvat-tag';
 import JobActionsComponent from 'components/jobs-page/actions-menu';
 import { JobStageSelector, JobStateSelector } from './job-selectors';
 
-function formatDate(value: moment.Moment): string {
+function formatDate(value: Dayjs): string {
     return value.format('MMM Do YYYY HH:mm');
 }
 
@@ -117,9 +117,9 @@ function JobItem(props: Readonly<Props>): JSX.Element {
     const deleted = job.id in deletes ? deletes[job.id] === true : false;
 
     const { stage, state } = job;
-    const created = moment(job.createdDate);
-    const updated = moment(job.updatedDate);
-    const now = moment(moment.now());
+    const created = dayjs(job.createdDate);
+    const updated = dayjs(job.updatedDate);
+    const now = dayjs();
 
     const style = {};
     if (deleted) {
@@ -249,7 +249,7 @@ function JobItem(props: Readonly<Props>): JSX.Element {
                                     <Icon component={DurationIcon} />
                                     <Text>Duration: </Text>
                                     <Text type='secondary'>
-                                        {`${moment
+                                        {`${dayjs
                                             .duration(now.diff(created))
                                             .humanize()}`}
                                     </Text>
