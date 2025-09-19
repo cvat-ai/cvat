@@ -10,10 +10,11 @@ import json
 import os
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
-from concurrent.futures import FIRST_EXCEPTION, ThreadPoolExecutor, wait
+from concurrent.futures import FIRST_EXCEPTION, Future, ThreadPoolExecutor, wait
 from enum import Enum
 from io import BytesIO
 from pathlib import Path
+from queue import Queue
 from typing import Any, BinaryIO, Callable, Optional, TypeVar
 
 import boto3
@@ -35,7 +36,7 @@ from rq import get_current_job
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import CloudProviderChoice, CredentialsTypeChoice, DimensionType
 from cvat.apps.engine.rq import ExportRQMeta
-from cvat.apps.engine.utils import get_cpu_number, take_by
+from cvat.apps.engine.utils import get_cpu_number
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS
 from utils.dataset_manifest.utils import InvalidPcdError, PcdReader
 
@@ -214,9 +215,21 @@ class _CloudStorage(ABC):
         func = object_downloader or self.download_fileobj
         threads_number = get_max_threads_number(len(files))
 
+        queue: Queue[Future] = Queue(maxsize=threads_number)
+        input_iter = iter(files)
         with ThreadPoolExecutor(max_workers=threads_number) as executor:
-            for batch_links in take_by(files, chunk_size=threads_number):
-                yield from executor.map(func, batch_links)
+            while not queue.empty() or input_iter is not None:
+                while not queue.full() and input_iter is not None:
+                    next_job_params = next(input_iter, None)
+                    if next_job_params is None:
+                        input_iter = None
+                        break
+
+                    next_job = executor.submit(func, next_job_params)
+                    queue.put(next_job)
+
+                top_job = queue.get()
+                yield top_job.result()
 
     def bulk_download_to_dir(
         self,
