@@ -11,6 +11,8 @@ module.exports = defineConfig({
     e2e: {
         ...baseConfig.e2e,
         specPattern: [
+            'cypress/e2e/setup/setup.js',
+            'cypress/e2e/setup/setup_project.js',
             'cypress/e2e/auth_page.js',
             'cypress/e2e/features/*.js',
             'cypress/e2e/actions_tasks/**/*.js',
