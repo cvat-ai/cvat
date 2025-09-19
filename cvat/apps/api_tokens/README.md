@@ -11,7 +11,7 @@ Check `default_settings.py` for the list of configurable variables.
 This component introduces new elements that can be used in OPA permission checks. For each
 base permission package (typically defined in `apps/*/rules/`) there can now be
 a set of extension packages (a set of drop-in plugin files) that add extra permission logic.
-Each extension has to use the following name pattern:
+Each extension has to use the following filename pattern:
 
 `rules/api_token_plugin.<any name>.rego`
 
@@ -24,12 +24,15 @@ input and also an extended part that includes:
   - `.id` - the id of the API Token used for the client authentication.
   - `.read_only` - the `read_only` property of the API Token.
 
-Additionally, plugins can use the `data.utils.api_token.is_api_token` variable to check
-if the client is using an API token.
-
 Such plugins are expected to include rules that allow or disallow operations
-for API token-authenticated clients. if the default behavior doesn't fit the component needs.
+for API token-authenticated clients, if the default behavior doesn't fit the component needs.
 Default rules for API token-authenticated clients:
 - if the token is not `read_only`, all endpoints are allowed
 - if the token is `read_only`, only "safe" operations are permitted
   (i.e. `GET`, `OPTIONS`, `HEAD` endpoint methods)
+
+Rules defined in the API token permission plugins are checked only if the client
+uses an API token in the request.
+
+Permission plugins follow the same rules as the other permission packages, which means it's
+impossible to allow something, if it's prohibited by the rules in the base package.
