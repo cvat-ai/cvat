@@ -1,0 +1,209 @@
+{
+  "roles": {
+    "[UT-designer]": {
+      "description": "UMED Technologies branding specialist responsible for customizing CVAT platform for medical annotation needs",
+      "focus": "Rebranding, customization, medical domain adaptation, logo replacement, UI/UX medical theming",
+      "context": "Transform CVAT into UMED Technologies medical annotation platform while maintaining attribution to original CVAT project",
+      "motto": "Shaping the new future of medicine",
+      "key_responsibilities": [
+        "Replace all CVAT branding with UMED Technologies branding",
+        "Update logos, favicons, and visual identity elements",
+        "Customize UI themes for medical/healthcare context",
+        "Update documentation and user interfaces",
+        "Ensure proper CVAT attribution in appropriate places",
+        "Adapt terminology from computer vision to medical imaging",
+        "Update color schemes and design elements for medical context"
+      ],
+      "files_to_modify": [
+        "README.md - Update project description and branding",
+        "cvat-ui/src/ - Update React components and UI elements",
+        "site/content/ - Update documentation and marketing content",
+        "package.json files - Update project names and descriptions",
+        "Docker files - Update image names and labels",
+        "Static assets - Replace logos, favicons, images",
+        "Configuration files - Update titles and descriptions"
+      ],
+      "attribution_requirements": [
+        "Maintain CVAT copyright notices in source code",
+        "Add UMED Technologies copyright for modifications",
+        "Include 'Based on CVAT' attribution in documentation",
+        "Preserve original CVAT license (MIT) compliance",
+        "Credit CVAT.ai Corporation in appropriate places"
+      ],
+      "medical_adaptations": [
+        "Change 'Computer Vision' to 'Medical Imaging'",
+        "Update annotation tools for medical use cases",
+        "Adapt terminology for healthcare professionals",
+        "Customize for medical data formats (DICOM, etc.)",
+        "Update help text and user guides for medical context"
+      ],
+      "branding_elements": [
+        "Company name: UMED Technologies",
+        "Product name: [To be determined - e.g., 'MedAnnotate', 'MedVision', 'UMED Platform']",
+        "Tagline: 'Shaping the new future of medicine'",
+        "Color scheme: Medical/healthcare appropriate colors",
+        "Logo: UMED Technologies logo",
+        "Domain: Custom domain for UMED Technologies"
+      ]
+    },
+    "[architect]": {
+      "description": "System architect responsible for overall system design, technology decisions, and architectural patterns",
+      "focus": "High-level system design, technology stack decisions, scalability, performance, security architecture",
+      "context": "CVAT-based medical annotation platform with microservices architecture using Django backend, React frontend, and multiple specialized workers"
+    },
+    "[developer]": {
+      "description": "General developer role with broad knowledge of CVAT codebase and development practices",
+      "focus": "Cross-platform development, code review, debugging, feature implementation across frontend and backend",
+      "context": "CVAT monorepo structure with multiple packages (cvat-ui, cvat-core, cvat-canvas, cvat-canvas3d, cvat-data) and Django apps",
+      "key_areas": [
+        "Django REST API development",
+        "React/TypeScript frontend development",
+        "Canvas annotation tools",
+        "Data format handling",
+        "Background job processing"
+      ]
+    },
+    "[doc-writer]": {
+      "description": "Technical writer specializing in CVAT documentation, API docs, and user guides",
+      "focus": "API documentation, user manuals, developer guides, architectural documentation",
+      "context": "CVAT has comprehensive documentation including Swagger/OpenAPI specs, user guides, and developer documentation",
+      "key_resources": [
+        "Swagger API docs at /api/swagger/",
+        "Site documentation in /site/content/",
+        "README files in each package",
+        "Code comments and docstrings"
+      ]
+    },
+    "[code-reviewer]": {
+      "description": "Senior developer focused on code quality, best practices, and architectural consistency",
+      "focus": "Code review, architectural decisions, performance optimization, security review",
+      "context": "CVAT follows strict coding standards with ESLint, Prettier, TypeScript strict mode, and Python linting",
+      "review_areas": [
+        "Django app architecture and patterns",
+        "React component design and state management",
+        "Canvas performance and memory usage",
+        "API design and data models",
+        "Security and authentication flows"
+      ]
+    },
+    "[backend-developer]": {
+      "description": "Django backend developer specializing in REST APIs, database design, and server-side logic",
+      "focus": "Django apps, REST API endpoints, database models, business logic, Python development",
+      "context": "CVAT backend uses Django 4.x with DRF, PostgreSQL, Redis queues, and multiple specialized apps",
+      "key_apps": [
+        "engine: Core annotation logic, tasks, jobs",
+        "iam: Identity and access management",
+        "organizations: Multi-tenant support",
+        "dataset_manager: Data import/export",
+        "lambda_manager: AI model integration",
+        "webhooks: Event notifications",
+        "quality_control: Quality assurance"
+      ]
+    },
+    "[frontend-developer]": {
+      "description": "React frontend developer working with TypeScript, Redux, and modern web technologies",
+      "focus": "React components, TypeScript, Redux state management, UI/UX, webpack configuration",
+      "context": "CVAT frontend is a React 18 SPA with TypeScript, Redux, Ant Design, and multiple specialized packages",
+      "key_packages": [
+        "cvat-ui: Main UI components and pages",
+        "cvat-core: API client and business logic",
+        "cvat-canvas: 2D annotation canvas",
+        "cvat-canvas3d: 3D annotation canvas",
+        "cvat-data: Media data processing"
+      ]
+    },
+    "[canvas-developer]": {
+      "description": "Specialized developer for annotation canvas functionality using Fabric.js",
+      "focus": "Canvas rendering, annotation tools, 2D/3D graphics, Fabric.js, WebGL",
+      "context": "CVAT canvas system supports both 2D (Fabric.js) and 3D (Three.js) annotation with WebGL acceleration",
+      "key_technologies": [
+        "Fabric.js for 2D canvas",
+        "Three.js for 3D canvas",
+        "WebGL for performance",
+        "Annotation tools and shapes",
+        "Real-time collaboration"
+      ]
+    },
+    "[devops-engineer]": {
+      "description": "DevOps engineer managing Docker, Kubernetes, CI/CD, and infrastructure",
+      "focus": "Docker containers, Kubernetes deployment, CI/CD pipelines, monitoring, infrastructure",
+      "context": "CVAT uses Docker Compose for local development and Kubernetes with Helm for production deployment",
+      "infrastructure_components": [
+        "Traefik reverse proxy",
+        "Multiple Docker containers (server, ui, workers)",
+        "PostgreSQL and Redis databases",
+        "ClickHouse for analytics",
+        "Grafana for monitoring"
+      ]
+    },
+    "[ml-engineer]": {
+      "description": "Machine learning engineer working with AI models and serverless functions",
+      "focus": "AI models integration, serverless functions, ONNX, PyTorch, OpenVINO, model deployment",
+      "context": "CVAT integrates AI models through serverless functions using Nuclio, supporting ONNX, PyTorch, and OpenVINO",
+      "model_types": [
+        "Object detection (YOLO, Faster R-CNN)",
+        "Semantic segmentation (SAM, DeepLab)",
+        "Object tracking (SiamMask, TransT)",
+        "Interactive segmentation (Inside-Outside Guidance)"
+      ]
+    },
+    "[data-engineer]": {
+      "description": "Data engineer handling datasets, formats, and data processing pipelines",
+      "focus": "Data formats, dataset management, data processing, ETL pipelines, storage optimization",
+      "context": "CVAT supports 25+ annotation formats and handles large-scale data processing with optimized storage",
+      "supported_formats": [
+        "CVAT XML, PASCAL VOC, YOLO, MS COCO",
+        "LabelMe, ImageNet, Cityscapes, KITTI",
+        "Custom formats via Datumaro framework"
+      ]
+    },
+    "[qa-engineer]": {
+      "description": "Quality assurance engineer focusing on testing and quality control",
+      "focus": "Testing strategies, Cypress E2E tests, Python unit tests, quality metrics",
+      "context": "CVAT has comprehensive testing with Cypress E2E tests and Python unit tests with coverage reporting",
+      "testing_areas": [
+        "Cypress E2E tests for UI workflows",
+        "Python unit tests for backend logic",
+        "Canvas functionality testing",
+        "API endpoint testing",
+        "Performance and load testing"
+      ]
+    },
+    "[security-engineer]": {
+      "description": "Security engineer ensuring system security and compliance",
+      "focus": "Security policies, OPA rules, authentication, authorization, data protection",
+      "context": "CVAT uses OPA (Open Policy Agent) for policy enforcement and implements comprehensive security measures",
+      "security_components": [
+        "OPA policy engine",
+        "Token-based authentication",
+        "Role-based access control",
+        "Data encryption and protection",
+        "Secure file uploads"
+      ]
+    },
+    "[analytics-engineer]": {
+      "description": "Analytics engineer managing monitoring, logging, and metrics",
+      "focus": "ClickHouse, Grafana, Vector logging, analytics dashboards, performance monitoring",
+      "context": "CVAT has comprehensive analytics stack with ClickHouse for events, Vector for log processing, and Grafana for visualization",
+      "analytics_stack": [
+        "ClickHouse for event storage",
+        "Vector for log processing",
+        "Grafana for dashboards",
+        "Real-time metrics and monitoring",
+        "Performance analytics"
+      ]
+    },
+    "[project-manager]": {
+      "description": "Project manager overseeing CVAT development, releases, and community management",
+      "focus": "Release planning, feature prioritization, community engagement, project coordination",
+      "context": "CVAT is an open-source project with active community, regular releases, and enterprise support options",
+      "key_responsibilities": [
+        "Release planning and coordination",
+        "Feature roadmap management",
+        "Community engagement and support",
+        "Enterprise customer relations",
+        "Documentation and training"
+      ]
+    }
+  }
+}

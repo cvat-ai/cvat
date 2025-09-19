@@ -1,0 +1,170 @@
+project:
+  codename: MedVision
+  based_on: CVAT
+  goal: Rebranding CVAT to a medical annotation platform with professional-grade code and plan-first workflow
+  attribution:
+    - Preserve original CVAT MIT license and headers
+    - Add "Based on CVAT" attribution across README and site docs
+    - Add UMED Technologies modifications copyright
+  branding:
+    company_name: UMED Technologies
+    product_name: MedVision
+    tagline: "Shaping the new future of medicine"
+    color_scheme: medical/healthcare palette (accessible WCAG AA)
+    replace_assets:
+      - logos
+      - favicons
+      - titles
+      - meta tags / social preview images
+    do_not_remove:
+      - CVAT license files and copyright
+      - Upstream credits in source headers
+
+roles:
+  architect:
+    responsibilities:
+      - Approve architecture-affecting decisions and cross-cutting concerns
+      - Define boundaries between frontend, backend, and shared contracts
+      - Ensure security, performance, and scalability are not regressed
+    required_inputs:
+      - ADRs for non-trivial changes
+      - High-level sequence or component diagrams when needed
+  developer:
+    responsibilities:
+      - Implement features aligned to the plan-first workflow
+      - Maintain code readability and tests
+      - Follow stack-specific rules (frontend/backend)
+    required_inputs:
+      - Implementation plan validated by architect
+      - Task granularity agreed with reviewer
+  doc_writer:
+    responsibilities:
+      - Update README, site content, and inline docs
+      - Maintain change logs and upgrade notes
+    required_inputs:
+      - Summaries of changes and screenshots where relevant
+  reviewer:
+    responsibilities:
+      - Enforce coding standards and security best practices
+      - Validate plans before code changes
+    required_inputs:
+      - Link to task plan and acceptance criteria
+
+workflow:
+  principle: plan-first, code-second
+  steps:
+    - name: Define task
+      output:
+        - title
+        - problem_statement
+        - scope: in-scope and out-of-scope
+        - acceptance_criteria
+    - name: Propose plan
+      output:
+        - minimal viable changes
+        - affected_files
+        - risks_and_mitigations
+        - test_strategy
+      gate: architect_or_reviewer_approval
+    - name: Implement
+      rules:
+        - Keep edits minimal and localized
+        - Separate concerns (no drive-by refactors)
+        - Preserve existing indentation and formatting
+    - name: Verify
+      rules:
+        - Run linters and tests locally
+        - Provide screenshots or recordings for UI changes
+    - name: Document
+      rules:
+        - Update README, site docs, and changelog
+    - name: Review
+      rules:
+        - Small, focused PRs; descriptive titles; link to plan
+
+stack_policy:
+  frontend:
+    tech_stack:
+      - React 18
+      - TypeScript strict
+      - Redux (RTK) per CVAT patterns
+      - Ant Design
+    rules:
+      - Do not weaken TypeScript types; prefer explicit interfaces
+      - Avoid prop drilling; use selectors and memoization
+      - Keep UI text medical-contextual and accessible (aria-labels, roles)
+      - Use design tokens for colors and spacing; avoid hard-coded hex values
+      - Prefer functional components and hooks; no legacy class components
+      - Co-locate tests next to components (*.test.tsx)
+      - Do not break public APIs of `cvat-core`; extend via adapters
+    theming:
+      - Replace CVAT theme tokens with MedVision tokens via a centralized theme file
+      - Maintain dark/light parity
+    assets:
+      - Replace logos and favicons in `cvat-ui` and `site/static`
+      - Update document titles and meta tags
+  backend:
+    tech_stack:
+      - Django 4.x
+      - Django REST Framework
+      - PostgreSQL, Redis
+      - RQ workers
+    rules:
+      - Preserve API compatibility unless approved via ADR
+      - Add new serializers/fields without breaking existing clients
+      - Validate and sanitize all inputs; consider PII in medical context
+      - Use migrations for DB changes; no raw SQL unless necessary
+      - Keep business logic in apps; maintain modular boundaries (engine, iam, etc.)
+      - Write unit tests for serializers, views, and permissions
+      - Maintain OPA/rego policies alignment if authorization impacts
+
+naming_conventions:
+  product: MedVision
+  replace_terms:
+    - from: Computer Vision
+      to: Medical Imaging
+    - from: CVAT
+      to: MedVision (with "Based on CVAT" where appropriate)
+
+files_touch_points:
+  - README.md
+  - cvat-ui/src/** (titles, logos, theme, strings)
+  - site/content/** (docs, marketing)
+  - package.json (name, description)
+  - Dockerfile* (labels)
+  - static assets (logos, favicon)
+
+security_privacy:
+  - Keep CVAT security posture; do not reduce auth/permission checks
+  - No PHI in logs; scrub sensitive data
+  - Enforce HTTPS and secure cookies in production configs
+
+testing:
+  ui:
+    - Update and add Cypress tests for rebranded UI elements
+    - Snapshot tests for key components if applicable
+  backend:
+    - Unit tests for endpoints affected by branding/config
+    - Integration tests for auth and permissions
+
+commit_pr_policy:
+  commits:
+    - Conventional commits (feat, fix, docs, chore, refactor, test, build)
+    - One logical change per commit
+  pull_requests:
+    - Link to task plan
+    - Checklist: tests pass, lints clean, docs updated, screenshots attached (UI)
+
+llm_collaboration:
+  prompts:
+    - Always request a plan before code changes
+    - Ask for affected files and rollback strategy
+    - Require acceptance criteria and test plan
+  outputs:
+    - Use minimal, focused edits
+    - Provide diffs only for changed lines (no reformatting)
+
+constraints:
+  - Do not remove or alter LICENSE and attribution files
+  - Keep rebranding reversible via feature flag or config where feasible
+  - Avoid mass text-replacements without scoping and review
