@@ -23,13 +23,17 @@ export enum DimensionType {
     DIMENSION_2D = '2d',
 }
 
-export function decodeContextImages(
-    block: any, start: number, end: number,
-): Promise<Record<string, ImageBitmap>> {
-    const decodeZipWorker = (decodeContextImages as any).zipWorker || new Worker(
+export interface DecodeContextImagesFn {
+    (block: ArrayBuffer, start: number, end: number): Promise<Record<string, ImageBitmap>>;
+    mutex: Mutex;
+    zipWorker?: Worker;
+}
+
+export const decodeContextImages: DecodeContextImagesFn = (block, start, end) => {
+    const decodeZipWorker = decodeContextImages.zipWorker || new Worker(
         new URL('./unzip_imgs.worker', import.meta.url),
     );
-    (decodeContextImages as any).zipWorker = decodeZipWorker;
+    decodeContextImages.zipWorker = decodeZipWorker;
     return new Promise((resolve, reject) => {
         decodeContextImages.mutex.acquire().then((release) => {
             const result: Record<string, ImageBitmap> = {};
@@ -40,9 +44,11 @@ export function decodeContextImages(
                 reject(event.error);
             };
 
-            decodeZipWorker.onmessage = async (event) => {
+            decodeZipWorker.onmessage = async (
+                event: MessageEvent<{ error?: Error; data: ImageBitmap; fileName: string }>,
+            ) => {
                 if (event.data.error) {
-                    this.zipWorker.onerror(new ErrorEvent('error', {
+                    decodeZipWorker.onerror(new ErrorEvent('error', {
                         error: event.data.error,
                     }));
                     return;
@@ -67,7 +73,7 @@ export function decodeContextImages(
             });
         });
     });
-}
+};
 
 decodeContextImages.mutex = new Mutex();
 

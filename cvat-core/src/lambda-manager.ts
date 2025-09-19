@@ -21,7 +21,7 @@ export interface MinimalShape {
 }
 
 export interface TrackerResults {
-    states: any[];
+    states: Record<string, unknown>[];
     shapes: MinimalShape[];
 }
 
@@ -54,7 +54,7 @@ class LambdaManager {
         return { models, count: lambdaFunctions.length };
     }
 
-    async run(taskID: number, model: MLModel, args: any): Promise<string> {
+    async run(taskID: number, model: MLModel, args: Record<string, unknown>): Promise<string> {
         if (!Number.isInteger(taskID) || taskID < 0) {
             throw new ArgumentError(`Argument taskID must be a positive integer. Got "${taskID}"`);
         }
@@ -79,7 +79,11 @@ class LambdaManager {
         return result.id;
     }
 
-    async call(taskID, model, args): Promise<TrackerResults | InteractorResults | SerializedCollection> {
+    async call(
+        taskID: number,
+        model: MLModel,
+        args: Record<string, unknown>,
+    ): Promise<TrackerResults | InteractorResults | SerializedCollection> {
         if (!Number.isInteger(taskID) || taskID < 0) {
             throw new ArgumentError(`Argument taskID must be a positive integer. Got "${taskID}"`);
         }
@@ -92,13 +96,13 @@ class LambdaManager {
         return result;
     }
 
-    async requests(): Promise<any[]> {
+    async requests(): Promise<Record<string, unknown>[]> {
         const lambdaRequests = await serverProxy.lambda.requests();
         return lambdaRequests
             .filter((request) => [RQStatus.QUEUED, RQStatus.STARTED].includes(request.status));
     }
 
-    async cancel(requestID, functionID): Promise<void> {
+    async cancel(requestID: string, functionID: number): Promise<void> {
         if (typeof requestID !== 'string') {
             throw new ArgumentError(`Request id argument is required to be a string. But got ${requestID}`);
         }
