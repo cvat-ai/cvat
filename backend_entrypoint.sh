@@ -31,8 +31,10 @@ cmd_init() {
     ~/manage.py migrateredis
     ~/manage.py syncperiodicjobs
 
-    wait_for_clickhouse
-    python components/analytics/clickhouse/init.py
+    if [[ "${CVAT_ANALYTICS:-0}" == "1" ]]; then
+        wait_for_clickhouse
+        python components/analytics/clickhouse/init.py
+    fi
 }
 
 _get_includes() {
