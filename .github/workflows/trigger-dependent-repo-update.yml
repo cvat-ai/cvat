@@ -3,7 +3,7 @@ name: Trigger dependent repo update workflow
 on:
   workflow_dispatch:
   push:
-    branches: [ master ]
+    branches: [ develop ]
 
 jobs:
   trigger:
@@ -20,10 +20,11 @@ jobs:
       - name: Trigger private repository workflow
         env:
           GH_TOKEN: "${{ steps.gen-token.outputs.token }}"
-          GH_REPO: cvat-ai/${{ secrets.CVAT_DEPENDENT_REPO }}
         run: |
-          gh workflow run \
-            update-dependency.yml \
-            -f triggeredBy=${{ github.repository }} \
-            -f commitSha=${{ github.sha }} \
-            -f branch=${{ github.ref }}
+          gh api \
+            --method POST \
+            /repos/cvat-ai/${{ secrets.CVAT_DEPENDENT_REPO }}/dispatches \
+            -f 'event_type=upstream_updated' \
+            -F "client_payload[triggeredBy]=${{ github.repository }}" \
+            -F "client_payload[commitSha]=${{ github.sha }}" \
+            -F "client_payload[branch]=${{ github.ref }}"
