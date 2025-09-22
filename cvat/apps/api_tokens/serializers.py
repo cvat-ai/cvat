@@ -39,6 +39,14 @@ class ApiTokenReadSerializer(serializers.ModelSerializer):
             "created_date": {"source": "created"},
             "expiry_date": {"help_text": "Once API token expires, clients cannot use it anymore."},
             "name": {"help_text": "A free-form name for the API token."},
+            "last_used_date": {
+                "help_text": textwrap.dedent(
+                    """\
+                    The last use date of the token. This field is NOT updated after each
+                    user request. The minimum expected resolution should be 1 day.
+                    """
+                )
+            },
         }
 
         read_only_fields = fields

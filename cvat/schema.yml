@@ -7201,6 +7201,9 @@ components:
           format: date-time
           readOnly: true
           nullable: true
+          description: |
+            The last use date of the token. This field is NOT updated after each
+            user request. The minimum expected resolution should be 1 day.
         read_only:
           type: boolean
           readOnly: true
