@@ -5,17 +5,27 @@
 #
 # SPDX-License-Identifier: MIT
 
-import argparse
 import os
-import re
 import sys
-from glob import glob
 
 if __name__ == "__main__":
     # fix types.py import
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+    # Remove the script directory from the path, it can be appended by the interpreter
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    try:
+        sys.path.remove(script_dir)
+    except ValueError:
+        print("warning: {script_dir} was not found in sys.path")
+
+    # Make the component visible as dataset_manifest module
+    base_dir = os.path.dirname(script_dir)
     sys.path.append(base_dir)
 
+
+import argparse
+import re
+from glob import glob
 from dataset_manifest.core import ImageManifestManager, VideoManifestManager
 from dataset_manifest.utils import SortingMethod, find_related_images, is_image, is_video
 from tqdm import tqdm
