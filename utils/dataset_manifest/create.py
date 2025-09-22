@@ -26,6 +26,7 @@ if __name__ == "__main__":
 import argparse
 import re
 from glob import glob
+
 from dataset_manifest.core import ImageManifestManager, VideoManifestManager
 from dataset_manifest.utils import SortingMethod, find_related_images, is_image, is_video
 from tqdm import tqdm
