@@ -20,7 +20,7 @@ import av
 from PIL import Image
 
 from .errors import InvalidImageError, InvalidManifestError, InvalidPcdError, InvalidVideoError
-from .types_ import NamedBytesIO
+from .types import NamedBytesIO
 from .utils import PcdReader, SortingMethod, md5_hash, rotate_image, sort
 
 
