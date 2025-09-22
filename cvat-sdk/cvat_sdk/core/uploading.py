@@ -9,12 +9,13 @@ import json
 import logging
 import os
 from contextlib import AbstractContextManager
+from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 import urllib3
 
-from cvat_sdk.api_client.api_client import ApiClient, Endpoint
+from cvat_sdk.api_client.api_client import ApiClient, ApiException, Endpoint
 from cvat_sdk.core.exceptions import CvatSdkException
 from cvat_sdk.core.helpers import StreamWithProgress, expect_status
 from cvat_sdk.core.progress import NullProgressReporter, ProgressReporter
@@ -66,6 +67,8 @@ def _upload_with_tus(
         file_stream.seek(upload_offset)
         chunk = file_stream.read(TUS_CHUNK_SIZE)
 
+        new_upload_offset = None
+
         try:
             response = api_client.rest_client.PATCH(
                 upload_url,
@@ -75,28 +78,28 @@ def _upload_with_tus(
                     "Upload-Offset": str(upload_offset),
                 },
                 body=chunk,
-                _check_status=False,
             )
+
+            try:
+                new_upload_offset = int(response.headers["Upload-Offset"])
+            except KeyError:
+                raise CvatSdkException("Server did not send Upload-Offset after chunk upload")
+
+            # prevent the server from asking us to keep uploading the same chunk
+            if new_upload_offset < upload_offset + len(chunk):
+                raise CvatSdkException("Server reported unexpected Upload-Offset")
+        except ApiException as e:
+            if e.status and e.status < 500 and e.status != HTTPStatus.CONFLICT:
+                raise
+
+            if e.headers and "Upload-Offset" in e.headers:
+                new_upload_offset = int(e.headers["Upload-Offset"])
+
+            logger.error("Chunk upload failed", exc_info=e)
+            num_errors += 1
         except urllib3.exceptions.HTTPError as e:
             logger.error("Chunk upload failed", exc_info=e)
-            new_upload_offset = None
             num_errors += 1
-        else:
-            if "Upload-Offset" in response.headers:
-                new_upload_offset = int(response.headers["Upload-Offset"])
-            else:
-                new_upload_offset = None
-
-            if 200 <= response.status < 300:
-                if new_upload_offset is None:
-                    raise CvatSdkException("Server did not send Upload-Offset after chunk upload")
-
-                # prevent the server from asking us to keep uploading the same chunk
-                if new_upload_offset < upload_offset + len(chunk):
-                    raise CvatSdkException("Server reported unexpected Upload-Offset")
-            else:
-                logger.error("Chunk upload returned status code %d", response.status)
-                num_errors += 1
 
         if num_errors >= MAX_TUS_RETRIES:
             raise CvatSdkException("Too many upload errors")
