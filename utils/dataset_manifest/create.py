@@ -16,7 +16,7 @@ if __name__ == "__main__":
     try:
         sys.path.remove(script_dir)
     except ValueError:
-        print("warning: {script_dir} was not found in sys.path")
+        print(f"warning: {script_dir} was not found in sys.path")
 
     # Make the component visible as dataset_manifest module
     base_dir = os.path.dirname(script_dir)
