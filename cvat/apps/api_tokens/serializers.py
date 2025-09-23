@@ -79,7 +79,7 @@ class ApiTokenWriteSerializer(serializers.ModelSerializer):
         }
 
     def to_representation(self, instance):
-        return ApiTokenReadSerializer().to_representation(instance)
+        return ApiTokenReadSerializer(context=self.context).to_representation(instance)
 
     def create(self, validated_data: dict[str, Any]) -> models.ApiToken:
         instance, raw_token = models.ApiToken.objects.create_key(
