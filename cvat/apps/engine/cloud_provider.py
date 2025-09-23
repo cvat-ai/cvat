@@ -470,7 +470,7 @@ class _HeaderFirstPcdDownloader(HeaderFirstDownloader):
     def try_parse_header(self, header):
         pcd_parser = PcdReader()
         file = header
-        file_ext = os.path.splitext(file.name)[1].lower()
+        file_ext = os.path.splitext(file.filename)[1].lower()
 
         if file_ext == ".bin":
             # We need to ensure the file is a valid .bin file
