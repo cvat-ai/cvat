@@ -242,13 +242,15 @@ class Task3DTest(_DbTestBase):
         cls.pointcloud_pcd_path = osp.join(
             os.path.dirname(__file__), "assets", cls.pointcloud_pcd_filename
         )
+
         image_sizes = []
         zip_file = zipfile.ZipFile(cls.pointcloud_pcd_path)
         for info in zip_file.namelist():
-            if info.rsplit(".", maxsplit=1)[-1] == "pcd":
+            if info.endswith(".pcd"):
                 with zip_file.open(info, "r") as file:
                     data = ValidateDimension.get_pcd_properties(file)
                     image_sizes.append((int(data["WIDTH"]), int(data["HEIGHT"])))
+
         cls.task = {
             "name": "main task",
             "owner_id": 2,

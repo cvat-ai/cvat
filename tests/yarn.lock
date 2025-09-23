@@ -764,13 +764,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/k6@npm:^1.1.1":
-  version: 1.2.0
-  resolution: "@types/k6@npm:1.2.0"
-  checksum: 10c0/bab24bfcfb5e7d9645be7417b64f242c4e607658edce213a1077ba3ce5b0dc7531ea2087e2b5383f8b817eae3d1e572944d5511db20ee81c4188f9728b53cc9f
-  languageName: node
-  linkType: hard
-
 "@types/node@npm:*, @types/node@npm:16.9.1":
   version: 16.9.1
   resolution: "@types/node@npm:16.9.1"
@@ -3302,7 +3295,6 @@ __metadata:
   resolution: "root-workspace-0b6124@workspace:."
   dependencies:
     "@cypress/code-coverage": "npm:^3.9.10"
-    "@types/k6": "npm:^1.1.1"
     allure-cypress: "npm:^3.2.2"
     archiver: "npm:^5.3.0"
     cy-verify-downloads: "npm:^0.0.5"
