@@ -253,8 +253,10 @@ class ApiTokenPluginPermission(ApiTokenPluginPermissionBase):
 
     @classmethod
     def find_extensions(cls, original_permission: OpenPolicyAgentPermission) -> Sequence[str]:
+        opa_base_url = settings.IAM_OPA_DATA_URL + "/"
+
         if not (
-            original_permission.url.startswith(settings.IAM_OPA_DATA_URL)
+            original_permission.url.startswith(opa_base_url)
             and original_permission.url.endswith("/allow")
         ):
             raise ValueError(
@@ -264,7 +266,7 @@ class ApiTokenPluginPermission(ApiTokenPluginPermissionBase):
             )
 
         original_package = (
-            original_permission.url.removeprefix(settings.IAM_OPA_DATA_URL + "/")
+            original_permission.url.removeprefix(opa_base_url)
             .removesuffix("/allow")
             .replace("/", ".")
         )
@@ -421,7 +423,7 @@ class PolicyEnforcer(iam_permissions.PolicyEnforcer):
     def _check_permission(self, request, view, obj):
         allow, checked_permissions = super()._check_permission(request, view, obj)
 
-        def _check_permissions():
+        def _check_plugin_permissions():
             for original_perm in checked_permissions[:]:
                 extra_permissions = ApiTokenPluginPermission.create(
                     request, view, obj, None, [original_perm]
@@ -435,6 +437,6 @@ class PolicyEnforcer(iam_permissions.PolicyEnforcer):
             return True
 
         if allow:
-            allow = _check_permissions()
+            allow = _check_plugin_permissions()
 
         return allow, checked_permissions
