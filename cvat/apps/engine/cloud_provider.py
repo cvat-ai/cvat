@@ -564,7 +564,16 @@ class AWS_S3(_CloudStorage):
 
         session = boto3.Session(**kwargs)
         self._s3 = session.resource("s3", endpoint_url=endpoint_url,
-            config=Config(proxies=PROXIES_FOR_UNTRUSTED_URLS or {}),
+            config=Config(
+                proxies=PROXIES_FOR_UNTRUSTED_URLS or {},
+                max_pool_connections=(
+                    # AWS can throttle the requests if there are too many of them,
+                    # the SDK handles it with the retry policy:
+                    # https://boto3.amazonaws.com/v1/documentation/api/latest/guide/retries.html
+                    # 10 is the default value
+                    max(10, CPU_NUMBER * settings.CLOUD_DATA_DOWNLOADING_MAX_THREADS_NUMBER_PER_CPU)
+                )
+            ),
         )
 
         # anonymous access
