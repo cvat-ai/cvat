@@ -15,7 +15,7 @@ from ultralytics.engine.results import Results
 
 
 class YoloFunction(abc.ABC):
-    def __init__(self, model: YOLO, device: str) -> None:
+    def __init__(self, model: YOLO, *, device: str = "cpu") -> None:
         self._model = model
         self._device = device
 
@@ -126,15 +126,13 @@ DEFAULT_KEYPOINT_NAMES = [
 
 
 class YoloPoseEstimationFunction(YoloFunctionWithShapes):
-    def __init__(
-        self, model: YOLO, device: str, *, keypoint_names_path: Optional[str] = None
-    ) -> None:
+    def __init__(self, model: YOLO, *, keypoint_names_path: Optional[str] = None, **kwargs) -> None:
         if keypoint_names_path is None:
             self._keypoint_names = DEFAULT_KEYPOINT_NAMES
         else:
             self._keypoint_names = self._load_names(keypoint_names_path)
 
-        super().__init__(model, device)
+        super().__init__(model, **kwargs)
 
     def _load_names(self, path: str) -> list[str]:
         with open(path, "r") as f:

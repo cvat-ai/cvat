@@ -8,7 +8,7 @@ from __future__ import annotations
 import os.path as osp
 import re
 import sys
-from collections import OrderedDict, defaultdict
+from collections import defaultdict
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from functools import partial, reduce
 from operator import add
@@ -18,6 +18,8 @@ from typing import Any, Callable, Generator, Literal, NamedTuple, Optional, Unio
 
 import attr
 import datumaro as dm
+import datumaro.components
+import datumaro.components.media
 import datumaro.util
 import defusedxml.ElementTree as ET
 import rq
@@ -30,6 +32,7 @@ from django.utils import timezone
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import models
+from cvat.apps.engine.cache import MediaCache
 from cvat.apps.engine.frame_provider import FrameOutputType, FrameQuality, TaskFrameProvider
 from cvat.apps.engine.lazy_list import LazyList
 from cvat.apps.engine.model_utils import add_prefetch_fields
@@ -80,10 +83,10 @@ class InstanceLabelData:
 
         # If this flag is set to true, create attribute within annotations import
         self._soft_attribute_import = False
-        self._label_mapping = OrderedDict[int, Label](
-            (db_label.id, db_label)
+        self._label_mapping: dict[int, Label] = {
+            db_label.id: db_label
             for db_label in sorted(db_labels, key=lambda v: v.pk)
-        )
+        }
 
         self._attribute_mapping = {db_label.id: {
             'mutable': {}, 'immutable': {}, 'spec': {}}
@@ -380,19 +383,20 @@ class CommonData(InstanceLabelData):
     def _convert_db_labels(db_labels):
         labels = []
         for db_label in db_labels:
-            label = OrderedDict([
-                ("name", db_label.name),
-                ("color", db_label.color),
-                ("type", db_label.type),
-                ("attributes", [
-                    ("attribute", OrderedDict([
-                        ("name", db_attr.name),
-                        ("mutable", str(db_attr.mutable)),
-                        ("input_type", db_attr.input_type),
-                        ("default_value", db_attr.default_value),
-                        ("values", db_attr.values)]))
-                    for db_attr in db_label.attributespec_set.all()])
-            ])
+            label = {
+                "name": db_label.name,
+                "color": db_label.color,
+                "type": db_label.type,
+                "attributes": [
+                    ("attribute", {
+                        "name": db_attr.name,
+                        "mutable": str(db_attr.mutable),
+                        "input_type": db_attr.input_type,
+                        "default_value": db_attr.default_value,
+                        "values": db_attr.values})
+                    for db_attr in db_label.attributespec_set.all()
+                ]
+            }
 
             if db_label.parent:
                 label["parent"] = db_label.parent.name
@@ -521,7 +525,7 @@ class CommonData(InstanceLabelData):
             return get
 
         get_shapes_for_frame = get_anns_for_frame(
-            anno_manager.to_shapes_stream(
+            anno_manager.to_shapes(
                 self.stop + 1,
                 # Skip outside, deleted and excluded frames
                 included_frames=included_frames,
@@ -538,7 +542,7 @@ class CommonData(InstanceLabelData):
                     for tag in self._annotation_ir.tags
                     if tag['frame'] in included_frames
                 ),
-                key=lambda tag: tag["frame"],
+                key=lambda tag: tag['frame']
             )
         )
 
@@ -821,47 +825,47 @@ class JobData(CommonData):
 
     def _init_meta(self):
         db_segment = self._db_job.segment
-        self._meta = OrderedDict([
-            (JobData.META_FIELD, OrderedDict([
-                ("id", str(self._db_job.id)),
-                ("size", str(len(self))),
-                ("mode", self._db_task.mode),
-                ("overlap", str(self._db_task.overlap)),
-                ("bugtracker", self._db_task.bug_tracker),
-                ("created", str(timezone.localtime(self._db_task.created_date))),
-                ("updated", str(timezone.localtime(self._db_job.updated_date))),
-                ("subset", self._db_task.subset or dm.DEFAULT_SUBSET_NAME),
-                ("start_frame", str(self._db_data.start_frame + db_segment.start_frame * self._frame_step)),
-                ("stop_frame", str(self._db_data.start_frame + db_segment.stop_frame * self._frame_step)),
-                ("frame_filter", self._db_data.frame_filter),
-                ("segments", [
-                    ("segment", OrderedDict([
-                        ("id", str(db_segment.id)),
-                        ("start", str(db_segment.start_frame)),
-                        ("stop", str(db_segment.stop_frame)),
-                        ("url", "{}/api/jobs/{}".format(self._host, self._db_job.id))])),
-                ]),
-                ("owner", OrderedDict([
-                    ("username", self._db_task.owner.username),
-                    ("email", self._db_task.owner.email)
-                ]) if self._db_task.owner else ""),
+        self._meta = {
+            JobData.META_FIELD: {
+                "id": str(self._db_job.id),
+                "size": str(len(self)),
+                "mode": self._db_task.mode,
+                "overlap": str(self._db_task.overlap),
+                "bugtracker": self._db_task.bug_tracker,
+                "created": str(timezone.localtime(self._db_task.created_date)),
+                "updated": str(timezone.localtime(self._db_job.updated_date)),
+                "subset": self._db_task.subset or dm.DEFAULT_SUBSET_NAME,
+                "start_frame": str(self._db_data.start_frame + db_segment.start_frame * self._frame_step),
+                "stop_frame": str(self._db_data.start_frame + db_segment.stop_frame * self._frame_step),
+                "frame_filter": self._db_data.frame_filter,
+                "segments": [
+                    ("segment", {
+                        "id": str(db_segment.id),
+                        "start": str(db_segment.start_frame),
+                        "stop": str(db_segment.stop_frame),
+                        "url": "{}/api/jobs/{}".format(self._host, self._db_job.id)}),
+                ],
+                "owner": {
+                    "username": self._db_task.owner.username,
+                    "email": self._db_task.owner.email
+                } if self._db_task.owner else "",
 
-                ("assignee", OrderedDict([
-                    ("username", self._db_job.assignee.username),
-                    ("email", self._db_job.assignee.email)
-                ]) if self._db_job.assignee else ""),
-            ])),
-            ("dumped", str(timezone.localtime(timezone.now()))),
-        ])
+                "assignee": {
+                    "username": self._db_job.assignee.username,
+                    "email": self._db_job.assignee.email
+                } if self._db_job.assignee else "",
+            },
+            "dumped": str(timezone.localtime(timezone.now())),
+        }
 
         if self._label_mapping is not None:
             self._meta[JobData.META_FIELD]["labels"] = CommonData._convert_db_labels(self._label_mapping.values())
 
         if hasattr(self._db_data, "video"):
-            self._meta["original_size"] = OrderedDict([
-                ("width", str(self._db_data.video.width)),
-                ("height", str(self._db_data.video.height))
-            ])
+            self._meta["original_size"] = {
+                "width": str(self._db_data.video.width),
+                "height": str(self._db_data.video.height)
+            }
 
     def _init_frame_info(self):
         super()._init_frame_info()
@@ -927,51 +931,51 @@ class TaskData(CommonData):
             Prefetch('job_set', models.Job.objects.order_by("pk"))
         )
 
-        meta = OrderedDict([
-            ("id", str(db_task.id)),
-            ("name", db_task.name),
-            ("size", str(db_task.data.size)),
-            ("mode", db_task.mode),
-            ("overlap", str(db_task.overlap)),
-            ("bugtracker", db_task.bug_tracker),
-            ("created", str(timezone.localtime(db_task.created_date))),
-            ("updated", str(timezone.localtime(db_task.updated_date))),
-            ("subset", db_task.subset or dm.DEFAULT_SUBSET_NAME),
-            ("start_frame", str(db_task.data.start_frame)),
-            ("stop_frame", str(db_task.data.stop_frame)),
-            ("frame_filter", db_task.data.frame_filter),
+        meta = {
+            "id": str(db_task.id),
+            "name": db_task.name,
+            "size": str(db_task.data.size),
+            "mode": db_task.mode,
+            "overlap": str(db_task.overlap),
+            "bugtracker": db_task.bug_tracker,
+            "created": str(timezone.localtime(db_task.created_date)),
+            "updated": str(timezone.localtime(db_task.updated_date)),
+            "subset": db_task.subset or dm.DEFAULT_SUBSET_NAME,
+            "start_frame": str(db_task.data.start_frame),
+            "stop_frame": str(db_task.data.stop_frame),
+            "frame_filter": db_task.data.frame_filter,
 
-            ("segments", [
-                ("segment", OrderedDict([
-                    ("id", str(db_segment.id)),
-                    ("start", str(db_segment.start_frame)),
-                    ("stop", str(db_segment.stop_frame)),
-                    ("url", "{}/api/jobs/{}".format(
-                        host, db_segment.job_set.first().id))]
-                ))
+            "segments": [
+                ("segment", {
+                    "id": str(db_segment.id),
+                    "start": str(db_segment.start_frame),
+                    "stop": str(db_segment.stop_frame),
+                    "url": "{}/api/jobs/{}".format(
+                        host, db_segment.job_set.first().id)
+                })
                 for db_segment in db_segments
                 if db_segment.job_set.first().type == JobType.ANNOTATION
-            ]),
+            ],
 
-            ("owner", OrderedDict([
-                ("username", db_task.owner.username),
-                ("email", db_task.owner.email)
-            ]) if db_task.owner else ""),
+            "owner": {
+                "username": db_task.owner.username,
+                "email": db_task.owner.email
+            } if db_task.owner else "",
 
-            ("assignee", OrderedDict([
-                ("username", db_task.assignee.username),
-                ("email", db_task.assignee.email)
-            ]) if db_task.assignee else ""),
-        ])
+            "assignee": {
+                "username": db_task.assignee.username,
+                "email": db_task.assignee.email
+            } if db_task.assignee else "",
+        }
 
         if label_mapping is not None:
             meta['labels'] = CommonData._convert_db_labels(label_mapping.values())
 
         if hasattr(db_task.data, "video"):
-            meta["original_size"] = OrderedDict([
-                ("width", str(db_task.data.video.width)),
-                ("height", str(db_task.data.video.height))
-            ])
+            meta["original_size"] = {
+                "width": str(db_task.data.video.width),
+                "height": str(db_task.data.video.height)
+            }
 
             # Add source to dumped file
             meta["source"] = str(osp.basename(db_task.data.video.path))
@@ -979,10 +983,10 @@ class TaskData(CommonData):
         return meta
 
     def _init_meta(self):
-        self._meta = OrderedDict([
-            (TaskData.META_FIELD, self.meta_for_task(self._db_task, self._host, self._label_mapping)),
-            ("dumped", str(timezone.localtime(timezone.now())))
-        ])
+        self._meta = {
+            TaskData.META_FIELD: self.meta_for_task(self._db_task, self._host, self._label_mapping),
+            "dumped": str(timezone.localtime(timezone.now())),
+        }
 
     def __len__(self):
         return self._db_data.size
@@ -1137,10 +1141,10 @@ class ProjectData(InstanceLabelData):
         self._init_meta()
 
     def _init_tasks(self):
-        self._db_tasks: OrderedDict[int, Task] = OrderedDict(
-            (db_task.id, db_task)
+        self._db_tasks: dict[int, Task] = {
+            db_task.id: db_task
             for db_task in self._db_project.tasks.exclude(data=None).order_by("subset","id").all()
-        )
+        }
 
         subsets = set()
         for task in self._db_tasks.values():
@@ -1193,50 +1197,51 @@ class ProjectData(InstanceLabelData):
         }
 
     def _init_meta(self):
-        self._meta = OrderedDict([
-            (ProjectData.META_FIELD, OrderedDict([
-                ('id', str(self._db_project.id)),
-                ('name', self._db_project.name),
-                ("bugtracker", self._db_project.bug_tracker),
-                ("created", str(timezone.localtime(self._db_project.created_date))),
-                ("updated", str(timezone.localtime(self._db_project.updated_date))),
-                ("tasks", [
+        self._meta = {
+            ProjectData.META_FIELD: {
+                "id": str(self._db_project.id),
+                "name": self._db_project.name,
+                "bugtracker": self._db_project.bug_tracker,
+                "created": str(timezone.localtime(self._db_project.created_date)),
+                "updated": str(timezone.localtime(self._db_project.updated_date)),
+                "tasks": [
                     ('task',
                         TaskData.meta_for_task(db_task, self._host)
                     ) for db_task in self._db_tasks.values()
-                ]),
+                ],
 
-                ("subsets", '\n'.join([s if s else dm.DEFAULT_SUBSET_NAME for s in self._subsets])),
+                "subsets": '\n'.join([s if s else dm.DEFAULT_SUBSET_NAME for s in self._subsets]),
 
-                ("owner", OrderedDict([
-                    ("username", self._db_project.owner.username),
-                    ("email", self._db_project.owner.email),
-                ]) if self._db_project.owner else ""),
+                "owner": {
+                    "username": self._db_project.owner.username,
+                    "email": self._db_project.owner.email,
+                } if self._db_project.owner else "",
 
-                ("assignee", OrderedDict([
-                    ("username", self._db_project.assignee.username),
-                    ("email", self._db_project.assignee.email),
-                ]) if self._db_project.assignee else ""),
-            ])),
-            ("dumped", str(timezone.localtime(timezone.now())))
-        ])
+                "assignee": {
+                    "username": self._db_project.assignee.username,
+                    "email": self._db_project.assignee.email,
+                } if self._db_project.assignee else "",
+            },
+            "dumped": str(timezone.localtime(timezone.now())),
+        }
 
         if self._label_mapping is not None:
             labels = []
             for db_label in self._label_mapping.values():
-                label = OrderedDict([
-                    ("name", db_label.name),
-                    ("color", db_label.color),
-                    ("type", db_label.type),
-                    ("attributes", [
-                        ("attribute", OrderedDict([
-                            ("name", db_attr.name),
-                            ("mutable", str(db_attr.mutable)),
-                            ("input_type", db_attr.input_type),
-                            ("default_value", db_attr.default_value),
-                            ("values", db_attr.values)]))
-                        for db_attr in db_label.attributespec_set.all()])
-                ])
+                label = {
+                    "name": db_label.name,
+                    "color": db_label.color,
+                    "type": db_label.type,
+                    "attributes": [
+                        ("attribute", {
+                            "name": db_attr.name,
+                            "mutable": str(db_attr.mutable),
+                            "input_type": db_attr.input_type,
+                            "default_value": db_attr.default_value,
+                            "values": db_attr.values})
+                        for db_attr in db_label.attributespec_set.all()
+                    ]
+                }
 
                 if db_label.parent:
                     label["parent"] = db_label.parent.name
@@ -1593,33 +1598,143 @@ class MediaProvider2D(MediaProvider):
         self._current_source_id = None
 
 class MediaProvider3D(MediaProvider):
+    class PointCloudFromLazyChunk(datumaro.components.media.PointCloudFromBytes):
+        def __init__(
+            self,
+            path: str,
+            extra_images: list[dm.Image],
+            *args,
+            data_getter: Callable[[], bytes],
+            **kwargs
+        ):
+            super().__init__(data_getter, *args, extra_images=extra_images, **kwargs)
+            self._path = path
+
+        @property
+        def path(self) -> str:
+            return self._path.replace("\\", "/")
+
+    class ImageFromLazyChunk(datumaro.components.media.ImageFromBytes):
+        def __init__(
+            self,
+            path: str,
+            *args,
+            data_getter: Callable[[], bytes],
+            **kwargs
+        ):
+            kwargs.setdefault("ext", osp.splitext(path)[1])
+            super().__init__(
+                data_getter,
+                *args,
+                **kwargs
+            )
+            self._path = path
+
+        @property
+        def path(self) -> str:
+            return self._path.replace("\\", "/")
+
     def __init__(self, sources: dict[int, MediaSource]) -> None:
         super().__init__(sources)
-        self._images_per_source = {
-            source_id: {
-                image.id: image
-                for image in source.db_task.data.images.prefetch_related('related_files')
-            }
-            for source_id, source in sources.items()
-        }
+        self._current_source_id = None
+        self._frame_provider = None
+
+        self._ri_cache: dict[int, dict[str, bytes]] = {}
+        "{source_id -> {task path -> file data}}"
+
+        ThroughModel = models.RelatedFile.images.through
+
+        self._ri_per_source: dict[int, dict[int, list[str]]] = {}
+        "{source_id -> {frame_id -> [ri, ...]}}"
+
+        for source_id, source in sources.items():
+            source_ris = self._ri_per_source.setdefault(source_id, {})
+
+            db_related_files = (
+                ThroughModel.objects.filter(relatedfile__data=source.db_task.data)
+                .order_by("image__frame", "relatedfile__path")
+                .values_list("image__frame", "relatedfile__path")
+            )
+            for frame_idx, ri_path in db_related_files:
+                source_ris.setdefault(frame_idx, []).append(ri_path)
+
+    def unload(self) -> None:
+        self._unload_source()
 
     def get_media_for_frame(self, source_id: int, frame_id: int, **image_kwargs) -> dm.PointCloud:
         source = self._sources[source_id]
 
-        point_cloud_path = osp.join(
-            source.db_task.data.get_upload_dirname(), image_kwargs['path'],
-        )
+        upload_dir = source.db_task.data.get_upload_dirname()
+        point_cloud_path = image_kwargs['path']
 
-        image = self._images_per_source[source_id][frame_id]
-
-        related_images = [
-            dm.Image.from_file(path=path)
-            for rf in image.related_files.all()
-            for path in [osp.realpath(str(rf.path))]
-            if osp.isfile(path)
+        related_image_paths = [
+            osp.relpath(str(ri_path), upload_dir)
+            for ri_path in self._ri_per_source[source_id].get(frame_id, [])
         ]
 
-        return dm.PointCloud.from_file(point_cloud_path, extra_images=related_images)
+        def get_pcd_bytes():
+            self._load_source(source_id, source)
+
+            return self._frame_provider.get_frame(
+                frame_id, quality=FrameQuality.ORIGINAL, out_type=FrameOutputType.BUFFER
+            ).data.getvalue()
+
+        def get_ri_frame(path: str) -> bytes:
+            self._load_source(source_id, source)
+
+            return self._get_ri_chunk(frame_id)[path]
+
+        dm_related_images = [
+            self.ImageFromLazyChunk(ri_path, data_getter=partial(get_ri_frame, ri_path))
+            for ri_path in related_image_paths
+        ]
+
+        return self.PointCloudFromLazyChunk(
+            point_cloud_path, extra_images=dm_related_images, data_getter=get_pcd_bytes
+        )
+
+    def _get_ri_chunk(self, frame_id: int) -> dict[str, bytes]:
+        frame_related_images = self._ri_cache.get(frame_id, None)
+
+        if frame_related_images is None:
+            self._clear_ri_chunk_cache()
+
+            # frame provider doesn't cache RIs and can return only compressed RI chunks for the UI
+            cache = MediaCache()
+
+            frame_related_images = {
+                ri_path: Path(ri_realpath).read_bytes()
+                for _, (ri_realpath, ri_path, _) in cache.read_raw_context_images(
+                    self._sources[self._current_source_id].db_task.data,
+                    frame_ids=[frame_id],
+                    truncate_common_filename_prefix=False,
+                    decode=False,
+                )
+            }
+
+            self._ri_cache[frame_id] = frame_related_images
+
+        return frame_related_images
+
+    def _clear_ri_chunk_cache(self):
+        self._ri_cache.clear()
+
+    def _load_source(self, source_id: int, source: MediaSource) -> None:
+        if self._current_source_id == source_id:
+            return
+
+        self._unload_source()
+        self._frame_provider = TaskFrameProvider(source.db_task)
+        self._current_source_id = source_id
+
+    def _unload_source(self) -> None:
+        if self._frame_provider:
+            self._frame_provider.unload()
+            self._frame_provider = None
+
+            self._clear_ri_chunk_cache()
+
+        self._current_source_id = None
 
 MEDIA_PROVIDERS_BY_DIMENSION: dict[DimensionType, MediaProvider] = {
     DimensionType.DIM_3D: MediaProvider3D,
@@ -1732,15 +1847,8 @@ class CvatDataExtractorBase(CVATDataExtractorMixin):
         }
         if self._dimension == DimensionType.DIM_3D:
             dm_media: dm.PointCloud = self._media_provider.get_media_for_frame(
-                frame_data.task_id, frame_data.id, **dm_media_args
+                frame_data.task_id, frame_data.idx, **dm_media_args
             )
-
-            if not self._include_images:
-                dm_media_args["extra_images"] = [
-                    dm.Image.from_file(path=osp.basename(image.path))
-                    for image in dm_media.extra_images
-                ]
-                dm_media = dm.PointCloud.from_file(**dm_media_args)
         else:
             dm_media_args['size'] = (frame_data.height, frame_data.width)
             if self._include_images:
@@ -1805,33 +1913,8 @@ class CvatTaskOrJobDataExtractor(dm.SubsetBase, CvatDataExtractorBase):
         )
         self._categories = self.load_categories(self._instance_meta['labels'])
 
-        if not self._instance_data.is_stream:
-            self._grouped_by_frame = list(self._instance_data.group_by_frame(include_empty=True))
-
-    @staticmethod
-    def copy_frame_data_with_replaced_lazy_lists(frame_data: CommonData.Frame) -> CommonData.Frame:
-        return attr.evolve(
-            frame_data,
-            labeled_shapes=[
-                (
-                    shape._replace(points=shape.points.lazy_copy())
-                    if isinstance(shape.points, LazyList) and not shape.points.is_parsed
-                    else shape
-                )
-                for shape in frame_data.labeled_shapes
-            ]
-        )
-
     def __iter__(self):
-        if self._instance_data.is_stream:
-            grouped_by_frame = self._instance_data.group_by_frame(include_empty=True)
-        else:
-            grouped_by_frame = self._grouped_by_frame
-
-        for frame_data in grouped_by_frame:
-            if not self._instance_data.is_stream:
-                # do not keep parsed lazy list data after this iteration
-                frame_data = self.copy_frame_data_with_replaced_lazy_lists(frame_data)
+        for frame_data in self._instance_data.group_by_frame(include_empty=True):
             yield self._process_one_frame_data(frame_data)
 
     def __len__(self):

@@ -33,10 +33,11 @@ from rest_framework.exceptions import NotFound, PermissionDenied, ValidationErro
 from rq import get_current_job
 
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.models import CloudProviderChoice, CredentialsTypeChoice
+from cvat.apps.engine.models import CloudProviderChoice, CredentialsTypeChoice, DimensionType
 from cvat.apps.engine.rq import ExportRQMeta
 from cvat.apps.engine.utils import get_cpu_number, take_by
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS
+from utils.dataset_manifest.utils import InvalidPcdError, PcdReader
 
 
 class NamedBytesIO(BytesIO):
@@ -204,44 +205,13 @@ class _CloudStorage(ABC):
     def _download_range_of_bytes(self, key: str, /, *, stop_byte: int, start_byte: int):
         pass
 
-    def optimally_image_download(self, key: str, /, *, chunk_size: int = 65536) -> NamedBytesIO:
-        """
-        Method downloads image by the following approach:
-        Firstly we try to download the first N bytes of image which will be enough for determining image properties.
-        If for some reason we cannot identify the required properties then we will download all file.
-
-        Args:
-            key (str): File on the bucket
-            chunk_size (int, optional): The number of first bytes to download. Defaults to 65536 (64kB).
-
-        Returns:
-            BytesIO: Buffer with image
-        """
-        image_parser = ImageFile.Parser()
-
-        chunk = self.download_range_of_bytes(key, stop_byte=chunk_size - 1)
-        image_parser.feed(chunk)
-
-        if image_parser.image:
-            buff = NamedBytesIO(chunk)
-            buff.filename = key
-        else:
-            buff = self.download_fileobj(key)
-            image_size_in_bytes = len(buff.getvalue())
-            slogger.glob.warning(
-                f'The {chunk_size} bytes were not enough to parse "{key}" image. '
-                f'Image size was {image_size_in_bytes} bytes. Image resolution was {Image.open(buff).size}. '
-                f'Downloaded percent was {round(min(chunk_size, image_size_in_bytes) / image_size_in_bytes * 100)}')
-
-        return buff
-
     def bulk_download_to_memory(
         self,
         files: list[str],
         *,
-        _use_optimal_downloading: bool = True,
+        object_downloader: Callable[[str], NamedBytesIO] = None
     ) -> Iterator[BytesIO]:
-        func = self.optimally_image_download if _use_optimal_downloading else self.download_fileobj
+        func = object_downloader or self.download_fileobj
         threads_number = get_max_threads_number(len(files))
 
         with ThreadPoolExecutor(max_workers=threads_number) as executor:
@@ -250,13 +220,28 @@ class _CloudStorage(ABC):
 
     def bulk_download_to_dir(
         self,
-        files: list[str],
+        files: list[str | tuple[str, str]],
         upload_dir: str,
     ) -> None:
+        """
+        :param files: a list of filenames or (storage filename, output filename) pairs
+        :param upload_dir: the output directory
+        """
+
         threads_number = get_max_threads_number(len(files))
 
         with ThreadPoolExecutor(max_workers=threads_number) as executor:
-            futures = [executor.submit(self.download_file, f, os.path.join(upload_dir, f)) for f in files]
+            futures = []
+            for f in files:
+                if isinstance(f, tuple):
+                    key, output_path = f
+                else:
+                    key = f
+                    output_path = f
+
+                output_path = os.path.join(upload_dir, output_path)
+                futures.append(executor.submit(self.download_file, key, output_path))
+
             done, _ = wait(futures, return_when=FIRST_EXCEPTION)
             for future in done:
                 if ex := future.exception():
@@ -366,6 +351,120 @@ class _CloudStorage(ABC):
     @property
     def write_access(self):
         return Permissions.WRITE in self.access
+
+
+class HeaderFirstDownloader(ABC):
+    def __init__(
+        self,
+        *,
+        client: _CloudStorage,
+        chunk_size: int = 65536,
+    ):
+        self.client = client
+        self.chunk_size = chunk_size
+
+    @abstractmethod
+    def try_parse_header(self, header: bytes, *, key: str) -> Any | None: ...
+
+    def log_header_miss(self, file: NamedBytesIO, *, key: str):
+        full_object_size = len(file.getvalue())
+
+        slogger.glob.warning(
+            f'The {self.chunk_size} bytes were not enough to parse the "{key}" object header. '
+            f'Object size was {full_object_size} bytes. '
+            f'Downloaded percent was '
+            f'{round(min(self.chunk_size, full_object_size) / full_object_size):%}'
+        )
+
+    def download(self, key: str) -> NamedBytesIO:
+        """
+        Method downloads the file using the following approach:
+        First we try to download the file header (first N bytes).
+        It should be enough to determine image properties.
+        If it's not enough for the file, the whole file will be downloaded.
+
+        :param key: File on the bucket
+
+        Returns:
+            buffer with the image
+        """
+        chunk = self.client.download_range_of_bytes(key, stop_byte=self.chunk_size - 1)
+
+        if self.try_parse_header(chunk, key=key):
+            buff = NamedBytesIO(chunk)
+            buff.filename = key
+        else:
+            buff = self.client.download_fileobj(key)
+            self.log_header_miss(file=buff, key=key)
+
+        return buff
+
+class _HeaderFirstImageDownloader(HeaderFirstDownloader):
+    def try_parse_header(self, header, *, key):
+        image_parser = ImageFile.Parser()
+        image_parser.feed(header)
+        return image_parser.image
+
+    def log_header_miss(self, file, *, key):
+        full_object_size = len(file.getvalue())
+
+        slogger.glob.warning(
+            f'The {self.chunk_size} bytes were not enough to parse the "{key}" object header. '
+            f'Object size was {full_object_size} bytes. '
+            f'Image resolution was {Image.open(file).size}. '
+            f'Downloaded percent was '
+            f'{round(min(self.chunk_size, full_object_size) / full_object_size):.0%}'
+        )
+
+    def download(self, key):
+        try:
+            return super().download(key)
+        except Image.UnidentifiedImageError as e:
+            # PIL also can raise many OSErrors, but it's quite a broad class
+            # for the general capturing here. The precise info will be available in the logs
+            raise Exception(f"Failed to read the image file '{key}'") from e
+
+
+class _HeaderFirstPcdDownloader(HeaderFirstDownloader):
+    def try_parse_header(self, header, *, key):
+        pcd_parser = PcdReader()
+        file = NamedBytesIO(header)
+        file_ext = os.path.splitext(key)[1].lower()
+
+        if file_ext == ".bin":
+            # We need to ensure the file is a valid .bin file
+            pcd_parser.parse_bin_header(file)
+
+            # but we need the whole file for the next operations (getting frame size etc.)
+            return False
+        elif file_ext == ".pcd":
+            parameters = pcd_parser.parse_pcd_header(file, verify_version=True)
+            if not parameters.get("WIDTH") or not parameters.get("HEIGHT"):
+                raise InvalidPcdError("invalid scene size")
+        else:
+            raise InvalidPcdError(f"The '{file_ext}' file format is not supported")
+
+        return True
+
+    def download(self, key):
+        try:
+            return super().download(key)
+        except InvalidPcdError as e:
+            raise Exception(f"Failed to read point cloud file '{key}': {e}") from e
+
+
+class HeaderFirstMediaDownloader:
+    @staticmethod
+    def create(dimension: DimensionType, **kwargs) -> HeaderFirstDownloader:
+        if dimension == DimensionType.DIM_2D:
+            downloader = _HeaderFirstImageDownloader(**kwargs)
+        elif dimension == DimensionType.DIM_3D:
+            downloader = _HeaderFirstPcdDownloader(**kwargs)
+        else:
+            assert False
+
+        return downloader
+
 
 def get_cloud_storage_instance(
     *,
