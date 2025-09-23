@@ -6,10 +6,11 @@
 from __future__ import annotations
 
 import functools
+import io
 import json
 import os
 from abc import ABC, abstractmethod
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from concurrent.futures import FIRST_EXCEPTION, Future, ThreadPoolExecutor, wait
 from enum import Enum
 from io import BytesIO
@@ -367,26 +368,36 @@ class _CloudStorage(ABC):
 
 
 class HeaderFirstDownloader(ABC):
-    def __init__(
-        self,
-        *,
-        client: _CloudStorage,
-        chunk_size: int = 65536,
-    ):
+    def __init__(self, *, client: _CloudStorage):
         self.client = client
-        self.chunk_size = chunk_size
 
     @abstractmethod
-    def try_parse_header(self, header: bytes, *, key: str) -> Any | None: ...
+    def try_parse_header(self, header: NamedBytesIO) -> Any | None: ...
 
-    def log_header_miss(self, file: NamedBytesIO, *, key: str):
-        full_object_size = len(file.getvalue())
+    def log_header_miss(self, key: str, header_size: int, *, full_file: NamedBytesIO | None = None):
+        message = (
+            f'The first {header_size} bytes were not enough to parse the "{key}" object header. '
+        )
 
-        slogger.glob.warning(
-            f'The {self.chunk_size} bytes were not enough to parse the "{key}" object header. '
-            f'Object size was {full_object_size} bytes. '
-            f'Downloaded percent was '
-            f'{round(min(self.chunk_size, full_object_size) / full_object_size):%}'
+        if full_file:
+            full_object_size = len(full_file.getvalue())
+
+            message += (
+                f'Object size was {full_object_size} bytes. '
+                f'Downloaded percent was '
+                f'{round(min(header_size, full_object_size) / full_object_size):%}'
+            )
+
+        slogger.glob.warning(message)
+
+    def get_header_size(self) -> Sequence[int]:
+        return (
+            # Standard Ethernet v2 MTU size, should result in just 1 packet
+            1500,
+            # Try bigger sizes, but less than the whole file
+            # TODO: Maybe implement exponential increase
+            15000,
+            65536,
         )
 
     def download(self, key: str) -> NamedBytesIO:
@@ -401,33 +412,50 @@ class HeaderFirstDownloader(ABC):
         Returns:
             buffer with the image
         """
-        chunk = self.client.download_range_of_bytes(key, stop_byte=self.chunk_size - 1)
 
-        if self.try_parse_header(chunk, key=key):
-            buff = NamedBytesIO(chunk)
-            buff.filename = key
-        else:
-            buff = self.client.download_fileobj(key)
-            self.log_header_miss(file=buff, key=key)
+        buff = NamedBytesIO()
+        buff.filename = key
+        for header_size in self.get_header_size():
+            buff.seek(0, io.SEEK_END)
+            cur_pos = buff.tell()
+            chunk = self.client.download_range_of_bytes(
+                key, start_byte=cur_pos, stop_byte=header_size - 1 - cur_pos
+            )
+            buff.write(chunk)
+            buff.seek(0)
 
+            if self.try_parse_header(buff):
+                buff.seek(0)
+                return buff
+
+            self.log_header_miss(key=key, header_size=header_size)
+
+        buff = self.client.download_fileobj(key)
+        self.log_header_miss(key=key, header_size=header_size, full_file=buff)
         return buff
 
 class _HeaderFirstImageDownloader(HeaderFirstDownloader):
-    def try_parse_header(self, header, *, key):
+    def try_parse_header(self, header):
         image_parser = ImageFile.Parser()
-        image_parser.feed(header)
+        image_parser.feed(header.getvalue())
         return image_parser.image
 
-    def log_header_miss(self, file, *, key):
-        full_object_size = len(file.getvalue())
-
-        slogger.glob.warning(
-            f'The {self.chunk_size} bytes were not enough to parse the "{key}" object header. '
-            f'Object size was {full_object_size} bytes. '
-            f'Image resolution was {Image.open(file).size}. '
-            f'Downloaded percent was '
-            f'{round(min(self.chunk_size, full_object_size) / full_object_size):.0%}'
+    def log_header_miss(self, key, header_size, *, full_file = None):
+        message = (
+            f'The first {header_size} bytes were not enough to parse the "{key}" object header. '
         )
+
+        if full_file:
+            full_object_size = len(full_file.getvalue())
+
+            message += (
+                f'Object size was {full_object_size} bytes. '
+                f'Image resolution was {Image.open(full_file).size}. '
+                f'Downloaded percent was '
+                f'{round(min(header_size, full_object_size) / full_object_size):.0%}'
+            )
+
+        slogger.glob.warning(message)
 
     def download(self, key):
         try:
@@ -439,10 +467,10 @@ class _HeaderFirstImageDownloader(HeaderFirstDownloader):
 
 
 class _HeaderFirstPcdDownloader(HeaderFirstDownloader):
-    def try_parse_header(self, header, *, key):
+    def try_parse_header(self, header):
         pcd_parser = PcdReader()
-        file = NamedBytesIO(header)
-        file_ext = os.path.splitext(key)[1].lower()
+        file = header
+        file_ext = os.path.splitext(file.name)[1].lower()
 
         if file_ext == ".bin":
             # We need to ensure the file is a valid .bin file
