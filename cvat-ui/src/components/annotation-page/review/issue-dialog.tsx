@@ -115,7 +115,7 @@ export default function IssueDialog(props: Props): JSX.Element {
 
     const lines = comments.map(
         (_comment: CommentModel): JSX.Element => {
-            const created = _comment.createdDate ? dayjs(_comment.createdDate) : dayjs();
+            const created = dayjs(_comment.createdDate ?? undefined);
             const diff = created.fromNow();
 
             return (
