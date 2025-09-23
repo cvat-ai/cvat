@@ -13,12 +13,12 @@ base permission package (typically defined in `apps/*/rules/`) there can now be
 a set of extension packages (a set of drop-in plugin files) that add extra permission logic.
 Each extension has to use the following filename pattern:
 
-`rules/api_token_plugin.<any name>.rego`
+`rules/[optional_prefix.]api_token_plugin.<any name>.rego`
 
-and define a package with the `api_token_plugin.<base package name>` name.
+and define a package with the `[optional_prefix.]api_token_plugin.<base package name>` name.
 Each plugin extends the base permission package, which name is determined by
-the plugin package name after the prefix. Plugins receive the base permission package
-input and also an extended part that includes:
+the plugin package name after the `api_token_plugin.` prefix.
+Plugins receive the base permission package input and also an extended part that includes:
 
 - `input.auth.token`
   - `.id` - the id of the API Token used for the client authentication.
