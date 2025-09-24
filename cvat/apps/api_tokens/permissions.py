@@ -145,10 +145,8 @@ PluginCollection = dict[str, list[PluginInfo]]
 
 
 class ApiTokenPermissionPluginManager:
-    PLUGIN_FILE_PREFIX = "api_token_plugin."
-    PLUGIN_FILE_EXT = ".rego"
-
     PLUGIN_PACKAGE_PREFIX = "api_token_plugin."
+    PLUGIN_FILE_EXT = ".rego"
 
     @classmethod
     def _build_plugin_descriptor(cls, p: Path) -> PluginInfo:
@@ -185,7 +183,7 @@ class ApiTokenPermissionPluginManager:
     @classmethod
     def _collect_plugins(cls, *, plugin_dirs: Sequence[Path]) -> PluginCollection:
         plugin_dirs = set(p.resolve() for p in plugin_dirs)
-        plugin_filename_pattern = f"*{cls.PLUGIN_FILE_PREFIX}*{cls.PLUGIN_FILE_EXT}"
+        plugin_filename_pattern = f"*{cls.PLUGIN_PACKAGE_PREFIX}*{cls.PLUGIN_FILE_EXT}"
 
         plugins: dict[str, PluginInfo] = {}
         for plugin_dir in plugin_dirs:

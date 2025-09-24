@@ -4,8 +4,6 @@
 
 from __future__ import annotations
 
-from datetime import timedelta
-
 from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth.models import User
@@ -15,10 +13,6 @@ from django.utils import timezone
 from rest_framework_api_key.models import AbstractAPIKey, BaseAPIKeyManager
 
 from cvat.apps.engine.model_utils import MaybeUndefined
-
-
-def get_token_stale_period() -> timedelta:
-    return settings.API_TOKEN_STALE_PERIOD
 
 
 class ApiTokenManager(BaseAPIKeyManager):
@@ -39,7 +33,7 @@ class ApiTokenManager(BaseAPIKeyManager):
                     # We want to track really used tokens here.
                 )
             )
-            .filter(_last_used__gte=db_functions.Now() - get_token_stale_period())
+            .filter(_last_used__gte=db_functions.Now() - settings.API_TOKEN_STALE_PERIOD)
         )
 
     def assign_key(self, obj):
@@ -123,6 +117,8 @@ class ApiToken(AbstractAPIKey):
     @admin.display(boolean=True, description="Is stale")
     def _is_stale(self):
         # check comment in get_usable_keys()
-        return (self.last_used_date or self.created) + get_token_stale_period() < timezone.now()
+        return (
+            self.last_used_date or self.created
+        ) + settings.API_TOKEN_STALE_PERIOD < timezone.now()
 
     is_stale = property(_is_stale)

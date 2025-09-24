@@ -40,7 +40,7 @@ def clear_unusable_api_tokens():
 
     deleted_stale_count = chunked_bulk_delete(
         models.ApiToken.objects.annotate(_last_used=Coalesce("last_used_date", "created")).filter(
-            _last_used__lt=unusable_threshold_date - models.get_token_stale_period()
+            _last_used__lt=unusable_threshold_date - settings.API_TOKEN_STALE_PERIOD
         )
     )
 
