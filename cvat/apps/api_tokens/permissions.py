@@ -10,7 +10,7 @@ from pathlib import Path
 from types import NoneType
 from typing import TYPE_CHECKING, Any, ClassVar, Sequence
 
-from attrs import define
+from attrs import frozen
 from django.conf import settings
 from rest_framework.permissions import SAFE_METHODS
 
@@ -134,38 +134,46 @@ class ApiTokenPermission(ApiTokenPermissionBase):
         return data
 
 
+@frozen
+class PluginInfo:
+    file_path: Path
+    package: str
+    original_package: str
+
+
+PluginCollection = dict[str, list[PluginInfo]]
+
+
 class ApiTokenPermissionPluginManager:
     PLUGIN_FILE_PREFIX = "api_token_plugin."
     PLUGIN_FILE_EXT = ".rego"
 
     PLUGIN_PACKAGE_PREFIX = "api_token_plugin."
 
-    @define
-    class PluginInfo:
-        file_path: Path
-        package: str
-        original_package: str
-
     @classmethod
     def _build_plugin_descriptor(cls, p: Path) -> PluginInfo:
         package = cls._get_plugin_package_name(p)
-        if not package.startswith(cls.PLUGIN_PACKAGE_PREFIX):
+
+        package_parts = re.fullmatch(
+            r"(([\w\.]+\.)?" + re.escape(cls.PLUGIN_PACKAGE_PREFIX) + r")([\w\.]+)", package
+        )
+        if not package_parts:
             raise Exception(
-                "Api token plugins must have the '{}' "
-                "prefix in their package name, found '{}' in '{}'".format(
+                "Api token plugins must have '{}' "
+                "in their package name, found '{}' in '{}'".format(
                     cls.PLUGIN_PACKAGE_PREFIX, package, p
                 )
             )
 
-        return cls.PluginInfo(
+        return PluginInfo(
             file_path=p,
             package=package,
-            original_package=package.removeprefix(cls.PLUGIN_PACKAGE_PREFIX),
+            original_package=package_parts.group(3),
         )
 
     @classmethod
     def _get_plugin_package_name(cls, p: Path) -> str:
-        package_regex = r"package\s+([\w.]+)"
+        package_regex = r"package\s+([\w\.]+)"
 
         for line in p.open():
             match = re.fullmatch(package_regex, line.strip())
@@ -175,13 +183,11 @@ class ApiTokenPermissionPluginManager:
         raise ValueError(f"Could not find package declaration in '{p}'")
 
     @classmethod
-    def _collect_plugins(
-        cls, *, plugin_dirs: Sequence[Path]
-    ) -> dict[str, Sequence[ApiTokenPermissionPluginManager.PluginInfo]]:
+    def _collect_plugins(cls, *, plugin_dirs: Sequence[Path]) -> PluginCollection:
         plugin_dirs = set(p.resolve() for p in plugin_dirs)
-        plugin_filename_pattern = f"{cls.PLUGIN_FILE_PREFIX}*{cls.PLUGIN_FILE_EXT}"
+        plugin_filename_pattern = f"*{cls.PLUGIN_FILE_PREFIX}*{cls.PLUGIN_FILE_EXT}"
 
-        plugins: dict[str, ApiTokenPermissionPluginManager.PluginInfo] = {}
+        plugins: dict[str, PluginInfo] = {}
         for plugin_dir in plugin_dirs:
             for plugin_path in plugin_dir.glob(plugin_filename_pattern):
                 if not plugin_path.is_file():
@@ -206,12 +212,10 @@ class ApiTokenPermissionPluginManager:
     _manager_instance: ClassVar[ApiTokenPermissionPluginManager] = None
 
     def __init__(self):
-        self._cached_plugins: (
-            tuple[int, dict[str, list[ApiTokenPermissionPluginManager.PluginInfo]]] | None
-        ) = None
+        self._cached_plugins: tuple[int, PluginCollection] = (0, {})  # (hash, plugins)
 
     @property
-    def plugins(self) -> dict[str, list[ApiTokenPermissionPluginManager.PluginInfo]]:
+    def plugins(self) -> PluginCollection:
         from cvat.apps.iam.utils import _OPA_RULES_PATHS
 
         # Not really a strong hash, but there's no "official" way to remove rules after
@@ -219,7 +223,7 @@ class ApiTokenPermissionPluginManager:
         # that has to be called explicitly in the apps that update rule paths.
         opa_rules_hash = len(_OPA_RULES_PATHS)
 
-        if not self._cached_plugins or self._cached_plugins[0] != opa_rules_hash:
+        if self._cached_plugins[0] != opa_rules_hash:
             self._cached_plugins = (
                 opa_rules_hash,
                 self._collect_plugins(plugin_dirs=_OPA_RULES_PATHS),
@@ -235,9 +239,7 @@ class ApiTokenPermissionPluginManager:
         return cls._manager_instance
 
     @classmethod
-    def get_plugins(
-        cls, original_package: str
-    ) -> Sequence[ApiTokenPermissionPluginManager.PluginInfo]:
+    def get_plugins(cls, original_package: str) -> Sequence[PluginInfo]:
         return cls.get_instance().plugins.get(original_package, [])
 
 
@@ -251,8 +253,10 @@ class ApiTokenPluginPermission(ApiTokenPluginPermissionBase):
 
     @classmethod
     def find_extensions(cls, original_permission: OpenPolicyAgentPermission) -> Sequence[str]:
+        opa_base_url = settings.IAM_OPA_DATA_URL + "/"
+
         if not (
-            original_permission.url.startswith(settings.IAM_OPA_DATA_URL)
+            original_permission.url.startswith(opa_base_url)
             and original_permission.url.endswith("/allow")
         ):
             raise ValueError(
@@ -262,7 +266,7 @@ class ApiTokenPluginPermission(ApiTokenPluginPermissionBase):
             )
 
         original_package = (
-            original_permission.url.removeprefix(settings.IAM_OPA_DATA_URL + "/")
+            original_permission.url.removeprefix(opa_base_url)
             .removesuffix("/allow")
             .replace("/", ".")
         )
@@ -419,7 +423,7 @@ class PolicyEnforcer(iam_permissions.PolicyEnforcer):
     def _check_permission(self, request, view, obj):
         allow, checked_permissions = super()._check_permission(request, view, obj)
 
-        def _check_permissions():
+        def _check_plugin_permissions():
             for original_perm in checked_permissions[:]:
                 extra_permissions = ApiTokenPluginPermission.create(
                     request, view, obj, None, [original_perm]
@@ -433,6 +437,6 @@ class PolicyEnforcer(iam_permissions.PolicyEnforcer):
             return True
 
         if allow:
-            allow = _check_permissions()
+            allow = _check_plugin_permissions()
 
         return allow, checked_permissions

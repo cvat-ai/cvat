@@ -8,9 +8,8 @@ from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from cvat.apps.api_tokens import models
+from cvat.apps.dataset_manager.util import current_function_name
 from cvat.apps.engine.log import ServerLogManager
-
-slogger = ServerLogManager(__name__)
 
 
 def chunked_bulk_delete(queryset: QuerySet[models.ApiToken], *, chunk_size: int = 1000) -> int:
@@ -34,16 +33,20 @@ def clear_unusable_api_tokens():
     deleted_expired_count = chunked_bulk_delete(
         models.ApiToken.objects.filter(expiry_date__lt=unusable_threshold_date)
     )
-    slogger.glob.info("Deleted expired: %s", deleted_expired_count)
 
     deleted_revoked_count = chunked_bulk_delete(
         models.ApiToken.objects.filter(revoked=True, updated_date__lt=unusable_threshold_date)
     )
-    slogger.glob.info("Deleted revoked: %s", deleted_revoked_count)
 
     deleted_stale_count = chunked_bulk_delete(
         models.ApiToken.objects.annotate(_last_used=Coalesce("last_used_date", "created")).filter(
             _last_used__lt=unusable_threshold_date - models.get_token_stale_period()
         )
     )
-    slogger.glob.info("Deleted stale: %s", deleted_stale_count)
+
+    slogger = ServerLogManager(__name__ + "." + current_function_name())
+    slogger.glob.info(
+        f"Deleted expired: {deleted_expired_count}, "
+        f"deleted revoked: {deleted_revoked_count}, "
+        f"deleted stale: {deleted_stale_count}"
+    )

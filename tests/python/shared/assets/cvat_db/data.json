@@ -16072,7 +16072,7 @@
   "model": "engine.manifest",
   "pk": 1,
   "fields": {
-    "filename": "manifest.jsonl",
+    "filename": "images_with_manifest/manifest.jsonl",
     "cloud_storage": 1
   }
 },
@@ -16080,7 +16080,7 @@
   "model": "engine.manifest",
   "pk": 2,
   "fields": {
-    "filename": "sub/manifest.jsonl",
+    "filename": "sub/images_with_manifest/manifest.jsonl",
     "cloud_storage": 2
   }
 },
@@ -16088,7 +16088,7 @@
   "model": "engine.manifest",
   "pk": 3,
   "fields": {
-    "filename": "manifest.jsonl",
+    "filename": "images_with_manifest/manifest.jsonl",
     "cloud_storage": 3
   }
 },

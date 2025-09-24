@@ -38,10 +38,5 @@ import data.utils
 default allow := false
 
 allow if {
-    not utils.api_token.is_api_token
-}
-
-allow if {
-    utils.api_token.is_api_token
     input.scope in {utils.DOWNLOAD_EXPORTED_FILE, utils.DUMP_EVENTS}
 }

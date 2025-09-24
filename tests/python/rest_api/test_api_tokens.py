@@ -160,6 +160,8 @@ class TestGetApiToken:
 
 
 class TestApiTokenListFilters(CollectionSimpleFilterTestBase):
+    field_lookups = {"owner": ["owner", "id"]}
+
     @pytest.fixture(scope="session")
     def _cleaned_api_tokens(self, api_tokens):
         return [filter_dict(t, drop=("private_key",)) for t in api_tokens]

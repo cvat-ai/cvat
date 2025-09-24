@@ -582,7 +582,7 @@ def api_tokens():
 def api_tokens_by_username(api_tokens, users):
     api_tokens_by_user_id = {}
     for api_token in api_tokens:
-        api_tokens_by_user_id.setdefault(api_token["owner"], []).append(api_token)
+        api_tokens_by_user_id.setdefault(api_token["owner"]["id"], []).append(api_token)
 
     users_by_id = {}
     for user in users:

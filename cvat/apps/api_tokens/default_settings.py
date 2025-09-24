@@ -21,4 +21,7 @@ are automatically removed.
 API_TOKEN_LAST_USE_UPDATE_MIN_INTERVAL = timedelta(
     seconds=int(os.getenv("CVAT_API_TOKEN_LAST_USE_UPDATE_MIN_INTERVAL", 2 * 60 * 60))
 )
-"""The minimal time period between the token last use updates."""
+"""
+The minimal time period between the token last use updates.
+The recommended value range is from 5 minutes up to 4 hours.
+"""

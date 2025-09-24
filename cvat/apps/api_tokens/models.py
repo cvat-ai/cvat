@@ -7,6 +7,7 @@ from __future__ import annotations
 from datetime import timedelta
 
 from django.conf import settings
+from django.contrib import admin
 from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import functions as db_functions
@@ -49,7 +50,7 @@ class ApiTokenManager(BaseAPIKeyManager):
 
 class ApiToken(AbstractAPIKey):
     # rest_framework_api_key and "classic" API keys are not recommended for authentication,
-    # however we implement additional security measures to improve security API tokens:
+    # however we implement additional security measures to improve security of API tokens:
     # - Each token can have an expiration date
     # - Each token can be revoked at any time by the user or admin
     # - Server tracks the last usage for each token and unused tokens are automatically revoked
@@ -62,7 +63,7 @@ class ApiToken(AbstractAPIKey):
     id = models.AutoField(primary_key=True)
     # 1. The default id field is a string with special characters, which can also expose
     # some implementation information.
-    # 2. The PK is not used anywhere for the API key logic, so it's pretty safe
+    # 2. The PK is not used anywhere for the DRF API key logic, so it's pretty safe
     # to replace this field (since v3.0.0).
     # https://github.com/florimondmanca/djangorestframework-api-key/issues/128
     # 3. Alternative: add a separate sequence field to store a user-displayable id.
@@ -117,10 +118,11 @@ class ApiToken(AbstractAPIKey):
 
         return is_updated
 
+    # Replace function with @property, once it's working
+    # https://code.djangoproject.com/ticket/31558
+    @admin.display(boolean=True, description="Is stale")
     def _is_stale(self):
         # check comment in get_usable_keys()
         return (self.last_used_date or self.created) + get_token_stale_period() < timezone.now()
 
-    _is_stale.short_description = "Is stale"  # type: ignore
-    _is_stale.boolean = True  # type: ignore
     is_stale = property(_is_stale)
