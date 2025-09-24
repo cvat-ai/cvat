@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 @import 'base';
+@import '../../styles';
 
 .cvat-profile-page {
     height: 100%;
@@ -67,5 +68,13 @@
 
     .ant-card-body {
         padding-bottom: $grid-unit-size;
+    }
+}
+
+.cvat-api-tokens-tooltip-inner {
+    @extend .cvat-settings-tooltip-inner;
+
+    > div:not(:last-child) {
+        margin-bottom: $grid-unit-size;
     }
 }

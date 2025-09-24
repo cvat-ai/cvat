@@ -12,7 +12,10 @@ import Button from 'antd/lib/button';
 import Tag from 'antd/lib/tag';
 import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
-import { MoreOutlined, PlusOutlined } from '@ant-design/icons';
+import Text from 'antd/lib/typography/Text';
+import {
+    MoreOutlined, PlusOutlined, QuestionCircleOutlined,
+} from '@ant-design/icons';
 import type { ColumnType } from 'antd/lib/table';
 
 import { CombinedState } from 'reducers';
@@ -22,6 +25,7 @@ import {
     updateApiTokenAsync, revokeApiTokenAsync,
 } from 'actions/auth-actions';
 import CVATTable from 'components/common/cvat-table';
+import CVATTooltip from 'components/common/cvat-tooltip';
 import ApiTokenForm from './api-token-form';
 import ApiTokenCreatedModal from './api-token-created-modal';
 
@@ -216,7 +220,44 @@ function ApiTokensCard(): JSX.Element {
                     />
                 ) : (
                     <CVATTable
-                        tableTitle='Personal Access Tokens (PATs)'
+                        tableTitle={(
+                            <>
+                                <Text strong>Personal Access Tokens (PATs)</Text>
+                                <CVATTooltip
+                                    title={(
+                                        <Row className='cvat-api-tokens-tooltip-inner'>
+                                            <Row>
+                                                <Col>
+                                                    <Text>
+                                                        Personal Access Tokens allow you to authenticate with the API
+                                                        without using your username and password.
+                                                    </Text>
+                                                </Col>
+                                            </Row>
+                                            <Row>
+                                                <Col>
+                                                    <Text>
+                                                        Read Only tokens can only view data, while
+                                                        Read/Write tokens can modify data.
+                                                    </Text>
+                                                </Col>
+                                            </Row>
+                                            <Row>
+                                                <Col>
+                                                    <Text>
+                                                        Store your tokens securely and never share them.
+                                                        If a token is compromised, revoke it immediately.
+                                                    </Text>
+                                                </Col>
+                                            </Row>
+                                        </Row>
+                                    )}
+                                    overlayStyle={{ maxWidth: 400 }}
+                                >
+                                    <QuestionCircleOutlined style={{ opacity: 0.5 }} />
+                                </CVATTooltip>
+                            </>
+                        )}
                         className='cvat-api-tokens-table'
                         csvExport={{ filename: 'api_tokens.csv' }}
                         columns={apiTokenColumns}
