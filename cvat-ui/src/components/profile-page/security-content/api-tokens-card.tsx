@@ -91,7 +91,7 @@ function ApiTokensCard(): JSX.Element {
             },
             cancelText: 'Cancel',
             onOk: () => {
-                dispatch(revokeApiTokenAsync(token.id, () => {
+                dispatch(revokeApiTokenAsync(token, () => {
                     dispatch(getApiTokensAsync());
                 }));
             },

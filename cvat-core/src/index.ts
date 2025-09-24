@@ -4,7 +4,7 @@
 
 import {
     AnalyticsEventsFilter, QualityConflictsFilter, QualityReportsFilter,
-    QualitySettingsFilter, ConsensusSettingsFilter, APIApiTokensFilter,
+    QualitySettingsFilter, ConsensusSettingsFilter, ApiTokensFilter,
 } from './server-response-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
@@ -95,7 +95,7 @@ export default interface CVATCore {
         get: any;
     };
     apiTokens: {
-        get: (filter: APIApiTokensFilter) => Promise<PaginatedResource<ApiToken>>;
+        get: (filter: ApiTokensFilter) => Promise<PaginatedResource<ApiToken>>;
         revoke: (id: number) => Promise<void>;
     };
     jobs: {

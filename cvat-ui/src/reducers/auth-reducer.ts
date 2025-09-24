@@ -176,6 +176,7 @@ export default function (state = defaultState, action: AuthActions | BoundariesA
             return {
                 ...state,
                 apiTokens: {
+                    ...state.apiTokens,
                     fetching: false,
                     current: [...state.apiTokens.current, action.payload.token],
                 },
@@ -185,6 +186,7 @@ export default function (state = defaultState, action: AuthActions | BoundariesA
             return {
                 ...state,
                 apiTokens: {
+                    ...state.apiTokens,
                     fetching: false,
                     current: state.apiTokens.current.map((token) => (
                         token.id === updatedToken.id ? updatedToken : token
@@ -193,12 +195,13 @@ export default function (state = defaultState, action: AuthActions | BoundariesA
             };
         }
         case AuthActionTypes.REVOKE_API_TOKEN_SUCCESS: {
-            const { tokenId } = action.payload;
+            const { token } = action.payload;
             return {
                 ...state,
                 apiTokens: {
+                    ...state.apiTokens,
                     fetching: false,
-                    current: state.apiTokens.current.filter((token) => token.id !== tokenId),
+                    current: state.apiTokens.current.filter((_token) => _token.id !== token.id),
                 },
             };
         }

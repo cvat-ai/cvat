@@ -16,6 +16,7 @@ import {
 import {
     SerializedAttribute, SerializedLabel, SerializedAPISchema,
     OrganizationMembersFilter, AnalyticsEventsFilter, SerializedApiToken,
+    ApiTokensFilter,
 } from 'cvat-core/src/server-response-types';
 import { ApiTokenModifiableFields } from 'cvat-core/src/server-request-types';
 import { UpdateStatusData } from 'cvat-core/src/core-types';
@@ -140,4 +141,5 @@ export type {
     InteractorResults,
     TrackerResults,
     ApiTokenModifiableFields,
+    ApiTokensFilter,
 };

@@ -51,6 +51,7 @@ export interface APIApiTokensFilter extends APICommonFilterParams {
     read_only?: boolean;
     name?: string;
 }
+export type ApiTokensFilter = CamelizedV2<APIApiTokensFilter>;
 
 export interface SerializedUser {
     url: string;
@@ -404,14 +405,14 @@ export interface SerializedInvitationData {
 }
 
 export interface SerializedApiToken {
-    id: number;
+    id?: number;
     name: string;
-    created_date: string;
-    updated_date: string;
+    created_date?: string;
+    updated_date?: string;
     expiry_date: string | null;
-    last_used_date: string | null;
+    last_used_date?: string | null;
     read_only: boolean;
-    owner: number;
+    owner?: SerializedUser;
     value?: string;
 }
 

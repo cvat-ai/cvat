@@ -631,19 +631,6 @@ async function revokeApiToken(id: number): Promise<void> {
     }
 }
 
-async function getSelfApiToken(): Promise<SerializedApiToken> {
-    const { backendAPI } = config;
-
-    let response = null;
-    try {
-        response = await Axios.get(`${backendAPI}/auth/api_tokens/self`);
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-
-    return response.data;
-}
-
 async function healthCheck(
     maxRetries: number,
     checkPeriod: number,
@@ -2563,7 +2550,6 @@ export default Object.freeze({
         create: createApiToken,
         update: updateApiToken,
         revoke: revokeApiToken,
-        self: getSelfApiToken,
     }),
 
     frames: Object.freeze({

@@ -7,9 +7,9 @@ import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { RegisterData } from 'components/register-page/register-form';
 import {
     getCore, User, ApiToken, ApiTokenModifiableFields,
+    ApiTokensFilter, SerializedApiToken,
 } from 'cvat-core-wrapper';
 import { ChangePasswordData } from 'reducers';
-import { APIApiTokensFilter, SerializedApiToken } from 'cvat-core/src/server-response-types';
 
 const cvat = getCore();
 
@@ -91,8 +91,8 @@ export const authActions = {
     updateApiTokenSuccess: (token: ApiToken) => createAction(AuthActionTypes.UPDATE_API_TOKEN_SUCCESS, { token }),
     updateApiTokenFailed: (error: any) => createAction(AuthActionTypes.UPDATE_API_TOKEN_FAILED, { error }),
     revokeApiToken: () => createAction(AuthActionTypes.REVOKE_API_TOKEN),
-    revokeApiTokenSuccess: (tokenId: number) => (
-        createAction(AuthActionTypes.REVOKE_API_TOKEN_SUCCESS, { tokenId })
+    revokeApiTokenSuccess: (token: ApiToken) => (
+        createAction(AuthActionTypes.REVOKE_API_TOKEN_SUCCESS, { token })
     ),
     revokeApiTokenFailed: (error: any) => createAction(AuthActionTypes.REVOKE_API_TOKEN_FAILED, { error }),
 };
@@ -231,7 +231,7 @@ export const updateUserAsync = (
     }
 };
 
-export const getApiTokensAsync = (filter: APIApiTokensFilter = {}): ThunkAction => async (dispatch) => {
+export const getApiTokensAsync = (filter: ApiTokensFilter = {}): ThunkAction => async (dispatch) => {
     dispatch(authActions.getApiTokens());
 
     try {
@@ -290,14 +290,14 @@ export const updateApiTokenAsync = (
 };
 
 export const revokeApiTokenAsync = (
-    id: number,
+    token: ApiToken,
     onSuccess?: () => void,
 ): ThunkAction => async (dispatch) => {
     dispatch(authActions.revokeApiToken());
 
     try {
-        await cvat.apiTokens.revoke(id);
-        dispatch(authActions.revokeApiTokenSuccess(id));
+        await token.revoke();
+        dispatch(authActions.revokeApiTokenSuccess(token));
         if (onSuccess) onSuccess();
     } catch (error) {
         dispatch(authActions.revokeApiTokenFailed(error));

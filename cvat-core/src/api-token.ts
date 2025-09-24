@@ -4,19 +4,20 @@
 
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
+import User from './user';
 import { SerializedApiToken } from './server-response-types';
 import { APIApiTokenModifiableFields, ApiTokenModifiableFields } from './server-request-types';
 import { fieldsToSnakeCase } from './common';
 
 export default class ApiToken {
-    #id: number;
+    #id?: number;
     #name: string;
-    #createdDate: string;
-    #updatedDate: string;
+    #createdDate?: string;
+    #updatedDate?: string;
     #expiryDate: string | null;
-    #lastUsedDate: string | null;
+    #lastUsedDate?: string | null;
     #readOnly: boolean;
-    #owner: number;
+    #owner?: User;
     #value?: string;
 
     constructor(initialData: Partial<SerializedApiToken>) {
@@ -27,7 +28,7 @@ export default class ApiToken {
         this.#expiryDate = initialData.expiry_date;
         this.#lastUsedDate = initialData.last_used_date;
         this.#readOnly = initialData.read_only;
-        this.#owner = initialData.owner;
+        this.#owner = initialData.owner ? new User(initialData.owner) : undefined;
         this.#value = initialData.value;
     }
 
@@ -59,7 +60,7 @@ export default class ApiToken {
         return this.#readOnly;
     }
 
-    get owner(): number {
+    get owner(): User {
         return this.#owner;
     }
 
@@ -67,27 +68,21 @@ export default class ApiToken {
         return this.#value;
     }
 
-    get isExpired(): boolean {
-        if (!this.#expiryDate) {
-            return false;
-        }
-        return new Date(this.#expiryDate) < new Date();
-    }
-
-    get isNew(): boolean {
-        return this.#value !== undefined;
-    }
-
     public async save(fields: ApiTokenModifiableFields = {}): Promise<ApiToken> {
         const result = await PluginRegistry.apiWrapper.call(this, ApiToken.prototype.save, fields);
         return result;
     }
 
+    public async revoke(): Promise<ApiToken> {
+        const result = await PluginRegistry.apiWrapper.call(this, ApiToken.prototype.revoke);
+        return result;
+    }
+
     public toJSON(): SerializedApiToken {
-        const result: Partial<SerializedApiToken> = {
+        const result: SerializedApiToken = {
             name: this.#name,
             read_only: this.#readOnly,
-            owner: this.#owner,
+            expiry_date: this.#expiryDate,
         };
 
         if (Number.isInteger(this.#id)) {
@@ -114,7 +109,7 @@ export default class ApiToken {
             result.value = this.#value;
         }
 
-        return result as SerializedApiToken;
+        return result;
     }
 }
 
@@ -132,6 +127,17 @@ Object.defineProperties(ApiToken.prototype.save, {
 
             const result = await serverProxy.apiTokens.create(this.toJSON());
             return new ApiToken(result);
+        },
+    },
+});
+
+Object.defineProperties(ApiToken.prototype.revoke, {
+    implementation: {
+        writable: false,
+        enumerable: false,
+        value: async function implementation() {
+            await serverProxy.apiTokens.revoke(this.id);
+            return this;
         },
     },
 });
