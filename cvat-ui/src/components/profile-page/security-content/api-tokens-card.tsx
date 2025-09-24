@@ -85,7 +85,10 @@ function ApiTokensCard(): JSX.Element {
             title: 'Revoke API Token',
             content: `Are you sure you want to revoke the token "${token.name}"? This action cannot be undone.`,
             okText: 'Revoke',
-            okType: 'danger',
+            okButtonProps: {
+                type: 'primary',
+                danger: true,
+            },
             cancelText: 'Cancel',
             onOk: () => {
                 dispatch(revokeApiTokenAsync(token.id, () => {
