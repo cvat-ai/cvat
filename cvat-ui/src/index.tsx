@@ -36,6 +36,7 @@ import { getRequestsAsync } from 'actions/requests-async-actions';
 import { getServerAPISchemaAsync } from 'actions/server-actions';
 import { navigationActions } from 'actions/navigation-actions';
 import { CombinedState, NotificationsState, PluginsState } from './reducers';
+import './utils/dayjs-wrapper';
 
 createCVATStore(createRootReducer);
 
