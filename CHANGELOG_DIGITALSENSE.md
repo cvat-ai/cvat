@@ -11,10 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Created API export file. [PR #23]
 - Added all possible anomalib models for detection. [PR #24]
 - Email configuration support through environment variables for SMTP authentication and user verification. [PR #25]
+- GPU acceleration support for all 11 Anomalib models with dedicated deployment script and configuration files. [PR #26]
+- GPU-enabled startup script for complete CVAT infrastructure deployment with GPU-accelerated Anomalib functions. [PR #26]
 
 ### Changed
 - Updated files to utilize environment variables. [PR #22]
 - Enhanced docker-compose.override.yml and example.env to load email settings from environment variables with fallback defaults. [PR #25]
+- Enhanced Anomalib functions with GPU resource allocation and CUDA 12.8 support for improved inference performance. [PR #26]
 
 ### Fixed
 - Fixed Task creating changing cvat base docker image to version v2.35.0 [PR #21]
