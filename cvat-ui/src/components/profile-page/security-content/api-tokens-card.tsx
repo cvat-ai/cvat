@@ -164,7 +164,9 @@ function ApiTokensCard(): JSX.Element {
                 if (!b.expiryDate) return -1;
                 return new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime();
             },
-            render: (date: string | null) => (date ? new Date(date).toLocaleDateString() : 'Never'),
+            render: (date: string | null) => (
+                date ? new Date(date).toLocaleDateString() : <Text underline>Never</Text>
+            ),
         },
         {
             title: 'Last Used',
