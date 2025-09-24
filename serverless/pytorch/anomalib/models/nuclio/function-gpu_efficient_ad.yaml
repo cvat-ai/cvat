@@ -1,0 +1,52 @@
+metadata:
+  name: efficient_ad
+  namespace: cvat
+  annotations:
+    name: efficient_ad
+    type: detector
+    spec: |
+      [
+        { "id": 0, "name": "anomaly", "type": "mask" }
+      ]
+
+spec:
+  description: efficient_ad from Anomalib (GPU-enabled)
+  runtime: 'python:3.11'
+  handler: efficient_ad.main:handler
+  eventTimeout: 3000s
+
+  build:
+    image: cvat.pth.anomalib_aux.models:gpu
+    baseImage: anomalib-base:ubuntu22.04  # Base with proper GL libraries and CUDA
+
+    directives:
+      preCopy:
+        - kind: ENV
+          value: DEBIAN_FRONTEND=noninteractive
+
+        # 3. Install Python packages
+        - kind: WORKDIR
+          value: /opt/nuclio
+
+  resources:
+    limits:
+      nvidia.com/gpu: 1
+    requests:
+      cpu: "1"
+      memory: "2Gi"
+
+  triggers:
+    myHttpTrigger:
+      numWorkers: 2
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 300000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+        port: 32753
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume
