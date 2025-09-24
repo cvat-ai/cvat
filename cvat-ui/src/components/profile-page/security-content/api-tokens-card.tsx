@@ -32,7 +32,7 @@ interface RowData {
     createdDate: string;
     expiryDate: string | null;
     lastUsedDate: string | null;
-    actions: ApiToken;
+    token: ApiToken;
 }
 
 function ApiTokensCard(): JSX.Element {
@@ -54,7 +54,7 @@ function ApiTokensCard(): JSX.Element {
         createdDate: token.createdDate,
         expiryDate: token.expiryDate,
         lastUsedDate: token.lastUsedDate,
-        actions: token,
+        token,
     }));
 
     useEffect(() => {
@@ -176,24 +176,23 @@ function ApiTokensCard(): JSX.Element {
         },
         {
             title: 'Actions',
-            dataIndex: 'actions',
             key: 'actions',
             align: 'center' as const,
             width: 60,
-            render: (token: ApiToken) => (
+            render: (row: RowData) => (
                 <Dropdown
                     menu={{
                         items: [
                             {
                                 key: 'edit',
                                 label: 'Edit',
-                                onClick: () => onEditToken(token),
+                                onClick: () => onEditToken(row.token),
                             },
                             { type: 'divider' },
                             {
                                 key: 'revoke',
                                 label: 'Revoke',
-                                onClick: () => onRevokeToken(token),
+                                onClick: () => onRevokeToken(row.token),
                             },
                         ],
                     }}
@@ -219,6 +218,7 @@ function ApiTokensCard(): JSX.Element {
                     <CVATTable
                         tableTitle='Personal Access Tokens (PATs)'
                         className='cvat-api-tokens-table'
+                        csvExport={{ filename: 'api_tokens.csv' }}
                         columns={apiTokenColumns}
                         dataSource={tableData}
                         loading={fetching}
