@@ -13,10 +13,10 @@ import Button from 'antd/lib/button';
 import { Row, Col } from 'antd/lib/grid';
 import Typography from 'antd/lib/typography';
 
-import { ApiTokenSaveFields, ApiToken } from 'cvat-core-wrapper';
+import { ApiTokenModifiableFields, ApiToken } from 'cvat-core-wrapper';
 
 interface Props {
-    onSubmit: (data: ApiTokenSaveFields) => void;
+    onSubmit: (data: ApiTokenModifiableFields) => void;
     onCancel: () => void;
     submitting: boolean;
     token: ApiToken | null;

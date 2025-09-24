@@ -4,8 +4,8 @@
 
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
-import { SerializedApiTokenData } from './server-response-types';
-import { APIApiTokenSaveFields, ApiTokenSaveFields } from './server-request-types';
+import { SerializedApiToken } from './server-response-types';
+import { APIApiTokenModifiableFields, ApiTokenModifiableFields } from './server-request-types';
 import { fieldsToSnakeCase } from './common';
 
 export default class ApiToken {
@@ -19,7 +19,7 @@ export default class ApiToken {
     #owner: number;
     #value?: string;
 
-    constructor(initialData: Partial<SerializedApiTokenData>) {
+    constructor(initialData: Partial<SerializedApiToken>) {
         this.#id = initialData.id;
         this.#name = initialData.name;
         this.#createdDate = initialData.created_date;
@@ -78,13 +78,13 @@ export default class ApiToken {
         return this.#value !== undefined;
     }
 
-    public async save(fields: ApiTokenSaveFields = {}): Promise<ApiToken> {
+    public async save(fields: ApiTokenModifiableFields = {}): Promise<ApiToken> {
         const result = await PluginRegistry.apiWrapper.call(this, ApiToken.prototype.save, fields);
         return result;
     }
 
-    public toJSON(): SerializedApiTokenData {
-        const result: Partial<SerializedApiTokenData> = {
+    public toJSON(): SerializedApiToken {
+        const result: Partial<SerializedApiToken> = {
             name: this.#name,
             read_only: this.#readOnly,
             owner: this.#owner,
@@ -114,7 +114,7 @@ export default class ApiToken {
             result.value = this.#value;
         }
 
-        return result as SerializedApiTokenData;
+        return result as SerializedApiToken;
     }
 }
 
@@ -123,7 +123,7 @@ Object.defineProperties(ApiToken.prototype.save, {
         writable: false,
         enumerable: false,
         value: async function implementation(fields: Parameters<typeof ApiToken.prototype.save>[0]) {
-            const data: APIApiTokenSaveFields = fieldsToSnakeCase(fields);
+            const data: APIApiTokenModifiableFields = fieldsToSnakeCase(fields);
 
             if (Number.isInteger(this.id)) {
                 const result = await serverProxy.apiTokens.update(this.id, data);

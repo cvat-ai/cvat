@@ -403,7 +403,7 @@ export interface SerializedInvitationData {
     organization_info: SerializedOrganization;
 }
 
-export interface SerializedApiTokenData {
+export interface SerializedApiToken {
     id: number;
     name: string;
     created_date: string;

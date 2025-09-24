@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import { SerializedUser } from './server-response-types';
-import { UserSaveFields } from './server-request-types';
+import { UserModifiableFields } from './server-request-types';
 import PluginRegistry from './plugins';
 import { fieldsToSnakeCase } from './common';
 import serverProxy from './server-proxy';
@@ -111,7 +111,7 @@ export default class User {
         };
     }
 
-    public async save(fields: UserSaveFields = {}): Promise<User> {
+    public async save(fields: UserModifiableFields = {}): Promise<User> {
         const result = await PluginRegistry.apiWrapper.call(this, User.prototype.save, fields);
         return result;
     }

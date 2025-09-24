@@ -6,10 +6,10 @@
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { RegisterData } from 'components/register-page/register-form';
 import {
-    getCore, User, ApiToken, ApiTokenSaveFields,
+    getCore, User, ApiToken, ApiTokenModifiableFields,
 } from 'cvat-core-wrapper';
 import { ChangePasswordData } from 'reducers';
-import { APIApiTokensFilter, SerializedApiTokenData } from 'cvat-core/src/server-response-types';
+import { APIApiTokensFilter, SerializedApiToken } from 'cvat-core/src/server-response-types';
 
 const cvat = getCore();
 
@@ -244,13 +244,13 @@ export const getApiTokensAsync = (filter: APIApiTokensFilter = {}): ThunkAction 
 };
 
 export const createApiTokenAsync = (
-    tokenData: ApiTokenSaveFields,
+    tokenData: ApiTokenModifiableFields,
     onSuccess?: (token: ApiToken) => void,
 ): ThunkAction<Promise<ApiToken>> => async (dispatch) => {
     dispatch(authActions.createApiToken());
 
     try {
-        const data: Partial<SerializedApiTokenData> = {
+        const data: Partial<SerializedApiToken> = {
             name: tokenData.name,
             expiry_date: tokenData.expiryDate,
             read_only: tokenData.readOnly,
@@ -271,7 +271,7 @@ export const createApiTokenAsync = (
 
 export const updateApiTokenAsync = (
     token: ApiToken,
-    tokenData: ApiTokenSaveFields,
+    tokenData: ApiTokenModifiableFields,
     onSuccess?: (token: ApiToken) => void,
 ): ThunkAction<Promise<ApiToken>> => async (dispatch) => {
     dispatch(authActions.updateApiToken());

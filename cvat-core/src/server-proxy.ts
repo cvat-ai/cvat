@@ -20,9 +20,9 @@ import {
     SerializedQualitySettingsData, APIQualitySettingsFilter, SerializedQualityConflictData, APIQualityConflictsFilter,
     SerializedQualityReportData, APIQualityReportsFilter, APIAnalyticsEventsFilter, APIConsensusSettingsFilter,
     SerializedRequest, SerializedJobValidationLayout, SerializedTaskValidationLayout, SerializedConsensusSettingsData,
-    SerializedApiTokenData, APIApiTokensFilter,
+    SerializedApiToken, APIApiTokensFilter,
 } from './server-response-types';
-import { APIApiTokenSaveFields } from './server-request-types';
+import { APIApiTokenModifiableFields } from './server-request-types';
 import { PaginatedResource, UpdateStatusData } from './core-types';
 import { Storage } from './storage';
 import { SerializedEvent } from './event';
@@ -592,7 +592,7 @@ async function getApiTokens(filter: APIApiTokensFilter = {}): Promise<PaginatedR
     return response.results;
 }
 
-async function createApiToken(tokenData: SerializedApiTokenData): Promise<SerializedApiTokenData> {
+async function createApiToken(tokenData: SerializedApiToken): Promise<SerializedApiToken> {
     const { backendAPI } = config;
 
     let response = null;
@@ -607,8 +607,8 @@ async function createApiToken(tokenData: SerializedApiTokenData): Promise<Serial
 
 async function updateApiToken(
     id: number,
-    tokenData: APIApiTokenSaveFields,
-): Promise<SerializedApiTokenData> {
+    tokenData: APIApiTokenModifiableFields,
+): Promise<SerializedApiToken> {
     const { backendAPI } = config;
 
     let response = null;
@@ -631,7 +631,7 @@ async function revokeApiToken(id: number): Promise<void> {
     }
 }
 
-async function getSelfApiToken(): Promise<SerializedApiTokenData> {
+async function getSelfApiToken(): Promise<SerializedApiToken> {
     const { backendAPI } = config;
 
     let response = null;

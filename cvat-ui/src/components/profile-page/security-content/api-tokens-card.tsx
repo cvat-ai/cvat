@@ -19,7 +19,7 @@ import {
 import type { ColumnType } from 'antd/lib/table';
 
 import { CombinedState } from 'reducers';
-import { ApiToken, ApiTokenSaveFields } from 'cvat-core-wrapper';
+import { ApiToken, ApiTokenModifiableFields } from 'cvat-core-wrapper';
 import {
     createApiTokenAsync, getApiTokensAsync,
     updateApiTokenAsync, revokeApiTokenAsync,
@@ -98,7 +98,7 @@ function ApiTokensCard(): JSX.Element {
         });
     }, [dispatch]);
 
-    const onSubmitTokenForm = async (data: ApiTokenSaveFields): Promise<void> => {
+    const onSubmitTokenForm = async (data: ApiTokenModifiableFields): Promise<void> => {
         if (editingToken) {
             dispatch(updateApiTokenAsync(editingToken, data, () => {
                 setShowCreateTokenForm(false);
