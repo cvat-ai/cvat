@@ -31,3 +31,7 @@ rules:
       # Many rules longer than the default limit of 30 lines
       level: error
       max-rule-length: 60
+  imports:
+    unresolved-import:
+      # one of "error", "warning", "ignore"
+      level: error

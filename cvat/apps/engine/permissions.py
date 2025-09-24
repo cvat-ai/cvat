@@ -19,6 +19,7 @@ from cvat.apps.engine.utils import is_dataset_export
 from cvat.apps.iam.permissions import (
     OpenPolicyAgentPermission,
     StrEnum,
+    build_iam_context,
     get_iam_context,
     get_membership,
 )
@@ -146,7 +147,6 @@ class UserPermission(OpenPolicyAgentPermission):
 
     def get_resource(self):
         data = None
-        organization = self.payload['input']['auth']['organization']
         if self.obj:
             data = {
                 'id': self.obj.id
@@ -157,12 +157,7 @@ class UserPermission(OpenPolicyAgentPermission):
             }
 
         if data:
-            data.update({
-                'membership': {
-                    'role': organization['user']['role']
-                        if organization else None
-                }
-            })
+            data['membership'] = { 'role': self.org_role if self.org_id else None }
 
         return data
 
@@ -243,21 +238,21 @@ class ProjectPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
     obj: Optional[Project]
 
     class Scopes(StrEnum):
-        LIST = 'list'
         CREATE = 'create'
         DELETE = 'delete'
-        UPDATE = 'update'
-        UPDATE_OWNER = 'update:owner'
-        UPDATE_ASSIGNEE = 'update:assignee'
-        UPDATE_DESC = 'update:desc'
-        UPDATE_ORG = 'update:organization'
-        UPDATE_ASSOCIATED_STORAGE = 'update:associated_storage'
-        VIEW = 'view'
-        IMPORT_DATASET = 'import:dataset'
         EXPORT_ANNOTATIONS = 'export:annotations'
-        EXPORT_DATASET = 'export:dataset'
         EXPORT_BACKUP = 'export:backup'
+        EXPORT_DATASET = 'export:dataset'
         IMPORT_BACKUP = 'import:backup'
+        IMPORT_DATASET = 'import:dataset'
+        LIST = 'list'
+        UPDATE = 'update'
+        UPDATE_ASSIGNEE = 'update:assignee'
+        UPDATE_ASSOCIATED_STORAGE = 'update:associated_storage'
+        UPDATE_DESC = 'update:desc'
+        UPDATE_ORGANIZATION = 'update:organization'
+        UPDATE_OWNER = 'update:owner'
+        VIEW = 'view'
 
     @classmethod
     def create(cls, request: ExtendedRequest, view: ViewSet, obj: Project | None, iam_context: dict[str, Any]) -> list[OpenPolicyAgentPermission]:
@@ -265,7 +260,29 @@ class ProjectPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
         if view.basename == 'project':
             assignee_id = request.data.get('assignee_id') or request.data.get('assignee')
 
-            for scope in cls.get_scopes(request, view, obj):
+            scopes = cls.get_scopes(request, view, obj)
+
+            if cls.Scopes.UPDATE_ORGANIZATION in scopes:
+                # consider this case as deleting a project in the org A and creating a new one in the org B
+                permissions.append(cls.create_base_perm(
+                    request, view, cls.Scopes.DELETE, iam_context, obj, assignee_id=assignee_id
+                ))
+
+                if dst_org_id := request.data['organization_id']:
+                    try:
+                        dst_org = Organization.objects.get(pk=dst_org_id)
+                    except Organization.DoesNotExist:
+                        raise ValidationError("Invalid org id")
+                    dst_iam_context = get_iam_context(request, dst_org)
+                else:
+                    # do not use here get_iam_context since it checks also org_id/org_slug query params and X-Organization header
+                    dst_iam_context = build_iam_context(request, None, None)
+                permissions.append(cls.create_base_perm(
+                    request, view, cls.Scopes.CREATE, dst_iam_context, assignee_id=assignee_id
+                ))
+                scopes.remove(cls.Scopes.UPDATE_ORGANIZATION)
+
+            for scope in scopes:
                 scope_params = {}
 
                 if DownloadExportedExtension.Scopes.DOWNLOAD_EXPORTED_FILE == scope:
@@ -338,7 +355,7 @@ class ProjectPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
                 'name': Scopes.UPDATE_DESC,
                 'labels': Scopes.UPDATE_DESC,
                 'bug_tracker': Scopes.UPDATE_DESC,
-                'organization': Scopes.UPDATE_ORG,
+                'organization_id': Scopes.UPDATE_ORGANIZATION,
                 'source_storage': Scopes.UPDATE_ASSOCIATED_STORAGE,
                 'target_storage': Scopes.UPDATE_ASSOCIATED_STORAGE,
             }))
@@ -413,32 +430,32 @@ class TaskPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
     obj: Optional[Task]
 
     class Scopes(StrEnum):
-        LIST = 'list'
         CREATE = 'create'
         CREATE_IN_PROJECT = 'create@project'
-        VIEW = 'view'
-        UPDATE = 'update'
-        UPDATE_DESC = 'update:desc'
-        UPDATE_ORGANIZATION = 'update:organization'
-        UPDATE_ASSIGNEE = 'update:assignee'
-        UPDATE_PROJECT = 'update:project'
-        UPDATE_OWNER = 'update:owner'
-        UPDATE_ASSOCIATED_STORAGE = 'update:associated_storage'
         DELETE = 'delete'
-        VIEW_ANNOTATIONS = 'view:annotations'
-        UPDATE_ANNOTATIONS = 'update:annotations'
         DELETE_ANNOTATIONS = 'delete:annotations'
-        IMPORT_ANNOTATIONS = 'import:annotations'
         EXPORT_ANNOTATIONS = 'export:annotations'
-        EXPORT_DATASET = 'export:dataset'
-        VIEW_METADATA = 'view:metadata'
-        UPDATE_METADATA = 'update:metadata'
-        VIEW_DATA = 'view:data'
-        UPLOAD_DATA = 'upload:data'
-        IMPORT_BACKUP = 'import:backup'
         EXPORT_BACKUP = 'export:backup'
-        VIEW_VALIDATION_LAYOUT = 'view:validation_layout'
+        EXPORT_DATASET = 'export:dataset'
+        IMPORT_ANNOTATIONS = 'import:annotations'
+        IMPORT_BACKUP = 'import:backup'
+        LIST = 'list'
+        UPDATE = 'update'
+        UPDATE_ANNOTATIONS = 'update:annotations'
+        UPDATE_ASSIGNEE = 'update:assignee'
+        UPDATE_ASSOCIATED_STORAGE = 'update:associated_storage'
+        UPDATE_DESC = 'update:desc'
+        UPDATE_METADATA = 'update:metadata'
+        UPDATE_ORGANIZATION = 'update:organization'
+        UPDATE_OWNER = 'update:owner'
+        UPDATE_PROJECT = 'update:project'
         UPDATE_VALIDATION_LAYOUT = 'update:validation_layout'
+        UPLOAD_DATA = 'upload:data'
+        VIEW = 'view'
+        VIEW_ANNOTATIONS = 'view:annotations'
+        VIEW_DATA = 'view:data'
+        VIEW_METADATA = 'view:metadata'
+        VIEW_VALIDATION_LAYOUT = 'view:validation_layout'
 
     @classmethod
     def create(cls, request: ExtendedRequest, view: ViewSet, obj: Task | None, iam_context: dict[str, Any]) -> list[OpenPolicyAgentPermission]:
@@ -448,17 +465,32 @@ class TaskPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
             assignee_id = request.data.get('assignee_id') or request.data.get('assignee')
             owner = request.data.get('owner_id') or request.data.get('owner')
 
-            for scope in cls.get_scopes(request, view, obj):
+            scopes = cls.get_scopes(request, view, obj)
+
+            if cls.Scopes.UPDATE_ORGANIZATION in scopes:
+                # consider this case as deleting a task in the org A and creating a new one in the org B
+                permissions.append(cls.create_base_perm(
+                    request, view, cls.Scopes.DELETE, iam_context, obj, project_id=project_id, assignee_id=assignee_id
+                ))
+
+                if dst_org_id := request.data['organization_id']:
+                    try:
+                        dst_org = Organization.objects.get(pk=dst_org_id)
+                    except Organization.DoesNotExist:
+                        raise ValidationError("Invalid org id")
+                    dst_iam_context = get_iam_context(request, dst_org)
+                else: # sandbox
+                    # do not use here get_iam_context since it checks also org_id/org_slug query params and X-Organization header
+                    dst_iam_context = build_iam_context(request, None, None)
+                permissions.append(cls.create_base_perm(
+                    request, view, cls.Scopes.CREATE, dst_iam_context, project_id=project_id, assignee_id=assignee_id
+                ))
+                scopes.remove(cls.Scopes.UPDATE_ORGANIZATION)
+
+            for scope in scopes:
                 params = { 'project_id': project_id, 'assignee_id': assignee_id }
 
-                if scope == cls.Scopes.UPDATE_ORGANIZATION:
-                    org_id = request.data.get('organization')
-                    if obj is not None and obj.project is not None:
-                        raise ValidationError('Cannot change the organization for '
-                            'a task inside a project')
-                    # FIX IT: TaskPermission doesn't have create_scope_create method
-                    permissions.append(TaskPermission.create_scope_create(request, org_id))
-                elif scope == cls.Scopes.UPDATE_OWNER:
+                if scope == cls.Scopes.UPDATE_OWNER:
                     params['owner_id'] = owner
 
                 if DownloadExportedExtension.Scopes.DOWNLOAD_EXPORTED_FILE == scope:
@@ -570,7 +602,7 @@ class TaskPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
                 'labels': Scopes.UPDATE_DESC,
                 'bug_tracker': Scopes.UPDATE_DESC,
                 'subset': Scopes.UPDATE_DESC,
-                'organization': Scopes.UPDATE_ORGANIZATION,
+                'organization_id': Scopes.UPDATE_ORGANIZATION,
                 'source_storage': Scopes.UPDATE_ASSOCIATED_STORAGE,
                 'target_storage': Scopes.UPDATE_ASSOCIATED_STORAGE,
             }))
@@ -656,24 +688,24 @@ class JobPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
 
     class Scopes(StrEnum):
         CREATE = 'create'
-        LIST = 'list'
-        VIEW = 'view'
-        UPDATE = 'update'
-        UPDATE_ASSIGNEE = 'update:assignee'
-        UPDATE_STAGE = 'update:stage'
-        UPDATE_STATE = 'update:state'
         DELETE = 'delete'
-        VIEW_ANNOTATIONS = 'view:annotations'
-        UPDATE_ANNOTATIONS = 'update:annotations'
         DELETE_ANNOTATIONS = 'delete:annotations'
-        IMPORT_ANNOTATIONS = 'import:annotations'
         EXPORT_ANNOTATIONS = 'export:annotations'
         EXPORT_DATASET = 'export:dataset'
+        IMPORT_ANNOTATIONS = 'import:annotations'
+        LIST = 'list'
+        UPDATE = 'update'
+        UPDATE_ANNOTATIONS = 'update:annotations'
+        UPDATE_ASSIGNEE = 'update:assignee'
+        UPDATE_METADATA = 'update:metadata'
+        UPDATE_STAGE = 'update:stage'
+        UPDATE_STATE = 'update:state'
+        UPDATE_VALIDATION_LAYOUT = 'update:validation_layout'
+        VIEW = 'view'
+        VIEW_ANNOTATIONS = 'view:annotations'
         VIEW_DATA = 'view:data'
         VIEW_METADATA = 'view:metadata'
-        UPDATE_METADATA = 'update:metadata'
         VIEW_VALIDATION_LAYOUT = 'view:validation_layout'
-        UPDATE_VALIDATION_LAYOUT = 'update:validation_layout'
 
     @classmethod
     def create(cls, request: ExtendedRequest, view: ViewSet, obj: Job | None, iam_context: dict[str, Any]) -> list[OpenPolicyAgentPermission]:
@@ -702,10 +734,6 @@ class JobPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
 
                 self = cls.create_base_perm(request, view, scope, iam_context, obj, **scope_params)
                 permissions.append(self)
-
-            if view.action == 'issues':
-                perm = IssuePermission.create_scope_list(request, iam_context)
-                permissions.append(perm)
 
             assignee_id = request.data.get('assignee')
             if assignee_id:
@@ -768,7 +796,6 @@ class JobPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
             ('data', 'GET'): Scopes.VIEW_DATA,
             ('metadata','GET'): Scopes.VIEW_METADATA,
             ('metadata','PATCH'): Scopes.UPDATE_METADATA,
-            ('issues', 'GET'): Scopes.VIEW,
             ('initiate_dataset_export', 'POST'): Scopes.EXPORT_DATASET if is_dataset_export(request) else Scopes.EXPORT_ANNOTATIONS,
             ('preview', 'GET'): Scopes.VIEW,
             ('validation_layout', 'GET'): Scopes.VIEW_VALIDATION_LAYOUT,
@@ -975,7 +1002,6 @@ class IssuePermission(OpenPolicyAgentPermission):
             'destroy': Scopes.DELETE,
             'partial_update': Scopes.UPDATE,
             'retrieve': Scopes.VIEW,
-            'comments': Scopes.VIEW,
         }[view.action]]
 
     def get_resource(self):

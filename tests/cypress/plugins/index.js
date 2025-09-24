@@ -7,6 +7,7 @@
 /* eslint-disable security/detect-non-literal-fs-filename */
 
 const fs = require('fs');
+const fg = require('fast-glob');
 // eslint-disable-next-line import/no-extraneous-dependencies
 const { isFileExist } = require('cy-verify-downloads');
 const { imageGenerator, bufferToImage } = require('./imageGenerator/addPlugin');
@@ -31,6 +32,12 @@ module.exports = (on, config) => {
     on('task', {
         listFiles(folderName) {
             return fs.readdirSync(folderName);
+        },
+    });
+    on('task', {
+        async findFiles({ pattern }) {
+            const files = await fg(pattern, { dot: true });
+            return files;
         },
     });
     on('task', { isFileExist });

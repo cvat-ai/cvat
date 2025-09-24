@@ -4,17 +4,19 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useHistory } from 'react-router';
-import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import Spin from 'antd/lib/spin';
 import { Col, Row } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
 
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
-import { CombinedState, Indexable, JobsQuery } from 'reducers';
+import { CombinedState, JobsQuery, SelectedResourceType } from 'reducers';
 import { getJobsAsync } from 'actions/jobs-actions';
 import { anySearch } from 'utils/any-search';
+import { useResourceQuery } from 'utils/hooks';
+import { selectionActions } from 'actions/selection-actions';
 
 import TopBarComponent from './top-bar';
 import JobsContentComponent from './jobs-content';
@@ -24,18 +26,30 @@ function JobsPageComponent(): JSX.Element {
     const dispatch = useDispatch();
     const history = useHistory();
     const [isMounted, setIsMounted] = useState(false);
-    const query = useSelector((state: CombinedState) => state.jobs.query);
-    const fetching = useSelector((state: CombinedState) => state.jobs.fetching);
-    const count = useSelector((state: CombinedState) => state.jobs.count);
+    const {
+        query,
+        fetching,
+        count,
+        currentJobs,
+        selectedCount,
+        bulkFetching,
+    } = useSelector((state: CombinedState) => ({
+        query: state.jobs.query,
+        fetching: state.jobs.fetching,
+        count: state.jobs.count,
+        currentJobs: state.jobs.current,
+        selectedCount: state.jobs.selected.length,
+        bulkFetching: state.bulkActions.fetching,
+    }), shallowEqual);
 
-    const queryParams = new URLSearchParams(history.location.search);
-    const updatedQuery = { ...query };
-    for (const key of Object.keys(updatedQuery)) {
-        (updatedQuery as Indexable)[key] = queryParams.get(key) || null;
-        if (key === 'page') {
-            updatedQuery.page = updatedQuery.page ? +updatedQuery.page : 1;
-        }
-    }
+    const onSelectAll = useCallback(() => {
+        dispatch(selectionActions.selectResources(
+            currentJobs.map((j) => j.id),
+            SelectedResourceType.JOBS,
+        ));
+    }, [currentJobs]);
+
+    const updatedQuery = useResourceQuery<JobsQuery>(query, { pageSize: 12 });
 
     useEffect(() => {
         dispatch(getJobsAsync({ ...updatedQuery }));
@@ -55,21 +69,23 @@ function JobsPageComponent(): JSX.Element {
     const content = count ? (
         <>
             <JobsContentComponent />
-            <Row justify='space-around' about='middle'>
+            <Row justify='space-around' about='middle' className='cvat-resource-pagination-wrapper'>
                 <Col md={22} lg={18} xl={16} xxl={16}>
                     <Pagination
                         className='cvat-jobs-page-pagination'
-                        onChange={(page: number) => {
+                        onChange={(page: number, pageSize: number) => {
                             dispatch(getJobsAsync({
                                 ...query,
                                 page,
+                                pageSize,
                             }));
                         }}
-                        showSizeChanger={false}
                         total={count}
-                        pageSize={12}
+                        pageSizeOptions={[12, 24, 48, 96]}
                         current={query.page}
+                        pageSize={query.pageSize}
                         showQuickJumper
+                        showSizeChanger
                     />
                 </Col>
             </Row>
@@ -82,6 +98,8 @@ function JobsPageComponent(): JSX.Element {
         <div className='cvat-jobs-page'>
             <TopBarComponent
                 query={updatedQuery}
+                selectedCount={selectedCount}
+                onSelectAll={onSelectAll}
                 onApplySearch={(search: string | null) => {
                     dispatch(
                         getJobsAsync({
@@ -110,7 +128,7 @@ function JobsPageComponent(): JSX.Element {
                     );
                 }}
             />
-            {fetching ? <Spin size='large' className='cvat-spinner' /> : content}
+            {fetching && !bulkFetching ? <Spin size='large' className='cvat-spinner' /> : content}
         </div>
     );
 }

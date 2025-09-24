@@ -187,7 +187,7 @@ class ComponentProxySerializerExtension(OpenApiTypeProxySerializerExtension):
 class AnyOfProxySerializerExtension(ComponentProxySerializerExtension):
     """
     Replaces oneOf with anyOf in the generated schema. Useful when
-    no disciminator field is available, and the options are
+    no discriminator field is available, and the options are
     not mutually-exclusive.
     """
 
@@ -223,7 +223,7 @@ class _CloudStorageSerializerExtension(OpenApiSerializerExtension):
 
         serializer_transformer = _SerializerTransformer(instance)
 
-        class _Override(self.target_class):  # pylint: disable=inherit-non-class
+        class _Override(self.target_class):
             manifests = serializers.ListField(
                 child=serializer_transformer.make_field("manifests", "filename"), default=[]
             )

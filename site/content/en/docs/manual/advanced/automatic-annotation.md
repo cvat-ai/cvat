@@ -13,6 +13,8 @@ CVAT can use models from the following sources:
 - [Pre-installed models](#models).
 - Models integrated from [Hugging Face and Roboflow](#adding-models-from-hugging-face-and-roboflow).
 - {{< ilink "/docs/manual/advanced/serverless-tutorial" "Self-hosted models deployed with Nuclio" >}}.
+- {{< ilink "/docs/enterprise/segment-anything-2-tracker" "AI agent functions (SAM2 tracking)" >}}
+for CVAT Online and Enterprise.
 
 The following table describes the available options:
 
@@ -21,6 +23,7 @@ The following table describes the available options:
 | **Price**                                   | Free                   | See [Pricing](https://www.cvat.ai/pricing/cvat-online) |
 | **Models**                                  | You have to add models | You can use pre-installed models                       |
 | **Hugging Face & Roboflow <br>integration** | Not supported          | Supported                                              |
+| **AI Agent Functions**                      | Supported (Enterprise) | Supported (SAM2 tracking available)                   |
 
 See:
 
@@ -36,7 +39,7 @@ To start automatic annotation, do the following:
 1. On the top menu, click **Tasks**.
 1. Find the task you want to annotate and click **Action** > **Automatic annotation**.
 
-   ![](/images/image119_detrac.jpg)
+   ![Task with opened "Actions" menu](/images/image119_detrac.jpg)
 
 1. In the Automatic annotation dialog, from the drop-down list, select a [model](#models).
 1. [Match the labels](#labels-matching) of the model and the task.
@@ -45,7 +48,7 @@ To start automatic annotation, do the following:
 1. (Optional) You can specify a **Threshold** for the model.
     If not provided, the default value from the model settings will be used.
 
-   ![](/images/running_automatic_annotation.png)
+   ![Automatic annotation window displaying the selected YOLOv3 model and parameters](/images/running_automatic_annotation.png)
 
 1. Click **Annotate**.
 
@@ -81,10 +84,12 @@ papers and official documentation.
 
 Automatic annotation uses pre-installed and added models.
 
-> For self-hosted solutions,
-> you need to
-> {{< ilink "/docs/administration/advanced/installation_automatic_annotation" "install Automatic Annotation first" >}}
-> and {{< ilink "/docs/manual/advanced/models" "add models" >}}.
+{{% alert title="Note" color="primary" %}}
+For self-hosted solutions,
+you need to
+{{< ilink "/docs/administration/advanced/installation_automatic_annotation" "install Automatic Annotation first" >}}
+and {{< ilink "/docs/manual/advanced/models" "add models" >}}.
+{{% /alert %}}
 
 List of pre-installed models:
 
@@ -106,7 +111,9 @@ In case you did not find the model you need, you can add a model
 of your choice from [Hugging Face](https://huggingface.co/)
 or [Roboflow](https://roboflow.com/).
 
-> **Note**, that you cannot add models from Hugging Face and Roboflow to self-hosted CVAT.
+{{% alert title="Note" color="primary" %}}
+You cannot add models from Hugging Face and Roboflow to self-hosted CVAT.
+{{% /alert %}}
 
 <!--lint disable maximum-line-length-->
 

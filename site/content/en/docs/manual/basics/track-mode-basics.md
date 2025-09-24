@@ -14,58 +14,58 @@ Usage examples:
 1. Like in the `Shape mode`, you need to select a `Rectangle` on the sidebar,
    in the appearing form, select the desired `Label` and the `Drawing method`.
 
-   ![](/images/image083.jpg)
+   !["Draw new rectangle" window with highlighted "Label" and "Drawing method" options](/images/image083.jpg)
 
 1. Creating a track for an object (look at the selected car as an example):
 
    - Create a `Rectangle` in `Track mode` by selecting `Track`.
 
-     ![](/images/image014.jpg)
+     !["Draw new rectangle" window with highlighted "Track" option](/images/image014.jpg)
 
    - In `Track mode`, the rectangle will be automatically interpolated on the next frames.
    - The cyclist starts moving on frame #2270. Let's mark the frame as a key frame.
      You can press `K` for that or select the `star` button (see the screenshot below).
 
-     ![](/images/image016.jpg)
+     ![Objects sidebar with highlighted button for making a keyframe](/images/image016.jpg)
 
    - If the object starts to change its position, you need to modify the rectangle where it happens.
      It isn't necessary to change the rectangle on each frame, simply update several keyframes
      and the frames between them will be interpolated automatically.
    - Let's jump 30 frames forward and adjust the boundaries of the object. See an example below:
 
-     ![](/images/image017_detrac.jpg)
+     ![Several frames displaying a keyframe annotation](/images/image017_detrac.jpg)
 
    - After that the rectangle of the object will be changed automatically on frames 2270 to 2300:
 
-     ![](/images/gif019_detrac.gif)
+     ![Example of automatically tracked object](/images/gif019_detrac.gif)
 
 1. When the annotated object disappears or becomes too small, you need to
    finish the track. You have to choose `Outside Property`, shortcut `O`.
 
-   ![](/images/image019.jpg)
+   ![Objects sidebar with highlighted "Outside property" button](/images/image019.jpg)
 
 1. If the object isn't visible on a couple of frames and then appears again,
    you can use the `Merge` feature to merge several individual tracks
    into one.
 
-   ![](/images/image020.jpg)
+   ![User interface with highlighted "Merge" button](/images/image020.jpg)
 
    - Create tracks for moments when the cyclist is visible:
 
-     ![](/images/gif001_detrac.gif)
+     ![Example of a created track for an object that is sometimes not visible](/images/gif001_detrac.gif)
 
    - Select `Merge` button or press key `M` and select on any rectangle of the first track
      and on any rectangle of the second track and so on:
 
-     ![](/images/image162_detrac.jpg)
+     ![Several frames displaying the process of track merging](/images/image162_detrac.jpg)
 
    - Select `Merge` button or press `M` to apply changes.
 
-     ![](/images/image020.jpg)
+     ![User interface with highlighted "Merge" button](/images/image020.jpg)
 
    - The final annotated sequence of frames in `Interpolation` mode can
      look like the clip below:
 
-     ![](/images/gif003_detrac.gif)
+     ![Example of a track with interpolated frames](/images/gif003_detrac.gif)
 
      Read more in the section {{< ilink "/docs/manual/advanced/track-mode-advanced" "track mode (advanced)" >}}.

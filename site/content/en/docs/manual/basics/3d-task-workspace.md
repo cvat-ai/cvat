@@ -4,8 +4,7 @@ linkTitle: '3D task workspace'
 weight: 13
 ---
 
-![](/images/image214_carla_town3.jpg)
-
+![Interface diagram with marked areas and buttons](/images/image214_carla_town3.jpg)
 
 If the `related_images` folder contains any images, a `context image` will be available  in the perspective window.
 The contextual image could be compared to 3D data and would help to identify the labels of marked objects.

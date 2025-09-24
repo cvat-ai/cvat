@@ -6,7 +6,7 @@
 import React, {
     useState, useRef, useEffect, useCallback,
 } from 'react';
-import { useHistory } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import moment from 'moment';
 import { Row, Col } from 'antd/lib/grid';
@@ -15,7 +15,7 @@ import Modal from 'antd/lib/modal';
 import Button from 'antd/lib/button';
 import Space from 'antd/lib/space';
 import Input from 'antd/lib/input';
-import Popover from 'antd/lib/popover';
+import Dropdown from 'antd/lib/dropdown';
 import { Store } from 'antd/lib/form/interface';
 import {
     EditTwoTone, EnvironmentOutlined,
@@ -30,8 +30,13 @@ import {
 } from 'actions/organization-actions';
 import { OrganizationMembersQuery } from 'reducers';
 import { Organization, User } from 'cvat-core-wrapper';
-import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
-import Menu from 'components/dropdown-menu';
+import {
+    SortingComponent,
+    ResourceFilterHOC,
+    defaultVisibility,
+    ResourceSelectionInfo,
+} from 'components/resource-sorting-filtering';
+
 import InvitationModal from './invitation-modal';
 
 import {
@@ -46,6 +51,8 @@ export interface Props {
     onApplySearch: (search: string | null) => void;
     onApplyFilter: (filter: string | null) => void;
     onApplySorting: (sort: string | null) => void;
+    selectedCount: number;
+    onSelectAll: () => void;
 }
 
 export enum MenuActions {
@@ -57,10 +64,10 @@ const FilteringComponent = ResourceFilterHOC(
     config, localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues,
 );
 
-function OrganizationTopBar(props: Props): JSX.Element {
+function OrganizationTopBar(props: Readonly<Props>): JSX.Element {
     const {
         organizationInstance, userInstance, fetchMembers, query,
-        onApplyFilter, onApplySearch, onApplySorting,
+        onApplyFilter, onApplySearch, onApplySorting, selectedCount, onSelectAll,
     } = props;
     const {
         owner, createdDate, description, updatedDate, slug, name, contact,
@@ -132,7 +139,6 @@ function OrganizationTopBar(props: Props): JSX.Element {
     let organizationName = name;
     let organizationDescription = description;
     let organizationContacts = contact;
-    const history = useHistory();
 
     return (
         <>
@@ -146,46 +152,32 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                 </Text>
                             </Col>
                             <Col>
-                                <Popover
+                                <Dropdown
+                                    menu={{
+                                        items: [
+                                            {
+                                                key: MenuActions.SET_WEBHOOKS,
+                                                label: <Link to='/organization/webhooks'>Setup webhooks</Link>,
+                                            },
+                                            ...(owner && userID === owner.id ? [{
+                                                type: 'divider' as const,
+                                            }, {
+                                                key: MenuActions.REMOVE_ORGANIZATION,
+                                                onClick: onRemove,
+                                                label: 'Remove organization',
+                                            }] : []),
+                                        ],
+                                        className: 'cvat-organization-actions-menu',
+                                    }}
                                     trigger={['click']}
-                                    destroyTooltipOnHide
-                                    overlayInnerStyle={{ padding: 0 }}
-                                    content={() => (
-                                        <Menu className='cvat-organization-actions-menu'>
-                                            <Menu.Item key={MenuActions.SET_WEBHOOKS}>
-                                                <a
-                                                    href='/organization/webhooks'
-                                                    onClick={(e: React.MouseEvent) => {
-                                                        e.preventDefault();
-                                                        history.push({
-                                                            pathname: '/organization/webhooks',
-                                                        });
-                                                        return false;
-                                                    }}
-                                                >
-                                                    Setup webhooks
-                                                </a>
-                                            </Menu.Item>
-                                            {owner && userID === owner.id ? (
-                                                <Menu.Item
-                                                    key={MenuActions.REMOVE_ORGANIZATION}
-                                                    onClick={onRemove}
-                                                >
-                                                    Remove organization
-                                                </Menu.Item>
-                                            ) : null}
-                                        </Menu>
-                                    )}
                                 >
                                     <Button size='middle' className='cvat-organization-page-actions-button'>
                                         <Text className='cvat-text-color'>Actions</Text>
                                         <MoreOutlined className='cvat-menu-icon' />
                                     </Button>
-                                </Popover>
+                                </Dropdown>
                             </Col>
-
                         </Row>
-
                         <Text
                             editable={{
                                 onChange: (value: string) => {
@@ -352,10 +344,11 @@ function OrganizationTopBar(props: Props): JSX.Element {
                         onSearch={(phrase: string) => {
                             onApplySearch(phrase);
                         }}
-                        defaultValue={query.search || ''}
+                        defaultValue={query.search ?? ''}
                         className='cvat-organization-page-search-bar'
                         placeholder='Search ...'
                     />
+                    <ResourceSelectionInfo selectedCount={selectedCount} onSelectAll={onSelectAll} />
                 </Col>
                 <Col>
                     <SortingComponent

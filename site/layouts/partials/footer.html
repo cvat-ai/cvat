@@ -16,6 +16,11 @@
         <div class="row">
           {{ with .Site.Params.cvat_ai_terms_of_use }}<a href="{{ . }}">{{ T "footer_cvat_ai_terms_of_use" }}</a>{{ end }}
         </div>
+        {{ if hugo.IsProduction -}}
+        <div class="row">
+          <a href="#" onclick="showCookieSettings(); return false;">Cookie Settings</a>
+        </div>
+        {{ end -}}
         <div class="row">
           {{ if not .Site.Params.ui.footer_about_disable }}
             {{ with .Site.GetPage "about" }}<p><a href="{{ .RelPermalink }}">{{ .Title }}</a></p>{{ end }}
@@ -31,6 +36,7 @@
       </div>
     </div>
   </div>
+  {{ partial "cookie-consent.html" . }}
 </footer>
 
 {{ define "footer-links-block" }}

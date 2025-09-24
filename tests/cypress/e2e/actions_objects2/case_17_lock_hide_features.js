@@ -179,7 +179,7 @@ context('Lock/hide features.', () => {
                 cy.get('.cvat-object-item-button-pinned').click();
             });
             cy.get('#cvat_canvas_shape_6').should('not.have.class', 'cvat_canvas_shape_draggable');
-            // Get cuttent values for "width" parameter.
+            // Get current values for "width" parameter.
             cy.get('#cvat_canvas_shape_6')
                 .should('have.attr', 'width')
                 .then(($shapeWidth) => {

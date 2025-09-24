@@ -6,27 +6,7 @@
 @import 'base';
 
 .cvat-projects-page {
-    padding-top: $grid-unit-size * 2;
-    padding-bottom: $grid-unit-size;
-    height: 100%;
-    width: 100%;
-    overflow: auto;
-
-    .cvat-projects-page-top-bar {
-        > div:nth-child(1) {
-            > div:nth-child(1) {
-                width: 100%;
-
-                > div:nth-child(1) {
-                    display: flex;
-
-                    span {
-                        margin-right: $grid-unit-size;
-                    }
-                }
-            }
-        }
-    }
+    @include cvat-resource-page;
 
     > div:nth-child(1) {
         padding-bottom: $grid-unit-size;
@@ -119,8 +99,6 @@
 }
 
 .cvat-project-list-content {
-    padding-bottom: $grid-unit-size;
-
     .ant-ribbon-wrapper {
         .cvat-projects-project-item-card {
             .cvat-projects-project-item-card-preview-wrapper {
@@ -200,10 +178,11 @@
 }
 
 .cvat-projects-list {
+    overflow-y: auto;
     display: flex;
     flex-wrap: wrap;
 
-    > div {
+    .cvat-projects-list-row {
         width: 100%;
         margin-bottom: $grid-unit-size;
 

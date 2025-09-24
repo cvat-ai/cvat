@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { throttle } from 'lodash';
+import { throttle, range } from 'lodash';
 
 import ObjectState from '../object-state';
 import AnnotationsFilter from '../annotations-filter';
@@ -55,7 +55,7 @@ export async function run(
     const showMessageWithPause = async (message: string, progress: number, duration: number): Promise<void> => {
         // wrapper that gives a chance to abort action
         throttledOnProgress(message, progress);
-        await new Promise((resolve) => setTimeout(resolve, duration));
+        await new Promise((resolve) => { setTimeout(resolve, duration); });
     };
 
     try {
@@ -86,8 +86,16 @@ export async function run(
 
         const totalUpdates = { created: { shapes: [] }, deleted: { shapes: [] } };
         // Iterate over frames
-        const totalFrames = frameTo - frameFrom + 1;
-        for (let frame = frameFrom; frame <= frameTo; frame++) {
+        const rawFrameNumbers = instance instanceof Job ?
+            await instance.frames.frameNumbers() : range(0, instance.size);
+        const frameNumbers = rawFrameNumbers.filter((frame) => frame >= frameFrom && frame <= frameTo);
+        const totalFrames = frameNumbers.length;
+        if (totalFrames === 0) {
+            await showMessageWithPause('No frames to process', 100, 1500);
+            return;
+        }
+        for (let frameIdx = 0; frameIdx < totalFrames; frameIdx++) {
+            const frame = frameNumbers[frameIdx];
             const frameData = await Object.getPrototypeOf(instance).frames
                 .get.implementation.call(instance, frame);
 
@@ -121,7 +129,7 @@ export async function run(
                 Array.prototype.push.apply(totalUpdates.created.shapes, created.shapes);
                 Array.prototype.push.apply(totalUpdates.deleted.shapes, deleted.shapes);
 
-                const progress = Math.ceil(+(((frame - frameFrom) / totalFrames) * 100));
+                const progress = Math.ceil(((frameIdx + 1) / totalFrames) * 100);
                 throttledOnProgress('Actions are running', progress);
                 if (cancelled()) {
                     return;
@@ -137,7 +145,7 @@ export async function run(
         await instance.annotations.commit(
             { shapes: totalUpdates.created.shapes, tags: [], tracks: [] },
             { shapes: totalUpdates.deleted.shapes, tags: [], tracks: [] },
-            frameFrom,
+            frameNumbers[0],
         );
 
         event.close();

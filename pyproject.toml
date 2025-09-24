@@ -7,9 +7,6 @@ extend_skip=[
     # Correctly ordering the imports in serverless functions would
     # require a pyproject.toml in every function; don't bother with it for now.
     "serverless",
-    # Sorting the imports in this file causes test failures;
-    # TODO: fix them and remove this ignore.
-    "cvat/apps/dataset_manager/formats/registry.py",
 ]
 
 [tool.black]
@@ -18,32 +15,17 @@ target-version = ['py39']
 extend-exclude = """
 # TODO: get rid of these
 ^/cvat/apps/(
-    dataset_manager/(
-        annotation.py
-        |bindings.py
-        |project.py
-        |serializers.py
-        |task.py
-        |tests/test_formats.py
-        |tests/test_rest_api_formats.py
-        |util.py
-        |views.py
-    )
+    dataset_manager/bindings.py
     |engine/(
         admin.py
         |backup.py
         |cloud_provider.py
-        |filters.py
         |media_extractors.py
         |mixins.py
         |models.py
-        |parsers.py
         |permissions.py
         |serializers.py
         |task.py
-        |tests/
-        |utils.py
-        |view_utils.py
         |views.py
     )
 )

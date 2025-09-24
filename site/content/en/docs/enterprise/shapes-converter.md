@@ -8,7 +8,9 @@ description: 'How to perform bulk actions on filtered shapes'
 The shapes converter is a feature that enables bulk actions on filtered **shapes**. It allows you to perform mutual
 conversion between masks, polygons and rectangles.
 
-> **Note:** All shapes converter work only when the filter is set up.
+{{% alert title="Note" color="primary" %}}
+All shapes converter work only when the filter is set up.
+{{% /alert %}}
 
 See:
 
@@ -22,17 +24,20 @@ Annotations actions can be accessed from the annotation menu.
 To access it, click on the burger icon
 and then select **Run actions**.
 
-> Note: All **Shapes converter** functions work in alignment with set up filter.
+{{% alert title="Note" color="primary" %}}
+All **Shapes converter** functions work in alignment with set up filter.
+{{% /alert %}}
 
-![](/images/run-actions-menu.jpg)
+![Run actions menu open in annotation](/images/run-actions-menu.jpg)
 
 You will see the following dialog:
 
-![](/images/shapes-converter-dialog.jpg)
+<!--lint disable maximum-line-length-->
+
+![Dialog for removing filtered shapes](/images/shapes-converter-dialog.jpg)
 
 With the following fields:
 
-<!--lint disable maximum-line-length-->
 
 | Field                                    | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -62,11 +67,11 @@ To convert shapes, do the following:
 
 1. Annotate your dataset.
 
-   ![](/images/shapes-converter-annotated-dataset.jpg)
+   ![Example of annotated dataset with different shapes](/images/shapes-converter-annotated-dataset.jpg)
 
 2. Set up {{< ilink "/docs/manual/advanced/filter" "filters" >}}.
 
-   ![](/images/shapes-converter-setup-filter.png)
+   ![Example of a filter for shapes](/images/shapes-converter-setup-filter.png)
 
 3. From the burger menu, select **Run actions**.
 4. Choose the action you need from the **Select action** drop-down list.
@@ -75,9 +80,11 @@ To convert shapes, do the following:
 6. (Optional) Select an option from **Or choose one of the predefined options** to apply the action.
 7. Click **Run**. <br> A progress bar will appear. You may abort the process by clicking **Cancel** until the process commits modified objects at the end of pipeline.
 
-   ![](/images/shapes-coverter-action-run.jpg)
+   ![Progress bar for shapes converter with defined parameters](/images/shapes-converter-action-run.jpg)
 
-> **Note:** Once the action is applied, it cannot be undone.
+{{% alert title="Note" color="primary" %}}
+Once the action is applied, it cannot be undone.
+{{% /alert %}}
 
 ## Convert shapes video tutorial
 

@@ -47,7 +47,7 @@ To create bucket, do the following:
 1. Create an [AWS account](https://portal.aws.amazon.com/billing/signup#/start).
 1. Go to [console AWS-S3](https://s3.console.aws.amazon.com/s3/home), and select **Create bucket**.
 
-   ![](/images/aws-s3_tutorial_1.jpg)
+   ![AWS S3 interface with highlighted "Create bucket" button](/images/aws-s3_tutorial_1.jpg)
 
 1. Specify the name and region of the bucket. You can also
    copy the settings of another bucket by selecting **Choose bucket**.
@@ -58,7 +58,9 @@ A new bucket will appear on the list of buckets.
 
 ### Upload data
 
-> **Note**: manifest file is optional.
+{{% alert title="Note" color="primary" %}}
+The manifest file is optional.
+{{% /alert %}}
 
 You need to upload data for annotation and the `manifest.jsonl` file.
 
@@ -67,11 +69,11 @@ You need to upload data for annotation and the `manifest.jsonl` file.
    refer on how to [prepare the dataset](#prepare-the-dataset).
 1. Open the bucket and select **Upload**.
 
-   ![](/images/aws-s3_tutorial_5.jpg)
+   ![AWS S3 interface with highlighted "Upload"](/images/aws-s3_tutorial_5.jpg)
 
 1. Drag the manifest file and image folder on the page and select **Upload**:
 
-![](/images/aws-s3_tutorial_1.gif)
+![Uploading data to AWS S3](/images/aws-s3_tutorial_1.gif)
 
 ### Access permissions
 
@@ -82,7 +84,7 @@ To add access permissions, do the following:
 1. Go to [IAM](https://console.aws.amazon.com/iamv2/home#/users) and select **Add users**.
 1. Set **User name** and enable **Access key - programmatic access**.
 
-   ![](/images/aws-s3_tutorial_2.jpg)
+   ![AWS S3 interface with highlighted "User name" and "Access key - programmatic access" parameters](/images/aws-s3_tutorial_2.jpg)
 
 1. Select **Next: Permissions**.
 1. Select **Create group**, enter the group name.
@@ -91,12 +93,12 @@ To add access permissions, do the following:
    - For read-only access: **AmazonS3ReadOnlyAccess**.
    - For full access: **AmazonS3FullAccess**.
 
-   ![](/images/aws-s3_tutorial_3.jpg)
+   ![AWS S3 interface with creating user group step](/images/aws-s3_tutorial_3.jpg)
 
 1. (Optional) Add tags for the user and go to the next page.
 1. Save **Access key ID** and **Secret access key**.
 
-![](/images/aws-s3_tutorial_4.jpg)
+![AWS S3 interface with saving access credentials step](/images/aws-s3_tutorial_4.jpg)
 
 For more information,
 consult [Creating an IAM user in your AWS account](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html)
@@ -136,7 +138,9 @@ After filling in all the fields, select **Submit**.
 
 ### AWS S3 manifest file
 
-> **Note**: manifest file is optional.
+{{% alert title="Note" color="primary" %}}
+The manifest file is optional.
+{{% /alert %}}
 
 To prepare the manifest file, do the following:
 
@@ -176,7 +180,7 @@ To prepare the manifest file, do the following:
    - For read-only permissions, use the download through the browser,
      select upload, drag the manifest file to the page and select upload.
 
-     ![](/images/aws-s3_tutorial_5.jpg)
+     ![AWS S3 interface with highlighted "Upload"](/images/aws-s3_tutorial_5.jpg)
 
 ### Video tutorial: Add AWS S3 as Cloud Storage in CVAT
 
@@ -194,7 +198,11 @@ To create bucket, do the following:
 1. Create [Google account](https://support.google.com/accounts/answer/27441?hl=en) and log into it.
 1. On the [Google Cloud](https://cloud.google.com/) page, select **Start Free**, then enter the required
    data and accept the terms of service.
-   > **Note:** Google requires to add payment, you will need a bank card to accomplish step 2.
+
+   {{% alert title="Note" color="primary" %}}
+   Google requires to add payment, you will need a bank card to accomplish step 2.
+   {{% /alert %}}
+
 1. [Create a Bucket](https://cloud.google.com/storage/docs/creating-buckets) with the following parameters:
    - **Name your bucket**: Unique name.
    - **Choose where to store your data**: Set up a location nearest to you.
@@ -209,7 +217,9 @@ You will be forwarded to the bucket.
 
 ### Upload data
 
-> **Note**: manifest file is optional.
+{{% alert title="Note" color="primary" %}}
+The manifest file is optional.
+{{% /alert %}}
 
 You need to upload data for annotation and the `manifest.jsonl` file.
 
@@ -225,7 +235,7 @@ You need to upload data for annotation and the `manifest.jsonl` file.
 To access Google Cloud Storage get a **Project ID**
 from [cloud resource manager page](https://console.cloud.google.com/cloud-resource-manager)
 
-![](/images/google_cloud_storage_tutorial5.jpg)
+![Project ID shown in Google Cloud Storage interface](/images/google_cloud_storage_tutorial5.jpg)
 
 And follow instructions below based on the preferable type of access.
 
@@ -241,7 +251,7 @@ To create a service account:
 1. (Optional) Give access rights to the service account.
 1. Select **Done**.
 
-![](/images/google_cloud_storage_tutorial2.jpg)
+![Creating service account shown in Google Cloud Storage interface](/images/google_cloud_storage_tutorial2.jpg)
 
 To create a key:
 
@@ -249,7 +259,7 @@ To create a key:
 1. Select **Add key** and select **Create new key** > **JSON**
 1. Select **Create**. The key file will be downloaded automatically.
 
-![](/images/google_cloud_storage_tutorial3.jpg)
+![Google Cloud Storage interface with highlighted steps to create a key](/images/google_cloud_storage_tutorial3.jpg)
 
 For more information about keys, consult
 [Learn more about creating keys](https://cloud.google.com/docs/authentication/getting-started).
@@ -259,12 +269,12 @@ For more information about keys, consult
 To configure anonymous access:
 
 1. Open the bucket and go to the **Permissions** tab.
-1. Сlick **+ Grant access** to add new principals.
+1. Click **+ Grant access** to add new principals.
 1. In the **New principals** field specify `allUsers`,
    select roles: `Cloud Storage Legacy` > `Storage Legacy Bucket Reader`.
 1. Select **Save**.
 
-![](/images/google_cloud_storage_tutorial4.jpg)
+![Google Cloud Storage interface with anonymous access configuration](/images/google_cloud_storage_tutorial4.jpg)
 
 Now you can attach the Google Cloud Storage bucket to CVAT.
 
@@ -315,14 +325,14 @@ To create bucket, do the following:
 1. Go to [Azure portal](https://portal.azure.com/#home), hover over the resource
    , and in the pop-up window select **Create**.
 
-   ![](/images/azure_blob_container_tutorial1.jpg)
+   ![Microsoft Azure interface with highlighted "Create" button](/images/azure_blob_container_tutorial1.jpg)
 
 1. Enter a name for the group and select **Review + create**, check the entered data and select **Create**.
 1. Go to the [resource groups page](https://portal.azure.com/#view/HubsExtension/BrowseResourceGroups),
    navigate to the group that you created and select **Create resources**.
 1. On the marketplace page, use search to find **Storage account**.
 
-   ![](/images/azure_blob_container_tutorial2.png)
+   ![Microsoft Azure interface with highlighted "Storage account" button](/images/azure_blob_container_tutorial2.png)
 
 1. Select on **Storage account** and on the next page select **Create**.
 1. On the **Basics** tab, fill in the following fields:
@@ -333,13 +343,13 @@ To create bucket, do the following:
    - Select **Local-redundancy storage (LRS)**.
    - Select **next: Advanced>**.
 
-   ![](/images/azure_blob_container_tutorial4.png)
+   ![Microsoft Azure interface with basic settings for storage account](/images/azure_blob_container_tutorial4.jpg)
 
 1. On the **Advanced** page, fill in the following fields:
    - (Optional) Disable **Allow enabling public access on containers** to prohibit anonymous access to the container.
    - Select **Next > Networking**.
 
-   ![](/images/azure_blob_container_tutorial5.png)
+   ![Microsoft Azure interface with advanced settings for storage account](/images/azure_blob_container_tutorial5.png)
 
 1. On the **Networking** tab, fill in the following fields:
 
@@ -352,7 +362,7 @@ To create bucket, do the following:
 1. Select **Create**. Deployment will start.
 1. After deployment is over, select **Go to resource**.
 
-![](/images/azure_blob_container_tutorial6.jpg)
+![Microsoft Azure interface with highlighted "Go to resource" button](/images/azure_blob_container_tutorial6.jpg)
 
 ### Create a container
 
@@ -360,7 +370,7 @@ To create container, do the following:
 
 1. Go to the containers section and on the top menu select **+Container**
 
-   ![](/images/azure_blob_container_tutorial7.jpg)
+   ![Microsoft Azure interface with highlighted "+Container" button](/images/azure_blob_container_tutorial7.jpg)
 
 1. Enter the name of the container.
 1. (Optional) In the **Public access level** drop-down, select type of the access.
@@ -376,10 +386,14 @@ You need to upload data for annotation and the `manifest.jsonl` file.
    refer on how to [prepare the dataset](#prepare-the-dataset).
 1. Go to container and select **Upload**.
 1. Select **Browse for files** and select images.
-   > Note: If images are in folder, specify folder in the **Advanced settings** > **Upload to folder**.
+
+   {{% alert title="Note" color="primary" %}}
+   If images are in folder, specify folder in the **Advanced settings** > **Upload to folder**.
+   {{% /alert %}}
+
 1. Select **Upload**.
 
-![](/images/azure_blob_container_tutorial9.jpg)
+![Microsoft Azure interface with highlighted "Upload" button and upload settings](/images/azure_blob_container_tutorial9.jpg)
 
 ### SAS token and connection string
 
@@ -398,7 +412,7 @@ To configure the credentials:
    - Leave all other fields with default parameters.
 1. Select **Generate SAS and connection string** and copy **SAS token** or **Connection string**.
 
-![](/images/azure_blob_container_tutorial3.jpg)
+![Microsoft Azure interface with highlighted "SAS token" field](/images/azure_blob_container_tutorial3.jpg)
 
 ### Personal use
 
@@ -410,7 +424,7 @@ To get the **Access Key**:
 1. In the Azure Portal, go to the **Security + networking** > **Access Keys**
 1. Select **Show** and copy the key.
 
-![](/images/azure_blob_container_tutorial8.jpg)
+![Microsoft Azure interface with highlighted elements to get an access key](/images/azure_blob_container_tutorial8.jpg)
 
 ### Attach Azure Blob Storage
 

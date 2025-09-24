@@ -1,6 +1,6 @@
 {
   "name": "cvat-ui",
-  "version": "2.37.1",
+  "version": "2.45.1",
   "description": "CVAT single-page application",
   "main": "src/index.tsx",
   "scripts": {
@@ -12,8 +12,8 @@
     "lint:fix": "eslint './src/**/*.{ts,tsx}' --fix"
   },
   "browserslist": [
-    "Chrome >= 63",
-    "Firefox > 102",
+    "Chrome >= 99",
+    "Firefox >= 110",
     "not IE 11",
     "> 2%"
   ],
@@ -54,9 +54,9 @@
     "react": "18.2.0",
     "react-chartjs-2": "^5.2.0",
     "react-color": "^2.19.3",
-    "react-cookie": "^4.0.3",
     "react-dom": "18.2.0",
     "react-grid-layout": "^1.3.4",
+    "react-intersection-observer": "^9.16.0",
     "react-markdown": "^8.0.4",
     "react-moment": "^1.1.1",
     "react-redux": "^8.0.2",

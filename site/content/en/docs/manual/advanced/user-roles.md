@@ -26,10 +26,12 @@ Rego is a declarative language employed for defining
 OPA (Open Policy Agent) policies, and its syntax is detailed
 in the [**OPA documentation**](https://www.openpolicyagent.org/docs/latest/policy-language/).
 
-> Note: Once you've made changes to the `.rego` files, you must
-> rebuild and restart the Docker Compose for those changes to be applied.
-> In this scenario, be sure to include the `docker-compose.dev.yml` compose
-> configuration file when executing the Docker Compose command.
+{{% alert title="Note" color="primary" %}}
+Once you've made changes to the `.rego` files, you must
+rebuild and restart the Docker Compose for those changes to be applied.
+In this scenario, be sure to include the `docker-compose.dev.yml` compose
+configuration file when executing the Docker Compose command.
+{{% /alert %}}
 
 See:
 
@@ -39,7 +41,9 @@ See:
 
 ## Global roles in CVAT
 
-> **Note:** Global roles can be adjusted only on self-hosted solution.
+{{% alert title="Note" color="primary" %}}
+Global roles can be adjusted only on self-hosted solution.
+{{% /alert %}}
 
 CVAT has implemented three Global roles, categorized as user Groups. These roles are:
 

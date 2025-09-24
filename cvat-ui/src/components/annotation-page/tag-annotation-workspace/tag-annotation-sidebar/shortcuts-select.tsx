@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import Select from 'antd/lib/select';
-import { Label, DimensionType } from 'cvat-core-wrapper';
+import { Label } from 'cvat-core-wrapper';
 import GlobalHotKeys, { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
 import { shift } from 'utils/math';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
@@ -22,7 +22,7 @@ interface ShortcutLabelMap {
 }
 
 type Props = {
-    onShortcutPress(event: KeyboardEvent | undefined, labelID: number): void;
+    onShortcutPress(labelID: number): void;
     labels: Label[];
 };
 
@@ -32,10 +32,9 @@ for (const idx of [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]) {
     componentShortcuts[`SETUP_${idx}_TAG`] = {
         name: 'Create a new tag',
         description: 'Create a new tag with corresponding class. The class may be setup in tag annotation sidebar',
-        sequences: [`${idx}`, `shift+${idx}`],
+        sequences: [`${idx}`],
         nonActive: true,
         scope: ShortcutScope.TAG_ANNOTATION_WORKSPACE,
-        applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
     };
 }
 
@@ -99,16 +98,16 @@ function ShortcutsSelect(props: Props): JSX.Element {
     }, [shortcutLabelMap]);
 
     Object.keys(shortcutLabelMap)
-        .map((id) => Number.parseInt(id, 10))
-        .filter((id) => shortcutLabelMap[id])
-        .forEach((id: number): void => {
-            const [label] = labels.filter((_label) => _label.id === shortcutLabelMap[id]);
-            const key = `SETUP_${id}_TAG`;
+        .map((idx: string) => Number.parseInt(idx, 10))
+        .filter((idx: number) => shortcutLabelMap[idx])
+        .forEach((idx: number): void => {
+            const [label] = labels.filter((_label) => _label.id === shortcutLabelMap[idx]);
+            const key = `SETUP_${idx}_TAG`;
             handlers[key] = (event: KeyboardEvent | undefined) => {
                 if (event) {
                     event.preventDefault();
                 }
-                onShortcutPress(event, label.id as number);
+                onShortcutPress(label.id!);
             };
         });
 
@@ -130,6 +129,11 @@ function ShortcutsSelect(props: Props): JSX.Element {
                 .slice(0, Math.min(labels.length, 10))
                 .map((id) => (
                     <Row key={id}>
+                        <Col span={24}>
+                            <Text code>
+                                {`Shortcut: ${keyMap[`SETUP_${id}_TAG`].sequences.join(', ')}`}
+                            </Text>
+                        </Col>
                         <Col>
                             <Select
                                 value={`${shortcutLabelMap[Number.parseInt(id, 10)]}`}
@@ -148,7 +152,6 @@ function ShortcutsSelect(props: Props): JSX.Element {
                                     </Select.Option>
                                 ))}
                             </Select>
-                            <Text code className='cvat-tag-annotation-shortcut-key'>{`Key ${id}`}</Text>
                         </Col>
                     </Row>
                 ))}

@@ -35,8 +35,8 @@ spec:
           image: {{ .Values.cvat.kvrocks.image }}:{{ .Values.cvat.kvrocks.tag }}
           imagePullPolicy: {{ .Values.cvat.kvrocks.imagePullPolicy }}
           args:
-            - --dir
-            - /var/lib/kvrocks/data
+            - "--compact-cron"
+            - "0 3 * * *"
             - --requirepass
             - "$(CVAT_REDIS_ONDISK_PASSWORD)"
           {{- with .Values.cvat.kvrocks.resources }}
@@ -80,10 +80,16 @@ spec:
           {{- end }}
           volumeMounts:
           - name: {{ .Release.Name }}-kvrocks-data
-            mountPath: /var/lib/kvrocks/data
+            mountPath: /var/lib/kvrocks/db
           {{- with .Values.cvat.kvrocks.additionalVolumeMounts }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
+          securityContext:
+            runAsNonRoot: true
+
+            # Workaround for <https://github.com/apache/kvrocks/issues/3135>.
+            # Can be removed after updating to Kvrocks 2.14+.
+            runAsUser: 999
       {{- with .Values.cvat.kvrocks.additionalVolumes }}
       volumes:
         {{- toYaml . | nindent 8 }}
@@ -100,6 +106,9 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      securityContext:
+        fsGroup: 999
+        fsGroupChangePolicy: "OnRootMismatch"
   {{- if .Values.cvat.kvrocks.defaultStorage.enabled }}
   volumeClaimTemplates:
   - metadata:

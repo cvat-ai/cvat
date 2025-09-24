@@ -6,12 +6,17 @@ import argparse
 import json
 import textwrap
 from collections.abc import Sequence
-from typing import Union
+from typing import Any, Union
 
 import cvat_sdk.auto_annotation as cvataa
 from cvat_sdk import Client, models
 
-from .agent import FUNCTION_KIND_DETECTOR, FUNCTION_PROVIDER_NATIVE, run_agent
+from .agent import (
+    FUNCTION_KIND_DETECTOR,
+    FUNCTION_KIND_TRACKER,
+    FUNCTION_PROVIDER_NATIVE,
+    run_agent,
+)
 from .command_base import CommandGroup
 from .common import FunctionLoader, configure_function_implementation_arguments
 
@@ -66,26 +71,29 @@ class FunctionCreateNative:
     ) -> None:
         function = function_loader.load()
 
-        remote_function = {
+        remote_function: dict[str, Any] = {
             "provider": FUNCTION_PROVIDER_NATIVE,
             "name": name,
         }
 
-        if isinstance(function.spec, cvataa.DetectionFunctionSpec):
+        spec = function.spec
+
+        if isinstance(spec, cvataa.DetectionFunctionSpec):
             remote_function["kind"] = FUNCTION_KIND_DETECTOR
             remote_function["labels_v2"] = []
 
-            for label_spec in function.spec.labels:
+            for label_spec in spec.labels:
                 remote_function["labels_v2"].append(self._dump_sublabel_spec(label_spec))
 
                 if sublabels := getattr(label_spec, "sublabels", None):
                     remote_function["labels_v2"][-1]["sublabels"] = [
                         self._dump_sublabel_spec(sublabel) for sublabel in sublabels
                     ]
+        elif isinstance(spec, cvataa.TrackingFunctionSpec):
+            remote_function["kind"] = FUNCTION_KIND_TRACKER
+            remote_function["supported_shape_types"] = sorted(spec.supported_shape_types)
         else:
-            raise cvataa.BadFunctionError(
-                f"Unsupported function spec type: {type(function.spec).__name__}"
-            )
+            raise cvataa.BadFunctionError(f"Unsupported function spec type: {type(spec).__name__}")
 
         _, response = client.api_client.call_api(
             "/api/functions",

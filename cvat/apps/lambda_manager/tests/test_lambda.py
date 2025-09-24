@@ -5,7 +5,7 @@
 
 import json
 import os
-from collections import Counter, OrderedDict
+from collections import Counter
 from itertools import groupby
 from typing import Optional
 from unittest import mock, skip
@@ -35,6 +35,7 @@ id_function_reid_with_no_response_data = (
 )
 id_function_interactor = "test-openvino-dextr"
 id_function_tracker = "test-pth-foolwood-siammask"
+id_function_tracker_with_supported_shape_types = "test-tracker-with-supported-shape-types"
 id_function_non_type = "test-model-has-non-type"
 id_function_wrong_type = "test-model-has-wrong-type"
 id_function_unknown_type = "test-model-has-unknown-type"
@@ -43,10 +44,8 @@ id_function_state_building = "test-model-has-state-building"
 id_function_state_error = "test-model-has-state-error"
 
 expected_keys_in_response_all_functions = ["id", "kind", "labels_v2", "description", "name"]
-expected_keys_in_response_function_interactor = expected_keys_in_response_all_functions + [
-    "min_pos_points",
-    "startswith_box",
-]
+expected_keys_in_response_function_interactor = ["min_pos_points", "startswith_box"]
+expected_keys_in_response_function_tracker = ["supported_shape_types"]
 expected_keys_in_response_requests = [
     "id",
     "function",
@@ -108,17 +107,32 @@ class _LambdaTestCaseBase(ApiTestBase):
     def _invoke_function(self, func, payload):
         data = []
         func_id = func.id
-        type_function = functions["positive"][func_id]["metadata"]["annotations"]["type"]
+        annotations = functions["positive"][func_id]["metadata"]["annotations"]
+        type_function = annotations["type"]
         if type_function == "reid":
             if func_id == id_function_reid_with_response_data:
                 data = [0, 1]
             else:
                 data = []
         elif type_function == "tracker":
-            data = {
-                "shapes": [[12.34, 34.0, 35.01, 41.99]],
-                "states": [{"key": "value"}],
-            }
+            if "supported_shape_types" in annotations:
+                for shape in payload["shapes"]:
+                    self.assertIsInstance(shape, dict)
+                    self.assertIn("type", shape)
+                    self.assertIn("points", shape)
+
+                data = {
+                    "shapes": [{"type": "rectangle", "points": [12.34, 34.0, 35.01, 41.99]}],
+                    "states": [{"key": "value"}],
+                }
+            else:
+                for shape in payload["shapes"]:
+                    self.assertIsInstance(shape, list)
+
+                data = {
+                    "shapes": [[12.34, 34.0, 35.01, 41.99]],
+                    "states": [{"key": "value"}],
+                }
         elif type_function == "interactor":
             data = [
                 [8, 12],
@@ -142,7 +156,7 @@ class _LambdaTestCaseBase(ApiTestBase):
                 {
                     "confidence": "0.59464583",
                     "label": "car",
-                    "points": [12.17, 45.0, 69.80, 18.99],
+                    "points": [10, 10, 10, 20, 20, 10],
                     "type": "polygon",
                 },
                 {
@@ -217,9 +231,12 @@ class _LambdaTestCaseBase(ApiTestBase):
         if kind == "interactor":
             for key in expected_keys_in_response_function_interactor:
                 self.assertIn(key, data)
-        else:
-            for key in expected_keys_in_response_all_functions:
+        elif kind == "tracker":
+            for key in expected_keys_in_response_function_tracker:
                 self.assertIn(key, data)
+
+        for key in expected_keys_in_response_all_functions:
+            self.assertIn(key, data)
 
     def _delete_lambda_request(self, request_id: str, user: Optional[User] = None) -> None:
         response = self._delete_request(f"{LAMBDA_REQUESTS_PATH}/{request_id}", user or self.admin)
@@ -284,6 +301,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
             id_function_detector,
             id_function_interactor,
             id_function_tracker,
+            id_function_tracker_with_supported_shape_types,
             id_function_reid_with_response_data,
         ]
 
@@ -730,33 +748,37 @@ class LambdaTestCases(_LambdaTestCaseBase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_api_v2_lambda_functions_create_tracker(self):
-        data_main_task = {
-            "task": self.main_task["id"],
-            "frame": 0,
-            "shapes": [[12.12, 34.45, 54.0, 76.12]],
-        }
-        data_assigneed_to_user_task = {
-            "task": self.assigneed_to_user_task["id"],
-            "frame": 0,
-            "shapes": [[12.12, 34.45, 54.0, 76.12]],
-        }
+        for id_func in [
+            id_function_tracker,
+            id_function_tracker_with_supported_shape_types,
+        ]:
+            data_main_task = {
+                "task": self.main_task["id"],
+                "frame": 0,
+                "shapes": [{"type": "rectangle", "points": [12.12, 34.45, 54.0, 76.12]}],
+            }
+            data_assigneed_to_user_task = {
+                "task": self.assigneed_to_user_task["id"],
+                "frame": 0,
+                "shapes": [{"type": "rectangle", "points": [12.12, 34.45, 54.0, 76.12]}],
+            }
 
-        response = self._post_request(
-            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_tracker}", self.admin, data=data_main_task
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+            response = self._post_request(
+                f"{LAMBDA_FUNCTIONS_PATH}/{id_func}", self.admin, data=data_main_task
+            )
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        response = self._post_request(
-            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_tracker}",
-            self.user,
-            data=data_assigneed_to_user_task,
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+            response = self._post_request(
+                f"{LAMBDA_FUNCTIONS_PATH}/{id_func}",
+                self.user,
+                data=data_assigneed_to_user_task,
+            )
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        response = self._post_request(
-            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_tracker}", None, data=data_main_task
-        )
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+            response = self._post_request(
+                f"{LAMBDA_FUNCTIONS_PATH}/{id_func}", None, data=data_main_task
+            )
+            self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_api_v2_lambda_functions_create_tracker_bad_signature(self):
         signer = TimestampSigner(key="bad key")
@@ -764,7 +786,6 @@ class LambdaTestCases(_LambdaTestCaseBase):
         data = {
             "task": self.main_task["id"],
             "frame": 0,
-            "shapes": [[12.12, 34.45, 54.0, 76.12]],
             "states": [signer.sign("{}")],
         }
 
@@ -774,72 +795,81 @@ class LambdaTestCases(_LambdaTestCaseBase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("Invalid or expired tracker state", response.content.decode("UTF-8"))
 
+    def test_api_v2_lambda_functions_create_tracker_unsupported_shape_type(self):
+        for id_func in [
+            id_function_tracker,
+            id_function_tracker_with_supported_shape_types,
+        ]:
+            data = {
+                "task": self.main_task["id"],
+                "frame": 0,
+                "shapes": [{"type": "points", "points": [1, 2, 3, 4]}],
+            }
+
+            response = self._post_request(
+                f"{LAMBDA_FUNCTIONS_PATH}/{id_func}", self.admin, data=data
+            )
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            self.assertIn("This function does not support shapes", response.content.decode("UTF-8"))
+
     def test_api_v2_lambda_functions_create_reid(self):
         data_main_task = {
             "task": self.main_task["id"],
             "frame0": 0,
             "frame1": 1,
             "boxes0": [
-                OrderedDict(
-                    [
-                        ("attributes", []),
-                        ("frame", 0),
-                        ("group", None),
-                        ("id", 11258),
-                        ("label_id", 8),
-                        ("occluded", False),
-                        ("path_id", 0),
-                        ("points", [137.0, 129.0, 457.0, 676.0]),
-                        ("source", "auto"),
-                        ("type", "rectangle"),
-                        ("z_order", 0),
-                    ]
-                ),
-                OrderedDict(
-                    [
-                        ("attributes", []),
-                        ("frame", 0),
-                        ("group", None),
-                        ("id", 11259),
-                        ("label_id", 8),
-                        ("occluded", False),
-                        ("path_id", 1),
-                        ("points", [1511.0, 224.0, 1537.0, 437.0]),
-                        ("source", "auto"),
-                        ("type", "rectangle"),
-                        ("z_order", 0),
-                    ]
-                ),
+                {
+                    "attributes": [],
+                    "frame": 0,
+                    "group": None,
+                    "id": 11258,
+                    "label_id": 8,
+                    "occluded": False,
+                    "path_id": 0,
+                    "points": [137.0, 129.0, 457.0, 676.0],
+                    "source": "auto",
+                    "type": "rectangle",
+                    "z_order": 0,
+                },
+                {
+                    "attributes": [],
+                    "frame": 0,
+                    "group": None,
+                    "id": 11259,
+                    "label_id": 8,
+                    "occluded": False,
+                    "path_id": 1,
+                    "points": [1511.0, 224.0, 1537.0, 437.0],
+                    "source": "auto",
+                    "type": "rectangle",
+                    "z_order": 0,
+                },
             ],
             "boxes1": [
-                OrderedDict(
-                    [
-                        ("attributes", []),
-                        ("frame", 1),
-                        ("group", None),
-                        ("id", 11260),
-                        ("label_id", 8),
-                        ("occluded", False),
-                        ("points", [1076.0, 199.0, 1218.0, 593.0]),
-                        ("source", "auto"),
-                        ("type", "rectangle"),
-                        ("z_order", 0),
-                    ]
-                ),
-                OrderedDict(
-                    [
-                        ("attributes", []),
-                        ("frame", 1),
-                        ("group", None),
-                        ("id", 11261),
-                        ("label_id", 8),
-                        ("occluded", False),
-                        ("points", [924.0, 177.0, 1090.0, 615.0]),
-                        ("source", "auto"),
-                        ("type", "rectangle"),
-                        ("z_order", 0),
-                    ]
-                ),
+                {
+                    "attributes": [],
+                    "frame": 1,
+                    "group": None,
+                    "id": 11260,
+                    "label_id": 8,
+                    "occluded": False,
+                    "points": [1076.0, 199.0, 1218.0, 593.0],
+                    "source": "auto",
+                    "type": "rectangle",
+                    "z_order": 0,
+                },
+                {
+                    "attributes": [],
+                    "frame": 1,
+                    "group": None,
+                    "id": 11261,
+                    "label_id": 8,
+                    "occluded": False,
+                    "points": [924.0, 177.0, 1090.0, 615.0],
+                    "source": "auto",
+                    "type": "rectangle",
+                    "z_order": 0,
+                },
             ],
             "threshold": 0.5,
             "max_distance": 55,
@@ -849,79 +879,68 @@ class LambdaTestCases(_LambdaTestCaseBase):
             "frame0": 0,
             "frame1": 1,
             "boxes0": [
-                OrderedDict(
-                    [
-                        ("attributes", []),
-                        ("frame", 0),
-                        ("group", None),
-                        ("id", 11258),
-                        ("label_id", 8),
-                        ("occluded", False),
-                        ("path_id", 0),
-                        ("points", [137.0, 129.0, 457.0, 676.0]),
-                        ("source", "auto"),
-                        ("type", "rectangle"),
-                        ("z_order", 0),
-                    ]
-                ),
-                OrderedDict(
-                    [
-                        ("attributes", []),
-                        ("frame", 0),
-                        ("group", None),
-                        ("id", 11259),
-                        ("label_id", 8),
-                        ("occluded", False),
-                        ("path_id", 1),
-                        ("points", [1511.0, 224.0, 1537.0, 437.0]),
-                        ("source", "auto"),
-                        ("type", "rectangle"),
-                        ("z_order", 0),
-                    ]
-                ),
+                {
+                    "attributes": [],
+                    "frame": 0,
+                    "group": None,
+                    "id": 11258,
+                    "label_id": 8,
+                    "occluded": False,
+                    "path_id": 0,
+                    "points": [137.0, 129.0, 457.0, 676.0],
+                    "source": "auto",
+                    "type": "rectangle",
+                    "z_order": 0,
+                },
+                {
+                    "attributes": [],
+                    "frame": 0,
+                    "group": None,
+                    "id": 11259,
+                    "label_id": 8,
+                    "occluded": False,
+                    "path_id": 1,
+                    "points": [1511.0, 224.0, 1537.0, 437.0],
+                    "source": "auto",
+                    "type": "rectangle",
+                    "z_order": 0,
+                },
             ],
             "boxes1": [
-                OrderedDict(
-                    [
-                        ("attributes", []),
-                        ("frame", 1),
-                        ("group", None),
-                        ("id", 11260),
-                        ("label_id", 8),
-                        ("occluded", False),
-                        ("points", [1076.0, 199.0, 1218.0, 593.0]),
-                        ("source", "auto"),
-                        ("type", "rectangle"),
-                        ("z_order", 0),
-                    ]
-                ),
-                OrderedDict(
-                    [
-                        ("attributes", []),
-                        ("frame", 1),
-                        ("group", 0),
-                        ("id", 11398),
-                        ("label_id", 8),
-                        ("occluded", False),
-                        (
-                            "points",
-                            [
-                                184.3935546875,
-                                211.5048828125,
-                                331.64968722073354,
-                                97.27792672028772,
-                                445.87667560321825,
-                                126.17873100983161,
-                                454.13404825737416,
-                                691.8087578194827,
-                                180.26452189455085,
-                            ],
-                        ),
-                        ("source", "manual"),
-                        ("type", "polygon"),
-                        ("z_order", 0),
-                    ]
-                ),
+                {
+                    "attributes": [],
+                    "frame": 1,
+                    "group": None,
+                    "id": 11260,
+                    "label_id": 8,
+                    "occluded": False,
+                    "points": [1076.0, 199.0, 1218.0, 593.0],
+                    "source": "auto",
+                    "type": "rectangle",
+                    "z_order": 0,
+                },
+                {
+                    "attributes": [],
+                    "frame": 1,
+                    "group": 0,
+                    "id": 11398,
+                    "label_id": 8,
+                    "occluded": False,
+                    "points": [
+                        184.3935546875,
+                        211.5048828125,
+                        331.64968722073354,
+                        97.27792672028772,
+                        445.87667560321825,
+                        126.17873100983161,
+                        454.13404825737416,
+                        691.8087578194827,
+                        180.26452189455085,
+                    ],
+                    "source": "manual",
+                    "type": "polygon",
+                    "z_order": 0,
+                },
             ],
         }
 

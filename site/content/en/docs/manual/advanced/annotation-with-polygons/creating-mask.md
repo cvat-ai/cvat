@@ -49,13 +49,13 @@ Important notices:
 All the labels have associated colors, which are used in the generated masks.
 These colors can be changed in the task label properties:
 
-  ![](/images/label_color_picker.jpg)
+  ![Task label properties with color picker](/images/label_color_picker.jpg)
 
 Label colors are also displayed in the annotation window on the right panel,
 where you can show or hide specific labels
 (only the presented labels are displayed):
 
-  ![](/images/label_panel_anno_window.jpg)
+  ![Label tab with label colors open in annotation window](/images/label_panel_anno_window.jpg)
 
 A background class can be:
 - A default class, which is implicitly-added, of black color (RGB 0, 0, 0)

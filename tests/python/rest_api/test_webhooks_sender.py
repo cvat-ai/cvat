@@ -9,7 +9,7 @@ from time import sleep, time
 import pytest
 from deepdiff import DeepDiff
 
-from shared.fixtures.init import CVAT_ROOT_DIR, _run
+from shared.fixtures.init import CVAT_ROOT_DIR
 from shared.utils.config import delete_method, get_method, patch_method, post_method
 
 # Testing webhook functionality:
@@ -30,12 +30,9 @@ def target_url():
         for line in f:
             name, value = tuple(line.strip().split("="))
             env_data[name] = value
-
-    container_id = _run(
-        "docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' test_webhook_receiver_1"
-    )[0].strip()[1:-1]
-
-    return f'http://{container_id}:{env_data["SERVER_PORT"]}/{env_data["PAYLOAD_ENDPOINT"]}'
+    return (
+        f'http://{env_data["SERVER_HOST"]}:{env_data["SERVER_PORT"]}/{env_data["PAYLOAD_ENDPOINT"]}'
+    )
 
 
 def webhook_spec(events, project_id=None, webhook_type="organization"):
@@ -463,8 +460,8 @@ class TestWebhookIssueEvents:
         assert payload["before_update"]["position"] == issue["position"]
         assert payload["issue"]["position"] == patch_data["position"]
 
-    def test_webhook_create_and_delete_issue(self, organizations, jobs, tasks):
-        org_id = list(organizations)[0]["id"]
+    @pytest.mark.parametrize("org_id", (2,))
+    def test_webhook_create_and_delete_issue(self, org_id: int, jobs, tasks):
         job_id = next(job["id"] for job in jobs if tasks[job["task_id"]]["organization"] == org_id)
         events = ["create:issue", "delete:issue"]
 

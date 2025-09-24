@@ -199,6 +199,7 @@ class ApiTestBase(APITestCase):
         assert request_status == "finished", f"The last request status was {request_status}"
         return response
 
+
 class ImportApiTestBase(ApiTestBase):
     def _import(
         self,
@@ -211,7 +212,8 @@ class ImportApiTestBase(ApiTestBase):
         expected_4xx_status_code: int | None = None,
     ):
         response = self._post_request(
-            api_path, user,
+            api_path,
+            user,
             data={through_field: file_content},
             format="multipart",
             query_params=query_params,
@@ -226,39 +228,70 @@ class ImportApiTestBase(ApiTestBase):
         return response
 
     def _import_project_dataset(
-        self, user: str, projetc_id: int, file_content: BytesIO, query_params: str = None,
-        expected_4xx_status_code: int | None = None
+        self,
+        user: str,
+        projetc_id: int,
+        file_content: BytesIO,
+        query_params: str = None,
+        expected_4xx_status_code: int | None = None,
     ):
         return self._import(
-            user, f"/api/projects/{projetc_id}/dataset", file_content, through_field="dataset_file",
-            query_params=query_params, expected_4xx_status_code=expected_4xx_status_code
+            user,
+            f"/api/projects/{projetc_id}/dataset",
+            file_content,
+            through_field="dataset_file",
+            query_params=query_params,
+            expected_4xx_status_code=expected_4xx_status_code,
         )
 
     def _import_task_annotations(
-        self, user: str, task_id: int, file_content: BytesIO, query_params: str = None,
-        expected_4xx_status_code: int | None = None
+        self,
+        user: str,
+        task_id: int,
+        file_content: BytesIO,
+        query_params: str = None,
+        expected_4xx_status_code: int | None = None,
     ):
         return self._import(
-            user, f"/api/tasks/{task_id}/annotations", file_content, through_field="annotation_file",
-            query_params=query_params, expected_4xx_status_code=expected_4xx_status_code
+            user,
+            f"/api/tasks/{task_id}/annotations",
+            file_content,
+            through_field="annotation_file",
+            query_params=query_params,
+            expected_4xx_status_code=expected_4xx_status_code,
         )
 
     def _import_job_annotations(
-        self, user: str, job_id: int, file_content: BytesIO, query_params: str = None,
-        expected_4xx_status_code: int | None = None
+        self,
+        user: str,
+        job_id: int,
+        file_content: BytesIO,
+        query_params: str = None,
+        expected_4xx_status_code: int | None = None,
     ):
         return self._import(
-            user, f"/api/jobs/{job_id}/annotations", file_content, through_field="annotation_file",
-            query_params=query_params, expected_4xx_status_code=expected_4xx_status_code
+            user,
+            f"/api/jobs/{job_id}/annotations",
+            file_content,
+            through_field="annotation_file",
+            query_params=query_params,
+            expected_4xx_status_code=expected_4xx_status_code,
         )
 
     def _import_project_backup(
-        self, user: str, file_content: BytesIO, query_params: str = None,
-        expected_4xx_status_code: int | None = None
+        self,
+        user: str,
+        file_content: BytesIO,
+        query_params: str = None,
+        expected_4xx_status_code: int | None = None,
     ) -> int | None:
         response = self._import(
-            user, "/api/projects/backup", file_content, through_field="project_file",
-            query_params=query_params, expected_4xx_status_code=expected_4xx_status_code
+            user,
+            "/api/projects/backup",
+            file_content,
+            through_field="project_file",
+            query_params=query_params,
+            expected_4xx_status_code=expected_4xx_status_code,
         )
         if expected_4xx_status_code:
             return None
@@ -266,17 +299,25 @@ class ImportApiTestBase(ApiTestBase):
         return response.json()["result_id"]
 
     def _import_task_backup(
-        self, user: str, file_content: BytesIO, query_params: str = None,
-        expected_4xx_status_code: int | None = None
+        self,
+        user: str,
+        file_content: BytesIO,
+        query_params: str = None,
+        expected_4xx_status_code: int | None = None,
     ) -> int | None:
         response = self._import(
-            user, "/api/tasks/backup", file_content, through_field="task_file",
-            query_params=query_params, expected_4xx_status_code=expected_4xx_status_code
+            user,
+            "/api/tasks/backup",
+            file_content,
+            through_field="task_file",
+            query_params=query_params,
+            expected_4xx_status_code=expected_4xx_status_code,
         )
         if expected_4xx_status_code:
             return None
 
         return response.json()["result_id"]
+
 
 class ExportApiTestBase(ApiTestBase):
     def _export(
@@ -716,11 +757,11 @@ def check_annotation_response(
         rotation=0,
         attributes=[],
         elements=[],
-    )   # if omitted, are set by the server
-        # https://docs.cvat.ai/docs/api_sdk/sdk/reference/models/labeled-shape/
+    )  # if omitted, are set by the server
+    # https://docs.cvat.ai/docs/api_sdk/sdk/reference/models/labeled-shape/
 
     if expected_values is not None:
-        optional_fields['source'] = expected_values.get('source') or optional_fields['source']
+        optional_fields["source"] = expected_values.get("source") or optional_fields["source"]
         # the only field with a variable default
 
         def put_expected_values(v: Any) -> Any:
@@ -758,8 +799,7 @@ def check_annotation_response(
                 ],
             )
         if key_path and key_path[-1] == "tracks":
-            return filter_dict(optional_fields, keep=["source",
-             "attributes", "elements"])
+            return filter_dict(optional_fields, keep=["source", "attributes", "elements"])
         if key_path and _format_key(key_path).endswith("tracks.elements"):
             return filter_dict(optional_fields, keep=["source", "attributes"])
         if key_path and _format_key(key_path).endswith("tracks.elements.shapes"):

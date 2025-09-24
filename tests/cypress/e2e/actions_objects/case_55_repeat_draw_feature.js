@@ -69,11 +69,11 @@ context('Repeat draw feature.', () => {
         cy.get(id).find('.cvat-objects-sidebar-state-item-object-type-text').should('have.text', expectedType);
     }
 
-    function repeatDrawningStart() {
+    function repeatDrawingStart() {
         cy.get('body').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' });
     }
 
-    function repeatDrawningFinish() {
+    function repeatDrawingFinish() {
         cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' });
         cy.get('.cvat-canvas-container').trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
     }
@@ -85,7 +85,7 @@ context('Repeat draw feature.', () => {
     describe(`Testing case "${caseId}"`, () => {
         it('Draw and repeat the drawing of the rectangle.', () => {
             cy.createRectangle(createRectangleShape2Points);
-            repeatDrawningStart(); // Repeat the drawing the rectangle
+            repeatDrawingStart(); // Repeat the drawing the rectangle
             cy.get('.cvat-canvas-container').click(createRectangleShape2Points.firstX, createRectangleShape2Points.firstY - 200);
             cy.get('.cvat-canvas-container').click(createRectangleShape2Points.secondX, createRectangleShape2Points.secondY - 200);
             cy.get('#cvat_canvas_shape_2').should('exist');
@@ -95,11 +95,11 @@ context('Repeat draw feature.', () => {
 
         it('Draw and repeat the drawing of the polygon.', () => {
             cy.createPolygon(createPolygonShape);
-            repeatDrawningStart(); // Repeat the drawing the polygon
+            repeatDrawingStart(); // Repeat the drawing the polygon
             createPolygonShape.pointsMap.forEach((element) => {
                 cy.get('.cvat-canvas-container').click(element.x, element.y - 200);
             });
-            repeatDrawningFinish();
+            repeatDrawingFinish();
             cy.get('#cvat_canvas_shape_4').should('exist');
             checkCountShapes(4);
             checkShapeType('#cvat-objects-sidebar-state-item-4', 'POLYGON SHAPE');
@@ -107,11 +107,11 @@ context('Repeat draw feature.', () => {
 
         it('Draw and repeat the drawing of the polyline.', () => {
             cy.createPolyline(createPolylinesShape);
-            repeatDrawningStart(); // Repeat the drawing the polyline
+            repeatDrawingStart(); // Repeat the drawing the polyline
             createPolylinesShape.pointsMap.forEach((element) => {
                 cy.get('.cvat-canvas-container').click(element.x, element.y - 200);
             });
-            repeatDrawningFinish();
+            repeatDrawingFinish();
             cy.get('#cvat_canvas_shape_6').should('exist');
             checkCountShapes(6);
             checkShapeType('#cvat-objects-sidebar-state-item-6', 'POLYLINE SHAPE');
@@ -119,11 +119,11 @@ context('Repeat draw feature.', () => {
 
         it('Draw and repeat the drawing of the point.', () => {
             cy.createPoint(createPointsShape);
-            repeatDrawningStart(); // Repeat the drawing the point
+            repeatDrawingStart(); // Repeat the drawing the point
             createPointsShape.pointsMap.forEach((element) => {
                 cy.get('.cvat-canvas-container').click(element.x, element.y - 200);
             });
-            repeatDrawningFinish();
+            repeatDrawingFinish();
             cy.get('#cvat_canvas_shape_8').should('exist');
             checkCountShapes(8);
             checkShapeType('#cvat-objects-sidebar-state-item-8', 'POINTS SHAPE');
@@ -131,7 +131,7 @@ context('Repeat draw feature.', () => {
 
         it('Draw and repeat the drawing of the cuboid.', () => {
             cy.createCuboid(createCuboidShape2Points);
-            repeatDrawningStart(); // Repeat the drawing the cuboid
+            repeatDrawingStart(); // Repeat the drawing the cuboid
             cy.get('.cvat-canvas-container').click(createCuboidShape2Points.firstX, createCuboidShape2Points.firstY - 200);
             cy.get('.cvat-canvas-container').click(createCuboidShape2Points.secondX, createCuboidShape2Points.secondY - 200);
             cy.get('#cvat_canvas_shape_10').should('exist');

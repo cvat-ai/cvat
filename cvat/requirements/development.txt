@@ -4,21 +4,15 @@
 # To update it, refer to cvat/requirements/README.txt.
 #
 -r base.txt
-autopep8==2.3.2
-    # via django-silk
 django-extensions==3.0.8
     # via -r cvat/requirements/development.in
-django-silk==5.3.2
+django-silk==5.4.0
     # via -r cvat/requirements/development.in
 gprof2dot==2025.4.14
     # via django-silk
-pycodestyle==2.13.0
-    # via autopep8
 rope==0.17.0
     # via -r cvat/requirements/development.in
 snakeviz==2.1.0
     # via -r cvat/requirements/development.in
-tomli==2.2.1
-    # via autopep8
-tornado==6.5
+tornado==6.5.1
     # via snakeviz

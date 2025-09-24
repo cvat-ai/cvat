@@ -41,9 +41,6 @@ os.makedirs(PROJECTS_ROOT, exist_ok=True)
 SHARE_ROOT = os.path.join(BASE_DIR, "share")
 os.makedirs(SHARE_ROOT, exist_ok=True)
 
-MODELS_ROOT = os.path.join(DATA_ROOT, "models")
-os.makedirs(MODELS_ROOT, exist_ok=True)
-
 LOGS_ROOT = os.path.join(BASE_DIR, "logs")
 os.makedirs(LOGS_ROOT, exist_ok=True)
 
@@ -55,6 +52,7 @@ os.makedirs(CLOUD_STORAGE_ROOT, exist_ok=True)
 
 TMP_FILES_ROOT = os.path.join(DATA_ROOT, "tmp")
 os.makedirs(TMP_FILES_ROOT, exist_ok=True)
+IGNORE_TMP_FOLDER_CLEANUP_ERRORS = False
 
 # To avoid ERROR django.security.SuspiciousFileOperation:
 # The joined path (...) is located outside of the base path component

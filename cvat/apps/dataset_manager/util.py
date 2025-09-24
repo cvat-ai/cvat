@@ -31,8 +31,8 @@ def current_function_name(depth=1):
 
 
 def make_zip_archive(src_path, dst_path):
-    with zipfile.ZipFile(dst_path, 'w') as archive:
-        for (dirpath, _, filenames) in os.walk(src_path):
+    with zipfile.ZipFile(dst_path, "w") as archive:
+        for dirpath, _, filenames in os.walk(src_path):
             for name in filenames:
                 path = osp.join(dirpath, name)
                 archive.write(path, osp.relpath(path, src_path))
@@ -55,6 +55,7 @@ def faster_deepcopy(v):
 
 class LockNotAvailableError(Exception):
     pass
+
 
 class CacheFileOrDirPathParseError(Exception):
     pass
@@ -79,7 +80,6 @@ def get_export_cache_lock(
 
     if acquire_timeout < 0:
         raise ValueError("acquire_timeout must be a non-negative number")
-
 
     if isinstance(ttl, timedelta):
         ttl = ttl.total_seconds()
@@ -106,6 +106,7 @@ def get_export_cache_lock(
         if acquired:
             lock.release()
 
+
 class OperationType(str, Enum):
     EXPORT = "export"
 
@@ -121,10 +122,11 @@ class ExportFileType(str, Enum):
 
     @classmethod
     def values(cls) -> list[str]:
-        return list(map(lambda x: x.value, cls))
+        return [x.value for x in cls]
 
     def __str__(self):
         return self.value
+
 
 class InstanceType(str, Enum):
     PROJECT = "project"
@@ -133,17 +135,20 @@ class InstanceType(str, Enum):
 
     @classmethod
     def values(cls) -> list[str]:
-        return list(map(lambda x: x.value, cls))
+        return [x.value for x in cls]
 
     def __str__(self):
         return self.value
 
+
 class FileId(Protocol):
     value: str
+
 
 @attrs.frozen(kw_only=True)
 class SimpleFileId(FileId):
     value: str = attrs.field()
+
 
 @attrs.frozen(kw_only=True)
 class ConstructedFileId(FileId):
@@ -167,6 +172,7 @@ class TmpDirManager:
     SPLITTER = "-"
     TMP_ROOT = settings.TMP_FILES_ROOT
     TMP_FILE_OR_DIR_RETENTION_DAYS = settings.TMP_FILE_OR_DIR_RETENTION_DAYS
+    IGNORE_CLEANUP_ERRORS = settings.IGNORE_TMP_FOLDER_CLEANUP_ERRORS
 
     @classmethod
     @contextmanager
@@ -175,7 +181,6 @@ class TmpDirManager:
         *,
         prefix: str | None = None,
         suffix: str | None = None,
-        ignore_cleanup_errors: bool | None = None,
     ) -> Generator[str, Any, Any]:
         """
         The method allows to create a temporary directory and
@@ -185,7 +190,7 @@ class TmpDirManager:
         for k, v in {
             "prefix": prefix,
             "suffix": suffix,
-            "ignore_cleanup_errors": ignore_cleanup_errors,
+            "ignore_cleanup_errors": cls.IGNORE_CLEANUP_ERRORS,
         }.items():
             if v is not None:
                 params[k] = v
@@ -212,22 +217,24 @@ class ExportCacheManager:
 
     SPLITTER = "-"
     INSTANCE_PREFIX = "instance"
-    FILE_NAME_TEMPLATE_WITH_INSTANCE = SPLITTER.join([
-        "{instance_type}", "{instance_id}", "{file_type}", INSTANCE_PREFIX +
-        # store the instance timestamp in the file name to reliably get this information
-        # ctime / mtime do not return file creation time on linux
-        # mtime is used for file usage checks
-        "{instance_timestamp}{optional_suffix}.{file_ext}"
-    ])
+    FILE_NAME_TEMPLATE_WITH_INSTANCE = SPLITTER.join(
+        [
+            "{instance_type}",
+            "{instance_id}",
+            "{file_type}",
+            INSTANCE_PREFIX +
+            # store the instance timestamp in the file name to reliably get this information
+            # ctime / mtime do not return file creation time on linux
+            # mtime is used for file usage checks
+            "{instance_timestamp}{optional_suffix}.{file_ext}",
+        ]
+    )
 
-    FILE_NAME_TEMPLATE_WITHOUT_INSTANCE = SPLITTER.join([
-        "{file_type}", "{file_id}.{file_ext}"
-    ])
+    FILE_NAME_TEMPLATE_WITHOUT_INSTANCE = SPLITTER.join(["{file_type}", "{file_id}.{file_ext}"])
 
     @classmethod
     def file_types_with_general_template(cls):
         return (ExportFileType.EVENTS,)
-
 
     @classmethod
     def make_dataset_file_path(
@@ -265,6 +272,7 @@ class ExportCacheManager:
         instance_type: str,
         instance_id: int,
         instance_timestamp: float,
+        lightweight: bool,
     ) -> str:
         instance_type = InstanceType(instance_type.lower())
         filename = cls.FILE_NAME_TEMPLATE_WITH_INSTANCE.format(
@@ -272,7 +280,7 @@ class ExportCacheManager:
             instance_id=instance_id,
             file_type=ExportFileType.BACKUP,
             instance_timestamp=instance_timestamp,
-            optional_suffix="",
+            optional_suffix=cls.SPLITTER + "lightweight" if lightweight else "",
             file_ext="zip",
         )
         return osp.join(cls.ROOT, filename)
@@ -294,9 +302,7 @@ class ExportCacheManager:
         return osp.join(cls.ROOT, filename)
 
     @classmethod
-    def parse_filename(
-        cls, filename: str,
-    ) -> ParsedExportFilename:
+    def parse_filename(cls, filename: str) -> ParsedExportFilename:
         basename, file_ext = osp.splitext(filename)
         file_ext = file_ext.strip(".").lower()
 
@@ -306,9 +312,7 @@ class ExportCacheManager:
                     file_type, file_id = basename.split(cls.SPLITTER, maxsplit=1)
 
                     return ParsedExportFilename(
-                        file_type=file_type,
-                        file_id=SimpleFileId(value=file_id),
-                        file_ext=file_ext
+                        file_type=file_type, file_id=SimpleFileId(value=file_id), file_ext=file_ext
                     )
 
             basename_match = re.fullmatch(
@@ -322,16 +326,21 @@ class ExportCacheManager:
             )
 
             if not basename_match:
-                assert False # will be handled
+                assert False  # will be handled
 
             fragments = basename_match.groupdict()
-            unparsed = fragments.pop("unparsed")[len(cls.INSTANCE_PREFIX):]
+            unparsed = fragments.pop("unparsed")[len(cls.INSTANCE_PREFIX) :]
             instance_timestamp = unparsed
 
             if fragments["file_type"] in (ExportFileType.DATASET, ExportFileType.ANNOTATIONS):
                 # The "format" is a part of file id, but there is actually
                 # no need to use it after filename parsing, so just drop it.
                 instance_timestamp, _ = unparsed.split(cls.SPLITTER, maxsplit=1)
+            elif fragments["file_type"] == ExportFileType.BACKUP:
+                # Backup filename may have "lightweight" suffix
+                split_unparsed = unparsed.split(cls.SPLITTER, maxsplit=1)
+                if len(split_unparsed) > 1:
+                    instance_timestamp, _ = split_unparsed
 
             parsed_file_name = ParsedExportFilename(
                 file_type=fragments.pop("file_type"),

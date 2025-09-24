@@ -3,14 +3,12 @@
 #
 # SPDX-License-Identifier: MIT
 
-import base64
-import json
+from __future__ import annotations
+
 import os
 import os.path
-import uuid
-from dataclasses import asdict, dataclass
+import shutil
 from pathlib import Path
-from tempfile import NamedTemporaryFile
 from textwrap import dedent
 from unittest import mock
 from urllib.parse import urljoin
@@ -23,141 +21,26 @@ from rest_framework import mixins, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from cvat.apps.dataset_manager.util import TmpDirManager
 from cvat.apps.engine.background import BackupExporter, DatasetExporter
 from cvat.apps.engine.handlers import clear_import_cache
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.models import Location, RequestAction, RequestTarget
-from cvat.apps.engine.rq import RequestId
+from cvat.apps.engine.models import Location
 from cvat.apps.engine.serializers import DataSerializer
+from cvat.apps.engine.tus import (
+    TusChunk,
+    TusFile,
+    TusFileForbiddenError,
+    TusFileNotFoundError,
+    TusTooLargeFileError,
+)
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.redis_handler.serializers import RqIdSerializer
 
 slogger = ServerLogManager(__name__)
 
-class TusFile:
-    @dataclass
-    class TusMeta:
-        metadata: dict
-        filename: str
-        file_size: int
-        offset: int = 0
-
-    class TusMetaFile():
-        def __init__(self, path) -> None:
-            self._path = path
-            self._meta = None
-            if os.path.exists(self._path):
-                self._meta = self._read()
-
-        @property
-        def meta(self):
-            return self._meta
-
-        @meta.setter
-        def meta(self, meta):
-            self._meta = meta
-
-        def _read(self):
-            with open(self._path, "r") as fp:
-                data = json.load(fp)
-            return TusFile.TusMeta(**data)
-
-        def save(self):
-            if self._meta is not None:
-                os.makedirs(os.path.dirname(self._path), exist_ok=True)
-                with open(self._path, "w") as fp:
-                    json.dump(asdict(self._meta), fp)
-
-        def exists(self):
-            return os.path.exists(self._path)
-
-        def delete(self):
-            os.remove(self._path)
-
-    def __init__(self, file_id, upload_dir, meta=None):
-        self.file_id = file_id
-        self.upload_dir = upload_dir
-        self.file_path = os.path.join(self.upload_dir, self.file_id)
-        self.meta_file = self.TusMetaFile(self._get_tus_meta_file_path(file_id, upload_dir))
-        if meta is not None:
-            self.meta_file.meta = meta
-            self.meta_file.save()
-
-    @property
-    def filename(self):
-        return self.meta_file.meta.filename
-
-    @property
-    def file_size(self):
-        return self.meta_file.meta.file_size
-
-    @property
-    def offset(self):
-        return self.meta_file.meta.offset
-
-    def exists(self):
-        return self.meta_file.exists()
-
-    @staticmethod
-    def _get_tus_meta_file_path(file_id, upload_dir):
-        return os.path.join(upload_dir, f"{file_id}.meta")
-
-    def init_file(self):
-        os.makedirs(self.upload_dir, exist_ok=True)
-        file_path = os.path.join(self.upload_dir, self.file_id)
-        with open(file_path, 'wb') as file:
-            file.seek(self.file_size - 1)
-            file.write(b'\0')
-
-    def write_chunk(self, chunk):
-        with open(self.file_path, 'r+b') as file:
-            file.seek(chunk.offset)
-            file.write(chunk.content)
-        self.meta_file.meta.offset += chunk.size
-        self.meta_file.save()
-
-    def is_complete(self):
-        return self.offset == self.file_size
-
-    def rename(self):
-        file_path = os.path.join(self.upload_dir, self.filename)
-        if os.path.lexists(file_path):
-            original_file_name, extension = os.path.splitext(self.filename)
-            file_amount = 1
-            while os.path.lexists(os.path.join(self.upload_dir, self.filename)):
-                self.meta_file.meta.filename = "{}_{}{}".format(original_file_name, file_amount, extension)
-                file_path = os.path.join(self.upload_dir, self.filename)
-                file_amount += 1
-        os.rename(self.file_path, file_path)
-
-    def clean(self):
-        self.meta_file.delete()
-
-    @staticmethod
-    def create_file(metadata, file_size, upload_dir):
-        file_id = str(uuid.uuid4())
-        filename = metadata.get("filename")
-
-        tus_file = TusFile(
-            file_id,
-            upload_dir,
-            TusFile.TusMeta(
-                filename=filename,
-                file_size=file_size,
-                offset=0,
-                metadata=metadata,
-            ),
-        )
-        tus_file.init_file()
-
-        return tus_file
-
-class TusChunk:
-    def __init__(self, request: ExtendedRequest):
-        self.META = request.META
-        self.offset = int(request.META.get("HTTP_UPLOAD_OFFSET", 0))
-        self.size = int(request.META.get("CONTENT_LENGTH", settings.TUS_DEFAULT_CHUNK_SIZE))
-        self.content = request.body
+class UploadedFileError(ValueError):
+    pass
 
 class UploadMixin:
     """
@@ -186,19 +69,17 @@ class UploadMixin:
     _tus_api_version = '1.0.0'
     _tus_api_version_supported = ['1.0.0']
     _tus_api_extensions = []
-    _tus_max_file_size = str(settings.TUS_MAX_FILE_SIZE)
     _base_tus_headers = {
         'Tus-Resumable': _tus_api_version,
         'Tus-Version': ",".join(_tus_api_version_supported),
         'Tus-Extension': ",".join(_tus_api_extensions),
-        'Tus-Max-Size': _tus_max_file_size,
+        'Tus-Max-Size': str(TusFile.TusMeta.MAX_FILE_SIZE),
         'Access-Control-Allow-Origin': "*",
         'Access-Control-Allow-Methods': "PATCH,HEAD,GET,POST,OPTIONS",
         'Access-Control-Expose-Headers': "Tus-Resumable,upload-length,upload-metadata,Location,Upload-Offset",
         'Access-Control-Allow-Headers': "Tus-Resumable,upload-length,upload-metadata,Location,Upload-Offset,content-type",
         'Cache-Control': 'no-store'
     }
-    file_id_regex = r'(?P<file_id>\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b)'
 
     def _tus_response(self, status, data=None, extra_headers=None):
         response = Response(data, status)
@@ -208,21 +89,6 @@ class UploadMixin:
             for key, value in extra_headers.items():
                 response.__setitem__(key, value)
         return response
-
-    def _get_metadata(self, request: ExtendedRequest):
-        metadata = {}
-        if request.META.get("HTTP_UPLOAD_METADATA"):
-            for kv in request.META.get("HTTP_UPLOAD_METADATA").split(","):
-                splited_metadata = kv.split(" ")
-                if len(splited_metadata) == 2:
-                    key, value = splited_metadata
-                    value = base64.b64decode(value)
-                    if isinstance(value, bytes):
-                        value = value.decode()
-                    metadata[key] = value
-                else:
-                    metadata[splited_metadata[0]] = ""
-        return metadata
 
     def upload_data(self, request: ExtendedRequest):
         tus_request = request.headers.get('Upload-Length', None) is not None or request.method == 'OPTIONS'
@@ -241,90 +107,101 @@ class UploadMixin:
         else: # backward compatibility case - no upload headers were found
             return self.upload_finished(request)
 
+    def should_result_file_be_replaced(self) -> bool:
+        return self.action in ("data", "append_data_chunk")
+
     def init_tus_upload(self, request: ExtendedRequest):
         if request.method == 'OPTIONS':
             return self._tus_response(status=status.HTTP_204_NO_CONTENT)
-        else:
-            metadata = self._get_metadata(request)
-            filename = metadata.get('filename', '')
-            if not self.is_valid_uploaded_file_name(filename):
-                return self._tus_response(status=status.HTTP_400_BAD_REQUEST,
-                    data="File name {} is not allowed".format(filename))
 
+        upload_dir = Path(self.get_upload_dir())
 
-            message_id = request.META.get("HTTP_MESSAGE_ID")
-            if message_id:
-                metadata["message_id"] = base64.b64decode(message_id)
-
-            import_type = request.path.strip('/').split('/')[-1]
-            if import_type == 'backup':
-                # we need to create unique temp file here because
-                # users can try to import backups with the same name at the same time
-                with NamedTemporaryFile(prefix=f'cvat-backup-{filename}-by-{request.user}', suffix='.zip', dir=self.get_upload_dir()) as tmp_file:
-                    filename = os.path.relpath(tmp_file.name, self.get_upload_dir())
-                metadata['filename'] = filename
-            file_path = os.path.join(self.get_upload_dir(), filename)
-            file_exists = os.path.lexists(file_path) and import_type != 'backup'
-
-            if file_exists:
-                # check whether the rq_job is in progress or has been finished/failed
-                object_class_name = self._object.__class__.__name__.lower()
-                template = RequestId(
-                    action=RequestAction.IMPORT,
-                    target=RequestTarget(object_class_name),
-                    target_id=self._object.pk,
-                    subresource=import_type,
-                ).render()
-                queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
-                finished_job_ids = queue.finished_job_registry.get_job_ids()
-                failed_job_ids = queue.failed_job_registry.get_job_ids()
-                if template in finished_job_ids or template in failed_job_ids:
-                    os.remove(file_path)
-                    file_exists = False
-
-            if file_exists:
-                return self._tus_response(status=status.HTTP_409_CONFLICT,
-                    data="File with same name already exists")
-
-            file_size = int(request.META.get("HTTP_UPLOAD_LENGTH", "0"))
-            if file_size > int(self._tus_max_file_size):
-                return self._tus_response(status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                    data="File size exceeds max limit of {} bytes".format(self._tus_max_file_size))
-
-
-            tus_file = TusFile.create_file(metadata, file_size, self.get_upload_dir())
-
-            location = request.build_absolute_uri()
-            if 'HTTP_X_FORWARDED_HOST' not in request.META:
-                location = request.META.get('HTTP_ORIGIN') + request.META.get('PATH_INFO')
-
-            if import_type in ('backup', 'annotations', 'datasets'):
-                scheduler = django_rq.get_scheduler(settings.CVAT_QUEUES.CLEANING.value)
-                path = Path(self.get_upload_dir()) / tus_file.filename
-                cleaning_job = scheduler.enqueue_in(time_delta=settings.IMPORT_CACHE_CLEAN_DELAY,
-                    func=clear_import_cache,
-                    path=path,
-                    creation_time=Path(tus_file.file_path).stat().st_ctime
-                )
-                slogger.glob.info(
-                    f'The cleaning job {cleaning_job.id} is queued.'
-                    f'The check that the file {path} is deleted will be carried out after '
-                    f'{settings.IMPORT_CACHE_CLEAN_DELAY}.'
-                )
-
+        try:
+            metadata = TusFile.TusMeta.from_request(request)
+        except TusTooLargeFileError:
             return self._tus_response(
-                status=status.HTTP_201_CREATED,
-                extra_headers={'Location': urljoin(location, tus_file.file_id),
-                               'Upload-Filename': tus_file.filename})
+                status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                data=f"File size exceeds max limit of {TusFile.TusMeta.MAX_FILE_SIZE} bytes"
+            )
+
+        replaceable_result_file = self.should_result_file_be_replaced()
+
+        if replaceable_result_file:
+            if not metadata.filename:
+                return self._tus_response(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    data="Metadata is expected to contain 'filename' key"
+                )
+
+            try:
+                self.validate_uploaded_file_name(filename=metadata.filename, upload_dir=upload_dir)
+            except UploadedFileError:
+                return Response(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    data=f"File name {metadata.filename} is not allowed",
+                    content_type="text/plain"
+                )
+
+            if (upload_dir / metadata.filename).exists():
+                return self._tus_response(
+                    status=status.HTTP_409_CONFLICT,
+                    data="File with same name already exists"
+                )
+
+        tus_file = TusFile.create_file(
+            metadata=metadata, upload_dir=upload_dir, user_id=request.user.id
+        )
+
+        location = request.build_absolute_uri()
+        if 'HTTP_X_FORWARDED_HOST' not in request.META:
+            location = request.META.get('HTTP_ORIGIN') + request.META.get('PATH_INFO')
+
+        # FUTURE-TODO: migrate to common TMP cache where files
+        # are deleted automatically by a periodic background job
+        if self.action in ("annotations", "dataset") and str(upload_dir) != TmpDirManager.TMP_ROOT:
+            scheduler = django_rq.get_scheduler(settings.CVAT_QUEUES.CLEANING.value)
+            file_path = upload_dir / (
+                tus_file.filename if replaceable_result_file else tus_file.file_id.as_str
+            )
+            cleaning_job = scheduler.enqueue_in(time_delta=settings.IMPORT_CACHE_CLEAN_DELAY,
+                func=clear_import_cache,
+                path=file_path,
+                creation_time=file_path.stat().st_ctime
+            )
+            slogger.glob.info(
+                f'The cleaning job {cleaning_job.id} is queued.'
+                f'The check that the file {file_path} is deleted will be carried out after '
+                f'{settings.IMPORT_CACHE_CLEAN_DELAY}.'
+            )
+
+        return self._tus_response(
+            status=status.HTTP_201_CREATED,
+            extra_headers={
+                'Location': urljoin(location, tus_file.file_id.as_str),
+                'Upload-Filename': tus_file.meta_file.meta.filename if replaceable_result_file else tus_file.file_id.as_str
+            }
+        )
 
     def append_tus_chunk(self, request: ExtendedRequest, file_id: str):
-        tus_file = TusFile(str(file_id), self.get_upload_dir())
-        if request.method == 'HEAD':
-            if tus_file.exists():
-                return self._tus_response(status=status.HTTP_200_OK, extra_headers={
-                               'Upload-Offset': tus_file.offset,
-                               'Upload-Length': tus_file.file_size})
+        tus_file = TusFile(file_id, upload_dir=Path(self.get_upload_dir()))
+        tus_file.meta_file.init_from_file()
+
+        try:
+            tus_file.validate(user_id=request.user.id)
+        # https://tus.io/protocols/resumable-upload#patch
+        except TusFileNotFoundError:
             return self._tus_response(status=status.HTTP_404_NOT_FOUND)
+        except TusFileForbiddenError:
+            return self._tus_response(status=status.HTTP_403_FORBIDDEN)
+
+        if request.method == 'HEAD':
+            return self._tus_response(
+                status=status.HTTP_200_OK,
+                extra_headers={
+                    'Upload-Offset': tus_file.offset,
+                    'Upload-Length': tus_file.file_size
+                },
+            )
 
         chunk = TusChunk(request)
 
@@ -337,22 +214,23 @@ class UploadMixin:
         tus_file.write_chunk(chunk)
 
         if tus_file.is_complete():
-            tus_file.rename()
+            if self.should_result_file_be_replaced():
+                tus_file.rename()
             tus_file.clean()
 
-        return self._tus_response(status=status.HTTP_204_NO_CONTENT,
-                                    extra_headers={'Upload-Offset': tus_file.offset,
-                                                    'Upload-Filename': tus_file.filename})
+        return self._tus_response(
+            status=status.HTTP_204_NO_CONTENT,
+            extra_headers={
+                'Upload-Offset': tus_file.offset,
+            }
+        )
 
-    def is_valid_uploaded_file_name(self, filename: str) -> bool:
-        """
-        Checks the file name to be valid.
-        Returns True if the filename is valid, otherwise returns False.
-        """
+    def validate_uploaded_file_name(self, *, filename: str, upload_dir: Path) -> None:
+        """Checks the file name to be valid"""
 
-        upload_dir = self.get_upload_dir()
-        file_path = os.path.join(upload_dir, filename)
-        return os.path.commonprefix((os.path.realpath(file_path), upload_dir)) == upload_dir
+        file_path = upload_dir / filename
+        if not file_path.resolve().is_relative_to(upload_dir):
+            raise UploadedFileError
 
     def get_upload_dir(self) -> str:
         return self._object.data.get_upload_dirname()
@@ -373,12 +251,18 @@ class UploadMixin:
             upload_dir = self.get_upload_dir()
             for client_file in client_files:
                 filename = client_file['file'].name
-                if not self.is_valid_uploaded_file_name(filename):
-                    return Response(status=status.HTTP_400_BAD_REQUEST,
-                        data=f"File name {filename} is not allowed", content_type="text/plain")
+                try:
+                    self.validate_uploaded_file_name(filename=filename, upload_dir=Path(upload_dir))
+                except UploadedFileError:
+                    return Response(
+                        status=status.HTTP_400_BAD_REQUEST,
+                        data=f"File name {filename} is not allowed",
+                        content_type="text/plain"
+                    )
 
                 with open(os.path.join(upload_dir, filename), 'ab+') as destination:
-                    destination.write(client_file['file'].read())
+                    shutil.copyfileobj(client_file['file'], destination)
+
         return Response(status=status.HTTP_200_OK)
 
     def upload_started(self, request: ExtendedRequest):
@@ -482,6 +366,9 @@ class BackupMixin:
                 enum=Location.list()),
             OpenApiParameter('cloud_storage_id', description='Storage id',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
+            OpenApiParameter('lightweight',
+                description='Makes a lightweight backup (without media files) for tasks whose media is located in cloud storage',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False, default=True),
         ],
         request=OpenApiTypes.NONE,
         responses={

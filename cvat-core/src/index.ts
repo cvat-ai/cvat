@@ -13,7 +13,9 @@ import { AnnotationFormats } from './annotation-formats';
 import logger from './logger';
 import * as enums from './enums';
 import config from './config';
-import { mask2Rle, rle2Mask, propagateShapes } from './object-utils';
+import {
+    mask2Rle, rle2Mask, propagateShapes, validateAttributeValue,
+} from './object-utils';
 import User from './user';
 import Project from './project';
 import { Job, Task } from './session';
@@ -41,6 +43,7 @@ import {
     callAction,
     listActions,
     registerAction,
+    unregisterAction,
 } from './annotations-actions/annotations-actions';
 import { BaseCollectionAction } from './annotations-actions/base-collection-action';
 import { BaseShapesAction } from './annotations-actions/base-shapes-action';
@@ -104,6 +107,7 @@ export default interface CVATCore {
     tasks: {
         get: (filter: {
             page?: number;
+            pageSize?: number;
             projectId?: number;
             id?: number;
             sort?: string;
@@ -117,6 +121,7 @@ export default interface CVATCore {
             filter: {
                 id?: number;
                 page?: number;
+                pageSize?: number;
                 search?: string;
                 sort?: string;
                 filter?: string;
@@ -178,6 +183,7 @@ export default interface CVATCore {
     actions: {
         list: typeof listActions;
         register: typeof registerAction;
+        unregister: typeof unregisterAction;
         run: typeof runAction;
         call: typeof callAction;
     };
@@ -235,5 +241,6 @@ export default interface CVATCore {
         mask2Rle: typeof mask2Rle;
         rle2Mask: typeof rle2Mask;
         propagateShapes: typeof propagateShapes;
+        validateAttributeValue: typeof validateAttributeValue;
     };
 }

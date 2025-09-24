@@ -80,13 +80,11 @@ pip -m venv venv
 pip install -r requirements.txt
 ```
 
-The documentation site includes both old and new releases. Because of this,
-you will need tooling for all these releases. Currently, it means you need
-in your environment:
-- `hugo-0.110` - for new docs
-- `hugo-0.83` - for older docs
+The documentation site includes the last MAX_VERSIONS_TO_BUILD releases
+(they are defined in `build_docs.py`). To build the website, you only need:
+- `hugo-0.110` - for all documentation builds
 
-Please download these hugo releases (both extended), and make such binaries
+Please download this hugo release (extended), and make the binary
 available in your `PATH` environment variable.
 
 On Linux, you can install it this way:
@@ -96,11 +94,6 @@ wget https://github.com/gohugoio/hugo/releases/download/v0.110.0/hugo_extended_0
 (mkdir hugo_extended_0.110.0_Linux-64bit && tar -xf hugo_extended_0.110.0_Linux-64bit.tar.gz -C hugo_extended_0.110.0_Linux-64bit)
 cd hugo_extended_0.110.0_Linux-64bit
 sudo cp hugo /usr/local/bin/hugo-0.110
-
-wget https://github.com/gohugoio/hugo/releases/download/v0.83.0/hugo_extended_0.83.0_Linux-64bit.tar.gz
-(mkdir hugo_extended_0.83.0_Linux-64bit && tar -xf hugo_extended_0.83.0_Linux-64bit.tar.gz -C hugo_extended_0.83.0_Linux-64bit)
-cd hugo_extended_0.83.0_Linux-64bit
-sudo cp hugo /usr/local/bin/hugo-0.83
 ```
 
 2. Use the commands that generate a static site in the `public/` folder:
@@ -116,6 +109,11 @@ python build_docs.py
 The resulting folder contains the whole site, which can be published by a server like Apache.
 Read more [here](https://www.docsy.dev/docs/getting-started/)
 and [here](https://gohugo.io/hosting-and-deployment/).
+
+You can also deploy the website locally:
+```bash
+python -m http.server -d path/to/public
+```
 
 ### How to update the submodule of the Docsy theme
 

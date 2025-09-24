@@ -10,10 +10,14 @@ of a validation subset of images. To estimate the task quality, CVAT compares
 all other jobs in the task against the established **Ground truth** job,
 and calculates annotation quality based on this comparison.
 
-> **Note** that quality estimation only supports
-> 2d tasks. It supports all the annotation types except 2d cuboids.
+{{% alert title="Note" color="primary" %}}
+Quality estimation only supports
+2d tasks. It supports all the annotation types except 2d cuboids.
+{{% /alert %}}
 
-> **Note** that quality estimation is available for projects, tasks, and jobs.
+{{% alert title="Note" color="primary" %}}
+Quality estimation is available for projects, tasks, and jobs.
+{{% /alert %}}
 
 CVAT has the following features for automated quality control of annotations:
 - Validation set configuration for a task
@@ -71,8 +75,10 @@ Ground Truth jobs and Quality settings. Ground Truth jobs are configured at the 
 In this section, we explain how to set up a Ground Truth job.
 Read more about quality settings [here](#annotation-quality-settings).
 
-> A **Ground truth** job is considered **configured**
-> if it is at the **acceptance** stage and in the **completed** state.
+{{% alert title="Note" color="primary" %}}
+A **Ground truth** job is considered **configured**
+if it is at the **acceptance** stage and in the **completed** state.
+{{% /alert %}}
 
 A _configured_ Ground Truth job is required for all quality computations in CVAT.
 
@@ -94,8 +100,10 @@ A _configured_ Ground Truth job is required for all quality computations in CVAT
 {{% /tab %}}
 
 {{%tab header="In an existing task" %}}
-> For already existing tasks only the Ground Truth validation mode is available. If you want
-> to use Honeypots for your task, you will need to recreate the task.
+{{% alert title="Note" color="primary" %}}
+For already existing tasks only the Ground Truth validation mode is available. If you want
+to use Honeypots for your task, you will need to recreate the task.
+{{% /alert %}}
 
 1. Open the task page
 2. Click **+**.
@@ -116,7 +124,7 @@ A _configured_ Ground Truth job is required for all quality computations in CVAT
   It can be any integer number, the same value will yield the same random selection (given that the
   frame number is unchanged). <br> **Note** that if you want to use a
   custom frame sequence, you can do this using the server API instead,
-  see [Job API create()](/docs/api_sdk/sdk/reference/apis/jobs-api/#create).
+  see {{< ilink "/docs/api_sdk/sdk/reference/apis/jobs-api#create" "Job API create()" >}}.
 
 4. Click **Submit**.
 
@@ -293,7 +301,9 @@ To delete the Ground Truth job, do the following:
 2. Click on three dots to open the menu.
 3. From the menu, select **Delete**.
 
-> Note: The Ground truth job in the "Honeypots" task validation mode cannot be deleted.
+{{% alert title="Note" color="primary" %}}
+The Ground truth job in the "Honeypots" task validation mode cannot be deleted.
+{{% /alert %}}
 
 ### Import annotations
 
@@ -305,11 +315,13 @@ If you want to import annotations into the Ground truth job, do the following:
 4. Select import format and select file.
 5. Click **OK**.
 
-> **Note** that if there are imported annotations for the frames that exist in the task,
-> but are not included in the **Ground truth** job, they will be ignored.
-> This way, you don't need to worry about "cleaning up" your Ground truth
-> annotations for the whole dataset before importing them.
-> Importing annotations for the frames that are not known in the task still raises errors.
+{{% alert title="Note" color="primary" %}}
+If there are imported annotations for the frames that exist in the task,
+but are not included in the **Ground truth** job, they will be ignored.
+This way, you don't need to worry about "cleaning up" your Ground truth
+annotations for the whole dataset before importing them.
+Importing annotations for the frames that are not known in the task still raises errors.
+{{% /alert %}}
 
 ### Export annotations
 
@@ -338,9 +350,11 @@ both into GT job frames and into corresponding honeypot frames in annotation job
 When exporting **task** annotations, honeypot frames in annotation jobs will be ignored,
 and validation frames in the resulting dataset will get annotations from the GT job.
 
-> Note that it means that exporting from a task with honeypots and importing the results back
-> will result in changed annotations on the honeypot frames. If you want to backup annotations,
-> use a task backup or export job annotations instead.
+{{% alert title="Note" color="primary" %}}
+That it means that exporting from a task with honeypots and importing the results back
+will result in changed annotations on the honeypot frames. If you want to backup annotations,
+use a task backup or export job annotations instead.
+{{% /alert %}}
 
 Import and export of Ground Truth **job** annotations works the same way in both modes.
 
@@ -525,7 +539,9 @@ Each shape type can have their own spatial matching details. Specifically:
   The value is relative to the image side and determines a half of the hull width.
 - ellipses - IoU, described in more detail above.
 
-> **Note**: 2d cuboids are not supported
+{{% alert title="Note" color="primary" %}}
+2D cuboids are not supported.
+{{% /alert %}}
 
 ### Tracks
 
@@ -534,8 +550,10 @@ and shapes.
 
 ## Quality Analytics
 
-> **Note**: quality analytics is a paid feature. Please check how to get access to this
-> functionality in the {{< ilink "/docs/enterprise" "Paid features" >}} section of the site.
+{{% alert title="Note" color="primary" %}}
+Quality analytics is a paid feature. Please check how to get access to this
+functionality in the {{< ilink "/docs/enterprise" "Paid features" >}} section of the site.
+{{% /alert %}}
 
 Once the quality estimation is [enabled in a task](#configuring-quality-estimation)
 and the Ground Truth job is configured, quality analytics becomes available
@@ -549,8 +567,10 @@ If you want to request updating of quality metrics in a task (e.g. after the set
 you can do this by pressing the **Refresh** button on the
 task **Quality Management** > **Analytics** page.
 
-> **Note** that the process of quality calculation may take up to several hours, depending on
-> the amount of data and labeled objects, and is **not updated immediately** after task updates.
+{{% alert title="Note" color="primary" %}}
+The process of quality calculation may take up to several hours, depending on
+the amount of data and labeled objects, and is **not updated immediately** after task updates.
+{{% /alert %}}
 
 ![Quality Analytics page - refresh button](/images/honeypot11.jpg)
 

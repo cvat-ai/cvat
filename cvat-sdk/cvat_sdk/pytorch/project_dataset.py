@@ -23,7 +23,7 @@ class ProjectVisionDataset(torchvision.datasets.VisionDataset):
 
     The dataset contains one sample for each frame of each task in the project
     (except for tasks that are filtered out - see the description of `task_filter`
-    in the constructor). The sequence of samples is formed by concatening sequences
+    in the constructor). The sequence of samples is formed by concatenating sequences
     of samples from all included tasks in an arbitrary order that's consistent
     between executions. Each task's sequence of samples corresponds to the sequence
     of frames on the server.

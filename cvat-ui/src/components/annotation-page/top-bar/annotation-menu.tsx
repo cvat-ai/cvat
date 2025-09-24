@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
 import Modal from 'antd/lib/modal';
@@ -24,11 +24,12 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
 import { CombinedState } from 'reducers';
 import {
-    updateCurrentJobAsync, finishCurrentJobAsync,
+    finishCurrentJobAsync,
     removeAnnotationsAsync as removeAnnotationsAsyncAction,
 } from 'actions/annotation-actions';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
+import { updateJobAsync } from 'actions/jobs-actions';
 
 export enum Actions {
     LOAD_JOB_ANNO = 'load_job_anno',
@@ -46,19 +47,23 @@ function AnnotationMenuComponent(): JSX.Element {
     const [jobState, setJobState] = useState(jobInstance.state);
     const { stopFrame } = jobInstance;
 
+    useEffect(() => {
+        setJobState(jobInstance.state);
+    }, [jobInstance.state]);
+
     const exportDataset = useCallback(() => {
         dispatch(exportActions.openExportDatasetModal(jobInstance));
     }, [jobInstance]);
 
     const finishJob = useCallback(() => {
-        dispatch(finishCurrentJobAsync()).then(() => {
+        dispatch(finishCurrentJobAsync(() => {
             message.open({
                 duration: 1,
                 type: 'success',
                 content: 'You tagged the job as completed',
                 className: 'cvat-annotation-job-finished-success',
             });
-        });
+        }));
     }, []);
 
     const openTask = useCallback(() => {
@@ -70,9 +75,8 @@ function AnnotationMenuComponent(): JSX.Element {
     }, [jobInstance]);
 
     const changeState = useCallback((state: JobState) => {
-        dispatch(updateCurrentJobAsync({ state })).then(() => {
+        dispatch(updateJobAsync(jobInstance, { state })).then(() => {
             message.info('Job state updated', 2);
-            setJobState(jobInstance.state);
         });
     }, [jobInstance]);
 

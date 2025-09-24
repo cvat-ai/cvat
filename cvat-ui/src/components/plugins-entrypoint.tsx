@@ -9,9 +9,10 @@ import { useDispatch } from 'react-redux';
 import { PluginsActionTypes, pluginActions } from 'actions/plugins-actions';
 import { getCore, CVATCore, APIWrapperEnterOptions } from 'cvat-core-wrapper';
 import { modelsActions } from 'actions/models-actions';
-import { changeFrameAsync, updateCurrentJobAsync } from 'actions/annotation-actions';
+import { changeFrameAsync } from 'actions/annotation-actions';
 import { updateJobAsync } from 'actions/jobs-actions';
 import { getCVATStore } from 'cvat-store';
+import { makeBulkOperationAsync } from 'actions/bulk-actions';
 
 const core = getCore();
 
@@ -24,8 +25,8 @@ export type PluginActionCreators = {
     revokeUIComponent: typeof pluginActions['revokeUIComponent'],
     addUICallback: typeof pluginActions['addUICallback'],
     removeUICallback: typeof pluginActions['removeUICallback'],
-    updateCurrentJobAsync: typeof updateCurrentJobAsync,
     updateJobAsync: typeof updateJobAsync,
+    makeBulkOperationAsync: typeof makeBulkOperationAsync,
 };
 
 export interface ComponentBuilderArgs {
@@ -68,8 +69,8 @@ function PluginEntrypoint(): null {
                         REMOVE_ACTION: PluginsActionTypes.REMOVE_UI_COMPONENT,
                         actionCreators: {
                             changeFrameAsync,
-                            updateCurrentJobAsync,
                             updateJobAsync,
+                            makeBulkOperationAsync,
                             getModelsSuccess: modelsActions.getModelsSuccess,
                             addUICallback: pluginActions.addUICallback,
                             removeUICallback: pluginActions.removeUICallback,

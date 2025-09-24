@@ -12,22 +12,26 @@ import Title from 'antd/lib/typography/Title';
 import moment from 'moment';
 
 import {
-    User, getCore, Project, Task,
+    User, getCore, Project, Task, FramesMetaData,
 } from 'cvat-core-wrapper';
 import AutomaticAnnotationProgress from 'components/tasks-page/automatic-annotation-progress';
 import MdGuideControl from 'components/md-guide/md-guide-control';
 import Preview from 'components/common/preview';
 import { cancelInferenceAsync } from 'actions/models-actions';
-import { CombinedState, ActiveInference } from 'reducers';
+import { CombinedState, ActiveInference, CloudStorage } from 'reducers';
 import CVATTag, { TagType } from 'components/common/cvat-tag';
 import UserSelector from './user-selector';
 import BugTrackerEditor from './bug-tracker-editor';
+import CloudStorageEditor from './cloud-storage-editor';
 import LabelsEditorComponent from '../labels-editor/labels-editor';
 import ProjectSubsetField from '../create-task-page/project-subset-field';
 
 interface OwnProps {
     task: Task;
-    onUpdateTask: (task: Task) => Promise<void>;
+    onUpdateTask: (task: Task) => Promise<Task>;
+    taskMeta: FramesMetaData;
+    cloudStorageInstance: CloudStorage | null;
+    onUpdateTaskMeta: (meta: FramesMetaData) => Promise<void>;
 }
 
 interface StateToProps {
@@ -116,7 +120,13 @@ class DetailsComponent extends React.PureComponent<Props, State> {
     }
 
     private renderDescription(): JSX.Element {
-        const { task: taskInstance, onUpdateTask } = this.props;
+        const {
+            task: taskInstance,
+            onUpdateTask,
+            taskMeta,
+            cloudStorageInstance,
+            onUpdateTaskMeta,
+        } = this.props;
         const { consensusEnabled } = this.state;
         const owner = taskInstance.owner ? taskInstance.owner.username : null;
         const assignee = taskInstance.assignee ? taskInstance.assignee : null;
@@ -133,22 +143,31 @@ class DetailsComponent extends React.PureComponent<Props, State> {
         );
 
         return (
-            <Row className='cvat-task-details-user-block' justify='space-between' align='middle'>
-                <Col span={12}>
-                    {owner && (
-                        <div>
-                            <Text type='secondary'>
-                                {`Task #${taskInstance.id} Created by ${owner} on ${created}`}
-                            </Text>
-                        </div>
-                    )}
-                    {consensusEnabled && <CVATTag type={TagType.CONSENSUS} />}
-                </Col>
-                <Col>
-                    <Text type='secondary'>Assigned to</Text>
-                    {assigneeSelect}
-                </Col>
-            </Row>
+            <>
+                <Row className='cvat-task-details-user-block' justify='space-between' align='middle'>
+                    <Col span={12}>
+                        {owner && (
+                            <div>
+                                <Text type='secondary'>
+                                    {`Task #${taskInstance.id} Created by ${owner} on ${created}`}
+                                </Text>
+                            </div>
+                        )}
+                        {consensusEnabled && <CVATTag type={TagType.CONSENSUS} />}
+                    </Col>
+                    <Col>
+                        <Text type='secondary'>Assigned to</Text>
+                        {assigneeSelect}
+                    </Col>
+                </Row>
+                <Row justify='end' className='cvat-task-details-cloud-storage'>
+                    <CloudStorageEditor
+                        taskMeta={taskMeta}
+                        cloudStorageInstance={cloudStorageInstance}
+                        onUpdateTaskMeta={onUpdateTaskMeta}
+                    />
+                </Row>
+            </>
         );
     }
 

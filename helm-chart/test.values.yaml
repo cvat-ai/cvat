@@ -28,7 +28,7 @@ cvat:
       qualityreports:
         replicas: 0
       webhooks:
-        replicas: 0
+        replicas: 1
       utils:
         replicas: 1
         additionalVolumeMounts:
@@ -42,7 +42,6 @@ cvat:
         - "export"
         - "import"
         - "quality_reports"
-        - "webhooks"
 
     # Images are already present in the node
     imagePullPolicy: Never

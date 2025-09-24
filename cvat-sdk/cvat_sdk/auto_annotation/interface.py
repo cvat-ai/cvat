@@ -3,16 +3,33 @@
 # SPDX-License-Identifier: MIT
 
 import abc
-from collections.abc import Sequence
-from typing import Optional, Protocol
+from collections.abc import Sequence, Set
+from typing import Optional, Protocol, TypeVar, Union
 
 import attrs
 import PIL.Image
+from typing_extensions import TypeAlias
 
 import cvat_sdk.models as models
 
 from ..attributes import attribute_value_validator
 from .exceptions import BadFunctionError
+
+
+class AutoAnnotationFunction(Protocol):
+    """
+    The base interface for all auto-annotation function interfaces.
+    """
+
+    @property
+    def spec(self) -> object:
+        """
+        Returns the function's spec.
+
+        In each specific auto-annotation function interface,
+        this will be overridden to return a specific spec type.
+        """
+        ...
 
 
 @attrs.frozen(kw_only=True)
@@ -41,7 +58,7 @@ class DetectionFunctionSpec:
 
     `BadFunctionError` will be raised if any constraint violations are detected.
 
-    It's recommented to use the helper factory functions (label_spec, skeleton_label_spec,
+    It's recommended to use the helper factory functions (label_spec, skeleton_label_spec,
     keypoint_spec) to create the label objects, as they are more concise than the model
     constructors and help to follow some of the constraints.
     """
@@ -157,12 +174,15 @@ class DetectionFunctionContext(metaclass=abc.ABCMeta):
         """
 
 
-class DetectionFunction(Protocol):
+DetectionAnnotation: TypeAlias = Union[models.LabeledImageRequest, models.LabeledShapeRequest]
+
+
+class DetectionFunction(AutoAnnotationFunction, Protocol):
     """
     The interface that an auto-annotation detection function must implement.
 
-    A detection function is supposed to accept an image and return a list of shapes
-    describing objects in that image.
+    A detection function is supposed to accept an image and return a sequence of annotations
+    (tags and/or shapes) describing objects in that image.
 
     Since the same function could be used with multiple datasets, it needs some way
     to refer to labels without using dataset-specific label IDs. The way this is
@@ -184,14 +204,15 @@ class DetectionFunction(Protocol):
 
     def detect(
         self, context: DetectionFunctionContext, image: PIL.Image.Image
-    ) -> list[models.LabeledShapeRequest]:
+    ) -> Sequence[DetectionAnnotation]:
         """
         Detects objects on the supplied image and returns the results.
 
         The supplied context will contain information about the current image.
 
-        The returned LabeledShapeRequest objects must follow general constraints
-        imposed by the data model (such as the number of points in a shape),
+        The returned LabeledImageRequest and LabeledShapeRequest objects
+        must follow the general constraints imposed by the data model
+        (such as the number of points in a shape),
         as well as the following additional constraints:
 
         * The id attribute must not be set.
@@ -210,12 +231,173 @@ class DetectionFunction(Protocol):
           except that the label_id of a sub-shape must equal one of the sublabel IDs
           of the label of its parent shape.
 
-        It's recommented to use the helper factory functions (shape, rectangle, skeleton,
-        keypoint) to create the shape objects, as they are more concise than the model
+        It's recommended to use the helper factory functions
+        (tag, shape, rectangle, skeleton, keypoint, etc.)
+        to create the annotation objects, as they are more concise than the model
         constructors and help to follow some of the constraints.
 
         The function must not retain any references to the returned objects,
         so that the caller may freely modify them.
+        """
+        ...
+
+
+@attrs.frozen(kw_only=True)
+class TrackingFunctionSpec:
+    """
+    Static information about an auto-annotation tracking function.
+
+    Objects of this class should be treated as immutable;
+    do not modify them or any nested objects after they are created.
+    """
+
+    supported_shape_types: Set[str] = attrs.field(converter=frozenset[str])
+    """
+    A set of shape types that the function is able to track.
+
+    Each value of the set must be one of the strings allowed as the `type` attribute
+    in the `LabeledShape` model.
+    """
+
+    @supported_shape_types.validator
+    def _validate_supported_shape_types(self, attribute, value: Set[str]) -> None:
+        for st in value:
+            models.ShapeType(st)
+
+
+class TrackingFunctionContext(metaclass=abc.ABCMeta):
+    """
+    Information that is supplied to all methods of an auto-annotation tracking function.
+
+    Currently, this class is empty, but in the future some properties may be added.
+    """
+
+
+class TrackingFunctionShapeContext(TrackingFunctionContext):
+    """
+    Information that is supplied to shape-specific methods of an auto-annotation tracking function.
+    """
+
+    @property
+    @abc.abstractmethod
+    def original_shape_type(self) -> str:
+        """
+        The type of the shape that is being tracked.
+        """
+        ...
+
+
+@attrs.frozen(kw_only=True)
+class TrackableShape:
+    """
+    A shape that can be tracked by an auto-annotation tracking function.
+
+    All attributes have the same meaning as attributes of the same name in the `LabeledShape` model.
+    """
+
+    type: str
+    points: list[float] = attrs.field(converter=list)
+
+
+_PreprocessedImage = TypeVar("_PreprocessedImage")
+_TrackingState = TypeVar("_TrackingState")
+
+
+class TrackingFunction(AutoAnnotationFunction, Protocol[_PreprocessedImage, _TrackingState]):
+    """
+    The interface that an auto-annotation tracking function must implement.
+
+    On a high level, a tracking function analyzes an image with one or more shapes on it,
+    and then predicts the positions of those shapes on subsequent images.
+
+    To enable interactive use, the "analysis" and "prediction" steps are performed
+    by two separate methods: `init_tracking_state` and `track`.
+
+    * `init_tracking_state` is expected to accept an image and a shape,
+      and create and return a "tracking state" object that contains any data the function needs
+      to track the shape on subsequent images.
+
+    * `track` is expected to accept a new image and a tracking state, and return a new shape,
+      whose position is the predicted position of the original shape on the new image.
+      It may also update the tracking state as needed in order to improve tracking quality
+      on subsequent images.
+
+    In addition, a tracking function may implement a `preprocess_image` method
+    that performs any processing that is independent of the specific shapes being tracked.
+    Any image used with the function will first be passed to `preprocess_image`.
+    When `init_tracking_state` and `track` are called, they will receive this method's output value.
+
+    If a function does not implement `preprocess_image`, then `init_tracking_state` and `track`
+    will receive the original image as a `PIL.Image.Image` object.
+    """
+
+    @property
+    def spec(self) -> TrackingFunctionSpec:
+        """Returns the function's spec."""
+        ...
+
+    def preprocess_image(
+        self, context: TrackingFunctionContext, image: PIL.Image.Image
+    ) -> _PreprocessedImage:
+        """
+        Performs any processing that may be done on the given image independently of the shapes
+        that will be tracked on it.
+
+        Returns a new object that represents the processing results.
+
+        Note that the resulting object may be reused in multiple calls to
+        `init_tracking_state` and `track`.
+
+        This method is optional to implement.
+        """
+        ...
+
+    def init_tracking_state(
+        self,
+        context: TrackingFunctionShapeContext,
+        pp_image: _PreprocessedImage,
+        shape: TrackableShape,
+    ) -> _TrackingState:
+        """
+        Analyzes the given image and shape, and returns a new object containing any data needed
+        to predict this shape's position on subsequent images.
+
+        `shape.type` will be one of the types listed in the `supported_shape_types` field
+        of the function's spec.
+
+        `pp_image` will be the result of calling `preprocess_image` on the image the shape is on,
+        or, if `preprocess_image` is not implemented, that image itself as a `PIL.Image.Image`.
+        The method must not modify this object.
+        """
+        ...
+
+    def track(
+        self,
+        context: TrackingFunctionShapeContext,
+        pp_image: _PreprocessedImage,
+        state: _TrackingState,
+    ) -> Optional[TrackableShape]:
+        """
+        Predicts the position of a previously-analyzed shape on a new image.
+
+        `pp_image` will be the result of calling `preprocess_image` on the image
+        on which the shape must be located,
+        or, if `preprocess_image` is not implemented, that image itself as a `PIL.Image.Image`.
+        The method must not modify this object.
+
+        `state` will be the result of calling `init_tracking_state`.
+        The method may modify this object as necessary to improve tracking quality
+        on subsequent images.
+
+        The dimensions of the image used to create `pp_image` will be the same as those
+        of the image used to create `state`.
+
+        If the function is able to find this shape on the new image,
+        it returns a new shape with the predicted position.
+        Otherwise, it returns None.
+
+        If the function returns a shape, that shape must have the same type
+        as that of the shape used to create `state`.
         """
         ...
 
@@ -229,9 +411,12 @@ def label_spec(name: str, id: int, **kwargs) -> models.PatchedLabelRequest:
     return models.PatchedLabelRequest(name=name, id=id, **kwargs)
 
 
-# pylint: disable-next=redefined-builtin
 def skeleton_label_spec(
-    name: str, id: int, sublabels: Sequence[models.SublabelRequest], **kwargs
+    name: str,
+    # pylint: disable-next=redefined-builtin
+    id: int,
+    sublabels: Sequence[models.SublabelRequest],
+    **kwargs,
 ) -> models.PatchedLabelRequest:
     """Helper factory function for PatchedLabelRequest with type="skeleton"."""
     return label_spec(name, id, type="skeleton", sublabels=sublabels, **kwargs)
@@ -308,6 +493,11 @@ def text_attribute_spec(name: str, id: int, **kwargs) -> models.AttributeRequest
 
 
 # annotation factories
+
+
+def tag(label_id: int, **kwargs) -> models.LabeledImageRequest:
+    """Helper factory function for LabeledImageRequest with frame=0."""
+    return models.LabeledImageRequest(label_id=label_id, frame=0, **kwargs)
 
 
 def shape(label_id: int, **kwargs) -> models.LabeledShapeRequest:

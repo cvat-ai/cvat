@@ -68,7 +68,7 @@ context('Test default value for an attribute', () => {
         });
     });
 
-    describe('Annotation view has correct default attribute after task creationg', () => {
+    describe('Annotation view has correct default attribute after task creation', () => {
         it('Rectangle has correct default attributes', () => {
             cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
             cy.get('.cvat-canvas-container').should('exist').and('be.visible');
@@ -79,8 +79,7 @@ context('Test default value for an attribute', () => {
     describe('Test can change default attribute', () => {
         it('Can change default attribute value on task page', () => {
             const newDefaultValue = 'third';
-            cy.visit(`/tasks/${taskID}`);
-            cy.get('.cvat-task-details').should('exist').and('be.visible');
+            cy.openTaskById(taskID);
             cy.get('.cvat-constructor-viewer-item').within(() => {
                 cy.get('[aria-label="edit"]').click();
             });

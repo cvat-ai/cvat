@@ -10,7 +10,7 @@ import networks.deeplab_resnet as resnet
 
 net = resnet.resnet101(1, nInputChannels=4, classifier='psp')
 
-state_dict_checkpoint = torch.load(sys.argv[1], map_location=torch.device('cpu'))
+state_dict_checkpoint = torch.load(sys.argv[1], map_location=torch.device('cpu'), weights_only=True)
 
 net.load_state_dict(state_dict_checkpoint)
 

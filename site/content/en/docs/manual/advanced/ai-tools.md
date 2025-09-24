@@ -46,17 +46,17 @@ or negative points (for some models):
 - **Positive points** define the area in which the object is located.
 - **Negative points** define the area in which the object is not located.
 
-![](/images/image188_detrac.jpg)
+![Annotated object with positive and negative points](/images/image188_detrac.jpg)
 
 ### AI tools: annotate with interactors
 
 To annotate with interactors, do the following:
 
-1. Click **Magic wand** ![Magic wand](/images/image189.jpg), and go to the **Interactors** tab.
+1. Click **Magic wand** ![Magic wand icon](/images/image189.jpg), and go to the **Interactors** tab.
 2. From the **Label** drop-down, select a label for the polygon.
 3. From the **Interactor** drop-down, select a model (see [Interactors models](#interactors-models)).
    <br>Click the **Question mark** to see information about each model:
-   <br>![](/images/image114_detrac.jpg)
+   <br>![AI Tools interface with open Model information tooltip](/images/image114_detrac.jpg)
 4. (Optional) If the model returns masks, and you need to
    convert masks to polygons, use the **Convert masks to polygons** toggle.
 5. Click **Interact**.
@@ -66,8 +66,10 @@ To annotate with interactors, do the following:
 
 ### AI tools: add extra points
 
-> **Note:** More points improve outline accuracy, but make shape editing harder.
-> Fewer points make shape editing easier, but reduce outline accuracy.
+{{% alert title="Note" color="primary" %}}
+More points improve outline accuracy, but make shape editing harder.
+Fewer points make shape editing easier, but reduce outline accuracy.
+{{% /alert %}}
 
 Each model has a minimum required number of points for annotation.
 Once the required number of points is reached, the request
@@ -88,7 +90,7 @@ you can edit it like a polygon.
 You can change the number of points in the
 polygon with the slider:
 
-![](/images/image224.jpg)
+![Slider for point number in polygon](/images/image224.jpg)
 
 ### AI tools: delete points
 
@@ -102,18 +104,18 @@ polygon with the slider:
 
 To use **Intelligent scissors**, do the following:
 
-1. On the menu toolbar, click **OpenCV**![OpenCV](/images/image201.jpg) and wait for the library to load.
+1. On the menu toolbar, click **OpenCV**![OpenCV icon](/images/image201.jpg) and wait for the library to load.
 
-   <br>![](/images/image198.jpg)
+   <br>![Interface for loading OpenCV progress bar](/images/image198.jpg)
 
 2. Go to the **Drawing** tab, select the label, and click on the **Intelligent scissors** button.
 
-   ![](/images/image199.jpg)
+   ![Selecting Intelligent scissors instrument in Drawing tab](/images/image199.jpg)
 
 3. Add the first point on the boundary of the allocated object. <br> You will see a line repeating the outline of the object.
 4. Add the second point, so that the previous point is within the restrictive threshold.
    <br>After that a line repeating the object boundary will be automatically created between the points.
-   ![](/images/image200_detrac.jpg)
+   ![Diagram with points and lines created by intelligent scissors](/images/image200_detrac.jpg)
 5. To finish placing points, on the top menu click **Done** (or **N** on the keyboard).
 
 As a result, a polygon will be created.
@@ -121,7 +123,7 @@ As a result, a polygon will be created.
 You can change the number of points in the
 polygon with the slider:
 
-![](/images/image224.jpg)
+![Slider for point number in polygon](/images/image224.jpg)
 
 To increase or lower the action threshold, hold **Ctrl** and scroll the mouse wheel.
 
@@ -141,12 +143,10 @@ During the drawing process, you can remove the last point by clicking on it with
 
 | Model                                                     | Tool     | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Example                                           |
 | --------------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| Segment Anything Model (SAM)                              | AI Tools | The Segment Anything Model (SAM) produces high <br> quality object masks, and it can be used to generate <br> masks for all objects in an image. It has been trained <br>on a dataset of 11 million images and <br>1.1 billion masks, and has strong zero-shot performance on a variety of segmentation tasks. <br><br>For more information, see: <li>[GitHub: Segment Anything](https://github.com/facebookresearch/segment-anything) <li>[Site: Segment Anything](https://segment-anything.com/)<li>[Paper: Segment Anything](https://ai.facebook.com/research/publications/segment-anything/)               | ![](/images/interactors_SAM.gif)                  |
-| Deep extreme <br>cut (DEXTR)                              | AI Tool  | This is an optimized version of the original model, <br>introduced at the end of 2017. It uses the <br>information about extreme points of an object <br>to get its mask. The mask is then converted to a polygon. <br>For now this is the fastest interactor on the CPU. <br><br>For more information, see: <li>[GitHub: DEXTR-PyTorch](https://github.com/scaelles/DEXTR-PyTorch) <li>[Site: DEXTR-PyTorch](https://cvlsegmentation.github.io/dextr)<li>[Paper: DEXTR-PyTorch](https://arxiv.org/pdf/1711.09081.pdf)                                                                                         | ![](/images/dextr_example.gif)                    |
-| Feature backpropagating <br>refinement <br>scheme (f-BRS) | AI Tool  | The model allows to get a mask for an <br>object using positive points (should be <br>left-clicked on the foreground), <br>and negative points (should be right-clicked <br>on the background, if necessary). <br>It is recommended to run the model on GPU, <br>if possible. <br><br>For more information, see: <li>[GitHub: f-BRS](https://github.com/saic-vul/fbrs_interactive_segmentation) <li>[Paper: f-BRS](https://arxiv.org/pdf/2001.10331.pdf)                                                                                                                                                       | ![](/images/fbrs_example.gif)                     |
-| High Resolution <br>Net (HRNet)                           | AI Tool  | The model allows to get a mask for <br>an object using positive points (should <br>be left-clicked on the foreground), <br> and negative points (should be <br>right-clicked on the background, <br> if necessary). <br>It is recommended to run the model on GPU, <br>if possible. <br><br>For more information, see: <li>[GitHub: HRNet](https://github.com/saic-vul/ritm_interactive_segmentation) <li>[Paper: HRNet](https://arxiv.org/pdf/2102.06583.pdf)                                                                                                                                                 | ![](/images/hrnet_example.gif)                    |
-| Inside-Outside-Guidance<br>(IOG)                          | AI Tool  | The model uses a bounding box and <br>inside/outside points to create a mask. <br>First of all, you need to create a bounding<br> box, wrapping the object. <br>Then you need to use positive <br>and negative points to say the <br>model where is <br>a foreground, and where is a background.<br>Negative points are optional. <br><br>For more information, see: <li>[GitHub: IOG](https://github.com/shiyinzhang/Inside-Outside-Guidance) <li>[Paper: IOG](https://openaccess.thecvf.com/content_CVPR_2020/papers/Zhang_Interactive_Object_Segmentation_With_Inside-Outside_Guidance_CVPR_2020_paper.pdf) | ![](/images/iog_example.gif)                      |
-| Intelligent scissors                                      | OpenCV   | Intelligent scissors is a CV method of creating <br>a polygon by placing points with the automatic <br>drawing of a line between them. The distance<br> between the adjacent points is limited by <br>the threshold of action, displayed as a <br>red square that is tied to the cursor. <br><br> For more information, see: <li>[Site: Intelligent Scissors Specification](https://docs.opencv.org/4.x/df/d6b/classcv_1_1segmentation_1_1IntelligentScissorsMB.html)                                                                                                                                          | ![int scissors](/images/intelligent_scissors.gif) |
+| Segment Anything Model (SAM)                              | AI Tools | The Segment Anything Model (SAM) produces high <br> quality object masks, and it can be used to generate <br> masks for all objects in an image. It has been trained <br>on a dataset of 11 million images and <br>1.1 billion masks, and has strong zero-shot performance on a variety of segmentation tasks. <br><br>For more information, see: <li>[GitHub: Segment Anything](https://github.com/facebookresearch/segment-anything) <li>[Site: Segment Anything](https://segment-anything.com/)<li>[Paper: Segment Anything](https://ai.facebook.com/research/publications/segment-anything/)               | ![Example of annotation process using Segment Anything Model](/images/interactors_SAM.gif) |
+| Deep extreme <br>cut (DEXTR)                              | AI Tool  | This is an optimized version of the original model, <br>introduced at the end of 2017. It uses the <br>information about extreme points of an object <br>to get its mask. The mask is then converted to a polygon. <br>For now this is the fastest interactor on the CPU. <br><br>For more information, see: <li>[GitHub: DEXTR-PyTorch](https://github.com/scaelles/DEXTR-PyTorch) <li>[Site: DEXTR-PyTorch](https://cvlsegmentation.github.io/dextr)<li>[Paper: DEXTR-PyTorch](https://arxiv.org/pdf/1711.09081.pdf)                                                                                         | ![Example of annotation process using Deep extreme cut model](/images/dextr_example.gif) |
+| Inside-Outside-Guidance<br>(IOG)                          | AI Tool  | The model uses a bounding box and <br>inside/outside points to create a mask. <br>First of all, you need to create a bounding<br> box, wrapping the object. <br>Then you need to use positive <br>and negative points to say the <br>model where is <br>a foreground, and where is a background.<br>Negative points are optional. <br><br>For more information, see: <li>[GitHub: IOG](https://github.com/shiyinzhang/Inside-Outside-Guidance) <li>[Paper: IOG](https://openaccess.thecvf.com/content_CVPR_2020/papers/Zhang_Interactive_Object_Segmentation_With_Inside-Outside_Guidance_CVPR_2020_paper.pdf) | ![Example of annotation process using Inside-Outside-Guidance model](/images/iog_example.gif) |
+| Intelligent scissors                                      | OpenCV   | Intelligent scissors is a CV method of creating <br>a polygon by placing points with the automatic <br>drawing of a line between them. The distance<br> between the adjacent points is limited by <br>the threshold of action, displayed as a <br>red square that is tied to the cursor. <br><br> For more information, see: <li>[Site: Intelligent Scissors Specification](https://docs.opencv.org/4.x/df/d6b/classcv_1_1segmentation_1_1IntelligentScissorsMB.html)                                                                                                                                          | ![Example of annotation process using Intelligent scissors](/images/intelligent_scissors.gif) |
 
 <!--lint enable maximum-line-length-->
 
@@ -180,12 +180,12 @@ For this reason, supported DL models are suitable only for certain labels.
 
 To annotate with detectors, do the following:
 
-1. Click **Magic wand** ![Magic wand](/images/image189.jpg), and go to the **Detectors** tab.
+1. Click **Magic wand** ![Magic wand icon](/images/image189.jpg), and go to the **Detectors** tab.
 2. From the **Model** drop-down, select model (see [Detectors models](#detectors-models)).
 3. From the left drop-down select the DL model label, from the right drop-down
    select the matching label of your task.
 
-   ![](/images/detectors_tab.png)
+   ![Detectors tab with YOLO v3 model selected and matching labels](/images/detectors_tab.png)
 
 4. (Optional) If the model returns masks, and you
    need to convert masks to polygons, use the **Convert masks to polygons** toggle.
@@ -225,9 +225,9 @@ that are moving or changing over time.
 
 To annotate with trackers, do the following:
 
-1. Click **Magic wand** ![Magic wand](/images/image189.jpg), and go to the **Trackers** tab.
+1. Click **Magic wand** ![Magic wand icon](/images/image189.jpg), and go to the **Trackers** tab.
 
-   <br>![Start tracking an object](/images/trackers_tab.jpg)
+   <br>![Trackers tab with selected label and tracker](/images/trackers_tab.jpg)
 
 2. From the **Label** drop-down, select the label for the object.
 3. From **Tracker** drop-down, select tracker.
@@ -240,15 +240,15 @@ To annotate with trackers, do the following:
 
 - To enable/disable tracking, use **Tracker switcher** on the sidebar.
 
-  ![Tracker switcher](/images/tracker_switcher.png)
+  ![Object interface with highlighted Tracker switcher](/images/tracker_switcher.png)
 
 - Trackable objects have an indication on canvas with a model name.
 
-  ![Tracker indication](/images/tracker_indication_detrac.png)
+  ![Annotated object displaying Tracker indication with model name](/images/tracker_indication_detrac.png)
 
 - You can follow the tracking by the messages appearing at the top.
 
-  ![Tracker pop-up window](/images/tracker_pop-up_window.png)
+  ![Example of interface messages about tracking process](/images/tracker_pop-up_window.png)
 
 ### OpenCV: annotate with trackers
 
@@ -256,20 +256,22 @@ To annotate with trackers, do the following:
 
 1. Create basic rectangle shapes or tracks for tracker initialization
 
-2. On the menu toolbar, click **OpenCV**![OpenCV](/images/image201.jpg) and wait for the library to load.
+2. On the menu toolbar, click **OpenCV**![OpenCV icon](/images/image201.jpg) and wait for the library to load.
 
-   <br>![](/images/image198.jpg)
+   <br>![Interface for loading OpenCV progress bar](/images/image198.jpg)
 
 3. From **Tracker** drop-down, select tracker and Click **Track**
 
-   <br>![Start tracking an object](/images/tracker_mil_control.png)
+   <br>![Tracking tab in OpenCV window with selected Tracker](/images/tracker_mil_control.png)
 
 4. Annotation actions window will pop-up. Setup `Target frame`
 and `Convert rectangle shapes to tracks` parameters and click `Run`
 
-   > **Note:** Tracking will be applied to all filtered rectangle annotations.
+   {{% alert title="Note" color="primary" %}}
+   Tracking will be applied to all filtered rectangle annotations.
+   {{% /alert %}}
 
-   <br>![Tracker action](/images/tracker_mil_action.png)
+   <br>![Annotation actions window with parameters and buttons](/images/tracker_mil_action.png)
 
 All annotated objects will be automatically tracked up until target frame parameter.
 
@@ -279,9 +281,10 @@ All annotated objects will be automatically tracked up until target frame parame
 
 | Model                         | Tool     | Description                                                                                                                                                                                                                                                                                                                                                                                                                                            | Example                                                       |
 | ----------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------- |
-| TrackerMIL                    | OpenCV   | TrackerMIL model is not bound to <br>labels and can be used for any <br>object. It is a fast client-side model <br>designed to track simple non-overlapping objects. <br><br>For more information, see: <li>[Article: Object Tracking using OpenCV](https://learnopencv.com/tag/mil/)                                                                                                                                                                  | ![Annotation using a tracker](/images/tracker_mil_detrac.gif) |
-| SiamMask                      | AI Tools | Fast online Object Tracking and Segmentation. The trackable object will <br>be tracked automatically if the previous frame <br>was the latest keyframe for the object. <br><br>For more information, see:<li> [GitHub: SiamMask](https://github.com/foolwood/SiamMask) <li> [Paper: SiamMask](https://arxiv.org/pdf/1812.05050.pdf)                                                                                                                    | ![Annotation using a tracker](/images/tracker_ai_tools.gif)   |
-| Transformer Tracking (TransT) | AI Tools | Simple and efficient online tool for object tracking and segmentation. <br>If the previous frame was the latest keyframe <br>for the object, the trackable object will be tracked automatically.<br>This is a modified version of the PyTracking <br> Python framework based on Pytorch<br> <br><br>For more information, see: <li> [GitHub: TransT](https://github.com/chenxin-dlut/TransT)<li> [Paper: TransT](https://arxiv.org/pdf/2103.15436.pdf) | ![Annotation using a tracker](/images/tracker_transit.gif)    |
+| TrackerMIL                    | OpenCV   | TrackerMIL model is not bound to <br>labels and can be used for any <br>object. It is a fast client-side model <br>designed to track simple non-overlapping objects. <br><br>For more information, see: <li>[Article: Object Tracking using OpenCV](https://learnopencv.com/tag/mil/)                                                                                                                                                                  | ![Example of annotation process using TrackerMIL model](/images/tracker_mil_detrac.gif) |
+| SiamMask                      | AI Tools | Fast online Object Tracking and Segmentation. The trackable object will <br>be tracked automatically if the previous frame <br>was the latest keyframe for the object. <br><br>For more information, see:<li> [GitHub: SiamMask](https://github.com/foolwood/SiamMask) <li> [Paper: SiamMask](https://arxiv.org/pdf/1812.05050.pdf)                                                                                                                    | ![Example of annotation process using SiamMask](/images/tracker_ai_tools.gif) |
+| Transformer Tracking (TransT) | AI Tools | Simple and efficient online tool for object tracking and segmentation. <br>If the previous frame was the latest keyframe <br>for the object, the trackable object will be tracked automatically.<br>This is a modified version of the PyTracking <br> Python framework based on Pytorch<br> <br><br>For more information, see: <li> [GitHub: TransT](https://github.com/chenxin-dlut/TransT)<li> [Paper: TransT](https://arxiv.org/pdf/2103.15436.pdf) | ![Example of annotation process using Transformer Tracking](/images/tracker_transit.gif) |
+| SAM2 Tracker                  | AI Agent | Advanced object tracking and segmentation using Meta's Segment Anything Model 2. <br>Available for CVAT Online and Enterprise via AI agents. <br>Supports polygons and masks with high precision tracking. <br>Requires user-side agent setup with Python 3.10+. <br><br>For more information, see: <li>{{< ilink "/docs/enterprise/segment-anything-2-tracker" "SAM2 Tracker Setup Guide" >}} <li>[SAM2 Blog: AI Agent Integration](https://www.cvat.ai/resources/blog/sam2-ai-agent-tracking) | _Example coming soon_ |
 
 <!--lint enable maximum-line-length-->
 
@@ -300,7 +303,7 @@ To improve the contrast of the image, do the following:
 
 1. In the **OpenCV** menu, go to the **Image** tab.
 2. Click on **Histogram equalization** button.
-   <br>![](/images/image221.jpg)
+   <br>![Image tab in OpenCV window with highlighted histogram equalization button](/images/image221.jpg)
 
 **Histogram equalization** will improve
 contrast on current and following
@@ -308,6 +311,6 @@ frames.
 
 Example of the result:
 
-![](/images/image222.jpg)
+![Example of original image and image with applied histogram equalization](/images/image222.jpg)
 
 To disable **Histogram equalization**, click on the button again.

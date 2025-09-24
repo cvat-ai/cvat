@@ -10,8 +10,8 @@
   "author": "CVAT.ai",
   "license": "MIT",
   "browserslist": [
-    "Chrome >= 63",
-    "Firefox > 102",
+    "Chrome >= 99",
+    "Firefox >= 110",
     "not IE 11",
     "> 2%"
   ],

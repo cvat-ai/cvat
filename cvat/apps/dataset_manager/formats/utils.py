@@ -70,7 +70,7 @@ def generate_color(color, used_colors):
     def tint_shade_color():
         for added_color in (255, 0):
             for factor in range(1, 10):
-                yield tuple(map(lambda c: int(c + (added_color - c) * factor / 10), color))
+                yield tuple(int(c + (added_color - c) * factor / 10) for c in color)
 
     def get_unused_color():
         def get_avg_color(index):

@@ -38,8 +38,8 @@ To use CVAT within your organization, please follow these steps:
    assign {{< ilink "/docs/manual/advanced/user-roles" "User roles" >}} to invited members.
 5. {{< ilink "/docs/manual/advanced/projects" "Create **Project**" >}}.
 6. (Optional) Attach {{< ilink "/docs/manual/basics/attach-cloud-storage" "**Cloud storages**" >}} to the **Project**.
-7. Create {{< ilink "/docs/manual/basics/create-annotation-task" "**Task**" >}} or [
-   **Multitask**](/docs/manual/basics/create-multi-tasks/).
+7. Create {{< ilink "/docs/manual/basics/create-annotation-task" "**Task**" >}} or
+   {{< ilink "/docs/manual/basics/create-multi-tasks" "**Multitask**" >}}.
    <br>At this step the CVAT platform will automatically create
    jobs.
 8. (Optional) Create {{< ilink "/docs/manual/advanced/analytics-and-monitoring/auto-qa" "**Ground truth job**" >}}.
@@ -63,7 +63,7 @@ To use CVAT within your organization, please follow these steps:
     see {{< ilink "/docs/manual/advanced/analytics-and-monitoring/manual-qa" "**Manual QA and Review**" >}}
 16. Check issues and if there is a need for additional improvement, reassign jobs to
     either the Validator or Annotator.
-17. (Optional) Check {{< ilink "/docs/manual/advanced/analytics-and-monitoring/analytics-in-cloud" "**Analytics**" >}}.
+17. (Optional) Check {{< ilink "/docs/manual/advanced/analytics-and-monitoring/analytics" "**Analytics**" >}}.
 18. {{< ilink "/docs/manual/advanced/formats" "**Export Data**" >}}.
 
 ## Complete Workflow Guide video tutorial

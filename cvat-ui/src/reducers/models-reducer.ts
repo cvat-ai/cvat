@@ -7,8 +7,9 @@ import { omit } from 'lodash';
 import { BoundariesActions, BoundariesActionTypes } from 'actions/boundaries-actions';
 import { ModelsActionTypes, ModelsActions } from 'actions/models-actions';
 import { AuthActionTypes, AuthActions } from 'actions/auth-actions';
+import { SelectionActionsTypes, SelectionActions } from 'actions/selection-actions';
 import { MLModel, ModelKind } from 'cvat-core-wrapper';
-import { ModelsState } from '.';
+import { ModelsState, SelectedResourceType } from '.';
 
 const defaultState: ModelsState = {
     initialized: false,
@@ -25,15 +26,20 @@ const defaultState: ModelsState = {
     totalCount: 0,
     query: {
         page: 1,
+        pageSize: 12,
         id: null,
         search: null,
         filter: null,
         sort: null,
     },
     previews: {},
+    selected: [],
 };
 
-export default function (state = defaultState, action: ModelsActions | AuthActions | BoundariesActions): ModelsState {
+export default function (
+    state = defaultState,
+    action: ModelsActions | AuthActions | BoundariesActions | SelectionActions,
+): ModelsState {
     switch (action.type) {
         case ModelsActionTypes.GET_MODELS: {
             return {
@@ -192,6 +198,27 @@ export default function (state = defaultState, action: ModelsActions | AuthActio
         case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return { ...defaultState };
+        }
+        case SelectionActionsTypes.SELECT_RESOURCES: {
+            if (action.payload.resourceType === SelectedResourceType.MODELS) {
+                return {
+                    ...state,
+                    selected: Array.from(new Set([...state.selected, ...action.payload.resourceIds as number[]])),
+                };
+            }
+            return state;
+        }
+        case SelectionActionsTypes.DESELECT_RESOURCES: {
+            if (action.payload.resourceType === SelectedResourceType.MODELS) {
+                return {
+                    ...state,
+                    selected: state.selected.filter((id) => !action.payload.resourceIds.includes(id)),
+                };
+            }
+            return state;
+        }
+        case SelectionActionsTypes.CLEAR_SELECTED_RESOURCES: {
+            return { ...state, selected: [] };
         }
         default: {
             return state;

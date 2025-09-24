@@ -62,7 +62,7 @@ class Membership(models.Model):
         unique_together = ("user", "organization")
 
 
-# Inspried by https://github.com/bee-keeper/django-invitations
+# Inspired by https://github.com/bee-keeper/django-invitations
 class Invitation(models.Model):
     key = models.CharField(max_length=64, primary_key=True)
     created_date = models.DateTimeField(auto_now_add=True)

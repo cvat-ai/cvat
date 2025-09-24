@@ -6,12 +6,13 @@
 import { AnyAction } from 'redux';
 import { TasksQuery } from 'reducers';
 import {
-    getCore, RQStatus, Storage, StorageLocation, Task, UpdateStatusData, Request,
+    getCore, RQStatus, Storage, StorageLocation, Task, UpdateStatusData, Request, FramesMetaData,
 } from 'cvat-core-wrapper';
 import { filterNull } from 'utils/filter-null';
 import { ThunkDispatch, ThunkAction } from 'utils/redux';
 
 import { ValidationMode } from 'components/create-task-page/quality-configuration-form';
+import { ResourceUpdateTypes } from 'utils/enums';
 import { getInferenceStatusAsync } from './models-actions';
 import { updateRequestProgress } from './requests-actions';
 
@@ -29,7 +30,9 @@ export enum TasksActionTypes {
     GET_TASK_PREVIEW = 'GET_TASK_PREVIEW',
     GET_TASK_PREVIEW_SUCCESS = 'GET_TASK_PREVIEW_SUCCESS',
     GET_TASK_PREVIEW_FAILED = 'GET_TASK_PREVIEW_FAILED',
-    UPDATE_TASK_IN_STATE = 'UPDATE_TASK_IN_STATE',
+    UPDATE_TASK = 'UPDATE_TASK',
+    UPDATE_TASK_SUCCESS = 'UPDATE_TASK_SUCCESS',
+    UPDATE_TASK_FAILED = 'UPDATE_TASK_FAILED',
 }
 
 function getTasks(query: Partial<TasksQuery>, updateQuery: boolean, fetchingTimestamp: number): AnyAction {
@@ -205,7 +208,7 @@ export function getTaskPreviewAsync(taskInstance: any): ThunkAction {
 
 export function updateTaskInState(task: Task): AnyAction {
     const action = {
-        type: TasksActionTypes.UPDATE_TASK_IN_STATE,
+        type: TasksActionTypes.UPDATE_TASK_SUCCESS,
         payload: { task },
     };
 
@@ -260,7 +263,7 @@ ThunkAction {
             description.subset = data.subset;
         }
         if (data.cloudStorageId) {
-            description.cloud_storage_id = data.cloudStorageId;
+            description.data_cloud_storage_id = data.cloudStorageId;
         }
         if (data.advanced.consensusReplicas) {
             description.consensus_replicas = +data.advanced.consensusReplicas;
@@ -303,7 +306,7 @@ ThunkAction {
                             message = 'Unknown status received';
                         }
                     }
-                    onProgress?.(`${message} ${progress ? `${Math.floor(progress * 100)}%` : ''}. ${helperMessage}`);
+                    onProgress?.(`${message}${progress ? ` ${Math.floor(progress * 100)}%` : ''}. ${helperMessage}`);
                     if (updateData instanceof Request) updateRequestProgress(updateData, dispatch);
                 },
             });
@@ -313,6 +316,61 @@ ThunkAction {
             return savedTask;
         } catch (error) {
             dispatch(createTaskFailed(error));
+            throw error;
+        }
+    };
+}
+
+function updateTask(taskId: number): AnyAction {
+    return {
+        type: TasksActionTypes.UPDATE_TASK,
+        payload: {
+            taskId,
+        },
+    };
+}
+
+function updateTaskFailed(taskId: number, error: any, updateType?: ResourceUpdateTypes): AnyAction {
+    return {
+        type: TasksActionTypes.UPDATE_TASK_FAILED,
+        payload: {
+            taskId,
+            error,
+            updateType,
+        },
+    };
+}
+
+export function updateTaskAsync(
+    taskInstance: Task,
+    fields: Parameters<Task['save']>[0],
+    updateType?: ResourceUpdateTypes,
+): ThunkAction<Promise<Task>> {
+    return async (dispatch: ThunkDispatch): Promise<Task> => {
+        try {
+            dispatch(updateTask(taskInstance.id));
+            const updated = await taskInstance.save(fields);
+            dispatch(updateTaskInState(updated));
+            return updated;
+        } catch (error) {
+            dispatch(updateTaskFailed(taskInstance.id, error, updateType));
+            throw error;
+        }
+    };
+}
+
+export function updateTaskMetadataAsync(
+    taskInstance: Task,
+    taskMeta: FramesMetaData,
+): ThunkAction<Promise<FramesMetaData>> {
+    return async (dispatch: ThunkDispatch): Promise<FramesMetaData> => {
+        try {
+            dispatch(updateTask(taskInstance.id));
+            const updatedMeta = await taskInstance.meta.save(taskMeta);
+            dispatch(updateTaskInState(taskInstance));
+            return updatedMeta;
+        } catch (error) {
+            dispatch(updateTaskFailed(taskInstance.id, error));
             throw error;
         }
     };

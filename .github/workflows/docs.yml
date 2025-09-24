@@ -32,12 +32,8 @@ jobs:
           wget https://github.com/gohugoio/hugo/releases/download/v0.110.0/hugo_extended_0.110.0_Linux-64bit.tar.gz
           (mkdir hugo_extended_0.110.0_Linux-64bit && tar -xf hugo_extended_0.110.0_Linux-64bit.tar.gz -C hugo_extended_0.110.0_Linux-64bit)
 
-          wget https://github.com/gohugoio/hugo/releases/download/v0.83.0/hugo_extended_0.83.0_Linux-64bit.tar.gz
-          (mkdir hugo_extended_0.83.0_Linux-64bit && tar -xf hugo_extended_0.83.0_Linux-64bit.tar.gz -C hugo_extended_0.83.0_Linux-64bit)
-
           mkdir hugo
           cp hugo_extended_0.110.0_Linux-64bit/hugo hugo/hugo-0.110
-          cp hugo_extended_0.83.0_Linux-64bit/hugo hugo/hugo-0.83
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -55,7 +51,9 @@ jobs:
           python site/process_sdk_docs.py
           PATH="$PWD/hugo:$PATH" python site/build_docs.py
         env:
+          BASE_URL: https://docs.cvat.ai
           HUGO_ENV: production
+          GOOGLE_TAG_ID: G-GVSBK1DNK5
 
       - name: Deploy
         if: github.ref == 'refs/heads/develop'

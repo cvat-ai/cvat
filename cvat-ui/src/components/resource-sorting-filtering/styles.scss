@@ -102,3 +102,13 @@
     align-items: center;
     display: flex;
 }
+
+.cvat-resource-selection-info {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cvat-resource-selection-count {
+    font-weight: 500;
+}

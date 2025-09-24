@@ -22,7 +22,6 @@ import {
     SerializedRequest, SerializedJobValidationLayout, SerializedTaskValidationLayout, SerializedConsensusSettingsData,
 } from './server-response-types';
 import { PaginatedResource, UpdateStatusData } from './core-types';
-import { Request } from './request';
 import { Storage } from './storage';
 import { SerializedEvent } from './event';
 import { RQStatus, StorageLocation, WebhookSourceType } from './enums';
@@ -353,7 +352,7 @@ Axios.interceptors.request.use((reqConfig) => {
 });
 
 Axios.interceptors.response.use((response) => {
-    if (isResourceURL(response.config.url) &&
+    if (isResourceURL(response.config.url) && response.config.method === 'get' &&
         'organization' in (response.data || {})
     ) {
         const newOrgId: number | null = response.data.organization;
@@ -725,7 +724,6 @@ async function getProjects(filter: ProjectsFilter = {}): Promise<SerializedProje
         response = await Axios.get(`${backendAPI}/projects`, {
             params: {
                 ...filter,
-                page_size: 12,
             },
         });
     } catch (errorData) {
@@ -778,14 +776,13 @@ async function getTasks(
     let response = null;
     try {
         if (aggregate) {
-            response = await Axios.get(`${backendAPI}/tasks`, {
-                params: {
+            response = {
+                data: await fetchAll(`${backendAPI}/tasks`, {
                     ...filter,
-                },
-            });
-        }
-
-        if ('id' in filter) {
+                    ...enableOrganization(),
+                }),
+            };
+        } else if ('id' in filter) {
             response = await Axios.get(`${backendAPI}/tasks/${filter.id}`);
             const results = [response.data];
             Object.defineProperty(results, 'count', {
@@ -793,14 +790,14 @@ async function getTasks(
             });
 
             return results as PaginatedResource<SerializedTask>;
+        } else {
+            response = await Axios.get(`${backendAPI}/tasks`, {
+                params: {
+                    ...filter,
+                    page_size: filter.page_size ?? 10,
+                },
+            });
         }
-
-        response = await Axios.get(`${backendAPI}/tasks`, {
-            params: {
-                ...filter,
-                page_size: filter.page_size ?? 10,
-            },
-        });
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -979,11 +976,11 @@ async function importDataset(
                 params,
                 headers: { 'Upload-Start': true },
             });
-        await chunkUpload(file as File, uploadConfig);
+        const { filename } = await chunkUpload(file as File, uploadConfig);
         const response = await Axios.post(url,
             new FormData(),
             {
-                params,
+                params: { ...params, filename },
                 headers: { 'Upload-Finish': true },
             });
         return response.data.rq_id;
@@ -997,12 +994,14 @@ async function backupTask(
     targetStorage: Storage,
     useDefaultSettings: boolean,
     fileName?: string,
+    lightweight?: boolean,
 ): Promise<string | void> {
     const { backendAPI } = config;
     const params: Params = {
         ...enableOrganization(),
         ...configureStorage(targetStorage, useDefaultSettings),
         ...(fileName ? { filename: fileName } : {}),
+        ...(typeof lightweight === 'boolean' ? { lightweight } : {}),
     };
     const url = `${backendAPI}/tasks/${id}/backup/export`;
 
@@ -1077,6 +1076,7 @@ async function backupProject(
     targetStorage: Storage,
     useDefaultSettings: boolean,
     fileName?: string,
+    lightweight?: boolean,
 ): Promise<string | void> {
     const { backendAPI } = config;
     // keep current default params to 'freeze" them during this request
@@ -1084,6 +1084,7 @@ async function backupProject(
         ...enableOrganization(),
         ...configureStorage(targetStorage, useDefaultSettings),
         ...(fileName ? { filename: fileName } : {}),
+        ...(typeof lightweight === 'boolean' ? { lightweight } : {}),
     };
 
     const url = `${backendAPI}/projects/${id}/backup/export`;
@@ -1157,7 +1158,7 @@ async function restoreProject(storage: Storage, file: File | string): Promise<st
 async function createTask(
     taskSpec: Partial<SerializedTask>,
     taskDataSpec: any,
-    onUpdate: (request: Request | UpdateStatusData) => void,
+    onUpdate: (updateData: UpdateStatusData) => void,
 ): Promise<{ taskID: number, rqID: string }> {
     const { backendAPI, origin } = config;
     // keep current default params to 'freeze" them during this request
@@ -1319,7 +1320,6 @@ async function getJobs(
             response = await Axios.get(`${backendAPI}/jobs`, {
                 params: {
                     ...filter,
-                    page_size: 12,
                 },
             });
         }
@@ -1503,6 +1503,19 @@ async function getUsers(filter = { page_size: 'all' }): Promise<SerializedUser[]
     }
 
     return response.data.results;
+}
+
+async function updateUser(id: number, userData: Partial<SerializedUser>): Promise<SerializedUser> {
+    const { backendAPI } = config;
+
+    let response = null;
+    try {
+        response = await Axios.patch(`${backendAPI}/users/${id}`, userData);
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+
+    return response.data;
 }
 
 function getPreview(instance: 'projects' | 'tasks' | 'jobs' | 'cloudstorages' | 'functions') {
@@ -1702,11 +1715,11 @@ async function uploadAnnotations(
                 params,
                 headers: { 'Upload-Start': true },
             });
-        await chunkUpload(file as File, uploadConfig);
+        const { filename } = await chunkUpload(file as File, uploadConfig);
         const response = await Axios.post(url,
             new FormData(),
             {
-                params,
+                params: { ...params, filename },
                 headers: { 'Upload-Finish': true },
             });
         return response.data.rq_id;
@@ -1903,7 +1916,6 @@ async function getCloudStorages(filter = {}): Promise<SerializedCloudStorage[] &
         response = await Axios.get(`${backendAPI}/cloudstorages`, {
             params: {
                 ...filter,
-                page_size: 12,
             },
         });
         return Object.assign(response.data.results, { count: response.data.count });
@@ -1965,13 +1977,14 @@ async function getOrganizations(filter) {
         response = await Axios.get(`${backendAPI}/organizations`, {
             params: {
                 ...filter,
+                page_size: filter.page_size || 10,
+                sort: filter.sort || 'slug',
             },
         });
     } catch (errorData) {
         throw generateError(errorData);
     }
-
-    return response.data.results;
+    return response.data;
 }
 
 async function createOrganization(data: SerializedOrganization): Promise<SerializedOrganization> {
@@ -2076,7 +2089,7 @@ async function deleteOrganizationMembership(membershipId: number): Promise<void>
 }
 
 async function getMembershipInvitations(
-    filter: { page?: number, filter?: string, key?: string },
+    filter: { page?: number, page_size?: number, filter?: string, key?: string },
 ): Promise<{ results: SerializedInvitationData[], count: number }> {
     const { backendAPI } = config;
 
@@ -2095,7 +2108,6 @@ async function getMembershipInvitations(
         response = await Axios.get(`${backendAPI}/invitations`, {
             params: {
                 ...filter,
-                page_size: 11,
             },
         });
         return response.data;
@@ -2118,7 +2130,7 @@ async function getWebhookDelivery(webhookID: number, deliveryID: number): Promis
     }
 }
 
-async function getWebhooks(filter, pageSize = 10): Promise<any> {
+async function getWebhooks(filter): Promise<any> {
     const params = enableOrganization();
     const { backendAPI } = config;
 
@@ -2127,7 +2139,6 @@ async function getWebhooks(filter, pageSize = 10): Promise<any> {
             params: {
                 ...params,
                 ...filter,
-                page_size: pageSize,
             },
         });
 
@@ -2474,6 +2485,7 @@ export default Object.freeze({
     users: Object.freeze({
         get: getUsers,
         self: getSelf,
+        update: updateUser,
     }),
 
     frames: Object.freeze({

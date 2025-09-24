@@ -211,9 +211,20 @@
 }
 
 .cvat-player-frame-selector {
-    width: 5em;
+    width: unset;
     padding-right: 5px;
     margin-left: 5px;
+
+    .ant-input-number-input-wrap {
+        width: unset;
+    }
+
+    .ant-input-number-input {
+        box-sizing: content-box;
+        width: var(--frame-input-width, 6ch);
+        min-width: 6ch;
+        max-width: 10ch;
+    }
 }
 
 .cvat-player-actions {

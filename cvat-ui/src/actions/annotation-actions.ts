@@ -28,6 +28,7 @@ import {
     Workspace,
 } from 'reducers';
 import { switchToolsBlockerState } from './settings-actions';
+import { updateJobAsync } from './jobs-actions';
 
 interface AnnotationsParameters {
     filters: object[];
@@ -92,7 +93,7 @@ export enum AnnotationActionTypes {
     GET_JOB = 'GET_JOB',
     GET_JOB_SUCCESS = 'GET_JOB_SUCCESS',
     GET_JOB_FAILED = 'GET_JOB_FAILED',
-    UPDATE_CURRENT_JOB_FAILED = 'UPDATE_CURRENT_JOB_FAILED',
+    UPDATE_JOB_SUCCESS = 'UPDATE_CURRENT_SUCCESS',
     CLOSE_JOB = 'CLOSE_JOB',
     CHANGE_FRAME = 'CHANGE_FRAME',
     CHANGE_FRAME_SUCCESS = 'CHANGE_FRAME_SUCCESS',
@@ -1007,26 +1008,6 @@ export function getJobAsync({
     };
 }
 
-export function updateCurrentJobAsync(
-    jobFieldsToUpdate: {
-        state?: JobState;
-    },
-): ThunkAction {
-    return async (dispatch: ThunkDispatch) => {
-        const { jobInstance } = receiveAnnotationsParameters();
-        try {
-            await jobInstance.save(jobFieldsToUpdate);
-        } catch (error: unknown) {
-            dispatch({
-                type: AnnotationActionTypes.UPDATE_CURRENT_JOB_FAILED,
-                payload: { error },
-            });
-
-            throw error;
-        }
-    };
-}
-
 export function saveAnnotationsAsync(): ThunkAction {
     return async (dispatch: ThunkDispatch): Promise<void> => {
         const { jobInstance } = receiveAnnotationsParameters();
@@ -1045,7 +1026,7 @@ export function saveAnnotationsAsync(): ThunkAction {
             dispatch(saveLogsAsync());
 
             if (jobInstance instanceof cvat.classes.Job && jobInstance.state === cvat.enums.JobState.NEW) {
-                await dispatch(updateCurrentJobAsync({ state: JobState.IN_PROGRESS }));
+                await dispatch(updateJobAsync(jobInstance, { state: JobState.IN_PROGRESS }));
             }
 
             dispatch({
@@ -1067,7 +1048,7 @@ export function saveAnnotationsAsync(): ThunkAction {
     };
 }
 
-export function finishCurrentJobAsync(): ThunkAction {
+export function finishCurrentJobAsync(onSuccess: () => void): ThunkAction {
     return async (dispatch: ThunkDispatch, getState) => {
         const state = getState();
         const beforeCallbacks = state.plugins.callbacks.annotationPage.header.menu.beforeJobFinish;
@@ -1076,12 +1057,17 @@ export function finishCurrentJobAsync(): ThunkAction {
         await dispatch(saveAnnotationsAsync());
 
         for await (const callback of beforeCallbacks) {
-            await callback();
+            const result = await callback();
+            if (result?.preventJobStatusChange) {
+                return;
+            }
         }
 
         if (jobInstance.state !== JobState.COMPLETED) {
-            await dispatch(updateCurrentJobAsync({ state: JobState.COMPLETED }));
+            await dispatch(updateJobAsync(jobInstance, { state: JobState.COMPLETED }));
         }
+
+        onSuccess();
     };
 }
 

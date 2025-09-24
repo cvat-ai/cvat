@@ -27,6 +27,7 @@ from deepdiff import DeepDiff
 from PIL import Image
 from pytest_cases import parametrize
 
+from shared.tasks.utils import parse_frame_step
 from shared.utils.config import make_api_client
 from shared.utils.helpers import generate_image_files
 
@@ -35,7 +36,6 @@ from .utils import (
     compare_annotations,
     create_task,
     export_job_dataset,
-    parse_frame_step,
 )
 
 
@@ -222,8 +222,8 @@ class TestPostJobs:
         [
             # The results have to be the same in different CVAT revisions,
             # so the task ids are fixed
-            (21, [3, 5, 7]),  # annotation task
-            (5, [11, 14, 20]),  # interpolation task
+            (21, [4, 6, 8]),  # annotation task
+            (5, [12, 15, 21]),  # interpolation task
         ],
     )
     def test_can_create_gt_job_with_random_frames_and_seed(self, admin_user, task_id, frame_ids):
@@ -233,7 +233,7 @@ class TestPostJobs:
             "type": "ground_truth",
             "frame_selection_method": "random_uniform",
             "frame_count": 3,
-            "seed": 42,
+            "random_seed": 42,
         }
 
         response = self._test_create_job_ok(user, job_spec)
@@ -713,7 +713,7 @@ class TestGetGtJobData:
         task_id = task["id"]
         with make_api_client(user) as api_client:
             (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
-            frame_step = parse_frame_step(task_meta.frame_filter.split("=")[-1])
+            frame_step = parse_frame_step(task_meta.frame_filter)
 
         job_frame_ids = list(range(task_meta.start_frame, task_meta.stop_frame, frame_step))[
             :job_frame_count
@@ -819,7 +819,7 @@ class TestGetGtJobData:
         task_id = task["id"]
         with make_api_client(user) as api_client:
             (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
-            frame_step = parse_frame_step(task_meta.frame_filter.split("=")[-1])
+            frame_step = parse_frame_step(task_meta.frame_filter)
 
         task_frame_ids = range(task_meta.start_frame, task_meta.stop_frame + 1, frame_step)
         rng = np.random.Generator(np.random.MT19937(42))
@@ -902,7 +902,7 @@ class TestGetGtJobData:
         task_id = task["id"]
         with make_api_client(user) as api_client:
             (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
-            frame_step = parse_frame_step(task_meta.frame_filter.split("=")[-1])
+            frame_step = parse_frame_step(task_meta.frame_filter)
 
         job_frame_ids = list(range(task_meta.start_frame, task_meta.stop_frame, frame_step))[
             :job_frame_count
@@ -1145,10 +1145,14 @@ class TestPatchJobAnnotations:
     def request_data(self, annotations):
         def get_data(jid):
             data = deepcopy(annotations["job"][str(jid)])
-            if data["shapes"][0]["type"] == "skeleton":
-                data["shapes"][0]["elements"][0].update({"points": [2.0, 3.0, 4.0, 5.0]})
-            else:
-                data["shapes"][0].update({"points": [2.0, 3.0, 4.0, 5.0, 6.0, 7.0]})
+
+            def mutate(shape):
+                shape["points"] = [p + 1.0 for p in shape["points"]]
+
+            mutate(data["shapes"][0])
+            if elements := data["shapes"][0]["elements"]:
+                mutate(elements[0])
+
             data["version"] += 1
             return data
 
@@ -1646,7 +1650,9 @@ class TestGetJobPreview:
             (user["username"], job["id"])
             for user in users
             for org in organizations
-            for job in jobs_by_org[org["id"]]
+            for job in jobs_by_org.get(
+                org["id"], []
+            )  # jobs_by_org does not include orgs without jobs
             if is_job_staff(user["id"], job["id"])
         )
         self._test_get_job_preview_200(username, job_id)
@@ -1667,7 +1673,9 @@ class TestGetJobPreview:
             (user["username"], job["id"])
             for user in users
             for org in organizations
-            for job in jobs_by_org[org["id"]]
+            for job in jobs_by_org.get(
+                org["id"], []
+            )  # jobs_by_org does not include orgs without jobs
             if user["id"] not in org_staff(org["id"]) and not is_job_staff(user["id"], job["id"])
         )
         self._test_get_job_preview_403(username, job_id)

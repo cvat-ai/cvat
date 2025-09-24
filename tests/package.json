@@ -6,16 +6,18 @@
   },
   "dependencies": {
     "@cypress/code-coverage": "^3.9.10",
+    "allure-cypress": "^3.2.2",
     "archiver": "^5.3.0",
     "cy-verify-downloads": "^0.0.5",
     "cypress": "^13.10.0",
     "cypress-file-upload": "^5.0.8",
     "cypress-localstorage-commands": "^1.7.0",
-    "cypress-real-events": "^1.6.0",
+    "cypress-real-events": "^1.14.0",
     "extract-zip": "^2.0.1",
+    "fast-glob": "^3.3.3",
     "fs-extra": "^10.1.0",
     "jimp": "^0.22.10"
   },
   "version": "0.0.0",
-  "devDependencies": {}
+  "packageManager": "yarn@4.9.2"
 }
