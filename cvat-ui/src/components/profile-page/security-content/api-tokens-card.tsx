@@ -142,7 +142,7 @@ function ApiTokensCard(): JSX.Element {
             ],
             onFilter: (value: boolean | Key, record: RowData) => record.readOnly === value,
             render: (readOnly: boolean) => (
-                <Tag color={readOnly ? 'blue' : 'green'}>
+                <Tag color={readOnly ? 'blue' : 'orange'}>
                     {readOnly ? 'Read Only' : 'Read/Write'}
                 </Tag>
             ),
