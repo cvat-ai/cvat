@@ -6,13 +6,13 @@
 import React, { useCallback } from 'react';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
+import dayjs from 'dayjs';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 import Card from 'antd/lib/card';
 import Meta from 'antd/lib/card/Meta';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import Text from 'antd/lib/typography/Text';
 import Modal from 'antd/lib/modal';
-import moment from 'moment';
 
 import { CloudStorage, CombinedState } from 'reducers';
 import { deleteCloudStorageAsync } from 'actions/cloud-storage-actions';
@@ -124,11 +124,11 @@ export default function CloudStorageItemComponent(props: Readonly<Props>): JSX.E
                                     <Text type='secondary'>Created </Text>
                                     {owner ? <Text type='secondary'>{`by ${owner.username}`}</Text> : null}
                                     <Text type='secondary'> on </Text>
-                                    <Text type='secondary'>{moment(createdDate).format('MMMM Do YYYY')}</Text>
+                                    <Text type='secondary'>{dayjs(createdDate).format('MMMM Do YYYY')}</Text>
                                 </Paragraph>
                                 <Paragraph>
                                     <Text type='secondary'>Last updated </Text>
-                                    <Text type='secondary'>{moment(updatedDate).fromNow()}</Text>
+                                    <Text type='secondary'>{dayjs(updatedDate).fromNow()}</Text>
                                 </Paragraph>
                                 <Status cloudStorage={cloudStorage} />
                                 <CloudStorageActionsMenu
