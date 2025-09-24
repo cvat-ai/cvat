@@ -16,6 +16,7 @@ const defaultState: AuthState = {
     apiTokens: {
         fetching: false,
         current: [],
+        count: 0,
     },
 };
 
@@ -168,6 +169,7 @@ export default function (state = defaultState, action: AuthActions | BoundariesA
                 apiTokens: {
                     fetching: false,
                     current: action.payload.tokens,
+                    count: action.payload.count,
                 },
             };
         case AuthActionTypes.CREATE_API_TOKEN_SUCCESS:

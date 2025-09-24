@@ -80,7 +80,9 @@ export const authActions = {
     updateUserSuccess: (user: User) => createAction(AuthActionTypes.UPDATE_USER_SUCCESS, { user }),
     updateUserFailed: (error: unknown) => createAction(AuthActionTypes.UPDATE_USER_FAILED, { error }),
     getApiTokens: () => createAction(AuthActionTypes.GET_API_TOKENS),
-    getApiTokensSuccess: (tokens: ApiToken[]) => createAction(AuthActionTypes.GET_API_TOKENS_SUCCESS, { tokens }),
+    getApiTokensSuccess: (tokens: ApiToken[], count: number) => (
+        createAction(AuthActionTypes.GET_API_TOKENS_SUCCESS, { tokens, count })
+    ),
     getApiTokensFailed: (error: any) => createAction(AuthActionTypes.GET_API_TOKENS_FAILED, { error }),
     createApiToken: () => createAction(AuthActionTypes.CREATE_API_TOKEN),
     createApiTokenSuccess: (token: ApiToken) => createAction(AuthActionTypes.CREATE_API_TOKEN_SUCCESS, { token }),
@@ -234,7 +236,8 @@ export const getApiTokensAsync = (filter: APIApiTokensFilter = {}): ThunkAction 
 
     try {
         const tokens = await cvat.apiTokens.get(filter);
-        dispatch(authActions.getApiTokensSuccess(tokens));
+        const array = Array.from(tokens);
+        dispatch(authActions.getApiTokensSuccess(array, tokens.count));
     } catch (error) {
         dispatch(authActions.getApiTokensFailed(error));
     }

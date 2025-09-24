@@ -46,9 +46,10 @@ function ApiTokensCard(): JSX.Element {
     const [newToken, setNewToken] = useState<ApiToken | null>(null);
     const [editingToken, setEditingToken] = useState<ApiToken | null>(null);
 
-    const { apiTokens, fetching } = useSelector((state: CombinedState) => ({
+    const { apiTokens, fetching, tokenCount } = useSelector((state: CombinedState) => ({
         apiTokens: state.auth.apiTokens.current,
         fetching: state.auth.apiTokens.fetching,
+        tokenCount: state.auth.apiTokens.count,
     }), shallowEqual);
 
     const tableData: RowData[] = apiTokens.map((token: ApiToken) => ({
@@ -219,6 +220,7 @@ function ApiTokensCard(): JSX.Element {
                         onCancel={onCancelCreateTokenForm}
                         submitting={fetching}
                         token={editingToken}
+                        tokenCount={tokenCount}
                     />
                 ) : (
                     <CVATTable

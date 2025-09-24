@@ -18,8 +18,9 @@ import { ApiTokenSaveFields, ApiToken } from 'cvat-core-wrapper';
 interface Props {
     onSubmit: (data: ApiTokenSaveFields) => void;
     onCancel: () => void;
-    submitting?: boolean;
+    submitting: boolean;
     token: ApiToken | null;
+    tokenCount: number;
 }
 
 interface FormData {
@@ -29,7 +30,7 @@ interface FormData {
 }
 
 function ApiTokenForm({
-    onSubmit, onCancel, submitting = false, token,
+    onSubmit, onCancel, submitting, token, tokenCount,
 }: Props): JSX.Element {
     const [form] = Form.useForm<FormData>();
     const isEditing = !!token;
@@ -48,8 +49,8 @@ function ApiTokenForm({
     };
 
     const initialValues = {
-        name: token?.name || '',
-        expirationDate: token?.expiryDate ? dayjs(token.expiryDate) : null,
+        name: token?.name || (tokenCount === 0 ? 'New token' : `New token ${tokenCount + 1}`),
+        expirationDate: token?.expiryDate ? dayjs(token.expiryDate) : dayjs().add(1, 'year'),
         isReadOnly: token?.readOnly || false,
     };
 
@@ -73,7 +74,7 @@ function ApiTokenForm({
                     { max: 50, message: 'Token name must not exceed 50 characters' },
                 ]}
             >
-                <Input placeholder='Enter a descriptive name for this token' />
+                <Input placeholder='Enter a descriptive name for this token' allowClear />
             </Form.Item>
             <Form.Item
                 className='cvat-api-token-form-expiration-date'

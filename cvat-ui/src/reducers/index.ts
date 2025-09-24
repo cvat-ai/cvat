@@ -27,6 +27,7 @@ export interface AuthState {
     apiTokens: {
         fetching: boolean;
         current: ApiToken[];
+        count: number;
     };
 }
 
