@@ -42,8 +42,10 @@ function ApiTokenCreatedModal({
             open={visible}
             onCancel={handleClose}
             footer={[
-                <Button key='close' type='primary' onClick={handleClose}>
-                    I have saved my token
+                <Button key='close' type='primary' onClick={handleClose} style={{ background: '#faad14' }}>
+                    I have&nbsp;
+                    <strong>securely</strong>
+                    &nbsp;saved my token
                 </Button>,
             ]}
             width={500}
@@ -65,7 +67,7 @@ function ApiTokenCreatedModal({
                             className='cvat-api-token-value-input'
                         />
                         <Button
-                            type={copied ? 'default' : 'primary'}
+                            type='default'
                             icon={<CopyOutlined />}
                             onClick={handleCopyToClipboard}
                             className='cvat-api-token-copy-button'
