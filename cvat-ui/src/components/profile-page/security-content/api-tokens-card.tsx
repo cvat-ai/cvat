@@ -270,7 +270,7 @@ function ApiTokensCard(): JSX.Element {
                         columns={apiTokenColumns}
                         dataSource={tableData}
                         loading={fetching}
-                        rowKey='id'
+                        rowKey='key'
                         size='small'
                         pagination={{
                             showSizeChanger: true,
