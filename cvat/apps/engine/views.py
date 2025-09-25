@@ -1701,6 +1701,15 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
 
         return queryset
 
+    def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
+
+        from cvat.apps.engine.model_utils import q_from_where
+        q = q_from_where(queryset)
+        queryset = queryset.model.objects.filter(q)
+
+        return queryset
+
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
             return JobReadSerializer

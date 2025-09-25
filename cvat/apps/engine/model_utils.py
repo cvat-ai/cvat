@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Generator, Iterable
 from typing import Any, Sequence, TypeVar, Union
 
 from django.conf import settings
@@ -104,14 +104,14 @@ def get_cached(queryset: _QuerysetT, pk: int) -> _ModelT:
     return result
 
 
-def _is_terminal(term: models.Q | Any) -> bool:
+def _is_terminal_q(term: models.Q | Any) -> bool:
     return not isinstance(term, models.Q)
 
 
-def _is_simple_term(term: models.Q | Any) -> bool:
-    return _is_terminal(term) or (
+def _is_simple_term_q(term: models.Q | Any) -> bool:
+    return _is_terminal_q(term) or (
         term.connector in (models.Q.AND, models.Q.OR)
-        and all(_is_terminal(c) for c in term.children)
+        and all(_is_terminal_q(c) for c in term.children)
     )
 
 
@@ -122,7 +122,7 @@ def _to_dnf_q(q: models.Q) -> models.Q:
     while unchecked_stack:
         current_term = unchecked_stack.pop()
 
-        if _is_terminal(current_term) or _is_simple_term(current_term):
+        if _is_terminal_q(current_term) or _is_simple_term_q(current_term):
             checked_stack.append(current_term)
             continue
 
@@ -188,7 +188,7 @@ def _to_dnf_q(q: models.Q) -> models.Q:
             # Save the current term to be able to locate the beginning of the args
             checked_stack.append(current_term)
 
-    if len(checked_stack) == 1 and (term := checked_stack[0]) and not _is_terminal(term):
+    if len(checked_stack) == 1 and (term := checked_stack[0]) and not _is_terminal_q(term):
         dnf_q = checked_stack[0]
     else:
         dnf_q = models.Q(*checked_stack, _connector=models.Q.OR)
@@ -219,3 +219,70 @@ def filter_with_union(queryset: _QuerysetT, q_expr: models.Q) -> _QuerysetT:
         queryset = qs2
 
     return queryset
+
+
+class NonConvertibleQuery(Exception):
+    pass
+
+
+def q_from_where(queryset: _QuerysetT) -> models.Q:
+    from django.utils import tree
+    from django.db.models.sql import where
+
+    def _traverse_query_where(queryset: _QuerysetT) -> Generator[tree.Node, None, None]:
+        # Returns Where expression elements in the postfix expression order:
+        # Where(a, b(c(d, e), f), g) ->
+        # g, f, e, d, c, b, a, Where
+
+        query_stack = [(queryset.query.where, False)]
+        while query_stack:
+            node, is_visited = query_stack.pop()
+
+            if is_visited:
+                yield node
+            else:
+                query_stack.append((node, True))
+                for node_arg in node.children[::-1]:
+                    query_stack.append((node_arg, False))
+
+    def _as_simple_q(term: tree.Node, args: Sequence[models.Q | Any] = None) -> models.Q:
+        if term.connector in (where.AND, where.OR):
+            q_connector_for_node = {
+                where.AND: models.Q.AND,
+                where.OR: models.Q.OR,
+            }
+            assert len(term.children) == len(args)
+            q = models.Q(*args, _connector=q_connector_for_node[term.connector])
+        else:
+            raise NonConvertibleQuery(term)
+
+        if term.negated:
+            q = ~q
+
+        return q
+
+    q_stack = []
+    for term in _traverse_query_where(queryset):
+        if isinstance(term, tree.Node):
+            q_args_count = len(term.children)
+            q_args = q_stack[-q_args_count::-1]
+            q_stack.append(_as_simple_q(term, q_args))
+        else:
+            q_stack.append(term) # A terminal
+
+    assert len(q_stack) == 1
+    return q_stack[0]
+
+
+class RecordingQuerySet(models.QuerySet):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.calls = []
+
+    def filter(self, *args, **kwargs):
+        self.calls.append(("filter", args, kwargs))
+        return super().filter(*args, **kwargs)
+
+    def exclude(self, *args, **kwargs):
+        self.calls.append(("exclude", args, kwargs))
+        return super().exclude(*args, **kwargs)
