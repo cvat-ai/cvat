@@ -2,11 +2,7 @@
 
 attrs==21.4.0
 
-# This is the last version of av that supports ffmpeg we depend on.
-# Changing ffmpeg is undesirable, as there might be video decoding differences
-# between versions.
-# TODO: try to move to the newer version
-av==9.2.0
+av==15.0.0
 
 azure-storage-blob==12.13.0
 boto3~=1.37
