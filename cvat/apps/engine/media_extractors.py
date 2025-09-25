@@ -583,16 +583,6 @@ class _AvVideoReading:
         try:
             yield container
         finally:
-            if av.__version__ < "14":
-                # fixes a memory leak in input container closing
-                # https://github.com/PyAV-Org/PyAV/issues/1117
-                for stream in container.streams:
-                    context = stream.codec_context
-                    if context and context.is_open:
-                        # Currently, context closing may get stuck on some videos for an unknown reason,
-                        # so the thread_type == 'AUTO' setting is disabled for future investigation
-                        context.close()
-
             if container.open_files:
                 container.close()
 
@@ -635,20 +625,6 @@ class VideoReader(IMediaReader):
         self.allow_threading = allow_threading
         self._frame_count: Optional[int] = None
         self._frame_size: Optional[tuple[int, int]] = None # (w, h)
-
-    @staticmethod
-    def get_rotation_angle(video_stream: av.video.stream.VideoStream, frame: av.VideoFrame) -> int | None:
-        av_major = int(av.__version__.split(".")[0])
-        assert av_major not in (10, 11), "AV version does not give access to rotation info"
-        assert not av.__version__.startswith("14.0"), "AV version does not give access to rotation info"
-        if av_major == 9:
-            rotate = int(video_stream.metadata.get('rotate', 0))
-            if rotate:
-                return 360 - rotate
-        elif 12 <= av_major < 14:
-            return video_stream.side_data.get("DISPLAYMATRIX", 0)
-        else:
-            return frame.rotation
 
     def iterate_frames(
         self,
@@ -694,12 +670,11 @@ class VideoReader(IMediaReader):
             frame_counter = itertools.count()
             with closing(self._decode_stream(container, video_stream)) as stream_decoder:
                 for frame, frame_number in zip(stream_decoder, frame_counter):
-                    angle = self.get_rotation_angle(video_stream, frame)
                     if frame_number == next_frame_filter_frame:
-                        if angle:
+                        if frame.rotation:
                             pts = frame.pts
                             frame = av.VideoFrame().from_ndarray(
-                                rotate_image(frame.to_ndarray(format='bgr24'), angle),
+                                rotate_image(frame.to_ndarray(format='bgr24'), frame.rotation),
                                 format ='bgr24'
                             )
                             frame.pts = pts
@@ -856,11 +831,10 @@ class VideoReaderWithManifest:
             frame_counter = itertools.count(start_decode_frame_number)
             with closing(self._decode_stream(container, video_stream)) as stream_decoder:
                 for frame, frame_number in zip(stream_decoder, frame_counter):
-                    angle = VideoReader.get_rotation_angle(video_stream, frame)
                     if frame_number == next_frame_filter_frame:
-                        if angle:
+                        if frame.rotation:
                             frame = av.VideoFrame().from_ndarray(
-                                rotate_image(frame.to_ndarray(format='bgr24'), angle),
+                                rotate_image(frame.to_ndarray(format='bgr24'), frame.rotation),
                                 format ='bgr24'
                             )
 
@@ -1080,9 +1054,8 @@ class Mpeg4ChunkWriter(IChunkWriter):
         video_stream.width = w
         video_stream.height = h
 
-        if av.__version__ >= "14":
-            video_stream.profile = options["profile"]
-            options = {k: options[k] for k in options if k != "profile"}
+        video_stream.profile = options["profile"]
+        options = {k: options[k] for k in options if k != "profile"}
 
         video_stream.options = options
 
@@ -1120,11 +1093,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
                 options=self._codec_opts,
             )
 
-            if av.__version__ < "13.1":
-                with closing(output_v_stream):
-                    self._encode_images(images, output_container, output_v_stream)
-            else:
-                self._encode_images(images, output_container, output_v_stream)
+            self._encode_images(images, output_container, output_v_stream)
 
         return [(input_w, input_h)]
 
@@ -1180,11 +1149,7 @@ class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
                 options=self._codec_opts,
             )
 
-            if av.__version__ < "13.1":
-                with closing(output_v_stream):
-                    self._encode_images(images, output_container, output_v_stream)
-            else:
-                self._encode_images(images, output_container, output_v_stream)
+            self._encode_images(images, output_container, output_v_stream)
 
         return [(input_w, input_h)]
 

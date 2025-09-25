@@ -36,40 +36,18 @@ class VideoStreamReader:
             for packet in container.demux(video_stream):
                 for frame in packet.decode():
                     # check type of first frame
-                    if (
-                        frame.pict_type.name != "I"
-                        if av.__version__ < "14"
-                        else frame.pict_type != av.video.frame.PictureType.I
-                    ):
+                    if frame.pict_type != av.video.frame.PictureType.I:
                         raise InvalidVideoError("The first frame is not a key frame")
 
                     # get video resolution
-                    if angle := self.get_rotation_angle(video_stream, frame):
+                    if frame.rotation:
                         frame = av.VideoFrame().from_ndarray(
-                            rotate_image(frame.to_ndarray(format="bgr24"), angle),
+                            rotate_image(frame.to_ndarray(format="bgr24"), frame.rotation),
                             format="bgr24",
                         )
                     self.height, self.width = (frame.height, frame.width)
 
                     return
-
-    @staticmethod
-    def get_rotation_angle(
-        video_stream: av.video.stream.VideoStream, frame: av.VideoFrame
-    ) -> int | None:
-        av_major = int(av.__version__.split(".")[0])
-        assert av_major not in (10, 11), "AV version does not give access to rotation info"
-        assert not av.__version__.startswith(
-            "14.0"
-        ), "AV version does not give access to rotation info"
-        if av_major == 9:
-            rotate = int(video_stream.metadata.get("rotate", 0))
-            if rotate:
-                return 360 - rotate
-        elif 12 <= av_major < 14:
-            return video_stream.side_data.get("DISPLAYMATRIX", 0)
-        else:
-            return frame.rotation
 
     @property
     def source_path(self):
