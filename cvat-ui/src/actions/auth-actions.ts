@@ -246,7 +246,7 @@ export const getApiTokensAsync = (filter: ApiTokensFilter = {}): ThunkAction => 
 export const createApiTokenAsync = (
     tokenData: ApiTokenModifiableFields,
     onSuccess?: (token: ApiToken) => void,
-): ThunkAction<Promise<ApiToken>> => async (dispatch) => {
+): ThunkAction => async (dispatch) => {
     dispatch(authActions.createApiToken());
 
     try {
@@ -260,47 +260,47 @@ export const createApiTokenAsync = (
         token = await token.save();
 
         dispatch(authActions.createApiTokenSuccess(token));
-        if (onSuccess) onSuccess(token);
-
-        return token;
+        if (onSuccess) {
+            onSuccess(token);
+        }
     } catch (error) {
         dispatch(authActions.createApiTokenFailed(error));
-        throw error;
     }
 };
 
 export const updateApiTokenAsync = (
     token: ApiToken,
     tokenData: ApiTokenModifiableFields,
-    onSuccess?: (token: ApiToken) => void,
-): ThunkAction<Promise<ApiToken>> => async (dispatch) => {
+    onSuccess: (token: ApiToken) => void,
+): ThunkAction => async (dispatch) => {
     dispatch(authActions.updateApiToken());
 
     try {
         await token.save(tokenData);
 
         dispatch(authActions.updateApiTokenSuccess(token));
-        if (onSuccess) onSuccess(token);
-
-        return token;
+        if (onSuccess) {
+            onSuccess(token);
+        }
     } catch (error) {
         dispatch(authActions.updateApiTokenFailed(error));
-        throw error;
     }
 };
 
 export const revokeApiTokenAsync = (
     token: ApiToken,
-    onSuccess?: () => void,
+    onSuccess: () => void,
 ): ThunkAction => async (dispatch) => {
     dispatch(authActions.revokeApiToken());
 
     try {
         await token.revoke();
+
         dispatch(authActions.revokeApiTokenSuccess(token));
-        if (onSuccess) onSuccess();
+        if (onSuccess) {
+            onSuccess();
+        }
     } catch (error) {
         dispatch(authActions.revokeApiTokenFailed(error));
-        throw error;
     }
 };
