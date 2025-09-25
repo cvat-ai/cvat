@@ -184,10 +184,6 @@ function build(): CVATCore {
                 const result = await PluginRegistry.apiWrapper(cvat.apiTokens.get, filter);
                 return result;
             },
-            async revoke(id) {
-                const result = await PluginRegistry.apiWrapper(cvat.apiTokens.revoke, id);
-                return result;
-            },
         },
         plugins: {
             async list() {

@@ -96,7 +96,6 @@ export default interface CVATCore {
     };
     apiTokens: {
         get: (filter: ApiTokensFilter) => Promise<PaginatedResource<ApiToken>>;
-        revoke: (id: number) => Promise<void>;
     };
     jobs: {
         get: (filter: {

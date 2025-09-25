@@ -85,7 +85,7 @@ function ApiTokenForm({
                 <DatePicker
                     style={{ width: '100%' }}
                     placeholder='Select expiration date'
-                    // disabledDate={(current) => current && current.valueOf() < Date.now()}
+                    disabledDate={(current) => current && current.valueOf() < Date.now()}
                 />
             </Form.Item>
             <Form.Item
