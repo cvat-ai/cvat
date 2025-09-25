@@ -18,6 +18,8 @@ from typing import Any, Callable, Generator, Literal, NamedTuple, Optional, Unio
 
 import attr
 import datumaro as dm
+import datumaro.components
+import datumaro.components.media
 import datumaro.util
 import defusedxml.ElementTree as ET
 import rq
@@ -30,6 +32,7 @@ from django.utils import timezone
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import models
+from cvat.apps.engine.cache import MediaCache
 from cvat.apps.engine.frame_provider import FrameOutputType, FrameQuality, TaskFrameProvider
 from cvat.apps.engine.lazy_list import LazyList
 from cvat.apps.engine.model_utils import add_prefetch_fields
@@ -522,7 +525,7 @@ class CommonData(InstanceLabelData):
             return get
 
         get_shapes_for_frame = get_anns_for_frame(
-            anno_manager.to_shapes_stream(
+            anno_manager.to_shapes(
                 self.stop + 1,
                 # Skip outside, deleted and excluded frames
                 included_frames=included_frames,
@@ -539,7 +542,7 @@ class CommonData(InstanceLabelData):
                     for tag in self._annotation_ir.tags
                     if tag['frame'] in included_frames
                 ),
-                key=lambda tag: tag["frame"],
+                key=lambda tag: tag['frame']
             )
         )
 
@@ -1595,33 +1598,143 @@ class MediaProvider2D(MediaProvider):
         self._current_source_id = None
 
 class MediaProvider3D(MediaProvider):
+    class PointCloudFromLazyChunk(datumaro.components.media.PointCloudFromBytes):
+        def __init__(
+            self,
+            path: str,
+            extra_images: list[dm.Image],
+            *args,
+            data_getter: Callable[[], bytes],
+            **kwargs
+        ):
+            super().__init__(data_getter, *args, extra_images=extra_images, **kwargs)
+            self._path = path
+
+        @property
+        def path(self) -> str:
+            return self._path.replace("\\", "/")
+
+    class ImageFromLazyChunk(datumaro.components.media.ImageFromBytes):
+        def __init__(
+            self,
+            path: str,
+            *args,
+            data_getter: Callable[[], bytes],
+            **kwargs
+        ):
+            kwargs.setdefault("ext", osp.splitext(path)[1])
+            super().__init__(
+                data_getter,
+                *args,
+                **kwargs
+            )
+            self._path = path
+
+        @property
+        def path(self) -> str:
+            return self._path.replace("\\", "/")
+
     def __init__(self, sources: dict[int, MediaSource]) -> None:
         super().__init__(sources)
-        self._images_per_source = {
-            source_id: {
-                image.id: image
-                for image in source.db_task.data.images.prefetch_related('related_files')
-            }
-            for source_id, source in sources.items()
-        }
+        self._current_source_id = None
+        self._frame_provider = None
+
+        self._ri_cache: dict[int, dict[str, bytes]] = {}
+        "{source_id -> {task path -> file data}}"
+
+        ThroughModel = models.RelatedFile.images.through
+
+        self._ri_per_source: dict[int, dict[int, list[str]]] = {}
+        "{source_id -> {frame_id -> [ri, ...]}}"
+
+        for source_id, source in sources.items():
+            source_ris = self._ri_per_source.setdefault(source_id, {})
+
+            db_related_files = (
+                ThroughModel.objects.filter(relatedfile__data=source.db_task.data)
+                .order_by("image__frame", "relatedfile__path")
+                .values_list("image__frame", "relatedfile__path")
+            )
+            for frame_idx, ri_path in db_related_files:
+                source_ris.setdefault(frame_idx, []).append(ri_path)
+
+    def unload(self) -> None:
+        self._unload_source()
 
     def get_media_for_frame(self, source_id: int, frame_id: int, **image_kwargs) -> dm.PointCloud:
         source = self._sources[source_id]
 
-        point_cloud_path = osp.join(
-            source.db_task.data.get_upload_dirname(), image_kwargs['path'],
-        )
+        upload_dir = source.db_task.data.get_upload_dirname()
+        point_cloud_path = image_kwargs['path']
 
-        image = self._images_per_source[source_id][frame_id]
-
-        related_images = [
-            dm.Image.from_file(path=path)
-            for rf in image.related_files.all()
-            for path in [osp.realpath(str(rf.path))]
-            if osp.isfile(path)
+        related_image_paths = [
+            osp.relpath(str(ri_path), upload_dir)
+            for ri_path in self._ri_per_source[source_id].get(frame_id, [])
         ]
 
-        return dm.PointCloud.from_file(point_cloud_path, extra_images=related_images)
+        def get_pcd_bytes():
+            self._load_source(source_id, source)
+
+            return self._frame_provider.get_frame(
+                frame_id, quality=FrameQuality.ORIGINAL, out_type=FrameOutputType.BUFFER
+            ).data.getvalue()
+
+        def get_ri_frame(path: str) -> bytes:
+            self._load_source(source_id, source)
+
+            return self._get_ri_chunk(frame_id)[path]
+
+        dm_related_images = [
+            self.ImageFromLazyChunk(ri_path, data_getter=partial(get_ri_frame, ri_path))
+            for ri_path in related_image_paths
+        ]
+
+        return self.PointCloudFromLazyChunk(
+            point_cloud_path, extra_images=dm_related_images, data_getter=get_pcd_bytes
+        )
+
+    def _get_ri_chunk(self, frame_id: int) -> dict[str, bytes]:
+        frame_related_images = self._ri_cache.get(frame_id, None)
+
+        if frame_related_images is None:
+            self._clear_ri_chunk_cache()
+
+            # frame provider doesn't cache RIs and can return only compressed RI chunks for the UI
+            cache = MediaCache()
+
+            frame_related_images = {
+                ri_path: Path(ri_realpath).read_bytes()
+                for _, (ri_realpath, ri_path, _) in cache.read_raw_context_images(
+                    self._sources[self._current_source_id].db_task.data,
+                    frame_ids=[frame_id],
+                    truncate_common_filename_prefix=False,
+                    decode=False,
+                )
+            }
+
+            self._ri_cache[frame_id] = frame_related_images
+
+        return frame_related_images
+
+    def _clear_ri_chunk_cache(self):
+        self._ri_cache.clear()
+
+    def _load_source(self, source_id: int, source: MediaSource) -> None:
+        if self._current_source_id == source_id:
+            return
+
+        self._unload_source()
+        self._frame_provider = TaskFrameProvider(source.db_task)
+        self._current_source_id = source_id
+
+    def _unload_source(self) -> None:
+        if self._frame_provider:
+            self._frame_provider.unload()
+            self._frame_provider = None
+
+            self._clear_ri_chunk_cache()
+
+        self._current_source_id = None
 
 MEDIA_PROVIDERS_BY_DIMENSION: dict[DimensionType, MediaProvider] = {
     DimensionType.DIM_3D: MediaProvider3D,
@@ -1734,15 +1847,8 @@ class CvatDataExtractorBase(CVATDataExtractorMixin):
         }
         if self._dimension == DimensionType.DIM_3D:
             dm_media: dm.PointCloud = self._media_provider.get_media_for_frame(
-                frame_data.task_id, frame_data.id, **dm_media_args
+                frame_data.task_id, frame_data.idx, **dm_media_args
             )
-
-            if not self._include_images:
-                dm_media_args["extra_images"] = [
-                    dm.Image.from_file(path=osp.basename(image.path))
-                    for image in dm_media.extra_images
-                ]
-                dm_media = dm.PointCloud.from_file(**dm_media_args)
         else:
             dm_media_args['size'] = (frame_data.height, frame_data.width)
             if self._include_images:
@@ -1807,33 +1913,8 @@ class CvatTaskOrJobDataExtractor(dm.SubsetBase, CvatDataExtractorBase):
         )
         self._categories = self.load_categories(self._instance_meta['labels'])
 
-        if not self._instance_data.is_stream:
-            self._grouped_by_frame = list(self._instance_data.group_by_frame(include_empty=True))
-
-    @staticmethod
-    def copy_frame_data_with_replaced_lazy_lists(frame_data: CommonData.Frame) -> CommonData.Frame:
-        return attr.evolve(
-            frame_data,
-            labeled_shapes=[
-                (
-                    shape._replace(points=shape.points.lazy_copy())
-                    if isinstance(shape.points, LazyList) and not shape.points.is_parsed
-                    else shape
-                )
-                for shape in frame_data.labeled_shapes
-            ]
-        )
-
     def __iter__(self):
-        if self._instance_data.is_stream:
-            grouped_by_frame = self._instance_data.group_by_frame(include_empty=True)
-        else:
-            grouped_by_frame = self._grouped_by_frame
-
-        for frame_data in grouped_by_frame:
-            if not self._instance_data.is_stream:
-                # do not keep parsed lazy list data after this iteration
-                frame_data = self.copy_frame_data_with_replaced_lazy_lists(frame_data)
+        for frame_data in self._instance_data.group_by_frame(include_empty=True):
             yield self._process_one_frame_data(frame_data)
 
     def __len__(self):

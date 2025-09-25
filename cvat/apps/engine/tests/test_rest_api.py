@@ -22,6 +22,7 @@ from enum import Enum
 from glob import glob
 from io import BytesIO, IOBase
 from itertools import product
+from pathlib import Path
 from pprint import pformat
 from time import sleep
 from typing import BinaryIO
@@ -74,6 +75,7 @@ from cvat.apps.engine.tests.utils import (
     get_paginated_collection,
 )
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
+from utils.dataset_manifest.utils import PcdReader, find_related_images
 
 from .utils import check_annotation_response, compare_objects
 
@@ -1458,7 +1460,9 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
             video.write(data.read())
 
         manifest_path = os.path.join(settings.SHARE_ROOT, "videos", "manifest.jsonl")
-        generate_manifest_file(data_type="video", manifest_path=manifest_path, sources=[path])
+        generate_manifest_file(
+            data_type=ManifestDataType.video, manifest_path=manifest_path, sources=[path]
+        )
 
         cls.media_data.append(
             {
@@ -1472,7 +1476,7 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
 
         manifest_path = manifest_path = os.path.join(settings.SHARE_ROOT, "manifest.jsonl")
         generate_manifest_file(
-            data_type="images",
+            data_type=ManifestDataType.images,
             manifest_path=manifest_path,
             sources=[
                 os.path.join(settings.SHARE_ROOT, imagename_pattern.format(i)) for i in range(1, 8)
@@ -3077,6 +3081,27 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
                 }
             )
 
+            if sorting == SortingMethod.PREDEFINED:
+                # Manifest is required for predefined sorting with an archive
+                manifest_path = Path(path).with_suffix(".jsonl")
+                with (
+                    tempfile.TemporaryDirectory() as temp_dir,
+                    zipfile.ZipFile(path, "r") as zip_file,
+                ):
+                    zip_file.extractall(temp_dir)
+
+                    generate_manifest_file(
+                        ManifestDataType.point_clouds,
+                        manifest_path,
+                        glob(os.path.join(temp_dir, "**/*.*"), recursive=True),
+                        sorting_method=SortingMethod.PREDEFINED,
+                        root_dir=temp_dir,
+                    )
+
+                cls.media_data[-1]["server_files[1]"] = os.path.join(
+                    settings.SHARE_ROOT, manifest_path.name
+                )
+
         filename = os.path.join("videos", "test_video_1.mp4")
         path = os.path.join(settings.SHARE_ROOT, filename)
         os.makedirs(os.path.dirname(path))
@@ -3085,7 +3110,7 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
             video.write(data.read())
 
         generate_manifest_file(
-            data_type="video",
+            data_type=ManifestDataType.video,
             manifest_path=os.path.join(settings.SHARE_ROOT, "videos", "manifest.jsonl"),
             sources=[path],
         )
@@ -3101,7 +3126,7 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
         )
 
         generate_manifest_file(
-            data_type="images",
+            data_type=ManifestDataType.images,
             manifest_path=os.path.join(settings.SHARE_ROOT, "manifest.jsonl"),
             sources=[
                 os.path.join(settings.SHARE_ROOT, imagename_pattern.format(i)) for i in range(1, 8)
@@ -3492,8 +3517,14 @@ def generate_pdf_file(filename, page_count=1):
     return image_sizes, file_buf
 
 
+class ManifestDataType(str, Enum):
+    video = "video"
+    images = "images"
+    point_clouds = "point_clouds"
+
+
 def generate_manifest_file(
-    data_type,
+    data_type: ManifestDataType,
     manifest_path,
     sources,
     *,
@@ -3513,7 +3544,17 @@ def generate_manifest_file(
             "sorting_method": sorting_method,
             "use_image_hash": True,
             "data_dir": root_dir,
+            "DIM_3D": data_type == ManifestDataType.point_clouds,
         }
+
+        scenes, related_images = find_related_images(sources, root_path=root_dir)
+        kwargs["meta"] = {k: {"related_images": related_images[k]} for k in related_images}
+        kwargs["sources"] = [
+            p
+            for p in sources
+            if (root_dir is not None and os.path.relpath(p, root_dir) or p) in scenes
+        ]
+
         manifest = ImageManifestManager(manifest_path, create_index=False)
     manifest.link(**kwargs)
     manifest.create()
@@ -3576,12 +3617,11 @@ class TaskDataAPITestCase(ApiTestBase):
 
         filename = "test_rotated_90_video.mp4"
         path = os.path.join(os.path.dirname(__file__), "assets", "test_rotated_90_video.mp4")
-        container = av.open(path, "r")
-        for frame in container.decode(video=0):
-            # pyav ignores rotation record in metadata when decoding frames
-            img_sizes = [(frame.height, frame.width)] * container.streams.video[0].frames
-            break
-        container.close()
+        with av.open(path, "r") as container:
+            for frame in container.decode(video=0):
+                # pyav ignores rotation record in metadata when decoding frames
+                img_sizes = [(frame.height, frame.width)] * container.streams.video[0].frames
+                break
         cls._share_image_sizes[filename] = img_sizes
 
         filename = os.path.join("videos", "test_video_1.mp4")
@@ -3604,13 +3644,16 @@ class TaskDataAPITestCase(ApiTestBase):
         filename = "test_pointcloud_pcd.zip"
         path = os.path.join(os.path.dirname(__file__), "assets", filename)
         image_sizes = []
-        # container = av.open(path, 'r')
-        zip_file = zipfile.ZipFile(path)
-        for info in zip_file.namelist():
-            if info.rsplit(".", maxsplit=1)[-1] == "pcd":
+        with zipfile.ZipFile(path) as zip_file:
+            for info in zip_file.namelist():
+                if not info.endswith(".pcd"):
+                    continue
+
                 with zip_file.open(info, "r") as file:
-                    data = ValidateDimension.get_pcd_properties(file)
-                    image_sizes.append((int(data["WIDTH"]), int(data["HEIGHT"])))
+                    pcd_properties = ValidateDimension.get_pcd_properties(file)
+
+                image_sizes.append((int(pcd_properties["WIDTH"]), int(pcd_properties["HEIGHT"])))
+
         cls._share_image_sizes[filename] = image_sizes
 
         filename = "test_rar.rar"
@@ -3628,30 +3671,18 @@ class TaskDataAPITestCase(ApiTestBase):
         filename = "test_velodyne_points.zip"
         path = os.path.join(os.path.dirname(__file__), "assets", filename)
         image_sizes = []
+        with zipfile.ZipFile(path) as zip_file:
+            for info in zip_file.namelist():
+                if not info.endswith(".bin"):
+                    continue
 
-        # create zip instance
-        zip_file = zipfile.ZipFile(path, mode="a")
+                with zip_file.open(info, "r") as bin_file:
+                    pcd_file = io.BytesIO()
+                    PcdReader.convert_bin_to_pcd_file(bin_file, output_file=pcd_file)
+                    pcd_file.seek(0)
 
-        source_path = []
-        root_path = os.path.abspath(os.path.split(path)[0])
-
-        for info in zip_file.namelist():
-            if os.path.splitext(info)[1][1:] == "bin":
-                zip_file.extract(info, root_path)
-                bin_path = os.path.abspath(os.path.join(root_path, info))
-                source_path.append(ValidateDimension.convert_bin_to_pcd(bin_path))
-
-        for path in source_path:
-            zip_file.write(path, os.path.abspath(path.replace(root_path, "")))
-
-        for info in zip_file.namelist():
-            if os.path.splitext(info)[1][1:] == "pcd":
-                with zip_file.open(info, "r") as file:
-                    data = ValidateDimension.get_pcd_properties(file)
-                    image_sizes.append((int(data["WIDTH"]), int(data["HEIGHT"])))
-
-        root_path = os.path.abspath(os.path.join(root_path, filename.split(".")[0]))
-        shutil.rmtree(root_path, ignore_errors=True)
+                pcd_properties = ValidateDimension.get_pcd_properties(pcd_file)
+                image_sizes.append((int(pcd_properties["WIDTH"]), int(pcd_properties["HEIGHT"])))
 
         cls._share_image_sizes[filename] = image_sizes
 
@@ -3665,7 +3696,7 @@ class TaskDataAPITestCase(ApiTestBase):
 
         filename = "videos/manifest.jsonl"
         generate_manifest_file(
-            data_type="video",
+            data_type=ManifestDataType.video,
             manifest_path=os.path.join(settings.SHARE_ROOT, filename),
             sources=[os.path.join(settings.SHARE_ROOT, "videos", "test_video_1.mp4")],
         )
@@ -3683,7 +3714,7 @@ class TaskDataAPITestCase(ApiTestBase):
         for ordered in [True, False]:
             filename = "images_manifest{}.jsonl".format("_sorted" if ordered else "")
             generate_manifest_file(
-                data_type="images",
+                data_type=ManifestDataType.images,
                 manifest_path=os.path.join(settings.SHARE_ROOT, filename),
                 sources=[os.path.join(settings.SHARE_ROOT, fn) for fn in image_files],
                 sorting_method=(
@@ -4857,7 +4888,10 @@ class TaskDataAPITestCase(ApiTestBase):
             for caching_enabled, manifest in product([True, False], [True, False]):
                 manifest_path = os.path.join(test_dir, "manifest.jsonl")
                 generate_manifest_file(
-                    "images", manifest_path, image_paths, sorting_method=SortingMethod.PREDEFINED
+                    ManifestDataType.images,
+                    manifest_path,
+                    image_paths,
+                    sorting_method=SortingMethod.PREDEFINED,
                 )
 
                 task_data_common["use_cache"] = caching_enabled
@@ -5015,7 +5049,7 @@ class TaskDataAPITestCase(ApiTestBase):
 
                     manifest_path = os.path.join(test_dir, "manifest.jsonl")
                     generate_manifest_file(
-                        "images",
+                        ManifestDataType.images,
                         manifest_path,
                         image_paths,
                         sorting_method=SortingMethod.PREDEFINED,

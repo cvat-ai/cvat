@@ -4,9 +4,9 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
+import dayjs from 'dayjs';
 
 import { Row, Col } from 'antd/lib/grid';
-
 import Card from 'antd/lib/card';
 import Text from 'antd/lib/typography/Text';
 import Progress from 'antd/lib/progress';
@@ -15,7 +15,6 @@ import Button from 'antd/lib/button';
 
 import { RQStatus, Request } from 'cvat-core-wrapper';
 
-import moment from 'moment';
 import StatusMessage from './request-status';
 import RequestActionsComponent from './actions-menu';
 
@@ -65,10 +64,10 @@ function constructName(operation: Request['operation']): string | null {
 }
 
 function constructTimestamps(request: Request): JSX.Element {
-    const started = moment(request.startedDate).format('MMM Do YY, H:mm');
-    const finished = moment(request.finishedDate).format('MMM Do YY, H:mm');
-    const created = moment(request.createdDate).format('MMM Do YY, H:mm');
-    const expired = moment(request.expiryDate).format('MMM Do YY, H:mm');
+    const started = dayjs(request.startedDate).format('MMM Do YY, H:mm');
+    const finished = dayjs(request.finishedDate).format('MMM Do YY, H:mm');
+    const created = dayjs(request.createdDate).format('MMM Do YY, H:mm');
+    const expired = dayjs(request.expiryDate).format('MMM Do YY, H:mm');
     const { operation: { type }, url } = request;
 
     switch (request.status) {
