@@ -37,7 +37,7 @@ FROM build-image-base AS build-image-av
 ARG PREFIX=/opt/ffmpeg
 ARG PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig
 
-ENV FFMPEG_VERSION=7.1.1 \
+ENV FFMPEG_VERSION=8.0 \
     OPENH264_VERSION=2.6.0
 
 WORKDIR /tmp/openh264

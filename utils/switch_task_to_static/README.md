@@ -1,5 +1,5 @@
 # Description
-In version 2.46.0, CVAT upgraded the FFMPEG library it uses to split videos into frames from 4.3.1 to 7.1.1.
+In version 2.46.0, CVAT upgraded the FFMPEG library it uses to split videos into frames from 4.3.1 to 8.0.
 
 There is a small chance that some video files may be splitted to frames differently by different FFMPEG versions.
 
