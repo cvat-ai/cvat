@@ -10,5 +10,5 @@ this script may be used to switch a task to static chunks and generate frames wi
 
 If your CVAT is deployed through docker, run
 ```shell
-TASK_ID=<id> docker compose -f ./utils/switch_task_to_static/docker-compose.yaml run --rm old_cvat "python manage.py shell < /switch_task_to_static_cache.py"
+docker compose -f ./utils/switch_task_to_static/docker-compose.yaml run --rm generate_chunks_for_task <task id>
 ```

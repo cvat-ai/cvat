@@ -3,12 +3,16 @@
 
 from __future__ import annotations
 
+import argparse
 import os
 import shutil
 from unittest.mock import Mock, patch
 
+import django
 from django.db import connection, transaction
 from django.db.migrations.recorder import MigrationRecorder
+
+django.setup()
 
 from cvat.apps.engine import models
 from cvat.apps.engine.media_extractors import MEDIA_TYPES
@@ -53,10 +57,12 @@ def _cleanup_static_cache(data: models.Data):
 
 
 def main():
-    try:
-        task_id = int(os.environ.get("TASK_ID"))
-    except (TypeError, ValueError):
-        raise ValueError("TASK_ID environment variable must be set to a valid integer.")
+    parser = argparse.ArgumentParser(
+        description="Switch a video task to static cache storage and generate static chunks."
+    )
+    parser.add_argument("task_id", type=int, help="Task ID (integer)")
+    args = parser.parse_args()
+    task_id = args.task_id
 
     _ensure_last_engine_applied_migration_name()
 
@@ -85,4 +91,5 @@ def main():
     print(f"Task #{task_id}: switched to static cache.")
 
 
-main()
+if __name__ == "__main__":
+    main()
