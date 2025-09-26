@@ -58,10 +58,10 @@ To upgrade CVAT, follow these steps:
 
 ## How to upgrade CVAT from v2.45.0 to v2.46.0.
 
-In version 2.46.0, CVAT upgraded the FFMPEG library it uses to split videos into frames from 4.3.1 to 8.0.
+In version 2.46.0, CVAT upgraded the FFmpeg library it uses to split videos into frames from 4.3.1 to 8.0.
 There is a small chance that some video files may not be processed correctly with the new FFMPEG version.
 
-If one of your task is affected, follow the guide in ./utils/switch_task_to_static/README.md
+If one of your tasks is affected, follow the guide in ./utils/switch_task_to_static/README.md
 
 ## Upgrade CVAT after v2.26.0
 
