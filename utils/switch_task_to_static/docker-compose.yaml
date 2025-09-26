@@ -1,0 +1,22 @@
+services:
+  old_cvat:
+    image: cvat/server:v2.45.0
+    environment:
+      CVAT_POSTGRES_HOST: cvat_db
+      TASK_ID: ${TASK_ID}
+    volumes:
+      - cvat_data:/home/django/data
+      - ./switch_task_to_static_cache.py:/switch_task_to_static_cache.py:ro
+    networks:
+      - cvat
+    entrypoint: ["/bin/bash", "-c"]
+
+volumes:
+  cvat_data:
+    name: cvat_cvat_data
+    external: True
+
+networks:
+  cvat:
+    name: cvat_cvat
+    external: true
