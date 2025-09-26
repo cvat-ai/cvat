@@ -329,7 +329,9 @@ postgresql:
   #See https://github.com/bitnami/charts/blob/master/bitnami/postgresql/ for more info
   enabled: true # false for external db
   image:
-    repository: bitnamilegacy/postgresql
+    registry: public.ecr.aws
+    repository: b8u7h5e8/postgresql
+    tag: 15.2.0-debian-11-r0
   external:
     # Ignored if an empty value is set
     host: ""
@@ -354,7 +356,9 @@ postgresql:
 redis:
   enabled: true
   image:
-    repository: bitnamilegacy/redis
+    registry: public.ecr.aws
+    repository: b8u7h5e8/redis
+    tag: 7.2.3-debian-11-r1
   external:
     host: 127.0.0.1
   architecture: standalone
@@ -416,11 +420,12 @@ clickhouse:
   # Set to false in case of external db usage
   enabled: true
   image:
-    repository: bitnamilegacy/clickhouse
+    registry: public.ecr.aws
+    repository: b8u7h5e8/clickhouse
+    tag: 23.12.2-debian-11-r0
   shards: 1
   replicaCount: 1
   extraEnvVarsSecret: cvat-analytics-secret
-  initdbScriptsSecret: cvat-clickhouse-init
   auth:
     username: user
     existingSecret: cvat-analytics-secret
