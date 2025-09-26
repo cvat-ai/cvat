@@ -1054,8 +1054,12 @@ class Mpeg4ChunkWriter(IChunkWriter):
         video_stream.width = w
         video_stream.height = h
 
-        video_stream.profile = options["profile"]
-        options = {k: options[k] for k in options if k != "profile"}
+        if "profile" in options:
+            video_stream.profile = options["profile"]
+        if "qmin" in options:
+            video_stream.codec_context.qmin = int(options["qmin"])
+            video_stream.codec_context.qmax = int(options["qmax"])
+        options = {k: options[k] for k in options if k not in ("profile", "qmin", "qmax")}
 
         video_stream.options = options
 
