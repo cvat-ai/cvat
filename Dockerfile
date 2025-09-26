@@ -62,8 +62,7 @@ RUN grep -q '^av==' /tmp/utils/dataset_manifest/requirements.txt
 RUN sed -i '/^av==/!d' /tmp/utils/dataset_manifest/requirements.txt
 
 RUN --mount=type=cache,target=/root/.cache/pip/http-v2 \
-    # without this env var fails because it is not a virtual environment
-    GITHUB_ACTIONS=true python3 -m pip wheel --no-binary=av \
+    python3 -m pip wheel --no-binary=av \
     -r /tmp/utils/dataset_manifest/requirements.txt \
     -w /tmp/wheelhouse
 
