@@ -15,7 +15,7 @@ import zipfile
 from abc import ABC, abstractmethod
 from bisect import bisect
 from collections.abc import Generator, Iterable, Iterator, Sequence
-from contextlib import AbstractContextManager, ExitStack, closing, contextmanager
+from contextlib import ExitStack, closing
 from dataclasses import dataclass
 from enum import IntEnum
 from fractions import Fraction
@@ -572,19 +572,14 @@ class ZipReader(ImageListReader):
             os.remove(self._zip_source.filename)
 
 class _AvVideoReading:
-    @contextmanager
     def read_av_container(
         self, source: Union[str, io.BytesIO]
-    ) -> Generator[av.container.InputContainer, None, None]:
+    ) -> av.container.InputContainer:
         if isinstance(source, io.BytesIO):
             source.seek(0) # required for re-reading
 
-        container = av.open(source)
-        try:
-            yield container
-        finally:
-            if container.open_files:
-                container.close()
+        return av.open(source)
+
 
     def decode_stream(
         self, container: av.container.Container, video_stream: av.video.stream.VideoStream
@@ -696,7 +691,7 @@ class VideoReader(IMediaReader):
         duration = self._get_duration()
         return pos / duration if duration else None
 
-    def _read_av_container(self) -> AbstractContextManager[av.container.InputContainer]:
+    def _read_av_container(self) -> av.container.InputContainer:
         return _AvVideoReading().read_av_container(self._source_path[0])
 
     def _decode_stream(
@@ -787,7 +782,7 @@ class VideoReaderWithManifest:
 
         self.allow_threading = allow_threading
 
-    def _read_av_container(self) -> AbstractContextManager[av.container.InputContainer]:
+    def _read_av_container(self) -> av.container.InputContainer:
         return _AvVideoReading().read_av_container(self.source_path)
 
     def _decode_stream(
