@@ -25,7 +25,7 @@ interface Props {
 
 interface FormData {
     name: string;
-    expirationDate: moment.Moment | null;
+    expirationDate: dayjs.Dayjs | null;
     isReadOnly: boolean;
 }
 
@@ -50,7 +50,7 @@ function ApiTokenForm({
 
     const initialValues = {
         name: token?.name || (tokenCount === 0 ? 'New token' : `New token ${tokenCount + 1}`),
-        expirationDate: token?.expiryDate ? dayjs(token.expiryDate) : dayjs().add(1, 'year'),
+        expirationDate: token?.expiryDate ? dayjs.utc(token.expiryDate).local() : dayjs().add(1, 'year'),
         isReadOnly: token?.readOnly || false,
     };
 
@@ -80,7 +80,7 @@ function ApiTokenForm({
                 className='cvat-api-token-form-expiration-date'
                 label='Expiration Date'
                 name='expirationDate'
-                help='Leave this field empty if you dont want token to expire'
+                help='Leave this field empty if you do not want token to expire'
             >
                 <DatePicker
                     style={{ width: '100%' }}

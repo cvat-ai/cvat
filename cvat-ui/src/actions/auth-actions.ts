@@ -5,6 +5,7 @@
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { RegisterData } from 'components/register-page/register-form';
+import { ensureError } from 'utils/error-handling';
 import {
     getCore, User, ApiToken, ApiTokenModifiableFields,
     ApiTokensFilter, SerializedApiToken,
@@ -83,18 +84,18 @@ export const authActions = {
     getApiTokensSuccess: (tokens: ApiToken[], count: number) => (
         createAction(AuthActionTypes.GET_API_TOKENS_SUCCESS, { tokens, count })
     ),
-    getApiTokensFailed: (error: any) => createAction(AuthActionTypes.GET_API_TOKENS_FAILED, { error }),
+    getApiTokensFailed: (error: Error) => createAction(AuthActionTypes.GET_API_TOKENS_FAILED, { error }),
     createApiToken: () => createAction(AuthActionTypes.CREATE_API_TOKEN),
     createApiTokenSuccess: (token: ApiToken) => createAction(AuthActionTypes.CREATE_API_TOKEN_SUCCESS, { token }),
-    createApiTokenFailed: (error: any) => createAction(AuthActionTypes.CREATE_API_TOKEN_FAILED, { error }),
+    createApiTokenFailed: (error: Error) => createAction(AuthActionTypes.CREATE_API_TOKEN_FAILED, { error }),
     updateApiToken: () => createAction(AuthActionTypes.UPDATE_API_TOKEN),
     updateApiTokenSuccess: (token: ApiToken) => createAction(AuthActionTypes.UPDATE_API_TOKEN_SUCCESS, { token }),
-    updateApiTokenFailed: (error: any) => createAction(AuthActionTypes.UPDATE_API_TOKEN_FAILED, { error }),
+    updateApiTokenFailed: (error: Error) => createAction(AuthActionTypes.UPDATE_API_TOKEN_FAILED, { error }),
     revokeApiToken: () => createAction(AuthActionTypes.REVOKE_API_TOKEN),
     revokeApiTokenSuccess: (token: ApiToken) => (
         createAction(AuthActionTypes.REVOKE_API_TOKEN_SUCCESS, { token })
     ),
-    revokeApiTokenFailed: (error: any) => createAction(AuthActionTypes.REVOKE_API_TOKEN_FAILED, { error }),
+    revokeApiTokenFailed: (error: Error) => createAction(AuthActionTypes.REVOKE_API_TOKEN_FAILED, { error }),
 };
 
 export type AuthActions = ActionUnion<typeof authActions>;
@@ -238,8 +239,8 @@ export const getApiTokensAsync = (filter: ApiTokensFilter = {}): ThunkAction => 
         const tokens = await cvat.apiTokens.get(filter);
         const array = Array.from(tokens);
         dispatch(authActions.getApiTokensSuccess(array, tokens.count));
-    } catch (error) {
-        dispatch(authActions.getApiTokensFailed(error));
+    } catch (error: unknown) {
+        dispatch(authActions.getApiTokensFailed(ensureError(error)));
     }
 };
 
@@ -261,8 +262,8 @@ export const createApiTokenAsync = (
 
         dispatch(authActions.createApiTokenSuccess(token));
         onSuccess(token);
-    } catch (error) {
-        dispatch(authActions.createApiTokenFailed(error));
+    } catch (error: unknown) {
+        dispatch(authActions.createApiTokenFailed(ensureError(error)));
     }
 };
 
@@ -278,8 +279,8 @@ export const updateApiTokenAsync = (
 
         dispatch(authActions.updateApiTokenSuccess(token));
         onSuccess(token);
-    } catch (error) {
-        dispatch(authActions.updateApiTokenFailed(error));
+    } catch (error: unknown) {
+        dispatch(authActions.updateApiTokenFailed(ensureError(error)));
     }
 };
 
@@ -294,7 +295,7 @@ export const revokeApiTokenAsync = (
 
         dispatch(authActions.revokeApiTokenSuccess(token));
         onSuccess();
-    } catch (error) {
-        dispatch(authActions.revokeApiTokenFailed(error));
+    } catch (error: unknown) {
+        dispatch(authActions.revokeApiTokenFailed(ensureError(error)));
     }
 };

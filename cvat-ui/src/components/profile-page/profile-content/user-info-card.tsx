@@ -14,6 +14,7 @@ import Input from 'antd/lib/input';
 import Button from 'antd/lib/button';
 
 import { updateUserAsync } from 'actions/auth-actions';
+import validationRules from 'utils/validation-rules';
 
 interface ProfileFormValues {
     username?: string;
@@ -69,7 +70,7 @@ function UserInfoCard(): JSX.Element {
                         <Form.Item
                             label='First Name'
                             name='firstName'
-                            rules={[{ required: true, message: 'Please input your first name!' }]}
+                            rules={validationRules.firstName}
                         >
                             <Input />
                         </Form.Item>
@@ -78,7 +79,7 @@ function UserInfoCard(): JSX.Element {
                         <Form.Item
                             label='Last Name'
                             name='lastName'
-                            rules={[{ required: true, message: 'Please input your last name!' }]}
+                            rules={validationRules.lastName}
                         >
                             <Input />
                         </Form.Item>
@@ -87,17 +88,14 @@ function UserInfoCard(): JSX.Element {
                 <Form.Item
                     label='Email'
                     name='email'
-                    rules={[
-                        { required: true, message: 'Please input your email!' },
-                        { type: 'email', message: 'Please enter a valid email!' },
-                    ]}
+                    rules={validationRules.email}
                 >
                     <Input disabled />
                 </Form.Item>
                 <Form.Item
                     label='Username'
                     name='username'
-                    rules={[{ required: true, message: 'Please input your username!' }]}
+                    rules={validationRules.userName}
                 >
                     <Input disabled />
                 </Form.Item>

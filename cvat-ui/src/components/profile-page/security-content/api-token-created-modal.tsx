@@ -27,8 +27,7 @@ function ApiTokenCreatedModal({
     const { value: tokenValue } = token;
 
     const handleCopyToClipboard = useCallback(async (): Promise<void> => {
-        toClipboard(tokenValue ?? '');
-        setCopied(true);
+        toClipboard(tokenValue ?? '').then(setCopied);
     }, [tokenValue]);
 
     const handleClose = useCallback((): void => {
