@@ -245,7 +245,7 @@ export const getApiTokensAsync = (filter: ApiTokensFilter = {}): ThunkAction => 
 
 export const createApiTokenAsync = (
     tokenData: ApiTokenModifiableFields,
-    onSuccess?: (token: ApiToken) => void,
+    onSuccess: (token: ApiToken) => void,
 ): ThunkAction => async (dispatch) => {
     dispatch(authActions.createApiToken());
 
@@ -260,9 +260,7 @@ export const createApiTokenAsync = (
         token = await token.save();
 
         dispatch(authActions.createApiTokenSuccess(token));
-        if (onSuccess) {
-            onSuccess(token);
-        }
+        onSuccess(token);
     } catch (error) {
         dispatch(authActions.createApiTokenFailed(error));
     }
@@ -279,9 +277,7 @@ export const updateApiTokenAsync = (
         await token.save(tokenData);
 
         dispatch(authActions.updateApiTokenSuccess(token));
-        if (onSuccess) {
-            onSuccess(token);
-        }
+        onSuccess(token);
     } catch (error) {
         dispatch(authActions.updateApiTokenFailed(error));
     }
@@ -297,9 +293,7 @@ export const revokeApiTokenAsync = (
         await token.revoke();
 
         dispatch(authActions.revokeApiTokenSuccess(token));
-        if (onSuccess) {
-            onSuccess();
-        }
+        onSuccess();
     } catch (error) {
         dispatch(authActions.revokeApiTokenFailed(error));
     }
