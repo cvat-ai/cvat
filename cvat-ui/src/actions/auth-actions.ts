@@ -6,6 +6,7 @@
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { RegisterData } from 'components/register-page/register-form';
 import { ensureError } from 'utils/error-handling';
+import { fetchAllPaginated } from 'utils/pagination';
 import {
     getCore, User, ApiToken, ApiTokenModifiableFields,
     ApiTokensFilter, SerializedApiToken,
@@ -236,9 +237,12 @@ export const getApiTokensAsync = (filter: ApiTokensFilter = {}): ThunkAction => 
     dispatch(authActions.getApiTokens());
 
     try {
-        const tokens = await cvat.apiTokens.get(filter);
-        const array = Array.from(tokens);
-        dispatch(authActions.getApiTokensSuccess(array, tokens.count));
+        const { items: tokens, count } = await fetchAllPaginated(
+            (paginationFilter) => cvat.apiTokens.get(paginationFilter),
+            filter,
+        );
+
+        dispatch(authActions.getApiTokensSuccess(tokens, count));
     } catch (error: unknown) {
         dispatch(authActions.getApiTokensFailed(ensureError(error)));
     }

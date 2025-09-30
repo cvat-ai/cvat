@@ -581,15 +581,17 @@ async function getApiTokens(filter: APIApiTokensFilter = {}): Promise<PaginatedR
 
     let response = null;
     try {
-        response = await fetchAll(`${backendAPI}/auth/api_tokens`, {
-            ...filter,
+        response = await Axios.get(`${backendAPI}/auth/api_tokens`, {
+            params: {
+                ...filter,
+            },
         });
     } catch (errorData) {
         throw generateError(errorData);
     }
 
-    response.results.count = response.count;
-    return response.results;
+    response.data.results.count = response.data.count;
+    return response.data.results;
 }
 
 async function createApiToken(tokenData: SerializedApiToken): Promise<SerializedApiToken> {
