@@ -12,6 +12,7 @@ context('UI and job metadata work correctly when deleting frames', () => {
 
     describe('Attempt to delete any frame after repeated request to /data/meta/', () => {
         before(() => {
+            cy.loginSetup();
             cy.window().then((window) => {
                 defaultJobMetadataReloadPeriod = window.cvat.config.jobMetaDataReloadPeriod;
                 window.cvat.config.jobMetaDataReloadPeriod = chunkReloadPeriod;

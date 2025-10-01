@@ -28,6 +28,7 @@ context('Message in UI when raw labels are wrong.', () => {
     ];
 
     before(() => {
+        cy.loginSetup();
         cy.openTask(taskName);
         cy.get('[role="tab"]').contains('Raw').click();
     });

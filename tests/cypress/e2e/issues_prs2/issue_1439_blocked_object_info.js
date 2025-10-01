@@ -28,6 +28,7 @@ context('Information about a blocked object disappears if hover the cursor over 
     };
 
     before(() => {
+        cy.loginSetup();
         cy.openTaskJob(taskName);
     });
 

@@ -20,6 +20,7 @@ context('Check hide functionality (H)', () => {
     };
 
     before(() => {
+        cy.loginSetup();
         cy.openTaskJob(taskName);
     });
 
