@@ -11,6 +11,7 @@ context('Check maintenance of popups visibility.', () => {
     const issueId = '2230';
 
     before(() => {
+        cy.loginSetup();
         cy.openTaskJob(taskName);
     });
 
