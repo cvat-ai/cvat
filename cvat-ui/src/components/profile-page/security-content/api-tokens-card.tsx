@@ -236,24 +236,20 @@ function ApiTokensCard(): JSX.Element {
                                             <Row>
                                                 <Col>
                                                     <Text>
-                                                        Personal Access Tokens allow you to authenticate with the API
-                                                        without using your username and password.
+                                                        Personal Access Tokens (PATs) are text strings that
+                                                        can be used for authentication instead of a username/email
+                                                        and password. They allow interaction with the CVAT server
+                                                        API via various clients, including custom scripts, the CVAT
+                                                        Python SDK, and the CVAT CLI.
                                                     </Text>
                                                 </Col>
                                             </Row>
                                             <Row>
                                                 <Col>
                                                     <Text>
-                                                        Read Only tokens can only view data, while
-                                                        Read/Write tokens can modify data.
-                                                    </Text>
-                                                </Col>
-                                            </Row>
-                                            <Row>
-                                                <Col>
-                                                    <Text>
-                                                        Store your tokens securely and never share them.
-                                                        If a token is compromised, revoke it immediately.
+                                                        For additional security, each token can have an expiration
+                                                        date and restricted permissions. Users can create or revoke
+                                                        tokens at any time.
                                                     </Text>
                                                 </Col>
                                             </Row>
