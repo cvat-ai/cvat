@@ -48,9 +48,16 @@ function ApiTokenForm({
         }
     };
 
+    const getInitialExpirationDate = (): dayjs.Dayjs | null => {
+        if (isEditing) {
+            return token?.expiryDate ? dayjs.utc(token.expiryDate).local() : null;
+        }
+        return dayjs().add(1, 'year');
+    };
+
     const initialValues = {
         name: token?.name || (tokenCount === 0 ? 'New token' : `New token ${tokenCount + 1}`),
-        expirationDate: token?.expiryDate ? dayjs.utc(token.expiryDate).local() : dayjs().add(1, 'year'),
+        expirationDate: getInitialExpirationDate(),
         isReadOnly: token?.readOnly || false,
     };
 
