@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 
 import Modal from 'antd/lib/modal';
 import Input from 'antd/lib/input';
@@ -26,22 +26,23 @@ function ApiTokenCreatedModal({
     const [copied, setCopied] = useState(false);
     const { value: tokenValue } = token;
 
+    useEffect(() => {
+        if (visible) {
+            setCopied(false);
+        }
+    }, [visible]);
+
     const handleCopyToClipboard = useCallback(async (): Promise<void> => {
         toClipboard(tokenValue ?? '').then(setCopied);
     }, [tokenValue]);
-
-    const handleClose = useCallback((): void => {
-        setCopied(false);
-        onClose();
-    }, [onClose]);
 
     return (
         <Modal
             title='Your token is ready'
             open={visible}
-            onCancel={handleClose}
+            onCancel={onClose}
             footer={[
-                <Button key='close' type='primary' onClick={handleClose} style={{ background: '#faad14' }}>
+                <Button key='close' type='primary' onClick={onClose} style={{ background: '#faad14' }}>
                     I have&nbsp;
                     <strong>securely</strong>
                     &nbsp;saved my token
