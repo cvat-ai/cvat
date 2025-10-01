@@ -32,6 +32,11 @@ Cypress.Commands.add('login', (username = Cypress.env('user'), password = Cypres
     });
 });
 
+Cypress.Commands.add('loginSetup', () => {
+    cy.visit('/auth/login');
+    cy.headlessLogin({ nextURL: '/tasks' });
+});
+
 Cypress.Commands.add('logout', () => {
     cy.get('.cvat-header-menu-user-dropdown-user').click();
     cy.get('span[aria-label="logout"]').click();
@@ -278,7 +283,7 @@ Cypress.Commands.add('selectFilesFromShare', (serverFiles) => {
 Cypress.Commands.add('headlessLogin', ({
     username,
     password,
-    nextURL,
+    nextURL = null,
 } = {}) => {
     cy.window().its('cvat', { timeout: 25000 }).should('not.be.undefined');
     return cy.window().then((win) => (
@@ -428,7 +433,7 @@ Cypress.Commands.add('headlessCreateUser', (userSpec) => {
     cy.intercept('POST', '/api/auth/register**', (req) => {
         req.continue((response) => {
             delete response.headers['set-cookie'];
-            expect(response.statusCode).to.eq(201);
+            expect(response.statusCode).to.eq(201, response.statusMessage);
             expect(response.body.username).to.eq(userSpec.username);
             expect(response.body.email).to.eq(userSpec.email);
         });
