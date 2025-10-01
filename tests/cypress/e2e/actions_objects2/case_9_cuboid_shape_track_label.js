@@ -78,6 +78,7 @@ context('Actions on Cuboid', () => {
     };
 
     before(() => {
+        cy.loginSetup();
         cy.openTask(taskName);
         cy.addNewLabel({ name: newLabelName });
         cy.openJob();

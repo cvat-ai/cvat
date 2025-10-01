@@ -74,6 +74,7 @@ context('Actions on polylines.', () => {
     };
 
     before(() => {
+        cy.loginSetup();
         cy.openTask(taskName);
         cy.addNewLabel({ name: newLabelName });
         cy.openJob();

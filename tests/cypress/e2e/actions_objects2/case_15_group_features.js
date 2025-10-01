@@ -61,6 +61,7 @@ context('Group features', () => {
     const trackSidebarItemArray = ['#cvat-objects-sidebar-state-item-3', '#cvat-objects-sidebar-state-item-4'];
 
     before(() => {
+        cy.loginSetup();
         cy.openTaskJob(taskName);
     });
 

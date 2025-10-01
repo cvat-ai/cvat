@@ -55,6 +55,7 @@ context('Rotated bounding boxes.', () => {
     }
 
     before(() => {
+        cy.loginSetup();
         cy.openTask(taskName);
         cy.openJob();
         Cypress.config('scrollBehavior', false);

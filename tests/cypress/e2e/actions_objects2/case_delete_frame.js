@@ -7,9 +7,10 @@
 import { taskName } from '../../support/const';
 
 context('Delete frame from job.', () => {
-    let frame;
+    let frame = null;
 
     before(() => {
+        cy.loginSetup();
         cy.openTaskJob(taskName);
     });
 
