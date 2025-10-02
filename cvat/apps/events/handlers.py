@@ -12,6 +12,7 @@ from rest_framework.exceptions import NotAuthenticated
 from rest_framework.views import exception_handler
 
 from cvat.apps.api_tokens.models import ApiToken
+from cvat.apps.api_tokens.serializers import ApiTokenReadSerializer
 from cvat.apps.dataset_manager.tracks_counter import TracksCounter
 from cvat.apps.engine.models import (
     CloudStorage,
@@ -270,6 +271,7 @@ def _get_object_name(instance):
 
 
 SERIALIZERS = [
+    (ApiToken, ApiTokenReadSerializer),
     (Organization, OrganizationReadSerializer),
     (Project, ProjectReadSerializer),
     (Task, TaskReadSerializer),

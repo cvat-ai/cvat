@@ -16,9 +16,6 @@ from cvat.apps.api_tokens.cron import clear_unusable_api_tokens
 from cvat.apps.api_tokens.models import ApiToken
 from cvat.apps.engine.tests.utils import ApiTestBase
 
-# suppress av warnings
-logging.getLogger("libav").setLevel(logging.ERROR)
-
 
 def create_db_users(cls: type[ApiTestBase]):
     (group_admin, _) = Group.objects.get_or_create(name="admin")

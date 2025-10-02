@@ -407,25 +407,61 @@ class TestTokenTracking:
         assert updated_token.last_used_date != old_last_used_date
 
     @pytest.mark.usefixtures("restore_redis_inmem_per_function")
-    def test_can_record_token_use_in_audit_logs(self, admin_user, api_tokens_by_username, tasks):
-        token = next(t for t in api_tokens_by_username[admin_user] if not t["read_only"])
+    def test_can_record_token_events_in_audit_logs(self, admin_user, tasks):
+        test_start_date = datetime.now(tz=timezone.utc)
+
+        with make_api_client(admin_user) as api_client:
+            token = api_client.auth_api.create_api_tokens(
+                api_token_write_request=models.ApiTokenWriteRequest(
+                    name="test token", read_only=False
+                )
+            )[0]
 
         task_id = next(p["id"] for p in tasks if p["size"] > 0)
 
-        with make_api_client(access_token=token["private_key"]) as api_client:
+        with make_api_client(access_token=token.value) as api_client:
             api_client.tasks_api.partial_update(
                 task_id, patched_task_write_request=models.PatchedTaskWriteRequest(name="newname")
             )
 
-            # clickhouse updates are not immediate, vector has buffering on sinks
-            # potentially unstable, should probably be improved
+        with make_api_client(admin_user) as api_client:
+            api_client.auth_api.partial_update_api_tokens(
+                token.id,
+                patched_api_token_write_request=models.PatchedApiTokenWriteRequest(
+                    expiry_date=test_start_date + timedelta(days=1)
+                ),
+            )
+
+            api_client.auth_api.destroy_api_tokens(token.id)
+
+            # Clickhouse updates are not immediate, vector has buffering on sinks.
+            # All these checks are in a single test because of this extra waiting.
+            # Potentially unstable, should probably be improved or maybe moved into server tests.
             sleep(5)
 
-            events_csv = export_events(api_client, api_version=2, task_id=task_id)
+            events_csv = export_events(api_client, api_version=2, _from=test_start_date)
             csv_reader = csv.DictReader(StringIO(events_csv.decode()))
             rows = list(csv_reader)
-            assert rows[-2]["api_token_id"] == str(token["id"])
-            assert rows[-2]["scope"] == "update:task"
-            assert rows[-2]["task_id"] == str(task_id)
-            assert rows[-2]["obj_name"] == "name"
-            assert rows[-2]["obj_val"] == "newname"
+
+            def find_row(scope: str):
+                return next((i, r) for i, r in enumerate(rows) if r["scope"] == scope)
+
+            token_creation_row_index, row = find_row(scope="create:apitoken")
+            assert row["obj_id"] == str(token.id)
+
+            task_update_row_index, row = find_row(scope="update:task")
+            assert row["task_id"] == str(task_id)
+            assert row["api_token_id"] == str(token.id)
+            assert row["obj_name"] == "name"
+            assert row["obj_val"] == "newname"
+
+            token_update_row_index, row = find_row(scope="update:apitoken")
+            # token id is not present in the "update:*" event fields, can't check it
+            assert row["obj_name"] == "expiry_date"
+
+            token_delete_row_index, row = find_row(scope="delete:apitoken")
+            assert row["obj_id"] == str(token.id)
+
+            assert token_creation_row_index < task_update_row_index
+            assert task_update_row_index < token_update_row_index
+            assert token_update_row_index < token_delete_row_index
