@@ -55,16 +55,12 @@ class RequestPermission(OpenPolicyAgentPermission):
                         continue
                     elif parsed_request_id.target == RequestTarget.TASK.value:
                         permissions.append(
-                            TaskPermission.create_scope_view(
-                                request, parsed_request_id.target_id
-                            )
+                            TaskPermission.create_scope_view(request, parsed_request_id.target_id)
                         )
                         continue
                     elif parsed_request_id.target == RequestTarget.JOB.value:
                         permissions.append(
-                            JobPermission.create_scope_view(
-                                request, parsed_request_id.target_id
-                            )
+                            JobPermission.create_scope_view(request, parsed_request_id.target_id)
                         )
                         continue
                     assert False, "Unsupported operation on resource"
