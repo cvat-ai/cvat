@@ -71,7 +71,7 @@ export default function CloudStorageItemComponent(props: Readonly<Props>): JSX.E
         Modal.confirm({
             title: isBulkMode ?
                 `Delete ${cloudStoragesToDelete.length} selected cloud storages` :
-                `The cloud storage "${displayName}" will be deleted`,
+                'Please, confirm your action',
             content: isBulkMode ?
                 'All selected cloud storages will be permanently removed. Continue?' :
                 `You are going to remove the cloudstorage "${displayName}". Continue?`,
