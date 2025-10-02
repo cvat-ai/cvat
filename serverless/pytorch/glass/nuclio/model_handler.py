@@ -49,7 +49,8 @@ class ModelHandler:
             step=20,
             limit=392
         )
-        self.pth_path = "ckpt_best_568.pth"
+        # Original value: "ckpt_best_568.pth"
+        self.pth_path = "glass_leather_v1_0_0.pth"
 
     def resize_mask(self, mask, image):
         target_size = image.size
@@ -73,7 +74,21 @@ class ModelHandler:
 
         img_tensor = transform(image).unsqueeze(0).to(self.device)
 
-        checkpoint = torch.load(self.pth_path, map_location=self.device)
+        # Check if checkpoint file exists and provide helpful error message
+        if not os.path.exists(self.pth_path):
+            available_files = [f for f in os.listdir('.') if f.endswith('.pth')]
+            error_msg = f"Model checkpoint file '{self.pth_path}' not found."
+            if available_files:
+                error_msg += f" Available .pth files: {', '.join(available_files)}"
+            else:
+                error_msg += " No .pth files found in the current directory."
+            error_msg += f" Current working directory: {os.getcwd()}"
+            raise FileNotFoundError(error_msg)
+
+        try:
+            checkpoint = torch.load(self.pth_path, map_location=self.device)
+        except Exception as e:
+            raise RuntimeError(f"Failed to load checkpoint '{self.pth_path}': {str(e)}")
 
         self.model.discriminator.load_state_dict(checkpoint['discriminator'])
         self.model.pre_projection.load_state_dict(checkpoint['pre_projection'])
