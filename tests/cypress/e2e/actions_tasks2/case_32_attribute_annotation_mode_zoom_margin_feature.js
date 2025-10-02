@@ -32,6 +32,7 @@ context('Attribute annotation mode (AAM) zoom margin feature', () => {
     }
 
     before(() => {
+        cy.loginSetup();
         cy.openTaskJob(taskName);
 
         // create object and tag

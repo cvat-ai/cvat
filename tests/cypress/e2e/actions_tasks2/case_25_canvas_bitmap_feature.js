@@ -10,6 +10,7 @@ context('Canvas bitmap feature', () => {
     const caseId = '25';
 
     before(() => {
+        cy.loginSetup();
         cy.openTaskJob(taskName);
     });
 

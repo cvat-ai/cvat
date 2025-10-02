@@ -11,6 +11,7 @@ context('Creating a label with existing label name.', () => {
     let firstLabelName = '';
 
     before(() => {
+        cy.loginSetup();
         cy.openTask(taskName);
     });
 

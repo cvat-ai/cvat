@@ -55,6 +55,7 @@ context('Label constructor. Color label. Label name editing', () => {
     };
 
     before(() => {
+        cy.loginSetup();
         cy.openTask(taskName);
     });
 
