@@ -1,0 +1,55 @@
+metadata:
+  name: glass
+  namespace: cvat
+  annotations:
+    name: GLASS
+    type: detector
+    spec: |
+      [
+        { "id": 0, "name": "anomaly", "type": "mask" }
+      ]
+
+spec:
+  description: GLASS (GPU-enabled with CUDA 12.8)
+  runtime: 'python:3.11'
+  handler: main:handler
+  eventTimeout: 3000s
+
+  build:
+    image: cvat.pth.gpu:cuda12.8
+    baseImage: cuda12.8-base:ubuntu22.04
+
+    directives:
+      preCopy:
+        - kind: ENV
+          value: DEBIAN_FRONTEND=noninteractive
+
+        - kind: WORKDIR
+          value: /opt/nuclio
+
+        # Install GLASS-specific requirements directly
+        - kind: RUN
+          value: pip install timm opencv-python-headless scikit-image scikit-learn tensorboard pandas
+
+  resources:
+    limits:
+      nvidia.com/gpu: 1
+    requests:
+      cpu: "1"
+      memory: "2Gi"
+
+  triggers:
+    myHttpTrigger:
+      numWorkers: 2
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 300000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+        port: 32761
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume
