@@ -70,7 +70,7 @@ export default class Organization {
         }
 
         if (typeof data.contact !== 'undefined') {
-            checkObjectType('contact', data.contact, 'object');
+            checkObjectType('contact', data.contact, null, { cls: Object, name: 'Object' });
             for (const prop in data.contact) {
                 if (typeof data.contact[prop] !== 'string') {
                     throw new ArgumentError(
@@ -81,7 +81,7 @@ export default class Organization {
         }
 
         if (typeof data.owner !== 'undefined' && data.owner !== null) {
-            checkObjectType('owner', data.owner, null, User);
+            checkObjectType('owner', data.owner, null, { cls: User, name: 'User' });
         }
 
         Object.defineProperties(this, {
@@ -347,13 +347,16 @@ Object.defineProperties(Organization.prototype.members, {
                     // eslint-disable-next-line no-empty
                     } catch (e) {}
                 }
+
                 return new Membership({
                     ...rawMembership,
                     invitation: rawInvitation,
                 });
             }));
-            memberships.count = result.count;
-            return memberships;
+
+            return Object.assign(memberships, {
+                count: result.count,
+            });
         },
     },
 });
@@ -426,7 +429,7 @@ Object.defineProperties(Organization.prototype.leave, {
         writable: false,
         enumerable: false,
         value: async function implementation(user: User) {
-            checkObjectType('user', user, null, User);
+            checkObjectType('user', user, null, { cls: User, name: 'User' });
             if (typeof this.id === 'number') {
                 const result = await serverProxy.organizations.members({
                     page: 1,
