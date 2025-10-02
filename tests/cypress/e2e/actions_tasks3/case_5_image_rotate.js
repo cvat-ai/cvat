@@ -40,6 +40,7 @@ context('Check if the image is rotated', () => {
     }
 
     before(() => {
+        cy.loginSetup();
         cy.openTaskJob(taskName);
     });
 

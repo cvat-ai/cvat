@@ -123,6 +123,7 @@ context('Annotations statistics.', () => {
     };
 
     before(() => {
+        cy.loginSetup();
         cy.openTaskJob(taskName);
         cy.createRectangle(createRectangleShape2Points);
         cy.createRectangle(createRectangleTrack2Points);

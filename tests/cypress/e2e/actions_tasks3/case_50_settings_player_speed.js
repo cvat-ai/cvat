@@ -31,6 +31,7 @@ context('Settings. "Player speed" option.', () => {
     }
 
     before(() => {
+        cy.loginSetup();
         cy.openTaskJob(taskName);
     });
 
