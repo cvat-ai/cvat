@@ -85,7 +85,7 @@ class OrganizationViewSet(
     ordering = "-id"
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
     iam_organization_field = None
-    opa_permission_class = OrganizationPermission
+    iam_permission_class = OrganizationPermission
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -154,7 +154,7 @@ class MembershipViewSet(
     ordering_fields = list(filter_fields)
     lookup_fields = {"user": "user__username"}
     iam_organization_field = "organization"
-    opa_permission_class = MembershipPermission
+    iam_permission_class = MembershipPermission
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
@@ -247,7 +247,7 @@ class InvitationViewSet(
     queryset = Invitation.objects.all()
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
     iam_organization_field = "membership__organization"
-    opa_permission_class = InvitationPermission
+    iam_permission_class = InvitationPermission
 
     search_fields = ("owner",)
     filter_fields = list(search_fields) + ["user_id", "accepted"]

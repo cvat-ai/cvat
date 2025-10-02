@@ -71,7 +71,7 @@ class WebhookViewSet(viewsets.ModelViewSet):
     ordering_fields = list(filter_fields)
     lookup_fields = {"owner": "owner__username"}
     iam_organization_field = "organization"
-    opa_permission_class = WebhookPermission
+    iam_permission_class = WebhookPermission
 
     def get_serializer_class(self):
         if self.request.path.endswith("redelivery") or self.request.path.endswith("ping"):

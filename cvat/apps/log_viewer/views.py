@@ -15,7 +15,7 @@ from cvat.apps.log_viewer.permissions import LogViewerPermission
 @extend_schema(exclude=True)
 class LogViewerAccessViewSet(viewsets.ViewSet):
     serializer_class = None
-    opa_permission_class = LogViewerPermission
+    iam_permission_class = LogViewerPermission
 
     def list(self, request):
         return Response(status=status.HTTP_200_OK)

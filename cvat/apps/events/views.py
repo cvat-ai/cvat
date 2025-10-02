@@ -84,7 +84,7 @@ api_filter_parameters = (
 
 class EventsViewSet(viewsets.ViewSet):
     serializer_class = None
-    opa_permission_class = EventsPermission
+    iam_permission_class = EventsPermission
 
     @extend_schema(
         summary="Log client events",

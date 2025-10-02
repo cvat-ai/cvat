@@ -312,10 +312,10 @@ class PolicyEnforcer(BasePermission):
                 return True
 
             assert hasattr(
-                view, "opa_permission_class"
-            ), f"View {view} has no 'opa_permission_class' attribute"
+                view, "iam_permission_class"
+            ), f"View {view} has no 'iam_permission_class' attribute"
 
-            perm_class = view.opa_permission_class
+            perm_class = view.iam_permission_class
             iam_context = get_iam_context(request, obj)
 
             for perm in perm_class.create(request, view, obj, iam_context=iam_context):
@@ -357,7 +357,7 @@ class IsAuthenticatedOrReadPublicResource(BasePermission):
         )
 
 
-def load_app_opa_rules(config: AppConfig) -> None:
+def load_app_iam_rules(config: AppConfig) -> None:
     """
     Ensures that OPA rules from the given app are loaded.
 

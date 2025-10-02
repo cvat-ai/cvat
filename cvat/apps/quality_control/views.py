@@ -75,6 +75,7 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
         "report__task__organization",
         "report__project__organization",
     ]
+    iam_permission_class = AnnotationConflictPermission
 
     search_fields = []
     filter_fields = list(search_fields) + [
@@ -95,7 +96,6 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
     ordering_fields = list(filter_fields)
     ordering = "-id"
     serializer_class = AnnotationConflictSerializer
-    opa_permission_class = AnnotationConflictPermission
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -195,13 +195,13 @@ class QualityReportViewSet(
     mixins.CreateModelMixin,
 ):
     queryset = QualityReport.objects.prefetch_related("assignee")
-    opa_permission_class = QualityReportPermission
 
     iam_organization_field = [
         "job__segment__task__organization",
         "task__organization",
         "project__organization",
     ]
+    iam_permission_class = QualityReportPermission
 
     search_fields = []
     filter_fields = list(search_fields) + [
@@ -515,6 +515,7 @@ class QualitySettingsViewSet(
     queryset = QualitySettings.objects
 
     iam_organization_field = ["task__organization", "project__organization"]
+    iam_permission_class = QualitySettingPermission
 
     search_fields = []
     filter_fields = ["id", "task_id", "project_id", "inherit", "created_date", "updated_date"]
@@ -523,7 +524,6 @@ class QualitySettingsViewSet(
     ordering = "id"
 
     serializer_class = QualitySettingsSerializer
-    opa_permission_class = QualitySettingPermission
 
     def get_queryset(self):
         queryset = super().get_queryset()

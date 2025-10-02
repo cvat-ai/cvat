@@ -51,12 +51,12 @@ slogger = ServerLogManager(__name__)
 class RequestViewSet(viewsets.GenericViewSet):
     serializer_class = RequestSerializer
     iam_organization_field = None
+    iam_permission_class = RequestPermission
     filter_backends = [
         NonModelSimpleFilter,
         NonModelJsonLogicFilter,
         NonModelOrderingFilter,
     ]
-    opa_permission_class = RequestPermission
 
     ordering_fields = ["created_date", "status", "action"]
     ordering = "-created_date"
