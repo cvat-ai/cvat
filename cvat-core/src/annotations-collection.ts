@@ -1033,7 +1033,9 @@ export default class Collection {
 
         for (const state of objectStates) {
             checkObjectType('object state', state, null, { cls: ObjectState, name: 'ObjectState' });
-            checkObjectType('state client ID', state.clientID, null);
+            if (state.clientID !== null) {
+                throw new ArgumentError('ObjectState.clientID must be null when adding new objects');
+            }
             checkObjectType('state frame', state.frame, 'integer');
             checkObjectType('state rotation', state.rotation ?? 0, 'number');
             checkObjectType('state attributes', state.attributes, null, { cls: Object, name: 'Object' });
