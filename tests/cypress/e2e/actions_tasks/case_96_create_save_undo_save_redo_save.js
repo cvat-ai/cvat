@@ -19,6 +19,7 @@ context('Create an object, save, undo, save, redo, save.', () => {
     };
 
     before(() => {
+        cy.loginSetup();
         cy.openTaskJob(taskName);
     });
 

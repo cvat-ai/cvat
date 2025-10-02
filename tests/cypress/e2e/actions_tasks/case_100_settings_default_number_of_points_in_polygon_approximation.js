@@ -29,6 +29,7 @@ context('Settings. Default number of points in polygon approximation.', () => {
     }
 
     before(() => {
+        cy.loginSetup();
         cy.openTaskJob(taskName);
     });
 
