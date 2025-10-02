@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: MIT
 
 
-import logging
 from datetime import timedelta
 
 from django.contrib.auth.models import Group, User
