@@ -10,6 +10,7 @@ import { Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import dayjs from 'dayjs';
 import { Row, Col } from 'antd/lib/grid';
+import Form from 'antd/lib/form';
 import Text from 'antd/lib/typography/Text';
 import Modal from 'antd/lib/modal';
 import Button from 'antd/lib/button';
@@ -73,6 +74,7 @@ function OrganizationTopBar(props: Readonly<Props>): JSX.Element {
         owner, createdDate, description, updatedDate, slug, name, contact,
     } = organizationInstance;
     const { id: userID } = userInstance;
+    const [descriptionForm] = Form.useForm();
     const descriptionEditingRef = useRef<HTMLDivElement>(null);
     const [editingDescription, setEditingDescription] = useState(false);
     const [visibleInviteModal, setVisibleInviteModal] = useState(false);
@@ -136,8 +138,15 @@ function OrganizationTopBar(props: Readonly<Props>): JSX.Element {
         });
     };
 
+    const onSubmitDescription = useCallback((values: { description: string }) => {
+        if (description !== values.description) {
+            organizationInstance.description = values.description;
+            dispatch(updateOrganizationAsync(organizationInstance));
+        }
+        setEditingDescription(false);
+    }, []);
+
     let organizationName = name;
-    let organizationDescription = description;
     let organizationContacts = contact;
 
     return (
@@ -203,26 +212,24 @@ function OrganizationTopBar(props: Readonly<Props>): JSX.Element {
                             </span>
                         ) : (
                             <div ref={descriptionEditingRef}>
-                                <Input.TextArea
-                                    defaultValue={description}
-                                    onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => {
-                                        organizationDescription = event.target.value;
-                                    }}
-                                />
-                                <Button
-                                    className='cvat-submit-new-org-description-button'
-                                    size='small'
-                                    type='primary'
-                                    onClick={() => {
-                                        if (organizationDescription !== description) {
-                                            organizationInstance.description = organizationDescription;
-                                            dispatch(updateOrganizationAsync(organizationInstance));
-                                        }
-                                        setEditingDescription(false);
-                                    }}
+                                <Form
+                                    onFinish={onSubmitDescription}
+                                    form={descriptionForm}
+                                    initialValues={{ description }}
                                 >
-                                    Submit
-                                </Button>
+                                    <Form.Item name='description'>
+                                        <Input.TextArea />
+                                    </Form.Item>
+                                    <Form.Item>
+                                        <Button
+                                            className='cvat-submit-new-org-description-button'
+                                            type='primary'
+                                            htmlType='submit'
+                                        >
+                                            Submit
+                                        </Button>
+                                    </Form.Item>
+                                </Form>
                             </div>
                         )}
                     </div>
