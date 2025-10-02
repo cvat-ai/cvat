@@ -26,6 +26,7 @@ from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.rq import is_rq_job_owner
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.redis_handler.apps import SELECTOR_TO_QUEUE
+from cvat.apps.redis_handler.permissions import RequestPermission
 from cvat.apps.redis_handler.rq import CustomRQJob, RequestId
 from cvat.apps.redis_handler.serializers import RequestSerializer, RequestStatus
 
@@ -55,6 +56,7 @@ class RequestViewSet(viewsets.GenericViewSet):
         NonModelJsonLogicFilter,
         NonModelOrderingFilter,
     ]
+    opa_permission_class = RequestPermission
 
     ordering_fields = ["created_date", "status", "action"]
     ordering = "-created_date"

@@ -93,10 +93,12 @@ from cvat.apps.engine.permissions import (
     AnnotationGuidePermission,
     CloudStoragePermission,
     CommentPermission,
+    GuideAssetPermission,
     IssuePermission,
     JobPermission,
     LabelPermission,
     ProjectPermission,
+    ServerPermission,
     TaskPermission,
     UserPermission,
     get_iam_context,
@@ -170,6 +172,7 @@ _RETRY_AFTER_TIMEOUT = 10
 class ServerViewSet(viewsets.ViewSet):
     serializer_class = None
     iam_organization_field = None
+    opa_permission_class = ServerPermission
 
     # To get nice documentation about ServerViewSet actions it is necessary
     # to implement the method. By default, ViewSet doesn't provide it.
@@ -330,6 +333,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username', 'assignee': 'assignee__username'}
     iam_organization_field = 'organization'
+    opa_permission_class = ProjectPermission
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
@@ -871,6 +875,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ordering_fields = list(filter_fields)
     ordering = "-id"
     iam_organization_field = 'organization'
+    opa_permission_class = TaskPermission
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
@@ -1656,6 +1661,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         'segment__task__annotation_guide',
         'segment__task__project__annotation_guide',
     )
+    opa_permission_class = JobPermission
 
     iam_organization_field = 'segment__task__organization'
     search_fields = ('task_name', 'project_name', 'assignee', 'state', 'stage')
@@ -2125,6 +2131,7 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     queryset = Issue.objects.prefetch_related(
         'job__segment__task', 'owner', 'assignee', 'job'
     ).all()
+    opa_permission_class = IssuePermission
 
     iam_organization_field = 'job__segment__task__organization'
     search_fields = ('owner', 'assignee')
@@ -2196,6 +2203,7 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     queryset = Comment.objects.prefetch_related(
         'issue', 'issue__job', 'owner'
     ).all()
+    opa_permission_class = CommentPermission
 
     iam_organization_field = 'issue__job__segment__task__organization'
     search_fields = ('owner',)
@@ -2292,6 +2300,7 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     }
     ordering = 'id'
     serializer_class = LabelSerializer
+    opa_permission_class = LabelPermission
 
     def get_queryset(self):
         if self.action == 'list':
@@ -2426,6 +2435,7 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, PartialUpdateModelMixin, mixins.DestroyModelMixin):
     queryset = User.objects.prefetch_related('groups').all()
     iam_organization_field = 'memberships__organization'
+    opa_permission_class = UserPermission
 
     search_fields = ('username', 'first_name', 'last_name')
     filter_fields = list(search_fields) + ['id', 'is_active']
@@ -2510,6 +2520,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     PartialUpdateModelMixin
 ):
     queryset = CloudStorage.objects.all()
+    opa_permission_class = CloudStoragePermission
 
     search_fields = ('provider_type', 'name', 'resource',
                     'credentials_type', 'owner', 'description')
@@ -2752,6 +2763,7 @@ class AssetsViewSet(
     parser_classes = [MultiPartParser]
     search_fields = ()
     ordering = "uuid"
+    opa_permission_class = GuideAssetPermission
 
     def check_object_permissions(self, request: ExtendedRequest, obj):
         super().check_object_permissions(request, obj.guide)
@@ -2832,6 +2844,7 @@ class AnnotationGuidesViewSet(
     search_fields = ()
     ordering = "-id"
     iam_organization_field = None
+    opa_permission_class = AnnotationGuidePermission
 
     def _update_related_assets(self, request: ExtendedRequest, guide: AnnotationGuide):
         existing_assets = list(guide.assets.all())

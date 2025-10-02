@@ -1245,6 +1245,7 @@ class FunctionViewSet(viewsets.ViewSet):
     lookup_field = "func_id"
     iam_organization_field = None
     serializer_class = None
+    opa_permission_class = LambdaPermission
 
     @return_response()
     def list(self, request):
@@ -1372,6 +1373,7 @@ class FunctionViewSet(viewsets.ViewSet):
 class RequestViewSet(viewsets.ViewSet):
     iam_organization_field = None
     serializer_class = None
+    opa_permission_class = LambdaPermission
 
     @return_response()
     def list(self, request):

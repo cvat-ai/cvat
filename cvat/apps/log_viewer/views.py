@@ -9,10 +9,13 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from cvat.apps.log_viewer.permissions import LogViewerPermission
+
 
 @extend_schema(exclude=True)
 class LogViewerAccessViewSet(viewsets.ViewSet):
     serializer_class = None
+    opa_permission_class = LogViewerPermission
 
     def list(self, request):
         return Response(status=status.HTTP_200_OK)

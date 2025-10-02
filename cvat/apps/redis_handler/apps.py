@@ -72,7 +72,7 @@ class RedisHandlerConfig(AppConfig):
     name = "cvat.apps.redis_handler"
 
     def ready(self) -> None:
-        from cvat.apps.iam.permissions import load_app_permissions
+        from cvat.apps.iam.permissions import load_app_opa_rules
 
-        load_app_permissions(self)
+        load_app_opa_rules(self)
         initialize_mappings()
