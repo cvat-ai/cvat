@@ -4,12 +4,14 @@
 
 /// <reference types="cypress" />
 
-import { projectName } from '../../support/const_project';
+import { projectNameDelete } from '../../support/const_project';
 
 context('Delete a project via actions.', () => {
+    const projectName = projectNameDelete;
     const issueID = 2625;
 
     before(() => {
+        cy.loginSetupProjects();
         cy.openProject(projectName);
     });
 
