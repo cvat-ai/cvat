@@ -55,6 +55,7 @@ context('Base actions on the project', () => {
     }
 
     before(() => {
+        cy.loginSetupProjects();
         cy.openProject(projectName);
     });
 

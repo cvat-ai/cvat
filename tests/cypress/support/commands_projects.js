@@ -5,6 +5,13 @@
 
 /// <reference types="cypress" />
 
+import { fullMatch } from './utils';
+
+Cypress.Commands.add('loginSetupProjects', () => {
+    cy.visit('/auth/login');
+    cy.headlessLogin({ nextURL: '/projects' });
+});
+
 Cypress.Commands.add('goToProjectsList', () => {
     cy.get('[value="projects"]').click();
     cy.url().should('include', '/projects');
@@ -74,7 +81,7 @@ Cypress.Commands.add('deleteProjects', (authResponse, projectsToDelete) => {
 });
 
 Cypress.Commands.add('openProject', (projectName) => {
-    cy.contains(projectName).click({ force: true });
+    cy.contains(fullMatch(projectName)).click({ force: true });
     cy.get('.cvat-project-details').should('exist');
 });
 
@@ -85,7 +92,7 @@ Cypress.Commands.add('openProjectById', (projectId) => {
 });
 
 Cypress.Commands.add('openProjectActions', (projectName) => {
-    cy.contains('.cvat-projects-project-item-title', projectName)
+    cy.contains('.cvat-projects-project-item-title', fullMatch(projectName))
         .parents('.cvat-projects-project-item-card')
         .within(() => {
             cy.get('.cvat-projects-project-item-description').within(() => {

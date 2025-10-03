@@ -5,10 +5,11 @@
 
 /// <reference types="cypress" />
 
-import { projectName, labelName } from '../../support/const_project';
+import { projectNameDelete, labelName } from '../../support/const_project';
 
 context('Create more than one task per time when create from project.', () => {
     const issueID = 2900;
+    const projectName = projectNameDelete;
     const taskName = {
         firstTask: `First task for ${projectName}`,
         secondTask: `Second task for ${projectName}`,
@@ -43,6 +44,7 @@ context('Create more than one task per time when create from project.', () => {
     before(() => {
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
+        cy.loginSetupProjects();
         cy.openProject(projectName);
     });
 

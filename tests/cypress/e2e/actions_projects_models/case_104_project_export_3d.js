@@ -5,7 +5,7 @@
 
 /// <reference types="cypress" />
 
-import { projectName, labelName } from '../../support/const_project';
+import { projectName3d, labelName } from '../../support/const_project';
 
 context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
     const caseID = 104;
@@ -30,7 +30,8 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
     }
 
     before(() => {
-        cy.openProject(projectName);
+        cy.loginSetupProjects();
+        cy.openProject(projectName3d);
         getProjectID();
         cy.createAnnotationTask(
             task.name3d,
@@ -42,20 +43,19 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
             task.advancedConfigurationParams,
             task.forProject,
             task.attachToProject,
-            projectName,
+            projectName3d,
         );
     });
 
     after(() => {
-        cy.goToProjectsList();
-        cy.deleteProject(projectName, projectID);
+        cy.logout();
     });
 
     describe(`Testing "Case ${caseID}"`, () => {
         it('Export project with 3D task. Annotation.', () => {
             cy.goToProjectsList();
             const exportAnnotation3d = {
-                projectName,
+                projectName: projectName3d,
                 as: 'exportAnnotations3d',
                 type: 'annotations',
                 dumpType: 'Kitti Raw Format',
@@ -70,7 +70,7 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
         it('Export project with 3D task. Dataset.', () => {
             cy.goToProjectsList();
             const exportDataset3d = {
-                projectName,
+                projectName: projectName3d,
                 as: 'exportDataset3d',
                 type: 'dataset',
                 dumpType: 'Sly Point Cloud Format',
@@ -86,7 +86,7 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
         it('Export project with 3D task. Annotation. Rename a archive.', () => {
             cy.goToProjectsList();
             const exportAnnotations3dRenameArchive = {
-                projectName,
+                projectName: projectName3d,
                 as: 'exportAnnotations3dRenameArchive',
                 type: 'annotations',
                 dumpType: 'Datumaro 3D',
@@ -101,7 +101,7 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
 
         // FIXME: Activate after implementation
         it.skip('Import dataset.', () => {
-            cy.openProject(projectName);
+            cy.openProject(projectName3d);
             cy.deleteTask(task.name3d);
             cy.get('.cvat-tasks-list-item')
                 .should('have.length', 1)
@@ -109,13 +109,13 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
                 .and('contain', 'pointer-events: none; opacity: 0.5;');
             cy.goToProjectsList();
             const importDataset = {
-                projectName,
+                projectName: projectName3d,
                 format: 'Sly Point Cloud Format',
                 archive: datasetArchiveName,
             };
             cy.importProject(importDataset);
             cy.verifyNotification();
-            cy.openProject(projectName);
+            cy.openProject(projectName3d);
             cy.get('.cvat-tasks-list-item').should('have.length', 1);
         });
     });
