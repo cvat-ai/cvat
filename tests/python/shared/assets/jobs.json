@@ -478,7 +478,7 @@
       },
       "stage": "annotation",
       "start_frame": 0,
-      "state": "new",
+      "state": "completed",
       "status": "annotation",
       "stop_frame": 2,
       "target_storage": {
