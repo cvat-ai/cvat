@@ -16,7 +16,7 @@ spec:
       value: /opt/nuclio/trans-t
 
   build:
-    image: cvat.pth.gpu:cuda12.8
+    image: cvat.pth.transt.gpu:cuda12.8
     baseImage: cuda12.8-base:ubuntu22.04
 
     directives:
@@ -37,9 +37,11 @@ spec:
 
         # Copy modified files with weights_only=False fix
         - kind: COPY
-          value: loading.py /opt/nuclio/trans-t/ltr/admin/loading.py
-        - kind: COPY
-          value: resnet18_vggm.py /opt/nuclio/trans-t/ltr/models/backbone/resnet18_vggm.py
+          value: . /opt/nuclio/build_files/
+
+        # Move the modified files to the correct locations
+        - kind: RUN
+          value: cp /opt/nuclio/build_files/handler/loading.py /opt/nuclio/trans-t/ltr/admin/loading.py && cp /opt/nuclio/build_files/handler/resnet18_vggm.py /opt/nuclio/trans-t/ltr/models/backbone/resnet18_vggm.py && cp /opt/nuclio/build_files/handler/misc.py /opt/nuclio/trans-t/util/misc.py
 
         # All dependencies are in base image, no additional installations needed
         - kind: RUN
