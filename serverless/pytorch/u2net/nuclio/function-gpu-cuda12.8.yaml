@@ -1,0 +1,63 @@
+metadata:
+  name: u2net
+  namespace: cvat
+  annotations:
+    name: U2Net
+    type: detector
+    spec: |
+      [
+        { "id": 0, "name": "anomaly", "type": "mask" }
+      ]
+
+spec:
+  description: U2Net (GPU-enabled with CUDA 12.8)
+  runtime: 'python:3.11'
+  handler: main:handler
+  eventTimeout: 3000s
+
+  build:
+    image: cvat.pth.gpu:cuda12.8
+    baseImage: cuda12.8-base:ubuntu22.04
+
+    directives:
+      preCopy:
+        - kind: ENV
+          value: DEBIAN_FRONTEND=noninteractive
+
+        - kind: WORKDIR
+          value: /opt/nuclio
+
+        # git and ca-certificates already in base image
+        - kind: RUN
+          value: echo "Using base image system dependencies"
+
+        # All dependencies are in base image, no additional installations needed
+        - kind: RUN
+          value: echo "Using base image dependencies"
+
+        # Clone U2Net repository
+        - kind: RUN
+          value: git clone https://github.com/xuebinqin/U-2-Net.git u2net
+
+  resources:
+    limits:
+      nvidia.com/gpu: 1
+    requests:
+      cpu: "1"
+      memory: "2Gi"
+
+  triggers:
+    myHttpTrigger:
+      numWorkers: 2
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 300000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+        port: 32764
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume
