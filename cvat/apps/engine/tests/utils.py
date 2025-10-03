@@ -831,3 +831,14 @@ def check_annotation_response(
         )
         print(e)
         raise
+
+
+@contextmanager
+def monkeypatch(object, attr: str, new_value):
+    old_value = getattr(object, attr)
+
+    try:
+        setattr(object, attr, new_value)
+        yield new_value
+    finally:
+        setattr(object, attr, old_value)

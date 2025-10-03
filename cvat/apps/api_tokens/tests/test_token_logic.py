@@ -5,6 +5,7 @@
 
 
 from datetime import timedelta
+from unittest import mock
 
 from django.contrib.auth.models import Group, User
 from django.test import override_settings
@@ -13,7 +14,7 @@ from rest_framework import status
 
 from cvat.apps.api_tokens.cron import clear_unusable_api_tokens
 from cvat.apps.api_tokens.models import ApiToken
-from cvat.apps.engine.tests.utils import ApiTestBase
+from cvat.apps.engine.tests.utils import ApiTestBase, monkeypatch
 
 
 def create_db_users(cls: type[ApiTestBase]):
@@ -128,3 +129,45 @@ class ApiTokenAutomationTest(ApiTestBase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json()["count"], 1)
         self.assertEqual(response.json()["results"][0]["id"], alive_token.id)
+
+
+class ApiTokenPluginSystemTest(ApiTestBase):
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+
+    def test_can_use_default_fallback_if_no_plugins(self):
+        response = self._post_request(
+            "/api/auth/api_tokens", user=self.admin, data={"name": "test token", "read_only": True}
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        token_id = response.json()["id"]
+        token_value = response.json()["value"]
+
+        from cvat.apps.api_tokens.permissions import ApiTokenReadOnlyDefaultPermission
+
+        original_check_access = ApiTokenReadOnlyDefaultPermission.check_access
+        check_default_access_calls = 0
+
+        def patched_check_access(self, *args, **kwargs):
+            nonlocal check_default_access_calls
+            check_default_access_calls += 1
+            return original_check_access(self, *args, **kwargs)
+
+        with (
+            mock.patch(
+                "cvat.apps.api_tokens.permissions.ApiTokenPermissionPluginManager.get_plugins",
+                return_value=[],
+            ) as mock_get_plugins,
+            monkeypatch(ApiTokenReadOnlyDefaultPermission, "check_access", patched_check_access),
+        ):
+            response = self.client.patch(
+                f"/api/auth/api_tokens/{token_id}",
+                headers={"Authorization": f"Bearer {token_value}"},
+                data={"name": "newname"},
+            )
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+            mock_get_plugins.assert_called()
+            self.assertGreater(check_default_access_calls, 0)
