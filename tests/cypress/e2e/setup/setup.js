@@ -15,9 +15,6 @@ import { defaultTaskSpec } from '../../support/default-specs';
 
 it('Prepare for testing', () => {
     cy.log('Seeding shared data');
-    // FIXME: this should run once before every npx cypress run, not before every spec
-    // still the only obvious solution is to run npx cypress run twice
-    // double run can serve as a proof of concept and as a minimally feasible solution
     cy.visit('/auth/login');
     const attributes = [
         { name: attrName, values: textDefaultValue, type: 'text' },
@@ -37,5 +34,4 @@ it('Prepare for testing', () => {
     cy.intercept('POST', '/api/tasks**').as('createTaskRequest');
     cy.headlessCreateTask(taskSpec, dataSpec, extras);
     cy.wait('@createTaskRequest');
-    cy.visit('/tasks');
 });
