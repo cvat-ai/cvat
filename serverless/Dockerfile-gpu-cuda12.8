@@ -1,0 +1,51 @@
+# Use Nvidia Cuda 12.8.0 as base
+FROM nvidia/cuda:12.8.0-devel-ubuntu22.04
+
+# Set noninteractive frontend for apt
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install system dependencies
+RUN apt-get update --fix-missing && apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
+    python3.11 \
+    python3.11-dev \
+    python3.11-distutils \
+    libgl1 \
+    libglib2.0-0 \
+    libsm6 \
+    libxrender1 \
+    libxext6 \
+    curl \
+    python3-pip \
+    git \
+    wget \
+    ca-certificates \
+    gcc \
+    g++ \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Symlink python3 to python
+RUN ln -s /usr/bin/python3 /usr/bin/python
+
+# Upgrade pip
+RUN python -m pip install --upgrade pip
+
+# Copy and install PyTorch requirements
+COPY requirements-torch-cuda12.8.txt /tmp/requirements-torch-cuda12.8.txt
+RUN pip install -r /tmp/requirements-torch-cuda12.8.txt
+
+# Install serverless framework
+RUN pip install msgpack nuclio_sdk
+
+# Install all GPU function dependencies
+RUN pip install \
+    timm \
+    opencv-python-headless \
+    pillow \
+    scikit-image \
+    scikit-learn \
+    tensorboard \
+    pandas \
+    jsonpickle \
+    matplotlib
