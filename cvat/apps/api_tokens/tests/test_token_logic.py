@@ -14,7 +14,7 @@ from rest_framework import status
 
 from cvat.apps.api_tokens.cron import clear_unusable_api_tokens
 from cvat.apps.api_tokens.models import ApiToken
-from cvat.apps.engine.tests.utils import ApiTestBase, monkeypatch
+from cvat.apps.engine.tests.utils import ApiTestBase, mock_method
 
 
 def create_db_users(cls: type[ApiTestBase]):
@@ -145,22 +145,14 @@ class ApiTokenPluginSystemTest(ApiTestBase):
         token_id = response.json()["id"]
         token_value = response.json()["value"]
 
-        from cvat.apps.api_tokens.permissions import ApiTokenReadOnlyDefaultPermission
-
-        original_check_access = ApiTokenReadOnlyDefaultPermission.check_access
-        check_default_access_calls = 0
-
-        def patched_check_access(self, *args, **kwargs):
-            nonlocal check_default_access_calls
-            check_default_access_calls += 1
-            return original_check_access(self, *args, **kwargs)
-
         with (
             mock.patch(
                 "cvat.apps.api_tokens.permissions.ApiTokenPermissionPluginManager.get_plugins",
                 return_value=[],
             ) as mock_get_plugins,
-            monkeypatch(ApiTokenReadOnlyDefaultPermission, "check_access", patched_check_access),
+            mock_method(
+                "cvat.apps.api_tokens.permissions.ApiTokenReadOnlyDefaultPermission", "check_access"
+            ) as mock_fallback_check_access,
         ):
             response = self.client.patch(
                 f"/api/auth/api_tokens/{token_id}",
@@ -170,4 +162,4 @@ class ApiTokenPluginSystemTest(ApiTestBase):
             self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
             mock_get_plugins.assert_called()
-            self.assertGreater(check_default_access_calls, 0)
+            mock_fallback_check_access.assert_called()
