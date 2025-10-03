@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import re
-from functools import lru_cache
 from pathlib import Path
 from types import NoneType
 from typing import TYPE_CHECKING, Any, ClassVar, Sequence
@@ -291,7 +290,6 @@ class ApiTokenPluginPermission(ApiTokenPluginPermissionBase):
         if not cls.get_api_token_from_request(request):
             return extra_permissions
 
-        # TODO: maybe check only the root (request) view extensions, without deps?
         for permission in permissions:
             for extension in cls.find_extensions(permission):
                 extra_permissions.append(
@@ -408,33 +406,32 @@ class ApiTokenReadOnlyDefaultPermission(ApiTokenPluginPermissionBase):
 
 
 class PolicyEnforcer(iam_permissions.PolicyEnforcer):
-    @lru_cache(maxsize=1, typed=True)
-    def _collect_permission_types(self):
-        types = super()._collect_permission_types()
-        return [
-            t
-            for t in types
-            if not issubclass(t, ApiTokenPluginPermissionBase)
-            if t is not ApiTokenPermissionBase
-        ]
+    def _check_permission_plugins(
+        self,
+        request: ExtendedRequest,
+        view: ViewSet,
+        obj: Any | None,
+        *,
+        checked_permissions: list[OpenPolicyAgentPermission],
+    ):
+        for original_perm in checked_permissions.copy():
+            extra_permissions = ApiTokenPluginPermission.create(
+                request, view, obj, None, [original_perm]
+            )
+            for perm in extra_permissions:
+                checked_permissions.append(perm)
+                result = perm.check_access()
+                if not result.allow:
+                    return False
+
+        return True
 
     def _check_permission(self, request, view, obj):
         allow, checked_permissions = super()._check_permission(request, view, obj)
 
-        def _check_plugin_permissions():
-            for original_perm in checked_permissions[:]:
-                extra_permissions = ApiTokenPluginPermission.create(
-                    request, view, obj, None, [original_perm]
-                )
-                for perm in extra_permissions:
-                    checked_permissions.append(perm)
-                    result = perm.check_access()
-                    if not result.allow:
-                        return False
-
-            return True
-
         if allow:
-            allow = _check_plugin_permissions()
+            allow = self._check_permission_plugins(
+                request=request, view=view, obj=obj, checked_permissions=checked_permissions
+            )
 
         return allow, checked_permissions
