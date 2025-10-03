@@ -27,9 +27,9 @@ spec:
         - kind: WORKDIR
           value: /opt/nuclio
 
-        # Install GLASS-specific requirements directly
+        # All dependencies are in base image, no additional installations needed
         - kind: RUN
-          value: pip install timm opencv-python-headless scikit-image scikit-learn tensorboard pandas
+          value: echo "Using base image dependencies"
 
   resources:
     limits:
