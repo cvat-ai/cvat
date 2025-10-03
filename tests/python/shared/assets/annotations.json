@@ -8077,7 +8077,7 @@
           "elements": [],
           "frame": 0,
           "group": 0,
-          "id": 267,
+          "id": 270,
           "label_id": 80,
           "occluded": false,
           "outside": false,
@@ -8103,12 +8103,77 @@
           ],
           "frame": 0,
           "group": 0,
-          "id": 20,
+          "id": 22,
           "label_id": 80,
           "source": "file"
         }
       ],
-      "tracks": [],
+      "tracks": [
+        {
+          "attributes": [
+            {
+              "spec_id": 18,
+              "value": "j2 f1 (30) a3"
+            }
+          ],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 19,
+          "label_id": 80,
+          "shapes": [
+            {
+              "attributes": [],
+              "frame": 0,
+              "id": 25,
+              "occluded": false,
+              "outside": false,
+              "points": [
+                100.5,
+                0.0,
+                201.0,
+                99.0
+              ],
+              "rotation": 0.0,
+              "type": "rectangle",
+              "z_order": 0
+            },
+            {
+              "attributes": [],
+              "frame": 1,
+              "id": 26,
+              "occluded": false,
+              "outside": true,
+              "points": [
+                100.5,
+                0.0,
+                201.0,
+                99.0
+              ],
+              "rotation": 0.0,
+              "type": "rectangle",
+              "z_order": 0
+            },
+            {
+              "attributes": [],
+              "frame": 2,
+              "id": 27,
+              "occluded": false,
+              "outside": false,
+              "points": [
+                100.5,
+                0.0,
+                201.0,
+                99.0
+              ],
+              "rotation": 0.0,
+              "type": "rectangle",
+              "z_order": 0
+            }
+          ],
+          "source": "consensus"
+        }
+      ],
       "version": 0
     },
     "52": {
@@ -8179,7 +8244,40 @@
           "source": "manual"
         }
       ],
-      "tracks": [],
+      "tracks": [
+        {
+          "attributes": [
+            {
+              "spec_id": 18,
+              "value": "j2 f1 (30) a3"
+            }
+          ],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 18,
+          "label_id": 80,
+          "shapes": [
+            {
+              "attributes": [],
+              "frame": 0,
+              "id": 24,
+              "occluded": false,
+              "outside": false,
+              "points": [
+                100.49943887783229,
+                0.0,
+                200.99943370442088,
+                98.99943895504657
+              ],
+              "rotation": 0.0,
+              "type": "rectangle",
+              "z_order": 0
+            }
+          ],
+          "source": "manual"
+        }
+      ],
       "version": 0
     },
     "53": {
@@ -8233,6 +8331,31 @@
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
+        },
+        {
+          "attributes": [
+            {
+              "spec_id": 18,
+              "value": "j1 f3 (32) a1"
+            }
+          ],
+          "elements": [],
+          "frame": 2,
+          "group": 0,
+          "id": 268,
+          "label_id": 80,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            100.49996298562837,
+            0.0,
+            201.0332959775842,
+            103.53329630866392
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
         }
       ],
       "tags": [
@@ -8258,7 +8381,56 @@
           "source": "manual"
         }
       ],
-      "tracks": [],
+      "tracks": [
+        {
+          "attributes": [
+            {
+              "spec_id": 18,
+              "value": "j1 f1 (30) a3"
+            }
+          ],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 17,
+          "label_id": 80,
+          "shapes": [
+            {
+              "attributes": [],
+              "frame": 0,
+              "id": 22,
+              "occluded": false,
+              "outside": false,
+              "points": [
+                99.74943891644034,
+                0.0,
+                200.99943370442088,
+                71.99944034492
+              ],
+              "rotation": 0.0,
+              "type": "rectangle",
+              "z_order": 0
+            },
+            {
+              "attributes": [],
+              "frame": 1,
+              "id": 23,
+              "occluded": false,
+              "outside": true,
+              "points": [
+                99.74943891644034,
+                0.0,
+                200.99943370442088,
+                71.99944034492
+              ],
+              "rotation": 0.0,
+              "type": "rectangle",
+              "z_order": 0
+            }
+          ],
+          "source": "manual"
+        }
+      ],
       "version": 0
     },
     "54": {
@@ -13052,12 +13224,77 @@
           ],
           "frame": 0,
           "group": 0,
-          "id": 20,
+          "id": 22,
           "label_id": 80,
           "source": "file"
         }
       ],
-      "tracks": [],
+      "tracks": [
+        {
+          "attributes": [
+            {
+              "spec_id": 18,
+              "value": "j2 f1 (30) a3"
+            }
+          ],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 19,
+          "label_id": 80,
+          "shapes": [
+            {
+              "attributes": [],
+              "frame": 0,
+              "id": 25,
+              "occluded": false,
+              "outside": false,
+              "points": [
+                100.5,
+                0.0,
+                201.0,
+                99.0
+              ],
+              "rotation": 0.0,
+              "type": "rectangle",
+              "z_order": 0
+            },
+            {
+              "attributes": [],
+              "frame": 1,
+              "id": 26,
+              "occluded": false,
+              "outside": true,
+              "points": [
+                100.5,
+                0.0,
+                201.0,
+                99.0
+              ],
+              "rotation": 0.0,
+              "type": "rectangle",
+              "z_order": 0
+            },
+            {
+              "attributes": [],
+              "frame": 2,
+              "id": 27,
+              "occluded": false,
+              "outside": false,
+              "points": [
+                100.5,
+                0.0,
+                201.0,
+                99.0
+              ],
+              "rotation": 0.0,
+              "type": "rectangle",
+              "z_order": 0
+            }
+          ],
+          "source": "consensus"
+        }
+      ],
       "version": 0
     },
     "32": {

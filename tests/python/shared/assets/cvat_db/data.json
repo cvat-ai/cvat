@@ -9161,7 +9161,7 @@
 },
 {
   "model": "engine.labeledimage",
-  "pk": 20,
+  "pk": 22,
   "fields": {
     "job": 51,
     "label": 80,
@@ -9272,12 +9272,12 @@
 },
 {
   "model": "engine.labeledimageattributeval",
-  "pk": 14,
+  "pk": 16,
   "fields": {
     "spec": 18,
     "job": 51,
     "value": "",
-    "image": 20
+    "image": 22
   }
 },
 {
@@ -13332,7 +13332,25 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 267,
+  "pk": 268,
+  "fields": {
+    "job": 53,
+    "label": 80,
+    "frame": 2,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "100.49996298562837,0,201.0332959775842,103.53329630866392",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 270,
   "fields": {
     "job": 51,
     "label": 80,
@@ -15310,12 +15328,22 @@
 },
 {
   "model": "engine.labeledshapeattributeval",
-  "pk": 229,
+  "pk": 231,
+  "fields": {
+    "spec": 18,
+    "job": 53,
+    "value": "j1 f3 (32) a1",
+    "shape": 268
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 233,
   "fields": {
     "spec": 18,
     "job": 51,
     "value": "j2 f1 (30) a1",
-    "shape": 267
+    "shape": 270
   }
 },
 {
@@ -15499,6 +15527,42 @@
   }
 },
 {
+  "model": "engine.labeledtrack",
+  "pk": 17,
+  "fields": {
+    "job": 53,
+    "label": 80,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledtrack",
+  "pk": 18,
+  "fields": {
+    "job": 52,
+    "label": 80,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledtrack",
+  "pk": 19,
+  "fields": {
+    "job": 51,
+    "label": 80,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "parent": null
+  }
+},
+{
   "model": "engine.labeledtrackattributeval",
   "pk": 3,
   "fields": {
@@ -15516,6 +15580,36 @@
     "job": 18,
     "value": "val1",
     "track": 4
+  }
+},
+{
+  "model": "engine.labeledtrackattributeval",
+  "pk": 7,
+  "fields": {
+    "spec": 18,
+    "job": 53,
+    "value": "j1 f1 (30) a3",
+    "track": 17
+  }
+},
+{
+  "model": "engine.labeledtrackattributeval",
+  "pk": 8,
+  "fields": {
+    "spec": 18,
+    "job": 52,
+    "value": "j2 f1 (30) a3",
+    "track": 18
+  }
+},
+{
+  "model": "engine.labeledtrackattributeval",
+  "pk": 9,
+  "fields": {
+    "spec": 18,
+    "job": 51,
+    "value": "j2 f1 (30) a3",
+    "track": 19
   }
 },
 {
@@ -15796,6 +15890,90 @@
     "rotation": 0.0,
     "track": 15,
     "frame": 6
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 22,
+  "fields": {
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "99.74943891644034,0,200.99943370442088,71.99944034492",
+    "rotation": 0.0,
+    "track": 17,
+    "frame": 0
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 23,
+  "fields": {
+    "type": "rectangle",
+    "occluded": false,
+    "outside": true,
+    "z_order": 0,
+    "points": "99.74943891644034,0,200.99943370442088,71.99944034492",
+    "rotation": 0.0,
+    "track": 17,
+    "frame": 1
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 24,
+  "fields": {
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "100.49943887783229,0,200.99943370442088,98.99943895504657",
+    "rotation": 0.0,
+    "track": 18,
+    "frame": 0
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 25,
+  "fields": {
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "100.5,0.0,201.0,99.0",
+    "rotation": 0.0,
+    "track": 19,
+    "frame": 0
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 26,
+  "fields": {
+    "type": "rectangle",
+    "occluded": false,
+    "outside": true,
+    "z_order": 0,
+    "points": "100.5,0.0,201.0,99.0",
+    "rotation": 0.0,
+    "track": 19,
+    "frame": 1
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 27,
+  "fields": {
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "100.5,0.0,201.0,99.0",
+    "rotation": 0.0,
+    "track": 19,
+    "frame": 2
   }
 },
 {
