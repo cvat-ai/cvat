@@ -16,7 +16,7 @@ from rest_framework.exceptions import NotFound
 
 from cvat.apps.consensus import merging_manager as merging
 from cvat.apps.consensus.models import ConsensusSettings
-from cvat.apps.consensus.permissions import ConsensusSettingPermission
+from cvat.apps.consensus.permissions import ConsensusMergePermission, ConsensusSettingPermission
 from cvat.apps.consensus.serializers import (
     ConsensusMergeCreateSerializer,
     ConsensusSettingsSerializer,
@@ -30,6 +30,8 @@ from cvat.apps.redis_handler.serializers import RqIdSerializer
 
 @extend_schema(tags=["consensus"])
 class ConsensusMergesViewSet(viewsets.GenericViewSet):
+    iam_permission_class = ConsensusMergePermission
+
     CREATE_MERGE_RQ_ID_PARAMETER = "rq_id"
 
     @extend_schema(
@@ -124,6 +126,7 @@ class ConsensusSettingsViewSet(
     queryset = ConsensusSettings.objects
 
     iam_organization_field = "task__organization"
+    iam_permission_class = ConsensusSettingPermission
 
     search_fields = []
     filter_fields = ["id", "task_id"]

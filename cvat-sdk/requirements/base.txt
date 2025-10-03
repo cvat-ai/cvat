@@ -5,5 +5,4 @@ packaging >= 21.3
 Pillow >= 10.3.0
 platformdirs >= 2.1.0
 tqdm >= 4.64.0
-tuspy == 0.2.5 # have it pinned, because SDK has lots of patched TUS code
 typing_extensions >= 4.2.0

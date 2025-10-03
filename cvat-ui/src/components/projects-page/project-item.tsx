@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback } from 'react';
-import moment from 'moment';
+import dayjs from 'dayjs';
 import { useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
 import Text from 'antd/lib/typography/Text';
@@ -45,7 +45,7 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
     const ribbonPlugins = usePlugins((state: CombinedState) => state.plugins.components.projectItem.ribbon, props);
     const height = useCardHeight();
     const ownerName = instance.owner ? instance.owner.username : null;
-    const updated = moment(instance.updatedDate).fromNow();
+    const updated = dayjs(instance.updatedDate).fromNow();
     const deletes = useSelector((state: CombinedState) => state.projects.activities.deletes);
     const deleted = instance.id in deletes ? deletes[instance.id] : false;
 
