@@ -1,0 +1,73 @@
+metadata:
+  name: onnx-yolov8-sienz-oranges-color
+  namespace: cvat
+  annotations:
+    name: YOLOv8 Sienz Oranges Color
+    type: detector
+    spec: |
+      [
+        { "id": 0, "name": "Calyx", "type": "mask" },
+        { "id": 1, "name": "Stem", "type": "mask" },
+        { "id": 2, "name": "Trips", "type": "mask" },
+        { "id": 3, "name": "Scar", "type": "mask" },
+        { "id": 4, "name": "Rot", "type": "mask" },
+        { "id": 5, "name": "Evolutionary", "type": "mask" },
+        { "id": 6, "name": "Skin Defect", "type": "mask" },
+        { "id": 7, "name": "Caracol", "type": "mask" },
+        { "id": 8, "name": "Label", "type": "mask" },
+        { "id": 9, "name": "Scale", "type": "mask" },
+        { "id": 10, "name": "Crease", "type": "mask" },
+        { "id": 11, "name": "Oleo", "type": "mask" },
+        { "id": 12, "name": "Mask", "type": "mask" },
+        { "id": 13, "name": "End check", "type": "mask" },
+        { "id": 14, "name": "Bad stem", "type": "mask" },
+        { "id": 15, "name": "Antracnose", "type": "mask" },
+        { "id": 16, "name": "Mosca", "type": "mask" },
+        { "id": 17, "name": "Pliegue", "type": "mask" },
+        { "id": 18, "name": "Melanosis", "type": "mask" },
+        { "id": 19, "name": "Fumagima", "type": "mask" },
+        { "id": 20, "name": "Mancha Negra", "type": "mask" },
+        { "id": 21, "name": "Cancrosis", "type": "mask" },
+        { "id": 22, "name": "Long Stem", "type": "mask" },
+        { "id": 23, "name": "Bruises", "type": "mask" },
+        { "id": 24, "name": "Sunburn", "type": "mask" }
+      ]
+
+spec:
+  description: YOLOv8 Segmentation model for Sienz orange color defect detection via ONNX
+  runtime: 'python:3.8'
+  handler: main:handler
+  eventTimeout: 30s
+
+  build:
+    image: cvat.onnx.yolov8.sienz.oranges.color
+    baseImage: ubuntu:22.04
+
+    directives:
+      preCopy:
+        - kind: USER
+          value: root
+        - kind: RUN
+          value: apt update && apt install --no-install-recommends -y python3-pip
+        - kind: RUN
+          value: pip install onnxruntime opencv-python-headless pillow pyyaml numpy
+        - kind: WORKDIR
+          value: /opt/nuclio
+        - kind: RUN
+          value: ln -s /usr/bin/python3 /usr/bin/python
+
+  triggers:
+    myHttpTrigger:
+      numWorkers: 2
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+        port: 32780
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume
