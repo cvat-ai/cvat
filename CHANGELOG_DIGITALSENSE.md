@@ -13,10 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Email configuration support through environment variables for SMTP authentication and user verification. [PR #25]
 - GPU acceleration support for all 11 Anomalib models with dedicated deployment script and configuration files. [PR #26]
 - GPU-enabled startup script for complete CVAT infrastructure deployment with GPU-accelerated Anomalib functions. [PR #26]
-
-=======
 - YOLOv8 segmentation model detection with ONNX runtime support for both CPU and GPU deployment. [PR #27]
-
 
 ### Changed
 - Updated files to utilize environment variables. [PR #22]
