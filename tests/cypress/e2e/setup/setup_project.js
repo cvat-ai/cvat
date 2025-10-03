@@ -5,31 +5,65 @@
 /// <reference types="cypress" />
 
 import {
-    projectName,
+    projectName, projectName3d, projectNameDelete,
     labelName,
     attrName,
     textDefaultValue,
     multiAttrParams,
+    labelDelete,
+    projectNameDeleteLabel,
 } from '../../support/const_project';
 
-it('Prepare to testing projects', () => {
-    // TODO: refactor to headless requests
-
+it('Prepare for testing projects', () => {
+    cy.task('log', 'Seeding shared data');
     cy.visit('/auth/login');
-    cy.login();
-    cy.goToProjectsList();
-    cy.get('.cvat-projects-page').should('exist');
-    const listItems = [];
-    cy.document().then((doc) => {
-        const collection = Array.from(doc.querySelectorAll('.cvat-projects-project-item-title'));
-        for (let i = 0; i < collection.length; i++) {
-            listItems.push(collection[i].innerText);
-        }
-        if (listItems.indexOf(projectName) === -1) {
-            cy.task('log', "A project doesn't exist. Creating.");
-            cy.createProjects(projectName, labelName, attrName, textDefaultValue, multiAttrParams);
-        } else {
-            cy.task('log', 'The project exist. Skipping creation.');
-        }
-    });
+    cy.headlessLogin();
+    const projectSpec = {
+        name: projectName,
+        labels: [
+            {
+                name: labelName,
+                type: 'any',
+                attributes: [
+                    {
+                        name: multiAttrParams.name,
+                        default_value: textDefaultValue,
+                        values: [multiAttrParams.values],
+                        input_type: multiAttrParams.type,
+                        mutable: false,
+                    },
+                    {
+                        mutable: false,
+                        name: attrName,
+                        values: [],
+                        default_value: textDefaultValue,
+                        input_type: 'text',
+                    },
+                ],
+            },
+        ],
+    };
+    const projectDeleteLabelSpec = {
+        name: projectNameDeleteLabel,
+        labels: [
+            labelDelete,
+        ],
+    };
+    const projectDeleteSpec = {
+        ...projectSpec,
+        name: projectNameDelete,
+    };
+    cy.intercept('POST', '/api/projects**').as('createProjectRequest');
+    cy.headlessCreateProject(projectSpec);
+    cy.wait('@createProjectRequest');
+    cy.headlessCreateProject({ ...projectSpec, name: projectName3d }); // can't reuse for 3d if already has 2d tasks
+    cy.wait('@createProjectRequest');
+    cy.headlessCreateProject(projectDeleteLabelSpec); // label deletion tests require project to have only one label
+    cy.wait('@createProjectRequest');
+
+    // Tests that check project deletion
+    cy.headlessCreateProject(projectDeleteSpec);
+    cy.wait('@createProjectRequest');
+    cy.headlessCreateProject(projectDeleteSpec);
+    cy.wait('@createProjectRequest');
 });
