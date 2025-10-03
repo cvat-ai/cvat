@@ -12,10 +12,12 @@ logger = log.getLogger("cvat")
 
 MEDIA_CACHE_ALLOW_STATIC_CACHE = to_bool(os.getenv("CVAT_ALLOW_STATIC_CACHE", False))
 """
-Allow or disallow static media cache.
-If disabled, CVAT will only use the dynamic media cache. New tasks requesting static media cache
-will be automatically switched to the dynamic cache.
-When enabled, this option can increase data access speed and reduce server load,
+Allow or disallow static media cache for new tasks.
+If disabled, CVAT will not allow task creation with static media cache.
+New tasks requesting static media cache will be automatically switched to the dynamic cache.
+When enabled, CVAT will allow task creation with static media chunks.
+
+Static media cache can increase data access speed and reduce server load,
 but significantly increase disk space occupied by tasks.
 """
 

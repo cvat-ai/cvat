@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useState } from 'react';
-import moment from 'moment';
+import dayjs from 'dayjs';
 import { Row, Col } from 'antd/lib/grid';
 import Tag from 'antd/lib/tag';
 import Text from 'antd/lib/typography/Text';
@@ -53,7 +53,7 @@ export default function DeployedModelItem(props: Readonly<Props>): JSX.Element {
         setIsModalShown(false);
     };
 
-    const created = moment(model.createdDate).fromNow();
+    const created = dayjs(model.createdDate).fromNow();
     const modelDescription = !systemModel ?
         <Text type='secondary'>{`Added ${created}`}</Text> :
         <Text type='secondary'>System model</Text>;

@@ -20,7 +20,6 @@ from typing import Any, Callable, Generic, Optional, TypeVar, Union, overload
 import av
 import cv2
 import numpy as np
-from django.conf import settings
 from django.db.models import prefetch_related_objects
 from PIL import Image
 from rest_framework.exceptions import ValidationError
@@ -489,8 +488,8 @@ class SegmentFrameProvider(IFrameProvider):
 
         self._loaders: dict[FrameQuality, _ChunkLoader] = {}
         if (
-            db_data.storage_method == models.StorageMethodChoice.CACHE
-            or not settings.MEDIA_CACHE_ALLOW_STATIC_CACHE
+            db_data.storage_method
+            == models.StorageMethodChoice.CACHE
             # TODO: separate handling, extract cache creation logic from media cache
         ):
             cache = MediaCache()
