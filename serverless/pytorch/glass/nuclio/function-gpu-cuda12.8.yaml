@@ -16,7 +16,7 @@ spec:
   eventTimeout: 3000s
 
   build:
-    image: cvat.pth.gpu:cuda12.8
+    image: cvat.pth.glass.gpu:cuda12.8
     baseImage: cuda12.8-base:ubuntu22.04
 
     directives:
