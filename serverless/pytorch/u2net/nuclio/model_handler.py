@@ -42,14 +42,21 @@ class ModelHandler:
         # Setup device
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = U2NET(3,1)
-        self.pth_path = "u2net_best_val_model.pth"
+        # Original value: "u2net_best_val_model.pth"
+        self.pth_path = "sienz_250217_u2net_all_classes.pth"
 
     def resize_mask(self, mask, image):
         target_size = image.size
         return cv.resize(mask, target_size, interpolation=cv.INTER_NEAREST)
 
-    def infer(self, image, threshold=0.5):
-        
+    def infer(self, image, threshold=0.5, ckpt_path=None):
+
+        if ckpt_path is not None:
+            self.pth_path = ckpt_path
+            print(f"Using custom checkpoint path: {self.pth_path}")
+        else:
+            print("No checkpoint path provided, using default.")
+
         # Convert PIL Image to numpy array if needed
         if hasattr(image, 'mode'):  # PIL Image
             original_image = np.array(image)
@@ -60,24 +67,24 @@ class ModelHandler:
 
         # Apply transforms directly to the image
         transform = T.Compose([RescaleT(320), ToTensorLab(flag=0)])
-        
+
         # Create a sample dict similar to what SalObjDataset would return
         imidx = np.array([0])  # Add the missing imidx
-        
+
         # Create label following the same logic as in SalObjDataset
         label_3 = np.zeros(original_image.shape)  # Create with same shape as image
         label = np.zeros(label_3.shape[0:2])  # Extract 2D shape
-        
+
         # Apply the same dimension handling as in the dataset
         if(3==len(original_image.shape) and 2==len(label.shape)):
             label = label[:,:,np.newaxis]
         elif(2==len(original_image.shape) and 2==len(label.shape)):
             original_image = original_image[:,:,np.newaxis]
             label = label[:,:,np.newaxis]
-        
+
         sample = {'imidx': imidx, 'image': original_image, 'label': label}
         sample = transform(sample)
-        
+
         # Add batch dimension
         inputs_test = sample['image'].unsqueeze(0)
         inputs_test = inputs_test.type(torch.FloatTensor)
@@ -89,7 +96,7 @@ class ModelHandler:
             inputs_test = Variable(inputs_test.cuda())
         else:
             inputs_test = Variable(inputs_test)
-        
+
         self.model.eval()
 
         # Run inference
@@ -107,7 +114,7 @@ class ModelHandler:
         binary_mask = (predict_np > threshold).astype(np.uint8)
         # Convert binary mask to 0-255 range for visualization/processing
         pred_mask = (binary_mask * 255).astype(np.uint8)
-        
+
         # Resize mask to match original image dimensions
         resized_mask = cv.resize(pred_mask, (original_image.shape[1], original_image.shape[0]), interpolation=cv.INTER_NEAREST)
 
