@@ -13,6 +13,7 @@ from dj_rest_auth.views import (
 from django.conf import settings
 from django.urls import path, re_path
 from django.urls.conf import include
+from django.utils.module_loading import import_string
 
 from cvat.apps.iam.views import (
     ConfirmEmailViewEx,
@@ -40,17 +41,13 @@ if settings.IAM_TYPE == "BASIC":
     password_change_view = PasswordChangeView
 
     if "cvat.apps.api_tokens" in settings.INSTALLED_APPS:
-        import importlib
-
         from rest_framework.decorators import authentication_classes
 
         from cvat.apps.api_tokens.authentication import ApiTokenAuthentication
 
         no_api_token_auth_classes = []
         for auth_class_path in settings.REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"]:
-            auth_class_module_path, auth_class_name = auth_class_path.rsplit(".", maxsplit=1)
-            auth_class_module = importlib.import_module(auth_class_module_path)
-            auth_class = getattr(auth_class_module, auth_class_name)
+            auth_class = import_string(auth_class_path)
 
             if not issubclass(auth_class, ApiTokenAuthentication):
                 no_api_token_auth_classes.append(auth_class)
