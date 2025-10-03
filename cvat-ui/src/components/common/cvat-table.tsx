@@ -31,7 +31,7 @@ type Props = TableProps & {
     csvExport?: {
         filename: string;
     };
-    tableTitle?: string;
+    tableTitle?: string | React.ReactNode;
     searchDataIndex?: (string | string[])[];
 };
 
@@ -169,10 +169,18 @@ function CVATTable(props: Props): JSX.Element {
 
     return (
         <div className='cvat-table-wrapper'>
-            <Row justify='space-between' align='middle'>
+            <Row align='middle'>
                 <Col>
                     <Space align='center'>
-                        {!!tableTitle && <Text strong className='cvat-text-color cvat-table-header'>{tableTitle}</Text> }
+                        {!!tableTitle && (
+                            <div className='cvat-text-color cvat-table-header'>
+                                {typeof tableTitle === 'string' ? (
+                                    <Text strong>{tableTitle}</Text>
+                                ) : (
+                                    tableTitle
+                                )}
+                            </div>
+                        )}
                         { !!csvExport && !!columns && (
                             <Button
                                 className='cvat-table-export-csv-button'
@@ -181,8 +189,10 @@ function CVATTable(props: Props): JSX.Element {
                                 onClick={downloadCSV}
                             />
                         ) }
-                        { !!renderExtraActions && renderExtraActions() }
                     </Space>
+                </Col>
+                <Col flex='auto'>
+                    { !!renderExtraActions && renderExtraActions() }
                 </Col>
                 <Col>
                     <Space align='center'>

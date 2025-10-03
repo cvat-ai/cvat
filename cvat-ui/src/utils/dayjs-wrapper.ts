@@ -12,6 +12,7 @@ import weekday from 'dayjs/plugin/weekday';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 import weekYear from 'dayjs/plugin/weekYear';
 import duration from 'dayjs/plugin/duration';
+import utc from 'dayjs/plugin/utc';
 
 dayjs.extend(customParseFormat);
 dayjs.extend(advancedFormat);
@@ -22,5 +23,6 @@ dayjs.extend(weekOfYear);
 dayjs.extend(weekYear);
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
+dayjs.extend(utc);
 
 export default dayjs;

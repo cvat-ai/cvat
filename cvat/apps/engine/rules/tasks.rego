@@ -61,6 +61,7 @@ import data.organizations
 #             "organization": { "id": <num> } or null,
 #         } or null,
 #         "rq_job": { "owner": { "id": <num> } } or null,
+#         "destination": <"local" | "cloud_storage"> or undefined,
 #     }
 # }
 
