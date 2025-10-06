@@ -381,8 +381,8 @@ Cypress.Commands.add('headlessRestoreAllFrames', (jobID) => {
 });
 
 Cypress.Commands.add('headlessCreateTask', (taskSpec, dataSpec, extras) => {
-    cy.window().then(async ($win) => {
-        const task = new $win.cvat.classes.Task({
+    cy.window().its('cvat').should('not.be.undefined').then(async (cvat) => {
+        const task = new cvat.classes.Task({
             ...taskSpec,
             ...dataSpec,
         });
