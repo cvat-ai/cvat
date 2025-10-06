@@ -27,7 +27,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -56,7 +55,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -80,7 +78,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -150,7 +147,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -176,7 +172,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -204,7 +199,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -236,7 +230,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -263,7 +256,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -313,7 +305,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -339,7 +330,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -370,7 +360,6 @@ paths:
         required: true
       security:
       - tokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -401,7 +390,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -435,7 +423,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -462,7 +449,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -485,35 +471,6 @@ paths:
       responses:
         '200':
           description: No response body
-  /api/auth/signing:
-    post:
-      operationId: auth_create_signing
-      description: Signed URL contains a token which authenticates a user on the server.Signed
-        URL is valid during 30 seconds since signing.
-      summary: This method signs URL for access to the server
-      tags:
-      - auth
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SigningRequest'
-        required: true
-      security:
-      - tokenAuth: []
-      - apiTokenAuth: []
-      - signatureAuth: []
-      - sessionAuth: []
-        csrfAuth: []
-        csrfHeaderAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                type: string
-          description: text URL
   /api/cloudstorages:
     get:
       operationId: cloudstorages_list
@@ -618,7 +575,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -707,7 +663,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -735,7 +690,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -814,7 +768,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -841,7 +794,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -867,7 +819,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -914,7 +865,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -942,7 +892,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -970,7 +919,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1068,7 +1016,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1110,7 +1057,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1138,7 +1084,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1170,7 +1115,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1197,7 +1141,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1219,7 +1162,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1300,7 +1242,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1328,7 +1269,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1360,7 +1300,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1439,7 +1378,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1483,7 +1421,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1561,7 +1498,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1589,7 +1525,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1617,7 +1552,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1649,7 +1583,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1677,7 +1610,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1756,7 +1688,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1798,7 +1729,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1826,7 +1756,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1858,7 +1787,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1885,7 +1813,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1909,7 +1836,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1939,7 +1865,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1963,7 +1888,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2070,7 +1994,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2112,7 +2035,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2140,7 +2062,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2172,7 +2093,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2199,7 +2119,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2342,7 +2261,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2412,7 +2330,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2440,7 +2357,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2472,7 +2388,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2504,7 +2419,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2573,7 +2487,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2648,7 +2561,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2687,7 +2599,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2727,7 +2638,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2750,7 +2660,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2803,7 +2712,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2832,7 +2740,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2864,7 +2771,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2929,7 +2835,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2965,7 +2870,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2989,7 +2893,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3039,7 +2942,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3168,7 +3070,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3196,7 +3097,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3230,7 +3130,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3259,7 +3158,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3276,7 +3174,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3300,7 +3197,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3339,7 +3235,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3356,7 +3251,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3400,7 +3294,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3428,7 +3321,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3455,7 +3347,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3544,7 +3435,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3572,7 +3462,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3604,7 +3493,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3631,7 +3519,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3706,7 +3593,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3732,7 +3618,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3760,7 +3645,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3792,7 +3676,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3819,7 +3702,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3918,7 +3800,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3960,7 +3841,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3988,7 +3868,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -4020,7 +3899,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -4047,7 +3925,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -4100,7 +3977,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -4176,7 +4052,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -4245,7 +4120,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -4281,7 +4155,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -4355,7 +4228,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -4474,7 +4346,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -4590,7 +4461,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -4627,7 +4497,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -4667,7 +4536,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -4695,7 +4563,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -4794,7 +4661,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -4822,7 +4688,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -4854,7 +4719,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -4957,7 +4821,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -4984,7 +4847,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5011,7 +4873,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5143,7 +5004,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5173,7 +5033,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5194,7 +5053,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5215,7 +5073,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5247,7 +5104,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5403,7 +5259,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5448,7 +5303,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5476,7 +5330,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5562,7 +5415,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5590,7 +5442,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5614,7 +5465,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5691,7 +5541,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5730,7 +5579,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5770,7 +5618,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5797,7 +5644,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5850,7 +5696,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5909,7 +5754,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6020,7 +5864,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6048,7 +5891,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6080,7 +5922,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6145,7 +5986,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6181,7 +6021,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6210,7 +6049,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6239,7 +6077,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6300,7 +6137,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6376,7 +6212,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6475,7 +6310,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6503,7 +6337,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6535,7 +6368,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6562,7 +6394,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6580,7 +6411,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6683,7 +6513,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6725,7 +6554,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6753,7 +6581,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6786,7 +6613,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6818,7 +6644,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6845,7 +6670,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6881,7 +6705,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6915,7 +6738,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6949,7 +6771,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6973,7 +6794,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -7000,7 +6820,6 @@ paths:
       security:
       - tokenAuth: []
       - apiTokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -10948,14 +10767,6 @@ components:
         * `cuboid` - CUBOID
         * `mask` - MASK
         * `skeleton` - SKELETON
-    SigningRequest:
-      type: object
-      properties:
-        url:
-          type: string
-          minLength: 1
-      required:
-      - url
     SortingMethod:
       enum:
       - lexicographical
@@ -11901,11 +11712,6 @@ components:
       type: apiKey
       in: cookie
       name: sessionid
-    signatureAuth:
-      type: apiKey
-      in: query
-      name: sign
-      description: Can be used to share URLs to private links
     tokenAuth:
       type: apiKey
       in: header

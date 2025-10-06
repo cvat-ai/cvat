@@ -31,7 +31,6 @@ Django~=4.2.7
 djangorestframework>=3.15.2,<4
 djangorestframework-api-key~=3.1
 drf-spectacular==0.26.2
-furl==2.1.0
 google-cloud-storage~=3.0
 lxml>=5.2.1,<6
 natsort==8.0.0

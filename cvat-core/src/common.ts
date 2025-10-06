@@ -66,7 +66,15 @@ export function checkExclusiveFields(obj, exclusive, ignore): void {
     }
 }
 
-export function checkObjectType(name, value, type, instance?): boolean {
+export function checkObjectType(
+    name: string,
+    value: unknown,
+    type: 'string' | 'number' | 'boolean' | 'integer' | null,
+    constructor?: {
+        cls: new (...args: any[]) => unknown,
+        name: string,
+    },
+): boolean {
     if (type) {
         if (typeof value !== type) {
             // specific case for integers which aren't native type in JS
@@ -76,16 +84,13 @@ export function checkObjectType(name, value, type, instance?): boolean {
 
             throw new ArgumentError(`"${name}" is expected to be "${type}", but "${typeof value}" received.`);
         }
-    } else if (instance) {
-        if (!(value instanceof instance)) {
+    } else if (constructor) {
+        if (!(value instanceof constructor.cls)) {
             if (value !== undefined) {
-                throw new ArgumentError(
-                    `"${name}" is expected to be ${instance.name}, but ` +
-                        `"${value.constructor.name}" received`,
-                );
+                throw new ArgumentError(`"${name}" is expected to be instance of ${constructor.name}.`);
             }
 
-            throw new ArgumentError(`"${name}" is expected to be ${instance.name}, but "undefined" received`);
+            throw new ArgumentError(`"${name}" is expected to be ${constructor.name}, but "undefined" received`);
         }
     }
 

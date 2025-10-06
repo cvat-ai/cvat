@@ -260,12 +260,7 @@ export default class ObjectState {
                     },
                     set: (points) => {
                         if (!Array.isArray(points) || points.some((coord) => typeof coord !== 'number')) {
-                            throw new ArgumentError(
-                                'Points are expected to be an array of numbers ' +
-                                    `but got ${
-                                        typeof points === 'object' ? points.constructor.name : typeof points
-                                    }`,
-                            );
+                            throw new ArgumentError('Points are expected to be an array of numbers.');
                         }
 
                         if (data.shapeType === ShapeType.SKELETON) {
@@ -296,11 +291,7 @@ export default class ObjectState {
                             data.updateFlags.rotation = true;
                             data.rotation = rotation;
                         } else {
-                            throw new ArgumentError(
-                                `Rotation is expected to be a number, but got ${
-                                    typeof rotation === 'object' ? rotation.constructor.name : typeof rotation
-                                }`,
-                            );
+                            throw new ArgumentError('Rotation is expected to be a number.');
                         }
                     },
                 },
