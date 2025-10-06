@@ -11,33 +11,27 @@ import {
     textDefaultValue,
     pcdPngZipArr,
     multiAttrParams,
-    advancedConfigurationParams,
+    advancedConfigurationParams, // is false
 } from '../../support/const_canvas3d';
+import { defaultTaskSpec } from '../../support/default-specs';
 
-it('Prepare to testing canvas3d', () => {
-    // TODO: refactor to headless requests
-    cy.visit('/auth/login');
-    cy.login();
-    cy.get('.cvat-tasks-page').should('exist');
-    const listItems = [];
-    cy.document().then((doc) => {
-        const collection = Array.from(doc.querySelectorAll('.cvat-item-task-name'));
-        for (let i = 0; i < collection.length; i++) {
-            listItems.push(collection[i].innerText);
-        }
-        if (listItems.indexOf(taskName) === -1) {
-            cy.task('log', "A task doesn't exist. Creating.");
-            cy.createAnnotationTask(
-                taskName,
-                labelName,
-                attrName,
-                textDefaultValue,
-                pcdPngZipArr,
-                multiAttrParams,
-                advancedConfigurationParams,
-            );
-        } else {
-            cy.task('log', 'The task exist. Skipping creation.');
-        }
+it('Prepare for testing canvas3d', () => {
+    const attributes = [
+        { name: attrName, values: textDefaultValue, type: 'text' },
+    ];
+    if (multiAttrParams && typeof multiAttrParams === 'object') {
+        attributes.push({ ...multiAttrParams });
+    }
+    const { taskSpec, dataSpec, extras } = defaultTaskSpec({
+        taskName,
+        labelName,
+        attributes,
+        serverFiles: [pcdPngZipArr],
+        validationParams: advancedConfigurationParams,
     });
+    cy.visit('/auth/login');
+    cy.headlessLogin();
+    cy.intercept('POST', '/api/tasks**').as('createTaskRequest');
+    cy.headlessCreateTask(taskSpec, dataSpec, extras);
+    cy.wait('@createTaskRequest');
 });
