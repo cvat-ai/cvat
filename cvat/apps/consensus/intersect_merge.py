@@ -385,13 +385,7 @@ class LabelMerger(AnnotationMerger, LabelMatcher):
         merged = []
         for label, count in votes.items():
             if count < self.quorum:
-                sources = set(
-                    self._context.get_ann_source(id(a))
-                    for a in clusters[0]
-                    if label not in [self._context.get_src_label_name(l, l.label) for l in a]
-                )
-                sources = [self._context.get_dataset_source_id(s) for s in sources]
-                self._context.add_item_error(FailedLabelVotingError, votes, sources=sources)
+                self._context.add_item_error(FailedLabelVotingError, {label: count})
                 continue
 
             merged.append(

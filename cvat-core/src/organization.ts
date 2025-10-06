@@ -35,7 +35,7 @@ function validateDescription(description: unknown): void {
 }
 
 function validateContact(contact: unknown): void {
-    checkObjectType('organization contacts', contact, 'object');
+    checkObjectType('contact', contact, null, { cls: Object, name: 'Object' });
     for (const prop of Object.keys(contact)) {
         checkObjectType('organization contact', contact[prop], 'string');
     }
@@ -90,7 +90,7 @@ export default class Organization {
         }
 
         if (typeof data.owner !== 'undefined' && data.owner !== null) {
-            checkObjectType('owner', data.owner, null, User);
+            checkObjectType('owner', data.owner, null, { cls: User, name: 'User' });
         }
 
         Object.defineProperties(this, {
@@ -348,6 +348,7 @@ Object.defineProperties(Organization.prototype.members, {
                     // eslint-disable-next-line no-empty
                     } catch (e) {}
                 }
+
                 return new Membership({
                     ...rawMembership,
                     invitation: rawInvitation,
@@ -427,7 +428,7 @@ Object.defineProperties(Organization.prototype.leave, {
         writable: false,
         enumerable: false,
         value: async function implementation(user: User) {
-            checkObjectType('user', user, null, User);
+            checkObjectType('user', user, null, { cls: User, name: 'User' });
             if (typeof this.id === 'number') {
                 const result = await serverProxy.organizations.members({
                     page: 1,

@@ -1,5 +1,5 @@
 {
-  "count": 53,
+  "count": 54,
   "next": null,
   "previous": null,
   "results": [
@@ -1029,6 +1029,17 @@
       "parent_id": null,
       "sublabels": [],
       "task_id": 34,
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#406040",
+      "has_parent": false,
+      "id": 90,
+      "name": "dog",
+      "parent_id": null,
+      "sublabels": [],
+      "task_id": 31,
       "type": "any"
     }
   ]

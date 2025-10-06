@@ -5,12 +5,11 @@
 
 from __future__ import annotations
 
-import importlib
 import operator
 from abc import ABCMeta, abstractmethod
-from collections.abc import Collection, Sequence
+from collections.abc import Sequence
 from enum import Enum
-from functools import cached_property, lru_cache
+from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, TypeVar
 
@@ -300,15 +299,6 @@ def is_public_obj(obj: T) -> bool:
 
 
 class PolicyEnforcer(BasePermission):
-    @lru_cache(maxsize=1, typed=True)
-    def _collect_permission_types(self) -> Collection[type[OpenPolicyAgentPermission]]:
-        def get_subclasses(cls):
-            return set(cls.__subclasses__()).union(
-                s for c in cls.__subclasses__() for s in get_subclasses(c)
-            )
-
-        return get_subclasses(OpenPolicyAgentPermission)
-
     def _check_permission(
         self, request: ExtendedRequest, view: ViewSet, obj
     ) -> tuple[bool, list[OpenPolicyAgentPermission]]:
@@ -321,13 +311,18 @@ class PolicyEnforcer(BasePermission):
             if self.is_metadata_request(request, view) or obj and is_public_obj(obj):
                 return True
 
+            assert hasattr(
+                view, "iam_permission_class"
+            ), f"View {view} has no 'iam_permission_class' attribute"
+
+            perm_class = view.iam_permission_class
             iam_context = get_iam_context(request, obj)
-            for perm_class in self._collect_permission_types():
-                for perm in perm_class.create(request, view, obj, iam_context=iam_context):
-                    checked_permissions.append(perm)
-                    result = perm.check_access()
-                    if not result.allow:
-                        return False
+
+            for perm in perm_class.create(request, view, obj, iam_context=iam_context):
+                checked_permissions.append(perm)
+                result = perm.check_access()
+                if not result.allow:
+                    return False
 
             return True
 
@@ -362,18 +357,11 @@ class IsAuthenticatedOrReadPublicResource(BasePermission):
         )
 
 
-def load_app_permissions(config: AppConfig) -> None:
+def load_app_iam_rules(config: AppConfig) -> None:
     """
-    Ensures that permissions and OPA rules from the given app are loaded.
+    Ensures that OPA rules from the given app are loaded.
 
     This function should be called from the AppConfig.ready() method of every
-    app that defines a permissions module.
+    app that defines OPA rules.
     """
-    permissions_module = importlib.import_module(config.name + ".permissions")
-
-    assert any(
-        isinstance(attr, type) and issubclass(attr, OpenPolicyAgentPermission)
-        for attr in vars(permissions_module).values()
-    )
-
     add_opa_rules_path(Path(config.path, "rules"))
