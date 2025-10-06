@@ -38,11 +38,9 @@ if settings.IAM_TYPE == "BASIC":
         path("register", RegisterViewEx.as_view(), name=BASIC_REGISTER_PATH_NAME),
     ]
 
-    password_change_view = PasswordChangeView
+    password_change_view_kwargs = {}
 
     if "cvat.apps.api_tokens" in settings.INSTALLED_APPS:
-        from rest_framework.decorators import authentication_classes
-
         from cvat.apps.api_tokens.authentication import ApiTokenAuthentication
 
         no_api_token_auth_classes = []
@@ -52,9 +50,7 @@ if settings.IAM_TYPE == "BASIC":
             if not issubclass(auth_class, ApiTokenAuthentication):
                 no_api_token_auth_classes.append(auth_class)
 
-        password_change_view = authentication_classes(no_api_token_auth_classes)(
-            password_change_view,
-        )
+        password_change_view_kwargs["authentication_classes"] = no_api_token_auth_classes
 
     urlpatterns += [
         # password
@@ -64,7 +60,11 @@ if settings.IAM_TYPE == "BASIC":
             PasswordResetConfirmView.as_view(),
             name="rest_password_reset_confirm",
         ),
-        path("password/change", password_change_view.as_view(), name="rest_password_change"),
+        path(
+            "password/change",
+            PasswordChangeView.as_view(**password_change_view_kwargs),
+            name="rest_password_change",
+        ),
     ]
 
     if allauth_settings.EMAIL_VERIFICATION != allauth_settings.EmailVerificationMethod.NONE:
