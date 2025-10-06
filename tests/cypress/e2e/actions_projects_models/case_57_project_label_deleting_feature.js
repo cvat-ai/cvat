@@ -49,7 +49,7 @@ context('Delete a label from a project.', () => {
     after(() => {
         // restore label with different color to mark deletion
         cy.window().then(async ($win) => {
-            const res = await $win.cvat.server.request(
+            await $win.cvat.server.request(
                 `/api/projects/${projectID}`, {
                     method: 'PATCH',
                     data: { labels: [{ ...labelDelete, color: 'green' }] },
