@@ -284,7 +284,7 @@ function OrganizationTopBar(props: Readonly<Props>): JSX.Element {
                                 type='secondary'
                                 editable={{
                                     onStart() {
-                                        editingRef.current.contact.email = contact.email;
+                                        editingRef.current.contact = { ...contact };
                                     },
                                     onChange(value: string) {
                                         editingRef.current.contact.email = value;
@@ -302,7 +302,7 @@ function OrganizationTopBar(props: Readonly<Props>): JSX.Element {
                                 type='secondary'
                                 editable={{
                                     onStart() {
-                                        editingRef.current.contact.location = contact.location;
+                                        editingRef.current.contact = { ...contact };
                                     },
                                     onChange(value: string) {
                                         editingRef.current.contact.location = value;
