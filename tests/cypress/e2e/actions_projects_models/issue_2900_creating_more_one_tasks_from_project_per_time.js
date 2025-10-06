@@ -5,11 +5,12 @@
 
 /// <reference types="cypress" />
 
-import { projectNameDelete, labelName } from '../../support/const_project';
+import { projectDeleteSpec } from '../../support/const_project';
 
 context('Create more than one task per time when create from project.', () => {
     const issueID = 2900;
-    const projectName = projectNameDelete;
+    const projectName = projectDeleteSpec.name;
+    const labelName = projectDeleteSpec.labels[0].name;
     const taskName = {
         firstTask: `First task for ${projectName}`,
         secondTask: `Second task for ${projectName}`,
@@ -46,6 +47,10 @@ context('Create more than one task per time when create from project.', () => {
         cy.createZipArchive(directoryToArchive, archivePath);
         cy.loginSetupProjects();
         cy.openProject(projectName);
+    });
+    after(() => {
+        // restore deleted project
+        cy.headlessCreateProject(projectDeleteSpec);
     });
 
     describe(`Testing "Issue ${issueID}"`, () => {

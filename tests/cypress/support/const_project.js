@@ -24,3 +24,41 @@ export const multiAttrParams = {
     type: 'text',
 };
 export const ADMIN_ID = 1;
+
+// Reusable specs
+export const projectSpec = {
+    name: projectName,
+    labels: [
+        {
+            name: labelName,
+            type: 'any',
+            attributes: [
+                {
+                    name: multiAttrParams.name,
+                    default_value: textDefaultValue,
+                    values: [multiAttrParams.values],
+                    input_type: multiAttrParams.type,
+                    mutable: false,
+                },
+                {
+                    mutable: false,
+                    name: attrName,
+                    values: [],
+                    default_value: textDefaultValue,
+                    input_type: 'text',
+                },
+            ],
+        },
+    ],
+};
+export const project3d = { ...projectSpec, name: projectName3d };
+export const projectDeleteLabelSpec = {
+    name: projectNameDeleteLabel,
+    labels: [
+        labelDelete,
+    ],
+};
+export const projectDeleteSpec = {
+    ...projectSpec,
+    name: projectNameDelete,
+};
