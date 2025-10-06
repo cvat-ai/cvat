@@ -9,6 +9,7 @@ import React, {
 import { Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import dayjs from 'dayjs';
+import _ from 'lodash';
 import { Row, Col } from 'antd/lib/grid';
 import Form from 'antd/lib/form';
 import Text from 'antd/lib/typography/Text';
@@ -76,6 +77,7 @@ function OrganizationTopBar(props: Readonly<Props>): JSX.Element {
     const { id: userID } = userInstance;
     const [descriptionForm] = Form.useForm();
     const descriptionEditingRef = useRef<HTMLDivElement>(null);
+    const editingRef = useRef({ name, contact });
     const [editingDescription, setEditingDescription] = useState(false);
     const [visibleInviteModal, setVisibleInviteModal] = useState(false);
     const [visibility, setVisibility] = useState(defaultVisibility);
@@ -140,14 +142,26 @@ function OrganizationTopBar(props: Readonly<Props>): JSX.Element {
 
     const onSubmitDescription = useCallback((values: { description: string }) => {
         if (description !== values.description) {
-            organizationInstance.description = values.description;
-            dispatch(updateOrganizationAsync(organizationInstance));
+            dispatch(
+                updateOrganizationAsync(
+                    organizationInstance,
+                    { description: values.description },
+                ),
+            );
         }
         setEditingDescription(false);
-    }, []);
+    }, [description]);
 
-    let organizationName = name;
-    let organizationContacts = contact;
+    const onFinishContactsEditing = useCallback(() => {
+        if (!_.isEqual(contact, editingRef.current.contact)) {
+            dispatch(
+                updateOrganizationAsync(
+                    organizationInstance,
+                    { contact: editingRef.current.contact },
+                ),
+            );
+        }
+    }, [contact]);
 
     return (
         <>
@@ -189,12 +203,21 @@ function OrganizationTopBar(props: Readonly<Props>): JSX.Element {
                         </Row>
                         <Text
                             editable={{
-                                onChange: (value: string) => {
-                                    organizationName = value;
+                                onStart() {
+                                    editingRef.current.name = name;
                                 },
-                                onEnd: () => {
-                                    organizationInstance.name = organizationName;
-                                    dispatch(updateOrganizationAsync(organizationInstance));
+                                onChange(value: string) {
+                                    editingRef.current.name = value;
+                                },
+                                onEnd() {
+                                    if (name !== editingRef.current.name) {
+                                        dispatch(
+                                            updateOrganizationAsync(
+                                                organizationInstance,
+                                                { name: editingRef.current.name },
+                                            ),
+                                        );
+                                    }
                                 },
                             }}
                             type='secondary'
@@ -203,7 +226,7 @@ function OrganizationTopBar(props: Readonly<Props>): JSX.Element {
                         </Text>
                         {!editingDescription ? (
                             <span style={{ display: 'grid' }}>
-                                {(description || 'Add description').split('\n').map((val: string, idx: number) => (
+                                {(description ?? 'Add description').split('\n').map((val: string, idx: number) => (
                                     <Text key={idx} type='secondary'>
                                         {val}
                                         {idx === 0 ? <EditTwoTone onClick={() => setEditingDescription(true)} /> : null}
@@ -242,15 +265,13 @@ function OrganizationTopBar(props: Readonly<Props>): JSX.Element {
                             <Text
                                 type='secondary'
                                 editable={{
-                                    onChange: (value: string) => {
-                                        organizationContacts = {
-                                            ...organizationInstance.contact, phoneNumber: value,
-                                        };
+                                    onStart() {
+                                        editingRef.current.contact = { ...contact };
                                     },
-                                    onEnd: () => {
-                                        organizationInstance.contact = organizationContacts;
-                                        dispatch(updateOrganizationAsync(organizationInstance));
+                                    onChange(value: string) {
+                                        editingRef.current.contact.phoneNumber = value;
                                     },
+                                    onEnd: onFinishContactsEditing,
                                 }}
                             >
                                 {contact.phoneNumber}
@@ -262,15 +283,13 @@ function OrganizationTopBar(props: Readonly<Props>): JSX.Element {
                             <Text
                                 type='secondary'
                                 editable={{
-                                    onChange: (value: string) => {
-                                        organizationContacts = {
-                                            ...organizationInstance.contact, email: value,
-                                        };
+                                    onStart() {
+                                        editingRef.current.contact.email = contact.email;
                                     },
-                                    onEnd: () => {
-                                        organizationInstance.contact = organizationContacts;
-                                        dispatch(updateOrganizationAsync(organizationInstance));
+                                    onChange(value: string) {
+                                        editingRef.current.contact.email = value;
                                     },
+                                    onEnd: onFinishContactsEditing,
                                 }}
                             >
                                 {contact.email}
@@ -282,15 +301,13 @@ function OrganizationTopBar(props: Readonly<Props>): JSX.Element {
                             <Text
                                 type='secondary'
                                 editable={{
-                                    onChange: (value: string) => {
-                                        organizationContacts = {
-                                            ...organizationInstance.contact, location: value,
-                                        };
+                                    onStart() {
+                                        editingRef.current.contact.location = contact.location;
                                     },
-                                    onEnd: () => {
-                                        organizationInstance.contact = organizationContacts;
-                                        dispatch(updateOrganizationAsync(organizationInstance));
+                                    onChange(value: string) {
+                                        editingRef.current.contact.location = value;
                                     },
+                                    onEnd: onFinishContactsEditing,
                                 }}
                             >
                                 {contact.location}
