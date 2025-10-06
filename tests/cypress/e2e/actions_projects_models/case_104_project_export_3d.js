@@ -20,19 +20,11 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
         attachToProject: false,
         multiAttrParams: false,
     };
-    let projectID = '';
     let datasetArchiveName;
-
-    function getProjectID() {
-        cy.url().then((url) => {
-            projectID = Number(url.split('/').slice(-1)[0].split('?')[0]);
-        });
-    }
 
     before(() => {
         cy.loginSetupProjects();
         cy.openProject(projectName3d);
-        getProjectID();
         cy.createAnnotationTask(
             task.name3d,
             task.label3d,
