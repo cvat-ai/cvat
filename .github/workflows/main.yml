@@ -369,24 +369,14 @@ jobs:
 
           if [[ ${{ matrix.specs }} == canvas3d_* ]]; then
             npx cypress run \
-                --headed \
-                --browser chrome \
-                --config-file cypress_canvas3d.config.js \
-                --spec 'cypress/e2e/setup/setup_canvas3d.js';
-            npx cypress run \
               --headed \
               --browser chrome \
               --config-file cypress_canvas3d.config.js \
-              --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
+              --spec 'cypress/e2e/setup/setup_canvas3d.js,cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
           else
             npx cypress run \
-                --browser chrome \
-                --spec 'cypress/e2e/setup/setup.js,cypress/e2e/setup/setup_project.js'; 
-                                                     # TODO: move setup to a separate step to try and run it once for all workers to give
-                                                     # TODO: setup in same npx cypress cmd, like the teardown
-            npx cypress run \
               --browser chrome \
-              --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
+              --spec 'cypress/e2e/setup/setup.js,cypress/e2e/setup/setup_project.js,cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
           fi
           mv coverage/coverage-final.json coverage/${{ matrix.specs }}_coverage.json
 
