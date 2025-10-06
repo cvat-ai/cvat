@@ -78,7 +78,6 @@ export default class Organization {
 
         if (typeof data.description !== 'undefined') {
             validateDescription(data.description);
-            checkObjectType('description', data.description, 'string');
         }
 
         if (typeof data.id !== 'undefined') {
@@ -123,7 +122,7 @@ export default class Organization {
 
     // Method updates organization data if it was created before, or creates a new organization
     public async save(
-        fields: Partial<Pick<Organization, 'name' | 'description' | 'contact'>> = {},
+        fields: Partial<Pick<SerializedOrganization, 'name' | 'description' | 'contact'>> = {},
     ): Promise<Organization> {
         const result = await PluginRegistry.apiWrapper.call(this, Organization.prototype.save, fields);
         return result;
