@@ -14,7 +14,7 @@ class ApiTokenAuthenticationScheme(TokenScheme):
     """
 
     target_class = "cvat.apps.api_tokens.authentication.ApiTokenAuthentication"
-    name = "accessTokenAuth"
+    name = "apiTokenAuth"
     priority = 0
     match_subclasses = True
 
