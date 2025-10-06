@@ -19,6 +19,7 @@ context('Canvas 3D functionality. Opacity. Outlined borders.', () => {
     };
 
     before(() => {
+        cy.loginSetup();
         cy.openTask(taskName);
         cy.openJob();
         cy.wait(2000); // Waiting for the point cloud to display

@@ -204,7 +204,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
         });
 
         // Waiting for fix https://github.com/openvinotoolkit/cvat/issues/3474
-        it.skip('Redraw the shape created with "Intelligent cissors".', () => {
+        it.skip('Redraw the shape created with "Intelligent scissors".', () => {
             cy.get('.cvat-canvas-container').click();
             cy.get('.cvat-opencv-control-popover').should('be.hidden');
             cy.get('#cvat_canvas_shape_1').trigger('mousemove');

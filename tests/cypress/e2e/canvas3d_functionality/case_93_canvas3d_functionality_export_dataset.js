@@ -20,6 +20,7 @@ context('Canvas 3D functionality. Export as a dataset.', () => {
     const dumpTypeVC = 'Kitti Raw Format';
 
     before(() => {
+        cy.loginSetup();
         cy.openTask(taskName);
         cy.openJob();
         // eslint-disable-next-line cypress/no-unnecessary-waiting
