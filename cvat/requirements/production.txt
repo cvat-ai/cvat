@@ -4,7 +4,7 @@
 # To update it, refer to cvat/requirements/README.txt.
 #
 -r base.txt
-anyio==4.11.0
+anyio==4.9.0
     # via watchfiles
 coverage==7.2.3
     # via -r cvat/requirements/production.in
