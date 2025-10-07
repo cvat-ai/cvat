@@ -13,6 +13,7 @@ from cvat.apps.engine.location import Location
 from cvat.apps.engine.log import vlogger
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.events.export import EventsExporter
+from cvat.apps.events.permissions import EventsPermission
 from cvat.apps.events.serializers import ClientEventsSerializer
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.redis_handler.serializers import RqIdSerializer
@@ -83,6 +84,7 @@ api_filter_parameters = (
 
 class EventsViewSet(viewsets.ViewSet):
     serializer_class = None
+    iam_permission_class = EventsPermission
 
     @extend_schema(
         summary="Log client events",
