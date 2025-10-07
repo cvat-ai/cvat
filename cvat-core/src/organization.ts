@@ -26,15 +26,30 @@ interface SerializedMembershipData {
     invitation: SerializedInvitationData | null;
 }
 
+function validateName(name: unknown): void {
+    checkObjectType('organization name', name, 'string');
+}
+
+function validateDescription(description: unknown): void {
+    checkObjectType('organization description', description, 'string');
+}
+
+function validateContact(contact: unknown): void {
+    checkObjectType('contact', contact, null, { cls: Object, name: 'Object' });
+    for (const prop of Object.keys(contact)) {
+        checkObjectType('organization contact', contact[prop], 'string');
+    }
+}
+
 export default class Organization {
     public readonly id: number;
     public readonly slug: string;
     public readonly createdDate: string;
     public readonly updatedDate: string;
     public readonly owner: User;
-    public contact: SerializedOrganizationContact;
-    public name: string;
-    public description: string;
+    public readonly contact: SerializedOrganizationContact;
+    public readonly name: string;
+    public readonly description: string;
 
     constructor(initialData: SerializedOrganization) {
         const data: SerializedOrganization = {
@@ -58,11 +73,11 @@ export default class Organization {
 
         checkObjectType('slug', data.slug, 'string');
         if (typeof data.name !== 'undefined') {
-            checkObjectType('name', data.name, 'string');
+            validateName(data.name);
         }
 
         if (typeof data.description !== 'undefined') {
-            checkObjectType('description', data.description, 'string');
+            validateDescription(data.description);
         }
 
         if (typeof data.id !== 'undefined') {
@@ -70,14 +85,7 @@ export default class Organization {
         }
 
         if (typeof data.contact !== 'undefined') {
-            checkObjectType('contact', data.contact, null, { cls: Object, name: 'Object' });
-            for (const prop in data.contact) {
-                if (typeof data.contact[prop] !== 'string') {
-                    throw new ArgumentError(
-                        `Contact fields must be strings,tried to set ${typeof data.contact[prop]}`,
-                    );
-                }
-            }
+            validateContact(data.contact);
         }
 
         if (typeof data.owner !== 'undefined' && data.owner !== null) {
@@ -93,39 +101,12 @@ export default class Organization {
             },
             name: {
                 get: () => data.name,
-                set: (name) => {
-                    if (typeof name !== 'string') {
-                        throw new ArgumentError(`Name property must be a string, tried to set ${typeof name}`);
-                    }
-                    data.name = name;
-                },
             },
             description: {
                 get: () => data.description,
-                set: (description) => {
-                    if (typeof description !== 'string') {
-                        throw new ArgumentError(
-                            `Description property must be a string, tried to set ${typeof description}`,
-                        );
-                    }
-                    data.description = description;
-                },
             },
             contact: {
-                get: () => ({ ...data.contact }),
-                set: (contact) => {
-                    if (typeof contact !== 'object') {
-                        throw new ArgumentError(`Contact property must be an object, tried to set ${typeof contact}`);
-                    }
-                    for (const prop in contact) {
-                        if (typeof contact[prop] !== 'string') {
-                            throw new ArgumentError(
-                                `Contact fields must be strings, tried to set ${typeof contact[prop]}`,
-                            );
-                        }
-                    }
-                    data.contact = { ...contact };
-                },
+                get: () => ({ ...data.contact ?? {} }),
             },
             owner: {
                 get: () => data.owner,
@@ -140,8 +121,10 @@ export default class Organization {
     }
 
     // Method updates organization data if it was created before, or creates a new organization
-    public async save(): Promise<Organization> {
-        const result = await PluginRegistry.apiWrapper.call(this, Organization.prototype.save);
+    public async save(
+        fields: Partial<Pick<SerializedOrganization, 'name' | 'description' | 'contact'>> = {},
+    ): Promise<Organization> {
+        const result = await PluginRegistry.apiWrapper.call(this, Organization.prototype.save, fields);
         return result;
     }
 
@@ -293,13 +276,30 @@ Object.defineProperties(Organization.prototype.save, {
     implementation: {
         writable: false,
         enumerable: false,
-        value: async function implementation() {
+        value: async function implementation(
+            fields: Parameters<typeof Organization.prototype.save>[0],
+        ) {
             if (typeof this.id === 'number') {
                 const organizationData = {
-                    name: this.name || this.slug,
-                    description: this.description,
-                    contact: this.contact,
+                    ...('name' in fields ? { name: fields.name } : {}),
+                    ...('description' in fields ? { description: fields.description } : {}),
+                    ...('contact' in fields ? { contact: fields.contact } : {}),
                 };
+
+                if (Object.hasOwn(organizationData, 'name') && typeof organizationData.name !== 'string') {
+                    validateName(organizationData.name);
+                }
+
+                if (
+                    Object.hasOwn(organizationData, 'description') &&
+                    typeof organizationData.description !== 'string'
+                ) {
+                    validateDescription(organizationData.description);
+                }
+
+                if (Object.hasOwn(organizationData, 'contact')) {
+                    validateContact(organizationData.contact);
+                }
 
                 const result = await serverProxy.organizations.update(this.id, organizationData);
                 return new Organization(result);
@@ -354,9 +354,7 @@ Object.defineProperties(Organization.prototype.members, {
                 });
             }));
 
-            return Object.assign(memberships, {
-                count: result.count,
-            });
+            return Object.assign(memberships, { count: result.count });
         },
     },
 });
