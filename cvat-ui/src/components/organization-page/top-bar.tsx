@@ -75,7 +75,6 @@ function OrganizationTopBar(props: Readonly<Props>): JSX.Element {
         owner, createdDate, description, updatedDate, slug, name, contact,
     } = organizationInstance;
     const { id: userID } = userInstance;
-    const [descriptionForm] = Form.useForm();
     const descriptionEditingRef = useRef<HTMLDivElement>(null);
     const editingRef = useRef({ name, contact });
     const [editingDescription, setEditingDescription] = useState(false);
@@ -237,7 +236,6 @@ function OrganizationTopBar(props: Readonly<Props>): JSX.Element {
                             <div ref={descriptionEditingRef}>
                                 <Form
                                     onFinish={onSubmitDescription}
-                                    form={descriptionForm}
                                     initialValues={{ description }}
                                 >
                                     <Form.Item name='description'>
