@@ -24,14 +24,13 @@ class EventsPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
         cls, request: ExtendedRequest, view, obj: None, iam_context: dict[str, Any]
     ) -> list[OpenPolicyAgentPermission]:
         permissions = []
-        if view.basename == "events":
-            for scope in cls.get_scopes(request, view, obj):
-                scope_params = {}
-                if DownloadExportedExtension.Scopes.DOWNLOAD_EXPORTED_FILE == scope:
-                    cls.extend_params_with_rq_job_details(request=request, params=scope_params)
+        for scope in cls.get_scopes(request, view, obj):
+            scope_params = {}
+            if DownloadExportedExtension.Scopes.DOWNLOAD_EXPORTED_FILE == scope:
+                cls.extend_params_with_rq_job_details(request=request, params=scope_params)
 
-                self = cls.create_base_perm(request, view, scope, iam_context, obj, **scope_params)
-                permissions.append(self)
+            self = cls.create_base_perm(request, view, scope, iam_context, obj, **scope_params)
+            permissions.append(self)
 
         return permissions
 

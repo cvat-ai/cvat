@@ -14,13 +14,7 @@ from django.conf import settings
 from django.urls import path, re_path
 from django.urls.conf import include
 
-from cvat.apps.iam.views import (
-    ConfirmEmailViewEx,
-    LoginViewEx,
-    RegisterViewEx,
-    RulesView,
-    SigningView,
-)
+from cvat.apps.iam.views import ConfirmEmailViewEx, LoginViewEx, RegisterViewEx, RulesView
 
 BASIC_LOGIN_PATH_NAME = "rest_login"
 BASIC_REGISTER_PATH_NAME = "rest_register"
@@ -28,7 +22,6 @@ BASIC_REGISTER_PATH_NAME = "rest_register"
 urlpatterns = [
     path("login", LoginViewEx.as_view(), name=BASIC_LOGIN_PATH_NAME),
     path("logout", LogoutView.as_view(), name="rest_logout"),
-    path("signing", SigningView.as_view(), name="signing"),
     path("rules", RulesView.as_view(), name="rules"),
 ]
 

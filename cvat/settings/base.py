@@ -139,7 +139,6 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.TokenAuthentication",
-        "cvat.apps.iam.authentication.SignatureAuthentication",
         "rest_framework.authentication.SessionAuthentication",
         "cvat.apps.iam.authentication.BasicAuthenticationEx",
     ],
