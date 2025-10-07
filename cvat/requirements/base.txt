@@ -65,7 +65,7 @@ dj-pagination==2.5.0
     # via -r cvat/requirements/base.in
 dj-rest-auth[with-social]==5.0.2
     # via -r cvat/requirements/base.in
-django==4.2.24
+django==4.2.25
     # via
     #   -r cvat/requirements/base.in
     #   dj-rest-auth
