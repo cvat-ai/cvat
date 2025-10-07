@@ -186,7 +186,7 @@ Cypress.Commands.add(
         labelName = 'Some label',
         attrName = 'Some attr name',
         textDefaultValue = 'Some default value for type Text',
-        image = 'image.png',
+        fileName = 'image.png',
         multiAttrParams = null,
         advancedConfigurationParams = null,
         forProject = false,
@@ -195,6 +195,7 @@ Cypress.Commands.add(
         expectedResult = 'success',
         projectSubsetFieldValue = 'Test',
         qualityConfigurationParams = null,
+        fromShare = false,
     ) => {
         cy.url().then(() => {
             cy.get('.cvat-create-task-dropdown').click();
@@ -228,7 +229,11 @@ Cypress.Commands.add(
                 cy.get('.cvat-project-subset-field').type(`${projectSubsetFieldValue}{Enter}`);
                 cy.get('.cvat-constructor-viewer-new-item').should('not.exist');
             }
-            cy.get('input[type="file"]').attachFile(image, { subjectType: 'drag-n-drop' });
+            if (fromShare) {
+                cy.selectFilesFromShare([fileName]);
+            } else {
+                cy.get('input[type="file"]').attachFile(fileName, { subjectType: 'drag-n-drop' });
+            }
             if (advancedConfigurationParams) {
                 cy.advancedConfiguration(advancedConfigurationParams);
             }

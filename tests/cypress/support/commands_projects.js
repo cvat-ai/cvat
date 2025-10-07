@@ -81,8 +81,10 @@ Cypress.Commands.add('deleteProjects', (authResponse, projectsToDelete) => {
 });
 
 Cypress.Commands.add('openProject', (projectName) => {
+    cy.intercept('GET', '/api/projects/**').as('getProject');
     cy.contains(fullMatch(projectName)).click({ force: true });
     cy.get('.cvat-project-details').should('exist');
+    cy.wait('@getProject');
 });
 
 Cypress.Commands.add('openProjectById', (projectId) => {
