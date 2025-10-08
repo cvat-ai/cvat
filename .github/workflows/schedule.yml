@@ -264,27 +264,14 @@ jobs:
           shopt -s extglob
           if [[ ${{ matrix.specs }} == canvas3d_* ]]; then
             npx cypress run \
-                --headed \
-                --browser chrome \
-                --env coverage=false \
-                --config-file cypress_canvas3d.config.js \
-                --spec 'cypress/e2e/setup/setup_canvas3d.js';
-            npx cypress run \
               --headed \
               --browser chrome \
-              --env coverage=false \
               --config-file cypress_canvas3d.config.js \
-              --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
+              --spec 'cypress/e2e/setup/setup_canvas3d.js,cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
           else
             npx cypress run \
-                --browser chrome \
-                --env coverage=false \
-                --spec 'cypress/e2e/setup/setup.js'; # TODO: add setup_projects.js when refactored
-
-            npx cypress run \
               --browser chrome \
-              --env coverage=false \
-              --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
+              --spec 'cypress/e2e/setup/setup.js,cypress/e2e/setup/setup_project.js,cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
           fi
 
       - name: Creating a log file from "cvat" container logs
