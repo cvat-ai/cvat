@@ -37,7 +37,6 @@ from drf_spectacular.utils import (
     extend_schema,
     extend_schema_view,
 )
-from PIL import Image
 from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, NotFound, PermissionDenied, ValidationError
@@ -52,8 +51,14 @@ import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine import backup
 from cvat.apps.engine.background import BackupImporter, DatasetImporter, TaskCreator
-from cvat.apps.engine.cache import CvatChunkTimestampMismatchError, LockError, MediaCache
+from cvat.apps.engine.cache import (
+    CacheTooLargeDataError,
+    CvatChunkTimestampMismatchError,
+    LockError,
+    MediaCache,
+)
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
+from cvat.apps.engine.exceptions import CloudStorageMissingError
 from cvat.apps.engine.frame_provider import (
     DataWithMeta,
     FrameQuality,
@@ -88,10 +93,12 @@ from cvat.apps.engine.permissions import (
     AnnotationGuidePermission,
     CloudStoragePermission,
     CommentPermission,
+    GuideAssetPermission,
     IssuePermission,
     JobPermission,
     LabelPermission,
     ProjectPermission,
+    ServerPermission,
     TaskPermission,
     UserPermission,
     get_iam_context,
@@ -136,6 +143,7 @@ from cvat.apps.engine.serializers import (
     TaskWriteSerializer,
     UserSerializer,
 )
+from cvat.apps.engine.tus import TusFile
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import parse_exception_message, sendfile
 from cvat.apps.engine.view_utils import (
@@ -164,6 +172,7 @@ _RETRY_AFTER_TIMEOUT = 10
 class ServerViewSet(viewsets.ViewSet):
     serializer_class = None
     iam_organization_field = None
+    iam_permission_class = ServerPermission
 
     # To get nice documentation about ServerViewSet actions it is necessary
     # to implement the method. By default, ViewSet doesn't provide it.
@@ -324,6 +333,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username', 'assignee': 'assignee__username'}
     iam_organization_field = 'organization'
+    iam_permission_class = ProjectPermission
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
@@ -576,6 +586,16 @@ class _DataGetter(metaclass=ABCMeta):
                 status=status.HTTP_429_TOO_MANY_REQUESTS,
                 headers={'Retry-After': _RETRY_AFTER_TIMEOUT},
             )
+        except CacheTooLargeDataError as ex:
+            return Response(
+                data=str(ex),
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        except CloudStorageMissingError as ex:
+            return Response(
+                data=str(ex),
+                status=status.HTTP_409_CONFLICT,
+            )
 
     @abstractmethod
     def _get_chunk_response_headers(self, chunk_data: DataWithMeta) -> dict[str, str]: ...
@@ -679,6 +699,16 @@ class _JobDataGetter(_DataGetter):
                     status=status.HTTP_429_TOO_MANY_REQUESTS,
                     headers={'Retry-After': _RETRY_AFTER_TIMEOUT},
                 )
+            except CacheTooLargeDataError as ex:
+                return Response(
+                    data=str(ex),
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+            except CloudStorageMissingError as ex:
+                return Response(
+                    data=str(ex),
+                    status=status.HTTP_409_CONFLICT,
+                )
         else:
             return super().__call__()
 
@@ -720,6 +750,86 @@ class _JobDataGetter(_DataGetter):
         }),
     partial_update=extend_schema(
         summary='Update a task',
+        examples=[
+            OpenApiExample(
+                "Update task properties",
+                value={
+                    "name": "string",
+                    "owner_id": 0,
+                    "assignee_id": 0,
+                    "bug_tracker": "string",
+                    "subset": "string",
+                    "target_storage": {
+                        "location": "cloud_storage",
+                        "cloud_storage_id": 0
+                    },
+                    "source_storage": {
+                        "location": "cloud_storage",
+                        "cloud_storage_id": 0
+                    }
+                },
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Update task labels",
+                value={
+                    "labels": [
+                        {
+                            "name": "string",
+                            "color": "string",
+                            "attributes": [],
+                            "deleted": False,
+                            "type": "any",
+                            "svg": "string",
+                            "sublabels": [{
+                                "name": "string",
+                                "color": "string",
+                                "attributes": [],
+                                "type": "any",
+                                "has_parent": True
+                            }],
+                        }
+                    ],
+                },
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Move task to a project",
+                value={
+                    "project_id": 0,
+                },
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Transfer task to personal sandbox",
+                value={
+                    "organization_id": None,
+                },
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Transfer task to organization",
+                value={
+                    "organization_id": 1,
+                },
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Transfer a storage linked task to an organization and detach storages",
+                value={
+                    "organization_id": 1,
+                    "source_storage": {
+                        "location": models.Location.LOCAL,
+                        "cloud_storage_id": None,
+                    },
+                    "target_storage": {
+                        "location": models.Location.LOCAL,
+                        "cloud_storage_id": None,
+                    },
+                },
+                request_only=True,
+            )
+        ],
         request=TaskWriteSerializer(partial=True),
         responses={
             '200': TaskReadSerializer, # check TaskWriteSerializer.to_representation
@@ -765,6 +875,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ordering_fields = list(filter_fields)
     ordering = "-id"
     iam_organization_field = 'organization'
+    iam_permission_class = TaskPermission
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
@@ -933,7 +1044,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         response = super().init_tus_upload(request)
 
         if self._is_data_uploading() and response.status_code == status.HTTP_201_CREATED:
-            self._maybe_append_upload_info_entry(self._get_metadata(request)['filename'])
+            self._maybe_append_upload_info_entry(TusFile.TusMeta.from_request(request).filename)
 
         return response
 
@@ -1258,7 +1369,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             if {"format", "rq_id"} & set(request.query_params.keys()):
                 return get_410_response_when_checking_process_status("import")
 
-            serializer = LabeledDataSerializer(data=request.data)
+            serializer = LabeledDataSerializer(
+                data=request.data, context={"annotation_action": dm.task.PatchAction.CREATE}
+            )
             if serializer.is_valid(raise_exception=True):
                 data = dm.task.put_task_data(pk, serializer.validated_data)
                 return Response(data)
@@ -1271,7 +1384,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             if action not in dm.task.PatchAction.values():
                 raise serializers.ValidationError(
                     "Please specify a correct 'action' for the request")
-            serializer = LabeledDataSerializer(data=request.data)
+            serializer = LabeledDataSerializer(
+                data=request.data, context={"annotation_action": action}
+            )
             if serializer.is_valid(raise_exception=True):
                 try:
                     data = dm.task.patch_task_data(pk, serializer.validated_data, action)
@@ -1548,6 +1663,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     )
 
     iam_organization_field = 'segment__task__organization'
+    iam_permission_class = JobPermission
     search_fields = ('task_name', 'project_name', 'assignee', 'state', 'stage')
     filter_fields = list(search_fields) + [
         'id', 'task_id', 'project_id', 'updated_date', 'dimension', 'type', 'parent_job_id',
@@ -1738,7 +1854,9 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             if {"format", "rq_id"} & set(request.query_params.keys()):
                 return get_410_response_when_checking_process_status("import")
 
-            serializer = LabeledDataSerializer(data=request.data)
+            serializer = LabeledDataSerializer(
+                data=request.data, context={"annotation_action": dm.task.PatchAction.CREATE}
+            )
             if serializer.is_valid(raise_exception=True):
                 try:
                     data = dm.task.put_job_data(pk, serializer.validated_data)
@@ -1753,7 +1871,9 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             if action not in dm.task.PatchAction.values():
                 raise serializers.ValidationError(
                     "Please specify a correct 'action' for the request")
-            serializer = LabeledDataSerializer(data=request.data)
+            serializer = LabeledDataSerializer(
+                data=request.data, context={"annotation_action": action}
+            )
             if serializer.is_valid(raise_exception=True):
                 try:
                     data = dm.task.patch_job_data(pk, serializer.validated_data, action)
@@ -1879,11 +1999,12 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         if db_job.type == models.JobType.GROUND_TRUTH:
             deleted_frames.update(db_data.validation_layout.disabled_frames)
 
-        # Filter data with segment size
-        db_data.deleted_frames = sorted(filter(
-            lambda frame: frame >= start_frame and frame <= stop_frame,
-            deleted_frames,
-        ))
+        # Keep only frames from the job segment
+        task_frame_provider = TaskFrameProvider(db_task)
+        segment_rel_frame_set = set(
+            map(task_frame_provider.get_rel_frame_number, db_segment.frame_set)
+        )
+        db_data.deleted_frames = sorted(deleted_frames.intersection(segment_rel_frame_set))
 
         db_data.start_frame = data_start_frame
         db_data.stop_frame = data_stop_frame
@@ -2012,6 +2133,7 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ).all()
 
     iam_organization_field = 'job__segment__task__organization'
+    iam_permission_class = IssuePermission
     search_fields = ('owner', 'assignee')
     filter_fields = list(search_fields) + ['id', 'job_id', 'task_id', 'resolved', 'frame_id']
     simple_filters = list(search_fields) + ['job_id', 'task_id', 'resolved', 'frame_id']
@@ -2083,6 +2205,7 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ).all()
 
     iam_organization_field = 'issue__job__segment__task__organization'
+    iam_permission_class = CommentPermission
     search_fields = ('owner',)
     filter_fields = list(search_fields) + ['id', 'issue_id', 'frame_id', 'job_id']
     simple_filters = list(search_fields) + ['issue_id', 'frame_id', 'job_id']
@@ -2167,6 +2290,7 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ).all()
 
     iam_organization_field = ('task__organization', 'project__organization')
+    iam_permission_class = LabelPermission
 
     search_fields = ('name', 'parent')
     filter_fields = list(search_fields) + ['id', 'type', 'color', 'parent_id']
@@ -2311,6 +2435,7 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, PartialUpdateModelMixin, mixins.DestroyModelMixin):
     queryset = User.objects.prefetch_related('groups').all()
     iam_organization_field = 'memberships__organization'
+    iam_permission_class = UserPermission
 
     search_fields = ('username', 'first_name', 'last_name')
     filter_fields = list(search_fields) + ['id', 'is_active']
@@ -2404,6 +2529,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username', 'name': 'display_name'}
     iam_organization_field = 'organization'
+    iam_permission_class = CloudStoragePermission
 
     # Multipart support is necessary here, as CloudStorageWriteSerializer
     # contains a file field (key_file).
@@ -2612,17 +2738,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 @extend_schema_view(
     create=extend_schema(
         summary='Create an asset',
-        request={
-            'multipart/form-data': {
-                'type': 'object',
-                'properties': {
-                    'file': {
-                        'type': 'string',
-                        'format': 'binary'
-                    }
-                }
-            }
-        },
+        request=AssetWriteSerializer,
         responses={
             '201': AssetReadSerializer,
         }),
@@ -2644,9 +2760,10 @@ class AssetsViewSet(
     queryset = Asset.objects.select_related(
         'owner', 'guide', 'guide__project', 'guide__task', 'guide__project__organization', 'guide__task__organization',
     ).all()
-    parser_classes=_UPLOAD_PARSER_CLASSES
+    parser_classes = [MultiPartParser]
     search_fields = ()
     ordering = "uuid"
+    iam_permission_class = GuideAssetPermission
 
     def check_object_permissions(self, request: ExtendedRequest, obj):
         super().check_object_permissions(request, obj.guide)
@@ -2663,46 +2780,21 @@ class AssetsViewSet(
             return AssetWriteSerializer
 
     def create(self, request: ExtendedRequest, *args, **kwargs):
-        file = request.data.get('file', None)
-        if not file:
-            raise ValidationError('Asset file was not provided')
-
-        if file.size / (1024 * 1024) > settings.ASSET_MAX_SIZE_MB:
-            raise ValidationError(f'Maximum size of asset is {settings.ASSET_MAX_SIZE_MB} MB')
-
-        if file.content_type not in settings.ASSET_SUPPORTED_TYPES:
-            raise ValidationError(f'File is not supported as an asset. Supported are {settings.ASSET_SUPPORTED_TYPES}')
-
-        guide_id = request.data.get('guide_id')
-        db_guide = AnnotationGuide.objects.prefetch_related('assets').get(pk=guide_id)
-        if db_guide.assets.count() >= settings.ASSET_MAX_COUNT_PER_GUIDE:
-            raise ValidationError(f'Maximum number of assets per guide reached')
-
-        serializer = self.get_serializer(data={
-            'filename': file.name,
-            'guide_id': guide_id,
-        })
-
+        serializer = AssetWriteSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        path = os.path.join(settings.ASSETS_ROOT, str(serializer.instance.uuid))
-        os.makedirs(path)
-        if file.content_type in ('image/jpeg', 'image/png'):
-            image = Image.open(file)
-            if any(map(lambda x: x > settings.ASSET_MAX_IMAGE_SIZE, image.size)):
-                scale_factor = settings.ASSET_MAX_IMAGE_SIZE / max(image.size)
-                image = image.resize(map(lambda x: int(x * scale_factor), image.size))
-            image.save(os.path.join(path, file.name))
-        else:
-            with open(os.path.join(path, file.name), 'wb+') as destination:
-                for chunk in file.chunks():
-                    destination.write(chunk)
 
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        db_guide = AnnotationGuide.objects.prefetch_related("assets").get(pk=serializer.validated_data['guide_id'])
+        if db_guide.assets.count() >= settings.ASSET_MAX_COUNT_PER_GUIDE:
+            raise ValidationError(f"Maximum number of assets per guide reached")
 
-    def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
+        return Response(
+            AssetReadSerializer(
+                instance=serializer.instance,
+                context={ "request": self.request }
+            ).data,
+            status=status.HTTP_201_CREATED,
+        )
 
     def retrieve(self, request: ExtendedRequest, *args, **kwargs):
         instance = self.get_object()
@@ -2752,12 +2844,12 @@ class AnnotationGuidesViewSet(
     search_fields = ()
     ordering = "-id"
     iam_organization_field = None
+    iam_permission_class = AnnotationGuidePermission
 
     def _update_related_assets(self, request: ExtendedRequest, guide: AnnotationGuide):
         existing_assets = list(guide.assets.all())
         new_assets = []
 
-        # pylint: disable=anomalous-backslash-in-string
         pattern = re.compile(r'\(/api/assets/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\)')
         results = set(re.findall(pattern, guide.markdown))
 

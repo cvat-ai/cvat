@@ -10,6 +10,7 @@ import cvat_sdk.datasets as cvatds
 import PIL.Image
 import pytest
 from cvat_sdk import Client, models
+from cvat_sdk.core.proxies.annotations import AnnotationUpdateAction
 from cvat_sdk.core.proxies.tasks import ResourceType
 
 from shared.utils.helpers import generate_image_files
@@ -83,7 +84,8 @@ class TestTaskDataset:
                         points=[1.0, 2.0, 3.0, 4.0],
                     ),
                 ],
-            )
+            ),
+            action=AnnotationUpdateAction.CREATE,
         )
 
     @pytest.mark.parametrize("media_download_policy", cvatds.MediaDownloadPolicy)

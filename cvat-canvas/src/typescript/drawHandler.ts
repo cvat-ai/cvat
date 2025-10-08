@@ -33,7 +33,7 @@ import {
 import { cuboidFrom4Points, intersection } from './cuboid';
 
 export interface DrawHandler {
-    configurate(configuration: Configuration): void;
+    configure(configuration: Configuration): void;
     draw(drawData: DrawData, geometry: Geometry): void;
     transform(geometry: Geometry): void;
     cancel(): void;
@@ -1324,7 +1324,7 @@ export class DrawHandlerImpl implements DrawHandler {
         }
     }
 
-    public configurate(configuration: Configuration): void {
+    public configure(configuration: Configuration): void {
         this.controlPointsSize = configuration.controlPointsSize;
         this.selectedShapeOpacity = configuration.selectedShapeOpacity;
         this.outlinedBorders = configuration.outlinedBorders || 'black';

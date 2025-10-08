@@ -6,7 +6,7 @@
 import serverProxy from './server-proxy';
 import { ArgumentError } from './exceptions';
 import MLModel from './ml-model';
-import { RQStatus } from './enums';
+import { RQStatus, ShapeType } from './enums';
 import { SerializedCollection } from './server-response-types';
 
 export interface InteractorResults {
@@ -15,9 +15,14 @@ export interface InteractorResults {
     bounds?: [number, number, number, number]
 }
 
+export interface MinimalShape {
+    type: ShapeType;
+    points: number[];
+}
+
 export interface TrackerResults {
     states: any[];
-    shapes: number[][];
+    shapes: MinimalShape[];
 }
 
 class LambdaManager {

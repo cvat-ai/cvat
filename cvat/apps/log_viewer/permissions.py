@@ -17,10 +17,9 @@ class LogViewerPermission(OpenPolicyAgentPermission):
     @classmethod
     def create(cls, request, view, obj, iam_context):
         permissions = []
-        if view.basename == "analytics":
-            for scope in cls.get_scopes(request, view, obj):
-                self = cls.create_base_perm(request, view, scope, iam_context, obj)
-                permissions.append(self)
+        for scope in cls.get_scopes(request, view, obj):
+            self = cls.create_base_perm(request, view, scope, iam_context, obj)
+            permissions.append(self)
 
         return permissions
 
@@ -38,8 +37,8 @@ class LogViewerPermission(OpenPolicyAgentPermission):
 
     def __init__(self, has_analytics_access=False, **kwargs):
         super().__init__(**kwargs)
-        self.payload["input"]["auth"]["user"]["has_analytics_access"] = has_analytics_access
         self.url = settings.IAM_OPA_DATA_URL + "/analytics/allow"
+        self.has_analytics_access = has_analytics_access
 
     @classmethod
     def _get_scopes(cls, request, view, obj):
@@ -49,6 +48,11 @@ class LogViewerPermission(OpenPolicyAgentPermission):
                 "list": Scopes.VIEW,
             }[view.action]
         ]
+
+    def get_opa_auth_payload(self):
+        data = super().get_opa_auth_payload()
+        data["auth"]["user"]["has_analytics_access"] = self.has_analytics_access
+        return data
 
     def get_resource(self):
         return None

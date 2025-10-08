@@ -6,22 +6,26 @@
 import './styles.scss';
 import React, { useEffect, useState } from 'react';
 import { useHistory, useParams } from 'react-router';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector, shallowEqual } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import Spin from 'antd/lib/spin';
 import notification from 'antd/lib/notification';
 
 import { getInferenceStatusAsync } from 'actions/models-actions';
-import { updateJobAsync } from 'actions/jobs-actions';
-import { getCore, Task, Job } from 'cvat-core-wrapper';
+import { updateJobAsync, jobsActions } from 'actions/jobs-actions';
+import {
+    getCore, Task, Job, FramesMetaData,
+} from 'cvat-core-wrapper';
 import { TaskNotFoundComponent } from 'components/common/not-found';
 import JobListComponent from 'components/task-page/job-list';
 import ModelRunnerModal from 'components/model-runner-modal/model-runner-dialog';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import MoveTaskModal from 'components/move-task-modal/move-task-modal';
-import { CombinedState } from 'reducers';
+import { CombinedState, CloudStorage } from 'reducers';
+import { updateTaskAsync, updateTaskMetadataAsync } from 'actions/tasks-actions';
 import TopBarComponent from './top-bar';
 import DetailsComponent from './details';
+import { getCloudStorageById } from './cloud-storage-editor';
 
 const core = getCore();
 
@@ -30,38 +34,51 @@ function TaskPageComponent(): JSX.Element {
     const id = +useParams<{ id: string }>().id;
     const dispatch = useDispatch();
     const [taskInstance, setTaskInstance] = useState<Task | null>(null);
+    const [taskMeta, setTaskMeta] = useState<FramesMetaData | null>(null);
+    const [cloudStorageInstance, setCloudStorageInstance] = useState<CloudStorage | null>(null);
     const [fetchingTask, setFetchingTask] = useState(true);
-    const [updatingTask, setUpdatingTask] = useState(false);
 
-    const deletes = useSelector((state: CombinedState) => state.tasks.activities.deletes);
+    const {
+        deletes,
+        updates,
+        jobsFetching,
+        bulkFetching,
+    } = useSelector((state: CombinedState) => ({
+        deletes: state.tasks.activities.deletes,
+        updates: state.tasks.activities.updates,
+        jobsFetching: state.jobs.fetching,
+        bulkFetching: state.bulkActions.fetching,
+    }), shallowEqual);
+    const isTaskUpdating = (updates[id] || jobsFetching) && !bulkFetching;
 
-    const receieveTask = (): Promise<Task[]> => {
-        if (Number.isInteger(id)) {
-            const promise = core.tasks.get({ id });
-            promise.then(([task]: Task[]) => {
-                if (task) {
-                    setTaskInstance(task);
+    const receiveTask = async (): Promise<void> => {
+        try {
+            const [task]: Task[] = await core.tasks.get({ id });
+
+            if (task) {
+                setTaskInstance(task);
+                dispatch(jobsActions.getJobsSuccess(
+                    Object.assign([...task.jobs], { count: task.jobs.length })),
+                );
+
+                const meta = await task.meta.get();
+                setTaskMeta(meta);
+
+                if (meta.cloudStorageId) {
+                    const cloudStorage = await getCloudStorageById(meta.cloudStorageId);
+                    setCloudStorageInstance(cloudStorage);
                 }
-            }).catch((error: Error) => {
-                notification.error({
-                    message: 'Could not receive the requested task from the server',
-                    description: error.toString(),
-                });
+            }
+        } catch (error: any) {
+            notification.error({
+                message: 'Could not receive the requested task from the server',
+                description: error.toString(),
             });
-
-            return promise;
         }
-
-        notification.error({
-            message: 'Could not receive the requested task from the server',
-            description: `Requested task id "${id}" is not valid`,
-        });
-
-        return Promise.reject();
     };
 
     useEffect(() => {
-        receieveTask().finally(() => {
+        receiveTask().finally(() => {
             setFetchingTask(false);
         });
         dispatch(getInferenceStatusAsync());
@@ -81,52 +98,47 @@ function TaskPageComponent(): JSX.Element {
         return <TaskNotFoundComponent />;
     }
 
-    const onUpdateTask = (task: Task): Promise<void> => (
-        new Promise((resolve, reject) => {
-            setUpdatingTask(true);
-            task.save().then((updatedTask: Task) => {
-                setTaskInstance(updatedTask);
-                resolve();
-            }).catch((error: Error) => {
-                notification.error({
-                    message: 'Could not update the task',
-                    className: 'cvat-notification-notice-update-task-failed',
-                    description: error.toString(),
-                });
-                reject();
-            }).finally(() => {
-                setUpdatingTask(false);
-            });
+    const onUpdateTask = (task: Task): Promise<Task> => {
+        const promise = dispatch(updateTaskAsync(task, {}));
+        promise.then((updatedTask: Task) => {
+            setTaskInstance(updatedTask);
+        });
+        return promise;
+    };
+
+    const onUpdateTaskMeta = (meta: FramesMetaData): Promise<void> => (
+        dispatch(updateTaskMetadataAsync(taskInstance, meta)).then((updatedMeta: FramesMetaData) => {
+            setTaskMeta(updatedMeta);
+            if (updatedMeta && updatedMeta.cloudStorageId) {
+                return getCloudStorageById(updatedMeta.cloudStorageId);
+            }
+            return null;
+        }).then((_cloudStorage) => {
+            setCloudStorageInstance(_cloudStorage);
         })
     );
 
     const onJobUpdate = (job: Job, data: Parameters<Job['save']>[0]): void => {
-        setUpdatingTask(true);
-        dispatch(updateJobAsync(job, data)).then(() => {
-            // if one of jobs changes, task will have its updated_date bumped
-            // but generally we do not use this field anywhere on the page
-            // so, as a kind of optimization we do not fetch the task again
-            setUpdatingTask(false);
-        }).catch((error: Error) => {
-            setUpdatingTask(false);
-            notification.error({
-                message: 'Could not update the job',
-                description: error.toString(),
-            });
-        });
+        dispatch(updateJobAsync(job, data));
     };
 
     return (
         <div className='cvat-task-page'>
-            { updatingTask ? <CVATLoadingSpinner size='large' /> : null }
+            { isTaskUpdating ? <CVATLoadingSpinner size='large' /> : null }
             <Row
                 justify='center'
                 align='top'
                 className='cvat-task-details-wrapper'
             >
                 <Col span={22} xl={18} xxl={14}>
-                    <TopBarComponent taskInstance={taskInstance} />
-                    <DetailsComponent task={taskInstance} onUpdateTask={onUpdateTask} />
+                    <TopBarComponent taskInstance={taskInstance} onUpdateTask={onUpdateTask} />
+                    <DetailsComponent
+                        task={taskInstance}
+                        onUpdateTask={onUpdateTask}
+                        taskMeta={taskMeta}
+                        cloudStorageInstance={cloudStorageInstance}
+                        onUpdateTaskMeta={onUpdateTaskMeta}
+                    />
                     <JobListComponent task={taskInstance} onJobUpdate={onJobUpdate} />
                 </Col>
             </Row>

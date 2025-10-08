@@ -24,8 +24,8 @@ import {
 
 interface Props {
     readonly: boolean;
-    serverID: number | null;
     locked: boolean;
+    serverID: number | null;
     shapeType: ShapeType;
     objectType: ObjectType;
     color: string;
@@ -296,7 +296,7 @@ function RunAnnotationActionItem(props: ItemProps): JSX.Element {
 
 export default function ItemMenu(props: Props): MenuProps {
     const {
-        readonly, shapeType, objectType, colorBy, jobInstance,
+        readonly, locked, shapeType, objectType, colorBy, jobInstance,
     } = props;
 
     enum MenuKeys {
@@ -304,7 +304,7 @@ export default function ItemMenu(props: Props): MenuProps {
         COPY = 'copy',
         PROPAGATE = 'propagate',
         SWITCH_ORIENTATION = 'switch_orientation',
-        RESET_PERSPECIVE = 'reset_perspective',
+        RESET_PERSPECTIVE = 'reset_perspective',
         TO_BACKGROUND = 'to_background',
         TO_FOREGROUND = 'to_foreground',
         MOVE_TO_PREVIOUS_LAYER = 'move_to_previous_layer',
@@ -330,14 +330,17 @@ export default function ItemMenu(props: Props): MenuProps {
         });
     }
 
-    if (!readonly && shapeType === ShapeType.MASK) {
+    if (!readonly && !locked && shapeType === ShapeType.MASK) {
         items.push({
             key: MenuKeys.EDIT_MASK,
             label: <EditMaskItem toolProps={props} />,
         });
     }
 
-    if (!readonly && objectType === ObjectType.SHAPE && [ShapeType.MASK, ShapeType.POLYGON].includes(shapeType)) {
+    if (
+        !readonly && !locked && objectType === ObjectType.SHAPE &&
+        [ShapeType.MASK, ShapeType.POLYGON].includes(shapeType)
+    ) {
         items.push({
             key: MenuKeys.SLICE_ITEM,
             label: <SliceItem key={MenuKeys.SLICE_ITEM} toolProps={props} />,
@@ -351,21 +354,21 @@ export default function ItemMenu(props: Props): MenuProps {
         });
     }
 
-    if (is2D && !readonly && [ShapeType.POLYGON, ShapeType.POLYLINE, ShapeType.CUBOID].includes(shapeType)) {
+    if (is2D && !readonly && !locked && [ShapeType.POLYGON, ShapeType.POLYLINE, ShapeType.CUBOID].includes(shapeType)) {
         items.push({
             key: MenuKeys.SWITCH_ORIENTATION,
             label: <SwitchOrientationItem toolProps={props} />,
         });
     }
 
-    if (is2D && !readonly && shapeType === ShapeType.CUBOID) {
+    if (is2D && !readonly && !locked && shapeType === ShapeType.CUBOID) {
         items.push({
-            key: MenuKeys.RESET_PERSPECIVE,
+            key: MenuKeys.RESET_PERSPECTIVE,
             label: <ResetPerspectiveItem toolProps={props} />,
         });
     }
 
-    if (is2D && !readonly && objectType !== ObjectType.TAG) {
+    if (is2D && !readonly && !locked && objectType !== ObjectType.TAG) {
         items.push({
             key: MenuKeys.TO_BACKGROUND,
             label: <ToBackgroundItem toolProps={props} />,
@@ -387,7 +390,7 @@ export default function ItemMenu(props: Props): MenuProps {
         });
     }
 
-    if ([ColorBy.INSTANCE, ColorBy.GROUP].includes(colorBy)) {
+    if (!locked && [ColorBy.INSTANCE, ColorBy.GROUP].includes(colorBy)) {
         items.push({
             key: MenuKeys.SWITCH_COLOR,
             label: <SwitchColorItem toolProps={props} />,

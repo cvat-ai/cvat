@@ -24,6 +24,7 @@ from django.db import IntegrityError, models, transaction
 from django.db.models import Q, TextChoices
 from django.db.models.base import ModelBase
 from django.db.models.fields import FloatField
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
@@ -69,7 +70,7 @@ class StatusChoice(str, Enum):
 
     @classmethod
     def list(cls):
-        return list(map(lambda x: x.value, cls))
+        return [x.value for x in cls]
 
     def __str__(self):
         return self.value
@@ -92,7 +93,7 @@ class LabelType(str, Enum):
 
     @classmethod
     def list(cls):
-        return list(map(lambda x: x.value, cls))
+        return [x.value for x in cls]
 
     def __str__(self):
         return self.value
@@ -291,6 +292,7 @@ class ValidationLayout(models.Model):
 class Data(models.Model):
     MANIFEST_FILENAME: ClassVar[str] = 'manifest.jsonl'
 
+    content_size = models.PositiveBigIntegerField(null=True)
     chunk_size = models.PositiveIntegerField(null=True)
     size = models.PositiveIntegerField(default=0)
     image_quality = models.PositiveSmallIntegerField(default=50)
@@ -436,6 +438,31 @@ class TimestampedModel(models.Model):
     def touch(self) -> None:
         self.save(update_fields=["updated_date"])
 
+class AssignableModel(models.Model):
+    assignee = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="assigned_%(class)ss", related_query_name="assigned_%(class)s"
+    )
+    assignee_updated_date = models.DateTimeField(null=True, blank=True, default=None)
+
+    class Meta:
+        abstract = True
+
+    def update_assignee(
+        self,
+        assignee_id: int | None,
+        /,
+        *,
+        updated_date: datetime.datetime | None = None,
+    ) -> None:
+        """
+        Updates the assignee id and the corresponding timestamp.
+        Changes are not persisted to the database.
+        """
+        self.assignee_id = assignee_id
+        self.assignee_updated_date = updated_date or timezone.now()
+
+
 class ABCModelMeta(ABCMeta, ModelBase):
     pass
 
@@ -458,13 +485,13 @@ class FileSystemRelatedModel(metaclass=ABCModelMeta):
 @transaction.atomic(savepoint=False)
 def clear_annotations_in_jobs(job_ids: Iterable[int]):
     for job_ids_chunk in take_by(job_ids, chunk_size=1000):
-        TrackedShapeAttributeVal.objects.filter(shape__track__job_id__in=job_ids_chunk).delete()
+        TrackedShapeAttributeVal.objects.filter(job_id__in=job_ids_chunk).delete()
         TrackedShape.objects.filter(track__job_id__in=job_ids_chunk).delete()
-        LabeledTrackAttributeVal.objects.filter(track__job_id__in=job_ids_chunk).delete()
+        LabeledTrackAttributeVal.objects.filter(job_id__in=job_ids_chunk).delete()
         LabeledTrack.objects.filter(job_id__in=job_ids_chunk).delete()
-        LabeledShapeAttributeVal.objects.filter(shape__job_id__in=job_ids_chunk).delete()
+        LabeledShapeAttributeVal.objects.filter(job_id__in=job_ids_chunk).delete()
         LabeledShape.objects.filter(job_id__in=job_ids_chunk).delete()
-        LabeledImageAttributeVal.objects.filter(image__job_id__in=job_ids_chunk).delete()
+        LabeledImageAttributeVal.objects.filter(job_id__in=job_ids_chunk).delete()
         LabeledImage.objects.filter(job_id__in=job_ids_chunk).delete()
 
 
@@ -476,7 +503,7 @@ def clear_annotations_on_frames_in_honeypot_task(db_task: Task, frames: Sequence
 
     for frames_batch in take_by(frames, chunk_size=1000):
         LabeledShapeAttributeVal.objects.filter(
-            shape__job_id__segment__task_id=db_task.id,
+            job_id__segment__task_id=db_task.id,
             shape__frame__in=frames_batch,
         ).delete()
         LabeledShape.objects.filter(
@@ -484,7 +511,7 @@ def clear_annotations_on_frames_in_honeypot_task(db_task: Task, frames: Sequence
             frame__in=frames_batch,
         ).delete()
         LabeledImageAttributeVal.objects.filter(
-            image__job_id__segment__task_id=db_task.id,
+            job_id__segment__task_id=db_task.id,
             image__frame__in=frames_batch,
         ).delete()
         LabeledImage.objects.filter(
@@ -492,13 +519,10 @@ def clear_annotations_on_frames_in_honeypot_task(db_task: Task, frames: Sequence
             frame__in=frames_batch,
         ).delete()
 
-class Project(TimestampedModel, FileSystemRelatedModel):
+class Project(TimestampedModel, AssignableModel, FileSystemRelatedModel):
     name = SafeCharField(max_length=256)
     owner = models.ForeignKey(User, null=True, blank=True,
                               on_delete=models.SET_NULL, related_name="+")
-    assignee = models.ForeignKey(User, null=True, blank=True,
-                                 on_delete=models.SET_NULL, related_name="+")
-    assignee_updated_date = models.DateTimeField(null=True, blank=True, default=None)
 
     bug_tracker = models.CharField(max_length=2000, blank=True, default="")
     status = models.CharField(max_length=32, choices=StatusChoice.choices(),
@@ -576,7 +600,7 @@ class TaskQuerySet(models.QuerySet):
             }
         )
 
-class Task(TimestampedModel, FileSystemRelatedModel):
+class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
     objects = TaskQuerySet.as_manager()
 
     project = models.ForeignKey(Project, on_delete=models.CASCADE,
@@ -585,10 +609,8 @@ class Task(TimestampedModel, FileSystemRelatedModel):
     name = SafeCharField(max_length=256)
     mode = models.CharField(max_length=32)
     owner = models.ForeignKey(User, null=True, blank=True,
-        on_delete=models.SET_NULL, related_name="owners")
-    assignee = models.ForeignKey(User, null=True,  blank=True,
-        on_delete=models.SET_NULL, related_name="assignees")
-    assignee_updated_date = models.DateTimeField(null=True, blank=True, default=None)
+        on_delete=models.SET_NULL, related_name="tasks", related_query_name="task")
+
     bug_tracker = models.CharField(max_length=2000, blank=True, default="")
     overlap = models.PositiveIntegerField(null=True)
     # Zero means that there are no limits (default)
@@ -872,13 +894,10 @@ class JobQuerySet(models.QuerySet):
 
 
 
-class Job(TimestampedModel, FileSystemRelatedModel):
+class Job(TimestampedModel, AssignableModel, FileSystemRelatedModel):
     objects = JobQuerySet.as_manager()
 
     segment = models.ForeignKey(Segment, on_delete=models.CASCADE)
-
-    assignee = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
-    assignee_updated_date = models.DateTimeField(null=True, blank=True, default=None)
 
     # TODO: it has to be deleted in Job, Task, Project and replaced by (stage, state)
     # The stage field cannot be changed by an assignee, but state field can be. For
@@ -896,6 +915,15 @@ class Job(TimestampedModel, FileSystemRelatedModel):
         'self', on_delete=models.CASCADE, null=True, blank=True,
         related_name='child_jobs', related_query_name="child_job"
     )
+
+    labeledimage_set: models.manager.RelatedManager[LabeledImage]
+    labeledshape_set: models.manager.RelatedManager[LabeledShape]
+    labeledtrack_set: models.manager.RelatedManager[LabeledTrack]
+    trackedshape_set: models.manager.RelatedManager[TrackedShape]
+    labeledimageattributeval_set: models.manager.RelatedManager[LabeledImageAttributeVal]
+    labeledshapeattributeval_set: models.manager.RelatedManager[LabeledShapeAttributeVal]
+    labeledtrackattributeval_set: models.manager.RelatedManager[LabeledTrackAttributeVal]
+    trackedshapeattributeval_set: models.manager.RelatedManager[TrackedShapeAttributeVal]
 
     user_can_view_task: MaybeUndefined[bool]
     "Can be defined by the fetching queryset to avoid extra IAM checks, e.g. in a list serializer"
@@ -1074,6 +1102,7 @@ class AttributeVal(models.Model):
     # TODO: add a validator here to be sure that it corresponds to self.label
     id = models.BigAutoField(primary_key=True)
     spec = models.ForeignKey(AttributeSpec, on_delete=models.CASCADE)
+    job = models.ForeignKey(Job, on_delete=models.DO_NOTHING, null=False)
     value = SafeCharField(max_length=4096)
 
     class Meta:
@@ -1102,6 +1131,7 @@ class SourceType(str, Enum):
     SEMI_AUTO = 'semi-auto'
     MANUAL = 'manual'
     FILE = 'file'
+    CONSENSUS = 'consensus'
 
     @classmethod
     def choices(cls):
@@ -1170,6 +1200,7 @@ class TrackedShapeAttributeVal(AttributeVal):
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     rating = models.FloatField(default=0.0)
+    last_activity_date = models.DateTimeField(null=True, blank=True, default=None)
     has_analytics_access = models.BooleanField(
         _("has access to analytics"),
         default=False,
@@ -1177,13 +1208,11 @@ class Profile(models.Model):
     )
 
 
-class Issue(TimestampedModel):
+class Issue(TimestampedModel, AssignableModel):
     frame = models.PositiveIntegerField()
     position = FloatArrayField()
     job = models.ForeignKey(Job, related_name='issues', on_delete=models.CASCADE)
     owner = models.ForeignKey(User, null=True, blank=True, related_name='+',
-        on_delete=models.SET_NULL)
-    assignee = models.ForeignKey(User, null=True, blank=True, related_name='+',
         on_delete=models.SET_NULL)
     resolved = models.BooleanField(default=False)
 
@@ -1237,7 +1266,7 @@ class CloudProviderChoice(str, Enum):
 
     @classmethod
     def list(cls):
-        return list(map(lambda x: x.value, cls))
+        return [x.value for x in cls]
 
     def __str__(self):
         return self.value
@@ -1256,7 +1285,7 @@ class CredentialsTypeChoice(str, Enum):
 
     @classmethod
     def list(cls):
-        return list(map(lambda x: x.value, cls))
+        return [x.value for x in cls]
 
     def __str__(self):
         return self.value
@@ -1365,6 +1394,7 @@ class Asset(models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
     owner = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="assets")
     guide = models.ForeignKey(AnnotationGuide, on_delete=models.CASCADE, related_name="assets")
+    content_size = models.PositiveBigIntegerField(null=True)
 
     @property
     def organization_id(self):

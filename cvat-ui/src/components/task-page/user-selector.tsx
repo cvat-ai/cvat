@@ -11,6 +11,7 @@ import debounce from 'lodash/debounce';
 
 import { User, getCore, ServerError } from 'cvat-core-wrapper';
 import { getCVATStore } from 'cvat-store';
+import { handleDropdownKeyDown } from 'utils/dropdown-utils';
 
 const core = getCore();
 
@@ -33,7 +34,7 @@ const searchUsers = debounce(
                     setUsers(result);
                 }
             }).catch((error: unknown) => {
-                // user may get logged out while debounding
+                // user may get logged out while debouncing
                 // it is normal situation
                 if (!(error instanceof ServerError && error.code === 401)) {
                     throw error;
@@ -74,7 +75,7 @@ const initialUsersStorage: {
     },
 };
 
-export default function UserSelector(props: Props): JSX.Element {
+export default function UserSelector(props: Readonly<Props>): JSX.Element {
     const {
         value, className, username, onSelect,
     } = props;
@@ -123,9 +124,14 @@ export default function UserSelector(props: Props): JSX.Element {
     };
 
     const handleSelect = (_value: SelectValue): void => {
-        const user = _value ? users.filter((_user) => _user.id === +_value)[0] : null;
-        if ((user?.id || null) !== (value?.id || null)) {
-            onSelect(user);
+        if (_value === 'RESET_ASSIGNEE') {
+            onSelect(null);
+            setSearchPhrase('');
+        } else {
+            const user = _value ? users.filter((_user) => _user.id === +_value)[0] : null;
+            if ((user?.id || null) !== (value?.id || null)) {
+                onSelect(user);
+            }
         }
     };
 
@@ -141,6 +147,8 @@ export default function UserSelector(props: Props): JSX.Element {
             }
 
             setSearchPhrase(value.username);
+        } else {
+            setSearchPhrase('');
         }
     }, [value]);
 
@@ -153,12 +161,19 @@ export default function UserSelector(props: Props): JSX.Element {
             onSearch={setSearchPhrase}
             onSelect={handleSelect}
             onBlur={onBlur}
+            onKeyDown={handleDropdownKeyDown}
             className={combinedClassName}
             popupClassName='cvat-user-search-dropdown'
-            options={users.map((user) => ({
-                value: user.id.toString(),
-                label: user.username,
-            }))}
+            options={[
+                ...(!searchPhrase || 'reset assignee'.includes(searchPhrase.toLowerCase()) ? [{
+                    value: 'RESET_ASSIGNEE',
+                    label: 'Reset assignee',
+                }] : []),
+                ...users.map((user) => ({
+                    value: user.id.toString(),
+                    label: user.username,
+                })),
+            ]}
         >
             <Input onPressEnter={() => autocompleteRef.current?.blur()} />
         </Autocomplete>

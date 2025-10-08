@@ -5,11 +5,11 @@
 
 from __future__ import annotations
 
-import importlib
 import operator
 from abc import ABCMeta, abstractmethod
 from collections.abc import Sequence
 from enum import Enum
+from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, TypeVar
 
@@ -84,9 +84,12 @@ def get_membership(request, organization):
     ).first()
 
 
+IamContext = dict[str, Any]
+
+
 def build_iam_context(
     request, organization: Optional[Organization], membership: Optional[Membership]
-):
+) -> IamContext:
     return {
         "user_id": request.user.id,
         "group_name": request.iam_context["privilege"],
@@ -107,12 +110,12 @@ def get_iam_context(request, obj) -> dict[str, Any]:
 class OpenPolicyAgentPermission(metaclass=ABCMeta):
     url: str
     user_id: int
-    group_name: Optional[str]
-    org_id: Optional[int]
-    org_owner_id: Optional[int]
-    org_role: Optional[str]
+    group_name: str | None
+    org_id: int | None
+    org_owner_id: int | None
+    org_role: str | None
     scope: str
-    obj: Optional[Any]
+    obj: Any | None
 
     @classmethod
     @abstractmethod
@@ -137,55 +140,83 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
 
     @classmethod
     @abstractmethod
-    def create(cls, request, view, obj, iam_context) -> Sequence[OpenPolicyAgentPermission]: ...
+    def create(
+        cls,
+        request: ExtendedRequest,
+        view: ViewSet,
+        obj: Any | None,
+        iam_context: IamContext | None,
+    ) -> Sequence[OpenPolicyAgentPermission]: ...
 
     @classmethod
-    def create_base_perm(cls, request, view, scope, iam_context, obj=None, **kwargs):
+    def create_base_perm(
+        cls,
+        request: ExtendedRequest,
+        view,
+        scope,
+        iam_context: IamContext | None,
+        obj: Any | None = None,
+        **kwargs,
+    ):
         if not iam_context and request:
             iam_context = get_iam_context(request, obj)
+
         return cls(scope=scope, obj=obj, **iam_context, **kwargs)
 
     @classmethod
-    def create_scope_list(cls, request, iam_context=None):
+    def create_scope_list(cls, request: ExtendedRequest, iam_context: IamContext | None = None):
         if not iam_context and request:
             iam_context = get_iam_context(request, None)
+
         return cls(**iam_context, scope="list")
+
+    @cached_property
+    def payload(self):
+        return self.get_opa_payload()
+
+    def get_opa_payload(self):
+        return {
+            "input": {
+                "scope": self.scope,
+                **self.get_opa_auth_payload(),
+                **self.get_opa_resource_payload(),
+            }
+        }
+
+    def get_opa_auth_payload(self):
+        return {
+            "auth": {
+                "user": {
+                    "id": self.user_id,
+                    "privilege": self.group_name,
+                },
+                "organization": (
+                    {
+                        "id": self.org_id,
+                        "owner": {
+                            "id": self.org_owner_id,
+                        },
+                        "user": {
+                            "role": self.org_role,
+                        },
+                    }
+                    if self.org_id is not None
+                    else None
+                ),
+            },
+        }
+
+    def get_opa_resource_payload(self):
+        return {"resource": self.get_resource()}
+
+    @abstractmethod
+    def get_resource(self):
+        return None
 
     def __init__(self, **kwargs):
         self.obj = None
         for name, val in kwargs.items():
             setattr(self, name, val)
-
-        self.payload = {
-            "input": {
-                "scope": self.scope,
-                "auth": {
-                    "user": {
-                        "id": self.user_id,
-                        "privilege": self.group_name,
-                    },
-                    "organization": (
-                        {
-                            "id": self.org_id,
-                            "owner": {
-                                "id": self.org_owner_id,
-                            },
-                            "user": {
-                                "role": self.org_role,
-                            },
-                        }
-                        if self.org_id is not None
-                        else None
-                    ),
-                },
-            }
-        }
-
-        self.payload["input"]["resource"] = self.get_resource()
-
-    @abstractmethod
-    def get_resource(self):
-        return None
 
     def check_access(self) -> PermissionResult:
         with make_requests_session() as session:
@@ -268,24 +299,39 @@ def is_public_obj(obj: T) -> bool:
 
 
 class PolicyEnforcer(BasePermission):
-    # pylint: disable=no-self-use
-    def check_permission(self, request, view, obj) -> bool:
-        # DRF can send OPTIONS request. Internally it will try to get
-        # information about serializers for PUT and POST requests (clone
-        # request and replace the http method). To avoid handling
-        # ('POST', 'metadata') and ('PUT', 'metadata') in every request,
-        # the condition below is enough.
-        if self.is_metadata_request(request, view) or obj and is_public_obj(obj):
-            return True
+    def _check_permission(
+        self, request: ExtendedRequest, view: ViewSet, obj
+    ) -> tuple[bool, list[OpenPolicyAgentPermission]]:
+        def _check_permissions():
+            # DRF can send OPTIONS request. Internally it will try to get
+            # information about serializers for PUT and POST requests (clone
+            # request and replace the http method). To avoid handling
+            # ('POST', 'metadata') and ('PUT', 'metadata') in every request,
+            # the condition below is enough.
+            if self.is_metadata_request(request, view) or obj and is_public_obj(obj):
+                return True
 
-        iam_context = get_iam_context(request, obj)
-        for perm_class in OpenPolicyAgentPermission.__subclasses__():
-            for perm in perm_class.create(request, view, obj, iam_context):
+            assert hasattr(
+                view, "iam_permission_class"
+            ), f"View {view} has no 'iam_permission_class' attribute"
+
+            perm_class = view.iam_permission_class
+            iam_context = get_iam_context(request, obj)
+
+            for perm in perm_class.create(request, view, obj, iam_context=iam_context):
+                checked_permissions.append(perm)
                 result = perm.check_access()
                 if not result.allow:
                     return False
 
-        return True
+            return True
+
+        checked_permissions = []
+        allow = _check_permissions()
+        return allow, checked_permissions
+
+    def check_permission(self, request, view, obj) -> bool:
+        return self._check_permission(request, view, obj)[0]
 
     def has_permission(self, request, view):
         if not view.detail:
@@ -311,18 +357,11 @@ class IsAuthenticatedOrReadPublicResource(BasePermission):
         )
 
 
-def load_app_permissions(config: AppConfig) -> None:
+def load_app_iam_rules(config: AppConfig) -> None:
     """
-    Ensures that permissions and OPA rules from the given app are loaded.
+    Ensures that OPA rules from the given app are loaded.
 
     This function should be called from the AppConfig.ready() method of every
-    app that defines a permissions module.
+    app that defines OPA rules.
     """
-    permissions_module = importlib.import_module(config.name + ".permissions")
-
-    assert any(
-        isinstance(attr, type) and issubclass(attr, OpenPolicyAgentPermission)
-        for attr in vars(permissions_module).values()
-    )
-
     add_opa_rules_path(Path(config.path, "rules"))

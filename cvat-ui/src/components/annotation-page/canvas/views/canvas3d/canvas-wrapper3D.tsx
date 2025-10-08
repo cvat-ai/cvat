@@ -5,7 +5,7 @@
 
 import './styles.scss';
 import React, { useEffect, useRef } from 'react';
-import { connect, useSelector } from 'react-redux';
+import { connect, shallowEqual, useSelector } from 'react-redux';
 import {
     ArrowDownOutlined, ArrowLeftOutlined, ArrowRightOutlined, ArrowUpOutlined,
 } from '@ant-design/icons';
@@ -249,9 +249,17 @@ const Spinner = React.memo(() => (
 export const PerspectiveViewComponent = React.memo(
     (): JSX.Element => {
         const ref = useRef<HTMLDivElement>(null);
-        const canvas = useSelector((state: CombinedState) => state.annotation.canvas.instance as Canvas3d);
-        const canvasIsReady = useSelector((state: CombinedState) => state.annotation.canvas.ready);
-        const { keyMap, normalizedKeyMap } = useSelector((state: CombinedState) => state.shortcuts);
+        const {
+            canvas,
+            canvasIsReady,
+            keyMap,
+            normalizedKeyMap,
+        } = useSelector((state: CombinedState) => ({
+            canvas: state.annotation.canvas.instance as Canvas3d,
+            canvasIsReady: state.annotation.canvas.ready,
+            keyMap: state.shortcuts.keyMap,
+            normalizedKeyMap: state.shortcuts.normalizedKeyMap,
+        }), shallowEqual);
 
         const screenKeyControl = (code: CameraAction, altKey: boolean, shiftKey: boolean): void => {
             canvas.keyControls(new KeyboardEvent('keydown', { code, altKey, shiftKey }));
@@ -403,8 +411,10 @@ export const PerspectiveViewComponent = React.memo(
 export const TopViewComponent = React.memo(
     (): JSX.Element => {
         const ref = useRef<HTMLDivElement>(null);
-        const canvas = useSelector((state: CombinedState) => state.annotation.canvas.instance as Canvas3d);
-        const canvasIsReady = useSelector((state: CombinedState) => state.annotation.canvas.ready);
+        const { canvas, canvasIsReady } = useSelector((state: CombinedState) => ({
+            canvas: state.annotation.canvas.instance as Canvas3d,
+            canvasIsReady: state.annotation.canvas.ready,
+        }), shallowEqual);
 
         useEffect(() => {
             if (ref.current) {
@@ -428,8 +438,10 @@ export const TopViewComponent = React.memo(
 export const SideViewComponent = React.memo(
     (): JSX.Element => {
         const ref = useRef<HTMLDivElement>(null);
-        const canvas = useSelector((state: CombinedState) => state.annotation.canvas.instance as Canvas3d);
-        const canvasIsReady = useSelector((state: CombinedState) => state.annotation.canvas.ready);
+        const { canvas, canvasIsReady } = useSelector((state: CombinedState) => ({
+            canvas: state.annotation.canvas.instance as Canvas3d,
+            canvasIsReady: state.annotation.canvas.ready,
+        }), shallowEqual);
 
         useEffect(() => {
             if (ref.current) {
@@ -453,8 +465,10 @@ export const SideViewComponent = React.memo(
 export const FrontViewComponent = React.memo(
     (): JSX.Element => {
         const ref = useRef<HTMLDivElement>(null);
-        const canvas = useSelector((state: CombinedState) => state.annotation.canvas.instance as Canvas3d);
-        const canvasIsReady = useSelector((state: CombinedState) => state.annotation.canvas.ready);
+        const { canvas, canvasIsReady } = useSelector((state: CombinedState) => ({
+            canvas: state.annotation.canvas.instance as Canvas3d,
+            canvasIsReady: state.annotation.canvas.ready,
+        }), shallowEqual);
 
         useEffect(() => {
             if (ref.current) {
@@ -660,7 +674,7 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
         );
     };
 
-    const onCanvasObjectsGroupped = (event: CustomEvent<{ states: ObjectState[] }>): void => {
+    const onCanvasObjectsGrouped = (event: CustomEvent<{ states: ObjectState[] }>): void => {
         const { states } = event.detail;
         updateActiveControl(ActiveControl.CURSOR);
         onGroupAnnotations(states);
@@ -688,7 +702,7 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
         canvasInstanceDOM.perspective.addEventListener('canvas.edited', onCanvasEditDone);
         canvasInstanceDOM.perspective.addEventListener('canvas.contextmenu', onContextMenu);
         canvasInstanceDOM.perspective.addEventListener('click', onCanvasClick);
-        canvasInstanceDOM.perspective.addEventListener('canvas.groupped', onCanvasObjectsGroupped as EventListener);
+        canvasInstanceDOM.perspective.addEventListener('canvas.grouped', onCanvasObjectsGrouped as EventListener);
         canvasInstanceDOM.perspective.addEventListener('canvas.merged', onCanvasObjectsMerged as EventListener);
         canvasInstanceDOM.perspective.addEventListener('canvas.splitted', onCanvasTrackSplitted as EventListener);
 
@@ -698,7 +712,7 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
             canvasInstanceDOM.perspective.removeEventListener('canvas.edited', onCanvasEditDone);
             canvasInstanceDOM.perspective.removeEventListener('canvas.contextmenu', onContextMenu);
             canvasInstanceDOM.perspective.removeEventListener('click', onCanvasClick);
-            canvasInstanceDOM.perspective.removeEventListener('canvas.groupped', onCanvasObjectsGroupped as EventListener);
+            canvasInstanceDOM.perspective.removeEventListener('canvas.grouped', onCanvasObjectsGrouped as EventListener);
             canvasInstanceDOM.perspective.removeEventListener('canvas.merged', onCanvasObjectsMerged as EventListener);
             canvasInstanceDOM.perspective.removeEventListener('canvas.splitted', onCanvasTrackSplitted as EventListener);
         };

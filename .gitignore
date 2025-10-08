@@ -50,6 +50,7 @@ yarn-error.log*
 node_modules
 /*env*/
 /.*env*
+perfkit.egg-info/
 
 # Ignore all js dists
 cvat-data/dist
@@ -63,3 +64,16 @@ cvat-ui/dist
 
 # produced by cvat/apps/iam/rules/tests/generate_tests.py
 /cvat/apps/*/rules/*_test.gen.rego
+
+# produced by allure report
+/**/allure-report*
+/**/allure-results*
+
+# https://yarnpkg.com/getting-started/qa#which-files-should-be-gitignored
+**/.pnp.*
+**/.yarn/*
+**/!.yarn/patches
+**/!.yarn/plugins
+**/!.yarn/releases
+**/!.yarn/sdks
+**/!.yarn/versions

@@ -7,7 +7,9 @@ description: 'Step-by-step guide on how to create and set up multiple tasks'
 
 Use **Create multi tasks** to create multiple video annotation tasks with the same configuration.
 
-> **Note:** The **Create multi tasks** feature is available for videos only.
+{{% alert title="Note" color="primary" %}}
+The **Create multi tasks** feature is available for videos only.
+{{% /alert %}}
 
 Check out:
 
@@ -22,7 +24,7 @@ To create the multi tasks:
 1. On the **Tasks** page select **+**.
 1. Select **Create multi tasks**.
 
-![](/images/create_multi_tasks_1.png)
+![User interface with opened menu and highlighted "Create multi tasks" option](/images/create_multi_tasks_1.png)
 
 Next, specify the parameters in the task configurator:
 
@@ -39,8 +41,10 @@ Next, specify the parameters in the task configurator:
 
    ![Select project](/images/select_project.png)
 
-   > **Note:** Following steps are valid if the tasks do not belong to a project.
-   > <br>If the tasks have been assigned to a project, the project's labels will be applied to the tasks.
+   {{% alert title="Note" color="primary" %}}
+   Following steps are valid if the tasks do not belong to a project.
+   <br>If the tasks have been assigned to a project, the project's labels will be applied to the tasks.
+   {{% /alert %}}
 
 1. On the **Constructor** tab, select **Add label**.
 1. In the **Label name** field, enter the name of the label.
@@ -50,7 +54,11 @@ Next, specify the parameters in the task configurator:
    and set up its properties.
 1. Select {{< ilink "/docs/manual/basics/create-annotation-task#select-files" "**Select files**" >}}
    to upload files for annotation.
-   > **Note:** You cannot upload multiple tasks from the cloud storage.
+
+   {{% alert title="Note" color="primary" %}}
+   You cannot upload multiple tasks from the cloud storage.
+   {{% /alert %}}
+
 1. Select **Submit `N` tasks**
 
 ## Example
@@ -61,22 +69,22 @@ A step-by-step example for creating the multiple tasks:
 1. Add labels.
 1. Select files. <br>In case there are more than four files,
    only the total number of selected files will be displayed:
-   ![](/images/create_multi_tasks_3.png)
+   !["My computer" tab opened in task creation window with message showing the number of selected files](/images/create_multi_tasks_3.png)
 1. Select **Submit `N` tasks**
 
-   ![](/images/create_multi_tasks_4.png)
+   !["Basic configuration" tab opened in task creation window](/images/create_multi_tasks_4.png)
 
 1. You will see a progress bar that shows the progress of the tasks being created:
 
-   ![](/images/create_multi_tasks_5.png)
+   ![Progress bar demonstrating the status of multi tasks creation](/images/create_multi_tasks_5.png)
 
 1. Select **Ok**.
 
-   ![](/images/create_multi_tasks_6.png)
+   ![Progress bar after finishing multi tasks creation](/images/create_multi_tasks_6.png)
 
 The result will look like the following:
 
-![](/images/create_multi_tasks_7.png)
+![Example of created multi tasks in the task list](/images/create_multi_tasks_7.png)
 
 ## Errors
 
@@ -86,8 +94,8 @@ During the process of adding multiple tasks, the following errors may occur:
 
 | Error                     | Description                                                                                                                                                                                                                                                                                      |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| ![](/images/create_multi_tasks_8.png) | Wrong file format. You can add only video files.                                                                                                                                                                                                                                                 |
-| ![](/images/create_multi_tasks_9.png) | In the process of creating a task, CVAT was not able to process the video file. <br>The name of the failed file will be displayed on the progress bar. <br><br> To fix this issue: <li> If you want to try again, click **Retry failed tasks**. <li> If you want to skip the file, click **OK**. |
+| ![Wrong file format error in user interface](/images/create_multi_tasks_8.png) | Wrong file format. You can add only video files.                                                                                                                                                                                                                                                 |
+| ![Failed to process file error in user interface](/images/create_multi_tasks_9.png) | In the process of creating a task, CVAT was not able to process the video file. <br>The name of the failed file will be displayed on the progress bar. <br><br> To fix this issue: <li> If you want to try again, click **Retry failed tasks**. <li> If you want to skip the file, click **OK**. |
 
 <!--lint enable maximum-line-length-->
 

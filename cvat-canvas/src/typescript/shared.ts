@@ -42,7 +42,7 @@ export interface DrawnState {
     occluded?: boolean;
     hidden?: boolean;
     lock: boolean;
-    source: 'AUTO' | 'SEMI-AUTO' | 'MANUAL' | 'FILE';
+    source: 'AUTO' | 'SEMI-AUTO' | 'MANUAL' | 'FILE' | 'CONSENSUS';
     shapeType: string;
     points?: number[];
     rotation: number;

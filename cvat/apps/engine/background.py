@@ -38,6 +38,7 @@ from cvat.apps.engine.models import (
     RequestAction,
     RequestSubresource,
     RequestTarget,
+    StorageChoice,
     Task,
 )
 from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
@@ -49,6 +50,7 @@ from cvat.apps.engine.serializers import (
     TaskFileSerializer,
 )
 from cvat.apps.engine.task import create_thread as create_task
+from cvat.apps.engine.tus import TusFile, TusFileForbiddenError, TusFileNotFoundError
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import (
     build_annotations_file_name,
@@ -135,9 +137,7 @@ class DatasetExporter(AbstractExporter):
         self.callback_args = (self.db_instance.pk, self.export_args.format)
 
         try:
-            if self.request.scheme:
-                server_address = self.request.scheme + "://"
-            server_address += self.request.get_host()
+            server_address = self.request.scheme + "://" + self.request.get_host()
         except Exception:
             server_address = None
 
@@ -178,6 +178,32 @@ class DatasetExporter(AbstractExporter):
 class BackupExporter(AbstractExporter):
     SUPPORTED_TARGETS = {RequestTarget.PROJECT, RequestTarget.TASK}
 
+    @dataclass
+    class ExportArgs(AbstractExporter.ExportArgs):
+        lightweight: bool
+
+    def is_lightweight_possible(self):
+        if isinstance(self.db_instance, Task):
+            return self.db_instance.data.storage == StorageChoice.CLOUD_STORAGE
+        if isinstance(self.db_instance, Project):
+            return Task.objects.filter(
+                project=self.db_instance, data__storage=StorageChoice.CLOUD_STORAGE
+            ).exists()
+
+        return False
+
+    def init_request_args(self) -> None:
+        super().init_request_args()
+        lightweight = to_bool(self.request.query_params.get("lightweight", False))
+
+        if lightweight:
+            lightweight = self.is_lightweight_possible()
+
+        self.export_args: BackupExporter.ExportArgs = self.ExportArgs(
+            **self.export_args.to_dict(),
+            lightweight=lightweight,
+        )
+
     def validate_request(self):
         super().validate_request()
 
@@ -217,6 +243,9 @@ class BackupExporter(AbstractExporter):
             logger,
             self.job_result_ttl,
         )
+        self.callback_kwargs = {
+            "lightweight": self.export_args.lightweight,
+        }
 
     def get_result_filename(self):
         filename = self.export_args.filename
@@ -228,6 +257,7 @@ class BackupExporter(AbstractExporter):
                 class_name=self.target,
                 identifier=self.db_instance.name,
                 timestamp=instance_timestamp,
+                lightweight=self.export_args.lightweight,
             )
 
         return filename
@@ -239,6 +269,7 @@ class BackupExporter(AbstractExporter):
             target_id=self.db_instance.pk,
             user_id=self.user_id,
             subresource=RequestSubresource.BACKUP,
+            lightweight=self.export_args.lightweight,
         ).render()
 
     def get_result_endpoint_url(self) -> str:
@@ -257,7 +288,7 @@ class ResourceImporter(AbstractRequestManager):
     @dataclass
     class ImportArgs:
         location_config: LocationConfig
-        file_path: str | None
+        filename: str | None
 
         def to_dict(self):
             return dataclass_asdict(self)
@@ -277,8 +308,6 @@ class ResourceImporter(AbstractRequestManager):
         return int(settings.IMPORT_CACHE_FAILED_TTL.total_seconds())
 
     def init_request_args(self):
-        file_path: str | None = None
-
         try:
             location_config = get_location_configuration(
                 db_instance=self.db_instance,
@@ -288,16 +317,9 @@ class ResourceImporter(AbstractRequestManager):
         except ValueError as ex:
             raise serializers.ValidationError(str(ex)) from ex
 
-        if filename := self.request.query_params.get("filename"):
-            file_path = (
-                str(self.tmp_dir / filename)
-                if location_config.location != Location.CLOUD_STORAGE
-                else filename
-            )
-
         self.import_args = ResourceImporter.ImportArgs(
             location_config=location_config,
-            file_path=file_path,
+            filename=self.request.query_params.get("filename"),
         )
 
     def validate_request(self):
@@ -305,9 +327,21 @@ class ResourceImporter(AbstractRequestManager):
 
         if (
             self.import_args.location_config.location == Location.CLOUD_STORAGE
-            and not self.import_args.file_path
+            and not self.import_args.filename
         ):
             raise serializers.ValidationError("The filename was not specified")
+
+        # file was uploaded via TUS
+        if (
+            self.import_args.location_config.location == Location.LOCAL
+            and self.import_args.filename
+        ):
+            try:
+                TusFile(file_id=self.import_args.filename, upload_dir=self.tmp_dir).validate(
+                    user_id=self.user_id, with_meta=False
+                )
+            except (TusFileNotFoundError, TusFileForbiddenError, ValueError):
+                raise serializers.ValidationError("No such file were uploaded")
 
     def _handle_cloud_storage_file_upload(self):
         storage_id = self.import_args.location_config.cloud_storage_id
@@ -317,9 +351,10 @@ class ResourceImporter(AbstractRequestManager):
             is_default=self.import_args.location_config.is_default,
         )
 
-        key = self.import_args.file_path
-        with NamedTemporaryFile(prefix="cvat_", dir=TmpDirManager.TMP_ROOT, delete=False) as tf:
-            self.import_args.file_path = tf.name
+        key = self.import_args.filename
+        with NamedTemporaryFile(prefix="cvat_", dir=self.tmp_dir, delete=False) as tf:
+            self.import_args.filename = Path(tf.name).relative_to(self.tmp_dir).name
+
         return db_storage, key
 
     @abstractmethod
@@ -328,10 +363,11 @@ class ResourceImporter(AbstractRequestManager):
     def _handle_non_tus_file_upload(self):
         payload_file = self._get_payload_file()
 
-        with NamedTemporaryFile(prefix="cvat_", dir=TmpDirManager.TMP_ROOT, delete=False) as tf:
-            self.import_args.file_path = tf.name
+        with NamedTemporaryFile(prefix="cvat_", dir=self.tmp_dir, delete=False) as tf:
             for chunk in payload_file.chunks():
                 tf.write(chunk)
+
+            self.import_args.filename = Path(tf.name).relative_to(self.tmp_dir).name
 
     @abstractmethod
     def _init_callback_with_params(self): ...
@@ -340,7 +376,7 @@ class ResourceImporter(AbstractRequestManager):
         # Note: self.import_args is changed here
         if self.import_args.location_config.location == Location.CLOUD_STORAGE:
             db_storage, key = self._handle_cloud_storage_file_upload()
-        elif not self.import_args.file_path:
+        elif not self.import_args.filename:
             self._handle_non_tus_file_upload()
 
         self._init_callback_with_params()
@@ -414,7 +450,7 @@ class DatasetImporter(ResourceImporter):
             self.callback = dm.task.import_job_annotations
 
         self.callback_args = (
-            self.import_args.file_path,
+            str(self.tmp_dir / self.import_args.filename),
             self.db_instance.pk,
             self.import_args.format,
             self.import_args.conv_mask_to_poly,
@@ -499,7 +535,11 @@ class BackupImporter(ResourceImporter):
 
     def _init_callback_with_params(self):
         self.callback = import_project if self.target == RequestTarget.PROJECT else import_task
-        self.callback_args = (self.import_args.file_path, self.user_id, self.import_args.org_id)
+        self.callback_args = (
+            str(self.tmp_dir / self.import_args.filename),
+            self.user_id,
+            self.import_args.org_id,
+        )
 
     def finalize_request(self):
         # FUTURE-TODO: send logs to event store

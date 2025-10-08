@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from datumaro.components.dataset import Dataset
+from datumaro.components.dataset import StreamDataset
 from pyunpack import Archive
 
 from cvat.apps.dataset_manager.bindings import GetCVATDataExtractor, import_dm_annotations
@@ -17,7 +17,7 @@ from .utils import make_colormap
 @exporter(name="CamVid", ext="ZIP", version="1.0")
 def _export(dst_file, temp_dir, instance_data, save_images=False):
     with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
-        dataset = Dataset.from_extractors(extractor, env=dm_env)
+        dataset = StreamDataset.from_extractors(extractor, env=dm_env)
         dataset.transform(RotatedBoxesToPolygons)
         dataset.transform("polygons_to_masks")
         dataset.transform("boxes_to_masks")
@@ -43,7 +43,7 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
     # We do not run detect_dataset before import because the Camvid format
     # has problem with the dataset detection in case of empty annotation file(s)
     # Details in: https://github.com/cvat-ai/datumaro/issues/43
-    dataset = Dataset.import_from(temp_dir, "camvid", env=dm_env)
+    dataset = StreamDataset.import_from(temp_dir, "camvid", env=dm_env)
     dataset = MaskToPolygonTransformation.convert_dataset(dataset, **kwargs)
     if load_data_callback is not None:
         load_data_callback(dataset, instance_data)

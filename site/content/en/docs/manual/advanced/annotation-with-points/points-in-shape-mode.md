@@ -9,7 +9,7 @@ It is used for face, landmarks annotation etc.
 Before you start you need to select the `Points`. If necessary you can set a fixed number of points
 in the `Number of points` field, then drawing will be stopped automatically.
 
-![](/images/image042.jpg)
+![Highlighted "Points" button with "Draw new points" window](/images/image042.jpg)
 
 Click `Shape` to entering the drawing mode. Now you can start annotation of the necessary area.
 Points are automatically grouped — all points will be considered linked between each start and finish.
@@ -20,4 +20,4 @@ There you can add new points into an existing shape. You can zoom in/out (when s
 and move (when clicking the mouse wheel and moving the mouse) while drawing. You can drag an object after
 it has been drawn and change the position of individual points after finishing an object.
 
-![](/images/image063_affectnet.jpg)
+![Example of annotation with different points](/images/image063_affectnet.jpg)

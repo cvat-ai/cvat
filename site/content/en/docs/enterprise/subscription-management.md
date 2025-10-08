@@ -110,7 +110,9 @@ Here’s how you can do it:
 
 6. Select checkbox **I agree to refund policy** **(4)**.
 
-   > **Note:** Please read the **Refund policy** before selecting the checkbox.
+   {{% alert title="Note" color="primary" %}}
+   Please read the **Refund policy** before selecting the checkbox.
+   {{% /alert %}}
 
 7. Click **Pay & Subscribe**.
 
@@ -192,8 +194,10 @@ This section describes how to change or add payment methods.
 
 ### Paying with bank transfer
 
-> **Note** At the moment this method of payment
-> works only with US banks.
+{{% alert title="Note" color="primary" %}}
+At the moment this method of payment
+works only with US banks.
+{{% /alert %}}
 
 To pay with a bank transfer:
 
@@ -201,7 +205,9 @@ To pay with a bank transfer:
 2. Click **US Bank Transfer**.
 3. Upon successful completion of the payment, you will receive a receipt via email.
 
-> **Note** that the completion of the payment process may take up to three banking days.
+{{% alert title="Note" color="primary" %}}
+The completion of the payment process may take up to three banking days.
+{{% /alert %}}
 
 ![Bank Transfer Payment](/images/bank_transfer_payment.png)
 
@@ -213,7 +219,9 @@ In the top right corner, near the nickname, click on the arrow > manage plan > *
 
 ## Adding and removing team members
 
-> **Solo plan** is **for personal use only**, you cannot add or remove team members.
+{{% alert title="Note" color="primary" %}}
+**Solo plan** is **for personal use only**, you cannot add or remove team members.
+{{% /alert %}}
 
 **Team plan** is for collaboration. To add members to your
 {{< ilink "/docs/manual/advanced/organization" "Organization" >}},

@@ -79,6 +79,7 @@ export enum ColorBy {
 export interface Configuration {
     smoothImage?: boolean;
     autoborders?: boolean;
+    adaptiveZoom?: boolean;
     displayAllText?: boolean;
     textFontSize?: number;
     textPosition?: 'auto' | 'center';
@@ -261,7 +262,7 @@ export interface CanvasModel {
     mode: Mode;
     exception: Error | null;
 
-    zoom(x: number, y: number, direction: number): void;
+    zoom(x: number, y: number, deltaY: number): void;
     move(topOffset: number, leftOffset: number): void;
 
     setup(frameData: any, objectStates: any[], zLayer: number): void;
@@ -400,6 +401,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             configuration: {
                 smoothImage: true,
                 autoborders: false,
+                adaptiveZoom: true,
                 displayAllText: false,
                 showProjections: false,
                 showConflicts: false,
@@ -450,9 +452,19 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         };
     }
 
-    public zoom(x: number, y: number, direction: number): void {
+    public zoom(x: number, y: number, deltaY: number): void {
+        const basicZoomCoef = 6 / 5; // historical value
+        // less value of adjust coef, means zoomin/zoomout smoother
+        // we need a trade-off between speed and smoothness, value 1 / 8 is good enough
+        const adjustCoef = 1 / 10;
         const oldScale: number = this.data.scale;
-        const newScale: number = direction > 0 ? (oldScale * 6) / 5 : (oldScale * 5) / 6;
+        let scaleFactor = basicZoomCoef ** (-deltaY * adjustCoef);
+
+        if (!this.data.configuration.adaptiveZoom) {
+            // old alogithm, just multiplies to 6/5 or 5/6
+            scaleFactor = basicZoomCoef ** (Math.sign(-deltaY));
+        }
+        const newScale: number = oldScale * scaleFactor;
         this.data.scale = Math.min(Math.max(newScale, FrameZoom.MIN), FrameZoom.MAX);
 
         const { angle } = this.data;
@@ -619,7 +631,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                     if (exception instanceof Error) {
                         this.data.exception = exception;
                     } else {
-                        this.data.exception = new Error('Unknown error occured when fetching image data');
+                        this.data.exception = new Error('Unknown error occurred when fetching image data');
                     }
                     this.notify(UpdateReasons.DATA_FAILED);
                 }
@@ -957,6 +969,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
         if (typeof configuration.autoborders === 'boolean') {
             this.data.configuration.autoborders = configuration.autoborders;
+        }
+        if (typeof configuration.adaptiveZoom === 'boolean') {
+            this.data.configuration.adaptiveZoom = configuration.adaptiveZoom;
         }
         if (typeof configuration.smoothImage === 'boolean') {
             this.data.configuration.smoothImage = configuration.smoothImage;

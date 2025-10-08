@@ -19,6 +19,7 @@ import {
     switchTextPosition,
     switchTextContent,
     switchShowingTagsOnFrame,
+    switchAdaptiveZoom,
 } from 'actions/settings-actions';
 
 import { CombinedState } from 'reducers';
@@ -33,6 +34,7 @@ interface StateToProps {
     showObjectsTextAlways: boolean;
     defaultApproxPolyAccuracy: number;
     automaticBordering: boolean;
+    adaptiveZoom: boolean;
     intelligentPolygonCrop: boolean;
     textFontSize: number;
     controlPointsSize: number;
@@ -48,6 +50,7 @@ interface DispatchToProps {
     onSwitchShowingInterpolatedTracks(enabled: boolean): void;
     onSwitchShowingObjectsTextAlways(enabled: boolean): void;
     onSwitchAutomaticBordering(enabled: boolean): void;
+    onSwitchAdaptiveZoom(enabled: boolean): void;
     onSwitchIntelligentPolygonCrop(enabled: boolean): void;
     onChangeDefaultApproxPolyAccuracy(approxPolyAccuracy: number): void;
     onChangeTextFontSize(fontSize: number): void;
@@ -66,6 +69,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         showAllInterpolationTracks,
         showObjectsTextAlways,
         automaticBordering,
+        adaptiveZoom,
         intelligentPolygonCrop,
         defaultApproxPolyAccuracy,
         textFontSize,
@@ -82,6 +86,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         showAllInterpolationTracks,
         showObjectsTextAlways,
         automaticBordering,
+        adaptiveZoom,
         intelligentPolygonCrop,
         defaultApproxPolyAccuracy,
         textFontSize,
@@ -99,6 +104,7 @@ const mapDispatchToProps: DispatchToProps = {
     onSwitchShowingInterpolatedTracks: switchShowingInterpolatedTracks,
     onSwitchShowingObjectsTextAlways: switchShowingObjectsTextAlways,
     onSwitchAutomaticBordering: switchAutomaticBordering,
+    onSwitchAdaptiveZoom: switchAdaptiveZoom,
     onSwitchIntelligentPolygonCrop: switchIntelligentPolygonCrop,
     onChangeDefaultApproxPolyAccuracy: changeDefaultApproxPolyAccuracy,
     onChangeTextFontSize: switchTextFontSize,

@@ -110,6 +110,7 @@ interface StateToProps {
     maxZLayer: number;
     curZLayer: number;
     automaticBordering: boolean;
+    adaptiveZoom: boolean;
     intelligentPolygonCrop: boolean;
     switchableAutomaticBordering: boolean;
     keyMap: KeyMap;
@@ -190,6 +191,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 showAllInterpolationTracks,
                 showTagsOnFrame,
                 automaticBordering,
+                adaptiveZoom,
                 intelligentPolygonCrop,
                 textFontSize,
                 controlPointsSize,
@@ -246,6 +248,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         minZLayer,
         maxZLayer,
         automaticBordering,
+        adaptiveZoom,
         intelligentPolygonCrop,
         workspace,
         keyMap,
@@ -367,6 +370,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     public componentDidMount(): void {
         const {
             automaticBordering,
+            adaptiveZoom,
             intelligentPolygonCrop,
             showObjectsTextAlways,
             workspace,
@@ -396,6 +400,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             undefinedAttrValue: config.UNDEFINED_ATTRIBUTE_VALUE,
             displayAllText: showObjectsTextAlways,
             autoborders: automaticBordering,
+            adaptiveZoom,
             showProjections,
             showConflicts: showGroundTruth,
             intelligentPolygonCrop,
@@ -444,6 +449,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             textContent,
             showAllInterpolationTracks,
             automaticBordering,
+            adaptiveZoom,
             intelligentPolygonCrop,
             showProjections,
             colorBy,
@@ -457,6 +463,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         if (
             prevProps.showObjectsTextAlways !== showObjectsTextAlways ||
             prevProps.automaticBordering !== automaticBordering ||
+            prevProps.adaptiveZoom !== adaptiveZoom ||
             prevProps.showProjections !== showProjections ||
             prevProps.intelligentPolygonCrop !== intelligentPolygonCrop ||
             prevProps.opacity !== opacity ||
@@ -476,6 +483,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                 undefinedAttrValue: config.UNDEFINED_ATTRIBUTE_VALUE,
                 displayAllText: showObjectsTextAlways,
                 autoborders: automaticBordering,
+                adaptiveZoom,
                 showProjections,
                 intelligentPolygonCrop,
                 selectedShapeOpacity: selectedOpacity,
@@ -510,10 +518,10 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                 ).filter((state: ObjectState | undefined) => !!state) as ObjectState[];
             const highlightedClientIDs = highlightedObjects.map((state) => state?.clientID) as number[];
 
-            const higlightedTags = highlightedObjects.some((state) => state?.objectType === ObjectType.TAG);
-            if (higlightedTags && prevProps.highlightedConflict) {
+            const highlightedTags = highlightedObjects.some((state) => state?.objectType === ObjectType.TAG);
+            if (highlightedTags && prevProps.highlightedConflict) {
                 canvasInstance.highlight([], null);
-            } else if (!higlightedTags) {
+            } else if (!highlightedTags) {
                 canvasInstance.highlight(highlightedClientIDs, severity || null);
             }
         }
@@ -614,7 +622,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().removeEventListener('canvas.clicked', this.onCanvasShapeClicked);
         canvasInstance.html().removeEventListener('canvas.drawn', this.onCanvasShapeDrawn);
         canvasInstance.html().removeEventListener('canvas.merged', this.onCanvasObjectsMerged);
-        canvasInstance.html().removeEventListener('canvas.groupped', this.onCanvasObjectsGroupped);
+        canvasInstance.html().removeEventListener('canvas.grouped', this.onCanvasObjectsGrouped);
         canvasInstance.html().removeEventListener('canvas.joined', this.onCanvasObjectsJoined);
         canvasInstance.html().removeEventListener('canvas.regionselected', this.onCanvasPositionSelected);
         canvasInstance.html().removeEventListener('canvas.splitted', this.onCanvasTrackSplitted);
@@ -697,7 +705,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         onMergeAnnotations(states);
     };
 
-    private onCanvasObjectsGroupped = (event: any): void => {
+    private onCanvasObjectsGrouped = (event: any): void => {
         const {
             jobInstance, onGroupAnnotations, updateActiveControl,
         } = this.props;
@@ -1078,7 +1086,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener('canvas.clicked', this.onCanvasShapeClicked);
         canvasInstance.html().addEventListener('canvas.drawn', this.onCanvasShapeDrawn);
         canvasInstance.html().addEventListener('canvas.merged', this.onCanvasObjectsMerged);
-        canvasInstance.html().addEventListener('canvas.groupped', this.onCanvasObjectsGroupped);
+        canvasInstance.html().addEventListener('canvas.grouped', this.onCanvasObjectsGrouped);
         canvasInstance.html().addEventListener('canvas.joined', this.onCanvasObjectsJoined);
         canvasInstance.html().addEventListener('canvas.regionselected', this.onCanvasPositionSelected);
         canvasInstance.html().addEventListener('canvas.splitted', this.onCanvasTrackSplitted);

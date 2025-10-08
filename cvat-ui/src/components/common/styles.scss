@@ -55,3 +55,8 @@
     max-height: $grid-unit-size * 40;
     overflow-y: auto;
 }
+
+.cvat-menu-edit-label {
+    display: flex;
+    justify-content: space-between;
+}

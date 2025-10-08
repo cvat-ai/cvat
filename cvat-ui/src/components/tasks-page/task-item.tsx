@@ -6,13 +6,13 @@
 import React from 'react';
 import { RouteComponentProps } from 'react-router';
 import { withRouter } from 'react-router-dom';
+import dayjs from 'dayjs';
 import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
 import { MoreOutlined } from '@ant-design/icons';
 import Progress from 'antd/lib/progress';
 import Badge from 'antd/lib/badge';
-import moment from 'moment';
 import { Task, RQStatus, Request } from 'cvat-core-wrapper';
 import Preview from 'components/common/preview';
 import { ActiveInference, PluginComponent } from 'reducers';
@@ -28,6 +28,8 @@ export interface TaskItemProps {
     ribbonPlugins: PluginComponent[];
     cancelAutoAnnotation(): void;
     updateTaskInState(task: Task): void;
+    selected: boolean;
+    onClick: () => void;
 }
 
 interface State {
@@ -126,8 +128,8 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         const { taskInstance } = this.props;
         const { id } = taskInstance;
         const owner = taskInstance.owner ? taskInstance.owner.username : null;
-        const updated = moment(taskInstance.updatedDate).fromNow();
-        const created = moment(taskInstance.createdDate).format('MMMM Do YYYY');
+        const updated = dayjs(taskInstance.updatedDate).fromNow();
+        const created = dayjs(taskInstance.createdDate).format('MMMM Do YYYY');
 
         return (
             <Col span={10} className='cvat-task-item-description'>
@@ -259,7 +261,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                         <TaskActionsComponent
                             taskInstance={taskInstance}
                             triggerElement={(
-                                <div>
+                                <div className='cvat-task-item-actions-button cvat-actions-menu-button'>
                                     <Text className='cvat-text-color'>Actions</Text>
                                     <MoreOutlined className='cvat-menu-icon' />
                                 </div>
@@ -272,12 +274,13 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
     }
 
     public render(): JSX.Element {
-        const { deleted, ribbonPlugins } = this.props;
-
-        const style = {};
+        const {
+            deleted, ribbonPlugins, selected, onClick, taskInstance,
+        } = this.props;
+        const style: React.CSSProperties = {};
         if (deleted) {
-            (style as any).pointerEvents = 'none';
-            (style as any).opacity = 0.5;
+            style.pointerEvents = 'none';
+            style.opacity = 0.5;
         }
 
         const ribbonItems = ribbonPlugins
@@ -298,12 +301,24 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                     </div>
                 )}
             >
-                <Row className='cvat-tasks-list-item' justify='center' align='top' style={{ ...style }}>
-                    {this.renderPreview()}
-                    {this.renderDescription()}
-                    {this.renderProgress()}
-                    {this.renderNavigation()}
-                </Row>
+                <TaskActionsComponent
+                    taskInstance={taskInstance}
+                    dropdownTrigger={['contextMenu']}
+                    triggerElement={(
+                        <Row
+                            className={`cvat-tasks-list-item${selected ? ' cvat-item-selected' : ''}`}
+                            justify='center'
+                            align='top'
+                            style={style}
+                            onClick={onClick}
+                        >
+                            {this.renderPreview()}
+                            {this.renderDescription()}
+                            {this.renderProgress()}
+                            {this.renderNavigation()}
+                        </Row>
+                    )}
+                />
             </Badge.Ribbon>
         );
     }

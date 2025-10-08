@@ -49,8 +49,10 @@ integration, providing a clear picture of the workflow and participants involved
 
 ## Requester: How to get data annotated?
 
-> Note: Either you are Requester or Annotator,
-> to access this feature, you'll need to [send a request to HUMAN Protocol](mailto:app@humanprotocol.org).
+{{% alert title="Note" color="primary" %}}
+Either you are Requester or Annotator,
+to access this feature, you'll need to [send a request to HUMAN Protocol](mailto:app@humanprotocol.org).
+{{% /alert %}}
 
 To register and launch a job on the HUMAN Protocol site, follow these steps:
 
@@ -63,8 +65,10 @@ annotated according to the specified requirements and quality standards.
 
 ## Annotator: How to earn money?
 
-> Note: Either you are Requester or Annotator,
-> to access this feature, you'll need to [send a request to HUMAN Protocol](mailto:app@humanprotocol.org).
+{{% alert title="Note" color="primary" %}}
+Either you are Requester or Annotator,
+to access this feature, you'll need to [send a request to HUMAN Protocol](mailto:app@humanprotocol.org).
+{{% /alert %}}
 
 To start earning money on the Human Protocol site, follow these simple steps:
 

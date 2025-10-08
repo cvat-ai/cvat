@@ -233,6 +233,7 @@ function PlayerNavigation(props: Props): JSX.Element {
                         value={frameInputValue}
                         min={startFrame}
                         max={stopFrame}
+                        style={{ ['--frame-input-width' as string]: `${stopFrame.toString().length + 2}ch` }}
                         onChange={(value: number | undefined | string | null) => {
                             if (typeof value !== 'undefined' && value !== null) {
                                 setFrameInputValue(Math.floor(clamp(+value, startFrame, stopFrame)));

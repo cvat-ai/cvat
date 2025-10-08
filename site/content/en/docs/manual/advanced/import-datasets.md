@@ -13,13 +13,13 @@ You can export a dataset to a project, task or job.
 1. To download the latest annotations, you have to save all changes first.
    Click the `Save` button. There is a `Ctrl+S` shortcut to save annotations quickly.
 
-   ![](/images/image028.jpg)
+   ![Opened annotation menu with highlighted "Export task dataset" option](/images/image028.jpg)
 
 1. After that, click the `Menu` button.
    Exporting and importing of task and project datasets takes place through the `Action` menu.
 1. Press the `Export task dataset` button.
 
-   ![](/images/image225.jpg)
+   !["Export task" window with marked parameters](/images/image225.jpg)
 
 1. Choose the format for exporting the dataset. Exporting and importing is available in:
    - Standard CVAT formats:
@@ -51,7 +51,7 @@ You can export a dataset to a project, task or job.
 You can import dataset only to a project. In this case, the data will be split into subsets.
 To import a dataset, do the following on the `Project` page:
 
-![](/images/image238.jpg)
+![Project with opened "Actions" menu and highlighted "Import dataset" option](/images/image238.jpg)
 
 - Open the `Actions` menu.
 - Press the `Import dataset` button.
@@ -59,7 +59,7 @@ To import a dataset, do the following on the `Project` page:
   the format will be in the archive name).
 - Drag the file to the file upload area or click on the upload area to select the file through the explorer.
 
-![](/images/image250.jpg)
+!["Import dataset" window with options and parameters](/images/image250.jpg)
 
 - You can also import a dataset from an attached cloud storage.
   Here you should select the annotation format, then select a cloud storage from the list or use default settings
@@ -70,12 +70,12 @@ During the import process, you will be able to track the progress of the import.
 
 ## Upload annotations
 
-![](/images/image251.jpg)
+![Task with opened "Actions" menu and highlighted "Upload annotations" option](/images/image251.jpg)
 
 In the task or job you can upload an annotation. For this select the item `Upload annotation`
 in the menu `Action` of the task or in the job `Menu` on the `Top panel` select the format in which you plan
 to upload the annotation and select the annotation file or archive via explorer.
 
-![](/images/image252.jpg)
+!["Import annotation task" window with options and parameters](/images/image252.jpg)
 
 Or you can also use the attached cloud storage to upload the annotation file.

@@ -24,7 +24,7 @@ context('Button "Continue" in label editor.', () => {
             cy.addNewLabelViaContinueButton(additionalLabels);
         });
 
-        it('All labels cuccessfully added.', () => {
+        it('All labels successfully added.', () => {
             cy.collectLabelsName().then((labelNames) => {
                 expect(labelNames).to.include(additionalLabels[0]);
                 expect(labelNames).to.include(additionalLabels[1]);

@@ -26,8 +26,9 @@ In CVAT all such DL models are implemented as serverless functions using the [Nu
 serverless platform. There are multiple implemented functions that can be
 found in the [serverless][cvat-builtin-serverless] directory such as
 _Mask RCNN, Faster RCNN, SiamMask, Inside Outside Guidance, Deep Extreme Cut_, etc.
-Follow [the installation guide][cvat-auto-annotation-guide] to build and deploy
-these serverless functions. See [the user guide][cvat-ai-tools-user-guide] to
+Follow {{< ilink "/docs/administration/advanced/installation_automatic_annotation" "the installation guide" >}}
+to build and deploy
+these serverless functions. See {{< ilink "/docs/manual/advanced/ai-tools" "the user guide" >}} to
 understand how to use these functions in the UI to automatically annotate data.
 
 What is a serverless function and why is it used for automatic annotation
@@ -45,7 +46,8 @@ inside cloud infrastructure which can be called over HTTP. The Nuclio
 serverless platform helps us to implement and manage such functions.
 
 CVAT supports Nuclio out of the box if it is built properly. See
-[the installation guide][cvat-auto-annotation-guide] for instructions.
+{{< ilink "/docs/administration/advanced/installation_automatic_annotation" "the installation guide" >}}
+for instructions.
 Thus if you deploy a serverless function, the CVAT server can see it and call it
 with appropriate arguments. Of course there are some tricks how to create
 serverless functions for CVAT and we will discuss them in next sections of
@@ -80,7 +82,7 @@ nuclio       /docker-entrypoint.sh sh - ...   Up (healthy)   80/tcp, 0.0.0.0:807
 
 Next step is to deploy builtin serverless functions using Nuclio command
 line tool (aka `nuctl`). It is assumed that you followed
-[the installation guide][cvat-auto-annotation-guide] and `nuctl`
+{{< ilink "/docs/administration/advanced/installation_automatic_annotation" "the installation guide" >}} and `nuctl`
 is already installed on your operating system. Run the following
 command to check that it works. In the beginning you should not have
 any deployed serverless functions.
@@ -150,7 +152,7 @@ finish the process.
 
 ![Create a video annotation task](/images/create_video_task.png)
 
-Open the task and use [AI tools][cvat-ai-tools-user-guide] to start tracking
+Open the task and use {{< ilink "/docs/manual/advanced/ai-tools" "AI tools" >}} to start tracking
 an object. Draw a bounding box around an object, and sequentially switch
 through the frame and correct the restrictive box if necessary.
 
@@ -214,7 +216,7 @@ should see detection results. Do not forget to save annotations.
 Also it is possible to run a detector for the whole annotation task. Thus
 CVAT will run the serverless function on every frame of the task and submit
 results directly into database. For more details please read
-[the guide][cvat-auto-annotation-user-guide].
+{{< ilink "/docs/manual/advanced/automatic-annotation" "the guide" >}}.
 
 ### Object segmentation using Segment Anything
 
@@ -553,7 +555,7 @@ Full code can be found here: [detectron2/retinanet/nuclio/main.py][retinanet-mai
 
 To use the new serverless function you have to deploy it using `nuctl` command.
 The actual deployment process is described in
-[automatic annotation guide][cvat-auto-annotation-guide].
+{{< ilink "/docs/administration/advanced/installation_automatic_annotation" "automatic annotation guide" >}}.
 
 <details>
 <summary>
@@ -754,8 +756,8 @@ port forwarding again._
 ### Troubleshooting
 
 First of all need to check that you are using the recommended version of
-Nuclio framework. In my case it is `1.5.16` but you need to check [the
-installation manual][cvat-auto-annotation-guide].
+Nuclio framework. In my case it is `1.5.16` but you need to check
+{{< ilink "/docs/administration/advanced/installation_automatic_annotation" "the installation manual" >}}.
 
 ```bash
 nuctl version
@@ -887,7 +889,6 @@ Deploying serverless/pytorch/shiyinzhang/iog function...
   NAMESPACE |                      NAME                      | PROJECT | STATE | NODE PORT | REPLICAS
   nuclio    | openvino-dextr                                 | cvat    | ready |     49154 | 1/1
   nuclio    | pth-foolwood-siammask                          | cvat    | ready |     49155 | 1/1
-  nuclio    | pth-saic-vul-fbrs                              | cvat    | ready |     49156 | 1/1
   nuclio    | pth-facebookresearch-detectron2-retinanet-r101 | cvat    | ready |     49155 | 1/1
   nuclio    | pth-shiyinzhang-iog                            | cvat    | ready |     49159 | 1/1
 ```
@@ -945,7 +946,8 @@ myHttpTrigger:
 If you encounter a problem running serverless functions on Windows 10,
 you can use the Ubuntu subsystem, for this do the following:
 
-1. Install  `WSL 2` and `Docker Desktop` as described in [installation manual][cvat-installation-guide-windows-10]
+1. Install  `WSL 2` and `Docker Desktop` as described in
+{{< ilink "/docs/administration/basics/installation#windows-10" "installation manual" >}}
 
 1. Install [Ubuntu 18.04 from Microsoft store][ubuntu-1804-microsoft-store].
 
@@ -954,10 +956,12 @@ you can use the Ubuntu subsystem, for this do the following:
    ![Docker WSL integration Ubuntu 18.04](/images/docker_wsl_integration.jpg)
 
 1. Then you can download and install `nuctl` on Ubuntu,
-   using the [automatic annotation guide][cvat-auto-annotation-guide].
+   using the
+   {{< ilink "/docs/administration/advanced/installation_automatic_annotation" "automatic annotation guide" >}}.
 
 1. Install `git` and clone repository on Ubuntu,
-   as described in the [installation manual][cvat-installation-guide-ubuntu-1804].
+   as described in the
+   {{< ilink "/docs/administration/basics/installation#ubuntu-1804-x86_64amd64" "installation manual" >}}.
 
 1. After that, run the commands from this tutorial through Ubuntu.
 
@@ -975,16 +979,11 @@ you can use the Ubuntu subsystem, for this do the following:
 [retinanet-main-py]: https://github.com/cvat-ai/cvat/blob/b2f616859ca64687c385e636b4a25014fbb9d17c/serverless/pytorch/facebookresearch/detectron2/retinanet/nuclio/main.py
 [nuclio-homepage]: https://nuclio.io/
 [cvat-builtin-serverless]: https://github.com/cvat-ai/cvat/tree/develop/serverless
-[cvat-auto-annotation-guide]: /docs/administration/advanced/installation_automatic_annotation
-[cvat-installation-guide-windows-10]: /docs/administration/basics/installation/#windows-10
-[cvat-installation-guide-ubuntu-1804]: /docs/administration/basics/installation/#ubuntu-1804-x86_64amd64
 [mscoco-format]: https://cocodataset.org/#format-data
 [pascal-voc-format]: http://host.robots.ox.ac.uk/pascal/VOC/voc2012/htmldoc/index.html
 [faas-wiki]: https://en.wikipedia.org/wiki/Function_as_a_service
-[cvat-ai-tools-user-guide]: /docs/manual/advanced/ai-tools/
 [cvat-github]: https://github.com/cvat-ai/cvat
 [siammask-serverless]: https://github.com/cvat-ai/cvat/tree/develop/serverless/pytorch/foolwood/siammask/nuclio
 [vtest-avi]: https://github.com/opencv/opencv/blob/master/samples/data/vtest.avi?raw=true
 [intel-openvino-url]: https://software.intel.com/content/www/us/en/develop/tools/openvino-toolkit.html
-[cvat-auto-annotation-user-guide]: /docs/manual/advanced/automatic-annotation/
 [ubuntu-1804-microsoft-store]: https://www.microsoft.com/en-us/p/ubuntu-1804-lts/9n9tngvndl3q

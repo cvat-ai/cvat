@@ -13,7 +13,7 @@ import {
     enableImageFilter,
     disableImageFilter,
 } from 'actions/settings-actions';
-import GammaCorrection from 'utils/fabric-wrapper/gamma-correciton';
+import GammaCorrection from 'utils/fabric-wrapper/gamma-correction';
 import { ImageFilterAlias, hasFilter } from 'utils/image-processing';
 
 export default function GammaFilter(): JSX.Element {

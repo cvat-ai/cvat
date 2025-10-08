@@ -155,7 +155,7 @@ class TestGetAuditEvents:
         api_client: ApiClient,
         *,
         api_version: int,
-        max_retries: int = 20,
+        max_retries: int = 100,
         interval: float = 0.1,
         **kwargs,
     ) -> Optional[bytes]:

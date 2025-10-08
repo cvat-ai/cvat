@@ -97,79 +97,6 @@ details > .code-toolbar {
     color: lightgray;
 }
 
-/* World map block "the team" */
-
-.team-container {
-    margin: auto;
-    max-width: 1200px;
-}
-
-.world-map-container {
-    width: 100%;
-}
-
-#world-map {
-    z-index: 1;
-    width: 100%;
-    height: 100%;
-}
-
-#world-map-marker {
-    z-index: 2;
-    position: absolute;
-    border-radius: 50%;
-    border: 2px white solid;
-    box-shadow: 2px 2px 1px gray;
-    max-height: 27px;
-}
-
-@media (max-width: 1680px) {
-    #world-map-marker {
-        margin-left: 25px;
-    }
-}
-
-@media (max-width: 1540px) {
-    #world-map-marker {
-        margin-left: 35px;
-        max-height: 25px;
-    }
-}
-
-@media (max-width: 1200px) {
-    #world-map-marker {
-        margin-top: 5px;
-        margin-left: 40px;
-        max-height: 20px;
-    }
-}
-
-@media (max-width: 992px) {
-    #world-map-marker {
-        margin-top: 10px;
-        margin-left: 30px;
-        max-height: 15px;
-    }
-}
-
-@media (max-width: 768px) {
-    #world-map-marker {
-        margin-top: 15px;
-        margin-left: 15px;
-        max-height: 10px;
-    }
-}
-
-#world-map-marker:hover {
-    border: 4px white solid;
-}
-
-/* Cover block on about page */
-
-#td-cover-block-0 {
-    background-image: url("../images/background-about-page.jpg");
-}
-
 /* Display version menu on mobile version of the site */
 /* stylelint-disable-next-line selector-id-pattern */
 #dropdown_ver {
@@ -190,3 +117,4 @@ details > .code-toolbar {
 */
 /* stylelint-disable-next-line selector-class-pattern */
 .td-breadcrumbs__single { display: none !important; }
+

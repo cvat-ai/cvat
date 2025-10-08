@@ -10,17 +10,22 @@ description: 'Creating and exporting projects in CVAT.'
 On this page, you can create a new project, create a project from a backup, and also see the created projects.
 
 In the upper left corner there is a search bar, using which you can find the project by project name, assignee etc.
-In the upper right corner there are [sorting][sorting], [quick filters][quick-filters] and filter.
+In the upper right corner there are {{< ilink "/docs/manual/advanced/filter#sort-by" "sorting" >}},
+{{< ilink "/docs/manual/advanced/filter#quick-filters" "quick filters" >}} and filter.
 
 ## Filter
 
-> Applying a filter disables the [quick filter][quick-filters].
+{{% alert title="Note" color="primary" %}}
+Applying a filter disables the {{< ilink "/docs/manual/advanced/filter#quick-filters" "quick filters" >}}.
+{{% /alert %}}
 
 The filter works similarly to the filters for annotation,
 you can create rules from [properties](#supported-properties-for-projects-list),
-[operators][operators] and values and group rules into [groups][groups].
-For more details, see the [filter section][create-filter].
-Learn more about [date and time selection][data-and-time].
+{{< ilink "/docs/manual/advanced/filter#supported-operators-for-properties" "operators" >}}
+and values and group rules into
+{{< ilink "/docs/manual/advanced/filter#groups" "groups" >}}.
+For more details, see the {{< ilink "/docs/manual/advanced/filter#create-a-filter" "filter section" >}}.
+Learn more about {{< ilink "/docs/manual/advanced/filter#date-and-time-selection" "date and time selection" >}}.
 
 To clear all filters, press `Clear filters`.
 
@@ -43,10 +48,12 @@ To create a project, go to the projects section by clicking on the `Projects` it
 On the projects page, you can see a list of projects, use a search,
 or create a new project by clicking on the `+` button and select `Create New Project`.
 
-![](/images/image190.jpg)
+!["Projects" page with highlighted menu for project creation](/images/image190.jpg)
 
-> Note that the project will be created in the organization that you selected at the time of creation.
-> Read more about {{< ilink "/docs/manual/advanced/organization" "organizations" >}}.
+{{% alert title="Note" color="primary" %}}
+Note that the project will be created in the organization that you selected at the time of creation.
+Read more about {{< ilink "/docs/manual/advanced/organization" "organizations" >}}.
+{{% /alert %}}
 
 You can change: the name of the project, the list of labels
 (which will be used for tasks created as parts of this project) and a skeleton if it's necessary.
@@ -58,11 +65,11 @@ Learn more about {{< ilink "/docs/manual/basics/create-annotation-task#labels" "
 To save and open a project, click on `Submit & Open` button. Also, you
 can click on `Submit & Continue` button to create several projects in sequence.
 
-![](/images/image191.jpg)
+!["Create a new project" window with options and parameters](/images/image191.jpg)
 
 Once created, the project will appear on the projects page. To open a project, just click on it.
 
-![](/images/image192_mapillary_vistas.jpg)
+![Example of a project page with project details and highlighted interface elements](/images/image192_mapillary_vistas.jpg)
 
 Here you can do the following:
 
@@ -73,6 +80,12 @@ Here you can do the following:
      section.
    - `Backup project` - make a backup of the project read more in the
      {{< ilink "/docs/manual/advanced/backup" "backup" >}} section.
+   - `Organization` - move the project between your personal workspace or organizations.
+     Please, refer to the
+     {{< ilink
+     "/docs/manual/advanced/organization#transfer-tasks-and-projects-between-organizations"
+     "Transfer between organizations" >}}
+     section for details.
    - `Delete` - remove the project and all related tasks.
 1. Change issue tracker or open issue tracker if it is specified.
 1. Change labels and skeleton.
@@ -90,9 +103,3 @@ Here you can do the following:
 It is possible to choose a subset for tasks in the project. You can use the available options
 (`Train`, `Test`, `Validation`) or set your own.
 
-[create-filter]: /docs/manual/advanced/filter/#create-a-filter
-[operators]: /docs/manual/advanced/filter/#supported-operators-for-properties
-[groups]: /docs/manual/advanced/filter/#groups
-[data-and-time]: /docs/manual/advanced/filter#date-and-time-selection
-[sorting]: /docs/manual/advanced/filter/#sort-by
-[quick-filters]: /docs/manual/advanced/filter/#quick-filters

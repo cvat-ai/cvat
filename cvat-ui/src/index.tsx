@@ -27,6 +27,7 @@ import { getRequestsAsync } from 'actions/requests-async-actions';
 import { getServerAPISchemaAsync } from 'actions/server-actions';
 import { navigationActions } from 'actions/navigation-actions';
 import { CombinedState, NotificationsState, PluginsState } from './reducers';
+import './utils/dayjs-wrapper';
 
 createCVATStore(createRootReducer);
 
@@ -123,8 +124,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         resetErrors: (): void => dispatch(resetErrors()),
         resetMessages: (): void => dispatch(resetMessages()),
         loadOrganization: (): void => dispatch(activateOrganizationAsync()),
-        initInvitations: (): void => dispatch(getInvitationsAsync({ page: 1 }, true)),
-        initRequests: (): void => dispatch(getRequestsAsync({ page: 1 })),
+        initInvitations: (): void => dispatch(getInvitationsAsync({}, true)),
+        initRequests: (): void => dispatch(getRequestsAsync()),
         loadServerAPISchema: (): void => dispatch(getServerAPISchemaAsync()),
         onChangeLocation: (from: string, to: string): void => dispatch(navigationActions.changeLocation(from, to)),
     };

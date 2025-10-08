@@ -36,7 +36,7 @@ export default class QualitySettings {
     #pointSizeBase: PointSizeBase;
     #lineThickness: number;
     #lowOverlapThreshold: number;
-    #orientedLines: boolean;
+    #compareLineOrientation: boolean;
     #lineOrientationThreshold: number;
     #compareGroups: boolean;
     #groupMatchThreshold: number;
@@ -60,7 +60,7 @@ export default class QualitySettings {
         this.#pointSizeBase = initialData.point_size_base as PointSizeBase;
         this.#lineThickness = initialData.line_thickness;
         this.#lowOverlapThreshold = initialData.low_overlap_threshold;
-        this.#orientedLines = initialData.compare_line_orientation;
+        this.#compareLineOrientation = initialData.compare_line_orientation;
         this.#lineOrientationThreshold = initialData.line_orientation_threshold;
         this.#compareGroups = initialData.compare_groups;
         this.#groupMatchThreshold = initialData.group_match_threshold;
@@ -102,8 +102,8 @@ export default class QualitySettings {
         return this.#lowOverlapThreshold;
     }
 
-    get orientedLines(): boolean {
-        return this.#orientedLines;
+    get compareLineOrientation(): boolean {
+        return this.#compareLineOrientation;
     }
 
     get lineOrientationThreshold(): number {

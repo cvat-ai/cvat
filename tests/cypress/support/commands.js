@@ -110,8 +110,8 @@ Cypress.Commands.add('changeUserActiveStatus', (authKey, accountsToChangeActiveS
             Authorization: `Token ${authKey}`,
         },
     }).then((response) => {
-        const responceResult = response.body.results;
-        responceResult.forEach((user) => {
+        const responseResult = response.body.results;
+        responseResult.forEach((user) => {
             const userId = user.id;
             const userName = user.username;
             if (userName.includes(accountsToChangeActiveStatus)) {
@@ -137,8 +137,8 @@ Cypress.Commands.add('checkUserStatuses', (authKey, userName, staffStatus, super
             Authorization: `Token ${authKey}`,
         },
     }).then((response) => {
-        const responceResult = response.body.results;
-        responceResult.forEach((user) => {
+        const responseResult = response.body.results;
+        responseResult.forEach((user) => {
             if (user.username.includes(userName)) {
                 expect(staffStatus).to.be.equal(user.is_staff);
                 expect(superuserStatus).to.be.equal(user.is_superuser);
@@ -156,8 +156,8 @@ Cypress.Commands.add('deleteTasks', (authResponse, tasksToDelete) => {
             Authorization: `Token ${authKey}`,
         },
     }).then((_response) => {
-        const responceResult = _response.body.results;
-        for (const task of responceResult) {
+        const responseResult = _response.body.results;
+        for (const task of responseResult) {
             const { id, name } = task;
             for (const taskToDelete of tasksToDelete) {
                 if (name === taskToDelete) {
@@ -493,6 +493,12 @@ Cypress.Commands.add('openTask', (taskName, projectSubsetFieldValue) => {
     }
 });
 
+Cypress.Commands.add('openTaskById', (taskId) => {
+    cy.visit(`/tasks/${taskId}`);
+    cy.get('.cvat-spinner').should('not.exist');
+    cy.get('.cvat-task-details').should('exist').and('be.visible');
+});
+
 Cypress.Commands.add('saveJob', (method = 'PATCH', status = 200, as = 'saveJob') => {
     cy.intercept(method, '/api/jobs/**').as(as);
     cy.clickSaveAnnotationView();
@@ -742,15 +748,21 @@ Cypress.Commands.add('createPolygon', (createPolygonParams) => {
     cy.checkObjectParameters(createPolygonParams, 'POLYGON');
 });
 
-Cypress.Commands.add('openSettings', () => {
+Cypress.Commands.add('clickUserMenuItem', (itemName, verify) => {
     cy.get('.cvat-header-menu-user-dropdown').click();
     cy.get('.cvat-header-menu')
         .should('exist')
         .and('be.visible')
         .find('[role="menuitem"]')
-        .filter(':contains("Settings")')
+        .filter(`:contains("${itemName}")`)
         .click();
-    cy.get('.cvat-settings-modal').should('be.visible');
+    verify();
+});
+
+Cypress.Commands.add('openSettings', () => {
+    cy.clickUserMenuItem('Settings', () => {
+        cy.get('.cvat-settings-modal').should('be.visible');
+    });
 });
 
 Cypress.Commands.add('closeSettings', () => {
@@ -758,6 +770,12 @@ Cypress.Commands.add('closeSettings', () => {
         cy.contains('button', 'Close').click();
     });
     cy.get('.cvat-settings-modal').should('not.be.visible');
+});
+
+Cypress.Commands.add('openProfile', () => {
+    cy.clickUserMenuItem('Profile', () => {
+        cy.get('.cvat-profile-page').should('be.visible');
+    });
 });
 
 Cypress.Commands.add('changeWorkspace', (mode) => {
@@ -1333,8 +1351,16 @@ Cypress.Commands.add('setJobStage', (jobID, stage) => {
     cy.get('.cvat-spinner').should('not.exist');
 });
 
-Cypress.Commands.add('closeNotification', (className) => {
-    cy.get(className).find('span[aria-label="close"]').click();
+Cypress.Commands.add('closeNotification', (className, numOfNotifications = 1) => {
+    cy.get(className)
+        .should('have.length', numOfNotifications)
+        .find('span[aria-label="close"]')
+        .then(($elements) => {
+            // Click in reverse order to avoid re-render instability
+            for (let i = $elements.length - 1; i >= 0; i--) {
+                cy.wrap($elements[i]).click();
+            }
+        });
     cy.get(className).should('not.exist');
 });
 
@@ -1498,9 +1524,9 @@ Cypress.Commands.add('shapeRotate', (shape, expectedRotateDeg, pressShift = fals
         cy.get(shape).should('have.attr', 'transform');
         cy.document().then((doc) => {
             const modShapeIDString = shape.substring(1); // Remove "#" from the shape id string
-            const shapeTranformMatrix = decomposeMatrix(doc.getElementById(modShapeIDString).getCTM());
-            cy.get('#cvat_canvas_text_content').should('contain.text', `${shapeTranformMatrix}°`);
-            expect(`${shapeTranformMatrix}°`).to.be.equal(`${expectedRotateDeg}°`);
+            const shapeTransformMatrix = decomposeMatrix(doc.getElementById(modShapeIDString).getCTM());
+            cy.get('#cvat_canvas_text_content').should('contain.text', `${shapeTransformMatrix}°`);
+            expect(`${shapeTransformMatrix}°`).to.be.equal(`${expectedRotateDeg}°`);
         });
         cy.get('#root').trigger('mouseup');
     });
@@ -1546,7 +1572,7 @@ Cypress.Commands.add('createJob', (options = {
     frameSelectionMethod: 'Random',
     quantity: null,
     frameCount: null,
-    seed: null,
+    randomSeed: null,
     fromTaskPage: true,
 }) => {
     const {
@@ -1554,7 +1580,7 @@ Cypress.Commands.add('createJob', (options = {
         frameSelectionMethod,
         quantity,
         frameCount,
-        seed,
+        randomSeed,
         fromTaskPage,
     } = options;
 
@@ -1587,9 +1613,9 @@ Cypress.Commands.add('createJob', (options = {
         cy.get('.cvat-input-frame-count').type(frameCount);
     }
 
-    if (seed) {
+    if (randomSeed) {
         cy.get('.cvat-input-seed').clear();
-        cy.get('.cvat-input-seed').type(seed);
+        cy.get('.cvat-input-seed').type(randomSeed);
     }
 
     cy.contains('button', 'Submit').click();

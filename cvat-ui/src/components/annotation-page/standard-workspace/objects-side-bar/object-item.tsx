@@ -154,7 +154,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                 <ObjectButtonsContainer readonly={readonly} clientID={clientID} />
                 {(!!attributes.length || sizeControlsVisible) && (
                     <ItemDetailsContainer
-                        readonly={readonly}
+                        readonly={readonly || locked}
                         clientID={clientID}
                         parentID={null}
                     />

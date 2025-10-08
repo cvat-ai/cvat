@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
@@ -66,12 +66,18 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
     const [providerType, setProviderType] = useState<ProviderType | null>(null);
     const [credentialsType, setCredentialsType] = useState<CredentialsType | null>(null);
     const [selectedRegion, setSelectedRegion] = useState<string | undefined>(undefined);
-    const newCloudStorageId = useSelector((state: CombinedState) => state.cloudStorages.activities.creates.id);
-    const attaching = useSelector((state: CombinedState) => state.cloudStorages.activities.creates.attaching);
-    const updating = useSelector((state: CombinedState) => state.cloudStorages.activities.updates.updating);
-    const updatedCloudStorageId = useSelector(
-        (state: CombinedState) => state.cloudStorages.activities.updates.cloudStorageID,
-    );
+    const {
+        newCloudStorageId,
+        attaching,
+        updating,
+        updatedCloudStorageId,
+    } = useSelector((state: CombinedState) => ({
+        newCloudStorageId: state.cloudStorages.activities.creates.id,
+        attaching: state.cloudStorages.activities.creates.attaching,
+        updating: state.cloudStorages.activities.updates.updating,
+        updatedCloudStorageId: state.cloudStorages.activities.updates.cloudStorageID,
+    }), shallowEqual);
+
     const loading = cloudStorage ? updating : attaching;
     const fakeCredentialsData = {
         accountName: 'X'.repeat(24),
@@ -322,7 +328,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         className: 'cvat-cloud-storage-form-item',
     };
 
-    const credentialsBlok = (): JSX.Element | null => {
+    const credentialsBlock = (): JSX.Element | null => {
         const internalCommonProps = {
             ...commonProps,
             className: `${commonProps.className} cvat-cloud-storage-form-item-offset-2`,
@@ -516,7 +522,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                         <Select.Option value={CredentialsType.ANONYMOUS_ACCESS}>Anonymous access</Select.Option>
                     </Select>
                 </Form.Item>
-                {credentialsBlok()}
+                {credentialsBlock()}
                 <Form.Item
                     label='Endpoint URL'
                     help='You can specify an endpoint for your storage when using the AWS S3 cloud storage compatible API'
@@ -564,7 +570,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                     </Select>
                 </Form.Item>
 
-                {credentialsBlok()}
+                {credentialsBlock()}
             </>
         );
     };
@@ -598,7 +604,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                         <Select.Option value={CredentialsType.ANONYMOUS_ACCESS}>Anonymous access</Select.Option>
                     </Select>
                 </Form.Item>
-                {credentialsBlok()}
+                {credentialsBlock()}
                 <Form.Item
                     label='Project ID'
                     name='project_id'

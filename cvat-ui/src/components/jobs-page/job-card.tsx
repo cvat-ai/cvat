@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
 import Card from 'antd/lib/card';
@@ -19,31 +19,36 @@ import JobActionsComponent from './actions-menu';
 const useCardHeight = useCardHeightHOC({
     containerClassName: 'cvat-jobs-page',
     siblingClassNames: ['cvat-jobs-page-pagination', 'cvat-jobs-page-top-bar'],
-    paddings: 64,
+    paddings: 80,
     minHeight: 200,
     numberOfRows: 3,
 });
 
 interface Props {
     job: Job;
+    selected: boolean;
+    onClick: (event: React.MouseEvent) => boolean;
 }
 
-function JobCardComponent(props: Props): JSX.Element {
-    const { job } = props;
+function JobCardComponent(props: Readonly<Props>): JSX.Element {
+    const { job, selected, onClick } = props;
 
     const deletes = useSelector((state: CombinedState) => state.jobs.activities.deletes);
     const deleted = job.id in deletes ? deletes[job.id] === true : false;
 
     const history = useHistory();
     const height = useCardHeight();
-    const onClick = (event: React.MouseEvent): void => {
-        const url = `/tasks/${job.taskId}/jobs/${job.id}`;
-        if (event.ctrlKey) {
-            window.open(url, '_blank', 'noopener noreferrer');
-        } else {
-            history.push(url);
+    const handleCardClick = useCallback((event: React.MouseEvent): void => {
+        const cancel = onClick(event);
+        if (!cancel) {
+            const url = `/tasks/${job.taskId}/jobs/${job.id}`;
+            if (event.ctrlKey) {
+                window.open(url, '_blank', 'noopener noreferrer');
+            } else {
+                history.push(url);
+            }
         }
-    };
+    }, [job, onClick]);
 
     const style = {};
     if (deleted) {
@@ -58,47 +63,57 @@ function JobCardComponent(props: Props): JSX.Element {
         tag = 'Consensus';
     }
 
+    const cardClassName = `cvat-job-page-list-item${selected ? ' cvat-item-selected' : ''}`;
+
     return (
-        <Card
-            style={{ ...style, height }}
-            className='cvat-job-page-list-item'
-            cover={(
-                <>
-                    <Preview
-                        job={job}
-                        onClick={onClick}
-                        loadingClassName='cvat-job-item-loading-preview'
-                        emptyPreviewClassName='cvat-job-item-empty-preview'
-                        previewWrapperClassName='cvat-jobs-page-job-item-card-preview-wrapper'
-                        previewClassName='cvat-jobs-page-job-item-card-preview'
-                    />
-                    <div className='cvat-job-page-list-item-id'>
+        <JobActionsComponent
+            jobInstance={job}
+            consensusJobsPresent={false}
+            dropdownTrigger={['contextMenu']}
+            triggerElement={(
+                <Card
+                    style={{ ...style, height }}
+                    className={cardClassName}
+                    cover={(
+                        <>
+                            <Preview
+                                job={job}
+                                onClick={handleCardClick}
+                                loadingClassName='cvat-job-item-loading-preview'
+                                emptyPreviewClassName='cvat-job-item-empty-preview'
+                                previewWrapperClassName='cvat-jobs-page-job-item-card-preview-wrapper'
+                                previewClassName='cvat-jobs-page-job-item-card-preview'
+                            />
+                            <div className='cvat-job-page-list-item-id'>
                         ID:
-                        {` ${job.id}`}
-                    </div>
-                    {tag && <div className='cvat-job-page-list-item-type'>{tag}</div>}
-                    <div className='cvat-job-page-list-item-dimension'>{job.dimension.toUpperCase()}</div>
-                </>
+                                {` ${job.id}`}
+                            </div>
+                            {tag && <div className='cvat-job-page-list-item-type'>{tag}</div>}
+                            <div className='cvat-job-page-list-item-dimension'>{job.dimension.toUpperCase()}</div>
+                        </>
+                    )}
+                    hoverable
+                    onClick={onClick}
+                >
+                    <Descriptions column={1} size='small'>
+                        <Descriptions.Item label='Stage and state'>{`${job.stage} ${job.state}`}</Descriptions.Item>
+                        <Descriptions.Item label='Frames'>{job.stopFrame - job.startFrame + 1}</Descriptions.Item>
+                        {job.assignee ? (
+                            <Descriptions.Item label='Assignee'>{job.assignee.username}</Descriptions.Item>
+                        ) : (
+                            <Descriptions.Item label='Assignee'> </Descriptions.Item>
+                        )}
+                    </Descriptions>
+                    <JobActionsComponent
+                        jobInstance={job}
+                        consensusJobsPresent={false} // consensus merging is not allowed from jobs page
+                        triggerElement={
+                            <MoreOutlined className='cvat-job-card-more-button cvat-actions-menu-button' />
+                        }
+                    />
+                </Card>
             )}
-            hoverable
-        >
-            <Descriptions column={1} size='small'>
-                <Descriptions.Item label='Stage and state'>{`${job.stage} ${job.state}`}</Descriptions.Item>
-                <Descriptions.Item label='Frames'>{job.stopFrame - job.startFrame + 1}</Descriptions.Item>
-                {job.assignee ? (
-                    <Descriptions.Item label='Assignee'>{job.assignee.username}</Descriptions.Item>
-                ) : (
-                    <Descriptions.Item label='Assignee'> </Descriptions.Item>
-                )}
-            </Descriptions>
-            <JobActionsComponent
-                jobInstance={job}
-                consensusJobsPresent={false} // consensus merging is not allowed from jobs page
-                triggerElement={
-                    <MoreOutlined className='cvat-job-card-more-button' />
-                }
-            />
-        </Card>
+        />
     );
 }
 

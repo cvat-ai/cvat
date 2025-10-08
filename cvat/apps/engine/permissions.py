@@ -19,6 +19,7 @@ from cvat.apps.engine.utils import is_dataset_export
 from cvat.apps.iam.permissions import (
     OpenPolicyAgentPermission,
     StrEnum,
+    build_iam_context,
     get_iam_context,
     get_membership,
 )
@@ -81,10 +82,9 @@ class ServerPermission(OpenPolicyAgentPermission):
     @classmethod
     def create(cls, request: ExtendedRequest, view: ViewSet, obj: None, iam_context: dict[str, Any]) -> list[OpenPolicyAgentPermission]:
         permissions = []
-        if view.basename == 'server':
-            for scope in cls.get_scopes(request, view, obj):
-                self = cls.create_base_perm(request, view, scope, iam_context, obj)
-                permissions.append(self)
+        for scope in cls.get_scopes(request, view, obj):
+            self = cls.create_base_perm(request, view, scope, iam_context, obj)
+            permissions.append(self)
 
         return permissions
 
@@ -117,10 +117,9 @@ class UserPermission(OpenPolicyAgentPermission):
     @classmethod
     def create(cls, request: ExtendedRequest, view: ViewSet, obj: User | None, iam_context: dict[str, Any]):
         permissions = []
-        if view.basename == 'user':
-            for scope in cls.get_scopes(request, view, obj):
-                self = cls.create_base_perm(request, view, scope, iam_context, obj)
-                permissions.append(self)
+        for scope in cls.get_scopes(request, view, obj):
+            self = cls.create_base_perm(request, view, scope, iam_context, obj)
+            permissions.append(self)
 
         return permissions
 
@@ -146,7 +145,6 @@ class UserPermission(OpenPolicyAgentPermission):
 
     def get_resource(self):
         data = None
-        organization = self.payload['input']['auth']['organization']
         if self.obj:
             data = {
                 'id': self.obj.id
@@ -157,12 +155,7 @@ class UserPermission(OpenPolicyAgentPermission):
             }
 
         if data:
-            data.update({
-                'membership': {
-                    'role': organization['user']['role']
-                        if organization else None
-                }
-            })
+            data['membership'] = { 'role': self.org_role if self.org_id else None }
 
         return data
 
@@ -180,10 +173,9 @@ class CloudStoragePermission(OpenPolicyAgentPermission):
     @classmethod
     def create(cls, request: ExtendedRequest, view: ViewSet, obj: CloudStorage | None, iam_context: dict[str, Any]) -> list[OpenPolicyAgentPermission]:
         permissions = []
-        if view.basename == 'cloudstorage':
-            for scope in cls.get_scopes(request, view, obj):
-                self = cls.create_base_perm(request, view, scope, iam_context, obj)
-                permissions.append(self)
+        for scope in cls.get_scopes(request, view, obj):
+            self = cls.create_base_perm(request, view, scope, iam_context, obj)
+            permissions.append(self)
 
         return permissions
 
@@ -243,63 +235,80 @@ class ProjectPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
     obj: Optional[Project]
 
     class Scopes(StrEnum):
-        LIST = 'list'
         CREATE = 'create'
         DELETE = 'delete'
-        UPDATE = 'update'
-        UPDATE_OWNER = 'update:owner'
-        UPDATE_ASSIGNEE = 'update:assignee'
-        UPDATE_DESC = 'update:desc'
-        UPDATE_ORG = 'update:organization'
-        UPDATE_ASSOCIATED_STORAGE = 'update:associated_storage'
-        VIEW = 'view'
-        IMPORT_DATASET = 'import:dataset'
         EXPORT_ANNOTATIONS = 'export:annotations'
-        EXPORT_DATASET = 'export:dataset'
         EXPORT_BACKUP = 'export:backup'
+        EXPORT_DATASET = 'export:dataset'
         IMPORT_BACKUP = 'import:backup'
+        IMPORT_DATASET = 'import:dataset'
+        LIST = 'list'
+        UPDATE = 'update'
+        UPDATE_ASSIGNEE = 'update:assignee'
+        UPDATE_ASSOCIATED_STORAGE = 'update:associated_storage'
+        UPDATE_DESC = 'update:desc'
+        UPDATE_ORGANIZATION = 'update:organization'
+        UPDATE_OWNER = 'update:owner'
+        VIEW = 'view'
 
     @classmethod
     def create(cls, request: ExtendedRequest, view: ViewSet, obj: Project | None, iam_context: dict[str, Any]) -> list[OpenPolicyAgentPermission]:
         permissions = []
-        if view.basename == 'project':
-            assignee_id = request.data.get('assignee_id') or request.data.get('assignee')
+        assignee_id = request.data.get('assignee_id') or request.data.get('assignee')
 
-            for scope in cls.get_scopes(request, view, obj):
-                scope_params = {}
+        scopes = cls.get_scopes(request, view, obj)
 
-                if DownloadExportedExtension.Scopes.DOWNLOAD_EXPORTED_FILE == scope:
-                    cls.extend_params_with_rq_job_details(request=request, params=scope_params)
+        if cls.Scopes.UPDATE_ORGANIZATION in scopes:
+            # consider this case as deleting a project in the org A and creating a new one in the org B
+            permissions.append(cls.create_base_perm(
+                request, view, cls.Scopes.DELETE, iam_context, obj, assignee_id=assignee_id
+            ))
 
-                self = cls.create_base_perm(request, view, scope, iam_context, obj,
-                    assignee_id=assignee_id, **scope_params)
-                permissions.append(self)
+            if dst_org_id := request.data['organization_id']:
+                try:
+                    dst_org = Organization.objects.get(pk=dst_org_id)
+                except Organization.DoesNotExist:
+                    raise ValidationError("Invalid org id")
+                dst_iam_context = get_iam_context(request, dst_org)
+            else:
+                # do not use here get_iam_context since it checks also org_id/org_slug query params and X-Organization header
+                dst_iam_context = build_iam_context(request, None, None)
+            permissions.append(cls.create_base_perm(
+                request, view, cls.Scopes.CREATE, dst_iam_context, assignee_id=assignee_id
+            ))
+            scopes.remove(cls.Scopes.UPDATE_ORGANIZATION)
 
-            if view.action == 'tasks':
-                perm = TaskPermission.create_scope_list(request, iam_context)
-                permissions.append(perm)
+        for scope in scopes:
+            scope_params = {}
 
-            owner = request.data.get('owner_id') or request.data.get('owner')
-            if owner:
-                perm = UserPermission.create_scope_view(iam_context, owner)
-                permissions.append(perm)
+            if DownloadExportedExtension.Scopes.DOWNLOAD_EXPORTED_FILE == scope:
+                cls.extend_params_with_rq_job_details(request=request, params=scope_params)
 
-            if assignee_id:
-                perm = UserPermission.create_scope_view(iam_context, assignee_id)
-                permissions.append(perm)
+            self = cls.create_base_perm(request, view, scope, iam_context, obj,
+                assignee_id=assignee_id, **scope_params)
+            permissions.append(self)
 
-            for field_source, field in [
-                # from ProjectWriteSerializer used in create and partial update endpoints
-                (request.data, 'source_storage.cloud_storage_id'),
-                (request.data, 'target_storage.cloud_storage_id'),
+        owner = request.data.get('owner_id') or request.data.get('owner')
+        if owner:
+            perm = UserPermission.create_scope_view(iam_context, owner)
+            permissions.append(perm)
 
-                # from /backup, /annotations and /dataset endpoints
-                (request.query_params, 'cloud_storage_id'),
-            ]:
-                field_path = field.split('.')
-                if cloud_storage_id := _get_key(field_source, field_path):
-                    permissions.append(CloudStoragePermission.create_scope_view(
-                        iam_context, storage_id=cloud_storage_id))
+        if assignee_id:
+            perm = UserPermission.create_scope_view(iam_context, assignee_id)
+            permissions.append(perm)
+
+        for field_source, field in [
+            # from ProjectWriteSerializer used in create and partial update endpoints
+            (request.data, 'source_storage.cloud_storage_id'),
+            (request.data, 'target_storage.cloud_storage_id'),
+
+            # from /backup, /annotations and /dataset endpoints
+            (request.query_params, 'cloud_storage_id'),
+        ]:
+            field_path = field.split('.')
+            if cloud_storage_id := _get_key(field_source, field_path):
+                permissions.append(CloudStoragePermission.create_scope_view(
+                    iam_context, storage_id=cloud_storage_id))
 
         return permissions
 
@@ -316,7 +325,6 @@ class ProjectPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
             ('destroy', 'DELETE'): Scopes.DELETE,
             ('partial_update', 'PATCH'): Scopes.UPDATE,
             ('retrieve', 'GET'): Scopes.VIEW,
-            ('tasks', 'GET'): Scopes.VIEW,
             ('dataset', 'POST'): Scopes.IMPORT_DATASET,
             ('append_dataset_chunk', 'HEAD'): Scopes.IMPORT_DATASET,
             ('append_dataset_chunk', 'PATCH'): Scopes.IMPORT_DATASET,
@@ -343,7 +351,7 @@ class ProjectPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
                 'name': Scopes.UPDATE_DESC,
                 'labels': Scopes.UPDATE_DESC,
                 'bug_tracker': Scopes.UPDATE_DESC,
-                'organization': Scopes.UPDATE_ORG,
+                'organization_id': Scopes.UPDATE_ORGANIZATION,
                 'source_storage': Scopes.UPDATE_ASSOCIATED_STORAGE,
                 'target_storage': Scopes.UPDATE_ASSOCIATED_STORAGE,
             }))
@@ -418,91 +426,101 @@ class TaskPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
     obj: Optional[Task]
 
     class Scopes(StrEnum):
-        LIST = 'list'
         CREATE = 'create'
         CREATE_IN_PROJECT = 'create@project'
-        VIEW = 'view'
-        UPDATE = 'update'
-        UPDATE_DESC = 'update:desc'
-        UPDATE_ORGANIZATION = 'update:organization'
-        UPDATE_ASSIGNEE = 'update:assignee'
-        UPDATE_PROJECT = 'update:project'
-        UPDATE_OWNER = 'update:owner'
-        UPDATE_ASSOCIATED_STORAGE = 'update:associated_storage'
         DELETE = 'delete'
-        VIEW_ANNOTATIONS = 'view:annotations'
-        UPDATE_ANNOTATIONS = 'update:annotations'
         DELETE_ANNOTATIONS = 'delete:annotations'
-        IMPORT_ANNOTATIONS = 'import:annotations'
         EXPORT_ANNOTATIONS = 'export:annotations'
-        EXPORT_DATASET = 'export:dataset'
-        VIEW_METADATA = 'view:metadata'
-        UPDATE_METADATA = 'update:metadata'
-        VIEW_DATA = 'view:data'
-        UPLOAD_DATA = 'upload:data'
-        IMPORT_BACKUP = 'import:backup'
         EXPORT_BACKUP = 'export:backup'
-        VIEW_VALIDATION_LAYOUT = 'view:validation_layout'
+        EXPORT_DATASET = 'export:dataset'
+        IMPORT_ANNOTATIONS = 'import:annotations'
+        IMPORT_BACKUP = 'import:backup'
+        LIST = 'list'
+        UPDATE = 'update'
+        UPDATE_ANNOTATIONS = 'update:annotations'
+        UPDATE_ASSIGNEE = 'update:assignee'
+        UPDATE_ASSOCIATED_STORAGE = 'update:associated_storage'
+        UPDATE_DESC = 'update:desc'
+        UPDATE_METADATA = 'update:metadata'
+        UPDATE_ORGANIZATION = 'update:organization'
+        UPDATE_OWNER = 'update:owner'
+        UPDATE_PROJECT = 'update:project'
         UPDATE_VALIDATION_LAYOUT = 'update:validation_layout'
+        UPLOAD_DATA = 'upload:data'
+        VIEW = 'view'
+        VIEW_ANNOTATIONS = 'view:annotations'
+        VIEW_DATA = 'view:data'
+        VIEW_METADATA = 'view:metadata'
+        VIEW_VALIDATION_LAYOUT = 'view:validation_layout'
 
     @classmethod
     def create(cls, request: ExtendedRequest, view: ViewSet, obj: Task | None, iam_context: dict[str, Any]) -> list[OpenPolicyAgentPermission]:
         permissions = []
-        if view.basename == 'task':
-            project_id = request.data.get('project_id') or request.data.get('project')
-            assignee_id = request.data.get('assignee_id') or request.data.get('assignee')
-            owner = request.data.get('owner_id') or request.data.get('owner')
+        project_id = request.data.get('project_id') or request.data.get('project')
+        assignee_id = request.data.get('assignee_id') or request.data.get('assignee')
+        owner = request.data.get('owner_id') or request.data.get('owner')
 
-            for scope in cls.get_scopes(request, view, obj):
-                params = { 'project_id': project_id, 'assignee_id': assignee_id }
+        scopes = cls.get_scopes(request, view, obj)
 
-                if scope == cls.Scopes.UPDATE_ORGANIZATION:
-                    org_id = request.data.get('organization')
-                    if obj is not None and obj.project is not None:
-                        raise ValidationError('Cannot change the organization for '
-                            'a task inside a project')
-                    # FIX IT: TaskPermission doesn't have create_scope_create method
-                    permissions.append(TaskPermission.create_scope_create(request, org_id))
-                elif scope == cls.Scopes.UPDATE_OWNER:
-                    params['owner_id'] = owner
+        if cls.Scopes.UPDATE_ORGANIZATION in scopes:
+            # consider this case as deleting a task in the org A and creating a new one in the org B
+            permissions.append(cls.create_base_perm(
+                request, view, cls.Scopes.DELETE, iam_context, obj, project_id=project_id, assignee_id=assignee_id
+            ))
 
-                if DownloadExportedExtension.Scopes.DOWNLOAD_EXPORTED_FILE == scope:
-                    cls.extend_params_with_rq_job_details(request=request, params=params)
+            if dst_org_id := request.data['organization_id']:
+                try:
+                    dst_org = Organization.objects.get(pk=dst_org_id)
+                except Organization.DoesNotExist:
+                    raise ValidationError("Invalid org id")
+                dst_iam_context = get_iam_context(request, dst_org)
+            else: # sandbox
+                # do not use here get_iam_context since it checks also org_id/org_slug query params and X-Organization header
+                dst_iam_context = build_iam_context(request, None, None)
+            permissions.append(cls.create_base_perm(
+                request, view, cls.Scopes.CREATE, dst_iam_context, project_id=project_id, assignee_id=assignee_id
+            ))
+            scopes.remove(cls.Scopes.UPDATE_ORGANIZATION)
 
-                self = cls.create_base_perm(request, view, scope, iam_context, obj, **params)
-                permissions.append(self)
+        for scope in scopes:
+            params = { 'project_id': project_id, 'assignee_id': assignee_id }
 
-            if view.action == 'jobs':
-                perm = JobPermission.create_scope_list(request, iam_context)
-                permissions.append(perm)
+            if scope == cls.Scopes.UPDATE_OWNER:
+                params['owner_id'] = owner
 
-            if owner:
-                perm = UserPermission.create_scope_view(iam_context, owner)
-                permissions.append(perm)
+            if DownloadExportedExtension.Scopes.DOWNLOAD_EXPORTED_FILE == scope:
+                cls.extend_params_with_rq_job_details(request=request, params=params)
 
-            if assignee_id:
-                perm = UserPermission.create_scope_view(iam_context, assignee_id)
-                permissions.append(perm)
+            self = cls.create_base_perm(request, view, scope, iam_context, obj, **params)
+            permissions.append(self)
 
-            if project_id:
-                perm = ProjectPermission.create_scope_view(request, int(project_id), iam_context)
-                permissions.append(perm)
+        if owner:
+            perm = UserPermission.create_scope_view(iam_context, owner)
+            permissions.append(perm)
 
-            for field_source, field in [
-                # from TaskWriteSerializer being used in the create and partial_update endpoints
-                (request.data, 'source_storage.cloud_storage_id'),
-                (request.data, 'target_storage.cloud_storage_id'),
+        if assignee_id:
+            perm = UserPermission.create_scope_view(iam_context, assignee_id)
+            permissions.append(perm)
 
-                # from DataSerializer being used in the /data endpoint
-                (request.data, 'cloud_storage_id'),
+        if project_id:
+            perm = ProjectPermission.create_scope_view(request, int(project_id), iam_context)
+            permissions.append(perm)
 
-                # from /backup, /annotations and /dataset endpoints
-                (request.query_params, 'cloud_storage_id'),
-            ]:
-                field_path = field.split('.')
-                if cloud_storage_id := _get_key(field_source, field_path):
-                    permissions.append(CloudStoragePermission.create_scope_view(
-                        iam_context, storage_id=cloud_storage_id))
+        for field_source, field in [
+            # from TaskWriteSerializer being used in the create and partial_update endpoints
+            (request.data, 'source_storage.cloud_storage_id'),
+            (request.data, 'target_storage.cloud_storage_id'),
+
+            # from DataSerializer being used in the /data endpoint
+            (request.data, 'cloud_storage_id'),
+
+            # from /backup, /annotations and /dataset endpoints
+            (request.query_params, 'cloud_storage_id'),
+        ]:
+            field_path = field.split('.')
+            if cloud_storage_id := _get_key(field_source, field_path):
+                permissions.append(CloudStoragePermission.create_scope_view(
+                    iam_context, storage_id=cloud_storage_id))
 
         return permissions
 
@@ -548,7 +566,6 @@ class TaskPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
             ('data', 'POST'): Scopes.UPLOAD_DATA,
             ('append_data_chunk', 'PATCH'): Scopes.UPLOAD_DATA,
             ('append_data_chunk', 'HEAD'): Scopes.UPLOAD_DATA,
-            ('jobs', 'GET'): Scopes.VIEW,
             ('import_backup', 'POST'): Scopes.IMPORT_BACKUP,
             ('append_backup_chunk', 'PATCH'): Scopes.IMPORT_BACKUP,
             ('append_backup_chunk', 'HEAD'): Scopes.IMPORT_BACKUP,
@@ -580,7 +597,7 @@ class TaskPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
                 'labels': Scopes.UPDATE_DESC,
                 'bug_tracker': Scopes.UPDATE_DESC,
                 'subset': Scopes.UPDATE_DESC,
-                'organization': Scopes.UPDATE_ORGANIZATION,
+                'organization_id': Scopes.UPDATE_ORGANIZATION,
                 'source_storage': Scopes.UPDATE_ASSOCIATED_STORAGE,
                 'target_storage': Scopes.UPDATE_ASSOCIATED_STORAGE,
             }))
@@ -666,70 +683,65 @@ class JobPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
 
     class Scopes(StrEnum):
         CREATE = 'create'
-        LIST = 'list'
-        VIEW = 'view'
-        UPDATE = 'update'
-        UPDATE_ASSIGNEE = 'update:assignee'
-        UPDATE_STAGE = 'update:stage'
-        UPDATE_STATE = 'update:state'
         DELETE = 'delete'
-        VIEW_ANNOTATIONS = 'view:annotations'
-        UPDATE_ANNOTATIONS = 'update:annotations'
         DELETE_ANNOTATIONS = 'delete:annotations'
-        IMPORT_ANNOTATIONS = 'import:annotations'
         EXPORT_ANNOTATIONS = 'export:annotations'
         EXPORT_DATASET = 'export:dataset'
+        IMPORT_ANNOTATIONS = 'import:annotations'
+        LIST = 'list'
+        UPDATE = 'update'
+        UPDATE_ANNOTATIONS = 'update:annotations'
+        UPDATE_ASSIGNEE = 'update:assignee'
+        UPDATE_METADATA = 'update:metadata'
+        UPDATE_STAGE = 'update:stage'
+        UPDATE_STATE = 'update:state'
+        UPDATE_VALIDATION_LAYOUT = 'update:validation_layout'
+        VIEW = 'view'
+        VIEW_ANNOTATIONS = 'view:annotations'
         VIEW_DATA = 'view:data'
         VIEW_METADATA = 'view:metadata'
-        UPDATE_METADATA = 'update:metadata'
         VIEW_VALIDATION_LAYOUT = 'view:validation_layout'
-        UPDATE_VALIDATION_LAYOUT = 'update:validation_layout'
 
     @classmethod
     def create(cls, request: ExtendedRequest, view: ViewSet, obj: Job | None, iam_context: dict[str, Any]) -> list[OpenPolicyAgentPermission]:
         permissions = []
-        if view.basename == 'job':
-            task_id = request.data.get('task_id')
-            for scope in cls.get_scopes(request, view, obj):
-                scope_params = {}
+        task_id = request.data.get('task_id')
+        for scope in cls.get_scopes(request, view, obj):
+            scope_params = {}
 
-                if scope == cls.Scopes.CREATE:
-                    scope_params['task_id'] = task_id
+            if scope == cls.Scopes.CREATE:
+                scope_params['task_id'] = task_id
 
-                    if task_id:
-                        try:
-                            task = Task.objects.get(id=task_id)
-                        except Task.DoesNotExist as ex:
-                            raise ValidationError(str(ex))
+                if task_id:
+                    try:
+                        task = Task.objects.get(id=task_id)
+                    except Task.DoesNotExist as ex:
+                        raise ValidationError(str(ex))
 
-                        iam_context = get_iam_context(request, task)
-                        permissions.append(TaskPermission.create_scope_view(
-                            request, task, iam_context=iam_context
-                        ))
+                    iam_context = get_iam_context(request, task)
+                    permissions.append(TaskPermission.create_scope_view(
+                        request, task, iam_context=iam_context
+                    ))
 
-                if DownloadExportedExtension.Scopes.DOWNLOAD_EXPORTED_FILE == scope:
-                    cls.extend_params_with_rq_job_details(request=request, params=scope_params)
+            if DownloadExportedExtension.Scopes.DOWNLOAD_EXPORTED_FILE == scope:
+                cls.extend_params_with_rq_job_details(request=request, params=scope_params)
 
-                self = cls.create_base_perm(request, view, scope, iam_context, obj, **scope_params)
-                permissions.append(self)
+            self = cls.create_base_perm(request, view, scope, iam_context, obj, **scope_params)
+            permissions.append(self)
 
-            if view.action == 'issues':
-                perm = IssuePermission.create_scope_list(request, iam_context)
-                permissions.append(perm)
+        assignee_id = request.data.get('assignee')
+        if assignee_id:
+            perm = UserPermission.create_scope_view(iam_context, assignee_id)
+            permissions.append(perm)
 
-            assignee_id = request.data.get('assignee')
-            if assignee_id:
-                perm = UserPermission.create_scope_view(iam_context, assignee_id)
-                permissions.append(perm)
-
-            for field_source, field in [
-                # from /annotations and /dataset endpoints
-                (request.query_params, 'cloud_storage_id'),
-            ]:
-                field_path = field.split('.')
-                if cloud_storage_id := _get_key(field_source, field_path):
-                    permissions.append(CloudStoragePermission.create_scope_view(
-                        iam_context, storage_id=cloud_storage_id))
+        for field_source, field in [
+            # from /annotations and /dataset endpoints
+            (request.query_params, 'cloud_storage_id'),
+        ]:
+            field_path = field.split('.')
+            if cloud_storage_id := _get_key(field_source, field_path):
+                permissions.append(CloudStoragePermission.create_scope_view(
+                    iam_context, storage_id=cloud_storage_id))
 
         return permissions
 
@@ -778,7 +790,6 @@ class JobPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
             ('data', 'GET'): Scopes.VIEW_DATA,
             ('metadata','GET'): Scopes.VIEW_METADATA,
             ('metadata','PATCH'): Scopes.UPDATE_METADATA,
-            ('issues', 'GET'): Scopes.VIEW,
             ('initiate_dataset_export', 'POST'): Scopes.EXPORT_DATASET if is_dataset_export(request) else Scopes.EXPORT_ANNOTATIONS,
             ('preview', 'GET'): Scopes.VIEW,
             ('validation_layout', 'GET'): Scopes.VIEW_VALIDATION_LAYOUT,
@@ -873,11 +884,10 @@ class CommentPermission(OpenPolicyAgentPermission):
     @classmethod
     def create(cls, request: ExtendedRequest, view: ViewSet, obj: Comment | None, iam_context: dict[str, Any]) -> list[OpenPolicyAgentPermission]:
         permissions = []
-        if view.basename == 'comment':
-            for scope in cls.get_scopes(request, view, obj):
-                self = cls.create_base_perm(request, view, scope, iam_context, obj,
-                    issue_id=request.data.get('issue'))
-                permissions.append(self)
+        for scope in cls.get_scopes(request, view, obj):
+            self = cls.create_base_perm(request, view, scope, iam_context, obj,
+                issue_id=request.data.get('issue'))
+            permissions.append(self)
 
         return permissions
 
@@ -958,17 +968,16 @@ class IssuePermission(OpenPolicyAgentPermission):
     @classmethod
     def create(cls, request: ExtendedRequest, view: ViewSet, obj: Issue | None, iam_context: dict[str, Any]) -> list[OpenPolicyAgentPermission]:
         permissions = []
-        if view.basename == 'issue':
-            assignee_id = request.data.get('assignee')
-            for scope in cls.get_scopes(request, view, obj):
-                self = cls.create_base_perm(request, view, scope, iam_context, obj,
-                    job_id=request.data.get('job'),
-                    assignee_id=assignee_id)
-                permissions.append(self)
+        assignee_id = request.data.get('assignee')
+        for scope in cls.get_scopes(request, view, obj):
+            self = cls.create_base_perm(request, view, scope, iam_context, obj,
+                job_id=request.data.get('job'),
+                assignee_id=assignee_id)
+            permissions.append(self)
 
-            if assignee_id:
-                perm = UserPermission.create_scope_view(iam_context, assignee_id)
-                permissions.append(perm)
+        if assignee_id:
+            perm = UserPermission.create_scope_view(iam_context, assignee_id)
+            permissions.append(perm)
 
         return permissions
 
@@ -985,7 +994,6 @@ class IssuePermission(OpenPolicyAgentPermission):
             'destroy': Scopes.DELETE,
             'partial_update': Scopes.UPDATE,
             'retrieve': Scopes.VIEW,
-            'comments': Scopes.VIEW,
         }[view.action]]
 
     def get_resource(self):
@@ -1052,49 +1060,48 @@ class LabelPermission(OpenPolicyAgentPermission):
         Scopes = cls.Scopes
 
         permissions = []
-        if view.basename == 'label':
-            for scope in cls.get_scopes(request, view, obj):
-                if scope in [Scopes.DELETE, Scopes.UPDATE, Scopes.VIEW]:
-                    obj = cast(Label, obj)
+        for scope in cls.get_scopes(request, view, obj):
+            if scope in [Scopes.DELETE, Scopes.UPDATE, Scopes.VIEW]:
+                obj = cast(Label, obj)
 
-                    # Access rights are the same as in the owning objects
-                    # Job assignees are not supposed to work with separate labels.
-                    # They should only use the list operation.
-                    if obj.project:
-                        if scope == Scopes.VIEW:
-                            owning_perm_scope = ProjectPermission.Scopes.VIEW
-                        else:
-                            owning_perm_scope = ProjectPermission.Scopes.UPDATE_DESC
-
-                        owning_perm = ProjectPermission.create_base_perm(
-                            request, view, owning_perm_scope, iam_context, obj=obj.project
-                        )
+                # Access rights are the same as in the owning objects
+                # Job assignees are not supposed to work with separate labels.
+                # They should only use the list operation.
+                if obj.project:
+                    if scope == Scopes.VIEW:
+                        owning_perm_scope = ProjectPermission.Scopes.VIEW
                     else:
-                        if scope == Scopes.VIEW:
-                            owning_perm_scope = TaskPermission.Scopes.VIEW
-                        else:
-                            owning_perm_scope = TaskPermission.Scopes.UPDATE_DESC
+                        owning_perm_scope = ProjectPermission.Scopes.UPDATE_DESC
 
-                        owning_perm = TaskPermission.create_base_perm(
-                            request, view, owning_perm_scope, iam_context, obj=obj.task,
-                        )
-
-                    # This component doesn't define its own rules for these cases
-                    permissions.append(owning_perm)
-                elif scope == Scopes.LIST and isinstance(obj, Job):
-                    permissions.append(JobPermission.create_base_perm(
-                        request, view, JobPermission.Scopes.VIEW, iam_context, obj=obj,
-                    ))
-                elif scope == Scopes.LIST and isinstance(obj, Task):
-                    permissions.append(TaskPermission.create_base_perm(
-                        request, view, TaskPermission.Scopes.VIEW, iam_context, obj=obj,
-                    ))
-                elif scope == Scopes.LIST and isinstance(obj, Project):
-                    permissions.append(ProjectPermission.create_base_perm(
-                        request, view, ProjectPermission.Scopes.VIEW, iam_context, obj=obj,
-                    ))
+                    owning_perm = ProjectPermission.create_base_perm(
+                        request, view, owning_perm_scope, iam_context, obj=obj.project
+                    )
                 else:
-                    permissions.append(cls.create_base_perm(request, view, scope, iam_context, obj))
+                    if scope == Scopes.VIEW:
+                        owning_perm_scope = TaskPermission.Scopes.VIEW
+                    else:
+                        owning_perm_scope = TaskPermission.Scopes.UPDATE_DESC
+
+                    owning_perm = TaskPermission.create_base_perm(
+                        request, view, owning_perm_scope, iam_context, obj=obj.task,
+                    )
+
+                # This component doesn't define its own rules for these cases
+                permissions.append(owning_perm)
+            elif scope == Scopes.LIST and isinstance(obj, Job):
+                permissions.append(JobPermission.create_base_perm(
+                    request, view, JobPermission.Scopes.VIEW, iam_context, obj=obj,
+                ))
+            elif scope == Scopes.LIST and isinstance(obj, Task):
+                permissions.append(TaskPermission.create_base_perm(
+                    request, view, TaskPermission.Scopes.VIEW, iam_context, obj=obj,
+                ))
+            elif scope == Scopes.LIST and isinstance(obj, Project):
+                permissions.append(ProjectPermission.create_base_perm(
+                    request, view, ProjectPermission.Scopes.VIEW, iam_context, obj=obj,
+                ))
+            else:
+                permissions.append(cls.create_base_perm(request, view, scope, iam_context, obj))
 
         return permissions
 
@@ -1149,14 +1156,13 @@ class AnnotationGuidePermission(OpenPolicyAgentPermission):
     def create(cls, request: ExtendedRequest, view: ViewSet, obj: AnnotationGuide | None, iam_context: dict[str, Any]) -> list[OpenPolicyAgentPermission]:
         permissions = []
 
-        if view.basename == 'annotationguide':
-            project_id = request.data.get('project_id')
-            task_id = request.data.get('task_id')
-            params = { 'project_id': project_id, 'task_id': task_id }
+        project_id = request.data.get('project_id')
+        task_id = request.data.get('task_id')
+        params = { 'project_id': project_id, 'task_id': task_id }
 
-            for scope in cls.get_scopes(request, view, obj):
-                self = cls.create_base_perm(request, view, scope, iam_context, obj, **params)
-                permissions.append(self)
+        for scope in cls.get_scopes(request, view, obj):
+            self = cls.create_base_perm(request, view, scope, iam_context, obj, **params)
+            permissions.append(self)
 
         return permissions
 
@@ -1221,25 +1227,24 @@ class GuideAssetPermission(OpenPolicyAgentPermission):
         Scopes = cls.Scopes
         permissions = []
 
-        if view.basename == 'asset':
-            for scope in cls.get_scopes(request, view, obj):
-                if scope == Scopes.VIEW and isinstance(obj, AnnotationGuide):
-                    permissions.append(AnnotationGuidePermission.create_base_perm(
-                        request, view, AnnotationGuidePermission.Scopes.VIEW, iam_context, obj=obj)
-                    )
-                if scope == Scopes.DELETE and isinstance(obj, AnnotationGuide):
+        for scope in cls.get_scopes(request, view, obj):
+            if scope == Scopes.VIEW and isinstance(obj, AnnotationGuide):
+                permissions.append(AnnotationGuidePermission.create_base_perm(
+                    request, view, AnnotationGuidePermission.Scopes.VIEW, iam_context, obj=obj)
+                )
+            if scope == Scopes.DELETE and isinstance(obj, AnnotationGuide):
+                permissions.append(AnnotationGuidePermission.create_base_perm(
+                    request, view, AnnotationGuidePermission.Scopes.UPDATE, iam_context, obj=obj)
+                )
+            if scope == Scopes.CREATE:
+                guide_id = request.data.get('guide_id')
+                try:
+                    obj = AnnotationGuide.objects.get(id=guide_id)
                     permissions.append(AnnotationGuidePermission.create_base_perm(
                         request, view, AnnotationGuidePermission.Scopes.UPDATE, iam_context, obj=obj)
                     )
-                if scope == Scopes.CREATE:
-                    guide_id = request.data.get('guide_id')
-                    try:
-                        obj = AnnotationGuide.objects.get(id=guide_id)
-                        permissions.append(AnnotationGuidePermission.create_base_perm(
-                            request, view, AnnotationGuidePermission.Scopes.UPDATE, iam_context, obj=obj)
-                        )
-                    except AnnotationGuide.DoesNotExist as ex:
-                        raise ValidationError(str(ex))
+                except AnnotationGuide.DoesNotExist as ex:
+                    raise ValidationError(str(ex))
 
         return permissions
 

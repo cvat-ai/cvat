@@ -177,7 +177,7 @@ class FunctionLoader:
     def __attrs_post_init__(self):
         assert self.function_module is not None or self.function_file is not None
 
-    def load(self) -> cvataa.DetectionFunction:
+    def load(self) -> cvataa.AutoAnnotationFunction:
         if self.function_module is not None:
             function = importlib.import_module(self.function_module)
         else:
@@ -193,5 +193,8 @@ class FunctionLoader:
         else:
             if self.function_parameters:
                 raise TypeError("function takes no parameters")
+
+        if not hasattr(function, "spec"):
+            raise cvataa.BadFunctionError("function has no 'spec' attribute")
 
         return function

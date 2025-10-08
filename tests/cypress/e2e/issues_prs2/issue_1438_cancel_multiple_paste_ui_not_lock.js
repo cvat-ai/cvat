@@ -24,7 +24,7 @@ context('Cancel "multiple paste". UI is not locked.', () => {
     });
 
     describe(`Testing issue "${issueId}"`, () => {
-        it('Copy, paste opject. Cancel pasting.', () => {
+        it('Copy, paste object. Cancel pasting.', () => {
             cy.createRectangle(createRectangleShape2Points);
             cy.get('#cvat_canvas_shape_1').trigger('mousemove');
             cy.get('#cvat_canvas_shape_1').trigger('mouseover');

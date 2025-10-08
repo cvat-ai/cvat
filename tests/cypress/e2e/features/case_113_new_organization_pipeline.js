@@ -135,7 +135,7 @@ context('New organization pipeline.', () => {
             });
         });
 
-        it('Search within organizations: All members shoould be queryable', () => {
+        it('Search within organizations: All members should be queryable', () => {
             const searchBar = 'searchBar';
             const searchBarRef = `@${searchBar}`;
             function search(string = '') {
@@ -283,6 +283,7 @@ context('New organization pipeline.', () => {
 
         it('The owner of the organization removes the second user from it.', () => {
             cy.headlessLogin(makeLoginUser(firstUser));
+            cy.contains(firstUser.username).should('exist').and('be.visible');
             cy.activateOrganization(organizationParams.shortName);
             cy.openOrganization(organizationParams.shortName);
             cy.removeMemberFromOrganization(secondUserName);

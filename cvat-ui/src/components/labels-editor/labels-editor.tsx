@@ -50,7 +50,7 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
     }
 
     public componentDidMount(): void {
-        // just need performe the same code
+        // just need to perform the same code
         this.componentDidUpdate((null as any) as LabelsEditorProps);
     }
 

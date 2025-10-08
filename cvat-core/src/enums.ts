@@ -235,6 +235,12 @@ export enum StorageLocation {
     CLOUD_STORAGE = 'cloud_storage',
 }
 
+export enum DataStorageLocation {
+    LOCAL = StorageLocation.LOCAL,
+    CLOUD_STORAGE = StorageLocation.CLOUD_STORAGE,
+    SHARE = 'share',
+}
+
 export enum WebhookSourceType {
     ORGANIZATION = 'organization',
     PROJECT = 'project',

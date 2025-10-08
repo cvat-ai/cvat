@@ -65,7 +65,7 @@ def migrate2meta(apps, shema_editor):
                         os.path.join(upload_dir, name_format.format(idx)), "w"
                     ) as dummy_chunk:
                         dummy_chunk.writelines([f"{img_path}\n" for img_path in img_paths])
-            logger.info("Succesfull migration for the data({})".format(db_data.id))
+            logger.info("Successful migration for the data({})".format(db_data.id))
         except Exception as ex:
             logger.error(str(ex))
 
@@ -133,7 +133,7 @@ def migrate2manifest(apps, shema_editor):
                     manifest.stop = db_data.stop_frame + 1
                 logger.info("Manifest creating has begun")
                 manifest.create()
-            logger.info("Succesfull migration for the data({})".format(db_data.id))
+            logger.info("Successful migration for the data({})".format(db_data.id))
         except Exception as ex:
             logger.error(str(ex))
 

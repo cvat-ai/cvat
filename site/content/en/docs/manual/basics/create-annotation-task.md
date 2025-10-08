@@ -39,8 +39,10 @@ Next, specify the task parameters in the configurator:
    <!-- TODO: replace the image with '/images/select_project.png' after updating screenshots -->
    ![Select project](/images/image193.jpg)
 
-   > **Note:** Following steps are valid if the task does not belong to a project.
-   > <br>If the task has been assigned to a project, the project's labels will be applied to the task.
+   {{% alert title="Note" color="primary" %}}
+   Following steps are valid if the task does not belong to a project.
+   <br>If the task has been assigned to a project, the project's labels will be applied to the task.
+   {{% /alert %}}
 
 1. On the **Constructor** tab, select **Add label**.
    <br>The label constructor menu will open:
@@ -94,9 +96,11 @@ but if you select `Rectangle` for all labels,
 only the **Rectangle** tool will be
 visible on the sidebar.
 
-> **Note:** You cannot apply the **Label shape**
-> to the **AI** and **OpenCV** tools,
-> these tools will always be available.
+{{% alert title="Note" color="primary" %}}
+You cannot apply the **Label shape**
+to the **AI** and **OpenCV** tools,
+these tools will always be available.
+{{% /alert %}}
 
 ![Type control sidebar](/images/type_tools.png)
 
@@ -108,8 +112,10 @@ the label shape to polylines, all previously created objects will remain
 polygons. However, you will not be able to add new polygon
 objects with the same label.
 
-> **Note:** You cannot change the shape of the `skeleton` label.
-> <br>The **Label shape** field for the `skeleton` label is disabled.
+{{% alert title="Note" color="primary" %}}
+You cannot change the shape of the `skeleton` label.
+<br>The **Label shape** field for the `skeleton` label is disabled.
+{{% /alert %}}
 
 ### Add an attribute
 
@@ -184,11 +190,13 @@ The **Raw** is a way of working with labels for an advanced user.
 
 It is useful when you need to copy labels from one independent task to another.
 
-> **Note:** Be careful with changing the raw specification of an existing task/project.
-> Removing any "id" properties will lead to losing existing annotations.
-> **This property will be removed automatically from any text you insert to this field**.
+{{% alert title="Note" color="primary" %}}
+Be careful with changing the raw specification of an existing task/project.
+Removing any "id" properties will lead to losing existing annotations.
+**This property will be removed automatically from any text you insert to this field**.
+{{% /alert %}}
 
-![](/images/image126.jpg)
+!["Raw" tab in task creation window showing labels in JSON format](/images/image126.jpg)
 
 Raw presents label data in _.json_ format with an option of editing and copying labels as text.
 The **Done** button applies the changes and the **Reset** button cancels the changes.
@@ -197,7 +205,9 @@ The **Done** button applies the changes and the **Reset** button cancels the cha
 
 To create a 3D task, you must prepare an archive with one of the following directory structures.
 
-> **Note:** You can't mix 2D and 3D data in the same task.
+{{% alert title="Note" color="primary" %}}
+You can't mix 2D and 3D data in the same task.
+{{% /alert %}}
 
 {{< tabpane >}}
 {{< tab header="Velodyne" >}}
@@ -247,7 +257,7 @@ To create a 3D task, you must prepare an archive with one of the following direc
 Use advanced configuration to set additional parameters for the task
 and customize it to meet specific needs or requirements.
 
-![](/images/image128.jpg)
+![Advanced configuration section opened in task creation window](/images/image128.jpg)
 
 The following parameters are available:
 
@@ -255,7 +265,7 @@ The following parameters are available:
 
 | Element           | Description |
 | ----------------- | ----------- |
-| Sorting method    | **Note:** Does not work for the video data. <br><br>Several methods to sort the data. <br> For example, the sequence `2.jpeg`, `10.jpeg`, `1.jpeg` after sorting will be: <br><br><li> **Lexicographica**: `1.jpeg`, `10.jpeg`, `2.jpeg` <li> **Natural**: `1.jpeg`, `2.jpeg`, `10.jpeg` <li> **Predefined**: `2.jpeg`, `10.jpeg`, `1.jpeg` <li> **Random** uploads data in random order. |
+| Sorting method    | **Note:** Does not work for the video data. <br><br>Several methods to sort the data. <br> For example, the sequence `2.jpeg`, `10.jpeg`, `1.jpeg` after sorting will be: <br><br><li> **Lexicographical**: `1.jpeg`, `10.jpeg`, `2.jpeg` <li> **Natural**: `1.jpeg`, `2.jpeg`, `10.jpeg` <li> **Predefined**: `2.jpeg`, `10.jpeg`, `1.jpeg` <li> **Random** uploads data in random order. |
 | Prefer zip chunks | Use this parameter to divide your video or image dataset for annotation into short video clips a zip file of frames. <br>Zip files are larger but do not require decoding on the client side, and video clips are smaller but require decoding. <br>It is recommended to turn off this parameter for video tasks to reduce traffic between the client side and the server. |
 | Use cache         | Select the checkbox to enable _on-the-fly_ data processing to reduce task creation time and store data in a cache with a policy of <br>evicting less popular items. <br><br>For more information, see {{< ilink "/docs/manual/advanced/data-on-fly" "Data preparation on the fly" >}}. |
 | Image quality     | CVAT has two types of data: original quality and compressed. Original quality images are used for dataset export<br> and automatic annotation. Compressed images are used only for annotations to reduce traffic between the server <br>and client side. <br> It is recommended to adjust the compression level only if the images contain small objects that are not <br>visible in the original quality. <br> Values range from `5` (highly compressed images) to `100` (not compressed). |

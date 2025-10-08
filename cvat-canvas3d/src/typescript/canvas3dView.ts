@@ -607,7 +607,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     private fitCanvas(animation: boolean): void {
         const { x, y, z } = this.action.frameCoordinates;
         this.positionAllViews(x, y, z, animation);
-        this.updateCameraFrustrumPlane();
+        this.updateCameraFrustumPlane();
     }
 
     private getAllVisibleCuboids(view: ViewType = ViewType.PERSPECTIVE): THREE.Mesh[] {
@@ -615,8 +615,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             .map(({ cuboid }) => cuboid[view]).filter((mesh: THREE.Mesh) => mesh.visible);
     }
 
-    private updateCameraFrustrumPlane(viewType?: ViewType): void {
-        const setCameraFrustrumPlane = (
+    private updateCameraFrustumPlane(viewType?: ViewType): void {
+        const setCameraFrustumPlane = (
             camera: THREE.OrthographicCamera,
             center: THREE.Vector3, dimensions: THREE.Vector3,
             view: ViewType,
@@ -657,19 +657,19 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         }
 
         if (viewType !== ViewType.FRONT) {
-            setCameraFrustrumPlane(
+            setCameraFrustumPlane(
                 this.views.front.camera as THREE.OrthographicCamera, center, dimensions, ViewType.FRONT,
             );
         }
 
         if (viewType !== ViewType.TOP) {
-            setCameraFrustrumPlane(
+            setCameraFrustumPlane(
                 this.views.top.camera as THREE.OrthographicCamera, center, dimensions, ViewType.TOP,
             );
         }
 
         if (viewType !== ViewType.SIDE) {
-            setCameraFrustrumPlane(
+            setCameraFrustumPlane(
                 this.views.side.camera as THREE.OrthographicCamera, center, dimensions, ViewType.SIDE,
             );
         }
@@ -677,7 +677,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
     private setDefaultZoom(): void {
         if (this.model.data.activeElement.clientID === null) {
-            this.updateCameraFrustrumPlane();
+            this.updateCameraFrustumPlane();
             Object.keys(this.views).forEach((view: ViewType): void => {
                 const viewType = this.views[view as keyof Views];
                 if (view !== ViewType.PERSPECTIVE) {
@@ -866,7 +866,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     private onGroupDone(objects?: any[], duration?: number): void {
         if (objects && objects.length !== 0) {
             this.dispatchEvent(
-                new CustomEvent('canvas.groupped', {
+                new CustomEvent('canvas.grouped', {
                     bubbles: false,
                     cancelable: true,
                     detail: {
@@ -1036,7 +1036,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             this.activatedElementID = +clientID;
             this.rotatePlane(null, null);
             this.detachCamera();
-            this.updateCameraFrustrumPlane();
+            this.updateCameraFrustumPlane();
             [ViewType.TOP, ViewType.SIDE, ViewType.FRONT]
                 .forEach((type) => this.updateHelperPointsSize(type));
         }
@@ -1814,7 +1814,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             this.action.translation.coordinates = coordinates;
             this.moveObject(coordinates);
             this.detachCamera(view);
-            this.updateCameraFrustrumPlane(view);
+            this.updateCameraFrustumPlane(view);
         }
     }
 
@@ -1862,13 +1862,13 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         // and the opposite point in another corner
         const currentPointNumber = +this.action.resize.helperElement.name.split('_')[1];
         const cuboidNodes = makeCornerPointsMatrix(0.5, 0.5, 0.5);
-        const crosslyingPointInternalCoordonates = (new THREE.Vector3())
+        const crosslyingPointInternalCoordinates = (new THREE.Vector3())
             .fromArray(cuboidNodes[+currentPointNumber]).multiply(new THREE.Vector3(-1, -1, -1));
         const crosslyingHelperIndex = cuboidNodes
             .findIndex(([x, y, z]): boolean => (
-                Math.sign(crosslyingPointInternalCoordonates.x) === Math.sign(x) &&
-                Math.sign(crosslyingPointInternalCoordonates.y) === Math.sign(y) &&
-                Math.sign(crosslyingPointInternalCoordonates.z) === Math.sign(z)
+                Math.sign(crosslyingPointInternalCoordinates.x) === Math.sign(x) &&
+                Math.sign(crosslyingPointInternalCoordinates.y) === Math.sign(y) &&
+                Math.sign(crosslyingPointInternalCoordinates.z) === Math.sign(z)
             ));
         const crosslyingHelper = cuboid.perspective.getObjectByName(`cuboidNodeHelper_${crosslyingHelperIndex}`);
         const crosslyingPointCoordinates = crosslyingHelper.getWorldPosition(new THREE.Vector3());
@@ -1901,27 +1901,27 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
         // small check to avoid case when points change their relative orientation
         if (
-            Math.sign(crosslyingPointInternalCoordonates.x - cuboidNodes[currentPointNumber][0]) !==
-                Math.sign(crosslyingPointInternalCoordonates.x - currentPointInternalCoordinates.x) ||
-            Math.sign(crosslyingPointInternalCoordonates.y - cuboidNodes[currentPointNumber][1]) !==
-                Math.sign(crosslyingPointInternalCoordonates.y - currentPointInternalCoordinates.y) ||
-            Math.sign(crosslyingPointInternalCoordonates.z - cuboidNodes[currentPointNumber][2]) !==
-                Math.sign(crosslyingPointInternalCoordonates.z - currentPointInternalCoordinates.z)
+            Math.sign(crosslyingPointInternalCoordinates.x - cuboidNodes[currentPointNumber][0]) !==
+                Math.sign(crosslyingPointInternalCoordinates.x - currentPointInternalCoordinates.x) ||
+            Math.sign(crosslyingPointInternalCoordinates.y - cuboidNodes[currentPointNumber][1]) !==
+                Math.sign(crosslyingPointInternalCoordinates.y - currentPointInternalCoordinates.y) ||
+            Math.sign(crosslyingPointInternalCoordinates.z - cuboidNodes[currentPointNumber][2]) !==
+                Math.sign(crosslyingPointInternalCoordinates.z - currentPointInternalCoordinates.z)
         ) {
             return;
         }
 
         // finally let's compute new center and scale
-        scale.x *= Math.abs(crosslyingPointInternalCoordonates.x - currentPointInternalCoordinates.x);
-        scale.y *= Math.abs(crosslyingPointInternalCoordonates.y - currentPointInternalCoordinates.y);
-        scale.z *= Math.abs(crosslyingPointInternalCoordonates.z - currentPointInternalCoordinates.z);
+        scale.x *= Math.abs(crosslyingPointInternalCoordinates.x - currentPointInternalCoordinates.x);
+        scale.y *= Math.abs(crosslyingPointInternalCoordinates.y - currentPointInternalCoordinates.y);
+        scale.z *= Math.abs(crosslyingPointInternalCoordinates.z - currentPointInternalCoordinates.z);
         const newPosition = crosslyingPointCoordinates.clone().add(perspectivePosition).divideScalar(2);
 
         // and apply them
         this.moveObject(newPosition);
         cuboid.setScale(scale.x, scale.y, scale.z);
         this.adjustPerspectiveCameras();
-        this.updateCameraFrustrumPlane(view);
+        this.updateCameraFrustumPlane(view);
 
         this.action.resize.previousPosition = currentPointCoordOnPlane;
     }
@@ -2156,7 +2156,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.updateResizeHelperPos();
         this.updateRotationHelperPos();
         this.detachCamera();
-        this.updateCameraFrustrumPlane();
+        this.updateCameraFrustumPlane();
 
         this.action.rotation.screenInit.x = this.action.rotation.screenMove.x;
         this.action.rotation.screenInit.y = this.action.rotation.screenMove.y;

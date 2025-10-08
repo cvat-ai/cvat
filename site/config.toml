@@ -1,6 +1,6 @@
 baseURL = "/"
 title = "CVAT"
-relativeURLs = true
+relativeURLs = false
 
 enableRobotsTXT = true
 
@@ -62,6 +62,7 @@ anchor = "smart"
 [services]
 [services.googleAnalytics]
 # Comment out the next line to disable GA tracking. Also disables the feature described in [params.ui.feedback].
+# GOOGLE_TAG_ID environment variable takes precedence over this setting
 # id = "UA-00000000-0"
 
 # Language configuration
@@ -85,6 +86,11 @@ weight = 1
       # guessSyntax = "true"
 
 # Everything below this are Site Params
+
+# Hugo security configuration
+[security]
+  [security.funcs]
+    getenv = ["^HUGO_", "^GOOGLE_TAG_ID$"]
 
 # Comment out if you don't want the "print entire section" link enabled.
 [outputs]

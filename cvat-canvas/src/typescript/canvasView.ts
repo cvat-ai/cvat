@@ -33,6 +33,7 @@ import {
     readPointsFromShape, setupSkeletonEdges, makeSVGFromTemplate,
     imageDataToDataURL, expandChannels, stringifyPoints, zipChannels,
     composeShapeDimensions, getRoundedRotation,
+    clamp,
 } from './shared';
 import {
     CanvasModel, Geometry, UpdateReasons, FrameZoom, ActiveElement,
@@ -44,6 +45,7 @@ import {
 export interface CanvasView {
     html(): HTMLDivElement;
     setupConflictRegions(clientID: number): number[];
+    translateFromSVG(points: number[]): number[];
 }
 
 export class CanvasViewImpl implements CanvasView, Listener {
@@ -87,6 +89,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private snapToAngleResize: number;
     private draggableShape: SVG.Shape | null;
     private resizableShape: SVG.Shape | null;
+    private ctrlPressed: boolean;
     private innerObjectsFlags: {
         drawHidden: Record<number, boolean>;
         editHidden: Record<number, boolean>;
@@ -417,7 +420,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             // if object view was not changed by canvas and points accepted as is without any changes
             // the view will not be updated during objects setup if we just set points as is here
             // that is why we need to set points to an empty array (something that can't normally come from CVAT)
-            // I do not think it can be easily fixed now, hovewer in the future we should refactor code
+            // I do not think it can be easily fixed now, however in the future we should refactor code
             if (Number.isInteger(state.parentID)) {
                 const { elements } = this.drawnStates[state.parentID];
                 const drawnElement = elements.find((el) => el.clientID === state.clientID);
@@ -498,7 +501,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         if (objects && typeof duration !== 'undefined') {
             if (this.mode === Mode.GROUP && objects.length > 1) {
                 this.mode = Mode.IDLE;
-                this.canvas.dispatchEvent(new CustomEvent('canvas.groupped', {
+                this.canvas.dispatchEvent(new CustomEvent('canvas.grouped', {
                     bubbles: false,
                     cancelable: true,
                     detail: {
@@ -1456,8 +1459,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     }
 
-    private onShiftKeyDown = (e: KeyboardEvent): void => {
-        if (!e.repeat && (e.code || '').toLowerCase().includes('shift')) {
+    private onKeyDown = (e: KeyboardEvent): void => {
+        if (e.repeat) {
+            return;
+        }
+
+        const code = (e.code ?? '').toLowerCase();
+
+        if (code.includes('shift')) {
             this.snapToAngleResize = consts.SNAP_TO_ANGLE_RESIZE_SHIFT;
             if (this.activeElement) {
                 const shape = this.svgShapes[this.activeElement.clientID];
@@ -1473,10 +1482,16 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
             }
         }
+
+        if (code.includes('control')) {
+            this.ctrlPressed = true;
+        }
     };
 
-    private onShiftKeyUp = (e: KeyboardEvent): void => {
-        if ((e.code || '').toLowerCase().includes('shift') && this.activeElement) {
+    private onKeyUp = (e: KeyboardEvent): void => {
+        const code = (e.code ?? '').toLowerCase();
+
+        if (code.includes('shift') && this.activeElement) {
             this.snapToAngleResize = consts.SNAP_TO_ANGLE_RESIZE_DEFAULT;
             if (this.activeElement) {
                 const shape = this.svgShapes[this.activeElement.clientID];
@@ -1491,6 +1506,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     }
                 }
             }
+        }
+
+        if (code.includes('control')) {
+            this.ctrlPressed = false;
         }
     };
 
@@ -1518,6 +1537,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.configuration = model.configuration;
         this.mode = Mode.IDLE;
         this.snapToAngleResize = consts.SNAP_TO_ANGLE_RESIZE_DEFAULT;
+        this.ctrlPressed = false;
         this.innerObjectsFlags = {
             drawHidden: {},
             editHidden: {},
@@ -1696,8 +1716,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         });
 
         window.document.addEventListener('mouseup', this.onMouseUp);
-        window.document.addEventListener('keydown', this.onShiftKeyDown);
-        window.document.addEventListener('keyup', this.onShiftKeyUp);
+        window.document.addEventListener('keydown', this.onKeyDown);
+        window.document.addEventListener('keyup', this.onKeyUp);
 
         for (const eventName of ['wheel', 'mousedown', 'dblclick', 'contextmenu']) {
             this.attachmentBoard.addEventListener(eventName, (event) => {
@@ -1706,10 +1726,23 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         this.canvas.addEventListener('wheel', (event): void => {
-            if (event.ctrlKey) return;
+            if (this.ctrlPressed) {
+                // we do not use event.ctrlKey to handle pinch zoom using touchpad correctly
+                // peach zoom automatically generates 'wheel' event with event.ctrlKey equals to true
+                // even when the ctrl key is not pressed actually
+                return;
+            }
+
+            let { deltaY } = event;
+            // clamp too high values to avoid strong zooming
+            // high values are usually applicable to mice
+            // 8 is a good experimental value to avoid strong zooming
+            const LIMIT_DELTA_Y = 8;
+            deltaY = clamp(deltaY, -LIMIT_DELTA_Y, LIMIT_DELTA_Y);
+
             const { offset } = this.controller.geometry;
             const point = translateToSVG(this.content, [event.clientX, event.clientY]);
-            this.controller.zoom(point[0] - offset, point[1] - offset, event.deltaY > 0 ? -1 : 1);
+            this.controller.zoom(point[0] - offset, point[1] - offset, deltaY);
             this.canvas.dispatchEvent(
                 new CustomEvent('canvas.zoom', {
                     bubbles: false,
@@ -1849,12 +1882,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
 
             this.activate(activeElement);
-            this.editHandler.configurate(this.configuration);
-            this.drawHandler.configurate(this.configuration);
-            this.masksHandler.configurate(this.configuration);
-            this.autoborderHandler.configurate(this.configuration);
-            this.interactionHandler.configurate(this.configuration);
-            this.sliceHandler.configurate(this.configuration);
+            this.editHandler.configure(this.configuration);
+            this.drawHandler.configure(this.configuration);
+            this.masksHandler.configure(this.configuration);
+            this.autoborderHandler.configure(this.configuration);
+            this.interactionHandler.configure(this.configuration);
+            this.sliceHandler.configure(this.configuration);
             this.transformCanvas();
 
             // remove if exist and not enabled
@@ -2183,8 +2216,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }),
             );
 
-            window.document.removeEventListener('keydown', this.onShiftKeyDown);
-            window.document.removeEventListener('keyup', this.onShiftKeyUp);
+            window.document.removeEventListener('keydown', this.onKeyDown);
+            window.document.removeEventListener('keyup', this.onKeyUp);
             window.document.removeEventListener('mouseup', this.onMouseUp);
             this.interactionHandler.destroy();
         }
@@ -2207,6 +2240,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
         cx = box.x + (box.width) / 2;
         cy = box.y;
         return [cx, cy];
+    }
+
+    public translateFromSVG(point: number[]): number[] {
+        return translateFromSVG(this.content, point);
     }
 
     private redrawBitmap(): void {

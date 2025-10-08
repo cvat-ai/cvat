@@ -24,20 +24,20 @@ description: 'Instructions on how to run all existence tests.'
              "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('admin', 'admin@localhost.company', '12qwaszx')\" | python3 ~/manage.py shell"
    ```
 1. Install npm dependencies:
-   ```
+   ```bash
    cd tests
-   yarn --frozen-lockfile
+   yarn --immutable
    ```
 
 If you want to get a code coverage report, instrument the code:
-```
-yarn --frozen-lockfile
+```bash
+yarn --immutable
 yarn run coverage
 ```
 
 **Running tests**
 
-```
+```bash
 yarn run cypress:run:chrome
 yarn run cypress:run:chrome:canvas3d
 ```
@@ -49,7 +49,7 @@ yarn run cypress:run:chrome:canvas3d
 1. Follow {{< ilink "/docs/api_sdk/sdk/developer-guide" "this guide" >}} to prepare
    `cvat-sdk` and `cvat-cli` source code
 1. Install all necessary requirements before running REST API tests:
-   ```
+   ```bash
    pip install -e ./cvat-sdk -e ./cvat-cli -r ./tests/python/requirements.txt
    ```
 1. Stop any other CVAT containers which you run previously. They keep ports
@@ -59,7 +59,7 @@ which are used by containers for the testing system.
 
 Run all REST API tests:
 
-```
+```bash
 pytest ./tests/python
 ```
 
@@ -68,18 +68,18 @@ This command will automatically start all necessary docker containers.
 If you want to start/stop these containers without running tests
 use special options for it:
 
-```
+```bash
 pytest ./tests/python --start-services
 pytest ./tests/python --stop-services
 ```
 
 If you need to rebuild your CVAT images add `--rebuild` option:
-```
+```bash
 pytest ./tests/python --rebuild
 ```
 
 If you want to get a code coverage report, use special option for it:
-```
+```bash
 COVERAGE_PROCESS_START=.coveragerc pytest ./tests/python --rebuild --cov --cov-report xml
 ```
 
@@ -133,27 +133,32 @@ Extra options:
 # Server unit tests
 
 **Initial steps**
-1. Install necessary Python dependencies:
+1. If you run unit tests on Linux, ensure that `poppler-utils` and `unrar` are installed on your system:
+   ```bash
+   sudo apt-get update
+   sudo apt-get install -y poppler-utils unrar
    ```
+1. Install necessary Python dependencies:
+   ```bash
    pip install -r cvat/requirements/testing.txt
    ```
 1. Build CVAT server image
-   ```
+   ```bash
    docker compose -f docker-compose.yml -f docker-compose.dev.yml build cvat_server
    ```
 1. Run cvat_opa container
-   ```
+   ```bash
    docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d cvat_opa
    ```
 
 **Running tests**
 1. Python tests
-   ```
+   ```bash
    python manage.py test --settings cvat.settings.testing cvat/apps -v 2
    ```
 
 If you want to get a code coverage report, run the next command:
-   ```
+   ```bash
    coverage run manage.py test --settings cvat.settings.testing cvat/apps -v 2
    ```
 

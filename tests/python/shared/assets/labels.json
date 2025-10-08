@@ -1,5 +1,5 @@
 {
-  "count": 49,
+  "count": 54,
   "next": null,
   "previous": null,
   "results": [
@@ -959,6 +959,87 @@
       "parent_id": null,
       "project_id": 17,
       "sublabels": [],
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#6080c0",
+      "has_parent": false,
+      "id": 83,
+      "name": "cat",
+      "parent_id": null,
+      "sublabels": [],
+      "task_id": 34,
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#406040",
+      "has_parent": false,
+      "id": 84,
+      "name": "dog",
+      "parent_id": null,
+      "sublabels": [],
+      "task_id": 34,
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#8c2f84",
+      "has_parent": false,
+      "id": 85,
+      "name": "skel",
+      "parent_id": null,
+      "sublabels": [
+        {
+          "attributes": [],
+          "color": "#20d603",
+          "has_parent": true,
+          "id": 86,
+          "name": "p1",
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#e00ebb",
+          "has_parent": true,
+          "id": 87,
+          "name": "p2",
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#0a699d",
+          "has_parent": true,
+          "id": 88,
+          "name": "p3",
+          "type": "points"
+        }
+      ],
+      "svg": "<line x1=\"36.04480743408203\" y1=\"43.290340423583984\" x2=\"21.16179084777832\" y2=\"21.0494327545166\" data-type=\"edge\" data-node-from=\"3\" data-node-to=\"1\"></line>\n<line x1=\"46.24552536010742\" y1=\"17.20326042175293\" x2=\"21.16179084777832\" y2=\"21.0494327545166\" data-type=\"edge\" data-node-from=\"2\" data-node-to=\"1\"></line>\n<circle r=\"0.75\" cx=\"21.16179084777832\" cy=\"21.0494327545166\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"86\"></circle>\n<circle r=\"0.75\" cx=\"46.24552536010742\" cy=\"17.20326042175293\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"87\"></circle>\n<circle r=\"0.75\" cx=\"36.04480743408203\" cy=\"43.290340423583984\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"88\"></circle>",
+      "task_id": 34,
+      "type": "skeleton"
+    },
+    {
+      "attributes": [],
+      "color": "#cfe6e8",
+      "has_parent": false,
+      "id": 89,
+      "name": "skelp3",
+      "parent_id": null,
+      "sublabels": [],
+      "task_id": 34,
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#406040",
+      "has_parent": false,
+      "id": 90,
+      "name": "dog",
+      "parent_id": null,
+      "sublabels": [],
+      "task_id": 31,
       "type": "any"
     }
   ]

@@ -7,25 +7,34 @@ from typing import Optional, Union
 
 from allauth.account import app_settings as allauth_settings
 from allauth.account.adapter import get_adapter
-from allauth.account.models import EmailAddress
 from allauth.account.utils import filter_users_by_email, setup_user_email
 from dj_rest_auth.registration.serializers import RegisterSerializer
 from dj_rest_auth.serializers import LoginSerializer, PasswordResetSerializer
 from django.conf import settings
-from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.utils.translation import gettext_lazy as _
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from cvat.apps.iam.forms import ResetPasswordFormEx
-from cvat.apps.iam.utils import get_dummy_user
+from cvat.apps.iam.utils import get_dummy_or_regular_user
 
 
 class RegisterSerializerEx(RegisterSerializer):
-    first_name = serializers.CharField(required=False)
-    last_name = serializers.CharField(required=False)
+    # workaround for https://github.com/iMerica/dj-rest-auth/issues/707
+    email = serializers.EmailField(
+        required=allauth_settings.EMAIL_REQUIRED, max_length=allauth_settings.EMAIL_MAX_LENGTH
+    )
+
+    first_name = serializers.CharField(
+        required=False, max_length=User._meta.get_field("first_name").max_length
+    )
+    last_name = serializers.CharField(
+        required=False, max_length=User._meta.get_field("last_name").max_length
+    )
+
     email_verification_required = serializers.SerializerMethodField()
     key = serializers.SerializerMethodField()
 
@@ -58,34 +67,20 @@ class RegisterSerializerEx(RegisterSerializer):
 
         return data
 
-    def validate_email(self, email):
-        def email_address_exists(email) -> bool:
-            if EmailAddress.objects.filter(email__iexact=email).exists():
-                return True
-
-            if email_field := allauth_settings.USER_MODEL_EMAIL_FIELD:
-                users = get_user_model().objects
-                return users.filter(**{email_field + "__iexact": email}).exists()
-            return False
-
-        email = get_adapter().clean_email(email)
-        if allauth_settings.UNIQUE_EMAIL:
-            if email and email_address_exists(email):
-                user = get_dummy_user(email)
-                if not user:
-                    raise serializers.ValidationError(
-                        ("A user is already registered with this e-mail address."),
-                    )
-
-        return email
-
     def save(self, request):
         adapter = get_adapter()
         self.cleaned_data = self.get_cleaned_data()
 
+        dummy_user, regular_user = get_dummy_or_regular_user(self.cleaned_data["email"])
+        # A regular user registered via standard sign-up or social login method;
+        # has an unverified email address
+        if regular_user:
+            raise serializers.ValidationError(
+                _("A user is already registered with this e-mail address.")
+            )
+
         # Allow to overwrite data for dummy users
-        dummy_user = get_dummy_user(self.cleaned_data["email"])
-        user = dummy_user if dummy_user else adapter.new_user(request)
+        user = dummy_user or adapter.new_user(request)
 
         user = adapter.save_user(request, user, self, commit=False)
         if "password1" in self.cleaned_data:
@@ -96,8 +91,7 @@ class RegisterSerializerEx(RegisterSerializer):
         user.save()
         self.custom_signup(request, user)
 
-        if not dummy_user:
-            setup_user_email(request, user, [])
+        setup_user_email(request, user, [])
         return user
 
 

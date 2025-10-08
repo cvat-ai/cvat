@@ -37,10 +37,12 @@ type ServerMapping = Record<string, {
     sublabels?: ServerMapping;
 }>;
 
-export interface DetectorRequestBody {
+export interface AnnotateTaskRequestBody {
+    type: 'annotate_task';
     mapping: ServerMapping;
     cleanup: boolean;
     conv_mask_to_poly: boolean;
+    threshold?: number;
 }
 
 function convertMappingToServer(mapping: FullMapping): ServerMapping {
@@ -256,12 +258,15 @@ function DetectorRunner(props: Props): JSX.Element {
                             if (!model) return;
                             const serverMapping = convertMappingToServer(mapping);
                             if (model.kind === ModelKind.DETECTOR) {
-                                runInference(model, {
+                                const body: AnnotateTaskRequestBody = {
+                                    type: 'annotate_task',
                                     mapping: serverMapping,
                                     cleanup,
                                     conv_mask_to_poly: convertMasksToPolygons,
                                     ...(detectorThreshold !== null ? { threshold: detectorThreshold } : {}),
-                                });
+                                };
+
+                                runInference(model, body);
                             } else if (model.kind === ModelKind.REID) {
                                 runInference(model, { threshold, max_distance: distance });
                             }

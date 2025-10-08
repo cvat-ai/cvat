@@ -90,3 +90,7 @@
 .ant-menu.cvat-job-item-menu {
     box-shadow: $box-shadow-base;
 }
+
+.cvat-job-item-stage, .cvat-job-item-state {
+    width: $grid-unit-size * 16;
+}

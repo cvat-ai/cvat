@@ -26,6 +26,7 @@ from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.rq import is_rq_job_owner
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.redis_handler.apps import SELECTOR_TO_QUEUE
+from cvat.apps.redis_handler.permissions import RequestPermission
 from cvat.apps.redis_handler.rq import CustomRQJob, RequestId
 from cvat.apps.redis_handler.serializers import RequestSerializer, RequestStatus
 
@@ -50,6 +51,7 @@ slogger = ServerLogManager(__name__)
 class RequestViewSet(viewsets.GenericViewSet):
     serializer_class = RequestSerializer
     iam_organization_field = None
+    iam_permission_class = RequestPermission
     filter_backends = [
         NonModelSimpleFilter,
         NonModelJsonLogicFilter,

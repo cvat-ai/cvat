@@ -4,7 +4,7 @@
 
 import './styles.scss';
 import React, { useCallback, useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector, shallowEqual } from 'react-redux';
 import {
     useHistory, useRouteMatch,
 } from 'react-router';
@@ -13,33 +13,46 @@ import { Row, Col } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
 import Button from 'antd/lib/button';
 
-import { CombinedState, Indexable } from 'reducers';
+import { CombinedState, WebhooksQuery, SelectedResourceType } from 'reducers';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import { getWebhooksAsync } from 'actions/webhooks-actions';
 import { LeftOutlined } from '@ant-design/icons';
+import { useResourceQuery } from 'utils/hooks';
+import { selectionActions } from 'actions/selection-actions';
 import WebhooksList from './webhooks-list';
 import TopBar from './top-bar';
 import EmptyWebhooksListComponent from './empty-list';
 
 interface ProjectRouteMatch {
-    id?: string | undefined;
+    id?: string;
 }
-
-const PAGE_SIZE = 10;
 
 function WebhooksPage(): JSX.Element | null {
     const dispatch = useDispatch();
     const history = useHistory();
-    const organization = useSelector((state: CombinedState) => state.organizations.current);
-    const fetching = useSelector((state: CombinedState) => state.webhooks.fetching);
-    const totalCount = useSelector((state: CombinedState) => state.webhooks.totalCount);
-    const query = useSelector((state: CombinedState) => state.webhooks.query);
+    const {
+        organization,
+        fetching,
+        totalCount,
+        query,
+        bulkFetching,
+        currentWebhooks,
+        selectedCount,
+    } = useSelector((state: CombinedState) => ({
+        organization: state.organizations.current,
+        fetching: state.webhooks.fetching,
+        totalCount: state.webhooks.totalCount,
+        query: state.webhooks.query,
+        bulkFetching: state.bulkActions.fetching,
+        currentWebhooks: state.webhooks.current,
+        selectedCount: state.webhooks.selected.length,
+    }), shallowEqual);
 
     const projectsMatch = useRouteMatch<ProjectRouteMatch>({ path: '/projects/:id/webhooks' });
 
     const [onCreateParams, setOnCreateParams] = useState<string | null>(null);
     const onCreateWebhook = useCallback(() => {
-        history.push(`/webhooks/create?${onCreateParams || ''}`);
+        history.push(`/webhooks/create?${onCreateParams ?? ''}`);
     }, [onCreateParams]);
 
     const goBackContent = (
@@ -54,17 +67,10 @@ function WebhooksPage(): JSX.Element | null {
         </Button>
     );
 
-    const queryParams = new URLSearchParams(history.location.search);
-    const updatedQuery = { ...query };
-    for (const key of Object.keys(updatedQuery)) {
-        (updatedQuery as Indexable)[key] = queryParams.get(key) || null;
-        if (key === 'page') {
-            updatedQuery.page = updatedQuery.page ? +updatedQuery.page : 1;
-        }
-    }
+    const updatedQuery = useResourceQuery<WebhooksQuery>(query);
 
     useEffect(() => {
-        if (projectsMatch && projectsMatch.params.id) {
+        if (projectsMatch?.params.id) {
             const { id } = projectsMatch.params;
             setOnCreateParams(`projectId=${id}`);
             dispatch(getWebhooksAsync({ ...updatedQuery, projectId: +id }));
@@ -81,24 +87,32 @@ function WebhooksPage(): JSX.Element | null {
         });
     }, [query]);
 
+    const onSelectAll = useCallback(() => {
+        dispatch(selectionActions.selectResources(
+            currentWebhooks.map((w) => w.id),
+            SelectedResourceType.WEBHOOKS),
+        );
+    }, [currentWebhooks]);
+
     const content = totalCount ? (
         <>
             <WebhooksList />
-            <Row justify='center' align='middle'>
+            <Row justify='center' align='middle' className='cvat-resource-pagination-wrapper'>
                 <Col md={22} lg={18} xl={16} xxl={14}>
                     <Pagination
                         className='cvat-tasks-pagination'
-                        onChange={(page: number) => {
+                        onChange={(page: number, pageSize: number) => {
                             dispatch(getWebhooksAsync({
                                 ...query,
                                 page,
+                                pageSize,
                             }));
                         }}
-                        showSizeChanger={false}
                         total={totalCount}
+                        pageSize={query.pageSize}
                         current={query.page}
-                        pageSize={PAGE_SIZE}
                         showQuickJumper
+                        showSizeChanger
                     />
                 </Col>
             </Row>
@@ -111,6 +125,8 @@ function WebhooksPage(): JSX.Element | null {
                 query={updatedQuery}
                 onCreateWebhook={onCreateWebhook}
                 goBackContent={goBackContent}
+                selectedCount={selectedCount}
+                onSelectAll={onSelectAll}
                 onApplySearch={(search: string | null) => {
                     dispatch(
                         getWebhooksAsync({
@@ -139,7 +155,7 @@ function WebhooksPage(): JSX.Element | null {
                     );
                 }}
             />
-            { fetching ? (
+            { fetching && !bulkFetching ? (
                 <div className='cvat-empty-webhooks-list'>
                     <Spin size='large' className='cvat-spinner' />
                 </div>

@@ -10,7 +10,9 @@ In the demanding process of annotation, ensuring accuracy is paramount.
 CVAT introduces a specialized **Review mode**, designed to streamline the
 validation of annotations by pinpointing errors or discrepancies in annotation.
 
-> **Note**: The **Review mode** is not applicable for 3D tasks.
+{{% alert title="Note" color="primary" %}}
+The **Review mode** is not applicable for 3D tasks.
+{{% /alert %}}
 
 See:
 
@@ -33,7 +35,9 @@ Review mode is a user interface (UI) setting where a specialized
 **Issue** tool is available. This tool allows you to identify
 and describe issues with objects or areas within the frame.
 
-> **Note:** While in review mode, all other tools will be hidden.
+{{% alert title="Note" color="primary" %}}
+While in review mode, all other tools will be hidden.
+{{% /alert %}}
 
 **Review** mode screen looks like the following:
 
@@ -41,7 +45,9 @@ and describe issues with objects or areas within the frame.
 
 ### Assigning reviewer
 
-> **Note**: Reviewers can be assigned by project or task owner, assignee, and maintainer.
+{{% alert title="Note" color="primary" %}}
+Reviewers can be assigned by project or task owner, assignee, and maintainer.
+{{% /alert %}}
 
 To assign a reviewer to the job, do the following:
 
@@ -60,7 +66,7 @@ To assign a reviewer to the job, do the following:
 To report an issue, do the following:
 
 1. Log in to the reviewer's account.
-2. On the **Controls** sidebar, click **Open and issue** (![](/images/image195.jpg)).
+2. On the **Controls** sidebar, click **Open and issue** (![Open an issue button](/images/image195.jpg)).
 3. Click on the area of the frame where the issue is occurring,
    and the **Issue report popup** will appear.
 
@@ -90,7 +96,9 @@ To create a **Quick issue** do the following:
 
 ### Assigning corrector
 
-> **Note**: Only project owners and maintainers can assign reviewers.
+{{% alert title="Note" color="primary" %}}
+Only project owners and maintainers can assign reviewers.
+{{% /alert %}}
 
 To assign a corrector to the job, do the following:
 
@@ -137,7 +145,7 @@ To correct annotation issues as a reviewer, do the following:
 3. In the top right corner, from the drop-down list,
    select **Standard**.
 
-   ![Change job status](/images/switch_to_standart_mode.jpg)
+   ![Change job status](/images/switch_to_standard_mode.jpg)
 
 ## Issues navigation and interface
 
@@ -148,7 +156,7 @@ comments section.
 
 The created issue will appear on the **Objects** sidebar, in the **Issues** tab.
 
-![](/images/image196_detrac.jpg)
+![Example of "Issues" tab with highlighted buttons and issue list](/images/image196_detrac.jpg)
 
 It has has the following elements:
 
@@ -168,14 +176,14 @@ It has has the following elements:
 In the workspace, you can click on the issue, and add a
 comment on the issue, remove (**Remove**) it, or resolve (**Resolve**) it.
 
-![](/images/image232.jpg)
+![Example of "Issue" window with its settings](/images/image232.jpg)
 
 To reopen the resolved issue, click **Reopen**.
 
 You can easily access multiple issues created in one
 location by hovering over an issue and scrolling the mouse wheel.
 
-![](/images/issues_scroll.gif)
+![Example of scrolling by issues created in one location in interface](/images/issues_scroll.gif)
 
 ### Issues comments
 
@@ -183,7 +191,7 @@ You can add as many comments as needed to the issue.
 
 In the Objects toolbar, only the first and last comments will be displayed
 
-![](/images/issue_comments.png)
+![Issue comment example](/images/issue_comments.png)
 
 You can copy and paste comments text.
 

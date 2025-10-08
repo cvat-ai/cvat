@@ -86,20 +86,27 @@ class Configuration:
 
     API Key Authentication Example.
 
-    You can authenticate with API token after doing the basic auth the following way:
+    You can authenticate with session tokens after logging in the following way:
 
     conf = {{{packageName}}}.Configuration(
         ...
         api_key={
             "sessionAuth": <sessionid cookie value>,
             "csrfAuth": <csrftoken cookie value>,
+        }
+    )
+
+    Alternatively, you can authenticate with a token after logging in the following way:
+
+    conf = {{{packageName}}}.Configuration(
+        ...
+        api_key={
             "tokenAuth": <auth key value>,
         }
     )
 
-    You need to specify all the 3 keys for this kind of auth.
-
     If your custom server uses another token prefix, use the 'api_key_prefix' parameter.
+    This authentication option is deprecated and will be removed in future.
 
 {{/hasApiKeyMethods}}
 {{#hasHttpBasicMethods}}
@@ -553,6 +560,16 @@ class Configuration:
             }
 {{/isOAuth}}
 {{/authMethods}}
+
+        if 'csrfAuth' in auth and 'csrfHeaderAuth' not in auth:
+            # Copy 'csrfAuth' into 'csrfHeaderAuth' by default
+            auth['csrfHeaderAuth'] = {
+                'type': 'api_key',
+                'in': 'header',
+                'key': 'X-CSRFToken',
+                'value': auth['csrfAuth']['value'],
+            }
+
         return auth
 
     def to_debug_report(self):

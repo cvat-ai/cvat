@@ -37,7 +37,7 @@ context('Import and export annotations: specify source and target storage in mod
     const cloudStorageData = {
         displayName: 'Demo bucket',
         resource: 'public',
-        manifest: 'manifest.jsonl',
+        manifest: 'images_with_manifest/manifest.jsonl',
         endpointUrl: Cypress.config('minioUrl'),
     };
 
@@ -45,7 +45,7 @@ context('Import and export annotations: specify source and target storage in mod
         name: `Case ${caseId}`,
         label: labelName,
         attrName: 'color',
-        attrVaue: 'red',
+        attrValue: 'red',
         multiAttrParams: false,
     };
 
@@ -73,7 +73,7 @@ context('Import and export annotations: specify source and target storage in mod
             project.name,
             project.label,
             project.attrName,
-            project.attrVaue,
+            project.attrValue,
             project.multiAttrParams,
         );
     });
