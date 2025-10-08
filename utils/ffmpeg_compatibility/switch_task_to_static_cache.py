@@ -1,6 +1,3 @@
-# Run with:
-#   TASK_ID=123 python manage.py shell < switch_task_to_static_cache.py
-
 from __future__ import annotations
 
 import argparse
