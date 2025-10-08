@@ -227,18 +227,18 @@ export interface SerializedAsset {
 export interface SerializedOrganizationContact {
     email?: string;
     location?: string;
-    phoneNumber?: string
+    phoneNumber?: string;
 }
 
 export interface SerializedOrganization {
-    id?: number,
-    slug?: string,
-    name?: string,
-    description?: string,
-    created_date?: string,
-    updated_date?: string,
-    owner?: any,
-    contact?: SerializedOrganizationContact,
+    id?: number;
+    slug?: string;
+    name?: string;
+    description?: string;
+    created_date?: string;
+    updated_date?: string;
+    owner?: any;
+    contact?: SerializedOrganizationContact;
 }
 
 export interface APIQualitySettingsFilter extends APICommonFilterParams {

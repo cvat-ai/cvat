@@ -36,7 +36,7 @@ DISABLE_SOURCE_MAPS="${DISABLE_SOURCE_MAPS}" \
 UI_APP_CONFIG="${UI_APP_CONFIG}" \
 SOURCE_MAPS_TOKEN="${SOURCE_MAPS_TOKEN}" yarn run build:cvat-ui
 
-FROM nginxinc/nginx-unprivileged:1.28.0-alpine3.21-slim
+FROM nginxinc/nginx-unprivileged:1.29.1-alpine3.22-slim
 
 # Replace default.conf configuration to remove unnecessary rules
 COPY cvat-ui/react_nginx.conf /etc/nginx/conf.d/default.conf

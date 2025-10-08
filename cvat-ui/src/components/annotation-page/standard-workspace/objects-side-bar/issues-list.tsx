@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { useSelector, useDispatch, shallowEqual } from 'react-redux';
+import dayjs from 'dayjs';
 import Icon, {
     LeftOutlined, RightOutlined, EyeInvisibleFilled, EyeOutlined,
     CheckCircleFilled, CheckCircleOutlined,
@@ -18,7 +19,6 @@ import {
 import { reviewActions } from 'actions/review-actions';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { ActiveControl, CombinedState, Workspace } from 'reducers';
-import moment from 'moment';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import { ConflictSeverity, QualityConflict, Issue } from 'cvat-core-wrapper';
 import { changeShowGroundTruth } from 'actions/settings-actions';
@@ -194,7 +194,7 @@ export default function LabelsListComponent(): JSX.Element {
                                     </Col>
                                     <Col offset={1}>
                                         <Text type='secondary'>
-                                            {`created ${moment(frameIssue.createdDate).fromNow()}`}
+                                            {`created ${dayjs(frameIssue.createdDate).fromNow()}`}
                                         </Text>
                                     </Col>
                                 </Row>
