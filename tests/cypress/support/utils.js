@@ -48,10 +48,11 @@ export function convertClasses(dataToConvert) {
             return data;
         }
 
-        if (data.constructor === Object) {
+        const prototype = Object.getPrototypeOf(data);
+        if ([null, Object.prototype].includes(prototype)) {
             let clone = $win.Object.create(null);
 
-            if (Object.getPrototypeOf(data) === Object.prototype) {
+            if (prototype === Object.prototype) {
                 clone = new $win.Object();
             }
 
