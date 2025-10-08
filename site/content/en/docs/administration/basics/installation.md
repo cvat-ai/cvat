@@ -721,6 +721,12 @@ export CVAT_HOST=<YOUR_DOMAIN>
 export ACME_EMAIL=<YOUR_EMAIL>
 ```
 
+Optional health check configuration:
+
+```shell
+export CVAT_HEALTH_DISK_USAGE_MAX=90
+```
+
 and restart docker:
 
 ```shell
