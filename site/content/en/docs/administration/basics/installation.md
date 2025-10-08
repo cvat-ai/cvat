@@ -377,6 +377,12 @@ MigrationsHealthCheck    ... working
 OPAHealthCheck           ... working
 ```
 
+Configuring Disk Usage Healthcheck
+
+- `CVAT_HEALTH_DISK_USAGE_MAX`: Specifies the maximum allowed disk usage percentage for the volume where CVAT
+  is installed. If the disk usage exceeds this threshold, the DiskUsage health check will fail.
+  The value should be an integer representing a percentage (e.g., 90 for 90%).
+
 ### Deploying CVAT behind a proxy
 
 If you deploy CVAT behind a proxy and do not plan to use any of [serverless functions](#semi-automatic-and-automatic-annotation)
