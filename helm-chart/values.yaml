@@ -359,6 +359,9 @@ redis:
     registry: public.ecr.aws
     repository: public.ecr.aws/docker/library/redis
     tag: 8.2.2
+  global:
+    security:
+      allowInsecureImages: true
   external:
     host: 127.0.0.1
   architecture: standalone
