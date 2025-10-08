@@ -169,15 +169,13 @@ function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
                 'All related data (images, annotations) will be lost. Continue?',
             className: 'cvat-modal-confirm-remove-project',
             onOk: () => {
-                setTimeout(() => {
-                    dispatch(makeBulkOperationAsync(
-                        projectsToDelete.length ? projectsToDelete : [projectInstance],
-                        async (project) => {
-                            await dispatch(deleteProjectAsync(project));
-                        },
-                        (project, idx, total) => `Deleting project #${project.id} (${idx + 1}/${total})`,
-                    ));
-                }, 0);
+                dispatch(makeBulkOperationAsync(
+                    projectsToDelete.length ? projectsToDelete : [projectInstance],
+                    async (project) => {
+                        await dispatch(deleteProjectAsync(project));
+                    },
+                    (project, idx, total) => `Deleting project #${project.id} (${idx + 1}/${total})`,
+                ));
             },
             okButtonProps: {
                 type: 'primary',
