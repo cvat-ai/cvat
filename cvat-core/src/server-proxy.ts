@@ -88,7 +88,7 @@ function fetchAll<T extends { id: number | string }>(url, filter = {}): Promise<
                 } else {
                     resolve({
                         count: result.count,
-                        results: Object.values(result.results),
+                        results: [...result.results.values()],
                     });
                 }
             }).catch((error) => reject(error));
