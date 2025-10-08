@@ -1,6 +1,6 @@
 services:
   generate_chunks_for_task:
-    image: cvat/server:v2.45.0
+    image: cvat/server:v2.46.0
     environment:
       CVAT_POSTGRES_HOST: cvat_db
     volumes:
