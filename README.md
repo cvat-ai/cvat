@@ -18,15 +18,15 @@
 [![DOI][doi-img]][doi-url]
 [![Status][status-img]][status-url]
 
-CVAT is an interactive video and image annotation
-tool for computer vision. It is used by tens of thousands of users and
+CVAT is an interactive visual annotation
+platform for labeling images, videos, and 3D data for training computer vision models. It is used by hundreds of thousands of users and
 companies around the world. Our mission is to help developers, companies, and
-organizations around the world to solve real problems using the Data-centric
+organizations around the world to solve real problems using the data-centric
 AI approach.
 
-Start using CVAT online: [cvat.ai](https://cvat.ai). You can use it for free,
+Start using CVAT Online: [cvat.ai](https://cvat.ai). You can use it for free,
 or [subscribe](https://www.cvat.ai/pricing/cloud) to get unlimited data,
-organizations, autoannotations, and [Roboflow and HuggingFace integration](https://www.cvat.ai/post/integrating-hugging-face-and-roboflow-models).
+organizations, auto-annotations, and [Roboflow and HuggingFace integration](https://www.cvat.ai/post/integrating-hugging-face-and-roboflow-models).
 
 Or set CVAT up as a self-hosted solution:
 [Self-hosted Installation Guide](https://docs.cvat.ai/docs/administration/basics/installation/).
@@ -49,7 +49,7 @@ do trainings and a dedicated support with 24 hour SLA.
 - [Frequently asked questions](https://docs.cvat.ai/docs/faq/)
 - [Where to ask questions](#where-to-ask-questions)
 
-## Partners ❤️
+## Partners️
 
 CVAT is used by teams all over the world. In the list, you can find key companies which
 help us support the product or an essential part of our ecosystem. If you use us,
@@ -73,7 +73,7 @@ For developing a semantic segmentation dataset using CVAT, see:
 - [ATLANTIS Development Kit](https://github.com/smhassanerfani/atlantis/tree/master/adk)
 - [ATLANTIS annotation tutorial videos](https://www.youtube.com/playlist?list=PLIfLGY-zZChS5trt7Lc3MfNhab7OWl2BR).
 
-## CVAT online: [cvat.ai](https://cvat.ai)
+## CVAT Online: [app.cvat.ai](https://app.cvat.ai/)
 
 This is an online version of CVAT. It's free, efficient, and easy to use.
 
@@ -117,7 +117,7 @@ presentations and covers the following topics:
 
 [Product tour](https://www.youtube.com/playlist?list=PL0to7Ng4Puua37NJVMIShl_pzqJTigFzg): in this course, we show how to use CVAT, and help to get familiar with CVAT functionality and interfaces. This course does not cover integrations and is dedicated solely to CVAT. It covers the following topics:
 
-- **Pipeline**. In this video, we show how to use [app.cvat.ai](https://app.cvat.ai): how to sign up, upload your data, annotate it, and download it.
+- **Pipeline**. In this video, we show how to use [CVAT Online](https://app.cvat.ai): how to sign up, upload your data, annotate it, and download it.
 
 <!--lint enable maximum-line-length-->
 
@@ -265,8 +265,6 @@ questions and get our support.
 [docker-ui-image-url]: https://hub.docker.com/r/cvat/ui
 [ci-img]: https://github.com/cvat-ai/cvat/actions/workflows/main.yml/badge.svg?branch=develop
 [ci-url]: https://github.com/cvat-ai/cvat/actions
-[gitter-img]: https://img.shields.io/gitter/room/opencv-cvat/public?style=flat
-[gitter-url]: https://gitter.im/opencv-cvat/public
 [coverage-img]: https://codecov.io/github/cvat-ai/cvat/branch/develop/graph/badge.svg
 [coverage-url]: https://codecov.io/github/cvat-ai/cvat
 [doi-img]: https://zenodo.org/badge/139156354.svg
