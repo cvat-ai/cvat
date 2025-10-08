@@ -357,7 +357,7 @@ redis:
   enabled: true
   image:
     registry: public.ecr.aws
-    repository: public.ecr.aws/docker/library/redis
+    repository: docker/library/redis
     tag: 8.2.2
   global:
     security:
