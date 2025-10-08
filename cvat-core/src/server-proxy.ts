@@ -60,15 +60,17 @@ function fetchAll<T extends { id: number | string }>(url, filter = {}): Promise<
     const pageSize = 500;
     const result = {
         count: 0,
-        results: {} as Record<number | string, T>,
+        results: new Map<T['id'], T>(),
     };
 
     function appendToResult(data: { count: number; results: T[] }): { hasMore: boolean; } {
         result.count = data.count;
         data.results.forEach((obj: T) => {
-            result.results[obj.id] = obj;
+            if (!result.results.has(obj.id)) {
+                result.results.set(obj.id, obj);
+            }
         });
-        return { hasMore: result.count > Object.keys(result.results).length };
+        return { hasMore: result.count > result.results.size };
     }
 
     return new Promise((resolve, reject) => {
