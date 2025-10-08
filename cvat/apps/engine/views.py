@@ -416,13 +416,6 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
 
-    def get_upload_dir(self):
-        if 'dataset' in self.action:
-            return self._object.get_tmp_dirname()
-        elif 'backup' in self.action:
-            return backup.get_backup_dirname()
-        assert False
-
     def upload_finished(self, request: ExtendedRequest):
         if self.action == 'dataset':
             importer = DatasetImporter(request=request, db_instance=self._object)
@@ -977,19 +970,14 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     # UploadMixin method
     def get_upload_dir(self):
-        if 'annotations' in self.action:
-            return self._object.get_tmp_dirname()
-        elif self._is_data_uploading():
+        if self._is_data_uploading():
             return self._object.data.get_upload_dirname()
-        elif 'backup' in self.action:
-            return backup.get_backup_dirname()
 
-        assert False
+        return super().get_upload_dir()
 
     def _prepare_upload_info_entry(self, filename: str) -> str:
-        filename = osp.normpath(filename)
         upload_dir = self.get_upload_dir()
-        return osp.join(upload_dir, filename)
+        return str((upload_dir / filename).resolve())
 
     def _maybe_append_upload_info_entry(self, filename: str):
         task_data = cast(Data, self._object.data)
@@ -1727,10 +1715,6 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
 
         if validation_layout:
             validation_layout.delete()
-
-    # UploadMixin method
-    def get_upload_dir(self):
-        return self._object.get_tmp_dirname()
 
     # UploadMixin method
     def upload_finished(self, request: ExtendedRequest):

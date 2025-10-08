@@ -295,9 +295,14 @@ class ResourceImporter(AbstractRequestManager):
 
     import_args: ImportArgs | None
 
-    def __init__(self, *, request: ExtendedRequest, db_instance: Model | None, tmp_dir: Path):
+    def __init__(
+        self,
+        *,
+        request: ExtendedRequest,
+        db_instance: Model | None,
+    ):
         super().__init__(request=request, db_instance=db_instance)
-        self.tmp_dir = tmp_dir
+        self.tmp_dir = Path(TmpDirManager.TMP_ROOT)
 
     @property
     def job_result_ttl(self):
@@ -406,15 +411,6 @@ class DatasetImporter(ResourceImporter):
         format: str
         conv_mask_to_poly: bool
 
-    def __init__(
-        self,
-        *,
-        request: ExtendedRequest,
-        db_instance: Project | Task | Job,
-    ):
-        super().__init__(
-            request=request, db_instance=db_instance, tmp_dir=Path(db_instance.get_tmp_dirname())
-        )
 
     def init_request_args(self) -> None:
         super().init_request_args()
@@ -500,7 +496,7 @@ class BackupImporter(ResourceImporter):
         request: ExtendedRequest,
         target: RequestTarget,
     ):
-        super().__init__(request=request, db_instance=None, tmp_dir=Path(TmpDirManager.TMP_ROOT))
+        super().__init__(request=request, db_instance=None)
         assert target in self.SUPPORTED_TARGETS, f"Unsupported target: {target}"
         self.target = target
 
