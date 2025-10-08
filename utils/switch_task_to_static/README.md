@@ -17,6 +17,6 @@ If your CVAT is deployed through docker, run
 docker compose \
   -f docker-compose.yml \
   \  # optionally -f docker-compose.dev.yml \
-  -f ./utils/switch_task_to_static/docker-compose.yaml \
+  -f ./utils/switch_task_to_static/docker-compose.yml \
   run --rm generate_chunks_for_task <task_id>
 ```
