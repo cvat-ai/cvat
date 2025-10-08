@@ -16,6 +16,89 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.46.0'></a>
+## \[2.46.0\] - 2025-10-08
+
+### Added
+
+- Support for related images in 2d and 3d tasks bound to cloud storages
+  (<https://github.com/cvat-ai/cvat/pull/9757>)
+- Support for 3d tasks with non-archived files bound to cloud storages
+  (<https://github.com/cvat-ai/cvat/pull/9757>)
+- \[Dataset manifest tool\] now can handle 3d datasets in all 4 supported file layouts
+  (<https://github.com/cvat-ai/cvat/pull/9757>)
+
+### Changed
+
+- Enabled validation of the frame `width` and `height` fields in manifests
+  (now required both for 2d and 3d dataset manifests)
+  (<https://github.com/cvat-ai/cvat/pull/9757>)
+- Dataset manifests now can include the `original_name` meta field with the server file name
+  (<https://github.com/cvat-ai/cvat/pull/9757>)
+
+- Tasks can now be created without specifying the labels in advance
+  (<https://github.com/cvat-ai/cvat/pull/9822>)
+
+- \[SDK\] Removed the `tuspy` dependency
+  (<https://github.com/cvat-ai/cvat/pull/9824>)
+
+- Bump helm chart version, using images from our public repo now
+  (<https://github.com/cvat-ai/cvat/pull/9832>)
+
+- The `CVAT_ALLOW_STATIC_CACHE` server configuration parameter
+  will no longer affect the existing tasks. It will only affect new tasks,
+  as stated in the description. Existing tasks will use chunks as
+  configured in the task.
+  (<https://github.com/cvat-ai/cvat/pull/9831>)
+
+### Deprecated
+
+- Excessive filtering for media files containing "related_images" in the path during task creation.
+  Only the actual related images wrt. the input media layout will be filtered out in the future.
+  (<https://github.com/cvat-ai/cvat/pull/9757>)
+
+### Removed
+
+- Removed non-functional API URL signing support
+  (<https://github.com/cvat-ai/cvat/pull/9867>)
+
+### Fixed
+
+- Related image detection for 2d and 3d media in all 5 supported layouts
+  (<https://github.com/cvat-ai/cvat/pull/9757>)
+- Improved documentation about supported task file layouts with related images
+  (<https://github.com/cvat-ai/cvat/pull/9757>)
+- Improved error messages for invalid media in task creation
+  (<https://github.com/cvat-ai/cvat/pull/9757>)
+
+- Re-enables helm chart compatibility with K8s pre-release versions
+  (<https://github.com/cvat-ai/cvat/pull/9841>)
+
+- Model card clipping on windows with small height
+  (<https://github.com/cvat-ai/cvat/pull/9852>)
+
+- UI error `Cannot read properties of undefined (reading 'points')` occurring in various scenarios
+  (<https://github.com/cvat-ai/cvat/pull/9855>)
+
+- Fixed incorrect class names in some user messages
+  (<https://github.com/cvat-ai/cvat/pull/9861>)
+
+- Updating organization description does not work on the organization page
+  (<https://github.com/cvat-ai/cvat/pull/9863>)
+
+- Bulk delete for cloud storages was deleting only one instance
+  (<https://github.com/cvat-ai/cvat/pull/9862>)
+
+- Fixed backend failing to start when analytics are disabled
+  (<https://github.com/cvat-ai/cvat/pull/9845>)
+
+- A possible error when trying to merge tag annotations via consensus
+  (<https://github.com/cvat-ai/cvat/pull/9865>)
+
+- Worked around an issue that may cause an error message to be replaced
+  with "No module named 'pkg_resources'"
+  (<https://github.com/cvat-ai/cvat/pull/9869>)
+
 <a id='changelog-2.45.0'></a>
 ## \[2.45.0\] - 2025-09-17
 
