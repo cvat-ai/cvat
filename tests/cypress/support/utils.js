@@ -41,3 +41,37 @@ export function translatePoints(points, delta, axis) {
     }
     return points;
 }
+
+export function convertClasses(dataToConvert) {
+    function convert(data, $win) {
+        if (typeof data !== 'object' || data === null) {
+            return data;
+        }
+
+        if (data.constructor === Object) {
+            let clone = $win.Object.create(null);
+
+            if (Object.getPrototypeOf(data) === Object.prototype) {
+                clone = new $win.Object();
+            }
+
+            for (const key of Object.keys(data)) {
+                clone[key] = convert(data[key], $win);
+            }
+
+            return clone;
+        }
+
+        if (Array.isArray(data)) {
+            const clone = new $win.Array();
+            for (const item of data) {
+                clone.push(convert(item, $win));
+            }
+            return clone;
+        }
+
+        return data;
+    }
+
+    return cy.window().then((_$win) => cy.wrap(convert(dataToConvert, _$win)));
+}
