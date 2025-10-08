@@ -259,6 +259,7 @@ jobs:
         run: |
           cd ./tests
           corepack enable yarn
+          yarn --version
           yarn --immutable
 
           shopt -s extglob
