@@ -357,8 +357,8 @@ redis:
   enabled: true
   image:
     registry: public.ecr.aws
-    repository: b8u7h5e8/redis
-    tag: 7.2.3-debian-11-r1
+    repository: public.ecr.aws/docker/library/redis
+    tag: 8.2.2
   external:
     host: 127.0.0.1
   architecture: standalone

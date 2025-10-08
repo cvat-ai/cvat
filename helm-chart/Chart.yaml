@@ -57,6 +57,6 @@ dependencies:
     condition: traefik.enabled
 
   - name: redis
-    version: "18.5.*"
+    version: "22.0.7"
     repository: https://charts.bitnami.com/bitnami
     condition: redis.enabled
