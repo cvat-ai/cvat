@@ -3,11 +3,12 @@ from __future__ import annotations
 import argparse
 import os
 import shutil
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, PropertyMock, patch
 
 import django
 from django.db import connection, transaction
 from django.db.migrations.recorder import MigrationRecorder
+from tqdm import tqdm
 
 django.setup()
 
@@ -16,6 +17,7 @@ from cvat.apps.engine.media_extractors import MEDIA_TYPES
 from cvat.apps.engine.task import _create_static_chunks
 
 EXPECTED_LAST_ENGINE_MIGRATION = "0093_issue_assignee_updated_date_alter_issue_assignee_and_more"
+EXPECTED_LAST_ENGINE_MIGRATION = "0094_test_guard"
 
 
 def _ensure_last_engine_applied_migration_name():
@@ -79,11 +81,20 @@ def main():
 
         data.storage_method = models.StorageMethodChoice.FILE_SYSTEM
         _cleanup_static_cache(data)
-        with patch("cvat.apps.engine.task.ImportRQMeta", return_value=Mock()):
-            _create_static_chunks(
-                task, media_extractor=extractor, upload_dir=data.get_upload_dirname()
-            )
-        data.save(update_fields=["storage_method"])
+
+        with tqdm(total=1.0, bar_format="{l_bar}{bar}| {n:.2f}/{total:.2f}") as pbar:
+
+            class _PropertyMock(PropertyMock):
+                def __set__(self, instance, value):
+                    pbar.n = value
+                    pbar.refresh()
+
+            with patch("cvat.apps.engine.task.ImportRQMeta", return_value=Mock()) as mock:
+                type(mock.for_job.return_value).task_progress = _PropertyMock()
+                _create_static_chunks(
+                    task, media_extractor=extractor, upload_dir=data.get_upload_dirname()
+                )
+                data.save(update_fields=["storage_method"])
 
     print(f"Task #{task_id}: switched to static cache.")
 
