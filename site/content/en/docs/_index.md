@@ -14,9 +14,9 @@ Many UI and UX decisions are based on feedbacks from CVAT's in-house professiona
 
 CVAT comes in three editions: CVAT Community, CVAT Online, and CVAT Enterprise. 
 
-* [CVAT Community] (https://github.com/cvat-ai/cvat) is the free, self-hosted version with core functionality.
-* [CVAT Online] (https://app.cvat.ai) is the SaaS edition with three pricing tiers (Free, Solo, Team).
-* [CVAT Enterprise] (https://www.cvat.ai/pricing/enterprise) is a self-hosted, premium version with enhanced security, built-in automation, and advanced customization support. 
+* [CVAT Community](https://github.com/cvat-ai/cvat) is the free, self-hosted version with core functionality.
+* [CVAT Online](https://app.cvat.ai) is the SaaS edition with three pricing tiers (Free, Solo, Team).
+* [CVAT Enterprise](https://www.cvat.ai/pricing/enterprise) is a self-hosted, premium version with enhanced security, built-in automation, and advanced customization support. 
 
 This documentation provides information for data annotators, AI researchers, system administrators, and developers.
 
