@@ -178,7 +178,7 @@ Cypress.Commands.add('removeMemberFromOrganization', (username) => {
 });
 
 Cypress.Commands.add('headlessCreateOrganization', (data = {}) => cy.window().then(($win) => {
-    const organization = new $win.cvat.classes.Organization(convertClasses(data));
+    const organization = new $win.cvat.classes.Organization(convertClasses(data, $win));
     return cy.wrap(organization.save());
 }));
 
