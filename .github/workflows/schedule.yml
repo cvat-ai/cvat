@@ -268,7 +268,7 @@ jobs:
               --headed \
               --browser chrome \
               --config-file cypress_canvas3d.config.js \
-              --spec 'cypress/e2e/setup/setup_canvas3d.js,cypress/e2e/${{ matrix.specs }}*/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
+              --spec 'cypress/e2e/setup/setup_canvas3d.js,cypress/e2e/canvas3d_*/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
           else
             npx cypress run \
               --browser chrome \
