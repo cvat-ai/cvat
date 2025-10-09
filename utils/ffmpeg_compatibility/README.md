@@ -7,8 +7,8 @@ In the case of any difference in frame decoding,
 this script may be used to switch a task to static chunks and generate frames with the old FFMPEG version.
 
 > NOTE: This option requires administrator
-access to the server instance. If you do not have such access, please try
-to contact the server administration.
+> access to the server instance. If you do not have such access, please try
+> to contact the server administration.
 
 # Usage
 
