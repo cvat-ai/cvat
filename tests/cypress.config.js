@@ -15,6 +15,7 @@ module.exports = defineConfig({
             'cypress/e2e/setup/setup_project.js',
             'cypress/e2e/auth_page.js',
             'cypress/e2e/features/*.js',
+            'cypress/e2e/features2/*.js',
             'cypress/e2e/actions_tasks/**/*.js',
             'cypress/e2e/actions_tasks2/**/*.js',
             'cypress/e2e/actions_tasks3/**/*.js',

@@ -303,7 +303,7 @@ jobs:
         specs: ['actions_tasks', 'actions_tasks2', 'actions_tasks3', 'actions_tasks4',
                 'actions_objects', 'actions_objects2', 'actions_users',
                 'actions_projects_models', 'canvas3d_functionality',
-                'issues_prs', 'issues_prs2', 'features']
+                'issues_prs', 'issues_prs2', 'features', 'features2']
     steps:
       - uses: actions/checkout@v4
 
