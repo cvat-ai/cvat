@@ -8,15 +8,15 @@ menu:
     weight: 20
 ---
 
-CVAT (Computer Vision Annotation Tool) is a leading visual data annotation platform for building high-quality image, video, and 3D datasets for training computer vision models.
-It is being developed CVAT.ai team to help AI and machine learning teams annotate millions of objects with different shapes and properties.
+CVAT is a leading visual annotation platform for building high-quality image, video, and 3D datasets for AL/ML models.
+It is being developed CVAT team to help AI/ML teams annotate millions of objects with different shapes and properties.
 Many UI and UX decisions are based on feedbacks from CVAT's in-house professional data annotation team.
 
-CVAT comes in three editions: CVAT Community, CVAT Online, and CVAT Enterprise. 
+CVAT comes in three editions: CVAT Community, CVAT Online, and CVAT Enterprise.
 
-* [CVAT Community](https://github.com/cvat-ai/cvat) is the free, self-hosted version with core functionality.
-* [CVAT Online](https://app.cvat.ai) is the SaaS edition with three pricing tiers (Free, Solo, Team).
-* [CVAT Enterprise](https://www.cvat.ai/pricing/enterprise) is a self-hosted, premium version with enhanced security, built-in automation, and advanced customization support. 
+- [CVAT Community](https://github.com/cvat-ai/cvat) is the free, self-hosted version with core functionality.
+- [CVAT Online](https://app.cvat.ai) is the SaaS edition with three pricing tiers (Free, Solo, Team).
+- [CVAT Enterprise](https://www.cvat.ai/pricing/enterprise) is a self-hosted, premium version with enhanced security.
 
 This documentation provides information for data annotators, AI researchers, system administrators, and developers.
 
