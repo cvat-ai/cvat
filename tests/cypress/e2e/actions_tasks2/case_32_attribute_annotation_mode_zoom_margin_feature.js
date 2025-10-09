@@ -5,9 +5,13 @@
 
 /// <reference types="cypress" />
 
+// eslint-disable-next-line import/no-extraneous-dependencies
+import * as allure from 'allure-js-commons';
+
 import { taskName, labelName } from '../../support/const';
 
 context('Attribute annotation mode (AAM) zoom margin feature', () => {
+    allure.tag('heavy operations & settings');
     const caseId = '32';
     const rectangleShape2Points = {
         points: 'By 2 Points',

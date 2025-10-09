@@ -9,7 +9,7 @@
 import * as allure from 'allure-js-commons';
 
 context('Settings. Text size/position. Text labels content.', () => {
-    allure.tag('slow');
+    allure.tag('heavy operations & settings');
     const caseId = '111';
     const taskName = 'Test text size/position task';
     const labelName = 'Test label';

@@ -8,7 +8,7 @@
 import * as allure from 'allure-js-commons';
 
 context('Test default value for an attribute', () => {
-    allure.tag('slow');
+    allure.tag('heavy operations & settings');
     const taskName = 'Default attribute value test';
     const serverFiles = {
         images: ['image_1.jpg', 'image_2.jpg', 'image_3.jpg'],

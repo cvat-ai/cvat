@@ -5,7 +5,11 @@
 
 /// <reference types="cypress" />
 
+// eslint-disable-next-line import/no-extraneous-dependencies
+import * as allure from 'allure-js-commons';
+
 context('Try to create a task without necessary arguments.', () => {
+    allure.tag('heavy operations & settings');
     const caseId = '40';
     const labelName = `Case ${caseId}`;
     const taskName = `New annotation task for ${labelName}`;

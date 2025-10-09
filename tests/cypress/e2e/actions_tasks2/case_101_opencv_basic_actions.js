@@ -11,7 +11,7 @@ import * as allure from 'allure-js-commons';
 import { generateString } from '../../support/utils';
 
 context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () => {
-    allure.tag('slow');
+    allure.tag('heavy operations & settings');
     const caseId = '101';
     const labelName = `Case ${caseId}`;
     const newLabel = `Case ${caseId}`;
