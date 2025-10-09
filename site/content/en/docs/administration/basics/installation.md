@@ -727,6 +727,13 @@ Optional health check configuration:
 export CVAT_HEALTH_DISK_USAGE_MAX=90
 ```
 
+also need to add an extra environment variable to the `docker-compose.yml` file:
+
+```yaml
+x-backend-env: &backend-env
+  CVAT_HEALTH_DISK_USAGE_MAX: '${CVAT_HEALTH_DISK_USAGE_MAX:-90}'
+```
+
 and restart docker:
 
 ```shell
