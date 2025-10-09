@@ -347,6 +347,7 @@ Cypress.Commands.add('headlessCreateObjects', (objects, jobID) => {
 
     return cy.window().then(async ($win) => {
         const [job] = await $win.cvat.jobs.get({ jobID });
+        await job.annotations.clear({ reload: true });
 
         const data = convertClasses({
             shapes: objects.filter((object) => object.objectType === 'shape').map(convertShape(job)),
