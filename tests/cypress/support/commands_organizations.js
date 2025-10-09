@@ -177,13 +177,10 @@ Cypress.Commands.add('removeMemberFromOrganization', (username) => {
         .click();
 });
 
-Cypress.Commands.add('headlessCreateOrganization', (data = {}) => convertClasses(data).then((convertedData) => (
-    cy.window().then(async ($win) => {
-        const organization = new $win.cvat.classes.Organization(convertedData);
-        const result = await organization.save();
-        return cy.wrap(result);
-    })
-)));
+Cypress.Commands.add('headlessCreateOrganization', (data = {}) => cy.window().then(($win) => {
+    const organization = new $win.cvat.classes.Organization(convertClasses(data));
+    return cy.wrap(organization.save());
+}));
 
 Cypress.Commands.add('headlessDeleteOrganization', (orgId) => {
     cy.window().then(($win) => cy.wrap($win.cvat.organizations.get({

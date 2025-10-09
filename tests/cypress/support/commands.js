@@ -7,7 +7,7 @@
 
 /* eslint-disable security/detect-non-literal-regexp */
 
-import { decomposeMatrix } from './utils';
+import { decomposeMatrix, convertClasses } from './utils';
 
 require('cypress-file-upload');
 require('../plugins/imageGenerator/imageGeneratorCommand');
@@ -303,39 +303,39 @@ Cypress.Commands.add('headlessLogin', ({
 });
 
 Cypress.Commands.add('headlessCreateObjects', (objects, jobID) => {
-    const convertShape = ($win, job) => (shape) => ({
+    const convertShape = (job) => (shape) => ({
         frame: shape.frame,
         type: shape.type,
-        points: $win.Array.from(shape.points),
+        points: shape.points,
         label_id: job.labels.find((label) => label.name === shape.labelName).id,
         occluded: shape.occluded || false,
         outside: shape.outside || false,
         source: shape.source || 'manual',
-        attributes: $win.Array.from(shape.attributes || []),
-        elements: $win.Array.from(shape.elements ? shape.elements.map(convertShape) : []),
+        attributes: shape.attributes || [],
+        elements: shape.elements ? shape.elements.map(convertShape(job)) : [],
         rotation: shape.rotation || 0,
         group: shape.group || 0,
         z_order: shape.zOrder || 0,
     });
 
-    const convertTag = ($win, job) => (tag) => ({
+    const convertTag = (job) => (tag) => ({
         frame: tag.frame,
         label_id: job.labels.find((label) => label.name === tag.labelName).id,
         source: tag.source || 'manual',
-        attributes: $win.Array.from(tag.attributes || []),
+        attributes: tag.attributes || [],
         group: tag.group || 0,
     });
 
-    const convertTrack = ($win, job) => (track) => ({
+    const convertTrack = (job) => (track) => ({
         frame: track.frame,
         label_id: job.labels.find((label) => label.name === track.labelName).id,
         group: track.group || 0,
         source: track.source || 'manual',
-        attributes: $win.Array.from(track.attributes || []),
-        elements: $win.Array.from(track.elements ? track.elements.map(convertTrack) : []),
+        attributes: track.attributes || [],
+        elements: track.elements ? track.elements.map(convertTrack(job)) : [],
         shapes: track.shapes.map((shape) => ({
-            attributes: $win.Array.from(shape.attributes || []),
-            points: $win.Array.from(shape.points),
+            attributes: shape.attributes || [],
+            points: shape.points,
             frame: shape.frame,
             occluded: shape.occluded || false,
             outside: shape.outside || false,
@@ -345,22 +345,17 @@ Cypress.Commands.add('headlessCreateObjects', (objects, jobID) => {
         })),
     });
 
-    cy.window().then(async ($win) => {
-        const job = (await $win.cvat.jobs.get({ jobID }))[0];
-        await job.annotations.clear({ reload: true });
+    return cy.window().then(async ($win) => {
+        const [job] = await $win.cvat.jobs.get({ jobID });
 
-        const shapes = objects.filter((object) => object.objectType === 'shape').map(convertShape($win, job));
-        const tracks = objects.filter((object) => object.objectType === 'track').map(convertTrack($win, job));
-        const tags = objects.filter((object) => object.objectType === 'tag').map(convertTag($win, job));
+        const data = convertClasses({
+            shapes: objects.filter((object) => object.objectType === 'shape').map(convertShape(job)),
+            tracks: objects.filter((object) => object.objectType === 'track').map(convertTrack(job)),
+            tags: objects.filter((object) => object.objectType === 'tag').map(convertTag(job)),
+        }, $win);
 
-        await job.annotations.import({
-            shapes: $win.Array.from(shapes),
-            tracks: $win.Array.from(tracks),
-            tags: $win.Array.from(tags),
-        });
-
+        await job.annotations.import(data);
         await job.annotations.save();
-        return cy.wrap();
     });
 });
 

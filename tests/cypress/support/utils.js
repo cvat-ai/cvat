@@ -42,37 +42,33 @@ export function translatePoints(points, delta, axis) {
     return points;
 }
 
-export function convertClasses(dataToConvert) {
-    function convert(data, $win) {
-        if (typeof data !== 'object' || data === null) {
-            return data;
-        }
-
-        const prototype = Object.getPrototypeOf(data);
-        if ([null, Object.prototype].includes(prototype)) {
-            let clone = $win.Object.create(null);
-
-            if (prototype === Object.prototype) {
-                clone = new $win.Object();
-            }
-
-            for (const key of Object.keys(data)) {
-                clone[key] = convert(data[key], $win);
-            }
-
-            return clone;
-        }
-
-        if (Array.isArray(data)) {
-            const clone = new $win.Array();
-            for (const item of data) {
-                clone.push(convert(item, $win));
-            }
-            return clone;
-        }
-
+export function convertClasses(data, $win) {
+    if (typeof data !== 'object' || data === null) {
         return data;
     }
 
-    return cy.window().then((_$win) => cy.wrap(convert(dataToConvert, _$win)));
+    const prototype = Object.getPrototypeOf(data);
+    if ([null, Object.prototype].includes(prototype)) {
+        let clone = $win.Object.create(null);
+
+        if (prototype === Object.prototype) {
+            clone = new $win.Object();
+        }
+
+        for (const key of Object.keys(data)) {
+            clone[key] = convertClasses(data[key], $win);
+        }
+
+        return clone;
+    }
+
+    if (Array.isArray(data)) {
+        const clone = new $win.Array();
+        for (const item of data) {
+            clone.push(convertClasses(item, $win));
+        }
+        return clone;
+    }
+
+    return data;
 }
