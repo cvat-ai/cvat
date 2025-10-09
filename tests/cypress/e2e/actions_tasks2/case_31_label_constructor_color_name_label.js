@@ -5,9 +5,13 @@
 
 /// <reference types="cypress" />
 
+// eslint-disable-next-line import/no-extraneous-dependencies
+import * as allure from 'allure-js-commons';
+
 import { taskName } from '../../support/const';
 
 context('Label constructor. Color label. Label name editing', () => {
+    allure.tag('slow');
     const caseId = '31';
     const labelColor = {
         redHex: 'ff0000',

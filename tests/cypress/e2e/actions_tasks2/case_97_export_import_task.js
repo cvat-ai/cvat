@@ -5,7 +5,11 @@
 
 /// <reference types="cypress" />
 
+// eslint-disable-next-line import/no-extraneous-dependencies
+import * as allure from 'allure-js-commons';
+
 context('Export, import an annotation task.', { browser: '!firefox' }, () => {
+    allure.tag('slow');
     const caseId = '97';
     const labelName = 'car';
     const taskName = `Case ${caseId}`;

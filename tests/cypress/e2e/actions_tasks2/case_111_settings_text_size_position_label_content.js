@@ -5,7 +5,11 @@
 
 /// <reference types="cypress" />
 
+// eslint-disable-next-line import/no-extraneous-dependencies
+import * as allure from 'allure-js-commons';
+
 context('Settings. Text size/position. Text labels content.', () => {
+    allure.tag('slow');
     const caseId = '111';
     const taskName = 'Test text size/position task';
     const labelName = 'Test label';

@@ -4,7 +4,11 @@
 
 /// <reference types="cypress" />
 
+// eslint-disable-next-line import/no-extraneous-dependencies
+import * as allure from 'allure-js-commons';
+
 context('Test default value for an attribute', () => {
+    allure.tag('slow');
     const taskName = 'Default attribute value test';
     const serverFiles = {
         images: ['image_1.jpg', 'image_2.jpg', 'image_3.jpg'],
