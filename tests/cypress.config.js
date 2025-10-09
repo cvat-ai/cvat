@@ -18,6 +18,7 @@ module.exports = defineConfig({
             'cypress/e2e/actions_tasks/**/*.js',
             'cypress/e2e/actions_tasks2/**/*.js',
             'cypress/e2e/actions_tasks3/**/*.js',
+            'cypress/e2e/actions_tasks4/**/*.js',
             'cypress/e2e/actions_objects/**/*.js',
             'cypress/e2e/actions_objects2/**/*.js',
             'cypress/e2e/issues_prs/**/*.js',
