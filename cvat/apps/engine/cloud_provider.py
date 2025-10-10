@@ -427,7 +427,7 @@ class HeaderFirstDownloader(ABC):
             buff.seek(0, io.SEEK_END)
             cur_pos = buff.tell()
             chunk = self.client.download_range_of_bytes(
-                key, start_byte=cur_pos, stop_byte=header_size - 1 - cur_pos
+                key, start_byte=cur_pos, stop_byte=header_size - 1
             )
             buff.write(chunk)
             buff.seek(0)
