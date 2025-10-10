@@ -397,12 +397,13 @@ class HeaderFirstDownloader(ABC):
 
     def get_header_sizes_to_try(self) -> Sequence[int]:
         return (
-            # Standard Ethernet v2 MTU size, should result in just a several packets
-            # for the first header check
-            1500,
-            # Try bigger sizes, but less than the whole file
-            # TODO: Maybe implement exponential increase
-            15000,
+            # The first 1-2Kb are typically enough for most formats with the static header size.
+            # Unfortunately, it's not enough for some popular formats, such as jpeg,
+            # which can optionally include a preview image embedded in the header, so we try
+            # other bigger sizes, but less than the whole file.
+            # For comparison, the standard Ethernet v2 MTU size is 1500 bytes.
+            2048,
+            16384,
             65536,
         )
 
