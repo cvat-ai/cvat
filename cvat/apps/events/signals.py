@@ -6,6 +6,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver
 
+from cvat.apps.api_tokens.models import ApiToken
 from cvat.apps.engine.models import (
     CloudStorage,
     Comment,
@@ -24,6 +25,7 @@ from .event import EventScopeChoice, event_scope
 from .handlers import handle_create, handle_delete, handle_update
 
 
+@receiver(pre_save, sender=ApiToken)
 @receiver(pre_save, sender=Webhook)
 @receiver(pre_save, sender=Membership)
 @receiver(pre_save, sender=Organization)
@@ -57,12 +59,24 @@ def resource_update(sender, *, instance, update_fields, **kwargs):
         return
 
     scope = event_scope("update", resource_name)
-    if scope not in (a[0] for a in EventScopeChoice.choices()):
+    allowed_scopes = tuple(a[0] for a in EventScopeChoice.choices())
+    if scope not in allowed_scopes:
         return
 
-    handle_update(scope=scope, instance=instance, old_instance=old_instance, **kwargs)
+    if isinstance(instance, ApiToken) and instance.revoked:
+        # Real model deletes are delayed for ApiToken.
+        # The events should store user actions, not the DB actions.
+        if old_instance and not old_instance.revoked:
+            scope = event_scope("delete", resource_name)
+            if scope not in allowed_scopes:
+                return
+
+            handle_delete(scope=scope, instance=instance, **kwargs)
+    else:
+        handle_update(scope=scope, instance=instance, old_instance=old_instance, **kwargs)
 
 
+@receiver(post_save, sender=ApiToken)
 @receiver(post_save, sender=Webhook)
 @receiver(post_save, sender=Membership)
 @receiver(post_save, sender=Invitation)

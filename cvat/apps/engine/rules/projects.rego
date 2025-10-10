@@ -45,6 +45,7 @@ import data.organizations
 #         "assignee": { "id": <num> },
 #         "organization": { "id": <num> } or null,
 #         "rq_job": { "owner": { "id": <num> } } or null,
+#         "destination": <"local" | "cloud_storage"> or undefined,
 #     }
 # }
 
