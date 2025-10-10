@@ -390,7 +390,7 @@ class HeaderFirstDownloader(ABC):
 
         slogger.glob.warning(message)
 
-    def get_header_size(self) -> Sequence[int]:
+    def get_header_sizes_to_try(self) -> Sequence[int]:
         return (
             # Standard Ethernet v2 MTU size, should result in just 1 packet
             1500,
@@ -415,7 +415,9 @@ class HeaderFirstDownloader(ABC):
 
         buff = NamedBytesIO()
         buff.filename = key
-        for header_size in self.get_header_size():
+
+        headers_to_try = self.get_header_sizes_to_try()
+        for i, header_size in enumerate(headers_to_try):
             buff.seek(0, io.SEEK_END)
             cur_pos = buff.tell()
             chunk = self.client.download_range_of_bytes(
@@ -428,7 +430,8 @@ class HeaderFirstDownloader(ABC):
                 buff.seek(0)
                 return buff
 
-            self.log_header_miss(key=key, header_size=header_size)
+            if i + 1 < len(headers_to_try):
+                self.log_header_miss(key=key, header_size=header_size)
 
         buff = self.client.download_fileobj(key)
         self.log_header_miss(key=key, header_size=header_size, full_file=buff)
