@@ -384,8 +384,8 @@ class HeaderFirstDownloader(ABC):
 
             message += (
                 f'Object size was {full_object_size} bytes. '
-                f'Downloaded percent was '
-                f'{round(min(header_size, full_object_size) / full_object_size):%}'
+                f'Downloaded percentage was '
+                f'{min(header_size, full_object_size) / full_object_size:.0%}'
             )
 
         slogger.glob.warning(message)
@@ -451,8 +451,8 @@ class _HeaderFirstImageDownloader(HeaderFirstDownloader):
             message += (
                 f'Object size was {full_object_size} bytes. '
                 f'Image resolution was {Image.open(full_file).size}. '
-                f'Downloaded percent was '
-                f'{round(min(header_size, full_object_size) / full_object_size):.0%}'
+                f'Downloaded percentage was '
+                f'{min(header_size, full_object_size) / full_object_size:.0%}'
             )
 
         slogger.glob.warning(message)
