@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from typing import Sequence, TypeVar, Union
+from typing import Any, Sequence, TypeVar, Union
 
 from django.conf import settings
 from django.db import models
@@ -102,3 +102,120 @@ def get_cached(queryset: _QuerysetT, pk: int) -> _ModelT:
         result = queryset.get(id=pk)
 
     return result
+
+
+def _is_terminal(term: models.Q | Any) -> bool:
+    return not isinstance(term, models.Q)
+
+
+def _is_simple_term(term: models.Q | Any) -> bool:
+    return _is_terminal(term) or (
+        term.connector in (models.Q.AND, models.Q.OR)
+        and all(_is_terminal(c) for c in term.children)
+    )
+
+
+def _to_dnf_q(q: models.Q) -> models.Q:
+    # Expand all ORs nested in ANDs in the expression
+    checked_stack = []
+    unchecked_stack = [q]
+    while unchecked_stack:
+        current_term = unchecked_stack.pop()
+
+        if _is_terminal(current_term) or _is_simple_term(current_term):
+            checked_stack.append(current_term)
+            continue
+
+        if current_term.connector not in (models.Q.AND, models.Q.OR):
+            raise NotImplementedError(f"unexpected term '{current_term}'")
+
+        checked_stack_offset = 1 + len(current_term.children)
+        if (
+            len(checked_stack) >= checked_stack_offset
+            and checked_stack[-checked_stack_offset] == current_term
+        ):
+            # We've already checked all the children of the current term to have no nested ORs.
+            # Need to check if we have a direct nested OR in the current term
+            # and expand it if needed (one at a time).
+
+            current_args = checked_stack[-checked_stack_offset + 1 :]
+
+            # Remove the current args from the checked stack
+            for _ in range(len(current_args)):
+                checked_stack.pop()
+
+            nested_or = next(
+                (c for c in current_args if isinstance(c, models.Q) and c.connector == models.Q.OR),
+                None,
+            )
+            if nested_or:
+                checked_stack.pop()  # remove the current term, it will be replaced
+
+                other_args = [c for c in current_args if c is not nested_or]
+                if current_term.connector == models.Q.AND:
+                    # Expand ORs nested in the current AND,
+                    # replace the current AND with an OR
+                    # e.g. (a AND (b OR c OR d)) -> (a AND b) OR (a AND c) OR (a AND d)
+                    updated_term = models.Q(
+                        *[
+                            models.Q(*([c] + other_args), _connector=models.Q.AND)
+                            for c in nested_or.children
+                        ],
+                        _connector=models.Q.OR,
+                    )
+
+                elif current_term.connector == models.Q.OR:
+                    # Simplify, expand ORs nested in the current OR
+                    updated_term = models.Q(
+                        *(other_args + nested_or.children), _connector=models.Q.OR
+                    )
+
+                    # Optimization: don't need to check the children subtrees again
+                    # still need to check for other direct nested ORs
+                    checked_stack.append(updated_term)
+                    checked_stack.extend(updated_term.children)
+
+                # Check what we've got now on the next iteration,
+                # we may have other nested ORs in the current term
+                unchecked_stack.append(updated_term)
+            else:
+                pass  # the current term is on the top of the checked stack
+        else:
+            # We haven't checked this term to be a DNF, so check it
+            unchecked_stack.append(current_term)
+            unchecked_stack.extend(current_term.children[::-1])
+
+            # Save the current term to be able to locate the beginning of the args
+            checked_stack.append(current_term)
+
+    if len(checked_stack) == 1 and (term := checked_stack[0]) and not _is_terminal(term):
+        dnf_q = checked_stack[0]
+    else:
+        dnf_q = models.Q(*checked_stack, _connector=models.Q.OR)
+
+    return dnf_q
+
+
+def filter_with_union(queryset: _QuerysetT, q_expr: models.Q) -> _QuerysetT:
+    """
+    Applies a Q-expression filter with ORs into a query with UNIONs.
+    This is needed to avoid the ORs in the queryset filter,
+    because they result in bad performance in Postgres.
+    """
+
+    q_expr_dnf = _to_dnf_q(q_expr)
+
+    if not isinstance(q_expr_dnf, models.Q) or (
+        q_expr_dnf.connector == models.Q.AND
+        or q_expr_dnf.connector == models.Q.OR
+        and len(q_expr_dnf.children) == 1
+    ):
+        # A trivial case, can use this expr directly
+        queryset = queryset.filter(q_expr_dnf)
+    else:
+        qs2 = queryset.filter(q_expr_dnf.children[0])
+        qs2 = qs2.union(*[queryset.filter(term) for term in q_expr_dnf.children[1:]])
+
+        queryset = qs2
+
+    return queryset
