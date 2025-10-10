@@ -216,6 +216,11 @@ class _CloudStorage(ABC):
         func = object_downloader or self.download_fileobj
         threads_number = get_max_threads_number(len(files))
 
+        # We're using a custom queue to limit the maximum number of downloaded unprocessed
+        # files stored in the memory.
+        # For example, the builtin executor.map() could also be used here, but it
+        # would enqueue all the file list in one go, and the downloaded files
+        # would all be stored in memory until processed.
         queue: Queue[Future] = Queue(maxsize=threads_number)
         input_iter = iter(files)
         with ThreadPoolExecutor(max_workers=threads_number) as executor:
