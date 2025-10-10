@@ -15,9 +15,10 @@ import zipfile
 from abc import ABC, abstractmethod
 from bisect import bisect
 from collections.abc import Generator, Iterable, Iterator, Sequence
-from contextlib import AbstractContextManager, ExitStack, closing, contextmanager
+from contextlib import ExitStack, closing
 from dataclasses import dataclass
 from enum import IntEnum
+from fractions import Fraction
 from random import shuffle
 from typing import Any, Callable, Optional, Protocol, TypeVar, Union
 
@@ -571,28 +572,14 @@ class ZipReader(ImageListReader):
             os.remove(self._zip_source.filename)
 
 class _AvVideoReading:
-    @contextmanager
     def read_av_container(
         self, source: Union[str, io.BytesIO]
-    ) -> Generator[av.container.InputContainer, None, None]:
+    ) -> av.container.InputContainer:
         if isinstance(source, io.BytesIO):
             source.seek(0) # required for re-reading
 
-        container = av.open(source)
-        try:
-            yield container
-        finally:
-            # fixes a memory leak in input container closing
-            # https://github.com/PyAV-Org/PyAV/issues/1117
-            for stream in container.streams:
-                context = stream.codec_context
-                if context and context.is_open:
-                    # Currently, context closing may get stuck on some videos for an unknown reason,
-                    # so the thread_type == 'AUTO' setting is disabled for future investigation
-                    context.close()
+        return av.open(source)
 
-            if container.open_files:
-                container.close()
 
     def decode_stream(
         self, container: av.container.Container, video_stream: av.video.stream.VideoStream
@@ -679,13 +666,10 @@ class VideoReader(IMediaReader):
             with closing(self._decode_stream(container, video_stream)) as stream_decoder:
                 for frame, frame_number in zip(stream_decoder, frame_counter):
                     if frame_number == next_frame_filter_frame:
-                        if video_stream.metadata.get('rotate'):
+                        if frame.rotation:
                             pts = frame.pts
                             frame = av.VideoFrame().from_ndarray(
-                                rotate_image(
-                                    frame.to_ndarray(format='bgr24'),
-                                    360 - int(video_stream.metadata.get('rotate'))
-                                ),
+                                rotate_image(frame.to_ndarray(format='bgr24'), frame.rotation),
                                 format ='bgr24'
                             )
                             frame.pts = pts
@@ -707,7 +691,7 @@ class VideoReader(IMediaReader):
         duration = self._get_duration()
         return pos / duration if duration else None
 
-    def _read_av_container(self) -> AbstractContextManager[av.container.InputContainer]:
+    def _read_av_container(self) -> av.container.InputContainer:
         return _AvVideoReading().read_av_container(self._source_path[0])
 
     def _decode_stream(
@@ -798,7 +782,7 @@ class VideoReaderWithManifest:
 
         self.allow_threading = allow_threading
 
-    def _read_av_container(self) -> AbstractContextManager[av.container.InputContainer]:
+    def _read_av_container(self) -> av.container.InputContainer:
         return _AvVideoReading().read_av_container(self.source_path)
 
     def _decode_stream(
@@ -843,12 +827,9 @@ class VideoReaderWithManifest:
             with closing(self._decode_stream(container, video_stream)) as stream_decoder:
                 for frame, frame_number in zip(stream_decoder, frame_counter):
                     if frame_number == next_frame_filter_frame:
-                        if video_stream.metadata.get('rotate'):
+                        if frame.rotation:
                             frame = av.VideoFrame().from_ndarray(
-                                rotate_image(
-                                    frame.to_ndarray(format='bgr24'),
-                                    360 - int(video_stream.metadata.get('rotate'))
-                                ),
+                                rotate_image(frame.to_ndarray(format='bgr24'), frame.rotation),
                                 format ='bgr24'
                             )
 
@@ -1050,7 +1031,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
                 "preset": "ultrafast",
             }
 
-    def _add_video_stream(self, container: av.container.OutputContainer, w, h, rate, options):
+    def _add_video_stream(self, container: av.container.OutputContainer, w, h, rate, options) -> av.video.stream.VideoStream:
         # x264 requires width and height must be divisible by 2 for yuv420p
         if h % 2:
             h += 1
@@ -1067,6 +1048,14 @@ class Mpeg4ChunkWriter(IChunkWriter):
         video_stream.pix_fmt = "yuv420p"
         video_stream.width = w
         video_stream.height = h
+
+        if "profile" in options:
+            video_stream.profile = options["profile"]
+        if "qmin" in options:
+            video_stream.codec_context.qmin = int(options["qmin"])
+            video_stream.codec_context.qmax = int(options["qmax"])
+        options = {k: options[k] for k in options if k not in ("profile", "qmin", "qmax")}
+
         video_stream.options = options
 
         return video_stream
@@ -1103,8 +1092,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
                 options=self._codec_opts,
             )
 
-            with closing(output_v_stream):
-                self._encode_images(images, output_container, output_v_stream)
+            self._encode_images(images, output_container, output_v_stream)
 
         return [(input_w, input_h)]
 
@@ -1115,7 +1103,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
         for frame, _, _ in images:
             # let libav set the correct pts and time_base
             frame.pts = None
-            frame.time_base = None
+            frame.time_base = Fraction(0, 1)
 
             for packet in stream.encode(frame):
                 container.mux(packet)
@@ -1160,8 +1148,7 @@ class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
                 options=self._codec_opts,
             )
 
-            with closing(output_v_stream):
-                self._encode_images(images, output_container, output_v_stream)
+            self._encode_images(images, output_container, output_v_stream)
 
         return [(input_w, input_h)]
 
