@@ -379,10 +379,11 @@ OPAHealthCheck           ... working
 
 Configuring Disk Usage Healthcheck
 
-- `CVAT_HEALTH_DISK_USAGE_MAX`: This environment variable specifies the maximum allowed disk usage percentage for the volume where CVAT
-  is installed. If the disk usage exceeds this threshold, the DiskUsage health check will fail.
-  The value should be an integer representing a percentage (e.g., 90 for 90%). Read more about how to enable, please read here:
-  [health checks](#cvat-health-check-failed-because-of-too-low-free-disk-space).
+- `CVAT_HEALTH_DISK_USAGE_MAX`: This environment variable specifies the maximum allowed disk usage percentage
+  for the volume where CVAT is installed.
+  If the disk usage exceeds this threshold, the DiskUsage health check will fail.
+  The value should be an integer representing a percentage (e.g., 90 for 90%). Read more about how to enable,
+  please read here: [health checks](#cvat-health-check-failed-because-of-too-low-free-disk-space).
 
 ### Deploying CVAT behind a proxy
 
