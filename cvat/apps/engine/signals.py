@@ -8,10 +8,11 @@ import shutil
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import transaction
-from django.db.models.signals import m2m_changed, post_delete, post_save
+from django.db.models.signals import m2m_changed, post_delete, post_save, pre_save
 from django.dispatch import receiver
+from rest_framework.exceptions import ValidationError
 
-from .models import Asset, CloudStorage, Data, Job, Profile, Project, StatusChoice, Task
+from .models import Asset, CloudStorage, Data, Job, Profile, Project, StatusChoice, Task, JobType
 
 # TODO: need to log any problems reported by shutil.rmtree when the new
 # analytics feature is available. Now the log system can write information
@@ -35,6 +36,26 @@ def __save_job_handler(instance, created, raw: bool, **kwargs):
     if status != db_task.status:
         db_task.status = status
         db_task.save(update_fields=["status", "updated_date"])
+
+
+@receiver(pre_save, sender=Job)
+def __enforce_job_limit(instance: Job, **kwargs):
+    # Only check on job creation, not on updates
+    if instance.pk is not None:
+        return
+
+    # Ground truth jobs are not counted towards the limit
+    if instance.type == JobType.GROUND_TRUTH:
+        return
+
+    task = instance.segment.task
+    current_job_count = Job.objects.filter(segment__task=task).count()
+
+    if current_job_count >= settings.MAX_JOBS_PER_TASK:
+        raise ValidationError(
+            f"Cannot create job: task #{task.id} has reached the maximum limit "
+            f"of {settings.MAX_JOBS_PER_TASK} jobs"
+        )
 
 
 @receiver(post_save, sender=User)

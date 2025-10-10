@@ -174,6 +174,10 @@ def _create_segments_and_jobs(
     db_task.segment_size = segment_size
     db_task.overlap = overlap
 
+    segments_size = db_task.data.size
+    if segments_size > settings.MAX_JOBS_PER_TASK:
+        raise ValueError("Too many segments would be created for the task.")
+
     for segment_idx, segment_params in enumerate(segments):
         slogger.glob.info(
             "New segment for task #{task_id}: idx = {segment_idx}, start_frame = {start_frame}, "
@@ -581,6 +585,7 @@ def _find_and_filter_related_images(
         os.path.relpath(k, upload_dir): [os.path.relpath(ri, upload_dir) for ri in k_ris]
         for k, k_ris in related_images.items()
     }
+
 
 @transaction.atomic
 def create_thread(
