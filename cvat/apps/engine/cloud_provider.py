@@ -392,7 +392,8 @@ class HeaderFirstDownloader(ABC):
 
     def get_header_sizes_to_try(self) -> Sequence[int]:
         return (
-            # Standard Ethernet v2 MTU size, should result in just 1 packet
+            # Standard Ethernet v2 MTU size, should result in just a several packets
+            # for the first header check
             1500,
             # Try bigger sizes, but less than the whole file
             # TODO: Maybe implement exponential increase
