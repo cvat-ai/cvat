@@ -10,6 +10,7 @@ context('Creating a label with an empty name.', () => {
     const caseId = '118';
 
     before(() => {
+        cy.loginSetup();
         cy.openTask(taskName);
     });
 

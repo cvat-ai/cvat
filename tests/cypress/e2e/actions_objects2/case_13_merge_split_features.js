@@ -33,6 +33,7 @@ context('Merge/split features', () => {
     let xCoordinatesObjectThirdFrame = 0;
 
     before(() => {
+        cy.loginSetup();
         cy.openTaskJob(taskName);
     });
 

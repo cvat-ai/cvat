@@ -24,6 +24,7 @@ context('When delete a point, the required point is deleted.', () => {
     }
 
     before(() => {
+        cy.loginSetup();
         cy.openTaskJob(taskName);
         pointsShapes.forEach((shape) => {
             cy.createPoint(shape);

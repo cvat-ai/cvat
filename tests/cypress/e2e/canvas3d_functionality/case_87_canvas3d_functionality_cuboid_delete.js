@@ -17,6 +17,7 @@ context('Canvas 3D functionality. Delete a cuboid.', () => {
     };
 
     before(() => {
+        cy.loginSetup();
         cy.openTask(taskName);
         cy.openJob();
         cy.create3DCuboid(cuboidCreationParams);

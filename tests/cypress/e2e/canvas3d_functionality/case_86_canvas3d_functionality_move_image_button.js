@@ -20,6 +20,7 @@ context('Canvas 3D functionality. "Move the image" button interaction.', () => {
     };
 
     before(() => {
+        cy.loginSetup();
         cy.openTask(taskName);
         cy.openJob();
         cy.wait(1000); // Waiting for the point cloud to display

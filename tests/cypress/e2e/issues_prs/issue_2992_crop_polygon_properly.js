@@ -23,6 +23,7 @@ context('Crop polygon properly.', () => {
     };
 
     before(() => {
+        cy.loginSetup();
         cy.openTaskJob(taskName);
     });
 

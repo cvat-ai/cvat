@@ -13,6 +13,7 @@ context('Canvas 3D functionality. Cancel drawing.', () => {
         'cypress/screenshots/canvas3d_functionality/case_85_canvas3d_functionality_cuboid_cancel_drawing.js';
 
     before(() => {
+        cy.loginSetup();
         cy.openTask(taskName);
         cy.openJob();
 

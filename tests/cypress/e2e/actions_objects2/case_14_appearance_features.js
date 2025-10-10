@@ -64,6 +64,7 @@ context('Appearance features', () => {
     };
 
     before(() => {
+        cy.loginSetup();
         cy.openTaskJob(taskName);
     });
 

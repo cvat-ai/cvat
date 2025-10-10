@@ -80,6 +80,7 @@ context('Actions on polygon.', () => {
     };
 
     before(() => {
+        cy.loginSetup();
         cy.openTask(taskName);
         cy.addNewLabel({ name: newLabelName });
         cy.openJob();

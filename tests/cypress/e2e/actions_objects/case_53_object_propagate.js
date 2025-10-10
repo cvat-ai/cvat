@@ -35,6 +35,7 @@ context('Object propagate.', () => {
     }
 
     before(() => {
+        cy.loginSetup();
         cy.openTaskJob(taskName);
     });
 

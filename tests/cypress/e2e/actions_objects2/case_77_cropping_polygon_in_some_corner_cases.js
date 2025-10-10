@@ -38,6 +38,7 @@ context('Cropping polygon in some corner cases.', () => {
     };
 
     before(() => {
+        cy.loginSetup();
         cy.openTask(taskName);
         cy.openJob();
     });

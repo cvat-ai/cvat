@@ -39,6 +39,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
     }
 
     before(() => {
+        cy.loginSetup();
         cy.openTask(taskName);
         cy.openJob();
         // eslint-disable-next-line cypress/no-unnecessary-waiting

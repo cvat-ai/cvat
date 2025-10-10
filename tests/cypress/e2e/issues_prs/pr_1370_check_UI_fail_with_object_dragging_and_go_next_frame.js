@@ -20,6 +20,7 @@ context('Check if the UI fails by moving to the next frame while dragging the ob
     };
 
     before(() => {
+        cy.loginSetup();
         cy.openTaskJob(taskName);
     });
 

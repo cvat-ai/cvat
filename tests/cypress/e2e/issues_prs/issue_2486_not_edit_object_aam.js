@@ -22,6 +22,7 @@ context("Object can't be draggable/resizable in AAM", () => {
     let shapeXPos = 0;
 
     before(() => {
+        cy.loginSetup();
         cy.openTaskJob(taskName);
     });
 

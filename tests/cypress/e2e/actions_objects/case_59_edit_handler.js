@@ -46,6 +46,7 @@ context('Edit handler.', () => {
     }
 
     before(() => {
+        cy.loginSetup();
         cy.openTaskJob(taskName);
     });
 

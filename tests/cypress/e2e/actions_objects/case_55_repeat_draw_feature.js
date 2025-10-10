@@ -79,6 +79,7 @@ context('Repeat draw feature.', () => {
     }
 
     before(() => {
+        cy.loginSetup();
         cy.openTaskJob(taskName);
     });
 

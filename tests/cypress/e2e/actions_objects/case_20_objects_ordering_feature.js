@@ -50,6 +50,7 @@ context('Objects ordering feature', () => {
     }
 
     before(() => {
+        cy.loginSetup();
         cy.openTaskJob(taskName);
     });
 

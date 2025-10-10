@@ -29,6 +29,7 @@ context('Check if UI not fails with shape dragging over sidebar', () => {
     };
 
     before(() => {
+        cy.loginSetup();
         cy.openTaskJob(taskName);
     });
 

@@ -35,6 +35,7 @@ context('Actions on polygon', () => {
         numberOfPoints: null,
     };
     before(() => {
+        cy.loginSetup();
         cy.openTaskJob(taskName);
     });
 

@@ -95,9 +95,11 @@ context('Lock/hide features.', () => {
     let shapeWidth = 0;
 
     before(() => {
+        cy.loginSetup();
         cy.openTask(taskName);
         [newLabelName1, newLabelName2, newLabelName3, newLabelName4].forEach((name) => {
             cy.addNewLabel({ name });
+            // TODO: probably can be done headlessly?
         });
         cy.openJob();
     });

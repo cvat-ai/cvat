@@ -17,6 +17,7 @@ context('Canvas 3D functionality. Cuboid propagate.', () => {
     };
 
     before(() => {
+        cy.loginSetup();
         cy.openTask(taskName);
         cy.openJob();
         cy.wait(1000); // Waiting for the point cloud to display

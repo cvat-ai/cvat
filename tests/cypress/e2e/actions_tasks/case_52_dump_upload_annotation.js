@@ -62,6 +62,7 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
     }
 
     before(() => {
+        cy.loginSetup();
         cy.openTaskJob(taskName);
         cy.createRectangle(createRectangleTrack2Points);
     });

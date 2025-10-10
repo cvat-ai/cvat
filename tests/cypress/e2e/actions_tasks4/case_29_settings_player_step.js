@@ -5,14 +5,19 @@
 
 /// <reference types="cypress" />
 
+// eslint-disable-next-line import/no-extraneous-dependencies
+import * as allure from 'allure-js-commons';
+
 import { taskName } from '../../support/const';
 
 context('Settings "Player step"', () => {
+    allure.tag('heavy operations & settings');
     const caseId = '29';
     const countJumpStep = 3;
     let startFrame;
 
     before(() => {
+        cy.loginSetup();
         cy.openTaskJob(taskName);
     });
 

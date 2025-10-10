@@ -10,6 +10,7 @@ context('Check "Open the task" button.', () => {
     const caseId = '45';
 
     before(() => {
+        cy.loginSetup();
         cy.openTaskJob(taskName);
     });
 

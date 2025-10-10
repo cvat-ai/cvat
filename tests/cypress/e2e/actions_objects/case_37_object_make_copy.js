@@ -97,6 +97,7 @@ context('Object make a copy.', () => {
     }
 
     before(() => {
+        cy.loginSetup();
         cy.openTaskJob(taskName);
         cy.createRectangle(rectangleShape2Points);
         cy.createCuboid(createCuboidShape2Points);

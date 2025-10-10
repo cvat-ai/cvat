@@ -13,6 +13,7 @@ context('Check if image was scaled to ROI', () => {
     let scaleAfter = 0;
 
     before(() => {
+        cy.loginSetup();
         cy.openTaskJob(taskName);
     });
 

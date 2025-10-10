@@ -60,6 +60,7 @@ context('Redraw feature.', () => {
     const keyCodeN = 78;
 
     before(() => {
+        cy.loginSetup();
         cy.openTaskJob(taskName);
     });
 

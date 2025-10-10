@@ -16,6 +16,7 @@ context('Button "Continue" in label editor.', () => {
     ];
 
     before(() => {
+        cy.loginSetup();
         cy.openTask(taskName);
     });
 

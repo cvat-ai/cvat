@@ -3,34 +3,62 @@
 //
 // SPDX-License-Identifier: MIT
 
-/// <reference types="cypress" />
-
 export const projectName = 'Main project';
+export const projectName3d = 'Main project 3D';
+export const projectNameDelete = 'Delete this project';
+export const projectNameDeleteLabel = 'Delete Label';
+export const labelNameDelete = 'Delete this label';
 export const labelName = `Base label for ${projectName}`;
+export const labelDelete = {
+    name: labelNameDelete,
+    attributes: [],
+    mutable: false,
+    type: 'any',
+    color: 'red',
+};
 export const attrName = `Attr for ${labelName}`;
 export const textDefaultValue = 'Some default value for type Text';
 export const multiAttrParams = {
     name: 'Attr 2',
     values: 'Attr value 2',
-    type: 'Text',
+    type: 'text',
 };
+export const ADMIN_ID = 1;
 
-it('Prepare to testing', () => {
-    cy.visit('/auth/login');
-    cy.login();
-    cy.goToProjectsList();
-    cy.get('.cvat-projects-page').should('exist');
-    const listItems = [];
-    cy.document().then((doc) => {
-        const collection = Array.from(doc.querySelectorAll('.cvat-projects-project-item-title'));
-        for (let i = 0; i < collection.length; i++) {
-            listItems.push(collection[i].innerText);
-        }
-        if (listItems.indexOf(projectName) === -1) {
-            cy.task('log', "A project doesn't exist. Creating.");
-            cy.createProjects(projectName, labelName, attrName, textDefaultValue, multiAttrParams);
-        } else {
-            cy.task('log', 'The project exist. Skipping creation.');
-        }
-    });
-});
+// Reusable specs
+export const projectSpec = {
+    name: projectName,
+    labels: [
+        {
+            name: labelName,
+            type: 'any',
+            attributes: [
+                {
+                    name: multiAttrParams.name,
+                    default_value: textDefaultValue,
+                    values: [multiAttrParams.values],
+                    input_type: multiAttrParams.type,
+                    mutable: false,
+                },
+                {
+                    mutable: false,
+                    name: attrName,
+                    values: [],
+                    default_value: textDefaultValue,
+                    input_type: 'text',
+                },
+            ],
+        },
+    ],
+};
+export const project3d = { ...projectSpec, name: projectName3d };
+export const projectDeleteLabelSpec = {
+    name: projectNameDeleteLabel,
+    labels: [
+        labelDelete,
+    ],
+};
+export const projectDeleteSpec = {
+    ...projectSpec,
+    name: projectNameDelete,
+};

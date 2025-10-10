@@ -10,6 +10,7 @@ context('Check if the UI not to crash after remove a tag', () => {
     const issueId = '1540';
 
     before(() => {
+        cy.loginSetup();
         cy.openTaskJob(taskName);
     });
 

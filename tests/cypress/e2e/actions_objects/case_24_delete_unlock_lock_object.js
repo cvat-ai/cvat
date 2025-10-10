@@ -71,6 +71,7 @@ context('Delete unlock/lock object', () => {
     }
 
     before(() => {
+        cy.loginSetup();
         cy.openTaskJob(taskName);
     });
 

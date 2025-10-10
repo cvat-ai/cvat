@@ -30,6 +30,7 @@ context('Collapse sidebar/appearance. Check issue 3250 (empty sidebar after resi
     }
 
     before(() => {
+        cy.loginSetup();
         cy.openTaskJob(taskName);
         cy.createRectangle(createRectangleShape2Points);
 
