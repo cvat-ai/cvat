@@ -22,8 +22,10 @@ import EmptyListComponent from './empty-list';
 import TopBar from './top-bar';
 
 function setUpModelsList(models: MLModel[], newPage: number, pageSize: number): MLModel[] {
-    const builtInModels = models.filter((model: MLModel) => model.provider === ModelProviders.CVAT);
-    const externalModels = models.filter((model: MLModel) => model.provider !== ModelProviders.CVAT);
+    // Sort models alphabetically by name before rendering
+    const sortedModels = models.slice().sort((a, b) => a.name.localeCompare(b.name));
+    const builtInModels = sortedModels.filter((model: MLModel) => model.provider === ModelProviders.CVAT);
+    const externalModels = sortedModels.filter((model: MLModel) => model.provider !== ModelProviders.CVAT);
     externalModels.sort((a, b) => dayjs(a.createdDate).valueOf() - dayjs(b.createdDate).valueOf());
     const renderModels = [...builtInModels, ...externalModels];
     return renderModels.slice((newPage - 1) * pageSize, newPage * pageSize);
