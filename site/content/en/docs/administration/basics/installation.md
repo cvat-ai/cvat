@@ -377,7 +377,7 @@ MigrationsHealthCheck    ... working
 OPAHealthCheck           ... working
 ```
 
-Configuring Disk Usage Healthcheck
+Configuring Disk Usage Health Check
 
 - `CVAT_HEALTH_DISK_USAGE_MAX`: This environment variable specifies the maximum allowed disk usage percentage
   for the volume where CVAT is installed.
