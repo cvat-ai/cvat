@@ -16,6 +16,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.46.1'></a>
+## \[2.46.1\] - 2025-10-09
+
+### Security
+
+- Bump Redis version to 7.2.11 to address CVE-2025-49844
+  (<https://github.com/cvat-ai/cvat/pull/9876>)
+
 <a id='changelog-2.46.0'></a>
 ## \[2.46.0\] - 2025-10-08
 
