@@ -25,7 +25,7 @@ from itertools import product
 from pathlib import Path
 from pprint import pformat
 from time import sleep
-from typing import BinaryIO
+from typing import BinaryIO, Optional
 from unittest import mock
 
 import av
@@ -7879,10 +7879,28 @@ class TaskJobLimitAPITestCase(ApiTestBase):
     def setUpTestData(cls):
         create_db_users(cls)
 
-    def _create_task(self, data, image_data, user=None):
-        """Helper method to create a task via REST API"""
-        user = user or self.admin
-        with ForceLogin(user, self.client):
+    def _create_task(
+        self, segment_size: int, img_size: int, consensus_replicas: Optional[int] = None
+    ):
+        data = {
+            "name": "test_create_task_within_job_limit",
+            "labels": [{"name": "car"}],
+            "segment_size": segment_size,
+        }
+
+        if consensus_replicas:
+            data["consensus_replicas"] = consensus_replicas
+
+        image_files = {}
+        for i in range(img_size):
+            image_files[f"client_files[{i}]"] = generate_image_file(f"test_{i}.jpg")
+
+        image_data = {
+            **image_files,
+            "image_quality": 75,
+        }
+
+        with ForceLogin(self.admin, self.client):
             response = self.client.post("/api/tasks", data=data, format="json")
             if response.status_code != status.HTTP_201_CREATED:
                 return response
@@ -7896,22 +7914,10 @@ class TaskJobLimitAPITestCase(ApiTestBase):
 
     @override_settings(MAX_JOBS_PER_TASK=5)
     def test_create_task_within_job_limit(self):
-        data = {
-            "name": "test_create_task_within_job_limit",
-            "labels": [{"name": "car"}],
-            "segment_size": 10,  # Will create 5 jobs for 50 images
-        }
-
-        image_files = {}
-        for i in range(50):
-            image_files[f"client_files[{i}]"] = generate_image_file(f"test_{i}.jpg")
-
-        image_data = {
-            **image_files,
-            "image_quality": 75,
-        }
-
-        response = self._create_task(data, image_data)
+        response = self._create_task(
+            segment_size=10,
+            img_size=50,
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["status"], RequestStatus.FINISHED)
 
@@ -7921,22 +7927,10 @@ class TaskJobLimitAPITestCase(ApiTestBase):
 
     @override_settings(MAX_JOBS_PER_TASK=5)
     def test_create_task_exceeds_job_limit(self):
-        data = {
-            "name": "test_create_task_exceeds_job_limit",
-            "labels": [{"name": "car"}],
-            "segment_size": 10,  # Will try to create 10 jobs for 100 images
-        }
-
-        image_files = {}
-        for i in range(100):
-            image_files[f"client_files[{i}]"] = generate_image_file(f"test_{i}.jpg")
-
-        image_data = {
-            **image_files,
-            "image_quality": 75,
-        }
-
-        response = self._create_task(data, image_data)
+        response = self._create_task(
+            segment_size=10,
+            img_size=100,
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["status"], RequestStatus.FAILED)
 
@@ -7946,22 +7940,10 @@ class TaskJobLimitAPITestCase(ApiTestBase):
 
     @override_settings(MAX_JOBS_PER_TASK=10)
     def test_create_task_exactly_at_job_limit(self):
-        data = {
-            "name": "test_create_task_exactly_at_job_limit",
-            "labels": [{"name": "car"}],
-            "segment_size": 10,  # Will create exactly 10 jobs for 100 images
-        }
-
-        image_files = {}
-        for i in range(100):
-            image_files[f"client_files[{i}]"] = generate_image_file(f"test_{i}.jpg")
-
-        image_data = {
-            **image_files,
-            "image_quality": 75,
-        }
-
-        response = self._create_task(data, image_data)
+        response = self._create_task(
+            segment_size=10,
+            img_size=100,
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["status"], RequestStatus.FINISHED)
 
@@ -7971,23 +7953,11 @@ class TaskJobLimitAPITestCase(ApiTestBase):
 
     @override_settings(MAX_JOBS_PER_TASK=30)
     def test_create_task_with_consensus_exactly_at_job_limit(self):
-        data = {
-            "name": "test_create_task_with_consensus_exactly_at_job_limit",
-            "labels": [{"name": "car"}],
-            "segment_size": 10,
-            "consensus_replicas": 2,
-        }
-
-        image_files = {}
-        for i in range(100):
-            image_files[f"client_files[{i}]"] = generate_image_file(f"test_{i}.jpg")
-
-        image_data = {
-            **image_files,
-            "image_quality": 75,
-        }
-
-        response = self._create_task(data, image_data)
+        response = self._create_task(
+            segment_size=10,
+            img_size=100,
+            consensus_replicas=2,
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["status"], RequestStatus.FINISHED)
 
@@ -7997,23 +7967,11 @@ class TaskJobLimitAPITestCase(ApiTestBase):
 
     @override_settings(MAX_JOBS_PER_TASK=10)
     def test_create_task_with_consensus_exceeds_job_limit(self):
-        data = {
-            "name": "test_create_task_with_consensus_exceeds_job_limit",
-            "labels": [{"name": "car"}],
-            "segment_size": 10,
-            "consensus_replicas": 2,
-        }
-
-        image_files = {}
-        for i in range(100):
-            image_files[f"client_files[{i}]"] = generate_image_file(f"test_{i}.jpg")
-
-        image_data = {
-            **image_files,
-            "image_quality": 75,
-        }
-
-        response = self._create_task(data, image_data)
+        response = self._create_task(
+            segment_size=10,
+            img_size=100,
+            consensus_replicas=2,
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["status"], RequestStatus.FAILED)
 
