@@ -21,7 +21,7 @@ in the web browser and implements standard authorization protocols, such as SSO.
 It may be inconvenient, insecure or not available for use in CLI and tool integrations.
 To address such use cases, there's an option to use Personal Access Token (PAT) authentication.
 
-__Personal Access Token (PAT)__ is an authentication option dedicated for CLI, SDK and Server API
+*Personal Access Token (PAT)* is an authentication option dedicated for CLI, SDK and Server API
 users. It requires a token that can be configured in the user settings section in the UI.
 It is the recommended authentication option for CVAT API interaction and integrations.
 
