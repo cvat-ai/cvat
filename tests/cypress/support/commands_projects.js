@@ -7,11 +7,6 @@
 
 import { fullMatch } from './utils';
 
-Cypress.Commands.add('loginSetupProjects', () => {
-    cy.visit('/auth/login');
-    cy.headlessLogin({ nextURL: '/projects' });
-});
-
 Cypress.Commands.add('goToProjectsList', () => {
     cy.get('[value="projects"]').click();
     cy.url().should('include', '/projects');

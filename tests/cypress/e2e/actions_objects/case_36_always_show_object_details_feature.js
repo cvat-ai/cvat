@@ -39,7 +39,7 @@ context('Always show object details feature', () => {
     }
 
     before(() => {
-        cy.loginSetup();
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
 
         // create objects

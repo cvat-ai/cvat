@@ -21,7 +21,7 @@ context('Check if the new label reflects in the options', () => {
     };
 
     before(() => {
-        cy.loginSetup();
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 

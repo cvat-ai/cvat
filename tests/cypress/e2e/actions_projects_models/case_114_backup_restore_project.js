@@ -125,7 +125,7 @@ context('Backup, restore a project with a 3D task.', { browser: '!firefox' }, ()
     };
 
     before(() => {
-        cy.loginSetupProjects();
+        cy.prepareUserSession('/projects');
         cy.createProjects(project3d.name, project3d.label, project3d.attrName, project3d.attrValue);
         cy.openProject(project3d.name);
         getProjectID();

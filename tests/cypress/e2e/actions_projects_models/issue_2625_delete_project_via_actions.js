@@ -11,7 +11,7 @@ context('Delete a project via actions.', () => {
     const issueID = 2625;
 
     before(() => {
-        cy.loginSetupProjects();
+        cy.prepareUserSession('/projects');
         cy.openProject(projectName);
     });
     after(() => {

@@ -48,7 +48,7 @@ context('Undo/redo feature', () => {
     }
 
     before(() => {
-        cy.loginSetup();
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
 
         // create objects

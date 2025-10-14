@@ -45,7 +45,7 @@ context('Create more than one task per time when create from project.', () => {
     before(() => {
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
-        cy.loginSetupProjects();
+        cy.prepareUserSession('/projects');
         cy.openProject(projectName);
     });
     after(() => {

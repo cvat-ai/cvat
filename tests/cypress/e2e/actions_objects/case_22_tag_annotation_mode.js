@@ -38,7 +38,7 @@ context('Tag annotation mode.', () => {
     }
 
     before(() => {
-        cy.loginSetup();
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 

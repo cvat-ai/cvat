@@ -32,9 +32,9 @@ Cypress.Commands.add('login', (username = Cypress.env('user'), password = Cypres
     });
 });
 
-Cypress.Commands.add('loginSetup', () => {
+Cypress.Commands.add('prepareUserSession', (nextURL = '/tasks') => {
     cy.visit('/auth/login');
-    cy.headlessLogin({ nextURL: '/tasks' });
+    cy.headlessLogin({ nextURL });
 });
 
 Cypress.Commands.add('logout', () => {

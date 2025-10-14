@@ -65,7 +65,7 @@ context('Autoborder feature.', () => {
     }
 
     before(() => {
-        cy.loginSetup();
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
         cy.createRectangle(createRectangleShape2Points);
         cy.createRectangle(createRectangleShape2PointsSec);

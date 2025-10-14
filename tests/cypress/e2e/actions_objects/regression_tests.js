@@ -35,7 +35,7 @@ context('Regression tests', () => {
     };
 
     before(() => {
-        cy.loginSetup();
+        cy.prepareUserSession();
 
         cy.headlessCreateTask(taskPayload, dataPayload).then((response) => {
             taskID = response.taskID;

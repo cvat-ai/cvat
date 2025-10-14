@@ -11,7 +11,7 @@ context('Tooltip does not interfere with interaction with elements.', () => {
     const issueId = '1825';
 
     before(() => {
-        cy.loginSetup();
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 

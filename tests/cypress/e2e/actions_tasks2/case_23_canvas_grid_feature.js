@@ -15,7 +15,7 @@ context('Canvas grid feature', () => {
     const gridOpacity = 80;
 
     before(() => {
-        cy.loginSetup();
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
         cy.get('.cvat-canvas-image-setups-trigger').click();
     });

@@ -22,7 +22,7 @@ context('Save filtered object in AAM.', () => {
     };
 
     before(() => {
-        cy.loginSetup();
+        cy.prepareUserSession();
         cy.openTask(taskName);
         cy.document().then((doc) => {
             // Getting list of labels and create a label if necessary

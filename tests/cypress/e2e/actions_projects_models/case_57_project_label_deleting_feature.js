@@ -42,7 +42,7 @@ context('Delete a label from a project.', () => {
     before(() => {
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
-        cy.loginSetupProjects();
+        cy.prepareUserSession('/projects');
         cy.openProject(projectName);
     });
 

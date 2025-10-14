@@ -18,7 +18,7 @@ context('Points track it is still invisible on next frames', () => {
     };
 
     before(() => {
-        cy.loginSetup();
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 

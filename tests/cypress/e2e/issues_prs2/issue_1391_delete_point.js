@@ -24,7 +24,7 @@ context('When delete a point, the required point is deleted.', () => {
     };
 
     before(() => {
-        cy.loginSetup();
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 

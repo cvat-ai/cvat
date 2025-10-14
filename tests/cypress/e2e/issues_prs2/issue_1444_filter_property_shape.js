@@ -31,7 +31,7 @@ context('Filter property "shape" work correctly', () => {
     };
 
     before(() => {
-        cy.loginSetup();
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 
