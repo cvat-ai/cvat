@@ -35,9 +35,7 @@ context('Regression tests', () => {
     };
 
     before(() => {
-        // TODO: try to use setupLogin instead if possible
-        cy.visit('/auth/login');
-        cy.login();
+        cy.loginSetup();
 
         cy.headlessCreateTask(taskPayload, dataPayload).then((response) => {
             taskID = response.taskID;
