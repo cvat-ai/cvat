@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-package api_token_plugin.tasks
+package access_token_plugin.tasks
 
 import rego.v1
 

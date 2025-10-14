@@ -23,7 +23,7 @@ from cvat.apps.iam.permissions import (
     get_iam_context,
 )
 
-from .models import ApiToken
+from .models import AccessToken
 
 if TYPE_CHECKING:
     from rest_framework.viewsets import ViewSet
@@ -33,16 +33,16 @@ if TYPE_CHECKING:
     from cvat.apps.iam.permissions import IamContext
 
 
-class ApiTokenPermissionBase(OpenPolicyAgentPermission):
-    api_token: ApiToken | None
+class AccessTokenPermissionBase(OpenPolicyAgentPermission):
+    access_token: AccessToken | None
 
     @classmethod
-    def get_api_token_from_request(cls, request: ExtendedRequest) -> ApiToken | None:
-        api_token = getattr(request, "auth", None)
-        if not isinstance(api_token, ApiToken):
-            api_token = None
+    def get_access_token_from_request(cls, request: ExtendedRequest) -> AccessToken | None:
+        access_token = getattr(request, "auth", None)
+        if not isinstance(access_token, AccessToken):
+            access_token = None
 
-        return api_token
+        return access_token
 
     @classmethod
     def create_base_perm(
@@ -52,16 +52,16 @@ class ApiTokenPermissionBase(OpenPolicyAgentPermission):
         scope,
         iam_context,
         obj=None,
-        api_token: ApiToken | None = None,
+        access_token: AccessToken | None = None,
         **kwargs,
     ):
-        return super(ApiTokenPermissionBase, cls).create_base_perm(
+        return super(AccessTokenPermissionBase, cls).create_base_perm(
             request=request,
             view=view,
             scope=scope,
             iam_context=iam_context,
             obj=obj,
-            api_token=api_token or cls.get_api_token_from_request(request),
+            access_token=access_token or cls.get_access_token_from_request(request),
             **kwargs,
         )
 
@@ -70,15 +70,17 @@ class ApiTokenPermissionBase(OpenPolicyAgentPermission):
         if not iam_context and request:
             iam_context = get_iam_context(request, None)
 
-        return cls(**iam_context, api_token=cls.get_api_token_from_request(request), scope="list")
+        return cls(
+            **iam_context, access_token=cls.get_access_token_from_request(request), scope="list"
+        )
 
     def __init__(self, **kwargs):
-        assert isinstance(kwargs["api_token"], ApiToken | NoneType)
+        assert isinstance(kwargs["access_token"], AccessToken | NoneType)
         super().__init__(**kwargs)
 
 
-class ApiTokenPermission(ApiTokenPermissionBase):
-    obj: ApiToken | None
+class AccessTokenPermission(AccessTokenPermissionBase):
+    obj: AccessToken | None
 
     class Scopes(StrEnum):
         CREATE = "create"
@@ -91,7 +93,7 @@ class ApiTokenPermission(ApiTokenPermissionBase):
     def create(cls, request, view, obj, iam_context):
         permissions = []
 
-        if view.basename == "api_token":
+        if view.basename == "access_token":
             for scope in cls.get_scopes(request, view, obj):
                 perm = cls.create_base_perm(request, view, scope, iam_context, obj)
                 permissions.append(perm)
@@ -100,7 +102,7 @@ class ApiTokenPermission(ApiTokenPermissionBase):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.url = settings.IAM_OPA_DATA_URL + "/api_tokens/allow"
+        self.url = settings.IAM_OPA_DATA_URL + "/access_tokens/allow"
 
     @classmethod
     def _get_scopes(cls, request, view, obj):
@@ -126,8 +128,8 @@ class ApiTokenPermission(ApiTokenPermissionBase):
             }
         elif self.scope == self.Scopes.VIEW:  # self
             data = {
-                "id": self.api_token.id,
-                "owner": {"id": self.api_token.owner_id},
+                "id": self.access_token.id,
+                "owner": {"id": self.access_token.owner_id},
             }
 
         return data
@@ -143,8 +145,8 @@ class PluginInfo:
 PluginCollection = dict[str, list[PluginInfo]]
 
 
-class ApiTokenPermissionPluginManager:
-    PLUGIN_PACKAGE_PREFIX = "api_token_plugin."
+class AccessTokenPermissionPluginManager:
+    PLUGIN_PACKAGE_PREFIX = "access_token_plugin."
     PLUGIN_FILE_EXT = ".rego"
 
     @classmethod
@@ -156,7 +158,7 @@ class ApiTokenPermissionPluginManager:
         )
         if not package_parts:
             raise Exception(
-                "Api token plugins must have '{}' "
+                "Access token plugins must have '{}' "
                 "in their package name, found '{}' in '{}'".format(
                     cls.PLUGIN_PACKAGE_PREFIX, package, p
                 )
@@ -196,7 +198,7 @@ class ApiTokenPermissionPluginManager:
                 if plugin_key in plugins:
                     existing_plugin = plugins[plugin_key]
                     raise Exception(
-                        f"Api token permission plugin '{plugin.package}' "
+                        f"Access token permission plugin '{plugin.package}' "
                         f"already found in '{existing_plugin.file_path}'"
                     )
 
@@ -206,7 +208,7 @@ class ApiTokenPermissionPluginManager:
 
         return plugins_by_source_package
 
-    _manager_instance: ClassVar[ApiTokenPermissionPluginManager] = None
+    _manager_instance: ClassVar[AccessTokenPermissionPluginManager] = None
 
     def __init__(self):
         self._cached_plugins: tuple[int, PluginCollection] = (0, {})  # (hash, plugins)
@@ -229,9 +231,9 @@ class ApiTokenPermissionPluginManager:
         return self._cached_plugins[1]
 
     @classmethod
-    def get_instance(cls) -> ApiTokenPermissionPluginManager:
+    def get_instance(cls) -> AccessTokenPermissionPluginManager:
         if cls._manager_instance is None:
-            cls._manager_instance = ApiTokenPermissionPluginManager()
+            cls._manager_instance = AccessTokenPermissionPluginManager()
 
         return cls._manager_instance
 
@@ -240,11 +242,11 @@ class ApiTokenPermissionPluginManager:
         return cls.get_instance().plugins.get(original_package, [])
 
 
-class ApiTokenPluginPermissionBase(ApiTokenPermissionBase):
+class AccessTokenPluginPermissionBase(AccessTokenPermissionBase):
     pass
 
 
-class ApiTokenPluginPermission(ApiTokenPluginPermissionBase):
+class AccessTokenPluginPermission(AccessTokenPluginPermissionBase):
     request: ExtendedRequest
     view: ViewSet
 
@@ -267,7 +269,7 @@ class ApiTokenPluginPermission(ApiTokenPluginPermissionBase):
             .removesuffix("/allow")
             .replace("/", ".")
         )
-        return [p.package for p in ApiTokenPermissionPluginManager.get_plugins(original_package)]
+        return [p.package for p in AccessTokenPermissionPluginManager.get_plugins(original_package)]
 
     original_permission: OpenPolicyAgentPermission
 
@@ -284,10 +286,10 @@ class ApiTokenPluginPermission(ApiTokenPluginPermissionBase):
         obj,
         iam_context,
         permissions: list[OpenPolicyAgentPermission],
-    ) -> Sequence[ApiTokenPluginPermission]:
+    ) -> Sequence[AccessTokenPluginPermission]:
         extra_permissions = []
 
-        if not cls.get_api_token_from_request(request):
+        if not cls.get_access_token_from_request(request):
             return extra_permissions
 
         for permission in permissions:
@@ -305,7 +307,7 @@ class ApiTokenPluginPermission(ApiTokenPluginPermissionBase):
 
         if not extra_permissions:
             extra_permissions.extend(
-                ApiTokenReadOnlyDefaultPermission.create(request, view, obj, iam_context)
+                AccessTokenReadOnlyDefaultPermission.create(request, view, obj, iam_context)
             )
 
         return extra_permissions
@@ -319,13 +321,13 @@ class ApiTokenPluginPermission(ApiTokenPluginPermissionBase):
         iam_context: dict | None,
         original_permission: OpenPolicyAgentPermission,
         extension_package: str,
-    ) -> ApiTokenPluginPermission:
+    ) -> AccessTokenPluginPermission:
         return cls(
             request=request,
             view=view,
             **iam_context or get_iam_context(request, obj),
             obj=obj,
-            api_token=request.auth,
+            access_token=request.auth,
             original_permission=original_permission,
             extension_package=extension_package,
         )
@@ -350,32 +352,32 @@ class ApiTokenPluginPermission(ApiTokenPluginPermissionBase):
         value = self.original_permission.get_opa_auth_payload()
         value["auth"]["token"] = (
             {
-                "id": self.api_token.id,
-                "read_only": self.api_token.read_only,
+                "id": self.access_token.id,
+                "read_only": self.access_token.read_only,
             }
-            if self.api_token is not None
+            if self.access_token is not None
             else None
         )
         return value
 
 
-class ApiTokenReadOnlyDefaultPermission(ApiTokenPluginPermissionBase):
+class AccessTokenReadOnlyDefaultPermission(AccessTokenPluginPermissionBase):
     """
     Disallows any unsafe (non HEAD, OPTIONS, GET) requests for
-    read-only API token-authenticated clients.
+    read-only token-authenticated clients.
 
     This is a default fallback implementation. If you want to redefine the default logic for
-    a specific view, add a permission plugin via the ApiTokenPluginPermission system.
+    a specific view, add a permission plugin via the AccessTokenPluginPermission system.
     """
 
-    REJECTION_REASON = "API token is read only"
+    REJECTION_REASON = "Access token is read only"
 
     @classmethod
     def create(cls, request, view, obj, iam_context):
         permissions = []
 
         if (
-            ApiTokenPermissionBase.get_api_token_from_request(request)
+            AccessTokenPermissionBase.get_access_token_from_request(request)
             and request.auth.read_only
             and request.method not in SAFE_METHODS
         ):
@@ -385,7 +387,7 @@ class ApiTokenReadOnlyDefaultPermission(ApiTokenPluginPermissionBase):
                     view=view,
                     **iam_context or get_iam_context(request, obj),
                     obj=obj,
-                    api_token=request.auth,
+                    access_token=request.auth,
                 )
             )
 
@@ -415,7 +417,7 @@ class PolicyEnforcer(iam_permissions.PolicyEnforcer):
         checked_permissions: list[OpenPolicyAgentPermission],
     ):
         for original_perm in checked_permissions.copy():
-            extra_permissions = ApiTokenPluginPermission.create(
+            extra_permissions = AccessTokenPluginPermission.create(
                 request, view, obj, None, [original_perm]
             )
             for perm in extra_permissions:

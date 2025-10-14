@@ -33,17 +33,17 @@ if settings.IAM_TYPE == "BASIC":
 
     password_change_view_kwargs = {}
 
-    if "cvat.apps.api_tokens" in settings.INSTALLED_APPS:
-        from cvat.apps.api_tokens.authentication import ApiTokenAuthentication
+    if "cvat.apps.access_tokens" in settings.INSTALLED_APPS:
+        from cvat.apps.access_tokens.authentication import AccessTokenAuthentication
 
-        no_api_token_auth_classes = []
+        no_access_token_auth_classes = []
         for auth_class_path in settings.REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"]:
             auth_class = import_string(auth_class_path)
 
-            if not issubclass(auth_class, ApiTokenAuthentication):
-                no_api_token_auth_classes.append(auth_class)
+            if not issubclass(auth_class, AccessTokenAuthentication):
+                no_access_token_auth_classes.append(auth_class)
 
-        password_change_view_kwargs["authentication_classes"] = no_api_token_auth_classes
+        password_change_view_kwargs["authentication_classes"] = no_access_token_auth_classes
 
     urlpatterns += [
         # password

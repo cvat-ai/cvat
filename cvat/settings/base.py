@@ -122,7 +122,7 @@ INSTALLED_APPS = [
     "cvat.apps.quality_control",
     "cvat.apps.redis_handler",
     "cvat.apps.consensus",
-    "cvat.apps.api_tokens",
+    "cvat.apps.access_tokens",
 ]
 
 SITE_ID = 1
@@ -137,11 +137,11 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
-        "cvat.apps.api_tokens.permissions.PolicyEnforcer",
+        "cvat.apps.access_tokens.permissions.PolicyEnforcer",
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.TokenAuthentication",
-        "cvat.apps.api_tokens.authentication.ApiTokenAuthentication",
+        "cvat.apps.access_tokens.authentication.AccessTokenAuthentication",
         "rest_framework.authentication.SessionAuthentication",
         "cvat.apps.iam.authentication.BasicAuthenticationEx",
     ],
@@ -251,7 +251,7 @@ OBJECTS_NOT_RELATED_WITH_ORG = [
     "lambda_request",
     "server",
     "request",
-    "api_token",
+    "access_token",
 ]
 
 # ORG settings
@@ -397,8 +397,8 @@ PERIODIC_RQ_JOBS = [
     },
     {
         "queue": CVAT_QUEUES.CLEANING.value,
-        "id": "clear_unusable_api_tokens",
-        "func": "cvat.apps.api_tokens.cron.clear_unusable_api_tokens",
+        "id": "clear_unusable_access_tokens",
+        "func": "cvat.apps.access_tokens.cron.clear_unusable_access_tokens",
         "cron_string": "0 0 * * 0",
     },
 ]

@@ -7,10 +7,10 @@ import importlib
 from django.apps import AppConfig
 
 
-class ApiTokensConfig(AppConfig):
+class AccessTokensConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
-    name = "cvat.apps.api_tokens"
-    verbose_name = "API Tokens"
+    name = "cvat.apps.access_tokens"
+    verbose_name = "API Access Tokens"
 
     def ready(self):
         from django.conf import settings

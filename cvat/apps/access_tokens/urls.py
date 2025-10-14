@@ -6,10 +6,10 @@ from django.urls import path
 from django.urls.conf import include
 from rest_framework import routers
 
-from .views import ApiTokensViewSet
+from .views import AccessTokensViewSet
 
 router = routers.DefaultRouter(trailing_slash=False)
-router.register("api_tokens", ApiTokensViewSet, basename="api_token")
+router.register("access_tokens", AccessTokensViewSet, basename="access_token")
 
 urlpatterns = [
     path("auth/", include(router.urls)),

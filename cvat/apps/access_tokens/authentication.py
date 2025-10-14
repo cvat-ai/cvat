@@ -8,11 +8,11 @@ from rest_framework.authentication import TokenAuthentication
 from . import models
 
 
-class ApiTokenAuthentication(TokenAuthentication):
+class AccessTokenAuthentication(TokenAuthentication):
     keyword = "Bearer"
 
     def authenticate_credentials(self, key):
-        model = models.ApiToken
+        model = models.AccessToken
         try:
             token = model.objects.get_from_key(key)
         except model.DoesNotExist:

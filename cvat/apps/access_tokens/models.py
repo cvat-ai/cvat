@@ -15,7 +15,7 @@ from rest_framework_api_key.models import AbstractAPIKey, BaseAPIKeyManager
 from cvat.apps.engine.model_utils import MaybeUndefined
 
 
-class ApiTokenManager(BaseAPIKeyManager):
+class AccessTokenManager(BaseAPIKeyManager):
     def is_valid(self, key: str) -> bool:
         return super().is_valid(key) and not self.get_from_key(key).is_stale
 
@@ -33,7 +33,7 @@ class ApiTokenManager(BaseAPIKeyManager):
                     # We want to track really used tokens here.
                 )
             )
-            .filter(_last_used__gte=db_functions.Now() - settings.API_TOKEN_STALE_PERIOD)
+            .filter(_last_used__gte=db_functions.Now() - settings.ACCESS_TOKEN_STALE_PERIOD)
         )
 
     def assign_key(self, obj):
@@ -42,9 +42,9 @@ class ApiTokenManager(BaseAPIKeyManager):
         return result
 
 
-class ApiToken(AbstractAPIKey):
+class AccessToken(AbstractAPIKey):
     # rest_framework_api_key and "classic" API keys are not recommended for authentication,
-    # however we implement additional security measures to improve security of API tokens:
+    # however we implement additional security measures to improve security of the tokens:
     # - Each token can have an expiration date
     # - Each token can be revoked at any time by the user or admin
     # - Server tracks the last usage for each token and unused tokens are automatically revoked
@@ -52,7 +52,7 @@ class ApiToken(AbstractAPIKey):
     # - Token-authenticated clients are not allowed to modify tokens
     # - Token-authenticated clients are not allowed to modify the owning user email or password
 
-    objects = ApiTokenManager()
+    objects = AccessTokenManager()
 
     id = models.AutoField(primary_key=True)
     # 1. The default id field is a string with special characters, which can also expose
@@ -71,8 +71,8 @@ class ApiToken(AbstractAPIKey):
 
     owner = models.ForeignKey(
         User,
-        related_name="api_tokens",
-        related_query_name="api_token",
+        related_name="access_tokens",
+        related_query_name="access_token",
         on_delete=models.CASCADE,
     )
 
@@ -80,8 +80,8 @@ class ApiToken(AbstractAPIKey):
     "Can be specified by the calling serializer to report the generated raw token to the user."
 
     class Meta(AbstractAPIKey.Meta):
-        verbose_name = "API Token"
-        verbose_name_plural = "API Tokens"
+        verbose_name = "API Access Token"
+        verbose_name_plural = "API Access Tokens"
         ordering = ("id",)
 
     def touch(self) -> None:
@@ -92,13 +92,13 @@ class ApiToken(AbstractAPIKey):
 
         # Throttle the updates to reduce the DB load
         if self.last_used_date and (
-            now < self.last_used_date + settings.API_TOKEN_LAST_USE_UPDATE_MIN_INTERVAL
+            now < self.last_used_date + settings.ACCESS_TOKEN_LAST_USE_UPDATE_MIN_INTERVAL
         ):
             return False
 
         # Update the token if it wasn't changed and if it's still valid
         is_updated = (
-            ApiToken.objects.get_usable_keys()
+            AccessToken.objects.get_usable_keys()
             .filter(
                 id=self.id,
                 last_used_date=self.last_used_date,
@@ -119,6 +119,6 @@ class ApiToken(AbstractAPIKey):
         # check comment in get_usable_keys()
         return (
             self.last_used_date or self.created
-        ) + settings.API_TOKEN_STALE_PERIOD < timezone.now()
+        ) + settings.ACCESS_TOKEN_STALE_PERIOD < timezone.now()
 
     is_stale = property(_is_stale)

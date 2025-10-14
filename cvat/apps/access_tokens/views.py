@@ -10,41 +10,41 @@ from rest_framework.decorators import action
 from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
 
-from cvat.apps.api_tokens.authentication import ApiTokenAuthentication
+from cvat.apps.access_tokens.authentication import AccessTokenAuthentication
 from cvat.apps.engine.mixins import PartialUpdateModelMixin
 from cvat.apps.engine.types import ExtendedRequest
 
 from . import models
-from .permissions import ApiTokenPermission
-from .serializers import ApiTokenReadSerializer, ApiTokenWriteSerializer
+from .permissions import AccessTokenPermission
+from .serializers import AccessTokenReadSerializer, AccessTokenWriteSerializer
 
 
 @extend_schema(tags=["auth"])
 @extend_schema_view(
     list=extend_schema(
-        summary="List API tokens",
-        responses={"200": ApiTokenReadSerializer(many=True)},
+        summary="List tokens",
+        responses={"200": AccessTokenReadSerializer(many=True)},
     ),
     create=extend_schema(
-        summary="Create an API token",
-        request=ApiTokenWriteSerializer,
-        responses={"201": ApiTokenReadSerializer},
+        summary="Create a token",
+        request=AccessTokenWriteSerializer,
+        responses={"201": AccessTokenReadSerializer},
     ),
     retrieve=extend_schema(
-        summary="Get API token details",
-        responses={"200": ApiTokenReadSerializer},
+        summary="Get token details",
+        responses={"200": AccessTokenReadSerializer},
     ),
     partial_update=extend_schema(
-        summary="Update an API token",
-        request=ApiTokenWriteSerializer,
-        responses={"200": ApiTokenReadSerializer(partial=True)},
+        summary="Update a token",
+        request=AccessTokenWriteSerializer,
+        responses={"200": AccessTokenReadSerializer(partial=True)},
     ),
     destroy=extend_schema(
-        summary="Revoke API token",
+        summary="Revoke token",
         responses={"204": OpenApiResponse(description="The token was successfully revoked")},
     ),
 )
-class ApiTokensViewSet(
+class AccessTokensViewSet(
     viewsets.GenericViewSet,
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
@@ -52,7 +52,7 @@ class ApiTokensViewSet(
     mixins.DestroyModelMixin,
     PartialUpdateModelMixin,
 ):
-    queryset = models.ApiToken.objects.none()  # for API schema only
+    queryset = models.AccessToken.objects.none()  # for API schema only
 
     search_fields = ("name",)
     filter_fields = list(search_fields) + [
@@ -72,40 +72,40 @@ class ApiTokensViewSet(
     }
 
     iam_organization_field = None
-    iam_permission_class = ApiTokenPermission
+    iam_permission_class = AccessTokenPermission
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
-            return ApiTokenReadSerializer
+            return AccessTokenReadSerializer
         else:
-            return ApiTokenWriteSerializer
+            return AccessTokenWriteSerializer
 
     def get_queryset(self):
         # Get a new queryset here to avoid potentially outdated constants
         # (e.g. staleness check date) stored in the filter expression
-        queryset = models.ApiToken.objects.get_usable_keys()
+        queryset = models.AccessToken.objects.get_usable_keys()
 
         if self.action == "list":
-            perm = ApiTokenPermission.create_scope_list(self.request)
+            perm = AccessTokenPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
 
         return queryset
 
-    def perform_destroy(self, instance: models.ApiToken):
+    def perform_destroy(self, instance: models.AccessToken):
         instance.revoked = True
         instance.save(update_fields=["revoked", "updated_date"])
 
     @extend_schema(
-        summary="Get current API token details",
+        summary="Get current token details",
         description=textwrap.dedent(
             """\
-            Get details of the API token used for the current request.
-            This endpoint is only allowed if the request is performed using an API token.
+            Get details of the token used for the current request.
+            This endpoint is only allowed if the request is performed using an access token.
             """
         ),
-        responses={"200": ApiTokenReadSerializer},
+        responses={"200": AccessTokenReadSerializer},
     )
-    @action(detail=False, methods=["GET"], authentication_classes=[ApiTokenAuthentication])
+    @action(detail=False, methods=["GET"], authentication_classes=[AccessTokenAuthentication])
     def self(self, request: ExtendedRequest):
         serializer_class = self.get_serializer_class()
         serializer = serializer_class(request.auth, context={"request": request})

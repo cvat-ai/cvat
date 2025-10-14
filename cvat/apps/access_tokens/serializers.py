@@ -12,7 +12,7 @@ from cvat.apps.engine.serializers import BasicUserSerializer
 from . import models
 
 
-class ApiTokenReadSerializer(serializers.ModelSerializer):
+class AccessTokenReadSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(required=False)
 
     value = serializers.CharField(
@@ -22,7 +22,7 @@ class ApiTokenReadSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        model = models.ApiToken
+        model = models.AccessToken
         fields = (
             "id",
             "name",
@@ -37,8 +37,8 @@ class ApiTokenReadSerializer(serializers.ModelSerializer):
 
         extra_kwargs = {
             "created_date": {"source": "created"},
-            "expiry_date": {"help_text": "Once API token expires, clients cannot use it anymore."},
-            "name": {"help_text": "A free-form name for the API token."},
+            "expiry_date": {"help_text": "Once the token expires, clients cannot use it anymore."},
+            "name": {"help_text": "A free-form name for the token."},
             "last_used_date": {
                 "help_text": textwrap.dedent(
                     """\
@@ -52,9 +52,9 @@ class ApiTokenReadSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-class ApiTokenWriteSerializer(serializers.ModelSerializer):
+class AccessTokenWriteSerializer(serializers.ModelSerializer):
     class Meta:
-        model = models.ApiToken
+        model = models.AccessToken
         fields = (
             "name",
             "expiry_date",
@@ -65,13 +65,13 @@ class ApiTokenWriteSerializer(serializers.ModelSerializer):
             "name": {
                 "required": True,
                 "allow_blank": False,
-                "help_text": "A free-form name for the API token. Doesn't have to be unique",
+                "help_text": "A free-form name for the token. Doesn't have to be unique",
             },
             "expiry_date": {
                 "allow_null": True,
                 "help_text": textwrap.dedent(
                     """\
-                    Once API token expires, clients cannot use it anymore.
+                    Once the token expires, clients cannot use it anymore.
                     If not set, the token will not expire.
                 """
                 ),
@@ -79,10 +79,10 @@ class ApiTokenWriteSerializer(serializers.ModelSerializer):
         }
 
     def to_representation(self, instance):
-        return ApiTokenReadSerializer(context=self.context).to_representation(instance)
+        return AccessTokenReadSerializer(context=self.context).to_representation(instance)
 
-    def create(self, validated_data: dict[str, Any]) -> models.ApiToken:
-        instance, raw_token = models.ApiToken.objects.create_key(
+    def create(self, validated_data: dict[str, Any]) -> models.AccessToken:
+        instance, raw_token = models.AccessToken.objects.create_key(
             **validated_data, owner=self.context["request"].user
         )
         instance.raw_token = raw_token

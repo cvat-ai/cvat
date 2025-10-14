@@ -5,10 +5,10 @@
 from django.contrib import admin
 from rest_framework_api_key.admin import APIKey, APIKeyAdmin
 
-from .models import ApiToken
+from .models import AccessToken
 
 
-class ApiTokenAdmin(APIKeyAdmin):
+class AccessTokenAdmin(APIKeyAdmin):
     list_display = [
         "id",
         "owner",
@@ -23,4 +23,4 @@ class ApiTokenAdmin(APIKeyAdmin):
 
 
 admin.site.unregister(APIKey)
-admin.site.register(ApiToken, ApiTokenAdmin)
+admin.site.register(AccessToken, AccessTokenAdmin)

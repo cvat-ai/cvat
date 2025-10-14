@@ -18,14 +18,14 @@ from .utils import CollectionSimpleFilterTestBase, export_backup, export_dataset
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
-class TestPostApiToken:
+class TestPostAccessToken:
     @pytest.mark.parametrize("user_group", ["admin", "user", "worker"])
     def test_can_create_token(self, users, user_group):
         user = next(u for u in users if user_group in u["groups"])
 
         with make_api_client(user["username"]) as api_client:
-            token, _ = api_client.auth_api.create_api_tokens(
-                api_token_write_request=models.ApiTokenWriteRequest(name="test token")
+            token, _ = api_client.auth_api.create_access_tokens(
+                access_token_write_request=models.AccessTokenWriteRequest(name="test token")
             )
 
         assert token.value
@@ -39,8 +39,8 @@ class TestPostApiToken:
         expiration_date = datetime.now(tz=timezone.utc) - timedelta(seconds=1)
 
         with make_api_client(admin_user) as api_client:
-            token, _ = api_client.auth_api.create_api_tokens(
-                api_token_write_request=models.ApiTokenWriteRequest(
+            token, _ = api_client.auth_api.create_access_tokens(
+                access_token_write_request=models.AccessTokenWriteRequest(
                     name="test token", expiry_date=expiration_date
                 )
             )
@@ -56,8 +56,8 @@ class TestPostApiToken:
     @parametrize("is_readonly", [True, False])
     def test_can_create_readonly_token(self, admin_user, is_readonly, tasks):
         with make_api_client(admin_user) as api_client:
-            token, _ = api_client.auth_api.create_api_tokens(
-                api_token_write_request=models.ApiTokenWriteRequest(
+            token, _ = api_client.auth_api.create_access_tokens(
+                access_token_write_request=models.AccessTokenWriteRequest(
                     name="test token", read_only=is_readonly
                 )
             )
@@ -78,18 +78,18 @@ class TestPostApiToken:
                 )
 
 
-class TestGetApiToken:
-    def test_can_get_api_token(self, admin_user, api_tokens):
-        expected = next(iter(api_tokens))
+class TestGetAccessToken:
+    def test_can_get_access_token(self, admin_user, access_tokens):
+        expected = next(iter(access_tokens))
 
         with make_api_client(admin_user) as api_client:
-            _, response = api_client.auth_api.retrieve_api_tokens(expected["id"])
+            _, response = api_client.auth_api.retrieve_access_tokens(expected["id"])
             actual = json.loads(response.data)
 
         assert DeepDiff(expected, actual, exclude_paths=["private_key"]) == {}
 
-    def test_cannot_see_foreign_tokens(self, users, api_tokens_by_username):
-        token_owner, token_owner_tokens = next(iter(api_tokens_by_username.items()))
+    def test_cannot_see_foreign_tokens(self, users, access_tokens_by_username):
+        token_owner, token_owner_tokens = next(iter(access_tokens_by_username.items()))
         token = token_owner_tokens[0]
 
         other_user = next(
@@ -100,21 +100,21 @@ class TestGetApiToken:
             make_api_client(other_user["username"]) as api_client,
             pytest.raises(exceptions.ForbiddenException),
         ):
-            api_client.auth_api.retrieve_api_tokens(token["id"])
+            api_client.auth_api.retrieve_access_tokens(token["id"])
 
         assert (
-            api_client.auth_api.list_api_tokens(
+            api_client.auth_api.list_access_tokens(
                 filter=json.dumps({"!": {"==": [{"var": "owner"}, other_user["id"]]}})
             )[0].count
             == 0
         )
 
-    def test_can_get_self(self, api_tokens_by_username):
-        _, user_tokens = next(iter(api_tokens_by_username.items()))
+    def test_can_get_self(self, access_tokens_by_username):
+        _, user_tokens = next(iter(access_tokens_by_username.items()))
         token = user_tokens[0]
 
         with make_api_client(access_token=token["private_key"]) as api_client:
-            received_token = json.loads(api_client.auth_api.retrieve_api_tokens_self()[1].data)
+            received_token = json.loads(api_client.auth_api.retrieve_access_tokens_self()[1].data)
 
         assert (
             DeepDiff(
@@ -130,49 +130,49 @@ class TestGetApiToken:
     def test_can_only_see_alive_tokens(self, token_eol_reason: str, admin_user):
         with make_api_client(admin_user) as api_client:
             if token_eol_reason == "expired":
-                token_id = api_client.auth_api.create_api_tokens(
-                    api_token_write_request=models.ApiTokenWriteRequest(
+                token_id = api_client.auth_api.create_access_tokens(
+                    access_token_write_request=models.AccessTokenWriteRequest(
                         name="test token",
                         expiry_date=datetime.now(timezone.utc) - timedelta(seconds=1),
                     )
                 )[0].id
             elif token_eol_reason == "revoked":
-                token_id = api_client.auth_api.create_api_tokens(
-                    api_token_write_request=models.ApiTokenWriteRequest(name="test token")
+                token_id = api_client.auth_api.create_access_tokens(
+                    access_token_write_request=models.AccessTokenWriteRequest(name="test token")
                 )[0].id
-                api_client.auth_api.destroy_api_tokens(token_id)
+                api_client.auth_api.destroy_access_tokens(token_id)
             elif token_eol_reason == "stale":
                 token_id = 6
             else:
                 assert False, f"Unexpected token eol reason '{token_eol_reason}'"
 
             with pytest.raises(
-                exceptions.NotFoundException, match="No ApiToken matches the given query"
+                exceptions.NotFoundException, match="No AccessToken matches the given query"
             ):
-                api_client.auth_api.retrieve_api_tokens(token_id)
+                api_client.auth_api.retrieve_access_tokens(token_id)
 
             assert (
-                api_client.auth_api.list_api_tokens(
+                api_client.auth_api.list_access_tokens(
                     filter=json.dumps({"==": [{"var": "id"}, token_id]})
                 )[0].count
                 == 0
             )
 
 
-class TestApiTokenListFilters(CollectionSimpleFilterTestBase):
+class TestAccessTokenListFilters(CollectionSimpleFilterTestBase):
     field_lookups = {"owner": ["owner", "id"]}
 
     @pytest.fixture(scope="session")
-    def _cleaned_api_tokens(self, api_tokens):
-        return [filter_dict(t, drop=("private_key",)) for t in api_tokens]
+    def _cleaned_access_tokens(self, access_tokens):
+        return [filter_dict(t, drop=("private_key",)) for t in access_tokens]
 
     @pytest.fixture(autouse=True)
-    def setup(self, restore_db_per_class, admin_user, _cleaned_api_tokens):
+    def setup(self, restore_db_per_class, admin_user, _cleaned_access_tokens):
         self.user = admin_user
-        self.samples = _cleaned_api_tokens
+        self.samples = _cleaned_access_tokens
 
     def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
-        return api_client.auth_api.list_api_tokens_endpoint
+        return api_client.auth_api.list_access_tokens_endpoint
 
     @pytest.mark.parametrize("field", ("name", "owner"))
     def test_can_use_simple_filter_for_object_list(self, field):
@@ -180,9 +180,9 @@ class TestApiTokenListFilters(CollectionSimpleFilterTestBase):
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
-class TestPatchApiToken:
-    def test_can_modify_token(self, api_tokens_by_username):
-        user, user_tokens = next(iter(api_tokens_by_username.items()))
+class TestPatchAccessToken:
+    def test_can_modify_token(self, access_tokens_by_username):
+        user, user_tokens = next(iter(access_tokens_by_username.items()))
         token = user_tokens[0]
 
         updated_values = {
@@ -195,9 +195,9 @@ class TestPatchApiToken:
         updated_token.update(updated_values)
 
         with make_api_client(user) as api_client:
-            _, response = api_client.auth_api.partial_update_api_tokens(
+            _, response = api_client.auth_api.partial_update_access_tokens(
                 token["id"],
-                patched_api_token_write_request=models.PatchedApiTokenWriteRequest(
+                patched_access_token_write_request=models.PatchedAccessTokenWriteRequest(
                     **updated_values
                 ),
             )
@@ -211,8 +211,8 @@ class TestPatchApiToken:
             == {}
         )
 
-    def test_cannot_modify_foreign_token(self, users, api_tokens_by_username):
-        token_owner, token_owner_tokens = next(iter(api_tokens_by_username.items()))
+    def test_cannot_modify_foreign_token(self, users, access_tokens_by_username):
+        token_owner, token_owner_tokens = next(iter(access_tokens_by_username.items()))
         token = token_owner_tokens[0]
 
         other_user = next(
@@ -223,42 +223,44 @@ class TestPatchApiToken:
             make_api_client(other_user) as api_client,
             pytest.raises(exceptions.ForbiddenException),
         ):
-            api_client.auth_api.partial_update_api_tokens(
+            api_client.auth_api.partial_update_access_tokens(
                 token["id"],
-                patched_api_token_write_request=models.PatchedApiTokenWriteRequest(name="new name"),
+                patched_access_token_write_request=models.PatchedAccessTokenWriteRequest(
+                    name="new name"
+                ),
             )
 
     def test_cannot_modify_expired_token(self, admin_user):
         with make_api_client(admin_user) as api_client:
-            token_id = api_client.auth_api.create_api_tokens(
-                api_token_write_request=models.ApiTokenWriteRequest(
+            token_id = api_client.auth_api.create_access_tokens(
+                access_token_write_request=models.AccessTokenWriteRequest(
                     name="test token",
                     expiry_date=datetime.now(timezone.utc) - timedelta(seconds=1),
                 )
             )[0].id
 
             with pytest.raises(
-                exceptions.NotFoundException, match="No ApiToken matches the given query"
+                exceptions.NotFoundException, match="No AccessToken matches the given query"
             ):
-                api_client.auth_api.partial_update_api_tokens(
+                api_client.auth_api.partial_update_access_tokens(
                     token_id,
-                    patched_api_token_write_request=models.PatchedApiTokenWriteRequest(
+                    patched_access_token_write_request=models.PatchedAccessTokenWriteRequest(
                         expiry_date=datetime.now(timezone.utc) + timedelta(days=1)
                     ),
                 )
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
-class TestDeleteApiToken:
-    def test_can_revoke_own_token(self, api_tokens_by_username):
-        user, user_tokens = next(iter(api_tokens_by_username.items()))
+class TestDeleteAccessToken:
+    def test_can_revoke_own_token(self, access_tokens_by_username):
+        user, user_tokens = next(iter(access_tokens_by_username.items()))
         token = user_tokens[0]
 
         with make_api_client(user) as api_client:
-            api_client.auth_api.destroy_api_tokens(token["id"])
+            api_client.auth_api.destroy_access_tokens(token["id"])
 
-    def test_cannot_revoke_foreign_token(self, users, api_tokens_by_username):
-        token_owner, token_owner_tokens = next(iter(api_tokens_by_username.items()))
+    def test_cannot_revoke_foreign_token(self, users, access_tokens_by_username):
+        token_owner, token_owner_tokens = next(iter(access_tokens_by_username.items()))
         token = token_owner_tokens[0]
 
         other_user = next(
@@ -269,14 +271,16 @@ class TestDeleteApiToken:
             make_api_client(other_user) as api_client,
             pytest.raises(exceptions.ForbiddenException),
         ):
-            api_client.auth_api.destroy_api_tokens(token["id"])
+            api_client.auth_api.destroy_access_tokens(token["id"])
 
 
 class TestTokenAuthPermissions:
     # Some operations are not allowed with token auth for security reasons, even if not read only
 
-    def test_cannot_change_password_when_using_token_auth(self, admin_user, api_tokens_by_username):
-        token = next(t for t in api_tokens_by_username[admin_user] if not t["read_only"])
+    def test_cannot_change_password_when_using_token_auth(
+        self, admin_user, access_tokens_by_username
+    ):
+        token = next(t for t in access_tokens_by_username[admin_user] if not t["read_only"])
 
         with (
             make_api_client(access_token=token["private_key"]) as api_client,
@@ -288,42 +292,44 @@ class TestTokenAuthPermissions:
                 )
             )
 
-    def test_cannot_create_token_when_using_token_auth(self, admin_user, api_tokens_by_username):
-        token = next(t for t in api_tokens_by_username[admin_user] if not t["read_only"])
+    def test_cannot_create_token_when_using_token_auth(self, admin_user, access_tokens_by_username):
+        token = next(t for t in access_tokens_by_username[admin_user] if not t["read_only"])
 
         with (
             make_api_client(access_token=token["private_key"]) as api_client,
             pytest.raises(exceptions.ForbiddenException),
         ):
-            api_client.auth_api.create_api_tokens(
-                api_token_write_request=models.ApiTokenWriteRequest(name="test token")
+            api_client.auth_api.create_access_tokens(
+                access_token_write_request=models.AccessTokenWriteRequest(name="test token")
             )
 
-    def test_cannot_edit_token_when_using_token_auth(self, admin_user, api_tokens_by_username):
-        token = next(t for t in api_tokens_by_username[admin_user] if not t["read_only"])
+    def test_cannot_edit_token_when_using_token_auth(self, admin_user, access_tokens_by_username):
+        token = next(t for t in access_tokens_by_username[admin_user] if not t["read_only"])
 
         with (
             make_api_client(access_token=token["private_key"]) as api_client,
             pytest.raises(exceptions.ForbiddenException),
         ):
-            api_client.auth_api.partial_update_api_tokens(
+            api_client.auth_api.partial_update_access_tokens(
                 token["id"],
-                patched_api_token_write_request=models.PatchedApiTokenWriteRequest(name="new name"),
+                patched_access_token_write_request=models.PatchedAccessTokenWriteRequest(
+                    name="new name"
+                ),
             )
 
-    def test_cannot_revoke_token_when_using_token_auth(self, admin_user, api_tokens_by_username):
-        token = next(t for t in api_tokens_by_username[admin_user] if not t["read_only"])
+    def test_cannot_revoke_token_when_using_token_auth(self, admin_user, access_tokens_by_username):
+        token = next(t for t in access_tokens_by_username[admin_user] if not t["read_only"])
 
         with (
             make_api_client(access_token=token["private_key"]) as api_client,
             pytest.raises(exceptions.ForbiddenException),
         ):
-            api_client.auth_api.destroy_api_tokens(token["id"])
+            api_client.auth_api.destroy_access_tokens(token["id"])
 
     def test_cannot_edit_user_when_using_token_auth(
-        self, admin_user, api_tokens_by_username, users_by_name
+        self, admin_user, access_tokens_by_username, users_by_name
     ):
-        token = next(t for t in api_tokens_by_username[admin_user] if not t["read_only"])
+        token = next(t for t in access_tokens_by_username[admin_user] if not t["read_only"])
         user = users_by_name[admin_user]
 
         with (
@@ -338,9 +344,11 @@ class TestTokenAuthPermissions:
     @parametrize("is_readonly", [True, False])
     @parametrize("export_type", ["annotations", "dataset", "backup"])
     def test_token_can_export_project(
-        self, admin_user, api_tokens_by_username, projects, export_type, is_readonly
+        self, admin_user, access_tokens_by_username, projects, export_type, is_readonly
     ):
-        token = next(t for t in api_tokens_by_username[admin_user] if t["read_only"] == is_readonly)
+        token = next(
+            t for t in access_tokens_by_username[admin_user] if t["read_only"] == is_readonly
+        )
 
         project_id = next(p["id"] for p in projects if p["tasks"]["count"] > 0)
 
@@ -356,9 +364,11 @@ class TestTokenAuthPermissions:
     @parametrize("is_readonly", [True, False])
     @parametrize("export_type", ["annotations", "dataset", "backup"])
     def test_token_can_export_task(
-        self, admin_user, api_tokens_by_username, tasks, export_type, is_readonly
+        self, admin_user, access_tokens_by_username, tasks, export_type, is_readonly
     ):
-        token = next(t for t in api_tokens_by_username[admin_user] if t["read_only"] == is_readonly)
+        token = next(
+            t for t in access_tokens_by_username[admin_user] if t["read_only"] == is_readonly
+        )
 
         task_id = next(p["id"] for p in tasks if p["size"] > 0)
 
@@ -374,9 +384,11 @@ class TestTokenAuthPermissions:
     @parametrize("is_readonly", [True, False])
     @parametrize("export_type", ["annotations", "dataset"])
     def test_token_can_export_jobs(
-        self, admin_user, api_tokens_by_username, jobs, export_type, is_readonly
+        self, admin_user, access_tokens_by_username, jobs, export_type, is_readonly
     ):
-        token = next(t for t in api_tokens_by_username[admin_user] if t["read_only"] == is_readonly)
+        token = next(
+            t for t in access_tokens_by_username[admin_user] if t["read_only"] == is_readonly
+        )
 
         job_id = next(p["id"] for p in jobs)
 
@@ -391,12 +403,12 @@ class TestTokenAuthPermissions:
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestTokenTracking:
-    def test_can_update_last_use(self, api_tokens_by_username):
-        _, user_tokens = next(iter(api_tokens_by_username.items()))
+    def test_can_update_last_use(self, access_tokens_by_username):
+        _, user_tokens = next(iter(access_tokens_by_username.items()))
         token = user_tokens[0]
 
         with make_api_client(access_token=token["private_key"]) as api_client:
-            updated_token, _ = api_client.auth_api.retrieve_api_tokens_self()
+            updated_token, _ = api_client.auth_api.retrieve_access_tokens_self()
 
         old_last_used_date = token["last_used_date"]
         if old_last_used_date is not None:
@@ -411,8 +423,8 @@ class TestTokenTracking:
         test_start_date = datetime.now(tz=timezone.utc)
 
         with make_api_client(admin_user) as api_client:
-            token = api_client.auth_api.create_api_tokens(
-                api_token_write_request=models.ApiTokenWriteRequest(
+            token = api_client.auth_api.create_access_tokens(
+                access_token_write_request=models.AccessTokenWriteRequest(
                     name="test token", read_only=False
                 )
             )[0]
@@ -425,14 +437,14 @@ class TestTokenTracking:
             )
 
         with make_api_client(admin_user) as api_client:
-            api_client.auth_api.partial_update_api_tokens(
+            api_client.auth_api.partial_update_access_tokens(
                 token.id,
-                patched_api_token_write_request=models.PatchedApiTokenWriteRequest(
+                patched_access_token_write_request=models.PatchedAccessTokenWriteRequest(
                     expiry_date=test_start_date + timedelta(days=1)
                 ),
             )
 
-            api_client.auth_api.destroy_api_tokens(token.id)
+            api_client.auth_api.destroy_access_tokens(token.id)
 
             # Clickhouse updates are not immediate, vector has buffering on sinks.
             # All these checks are in a single test because of this extra waiting.
@@ -446,20 +458,20 @@ class TestTokenTracking:
             def find_row(scope: str):
                 return next((i, r) for i, r in enumerate(rows) if r["scope"] == scope)
 
-            token_creation_row_index, row = find_row(scope="create:apitoken")
+            token_creation_row_index, row = find_row(scope="create:accesstoken")
             assert row["obj_id"] == str(token.id)
 
             task_update_row_index, row = find_row(scope="update:task")
             assert row["task_id"] == str(task_id)
-            assert row["api_token_id"] == str(token.id)
+            assert row["access_token_id"] == str(token.id)
             assert row["obj_name"] == "name"
             assert row["obj_val"] == "newname"
 
-            token_update_row_index, row = find_row(scope="update:apitoken")
+            token_update_row_index, row = find_row(scope="update:accesstoken")
             # token id is not present in the "update:*" event fields, can't check it
             assert row["obj_name"] == "expiry_date"
 
-            token_delete_row_index, row = find_row(scope="delete:apitoken")
+            token_delete_row_index, row = find_row(scope="delete:accesstoken")
             assert row["obj_id"] == str(token.id)
 
             assert token_creation_row_index < task_update_row_index
