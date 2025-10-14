@@ -23241,7 +23241,7 @@
   }
 },
 {
-  "model": "api_tokens.apitoken",
+  "model": "access_tokens.accesstoken",
   "pk": 1,
   "fields": {
     "prefix": "DgrZuqmc",
@@ -23259,7 +23259,7 @@
   }
 },
 {
-  "model": "api_tokens.apitoken",
+  "model": "access_tokens.accesstoken",
   "pk": 2,
   "fields": {
     "prefix": "EQCKEFZh",
@@ -23277,7 +23277,7 @@
   }
 },
 {
-  "model": "api_tokens.apitoken",
+  "model": "access_tokens.accesstoken",
   "pk": 3,
   "fields": {
     "prefix": "XQRwNl8D",
@@ -23295,7 +23295,7 @@
   }
 },
 {
-  "model": "api_tokens.apitoken",
+  "model": "access_tokens.accesstoken",
   "pk": 4,
   "fields": {
     "prefix": "waUchCLi",
@@ -23313,7 +23313,7 @@
   }
 },
 {
-  "model": "api_tokens.apitoken",
+  "model": "access_tokens.accesstoken",
   "pk": 5,
   "fields": {
     "prefix": "2HVbBoWR",
@@ -23331,7 +23331,7 @@
   }
 },
 {
-  "model": "api_tokens.apitoken",
+  "model": "access_tokens.accesstoken",
   "pk": 6,
   "fields": {
     "prefix": "UODahKbn",
@@ -23349,7 +23349,7 @@
   }
 },
 {
-  "model": "api_tokens.apitoken",
+  "model": "access_tokens.accesstoken",
   "pk": 7,
   "fields": {
     "prefix": "gIUANJCa",

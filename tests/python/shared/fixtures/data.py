@@ -559,10 +559,10 @@ def job_has_annotations(annotations) -> bool:
 
 
 @pytest.fixture(scope="session")
-def api_tokens():
+def access_tokens():
     "Private keys are available in the 'private_key' field."
 
-    with open(ASSETS_DIR / "api_tokens.json") as f:
+    with open(ASSETS_DIR / "access_tokens.json") as f:
         data = Container(json.load(f)["results"])
 
     private_keys = {
@@ -572,24 +572,24 @@ def api_tokens():
         7: "gIUANJCa.W4Y101GNS8wOyFcncvxMZjTEnU7dzAUF",  # nosec
     }
 
-    for api_token in data.raw_data:
-        api_token["private_key"] = private_keys[api_token["id"]]
+    for access_token in data.raw_data:
+        access_token["private_key"] = private_keys[access_token["id"]]
 
     return data
 
 
 @pytest.fixture(scope="session")
-def api_tokens_by_username(api_tokens, users):
-    api_tokens_by_user_id = {}
-    for api_token in api_tokens:
-        api_tokens_by_user_id.setdefault(api_token["owner"]["id"], []).append(api_token)
+def access_tokens_by_username(access_tokens, users):
+    access_tokens_by_user_id = {}
+    for access_token in access_tokens:
+        access_tokens_by_user_id.setdefault(access_token["owner"]["id"], []).append(access_token)
 
     users_by_id = {}
     for user in users:
         users_by_id[user["id"]] = user
 
     data = {}
-    for user_id, api_tokens in api_tokens_by_user_id.items():
-        data[users_by_id[user_id]["username"]] = api_tokens
+    for user_id, access_tokens in access_tokens_by_user_id.items():
+        data[users_by_id[user_id]["username"]] = access_tokens
 
     return data
