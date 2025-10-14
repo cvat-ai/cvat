@@ -21,7 +21,7 @@ context('Export task dataset.', () => {
     };
 
     before(() => {
-        cy.loginSetup();
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
         cy.createRectangle(rectangleShape2Points);
         cy.saveJob('PATCH', 200, 'saveJobExportDataset');

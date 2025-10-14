@@ -56,7 +56,7 @@ context('Settings "Intelligent polygon cropping".', () => {
     }
 
     before(() => {
-        cy.loginSetup();
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
         cy.createPolygon(createPolygonShape);
     });

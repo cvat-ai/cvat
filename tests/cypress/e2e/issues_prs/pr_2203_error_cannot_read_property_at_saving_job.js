@@ -19,7 +19,7 @@ context('Check error cannot read property at saving job', () => {
     };
 
     before(() => {
-        cy.loginSetup();
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 

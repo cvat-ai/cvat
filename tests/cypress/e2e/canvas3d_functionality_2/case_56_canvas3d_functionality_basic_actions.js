@@ -74,7 +74,7 @@ context('Canvas 3D functionality. Basic actions.', () => {
     }
 
     before(() => {
-        cy.loginSetup();
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
         cy.wait(2000); // Waiting for the point cloud to display
     });

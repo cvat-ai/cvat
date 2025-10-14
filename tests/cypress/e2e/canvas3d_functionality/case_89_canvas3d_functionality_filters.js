@@ -25,7 +25,7 @@ context('Canvas 3D functionality. Filters.', () => {
     };
 
     before(() => {
-        cy.loginSetup();
+        cy.prepareUserSession();
         cy.openTask(taskName);
         cy.addNewLabel({ name: secondLabel });
         cy.openJob();

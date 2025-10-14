@@ -17,7 +17,7 @@ context('Settings "Player step"', () => {
     let startFrame;
 
     before(() => {
-        cy.loginSetup();
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 

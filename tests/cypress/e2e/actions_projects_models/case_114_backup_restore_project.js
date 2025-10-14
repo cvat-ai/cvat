@@ -4,8 +4,6 @@
 
 /// <reference types="cypress" />
 
-// import { defaultTaskSpec } from '../../support/default-specs';
-
 const caseId = '114';
 let projectID = '';
 let projectBackupArchiveFullName;

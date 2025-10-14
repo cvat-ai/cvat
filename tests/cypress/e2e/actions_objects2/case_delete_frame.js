@@ -10,7 +10,7 @@ context('Delete frame from job.', () => {
     let frame = null;
 
     before(() => {
-        cy.loginSetup();
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 

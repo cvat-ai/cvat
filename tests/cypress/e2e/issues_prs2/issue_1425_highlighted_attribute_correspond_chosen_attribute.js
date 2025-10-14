@@ -20,7 +20,7 @@ context('The highlighted attribute in AAM should correspond to the chosen attrib
     };
 
     before(() => {
-        cy.loginSetup();
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 

@@ -85,7 +85,7 @@ context('Saving setting to local storage.', () => {
     }
 
     before(() => {
-        cy.loginSetup();
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 

@@ -35,7 +35,7 @@ context("The points of the previous polygon mustn't appear while polygon's inter
     };
 
     before(() => {
-        cy.loginSetup();
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 

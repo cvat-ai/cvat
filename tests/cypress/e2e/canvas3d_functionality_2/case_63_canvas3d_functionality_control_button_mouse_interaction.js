@@ -49,7 +49,7 @@ context('Canvas 3D functionality. Control button. Mouse interaction.', () => {
     }
 
     before(() => {
-        cy.loginSetup();
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 

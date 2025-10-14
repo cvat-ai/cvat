@@ -12,7 +12,7 @@ context('Shortcuts window.', () => {
     let shortcutsTableTrCount = 0;
 
     before(() => {
-        cy.loginSetup();
+        cy.prepareUserSession();
         cy.openTask(taskName);
     });
 

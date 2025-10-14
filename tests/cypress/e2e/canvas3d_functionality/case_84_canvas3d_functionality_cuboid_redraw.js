@@ -17,7 +17,7 @@ context('Canvas 3D functionality. Redraw.', () => {
     };
 
     before(() => {
-        cy.loginSetup();
+        cy.prepareUserSession();
         cy.openTask(taskName);
         cy.openJob();
         cy.create3DCuboid(cuboidCreationParams);

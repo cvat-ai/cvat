@@ -33,7 +33,7 @@ context('After draw correcting line and press the latest drawn point then it clo
     }
 
     before(() => {
-        cy.loginSetup();
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
         cy.createPolyline(createPolylinesShapePoints);
     });

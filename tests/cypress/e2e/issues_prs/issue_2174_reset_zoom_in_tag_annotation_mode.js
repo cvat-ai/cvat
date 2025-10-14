@@ -38,7 +38,7 @@ context('Reset zoom in tag annotation', () => {
     }
 
     before(() => {
-        cy.loginSetup();
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 

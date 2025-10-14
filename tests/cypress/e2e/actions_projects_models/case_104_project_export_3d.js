@@ -25,7 +25,7 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
     let projectID;
 
     before(() => {
-        cy.loginSetup();
+        cy.prepareUserSession();
         cy.headlessCreateProject({
             name: projectName,
             labels: [{

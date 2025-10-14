@@ -12,7 +12,7 @@ context('Check if the image is scaled and then fitted', () => {
     let scaleAfter = 0;
 
     before(() => {
-        cy.loginSetup();
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 

@@ -28,7 +28,7 @@ context('Create a link for shape, frame.', () => {
     };
 
     before(() => {
-        cy.loginSetup();
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
         cy.createRectangle(createRectangleShape2Points);
         cy.saveJob('PATCH', 200, `case${caseId}`);

@@ -72,7 +72,7 @@ context('Incorrect cloud storage filename used in subsequent import.', () => {
     }
 
     before(() => {
-        cy.loginSetup();
+        cy.prepareUserSession();
         createdCloudStorageId = cy.attachS3Bucket(cloudStorageData);
         cy.goToTaskList();
         cy.openTaskJob(taskName);

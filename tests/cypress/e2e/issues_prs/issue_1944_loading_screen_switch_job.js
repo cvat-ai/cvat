@@ -12,7 +12,7 @@ context(
         const issueId = '1944';
 
         before(() => {
-            cy.loginSetup();
+            cy.prepareUserSession();
             cy.openTaskJob(taskName);
         });
 

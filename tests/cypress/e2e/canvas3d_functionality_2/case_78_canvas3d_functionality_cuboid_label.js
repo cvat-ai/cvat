@@ -21,7 +21,7 @@ context('Canvas 3D functionality. Interaction with cuboid via sidebar.', () => {
     const secondLabelColorRed = 'ff0000';
 
     before(() => {
-        cy.loginSetup();
+        cy.prepareUserSession();
         cy.openTask(taskName);
         cy.addNewLabel({ name: secondLabel, color: secondLabelColorRed }, secondLabelAdditionalAttrs);
         cy.openJob();

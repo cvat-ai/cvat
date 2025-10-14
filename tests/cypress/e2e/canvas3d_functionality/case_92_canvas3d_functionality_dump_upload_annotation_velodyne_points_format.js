@@ -39,7 +39,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Velodyne Points" form
     }
 
     before(() => {
-        cy.loginSetup();
+        cy.prepareUserSession();
         cy.openTask(taskName);
         cy.openJob();
         // eslint-disable-next-line cypress/no-unnecessary-waiting

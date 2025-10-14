@@ -11,7 +11,7 @@ context('Settings. "Auto save" option.', () => {
     const caseId = '51';
 
     before(() => {
-        cy.loginSetup();
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 

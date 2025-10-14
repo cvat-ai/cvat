@@ -20,7 +20,7 @@ context('Check propagation work from the latest frame', () => {
     };
 
     before(() => {
-        cy.loginSetup();
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 
