@@ -16,7 +16,7 @@ class TestGenerateSegmentParams(TestCase):
         self.db_task = MagicMock(spec=models.Task)
         self.db_task.segment_size = 10
         self.db_task.overlap = 0
-        self.db_task.mode = 'annotation'
+        self.db_task.mode = "annotation"
         self.db_task.data = MagicMock()
         self.db_task.data.size = 100
 
@@ -44,9 +44,9 @@ class TestGenerateSegmentParams(TestCase):
 
     def test_generate_segment_params_with_job_file_mapping(self):
         job_file_mapping = [
-            ['file1.jpg', 'file2.jpg'],
-            ['file3.jpg', 'file4.jpg', 'file5.jpg'],
-            ['file6.jpg'],
+            ["file1.jpg", "file2.jpg"],
+            ["file3.jpg", "file4.jpg", "file5.jpg"],
+            ["file6.jpg"],
         ]
 
         segments_params = _generate_segment_params(
@@ -70,7 +70,7 @@ class TestGenerateSegmentParams(TestCase):
         self.assertEqual(segments_params.job_size, 1)
 
     def test_generate_segment_params_with_interpolation_mode(self):
-        self.db_task.mode = 'interpolation'
+        self.db_task.mode = "interpolation"
         self.db_task.overlap = None
         self.db_task.segment_size = 20
 
@@ -94,7 +94,7 @@ class TestCreateSegmentsAndJobs(TestCase):
         self.db_task.id = 1
         self.db_task.segment_size = 10
         self.db_task.overlap = 0
-        self.db_task.mode = 'annotation'
+        self.db_task.mode = "annotation"
         self.db_task.consensus_replicas = 0
         self.db_task.data = MagicMock()
         self.db_task.data.size = 100
@@ -104,10 +104,12 @@ class TestCreateSegmentsAndJobs(TestCase):
         self.update_status_callback = MagicMock()
 
     @override_settings(MAX_JOBS_PER_TASK=10)
-    @patch('cvat.apps.engine.task.models.Segment')
-    @patch('cvat.apps.engine.task.models.Job')
-    @patch('cvat.apps.engine.task.slogger')
-    def test_create_segments_and_jobs_within_limit(self, mock_slogger, mock_job_class, mock_segment_class):
+    @patch("cvat.apps.engine.task.models.Segment")
+    @patch("cvat.apps.engine.task.models.Job")
+    @patch("cvat.apps.engine.task.slogger")
+    def test_create_segments_and_jobs_within_limit(
+        self, mock_slogger, mock_job_class, mock_segment_class
+    ):
         mock_segment = MagicMock()
         mock_segment_class.return_value = mock_segment
         mock_job = MagicMock()
@@ -133,9 +135,9 @@ class TestCreateSegmentsAndJobs(TestCase):
         self.assertIn("5", str(context.exception))
 
     @override_settings(MAX_JOBS_PER_TASK=50)
-    @patch('cvat.apps.engine.task.models.Segment')
-    @patch('cvat.apps.engine.task.models.Job')
-    @patch('cvat.apps.engine.task.slogger')
+    @patch("cvat.apps.engine.task.models.Segment")
+    @patch("cvat.apps.engine.task.models.Job")
+    @patch("cvat.apps.engine.task.slogger")
     def test_create_segments_and_jobs_with_consensus_replicas(
         self, mock_slogger, mock_job_class, mock_segment_class
     ):
@@ -168,16 +170,16 @@ class TestCreateSegmentsAndJobs(TestCase):
         self.assertIn("20", str(context.exception))
 
     @override_settings(MAX_JOBS_PER_TASK=15)
-    @patch('cvat.apps.engine.task.models.Segment')
-    @patch('cvat.apps.engine.task.models.Job')
-    @patch('cvat.apps.engine.task.slogger')
+    @patch("cvat.apps.engine.task.models.Segment")
+    @patch("cvat.apps.engine.task.models.Job")
+    @patch("cvat.apps.engine.task.slogger")
     def test_create_segments_and_jobs_with_job_file_mapping(
         self, mock_slogger, mock_job_class, mock_segment_class
     ):
         job_file_mapping = [
-            ['file1.jpg', 'file2.jpg'],
-            ['file3.jpg', 'file4.jpg', 'file5.jpg'],
-            ['file6.jpg'],
+            ["file1.jpg", "file2.jpg"],
+            ["file3.jpg", "file4.jpg", "file5.jpg"],
+            ["file6.jpg"],
         ]
 
         mock_segment = MagicMock()
@@ -197,9 +199,9 @@ class TestCreateSegmentsAndJobs(TestCase):
     @override_settings(MAX_JOBS_PER_TASK=2)
     def test_create_segments_and_jobs_with_job_file_mapping_exceeds_limit(self):
         job_file_mapping = [
-            ['file1.jpg', 'file2.jpg'],
-            ['file3.jpg', 'file4.jpg', 'file5.jpg'],
-            ['file6.jpg'],
+            ["file1.jpg", "file2.jpg"],
+            ["file3.jpg", "file4.jpg", "file5.jpg"],
+            ["file6.jpg"],
         ]
 
         with self.assertRaises(ValueError) as context:
