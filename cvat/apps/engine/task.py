@@ -69,6 +69,7 @@ class SegmentsParams(NamedTuple):
     segments: Iterator[SegmentParams]
     segment_size: int
     overlap: int
+    job_size: Optional[int] = None
 
 def _copy_data_from_share_point(
     server_files: list[str],
@@ -134,6 +135,7 @@ def _generate_segment_params(
         segments = _segments()
         segment_size = 0
         overlap = 0
+        job_size = len(job_file_mapping)
     else:
         # The segments have equal parameters
         if data_size is None:
@@ -148,6 +150,8 @@ def _generate_segment_params(
                 else 5 if db_task.mode == 'interpolation' else 0,
             segment_size // 2,
         )
+        segments_range = range(0, data_size - overlap, segment_size - overlap)
+        job_size = len(list(segments_range))
 
         segments = (
             SegmentParams(
@@ -155,10 +159,11 @@ def _generate_segment_params(
                 stop_frame=min(start_frame + segment_size - 1, data_size - 1),
                 type=models.SegmentType.RANGE
             )
-            for start_frame in range(0, data_size - overlap, segment_size - overlap)
+            for start_frame in segments_range
         )
 
-    return SegmentsParams(segments, segment_size, overlap)
+    return SegmentsParams(segments, segment_size, overlap, job_size)
+
 
 def _create_segments_and_jobs(
     db_task: models.Task,
@@ -168,15 +173,19 @@ def _create_segments_and_jobs(
 ):
     update_status_callback('Task is being saved in database')
 
-    segments, segment_size, overlap = _generate_segment_params(
+    segments, segment_size, overlap, job_size = _generate_segment_params(
         db_task=db_task, job_file_mapping=job_file_mapping,
     )
     db_task.segment_size = segment_size
     db_task.overlap = overlap
 
-    segments_size = db_task.data.size
-    if segments_size > settings.MAX_JOBS_PER_TASK:
-        raise ValueError("Too many segments would be created for the task.")
+    job_size_total = job_size * (db_task.consensus_replicas + 1)
+    if job_size_total > settings.MAX_JOBS_PER_TASK:
+        raise ValueError(
+            "Too many jobs would be created for the task. "
+            f"Current total: {job_size_total}, "
+            f"maximum allowed: {settings.MAX_JOBS_PER_TASK}."
+        )
 
     for segment_idx, segment_params in enumerate(segments):
         slogger.glob.info(
@@ -202,6 +211,7 @@ def _create_segments_and_jobs(
 
     db_task.data.save()
     db_task.save()
+
 
 def _count_files(data):
     share_root = settings.SHARE_ROOT
