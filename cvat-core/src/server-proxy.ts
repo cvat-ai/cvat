@@ -581,7 +581,7 @@ async function getApiTokens(filter: APIApiTokensFilter = {}): Promise<PaginatedR
 
     let response = null;
     try {
-        response = await Axios.get(`${backendAPI}/auth/api_tokens`, {
+        response = await Axios.get(`${backendAPI}/auth/access_tokens`, {
             params: {
                 ...filter,
             },
@@ -599,7 +599,7 @@ async function createApiToken(tokenData: SerializedApiToken): Promise<Serialized
 
     let response = null;
     try {
-        response = await Axios.post(`${backendAPI}/auth/api_tokens`, tokenData);
+        response = await Axios.post(`${backendAPI}/auth/access_tokens`, tokenData);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -615,7 +615,7 @@ async function updateApiToken(
 
     let response = null;
     try {
-        response = await Axios.patch(`${backendAPI}/auth/api_tokens/${id}`, tokenData);
+        response = await Axios.patch(`${backendAPI}/auth/access_tokens/${id}`, tokenData);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -627,7 +627,7 @@ async function revokeApiToken(id: number): Promise<void> {
     const { backendAPI } = config;
 
     try {
-        await Axios.delete(`${backendAPI}/auth/api_tokens/${id}`);
+        await Axios.delete(`${backendAPI}/auth/access_tokens/${id}`);
     } catch (errorData) {
         throw generateError(errorData);
     }
