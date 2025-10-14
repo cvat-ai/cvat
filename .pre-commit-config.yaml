@@ -1,11 +1,21 @@
 repos:
-  - repo: https://github.com/psf/black
-    rev: 25.9.0
+  - repo: local
     hooks:
       - id: black
+        name: black (local)
+        entry: black
+        language: system
+        types: [python]
+        args: ["--line-length=88"]
 
-  - repo: https://github.com/pycqa/isort
-    rev: 6.1.0
-    hooks:
       - id: isort
-        name: isort (python)
+        name: isort (local)
+        entry: isort
+        language: system
+        types: [python]
+        args: ["--profile", "black"]
+
+      - id: husky
+        name: run husky pre-commit
+        entry: npx husky run pre-commit
+        language: system
