@@ -149,6 +149,10 @@ High-level SDK supports 2 authentication options:
 Password authentication doesn't require a special configuration, but for better security it's
 recommended to use a Personal Access Token (PAT) instead, if possible.
 
+Personal Access Token (PAT) authentication requires a token that can be configured
+in the user settings section in the UI. It is the recommended authentication option
+for most clients.
+
 {{< tabpane text=true >}}
 
 {{%tab header="Password authentication" %}}
