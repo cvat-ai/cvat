@@ -78,6 +78,7 @@ from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 from utils.dataset_manifest.utils import PcdReader, find_related_images
 
 from .utils import check_annotation_response, compare_objects
+from ...redis_handler.serializers import RequestStatus
 
 # suppress av warnings
 logging.getLogger("libav").setLevel(logging.ERROR)
@@ -7867,3 +7868,155 @@ class TaskChangeCloudStorageTestCase(_CloudStorageTestBase):
                 response.status_code,
                 response.content,
             )
+
+
+class TaskJobLimitAPITestCase(ApiTestBase):
+    """
+    Tests for MAX_JOBS_PER_TASK validation at the REST API level
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+
+    def _create_task(self, data, image_data, user=None):
+        """Helper method to create a task via REST API"""
+        user = user or self.admin
+        with ForceLogin(user, self.client):
+            response = self.client.post("/api/tasks", data=data, format="json")
+            if response.status_code != status.HTTP_201_CREATED:
+                return response
+
+            tid = response.data["id"]
+            response = self.client.post(f"/api/tasks/{tid}/data", data=image_data)
+
+            rq_id = response.data["rq_id"]
+            response = self.client.get(f"/api/requests/{rq_id}")
+            return response
+
+    @override_settings(MAX_JOBS_PER_TASK=5)
+    def test_create_task_within_job_limit(self):
+        data = {
+            "name": "test_create_task_within_job_limit",
+            "labels": [{"name": "car"}],
+            "segment_size": 10,  # Will create 5 jobs for 50 images
+        }
+
+        image_files = {}
+        for i in range(50):
+            image_files[f"client_files[{i}]"] = generate_image_file(f"test_{i}.jpg")
+
+        image_data = {
+            **image_files,
+            "image_quality": 75,
+        }
+
+        response = self._create_task(data, image_data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['status'], RequestStatus.FINISHED)
+
+        task_id = Task.objects.latest("id").id
+        job_count = Job.objects.filter(segment__task_id=task_id).count()
+        self.assertEqual(job_count, 5)
+
+    @override_settings(MAX_JOBS_PER_TASK=5)
+    def test_create_task_exceeds_job_limit(self):
+        data = {
+            "name": "test_create_task_exceeds_job_limit",
+            "labels": [{"name": "car"}],
+            "segment_size": 10,  # Will try to create 10 jobs for 100 images
+        }
+
+        image_files = {}
+        for i in range(100):
+            image_files[f"client_files[{i}]"] = generate_image_file(f"test_{i}.jpg")
+
+        image_data = {
+            **image_files,
+            "image_quality": 75,
+        }
+
+        response = self._create_task(data, image_data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['status'], RequestStatus.FAILED)
+
+        task_id = Task.objects.latest("id").id
+        job_count = Job.objects.filter(segment__task_id=task_id).count()
+        self.assertEqual(job_count, 0)
+
+    @override_settings(MAX_JOBS_PER_TASK=10)
+    def test_create_task_exactly_at_job_limit(self):
+        data = {
+            "name": "test_create_task_exactly_at_job_limit",
+            "labels": [{"name": "car"}],
+            "segment_size": 10,  # Will create exactly 10 jobs for 100 images
+        }
+
+        image_files = {}
+        for i in range(100):
+            image_files[f"client_files[{i}]"] = generate_image_file(f"test_{i}.jpg")
+
+        image_data = {
+            **image_files,
+            "image_quality": 75,
+        }
+
+        response = self._create_task(data, image_data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['status'], RequestStatus.FINISHED)
+
+        task_id = Task.objects.latest("id").id
+        job_count = Job.objects.filter(segment__task_id=task_id).count()
+        self.assertEqual(job_count, 10)
+
+    @override_settings(MAX_JOBS_PER_TASK=30)
+    def test_create_task_with_consensus_exactly_at_job_limit(self):
+        data = {
+            "name": "test_create_task_with_consensus_exactly_at_job_limit",
+            "labels": [{"name": "car"}],
+            "segment_size": 10,
+            "consensus_replicas": 2,
+        }
+
+        image_files = {}
+        for i in range(100):
+            image_files[f"client_files[{i}]"] = generate_image_file(f"test_{i}.jpg")
+
+        image_data = {
+            **image_files,
+            "image_quality": 75,
+        }
+
+        response = self._create_task(data, image_data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['status'], RequestStatus.FINISHED)
+
+        task_id = Task.objects.latest("id").id
+        job_count = Job.objects.filter(segment__task_id=task_id).count()
+        self.assertEqual(job_count, 30)
+
+    @override_settings(MAX_JOBS_PER_TASK=10)
+    def test_create_task_with_consensus_exceeds_job_limit(self):
+        data = {
+            "name": "test_create_task_with_consensus_exceeds_job_limit",
+            "labels": [{"name": "car"}],
+            "segment_size": 10,
+            "consensus_replicas": 2,
+        }
+
+        image_files = {}
+        for i in range(100):
+            image_files[f"client_files[{i}]"] = generate_image_file(f"test_{i}.jpg")
+
+        image_data = {
+            **image_files,
+            "image_quality": 75,
+        }
+
+        response = self._create_task(data, image_data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['status'], RequestStatus.FAILED)
+
+        task_id = Task.objects.latest("id").id
+        job_count = Job.objects.filter(segment__task_id=task_id).count()
+        self.assertEqual(job_count, 0)
