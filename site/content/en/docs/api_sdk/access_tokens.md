@@ -38,15 +38,41 @@ are automatically removed after some time period of inactivity (1 year by defaul
 > When using a self-hosted version, the staleness period can be configured
 > via the `ACCESS_TOKEN_STALE_PERIOD` setting.
 
-### How to create a Personal Access Token (PAT)
+### Permissions
+
+It's possible to configure allowed operations for a token. Currently, there is an option to
+make a token Read-only or Read/Write capable. A Read-only token will only be allowed safe requests
+that do not modify the server state.
+
+> For security reasons, token-authenticated clients are not allowed to modify tokens
+> and user details, regardless of the configuration.
+
+### How to create a Personal Access Token
 
 1. Open the user settings page
-2. Navigate to the authentication section
+
+  ![User profile menu item](/images/user_menu_profile_nav.png)
+
+2. Navigate to the "Security" section
+
+  ![User profile - security tab](/images/user_page_security_nav.png)
+
 3. Create a new token using the "+" button
-4. Configure the name, expiration date, and permissions for the new token.
+
+  ![Access Token create button](/images/access_token_list_create_button.png)
+
+4. Configure the name, expiration date, and permissions for the new token. Once ready, click "Save".
+
+  ![Access Token edit dialog](/images/access_token_new_dialog.png)
+
 5. You will be shown the private key of the new token. Make sure to securely safe this value,
    it will not be available in CVAT after the dialog window is closed.
+
+  ![Access Token private key dialog](/images/access_token_private_key.png)
+
 6. Once the value is saved, close the dialog window.
+
+The new token is ready for use.
 
 ### How to revoke Personal Access Tokens
 
@@ -54,5 +80,19 @@ Revocation allows you to disallow further uses for a token. Once a token is revo
 be restored.
 
 1. Open the user settings page
-2. Navigate to the authentication section
+
+  ![User profile menu item](/images/user_menu_profile_nav.png)
+
+2. Navigate to the "Security" section
+
+  ![User profile - security tab](/images/user_page_security_nav.png)
+
 3. Click the "Revoke" button for the token.
+
+  ![Access Token revoke button](/images/access_token_revoke_button.png)
+
+4. Confirm revocation in the dialog
+
+  ![Access Token revoke dialog](/images/access_token_revoke_dialog.png)
+
+The token will not be available for use anymore.
