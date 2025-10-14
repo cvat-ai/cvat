@@ -51,8 +51,8 @@ class TestClientUsecases:
 
         assert not self.client.has_credentials()
 
-    def test_can_login_with_pat_auth(self, api_tokens_by_username):
-        user, token = next((u, t) for u, ts in api_tokens_by_username.items() for t in ts)
+    def test_can_login_with_pat_auth(self, access_tokens_by_username):
+        user, token = next((u, t) for u, ts in access_tokens_by_username.items() for t in ts)
 
         self.client.login(AccessTokenCredentials(token["private_key"]))
 
@@ -60,8 +60,8 @@ class TestClientUsecases:
 
         assert self.client.has_credentials()
 
-    def test_can_logout_after_pat_login(self, api_tokens):
-        token = next(t for t in api_tokens)
+    def test_can_logout_after_pat_login(self, access_tokens):
+        token = next(t for t in access_tokens)
 
         self.client.login(AccessTokenCredentials(token["private_key"]))
 
@@ -78,8 +78,8 @@ class TestClientUsecases:
 
 
 class TestClientFactory:
-    def test_can_make_client_with_pat_auth(self, api_tokens_by_username):
-        user, token = next((u, t) for u, ts in api_tokens_by_username.items() for t in ts)
+    def test_can_make_client_with_pat_auth(self, access_tokens_by_username):
+        user, token = next((u, t) for u, ts in access_tokens_by_username.items() for t in ts)
         host, port = BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)
 
         with make_client(host=host, port=port, access_token=token["private_key"]) as client:

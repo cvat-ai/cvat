@@ -36,6 +36,7 @@ def _make_request_headers(api_client: ApiClient) -> dict[str, str]:
 
     return headers
 
+
 def _upload_with_tus(
     api_client: ApiClient,
     create_url: str,
