@@ -377,6 +377,12 @@ MigrationsHealthCheck    ... working
 OPAHealthCheck           ... working
 ```
 
+Configuring Disk Usage Health Check
+
+- `CVAT_HEALTH_DISK_USAGE_MAX`: This environment variable specifies the maximum allowed disk usage percentage
+  for the volume where CVAT is installed.
+  If the disk usage exceeds this threshold, the DiskUsage health check will fail.
+  The value should be an integer representing a percentage (e.g., 90 for 90%). Read more about how to enable [health checks](#cvat-health-check-failed-because-of-too-low-free-disk-space).
 ### Deploying CVAT behind a proxy
 
 If you deploy CVAT behind a proxy and do not plan to use any of [serverless functions](#semi-automatic-and-automatic-annotation)
@@ -719,4 +725,30 @@ and restart docker:
 
 ```shell
 docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
+```
+
+### CVAT health check failed because of too low free disk space
+
+During CVAT startup, it is possible to get an error like this:
+
+```
+health_check.exceptions.ServiceWarning: warning: <server name> 94.8% disk usage exceeds 90%
+```
+
+This error means that there is not enough free disk space on the CVAT data storage volume.
+
+By default, CVAT requires at least 10% free disk space. If you want to change the default value,
+it is possible to configure the required amount of free space used in such checks.
+
+Set the environment variable:
+
+```shell
+export CVAT_HEALTH_DISK_USAGE_MAX=90
+```
+
+and add an extra environment variable to the `docker-compose.yml` file:
+
+```yaml
+x-backend-env: &backend-env
+  CVAT_HEALTH_DISK_USAGE_MAX: '${CVAT_HEALTH_DISK_USAGE_MAX:-90}'
 ```

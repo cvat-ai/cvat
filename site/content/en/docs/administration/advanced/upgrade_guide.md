@@ -56,6 +56,13 @@ To upgrade CVAT, follow these steps:
   docker logs cvat_server -f
   ```
 
+## How to upgrade CVAT from v2.46.0 to v2.47.0.
+
+In version 2.47.0, CVAT upgraded the FFmpeg library it uses to split videos into frames from 4.3.1 to 8.0.
+There is a small chance that some video files may not be processed differently by the new FFmpeg version.
+
+If one of your tasks is affected, follow the guide in ./utils/ffmpeg_compatibility/README.md
+
 ## Upgrade CVAT after v2.26.0
 
 In version 2.26.0, CVAT changed the location where the export cache is stored.

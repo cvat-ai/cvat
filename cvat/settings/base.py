@@ -792,3 +792,6 @@ if ONE_RUNNING_JOB_IN_QUEUE_PER_USER:
     )
 
 USER_LAST_ACTIVITY_UPDATE_MIN_INTERVAL = timedelta(days=1)
+
+# Health check settings
+HEALTH_CHECK = {"DISK_USAGE_MAX": int(os.getenv("CVAT_HEALTH_DISK_USAGE_MAX", 90))}

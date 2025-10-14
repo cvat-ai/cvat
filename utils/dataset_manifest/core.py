@@ -36,16 +36,13 @@ class VideoStreamReader:
             for packet in container.demux(video_stream):
                 for frame in packet.decode():
                     # check type of first frame
-                    if not frame.pict_type.name == "I":
+                    if frame.pict_type != av.video.frame.PictureType.I:
                         raise InvalidVideoError("The first frame is not a key frame")
 
                     # get video resolution
-                    if video_stream.metadata.get("rotate"):
+                    if frame.rotation:
                         frame = av.VideoFrame().from_ndarray(
-                            rotate_image(
-                                frame.to_ndarray(format="bgr24"),
-                                360 - int(container.streams.video[0].metadata.get("rotate")),
-                            ),
+                            rotate_image(frame.to_ndarray(format="bgr24"), frame.rotation),
                             format="bgr24",
                         )
                     self.height, self.width = (frame.height, frame.width)
