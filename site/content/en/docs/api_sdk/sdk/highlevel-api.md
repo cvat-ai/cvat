@@ -151,7 +151,7 @@ recommended to use a Personal Access Token (PAT) instead, if possible.
 
 Personal Access Token (PAT) authentication requires a token that can be configured
 in the user settings section in the UI. It is the recommended authentication option
-for most clients.
+for most clients. {{< ilink "/docs/api_sdk/access_tokens" "Read more." >}}
 
 {{< tabpane text=true >}}
 

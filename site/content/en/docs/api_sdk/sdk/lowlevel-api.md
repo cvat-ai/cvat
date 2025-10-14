@@ -143,7 +143,7 @@ recommended to use other authentication options instead.
 
 Personal Access Token (PAT) authentication requires a token that can be configured
 in the user settings section in the UI. It is the recommended authentication option
-for most clients.
+for most clients. {{< ilink "/docs/api_sdk/access_tokens" "Read more." >}}
 
 Session authentication requires a session ID and a CSRF token, which can be obtained after
 logging in via the `/api/auth/login` endpoint using the basic authentication credentials.
