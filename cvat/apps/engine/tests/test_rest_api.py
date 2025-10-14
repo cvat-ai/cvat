@@ -77,7 +77,7 @@ from cvat.apps.engine.tests.utils import (
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 from utils.dataset_manifest.utils import PcdReader, find_related_images
 
-from .utils import check_annotation_response, compare_objects
+from .utils import ASSETS_DIR, check_annotation_response, compare_objects
 
 # suppress av warnings
 logging.getLogger("libav").setLevel(logging.ERROR)
@@ -3050,9 +3050,8 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
         )
 
         filename = "test_pointcloud_pcd.zip"
-        source_path = os.path.join(os.path.dirname(__file__), "assets", filename)
         path = os.path.join(settings.SHARE_ROOT, filename)
-        shutil.copyfile(source_path, path)
+        shutil.copyfile(ASSETS_DIR / filename, path)
         cls.media_data.append(
             {
                 "image_quality": 75,
@@ -3061,9 +3060,8 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
         )
 
         filename = "test_velodyne_points.zip"
-        source_path = os.path.join(os.path.dirname(__file__), "assets", filename)
         path = os.path.join(settings.SHARE_ROOT, filename)
-        shutil.copyfile(source_path, path)
+        shutil.copyfile(ASSETS_DIR / filename, path)
         cls.media_data.append(
             {
                 "image_quality": 75,
@@ -3616,8 +3614,7 @@ class TaskDataAPITestCase(ApiTestBase):
         cls._share_files.append(filename)
 
         filename = "test_rotated_90_video.mp4"
-        path = os.path.join(os.path.dirname(__file__), "assets", "test_rotated_90_video.mp4")
-        with av.open(path, "r") as container:
+        with av.open(ASSETS_DIR / "test_rotated_90_video.mp4", "r") as container:
             for frame in container.decode(video=0):
                 # pyav ignores rotation record in metadata when decoding frames
                 img_sizes = [(frame.height, frame.width)] * container.streams.video[0].frames
@@ -3642,9 +3639,8 @@ class TaskDataAPITestCase(ApiTestBase):
         cls._share_files.append(filename)
 
         filename = "test_pointcloud_pcd.zip"
-        path = os.path.join(os.path.dirname(__file__), "assets", filename)
         image_sizes = []
-        with zipfile.ZipFile(path) as zip_file:
+        with zipfile.ZipFile(ASSETS_DIR / filename) as zip_file:
             for info in zip_file.namelist():
                 if not info.endswith(".pcd"):
                     continue
@@ -3657,7 +3653,7 @@ class TaskDataAPITestCase(ApiTestBase):
         cls._share_image_sizes[filename] = image_sizes
 
         filename = "test_rar.rar"
-        source_path = os.path.join(os.path.dirname(__file__), "assets", filename)
+        source_path = ASSETS_DIR / filename
         path = os.path.join(settings.SHARE_ROOT, filename)
         shutil.copyfile(source_path, path)
         image_sizes = []
@@ -3669,9 +3665,8 @@ class TaskDataAPITestCase(ApiTestBase):
         cls._share_files.append(filename)
 
         filename = "test_velodyne_points.zip"
-        path = os.path.join(os.path.dirname(__file__), "assets", filename)
         image_sizes = []
-        with zipfile.ZipFile(path) as zip_file:
+        with zipfile.ZipFile(ASSETS_DIR / filename) as zip_file:
             for info in zip_file.namelist():
                 if not info.endswith(".bin"):
                     continue
@@ -4619,9 +4614,7 @@ class TaskDataAPITestCase(ApiTestBase):
         }
 
         task_data = {
-            "client_files[0]": open(
-                os.path.join(os.path.dirname(__file__), "assets", "test_rotated_90_video.mp4"), "rb"
-            ),
+            "client_files[0]": open(ASSETS_DIR / "test_rotated_90_video.mp4", "rb"),
             "image_quality": 70,
             "use_zip_chunks": True,
         }
@@ -4649,9 +4642,7 @@ class TaskDataAPITestCase(ApiTestBase):
         }
 
         task_data = {
-            "client_files[0]": open(
-                os.path.join(os.path.dirname(__file__), "assets", "test_rotated_90_video.mp4"), "rb"
-            ),
+            "client_files[0]": open(ASSETS_DIR / "test_rotated_90_video.mp4", "rb"),
             "image_quality": 70,
             "use_cache": True,
             "use_zip_chunks": True,
@@ -4701,9 +4692,7 @@ class TaskDataAPITestCase(ApiTestBase):
         }
 
         task_data = {
-            "client_files[0]": open(
-                os.path.join(os.path.dirname(__file__), "assets", "test_pointcloud_pcd.zip"), "rb"
-            ),
+            "client_files[0]": open(ASSETS_DIR / "test_pointcloud_pcd.zip", "rb"),
             "image_quality": 100,
         }
         image_sizes = self._share_image_sizes["test_pointcloud_pcd.zip"]
@@ -4729,9 +4718,7 @@ class TaskDataAPITestCase(ApiTestBase):
         }
 
         task_data = {
-            "client_files[0]": open(
-                os.path.join(os.path.dirname(__file__), "assets", "test_velodyne_points.zip"), "rb"
-            ),
+            "client_files[0]": open(ASSETS_DIR / "test_velodyne_points.zip", "rb"),
             "image_quality": 100,
         }
         image_sizes = self._share_image_sizes["test_velodyne_points.zip"]
@@ -5597,14 +5584,11 @@ class JobAnnotationAPITestCase(ApiTestBase):
             if dimension == DimensionType.DIM_3D:
                 images = {
                     "client_files[0]": open(
-                        os.path.join(
-                            os.path.dirname(__file__),
-                            "assets",
-                            (
-                                "test_pointcloud_pcd.zip"
-                                if annotation_format == "Sly Point Cloud Format 1.0"
-                                else "test_velodyne_points.zip"
-                            ),
+                        ASSETS_DIR
+                        / (
+                            "test_pointcloud_pcd.zip"
+                            if annotation_format == "Sly Point Cloud Format 1.0"
+                            else "test_velodyne_points.zip"
                         ),
                         "rb",
                     ),
