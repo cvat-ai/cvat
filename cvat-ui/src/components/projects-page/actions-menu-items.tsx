@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom';
 import { MenuProps } from 'antd/lib/menu';
 import { usePlugins } from 'utils/hooks';
 import { CVATMenuEditLabel } from 'components/common/cvat-menu-edit-label';
-import { LabelWithCountHOC } from 'components/common/label-with-count';
+import { LabelWithCountHOF } from 'components/common/label-with-count';
 
 interface MenuItemsData {
     projectId: number;
@@ -38,7 +38,7 @@ export default function ProjectActionsItems(
     const isBulkMode = selectedIds.length > 1;
     const bulkAllowedKeys = ['edit_assignee', 'backup-project', 'export-dataset', 'delete'];
     const isDisabled = (key: string): boolean => isBulkMode && !bulkAllowedKeys.includes(key);
-    const withCount = LabelWithCountHOC(selectedIds, bulkAllowedKeys);
+    const withCount = LabelWithCountHOF(selectedIds, bulkAllowedKeys);
 
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
 
@@ -93,11 +93,17 @@ export default function ProjectActionsItems(
     }, 69]);
 
     menuItems.push([{
+        key: 'edit_organization',
+        onClick: () => startEditField('organization'),
+        label: <CVATMenuEditLabel>Organization</CVATMenuEditLabel>,
+    }, 70]);
+
+    menuItems.push([{
         key: 'delete',
         onClick: onDeleteProject,
         label: withCount('Delete', 'delete'),
         disabled: isDisabled('delete'),
-    }, 70]);
+    }, 80]);
 
     menuItems.push(
         ...pluginActions.map(({ component: Component, weight }, index) => {

@@ -2,16 +2,12 @@
 
 attrs==21.4.0
 
-# This is the last version of av that supports ffmpeg we depend on.
-# Changing ffmpeg is undesirable, as there might be video decoding differences
-# between versions.
-# TODO: try to move to the newer version
-av==9.2.0
+av==15.1.0
 
 azure-storage-blob==12.13.0
 boto3~=1.37
 clickhouse-connect==0.6.8
-datumaro @ git+https://github.com/cvat-ai/datumaro.git@265bf06a4f742235828f9f53f7f7511a10217437
+datumaro @ git+https://github.com/cvat-ai/datumaro.git@866f27c70970467b169c81de33678d3bf8dcfca8
 dj-pagination==2.5.0
 # Despite direct indication allauth in requirements we should keep 'with_social' for dj-rest-auth
 # to avoid possible further versions conflicts (we use registration functionality)
@@ -29,10 +25,9 @@ django-rq==2.8.1
 django-sendfile2==0.7.0
 Django~=4.2.7
 djangorestframework>=3.15.2,<4
-djangorestframework-api-key==2.3.0
+djangorestframework-api-key~=3.1
 drf-spectacular==0.26.2
-furl==2.1.0
-google-cloud-storage==1.42.0
+google-cloud-storage~=3.0
 lxml>=5.2.1,<6
 natsort==8.0.0
 numpy~=1.22.2

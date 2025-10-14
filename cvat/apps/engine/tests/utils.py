@@ -6,7 +6,9 @@ import itertools
 import logging
 import os
 import shutil
-from collections.abc import Iterator, Sequence
+import unittest
+import unittest.mock
+from collections.abc import Generator, Iterator, Sequence
 from contextlib import contextmanager
 from copy import deepcopy
 from io import BytesIO
@@ -23,6 +25,7 @@ import numpy as np
 from django.conf import settings
 from django.core.cache import caches
 from django.http.response import HttpResponse
+from django.utils.module_loading import import_string
 from PIL import Image
 from rest_framework import status
 from rest_framework.response import Response
@@ -831,3 +834,38 @@ def check_annotation_response(
         )
         print(e)
         raise
+
+
+@contextmanager
+def mock_method(
+    obj: str | Any, attr: str, *, new: Callable | Any = unittest.mock.DEFAULT
+) -> Generator[unittest.mock.Mock, None, None]:
+    """
+    Allows to mock a class instance method, while still be able to call the original implementation.
+
+    If 'new' is unittest.mock.DEFAULT, the original implementation is called.
+    Otherwise, the replacement is called. The mocked function returns the value of the new or
+    the original method call.
+    """
+    # With unittest.mock.Mock, using "wraps" or other callable binding options results in "self"
+    # being consumed by the mock. This disallows using it for, e.g., transparent call recording.
+
+    if isinstance(obj, str):
+        obj = import_string(obj)
+
+    old_method = getattr(obj, attr)
+
+    if new is unittest.mock.DEFAULT:
+        new = old_method
+
+    m = unittest.mock.Mock(spec=old_method)
+
+    def call_wrapper(self, *args, **kwargs):
+        m(*args, **kwargs)
+        return new(self, *args, **kwargs)
+
+    try:
+        setattr(obj, attr, call_wrapper)
+        yield m
+    finally:
+        setattr(obj, attr, old_method)

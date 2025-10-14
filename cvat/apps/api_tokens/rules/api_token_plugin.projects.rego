@@ -59,16 +59,10 @@ import data.utils
 default allow := false
 
 allow if {
-    not utils.api_token.is_api_token
-}
-
-allow if {
-    utils.api_token.is_api_token
     input.scope in {utils.VIEW, utils.LIST, utils.DOWNLOAD_EXPORTED_FILE}
 }
 
 allow if {
-    utils.api_token.is_api_token
     input.scope in {
         utils.CREATE, utils.UPDATE, utils.DELETE,
         utils.IMPORT_DATASET, utils.IMPORT_BACKUP,
@@ -77,19 +71,16 @@ allow if {
 }
 
 allow if {
-    utils.api_token.is_api_token
     startswith(input.scope, "update:")
     not input.auth.token.read_only
 }
 
 allow if {
     # safe exports are allowed
-    utils.api_token.is_api_token
     utils.exportable_resource.is_local_export
 }
 
 allow if {
-    utils.api_token.is_api_token
     utils.exportable_resource.is_cloud_export
     not input.auth.token.read_only
 }

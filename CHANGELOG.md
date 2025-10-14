@@ -16,6 +16,234 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.46.1'></a>
+## \[2.46.1\] - 2025-10-09
+
+### Security
+
+- Bump Redis version to 7.2.11 to address CVE-2025-49844
+  (<https://github.com/cvat-ai/cvat/pull/9876>)
+
+<a id='changelog-2.46.0'></a>
+## \[2.46.0\] - 2025-10-08
+
+### Added
+
+- Support for related images in 2d and 3d tasks bound to cloud storages
+  (<https://github.com/cvat-ai/cvat/pull/9757>)
+- Support for 3d tasks with non-archived files bound to cloud storages
+  (<https://github.com/cvat-ai/cvat/pull/9757>)
+- \[Dataset manifest tool\] now can handle 3d datasets in all 4 supported file layouts
+  (<https://github.com/cvat-ai/cvat/pull/9757>)
+
+### Changed
+
+- Enabled validation of the frame `width` and `height` fields in manifests
+  (now required both for 2d and 3d dataset manifests)
+  (<https://github.com/cvat-ai/cvat/pull/9757>)
+- Dataset manifests now can include the `original_name` meta field with the server file name
+  (<https://github.com/cvat-ai/cvat/pull/9757>)
+
+- Tasks can now be created without specifying the labels in advance
+  (<https://github.com/cvat-ai/cvat/pull/9822>)
+
+- \[SDK\] Removed the `tuspy` dependency
+  (<https://github.com/cvat-ai/cvat/pull/9824>)
+
+- Bump helm chart version, using images from our public repo now
+  (<https://github.com/cvat-ai/cvat/pull/9832>)
+
+- The `CVAT_ALLOW_STATIC_CACHE` server configuration parameter
+  will no longer affect the existing tasks. It will only affect new tasks,
+  as stated in the description. Existing tasks will use chunks as
+  configured in the task.
+  (<https://github.com/cvat-ai/cvat/pull/9831>)
+
+### Deprecated
+
+- Excessive filtering for media files containing "related_images" in the path during task creation.
+  Only the actual related images wrt. the input media layout will be filtered out in the future.
+  (<https://github.com/cvat-ai/cvat/pull/9757>)
+
+### Removed
+
+- Removed non-functional API URL signing support
+  (<https://github.com/cvat-ai/cvat/pull/9867>)
+
+### Fixed
+
+- Related image detection for 2d and 3d media in all 5 supported layouts
+  (<https://github.com/cvat-ai/cvat/pull/9757>)
+- Improved documentation about supported task file layouts with related images
+  (<https://github.com/cvat-ai/cvat/pull/9757>)
+- Improved error messages for invalid media in task creation
+  (<https://github.com/cvat-ai/cvat/pull/9757>)
+
+- Re-enables helm chart compatibility with K8s pre-release versions
+  (<https://github.com/cvat-ai/cvat/pull/9841>)
+
+- Model card clipping on windows with small height
+  (<https://github.com/cvat-ai/cvat/pull/9852>)
+
+- UI error `Cannot read properties of undefined (reading 'points')` occurring in various scenarios
+  (<https://github.com/cvat-ai/cvat/pull/9855>)
+
+- Fixed incorrect class names in some user messages
+  (<https://github.com/cvat-ai/cvat/pull/9861>)
+
+- Updating organization description does not work on the organization page
+  (<https://github.com/cvat-ai/cvat/pull/9863>)
+
+- Bulk delete for cloud storages was deleting only one instance
+  (<https://github.com/cvat-ai/cvat/pull/9862>)
+
+- Fixed backend failing to start when analytics are disabled
+  (<https://github.com/cvat-ai/cvat/pull/9845>)
+
+- A possible error when trying to merge tag annotations via consensus
+  (<https://github.com/cvat-ai/cvat/pull/9865>)
+
+- Worked around an issue that may cause an error message to be replaced
+  with "No module named 'pkg_resources'"
+  (<https://github.com/cvat-ai/cvat/pull/9869>)
+
+<a id='changelog-2.45.0'></a>
+## \[2.45.0\] - 2025-09-17
+
+### Added
+
+- Basic user profile page that allows to change personal info, change password
+  (<https://github.com/cvat-ai/cvat/pull/9789>)
+
+- \[Helm\] Set fsGroup for the Kvrocks pod to GID of the user the process runs as
+  (<https://github.com/cvat-ai/cvat/pull/9823>)
+
+### Fixed
+
+- Fixed spacing in task creation status messages
+  (<https://github.com/cvat-ai/cvat/pull/9812>)
+
+- Unaccepted organization invitations could not be deleted
+  (<https://github.com/cvat-ai/cvat/pull/9819>)
+
+- \[SDK\] Fixed the `torchvision_instance_segmentation` AA function
+  returning invalid polygons in cases when the underlying model detects a very
+  small object
+  (<https://github.com/cvat-ai/cvat/pull/9820>)
+
+- Reduced RAM usage during task export
+  (<https://github.com/cvat-ai/cvat/pull/9782>)
+
+<a id='changelog-2.44.2'></a>
+## \[2.44.2\] - 2025-09-08
+
+### Fixed
+
+- User may create a skeleton with invalid structure in configurator, leads to UI crash
+  (<https://github.com/cvat-ai/cvat/pull/9784>)
+
+- Crash on job export if the job contains tags or is not the first job in the task
+  (<https://github.com/cvat-ai/cvat/pull/9790>)
+
+<a id='changelog-2.44.1'></a>
+## \[2.44.1\] - 2025-09-02
+
+### Fixed
+
+- Attribute/label input fields are not disabled when the object is locked
+  (<https://github.com/cvat-ai/cvat/pull/9783>)
+
+<a id='changelog-2.44.0'></a>
+## \[2.44.0\] - 2025-09-01
+
+### Added
+
+- Introduced bulk actions to perform operations on multiple selected resources at once
+  - Multi-select resources using click with Ctrl, Shift or using Select all button at the top bar
+  - Supported resources: Tasks, Jobs, Projects, Requests, Organization members, Webhooks, Cloud Storages
+  - Supported operations: Export, Backup, Delete, Download, Change: Assignee, State, Stage, Role
+  (<https://github.com/cvat-ai/cvat/pull/9582>)
+
+- \[SDK\] Auto-annotation functions are now able to output tags
+  (<https://github.com/cvat-ai/cvat/pull/9671>)
+
+- Now it is possible to move projects and tasks between organizations
+  (<https://github.com/cvat-ai/cvat/pull/9528>)
+
+- Improved validation errors for invalid json filter queries
+  (<https://github.com/cvat-ai/cvat/pull/9703>)
+
+- \[SDK, CLI\] Support for exporting with server-generated filename
+  (<https://github.com/cvat-ai/cvat/pull/9732>)
+
+- Organization transfer now supported as a bulk action
+  (<https://github.com/cvat-ai/cvat/pull/9727>)
+
+- Ability to replace cloud storage for tasks.
+  (<https://github.com/cvat-ai/cvat/pull/9535>)
+
+- Lightweight backup option in Export backup dialog (excludes media for cloud-storage tasks).
+  (<https://github.com/cvat-ai/cvat/pull/9535>)
+
+### Changed
+
+- Updated Yarn version from 1.22.22 to 4.9.2
+  (<https://github.com/cvat-ai/cvat/pull/9688>)
+
+- \[SDK\] simplified sending of custom requests with `ApiClient`, added documentation
+  and improved related APIs. Documented using foreign libraries for sending requests.
+  (<https://github.com/cvat-ai/cvat/pull/9730>)
+
+- \[CLI\] `task backup` and `task export-dataset` now download files with the server-generated
+  filenames by default
+  (<https://github.com/cvat-ai/cvat/pull/9732>)
+- \[CLI\] `task backup` and `task export-dataset` now always export files locally,
+  regardless of the default export location on the server
+  (<https://github.com/cvat-ai/cvat/pull/9732>)
+
+- The cvat/server Docker image is now configured with a numeric UID
+  rather than a username
+  (<https://github.com/cvat-ai/cvat/pull/9743>)
+
+- The frontend container no longer runs as root
+  (<https://github.com/cvat-ai/cvat/pull/9746>)
+
+- \[Helm\] The Clickhouse, PostgreSQL and Redis containers now use
+  the images from the Bitnami Legacy repository by default
+  (<https://github.com/cvat-ai/cvat/pull/9754>)
+
+- \[Compose, Helm\] The Vector container now runs as a non-root user
+  (<https://github.com/cvat-ai/cvat/pull/9755>)
+
+- \[Helm\] The Kvrocks container now has overridden UID/GID, making
+  it compatible with the `runAsNonRoot` security context setting
+
+- Made the error message when a particular image cannot be saved
+  to a compressed chunk more useful
+  (<https://github.com/cvat-ai/cvat/pull/9724>)
+
+- When registering a user, the server will now reject overly long email,
+  first name and last name fields, instead of truncating them
+  (<https://github.com/cvat-ai/cvat/pull/9767>)
+
+### Removed
+
+- Removed deprecated `seed` parameter in job creation in favor of `random_seed`
+  (<https://github.com/cvat-ai/cvat/pull/9744>)
+
+### Fixed
+
+- Invalid GT job frame numbers in backups of video tasks with custom start/stop frame or frame step
+  (<https://github.com/cvat-ai/cvat/pull/9695>)
+
+- Server error in GT job creation if the `random_per_job` frame selection method
+  was used with the `seed` parameter.
+  (<https://github.com/cvat-ai/cvat/pull/9744>)
+
+- \[Helm\] A useless `/models` directory is no longer created in the main
+  data volume
+  (<https://github.com/cvat-ai/cvat/pull/9773>)
+
 <a id='changelog-2.43.0'></a>
 ## \[2.43.0\] - 2025-08-07
 

@@ -8,6 +8,7 @@ import multiprocessing
 import sys
 import typing
 import urllib3
+import urllib3.util
 
 from http import client as http_client
 from {{packageName}}.exceptions import ApiValueError
@@ -324,7 +325,9 @@ class Configuration:
         self.safe_chars_for_path_param = ''
         """Safe chars for path_param"""
 
-        self.retries = None
+        self.retries = urllib3.util.Retry(
+            total=3, status_forcelist=(502, 503, 504), backoff_factor=0.5
+        )
         """Adding retries to override urllib3 default value 3"""
 
         # Enable client side validation

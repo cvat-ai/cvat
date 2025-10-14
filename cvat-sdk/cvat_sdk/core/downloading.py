@@ -6,11 +6,16 @@
 from __future__ import annotations
 
 import json
+import os
+import re
 from contextlib import closing
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
+import urllib3
+
 from cvat_sdk.api_client.api_client import Endpoint
+from cvat_sdk.core.exceptions import CvatSdkException
 from cvat_sdk.core.helpers import expect_status
 from cvat_sdk.core.progress import NullProgressReporter, ProgressReporter
 from cvat_sdk.core.utils import atomic_writer
@@ -35,6 +40,48 @@ class Downloader:
 
         return headers
 
+    @classmethod
+    def _validate_filename(cls, filename: str) -> str | None:
+        # Allow only meaningful and valid filenames for the user OS.
+
+        if len(filename) > 254:
+            return None
+
+        stem, ext = os.path.splitext(filename)
+        if not stem or len(ext) < 2:
+            return None
+
+        if filename.startswith(".") or re.search(r"[^A-Za-z0-9_\-\. ]", filename):
+            return None
+
+        return filename
+
+    @classmethod
+    def _get_server_filename(cls, response: urllib3.HTTPResponse) -> str:
+        # Header format specification:
+        # https://datatracker.ietf.org/doc/html/rfc2616#section-19.5.1
+        content_disposition = next(
+            (
+                parameter
+                for part in response.headers.get("Content-Disposition", "").split(";")
+                if (parameter := part.strip()) and parameter.lower().startswith("filename=")
+            ),
+            None,
+        )
+
+        filename = None
+        if content_disposition:
+            filename = content_disposition.split("=", maxsplit=1)[1].strip('"')
+            filename = cls._validate_filename(filename)
+
+        if not filename:
+            raise CvatSdkException(
+                "Can't find the output filename in the server response, "
+                "please try to specify the output filename explicitly"
+            )
+
+        return filename
+
     def download_file(
         self,
         url: str,
@@ -42,14 +89,19 @@ class Downloader:
         *,
         timeout: int = 60,
         pbar: Optional[ProgressReporter] = None,
-    ) -> None:
+    ) -> Path:
         """
         Downloads the file from url into a temporary file, then renames it to the requested name.
+        If output_path is a directory, saves the file into the directory with
+        the server-defined name.
+
+        Returns: path to the downloaded file
         """
 
         CHUNK_SIZE = 10 * 2**20
 
-        assert not output_path.exists()
+        if output_path.is_file():
+            raise FileExistsError(output_path)
 
         if pbar is None:
             pbar = NullProgressReporter()
@@ -65,6 +117,11 @@ class Downloader:
                 file_size = int(response.headers.get("Content-Length", 0))
             except ValueError:
                 file_size = None
+
+            if output_path.is_dir():
+                output_path /= self._get_server_filename(response)
+                if output_path.exists():
+                    raise FileExistsError(output_path)
 
             with (
                 atomic_writer(output_path, "wb") as fd,
@@ -83,6 +140,8 @@ class Downloader:
 
                     pbar.advance(len(chunk))
                     fd.write(chunk)
+
+                return output_path
 
     def prepare_file(
         self,
@@ -130,7 +189,7 @@ class Downloader:
         query_params: Optional[dict[str, Any]] = None,
         pbar: Optional[ProgressReporter] = None,
         status_check_period: Optional[int] = None,
-    ):
+    ) -> Path:
         client = self._client
 
         if status_check_period is None:
@@ -144,4 +203,4 @@ class Downloader:
         )
 
         assert export_request.result_url, "Result url was not found in server response"
-        self.download_file(export_request.result_url, output_path=filename, pbar=pbar)
+        return self.download_file(export_request.result_url, output_path=filename, pbar=pbar)

@@ -4,18 +4,19 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
+import dayjs from 'dayjs';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 import Card from 'antd/lib/card';
 import Meta from 'antd/lib/card/Meta';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import Text from 'antd/lib/typography/Text';
 import Modal from 'antd/lib/modal';
-import moment from 'moment';
 
 import { CloudStorage, CombinedState } from 'reducers';
 import { deleteCloudStorageAsync } from 'actions/cloud-storage-actions';
+import { makeBulkOperationAsync } from 'actions/bulk-actions';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import Preview from 'components/common/preview';
 import CloudStorageActionsMenu from './cloud-storage-actions-menu';
@@ -41,9 +42,18 @@ export default function CloudStorageItemComponent(props: Readonly<Props>): JSX.E
         updatedDate,
         description,
     } = cloudStorage;
-    const deletes = useSelector((state: CombinedState) => state.cloudStorages.activities.deletes);
+
+    const {
+        deletes,
+        selectedIds,
+        currentCloudStorages,
+    } = useSelector((state: CombinedState) => ({
+        deletes: state.cloudStorages.activities.deletes,
+        selectedIds: state.cloudStorages.selected,
+        currentCloudStorages: state.cloudStorages.current,
+    }), shallowEqual);
     const deleted = cloudStorage.id in deletes ? deletes[cloudStorage.id] : false;
-    const selectedIds = useSelector((state: CombinedState) => state.cloudStorages.selected);
+    const isBulkMode = selectedIds.length > 1;
 
     const style: React.CSSProperties = {};
     if (deleted) {
@@ -57,20 +67,31 @@ export default function CloudStorageItemComponent(props: Readonly<Props>): JSX.E
     }, []);
 
     const onDelete = useCallback(() => {
+        const cloudStoragesToDelete = currentCloudStorages.filter((storage) => selectedIds.includes(storage.id));
         Modal.confirm({
-            title: 'Please, confirm your action',
-            content: `You are going to remove the cloudstorage "${displayName}". Continue?`,
+            title: isBulkMode ?
+                `Delete ${cloudStoragesToDelete.length} selected cloud storages` :
+                'Please, confirm your action',
+            content: isBulkMode ?
+                'All selected cloud storages will be permanently removed. Continue?' :
+                `You are going to remove the cloudstorage "${displayName}". Continue?`,
             className: 'cvat-delete-cloud-storage-modal',
             onOk: () => {
-                dispatch(deleteCloudStorageAsync(cloudStorage));
+                dispatch(makeBulkOperationAsync(
+                    cloudStoragesToDelete.length ? cloudStoragesToDelete : [cloudStorage],
+                    async (storage) => {
+                        await dispatch(deleteCloudStorageAsync(storage));
+                    },
+                    (storage, idx, total) => `Deleting cloud storage #${storage.id} (${idx + 1}/${total})`,
+                ));
             },
             okButtonProps: {
                 type: 'primary',
                 danger: true,
             },
-            okText: 'Delete',
+            okText: isBulkMode ? 'Delete selected' : 'Delete',
         });
-    }, [cloudStorage.id]);
+    }, [cloudStorage, currentCloudStorages, selectedIds, isBulkMode, displayName]);
 
     return (
         <CloudStorageActionsMenu
@@ -118,11 +139,11 @@ export default function CloudStorageItemComponent(props: Readonly<Props>): JSX.E
                                     <Text type='secondary'>Created </Text>
                                     {owner ? <Text type='secondary'>{`by ${owner.username}`}</Text> : null}
                                     <Text type='secondary'> on </Text>
-                                    <Text type='secondary'>{moment(createdDate).format('MMMM Do YYYY')}</Text>
+                                    <Text type='secondary'>{dayjs(createdDate).format('MMMM Do YYYY')}</Text>
                                 </Paragraph>
                                 <Paragraph>
                                     <Text type='secondary'>Last updated </Text>
-                                    <Text type='secondary'>{moment(updatedDate).fromNow()}</Text>
+                                    <Text type='secondary'>{dayjs(updatedDate).fromNow()}</Text>
                                 </Paragraph>
                                 <Status cloudStorage={cloudStorage} />
                                 <CloudStorageActionsMenu

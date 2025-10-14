@@ -5,11 +5,11 @@
 
 import React from 'react';
 import { connect } from 'react-redux';
+import dayjs from 'dayjs';
 
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import Title from 'antd/lib/typography/Title';
-import moment from 'moment';
 
 import {
     User, getCore, Project, Task, FramesMetaData,
@@ -28,7 +28,7 @@ import ProjectSubsetField from '../create-task-page/project-subset-field';
 
 interface OwnProps {
     task: Task;
-    onUpdateTask: (task: Task) => Promise<void>;
+    onUpdateTask: (task: Task) => Promise<Task>;
     taskMeta: FramesMetaData;
     cloudStorageInstance: CloudStorage | null;
     onUpdateTaskMeta: (meta: FramesMetaData) => Promise<void>;
@@ -130,7 +130,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
         const { consensusEnabled } = this.state;
         const owner = taskInstance.owner ? taskInstance.owner.username : null;
         const assignee = taskInstance.assignee ? taskInstance.assignee : null;
-        const created = moment(taskInstance.createdDate).format('MMMM Do YYYY');
+        const created = dayjs(taskInstance.createdDate).format('MMMM Do YYYY');
         const assigneeSelect = (
             <UserSelector
                 value={assignee}

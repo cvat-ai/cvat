@@ -79,7 +79,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
                 };
 
                 if (jobData.assignee) {
-                    checkObjectType('job assignee', jobData.assignee, null, User);
+                    checkObjectType('job assignee', jobData.assignee, null, { cls: User, name: 'User' });
                     jobData.assignee = jobData.assignee.id;
                 }
 
@@ -136,7 +136,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
             issue: Parameters<typeof JobClass.prototype.openIssue>[0],
             message: Parameters<typeof JobClass.prototype.openIssue>[1],
         ): ReturnType<typeof JobClass.prototype.openIssue> {
-            checkObjectType('issue', issue, null, Issue);
+            checkObjectType('issue', issue, null, { cls: Issue, name: 'Issue' });
             checkObjectType('message', message, 'string');
             const result = await serverProxy.issues.create({
                 ...issue.serialize(),
@@ -681,6 +681,9 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                         bugTracker: 'bug_tracker',
                         projectId: 'project_id',
                         assignee: 'assignee_id',
+                        organizationId: 'organization_id',
+                        sourceStorage: 'source_storage',
+                        targetStorage: 'target_storage',
                     }),
                 };
 
@@ -741,6 +744,9 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             }
             if (typeof this.subset !== 'undefined') {
                 taskSpec.subset = this.subset;
+            }
+            if (typeof this.organizationId !== 'undefined') {
+                taskSpec.organization_id = this.organizationId;
             }
 
             if (this.targetStorage) {

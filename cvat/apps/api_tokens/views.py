@@ -72,6 +72,7 @@ class ApiTokensViewSet(
     }
 
     iam_organization_field = None
+    iam_permission_class = ApiTokenPermission
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:

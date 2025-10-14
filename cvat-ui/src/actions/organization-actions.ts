@@ -7,9 +7,9 @@ import { Store } from 'antd/lib/form/interface';
 import {
     getCore, Membership, Organization, User,
 } from 'cvat-core-wrapper';
-import { OrganizationMembersQuery } from 'reducers';
-import { filterNull } from 'utils/filter-null';
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
+import { filterNull } from 'utils/filter-null';
+import { OrganizationsQuery, OrganizationMembersQuery } from 'reducers';
 
 const core = getCore();
 
@@ -39,12 +39,17 @@ export enum OrganizationActionsTypes {
     UPDATE_ORGANIZATION_MEMBER = 'UPDATE_ORGANIZATION_MEMBER',
     UPDATE_ORGANIZATION_MEMBER_SUCCESS = 'UPDATE_ORGANIZATION_MEMBER_SUCCESS',
     UPDATE_ORGANIZATION_MEMBER_FAILED = 'UPDATE_ORGANIZATION_MEMBER_FAILED',
+    GET_ORGANIZATIONS = 'GET_ORGANIZATIONS',
+    GET_ORGANIZATIONS_SUCCESS = 'GET_ORGANIZATIONS_SUCCESS',
+    GET_ORGANIZATIONS_FAILED = 'GET_ORGANIZATIONS_FAILED',
+    OPEN_SELECT_ORGANIZATION_MODAL = 'OPEN_SELECT_ORGANIZATION_MODAL',
+    CLOSE_SELECT_ORGANIZATION_MODAL = 'CLOSE_SELECT_ORGANIZATION_MODAL',
     GET_ORGANIZATION_MEMBERS = 'GET_ORGANIZATION_MEMBERS',
     GET_ORGANIZATION_MEMBERS_SUCCESS = 'GET_ORGANIZATION_MEMBERS_SUCCESS',
     GET_ORGANIZATION_MEMBERS_FAILED = 'GET_ORGANIZATION_MEMBERS_FAILED',
 }
 
-const organizationActions = {
+export const organizationActions = {
     activateOrganization: () => createAction(OrganizationActionsTypes.ACTIVATE_ORGANIZATION),
     activateOrganizationSuccess: (organization: any | null) => createAction(
         OrganizationActionsTypes.ACTIVATE_ORGANIZATION_SUCCESS, { organization },
@@ -98,6 +103,17 @@ const organizationActions = {
     updateOrganizationMemberFailed: (username: string, role: string, error: any) => createAction(
         OrganizationActionsTypes.UPDATE_ORGANIZATION_MEMBER_FAILED, { username, role, error },
     ),
+    getOrganizations: (query: Partial<OrganizationsQuery>) => (
+        createAction(OrganizationActionsTypes.GET_ORGANIZATIONS, { query })
+    ),
+    getOrganizationsSuccess: (organizations: Organization[], count: number, nextPageUrl?: string) => (
+        createAction(OrganizationActionsTypes.GET_ORGANIZATIONS_SUCCESS, { organizations, count, nextPageUrl })
+    ),
+    getOrganizationsFailed: (error: any) => createAction(OrganizationActionsTypes.GET_ORGANIZATIONS_FAILED, { error }),
+    openSelectOrganizationModal: (
+        onSelectCallback: (org: Organization | null) => void,
+    ) => createAction(OrganizationActionsTypes.OPEN_SELECT_ORGANIZATION_MODAL, { onSelectCallback }),
+    closeSelectOrganizationModal: () => createAction(OrganizationActionsTypes.CLOSE_SELECT_ORGANIZATION_MODAL, {}),
     getOrganizationMembers: (membersQuery: OrganizationMembersQuery) => createAction(
         OrganizationActionsTypes.GET_ORGANIZATION_MEMBERS, { membersQuery },
     ),
@@ -159,12 +175,15 @@ export function createOrganizationAsync(
     };
 }
 
-export function updateOrganizationAsync(organization: any): ThunkAction {
+export function updateOrganizationAsync(
+    organization: Organization,
+    fields: Parameters<typeof Organization.prototype.save>[0],
+): ThunkAction {
     return async function (dispatch) {
         dispatch(organizationActions.updateOrganization());
 
         try {
-            const updatedOrganization = await organization.save();
+            const updatedOrganization = await organization.save(fields);
             dispatch(organizationActions.updateOrganizationSuccess(updatedOrganization));
         } catch (error) {
             dispatch(organizationActions.updateOrganizationFailed(organization.slug, error));
@@ -259,6 +278,21 @@ export function updateOrganizationMemberAsync(
             dispatch(organizationActions.updateOrganizationMemberSuccess());
         } catch (error) {
             dispatch(organizationActions.updateOrganizationMemberFailed(user.username, role, error));
+        }
+    };
+}
+
+export function getOrganizationsAsync(query: Partial<OrganizationsQuery> = {}): ThunkAction {
+    return async (dispatch): Promise<void> => {
+        const filteredQuery: Partial<OrganizationsQuery> = filterNull(query);
+        dispatch(organizationActions.getOrganizations(filteredQuery));
+
+        try {
+            const result = await core.organizations.get(filteredQuery);
+            const array: Organization[] = Array.from(result);
+            dispatch(organizationActions.getOrganizationsSuccess(array, result.count, result.next));
+        } catch (error) {
+            dispatch(organizationActions.getOrganizationsFailed(error));
         }
     };
 }

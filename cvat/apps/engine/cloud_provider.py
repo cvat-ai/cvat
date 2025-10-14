@@ -6,14 +6,16 @@
 from __future__ import annotations
 
 import functools
+import io
 import json
 import os
 from abc import ABC, abstractmethod
-from collections.abc import Iterator
-from concurrent.futures import FIRST_EXCEPTION, ThreadPoolExecutor, wait
+from collections.abc import Iterator, Sequence
+from concurrent.futures import FIRST_EXCEPTION, Future, ThreadPoolExecutor, wait
 from enum import Enum
 from io import BytesIO
 from pathlib import Path
+from queue import Queue
 from typing import Any, BinaryIO, Callable, Optional, TypeVar
 
 import boto3
@@ -33,10 +35,11 @@ from rest_framework.exceptions import NotFound, PermissionDenied, ValidationErro
 from rq import get_current_job
 
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.models import CloudProviderChoice, CredentialsTypeChoice
+from cvat.apps.engine.models import CloudProviderChoice, CredentialsTypeChoice, DimensionType
 from cvat.apps.engine.rq import ExportRQMeta
-from cvat.apps.engine.utils import get_cpu_number, take_by
+from cvat.apps.engine.utils import get_cpu_number
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS
+from utils.dataset_manifest.utils import InvalidPcdError, PcdReader
 
 
 class NamedBytesIO(BytesIO):
@@ -204,59 +207,60 @@ class _CloudStorage(ABC):
     def _download_range_of_bytes(self, key: str, /, *, stop_byte: int, start_byte: int):
         pass
 
-    def optimally_image_download(self, key: str, /, *, chunk_size: int = 65536) -> NamedBytesIO:
-        """
-        Method downloads image by the following approach:
-        Firstly we try to download the first N bytes of image which will be enough for determining image properties.
-        If for some reason we cannot identify the required properties then we will download all file.
-
-        Args:
-            key (str): File on the bucket
-            chunk_size (int, optional): The number of first bytes to download. Defaults to 65536 (64kB).
-
-        Returns:
-            BytesIO: Buffer with image
-        """
-        image_parser = ImageFile.Parser()
-
-        chunk = self.download_range_of_bytes(key, stop_byte=chunk_size - 1)
-        image_parser.feed(chunk)
-
-        if image_parser.image:
-            buff = NamedBytesIO(chunk)
-            buff.filename = key
-        else:
-            buff = self.download_fileobj(key)
-            image_size_in_bytes = len(buff.getvalue())
-            slogger.glob.warning(
-                f'The {chunk_size} bytes were not enough to parse "{key}" image. '
-                f'Image size was {image_size_in_bytes} bytes. Image resolution was {Image.open(buff).size}. '
-                f'Downloaded percent was {round(min(chunk_size, image_size_in_bytes) / image_size_in_bytes * 100)}')
-
-        return buff
-
     def bulk_download_to_memory(
         self,
         files: list[str],
         *,
-        _use_optimal_downloading: bool = True,
+        object_downloader: Callable[[str], NamedBytesIO] = None
     ) -> Iterator[BytesIO]:
-        func = self.optimally_image_download if _use_optimal_downloading else self.download_fileobj
+        func = object_downloader or self.download_fileobj
         threads_number = get_max_threads_number(len(files))
 
+        # We're using a custom queue to limit the maximum number of downloaded unprocessed
+        # files stored in the memory.
+        # For example, the builtin executor.map() could also be used here, but it
+        # would enqueue all the file list in one go, and the downloaded files
+        # would all be stored in memory until processed.
+        queue: Queue[Future] = Queue(maxsize=threads_number)
+        input_iter = iter(files)
         with ThreadPoolExecutor(max_workers=threads_number) as executor:
-            for batch_links in take_by(files, chunk_size=threads_number):
-                yield from executor.map(func, batch_links)
+            while not queue.empty() or input_iter is not None:
+                while not queue.full() and input_iter is not None:
+                    next_job_params = next(input_iter, None)
+                    if next_job_params is None:
+                        input_iter = None
+                        break
+
+                    next_job = executor.submit(func, next_job_params)
+                    queue.put(next_job)
+
+                top_job = queue.get()
+                yield top_job.result()
 
     def bulk_download_to_dir(
         self,
-        files: list[str],
+        files: list[str | tuple[str, str]],
         upload_dir: str,
     ) -> None:
+        """
+        :param files: a list of filenames or (storage filename, output filename) pairs
+        :param upload_dir: the output directory
+        """
+
         threads_number = get_max_threads_number(len(files))
 
         with ThreadPoolExecutor(max_workers=threads_number) as executor:
-            futures = [executor.submit(self.download_file, f, os.path.join(upload_dir, f)) for f in files]
+            futures = []
+            for f in files:
+                if isinstance(f, tuple):
+                    key, output_path = f
+                else:
+                    key = f
+                    output_path = f
+
+                output_path = os.path.join(upload_dir, output_path)
+                futures.append(executor.submit(self.download_file, key, output_path))
+
             done, _ = wait(futures, return_when=FIRST_EXCEPTION)
             for future in done:
                 if ex := future.exception():
@@ -367,6 +371,152 @@ class _CloudStorage(ABC):
     def write_access(self):
         return Permissions.WRITE in self.access
 
+
+class HeaderFirstDownloader(ABC):
+    def __init__(self, *, client: _CloudStorage):
+        self.client = client
+
+    @abstractmethod
+    def try_parse_header(self, header: NamedBytesIO) -> Any | None: ...
+
+    def log_header_miss(self, key: str, header_size: int, *, full_file: NamedBytesIO | None = None):
+        message = (
+            f'The first {header_size} bytes were not enough to parse the "{key}" object header. '
+        )
+
+        if full_file:
+            full_object_size = len(full_file.getvalue())
+
+            message += (
+                f'Object size was {full_object_size} bytes. '
+                f'Downloaded percentage was '
+                f'{min(header_size, full_object_size) / full_object_size:.0%}'
+            )
+
+        slogger.glob.warning(message)
+
+    def get_header_sizes_to_try(self) -> Sequence[int]:
+        return (
+            # The first 1-2Kb are typically enough for most formats with the static header size.
+            # Unfortunately, it's not enough for some popular formats, such as jpeg,
+            # which can optionally include a preview image embedded in the header, so we try
+            # other bigger sizes, but less than the whole file.
+            # For comparison, the standard Ethernet v2 MTU size is 1500 bytes.
+            2048,
+            16384,
+            65536,
+        )
+
+    def download(self, key: str) -> NamedBytesIO:
+        """
+        Method downloads the file using the following approach:
+        First we try to download the file header (first N bytes).
+        It should be enough to determine image properties.
+        If it's not enough for the file, the whole file will be downloaded.
+
+        :param key: File on the bucket
+
+        Returns:
+            buffer with the image
+        """
+
+        buff = NamedBytesIO()
+        buff.filename = key
+
+        headers_to_try = self.get_header_sizes_to_try()
+        for i, header_size in enumerate(headers_to_try):
+            buff.seek(0, io.SEEK_END)
+            cur_pos = buff.tell()
+            chunk = self.client.download_range_of_bytes(
+                key, start_byte=cur_pos, stop_byte=header_size - 1
+            )
+            buff.write(chunk)
+            buff.seek(0)
+
+            if self.try_parse_header(buff):
+                buff.seek(0)
+                return buff
+
+            if i + 1 < len(headers_to_try):
+                self.log_header_miss(key=key, header_size=header_size)
+
+        buff = self.client.download_fileobj(key)
+        self.log_header_miss(key=key, header_size=header_size, full_file=buff)
+        return buff
+
+class _HeaderFirstImageDownloader(HeaderFirstDownloader):
+    def try_parse_header(self, header):
+        image_parser = ImageFile.Parser()
+        image_parser.feed(header.getvalue())
+        return image_parser.image
+
+    def log_header_miss(self, key, header_size, *, full_file = None):
+        message = (
+            f'The first {header_size} bytes were not enough to parse the "{key}" object header. '
+        )
+
+        if full_file:
+            full_object_size = len(full_file.getvalue())
+
+            message += (
+                f'Object size was {full_object_size} bytes. '
+                f'Image resolution was {Image.open(full_file).size}. '
+                f'Downloaded percentage was '
+                f'{min(header_size, full_object_size) / full_object_size:.0%}'
+            )
+
+        slogger.glob.warning(message)
+
+    def download(self, key):
+        try:
+            return super().download(key)
+        except Image.UnidentifiedImageError as e:
+            # PIL also can raise many OSErrors, but it's quite a broad class
+            # for the general capturing here. The precise info will be available in the logs
+            raise Exception(f"Failed to read the image file '{key}'") from e
+
+
+class _HeaderFirstPcdDownloader(HeaderFirstDownloader):
+    def try_parse_header(self, header):
+        pcd_parser = PcdReader()
+        file = header
+        file_ext = os.path.splitext(file.filename)[1].lower()
+
+        if file_ext == ".bin":
+            # We need to ensure the file is a valid .bin file
+            pcd_parser.parse_bin_header(file)
+
+            # but we need the whole file for the next operations (getting frame size etc.)
+            return False
+        elif file_ext == ".pcd":
+            parameters = pcd_parser.parse_pcd_header(file, verify_version=True)
+            if not parameters.get("WIDTH") or not parameters.get("HEIGHT"):
+                raise InvalidPcdError("invalid scene size")
+        else:
+            raise InvalidPcdError(f"The '{file_ext}' file format is not supported")
+
+        return True
+
+    def download(self, key):
+        try:
+            return super().download(key)
+        except InvalidPcdError as e:
+            raise Exception(f"Failed to read point cloud file '{key}': {e}") from e
+
+
+class HeaderFirstMediaDownloader:
+    @staticmethod
+    def create(dimension: DimensionType, **kwargs) -> HeaderFirstDownloader:
+        if dimension == DimensionType.DIM_2D:
+            downloader = _HeaderFirstImageDownloader(**kwargs)
+        elif dimension == DimensionType.DIM_3D:
+            downloader = _HeaderFirstPcdDownloader(**kwargs)
+        else:
+            assert False
+
+        return downloader
+
+
 def get_cloud_storage_instance(
     *,
     cloud_provider: CloudProviderChoice,
@@ -452,7 +602,16 @@ class AWS_S3(_CloudStorage):
 
         session = boto3.Session(**kwargs)
         self._s3 = session.resource("s3", endpoint_url=endpoint_url,
-            config=Config(proxies=PROXIES_FOR_UNTRUSTED_URLS or {}),
+            config=Config(
+                proxies=PROXIES_FOR_UNTRUSTED_URLS or {},
+                max_pool_connections=(
+                    # AWS can throttle the requests if there are too many of them,
+                    # the SDK handles it with the retry policy:
+                    # https://boto3.amazonaws.com/v1/documentation/api/latest/guide/retries.html
+                    # 10 is the default value
+                    max(10, CPU_NUMBER * settings.CLOUD_DATA_DOWNLOADING_MAX_THREADS_NUMBER_PER_CPU)
+                )
+            ),
         )
 
         # anonymous access

@@ -9,16 +9,16 @@ import io
 import itertools
 import os
 import shutil
-import struct
 import sysconfig
 import tempfile
 import zipfile
 from abc import ABC, abstractmethod
 from bisect import bisect
 from collections.abc import Generator, Iterable, Iterator, Sequence
-from contextlib import AbstractContextManager, ExitStack, closing, contextmanager
+from contextlib import ExitStack, closing
 from dataclasses import dataclass
 from enum import IntEnum
+from fractions import Fraction
 from random import shuffle
 from typing import Any, Callable, Optional, Protocol, TypeVar, Union
 
@@ -41,6 +41,9 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 from cvat.apps.engine.mime_types import mimetypes
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
+from utils.dataset_manifest.errors import InvalidPcdError
+from utils.dataset_manifest.utils import MediaDimension as _MediaDimension
+from utils.dataset_manifest.utils import PcdReader, detect_media_dimension
 
 ORIENTATION_EXIF_TAG = 274
 
@@ -353,7 +356,7 @@ class ImageListReader(IMediaReader):
         with Image.open(self._source_path[i]) as img:
             return image_size_within_orientation(img)
 
-    def reconcile(self, source_files, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D, sorting_method=None):
+    def reconcile(self, source_files, step=1, start=0, stop=None, dimension=None, sorting_method=None):
         # FIXME
         ImageListReader.__init__(self,
             source_path=source_files,
@@ -361,8 +364,8 @@ class ImageListReader(IMediaReader):
             start=start,
             stop=stop,
             sorting_method=sorting_method if sorting_method else self._sorting_method,
+            dimension=dimension if dimension else self._dimension,
         )
-        self._dimension = dimension
 
     @property
     def absolute_source_paths(self):
@@ -498,7 +501,7 @@ class ZipReader(ImageListReader):
     def get_image_size(self, i):
         if self._dimension == DimensionType.DIM_3D:
             with open(self.get_path(i), 'rb') as f:
-                properties = ValidateDimension.get_pcd_properties(f)
+                properties = PcdReader.parse_pcd_header(f)
                 return int(properties["WIDTH"]),  int(properties["HEIGHT"])
         with Image.open(io.BytesIO(self._zip_source.read(self._source_path[i]))) as img:
             return image_size_within_orientation(img)
@@ -512,23 +515,46 @@ class ZipReader(ImageListReader):
         return self._zip_source.filename
 
     def get_path(self, i):
-        if self._zip_source.filename:
-            prefix = self._get_extract_prefix()
-            return os.path.join(prefix, self._source_path[i])
-        else: # necessary for mime_type definition
-            return self._source_path[i]
+        path = self._source_path[i]
+
+        prefix = self._get_extract_prefix()
+        if prefix is not None:
+            path = os.path.join(prefix, path)
+
+        return path
 
     def __contains__(self, media_file):
-        return super().__contains__(os.path.relpath(media_file, self._get_extract_prefix()))
+        path = media_file
 
-    def _get_extract_prefix(self):
-        return self.extract_dir or os.path.dirname(self._zip_source.filename)
+        prefix = self._get_extract_prefix()
+        if prefix is not None:
+            path = os.path.relpath(media_file, prefix)
 
-    def reconcile(self, source_files, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D, sorting_method=None):
-        if source_files:
+        return super().__contains__(path)
+
+    def _get_extract_prefix(self) -> str | None:
+        if self.extract_dir is not None:
+            return self.extract_dir
+
+        if self._zip_source.filename is not None:
+            return os.path.dirname(self._zip_source.filename)
+
+        return None
+
+    def filter(self, callback):
+        prefix = self._get_extract_prefix()
+        if prefix is not None:
+            updated_callback = lambda p: callback(os.path.join(prefix, p))
+        else:
+            updated_callback = callback
+
+        return super().filter(updated_callback)
+
+    def reconcile(self, source_files, step=1, start=0, stop=None, dimension=None, sorting_method=None):
+        prefix = self._get_extract_prefix()
+        if source_files and prefix is not None:
             # file list is expected to be a processed output of self.get_path()
             # which returns files with the output directory prefix
-            prefix = self._get_extract_prefix()
             source_files = [os.path.relpath(fn, prefix) for fn in source_files]
 
         super().reconcile(
@@ -546,28 +572,14 @@ class ZipReader(ImageListReader):
             os.remove(self._zip_source.filename)
 
 class _AvVideoReading:
-    @contextmanager
     def read_av_container(
         self, source: Union[str, io.BytesIO]
-    ) -> Generator[av.container.InputContainer, None, None]:
+    ) -> av.container.InputContainer:
         if isinstance(source, io.BytesIO):
             source.seek(0) # required for re-reading
 
-        container = av.open(source)
-        try:
-            yield container
-        finally:
-            # fixes a memory leak in input container closing
-            # https://github.com/PyAV-Org/PyAV/issues/1117
-            for stream in container.streams:
-                context = stream.codec_context
-                if context and context.is_open:
-                    # Currently, context closing may get stuck on some videos for an unknown reason,
-                    # so the thread_type == 'AUTO' setting is disabled for future investigation
-                    context.close()
+        return av.open(source)
 
-            if container.open_files:
-                container.close()
 
     def decode_stream(
         self, container: av.container.Container, video_stream: av.video.stream.VideoStream
@@ -654,13 +666,10 @@ class VideoReader(IMediaReader):
             with closing(self._decode_stream(container, video_stream)) as stream_decoder:
                 for frame, frame_number in zip(stream_decoder, frame_counter):
                     if frame_number == next_frame_filter_frame:
-                        if video_stream.metadata.get('rotate'):
+                        if frame.rotation:
                             pts = frame.pts
                             frame = av.VideoFrame().from_ndarray(
-                                rotate_image(
-                                    frame.to_ndarray(format='bgr24'),
-                                    360 - int(video_stream.metadata.get('rotate'))
-                                ),
+                                rotate_image(frame.to_ndarray(format='bgr24'), frame.rotation),
                                 format ='bgr24'
                             )
                             frame.pts = pts
@@ -682,7 +691,7 @@ class VideoReader(IMediaReader):
         duration = self._get_duration()
         return pos / duration if duration else None
 
-    def _read_av_container(self) -> AbstractContextManager[av.container.InputContainer]:
+    def _read_av_container(self) -> av.container.InputContainer:
         return _AvVideoReading().read_av_container(self._source_path[0])
 
     def _decode_stream(
@@ -773,7 +782,7 @@ class VideoReaderWithManifest:
 
         self.allow_threading = allow_threading
 
-    def _read_av_container(self) -> AbstractContextManager[av.container.InputContainer]:
+    def _read_av_container(self) -> av.container.InputContainer:
         return _AvVideoReading().read_av_container(self.source_path)
 
     def _decode_stream(
@@ -818,12 +827,9 @@ class VideoReaderWithManifest:
             with closing(self._decode_stream(container, video_stream)) as stream_decoder:
                 for frame, frame_number in zip(stream_decoder, frame_counter):
                     if frame_number == next_frame_filter_frame:
-                        if video_stream.metadata.get('rotate'):
+                        if frame.rotation:
                             frame = av.VideoFrame().from_ndarray(
-                                rotate_image(
-                                    frame.to_ndarray(format='bgr24'),
-                                    360 - int(video_stream.metadata.get('rotate'))
-                                ),
+                                rotate_image(frame.to_ndarray(format='bgr24'), frame.rotation),
                                 format ='bgr24'
                             )
 
@@ -907,7 +913,11 @@ class ZipChunkWriter(IChunkWriter):
             image_buf.seek(0, 0)
             return io.BytesIO(image_buf.read()), self.POINT_CLOUD_EXT, w, h
 
-    def save_as_chunk(self, images: Iterator[tuple[Image.Image|io.IOBase|str, str, str]], chunk_path: str):
+    def save_as_chunk(
+        self,
+        images: Iterator[tuple[Image.Image|io.IOBase|str, str, str]],
+        chunk_path: str | io.IOBase,
+    ):
         with zipfile.ZipFile(chunk_path, 'x') as zip_chunk:
             for idx, (image, path, _) in enumerate(images):
                 ext = os.path.splitext(path)[1].replace('.', '')
@@ -962,14 +972,22 @@ class ZipCompressedChunkWriter(ZipChunkWriter):
     def save_as_chunk(
         self,
         images: Iterator[tuple[Image.Image|io.IOBase|str, str, str]],
-        chunk_path: str, *, compress_frames: bool = True, zip_compress_level: int = 0
-    ):
+        chunk_path: str | io.IOBase,
+        *,
+        compress_frames: bool = True,
+        zip_compress_level: int = 0,
+    ) -> list[tuple[int, int]]:
         image_sizes = []
         with zipfile.ZipFile(chunk_path, 'x', compresslevel=zip_compress_level) as zip_chunk:
             for idx, (image, path, _) in enumerate(images):
                 if self._dimension == DimensionType.DIM_2D:
                     if compress_frames:
-                        w, h, image_buf = self._compress_image(image, self._image_quality)
+                        try:
+                            w, h, image_buf = self._compress_image(image, self._image_quality)
+                        except Exception as ex:
+                            raise RuntimeError(
+                                f"Exception occurred during compression of image {os.path.basename(path)!r}"
+                            ) from ex
                     else:
                         assert isinstance(image, io.IOBase)
                         image_buf = io.BytesIO(image.read())
@@ -1013,7 +1031,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
                 "preset": "ultrafast",
             }
 
-    def _add_video_stream(self, container: av.container.OutputContainer, w, h, rate, options):
+    def _add_video_stream(self, container: av.container.OutputContainer, w, h, rate, options) -> av.video.stream.VideoStream:
         # x264 requires width and height must be divisible by 2 for yuv420p
         if h % 2:
             h += 1
@@ -1030,6 +1048,14 @@ class Mpeg4ChunkWriter(IChunkWriter):
         video_stream.pix_fmt = "yuv420p"
         video_stream.width = w
         video_stream.height = h
+
+        if "profile" in options:
+            video_stream.profile = options["profile"]
+        if "qmin" in options:
+            video_stream.codec_context.qmin = int(options["qmin"])
+            video_stream.codec_context.qmax = int(options["qmax"])
+        options = {k: options[k] for k in options if k not in ("profile", "qmin", "qmax")}
+
         video_stream.options = options
 
         return video_stream
@@ -1066,8 +1092,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
                 options=self._codec_opts,
             )
 
-            with closing(output_v_stream):
-                self._encode_images(images, output_container, output_v_stream)
+            self._encode_images(images, output_container, output_v_stream)
 
         return [(input_w, input_h)]
 
@@ -1078,7 +1103,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
         for frame, _, _ in images:
             # let libav set the correct pts and time_base
             frame.pts = None
-            frame.time_base = None
+            frame.time_base = Fraction(0, 1)
 
             for packet in stream.encode(frame):
                 container.mux(packet)
@@ -1123,8 +1148,7 @@ class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
                 options=self._codec_opts,
             )
 
-            with closing(output_v_stream):
-                self._encode_images(images, output_container, output_v_stream)
+            self._encode_images(images, output_container, output_v_stream)
 
         return [(input_w, input_h)]
 
@@ -1209,121 +1233,92 @@ MEDIA_TYPES = {
 }
 
 class ValidateDimension:
-
-    def __init__(self, path=None):
+    def __init__(self):
         self.dimension = DimensionType.DIM_2D
-        self.path = path
-        self.related_files = {}
-        self.image_files = {}
+        self.pcd_files = []
+        self.image_files = []
         self.converted_files = []
 
     @staticmethod
-    def get_pcd_properties(fp, verify_version=False):
-        kv = {}
-        pcd_version = ["0.7", "0.6", "0.5", "0.4", "0.3", "0.2", "0.1",
-                       ".7", ".6", ".5", ".4", ".3", ".2", ".1"]
-        try:
-            for line in fp:
-                line = line.decode("utf-8")
-                if line.startswith("#"):
-                    continue
-                k, v = line.split(" ", maxsplit=1)
-                kv[k] = v.strip()
-                if "DATA" in line:
-                    break
-            if verify_version:
-                if "VERSION" in kv and kv["VERSION"] in pcd_version:
-                    return True
-                return None
-            return kv
-        except AttributeError:
-            return None
+    def get_pcd_properties(
+        fp: str | io.RawIOBase, *, verify_version: bool = False
+    ) -> dict[str, str] | None:
+        return PcdReader.parse_pcd_header(fp, verify_version=verify_version)
 
     @staticmethod
     def convert_bin_to_pcd(path, delete_source=True):
-        def write_header(fileObj, width, height):
-            fileObj.writelines(f'{line}\n' for line in [
-                'VERSION 0.7',
-                'FIELDS x y z intensity',
-                'SIZE 4 4 4 4',
-                'TYPE F F F F',
-                'COUNT 1 1 1 1',
-                f'WIDTH {width}',
-                f'HEIGHT {height}',
-                'VIEWPOINT 0 0 0 1 0 0 0',
-                f'POINTS {width * height}',
-                'DATA binary',
-            ])
+        return PcdReader.convert_bin_to_pcd(path, delete_source=delete_source)
 
+    def bin_operation(self, file_path: str, dataset_root: str) -> str:
+        try:
+            pcd_path = self.convert_bin_to_pcd(file_path)
+            self.converted_files.append(pcd_path)
+            return os.path.relpath(pcd_path, dataset_root)
+        except InvalidPcdError as e:
+            raise ValidationError(f"Could not read pcd file '{os.path.basename(file_path)}': {e}")
 
-        list_pcd = []
-        with open(path, "rb") as f:
-            size_float = 4
-            byte = f.read(size_float * 4)
-            while byte:
-                x, y, z, intensity = struct.unpack("ffff", byte)
-                list_pcd.append([x, y, z, intensity])
-                byte = f.read(size_float * 4)
-        np_pcd = np.asarray(list_pcd)
-        pcd_filename = path.replace(".bin", ".pcd")
-        with open(pcd_filename, "w") as f:
-            write_header(f, np_pcd.shape[0], 1)
-        with open(pcd_filename, "ab") as f:
-            f.write(np_pcd.astype('float32').tobytes())
-        if delete_source:
-            os.remove(path)
-        return pcd_filename
+    def pcd_operation(self, file_path: str, dataset_root: str) -> str | None:
+        try:
+            self.get_pcd_properties(file_path, verify_version=True)
+            return os.path.relpath(file_path, dataset_root)
+        except InvalidPcdError as e:
+            raise ValidationError(f"Could not read pcd file '{os.path.basename(file_path)}': {e}")
 
-    def set_path(self, path):
-        self.path = path
+    def _process_files(self, current_dir: str, dataset_root: str, filenames: Sequence[str]):
+        for filename in filenames:
+            ext = os.path.splitext(filename)[1].lower()
 
-    def bin_operation(self, file_path, actual_path):
-        pcd_path = ValidateDimension.convert_bin_to_pcd(file_path)
-        self.converted_files.append(pcd_path)
-        return pcd_path.split(actual_path)[-1][1:]
+            file_path = os.path.abspath(os.path.join(current_dir, filename))
 
-    @staticmethod
-    def pcd_operation(file_path, actual_path):
-        with open(file_path, "rb") as file:
-            is_pcd = ValidateDimension.get_pcd_properties(file, verify_version=True)
-        return file_path.split(actual_path)[-1][1:] if is_pcd else file_path
-
-    def process_files(self, root, actual_path, files):
-        pcd_files = {}
-
-        for file in files:
-            file_name, file_extension = os.path.splitext(file)
-            file_path = os.path.abspath(os.path.join(root, file))
-
-            if file_extension == ".bin":
-                path = self.bin_operation(file_path, actual_path)
-                pcd_files[file_name] = path
-                self.related_files[path] = []
-
-            elif file_extension == ".pcd":
-                path = ValidateDimension.pcd_operation(file_path, actual_path)
-                if path == file_path:
-                    self.image_files[file_name] = file_path
-                else:
-                    pcd_files[file_name] = path
-                    self.related_files[path] = []
+            if ext == ".bin":
+                path = self.bin_operation(file_path, dataset_root)
+                self.pcd_files.append(path)
+            elif ext == ".pcd":
+                path = self.pcd_operation(file_path, dataset_root)
+                self.pcd_files.append(path)
             else:
                 if _is_image(file_path):
-                    self.image_files[file_name] = file_path
-        return pcd_files
+                    self.image_files.append(file_path)
 
-    def validate(self):
-        """
-            Validate the directory structure for kitty and point cloud format.
-        """
-        if not self.path:
-            return
-        actual_path = self.path
-        for root, _, files in os.walk(actual_path):
-            if not files_to_ignore(root):
+    def validate(self, path: str):
+        "Detect media dimension and convert all point clouds into the .pcd format"
+
+        root = path
+        for dirpath, _, filenames in os.walk(root):
+            if not files_to_ignore(dirpath):
                 continue
 
-            self.process_files(root, actual_path, files)
+            self._process_files(dirpath, root, filenames)
 
-        if len(self.related_files.keys()):
+        if self.pcd_files:
             self.dimension = DimensionType.DIM_3D
+
+    def detect_dimension_for_paths(self, paths: Sequence[str]) -> DimensionType:
+        detected_dimensions = detect_media_dimension(paths)
+        if (
+            _MediaDimension.dim_2d in detected_dimensions and
+            _MediaDimension.dim_3d in detected_dimensions
+        ):
+            # Point clouds can have related images
+            detected_dimensions.remove(_MediaDimension.dim_2d)
+
+        result = []
+        for dim in detected_dimensions:
+            if dim == _MediaDimension.dim_2d:
+                result.append(DimensionType.DIM_2D)
+            elif dim == _MediaDimension.dim_3d:
+                result.append(DimensionType.DIM_3D)
+            else:
+                assert False, f"Unknown dimension {dim}"
+
+        if len(result) > 1:
+            raise ValidationError(
+                "Input data must have only one dimension, found {}".format(
+                    ", ".join(str(d) for d in result)
+                )
+            )
+
+        assert len(result) == 1
+        self.dimension = next(iter(result))
+
+        return self.dimension

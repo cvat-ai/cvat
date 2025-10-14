@@ -554,8 +554,10 @@ export class SliceHandlerImpl implements SliceHandler {
             }], 'slice');
 
             this.objectSelector.enable(([state]) => {
-                this.objectSelector.disable();
-                initializeWithContour(state);
+                if (state) {
+                    this.objectSelector.disable();
+                    initializeWithContour(state);
+                }
             }, { maxCount: 1, shapeType: ['polygon', 'mask'], objectType: ['shape'] });
         } else if (this.enabled && !sliceData.enabled) {
             this.release();

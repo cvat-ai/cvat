@@ -7,7 +7,7 @@
 
 /* eslint-disable security/detect-non-literal-regexp */
 
-import { decomposeMatrix } from './utils';
+import { decomposeMatrix, convertClasses } from './utils';
 
 require('cypress-file-upload');
 require('../plugins/imageGenerator/imageGeneratorCommand');
@@ -303,39 +303,39 @@ Cypress.Commands.add('headlessLogin', ({
 });
 
 Cypress.Commands.add('headlessCreateObjects', (objects, jobID) => {
-    const convertShape = ($win, job) => (shape) => ({
+    const convertShape = (job) => (shape) => ({
         frame: shape.frame,
         type: shape.type,
-        points: $win.Array.from(shape.points),
+        points: shape.points,
         label_id: job.labels.find((label) => label.name === shape.labelName).id,
         occluded: shape.occluded || false,
         outside: shape.outside || false,
         source: shape.source || 'manual',
-        attributes: $win.Array.from(shape.attributes || []),
-        elements: $win.Array.from(shape.elements ? shape.elements.map(convertShape) : []),
+        attributes: shape.attributes || [],
+        elements: shape.elements ? shape.elements.map(convertShape(job)) : [],
         rotation: shape.rotation || 0,
         group: shape.group || 0,
         z_order: shape.zOrder || 0,
     });
 
-    const convertTag = ($win, job) => (tag) => ({
+    const convertTag = (job) => (tag) => ({
         frame: tag.frame,
         label_id: job.labels.find((label) => label.name === tag.labelName).id,
         source: tag.source || 'manual',
-        attributes: $win.Array.from(tag.attributes || []),
+        attributes: tag.attributes || [],
         group: tag.group || 0,
     });
 
-    const convertTrack = ($win, job) => (track) => ({
+    const convertTrack = (job) => (track) => ({
         frame: track.frame,
         label_id: job.labels.find((label) => label.name === track.labelName).id,
         group: track.group || 0,
         source: track.source || 'manual',
-        attributes: $win.Array.from(track.attributes || []),
-        elements: $win.Array.from(track.elements ? track.elements.map(convertTrack) : []),
+        attributes: track.attributes || [],
+        elements: track.elements ? track.elements.map(convertTrack(job)) : [],
         shapes: track.shapes.map((shape) => ({
-            attributes: $win.Array.from(shape.attributes || []),
-            points: $win.Array.from(shape.points),
+            attributes: shape.attributes || [],
+            points: shape.points,
             frame: shape.frame,
             occluded: shape.occluded || false,
             outside: shape.outside || false,
@@ -345,22 +345,18 @@ Cypress.Commands.add('headlessCreateObjects', (objects, jobID) => {
         })),
     });
 
-    cy.window().then(async ($win) => {
-        const job = (await $win.cvat.jobs.get({ jobID }))[0];
+    return cy.window().then(async ($win) => {
+        const [job] = await $win.cvat.jobs.get({ jobID });
         await job.annotations.clear({ reload: true });
 
-        const shapes = objects.filter((object) => object.objectType === 'shape').map(convertShape($win, job));
-        const tracks = objects.filter((object) => object.objectType === 'track').map(convertTrack($win, job));
-        const tags = objects.filter((object) => object.objectType === 'tag').map(convertTag($win, job));
+        const data = convertClasses({
+            shapes: objects.filter((object) => object.objectType === 'shape').map(convertShape(job)),
+            tracks: objects.filter((object) => object.objectType === 'track').map(convertTrack(job)),
+            tags: objects.filter((object) => object.objectType === 'tag').map(convertTag(job)),
+        }, $win);
 
-        await job.annotations.import({
-            shapes: $win.Array.from(shapes),
-            tracks: $win.Array.from(tracks),
-            tags: $win.Array.from(tags),
-        });
-
+        await job.annotations.import(data);
         await job.annotations.save();
-        return cy.wrap();
     });
 });
 
@@ -491,6 +487,12 @@ Cypress.Commands.add('openTask', (taskName, projectSubsetFieldValue) => {
     if (projectSubsetFieldValue) {
         cy.get('.cvat-project-subset-field').find('input').should('have.attr', 'value', projectSubsetFieldValue);
     }
+});
+
+Cypress.Commands.add('openTaskById', (taskId) => {
+    cy.visit(`/tasks/${taskId}`);
+    cy.get('.cvat-spinner').should('not.exist');
+    cy.get('.cvat-task-details').should('exist').and('be.visible');
 });
 
 Cypress.Commands.add('saveJob', (method = 'PATCH', status = 200, as = 'saveJob') => {
@@ -742,15 +744,21 @@ Cypress.Commands.add('createPolygon', (createPolygonParams) => {
     cy.checkObjectParameters(createPolygonParams, 'POLYGON');
 });
 
-Cypress.Commands.add('openSettings', () => {
+Cypress.Commands.add('clickUserMenuItem', (itemName, verify) => {
     cy.get('.cvat-header-menu-user-dropdown').click();
     cy.get('.cvat-header-menu')
         .should('exist')
         .and('be.visible')
         .find('[role="menuitem"]')
-        .filter(':contains("Settings")')
+        .filter(`:contains("${itemName}")`)
         .click();
-    cy.get('.cvat-settings-modal').should('be.visible');
+    verify();
+});
+
+Cypress.Commands.add('openSettings', () => {
+    cy.clickUserMenuItem('Settings', () => {
+        cy.get('.cvat-settings-modal').should('be.visible');
+    });
 });
 
 Cypress.Commands.add('closeSettings', () => {
@@ -758,6 +766,12 @@ Cypress.Commands.add('closeSettings', () => {
         cy.contains('button', 'Close').click();
     });
     cy.get('.cvat-settings-modal').should('not.be.visible');
+});
+
+Cypress.Commands.add('openProfile', () => {
+    cy.clickUserMenuItem('Profile', () => {
+        cy.get('.cvat-profile-page').should('be.visible');
+    });
 });
 
 Cypress.Commands.add('changeWorkspace', (mode) => {
@@ -1333,8 +1347,16 @@ Cypress.Commands.add('setJobStage', (jobID, stage) => {
     cy.get('.cvat-spinner').should('not.exist');
 });
 
-Cypress.Commands.add('closeNotification', (className) => {
-    cy.get(className).find('span[aria-label="close"]').click();
+Cypress.Commands.add('closeNotification', (className, numOfNotifications = 1) => {
+    cy.get(className)
+        .should('have.length', numOfNotifications)
+        .find('span[aria-label="close"]')
+        .then(($elements) => {
+            // Click in reverse order to avoid re-render instability
+            for (let i = $elements.length - 1; i >= 0; i--) {
+                cy.wrap($elements[i]).click();
+            }
+        });
     cy.get(className).should('not.exist');
 });
 
@@ -1546,7 +1568,7 @@ Cypress.Commands.add('createJob', (options = {
     frameSelectionMethod: 'Random',
     quantity: null,
     frameCount: null,
-    seed: null,
+    randomSeed: null,
     fromTaskPage: true,
 }) => {
     const {
@@ -1554,7 +1576,7 @@ Cypress.Commands.add('createJob', (options = {
         frameSelectionMethod,
         quantity,
         frameCount,
-        seed,
+        randomSeed,
         fromTaskPage,
     } = options;
 
@@ -1587,9 +1609,9 @@ Cypress.Commands.add('createJob', (options = {
         cy.get('.cvat-input-frame-count').type(frameCount);
     }
 
-    if (seed) {
+    if (randomSeed) {
         cy.get('.cvat-input-seed').clear();
-        cy.get('.cvat-input-seed').type(seed);
+        cy.get('.cvat-input-seed').type(randomSeed);
     }
 
     cy.contains('button', 'Submit').click();

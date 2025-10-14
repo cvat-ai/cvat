@@ -190,7 +190,7 @@ class TestSessionAuth:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
-class TestAccessTokenAuth:
+class TestApiTokenAuth:
     @classmethod
     @contextmanager
     def make_client(cls, *, token: Optional[str] = None) -> Generator[ApiClient, None, None]:

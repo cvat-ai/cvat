@@ -764,10 +764,13 @@ export class Job extends Session {
 export class Task extends Session {
     public name: string;
     public projectId: number | null;
+    public organizationId: number | null;
     public assignee: User | null;
     public bugTracker: string;
     public subset: string;
     public labels: Label[];
+    public sourceStorage: Storage;
+    public targetStorage: Storage;
     public readonly guideId: number | null;
     public readonly id: number;
     public readonly status: TaskStatus;
@@ -782,9 +785,6 @@ export class Task extends Session {
     public readonly dataChunkSize: number;
     public readonly dataChunkType: ChunkType;
     public readonly dimension: DimensionType;
-    public readonly sourceStorage: Storage;
-    public readonly targetStorage: Storage;
-    public readonly organization: number | null;
     public readonly progress: {
         completedJobs: number,
         totalJobs: number,
@@ -800,7 +800,7 @@ export class Task extends Session {
     public readonly useZipChunks: boolean;
     public readonly useCache: boolean;
     public readonly copyData: boolean;
-    public readonly cloudStorageId: number;
+    public readonly cloudStorageId: number | null;
     public readonly sortingMethod: string;
 
     public readonly validationMode: string | null;
@@ -825,6 +825,7 @@ export class Task extends Session {
             name: undefined,
             project_id: null,
             guide_id: undefined,
+            organization_id: undefined,
             status: undefined,
             size: undefined,
             mode: undefined,
@@ -840,10 +841,10 @@ export class Task extends Session {
             data_chunk_size: undefined,
             data_compressed_chunk_type: undefined,
             data_original_chunk_type: undefined,
+            data_cloud_storage_id: undefined,
             dimension: undefined,
             source_storage: undefined,
             target_storage: undefined,
-            organization: undefined,
             progress: undefined,
             labels: undefined,
             jobs: undefined,
@@ -854,7 +855,6 @@ export class Task extends Session {
             use_zip_chunks: undefined,
             use_cache: undefined,
             copy_data: undefined,
-            cloud_storage_id: undefined,
             sorting_method: undefined,
             files: undefined,
             consensus_enabled: undefined,
@@ -1128,7 +1128,7 @@ export class Task extends Session {
                         for (const value of clientFiles) {
                             if (!(value instanceof File)) {
                                 throw new ArgumentError(
-                                    `Array values must be a File. But ${value.constructor.name} has been got.`,
+                                    'Array values must be a File.',
                                 );
                             }
                         }
@@ -1175,19 +1175,41 @@ export class Task extends Session {
                     get: () => data.dimension,
                 },
                 cloudStorageId: {
-                    get: () => data.cloud_storage_id,
+                    get: () => data.data_cloud_storage_id,
                 },
                 sortingMethod: {
                     get: () => data.sorting_method,
                 },
-                organization: {
-                    get: () => data.organization,
+                organizationId: {
+                    get: () => data.organization_id,
+                    set: (organizationId) => {
+                        if ((Number.isInteger(organizationId) && organizationId > 0) || organizationId === null) {
+                            updateTrigger.update('organizationId');
+                            data.organization_id = organizationId;
+                        } else {
+                            throw new ArgumentError('Value must be a positive integer or null');
+                        }
+                    },
                 },
                 sourceStorage: {
                     get: () => data.source_storage,
+                    set: (storage) => {
+                        if (!(storage instanceof Storage)) {
+                            throw new ArgumentError('Value must be an instance of the Storage class');
+                        }
+                        updateTrigger.update('sourceStorage');
+                        data.source_storage = storage;
+                    },
                 },
                 targetStorage: {
                     get: () => data.target_storage,
+                    set: (storage) => {
+                        if (!(storage instanceof Storage)) {
+                            throw new ArgumentError('Value must be an instance of the Storage class');
+                        }
+                        updateTrigger.update('targetStorage');
+                        data.target_storage = storage;
+                    },
                 },
                 progress: {
                     get: () => data.progress,

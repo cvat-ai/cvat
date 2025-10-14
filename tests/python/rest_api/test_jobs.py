@@ -222,8 +222,8 @@ class TestPostJobs:
         [
             # The results have to be the same in different CVAT revisions,
             # so the task ids are fixed
-            (21, [3, 5, 7]),  # annotation task
-            (5, [11, 14, 20]),  # interpolation task
+            (21, [4, 6, 8]),  # annotation task
+            (5, [12, 15, 21]),  # interpolation task
         ],
     )
     def test_can_create_gt_job_with_random_frames_and_seed(self, admin_user, task_id, frame_ids):
@@ -233,7 +233,7 @@ class TestPostJobs:
             "type": "ground_truth",
             "frame_selection_method": "random_uniform",
             "frame_count": 3,
-            "seed": 42,
+            "random_seed": 42,
         }
 
         response = self._test_create_job_ok(user, job_spec)
@@ -1650,7 +1650,9 @@ class TestGetJobPreview:
             (user["username"], job["id"])
             for user in users
             for org in organizations
-            for job in jobs_by_org[org["id"]]
+            for job in jobs_by_org.get(
+                org["id"], []
+            )  # jobs_by_org does not include orgs without jobs
             if is_job_staff(user["id"], job["id"])
         )
         self._test_get_job_preview_200(username, job_id)
@@ -1671,7 +1673,9 @@ class TestGetJobPreview:
             (user["username"], job["id"])
             for user in users
             for org in organizations
-            for job in jobs_by_org[org["id"]]
+            for job in jobs_by_org.get(
+                org["id"], []
+            )  # jobs_by_org does not include orgs without jobs
             if user["id"] not in org_staff(org["id"]) and not is_job_staff(user["id"], job["id"])
         )
         self._test_get_job_preview_403(username, job_id)

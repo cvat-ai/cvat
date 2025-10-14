@@ -128,6 +128,7 @@ class ObjectItemDetailsContainer extends React.PureComponent<Props> {
                     length: parseFloat(state.points[8].toFixed(2)), // Z
                 };
             }
+
             return (
                 <ObjectItemDetails
                     readonly={readonly}

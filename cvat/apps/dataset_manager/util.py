@@ -27,7 +27,15 @@ from pottery import Redlock
 
 
 def current_function_name(depth=1):
-    return inspect.getouterframes(inspect.currentframe())[depth].function
+    frame = inspect.currentframe()
+    if frame is None:
+        return "[unknown]"
+
+    for _ in range(depth):
+        frame = frame.f_back
+        assert frame is not None, "not enough stack frames"
+
+    return frame.f_code.co_name
 
 
 def make_zip_archive(src_path, dst_path):

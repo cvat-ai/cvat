@@ -142,7 +142,6 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.TokenAuthentication",
         "cvat.apps.api_tokens.authentication.ApiTokenAuthentication",
-        "cvat.apps.iam.authentication.SignatureAuthentication",
         "rest_framework.authentication.SessionAuthentication",
         "cvat.apps.iam.authentication.BasicAuthenticationEx",
     ],
@@ -489,9 +488,6 @@ os.makedirs(ASSETS_ROOT, exist_ok=True)
 SHARE_ROOT = os.path.join(BASE_DIR, "share")
 os.makedirs(SHARE_ROOT, exist_ok=True)
 
-MODELS_ROOT = os.path.join(DATA_ROOT, "models")
-os.makedirs(MODELS_ROOT, exist_ok=True)
-
 LOGS_ROOT = os.path.join(BASE_DIR, "logs")
 os.makedirs(LOGS_ROOT, exist_ok=True)
 
@@ -812,3 +808,6 @@ if ONE_RUNNING_JOB_IN_QUEUE_PER_USER:
     )
 
 USER_LAST_ACTIVITY_UPDATE_MIN_INTERVAL = timedelta(days=1)
+
+# Health check settings
+HEALTH_CHECK = {"DISK_USAGE_MAX": int(os.getenv("CVAT_HEALTH_DISK_USAGE_MAX", 90))}

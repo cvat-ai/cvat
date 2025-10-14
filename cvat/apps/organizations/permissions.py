@@ -21,10 +21,9 @@ class OrganizationPermission(OpenPolicyAgentPermission):
     @classmethod
     def create(cls, request, view, obj, iam_context):
         permissions = []
-        if view.basename == "organization":
-            for scope in cls.get_scopes(request, view, obj):
-                self = cls.create_base_perm(request, view, scope, iam_context, obj)
-                permissions.append(self)
+        for scope in cls.get_scopes(request, view, obj):
+            self = cls.create_base_perm(request, view, scope, iam_context, obj)
+            permissions.append(self)
 
         return permissions
 
@@ -72,12 +71,11 @@ class InvitationPermission(OpenPolicyAgentPermission):
     @classmethod
     def create(cls, request, view, obj, iam_context):
         permissions = []
-        if view.basename == "invitation":
-            for scope in cls.get_scopes(request, view, obj):
-                self = cls.create_base_perm(
-                    request, view, scope, iam_context, obj, role=request.data.get("role")
-                )
-                permissions.append(self)
+        for scope in cls.get_scopes(request, view, obj):
+            self = cls.create_base_perm(
+                request, view, scope, iam_context, obj, role=request.data.get("role")
+            )
+            permissions.append(self)
 
         return permissions
 
@@ -135,14 +133,13 @@ class MembershipPermission(OpenPolicyAgentPermission):
     @classmethod
     def create(cls, request, view, obj, iam_context):
         permissions = []
-        if view.basename == "membership":
-            for scope in cls.get_scopes(request, view, obj):
-                params = {}
-                if scope == "change:role":
-                    params["role"] = request.data.get("role")
+        for scope in cls.get_scopes(request, view, obj):
+            params = {}
+            if scope == "change:role":
+                params["role"] = request.data.get("role")
 
-                self = cls.create_base_perm(request, view, scope, iam_context, obj, **params)
-                permissions.append(self)
+            self = cls.create_base_perm(request, view, scope, iam_context, obj, **params)
+            permissions.append(self)
 
         return permissions
 

@@ -24,6 +24,6 @@ class ApiTokensConfig(AppConfig):
         # Force execution of symbols in the module.
         importlib.import_module(self.name + ".schema")
 
-        from cvat.apps.iam.permissions import load_app_permissions
+        from cvat.apps.iam.permissions import load_app_iam_rules
 
-        load_app_permissions(self)
+        load_app_iam_rules(self)

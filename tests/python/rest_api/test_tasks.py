@@ -439,6 +439,16 @@ class TestPostTasks:
                 assert task.assignee is None
                 assert task.assignee_updated_date is None
 
+    def test_can_create_without_labels(self, admin_user):
+        task_spec = {"name": "test task without labels"}
+
+        with make_api_client(admin_user) as api_client:
+            (task, _) = api_client.tasks_api.create(task_write_request=task_spec)
+
+            (labels, _) = api_client.labels_api.list(task_id=task.id)
+
+            assert labels.count == 0
+
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetData:
@@ -1088,7 +1098,8 @@ class TestPatchTaskLabel:
             for user, task in product(users, tasks)
             if not is_task_staff(user["id"], task["id"])
             and task["organization"]
-            and is_org_member(user["id"], task["organization"] and task["project_id"] is None)
+            and is_org_member(user["id"], task["organization"])
+            and task["project_id"] is None
         )
 
         new_label = {"name": "new name"}
@@ -1190,12 +1201,12 @@ class TestWorkWithTask:
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(
         "cloud_storage_id, manifest",
-        [(1, "manifest.jsonl")],  # public bucket
+        [(1, "images_with_manifest/manifest.jsonl")],  # public bucket
     )
     def test_work_with_task_containing_non_stable_cloud_storage_files(
         self, cloud_storage_id, manifest, cloud_storages, request
     ):
-        image_name = "image_case_65_1.png"
+        image_name = "images_with_manifest/image_case_65_1.png"
         cloud_storage_content = [image_name, manifest]
 
         task_spec = {
@@ -1289,8 +1300,11 @@ class TestTaskBackups:
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize("lightweight_backup", [True, False])
-    def test_can_export_and_import_backup_task_with_cloud_storage(self, tasks, lightweight_backup):
-        cloud_storage_content = ["image_case_65_1.png", "image_case_65_2.png"]
+    def test_can_export_and_import_backup_task_with_cloud_storage(self, lightweight_backup):
+        cloud_storage_content = [
+            "images_with_manifest/image_case_65_1.png",
+            "images_with_manifest/image_case_65_2.png",
+        ]
         task_spec = {
             "name": "Task with files from cloud storage",
             "labels": [
@@ -1312,8 +1326,18 @@ class TestTaskBackups:
         filename = self.tmp_dir / f"cloud_task_{task.id}_backup.zip"
         task.download_backup(filename, lightweight=lightweight_backup)
 
-        assert filename.is_file()
-        assert filename.stat().st_size > 0
+        with zipfile.ZipFile(filename, "r") as zf:
+            files_in_data = {
+                name.split("data/", maxsplit=1)[1]
+                for name in zf.namelist()
+                if name.startswith("data/")
+            }
+
+        expected_media = {"manifest.jsonl"}
+        if not lightweight_backup:
+            expected_media.update(cloud_storage_content)
+        assert files_in_data == expected_media
+
         self._test_can_restore_task_from_backup(task_id, lightweight_backup=lightweight_backup)
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
@@ -1443,8 +1467,10 @@ class TestTaskBackups:
                     r"root\['assignee'\]",  # id, depends on the situation
                     r"root\['owner'\]",  # id, depends on the situation
                     r"root\['data'\]",  # id, must be different
-                    r"root\['organization'\]",  # depends on the task setup
+                    r"root\['organization'\]",  # depends on the task setup, deprecated field
+                    r"root\['organization_id'\]",  # depends on the task setup
                     r"root\['project_id'\]",  # should be dropped
+                    r"root\['data_cloud_storage_id'\]",  # should be dropped
                     r"root(\['.*'\])*\['url'\]",  # depends on the task id
                     r"root\['data_compressed_chunk_type'\]",  # depends on the server configuration
                     r"root\['source_storage'\]",  # should be dropped
@@ -2738,6 +2764,100 @@ class TestPatchTask:
             task_id,
             expected_status=HTTPStatus.OK if is_allow else HTTPStatus.FORBIDDEN,
         )
+
+    # TODO: Test assignee reset
+    # TODO: Test owner update
+    # TODO: Test source/target/data storage reset
+    @pytest.mark.parametrize(
+        "from_org, to_org",
+        [
+            (True, True),
+            (True, False),
+            (False, True),
+        ],
+    )
+    def test_task_can_be_transferred_to_different_workspace(
+        self,
+        from_org: bool,
+        to_org: bool,
+        organizations,
+        find_users,
+    ):
+        src_org, dst_org, user = None, None, None
+        org_owners = {o["owner"]["username"] for o in organizations}
+        regular_users = {u["username"] for u in find_users(privilege="user")}
+
+        for u in regular_users & org_owners:
+            src_org, dst_org = None, None
+            for org in organizations:
+                if from_org and not src_org and u == org["owner"]["username"]:
+                    src_org = org
+                    continue
+                if to_org and not dst_org and u == org["owner"]["username"]:
+                    dst_org = org
+                    break
+            if (from_org and src_org or not from_org) and (to_org and dst_org or not to_org):
+                user = u
+                break
+
+        assert user, "Could not find a user matching the filters"
+        assert (
+            from_org and src_org or not from_org and not src_org
+        ), "Could not find a source org matching the filters"
+        assert (
+            to_org and dst_org or not to_org and not dst_org
+        ), "Could not find a destination org matching the filters"
+
+        src_org_id = src_org["id"] if src_org else src_org
+        dst_org_id = dst_org["id"] if dst_org else dst_org
+
+        task_spec = {
+            "name": "Task to be transferred to another workspace",
+            "labels": [
+                {
+                    "name": "car",
+                }
+            ],
+        }
+        data_spec = {
+            "image_quality": 75,
+            "use_cache": True,
+            "server_files": ["images/image_1.jpg"],
+        }
+        (task_id, _) = create_task(
+            user, task_spec, data_spec, **({"org_id": src_org_id} if src_org_id else {})
+        )
+
+        with make_api_client(user) as api_client:
+            task_details, _ = api_client.tasks_api.partial_update(
+                task_id, patched_task_write_request={"organization_id": dst_org_id}
+            )
+            assert task_details.organization_id == dst_org_id
+
+    def test_cannot_transfer_task_from_project_to_different_workspace(
+        self,
+        filter_tasks,
+        find_users,
+    ):
+        task, user = None, None
+
+        filtered_users = {u["username"] for u in find_users(privilege="user")}
+        for t in filter_tasks(exclude_project_id=None):
+            user = t["owner"]["username"]
+            if user in filtered_users:
+                task = t
+                break
+
+        assert task and user
+
+        with make_api_client(user) as api_client:
+            _, response = api_client.tasks_api.partial_update(
+                task["id"],
+                patched_task_write_request={"organization_id": None},
+                _check_status=False,
+                _parse_response=False,
+            )
+            assert response.status == HTTPStatus.BAD_REQUEST
 
 
 @pytest.mark.usefixtures("restore_db_per_function")

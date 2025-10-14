@@ -8,13 +8,13 @@ import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
 import { ItemType } from 'antd/lib/menu/hooks/useItems';
 import { MenuInfo } from 'components/dropdown-menu';
-import { Membership, Organization } from 'cvat-core-wrapper';
+import { Membership } from 'cvat-core-wrapper';
 import { useDropdownEditField } from 'utils/hooks';
 import { CVATMenuEditLabel } from 'components/common/cvat-menu-edit-label';
 import { MenuProps } from 'antd/lib/menu';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector, shallowEqual } from 'react-redux';
 import { CombinedState } from 'reducers';
-import { LabelWithCountHOC } from 'components/common/label-with-count';
+import { LabelWithCountHOF } from 'components/common/label-with-count';
 import { makeBulkOperationAsync } from 'actions/bulk-actions';
 import { removeOrganizationMemberAsync } from 'actions/organization-actions';
 import { resendInvitationAsync } from 'actions/invitations-actions';
@@ -55,11 +55,17 @@ function MemberActionsMenu(props: Readonly<MemberActionsMenuProps>): JSX.Element
     } = useDropdownEditField();
 
     const dispatch = useDispatch();
-    const selectedIds = useSelector((state: CombinedState) => state.organizations.selectedMembers);
-    const isBulkMode = selectedIds.length > 1;
-    const members = useSelector((state: CombinedState) => state.organizations.members);
-    const organizationInstance = useSelector((state: CombinedState) => state.organizations.current) as Organization;
+    const {
+        selectedIds,
+        members,
+        organizationInstance,
+    } = useSelector((state: CombinedState) => ({
+        selectedIds: state.organizations.selectedMembers,
+        members: state.organizations.members,
+        organizationInstance: state.organizations.current!,
+    }), shallowEqual);
 
+    const isBulkMode = selectedIds.length > 1;
     let membershipsToAct: Membership[] = [membershipInstance];
     if (selectedIds.includes(membershipInstance.id)) {
         membershipsToAct = members.filter((m) => selectedIds.includes(m.id));
@@ -69,11 +75,11 @@ function MemberActionsMenu(props: Readonly<MemberActionsMenuProps>): JSX.Element
         MenuKeys.EDIT_ROLE, MenuKeys.RESEND_INVITATION,
         MenuKeys.REMOVE_MEMBER, MenuKeys.DELETE_INVITATION,
     ];
-    const canUpdateRole = (membership: Membership) => (membership.role !== 'owner');
-    const canOperateInvitation = (membership: Membership) => (
+    const canUpdateRole = (membership: Membership): boolean => (membership.role !== 'owner');
+    const canOperateInvitation = (membership: Membership): boolean => (
         Boolean(membership.invitation && !membership.isActive && membership.invitation.key)
     );
-    const canRemoveMembership = (membership: Membership) => (
+    const canRemoveMembership = (membership: Membership): boolean => (
         membership.role !== 'owner' && selfUserName !== membership.user.username && !canOperateInvitation(membership)
     );
     const actionsApplicable = {
@@ -83,16 +89,20 @@ function MemberActionsMenu(props: Readonly<MemberActionsMenuProps>): JSX.Element
         [MenuKeys.REMOVE_MEMBER]: membershipsToAct.filter(canRemoveMembership),
     };
 
-    const withCount = LabelWithCountHOC(selectedIds, bulkKeys, actionsApplicable);
+    const withCount = LabelWithCountHOF(selectedIds, bulkKeys, actionsApplicable);
 
-    const handleRemoveMembership = (): void => {
-        const membershipsToRemove = actionsApplicable[MenuKeys.REMOVE_MEMBER];
+    const handleRemoveMembership = (
+        actionType: MenuKeys.REMOVE_MEMBER | MenuKeys.DELETE_INVITATION,
+    ): void => {
+        const membershipsToRemove = actionsApplicable[actionType];
+        const actionLabel = actionType === MenuKeys.DELETE_INVITATION ? 'Deleting invitation for' : 'Removing member';
+
         dispatch(makeBulkOperationAsync(
             membershipsToRemove,
             async (m) => {
                 await dispatch(removeOrganizationMemberAsync(organizationInstance, m));
             },
-            (m, idx, total) => `Removing member ${m.user.username} (${idx + 1}/${total})`,
+            (m, idx, total) => `${actionLabel} ${m.user.username} (${idx + 1}/${total})`,
             fetchMembers,
         ));
     };
@@ -161,7 +171,7 @@ function MemberActionsMenu(props: Readonly<MemberActionsMenuProps>): JSX.Element
                     if (action.key === MenuKeys.RESEND_INVITATION) {
                         handleResendInvitation();
                     } else if (action.key === MenuKeys.DELETE_INVITATION) {
-                        handleRemoveMembership();
+                        handleRemoveMembership(MenuKeys.DELETE_INVITATION);
                     } else if (action.key === 'remove_member') {
                         Modal.confirm({
                             className: 'cvat-modal-organization-member-remove',
@@ -172,7 +182,7 @@ function MemberActionsMenu(props: Readonly<MemberActionsMenuProps>): JSX.Element
                                 danger: true,
                             },
                             onOk: () => {
-                                handleRemoveMembership();
+                                handleRemoveMembership(MenuKeys.REMOVE_MEMBER);
                             },
                         });
                     } else if (action.key === 'edit_role') {

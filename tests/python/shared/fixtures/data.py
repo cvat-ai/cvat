@@ -246,6 +246,7 @@ def users_by_name(users):
 
 @pytest.fixture(scope="session")
 def jobs_by_org(tasks, jobs):
+    # FUTURE-FIXME: should be based on organizations to include orgs without jobs too
     data = {}
     for job in jobs:
         data.setdefault(tasks[job["task_id"]]["organization"], []).append(job)
@@ -581,7 +582,7 @@ def api_tokens():
 def api_tokens_by_username(api_tokens, users):
     api_tokens_by_user_id = {}
     for api_token in api_tokens:
-        api_tokens_by_user_id.setdefault(api_token["owner"], []).append(api_token)
+        api_tokens_by_user_id.setdefault(api_token["owner"]["id"], []).append(api_token)
 
     users_by_id = {}
     for user in users:

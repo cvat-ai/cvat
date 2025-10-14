@@ -101,11 +101,6 @@ export default function (state = defaultState, action: AuthActions | BoundariesA
                 ...state,
                 fetching: false,
             };
-        case AuthActionTypes.SWITCH_CHANGE_PASSWORD_DIALOG:
-            return {
-                ...state,
-                showChangePasswordDialog: action.payload.visible,
-            };
         case AuthActionTypes.REQUEST_PASSWORD_RESET:
             return {
                 ...state,
@@ -132,6 +127,22 @@ export default function (state = defaultState, action: AuthActions | BoundariesA
                 fetching: false,
             };
         case AuthActionTypes.RESET_PASSWORD_FAILED:
+            return {
+                ...state,
+                fetching: false,
+            };
+        case AuthActionTypes.UPDATE_USER:
+            return {
+                ...state,
+                fetching: true,
+            };
+        case AuthActionTypes.UPDATE_USER_SUCCESS:
+            return {
+                ...state,
+                fetching: false,
+                user: action.payload.user,
+            };
+        case AuthActionTypes.UPDATE_USER_FAILED:
             return {
                 ...state,
                 fetching: false,
