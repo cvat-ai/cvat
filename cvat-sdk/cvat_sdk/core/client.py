@@ -264,9 +264,13 @@ class Client:
         self.api_client.configuration.access_token = None
 
     def logout(self) -> None:
-        if self.has_credentials():
+        if not self.has_credentials():
+            return
+
+        if "sessionid" in self.api_client.cookies or "csrftoken" in self.api_client.cookies:
             self.api_client.auth_api.create_logout()
-            self._clear_credentials()
+
+        self._clear_credentials()
 
     def wait_for_completion(
         self: Client,
