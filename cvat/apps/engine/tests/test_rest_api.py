@@ -77,8 +77,8 @@ from cvat.apps.engine.tests.utils import (
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 from utils.dataset_manifest.utils import PcdReader, find_related_images
 
-from .utils import check_annotation_response, compare_objects
 from ...redis_handler.serializers import RequestStatus
+from .utils import check_annotation_response, compare_objects
 
 # suppress av warnings
 logging.getLogger("libav").setLevel(logging.ERROR)
@@ -7913,7 +7913,7 @@ class TaskJobLimitAPITestCase(ApiTestBase):
 
         response = self._create_task(data, image_data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['status'], RequestStatus.FINISHED)
+        self.assertEqual(response.data["status"], RequestStatus.FINISHED)
 
         task_id = Task.objects.latest("id").id
         job_count = Job.objects.filter(segment__task_id=task_id).count()
@@ -7938,7 +7938,7 @@ class TaskJobLimitAPITestCase(ApiTestBase):
 
         response = self._create_task(data, image_data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['status'], RequestStatus.FAILED)
+        self.assertEqual(response.data["status"], RequestStatus.FAILED)
 
         task_id = Task.objects.latest("id").id
         job_count = Job.objects.filter(segment__task_id=task_id).count()
@@ -7963,7 +7963,7 @@ class TaskJobLimitAPITestCase(ApiTestBase):
 
         response = self._create_task(data, image_data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['status'], RequestStatus.FINISHED)
+        self.assertEqual(response.data["status"], RequestStatus.FINISHED)
 
         task_id = Task.objects.latest("id").id
         job_count = Job.objects.filter(segment__task_id=task_id).count()
@@ -7989,7 +7989,7 @@ class TaskJobLimitAPITestCase(ApiTestBase):
 
         response = self._create_task(data, image_data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['status'], RequestStatus.FINISHED)
+        self.assertEqual(response.data["status"], RequestStatus.FINISHED)
 
         task_id = Task.objects.latest("id").id
         job_count = Job.objects.filter(segment__task_id=task_id).count()
@@ -8015,7 +8015,7 @@ class TaskJobLimitAPITestCase(ApiTestBase):
 
         response = self._create_task(data, image_data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['status'], RequestStatus.FAILED)
+        self.assertEqual(response.data["status"], RequestStatus.FAILED)
 
         task_id = Task.objects.latest("id").id
         job_count = Job.objects.filter(segment__task_id=task_id).count()
