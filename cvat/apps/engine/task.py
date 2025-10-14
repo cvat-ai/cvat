@@ -69,7 +69,7 @@ class SegmentsParams(NamedTuple):
     segments: Iterator[SegmentParams]
     segment_size: int
     overlap: int
-    job_size: Optional[int] = None
+    segments_count: Optional[int] = None
 
 def _copy_data_from_share_point(
     server_files: list[str],
@@ -135,7 +135,7 @@ def _generate_segment_params(
         segments = _segments()
         segment_size = 0
         overlap = 0
-        job_size = len(job_file_mapping)
+        segments_count = len(job_file_mapping)
     else:
         # The segments have equal parameters
         if data_size is None:
@@ -151,7 +151,7 @@ def _generate_segment_params(
             segment_size // 2,
         )
         segments_range = range(0, data_size - overlap, segment_size - overlap)
-        job_size = len(list(segments_range))
+        segments_count = len(segments_range)
 
         segments = (
             SegmentParams(
@@ -162,7 +162,7 @@ def _generate_segment_params(
             for start_frame in segments_range
         )
 
-    return SegmentsParams(segments, segment_size, overlap, job_size)
+    return SegmentsParams(segments, segment_size, overlap, segments_count)
 
 
 def _create_segments_and_jobs(
@@ -173,17 +173,17 @@ def _create_segments_and_jobs(
 ):
     update_status_callback('Task is being saved in database')
 
-    segments, segment_size, overlap, job_size = _generate_segment_params(
+    segments, segment_size, overlap, segments_count = _generate_segment_params(
         db_task=db_task, job_file_mapping=job_file_mapping,
     )
     db_task.segment_size = segment_size
     db_task.overlap = overlap
 
-    job_size_total = job_size * (db_task.consensus_replicas + 1)
-    if job_size_total > settings.MAX_JOBS_PER_TASK:
+    job_count_total = segments_count * (db_task.consensus_replicas + 1)
+    if job_count_total > settings.MAX_JOBS_PER_TASK:
         raise ValueError(
             "Too many jobs would be created for the task. "
-            f"Current total: {job_size_total}, "
+            f"Current total: {job_count_total}, "
             f"maximum allowed: {settings.MAX_JOBS_PER_TASK}."
         )
 
