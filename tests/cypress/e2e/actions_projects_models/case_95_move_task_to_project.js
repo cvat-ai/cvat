@@ -65,7 +65,6 @@ context('Move a task to a project.', { browser: '!firefox' }, () => {
         cy.createAnnotationTask(
             task.nameSecond, task.labelSecond, task.attrNameSecond, task.attrValueSecond, archiveName,
         );
-        // cy.createAnnotationTask(task.name3d, task.label3d, task.attrName3d, task.attrValue3d, archiveName3d);
     });
 
     beforeEach(() => {
