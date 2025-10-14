@@ -30,6 +30,8 @@ from scipy.optimize import linear_sum_assignment
 
 T = TypeVar("T")
 
+ASSETS_DIR = Path(__file__).parent / "assets"
+
 
 class OrderStrategy(Protocol):
     def __call__(self, key_path: list[str]) -> bool: ...

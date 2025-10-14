@@ -6,7 +6,6 @@
 
 import copy
 import itertools
-import os
 import os.path as osp
 import tempfile
 import xml.etree.ElementTree as ET
@@ -22,6 +21,7 @@ from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.dataset_manager.tests.utils import TestDir
 from cvat.apps.engine.media_extractors import ValidateDimension
 from cvat.apps.engine.tests.utils import (
+    ASSETS_DIR,
     ExportApiTestBase,
     ForceLogin,
     ImportApiTestBase,
@@ -239,9 +239,7 @@ class Task3DTest(_DbTestBase):
         cls.format_names = ["Sly Point Cloud Format 1.0", "Kitti Raw Format 1.0"]
         cls._image_sizes = {}
         cls.pointcloud_pcd_filename = "test_canvas3d.zip"
-        cls.pointcloud_pcd_path = osp.join(
-            os.path.dirname(__file__), "assets", cls.pointcloud_pcd_filename
-        )
+        cls.pointcloud_pcd_path = ASSETS_DIR / cls.pointcloud_pcd_filename
 
         image_sizes = []
         zip_file = zipfile.ZipFile(cls.pointcloud_pcd_path)
