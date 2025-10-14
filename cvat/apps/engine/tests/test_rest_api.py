@@ -7875,6 +7875,10 @@ class TaskJobLimitAPITestCase(ApiTestBase):
     Tests for MAX_JOBS_PER_TASK validation at the REST API level
     """
 
+    def setUp(self):
+        super().setUp()
+        self.error_message = "Too many jobs would be created for the task"
+
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -7933,6 +7937,7 @@ class TaskJobLimitAPITestCase(ApiTestBase):
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["status"], RequestStatus.FAILED)
+        self.assertIn(self.error_message, response.data["message"])
 
         task_id = Task.objects.latest("id").id
         job_count = Job.objects.filter(segment__task_id=task_id).count()
@@ -7974,6 +7979,7 @@ class TaskJobLimitAPITestCase(ApiTestBase):
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["status"], RequestStatus.FAILED)
+        self.assertIn(self.error_message, response.data["message"])
 
         task_id = Task.objects.latest("id").id
         job_count = Job.objects.filter(segment__task_id=task_id).count()
