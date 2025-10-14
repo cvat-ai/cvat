@@ -20,7 +20,9 @@ import {
     SerializedQualitySettingsData, APIQualitySettingsFilter, SerializedQualityConflictData, APIQualityConflictsFilter,
     SerializedQualityReportData, APIQualityReportsFilter, APIAnalyticsEventsFilter, APIConsensusSettingsFilter,
     SerializedRequest, SerializedJobValidationLayout, SerializedTaskValidationLayout, SerializedConsensusSettingsData,
+    SerializedApiToken, APIApiTokensFilter,
 } from './server-response-types';
+import { APIApiTokenModifiableFields } from './server-request-types';
 import { PaginatedResource, UpdateStatusData } from './core-types';
 import { Storage } from './storage';
 import { SerializedEvent } from './event';
@@ -554,6 +556,63 @@ async function authenticated(): Promise<boolean> {
     }
 
     return true;
+}
+
+async function getApiTokens(filter: APIApiTokensFilter = {}): Promise<PaginatedResource<SerializedRequest>> {
+    const { backendAPI } = config;
+
+    let response = null;
+    try {
+        response = await Axios.get(`${backendAPI}/auth/api_tokens`, {
+            params: {
+                ...filter,
+            },
+        });
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+
+    response.data.results.count = response.data.count;
+    return response.data.results;
+}
+
+async function createApiToken(tokenData: SerializedApiToken): Promise<SerializedApiToken> {
+    const { backendAPI } = config;
+
+    let response = null;
+    try {
+        response = await Axios.post(`${backendAPI}/auth/api_tokens`, tokenData);
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+
+    return response.data;
+}
+
+async function updateApiToken(
+    id: number,
+    tokenData: APIApiTokenModifiableFields,
+): Promise<SerializedApiToken> {
+    const { backendAPI } = config;
+
+    let response = null;
+    try {
+        response = await Axios.patch(`${backendAPI}/auth/api_tokens/${id}`, tokenData);
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+
+    return response.data;
+}
+
+async function revokeApiToken(id: number): Promise<void> {
+    const { backendAPI } = config;
+
+    try {
+        await Axios.delete(`${backendAPI}/auth/api_tokens/${id}`);
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
 }
 
 async function healthCheck(
@@ -2473,6 +2532,13 @@ export default Object.freeze({
         get: getUsers,
         self: getSelf,
         update: updateUser,
+    }),
+
+    apiTokens: Object.freeze({
+        get: getApiTokens,
+        create: createApiToken,
+        update: updateApiToken,
+        revoke: revokeApiToken,
     }),
 
     frames: Object.freeze({

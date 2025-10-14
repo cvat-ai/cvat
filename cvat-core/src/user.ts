@@ -4,12 +4,10 @@
 // SPDX-License-Identifier: MIT
 
 import { SerializedUser } from './server-response-types';
+import { UserModifiableFields } from './server-request-types';
 import PluginRegistry from './plugins';
 import { fieldsToSnakeCase } from './common';
-import { Camelized } from './type-utils';
 import serverProxy from './server-proxy';
-
-export type UserSaveFields = Partial<Pick<Camelized<SerializedUser>, 'firstName' | 'lastName'>>;
 
 export default class User {
     public readonly id: number;
@@ -113,7 +111,7 @@ export default class User {
         };
     }
 
-    public async save(fields: UserSaveFields = {}): Promise<User> {
+    public async save(fields: UserModifiableFields = {}): Promise<User> {
         const result = await PluginRegistry.apiWrapper.call(this, User.prototype.save, fields);
         return result;
     }
