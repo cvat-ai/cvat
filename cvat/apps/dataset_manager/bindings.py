@@ -1450,7 +1450,6 @@ class ProjectData(InstanceLabelData):
         for task_data in self._tasks_data.values():
             task_data.soft_attribute_import = value
 
-
     def init_task_data(self, task_id: int) -> TaskData:
         try:
             task = self._db_tasks[task_id]
@@ -1530,6 +1529,10 @@ class ProjectData(InstanceLabelData):
 
     def add_task(self, task, files):
         self._project_annotation.add_task(task, files, self)
+
+    def __len__(self):
+        return sum(len(data) for data in self._tasks_data.values())
+
 
 @attrs(frozen=True, auto_attribs=True)
 class MediaSource:
@@ -1936,8 +1939,11 @@ class CVATProjectDataExtractor(dm.DatasetBase, CvatDataExtractorBase):
 
         dm.DatasetBase.__init__(
             self,
-            length=len(self._grouped_by_frame),
-            subsets=list(set(frame_data.subset for frame_data in self._grouped_by_frame)),
+            length=len(self._instance_data),
+            subsets=[
+                get_defaulted_subset(subset, self._instance_data.subsets)
+                for subset in self._instance_data.subsets
+            ],
             media_type=dm.Image if self._dimension == DimensionType.DIM_2D else dm.PointCloud,
         )
         self._categories = self.load_categories(self._instance_meta['labels'])
