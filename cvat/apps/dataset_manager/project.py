@@ -21,7 +21,7 @@ from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.rq import ImportRQMeta
 from cvat.apps.engine.serializers import DataSerializer, TaskWriteSerializer
 from cvat.apps.engine.task import create_thread as create_task
-from cvat.apps.engine.utils import av_scan_paths
+from cvat.apps.engine.utils import av_scan_paths, transaction_with_repeatable_read
 
 from .annotation import AnnotationIR
 from .bindings import CvatDatasetNotFoundError, CvatImportError, ProjectData, load_dataset_data
@@ -30,6 +30,7 @@ from .formats.registry import make_exporter, make_importer
 dlogger = DatasetLogManager()
 
 
+@transaction_with_repeatable_read()
 def export_project(
     project_id: int,
     dst_file: str,
@@ -39,14 +40,8 @@ def export_project(
     save_images: bool = False,
     temp_dir: str | None = None,
 ):
-    # For big tasks dump function may run for a long time and
-    # we dont need to acquire lock after the task has been initialized from DB.
-    # But there is the bug with corrupted dump file in case 2 or
-    # more dump request received at the same time:
-    # https://github.com/cvat-ai/cvat/issues/217
-    with transaction.atomic():
-        project = ProjectAnnotationAndData(project_id)
-        project.init_from_db()
+    project = ProjectAnnotationAndData(project_id)
+    project.init_from_db(streaming=True)
 
     exporter = make_exporter(format_name)
     with open(dst_file, "wb") as f:
@@ -139,17 +134,17 @@ class ProjectAnnotationAndData:
         if attributes:
             bulk_create(models.AttributeSpec, [a[1] for a in attributes])
 
-    def _init_task_from_db(self, task_id: int) -> None:
+    def _init_task_from_db(self, task_id: int, *, streaming: bool = False) -> None:
         annotation = TaskAnnotation(pk=task_id)
-        annotation.init_from_db()
+        annotation.init_from_db(streaming=streaming)
         self.task_annotations[task_id] = annotation
         self.annotation_irs[task_id] = annotation.ir_data
 
-    def init_from_db(self):
+    def init_from_db(self, *, streaming: bool = False):
         self.reset()
 
         for task in self.db_tasks:
-            self._init_task_from_db(task.id)
+            self._init_task_from_db(task.id, streaming=streaming)
 
     def export(
         self,
