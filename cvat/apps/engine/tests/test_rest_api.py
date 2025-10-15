@@ -7883,11 +7883,9 @@ class TaskJobLimitAPITestCase(ApiTestBase):
     def setUpTestData(cls):
         create_db_users(cls)
 
-    def _create_task(
-        self, segment_size: int, img_size: int, consensus_replicas: int | None = None
-    ):
+    def _create_task(self, segment_size: int, img_size: int, consensus_replicas: int | None = None):
         data = {
-            "name": "test_create_task_within_job_limit",
+            "name": "test_for_job_limit",
             "labels": [{"name": "car"}],
             "segment_size": segment_size,
         }
@@ -7916,6 +7914,18 @@ class TaskJobLimitAPITestCase(ApiTestBase):
             response = self.client.get(f"/api/requests/{rq_id}")
             return response
 
+    def _create_gt_task(self, task_id: int):
+        data = {
+            "type": "ground_truth",
+            "task_id": task_id,
+            "frame_selection_method": "random_uniform",
+            "frame_count": 10,
+        }
+
+        with ForceLogin(self.admin, self.client):
+            response = self.client.post("/api/jobs", data=data, format="json")
+            return response
+
     @override_settings(MAX_JOBS_PER_TASK=5)
     def test_create_task_within_job_limit(self):
         response = self._create_task(
@@ -7929,11 +7939,11 @@ class TaskJobLimitAPITestCase(ApiTestBase):
         job_count = Job.objects.filter(segment__task_id=task_id).count()
         self.assertEqual(job_count, 5)
 
-    @override_settings(MAX_JOBS_PER_TASK=5)
+    @override_settings(MAX_JOBS_PER_TASK=10)
     def test_create_task_exceeds_job_limit(self):
         response = self._create_task(
             segment_size=10,
-            img_size=100,
+            img_size=101,
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["status"], RequestStatus.FAILED)
@@ -7944,7 +7954,7 @@ class TaskJobLimitAPITestCase(ApiTestBase):
         self.assertEqual(job_count, 0)
 
     @override_settings(MAX_JOBS_PER_TASK=10)
-    def test_create_task_exactly_at_job_limit(self):
+    def test_create_task_gt_job_with_extra_limit(self):
         response = self._create_task(
             segment_size=10,
             img_size=100,
@@ -7953,8 +7963,11 @@ class TaskJobLimitAPITestCase(ApiTestBase):
         self.assertEqual(response.data["status"], RequestStatus.FINISHED)
 
         task_id = Task.objects.latest("id").id
+        response = self._create_gt_task(task_id)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
         job_count = Job.objects.filter(segment__task_id=task_id).count()
-        self.assertEqual(job_count, 10)
+        self.assertEqual(job_count, 11)
 
     @override_settings(MAX_JOBS_PER_TASK=30)
     def test_create_task_with_consensus_exactly_at_job_limit(self):
