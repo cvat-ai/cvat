@@ -25,7 +25,7 @@ from itertools import product
 from pathlib import Path
 from pprint import pformat
 from time import sleep
-from typing import BinaryIO, Optional
+from typing import BinaryIO
 from unittest import mock
 
 import av
@@ -77,7 +77,7 @@ from cvat.apps.engine.tests.utils import (
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 from utils.dataset_manifest.utils import PcdReader, find_related_images
 
-from ...redis_handler.serializers import RequestStatus
+from cvat.apps.redis_handler.serializers import RequestStatus
 from .utils import check_annotation_response, compare_objects
 
 # suppress av warnings
@@ -7884,7 +7884,7 @@ class TaskJobLimitAPITestCase(ApiTestBase):
         create_db_users(cls)
 
     def _create_task(
-        self, segment_size: int, img_size: int, consensus_replicas: Optional[int] = None
+        self, segment_size: int, img_size: int, consensus_replicas: int | None = None
     ):
         data = {
             "name": "test_create_task_within_job_limit",

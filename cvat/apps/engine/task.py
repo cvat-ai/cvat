@@ -69,7 +69,7 @@ class SegmentsParams(NamedTuple):
     segments: Iterator[SegmentParams]
     segment_size: int
     overlap: int
-    segments_count: Optional[int] = None
+    segments_count: int
 
 def _copy_data_from_share_point(
     server_files: list[str],
