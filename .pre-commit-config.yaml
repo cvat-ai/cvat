@@ -6,7 +6,6 @@ repos:
         entry: black
         language: system
         types: [python]
-        args: ["--line-length=88"]
 
       - id: isort
         name: isort (local)
