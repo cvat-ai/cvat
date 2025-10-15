@@ -1345,10 +1345,7 @@ class ProjectData(InstanceLabelData):
 
         if include_empty:
             for task_id, frame in sorted(self._frame_info):
-                if not self._tasks_data.get(task_id):
-                    self.init_task_data(task_id)
-
-                task_included_frames = self._tasks_data[task_id].get_included_frames()
+                task_included_frames = self._task_data(task_id).get_included_frames()
                 if frame in task_included_frames:
                     get_frame(task_id, frame)
 
@@ -1530,8 +1527,8 @@ class ProjectData(InstanceLabelData):
     def add_task(self, task, files):
         self._project_annotation.add_task(task, files, self)
 
-    def __len__(self):
-        return sum(len(data) for data in self._tasks_data.values())
+    def __len__(self) -> int:
+        return sum(db_task.data.size for db_task in self._db_tasks.values())
 
 
 @attrs(frozen=True, auto_attribs=True)
@@ -1542,12 +1539,14 @@ class MediaSource:
     def is_video(self) -> bool:
         return self.db_task.mode == 'interpolation'
 
+
 class MediaProvider:
     def __init__(self, sources: dict[int, MediaSource]) -> None:
         self._sources = sources
 
     def unload(self) -> None:
         pass
+
 
 class MediaProvider2D(MediaProvider):
     def __init__(self, sources: dict[int, MediaSource]) -> None:
