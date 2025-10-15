@@ -1080,19 +1080,6 @@ class ProjectData(InstanceLabelData):
         task_id: int = attrib(default=None)
         subset: str = attrib(default=None)
 
-    @attrs
-    class Frame:
-        idx: int = attrib()
-        id: int = attrib()
-        frame: int = attrib()
-        name: str = attrib()
-        width: int = attrib()
-        height: int = attrib()
-        labeled_shapes: list[Union['ProjectData.LabeledShape', 'ProjectData.TrackedShape']] = attrib()
-        tags: list['ProjectData.Tag'] = attrib()
-        task_id: int = attrib(default=None)
-        subset: str = attrib(default=None)
-
     def __init__(self,
         annotation_irs: Mapping[str, AnnotationIR],
         db_project: Project,
@@ -1118,7 +1105,6 @@ class ProjectData(InstanceLabelData):
 
         InstanceLabelData.__init__(self, db_project)
         self.init()
-
 
     def abs_frame_id(self, task_id: int, relative_id: int) -> int:
         task = self._db_tasks[task_id]
@@ -1164,7 +1150,6 @@ class ProjectData(InstanceLabelData):
                 subset = task.subset
             self._task_frame_offsets[task.id] = s
             s += task.data.start_frame + task.data.get_frame_step() * task.data.size
-
 
     def _init_frame_info(self):
         self._frame_info = dict()
@@ -1323,66 +1308,30 @@ class ProjectData(InstanceLabelData):
                 for i, element in enumerate(track.get("elements", []))]
         )
 
-    def group_by_frame(self, include_empty: bool = False):
-        frames: dict[tuple[str, int], ProjectData.Frame] = {}
-        def get_frame(task_id: int, idx: int) -> ProjectData.Frame:
-            frame_info = self._frame_info[(task_id, idx)]
-            abs_frame = self.abs_frame_id(task_id, idx)
-            if (frame_info["subset"], abs_frame) not in frames:
-                frames[(frame_info["subset"], abs_frame)] = ProjectData.Frame(
-                    task_id=task_id,
+    def group_by_frame(self, include_empty: bool = False) -> Generator[CommonData.Frame, None, None]:
+        for task_id in self._db_tasks.keys():
+            task_data = self._task_data(task_id)
+            frame_offset = self._task_frame_offsets[task_id]
+            for task_frame in task_data.group_by_frame(include_empty=include_empty):
+                frame_info = self._frame_info[(task_id, task_frame.idx)]
+
+                def fill_annotations(frame: CommonData.Frame, offset: int):
+                    def apply_frame_offset(shape):
+                        shape = shape._replace(frame=shape.frame + offset)
+                        if hasattr(shape, "elements"):
+                            shape._replace(elements=[apply_frame_offset(element) for element in shape.elements])
+                        return shape
+
+                    frame.labeled_shapes = [apply_frame_offset(shape) for shape in frame.labeled_shapes]
+                    frame.tags = [apply_frame_offset(tag) for tag in frame.tags]
+
+                yield attr.evolve(
+                    task_frame,
+                    frame=task_frame.frame + frame_offset,
                     subset=frame_info["subset"],
-                    idx=idx,
-                    id=frame_info.get('id',0),
-                    frame=abs_frame,
                     name=frame_info["path"],
-                    height=frame_info["height"],
-                    width=frame_info["width"],
-                    labeled_shapes=[],
-                    tags=[],
+                    annotation_getter=partial(fill_annotations, offset=frame_offset)
                 )
-            return frames[(frame_info["subset"], abs_frame)]
-
-        if include_empty:
-            for task_id, frame in sorted(self._frame_info):
-                task_included_frames = self._task_data(task_id).get_included_frames()
-                if frame in task_included_frames:
-                    get_frame(task_id, frame)
-
-        for task_data in self.all_task_data:
-            task: Task = task_data.db_instance
-
-            anno_manager = AnnotationManager(
-                self._annotation_irs[task.id], dimension=self._annotation_irs[task.id].dimension
-            )
-            task_included_frames = task_data.get_included_frames()
-
-            for shape in sorted(
-                anno_manager.to_shapes(
-                    task.data.size,
-                    included_frames=task_included_frames,
-                    deleted_frames=task_data.deleted_frames.keys(),
-                    include_outside=False,
-                    use_server_track_ids=self._use_server_track_ids,
-                ),
-                key=lambda shape: shape.get("z_order", 0)
-            ):
-                assert (task.id, shape['frame']) in self._frame_info
-
-                if 'track_id' in shape:
-                    if shape['outside']:
-                        continue
-                    exported_shape = self._export_tracked_shape(shape, task.id)
-                else:
-                    exported_shape = self._export_labeled_shape(shape, task.id)
-                get_frame(task.id, shape['frame']).labeled_shapes.append(exported_shape)
-
-            for tag in self._annotation_irs[task.id].tags:
-                if (task.id, tag['frame']) not in self._frame_info:
-                    continue
-                get_frame(task.id, tag['frame']).tags.append(self._export_tag(tag, task.id))
-
-        return iter(frames.values())
 
     @property
     def shapes(self):
@@ -1948,7 +1897,7 @@ class CVATProjectDataExtractor(dm.DatasetBase, CvatDataExtractorBase):
         self._categories = self.load_categories(self._instance_meta['labels'])
 
     @staticmethod
-    def copy_frame_data_with_replaced_lazy_lists(frame_data: ProjectData.Frame) -> ProjectData.Frame:
+    def copy_frame_data_with_replaced_lazy_lists(frame_data: CommonData.Frame) -> CommonData.Frame:
         return attr.evolve(
             frame_data,
             labeled_shapes=[
