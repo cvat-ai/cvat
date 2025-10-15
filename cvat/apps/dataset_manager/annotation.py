@@ -392,10 +392,6 @@ class ObjectManager:
         int_objects_by_frame = self._get_objects_by_frame(int_objects, start_frame)
         old_objects_by_frame = self._get_objects_by_frame(self.objects, start_frame)
 
-        assert (
-            max(old_objects_by_frame.keys(), default=-1) < start_frame + overlap
-        ), "Old objects on unexpected frames"
-
         # 3. Add new objects as is. It should be done only after old_objects_by_frame
         # variable is initialized.
         self.objects.extend(new_objects)
