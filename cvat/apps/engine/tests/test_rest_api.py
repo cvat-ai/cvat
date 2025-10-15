@@ -4613,22 +4613,24 @@ class TaskDataAPITestCase(ApiTestBase):
             ],
         }
 
-        task_data = {
-            "client_files[0]": open(ASSETS_DIR / "test_rotated_90_video.mp4", "rb"),
-            "image_quality": 70,
-            "use_zip_chunks": True,
-        }
-
         image_sizes = self._share_image_sizes["test_rotated_90_video.mp4"]
-        self._test_api_v2_tasks_id_data_spec(
-            user,
-            task_spec,
-            task_data,
-            self.ChunkType.IMAGESET,
-            self.ChunkType.VIDEO,
-            image_sizes,
-            StorageMethodChoice.CACHE,
-        )
+
+        with open(ASSETS_DIR / "test_rotated_90_video.mp4", "rb") as video_file:
+            task_data = {
+                "client_files[0]": video_file,
+                "image_quality": 70,
+                "use_zip_chunks": True,
+            }
+
+            self._test_api_v2_tasks_id_data_spec(
+                user,
+                task_spec,
+                task_data,
+                self.ChunkType.IMAGESET,
+                self.ChunkType.VIDEO,
+                image_sizes,
+                StorageMethodChoice.CACHE,
+            )
 
     def _test_api_v2_tasks_id_data_create_can_use_chunked_cached_local_video(self, user):
         task_spec = {
@@ -4641,23 +4643,25 @@ class TaskDataAPITestCase(ApiTestBase):
             ],
         }
 
-        task_data = {
-            "client_files[0]": open(ASSETS_DIR / "test_rotated_90_video.mp4", "rb"),
-            "image_quality": 70,
-            "use_cache": True,
-            "use_zip_chunks": True,
-        }
-
         image_sizes = self._share_image_sizes["test_rotated_90_video.mp4"]
-        self._test_api_v2_tasks_id_data_spec(
-            user,
-            task_spec,
-            task_data,
-            self.ChunkType.IMAGESET,
-            self.ChunkType.VIDEO,
-            image_sizes,
-            StorageMethodChoice.CACHE,
-        )
+
+        with open(ASSETS_DIR / "test_rotated_90_video.mp4", "rb") as video_file:
+            task_data = {
+                "client_files[0]": video_file,
+                "image_quality": 70,
+                "use_cache": True,
+                "use_zip_chunks": True,
+            }
+
+            self._test_api_v2_tasks_id_data_spec(
+                user,
+                task_spec,
+                task_data,
+                self.ChunkType.IMAGESET,
+                self.ChunkType.VIDEO,
+                image_sizes,
+                StorageMethodChoice.CACHE,
+            )
 
     def _test_api_v2_tasks_id_data_create_can_use_mxf_video(self, user):
         task_spec = {
@@ -4691,20 +4695,22 @@ class TaskDataAPITestCase(ApiTestBase):
             ],
         }
 
-        task_data = {
-            "client_files[0]": open(ASSETS_DIR / "test_pointcloud_pcd.zip", "rb"),
-            "image_quality": 100,
-        }
         image_sizes = self._share_image_sizes["test_pointcloud_pcd.zip"]
-        self._test_api_v2_tasks_id_data_spec(
-            user,
-            task_spec,
-            task_data,
-            self.ChunkType.IMAGESET,
-            self.ChunkType.IMAGESET,
-            image_sizes,
-            dimension=DimensionType.DIM_3D,
-        )
+
+        with open(ASSETS_DIR / "test_pointcloud_pcd.zip", "rb") as pcd_file:
+            task_data = {
+                "client_files[0]": pcd_file,
+                "image_quality": 100,
+            }
+            self._test_api_v2_tasks_id_data_spec(
+                user,
+                task_spec,
+                task_data,
+                self.ChunkType.IMAGESET,
+                self.ChunkType.IMAGESET,
+                image_sizes,
+                dimension=DimensionType.DIM_3D,
+            )
 
     def _test_api_v2_tasks_id_data_create_can_use_local_pcd_kitti(self, user):
         task_spec = {
@@ -4717,20 +4723,22 @@ class TaskDataAPITestCase(ApiTestBase):
             ],
         }
 
-        task_data = {
-            "client_files[0]": open(ASSETS_DIR / "test_velodyne_points.zip", "rb"),
-            "image_quality": 100,
-        }
         image_sizes = self._share_image_sizes["test_velodyne_points.zip"]
-        self._test_api_v2_tasks_id_data_spec(
-            user,
-            task_spec,
-            task_data,
-            self.ChunkType.IMAGESET,
-            self.ChunkType.IMAGESET,
-            image_sizes,
-            dimension=DimensionType.DIM_3D,
-        )
+
+        with open(ASSETS_DIR / "test_velodyne_points.zip", "rb") as pcd_file:
+            task_data = {
+                "client_files[0]": pcd_file,
+                "image_quality": 100,
+            }
+            self._test_api_v2_tasks_id_data_spec(
+                user,
+                task_spec,
+                task_data,
+                self.ChunkType.IMAGESET,
+                self.ChunkType.IMAGESET,
+                image_sizes,
+                dimension=DimensionType.DIM_3D,
+            )
 
     def _test_api_v2_tasks_id_data_create_can_use_server_images_and_manifest(self, user):
         task_spec_common = {
@@ -7681,11 +7689,13 @@ class TaskAnnotation2DContext(ApiTestBase):
                 filename = self.create_zip_archive_with_related_images(
                     test_case, test_dir, context_img_data
                 )
-                img_data = {
-                    "client_files[0]": open(filename, "rb"),
-                    "image_quality": 75,
-                }
-                task = self._create_task(self.task, img_data)
+                with open(filename, "rb") as f:
+                    img_data = {
+                        "client_files[0]": f,
+                        "image_quality": 75,
+                    }
+                    task = self._create_task(self.task, img_data)
+
                 task_id = task["id"]
 
                 response = self._get_request("/api/tasks/%s/data/meta" % task_id, self.admin)
@@ -7699,11 +7709,14 @@ class TaskAnnotation2DContext(ApiTestBase):
             filename = self.create_zip_archive_with_related_images(
                 test_name, test_dir, context_img_data
             )
-            img_data = {
-                "client_files[0]": open(filename, "rb"),
-                "image_quality": 75,
-            }
-            task = self._create_task(self.task, img_data)
+
+            with open(filename, "rb") as f:
+                img_data = {
+                    "client_files[0]": f,
+                    "image_quality": 75,
+                }
+                task = self._create_task(self.task, img_data)
+
             task_id = task["id"]
             query_params = {"quality": "original", "type": "context_image", "number": 0}
             response = self._get_request(
