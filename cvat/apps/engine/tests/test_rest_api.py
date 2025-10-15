@@ -74,10 +74,10 @@ from cvat.apps.engine.tests.utils import (
     generate_video_file,
     get_paginated_collection,
 )
+from cvat.apps.redis_handler.serializers import RequestStatus
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 from utils.dataset_manifest.utils import PcdReader, find_related_images
 
-from cvat.apps.redis_handler.serializers import RequestStatus
 from .utils import check_annotation_response, compare_objects
 
 # suppress av warnings
