@@ -97,11 +97,13 @@ class Invitation(models.Model):
             raise ImproperlyConfigured("Email backend is not configured")
 
         target_email = self.membership.user.email
+        is_registered = self.membership.user.emailaddress_set.exists()
         current_site = get_current_site(request)
         site_name = current_site.name
         domain = current_site.domain
         context = {
             "email": target_email,
+            "is_registered": is_registered,
             "invitation_key": self.key,
             "domain": domain,
             "site_name": site_name,

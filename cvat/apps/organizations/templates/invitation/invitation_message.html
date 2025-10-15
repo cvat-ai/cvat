@@ -190,14 +190,22 @@
           <!-- start copy -->
           <tr>
             <td align="left" bgcolor="#ffffff" style="padding: 24px; font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif; font-size: 16px; line-height: 24px;">
-              {% blocktrans %}
               <p>
+                {% blocktrans %}
                 You're receiving this email because you've been invited by <strong>{{ invitation_owner }}</strong> to join the <strong>{{ organization_name }}</strong> organization in CVAT at {{ site_name }}.
+                {% endblocktrans %}
               </p>
               <p style="margin: 0;">
-                To join the organization and start annotating, simply tap the button below and complete the registration.
+                {% if is_registered %}
+                  {% blocktrans %}
+                  To join the organization and start annotating, simply tap the button below and login if necessary.
+                  {% endblocktrans %}
+                {% else %}
+                  {% blocktrans %}
+                  To join the organization and start annotating, simply tap the button below and complete the registration.
+                  {% endblocktrans %}
+                {% endif %}
               </p>
-              {% endblocktrans %}
             </td>
           </tr>
           <!-- end copy -->
@@ -211,16 +219,25 @@
                     <table border="0" cellpadding="0" cellspacing="0">
                       <tr>
                         <td align="center" bgcolor="#FF7200" style="border-radius: 6px;">
-                          {% blocktrans %}
-                          <a
-                            href="{{ protocol }}://{{ domain }}/auth/login?email={{ email }}&invitation={{ invitation_key }}"
-                            target="_blank"
-                            class="confirmation-button"
-                            rel="noopener noreferrer"
-                          >
-                            Setup your account
-                          </a>
-                          {% endblocktrans %}
+                          {% if is_registered %}
+                              <a
+                                href="{{ protocol }}://{{ domain }}/invitations"
+                                target="_blank"
+                                class="confirmation-button"
+                                rel="noopener noreferrer"
+                              >
+                                {% blocktrans %}Join the organization{% endblocktrans %}
+                              </a>
+                          {% else %}
+                            <a
+                              href="{{ protocol }}://{{ domain }}/auth/register?email={{ email }}&invitation={{ invitation_key }}"
+                              target="_blank"
+                              class="confirmation-button"
+                              rel="noopener noreferrer"
+                            >
+                              {% blocktrans %}Setup your account{% endblocktrans %}
+                            </a>
+                          {% endif %}
                         </td>
                       </tr>
                     </table>
