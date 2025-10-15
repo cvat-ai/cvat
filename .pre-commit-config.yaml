@@ -12,6 +12,7 @@ repos:
         entry: isort
         language: system
         types: [python]
+        args: ["--resolve-all-configs", "--filter-files", "manage.py"]
 
       - id: husky
         name: run husky pre-commit
