@@ -145,6 +145,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         );
     }
 
+    console.log('Chapters: ', meta?.chapters);
+
     return {
         frameIsDeleted,
         frameStep,

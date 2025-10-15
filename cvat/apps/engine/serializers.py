@@ -2956,6 +2956,29 @@ class FrameMetaSerializer(serializers.Serializer):
     def get_has_related_context(self, obj: dict) -> bool:
         return obj['related_files'] != 0
 
+class FractionSerializer(serializers.Serializer):
+    numerator = serializers.IntegerField()
+    denominator = serializers.IntegerField()
+
+    @classmethod
+    def from_fraction(cls, fraction):
+        return cls(
+            {
+                'numerator': fraction.numerator,
+                'denominator': fraction.denominator,
+            }
+        )
+
+class ChapterMetadataSerializer(serializers.Serializer):
+    title = serializers.CharField(required=False)
+
+class ChapterSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    start = serializers.IntegerField()
+    end = serializers.IntegerField()
+    time_base = FractionSerializer(many=False)
+    metadata = ChapterMetadataSerializer(many=False)
+
 class PluginsSerializer(serializers.Serializer):
     GIT_INTEGRATION = serializers.BooleanField()
     ANALYTICS = serializers.BooleanField()
@@ -2964,6 +2987,7 @@ class PluginsSerializer(serializers.Serializer):
 
 class DataMetaReadSerializer(serializers.ModelSerializer):
     frames = FrameMetaSerializer(many=True, allow_null=True)
+    chapters = ChapterSerializer(many=True, allow_null=True)
     image_quality = serializers.IntegerField(min_value=0, max_value=100)
     deleted_frames = serializers.ListField(child=serializers.IntegerField(min_value=0))
     included_frames = serializers.ListField(
@@ -2976,6 +3000,7 @@ class DataMetaReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Data
         fields = (
+            'chapters',
             'chunks_updated_date',
             'chunk_size',
             'size',

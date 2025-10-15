@@ -9,7 +9,7 @@ import {
 } from 'cvat-data';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
-import { SerializedFramesMetaData } from './server-response-types';
+import { SerializedChapterMetaData, SerializedFraction, SerializedFramesMetaData } from './server-response-types';
 import { ArgumentError } from './exceptions';
 import { FieldUpdateTrigger } from './common';
 import config from './config';
@@ -83,8 +83,72 @@ interface FramesMetaDataUpdatedData {
     deletedFrames: Record<number, DeletedFrameState>;
 }
 
+export class ChapterMetaData {
+    public title: string;
+
+    constructor(initialData: SerializedChapterMetaData) {
+        const data = {
+            title: undefined,
+        };
+
+        for (const key of Object.keys(data)) {
+            if (Object.prototype.hasOwnProperty.call(initialData, key)) {
+                data[key] = initialData[key];
+            }
+        }
+
+        Object.defineProperties(
+            this,
+            Object.freeze({
+                title: {
+                    get: () => data.title,
+                },
+            }),
+        );
+    }
+}
+
+export class Fraction {
+    public numerator: number;
+    public denominator: number;
+
+    constructor(initialData: SerializedFraction) {
+        const data = {
+            numerator: undefined,
+            denominator: undefined,
+        };
+
+        for (const key of Object.keys(data)) {
+            if (Object.prototype.hasOwnProperty.call(initialData, key)) {
+                data[key] = initialData[key];
+            }
+        }
+
+        Object.defineProperties(
+            this,
+            Object.freeze({
+                numerator: {
+                    get: () => data.numerator,
+                },
+                denominator: {
+                    get: () => data.denominator,
+                },
+            }),
+        );
+    }
+}
+
+export class Chapter {
+    public id: number;
+    public start: number;
+    public end: number;
+    public metadata: ChapterMetaData;
+    public timeBase: Fraction;
+}
+
 export class FramesMetaData {
     public chunkSize: number;
+    public chapters: Chapter[] | null;
     public deletedFrames: Record<number, boolean>;
     public includedFrames: number[] | null;
     public frameFilter: string;
@@ -109,6 +173,7 @@ export class FramesMetaData {
     constructor(initialData: Omit<SerializedFramesMetaData, 'deleted_frames'> & { deleted_frames: Record<number, boolean> }) {
         const data: typeof initialData = {
             chunk_size: undefined,
+            chapters: [],
             deleted_frames: {},
             included_frames: null,
             frame_filter: undefined,
@@ -173,6 +238,9 @@ export class FramesMetaData {
             Object.freeze({
                 chunkSize: {
                     get: () => data.chunk_size,
+                },
+                chapters: {
+                    get: () => data.chapters,
                 },
                 deletedFrames: {
                     get: () => data.deleted_frames,

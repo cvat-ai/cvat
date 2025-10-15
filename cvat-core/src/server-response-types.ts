@@ -493,8 +493,26 @@ export interface SerializedCloudStorage {
     manifests?: string[];
 }
 
+export interface SerializedChapterMetaData {
+    title: string;
+}
+
+export interface SerializedFraction {
+    numerator: number;
+    denominator: number;
+}
+
+export interface SerializedChapter {
+    id: number;
+    start: number;
+    end: number;
+    metadata: SerializedChapterMetaData;
+    time_base: SerializedFraction;
+}
+
 export interface SerializedFramesMetaData {
     chunk_size: number;
+    chapters: SerializedChapter[] | null
     deleted_frames: number[];
     included_frames: number[] | null;
     frame_filter: string;
