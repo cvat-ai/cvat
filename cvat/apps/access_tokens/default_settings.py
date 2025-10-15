@@ -25,3 +25,6 @@ ACCESS_TOKEN_LAST_USE_UPDATE_MIN_INTERVAL = timedelta(
 The minimal time period between the token last use updates.
 The recommended value range is from 5 minutes up to 4 hours.
 """
+
+MAX_ACCESS_TOKENS_PER_USER = int(os.getenv("CVAT_MAX_ACCESS_TOKENS_PER_USER", 50))
+"""The maximum number of Personal Access Tokens per user. Set to -1 to disable the restriction"""

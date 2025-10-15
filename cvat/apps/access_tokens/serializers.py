@@ -5,6 +5,7 @@
 import textwrap
 from typing import Any
 
+from django.conf import settings
 from rest_framework import serializers
 
 from cvat.apps.engine.serializers import BasicUserSerializer
@@ -82,6 +83,19 @@ class AccessTokenWriteSerializer(serializers.ModelSerializer):
         return AccessTokenReadSerializer(context=self.context).to_representation(instance)
 
     def create(self, validated_data: dict[str, Any]) -> models.AccessToken:
+        if 0 <= settings.MAX_ACCESS_TOKENS_PER_USER and (
+            # This check is not protected from race conditions, but it's not that important.
+            # Protection requires a table lock, a separate table with token counts per user,
+            # or a lock in a foreign service (e.g. Redis).
+            settings.MAX_ACCESS_TOKENS_PER_USER
+            <= models.AccessToken.objects.get_usable_keys()
+            .filter(owner=self.context["request"].user)
+            .count()
+        ):
+            raise serializers.ValidationError(
+                "You have reached the maximum allowed number of Personal Access Tokens for a user"
+            )
+
         instance, raw_token = models.AccessToken.objects.create_key(
             **validated_data, owner=self.context["request"].user
         )
