@@ -23239,5 +23239,131 @@
     "quorum": 0.6,
     "iou_threshold": 0.4
   }
+},
+{
+  "model": "access_tokens.accesstoken",
+  "pk": 1,
+  "fields": {
+    "prefix": "DgrZuqmc",
+    "hashed_key": "md5$4vOVrPTlVbaAdNpHgCz5n8$7eb28eada2b931b03f19a48c4653c539",
+    "created": "2025-07-17T16:16:45.241Z",
+    "name": "test revoked readonly key",
+    "revoked": true,
+    "expiry_date": null,
+    "updated_date": "2025-07-17T16:25:33.472Z",
+    "last_used_date": null,
+    "read_only": true,
+    "owner": [
+      "user1"
+    ]
+  }
+},
+{
+  "model": "access_tokens.accesstoken",
+  "pk": 2,
+  "fields": {
+    "prefix": "EQCKEFZh",
+    "hashed_key": "md5$cbyUZDVSaI6ARcISi2BAyP$c81eb4e53445c73d24357f8d158aae59",
+    "created": "2024-07-17T16:17:00.066Z",
+    "name": "test expired readwrite key",
+    "revoked": false,
+    "expiry_date": "2024-09-17T16:20:00.066Z",
+    "updated_date": "2024-08-17T16:25:40.236Z",
+    "last_used_date": null,
+    "read_only": false,
+    "owner": [
+      "user1"
+    ]
+  }
+},
+{
+  "model": "access_tokens.accesstoken",
+  "pk": 3,
+  "fields": {
+    "prefix": "XQRwNl8D",
+    "hashed_key": "md5$JylUmq04NnXDB8amN7fmW2$c0f68b4280322bc5aae4d1031efb076b",
+    "created": "2025-07-17T16:17:35.436Z",
+    "name": "test key",
+    "revoked": false,
+    "expiry_date": null,
+    "updated_date": "2025-07-17T16:17:35.436Z",
+    "last_used_date": null,
+    "read_only": false,
+    "owner": [
+      "admin2"
+    ]
+  }
+},
+{
+  "model": "access_tokens.accesstoken",
+  "pk": 4,
+  "fields": {
+    "prefix": "waUchCLi",
+    "hashed_key": "md5$gQWIRwVVJpxag4NtuhOgrZ$c381ef0af1cdc1bdce66df5bc65d7af7",
+    "created": "2025-07-17T16:19:18.229Z",
+    "name": "test readonly key",
+    "revoked": false,
+    "expiry_date": null,
+    "updated_date": "2025-07-17T16:19:18.229Z",
+    "last_used_date": null,
+    "read_only": true,
+    "owner": [
+      "user1"
+    ]
+  }
+},
+{
+  "model": "access_tokens.accesstoken",
+  "pk": 5,
+  "fields": {
+    "prefix": "2HVbBoWR",
+    "hashed_key": "md5$nwdhu6OXe4H4LjSJvYOYgL$bb375ffa6980fa98e8fa09698e14829f",
+    "created": "2025-07-17T16:19:46.576Z",
+    "name": "test readwrite key",
+    "revoked": false,
+    "expiry_date": null,
+    "updated_date": "2025-07-17T16:19:46.576Z",
+    "last_used_date": null,
+    "read_only": false,
+    "owner": [
+      "user1"
+    ]
+  }
+},
+{
+  "model": "access_tokens.accesstoken",
+  "pk": 6,
+  "fields": {
+    "prefix": "UODahKbn",
+    "hashed_key": "md5$damuD8CQt8fOi6Tnn2TWYF$48aacd12520f4ac63e1132bc2ffe79fa",
+    "created": "2000-01-01T01:00:00Z",
+    "name": "test stale token",
+    "revoked": false,
+    "expiry_date": null,
+    "updated_date": "2010-01-01T15:07:32.016Z",
+    "last_used_date": null,
+    "read_only": true,
+    "owner": [
+      "admin2"
+    ]
+  }
+},
+{
+  "model": "access_tokens.accesstoken",
+  "pk": 7,
+  "fields": {
+    "prefix": "gIUANJCa",
+    "hashed_key": "md5$gsxukSI2wEfdrmol6icK4T$c38c40fd30f6be101875be1a3df25746",
+    "created": "2025-08-12T10:30:10.206Z",
+    "name": "test readonly key",
+    "revoked": false,
+    "expiry_date": null,
+    "updated_date": "2025-08-12T10:30:10.206Z",
+    "last_used_date": null,
+    "read_only": true,
+    "owner": [
+      "admin2"
+    ]
+  }
 }
 ]
