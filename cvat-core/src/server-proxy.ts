@@ -58,63 +58,45 @@ function configureStorage(storage: Storage, useDefaultLocation = false): Partial
     };
 }
 
-function fetchAll(url, filter = {}): Promise<any> {
+function fetchAll<T extends { id: number | string }>(url, filter = {}): Promise<{ count: number; results: T[] }> {
     const pageSize = 500;
     const result = {
         count: 0,
-        results: [],
+        results: new Map<T['id'], T>(),
     };
-    return new Promise((resolve, reject) => {
-        Axios.get(url, {
-            params: {
-                ...filter,
-                page_size: pageSize,
-                page: 1,
-            },
-        }).then((initialData) => {
-            const { count, results } = initialData.data;
-            result.results = result.results.concat(results);
-            result.count = result.results.length;
 
-            if (count <= pageSize) {
-                resolve(result);
-                return;
+    function appendToResult(data: { count: number; results: T[] }): { hasMore: boolean; } {
+        result.count = data.count;
+        data.results.forEach((obj: T) => {
+            if (!result.results.has(obj.id)) {
+                result.results.set(obj.id, obj);
             }
+        });
+        return { hasMore: result.count > result.results.size };
+    }
 
-            const pages = Math.ceil(count / pageSize);
-            const promises = Array(pages).fill(0).map((_: number, i: number) => {
-                if (i) {
-                    return Axios.get(url, {
-                        params: {
-                            ...filter,
-                            page_size: pageSize,
-                            page: i + 1,
-                        },
+    return new Promise((resolve, reject) => {
+        const fetchPage = (page: number) => {
+            Axios.get(url, {
+                params: {
+                    ...filter,
+                    page_size: pageSize,
+                    page,
+                },
+            }).then((response) => {
+                const { hasMore } = appendToResult(response.data);
+                if (hasMore) {
+                    fetchPage(page + 1);
+                } else {
+                    resolve({
+                        count: result.count,
+                        results: [...result.results.values()],
                     });
                 }
-
-                return Promise.resolve(null);
-            });
-
-            Promise.all(promises).then((responses: AxiosResponse<any, any>[]) => {
-                responses.forEach((resp) => {
-                    if (resp) {
-                        result.results = result.results.concat(resp.data.results);
-                    }
-                });
-
-                // removing possible duplicates
-                const obj = result.results.reduce((acc: Record<string, any>, item: any) => {
-                    acc[item.id] = item;
-                    return acc;
-                }, {});
-
-                result.results = Object.values(obj);
-                result.count = result.results.length;
-
-                resolve(result);
             }).catch((error) => reject(error));
-        }).catch((error) => reject(error));
+        };
+
+        fetchPage(1);
     });
 }
 
@@ -681,9 +663,8 @@ async function getRequestsList(): Promise<PaginatedResource<SerializedRequest>> 
     const params = enableOrganization();
 
     try {
-        const response = await fetchAll(`${backendAPI}/requests`, params);
-
-        return response.results;
+        const response = await fetchAll<SerializedRequest>(`${backendAPI}/requests`, params);
+        return Object.assign(response.results, { count: response.count });
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -836,7 +817,7 @@ async function getTasks(
     try {
         if (aggregate) {
             response = {
-                data: await fetchAll(`${backendAPI}/tasks`, {
+                data: await fetchAll<SerializedTask>(`${backendAPI}/tasks`, {
                     ...filter,
                     ...enableOrganization(),
                 }),
@@ -922,7 +903,7 @@ async function getLabels(filter: {
     project_id?: number,
 }): Promise<{ results: SerializedLabel[] }> {
     const { backendAPI } = config;
-    return fetchAll(`${backendAPI}/labels`, {
+    return fetchAll<SerializedLabel & { id: number }>(`${backendAPI}/labels`, {
         ...filter,
         ...enableOrganization(),
     });
@@ -1370,7 +1351,7 @@ async function getJobs(
 
         if (aggregate) {
             response = {
-                data: await fetchAll(`${backendAPI}/jobs`, {
+                data: await fetchAll<SerializedJob>(`${backendAPI}/jobs`, {
                     ...filter,
                     ...enableOrganization(),
                 }),
@@ -2356,10 +2337,12 @@ async function getQualitySettings(
     try {
         if (aggregate) {
             response = {
-                data: await fetchAll(`${backendAPI}/quality/settings`, {
-                    ...filter,
-                    ...enableOrganization(),
-                }),
+                data: await fetchAll<SerializedQualitySettingsData & { id: number }>(
+                    `${backendAPI}/quality/settings`, {
+                        ...filter,
+                        ...enableOrganization(),
+                    },
+                ),
             };
         } else {
             response = await Axios.get(`${backendAPI}/quality/settings`, {
@@ -2437,10 +2420,12 @@ async function getQualityConflicts(
     const { backendAPI } = config;
 
     try {
-        const response = await fetchAll(`${backendAPI}/quality/conflicts`, {
-            ...params,
-            ...filter,
-        });
+        const response = await fetchAll<SerializedQualityConflictData & { id: number }>(
+            `${backendAPI}/quality/conflicts`, {
+                ...params,
+                ...filter,
+            },
+        );
 
         return response.results;
     } catch (errorData) {
@@ -2458,10 +2443,12 @@ async function getQualityReports(
     try {
         if (aggregate) {
             response = {
-                data: await fetchAll(`${backendAPI}/quality/reports`, {
-                    ...filter,
-                    ...enableOrganization(),
-                }),
+                data: await fetchAll<SerializedQualityReportData & { id: number }>(
+                    `${backendAPI}/quality/reports`, {
+                        ...filter,
+                        ...enableOrganization(),
+                    },
+                ),
             };
         } else {
             response = await Axios.get(`${backendAPI}/quality/reports`, {

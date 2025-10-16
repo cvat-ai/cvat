@@ -222,13 +222,13 @@ class TestAccessTokenAuth:
         assert response.status == HTTPStatus.OK
         assert user.username == username
 
-    def test_can_use_token_auth(self, admin_user: str, api_tokens_by_username):
-        token = api_tokens_by_username[admin_user][0]["private_key"]
+    def test_can_use_token_auth(self, admin_user: str, access_tokens_by_username):
+        token = access_tokens_by_username[admin_user][0]["private_key"]
         with self.make_client(token=token) as api_client:
             self._test_can_use_auth(api_client, username=admin_user, access_token=token)
 
-    def test_logout_is_not_an_error(self, admin_user: str, api_tokens_by_username):
-        token = api_tokens_by_username[admin_user][0]["private_key"]
+    def test_logout_is_not_an_error(self, admin_user: str, access_tokens_by_username):
+        token = access_tokens_by_username[admin_user][0]["private_key"]
         with ApiClient(Configuration(host=BASE_URL)) as session_api_client:
             session_api_client.auth_api.create_login(
                 login_serializer_ex_request=models.LoginSerializerExRequest(

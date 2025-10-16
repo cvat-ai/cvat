@@ -273,7 +273,7 @@ class Annotation {
 
     protected validateStateBeforeSave(data: ObjectState, updated: ObjectState['updateFlags']): void {
         if (updated.label) {
-            checkObjectType('label', data.label, null, Label);
+            checkObjectType('label', data.label, null, { cls: Label, name: 'Label' });
         }
 
         const labelAttributes = attrsAsAnObject(data.label.attributes);
@@ -303,38 +303,38 @@ class Annotation {
         }
 
         if (updated.occluded) {
-            checkObjectType('occluded', data.occluded, 'boolean', null);
+            checkObjectType('occluded', data.occluded, 'boolean');
         }
 
         if (updated.outside) {
-            checkObjectType('outside', data.outside, 'boolean', null);
+            checkObjectType('outside', data.outside, 'boolean');
         }
 
         if (updated.zOrder) {
-            checkObjectType('zOrder', data.zOrder, 'integer', null);
+            checkObjectType('zOrder', data.zOrder, 'integer');
         }
 
         if (updated.lock) {
-            checkObjectType('lock', data.lock, 'boolean', null);
+            checkObjectType('lock', data.lock, 'boolean');
         }
 
         if (updated.pinned) {
-            checkObjectType('pinned', data.pinned, 'boolean', null);
+            checkObjectType('pinned', data.pinned, 'boolean');
         }
 
         if (updated.color) {
-            checkObjectType('color', data.color, 'string', null);
+            checkObjectType('color', data.color, 'string');
             if (!/^#[0-9A-F]{6}$/i.test(data.color)) {
                 throw new ArgumentError(`Got invalid color value: "${data.color}"`);
             }
         }
 
         if (updated.hidden) {
-            checkObjectType('hidden', data.hidden, 'boolean', null);
+            checkObjectType('hidden', data.hidden, 'boolean');
         }
 
         if (updated.keyframe) {
-            checkObjectType('keyframe', data.keyframe, 'boolean', null);
+            checkObjectType('keyframe', data.keyframe, 'boolean');
             if (Object.keys(this.shapes).length === 1 && data.frame in this.shapes && !data.keyframe) {
                 throw new ArgumentError(
                     `Can not remove the latest keyframe of an object "${data.label.name}".` +
@@ -465,8 +465,8 @@ class Drawn extends Annotation {
 
     private fitPoints(points: number[], rotation: number, maxX: number, maxY: number): number[] {
         const { shapeType, parentID } = this;
-        checkObjectType('rotation', rotation, 'number', null);
-        points.forEach((coordinate) => checkObjectType('coordinate', coordinate, 'number', null));
+        checkObjectType('rotation', rotation, 'number');
+        points.forEach((coordinate) => checkObjectType('coordinate', coordinate, 'number'));
 
         if (parentID !== null || shapeType === ShapeType.CUBOID ||
             shapeType === ShapeType.ELLIPSE || !!rotation) {
@@ -492,7 +492,7 @@ class Drawn extends Annotation {
 
         let fittedPoints = [];
         if (updated.points && Number.isInteger(frame)) {
-            checkObjectType('points', data.points, null, Array);
+            checkObjectType('points', data.points, null, { cls: Array, name: 'Array' });
             checkNumberOfPoints(this.shapeType, data.points);
             // cut points
             const { width, height } = this.framesInfo[frame];

@@ -371,7 +371,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         return results as PaginatedResource<SerializedOrganization>;
     });
     implementationMixin(cvat.organizations.activate, (organization) => {
-        checkObjectType('organization', organization, null, Organization);
+        checkObjectType('organization', organization, null, { cls: Organization, name: 'Organization' });
         config.organization = {
             organizationID: organization.id,
             organizationSlug: organization.slug,

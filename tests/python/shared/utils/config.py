@@ -79,7 +79,7 @@ def make_api_client(
 ) -> ApiClient:
     assert (
         sum([bool(access_token), bool(user)]) <= 1
-    ), "Expected only one of the 'api_token' and 'user' args"
+    ), "Expected only one of the 'access_token' and 'user' args"
 
     configuration = Configuration(host=BASE_URL)
     if access_token:
