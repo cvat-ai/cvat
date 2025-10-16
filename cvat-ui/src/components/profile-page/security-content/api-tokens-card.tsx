@@ -262,7 +262,7 @@ function ApiTokensCard(): JSX.Element {
                             </>
                         )}
                         className='cvat-api-tokens-table'
-                        csvExport={{ filename: 'api_tokens.csv' }}
+                        csvExport={{ filename: 'access_tokens.csv' }}
                         columns={apiTokenColumns}
                         dataSource={tableData}
                         loading={fetching}
