@@ -1311,26 +1311,32 @@ class ProjectData(InstanceLabelData):
     def group_by_frame(self, include_empty: bool = False) -> Generator[CommonData.Frame, None, None]:
         for task_id in self._db_tasks.keys():
             task_data = self._task_data(task_id)
-            frame_offset = self._task_frame_offsets[task_id]
             for task_frame in task_data.group_by_frame(include_empty=include_empty):
                 frame_info = self._frame_info[(task_id, task_frame.idx)]
 
-                def fill_annotations(frame: CommonData.Frame, offset: int):
-                    def apply_frame_offset(shape):
-                        shape = shape._replace(frame=shape.frame + offset)
+                def fill_annotations(frame: CommonData.Frame, original_frame: CommonData.Frame):
+                    def fix_anno_frame(shape):
+                        shape = shape._replace(frame=frame.frame)
                         if hasattr(shape, "elements"):
-                            shape._replace(elements=[apply_frame_offset(element) for element in shape.elements])
+                            shape._replace(elements=[fix_anno_frame(element) for element in shape.elements])
                         return shape
 
-                    frame.labeled_shapes = [apply_frame_offset(shape) for shape in frame.labeled_shapes]
-                    frame.tags = [apply_frame_offset(tag) for tag in frame.tags]
+                    frame.labeled_shapes = [fix_anno_frame(shape) for shape in original_frame.labeled_shapes]
+                    frame.tags = [fix_anno_frame(tag) for tag in original_frame.tags]
+                    frame.shapes = original_frame.shapes
+                    frame.labels = original_frame.labels
 
                 yield attr.evolve(
                     task_frame,
-                    frame=task_frame.frame + frame_offset,
+                    frame=task_frame.frame + self._task_frame_offsets[task_id],
                     subset=frame_info["subset"],
                     name=frame_info["path"],
-                    annotation_getter=partial(fill_annotations, offset=frame_offset)
+                    annotation_getter=partial(fill_annotations, original_frame=task_frame),
+                    # otherwise evolve reads these fields
+                    labeled_shapes=[],
+                    tags=[],
+                    shapes=[],
+                    labels={},
                 )
 
     @property
