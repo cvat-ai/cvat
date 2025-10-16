@@ -11,6 +11,8 @@ from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated
 from rest_framework.views import exception_handler
 
+from cvat.apps.access_tokens.models import AccessToken
+from cvat.apps.access_tokens.serializers import AccessTokenReadSerializer
 from cvat.apps.dataset_manager.tracks_counter import TracksCounter
 from cvat.apps.engine.models import (
     CloudStorage,
@@ -155,10 +157,17 @@ def _get_value(obj, key):
 def request_info(instance=None):
     request = get_request(instance)
     request_headers = _get_value(request, "headers")
-    return {
+
+    data = {
         "id": _get_value(request, "uuid"),
         "user_agent": request_headers.get("User-Agent") if request_headers is not None else None,
     }
+
+    access_token = getattr(request, "auth", None)
+    if isinstance(access_token, AccessToken):
+        data["access_token_id"] = access_token.id
+
+    return data
 
 
 def user_id(instance=None):
@@ -262,6 +271,7 @@ def _get_object_name(instance):
 
 
 SERIALIZERS = [
+    (AccessToken, AccessTokenReadSerializer),
     (Organization, OrganizationReadSerializer),
     (Project, ProjectReadSerializer),
     (Task, TaskReadSerializer),
