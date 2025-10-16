@@ -11,18 +11,20 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { NavigationType, Workspace } from 'reducers';
 import {
-    FirstIcon,
     BackJumpIcon,
-    PreviousIcon,
-    PreviousFilteredIcon,
-    PreviousEmptyIcon,
-    PlayIcon,
-    PauseIcon,
-    NextIcon,
-    NextFilteredIcon,
-    NextEmptyIcon,
+    FirstIcon,
     ForwardJumpIcon,
     LastIcon,
+    NextChapterIcon,
+    NextEmptyIcon,
+    NextFilteredIcon,
+    NextIcon,
+    PauseIcon,
+    PlayIcon,
+    PreviousChapterIcon,
+    PreviousEmptyIcon,
+    PreviousFilteredIcon,
+    PreviousIcon,
 } from 'icons';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
@@ -46,6 +48,7 @@ interface Props {
     onFirstFrame(): void;
     onLastFrame(): void;
     onSearchAnnotations(direction: 'forward' | 'backward'): void;
+    onSearchChapters(direction: 'forward' | 'backward'): void;
     setNavigationType(navigationType: NavigationType): void;
 }
 
@@ -116,6 +119,7 @@ function PlayerButtons(props: Props): JSX.Element {
         onLastFrame,
         setNavigationType,
         onSearchAnnotations,
+        onSearchChapters,
     } = props;
 
     const handlers: Partial<Record<keyof typeof componentShortcuts, ((event?: KeyboardEvent) => void)>> = {
@@ -154,9 +158,11 @@ function PlayerButtons(props: Props): JSX.Element {
     const prevRegularText = 'Go back';
     const prevFilteredText = 'Go back with a filter';
     const prevEmptyText = 'Go back to an empty frame';
+    const prevChapterText = 'Go to the previous chapter';
     const nextRegularText = 'Go next';
     const nextFilteredText = 'Go next with a filter';
     const nextEmptyText = 'Go next to an empty frame';
+    const nextChapterText = 'Go to the next chapter';
 
     let prevButton = <Icon className='cvat-player-previous-button' component={PreviousIcon} onClick={onPrevFrame} />;
     let prevButtonTooltipMessage = prevRegularText;
@@ -174,6 +180,11 @@ function PlayerButtons(props: Props): JSX.Element {
             <Icon className='cvat-player-previous-button-empty' component={PreviousEmptyIcon} onClick={onPrevFrame} />
         );
         prevButtonTooltipMessage = prevEmptyText;
+    } else if (navigationType === NavigationType.CHAPTER) {
+        prevButton = (
+            <Icon className='cvat-player-previous-button-chapter' component={PreviousChapterIcon} onClick={onPrevFrame} />
+        );
+        prevButtonTooltipMessage = prevChapterText;
     }
 
     let nextButton = <Icon className='cvat-player-next-button' component={NextIcon} onClick={onNextFrame} />;
@@ -186,6 +197,11 @@ function PlayerButtons(props: Props): JSX.Element {
     } else if (navigationType === NavigationType.EMPTY) {
         nextButton = <Icon className='cvat-player-next-button-empty' component={NextEmptyIcon} onClick={onNextFrame} />;
         nextButtonTooltipMessage = nextEmptyText;
+    } else if (navigationType === NavigationType.CHAPTER) {
+        nextButton = (
+            <Icon className='cvat-player-next-button-chapter' component={NextChapterIcon} onClick={onNextFrame} />
+        );
+        nextButtonTooltipMessage = nextChapterText;
     }
 
     const navIconStyle: CSSProperties = workspace === Workspace.SINGLE_SHAPE ? {
@@ -236,6 +252,13 @@ function PlayerButtons(props: Props): JSX.Element {
                                 className='cvat-player-previous-empty-inlined-button'
                                 component={PreviousEmptyIcon}
                                 onClick={() => setNavigationType(NavigationType.EMPTY)}
+                            />
+                        </CVATTooltip>
+                        <CVATTooltip title={`${prevChapterText}`}>
+                            <Icon
+                                className='cvat-player-previous-chapter-inlined-button'
+                                component={PreviousChapterIcon}
+                                onClick={() => setNavigationType(NavigationType.CHAPTER)}
                             />
                         </CVATTooltip>
                     </>
@@ -290,6 +313,13 @@ function PlayerButtons(props: Props): JSX.Element {
                                 className='cvat-player-next-empty-inlined-button'
                                 component={NextEmptyIcon}
                                 onClick={() => setNavigationType(NavigationType.EMPTY)}
+                            />
+                        </CVATTooltip>
+                        <CVATTooltip title={`${nextChapterText}`}>
+                            <Icon
+                                className='cvat-player-next-chapter-inlined-button'
+                                component={NextChapterIcon}
+                                onClick={() => setNavigationType(NavigationType.CHAPTER)}
                             />
                         </CVATTooltip>
                     </>

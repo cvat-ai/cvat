@@ -156,6 +156,10 @@
         height: $grid-unit-size;
         background-color: $player-slider-color;
     }
+
+    > .ant-slider-mark {
+        z-index: 2;
+    }
 }
 
 .cvat-player-slider-progress {
@@ -473,7 +477,9 @@
 .cvat-player-previous-filtered-inlined-button,
 .cvat-player-next-filtered-inlined-button,
 .cvat-player-previous-empty-inlined-button,
-.cvat-player-next-empty-inlined-button {
+.cvat-player-next-empty-inlined-button,
+.cvat-player-previous-chapter-inlined-button,
+.cvat-player-next-chapter-inlined-button, {
     color: $player-buttons-color;
 
     &:not(:first-child) {

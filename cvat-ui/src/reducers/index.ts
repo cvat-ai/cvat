@@ -792,6 +792,7 @@ export enum NavigationType {
     REGULAR = 'regular',
     FILTERED = 'filtered',
     EMPTY = 'empty',
+    CHAPTER = 'chapter',
 }
 
 export interface EditingState {

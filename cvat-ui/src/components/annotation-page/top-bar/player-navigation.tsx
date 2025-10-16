@@ -24,6 +24,8 @@ import { clamp } from 'utils/math';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
 import { subKeyMap } from 'utils/component-subkeymap';
+import { Chapter } from 'cvat-core/src/frames';
+import Tooltip from 'antd/lib/tooltip';
 
 interface Props {
     startFrame: number;
@@ -31,7 +33,7 @@ interface Props {
     playing: boolean;
     ranges: string;
     frameNumber: number;
-    marks: { number: ReactNode } | { number: { style: CSSProperties, label: ReactNode } }
+    chapters: Chapter[] | null | undefined;
     frameFilename: string;
     frameDeleted: boolean;
     deleteFrameShortcut: string;
@@ -79,6 +81,7 @@ function PlayerNavigation(props: Props): JSX.Element {
     const {
         startFrame,
         stopFrame,
+        chapters,
         playing,
         frameNumber,
         frameFilename,
@@ -157,6 +160,26 @@ function PlayerNavigation(props: Props): JSX.Element {
         opacity: 0.5,
     } : {};
 
+    const formatChapterMarks = (labelname: string) => {
+        if (labelname) {
+            return {
+                style:
+                        { color: '#ff4136', fontSize: 'x-small' },
+                label:
+                        <Tooltip title={`${labelname}`}>
+                            <span>
+                                |
+                            </span>
+                        </Tooltip>,
+            };
+        }
+    };
+
+    const marks: Record<number, { style: React.CSSProperties; label: React.ReactNode } | undefined> = {};
+    chapters?.forEach((chapter) => {
+        marks[chapter.start] = formatChapterMarks(chapter.metadata.title);
+    });
+
     const deleteFrameIcon = !frameDeleted ? (
         <CVATTooltip title={`Delete the frame ${deleteFrameShortcut}`}>
             <DeleteOutlined
@@ -188,6 +211,7 @@ function PlayerNavigation(props: Props): JSX.Element {
                             className='cvat-player-slider'
                             min={startFrame}
                             max={stopFrame}
+                            marks={marks}
                             value={frameNumber || 0}
                             onChange={workspace !== Workspace.SINGLE_SHAPE ? onSliderChange : undefined}
                         />

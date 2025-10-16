@@ -1039,7 +1039,7 @@ export async function patchMeta(id: number, meta?: FramesMetaData, session: 'job
 }
 
 export async function findFrame(
-    jobID: number, frameFrom: number, frameTo: number, filters: { offset?: number, notDeleted: boolean },
+    jobID: number, frameFrom: number, frameTo: number, filters: { offset?: number, notDeleted: boolean, chapterMark: boolean },
 ): Promise<number | null> {
     const offset = filters.offset || 1;
     const meta = await getFramesMeta('job', jobID);
@@ -1061,6 +1061,11 @@ export async function findFrame(
         if (filters.notDeleted) {
             return !(frame in meta.deletedFrames);
         }
+
+        if (filters.chapterMark) {
+            return meta.chapters.some((chapter) => chapter.start === frame);
+        }
+
         return true;
     };
     for (let frame = frameFrom; predicate(frame); frame = update(frame)) {
