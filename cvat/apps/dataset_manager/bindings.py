@@ -1889,8 +1889,6 @@ class CVATProjectDataExtractor(dm.DatasetBase, CvatDataExtractorBase):
     def __init__(self, *args, **kwargs):
         CvatDataExtractorBase.__init__(self, *args, **kwargs)
 
-        self._grouped_by_frame = list(self._instance_data.group_by_frame(include_empty=True))
-
         dm.DatasetBase.__init__(
             self,
             length=len(self._instance_data),
@@ -1902,24 +1900,8 @@ class CVATProjectDataExtractor(dm.DatasetBase, CvatDataExtractorBase):
         )
         self._categories = self.load_categories(self._instance_meta['labels'])
 
-    @staticmethod
-    def copy_frame_data_with_replaced_lazy_lists(frame_data: CommonData.Frame) -> CommonData.Frame:
-        return attr.evolve(
-            frame_data,
-            labeled_shapes=[
-                (
-                    attr.evolve(shape, points=shape.points.lazy_copy())
-                    if isinstance(shape.points, LazyList) and not shape.points.is_parsed
-                    else shape
-                )
-                for shape in frame_data.labeled_shapes
-            ],
-        )
-
     def __iter__(self):
-        for frame_data in self._grouped_by_frame:
-            # do not keep parsed lazy list data after this iteration
-            frame_data = self.copy_frame_data_with_replaced_lazy_lists(frame_data)
+        for frame_data in self._instance_data.group_by_frame(include_empty=True):
             yield self._process_one_frame_data(frame_data)
 
     def categories(self):
