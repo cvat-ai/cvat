@@ -30,13 +30,16 @@ It is the recommended authentication option for CVAT API interaction and integra
 It's possible to create, edit, and revoke tokens. The tokens can be created and revoked at any
 time by a user request.
 
-> app.cvat.ai: There are limits on the number of available tokens per user. Read more here <TBD>
-
 It's recommended to always specify the expiration date for tokens. Please note that unused tokens
 are automatically removed after some time period of inactivity (1 year by default).
 
 > When using a self-hosted version, the staleness period can be configured
 > via the `ACCESS_TOKEN_STALE_PERIOD` setting.
+
+> When using a self-hosted version, the maximum number of tokens per user can be configured
+> via the `MAX_ACCESS_TOKENS_PER_USER` setting.
+
+> app.cvat.ai: users can have up to 50 Personal Access Tokens.
 
 ### Permissions
 
