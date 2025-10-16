@@ -3,7 +3,7 @@ import tempfile
 from collections import namedtuple
 from typing import Callable, Optional
 from unittest import TestCase, mock
-from unittest.mock import MagicMock, Mock
+from unittest.mock import Mock
 
 import numpy as np
 from datumaro import AnnotationType, Bbox, LabelCategories
