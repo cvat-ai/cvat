@@ -46,6 +46,31 @@ class AccessTokenAutomationTest(ApiTestBase):
         response = self._get_request(f"/api/auth/access_tokens/{token_id}", user=self.admin)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+    @override_settings(MAX_ACCESS_TOKENS_PER_USER=2)
+    def test_can_limit_maximum_number_of_user_tokens(self):
+        for i in range(2):
+            response = self._post_request(
+                "/api/auth/access_tokens", user=self.admin, data={"name": f"test token {i}"}
+            )
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            token_id = response.json()["id"]
+
+        response = self._post_request(
+            "/api/auth/access_tokens", user=self.admin, data={"name": f"test extra token"}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(b"You have reached the maximum allowed number" in response.content)
+
+        response = self._delete_request(f"/api/auth/access_tokens/{token_id}", user=self.admin)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        # Revoked tokens should not be counted
+        response = self._post_request(
+            "/api/auth/access_tokens", user=self.admin, data={"name": f"test extra token"}
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(AccessToken.objects.filter(owner=self.admin).count(), 3)
+
     def test_can_cleanup_old_disabled_tokens(self):
         cleanup_delay = timedelta(days=1)
         stale_delay = 20 * cleanup_delay
