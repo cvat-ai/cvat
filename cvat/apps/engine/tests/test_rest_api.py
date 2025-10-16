@@ -74,6 +74,7 @@ from cvat.apps.engine.tests.utils import (
     generate_video_file,
     get_paginated_collection,
 )
+from cvat.apps.redis_handler.serializers import RequestStatus
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 from utils.dataset_manifest.utils import PcdReader, find_related_images
 
@@ -4613,22 +4614,24 @@ class TaskDataAPITestCase(ApiTestBase):
             ],
         }
 
-        task_data = {
-            "client_files[0]": open(ASSETS_DIR / "test_rotated_90_video.mp4", "rb"),
-            "image_quality": 70,
-            "use_zip_chunks": True,
-        }
-
         image_sizes = self._share_image_sizes["test_rotated_90_video.mp4"]
-        self._test_api_v2_tasks_id_data_spec(
-            user,
-            task_spec,
-            task_data,
-            self.ChunkType.IMAGESET,
-            self.ChunkType.VIDEO,
-            image_sizes,
-            StorageMethodChoice.CACHE,
-        )
+
+        with open(ASSETS_DIR / "test_rotated_90_video.mp4", "rb") as video_file:
+            task_data = {
+                "client_files[0]": video_file,
+                "image_quality": 70,
+                "use_zip_chunks": True,
+            }
+
+            self._test_api_v2_tasks_id_data_spec(
+                user,
+                task_spec,
+                task_data,
+                self.ChunkType.IMAGESET,
+                self.ChunkType.VIDEO,
+                image_sizes,
+                StorageMethodChoice.CACHE,
+            )
 
     def _test_api_v2_tasks_id_data_create_can_use_chunked_cached_local_video(self, user):
         task_spec = {
@@ -4641,23 +4644,25 @@ class TaskDataAPITestCase(ApiTestBase):
             ],
         }
 
-        task_data = {
-            "client_files[0]": open(ASSETS_DIR / "test_rotated_90_video.mp4", "rb"),
-            "image_quality": 70,
-            "use_cache": True,
-            "use_zip_chunks": True,
-        }
-
         image_sizes = self._share_image_sizes["test_rotated_90_video.mp4"]
-        self._test_api_v2_tasks_id_data_spec(
-            user,
-            task_spec,
-            task_data,
-            self.ChunkType.IMAGESET,
-            self.ChunkType.VIDEO,
-            image_sizes,
-            StorageMethodChoice.CACHE,
-        )
+
+        with open(ASSETS_DIR / "test_rotated_90_video.mp4", "rb") as video_file:
+            task_data = {
+                "client_files[0]": video_file,
+                "image_quality": 70,
+                "use_cache": True,
+                "use_zip_chunks": True,
+            }
+
+            self._test_api_v2_tasks_id_data_spec(
+                user,
+                task_spec,
+                task_data,
+                self.ChunkType.IMAGESET,
+                self.ChunkType.VIDEO,
+                image_sizes,
+                StorageMethodChoice.CACHE,
+            )
 
     def _test_api_v2_tasks_id_data_create_can_use_mxf_video(self, user):
         task_spec = {
@@ -4691,20 +4696,22 @@ class TaskDataAPITestCase(ApiTestBase):
             ],
         }
 
-        task_data = {
-            "client_files[0]": open(ASSETS_DIR / "test_pointcloud_pcd.zip", "rb"),
-            "image_quality": 100,
-        }
         image_sizes = self._share_image_sizes["test_pointcloud_pcd.zip"]
-        self._test_api_v2_tasks_id_data_spec(
-            user,
-            task_spec,
-            task_data,
-            self.ChunkType.IMAGESET,
-            self.ChunkType.IMAGESET,
-            image_sizes,
-            dimension=DimensionType.DIM_3D,
-        )
+
+        with open(ASSETS_DIR / "test_pointcloud_pcd.zip", "rb") as pcd_file:
+            task_data = {
+                "client_files[0]": pcd_file,
+                "image_quality": 100,
+            }
+            self._test_api_v2_tasks_id_data_spec(
+                user,
+                task_spec,
+                task_data,
+                self.ChunkType.IMAGESET,
+                self.ChunkType.IMAGESET,
+                image_sizes,
+                dimension=DimensionType.DIM_3D,
+            )
 
     def _test_api_v2_tasks_id_data_create_can_use_local_pcd_kitti(self, user):
         task_spec = {
@@ -4717,20 +4724,22 @@ class TaskDataAPITestCase(ApiTestBase):
             ],
         }
 
-        task_data = {
-            "client_files[0]": open(ASSETS_DIR / "test_velodyne_points.zip", "rb"),
-            "image_quality": 100,
-        }
         image_sizes = self._share_image_sizes["test_velodyne_points.zip"]
-        self._test_api_v2_tasks_id_data_spec(
-            user,
-            task_spec,
-            task_data,
-            self.ChunkType.IMAGESET,
-            self.ChunkType.IMAGESET,
-            image_sizes,
-            dimension=DimensionType.DIM_3D,
-        )
+
+        with open(ASSETS_DIR / "test_velodyne_points.zip", "rb") as pcd_file:
+            task_data = {
+                "client_files[0]": pcd_file,
+                "image_quality": 100,
+            }
+            self._test_api_v2_tasks_id_data_spec(
+                user,
+                task_spec,
+                task_data,
+                self.ChunkType.IMAGESET,
+                self.ChunkType.IMAGESET,
+                image_sizes,
+                dimension=DimensionType.DIM_3D,
+            )
 
     def _test_api_v2_tasks_id_data_create_can_use_server_images_and_manifest(self, user):
         task_spec_common = {
@@ -7681,11 +7690,13 @@ class TaskAnnotation2DContext(ApiTestBase):
                 filename = self.create_zip_archive_with_related_images(
                     test_case, test_dir, context_img_data
                 )
-                img_data = {
-                    "client_files[0]": open(filename, "rb"),
-                    "image_quality": 75,
-                }
-                task = self._create_task(self.task, img_data)
+                with open(filename, "rb") as f:
+                    img_data = {
+                        "client_files[0]": f,
+                        "image_quality": 75,
+                    }
+                    task = self._create_task(self.task, img_data)
+
                 task_id = task["id"]
 
                 response = self._get_request("/api/tasks/%s/data/meta" % task_id, self.admin)
@@ -7699,11 +7710,14 @@ class TaskAnnotation2DContext(ApiTestBase):
             filename = self.create_zip_archive_with_related_images(
                 test_name, test_dir, context_img_data
             )
-            img_data = {
-                "client_files[0]": open(filename, "rb"),
-                "image_quality": 75,
-            }
-            task = self._create_task(self.task, img_data)
+
+            with open(filename, "rb") as f:
+                img_data = {
+                    "client_files[0]": f,
+                    "image_quality": 75,
+                }
+                task = self._create_task(self.task, img_data)
+
             task_id = task["id"]
             query_params = {"quality": "original", "type": "context_image", "number": 0}
             response = self._get_request(
@@ -7851,3 +7865,132 @@ class TaskChangeCloudStorageTestCase(_CloudStorageTestBase):
                 response.status_code,
                 response.content,
             )
+
+
+class TaskJobLimitAPITestCase(ApiTestBase):
+    """
+    Tests for MAX_JOBS_PER_TASK validation at the REST API level
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.error_message = "Too many jobs would be created for the task"
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+
+    def _create_task(self, segment_size: int, img_size: int, consensus_replicas: int | None = None):
+        data = {
+            "name": "test_for_job_limit",
+            "labels": [{"name": "car"}],
+            "segment_size": segment_size,
+        }
+
+        if consensus_replicas:
+            data["consensus_replicas"] = consensus_replicas
+
+        image_files = {}
+        for i in range(img_size):
+            image_files[f"client_files[{i}]"] = generate_image_file(f"test_{i}.jpg")
+
+        image_data = {
+            **image_files,
+            "image_quality": 75,
+        }
+
+        with ForceLogin(self.admin, self.client):
+            response = self.client.post("/api/tasks", data=data, format="json")
+            if response.status_code != status.HTTP_201_CREATED:
+                return response
+
+            tid = response.data["id"]
+            response = self.client.post(f"/api/tasks/{tid}/data", data=image_data)
+
+            rq_id = response.data["rq_id"]
+            response = self.client.get(f"/api/requests/{rq_id}")
+            return response
+
+    def _create_gt_job(self, task_id: int):
+        data = {
+            "type": "ground_truth",
+            "task_id": task_id,
+            "frame_selection_method": "random_uniform",
+            "frame_count": 10,
+        }
+
+        with ForceLogin(self.admin, self.client):
+            response = self.client.post("/api/jobs", data=data, format="json")
+            return response
+
+    @override_settings(MAX_JOBS_PER_TASK=5)
+    def test_create_task_within_job_limit(self):
+        response = self._create_task(
+            segment_size=10,
+            img_size=50,
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["status"], RequestStatus.FINISHED)
+
+        task_id = Task.objects.latest("id").id
+        job_count = Job.objects.filter(segment__task_id=task_id).count()
+        self.assertEqual(job_count, 5)
+
+    @override_settings(MAX_JOBS_PER_TASK=10)
+    def test_create_task_exceeds_job_limit(self):
+        response = self._create_task(
+            segment_size=10,
+            img_size=101,
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["status"], RequestStatus.FAILED)
+        self.assertIn(self.error_message, response.data["message"])
+
+        task_id = Task.objects.latest("id").id
+        job_count = Job.objects.filter(segment__task_id=task_id).count()
+        self.assertEqual(job_count, 0)
+
+    @override_settings(MAX_JOBS_PER_TASK=10)
+    def test_gt_jobs_are_not_affected_by_job_limit(self):
+        response = self._create_task(
+            segment_size=10,
+            img_size=100,
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["status"], RequestStatus.FINISHED)
+
+        task_id = Task.objects.latest("id").id
+        response = self._create_gt_job(task_id)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        job_count = Job.objects.filter(segment__task_id=task_id).count()
+        self.assertEqual(job_count, 11)
+
+    @override_settings(MAX_JOBS_PER_TASK=30)
+    def test_create_task_with_consensus_exactly_at_job_limit(self):
+        response = self._create_task(
+            segment_size=10,
+            img_size=100,
+            consensus_replicas=2,
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["status"], RequestStatus.FINISHED)
+
+        task_id = Task.objects.latest("id").id
+        job_count = Job.objects.filter(segment__task_id=task_id).count()
+        self.assertEqual(job_count, 30)
+
+    @override_settings(MAX_JOBS_PER_TASK=10)
+    def test_create_task_with_consensus_exceeds_job_limit(self):
+        response = self._create_task(
+            segment_size=10,
+            img_size=100,
+            consensus_replicas=2,
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["status"], RequestStatus.FAILED)
+        self.assertIn(self.error_message, response.data["message"])
+
+        task_id = Task.objects.latest("id").id
+        job_count = Job.objects.filter(segment__task_id=task_id).count()
+        self.assertEqual(job_count, 0)
