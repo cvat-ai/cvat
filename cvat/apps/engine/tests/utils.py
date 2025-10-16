@@ -36,6 +36,8 @@ from cvat.apps.engine.models import User
 
 T = TypeVar("T")
 
+ASSETS_DIR = Path(__file__).parent / "assets"
+
 
 class OrderStrategy(Protocol):
     def __call__(self, key_path: list[str]) -> bool: ...

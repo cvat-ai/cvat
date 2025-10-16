@@ -95,7 +95,7 @@ class TracksCounter:
                 "shape__outside",
             )
             .order_by("job_id", "label_id", "shape__type", "id", "shape__frame")
-        )
+        ).iterator(chunk_size=10000)
 
         unmerged_child_tracks = (
             child_labeledtrack_qs_filter(LabeledTrack.objects)
@@ -106,45 +106,46 @@ class TracksCounter:
                 "shape__outside",
             )
             .order_by("parent_id", "shape__frame")
-        )
+        ).iterator(chunk_size=10000)
 
-        i = 0
         tracks_per_job = defaultdict(lambda: {})
         tracks_per_id = {}
-        rows_count = len(unmerged_parent_tracks)
-        while i < rows_count:
-            row = unmerged_parent_tracks[i]
-            [job_id, label_id, track_type, track_id] = row[0:4]
 
-            if track_type == str(ShapeType.SKELETON):
-                tracks_per_id[track_id] = {
-                    "type": track_type,
-                    "id": track_id,
-                    "label_id": label_id,
-                    "shapes": [],  # will be filled further from its elements
-                }
-                tracks_per_job[job_id][track_id] = tracks_per_id[track_id]
-                while i < rows_count and unmerged_parent_tracks[i][3] == track_id:
-                    # go to next track
-                    i += 1
-            else:
+        current_track_id = None
+        current_job_id = None
+        current_track_shapes = []
+
+        def save_current():
+            nonlocal current_job_id, current_track_id, current_track_shapes
+            if current_job_id is not None and current_track_id is not None:
+                tracks_per_id[current_track_id]["shapes"] = current_track_shapes
+                tracks_per_job[current_job_id][current_track_id] = tracks_per_id[current_track_id]
+                current_track_shapes = []
+                current_job_id = None
+                current_track_id = None
+
+        for row in unmerged_parent_tracks:
+            job_id, label_id, track_type, track_id, frame, outside = row
+            is_new_track = track_id != current_track_id
+
+            if is_new_track:
+                save_current()
+
+                current_track_id = track_id
+                current_job_id = job_id
                 tracks_per_id[track_id] = {
                     "type": track_type,
                     "id": track_id,
                     "label_id": label_id,
                     "shapes": [],
                 }
-                tracks_per_job[job_id][track_id] = tracks_per_id[track_id]
 
-                while i < rows_count and unmerged_parent_tracks[i][3] == track_id:
-                    tracks_per_id[track_id]["shapes"].append(
-                        {
-                            "frame": unmerged_parent_tracks[i][4],
-                            "outside": unmerged_parent_tracks[i][5],
-                        }
-                    )
-                    i += 1
+            if track_type != str(ShapeType.SKELETON):
+                # for a skeleton, shapes are counted from its elements
+                current_track_shapes.append({"frame": frame, "outside": outside})
 
+        # save the last track if any
+        save_current()
         element_shapes_per_parent = defaultdict(
             lambda: defaultdict(
                 lambda: {
@@ -162,7 +163,8 @@ class TracksCounter:
                 element_shapes[frame]["outside"] = False
 
         for parent_id, element_shapes in element_shapes_per_parent.items():
-            tracks_per_id[parent_id]["shapes"] = linear_sort_shapes(element_shapes.values())
+            if parent_id in tracks_per_id:
+                tracks_per_id[parent_id]["shapes"] = linear_sort_shapes(element_shapes.values())
 
         self._tracks_per_job = defaultdict_to_regular(tracks_per_job)
         self._init_stop_frames()
