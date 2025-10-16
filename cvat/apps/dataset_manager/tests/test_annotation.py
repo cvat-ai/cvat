@@ -730,7 +730,7 @@ class TestTaskAnnotation(TestCase):
                 self.called_ids.append(job_id)
                 self.ir_data = AnnotationIR(models.DimensionType.DIM_2D)
 
-            def init_from_db(self, streaming=False):
+            def init_from_db(self, *, streaming: bool = False):
                 pass
 
         with mock.patch.object(task_module, "JobAnnotation", DummyJobAnnotation):
