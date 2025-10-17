@@ -6,9 +6,10 @@
 
 // eslint-disable-next-line import/no-extraneous-dependencies
 import * as allure from 'allure-js-commons';
+import { AllureTag } from '../../support/const_allure';
 
 context('Test default value for an attribute', () => {
-    allure.tag('heavy operations & settings');
+    allure.tags(AllureTag.HEAVY, AllureTag.SETTINGS);
     const taskName = 'Default attribute value test';
     const serverFiles = {
         images: ['image_1.jpg', 'image_2.jpg', 'image_3.jpg'],

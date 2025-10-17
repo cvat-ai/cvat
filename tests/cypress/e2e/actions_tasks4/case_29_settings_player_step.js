@@ -7,11 +7,10 @@
 
 // eslint-disable-next-line import/no-extraneous-dependencies
 import * as allure from 'allure-js-commons';
-
-import { taskName } from '../../support/const';
+import { AllureTag, taskName } from '../../support/const';
 
 context('Settings "Player step"', () => {
-    allure.tag('heavy operations & settings');
+    allure.tags(AllureTag.HEAVY, AllureTag.SETTINGS);
     const caseId = '29';
     const countJumpStep = 3;
     let startFrame;

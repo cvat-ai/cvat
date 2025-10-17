@@ -7,9 +7,10 @@
 
 // eslint-disable-next-line import/no-extraneous-dependencies
 import * as allure from 'allure-js-commons';
+import { AllureTag } from '../../support/const_allure';
 
 context('Settings. Text size/position. Text labels content.', () => {
-    allure.tag('heavy operations & settings');
+    allure.tags(AllureTag.HEAVY, AllureTag.SETTINGS);
     const caseId = '111';
     const taskName = 'Test text size/position task';
     const labelName = 'Test label';
