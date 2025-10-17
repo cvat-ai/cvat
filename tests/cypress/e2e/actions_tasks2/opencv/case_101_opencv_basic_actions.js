@@ -7,9 +7,9 @@
 
 // eslint-disable-next-line import/no-extraneous-dependencies
 import * as allure from 'allure-js-commons';
-import { AllureTag } from '../../support/const_allure';
+import { AllureTag } from '../../../support/const_allure';
 
-import { generateString } from '../../support/utils';
+import { generateString } from '../../../support/utils';
 
 context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () => {
     allure.tags(AllureTag.HEAVY, AllureTag.SETTINGS);
