@@ -690,15 +690,22 @@ class TestTaskAnnotation(TestCase):
     def test_reads_ordered_jobs(self):
         user = models.User.objects.create_superuser(username="admin", email="", password="admin")
 
-        db_data = models.Data.objects.create(size=200, image_quality=50)
+        db_data = models.Data.objects.create(size=31, stop_frame=30, image_quality=50)
 
         data = {
             "name": "my task",
             "owner": user,
-            "overlap": 0,
-            "segment_size": 100,
+            "overlap": 1,
+            "segment_size": 11,
         }
         db_task = models.Task.objects.create(data=db_data, **data)
+        
+        # We assume that normally segments and annotation jobs 
+        # are created in the ascending order for start_frame, 
+        # so their ids correspond to this order. The DB, however,
+        # can return them in an arbitrary order, if not specified explicitly.
+        # This test tries to reproduce this by specifying job ids.
+        # https://github.com/cvat-ai/cvat/issues/9860
 
         models.Job.objects.create(
             segment=models.Segment.objects.create(task=db_task, start_frame=0, stop_frame=10),
