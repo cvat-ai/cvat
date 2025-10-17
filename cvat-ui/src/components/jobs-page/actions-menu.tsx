@@ -20,6 +20,7 @@ import { makeBulkOperationAsync } from 'actions/bulk-actions';
 
 import UserSelector from 'components/task-page/user-selector';
 import { JobStageSelector, JobStateSelector } from 'components/job-item/job-selectors';
+import ActionsMenuTriggerWrapper from 'components/common/actions-menu-trigger-wrapper';
 import { makeKey } from 'reducers/consensus-reducer';
 import JobActionsItems from './actions-menu-items';
 
@@ -226,14 +227,11 @@ function JobActionsComponent(
                 onContextMenu: onContextActionsMenuClick,
             }}
         >
-            {!dropdownTrigger || dropdownTrigger.includes('click') ? (
-                <div
-                    className='cvat-actions-menu-trigger-wrapper'
-                    onContextMenu={onWrapperContextMenu}
-                >
-                    {triggerElement}
-                </div>
-            ) : triggerElement}
+            <ActionsMenuTriggerWrapper
+                triggerElement={triggerElement}
+                dropdownTrigger={dropdownTrigger}
+                onWrapperContextMenu={onWrapperContextMenu}
+            />
         </Dropdown>
     );
 }

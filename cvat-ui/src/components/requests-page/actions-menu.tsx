@@ -3,14 +3,18 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback, useState } from 'react';
-import { useContextActionsMenuClick } from 'utils/hooks';
 import { useDispatch, useSelector, shallowEqual } from 'react-redux';
+
 import Dropdown from 'antd/lib/dropdown';
 import { MenuProps } from 'antd/lib/menu';
+
+import { CombinedState } from 'reducers';
 import { Request, RQStatus } from 'cvat-core-wrapper';
 import { cancelRequestAsync } from 'actions/requests-async-actions';
 import { makeBulkOperationAsync } from 'actions/bulk-actions';
-import { CombinedState } from 'reducers';
+
+import ActionsMenuTriggerWrapper from 'components/common/actions-menu-trigger-wrapper';
+import { useContextActionsMenuClick } from 'utils/hooks';
 
 interface Props {
     requestInstance: Request;
@@ -130,14 +134,11 @@ function RequestActionsComponent(props: Readonly<Props>): JSX.Element | null {
                 onContextMenu: onContextActionsMenuClick,
             }}
         >
-            {!dropdownTrigger || dropdownTrigger.includes('click') ? (
-                <div
-                    className='cvat-actions-menu-trigger-wrapper'
-                    onContextMenu={onWrapperContextMenu}
-                >
-                    {triggerElement}
-                </div>
-            ) : triggerElement}
+            <ActionsMenuTriggerWrapper
+                triggerElement={triggerElement}
+                dropdownTrigger={dropdownTrigger}
+                onWrapperContextMenu={onWrapperContextMenu}
+            />
         </Dropdown>
     );
 }

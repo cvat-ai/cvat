@@ -5,22 +5,24 @@
 import React, { useCallback, useState } from 'react';
 import { useDispatch, useSelector, shallowEqual } from 'react-redux';
 import { useHistory } from 'react-router';
+
 import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
 
 import { Organization, Project, User } from 'cvat-core-wrapper';
-import { useDropdownEditField, usePlugins, useContextActionsMenuClick } from 'utils/hooks';
 import { CombinedState } from 'reducers';
 import { deleteProjectAsync, getProjectsAsync, updateProjectAsync } from 'actions/projects-actions';
 import { cloudStoragesActions } from 'actions/cloud-storage-actions';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
+import { makeBulkOperationAsync } from 'actions/bulk-actions';
+
 import UserSelector from 'components/task-page/user-selector';
 import OrganizationSelector from 'components/selectors/organization-selector';
+import ActionsMenuTriggerWrapper from 'components/common/actions-menu-trigger-wrapper';
 import { ResourceUpdateTypes } from 'utils/enums';
 import { confirmTransferModal } from 'utils/modals';
-
-import { makeBulkOperationAsync } from 'actions/bulk-actions';
+import { useDropdownEditField, usePlugins, useContextActionsMenuClick } from 'utils/hooks';
 import ProjectActionsItems from './actions-menu-items';
 
 interface Props {
@@ -239,14 +241,11 @@ function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
                 onContextMenu: onContextActionsMenuClick,
             }}
         >
-            {!dropdownTrigger || dropdownTrigger.includes('click') ? (
-                <div
-                    className='cvat-actions-menu-trigger-wrapper'
-                    onContextMenu={onWrapperContextMenu}
-                >
-                    {triggerElement}
-                </div>
-            ) : triggerElement}
+            <ActionsMenuTriggerWrapper
+                triggerElement={triggerElement}
+                dropdownTrigger={dropdownTrigger}
+                onWrapperContextMenu={onWrapperContextMenu}
+            />
         </Dropdown>
     );
 }

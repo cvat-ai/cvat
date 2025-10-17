@@ -4,12 +4,16 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback, useState } from 'react';
-import Dropdown from 'antd/lib/dropdown';
-import { MLModel, ModelProviders } from 'cvat-core-wrapper';
-import { usePlugins, useContextActionsMenuClick } from 'utils/hooks';
-import { CombinedState } from 'reducers';
-import { MenuProps } from 'antd/lib/menu';
 import { shallowEqual, useSelector } from 'react-redux';
+
+import Dropdown from 'antd/lib/dropdown';
+import { MenuProps } from 'antd/lib/menu';
+
+import { CombinedState } from 'reducers';
+import { MLModel, ModelProviders } from 'cvat-core-wrapper';
+
+import ActionsMenuTriggerWrapper from 'components/common/actions-menu-trigger-wrapper';
+import { usePlugins, useContextActionsMenuClick } from 'utils/hooks';
 
 interface ModelActionsProps {
     model: MLModel;
@@ -83,14 +87,11 @@ function ModelActionsComponent(props: Readonly<ModelActionsProps>): JSX.Element 
                 onContextMenu: onContextActionsMenuClick,
             }}
         >
-            {!dropdownTrigger || dropdownTrigger.includes('click') ? (
-                <div
-                    className='cvat-actions-menu-trigger-wrapper'
-                    onContextMenu={onWrapperContextMenu}
-                >
-                    {triggerElement}
-                </div>
-            ) : triggerElement}
+            <ActionsMenuTriggerWrapper
+                triggerElement={triggerElement}
+                dropdownTrigger={dropdownTrigger}
+                onWrapperContextMenu={onWrapperContextMenu}
+            />
         </Dropdown>
     );
 }

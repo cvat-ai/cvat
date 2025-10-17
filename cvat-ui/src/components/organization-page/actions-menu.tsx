@@ -4,20 +4,24 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback, useState } from 'react';
+import { useDispatch, useSelector, shallowEqual } from 'react-redux';
+
 import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
 import { ItemType } from 'antd/lib/menu/hooks/useItems';
-import { MenuInfo } from 'components/dropdown-menu';
-import { Membership } from 'cvat-core-wrapper';
-import { useDropdownEditField, useContextActionsMenuClick } from 'utils/hooks';
-import { CVATMenuEditLabel } from 'components/common/cvat-menu-edit-label';
 import { MenuProps } from 'antd/lib/menu';
-import { useDispatch, useSelector, shallowEqual } from 'react-redux';
+import { Membership } from 'cvat-core-wrapper';
+
 import { CombinedState } from 'reducers';
-import { LabelWithCountHOF } from 'components/common/label-with-count';
 import { makeBulkOperationAsync } from 'actions/bulk-actions';
 import { removeOrganizationMemberAsync } from 'actions/organization-actions';
 import { resendInvitationAsync } from 'actions/invitations-actions';
+
+import ActionsMenuTriggerWrapper from 'components/common/actions-menu-trigger-wrapper';
+import { MenuInfo } from 'components/dropdown-menu';
+import { LabelWithCountHOF } from 'components/common/label-with-count';
+import { CVATMenuEditLabel } from 'components/common/cvat-menu-edit-label';
+import { useDropdownEditField, useContextActionsMenuClick } from 'utils/hooks';
 import MemberRoleSelector from './member-role-selector';
 
 export interface MemberActionsMenuProps {
@@ -199,14 +203,11 @@ function MemberActionsMenu(props: Readonly<MemberActionsMenuProps>): JSX.Element
                 },
             }}
         >
-            {!dropdownTrigger || dropdownTrigger.includes('click') ? (
-                <div
-                    className='cvat-actions-menu-trigger-wrapper'
-                    onContextMenu={onWrapperContextMenu}
-                >
-                    {triggerElement}
-                </div>
-            ) : triggerElement}
+            <ActionsMenuTriggerWrapper
+                triggerElement={triggerElement}
+                dropdownTrigger={dropdownTrigger}
+                onWrapperContextMenu={onWrapperContextMenu}
+            />
         </Dropdown>
     );
 }

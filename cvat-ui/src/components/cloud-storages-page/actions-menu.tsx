@@ -4,6 +4,8 @@
 
 import React, { useCallback, useState } from 'react';
 import Dropdown from 'antd/lib/dropdown';
+
+import ActionsMenuTriggerWrapper from 'components/common/actions-menu-trigger-wrapper';
 import { useContextActionsMenuClick } from 'utils/hooks';
 
 interface Props {
@@ -62,14 +64,11 @@ export default function CloudStorageActionsMenu(props: Props): JSX.Element {
                 onContextMenu: onContextActionsMenuClick,
             }}
         >
-            {(!dropdownTrigger || dropdownTrigger.includes('click')) && triggerElement ? (
-                <div
-                    className='cvat-actions-menu-trigger-wrapper'
-                    onContextMenu={onWrapperContextMenu}
-                >
-                    {triggerElement}
-                </div>
-            ) : triggerElement}
+            <ActionsMenuTriggerWrapper
+                triggerElement={triggerElement}
+                dropdownTrigger={dropdownTrigger}
+                onWrapperContextMenu={onWrapperContextMenu}
+            />
         </Dropdown>
     );
 }

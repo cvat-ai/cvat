@@ -11,24 +11,23 @@ import Dropdown from 'antd/lib/dropdown';
 import {
     RQStatus, Task, User, Organization,
 } from 'cvat-core-wrapper';
-import { useDropdownEditField, usePlugins, useContextActionsMenuClick } from 'utils/hooks';
-
 import { CombinedState } from 'reducers';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
 import { modelsActions } from 'actions/models-actions';
 import { mergeConsensusJobsAsync } from 'actions/consensus-actions';
-
+import { makeBulkOperationAsync } from 'actions/bulk-actions';
 import {
     deleteTaskAsync, getTasksAsync, switchMoveTaskModalVisible, updateTaskAsync,
 } from 'actions/tasks-actions';
 import { cloudStoragesActions } from 'actions/cloud-storage-actions';
-import { ResourceUpdateTypes } from 'utils/enums';
-import UserSelector from 'components/task-page/user-selector';
 
+import UserSelector from 'components/task-page/user-selector';
+import ActionsMenuTriggerWrapper from 'components/common/actions-menu-trigger-wrapper';
 import OrganizationSelector from 'components/selectors/organization-selector';
 import { confirmTransferModal } from 'utils/modals';
-import { makeBulkOperationAsync } from 'actions/bulk-actions';
+import { ResourceUpdateTypes } from 'utils/enums';
+import { useDropdownEditField, usePlugins, useContextActionsMenuClick } from 'utils/hooks';
 import TaskActionsItems from './actions-menu-items';
 
 interface Props {
@@ -290,14 +289,11 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
                 onContextMenu: onContextActionsMenuClick,
             }}
         >
-            {!dropdownTrigger || dropdownTrigger.includes('click') ? (
-                <div
-                    className='cvat-actions-menu-trigger-wrapper'
-                    onContextMenu={onWrapperContextMenu}
-                >
-                    {triggerElement}
-                </div>
-            ) : triggerElement}
+            <ActionsMenuTriggerWrapper
+                triggerElement={triggerElement}
+                dropdownTrigger={dropdownTrigger}
+                onWrapperContextMenu={onWrapperContextMenu}
+            />
         </Dropdown>
     );
 }

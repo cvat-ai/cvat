@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback, useState } from 'react';
-import { useContextActionsMenuClick } from 'utils/hooks';
 import { useHistory } from 'react-router';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
+
 import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
 import { MenuProps } from 'antd/lib/menu';
@@ -14,6 +14,9 @@ import { Webhook } from 'cvat-core-wrapper';
 import { CombinedState } from 'reducers';
 import { deleteWebhookAsync } from 'actions/webhooks-actions';
 import { makeBulkOperationAsync } from 'actions/bulk-actions';
+
+import ActionsMenuTriggerWrapper from 'components/common/actions-menu-trigger-wrapper';
+import { useContextActionsMenuClick } from 'utils/hooks';
 
 interface WebhookActionsMenuProps {
     webhookInstance: Webhook;
@@ -96,14 +99,11 @@ export default function WebhookActionsMenu(props: Readonly<WebhookActionsMenuPro
                 onContextMenu: onContextActionsMenuClick,
             }}
         >
-            {!dropdownTrigger || dropdownTrigger.includes('click') ? (
-                <div
-                    className='cvat-actions-menu-trigger-wrapper'
-                    onContextMenu={onWrapperContextMenu}
-                >
-                    {triggerElement}
-                </div>
-            ) : triggerElement}
+            <ActionsMenuTriggerWrapper
+                triggerElement={triggerElement}
+                dropdownTrigger={dropdownTrigger}
+                onWrapperContextMenu={onWrapperContextMenu}
+            />
         </Dropdown>
     );
 }
