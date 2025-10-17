@@ -7,7 +7,8 @@
 
 // eslint-disable-next-line import/no-extraneous-dependencies
 import * as allure from 'allure-js-commons';
-import { AllureTag, taskName } from '../../support/const';
+import { taskName } from '../../support/const';
+import { AllureTag } from '../../support/const_allure';
 
 context('Settings "Player step"', () => {
     allure.tags(AllureTag.HEAVY, AllureTag.SETTINGS);
