@@ -789,6 +789,7 @@ if ONE_RUNNING_JOB_IN_QUEUE_PER_USER:
         }
     )
 
+ALLOW_CLOUD_STORAGE_ENV_CREDS = os.environ.get("ALLOW_CLOUD_STORAGE_ENV_CREDS", False)
 USER_LAST_ACTIVITY_UPDATE_MIN_INTERVAL = timedelta(days=1)
 
 # Health check settings

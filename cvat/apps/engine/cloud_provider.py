@@ -534,6 +534,7 @@ def get_cloud_storage_instance(
             region=specific_attributes.get('region'),
             endpoint_url=specific_attributes.get('endpoint_url'),
             prefix=specific_attributes.get('prefix'),
+            anonymous_access = credentials.credentials_type == CredentialsTypeChoice.ANONYMOUS_ACCESS,
         )
     elif cloud_provider == CloudProviderChoice.AZURE_CONTAINER:
         instance = AzureBlobContainer(
@@ -568,6 +569,7 @@ class AWS_S3(_CloudStorage):
 
     def __init__(self,
                 bucket: str,
+                anonymous_access: bool = False,
                 *,
                 region: Optional[str] = None,
                 access_key_id: Optional[str] = None,
@@ -614,8 +616,8 @@ class AWS_S3(_CloudStorage):
             ),
         )
 
-        # anonymous access
-        if not any([access_key_id, secret_key, session_token]):
+        # anonymous access - disable signing
+        if anonymous_access:
             self._s3.meta.client.meta.events.register(
                 "choose-signer.s3.*", disable_signing
             )
@@ -1083,6 +1085,7 @@ class Credentials:
             CredentialsTypeChoice.KEY_FILE_PATH: self.key_file_path,
             CredentialsTypeChoice.ANONYMOUS_ACCESS: "" if not self.account_name else self.account_name,
             CredentialsTypeChoice.CONNECTION_STRING: self.connection_string,
+            CredentialsTypeChoice.ENV_CREDS: None,
         }
         return converted_credentials[self.credentials_type]
 
@@ -1099,6 +1102,11 @@ class Credentials:
             self.key_file_path = credentials.get('value')
         elif self.credentials_type == CredentialsTypeChoice.CONNECTION_STRING:
             self.connection_string = credentials.get('value')
+        elif self.credentials_type == CredentialsTypeChoice.ENV_CREDS:
+            if settings.ALLOW_CLOUD_STORAGE_ENV_CREDS:
+                slogger.glob.debug('Credentials set to be pulled from environment.')
+            else:
+                raise ValidationError('Credentials type {} is not allowed in this environment'.format(self.credentials_type))
         else:
             raise NotImplementedError('Found {} not supported credentials type'.format(self.credentials_type))
 

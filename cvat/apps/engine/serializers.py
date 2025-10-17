@@ -3488,7 +3488,20 @@ class CloudStorageReadSerializer(serializers.ModelSerializer):
             request_only=True,
         ),
         OpenApiExample(
-            'Create AWS S3 cloud storage without credentials',
+            'Create AWS S3 cloud storage pulling credentials from environment',
+            value={
+                'provider_type': models.CloudProviderChoice.AWS_S3,
+                'resource': 'somebucket',
+                'display_name': 'Bucket',
+                'credentials_type': models.CredentialsTypeChoice.ENV_CREDS,
+                'manifests': [
+                    'manifest.jsonl'
+                ],
+            },
+            request_only=True,
+        ),
+        OpenApiExample(
+            'Create AWS S3 cloud storage to public bucket without credentials',
             value={
                 'provider_type': models.CloudProviderChoice.AWS_S3,
                 'resource': 'somebucket',

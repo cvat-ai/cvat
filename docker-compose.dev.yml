@@ -21,6 +21,9 @@ services:
         CVAT_DEBUG_ENABLED:
         COVERAGE_PROCESS_START:
     environment:
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-minio_access_key}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-minio_secret_key}
+      AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN:-}
       # Use this with CVAT_DEBUG_ENABLED to avoid server response timeouts
       CVAT_DEBUG_ENABLED: '${CVAT_DEBUG_ENABLED:-no}'
       CVAT_DEBUG_PORT: '9090'
