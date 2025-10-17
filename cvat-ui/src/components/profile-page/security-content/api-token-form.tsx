@@ -68,7 +68,7 @@ function ApiTokenForm({
             className='cvat-api-token-form'
             initialValues={initialValues}
         >
-            <Typography.Title level={4}>
+            <Typography.Title level={5}>
                 {isEditing ? 'Edit API Token' : 'Create API Token'}
             </Typography.Title>
             <Form.Item

@@ -2917,6 +2917,10 @@ class ProjectWriteSerializer(serializers.ModelSerializer, OrgTransferableMixin):
         owner_id: int,
         updated_date: datetime,
     ):
+        models.Data.objects.filter(
+            id__in=models.Task.objects.filter(project=instance).values('data_id'),
+        ).update(cloud_storage_id=None)
+
         instance.tasks.update(
             organization_id=organization_id,
             owner_id=owner_id,
