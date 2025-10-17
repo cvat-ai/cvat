@@ -7,19 +7,20 @@ import React, { useCallback } from 'react';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
 import dayjs from 'dayjs';
-import { QuestionCircleOutlined } from '@ant-design/icons';
+import { MoreOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import Card from 'antd/lib/card';
 import Meta from 'antd/lib/card/Meta';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import Text from 'antd/lib/typography/Text';
 import Modal from 'antd/lib/modal';
+import Button from 'antd/lib/button';
 
 import { CloudStorage, CombinedState } from 'reducers';
 import { deleteCloudStorageAsync } from 'actions/cloud-storage-actions';
 import { makeBulkOperationAsync } from 'actions/bulk-actions';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import Preview from 'components/common/preview';
-import CloudStorageActionsMenu from './cloud-storage-actions-menu';
+import CloudStorageActionsMenu from './actions-menu';
 import Status from './cloud-storage-status';
 
 interface Props {
@@ -150,6 +151,14 @@ export default function CloudStorageItemComponent(props: Readonly<Props>): JSX.E
                                     onUpdate={onUpdate}
                                     onDelete={onDelete}
                                     selectedIds={selectedIds}
+                                    triggerElement={(
+                                        <Button
+                                            className='cvat-cloud-storage-item-menu-button cvat-actions-menu-button'
+                                            type='link'
+                                            size='large'
+                                            icon={<MoreOutlined />}
+                                        />
+                                    )}
                                 />
                             </>
                         )}

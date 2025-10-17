@@ -60,3 +60,7 @@
     display: flex;
     justify-content: space-between;
 }
+
+.cvat-actions-menu-trigger-wrapper {
+    max-width: $grid-unit-size * 14;
+}

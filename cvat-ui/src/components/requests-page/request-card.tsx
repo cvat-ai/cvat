@@ -239,7 +239,7 @@ function RequestCard(props: Readonly<Props>): JSX.Element {
                                         ) : null
                                     }
                                 </Col>
-                                <Col span={3} style={{ display: 'flex', justifyContent: 'end' }}>
+                                <Col span={3} className='cvat-requests-page-actions-wrapper'>
                                     <RequestActionsComponent
                                         requestInstance={request}
                                         renderTriggerIfEmpty={false}

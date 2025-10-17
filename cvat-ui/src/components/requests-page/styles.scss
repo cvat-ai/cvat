@@ -111,3 +111,9 @@
         transform: translate(-50%, -50%);
     }
 }
+
+.cvat-requests-page-actions-wrapper {
+    display: flex;
+    justify-content: end;
+    height: $grid-unit-size * 5;
+}

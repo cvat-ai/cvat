@@ -278,14 +278,14 @@ function JobItem(props: Readonly<Props>): JSX.Element {
                         </Col>
                     </Row>
                 </Col>
+                <JobActionsComponent
+                    jobInstance={job}
+                    consensusJobsPresent={(childJobs as Job[]).length > 0}
+                    triggerElement={
+                        <MoreOutlined className='cvat-job-item-more-button cvat-actions-menu-button' />
+                    }
+                />
             </Row>
-            <JobActionsComponent
-                jobInstance={job}
-                consensusJobsPresent={(childJobs as Job[]).length > 0}
-                triggerElement={
-                    <MoreOutlined className='cvat-job-item-more-button cvat-actions-menu-button' />
-                }
-            />
             {childJobViews.length > 0 && (
                 <Collapse
                     className='cvat-consensus-job-collapse'

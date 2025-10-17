@@ -105,7 +105,7 @@ function MemberItem(props: Readonly<Props>): JSX.Element {
                             disabled={role === 'owner'}
                         />
                     </Col>
-                    <Col span={1} className='cvat-organization-member-item-remove'>
+                    <Col span={1}>
                         <MemberActionsMenu
                             membershipInstance={membershipInstance}
                             onUpdateMembershipRole={onUpdateMembershipRole}

@@ -3,8 +3,6 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback, useState } from 'react';
-import { MoreOutlined } from '@ant-design/icons';
-import Button from 'antd/lib/button';
 import Dropdown from 'antd/lib/dropdown';
 import { useContextActionsMenuClick } from 'utils/hooks';
 
@@ -12,7 +10,7 @@ interface Props {
     onUpdate: () => void;
     onDelete: () => void;
     selectedIds: number[];
-    triggerElement?: JSX.Element;
+    triggerElement: JSX.Element;
     dropdownTrigger?: ('click' | 'hover' | 'contextMenu')[];
 }
 
@@ -71,16 +69,7 @@ export default function CloudStorageActionsMenu(props: Props): JSX.Element {
                 >
                     {triggerElement}
                 </div>
-            ) : (
-                triggerElement || (
-                    <Button
-                        className='cvat-cloud-storage-item-menu-button cvat-actions-menu-button'
-                        type='link'
-                        size='large'
-                        icon={<MoreOutlined />}
-                    />
-                )
-            )}
+            ) : triggerElement}
         </Dropdown>
     );
 }

@@ -124,19 +124,17 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
                                         )}
                                         <Text type='secondary'>{`Last updated ${updated}`}</Text>
                                     </div>
-                                    <div>
-                                        <ProjectActionsComponent
-                                            projectInstance={instance}
-                                            triggerElement={(
-                                                <Button
-                                                    className='cvat-project-details-button cvat-actions-menu-button'
-                                                    type='link'
-                                                    size='large'
-                                                    icon={<MoreOutlined />}
-                                                />
-                                            )}
-                                        />
-                                    </div>
+                                    <ProjectActionsComponent
+                                        projectInstance={instance}
+                                        triggerElement={(
+                                            <Button
+                                                className='cvat-project-details-button cvat-actions-menu-button'
+                                                type='link'
+                                                size='large'
+                                                icon={<MoreOutlined />}
+                                            />
+                                        )}
+                                    />
                                 </div>
                             )}
                         />

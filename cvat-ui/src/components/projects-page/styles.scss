@@ -136,8 +136,7 @@
                 display: flex;
                 justify-content: space-between;
 
-                // actions button
-                > div:nth-child(2) {
+                .cvat-actions-menu-trigger-wrapper {
                     display: flex;
                     align-self: flex-end;
                     justify-content: center;

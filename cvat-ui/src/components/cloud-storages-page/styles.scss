@@ -100,10 +100,16 @@
         width: 100%;
     }
 
-    .cvat-cloud-storage-item-menu-button {
+    .cvat-actions-menu-trigger-wrapper {
         position: absolute;
         bottom: 0;
         right: 0;
+
+        > button {
+            color: $text-color;
+            width: inherit;
+            padding: 0 $grid-unit-size;
+        }
     }
 
     .cvat-cloud-storage-description-icon {
