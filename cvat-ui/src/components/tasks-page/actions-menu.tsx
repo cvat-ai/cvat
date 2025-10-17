@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
 import Modal from 'antd/lib/modal';
@@ -11,7 +11,7 @@ import Dropdown from 'antd/lib/dropdown';
 import {
     RQStatus, Task, User, Organization,
 } from 'cvat-core-wrapper';
-import { useDropdownEditField, usePlugins, useContextMenuClick } from 'utils/hooks';
+import { useDropdownEditField, usePlugins, useContextActionsMenuClick } from 'utils/hooks';
 
 import { CombinedState } from 'reducers';
 import { exportActions } from 'actions/export-actions';
@@ -62,15 +62,22 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
     }), shallowEqual);
 
     const isBulkMode = selectedIds.length > 1;
-    const onContextMenuClick = useContextMenuClick();
+    const onContextActionsMenuClick = useContextActionsMenuClick();
+
+    const [dropdownOpen, setDropdownOpen] = useState(false);
     const {
-        dropdownOpen,
         editField,
         startEditField,
         stopEditField,
         onOpenChange,
         onMenuClick,
-    } = useDropdownEditField();
+    } = useDropdownEditField((open: boolean) => {
+        setDropdownOpen(open);
+    });
+
+    const onWrapperContextMenu = useCallback(() => {
+        setDropdownOpen(false);
+    }, []);
 
     const onOpenBugTracker = useCallback(() => {
         if (taskInstance.bugTracker) {
@@ -280,10 +287,17 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
                 className: 'cvat-actions-menu',
                 items: menuItems,
                 onClick: onMenuClick,
-                onContextMenu: onContextMenuClick,
+                onContextMenu: onContextActionsMenuClick,
             }}
         >
-            {triggerElement}
+            {!dropdownTrigger || dropdownTrigger.includes('click') ? (
+                <div
+                    className='cvat-actions-menu-trigger-wrapper'
+                    onContextMenu={onWrapperContextMenu}
+                >
+                    {triggerElement}
+                </div>
+            ) : triggerElement}
         </Dropdown>
     );
 }

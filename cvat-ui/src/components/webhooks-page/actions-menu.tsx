@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback } from 'react';
-import { useContextMenuClick } from 'utils/hooks';
+import React, { useCallback, useState } from 'react';
+import { useContextActionsMenuClick } from 'utils/hooks';
 import { useHistory } from 'react-router';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import Dropdown from 'antd/lib/dropdown';
@@ -36,7 +36,12 @@ export default function WebhookActionsMenu(props: Readonly<WebhookActionsMenuPro
     }), shallowEqual);
 
     const isBulk = selectedIds.length > 1;
-    const onContextMenuClick = useContextMenuClick();
+    const onContextActionsMenuClick = useContextActionsMenuClick();
+
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+    const onWrapperContextMenu = useCallback(() => {
+        setDropdownOpen(false);
+    }, []);
     const onEdit = useCallback(() => {
         history.push(`/webhooks/update/${webhookInstance.id}`);
     }, [webhookInstance]);
@@ -84,12 +89,21 @@ export default function WebhookActionsMenu(props: Readonly<WebhookActionsMenuPro
         <Dropdown
             trigger={dropdownTrigger || ['click']}
             destroyPopupOnHide
+            open={dropdownOpen}
+            onOpenChange={setDropdownOpen}
             menu={{
                 items: menuItems,
-                onContextMenu: onContextMenuClick,
+                onContextMenu: onContextActionsMenuClick,
             }}
         >
-            {triggerElement}
+            {!dropdownTrigger || dropdownTrigger.includes('click') ? (
+                <div
+                    className='cvat-actions-menu-trigger-wrapper'
+                    onContextMenu={onWrapperContextMenu}
+                >
+                    {triggerElement}
+                </div>
+            ) : triggerElement}
         </Dropdown>
     );
 }

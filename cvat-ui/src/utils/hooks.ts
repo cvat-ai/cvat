@@ -206,16 +206,15 @@ export function useInstanceId(type: InstanceType): number {
     return +(params.tid as string);
 }
 
-export function useContextMenuClick(): (event: React.MouseEvent) => void {
-    const onContextMenuClick = useCallback((event: React.MouseEvent) => {
+export function useContextActionsMenuClick(): (event: React.MouseEvent) => void {
+    const onContextActionsMenuClick = useCallback((event: React.MouseEvent) => {
         event.stopPropagation();
     }, []);
 
-    return onContextMenuClick;
+    return onContextActionsMenuClick;
 }
 
 export type DropdownEditField = {
-    dropdownOpen: boolean;
     editField: string | null;
     startEditField: (key: string) => void;
     stopEditField: () => void;
@@ -223,8 +222,7 @@ export type DropdownEditField = {
     onMenuClick: (options: { key: string }) => void;
 };
 
-export function useDropdownEditField(): DropdownEditField {
-    const [dropdownOpen, setDropdownOpen] = useState(false);
+export function useDropdownEditField(setDropdownOpen: (open: boolean) => void): DropdownEditField {
     const [editField, setEditField] = useState<string | null>(null);
     const startEditField = useCallback((field: string) => setEditField(field), []);
     const stopEditField = useCallback(() => {
@@ -250,7 +248,6 @@ export function useDropdownEditField(): DropdownEditField {
     }, []);
 
     return {
-        dropdownOpen,
         editField,
         startEditField,
         stopEditField,

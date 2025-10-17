@@ -2,10 +2,11 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import { MoreOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 import Dropdown from 'antd/lib/dropdown';
+import { useContextActionsMenuClick } from 'utils/hooks';
 
 interface Props {
     onUpdate: () => void;
@@ -22,6 +23,12 @@ export default function CloudStorageActionsMenu(props: Props): JSX.Element {
     const isBulkMode = selectedIds.length > 1;
     const bulkAllowedKeys = ['delete'];
     const isDisabled = (key: string): boolean => isBulkMode && !bulkAllowedKeys.includes(key);
+
+    const onContextActionsMenuClick = useContextActionsMenuClick();
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+    const onWrapperContextMenu = useCallback(() => {
+        setDropdownOpen(false);
+    }, []);
 
     const withCount = (label: string, key: string): string => {
         if (isBulkMode && bulkAllowedKeys.includes(key)) {
@@ -49,18 +56,30 @@ export default function CloudStorageActionsMenu(props: Props): JSX.Element {
         <Dropdown
             trigger={dropdownTrigger || ['click']}
             destroyPopupOnHide
+            open={dropdownOpen}
+            onOpenChange={setDropdownOpen}
             menu={{
                 className: 'cvat-cloud-storage-actions-menu',
                 items,
+                onContextMenu: onContextActionsMenuClick,
             }}
         >
-            {triggerElement || (
-                <Button
-                    className='cvat-cloud-storage-item-menu-button cvat-actions-menu-button'
-                    type='link'
-                    size='large'
-                    icon={<MoreOutlined />}
-                />
+            {(!dropdownTrigger || dropdownTrigger.includes('click')) && triggerElement ? (
+                <div
+                    className='cvat-actions-menu-trigger-wrapper'
+                    onContextMenu={onWrapperContextMenu}
+                >
+                    {triggerElement}
+                </div>
+            ) : (
+                triggerElement || (
+                    <Button
+                        className='cvat-cloud-storage-item-menu-button cvat-actions-menu-button'
+                        type='link'
+                        size='large'
+                        icon={<MoreOutlined />}
+                    />
+                )
             )}
         </Dropdown>
     );

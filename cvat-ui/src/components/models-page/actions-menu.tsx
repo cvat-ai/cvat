@@ -3,10 +3,10 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import Dropdown from 'antd/lib/dropdown';
 import { MLModel, ModelProviders } from 'cvat-core-wrapper';
-import { usePlugins, useContextMenuClick } from 'utils/hooks';
+import { usePlugins, useContextActionsMenuClick } from 'utils/hooks';
 import { CombinedState } from 'reducers';
 import { MenuProps } from 'antd/lib/menu';
 import { shallowEqual, useSelector } from 'react-redux';
@@ -45,7 +45,12 @@ function ModelActionsComponent(props: Readonly<ModelActionsProps>): JSX.Element 
         ...trackers,
         ...reid,
     ];
-    const onContextMenuClick = useContextMenuClick();
+    const onContextActionsMenuClick = useContextActionsMenuClick();
+
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+    const onWrapperContextMenu = useCallback(() => {
+        setDropdownOpen(false);
+    }, []);
 
     const menuPlugins = usePlugins(
         (state: CombinedState) => state.plugins.components.modelsPage.modelItem.menu.items,
@@ -70,13 +75,22 @@ function ModelActionsComponent(props: Readonly<ModelActionsProps>): JSX.Element 
         <Dropdown
             trigger={dropdownTrigger || ['click']}
             destroyPopupOnHide
+            open={dropdownOpen}
+            onOpenChange={setDropdownOpen}
             menu={{
                 items: sortedMenuItems.map((menuItem) => menuItem[0]),
                 triggerSubMenuAction: 'click',
-                onContextMenu: onContextMenuClick,
+                onContextMenu: onContextActionsMenuClick,
             }}
         >
-            {triggerElement}
+            {!dropdownTrigger || dropdownTrigger.includes('click') ? (
+                <div
+                    className='cvat-actions-menu-trigger-wrapper'
+                    onContextMenu={onWrapperContextMenu}
+                >
+                    {triggerElement}
+                </div>
+            ) : triggerElement}
         </Dropdown>
     );
 }

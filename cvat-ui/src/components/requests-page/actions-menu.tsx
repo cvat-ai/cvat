@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback } from 'react';
-import { useContextMenuClick } from 'utils/hooks';
+import React, { useCallback, useState } from 'react';
+import { useContextActionsMenuClick } from 'utils/hooks';
 import { useDispatch, useSelector, shallowEqual } from 'react-redux';
 import Dropdown from 'antd/lib/dropdown';
 import { MenuProps } from 'antd/lib/menu';
@@ -38,7 +38,11 @@ function RequestActionsComponent(props: Readonly<Props>): JSX.Element | null {
     }), shallowEqual);
 
     const allRequests = Object.values(requestsMap);
-    const onContextMenuClick = useContextMenuClick();
+    const onContextActionsMenuClick = useContextActionsMenuClick();
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+    const onWrapperContextMenu = useCallback(() => {
+        setDropdownOpen(false);
+    }, []);
     const isCardMenu = !dropdownTrigger;
 
     const downloadable = (_request: Request): boolean => !!_request.url && !cancelled[_request.id];
@@ -117,14 +121,23 @@ function RequestActionsComponent(props: Readonly<Props>): JSX.Element | null {
         <Dropdown
             destroyPopupOnHide
             trigger={dropdownTrigger || ['click']}
+            open={dropdownOpen}
+            onOpenChange={setDropdownOpen}
             menu={{
                 items: menuItems,
                 triggerSubMenuAction: 'click',
                 className: 'cvat-request-menu',
-                onContextMenu: onContextMenuClick,
+                onContextMenu: onContextActionsMenuClick,
             }}
         >
-            {triggerElement}
+            {!dropdownTrigger || dropdownTrigger.includes('click') ? (
+                <div
+                    className='cvat-actions-menu-trigger-wrapper'
+                    onContextMenu={onWrapperContextMenu}
+                >
+                    {triggerElement}
+                </div>
+            ) : triggerElement}
         </Dropdown>
     );
 }

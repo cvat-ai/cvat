@@ -3,13 +3,13 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
 import { ItemType } from 'antd/lib/menu/hooks/useItems';
 import { MenuInfo } from 'components/dropdown-menu';
 import { Membership } from 'cvat-core-wrapper';
-import { useDropdownEditField, useContextMenuClick } from 'utils/hooks';
+import { useDropdownEditField, useContextActionsMenuClick } from 'utils/hooks';
 import { CVATMenuEditLabel } from 'components/common/cvat-menu-edit-label';
 import { MenuProps } from 'antd/lib/menu';
 import { useDispatch, useSelector, shallowEqual } from 'react-redux';
@@ -46,14 +46,20 @@ function MemberActionsMenu(props: Readonly<MemberActionsMenuProps>): JSX.Element
     } = membershipInstance;
     const { username } = user;
 
+    const [dropdownOpen, setDropdownOpen] = useState(false);
     const {
-        dropdownOpen,
         editField,
         startEditField,
         stopEditField,
         onOpenChange,
-    } = useDropdownEditField();
-    const onContextMenuClick = useContextMenuClick();
+    } = useDropdownEditField((open: boolean) => {
+        setDropdownOpen(open);
+    });
+    const onContextActionsMenuClick = useContextActionsMenuClick();
+
+    const onWrapperContextMenu = useCallback(() => {
+        setDropdownOpen(false);
+    }, []);
 
     const dispatch = useDispatch();
     const {
@@ -168,7 +174,7 @@ function MemberActionsMenu(props: Readonly<MemberActionsMenuProps>): JSX.Element
             menu={{
                 className: 'cvat-organization-membership-actions-menu',
                 items: menuItems,
-                onContextMenu: onContextMenuClick,
+                onContextMenu: onContextActionsMenuClick,
                 onClick: (action: MenuInfo) => {
                     if (action.key === MenuKeys.RESEND_INVITATION) {
                         handleResendInvitation();
@@ -193,7 +199,14 @@ function MemberActionsMenu(props: Readonly<MemberActionsMenuProps>): JSX.Element
                 },
             }}
         >
-            {triggerElement}
+            {!dropdownTrigger || dropdownTrigger.includes('click') ? (
+                <div
+                    className='cvat-actions-menu-trigger-wrapper'
+                    onContextMenu={onWrapperContextMenu}
+                >
+                    {triggerElement}
+                </div>
+            ) : triggerElement}
         </Dropdown>
     );
 }

@@ -2,14 +2,14 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useDispatch, useSelector, shallowEqual } from 'react-redux';
 import { useHistory } from 'react-router';
 import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
 
 import { Organization, Project, User } from 'cvat-core-wrapper';
-import { useDropdownEditField, usePlugins, useContextMenuClick } from 'utils/hooks';
+import { useDropdownEditField, usePlugins, useContextActionsMenuClick } from 'utils/hooks';
 import { CombinedState } from 'reducers';
 import { deleteProjectAsync, getProjectsAsync, updateProjectAsync } from 'actions/projects-actions';
 import { cloudStoragesActions } from 'actions/cloud-storage-actions';
@@ -54,15 +54,22 @@ function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
     }), shallowEqual);
 
     const isBulkMode = selectedIds.length > 1;
-    const onContextMenuClick = useContextMenuClick();
+    const onContextActionsMenuClick = useContextActionsMenuClick();
+
+    const [dropdownOpen, setDropdownOpen] = useState(false);
     const {
-        dropdownOpen,
         editField,
         startEditField,
         stopEditField,
         onOpenChange,
         onMenuClick,
-    } = useDropdownEditField();
+    } = useDropdownEditField((open: boolean) => {
+        setDropdownOpen(open);
+    });
+
+    const onWrapperContextMenu = useCallback(() => {
+        setDropdownOpen(false);
+    }, []);
 
     const onExportDataset = useCallback(() => {
         dispatch(exportActions.openExportDatasetModal(projectInstance));
@@ -229,10 +236,17 @@ function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
                 className: 'cvat-project-actions-menu',
                 items: menuItems,
                 onClick: onMenuClick,
-                onContextMenu: onContextMenuClick,
+                onContextMenu: onContextActionsMenuClick,
             }}
         >
-            {triggerElement}
+            {!dropdownTrigger || dropdownTrigger.includes('click') ? (
+                <div
+                    className='cvat-actions-menu-trigger-wrapper'
+                    onContextMenu={onWrapperContextMenu}
+                >
+                    {triggerElement}
+                </div>
+            ) : triggerElement}
         </Dropdown>
     );
 }

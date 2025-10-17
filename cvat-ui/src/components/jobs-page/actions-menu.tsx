@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
@@ -10,7 +10,7 @@ import Modal from 'antd/lib/modal';
 import {
     Job, JobStage, JobState, JobType, User,
 } from 'cvat-core-wrapper';
-import { useDropdownEditField, usePlugins, useContextMenuClick } from 'utils/hooks';
+import { useDropdownEditField, usePlugins, useContextActionsMenuClick } from 'utils/hooks';
 import { CombinedState } from 'reducers';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
@@ -42,7 +42,7 @@ function JobActionsComponent(
     const dispatch = useDispatch();
 
     const pluginActions = usePlugins((state: CombinedState) => state.plugins.components.jobActions.items, props);
-    const onContextMenuClick = useContextMenuClick();
+    const onContextActionsMenuClick = useContextActionsMenuClick();
     const {
         mergingConsensus,
         selectedIds,
@@ -54,14 +54,20 @@ function JobActionsComponent(
     }), shallowEqual);
     const isBulkMode = selectedIds.length > 1;
 
+    const [dropdownOpen, setDropdownOpen] = useState(false);
     const {
-        dropdownOpen,
         editField,
         startEditField,
         stopEditField,
         onOpenChange,
         onMenuClick,
-    } = useDropdownEditField();
+    } = useDropdownEditField((open: boolean) => {
+        setDropdownOpen(open);
+    });
+
+    const onWrapperContextMenu = useCallback(() => {
+        setDropdownOpen(false);
+    }, []);
 
     const onOpenBugTracker = useCallback(() => {
         if (jobInstance.bugTracker) {
@@ -217,10 +223,17 @@ function JobActionsComponent(
                 className: 'cvat-job-item-menu',
                 items: menuItems,
                 onClick: onMenuClick,
-                onContextMenu: onContextMenuClick,
+                onContextMenu: onContextActionsMenuClick,
             }}
         >
-            {triggerElement}
+            {!dropdownTrigger || dropdownTrigger.includes('click') ? (
+                <div
+                    className='cvat-actions-menu-trigger-wrapper'
+                    onContextMenu={onWrapperContextMenu}
+                >
+                    {triggerElement}
+                </div>
+            ) : triggerElement}
         </Dropdown>
     );
 }
