@@ -7,7 +7,8 @@
 
 // eslint-disable-next-line import/no-extraneous-dependencies
 import * as allure from 'allure-js-commons';
-import { AllureTag, taskName, labelName } from '../../support/const';
+import { AllureTag } from '../../support/const_allure';
+import { taskName, labelName } from '../../support/const';
 
 context('Attribute annotation mode (AAM) zoom margin feature', () => {
     allure.tags(AllureTag.HEAVY, AllureTag.SETTINGS);
