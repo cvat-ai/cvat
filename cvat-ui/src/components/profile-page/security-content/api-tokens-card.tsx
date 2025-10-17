@@ -216,7 +216,53 @@ function ApiTokensCard(): JSX.Element {
 
     return (
         <>
-            <Card className='cvat-security-api-tokens-card'>
+            <Card
+                title={(
+                    <Row className='cvat-security-api-tokens-card-title' justify='space-between'>
+                        <Col>
+                            <Text strong>Personal Access Tokens (PATs)</Text>
+                            <CVATTooltip
+                                title={(
+                                    <Row className='cvat-api-tokens-tooltip-inner'>
+                                        <Row>
+                                            <Col>
+                                                <Text>
+                                                    Personal Access Tokens (PATs) are text strings that
+                                                    can be used for authentication instead of a username/email
+                                                    and password. They allow interaction with the CVAT server
+                                                    API via various clients, including custom scripts, the CVAT
+                                                    Python SDK, and the CVAT CLI.
+                                                </Text>
+                                            </Col>
+                                        </Row>
+                                        <Row>
+                                            <Col>
+                                                <Text>
+                                                    For additional security, each token can have an expiration
+                                                    date and restricted permissions. Users can create or revoke
+                                                    tokens at any time.
+                                                </Text>
+                                            </Col>
+                                        </Row>
+                                    </Row>
+                                )}
+                                overlayStyle={{ maxWidth: 400 }}
+                            >
+                                <QuestionCircleOutlined style={{ opacity: 0.5 }} />
+                            </CVATTooltip>
+                        </Col>
+                        <Col>
+                            <Button
+                                type='primary'
+                                icon={<PlusOutlined />}
+                                onClick={onShowCreateTokenForm}
+                                className='cvat-create-api-token-button'
+                            />
+                        </Col>
+                    </Row>
+                )}
+                className='cvat-security-api-tokens-card'
+            >
                 {showCreateTokenForm ? (
                     <ApiTokenForm
                         onSubmit={onSubmitTokenForm}
@@ -227,40 +273,7 @@ function ApiTokensCard(): JSX.Element {
                     />
                 ) : (
                     <CVATTable
-                        tableTitle={(
-                            <>
-                                <Text strong>Personal Access Tokens (PATs)</Text>
-                                <CVATTooltip
-                                    title={(
-                                        <Row className='cvat-api-tokens-tooltip-inner'>
-                                            <Row>
-                                                <Col>
-                                                    <Text>
-                                                        Personal Access Tokens (PATs) are text strings that
-                                                        can be used for authentication instead of a username/email
-                                                        and password. They allow interaction with the CVAT server
-                                                        API via various clients, including custom scripts, the CVAT
-                                                        Python SDK, and the CVAT CLI.
-                                                    </Text>
-                                                </Col>
-                                            </Row>
-                                            <Row>
-                                                <Col>
-                                                    <Text>
-                                                        For additional security, each token can have an expiration
-                                                        date and restricted permissions. Users can create or revoke
-                                                        tokens at any time.
-                                                    </Text>
-                                                </Col>
-                                            </Row>
-                                        </Row>
-                                    )}
-                                    overlayStyle={{ maxWidth: 400 }}
-                                >
-                                    <QuestionCircleOutlined style={{ opacity: 0.5 }} />
-                                </CVATTooltip>
-                            </>
-                        )}
+                        tableTitle='Existing Tokens'
                         className='cvat-api-tokens-table'
                         csvExport={{ filename: 'access_tokens.csv' }}
                         columns={apiTokenColumns}
@@ -274,18 +287,6 @@ function ApiTokensCard(): JSX.Element {
                             defaultPageSize: 10,
                             pageSizeOptions: ['10', '20', '50'],
                         }}
-                        renderExtraActions={() => (
-                            <Row justify='end'>
-                                <Col>
-                                    <Button
-                                        type='primary'
-                                        icon={<PlusOutlined />}
-                                        onClick={onShowCreateTokenForm}
-                                        className='cvat-create-api-token-button'
-                                    />
-                                </Col>
-                            </Row>
-                        )}
                     />
                 )}
             </Card>

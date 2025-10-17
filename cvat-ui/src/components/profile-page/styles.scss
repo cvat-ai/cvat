@@ -62,6 +62,16 @@
 }
 
 .cvat-security-api-tokens-card {
+    .cvat-security-api-tokens-card-title > div:first-child {
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+
+        span[role="img"] {
+            margin-left: $grid-unit-size;
+        }
+    }
+
     .ant-pagination {
         margin-bottom: 0;
     }
