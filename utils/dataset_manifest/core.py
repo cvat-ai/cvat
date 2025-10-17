@@ -214,21 +214,21 @@ class DatasetImagesReader:
         }
 
         try:
-            img = Image.open(image, mode="r")
-            width, height = img.width, img.height
-            orientation = img.getexif().get(274, 1)
-            if orientation > 4:
-                width, height = height, width
-            image_properties["width"] = width
-            image_properties["height"] = height
+            with Image.open(image, mode="r") as img:
+                width, height = img.width, img.height
+                orientation = img.getexif().get(274, 1)
+                if orientation > 4:
+                    width, height = height, width
+                image_properties["width"] = width
+                image_properties["height"] = height
+
+                if self._use_image_hash:
+                    image_properties["checksum"] = md5_hash(img)
         except (OSError, Image.UnidentifiedImageError) as e:
             raise InvalidImageError(f"failed to parse image file '{img_name}'") from e
 
         if self._meta and img_name in self._meta:
             image_properties["meta"] = self._meta[img_name]
-
-        if self._use_image_hash:
-            image_properties["checksum"] = md5_hash(img)
 
         return image_properties
 

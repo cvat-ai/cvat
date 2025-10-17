@@ -16,6 +16,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.47.0'></a>
+## \[2.47.0\] - 2025-10-14
+
+### Added
+
+- Made disk usage health check threshold configurable and updated documentation
+  (<https://github.com/cvat-ai/cvat/pull/9870>)
+
+### Changed
+
+- FFmpeg updated to 8.0
+  (<https://github.com/cvat-ai/cvat/pull/9552>)
+
+- \[SDK\] Enabled retrying on some server error statuses by default
+  (<https://github.com/cvat-ai/cvat/pull/9880>)
+
+### Fixed
+
+- Improved performance of task creation from cloud without manifest
+  (<https://github.com/cvat-ai/cvat/pull/9827>)
+
 <a id='changelog-2.46.1'></a>
 ## \[2.46.1\] - 2025-10-09
 

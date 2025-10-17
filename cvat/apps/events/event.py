@@ -17,6 +17,7 @@ def event_scope(action, resource):
 
 class EventScopes:
     RESOURCES = {
+        "accesstoken": ["create", "update", "delete"],
         "project": ["create", "update", "delete"],
         "task": ["create", "update", "delete"],
         "job": ["create", "update", "delete"],
@@ -52,6 +53,10 @@ def record_server_event(
     **kwargs,
 ) -> None:
     payload = payload or {}
+
+    access_token_id = request_info.pop("access_token_id", None)
+    if access_token_id is not None:
+        kwargs.setdefault("access_token_id", access_token_id)
 
     payload_with_request_info = {
         **payload,
