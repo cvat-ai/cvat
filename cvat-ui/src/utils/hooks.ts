@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import _ from 'lodash';
-import {
+import React, {
     useRef, useEffect, useState, useCallback,
     useLayoutEffect, EffectCallback, DependencyList,
 } from 'react';
@@ -204,6 +204,14 @@ export function useInstanceId(type: InstanceType): number {
     if (type === InstanceType.PROJECT) return +(params.pid as string);
     if (type === InstanceType.JOB) return +(params.jid as string);
     return +(params.tid as string);
+}
+
+export function useContextMenuClick(): (event: React.MouseEvent) => void {
+    const onContextMenuClick = useCallback((event: React.MouseEvent) => {
+        event.stopPropagation();
+    }, []);
+
+    return onContextMenuClick;
 }
 
 export type DropdownEditField = {

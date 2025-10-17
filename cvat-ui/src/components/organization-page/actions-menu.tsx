@@ -9,7 +9,7 @@ import Modal from 'antd/lib/modal';
 import { ItemType } from 'antd/lib/menu/hooks/useItems';
 import { MenuInfo } from 'components/dropdown-menu';
 import { Membership } from 'cvat-core-wrapper';
-import { useDropdownEditField } from 'utils/hooks';
+import { useDropdownEditField, useContextMenuClick } from 'utils/hooks';
 import { CVATMenuEditLabel } from 'components/common/cvat-menu-edit-label';
 import { MenuProps } from 'antd/lib/menu';
 import { useDispatch, useSelector, shallowEqual } from 'react-redux';
@@ -53,6 +53,7 @@ function MemberActionsMenu(props: Readonly<MemberActionsMenuProps>): JSX.Element
         stopEditField,
         onOpenChange,
     } = useDropdownEditField();
+    const onContextMenuClick = useContextMenuClick();
 
     const dispatch = useDispatch();
     const {
@@ -167,6 +168,7 @@ function MemberActionsMenu(props: Readonly<MemberActionsMenuProps>): JSX.Element
             menu={{
                 className: 'cvat-organization-membership-actions-menu',
                 items: menuItems,
+                onContextMenu: onContextMenuClick,
                 onClick: (action: MenuInfo) => {
                     if (action.key === MenuKeys.RESEND_INVITATION) {
                         handleResendInvitation();

@@ -9,7 +9,7 @@ import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
 
 import { Organization, Project, User } from 'cvat-core-wrapper';
-import { useDropdownEditField, usePlugins } from 'utils/hooks';
+import { useDropdownEditField, usePlugins, useContextMenuClick } from 'utils/hooks';
 import { CombinedState } from 'reducers';
 import { deleteProjectAsync, getProjectsAsync, updateProjectAsync } from 'actions/projects-actions';
 import { cloudStoragesActions } from 'actions/cloud-storage-actions';
@@ -54,6 +54,7 @@ function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
     }), shallowEqual);
 
     const isBulkMode = selectedIds.length > 1;
+    const onContextMenuClick = useContextMenuClick();
     const {
         dropdownOpen,
         editField,
@@ -228,6 +229,7 @@ function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
                 className: 'cvat-project-actions-menu',
                 items: menuItems,
                 onClick: onMenuClick,
+                onContextMenu: onContextMenuClick,
             }}
         >
             {triggerElement}

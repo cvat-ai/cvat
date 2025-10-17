@@ -10,7 +10,7 @@ import Modal from 'antd/lib/modal';
 import {
     Job, JobStage, JobState, JobType, User,
 } from 'cvat-core-wrapper';
-import { useDropdownEditField, usePlugins } from 'utils/hooks';
+import { useDropdownEditField, usePlugins, useContextMenuClick } from 'utils/hooks';
 import { CombinedState } from 'reducers';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
@@ -42,6 +42,7 @@ function JobActionsComponent(
     const dispatch = useDispatch();
 
     const pluginActions = usePlugins((state: CombinedState) => state.plugins.components.jobActions.items, props);
+    const onContextMenuClick = useContextMenuClick();
     const {
         mergingConsensus,
         selectedIds,
@@ -216,6 +217,7 @@ function JobActionsComponent(
                 className: 'cvat-job-item-menu',
                 items: menuItems,
                 onClick: onMenuClick,
+                onContextMenu: onContextMenuClick,
             }}
         >
             {triggerElement}

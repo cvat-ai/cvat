@@ -11,7 +11,7 @@ import Dropdown from 'antd/lib/dropdown';
 import {
     RQStatus, Task, User, Organization,
 } from 'cvat-core-wrapper';
-import { useDropdownEditField, usePlugins } from 'utils/hooks';
+import { useDropdownEditField, usePlugins, useContextMenuClick } from 'utils/hooks';
 
 import { CombinedState } from 'reducers';
 import { exportActions } from 'actions/export-actions';
@@ -62,6 +62,7 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
     }), shallowEqual);
 
     const isBulkMode = selectedIds.length > 1;
+    const onContextMenuClick = useContextMenuClick();
     const {
         dropdownOpen,
         editField,
@@ -279,6 +280,7 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
                 className: 'cvat-actions-menu',
                 items: menuItems,
                 onClick: onMenuClick,
+                onContextMenu: onContextMenuClick,
             }}
         >
             {triggerElement}

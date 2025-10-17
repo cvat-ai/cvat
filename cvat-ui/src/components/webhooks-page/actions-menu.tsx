@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback } from 'react';
+import { useContextMenuClick } from 'utils/hooks';
 import { useHistory } from 'react-router';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import Dropdown from 'antd/lib/dropdown';
@@ -35,6 +36,7 @@ export default function WebhookActionsMenu(props: Readonly<WebhookActionsMenuPro
     }), shallowEqual);
 
     const isBulk = selectedIds.length > 1;
+    const onContextMenuClick = useContextMenuClick();
     const onEdit = useCallback(() => {
         history.push(`/webhooks/update/${webhookInstance.id}`);
     }, [webhookInstance]);
@@ -84,6 +86,7 @@ export default function WebhookActionsMenu(props: Readonly<WebhookActionsMenuPro
             destroyPopupOnHide
             menu={{
                 items: menuItems,
+                onContextMenu: onContextMenuClick,
             }}
         >
             {triggerElement}

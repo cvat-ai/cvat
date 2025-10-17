@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback } from 'react';
+import { useContextMenuClick } from 'utils/hooks';
 import { useDispatch, useSelector, shallowEqual } from 'react-redux';
 import Dropdown from 'antd/lib/dropdown';
 import { MenuProps } from 'antd/lib/menu';
@@ -37,6 +38,7 @@ function RequestActionsComponent(props: Readonly<Props>): JSX.Element | null {
     }), shallowEqual);
 
     const allRequests = Object.values(requestsMap);
+    const onContextMenuClick = useContextMenuClick();
     const isCardMenu = !dropdownTrigger;
 
     const downloadable = (_request: Request): boolean => !!_request.url && !cancelled[_request.id];
@@ -119,6 +121,7 @@ function RequestActionsComponent(props: Readonly<Props>): JSX.Element | null {
                 items: menuItems,
                 triggerSubMenuAction: 'click',
                 className: 'cvat-request-menu',
+                onContextMenu: onContextMenuClick,
             }}
         >
             {triggerElement}
