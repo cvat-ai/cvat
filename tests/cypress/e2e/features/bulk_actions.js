@@ -5,6 +5,7 @@
 /// <reference types="cypress" />
 
 import { defaultTaskSpec } from '../../support/default-specs';
+import { createDummyAWSBucket } from '../../support/dummy-data';
 
 context('Bulk actions in UI', () => {
     const taskName = 'task_bulk_actions';
@@ -218,6 +219,34 @@ context('Bulk actions in UI', () => {
                 });
             cy.get('.cvat-bulk-progress-wrapper').should('be.visible');
             cy.get('.cvat-tasks-list-item').each(($el) => {
+                cy.wrap($el)
+                    .invoke('attr', 'style')
+                    .should('include', 'pointer-events: none');
+            });
+        });
+    });
+
+    describe.only('Bulk actions cloud storage', () => {
+        before(() => {
+            cy.headlessAttachCloudStorage(createDummyAWSBucket);
+            cy.headlessAttachCloudStorage(createDummyAWSBucket);
+            cy.visit('/cloudstorages');
+        });
+        it('Delete all CS, ensure deleted ', () => {
+            // cvat-delete-cloud-storage-modal
+            // cvat-cloud-storage-item
+            getBulkActionsMenu().within(() => {
+                cy.contains(`Delete (${nobjs})`).click();
+            });
+
+            cy.get('.cvat-modal-confirm-delete-cloud-storage')
+                .should('be.visible').within(() => {
+                    cy.contains(`Delete ${nobjs} selected cloud storages`);
+                    cy.contains('Delete selected')
+                        .should('be.visible')
+                        .click();
+                });
+            cy.get('.cvat-cloud-storage-item').each(($el) => {
                 cy.wrap($el)
                     .invoke('attr', 'style')
                     .should('include', 'pointer-events: none');
