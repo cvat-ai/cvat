@@ -9,7 +9,7 @@ from logging import Logger
 import packaging.version as pv
 import pytest
 from cvat_sdk import Client, models
-from cvat_sdk.core.client import AccessTokenCredentials, BasicAuthCredentials, Config, make_client
+from cvat_sdk.core.client import AccessTokenCredentials, Config, PasswordCredentials, make_client
 from cvat_sdk.core.exceptions import IncompatibleVersionException, InvalidHostException
 from cvat_sdk.exceptions import ApiException
 
@@ -34,7 +34,7 @@ class TestClientUsecases:
         yield
 
     def test_can_login_with_basic_auth(self):
-        self.client.login(BasicAuthCredentials(self.user, USER_PASS))
+        self.client.login(PasswordCredentials(self.user, USER_PASS))
 
         assert self.client.users.retrieve_current_user().username == self.user
 

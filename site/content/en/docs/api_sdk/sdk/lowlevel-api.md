@@ -133,17 +133,17 @@ Typically, the first thing you do with `ApiClient` is log in.
 ## Authentication
 
 CVAT supports 3 authentication options:
-- Basic authentication, with a username and a password
 - Personal Access Token (PAT) authentication, with an access token value
+- Basic authentication, with a username and a password
 - Session authentication, with a session ID and a CSRF token
 - Token authentication, with an API key (deprecated)
 
-Basic authentication doesn't require a special configuration, but for better security it's
-recommended to use other authentication options instead.
-
 Personal Access Token (PAT) authentication requires a token that can be configured
 in the user settings section in the UI. It is the recommended authentication option
-for most clients.
+for most API clients.
+
+Basic authentication requires a username and password pair. For better security it's
+recommended to use other authentication options instead.
 
 Session authentication requires a session ID and a CSRF token, which can be obtained after
 logging in via the `/api/auth/login` endpoint using the basic authentication credentials.

@@ -90,7 +90,7 @@ A `Client` instance allows you to:
 - check server API compatibility with the current SDK version
 - manage user session with the `login()`, `logout()` and other methods
 - obtain high-level server object wrappers with the `users`, `tasks`, `jobs` and other members
-- easily reach lower-level APIs to send raw requests, typically via the `api` member of the object
+- reach lower-level APIs to send raw requests, typically via the `api` member of the object
 
 An instance of `Client` can be created directly by calling the class constructor
 or with the utility function `cvat_sdk.core.client.make_client()` which can handle
@@ -143,15 +143,15 @@ By default, a warning is raised and the error is suppressed.
 ### Authentication
 
 High-level SDK supports 2 authentication options:
-- Password authentication, with a username and a password
 - Personal Access Token (PAT) authentication, with an access token value
-
-Password authentication doesn't require a special configuration, but for better security it's
-recommended to use a Personal Access Token (PAT) instead, if possible.
+- Password authentication, with a username and a password
 
 Personal Access Token (PAT) authentication requires a token that can be configured
 in the user settings section in the UI. It is the recommended authentication option
-for most clients.
+for most API clients.
+
+Password authentication requires a username and password pair. For better security it's
+recommended to use a Personal Access Token (PAT) instead, if possible.
 
 {{< tabpane text=true >}}
 

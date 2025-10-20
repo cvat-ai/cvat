@@ -19,10 +19,10 @@ import attrs
 import cvat_sdk.auto_annotation as cvataa
 from cvat_sdk.core.client import (
     AccessTokenCredentials,
-    BasicAuthCredentials,
     Client,
     Config,
     Credentials,
+    PasswordCredentials,
 )
 
 from ..version import VERSION
@@ -63,9 +63,9 @@ def get_auth_factory(s: str) -> Callable[[str], Credentials]:
         password = os.environ.get("PASS")
 
     if password:
-        return lambda _: BasicAuthCredentials(user, password)
+        return lambda _: PasswordCredentials(user, password)
     else:
-        return lambda url: BasicAuthCredentials(
+        return lambda url: PasswordCredentials(
             user, getpass.getpass(f"Password for {user} at {url}: ")
         )
 
