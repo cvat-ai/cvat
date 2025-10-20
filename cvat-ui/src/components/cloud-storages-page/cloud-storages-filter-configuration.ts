@@ -25,6 +25,7 @@ export const config: Partial<Config> = {
                     { value: 'AWS_S3_BUCKET', title: 'AWS S3' },
                     { value: 'AZURE_CONTAINER', title: 'Azure' },
                     { value: 'GOOGLE_CLOUD_STORAGE', title: 'Google cloud' },
+                    { value: 'BACKBLAZE_B2', title: 'Backblaze B2' },
                 ],
             },
         },
@@ -87,4 +88,5 @@ export const predefinedFilterValues = {
     'AWS storages': '{"and":[{"==":[{"var":"provider_type"},"AWS_S3_BUCKET"]}]}',
     'Azure storages': '{"and":[{"==":[{"var":"provider_type"},"AZURE_CONTAINER"]}]}',
     'Google cloud storages': '{"and":[{"==":[{"var":"provider_type"},"GOOGLE_CLOUD_STORAGE"]}]}',
+    'Backblaze B2 storages': '{"and":[{"==":[{"var":"provider_type"},"BACKBLAZE_B2"]}]}',
 };

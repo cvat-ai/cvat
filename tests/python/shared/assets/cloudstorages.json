@@ -1,8 +1,30 @@
 {
-  "count": 3,
+  "count": 4,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "created_date": "2025-10-17T14:30:00.000000Z",
+      "credentials_type": "KEY_SECRET_KEY_PAIR",
+      "description": "Backblaze B2 cloud storage for testing",
+      "display_name": "B2 Test Bucket",
+      "id": 4,
+      "manifests": [
+        "images_with_manifest/manifest.jsonl"
+      ],
+      "organization": null,
+      "owner": {
+        "first_name": "User",
+        "id": 2,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/2",
+        "username": "user1"
+      },
+      "provider_type": "BACKBLAZE_B2",
+      "resource": "cvat-test-bucket",
+      "specific_attributes": "endpoint_url=https%3A%2F%2Fs3.us-east-005.backblazeb2.com",
+      "updated_date": "2025-10-17T14:30:00.000000Z"
+    },
     {
       "created_date": "2022-06-29T12:56:18.257000Z",
       "credentials_type": "KEY_SECRET_KEY_PAIR",

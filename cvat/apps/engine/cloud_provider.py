@@ -556,6 +556,14 @@ def get_cloud_storage_instance(
             endpoint_url=specific_attributes.get("endpoint_url"),
             prefix=specific_attributes.get("prefix"),
         )
+    elif cloud_provider == CloudProviderChoice.BACKBLAZE_B2:
+        instance = BackblazeB2(
+            resource,
+            endpoint_url=specific_attributes.get('endpoint_url'),
+            access_key_id=credentials.key,
+            secret_key=credentials.secret_key,
+            prefix=specific_attributes.get('prefix'),
+        )
     elif cloud_provider == CloudProviderChoice.AZURE_CONTAINER:
         instance = AzureBlobContainer(
             resource,
@@ -807,6 +815,216 @@ class AWS_S3(_CloudStorage):
 
         return allowed_actions
 
+class BackblazeB2(AWS_S3):
+    """
+    Backblaze B2 cloud storage backend using S3-compatible API.
+
+    Extends AWS_S3 class to leverage S3 compatibility while adding B2-specific
+    features like custom user-agent for telemetry and B2-specific endpoint handling.
+    """
+
+    # Backblaze B2 specific configuration
+    B2_USER_AGENT = "CVAT-B2-Integration/1.0"
+
+    def __init__(self,
+                bucket: str,
+                *,
+                endpoint_url: str,
+                access_key_id: Optional[str] = None,
+                secret_key: Optional[str] = None,
+                prefix: Optional[str] = None,
+    ):
+        """
+        Initialize Backblaze B2 storage.
+
+        Args:
+            bucket: B2 bucket name
+            endpoint_url: B2 S3-compatible endpoint (e.g., https://s3.us-east-005.backblazeb2.com)
+            access_key_id: B2 application key ID
+            secret_key: B2 application key
+            prefix: Optional prefix for all operations
+        """
+        # Validate that endpoint_url is provided for B2
+        if not endpoint_url:
+            raise Exception("Backblaze B2 requires an endpoint_url (e.g., https://s3.us-east-005.backblazeb2.com)")
+
+        # B2 doesn't use regions in the same way as AWS, but we can extract it from endpoint
+        # Format: https://s3.{region}.backblazeb2.com
+        region = None
+        if 's3.' in endpoint_url and '.backblazeb2.com' in endpoint_url:
+            try:
+                region = endpoint_url.split('s3.')[1].split('.backblazeb2.com')[0]
+            except (IndexError, AttributeError):
+                pass  # If we can't parse it, that's okay
+
+        # Initialize parent AWS_S3 class with B2 credentials and endpoint
+        super().__init__(
+            bucket=bucket,
+            region=region,
+            access_key_id=access_key_id,
+            secret_key=secret_key,
+            session_token=None,  # B2 doesn't use session tokens
+            endpoint_url=endpoint_url,
+            prefix=prefix
+        )
+
+        # Add custom user-agent for B2 telemetry
+        self._configure_user_agent()
+
+        # Store B2-specific attributes
+        self.endpoint_url = endpoint_url
+
+        # Log B2 storage initialization
+        slogger.glob.info(
+            f"Initialized Backblaze B2 storage for bucket '{bucket}' "
+            f"at endpoint '{endpoint_url}'"
+        )
+
+    def _configure_user_agent(self):
+        """Configure custom user-agent for Backblaze B2 telemetry."""
+        try:
+            # Add B2-specific user-agent to the boto3 client
+            if hasattr(self._client, 'meta') and hasattr(self._client.meta, 'config'):
+                if not self._client.meta.config.user_agent_extra:
+                    self._client.meta.config.user_agent_extra = self.B2_USER_AGENT
+                else:
+                    self._client.meta.config.user_agent_extra += f" {self.B2_USER_AGENT}"
+        except Exception as ex:
+            # Log but don't fail if we can't set user-agent
+            slogger.glob.warning(f"Could not set B2 user-agent: {ex}")
+
+    def create(self):
+        """
+        Create a new B2 bucket.
+
+        Note: B2 bucket creation through S3 API has some limitations.
+        It's recommended to create buckets through B2's native API or web console.
+        """
+        try:
+            # B2's S3-compatible API supports bucket creation
+            response = self._bucket.create(
+                ACL='private',
+                ObjectLockEnabledForBucket=False
+            )
+            slogger.glob.info(
+                f"Backblaze B2 bucket '{self.name}' has been created"
+            )
+
+            # Log telemetry event
+            self._log_event('bucket_create', {'bucket': self.name})
+
+        except Exception as ex:
+            msg = f"Failed to create B2 bucket '{self.name}': {str(ex)}"
+            slogger.glob.error(msg)
+            self._log_event('bucket_create_error', {'bucket': self.name, 'error': str(ex)})
+            raise Exception(msg)
+
+    def upload_file(self, file_path: str, key: str | None = None, /):
+        """Upload file to B2 with telemetry."""
+        try:
+            super().upload_file(file_path, key)
+            self._log_event('file_upload', {
+                'bucket': self.name,
+                'key': key or os.path.basename(file_path),
+                'file_path': file_path
+            })
+        except Exception as ex:
+            self._log_event('file_upload_error', {
+                'bucket': self.name,
+                'key': key or os.path.basename(file_path),
+                'error': str(ex)
+            })
+            raise
+
+    def upload_fileobj(self, file_obj: BinaryIO, key: str, /):
+        """Upload file object to B2 with telemetry."""
+        try:
+            super().upload_fileobj(file_obj, key)
+            self._log_event('fileobj_upload', {
+                'bucket': self.name,
+                'key': key
+            })
+        except Exception as ex:
+            self._log_event('fileobj_upload_error', {
+                'bucket': self.name,
+                'key': key,
+                'error': str(ex)
+            })
+            raise
+
+    def download_file(self, key: str, path: str, /):
+        """Download file from B2 with telemetry."""
+        try:
+            super().download_file(key, path)
+            self._log_event('file_download', {
+                'bucket': self.name,
+                'key': key,
+                'path': path
+            })
+        except Exception as ex:
+            self._log_event('file_download_error', {
+                'bucket': self.name,
+                'key': key,
+                'error': str(ex)
+            })
+            raise
+
+    def delete_file(self, file_name: str, /):
+        """Delete file from B2 with telemetry."""
+        try:
+            super().delete_file(file_name)
+            self._log_event('file_delete', {
+                'bucket': self.name,
+                'key': file_name
+            })
+        except Exception as ex:
+            self._log_event('file_delete_error', {
+                'bucket': self.name,
+                'key': file_name,
+                'error': str(ex)
+            })
+            raise
+
+    def _log_event(self, event_type: str, data: dict):
+        """
+        Log storage events for telemetry and monitoring.
+
+        Args:
+            event_type: Type of event (e.g., 'file_upload', 'file_download')
+            data: Event data dictionary
+        """
+        try:
+            # Log to CVAT's logging system
+            slogger.glob.info(
+                f"B2 Storage Event: {event_type}",
+                extra={
+                    'event_type': event_type,
+                    'provider': 'backblaze_b2',
+                    'endpoint': self.endpoint_url,
+                    **data
+                }
+            )
+        except Exception as ex:
+            # Don't fail operations if logging fails
+            slogger.glob.warning(f"Failed to log B2 event: {ex}")
+
+    @property
+    def supported_actions(self):
+        """
+        Get supported permissions for the B2 bucket.
+
+        B2's S3-compatible API may have limited policy support.
+        Returns all permissions by default.
+        """
+        try:
+            # Try to get permissions from bucket policy (if available)
+            return super().supported_actions
+        except Exception as ex:
+            # If policy is not available or supported, log and return all permissions
+            slogger.glob.info(
+                f"Could not retrieve B2 bucket policy, assuming all permissions: {ex}"
+            )
+            return Permissions.all()
 
 class AzureBlobContainer(_CloudStorage):
     MAX_CONCURRENCY = 3

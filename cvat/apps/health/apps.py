@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from django.apps import AppConfig
-from health_check.plugins import plugin_dir
+# from health_check.plugins import plugin_dir
 
 
 class HealthConfig(AppConfig):
@@ -12,4 +12,4 @@ class HealthConfig(AppConfig):
     def ready(self):
         from .backends import OPAHealthCheck
 
-        plugin_dir.register(OPAHealthCheck)
+        # plugin_dir.register(OPAHealthCheck)

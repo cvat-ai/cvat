@@ -16470,6 +16470,25 @@
   }
 },
 {
+  "model": "engine.cloudstorage",
+  "pk": 4,
+  "fields": {
+    "created_date": "2025-10-17T14:30:00.000Z",
+    "updated_date": "2025-10-17T14:30:00.000Z",
+    "provider_type": "BACKBLAZE_B2",
+    "resource": "cvat-test-bucket",
+    "display_name": "B2 Test Bucket",
+    "owner": [
+      "user1"
+    ],
+    "credentials": "test_b2_keyId test_b2_applicationKey",
+    "credentials_type": "KEY_SECRET_KEY_PAIR",
+    "specific_attributes": "endpoint_url=https%3A%2F%2Fs3.us-east-005.backblazeb2.com",
+    "description": "Backblaze B2 cloud storage for testing",
+    "organization": null
+  }
+},
+{
   "model": "engine.storage",
   "pk": 1,
   "fields": {

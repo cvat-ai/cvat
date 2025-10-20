@@ -1259,6 +1259,7 @@ class CloudProviderChoice(str, Enum):
     AZURE_CONTAINER = 'AZURE_CONTAINER'
     GOOGLE_DRIVE = 'GOOGLE_DRIVE'
     GOOGLE_CLOUD_STORAGE = 'GOOGLE_CLOUD_STORAGE'
+    BACKBLAZE_B2 = 'BACKBLAZE_B2'
 
     @classmethod
     def choices(cls):

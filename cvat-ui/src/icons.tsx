@@ -51,6 +51,7 @@ import SVGFilterIcon from './assets/filter-icon.svg';
 import SVGCVATAzureProvider from './assets/vscode-icons_file-type-azure.svg';
 import SVGCVATS3Provider from './assets/S3.svg';
 import SVGCVATGoogleCloudProvider from './assets/google-cloud.svg';
+import BackblazeB2Icon from './assets/backblaze-b2.png';
 import SVGRestoreIcon from './assets/restore-icon.svg';
 import SVGBrushIcon from './assets/brush-icon.svg';
 import SVGEraserIcon from './assets/eraser-icon.svg';
@@ -117,6 +118,9 @@ export const FilterIcon = React.memo((): JSX.Element => <SVGFilterIcon />);
 export const AzureProvider = React.memo((): JSX.Element => <SVGCVATAzureProvider />);
 export const S3Provider = React.memo((): JSX.Element => <SVGCVATS3Provider />);
 export const GoogleCloudProvider = React.memo((): JSX.Element => <SVGCVATGoogleCloudProvider />);
+export const BackblazeB2Provider = React.memo((): JSX.Element => (
+    <img src={BackblazeB2Icon} alt="Backblaze B2" style={{ width: '1em', height: '1em', verticalAlign: 'middle' }} />
+));
 export const RestoreIcon = React.memo((): JSX.Element => <SVGRestoreIcon />);
 export const BrushIcon = React.memo((): JSX.Element => <SVGBrushIcon />);
 export const EraserIcon = React.memo((): JSX.Element => <SVGEraserIcon />);

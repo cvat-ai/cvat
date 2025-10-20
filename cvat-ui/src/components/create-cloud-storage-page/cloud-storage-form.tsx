@@ -21,7 +21,7 @@ import { QuestionCircleOutlined, UploadOutlined } from '@ant-design/icons';
 import Upload, { RcFile } from 'antd/lib/upload';
 import Space from 'antd/lib/space';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { AzureProvider, S3Provider, GoogleCloudProvider } from '../../icons';
+import { AzureProvider, S3Provider, GoogleCloudProvider, BackblazeB2Provider } from '../../icons';
 import S3Region from './s3-region';
 import GCSLocation from './gcs-locatiion';
 import ManifestsManager from './manifests-manager';
@@ -229,6 +229,14 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                 specificAttributes.append('location', selectedRegion as string);
             }
         }
+        // For Backblaze B2, endpoint_url is required
+        if (cloudStorageData.provider_type === ProviderType.BACKBLAZE_B2 && !formValues.endpoint_url) {
+            notification.error({
+                message: 'Backblaze B2 requires an endpoint URL',
+                description: 'Please specify the S3-compatible endpoint URL for your Backblaze B2 bucket.',
+            });
+            return;
+        }
         if (formValues.prefix) {
             delete cloudStorageData.prefix;
             specificAttributes.append('prefix', formValues.prefix);
@@ -334,13 +342,21 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             className: `${commonProps.className} cvat-cloud-storage-form-item-offset-2`,
         };
 
-        if (providerType === ProviderType.AWS_S3_BUCKET && credentialsType === CredentialsType.KEY_SECRET_KEY_PAIR) {
+        if ((providerType === ProviderType.AWS_S3_BUCKET || providerType === ProviderType.BACKBLAZE_B2) &&
+            credentialsType === CredentialsType.KEY_SECRET_KEY_PAIR) {
+            const keyLabel = providerType === ProviderType.BACKBLAZE_B2 ? 'Application key ID' : 'Access key ID';
+            const secretKeyLabel = providerType === ProviderType.BACKBLAZE_B2 ? 'Application key' : 'Secret access key';
+            const keyMessage = providerType === ProviderType.BACKBLAZE_B2 ?
+                'Please, specify your application key ID' : 'Please, specify your access key ID';
+            const secretKeyMessage = providerType === ProviderType.BACKBLAZE_B2 ?
+                'Please, specify your application key' : 'Please, specify your secret access key';
+
             return (
                 <>
                     <Form.Item
-                        label='Access key ID'
+                        label={keyLabel}
                         name='key'
-                        rules={[{ required: true, message: 'Please, specify your access key ID' }]}
+                        rules={[{ required: true, message: keyMessage }]}
                         {...internalCommonProps}
                     >
                         <Input.Password
@@ -352,9 +368,9 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                         />
                     </Form.Item>
                     <Form.Item
-                        label='Secret access key'
+                        label={secretKeyLabel}
                         name='secret_key'
-                        rules={[{ required: true, message: 'Please, specify your secret access key' }]}
+                        rules={[{ required: true, message: secretKeyMessage }]}
                         {...internalCommonProps}
                     >
                         <Input.Password
@@ -621,6 +637,48 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         );
     };
 
+    const backblazeB2Configuration = (): JSX.Element => {
+        const internalCommonProps = {
+            className: `${commonProps.className} cvat-cloud-storage-form-item-offset-1`,
+        };
+
+        return (
+            <>
+                <Form.Item
+                    label='Bucket name'
+                    name='resource'
+                    rules={[{ required: true, message: 'Please, specify a bucket name' }]}
+                    {...internalCommonProps}
+                >
+                    <Input disabled={!!cloudStorage} maxLength={63} />
+                </Form.Item>
+                <Form.Item
+                    label='Authentication type'
+                    name='credentials_type'
+                    rules={[{ required: true, message: 'Please, specify credentials type' }]}
+                    {...internalCommonProps}
+                >
+                    <Select onSelect={(value: CredentialsType) => onChangeCredentialsType(value)}>
+                        <Select.Option value={CredentialsType.KEY_SECRET_KEY_PAIR}>
+                            Application key ID and application key
+                        </Select.Option>
+                        <Select.Option value={CredentialsType.ANONYMOUS_ACCESS}>Anonymous access</Select.Option>
+                    </Select>
+                </Form.Item>
+                {credentialsBlock()}
+                <Form.Item
+                    label='Endpoint URL'
+                    help='S3-compatible endpoint for your Backblaze B2 bucket (e.g., https://s3.us-east-005.backblazeb2.com)'
+                    name='endpoint_url'
+                    rules={[{ required: true, message: 'Please, specify the S3-compatible endpoint URL' }]}
+                    {...internalCommonProps}
+                >
+                    <Input placeholder='https://s3.us-east-005.backblazeb2.com' />
+                </Form.Item>
+            </>
+        );
+    };
+
     return (
         <Form
             className='cvat-cloud-storage-form'
@@ -671,11 +729,18 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                             Google Cloud Storage
                         </span>
                     </Select.Option>
+                    <Select.Option value={ProviderType.BACKBLAZE_B2}>
+                        <span className='cvat-cloud-storage-select-provider'>
+                            <BackblazeB2Provider />
+                            Backblaze B2
+                        </span>
+                    </Select.Option>
                 </Select>
             </Form.Item>
             {providerType === ProviderType.AWS_S3_BUCKET && awsS3Configuration()}
             {providerType === ProviderType.AZURE_CONTAINER && azureBlobStorageConfiguration()}
             {providerType === ProviderType.GOOGLE_CLOUD_STORAGE && googleCloudStorageConfiguration()}
+            {providerType === ProviderType.BACKBLAZE_B2 && backblazeB2Configuration()}
             <Form.Item
                 label={(
                     <CVATTooltip title='Prefix is used to filter bucket content'>

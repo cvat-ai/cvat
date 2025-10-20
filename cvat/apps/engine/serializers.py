@@ -3528,6 +3528,24 @@ class CloudStorageReadSerializer(serializers.ModelSerializer):
                 ],
             },
             request_only=True,
+        ),
+        OpenApiExample(
+            'Create Backblaze B2 cloud storage',
+            description='Backblaze B2 uses S3-compatible API with custom endpoint',
+            value={
+                'provider_type': models.CloudProviderChoice.BACKBLAZE_B2,
+                'resource': 'my-b2-bucket',
+                'display_name': 'B2 Bucket',
+                'credentials_type': models.CredentialsTypeChoice.KEY_SECRET_KEY_PAIR,
+                'key': 'your-b2-keyId',
+                'secret_key': 'your-b2-applicationKey',
+                'specific_attributes': 'endpoint_url=https://s3.us-east-005.backblazeb2.com',
+                'description': 'Backblaze B2 storage for datasets',
+                'manifests': [
+                    'manifest.jsonl'
+                ],
+            },
+            request_only=True,
         )
     ]
 )

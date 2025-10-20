@@ -201,6 +201,7 @@ export enum CloudStorageProviderType {
     AWS_S3_BUCKET = 'AWS_S3_BUCKET',
     AZURE_CONTAINER = 'AZURE_CONTAINER',
     GOOGLE_CLOUD_STORAGE = 'GOOGLE_CLOUD_STORAGE',
+    BACKBLAZE_B2 = 'BACKBLAZE_B2',
 }
 
 export enum CloudStorageCredentialsType {

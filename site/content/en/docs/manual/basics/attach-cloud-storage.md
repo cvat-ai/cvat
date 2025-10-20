@@ -5,8 +5,8 @@ weight: 23
 description: 'Instructions on how to attach cloud storage using UI'
 ---
 
-In CVAT, you can use **AWS S3**, **Azure Blob Storage**
-and **Google Cloud Storage** storages to import and export
+In CVAT, you can use **AWS S3**, **Azure Blob Storage**,
+**Google Cloud Storage**, and **Backblaze B2** storages to import and export
 image datasets for your tasks.
 
 Check out:
@@ -36,6 +36,10 @@ Check out:
   - [Personal use](#personal-use)
   - [Attach Azure Blob Storage](#attach-azure-blob-storage)
   - [Video tutorial: Add Microsoft Azure Blob Storage as Cloud Storage in CVAT](#video-tutorial-add-microsoft-azure-blob-storage-as-cloud-storage-in-cvat)
+- [Backblaze B2](#backblaze-b2)
+  - [Create a bucket](#create-a-bucket-3)
+  - [Generate application keys](#generate-application-keys)
+  - [Attach Backblaze B2 storage](#attach-backblaze-b2-storage)
 - [Prepare the dataset](#prepare-the-dataset)
 
 ## AWS S3
@@ -459,6 +463,71 @@ After filling in all the fields, select **Submit**.
 <iframe width="560" height="315" src="https://www.youtube.com/embed/nvrm8oFBKMY?si=v2z6Rjlc250niXPX" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 
 <!--lint enable maximum-line-length-->
+
+## Backblaze B2
+
+Backblaze B2 is a cost-effective cloud storage service that provides S3-compatible API access.
+
+### Create a bucket
+
+To create a Backblaze B2 bucket:
+
+1. Create a [Backblaze account](https://www.backblaze.com/b2/sign-up.html).
+1. Go to **B2 Cloud Storage** > **Buckets** and select **Create a Bucket**.
+1. Enter a unique bucket name and choose your bucket settings:
+   - **Files in Bucket**: Private (recommended)
+   - **Encryption**: Enable if required
+1. Select **Create a Bucket**.
+
+### Generate application keys
+
+To access your B2 bucket via S3-compatible API:
+
+1. Go to **App Keys** in your B2 account.
+1. Select **Add a New Application Key**.
+1. Configure the key:
+   - **Name of Key**: e.g., "CVAT Integration"
+   - **Allow access to Bucket(s)**: Select your bucket or "All"
+   - **Type of Access**: "Read and Write"
+   - **Allow List All Bucket Names**: Yes (recommended)
+1. Select **Create New Key**.
+1. **Important**: Save the following information immediately (shown only once):
+   - `keyID` (use as access key)
+   - `applicationKey` (use as secret key)
+   - `S3 Endpoint` (e.g., `https://s3.us-east-005.backblazeb2.com`)
+
+### Attach Backblaze B2 storage
+
+To attach B2 storage:
+
+1. Log into CVAT.
+1. On the top menu select **Cloud storages** > select **+**.
+
+Fill in the following fields:
+
+<!--lint disable maximum-line-length-->
+
+| CVAT                    | Backblaze B2 |
+| ----------------------- | ------------ |
+| **Display name**        | Preferred display name for your storage. |
+| **Description**         | (Optional) Add description of storage. |
+| **Provider**            | From drop-down list select **Backblaze B2**. |
+| **Bucket name**         | Name of your B2 bucket. |
+| **Authentication type** | **Key id and secret access key pair**: <ul><li>**Key**: Enter your B2 application `keyID`.<li>**Secret key**: Enter your B2 `applicationKey`.</ul> |
+| **Endpoint URL**        | **Required**. Enter your B2 S3-compatible endpoint in specific attributes field: `endpoint_url=https://s3.us-east-005.backblazeb2.com` (replace region with your bucket's region). You can find your endpoint in the B2 bucket details or App Keys page. |
+| **Prefix**              | (Optional) Used to filter bucket content. By setting a default prefix, you ensure that only data from a specific folder is used in CVAT. |
+| **Manifests**           | (Optional) Select **+ Add manifest** and enter the name of the manifest file with an extension. For example: `manifest.jsonl`. |
+
+<!--lint enable maximum-line-length-->
+
+**Note**: The `endpoint_url` must be specified in the **Specific attributes** field. Find your bucket's region in the B2 console under bucket details.
+
+Available B2 regions:
+- US West: `https://s3.us-west-000.backblazeb2.com` (and 001, 002, 004)
+- US East: `https://s3.us-east-005.backblazeb2.com`
+- EU Central: `https://s3.eu-central-003.backblazeb2.com`
+
+After filling in all the fields, select **Submit**.
 
 ## Prepare the dataset
 

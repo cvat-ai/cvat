@@ -229,6 +229,21 @@ class TestPostCloudStorage:
         else:
             self._test_cannot_create(username, self._SPEC, org_id=org_id)
 
+    def test_can_create_backblaze_b2_cloud_storage(self, users):
+        """Test creating Backblaze B2 cloud storage"""
+        b2_spec = {
+            "provider_type": "BACKBLAZE_B2",
+            "resource": "cvat-test-bucket",
+            "display_name": "B2 Test Bucket",
+            "credentials_type": "KEY_SECRET_KEY_PAIR",
+            "key": "test_b2_keyId",
+            "secret_key": "test_b2_applicationKey",
+            "specific_attributes": "endpoint_url=https://s3.us-east-005.backblazeb2.com",
+            "description": "Backblaze B2 cloud storage for testing",
+        }
+        username = [u for u in users if "user" in u["groups"]][0]["username"]
+        self._test_can_create(username, b2_spec, org="")
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchCloudStorage:
