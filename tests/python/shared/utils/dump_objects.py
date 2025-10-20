@@ -64,7 +64,7 @@ def main():
         default=[],
         action="append",
         type=_parse_asset_url_path,
-        help="Repeatable, an override for the default inferred path for an asset. "
+        help="Repeatable, an override for the default inferred URL path for an asset. "
         "Format: '<asset filename without extension>:<url path after api/>'",
     )
     args = parser.parse_args()
