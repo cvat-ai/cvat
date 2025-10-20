@@ -42,11 +42,6 @@ export function translatePoints(points, delta, axis) {
     return points;
 }
 
-/**
- * Get a regex pattern that fully matches the string
- * @param {string} string
- * @returns {RegExp}
- */
 export function fullMatch(string) {
     // eslint-disable-next-line security/detect-non-literal-regexp
     return new RegExp(`^${string}$`);
