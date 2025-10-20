@@ -17,7 +17,7 @@ import urllib3
 
 from cvat_sdk.api_client.api_client import ApiClient, ApiException, Endpoint
 from cvat_sdk.core.exceptions import CvatSdkException
-from cvat_sdk.core.helpers import StreamWithProgress, expect_status
+from cvat_sdk.core.helpers import StreamWithProgress, expect_status, make_request_headers
 from cvat_sdk.core.progress import NullProgressReporter, ProgressReporter
 
 if TYPE_CHECKING:
@@ -28,15 +28,6 @@ MAX_TUS_RETRIES = 3
 TUS_CHUNK_SIZE = 10 * 2**20
 
 
-def _make_request_headers(api_client: ApiClient) -> dict[str, str]:
-    headers = api_client.get_common_headers()
-    query_params = []
-    api_client.update_params_for_auth(headers=headers, queries=query_params)
-    assert not query_params  # query auth is not expected
-
-    return headers
-
-
 def _upload_with_tus(
     api_client: ApiClient,
     create_url: str,
@@ -44,7 +35,7 @@ def _upload_with_tus(
     file_stream: StreamWithProgress,
     logger: logging.Logger,
 ) -> str:
-    common_headers = {**_make_request_headers(api_client), "Tus-Resumable": "1.0.0"}
+    common_headers = {**make_request_headers(api_client), "Tus-Resumable": "1.0.0"}
 
     file_stream.seek(0, os.SEEK_END)
     upload_length = file_stream.tell()
@@ -207,7 +198,7 @@ class Uploader:
             query_params=query_params,
             headers={
                 "Upload-Start": "",
-                **_make_request_headers(self._client.api_client),
+                **make_request_headers(self._client.api_client),
             },
         )
         expect_status(202, response)
@@ -218,7 +209,7 @@ class Uploader:
             url,
             headers={
                 "Upload-Finish": "",
-                **_make_request_headers(self._client.api_client),
+                **make_request_headers(self._client.api_client),
             },
             query_params=query_params,
             post_params=fields,
@@ -319,7 +310,7 @@ class DataUploader(Uploader):
                     headers={
                         "Content-Type": "multipart/form-data",
                         "Upload-Multiple": "",
-                        **_make_request_headers(self._client.api_client),
+                        **make_request_headers(self._client.api_client),
                     },
                 )
                 expect_status(200, response)
