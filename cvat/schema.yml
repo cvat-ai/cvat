@@ -7210,6 +7210,30 @@ components:
           maxLength: 150
       required:
       - username
+    Chapter:
+      type: object
+      properties:
+        id:
+          type: integer
+        start:
+          type: integer
+        end:
+          type: integer
+        time_base:
+          $ref: '#/components/schemas/Fraction'
+        metadata:
+          $ref: '#/components/schemas/ChapterMetadata'
+      required:
+      - end
+      - id
+      - metadata
+      - start
+      - time_base
+    ChapterMetadata:
+      type: object
+      properties:
+        title:
+          type: string
     ChunkType:
       enum:
       - video
@@ -7456,6 +7480,11 @@ components:
     DataMetaRead:
       type: object
       properties:
+        chapters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Chapter'
+          nullable: true
         chunks_updated_date:
           type: string
           format: date-time
@@ -7508,6 +7537,7 @@ components:
           nullable: true
           readOnly: true
       required:
+      - chapters
       - chunks_updated_date
       - deleted_frames
       - frames
@@ -7941,6 +7971,16 @@ components:
       description: |-
         * `REG` - REG
         * `DIR` - DIR
+    Fraction:
+      type: object
+      properties:
+        numerator:
+          type: integer
+        denominator:
+          type: integer
+      required:
+      - denominator
+      - numerator
     FrameMeta:
       type: object
       properties:
