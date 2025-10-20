@@ -141,7 +141,7 @@ def get_video_chapters(video_path, segment: tuple[int, int] = None) -> list[dict
 
     if segment:
         chapters = [
-            chapter for chapter in chapters if chapter["start"] >= segment[0] and chapter["end"] <= segment[1]
+            chapter for chapter in chapters if segment[0] <= chapter["start"] <= segment[1]
         ]
     return chapters
 
