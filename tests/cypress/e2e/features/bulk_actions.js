@@ -226,15 +226,13 @@ context('Bulk actions in UI', () => {
         });
     });
 
-    describe.only('Bulk actions cloud storage', () => {
+    describe('Bulk actions cloud storage', () => {
         before(() => {
-            cy.headlessAttachCloudStorage(createDummyAWSBucket);
-            cy.headlessAttachCloudStorage(createDummyAWSBucket);
             cy.visit('/cloudstorages');
+            cy.headlessAttachCloudStorage(createDummyAWSBucket);
+            cy.headlessAttachCloudStorage(createDummyAWSBucket);
         });
         it('Delete all CS, ensure deleted ', () => {
-            // cvat-delete-cloud-storage-modal
-            // cvat-cloud-storage-item
             getBulkActionsMenu().within(() => {
                 cy.contains(`Delete (${nobjs})`).click();
             });
