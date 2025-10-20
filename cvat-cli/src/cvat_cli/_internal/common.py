@@ -89,7 +89,7 @@ def configure_common_arguments(parser: argparse.ArgumentParser) -> None:
             defaults to the current user and supports the PASS
             environment variable or password prompt.
             A Personal Access Token (PAT) can be generated on the server
-            and specified in the {} environment variable.
+            and specified in the {} environment variable instead.
             (default user: {}).
         """
         ).format(CVAT_ACCESS_TOKEN_ENV_VAR, getpass.getuser()),
