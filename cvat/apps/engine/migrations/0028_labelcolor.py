@@ -32,5 +32,6 @@ class Migration(migrations.Migration):
         migrations.RunPython(
             code=alter_label_colors,
             reverse_code=migrations.RunPython.noop,
+            elidable=True,
         ),
     ]
