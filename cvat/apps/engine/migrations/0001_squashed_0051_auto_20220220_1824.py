@@ -193,7 +193,7 @@ class Migration(migrations.Migration):
                         on_delete=django.db.models.deletion.CASCADE, to="engine.label"
                     ),
                 ),
-                ("default_value", models.CharField(default="", max_length=128)),
+                ("default_value", models.CharField(max_length=128)),
                 (
                     "input_type",
                     models.CharField(
@@ -207,9 +207,9 @@ class Migration(migrations.Migration):
                         max_length=16,
                     ),
                 ),
-                ("mutable", models.BooleanField(default=True)),
-                ("name", models.CharField(default="test", max_length=64)),
-                ("values", models.CharField(default="", max_length=4096)),
+                ("mutable", models.BooleanField()),
+                ("name", models.CharField(max_length=64)),
+                ("values", models.CharField(max_length=4096)),
             ],
             options={
                 "default_permissions": (),
