@@ -168,7 +168,9 @@ class TestExtractors(TestCase):
             task_item_ids = [
                 (item_id, item_subset) for item_id, item_subset in item_ids if item_subset == subset
             ]
-            instance_data._db_tasks[task_id] = Mock(data=Mock(size=len(task_item_ids)), id=task_id)
+            instance_data._db_tasks[task_id] = Mock(
+                data=Mock(size=len(task_item_ids)), id=task_id, subset=subset
+            )
             task_instance, task_shape_generator_was_iterated = self._make_mock_job_data(
                 task_item_ids
             )

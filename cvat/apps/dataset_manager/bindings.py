@@ -25,6 +25,7 @@ import defusedxml.ElementTree as ET
 import rq
 from attr import attrib, attrs
 from attrs.converters import to_bool
+from datumaro import IDataset
 from datumaro.components.format_detection import RejectionReason
 from django.conf import settings
 from django.db.models import Prefetch, QuerySet
@@ -1487,6 +1488,13 @@ class ProjectData(InstanceLabelData):
     def __len__(self) -> int:
         return sum(db_task.data.size for db_task in self._db_tasks.values())
 
+    def subset_len(self, subset_name: str) -> int:
+        return sum(
+            db_task.data.size
+            for db_task in self._db_tasks.values()
+            if subset_name == get_defaulted_subset(db_task.subset, self._subsets)
+        )
+
 
 @attrs(frozen=True, auto_attribs=True)
 class MediaSource:
@@ -1759,7 +1767,7 @@ class CVATDataExtractorMixin:
 class CvatDataExtractorBase(CVATDataExtractorMixin):
     def __init__(
         self,
-        instance_data: CommonData,
+        instance_data: CommonData | ProjectData,
         *,
         include_images: bool = False,
         format_type: str = None,
@@ -1904,8 +1912,7 @@ class CVATProjectDataExtractor(dm.DatasetBase, CvatDataExtractorBase):
 
     def __iter__(self):
         for subset in self._subsets:
-            for frame_data in self._instance_data.group_by_frame(include_empty=True, subset_name=subset):
-                yield self._process_one_frame_data(frame_data)
+            yield from self.get_subset(subset)
 
     def categories(self):
         return self._categories
@@ -1913,6 +1920,35 @@ class CVATProjectDataExtractor(dm.DatasetBase, CvatDataExtractorBase):
     @property
     def is_stream(self) -> bool:
         return True
+
+    def get_subset(self, name: str) -> IDataset:
+        class _SubsetBase(dm.SubsetBase):
+            def __init__(self, parent: CVATProjectDataExtractor):
+                dm.SubsetBase.__init__(
+                    self,
+                    media_type=parent.media_type(),
+                    subset=name,
+                )
+                self._parent = parent
+
+            def __iter__(self):
+                for frame_data in self._parent._instance_data.group_by_frame(
+                    include_empty=True,
+                    subset_name=name
+                ):
+                    yield self._parent._process_one_frame_data(frame_data)
+
+            def __len__(self):
+                return self._parent._instance_data.subset_len(name)
+
+            def categories(self):
+                return self._parent.categories()
+
+            @property
+            def is_stream(self) -> bool:
+                return True
+
+        return _SubsetBase(self)
 
 
 def GetCVATDataExtractor(
