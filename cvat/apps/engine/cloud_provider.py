@@ -546,8 +546,8 @@ def get_cloud_storage_instance(
     specific_attributes: Optional[dict[str, Any]] = None,
 ):
     instance = None
-    if cloud_provider == CloudProviderChoice.AWS_S3:
-        instance = AWS_S3(
+    if cloud_provider == CloudProviderChoice.AMAZON_S3:
+        instance = S3CloudStorage(
             resource,
             access_key_id=credentials.key,
             secret_key=credentials.secret_key,
@@ -556,8 +556,8 @@ def get_cloud_storage_instance(
             endpoint_url=specific_attributes.get("endpoint_url"),
             prefix=specific_attributes.get("prefix"),
         )
-    elif cloud_provider == CloudProviderChoice.AZURE_CONTAINER:
-        instance = AzureBlobContainer(
+    elif cloud_provider == CloudProviderChoice.AZURE_BLOB_STORAGE:
+        instance = AbsCloudStorage(
             resource,
             account_name=credentials.account_name,
             sas_token=credentials.session_token,
@@ -565,7 +565,7 @@ def get_cloud_storage_instance(
             prefix=specific_attributes.get("prefix"),
         )
     elif cloud_provider == CloudProviderChoice.GOOGLE_CLOUD_STORAGE:
-        instance = GoogleCloudStorage(
+        instance = GcsCloudStorage(
             resource,
             service_account_json=credentials.key_file_path,
             anonymous_access=credentials.credentials_type == CredentialsTypeChoice.ANONYMOUS_ACCESS,
@@ -578,7 +578,7 @@ def get_cloud_storage_instance(
     return instance
 
 
-class AWS_S3(_CloudStorage):
+class S3CloudStorage(_CloudStorage):
     transfer_config = {
         "max_io_queue": 10,
     }
@@ -808,7 +808,7 @@ class AWS_S3(_CloudStorage):
         return allowed_actions
 
 
-class AzureBlobContainer(_CloudStorage):
+class AbsCloudStorage(_CloudStorage):
     MAX_CONCURRENCY = 3
 
     class Effect:
@@ -953,10 +953,6 @@ class AzureBlobContainer(_CloudStorage):
         pass
 
 
-class GOOGLE_DRIVE(_CloudStorage):
-    pass
-
-
 def _define_gcs_status(func):
     def wrapper(self, key=None):
         try:
@@ -973,7 +969,7 @@ def _define_gcs_status(func):
     return wrapper
 
 
-class GoogleCloudStorage(_CloudStorage):
+class GcsCloudStorage(_CloudStorage):
 
     class Effect:
         pass
