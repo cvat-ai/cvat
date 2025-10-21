@@ -155,23 +155,23 @@ recommended to use a Personal Access Token (PAT) instead, if possible.
 
 {{< tabpane text=true >}}
 
-{{%tab header="Password authentication" %}}
-
-```python
-from cvat_sdk import make_client
-
-with make_client("https://app.cvat.ai", credentials=("user", "password")) as client:
-    ...
-```
-
-{{% /tab %}}
-
 {{%tab header="Personal Access Token (PAT) authentication" %}}
 
 ```python
 from cvat_sdk import make_client
 
 with make_client("https://app.cvat.ai", access_token="token") as client:
+    ...
+```
+
+{{% /tab %}}
+
+{{%tab header="Password authentication" %}}
+
+```python
+from cvat_sdk import make_client
+
+with make_client("https://app.cvat.ai", credentials=("user", "password")) as client:
     ...
 ```
 
