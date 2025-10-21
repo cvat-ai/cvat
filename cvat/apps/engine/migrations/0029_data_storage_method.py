@@ -44,5 +44,5 @@ class Migration(migrations.Migration):
                 max_length=15,
             ),
         ),
-        migrations.RunPython(unzip),
+        migrations.RunPython(unzip, elidable=True),
     ]

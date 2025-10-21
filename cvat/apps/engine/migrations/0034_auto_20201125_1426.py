@@ -177,5 +177,5 @@ class Migration(migrations.Migration):
                 ),
             ],
         ),
-        migrations.RunPython(create_profile),
+        migrations.RunPython(create_profile, elidable=True),
     ]

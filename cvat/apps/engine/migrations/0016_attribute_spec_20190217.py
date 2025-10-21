@@ -161,6 +161,7 @@ class Migration(migrations.Migration):
         migrations.RunPython(
             code=split_text_attribute,
             reverse_code=join_text_attribute,
+            elidable=True,
         ),
         migrations.RemoveField(
             model_name="attributespec",
@@ -173,6 +174,7 @@ class Migration(migrations.Migration):
         migrations.RunPython(
             code=fill_task_meta_data_forward,
             reverse_code=fill_task_meta_data_backward,
+            elidable=True,
         ),
         migrations.RemoveField(
             model_name="task",
