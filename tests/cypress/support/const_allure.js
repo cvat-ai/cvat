@@ -1,12 +1,7 @@
 // Copyright (C) CVAT.ai Corporation
 //
-// SPDX-License-Identifier: LicenseRef-CVAT-AI-Commercial
+// SPDX-License-Identifier: MIT
 
-/**
- * Enum for tri-state values.
- * @readonly
- * @enum {string}
- */
 export const AllureTag = {
     HEAVY: 'heavy',
     SETTINGS: 'settings',

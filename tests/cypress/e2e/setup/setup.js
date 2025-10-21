@@ -4,8 +4,6 @@
 
 /// <reference types="cypress" />
 
-/* eslint-disable security/detect-non-literal-regexp */
-
 import {
     taskName, labelName, attrName,
     textDefaultValue,
