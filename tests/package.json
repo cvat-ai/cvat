@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "cypress:run:chrome": "cypress run --browser chrome",
+    "cypress:run:chrome": "cypress run --browser chromium",
     "cypress:run:firefox": "cypress run --browser firefox --config-file nightly_cypress.config.js",
     "cypress:run:chrome:canvas3d": "cypress run --headed --browser chrome --config-file cypress_canvas3d.config.js"
   },
