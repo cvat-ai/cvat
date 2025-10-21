@@ -1556,7 +1556,7 @@ Cypress.Commands.add('deleteCloudStorage', (displayName) => {
         .within(() => {
             cy.contains('[role="menuitem"]', 'Delete').click();
         });
-    cy.get('.cvat-delete-cloud-storage-modal')
+    cy.get('.cvat-modal-confirm-delete-cloud-storage')
         .should('contain', `You are going to remove the cloudstorage "${displayName}"`)
         .within(() => {
             cy.contains('button', 'Delete').click();
