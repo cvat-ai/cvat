@@ -832,6 +832,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"allure-js-commons@npm:^3.4.1":
+  version: 3.4.1
+  resolution: "allure-js-commons@npm:3.4.1"
+  dependencies:
+    md5: "npm:^2.3.0"
+  peerDependencies:
+    allure-playwright: 3.4.1
+  peerDependenciesMeta:
+    allure-playwright:
+      optional: true
+  checksum: 10c0/0024346a209821a037edbe8f8ffa751c0837ad9a52a64b29704f04beceff58cb672ab5afaf772cec52ee3ab8030c6b69dd42fa840c340010a7982d38f31682ef
+  languageName: node
+  linkType: hard
+
 "ansi-colors@npm:^4.1.1":
   version: 4.1.3
   resolution: "ansi-colors@npm:4.1.3"
@@ -3296,6 +3310,7 @@ __metadata:
   dependencies:
     "@cypress/code-coverage": "npm:^3.9.10"
     allure-cypress: "npm:^3.2.2"
+    allure-js-commons: "npm:^3.4.1"
     archiver: "npm:^5.3.0"
     cy-verify-downloads: "npm:^0.0.5"
     cypress: "npm:^13.10.0"

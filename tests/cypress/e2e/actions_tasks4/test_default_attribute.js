@@ -4,7 +4,6 @@
 
 /// <reference types="cypress" />
 
-// eslint-disable-next-line import/no-extraneous-dependencies
 import * as allure from 'allure-js-commons';
 import { AllureTag } from '../../support/const_allure';
 
