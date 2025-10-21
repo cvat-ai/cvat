@@ -1545,10 +1545,10 @@ Cypress.Commands.add('verifyNotification', () => {
 });
 
 Cypress.Commands.add('goToCloudStoragesPage', () => {
-    cy.intercept('GET', '/api/cloudstorage**').as('getcs');
+    cy.intercept('GET', '/api/cloudstorages?**').as('getCloudStorages');
     cy.get('a[value="cloudstorages"]').click();
     cy.url().should('include', '/cloudstorages');
-    cy.wait('@getcs');
+    cy.wait('@getCloudStorages');
 });
 
 Cypress.Commands.add('deleteCloudStorage', (displayName) => {
