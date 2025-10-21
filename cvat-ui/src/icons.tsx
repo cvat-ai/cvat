@@ -119,7 +119,7 @@ export const AzureProvider = React.memo((): JSX.Element => <SVGCVATAzureProvider
 export const S3Provider = React.memo((): JSX.Element => <SVGCVATS3Provider />);
 export const GoogleCloudProvider = React.memo((): JSX.Element => <SVGCVATGoogleCloudProvider />);
 export const BackblazeB2Provider = React.memo((): JSX.Element => (
-    <img src={BackblazeB2Icon} alt="Backblaze B2" style={{ width: '1em', height: '1em', verticalAlign: 'middle' }} />
+    <img src={BackblazeB2Icon} alt="Backblaze B2" style={{ width: '1em', height: '1em', verticalAlign: 'middle', marginRight: '8px' }} />
 ));
 export const RestoreIcon = React.memo((): JSX.Element => <SVGRestoreIcon />);
 export const BrushIcon = React.memo((): JSX.Element => <SVGBrushIcon />);
