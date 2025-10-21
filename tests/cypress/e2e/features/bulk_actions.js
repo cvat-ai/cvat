@@ -228,7 +228,7 @@ context('Bulk actions in UI', () => {
 
     describe('Bulk actions cloud storage', () => {
         before(() => {
-            cy.visit('/cloudstorages');
+            cy.headlessLogin({ nextURL: '/cloudstorages' });
             cy.headlessAttachCloudStorage(createDummyAWSBucket);
             cy.headlessAttachCloudStorage(createDummyAWSBucket);
         });

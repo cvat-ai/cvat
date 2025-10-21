@@ -91,13 +91,19 @@ const dummyAWSBucket = {
 
 const createDummyAWSBucket = {
     provider_type: dummyAWSBucket.results[0].provider_type,
-    resource: 'test',
+    resource: 'public',
     display_name: dummyAWSBucket.results[0].display_name,
     credentials_type: dummyAWSBucket.results[0].credentials_type,
     manifests: ['images_with_manifest/manifest.jsonl'],
     secret_key: 'minio_secret_key',
     key: 'minio_access_key',
-    specific_attributes: 'endpoint_url=http://minio:9000',
+    specific_attributes: `endpoint_url=${Cypress.config('minioUrl')}`,
+    /*
+    displayName: 'Demo bucket',
+        resource: 'public',
+        manifest: 'images_with_manifest/manifest.jsonl',
+        endpointUrl: Cypress.config('minioUrl'),
+    */
 };
 
 module.exports = {
