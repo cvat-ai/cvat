@@ -1308,11 +1308,13 @@ class ProjectData(InstanceLabelData):
                 for i, element in enumerate(track.get("elements", []))]
         )
 
-    def group_by_frame(self, include_empty: bool = False) -> Generator[CommonData.Frame, None, None]:
-        for task_id in self._db_tasks.keys():
-            task_data = self._task_data(task_id)
+    def group_by_frame(self, include_empty: bool = False, *, subset_name: str = None) -> Generator[CommonData.Frame, None, None]:
+        for task in self._db_tasks.values():
+            if subset_name and subset_name != get_defaulted_subset(task.subset, self._subsets):
+                continue
+            task_data = self._task_data(task.id)
             for task_frame in task_data.group_by_frame(include_empty=include_empty):
-                frame_info = self._frame_info[(task_id, task_frame.idx)]
+                frame_info = self._frame_info[(task.id, task_frame.idx)]
 
                 def fill_annotations(frame: CommonData.Frame, original_frame: CommonData.Frame):
                     def fix_anno_frame(shape):
@@ -1328,7 +1330,7 @@ class ProjectData(InstanceLabelData):
 
                 yield attr.evolve(
                     task_frame,
-                    frame=task_frame.frame + self._task_frame_offsets[task_id],
+                    frame=task_frame.frame + self._task_frame_offsets[task.id],
                     subset=frame_info["subset"],
                     name=frame_info["path"],
                     annotation_getter=partial(fill_annotations, original_frame=task_frame),
@@ -1901,8 +1903,9 @@ class CVATProjectDataExtractor(dm.DatasetBase, CvatDataExtractorBase):
         self._categories = self.load_categories(self._instance_meta['labels'])
 
     def __iter__(self):
-        for frame_data in self._instance_data.group_by_frame(include_empty=True):
-            yield self._process_one_frame_data(frame_data)
+        for subset in self._subsets:
+            for frame_data in self._instance_data.group_by_frame(include_empty=True, subset_name=subset):
+                yield self._process_one_frame_data(frame_data)
 
     def categories(self):
         return self._categories
