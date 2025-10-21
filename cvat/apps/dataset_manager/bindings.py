@@ -25,7 +25,6 @@ import defusedxml.ElementTree as ET
 import rq
 from attr import attrib, attrs
 from attrs.converters import to_bool
-from datumaro import IDataset
 from datumaro.components.format_detection import RejectionReason
 from django.conf import settings
 from django.db.models import Prefetch, QuerySet
@@ -1309,13 +1308,11 @@ class ProjectData(InstanceLabelData):
                 for i, element in enumerate(track.get("elements", []))]
         )
 
-    def group_by_frame(self, include_empty: bool = False, *, subset_name: str = None) -> Generator[CommonData.Frame, None, None]:
-        for task in self._db_tasks.values():
-            if subset_name and subset_name != get_defaulted_subset(task.subset, self._subsets):
-                continue
-            task_data = self._task_data(task.id)
+    def group_by_frame(self, include_empty: bool = False) -> Generator[CommonData.Frame, None, None]:
+        for task_id in self._db_tasks.keys():
+            task_data = self._task_data(task_id)
             for task_frame in task_data.group_by_frame(include_empty=include_empty):
-                frame_info = self._frame_info[(task.id, task_frame.idx)]
+                frame_info = self._frame_info[(task_id, task_frame.idx)]
 
                 def fill_annotations(frame: CommonData.Frame, original_frame: CommonData.Frame):
                     def fix_anno_frame(shape):
@@ -1331,7 +1328,7 @@ class ProjectData(InstanceLabelData):
 
                 yield attr.evolve(
                     task_frame,
-                    frame=task_frame.frame + self._task_frame_offsets[task.id],
+                    frame=task_frame.frame + self._task_frame_offsets[task_id],
                     subset=frame_info["subset"],
                     name=frame_info["path"],
                     annotation_getter=partial(fill_annotations, original_frame=task_frame),
@@ -1487,13 +1484,6 @@ class ProjectData(InstanceLabelData):
 
     def __len__(self) -> int:
         return sum(db_task.data.size for db_task in self._db_tasks.values())
-
-    def subset_len(self, subset_name: str) -> int:
-        return sum(
-            db_task.data.size
-            for db_task in self._db_tasks.values()
-            if subset_name == get_defaulted_subset(db_task.subset, self._subsets)
-        )
 
 
 @attrs(frozen=True, auto_attribs=True)
@@ -1911,8 +1901,8 @@ class CVATProjectDataExtractor(dm.DatasetBase, CvatDataExtractorBase):
         self._categories = self.load_categories(self._instance_meta['labels'])
 
     def __iter__(self):
-        for subset in self._subsets:
-            yield from self.get_subset(subset)
+        for frame_data in self._instance_data.group_by_frame(include_empty=True):
+            yield self._process_one_frame_data(frame_data)
 
     def categories(self):
         return self._categories
@@ -1920,35 +1910,6 @@ class CVATProjectDataExtractor(dm.DatasetBase, CvatDataExtractorBase):
     @property
     def is_stream(self) -> bool:
         return True
-
-    def get_subset(self, name: str) -> IDataset:
-        class _SubsetBase(dm.SubsetBase):
-            def __init__(self, parent: CVATProjectDataExtractor):
-                dm.SubsetBase.__init__(
-                    self,
-                    media_type=parent.media_type(),
-                    subset=name,
-                )
-                self._parent = parent
-
-            def __iter__(self):
-                for frame_data in self._parent._instance_data.group_by_frame(
-                    include_empty=True,
-                    subset_name=name
-                ):
-                    yield self._parent._process_one_frame_data(frame_data)
-
-            def __len__(self):
-                return self._parent._instance_data.subset_len(name)
-
-            def categories(self):
-                return self._parent.categories()
-
-            @property
-            def is_stream(self) -> bool:
-                return True
-
-        return _SubsetBase(self)
 
 
 def GetCVATDataExtractor(
