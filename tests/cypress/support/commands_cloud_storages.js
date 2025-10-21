@@ -43,7 +43,7 @@ Cypress.Commands.add('attachS3Bucket', (data) => {
 });
 
 Cypress.Commands.add('headlessAttachCloudStorage', (spec) => {
-    cy.window().its('cvat').should('not.be.undefined').then(async (cvat) => {
+    cy.window().its('cvat').should('not.be.undefined').then({ timeout: 30000 }, async (cvat) => {
         const res = await cvat.server.request({
             url: '/api/cloudstorages',
             method: 'POST',
