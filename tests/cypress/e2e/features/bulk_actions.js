@@ -230,7 +230,7 @@ context('Bulk actions in UI', () => {
         before(() => {
             cy.headlessAttachCloudStorage(createDummyAWSBucket);
             cy.headlessAttachCloudStorage(createDummyAWSBucket);
-            cy.visit('/cloudstorages');
+            cy.goToCloudStoragesPage();
         });
         it('Delete all CS, ensure deleted ', () => {
             getBulkActionsMenu().within(() => {
