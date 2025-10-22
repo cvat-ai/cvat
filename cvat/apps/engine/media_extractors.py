@@ -121,27 +121,14 @@ def load_image(image: tuple[str, str, str]) -> tuple[Image.Image, str, str]:
         pil_img.load()
         return pil_img, image[1], image[2]
 
-def get_video_chapters(video_path, segment: tuple[int, int] = None) -> list[dict]:
+def get_video_chapters(manifest_path, segment: tuple[int, int] = None) -> list[dict]:
+    manifest = VideoManifestManager(manifest_path)
+
     chapters = []
-    with av.open(video_path) as container:
-        chapters = container.chapters()
-        stream = container.streams.video[0]
-
-    # Convert to frame numbers.
-    for chapter in chapters:
-        chapter["start"] = round(
-            float(chapter["start"]) / float(chapter["time_base"].denominator) * stream.frames /
-            (stream.duration * stream.time_base)
-        )
-        chapter["end"] = round(
-            float(chapter["end"]) / float(chapter["time_base"].denominator) * stream.frames /
-            (stream.duration * stream.time_base)
-        ) - 1
-
 
     if segment:
         chapters = [
-            chapter for chapter in chapters if segment[0] <= chapter["start"] <= segment[1]
+            chapter for chapter in manifest.chapters if segment[0] <= chapter["start"] <= segment[1]
         ]
     return chapters
 

@@ -1478,7 +1478,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         if hasattr(db_task.data, 'video'):
             media = [db_task.data.video]
-            chapters = get_video_chapters(os.path.join(db_task.data.get_raw_data_dirname(), media[0].path))
+            chapters = get_video_chapters(db_task.data.get_manifest_path())
         else:
             media = list(db_task.data.images.all())
             chapters = None
@@ -1987,7 +1987,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         if hasattr(db_data, 'video'):
             media = [db_data.video]
             chapters = get_video_chapters(
-                os.path.join(db_task.data.get_raw_data_dirname(), media[0].path),
+                db_task.data.get_manifest_path(),
                 segment=(data_start_frame, data_stop_frame)
                 )
         else:
