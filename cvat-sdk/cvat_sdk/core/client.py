@@ -65,9 +65,9 @@ class Credentials(metaclass=ABCMeta):
 
 
 @attrs.define
-class BasicAuthCredentials(Credentials):
+class PasswordCredentials(Credentials):
     """
-    Represents basic authentication credentials.
+    Represents password authentication credentials.
     """
 
     user: str
@@ -233,13 +233,13 @@ class Client:
         if self.has_credentials():
             self.logout()
 
-        if isinstance(credentials, BasicAuthCredentials):
+        if isinstance(credentials, PasswordCredentials):
             credentials = (credentials.user, credentials.password)
         elif isinstance(credentials, AccessTokenCredentials):
             self.api_client.configuration.access_token = credentials.token
             return
         elif not isinstance(credentials, tuple) or len(credentials) != 2:
-            raise TypeError(f"Unsupported credentials type: {type(credentials).__name__}")
+            raise TypeError(f"Invalid credentials format")
 
         self.api_client.auth_api.create_login(
             models.LoginSerializerExRequest(username=credentials[0], password=credentials[1])
@@ -435,7 +435,7 @@ def make_client(
 
     if port:
         parsed_url = urlsplit(("https://" if "://" not in url else "") + host)
-        if port and parsed_url.port:
+        if parsed_url.port:
             raise ValueError(
                 "The 'host' with a port and the 'port' argument cannot be used together. "
                 "Please specify only one port."

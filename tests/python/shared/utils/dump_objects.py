@@ -50,7 +50,7 @@ def clean_list_response(data: dict[str, Any]) -> dict[str, Any]:
     return data
 
 
-def _parse_asset_url(s: str) -> Tuple[str, str]:
+def _parse_asset_url_path(s: str) -> Tuple[str, str]:
     asset_filename, url_path = s.lower().rsplit(":", maxsplit=1)
     return asset_filename, url_path
 
@@ -60,24 +60,24 @@ def main():
     parser.add_argument("--assets-dir", type=Path, default=ASSETS_DIR)
     parser.add_argument(
         "--asset-path",
-        dest="asset_urls",
+        dest="asset_url_paths",
         default=[],
         action="append",
-        type=_parse_asset_url,
-        help="Repeatable, an override for the default inferred path for an asset. "
+        type=_parse_asset_url_path,
+        help="Repeatable, an override for the default inferred URL path for an asset. "
         "Format: '<asset filename without extension>:<url path after api/>'",
     )
     args = parser.parse_args()
 
     assets_dir: Path = args.assets_dir
 
-    asset_urls: dict[str, str] = dict(args.asset_urls)
+    asset_url_paths: dict[str, str] = dict(args.asset_url_paths)
 
     annotations = {}
 
     for dump_path in assets_dir.glob("*.json"):
         asset_name = dump_path.stem
-        endpoint = asset_urls.get(asset_name, asset_name.replace("_", "/"))
+        endpoint = asset_url_paths.get(asset_name, asset_name.replace("_", "/"))
 
         if asset_name == "annotations":
             continue  # this will be handled at the end
