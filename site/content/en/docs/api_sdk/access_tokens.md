@@ -9,16 +9,23 @@ description: 'Use access tokens for enhanced security when integrating with CVAT
 
 When interacting with API, there are several authentication options available in CVAT:
 - Basic authentication, with a username and a password
+- Legacy token authentication, with an API key (deprecated)
 - Session authentication, with a session ID and a CSRF token
 - Personal Access Token (PAT) authentication, with an access token value
 
 Basic authentication requires a username and a password pair.
 It's recommended to use other authentication options instead for better security.
 
+Legacy token authentication (deprecated) requires an API key, which can be obtained
+after logging in via the `/api/auth/login` endpoint using the basic authentication credentials.
+
 Session authentication requires a Session ID and a CSRF token than can be obtained after
-logging in using the configured authentication method. This option is supposed for work
-in the web browser and implements standard authorization protocols, such as SSO.
-It may be inconvenient, insecure or not available for use in CLI and tool integrations.
+logging in using the configured authentication method. This option is primarily supposed
+for interactive work in the web browser and supports standard authorization protocols,
+such as SSO.
+
+The methods described above can be inconvenient, insecure, or unavailable in
+SDK- or CLI-based workflows, scripts and 3rd-party application integrations.
 To address such use cases, there's an option to use Personal Access Token (PAT) authentication.
 
 **Personal Access Token (PAT)** is an authentication option dedicated for CLI, SDK and Server API
