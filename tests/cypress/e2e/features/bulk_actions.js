@@ -38,7 +38,7 @@ context('Bulk actions in UI', () => {
         jobIDs: [],
     };
     let projectTwoTasks = null;
-    const nobjs = 2;
+    const numberOfObjects = 2;
     const framesPerJob = 1;
     const stringID = (i, str) => str.concat(`_${i}`);
     const createTaskInProject = (i, projectID, taskParams) => {
@@ -67,7 +67,7 @@ context('Bulk actions in UI', () => {
     }
 
     function assignToAdmin() {
-        cy.contains(`Assignee (${nobjs})`).click();
+        cy.contains(`Assignee (${numberOfObjects})`).click();
         cy.get('.cvat-user-search-field').type('admin', { delay: 0 }); // all at once
         return cy.get('.cvat-user-search-field').type('{enter}');
     }
@@ -116,10 +116,10 @@ context('Bulk actions in UI', () => {
                 cy.get('.cvat-item-selected')
                     .should('exist')
                     .its('length')
-                    .should('eq', nobjs);
+                    .should('eq', numberOfObjects);
                 cy.get('.cvat-resource-selection-count')
                     .should('be.visible')
-                    .and('have.text', `Selected: ${nobjs}`);
+                    .and('have.text', `Selected: ${numberOfObjects}`);
                 cy.get('.cvat-resource-deselect-button')
                     .should('be.visible')
                     .and('have.text', 'Deselect').click();
@@ -160,7 +160,7 @@ context('Bulk actions in UI', () => {
 
             it('Bulk-change state', () => {
                 getBulkActionsMenu().within(() => {
-                    cy.contains(`State (${nobjs})`).click();
+                    cy.contains(`State (${numberOfObjects})`).click();
                     cy.get('.cvat-job-item-state').click();
 
                     // state is 'new' by default, so pick second option (='in progress')
@@ -170,7 +170,7 @@ context('Bulk actions in UI', () => {
                 cy.get('.cvat-bulk-progress-wrapper').should('be.visible');
 
                 cy.get('.ant-select-selection-item[title="in progress"]')
-                    .should('have.length', nobjs);
+                    .should('have.length', numberOfObjects);
             });
         });
     });
@@ -181,7 +181,7 @@ context('Bulk actions in UI', () => {
         });
         it('Bulk-export job annotations', () => {
             getBulkActionsMenu().within(() => {
-                cy.contains(`Export annotations (${nobjs})`)
+                cy.contains(`Export annotations (${numberOfObjects})`)
                     .should('be.visible')
                     .click();
             });
@@ -189,14 +189,14 @@ context('Bulk actions in UI', () => {
             cy.get('.cvat-modal-export-job')
                 .should('exist').and('be.visible')
                 .find('.ant-modal-header')
-                .should('have.text', `Export ${nobjs} jobs as datasets`);
+                .should('have.text', `Export ${numberOfObjects} jobs as datasets`);
             cy.get('.cvat-modal-export-job').contains('button', 'OK').click();
 
             cy.get('.cvat-notification-notice-export-job-start')
                 .should('be.visible');
             cy.closeNotification('.cvat-notification-notice-export-job-start');
 
-            cy.closeNotification('.cvat-notification-notice-export-job-finished', nobjs);
+            cy.closeNotification('.cvat-notification-notice-export-job-finished', numberOfObjects);
         });
     });
 
@@ -207,12 +207,12 @@ context('Bulk actions in UI', () => {
 
         it('Delete all tasks, ensure deletion', () => {
             getBulkActionsMenu().within(() => {
-                cy.contains(`Delete (${nobjs})`).click();
+                cy.contains(`Delete (${numberOfObjects})`).click();
             });
 
             cy.get('.cvat-modal-confirm-delete-task')
                 .should('be.visible').within(() => {
-                    cy.contains(`Delete ${nobjs} selected tasks`);
+                    cy.contains(`Delete ${numberOfObjects} selected tasks`);
                     cy.contains('Delete selected')
                         .should('be.visible')
                         .click();
@@ -228,18 +228,19 @@ context('Bulk actions in UI', () => {
 
     describe('Bulk actions cloud storage', () => {
         before(() => {
-            cy.headlessAttachCloudStorage(createDummyAWSBucket);
-            cy.headlessAttachCloudStorage(createDummyAWSBucket);
+            for (let i = 0; i < numberOfObjects; i++) {
+                cy.headlessAttachCloudStorage(createDummyAWSBucket);
+            }
             cy.goToCloudStoragesPage();
         });
         it('Delete all CS, ensure deleted ', () => {
             getBulkActionsMenu().within(() => {
-                cy.contains(`Delete (${nobjs})`).click();
+                cy.contains(`Delete (${numberOfObjects})`).click();
             });
 
             cy.get('.cvat-modal-confirm-delete-cloud-storage')
                 .should('be.visible').within(() => {
-                    cy.contains(`Delete ${nobjs} selected cloud storages`);
+                    cy.contains(`Delete ${numberOfObjects} selected cloud storages`);
                     cy.contains('Delete selected')
                         .should('be.visible')
                         .click();
