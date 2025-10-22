@@ -148,14 +148,14 @@ class TestExtractors(TestCase):
                 pass
 
         instance_data = MockProjectData()
-        instance_data._subsets = list(set(subset for _, subset in item_ids))
+        instance_data._subsets = list({subset for _, subset in item_ids})
         instance_data._meta = {
-            instance_data.META_FIELD: dict(
-                subsets=instance_data._subsets,
-                labels=[
-                    ("label", dict(name="LabelName", attributes=[], type=LabelType.ANY)),
+            instance_data.META_FIELD: {
+                "subsets": instance_data._subsets,
+                "labels": [
+                    ("label", {"name": "LabelName", "attributes": [], "type": LabelType.ANY}),
                 ],
-            ),
+            },
         }
 
         instance_data._db_tasks = {}
@@ -183,14 +183,14 @@ class TestExtractors(TestCase):
             )
 
             for index, (item_id, item_subset) in enumerate(task_item_ids):
-                instance_data._frame_info[(task_id, index)] = dict(
-                    id=item_id,
-                    subset=subset,
-                    path=f"path_{subset}_{item_id}.jpg",
-                )
+                instance_data._frame_info[(task_id, index)] = {
+                    "id": item_id,
+                    "subset": subset,
+                    "path": f"path_{subset}_{item_id}.jpg",
+                }
 
         def shape_generator_was_iterated():
-            assert len(set(was_iterated() for was_iterated in task_shape_generators)) == 1
+            assert len({was_iterated() for was_iterated in task_shape_generators}) == 1
             return task_shape_generators[0]()
 
         return instance_data, shape_generator_was_iterated
