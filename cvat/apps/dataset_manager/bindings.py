@@ -1183,7 +1183,7 @@ class ProjectData(InstanceLabelData):
                 self._frame_info.update({(task.id, self.rel_frame_id(task.id, db_image.frame)): {
                     # do not modify honeypot names since they will be excluded from the dataset
                     # and their quantity should not affect the validation frame name
-                    "path": mangle_image_name(db_image.path, defaulted_subset, original_names) \
+                    "path": mangle_image_name(db_image.path, defaulted_subset, original_names, task_id=task.id) \
                         if not db_image.is_placeholder else db_image.path,
                     "id": db_image.id,
                     "width": db_image.width,
@@ -2023,25 +2023,32 @@ class CvatDatasetNotFoundError(CvatImportError):
             message = "Dataset must contain a file:" + message
         return re.sub(r' +', " ", message)
 
-def mangle_image_name(name: str, subset: str, names: defaultdict[tuple[str, str], int]) -> str:
-    name, ext = name.rsplit(osp.extsep, maxsplit=1)
+def mangle_image_name(name: str, subset: str, names: defaultdict[tuple[str, str], int], task_id: Optional[int] = None) -> str:
+    # Track the base name and extension of the image file
+    name_base, ext = name.rsplit(osp.extsep, maxsplit=1)
 
-    if not names[(subset, name)]:
-        names[(subset, name)] += 1
-        return osp.extsep.join([name, ext])
-    else:
-        image_name = f"{name}_{names[(subset, name)]}"
-        if not names[(subset, image_name)]:
-            names[(subset, name)] += 1
-            return osp.extsep.join([image_name, ext])
-        else:
-            i = 1
-            while i < sys.maxsize:
-                new_image_name = f"{image_name}_{i}"
-                if not names[(subset, new_image_name)]:
-                    names[(subset, name)] += 1
-                    return osp.extsep.join([new_image_name, ext])
-                i += 1
+    if not names[(subset, name_base)]:
+        names[(subset, name_base)] += 1
+        return osp.extsep.join([name_base, ext])
+
+    if task_id is not None:
+        mangled_base = f"{name_base}-task_{task_id}"
+
+        if not names[(subset, mangled_base)]:
+            names[(subset, name_base)] += 1
+            names[(subset, mangled_base)] += 1
+            return osp.extsep.join([mangled_base, ext])
+
+    i = 1
+    while i < sys.maxsize:
+        mangled_base = f"{name_base}_{names[(subset, name_base)]}"
+
+        if not names[(subset, mangled_base)]:
+            names[(subset, name_base)] += 1
+            return osp.extsep.join([mangled_base, ext])
+
+        i += 1
+
     raise Exception('Cannot mangle image name')
 
 def get_defaulted_subset(subset: str, subsets: list[str]) -> str:
