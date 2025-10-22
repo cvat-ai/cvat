@@ -133,26 +133,47 @@ Typically, the first thing you do with `ApiClient` is log in.
 ## Authentication
 
 CVAT supports 3 authentication options:
+- Personal Access Token (PAT) authentication, with an access token value
 - Basic authentication, with a username and a password
 - Session authentication, with a session ID and a CSRF token
-- Token authentication, with an API key (deprecated)
+- Legacy token authentication, with an API key (deprecated)
 
-Token authentication requires an API key, which can be obtained after logging in
-via the `/api/auth/login` endpoint using the basic authentication credentials.
+Personal Access Token (PAT) authentication requires a token that can be configured
+in the user settings section in the UI. It is the recommended authentication option
+for most API clients.
+
+Basic authentication requires a username and password pair. For better security it's
+recommended to use other authentication options instead.
 
 Session authentication requires a session ID and a CSRF token, which can be obtained after
 logging in via the `/api/auth/login` endpoint using the basic authentication credentials.
+
+Legacy token authentication (deprecated) requires an API key, which can be obtained
+after logging in via the `/api/auth/login` endpoint using the basic authentication credentials.
 
 Authentication credentials for an `ApiClient` instance can be specified in a `Configuration` object:
 
 {{< tabpane text=true >}}
 
+{{%tab header="Personal Access Token (PAT) authentication" %}}
+
+```python
+configuration = Configuration(
+    access_token="<token value>",
+    ...
+)
+with ApiClient(configuration) as api_client:
+    ...
+```
+
+{{% /tab %}}
+
 {{%tab header="Basic authentication" %}}
 
 ```python
 configuration = Configuration(
-    username='YOUR_USERNAME',
-    password='YOUR_PASSWORD',
+    username="YOUR_USERNAME",
+    password="YOUR_PASSWORD",
     ...
 )
 with ApiClient(configuration) as api_client:
@@ -177,7 +198,7 @@ with ApiClient(configuration) as api_client:
 
 {{% /tab %}}
 
-{{%tab header="Token authentication (deprecated)" %}}
+{{%tab header="Legacy token authentication (deprecated)" %}}
 
 {{% alert title="Warning" color="warning" %}}
 This authentication option is deprecated and will be removed in future.
@@ -220,7 +241,7 @@ api_client.set_default_header("Origin", api_client.build_origin_header())
 ```
 {{% /tab %}}
 
-{{%tab header="Token authentication (deprecated)" %}}
+{{%tab header="Legacy token authentication (deprecated)" %}}
 
 {{% alert title="Warning" color="warning" %}}
 This authentication option is deprecated and will be removed in future.
