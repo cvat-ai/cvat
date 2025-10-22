@@ -154,7 +154,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(forwards_func),
+        migrations.RunPython(forwards_func, elidable=True),
         migrations.RemoveField(
             model_name="task",
             name="flipped",
