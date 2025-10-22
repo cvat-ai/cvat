@@ -16,7 +16,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-unreleased'></a>
+
+## [Unreleased]
+
+### Fixed
+
+- Fixed duplicate image name collisions during project export by adding task-specific
+  suffix (`-task_{id}`) to conflicting filenames (<https://github.com/cvat-ai/cvat/issues/8076>)
+
 <a id='changelog-2.47.0'></a>
+
 ## \[2.47.0\] - 2025-10-14
 
 ### Added
@@ -38,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/9827>)
 
 <a id='changelog-2.46.1'></a>
+
 ## \[2.46.1\] - 2025-10-09
 
 ### Security
@@ -46,6 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/9876>)
 
 <a id='changelog-2.46.0'></a>
+
 ## \[2.46.0\] - 2025-10-08
 
 ### Added
@@ -129,6 +141,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/9869>)
 
 <a id='changelog-2.45.0'></a>
+
 ## \[2.45.0\] - 2025-09-17
 
 ### Added
@@ -156,6 +169,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/9782>)
 
 <a id='changelog-2.44.2'></a>
+
 ## \[2.44.2\] - 2025-09-08
 
 ### Fixed
@@ -167,6 +181,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/9790>)
 
 <a id='changelog-2.44.1'></a>
+
 ## \[2.44.1\] - 2025-09-02
 
 ### Fixed
@@ -175,15 +190,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/9783>)
 
 <a id='changelog-2.44.0'></a>
+
 ## \[2.44.0\] - 2025-09-01
 
 ### Added
 
 - Introduced bulk actions to perform operations on multiple selected resources at once
+
   - Multi-select resources using click with Ctrl, Shift or using Select all button at the top bar
   - Supported resources: Tasks, Jobs, Projects, Requests, Organization members, Webhooks, Cloud Storages
   - Supported operations: Export, Backup, Delete, Download, Change: Assignee, State, Stage, Role
-  (<https://github.com/cvat-ai/cvat/pull/9582>)
+    (<https://github.com/cvat-ai/cvat/pull/9582>)
 
 - \[SDK\] Auto-annotation functions are now able to output tags
   (<https://github.com/cvat-ai/cvat/pull/9671>)
@@ -266,6 +283,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/9773>)
 
 <a id='changelog-2.43.0'></a>
+
 ## \[2.43.0\] - 2025-08-07
 
 ### Added
@@ -290,6 +308,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/9690>)
 
 <a id='changelog-2.42.0'></a>
+
 ## \[2.42.0\] - 2025-07-29
 
 ### Added
@@ -325,6 +344,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-fxgh-m76j-242q>)
 
 <a id='changelog-2.41.0'></a>
+
 ## \[2.41.0\] - 2025-07-09
 
 ### Added
@@ -333,7 +353,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/9527>)
 
 - Selector that allows inline editing of the following fields from card views: `assignee`, `state`, and `stage`.
-    (<https://github.com/cvat-ai/cvat/pull/9543>)
+  (<https://github.com/cvat-ai/cvat/pull/9543>)
 
 ### Changed
 
@@ -385,6 +405,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/9625>)
 
 <a id='changelog-2.40.1'></a>
+
 ## \[2.40.1\] - 2025-07-07
 
 ### Fixed
@@ -393,6 +414,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Because of inefficient database queries (<https://github.com/cvat-ai/cvat/pull/9612>)
 
 <a id='changelog-2.40.0'></a>
+
 ## \[2.40.0\] - 2025-06-25
 
 ### Added
@@ -454,6 +476,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-frpr-5w6q-hh4f>)
 
 <a id='changelog-2.39.0'></a>
+
 ## \[2.39.0\] - 2025-06-05
 
 ### Added
@@ -493,6 +516,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/9497>)
 
 <a id='changelog-2.38.0'></a>
+
 ## \[2.38.0\] - 2025-05-27
 
 ### Added
@@ -570,6 +594,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-7484-2gfm-852p>)
 
 <a id='changelog-2.37.0'></a>
+
 ## \[2.37.0\] - 2025-05-15
 
 ### Added
@@ -601,7 +626,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - \[Server API\] `GET api/quality/reports` and `GET api/quality/reports/{id}/` responses:
   - `frame_count` - deprecated in favor of the new `validation_frames` field,
   - `frame_share` - deprecated in favor of the new `validation_frame_share` field
-  (<https://github.com/opencv/cvat/pull/9116>)
+    (<https://github.com/opencv/cvat/pull/9116>)
 
 ### Fixed
 
@@ -627,6 +652,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/9378>)
 
 <a id='changelog-2.36.0'></a>
+
 ## \[2.36.0\] - 2025-05-08
 
 ### Added
@@ -684,6 +710,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/9376>)
 
 <a id='changelog-2.35.0'></a>
+
 ## \[2.35.0\] - 2025-04-29
 
 ### Changed
@@ -719,6 +746,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/9359>)
 
 <a id='changelog-2.34.0'></a>
+
 ## \[2.34.0\] - 2025-04-17
 
 ### Added
@@ -732,6 +760,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/9337>)
 
 <a id='changelog-2.33.0'></a>
+
 ## \[2.33.0\] - 2025-04-15
 
 ### Added
@@ -783,6 +812,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/9309>)
 
 <a id='changelog-2.32.0'></a>
+
 ## \[2.32.0\] - 2025-03-24
 
 ### Added
@@ -883,6 +913,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/9227>)
 
 <a id='changelog-2.31.0'></a>
+
 ## \[2.31.0\] - 2025-03-03
 
 ### Added
@@ -934,6 +965,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/9162>)
 
 <a id='changelog-2.30.0'></a>
+
 ## \[2.30.0\] - 2025-02-14
 
 ### Added
@@ -959,6 +991,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/9095>)
 
 <a id='changelog-2.29.0'></a>
+
 ## \[2.29.0\] - 2025-02-10
 
 ### Added
@@ -982,6 +1015,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/9059>)
 
 <a id='changelog-2.28.0'></a>
+
 ## \[2.28.0\] - 2025-02-06
 
 ### Added
@@ -1003,6 +1037,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/9053>)
 
 <a id='changelog-2.27.0'></a>
+
 ## \[2.27.0\] - 2025-02-04
 
 ### Added
@@ -1036,6 +1071,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/9028>)
 
 <a id='changelog-2.26.1'></a>
+
 ## \[2.26.1\] - 2025-01-29
 
 ### Added
@@ -1062,6 +1098,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/9008>)
 
 <a id='changelog-2.26.0'></a>
+
 ## \[2.26.0\] - 2025-01-27
 
 ### Added
@@ -1128,6 +1165,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-wq36-mxf8-hv62>)
 
 <a id='changelog-2.25.0'></a>
+
 ## \[2.25.0\] - 2025-01-09
 
 ### Added
@@ -1160,6 +1198,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/8872>)
 
 <a id='changelog-2.24.0'></a>
+
 ## \[2.24.0\] - 2024-12-20
 
 ### Added
@@ -1227,6 +1266,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   updating and handling (<https://github.com/cvat-ai/cvat/pull/8721>)
 
 <a id='changelog-2.23.1'></a>
+
 ## \[2.23.1\] - 2024-12-09
 
 ### Changed
@@ -1268,6 +1308,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/8785>)
 
 <a id='changelog-2.23.0'></a>
+
 ## \[2.23.0\] - 2024-11-29
 
 ### Added
@@ -1278,7 +1319,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - \[SDK, CLI\] Added a `conf_threshold` parameter to
   `cvat_sdk.auto_annotation.annotate_task`, which is passed as-is to the AA
   function object via the context. The CLI equivalent is `auto-annotate
-  --conf-threshold`. This makes it easier to write and use AA functions that
+--conf-threshold`. This makes it easier to write and use AA functions that
   support object filtering based on confidence levels
   (<https://github.com/cvat-ai/cvat/pull/8688>)
 
@@ -1374,11 +1415,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/8728>)
 
 <a id='changelog-2.22.0'></a>
+
 ## \[2.22.0\] - 2024-11-11
 
 ### Added
 
-- Feature to hide a mask during editing  (<https://github.com/cvat-ai/cvat/pull/8554>)
+- Feature to hide a mask during editing (<https://github.com/cvat-ai/cvat/pull/8554>)
 
 - A quality setting to compare point groups without using bbox
   (<https://github.com/cvat-ai/cvat/pull/8634>)
@@ -1423,6 +1465,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/8668>)
 
 <a id='changelog-2.21.3'></a>
+
 ## \[2.21.3\] - 2024-10-31
 
 ### Changed
@@ -1453,6 +1496,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/8598>)
 
 <a id='changelog-2.21.2'></a>
+
 ## \[2.21.2\] - 2024-10-24
 
 ### Added
@@ -1487,6 +1531,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/8587>)
 
 <a id='changelog-2.21.1'></a>
+
 ## \[2.21.1\] - 2024-10-18
 
 ### Added
@@ -1514,6 +1559,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/8555>)
 
 <a id='changelog-2.21.0'></a>
+
 ## \[2.21.0\] - 2024-10-10
 
 ### Added
@@ -1581,6 +1627,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/8510>)
 
 <a id='changelog-2.20.0'></a>
+
 ## \[2.20.0\] - 2024-10-01
 
 ### Added
@@ -1614,6 +1661,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/8272>)
 
 <a id='changelog-2.19.1'></a>
+
 ## \[2.19.1\] - 2024-09-26
 
 ### Security
@@ -1622,6 +1670,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-gxhm-hg65-5gh2>)
 
 <a id='changelog-2.19.0'></a>
+
 ## \[2.19.0\] - 2024-09-20
 
 ### Added
@@ -1653,6 +1702,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-2c85-39cc-2px9>)
 
 <a id='changelog-2.18.0'></a>
+
 ## \[2.18.0\] - 2024-09-10
 
 ### Added
@@ -1712,6 +1762,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-p3c9-m7jr-jxxj>)
 
 <a id='changelog-2.17.0'></a>
+
 ## \[2.17.0\] - 2024-08-27
 
 ### Added
@@ -1765,6 +1816,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/8334>)
 
 <a id='changelog-2.16.3'></a>
+
 ## \[2.16.3\] - 2024-08-13
 
 ### Added
@@ -1793,6 +1845,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/8299>)
 
 <a id='changelog-2.16.2'></a>
+
 ## \[2.16.2\] - 2024-08-06
 
 ### Changed
@@ -1837,6 +1890,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/8262>)
 
 <a id='changelog-2.16.1'></a>
+
 ## \[2.16.1\] - 2024-07-18
 
 ### Added
@@ -1865,6 +1919,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/8185>)
 
 <a id='changelog-2.16.0'></a>
+
 ## \[2.16.0\] - 2024-07-15
 
 ### Added
@@ -1923,6 +1978,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/8166>)
 
 <a id='changelog-2.15.0'></a>
+
 ## \[2.15.0\] - 2024-07-02
 
 ### Added
@@ -1973,6 +2029,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/8105>)
 
 <a id='changelog-2.14.4'></a>
+
 ## \[2.14.4\] - 2024-06-20
 
 ### Added
@@ -1994,6 +2051,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/8055>)
 
 <a id='changelog-2.14.3'></a>
+
 ## \[2.14.3\] - 2024-06-13
 
 ### Changed
@@ -2025,6 +2083,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-q684-4jjh-83g6>)
 
 <a id='changelog-2.14.2'></a>
+
 ## \[2.14.2\] - 2024-06-07
 
 ### Fixed
@@ -2036,6 +2095,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/7995>)
 
 <a id='changelog-2.14.1'></a>
+
 ## \[2.14.1\] - 2024-06-05
 
 ### Added
@@ -2083,6 +2143,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/7969>)
 
 <a id='changelog-2.14.0'></a>
+
 ## \[2.14.0\] - 2024-05-21
 
 ### Added
@@ -2138,6 +2199,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/7921>)
 
 <a id='changelog-2.13.0'></a>
+
 ## \[2.13.0\] - 2024-05-09
 
 ### Added
@@ -2209,6 +2271,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/7814>)
 
 <a id='changelog-2.12.1'></a>
+
 ## \[2.12.1\] - 2024-04-26
 
 ### Fixed
@@ -2233,6 +2296,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/7808>)
 
 <a id='changelog-2.12.0'></a>
+
 ## \[2.12.0\] - 2024-04-15
 
 ### Added
@@ -2285,6 +2349,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/7747>)
 
 <a id='changelog-2.11.3'></a>
+
 ## \[2.11.3\] - 2024-04-02
 
 ### Added
@@ -2333,7 +2398,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the old formula is now exposed as the `jaccard_index` key
   (<https://github.com/opencv/cvat/pull/7640>)
 
-- Sending `/events` request from logged-out user  (<https://github.com/opencv/cvat/pull/7608>)
+- Sending `/events` request from logged-out user (<https://github.com/opencv/cvat/pull/7608>)
 
 - Fixed accuracy being displayed incorrectly on the task analytics page
   (<https://github.com/opencv/cvat/pull/7652>)
@@ -2354,6 +2419,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/opencv/cvat/pull/7583>)
 
 <a id='changelog-2.11.2'></a>
+
 ## \[2.11.2\] - 2024-03-11
 
 ### Changed
@@ -2383,6 +2449,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/opencv/cvat/pull/7564>)
 
 <a id='changelog-2.11.1'></a>
+
 ## \[2.11.1\] - 2024-03-05
 
 ### Added
@@ -2407,6 +2474,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/opencv/cvat/pull/7540>)
 
 <a id='changelog-2.11.0'></a>
+
 ## \[2.11.0\] - 2024-02-23
 
 ### Added
@@ -2437,6 +2505,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   <https://github.com/opencv/cvat/pull/7477>)
 
 <a id='changelog-2.10.3'></a>
+
 ## \[2.10.3\] - 2024-02-09
 
 ### Changed
@@ -2471,6 +2540,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/opencv/cvat/pull/7421>)
 
 <a id='changelog-2.10.2'></a>
+
 ## \[2.10.2\] - 2024-01-26
 
 ### Changed
@@ -2491,6 +2561,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/opencv/cvat/pull/7399>)
 
 <a id='changelog-2.10.1'></a>
+
 ## \[2.10.1\] - 2024-01-18
 
 ### Changed
@@ -2511,6 +2582,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/opencv/cvat/pull/7362>)
 
 <a id='changelog-2.10.0'></a>
+
 ## \[2.10.0\] - 2024-01-10
 
 ### Changed
@@ -2519,7 +2591,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   longer accepted automatically. Instead, the invitee can now review the invitation and choose to accept or decline it.
   (<https://github.com/opencv/cvat/pull/7138>)
 
-- \[Compose, Helm\] Updated Clickhouse to version 23.11.*
+- \[Compose, Helm\] Updated Clickhouse to version 23.11.\*
   (<https://github.com/opencv/cvat/pull/7268>)
 
 - Job queues are now stored in a dedicated Redis instance
@@ -2575,6 +2647,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/opencv/cvat/pull/7336>)
 
 <a id='changelog-2.9.2'></a>
+
 ## \[2.9.2\] - 2023-12-11
 
 ### Added
@@ -2639,11 +2712,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/opencv/cvat/pull/7243>, <https://github.com/opencv/cvat/pull/7251>)
 
 <a id='changelog-2.9.1'></a>
+
 ## \[2.9.1\] - 2023-11-23
 
 This release has changes only in the Enterprise version.
 
 <a id='changelog-2.9.0'></a>
+
 ## \[2.9.0\] - 2023-11-23
 
 ### Added
@@ -2722,6 +2797,7 @@ This release has changes only in the Enterprise version.
   (<https://github.com/opencv/cvat/pull/7168>)
 
 <a id='changelog-2.8.2'></a>
+
 ## \[2.8.2\] - 2023-11-06
 
 ### Fixed
@@ -2730,6 +2806,7 @@ This release has changes only in the Enterprise version.
   (<https://github.com/opencv/cvat/pull/7101>)
 
 <a id='changelog-2.8.1'></a>
+
 ## \[2.8.1\] - 2023-11-03
 
 ### Added
