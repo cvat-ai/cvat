@@ -11,7 +11,7 @@ import {
     QualityConflict, FramesMetaData, RQStatus, Event, Invitation, SerializedAPISchema,
     Request, JobValidationLayout, QualitySettings, TaskValidationLayout, ObjectState,
     ConsensusSettings, AboutData, ShapeType, ObjectType,
-    Membership,
+    Membership, AnnotationFormats,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
@@ -210,7 +210,7 @@ export interface ConsensusState {
 }
 
 export interface FormatsState {
-    annotationFormats: any;
+    annotationFormats: AnnotationFormats | null;
     fetching: boolean;
     initialized: boolean;
 }
