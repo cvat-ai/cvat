@@ -91,7 +91,6 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django_rq",
-    "compressor",
     "django_sendfile",
     "dj_rest_auth",
     "dj_rest_auth.registration",
@@ -207,12 +206,6 @@ MIDDLEWARE = [
 ]
 
 UI_URL = ""
-
-STATICFILES_FINDERS = [
-    "django.contrib.staticfiles.finders.FileSystemFinder",
-    "django.contrib.staticfiles.finders.AppDirectoriesFinder",
-    "compressor.finders.CompressorFinder",
-]
 
 ROOT_URLCONF = "cvat.urls"
 
@@ -402,15 +395,6 @@ PERIODIC_RQ_JOBS = [
         "cron_string": "0 0 * * 0",
     },
 ]
-
-# JavaScript and CSS compression
-# https://django-compressor.readthedocs.io
-
-COMPRESS_CSS_FILTERS = [
-    "compressor.filters.css_default.CssAbsoluteFilter",
-    "compressor.filters.cssmin.rCSSMinFilter",
-]
-COMPRESS_JS_FILTERS = []  # No compression for js files (template literals were compressed bad)
 
 # Password validation
 # https://docs.djangoproject.com/en/2.0/ref/settings/#auth-password-validators

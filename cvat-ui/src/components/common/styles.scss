@@ -47,6 +47,10 @@
 
 .cvat-table-header {
     font-size: $grid-unit-size * 2;
+
+    .anticon {
+        margin-left: $grid-unit-size;
+    }
 }
 
 .cvat-table-columns-settings-menu {

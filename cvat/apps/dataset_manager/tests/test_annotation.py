@@ -1,11 +1,13 @@
 # Copyright (C) 2020-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
+from unittest import mock
 
-from unittest import TestCase
+from django.test import TestCase
 
+from cvat.apps.dataset_manager import task as task_module
 from cvat.apps.dataset_manager.annotation import AnnotationIR, TrackManager
-from cvat.apps.engine.models import DimensionType
+from cvat.apps.engine import models
 
 
 class TrackManagerTest(TestCase):
@@ -448,7 +450,7 @@ class TrackManagerTest(TestCase):
         ]
 
         interpolated_shapes = TrackManager.get_interpolated_shapes(
-            track, 0, end_frame, DimensionType.DIM_2D, deleted_frames=deleted_frames
+            track, 0, end_frame, models.DimensionType.DIM_2D, deleted_frames=deleted_frames
         )
         self.assertEqual(expected_shapes, interpolated_shapes)
 
@@ -547,7 +549,7 @@ class TrackManagerTest(TestCase):
 
         for included_frames in [None, [1, 3]]:
             interpolated_shapes = TrackManager.get_interpolated_shapes(
-                track, 0, end_frame, DimensionType.DIM_2D, included_frames=included_frames
+                track, 0, end_frame, models.DimensionType.DIM_2D, included_frames=included_frames
             )
             expected_shapes = [
                 shape
@@ -625,7 +627,7 @@ class TrackManagerTest(TestCase):
             track,
             0,
             end_frame,
-            DimensionType.DIM_2D,
+            models.DimensionType.DIM_2D,
             included_frames=included_frames,
             deleted_frames=deleted_frames,
         )
@@ -679,6 +681,67 @@ class AnnotationIRTest(TestCase):
                 }
             ],
         }
-        annotation = AnnotationIR(dimension=DimensionType.DIM_2D, data=data)
+        annotation = AnnotationIR(dimension=models.DimensionType.DIM_2D, data=data)
         sliced_annotation = annotation.slice(0, 1)
         self.assertEqual(sliced_annotation.data["tracks"][0]["shapes"], track_shapes[0:2])
+
+
+class TestTaskAnnotation(TestCase):
+    def test_reads_ordered_jobs(self):
+        user = models.User.objects.create_superuser(username="admin", email="", password="admin")
+
+        db_data = models.Data.objects.create(size=31, stop_frame=30, image_quality=50)
+
+        data = {
+            "name": "my task",
+            "owner": user,
+            "overlap": 1,
+            "segment_size": 11,
+        }
+        db_task = models.Task.objects.create(data=db_data, **data)
+
+        # We assume that normally segments and annotation jobs
+        # are created in the ascending order for start_frame,
+        # so their ids correspond to this order. The DB, however,
+        # can return them in an arbitrary order, if not specified explicitly.
+        # This test tries to reproduce this by specifying job ids.
+        # https://github.com/cvat-ai/cvat/issues/9860
+
+        models.Job.objects.create(
+            segment=models.Segment.objects.create(task=db_task, start_frame=0, stop_frame=10),
+            type=models.JobType.ANNOTATION,
+            id=456789,
+        )
+        models.Job.objects.create(
+            segment=models.Segment.objects.create(task=db_task, start_frame=10, stop_frame=20),
+            type=models.JobType.ANNOTATION,
+            id=123456,
+        )
+        models.Job.objects.create(
+            segment=models.Segment.objects.create(task=db_task, start_frame=20, stop_frame=30),
+            type=models.JobType.ANNOTATION,
+            id=345678,
+        )
+
+        # ensure that the jobs are not ordered if the order is not specified
+        # if they are ordered, the test is not really testing anything anymore
+        unordered_ids = list(
+            models.Job.objects.filter(segment__task_id=db_task.id).values_list("id", flat=True)
+        )
+        assert sorted(unordered_ids) != unordered_ids
+
+        class DummyJobAnnotation(task_module.JobAnnotation):
+            called_ids = []
+
+            def __init__(self, job_id, db_job=None):
+                self.called_ids.append(job_id)
+                self.ir_data = AnnotationIR(models.DimensionType.DIM_2D)
+
+            def init_from_db(self, *, streaming: bool = False):
+                pass
+
+        with mock.patch.object(task_module, "JobAnnotation", DummyJobAnnotation):
+            ta = task_module.TaskAnnotation(db_task.id)
+            ta.init_from_db()
+
+        assert DummyJobAnnotation.called_ids == sorted(unordered_ids)

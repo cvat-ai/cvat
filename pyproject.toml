@@ -19,8 +19,6 @@ extend-exclude = """
     |engine/(
         admin.py
         |backup.py
-        |cloud_provider.py
-        |media_extractors.py
         |mixins.py
         |models.py
         |permissions.py
