@@ -98,12 +98,6 @@ const createDummyAWSBucket = {
     secret_key: 'minio_secret_key',
     key: 'minio_access_key',
     specific_attributes: `endpoint_url=${Cypress.config('minioUrl')}`,
-    /*
-    displayName: 'Demo bucket',
-        resource: 'public',
-        manifest: 'images_with_manifest/manifest.jsonl',
-        endpointUrl: Cypress.config('minioUrl'),
-    */
 };
 
 module.exports = {
