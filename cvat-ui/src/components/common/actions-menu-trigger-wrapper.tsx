@@ -8,7 +8,6 @@ interface Props {
     triggerElement: JSX.Element;
     dropdownTrigger?: ('click' | 'hover' | 'contextMenu')[];
     onWrapperContextMenu: () => void;
-    fallbackElement?: JSX.Element;
 }
 
 export default function ActionsMenuTriggerWrapper(props: Readonly<Props>): JSX.Element {
@@ -16,28 +15,23 @@ export default function ActionsMenuTriggerWrapper(props: Readonly<Props>): JSX.E
         triggerElement,
         dropdownTrigger,
         onWrapperContextMenu,
-        fallbackElement,
+        ...rest
     } = props;
 
     const onContextMenu = useCallback(() => {
         onWrapperContextMenu();
     }, [onWrapperContextMenu]);
 
-    if (!dropdownTrigger || dropdownTrigger.includes('click')) {
-        if (triggerElement) {
-            return (
-                <div
-                    className='cvat-actions-menu-trigger-wrapper'
-                    onContextMenu={onContextMenu}
-                >
-                    {triggerElement}
-                </div>
-            );
-        }
-        if (fallbackElement) {
-            return fallbackElement;
-        }
-    }
+    const renderWrapper = !dropdownTrigger || dropdownTrigger.includes('click');
 
-    return triggerElement || fallbackElement || <div />;
+    return (
+        <div
+            {...rest}
+            className='cvat-actions-menu-trigger-wrapper'
+            onContextMenu={renderWrapper ? onContextMenu : (rest as React.DOMAttributes<HTMLDivElement>).onContextMenu}
+            style={{ display: renderWrapper ? 'flex' : 'contents' }}
+        >
+            {triggerElement}
+        </div>
+    );
 }
