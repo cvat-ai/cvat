@@ -1754,7 +1754,7 @@ class CVATDataExtractorMixin:
         }
 
 
-class CvatDataExtractorBase(CVATDataExtractorMixin):
+class CvatDataExtractor(dm.DatasetBase, CVATDataExtractorMixin):
     def __init__(
         self,
         instance_data: CommonData | ProjectData,
@@ -1796,6 +1796,22 @@ class CvatDataExtractorBase(CVATDataExtractorMixin):
             for task in db_tasks
             for is_video in [task.mode == 'interpolation']
         }
+
+        if isinstance(instance_data, ProjectData):
+            subsets = [
+                get_defaulted_subset(subset, self._instance_data.subsets)
+                for subset in self._instance_data.subsets
+            ]
+        else:
+            subsets = [self._instance_meta['subset']]
+
+        dm.DatasetBase.__init__(
+            self,
+            length=len(self._instance_data),
+            subsets=subsets,
+            media_type=dm.Image if self._dimension == DimensionType.DIM_2D else dm.PointCloud,
+        )
+        self._categories = self.load_categories(self._instance_meta['labels'])
 
     def _process_one_frame_data(self, frame_data: CommonData.Frame | ProjectData.Frame) -> dm.DatasetItem:
         dm_media_args = {
@@ -1859,50 +1875,12 @@ class CvatDataExtractorBase(CVATDataExtractorMixin):
         return self.convert_annotations(cvat_frame_anno,
             label_attrs, map_label, self._format_type, self._dimension)
 
-
-class CvatTaskOrJobDataExtractor(dm.SubsetBase, CvatDataExtractorBase):
-    def __init__(self, *args, **kwargs):
-        CvatDataExtractorBase.__init__(self, *args, **kwargs)
-        dm.SubsetBase.__init__(
-            self,
-            media_type=dm.Image if self._dimension == DimensionType.DIM_2D else dm.PointCloud,
-            subset=self._instance_meta['subset'],
-        )
-        self._categories = self.load_categories(self._instance_meta['labels'])
-
     def __iter__(self):
         for frame_data in self._instance_data.group_by_frame(include_empty=True):
             yield self._process_one_frame_data(frame_data)
 
     def __len__(self):
         return len(self._instance_data)
-
-    def categories(self):
-        return self._categories
-
-    @property
-    def is_stream(self) -> bool:
-        return True
-
-
-class CVATProjectDataExtractor(dm.DatasetBase, CvatDataExtractorBase):
-    def __init__(self, *args, **kwargs):
-        CvatDataExtractorBase.__init__(self, *args, **kwargs)
-
-        dm.DatasetBase.__init__(
-            self,
-            length=len(self._instance_data),
-            subsets=[
-                get_defaulted_subset(subset, self._instance_data.subsets)
-                for subset in self._instance_data.subsets
-            ],
-            media_type=dm.Image if self._dimension == DimensionType.DIM_2D else dm.PointCloud,
-        )
-        self._categories = self.load_categories(self._instance_meta['labels'])
-
-    def __iter__(self):
-        for frame_data in self._instance_data.group_by_frame(include_empty=True):
-            yield self._process_one_frame_data(frame_data)
 
     def categories(self):
         return self._categories
@@ -1924,10 +1902,7 @@ def GetCVATDataExtractor(
         'format_type': format_type,
         'dimension': dimension,
     })
-    if isinstance(instance_data, ProjectData):
-        return CVATProjectDataExtractor(instance_data, **kwargs)
-    else:
-        return CvatTaskOrJobDataExtractor(instance_data, **kwargs)
+    return CvatDataExtractor(instance_data, **kwargs)
 
 
 class CvatImportError(Exception):

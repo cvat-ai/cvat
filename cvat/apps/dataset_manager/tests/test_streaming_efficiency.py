@@ -17,8 +17,7 @@ from rq.job import Job as RQJob
 from cvat.apps.dataset_manager.annotation import AnnotationIR
 from cvat.apps.dataset_manager.bindings import (
     CommonData,
-    CVATProjectDataExtractor,
-    CvatTaskOrJobDataExtractor,
+    CvatDataExtractor,
     JobData,
     ProjectData,
     TaskData,
@@ -51,8 +50,8 @@ class TestExtractors(TestCase):
         return mock
 
     @staticmethod
-    def _make_counting_data_extractor_cls(extractor_cls):
-        class CountingDataExtractor(extractor_cls):
+    def _make_counting_data_extractor_cls():
+        class CountingDataExtractor(CvatDataExtractor):
             def __init__(self, *args, **kwargs):
                 self.item_anns_processed = 0
                 super().__init__(*args, **kwargs)
@@ -209,12 +208,7 @@ class TestExtractors(TestCase):
             else:
                 item_ids = {("image", "foo"), ("another_image", "foo")}
             with self.subTest(data_cls=data_cls.__name__):
-                extractor_cls = (
-                    CVATProjectDataExtractor
-                    if data_cls is ProjectData
-                    else CvatTaskOrJobDataExtractor
-                )
-                extractor_cls = self._make_counting_data_extractor_cls(extractor_cls)
+                extractor_cls = self._make_counting_data_extractor_cls()
 
                 if data_cls in [JobData, TaskData]:
                     instance_data, shape_generator_was_iterated = self._make_mock_job_data(item_ids)
