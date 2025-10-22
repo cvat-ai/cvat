@@ -1005,6 +1005,7 @@ class Migration(migrations.Migration):
         migrations.RunPython(
             code=copy_annotations_forward,
             reverse_code=copy_annotations_backward,
+            elidable=True,
         ),
         migrations.RemoveField(
             model_name="labeledbox",

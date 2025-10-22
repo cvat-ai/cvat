@@ -33,6 +33,7 @@ class Migration(migrations.Migration):
         migrations.RunPython(
             code=set_segment_size,
             reverse_code=django.db.migrations.operations.special.RunPython.noop,
+            elidable=True,
         ),
         migrations.AlterField(
             model_name="task",

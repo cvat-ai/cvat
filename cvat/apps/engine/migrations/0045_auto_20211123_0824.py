@@ -4,8 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-    replaces = [("engine", "0044_auto_20211123_0824")]
-
     dependencies = [
         ("engine", "0044_auto_20211115_0858"),
     ]

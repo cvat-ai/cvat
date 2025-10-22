@@ -2,15 +2,22 @@
 //
 // SPDX-License-Identifier: MIT
 
-export function toClipboard(text: string): void {
-    const fallback = (): void => {
+export async function toClipboard(text: string): Promise<boolean> {
+    const fallback = (): boolean => {
         // eslint-disable-next-line
         window.prompt('Browser Clipboard API not allowed, please copy manually', text);
+        return false;
     };
 
     if (window.isSecureContext) {
-        window.navigator.clipboard.writeText(text).catch(fallback);
+        try {
+            await window.navigator.clipboard.writeText(text);
+            return true;
+        } catch {
+            fallback();
+            return false;
+        }
     } else {
-        fallback();
+        return fallback();
     }
 }
