@@ -245,43 +245,8 @@ class IMediaReader(ABC):
         pass
 
     @abstractmethod
-    def get_preview(self, frame):
-        pass
-
-    @abstractmethod
     def get_progress(self, pos):
         pass
-
-    @staticmethod
-    def _get_preview(obj):
-        PREVIEW_SIZE = (256, 256)
-
-        if isinstance(obj, io.IOBase):
-            preview = Image.open(obj)
-        else:
-            preview = obj
-        preview = ImageOps.exif_transpose(preview)
-        # TODO - Check if the other formats work. I'm only interested in I;16 for now. Sorry @:-|
-        # Summary:
-        # Images in the Format I;16 definitely don't work. Most likely I;16B/L/N won't work as well.
-        # Simple Conversion from I;16 to I/RGB/L doesn't work as well.
-        #   Including any Intermediate Conversions doesn't work either. (eg. I;16 to I to L)
-        # Seems like an internal Bug of PIL
-        #     See Issue for further details: https://github.com/python-pillow/Pillow/issues/3011
-        #     Issue was opened 2018, so don't expect any changes soon and work with manual conversions.
-        mode: str = preview.mode
-        if mode == "I;16":
-            # fmt: off
-            preview = np.array(preview, dtype=np.uint16) # 'I;16' := Unsigned Integer 16, Grayscale
-            image = image - image.min()                  # In case the used range lies in [a, 2^16] with a > 0
-            preview = preview / preview.max() * 255      # Downscale into real numbers of range [0, 255]
-            preview = preview.astype(np.uint8)           # Floor to integers of range [0, 255]
-            preview = Image.fromarray(preview, mode="L") # 'L' := Unsigned Integer 8, Grayscale
-            preview = ImageOps.equalize(preview)         # The Images need equalization. High resolution with 16-bit but only small range that actually contains information
-            # fmt: on
-        preview.thumbnail(PREVIEW_SIZE)
-
-        return preview
 
     @abstractmethod
     def get_image_size(self, i):
@@ -358,13 +323,6 @@ class ImageListReader(IMediaReader):
 
     def get_progress(self, pos):
         return (pos + 1) / (len(self.frame_range) or 1)
-
-    def get_preview(self, frame):
-        if self._dimension == DimensionType.DIM_3D:
-            fp = open(os.path.join(os.path.dirname(__file__), "assets/3d_preview.jpeg"), "rb")
-        else:
-            fp = open(self._source_path[frame], "rb")
-        return self._get_preview(fp)
 
     def get_image_size(self, i):
         if self._dimension == DimensionType.DIM_3D:
@@ -532,15 +490,6 @@ class ZipReader(ImageListReader):
 
     def __del__(self):
         self._zip_source.close()
-
-    def get_preview(self, frame):
-        if self._dimension == DimensionType.DIM_3D:
-            # TODO
-            fp = open(os.path.join(os.path.dirname(__file__), "assets/3d_preview.jpeg"), "rb")
-            return self._get_preview(fp)
-
-        io_image = io.BytesIO(self._zip_source.read(self._source_path[frame]))
-        return self._get_preview(io_image)
 
     def get_image_size(self, i):
         if self._dimension == DimensionType.DIM_3D:
@@ -760,17 +709,6 @@ class VideoReader(IMediaReader):
                     duration_sec = 60 * 60 * float(_hour) + 60 * float(_min) + float(_sec)
                     duration = duration_sec * tb_denominator
             return duration
-
-    def get_preview(self, frame):
-        with self._read_av_container() as container:
-            stream = container.streams.video[0]
-
-            tb_denominator = stream.time_base.denominator
-            needed_time = int((frame / stream.guessed_rate) * tb_denominator)
-            container.seek(offset=needed_time, stream=stream)
-
-            with closing(self.iterate_frames(video_stream=stream)) as frame_iter:
-                return self._get_preview(next(frame_iter))
 
     def get_image_size(self, i):
         if self._frame_size is not None:
