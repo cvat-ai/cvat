@@ -159,6 +159,11 @@
 
     > .ant-slider-mark {
         z-index: 2;
+        top: -12px;
+    }
+
+    > .ant-slider-step > .ant-slider-dot {
+        z-index: 2;
     }
 }
 
