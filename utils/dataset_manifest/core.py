@@ -14,7 +14,7 @@ from inspect import isgenerator
 from io import StringIO
 from itertools import islice
 from json.decoder import JSONDecodeError
-from typing import Any, Callable, Optional, Union, List, Tuple
+from typing import Any, Callable, Optional, Union
 
 import av
 from PIL import Image
@@ -120,7 +120,7 @@ class VideoStreamReader:
             reading_v_stream = self._get_video_stream(reading_container)
             checking_v_stream = self._get_video_stream(checking_container)
             chapters = self._get_chapters(reading_container)
-            index_pts: List[Tuple[int, int]] = []
+            index_pts: list[tuple[int, int]] = []
             prev_pts: Optional[int] = None
             prev_dts: Optional[int] = None
             index, key_frame_count = 0, 0
