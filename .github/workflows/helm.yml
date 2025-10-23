@@ -4,7 +4,6 @@ on: pull_request
 jobs:
   helm:
     runs-on: ubuntu-latest
-    needs: docker-images
     steps:
       - uses: actions/checkout@v4
        # v4.3.1
@@ -22,7 +21,7 @@ jobs:
       - name: Package Helm chart
         working-directory: helm-chart
         run: |
-          helm package . --version ${{ github.event.release.tag_name }} --dependency-update --destination ../
+          helm package . --version "v2.47.0" --dependency-update --destination ../
 
       - name: Push Helm chart to Docker Hub
         run: |
