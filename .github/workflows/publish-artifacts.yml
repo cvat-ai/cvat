@@ -66,9 +66,8 @@ jobs:
         with:
           version: v3.14.4
        # v3.6.0
-      # 5e57cd118135c172c3672efd75eb46360885c0ef
       - name: Log in to Docker Hub
-        uses: docker/login-action@v3.6.0
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef
         with:
           username: ${{ secrets.DOCKERHUB_RW_USERNAME }}
           password: ${{ secrets.DOCKERHUB_RW_TOKEN }}
