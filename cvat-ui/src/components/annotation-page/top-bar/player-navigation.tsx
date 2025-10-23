@@ -176,9 +176,9 @@ function PlayerNavigation(props: Props): JSX.Element {
     };
 
     const marks: Record<number, { style: React.CSSProperties; label: React.ReactNode } | undefined> = {};
-    chapters?.forEach((chapter) => {
+    for (const chapter of chapters ?? []) {
         marks[chapter.start] = formatChapterMarks(chapter.metadata.title);
-    });
+    }
 
     const deleteFrameIcon = !frameDeleted ? (
         <CVATTooltip title={`Delete the frame ${deleteFrameShortcut}`}>

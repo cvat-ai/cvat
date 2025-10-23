@@ -539,7 +539,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         }
     };
 
-    private searchChapters = (direction: 'forward' | 'backward'): void => {
+    private readonly searchChapters = (direction: 'forward' | 'backward'): void => {
         const {
             frameNumber, jobInstance, searchChapters,
         } = this.props;

@@ -48,7 +48,6 @@ interface Props {
     onFirstFrame(): void;
     onLastFrame(): void;
     onSearchAnnotations(direction: 'forward' | 'backward'): void;
-    onSearchChapters(direction: 'forward' | 'backward'): void;
     setNavigationType(navigationType: NavigationType): void;
 }
 
@@ -119,7 +118,6 @@ function PlayerButtons(props: Props): JSX.Element {
         onLastFrame,
         setNavigationType,
         onSearchAnnotations,
-        onSearchChapters,
     } = props;
 
     const handlers: Partial<Record<keyof typeof componentShortcuts, ((event?: KeyboardEvent) => void)>> = {
