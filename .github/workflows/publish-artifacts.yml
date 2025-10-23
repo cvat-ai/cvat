@@ -65,9 +65,10 @@ jobs:
         uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4
         with:
           version: v3.14.4
-       # v3
+       # v3.6.0
+      # 5e57cd118135c172c3672efd75eb46360885c0ef
       - name: Log in to Docker Hub
-        uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d
+        uses: docker/login-action@v3.6.0
         with:
           username: ${{ secrets.DOCKERHUB_RW_USERNAME }}
           password: ${{ secrets.DOCKERHUB_RW_TOKEN }}
@@ -75,9 +76,8 @@ jobs:
       - name: Package Helm chart
         working-directory: helm-chart
         run: |
-          helm dependency update && helm package . --version ${{ github.event.release.tag_name }} && mv cvat-*.tgz ../
-          echo "CHART_FILE=$(ls ../cvat-*.tgz | xargs basename)" >> $GITHUB_ENV
+          helm package . --version ${{ github.event.release.tag_name }} --dependency-update --destination ../
 
       - name: Push Helm chart to Docker Hub
         run: |
-          helm push ${{ env.CHART_FILE }} oci://registry-1.docker.io/cvat
+          helm push cvat-*.tgz oci://registry-1.docker.io/cvat
