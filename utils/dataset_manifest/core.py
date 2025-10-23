@@ -648,7 +648,7 @@ class VideoManifestManager(_ManifestManager):
 
     @property
     def chapters(self):
-        return self["properties"]["chapters"]
+        return self["properties"].get("chapters", [])
 
     def get_subset(self, subset_names):
         raise NotImplementedError()
