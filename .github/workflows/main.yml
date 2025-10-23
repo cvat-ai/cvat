@@ -25,31 +25,6 @@ jobs:
       !startsWith(github.event.pull_request.title, '[WIP]') &&
       !startsWith(github.event.pull_request.title, '[Dependent]')
     uses: ./.github/workflows/search-cache.yml
-  helm:
-    runs-on: ubuntu-latest
-    needs: docker-images
-    steps:
-      - uses: actions/checkout@v4
-       # v4.3.1
-      - name: Set up Helm
-        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4
-        with:
-          version: v3.14.4
-       # v3.6.0
-      - name: Log in to Docker Hub
-        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Package Helm chart
-        working-directory: helm-chart
-        run: |
-          helm package . --version ${{ github.event.release.tag_name }} --dependency-update --destination ../
-
-      - name: Push Helm chart to Docker Hub
-        run: |
-          helm push cvat-*.tgz oci://registry-1.docker.io/cvat
   build:
     needs: search_cache
     runs-on: ubuntu-latest
