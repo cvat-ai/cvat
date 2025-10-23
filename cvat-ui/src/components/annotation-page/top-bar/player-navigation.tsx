@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, {
-    useState, useEffect, useCallback, CSSProperties, ReactNode,
+    useState, useEffect, useCallback, CSSProperties,
 } from 'react';
 
 import { Row, Col } from 'antd/lib/grid';
@@ -33,7 +33,7 @@ interface Props {
     playing: boolean;
     ranges: string;
     frameNumber: number;
-    chapters: Chapter[] | null | undefined;
+    chapters: Chapter[] | null;
     frameFilename: string;
     frameDeleted: boolean;
     deleteFrameShortcut: string;

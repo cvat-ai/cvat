@@ -84,57 +84,32 @@ interface FramesMetaDataUpdatedData {
 }
 
 export class ChapterMetaData {
-    public title: string;
+    readonly #title: string;
 
     constructor(initialData: SerializedChapterMetaData) {
-        const data = {
-            title: undefined,
-        };
+        this.#title = initialData.title;
+    }
 
-        for (const key of Object.keys(data)) {
-            if (Object.prototype.hasOwnProperty.call(initialData, key)) {
-                data[key] = initialData[key];
-            }
-        }
-
-        Object.defineProperties(
-            this,
-            Object.freeze({
-                title: {
-                    get: () => data.title,
-                },
-            }),
-        );
+    get title(): string {
+        return this.#title;
     }
 }
 
 export class Fraction {
-    public numerator: number;
-    public denominator: number;
+    readonly #numerator: number;
+    readonly #denominator: number;
 
     constructor(initialData: SerializedFraction) {
-        const data = {
-            numerator: undefined,
-            denominator: undefined,
-        };
+        this.#numerator = initialData.numerator;
+        this.#denominator = initialData.denominator;
+    }
 
-        for (const key of Object.keys(data)) {
-            if (Object.prototype.hasOwnProperty.call(initialData, key)) {
-                data[key] = initialData[key];
-            }
-        }
+    get numerator(): number {
+        return this.#numerator;
+    }
 
-        Object.defineProperties(
-            this,
-            Object.freeze({
-                numerator: {
-                    get: () => data.numerator,
-                },
-                denominator: {
-                    get: () => data.denominator,
-                },
-            }),
-        );
+    get denominator(): number {
+        return this.#denominator;
     }
 }
 
@@ -1039,9 +1014,10 @@ export async function patchMeta(id: number, meta?: FramesMetaData, session: 'job
 }
 
 export async function findFrame(
-    jobID: number, frameFrom: number, frameTo: number, filters: { offset?: number, notDeleted: boolean, chapterMark: boolean },
+    jobID: number, frameFrom: number, frameTo: number, filters: { offset?: number, notDeleted: boolean, chapterMark?: boolean },
 ): Promise<number | null> {
     const offset = filters.offset || 1;
+    const chapterMark = filters.chapterMark || false;
     const meta = await getFramesMeta('job', jobID);
 
     const sign = Math.sign(frameTo - frameFrom);
@@ -1062,7 +1038,7 @@ export async function findFrame(
             return !(frame in meta.deletedFrames);
         }
 
-        if (filters.chapterMark) {
+        if (chapterMark) {
             return meta.chapters.some((chapter) => chapter.start === frame);
         }
 

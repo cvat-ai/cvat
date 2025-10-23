@@ -20,7 +20,7 @@ import RightGroup from './right-group';
 interface Props {
     playing: boolean;
     saving: boolean;
-    chapters: Chapter[] | undefined | null;
+    chapters: Chapter[] | null;
     frameNumber: number;
     frameFilename: string;
     frameDeleted: boolean;

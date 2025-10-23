@@ -41,7 +41,7 @@ import { toClipboard } from 'utils/to-clipboard';
 import { Chapter } from 'cvat-core/src/frames';
 
 interface StateToProps {
-    chapters: Chapter[] | null | undefined;
+    chapters: Chapter[] | null;
     jobInstance: Job;
     frameIsDeleted: boolean;
     frameNumber: number;
@@ -146,7 +146,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         );
     }
 
-    const chapters = meta?.chapters;
+    const chapters = meta?.chapters ?? null;
 
     return {
         chapters,
