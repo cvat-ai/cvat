@@ -1813,7 +1813,7 @@ class CvatDataExtractor(dm.DatasetBase, CVATDataExtractorMixin):
         )
         self._categories = self.load_categories(self._instance_meta['labels'])
 
-    def _process_one_frame_data(self, frame_data: CommonData.Frame | ProjectData.Frame) -> dm.DatasetItem:
+    def _process_one_frame_data(self, frame_data: CommonData.Frame) -> dm.DatasetItem:
         dm_media_args = {
             'path': frame_data.name + self._ext_per_task[frame_data.task_id],
             'ext': self._ext_per_task[frame_data.task_id] or frame_data.name.rsplit(osp.extsep, maxsplit=1)[1],
@@ -1863,7 +1863,7 @@ class CvatDataExtractor(dm.DatasetBase, CVATDataExtractorMixin):
 
         return dm_item
 
-    def _read_cvat_anno(self, cvat_frame_anno: CommonData.Frame | ProjectData.Frame, labels: list):
+    def _read_cvat_anno(self, cvat_frame_anno: CommonData.Frame, labels: list):
         categories = self.categories()
         label_cat = categories[dm.AnnotationType.label]
         def map_label(name, parent=''): return label_cat.find(name, parent)[0]
