@@ -16,7 +16,7 @@ import urllib3
 
 from cvat_sdk.api_client.api_client import Endpoint
 from cvat_sdk.core.exceptions import CvatSdkException
-from cvat_sdk.core.helpers import expect_status
+from cvat_sdk.core.helpers import expect_status, make_request_headers
 from cvat_sdk.core.progress import NullProgressReporter, ProgressReporter
 from cvat_sdk.core.utils import atomic_writer
 
@@ -100,8 +100,8 @@ class Downloader:
 
         response = self._client.api_client.rest_client.GET(
             url,
+            headers=make_request_headers(self._client.api_client),
             _request_timeout=timeout,
-            headers=self._client.api_client.get_common_headers(),
             _parse_response=False,
         )
         with closing(response):
@@ -157,7 +157,7 @@ class Downloader:
         response = client.api_client.rest_client.request(
             method=endpoint.settings["http_method"],
             url=url,
-            headers=client.api_client.get_common_headers(),
+            headers=make_request_headers(self._client.api_client),
         )
 
         client.logger.debug("STATUS %s", response.status)

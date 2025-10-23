@@ -546,7 +546,7 @@ class Migration(migrations.Migration):
                 to="engine.Data",
             ),
         ),
-        migrations.RunPython(code=create_data_objects),
+        migrations.RunPython(code=create_data_objects, elidable=True),
         migrations.RemoveField(
             model_name="image",
             name="task",
