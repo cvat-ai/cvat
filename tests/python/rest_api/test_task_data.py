@@ -11,7 +11,6 @@ import zipfile
 from collections import Counter
 from collections.abc import Iterable, Sequence
 from copy import deepcopy
-from fractions import Fraction
 from functools import partial
 from http import HTTPStatus
 from itertools import chain, groupby, product
