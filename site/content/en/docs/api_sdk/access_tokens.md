@@ -7,30 +7,31 @@ description: 'Use access tokens for enhanced security when integrating with CVAT
 
 ## Overview
 
-When interacting with API, there are several authentication options available in CVAT:
+When interacting with the API, there are several authentication options available in CVAT:
 - Basic authentication, with a username and a password
 - Legacy token authentication, with an API key (deprecated)
 - Session authentication, with a session ID and a CSRF token
 - Personal Access Token (PAT) authentication, with an access token value
 
-Basic authentication requires a username and a password pair.
-It's recommended to use other authentication options instead for better security.
+**Personal Access Token (PAT)** is an authentication option dedicated to CLI, SDK and Server API
+clients. To authenticate using this method, you need an access token that can be created and
+configured in the user settings section in the UI. It is the recommended authentication option
+for CVAT API interaction and integrations.
 
-Legacy token authentication (deprecated) requires an API key, which can be obtained
-after logging in via the `/api/auth/login` endpoint using the basic authentication credentials.
+Compared to the other authentication options, PATs provide a more convenient, controlled,
+and secure way to authenticate requests from the CLI, scripts, and 3rd-party applications.
+They improve the security of your account by allowing you to use separate credentials
+for each application and by removing the need to use the password. Tokens can be created and
+revoked at any time by a user request. The security is further improved
+by configuring the allowed operations and setting expiration dates for each token.
 
-Session authentication requires a Session ID and a CSRF token than can be obtained after
-logging in using the configured authentication method. This option is primarily supposed
-for interactive work in the web browser and supports standard authorization protocols,
-such as SSO.
-
-The methods described above can be inconvenient, insecure, or unavailable in
-SDK- or CLI-based workflows, scripts and 3rd-party application integrations.
-To address such use cases, there's an option to use Personal Access Token (PAT) authentication.
-
-**Personal Access Token (PAT)** is an authentication option dedicated for CLI, SDK and Server API
-users. It requires a token that can be configured in the user settings section in the UI.
-It is the recommended authentication option for CVAT API interaction and integrations.
+{{% alert title="Warning" color="warning" %}}
+Please take special care to store the tokens securely. While CVAT takes extra steps to improve
+the security of the tokens, their security is primarily the user’s responsibility.
+It’s recommended to configure each token to only allow the required operations and to have an
+expiration date. Avoid sharing your tokens with other people. If you feel a token might
+have leaked, [revoke the token](#how-to-revoke-personal-access-tokens) immediately.
+{{% /alert %}}
 
 ## How to manage Personal Access Tokens
 
@@ -38,24 +39,33 @@ It's possible to create, edit, and revoke tokens. The tokens can be created and 
 time by a user request.
 
 It's recommended to always specify the expiration date for tokens. Please note that unused tokens
-are automatically removed after some time period of inactivity (1 year by default).
+are automatically considered “stale” and removed after some time period
+of inactivity (1 year by default).
 
-> When using a self-hosted version, the staleness period can be configured
-> via the `ACCESS_TOKEN_STALE_PERIOD` setting.
+{{% alert title="Note" color="primary" %}}
+When using a self-hosted version, the staleness period can be configured
+via the `ACCESS_TOKEN_STALE_PERIOD` setting.
+{{% /alert %}}
 
-> When using a self-hosted version, the maximum number of tokens per user can be configured
-> via the `MAX_ACCESS_TOKENS_PER_USER` setting.
+{{% alert title="Note" color="primary" %}}
+When using a self-hosted version, the maximum number of tokens per user can be configured
+via the `MAX_ACCESS_TOKENS_PER_USER` setting.
+{{% /alert %}}
 
-> app.cvat.ai: users can have up to 50 Personal Access Tokens.
+{{% alert title="Note" color="primary" %}}
+The CVAT Online users can have up to 50 Personal Access Tokens.
+{{% /alert %}}
 
 ### Permissions
 
 It's possible to configure allowed operations for a token. Currently, there is an option to
-make a token Read-only or Read/Write capable. A Read-only token will only be allowed safe requests
+make a token read-only or read/write capable. A read-only token will only be allowed safe requests
 that do not modify the server state.
 
-> For security reasons, token-authenticated clients are not allowed to modify tokens
-> and user details, regardless of the configuration.
+{{% alert title="Warning" color="warning" %}}
+For security reasons, token-authenticated clients are not allowed to modify tokens
+and user details, regardless of the configuration.
+{{% /alert %}}
 
 ### How to create a Personal Access Token
 
@@ -75,7 +85,7 @@ that do not modify the server state.
 
   ![Access Token edit dialog](/images/access_token_new_dialog.png)
 
-5. You will be shown the private key of the new token. Make sure to securely safe this value,
+5. You will be shown the new token. Make sure to **securely save** this value,
    it will not be available in CVAT after the dialog window is closed.
 
   ![Access Token private key dialog](/images/access_token_private_key.png)
@@ -86,7 +96,7 @@ The new token is ready for use.
 
 ### How to revoke Personal Access Tokens
 
-Revocation allows you to disallow further uses for a token. Once a token is revoked, it cannot
+Revocation allows you to prevent further uses of a token. Once a token is revoked, it cannot
 be restored.
 
 1. Open the user settings page
@@ -106,3 +116,4 @@ be restored.
   ![Access Token revoke dialog](/images/access_token_revoke_dialog.png)
 
 The token will not be available for use anymore.
+
