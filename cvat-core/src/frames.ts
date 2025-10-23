@@ -116,9 +116,8 @@ export class Fraction {
 export class Chapter {
     public id: number;
     public start: number;
-    public end: number;
+    public stop: number;
     public metadata: ChapterMetaData;
-    public timeBase: Fraction;
 }
 
 export class FramesMetaData {

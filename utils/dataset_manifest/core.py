@@ -182,11 +182,12 @@ class VideoStreamReader:
                     i = self._find_closest_pts(pts_list, chapter["start"])
                     j = self._find_closest_pts(pts_list, chapter["end"])
                     start = index_pts[i][0]
-                    end = index_pts[j][0] - 1
+                    stop = index_pts[j][0] - 1
                     if chapter["end"] > index_pts[-1][1]:
-                        end = index_pts[j][0]
+                        stop = index_pts[j][0]
                     chapter["start"] = start
-                    chapter["end"] = end
+                    chapter["stop"] = stop
+                    del chapter["end"]
                     self._chapters.append(chapter)
 
 class DatasetImagesReader:

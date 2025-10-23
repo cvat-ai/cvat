@@ -2975,8 +2975,7 @@ class ChapterMetadataSerializer(serializers.Serializer):
 class ChapterSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     start = serializers.IntegerField()
-    end = serializers.IntegerField()
-    time_base = FractionSerializer(many=False)
+    stop = serializers.IntegerField()
     metadata = ChapterMetadataSerializer(many=False)
 
 class PluginsSerializer(serializers.Serializer):

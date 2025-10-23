@@ -52,7 +52,7 @@ class Chapter(TypedDict):
     id: int
     metadata: dict[str, str]
     start: int
-    end: int
+    stop: int
     time_base: Fraction
 
 class ORIENTATION(IntEnum):
