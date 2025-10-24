@@ -107,7 +107,7 @@ The new token is ready for use.
 
 3. Click the "Edit" button for the token.
 
-  ![Access Token revoke button](/images/access_token_edit_button.png)
+  ![Access Token edit button](/images/access_token_edit_button.png)
 
 4. The token editing page will be displayed. Here you can configure token name,
   permissions, and expiration date.
