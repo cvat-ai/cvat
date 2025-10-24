@@ -5,14 +5,18 @@
 
 /// <reference types="cypress" />
 
+import * as allure from 'allure-js-commons';
 import { taskName } from '../../support/const';
+import { AllureTag } from '../../support/const_allure';
 
 context('Settings "Player step"', () => {
+    allure.tags(AllureTag.HEAVY, AllureTag.SETTINGS);
     const caseId = '29';
     const countJumpStep = 3;
     let startFrame;
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 

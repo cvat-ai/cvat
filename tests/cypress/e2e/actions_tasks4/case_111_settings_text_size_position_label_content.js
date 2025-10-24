@@ -5,7 +5,11 @@
 
 /// <reference types="cypress" />
 
+import * as allure from 'allure-js-commons';
+import { AllureTag } from '../../support/const_allure';
+
 context('Settings. Text size/position. Text labels content.', () => {
+    allure.tags(AllureTag.HEAVY, AllureTag.SETTINGS);
     const caseId = '111';
     const taskName = 'Test text size/position task';
     const labelName = 'Test label';
