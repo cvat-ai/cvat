@@ -35,8 +35,9 @@ have leaked, [revoke the token](#how-to-revoke-personal-access-tokens) immediate
 
 ## How to manage Personal Access Tokens
 
-It's possible to create, edit, and revoke tokens. The tokens can be created and revoked at any
-time by a user request.
+It's possible to create, edit, and revoke tokens. The tokens can be created, edited, and revoked
+at any time by a user request. You can configure the name, expiration date, and permissions
+for each token.
 
 It's recommended to always specify the expiration date for tokens. Please note that unused tokens
 are automatically considered “stale” and removed after some time period
@@ -93,6 +94,28 @@ and user details, regardless of the configuration.
 6. Once the value is saved, close the dialog window.
 
 The new token is ready for use.
+
+### How to edit a Personal Access Token
+
+1. Open the user settings page
+
+  ![User profile menu item](/images/user_menu_profile_nav.png)
+
+2. Navigate to the "Security" section
+
+  ![User profile - security tab](/images/user_page_security_nav.png)
+
+3. Click the "Edit" button for the token.
+
+  ![Access Token revoke button](/images/access_token_edit_button.png)
+
+4. The token editing page will be displayed. Here you can configure token name,
+  permissions, and expiration date.
+
+  ![Access Token edit dialog](/images/access_token_edit_dialog.png)
+
+5. After the required changes are made, click the "Update" button to confirm the updates.
+
 
 ### How to revoke Personal Access Tokens
 
