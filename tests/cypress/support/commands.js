@@ -1555,8 +1555,10 @@ Cypress.Commands.add('verifyNotification', () => {
 });
 
 Cypress.Commands.add('goToCloudStoragesPage', () => {
+    cy.intercept('GET', '/api/cloudstorages?**').as('getCloudStorages');
     cy.get('a[value="cloudstorages"]').click();
     cy.url().should('include', '/cloudstorages');
+    cy.wait('@getCloudStorages');
 });
 
 Cypress.Commands.add('deleteCloudStorage', (displayName) => {
@@ -1566,7 +1568,7 @@ Cypress.Commands.add('deleteCloudStorage', (displayName) => {
         .within(() => {
             cy.contains('[role="menuitem"]', 'Delete').click();
         });
-    cy.get('.cvat-delete-cloud-storage-modal')
+    cy.get('.cvat-modal-confirm-delete-cloud-storage')
         .should('contain', `You are going to remove the cloudstorage "${displayName}"`)
         .within(() => {
             cy.contains('button', 'Delete').click();
