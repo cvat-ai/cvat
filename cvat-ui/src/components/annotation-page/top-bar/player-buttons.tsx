@@ -48,6 +48,7 @@ interface Props {
     onFirstFrame(): void;
     onLastFrame(): void;
     onSearchAnnotations(direction: 'forward' | 'backward'): void;
+    onSearchChapters(direction: 'forward' | 'backward'): void;
     setNavigationType(navigationType: NavigationType): void;
 }
 
@@ -88,6 +89,18 @@ const componentShortcuts = {
         sequences: ['left'],
         scope: ShortcutScope.ANNOTATION_PAGE,
     },
+    CHAPTER_BACKWARD: {
+        name: 'Chapter backward',
+        description: 'Go to the previous chapter',
+        sequences: ['x'],
+        scope: ShortcutScope.ANNOTATION_PAGE,
+    },
+    CHAPTER_FORWARD: {
+        name: 'Chapter forward',
+        description: 'Go to the next chapter',
+        sequences: ['b'],
+        scope: ShortcutScope.ANNOTATION_PAGE,
+    },
     PLAY_PAUSE: {
         name: 'Play/pause',
         description: 'Start/stop automatic changing frames',
@@ -118,6 +131,7 @@ function PlayerButtons(props: Props): JSX.Element {
         onLastFrame,
         setNavigationType,
         onSearchAnnotations,
+        onSearchChapters,
     } = props;
 
     const handlers: Partial<Record<keyof typeof componentShortcuts, ((event?: KeyboardEvent) => void)>> = {
@@ -145,6 +159,14 @@ function PlayerButtons(props: Props): JSX.Element {
             SEARCH_BACKWARD: (event: KeyboardEvent | undefined) => {
                 event?.preventDefault();
                 onSearchAnnotations('backward');
+            },
+            CHAPTER_BACKWARD: (event: KeyboardEvent | undefined) => {
+                event?.preventDefault();
+                onSearchChapters('backward');
+            },
+            CHAPTER_FORWARD: (event: KeyboardEvent | undefined) => {
+                event?.preventDefault();
+                onSearchChapters('forward');
             },
             PLAY_PAUSE: (event: KeyboardEvent | undefined) => {
                 event?.preventDefault();
