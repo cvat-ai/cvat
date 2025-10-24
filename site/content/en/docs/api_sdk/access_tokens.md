@@ -29,8 +29,8 @@ by configuring the allowed operations and setting expiration dates for each toke
 Please take special care to store the tokens securely. While CVAT takes extra steps to improve
 the security of the tokens, their security is primarily the user’s responsibility.
 It’s recommended to configure each token to only allow the required operations and to have an
-expiration date. Avoid sharing your tokens with other people. If you feel a token might
-have leaked, [revoke the token](#how-to-revoke-personal-access-tokens) immediately.
+expiration date. Avoid sharing your tokens with other people. If you think a token might
+have been leaked, [revoke the token](#how-to-revoke-personal-access-tokens) immediately.
 {{% /alert %}}
 
 ## How to manage Personal Access Tokens
@@ -54,13 +54,13 @@ via the `MAX_ACCESS_TOKENS_PER_USER` setting.
 {{% /alert %}}
 
 {{% alert title="Note" color="primary" %}}
-The CVAT Online users can have up to 50 Personal Access Tokens.
+CVAT Online users can have up to 50 Personal Access Tokens.
 {{% /alert %}}
 
 ### Permissions
 
 It's possible to configure allowed operations for a token. Currently, there is an option to
-make a token read-only or read/write capable. A read-only token will only be allowed safe requests
+make a token read-only or read/write capable. A read-only token will only be allowed to make safe requests
 that do not modify the server state.
 
 {{% alert title="Warning" color="warning" %}}
