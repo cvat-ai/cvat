@@ -148,7 +148,7 @@ High-level SDK supports 2 authentication options:
 
 Personal Access Token (PAT) authentication requires a token that can be configured
 in the user settings section in the UI. It is the recommended authentication option
-for most API clients.
+for most API clients. {{< ilink "/docs/api_sdk/access_tokens" "Read more." >}}
 
 Password authentication requires a username and password pair. For better security it's
 recommended to use a Personal Access Token (PAT) instead, if possible.
