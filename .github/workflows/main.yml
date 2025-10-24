@@ -25,6 +25,7 @@ jobs:
       !startsWith(github.event.pull_request.title, '[WIP]') &&
       !startsWith(github.event.pull_request.title, '[Dependent]')
     uses: ./.github/workflows/search-cache.yml
+
   build:
     needs: search_cache
     runs-on: ubuntu-latest
