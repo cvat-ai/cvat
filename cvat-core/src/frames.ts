@@ -9,7 +9,7 @@ import {
 } from 'cvat-data';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
-import { SerializedChapterMetaData, SerializedFraction, SerializedFramesMetaData } from './server-response-types';
+import { SerializedChapterMetaData, SerializedFramesMetaData } from './server-response-types';
 import { ArgumentError } from './exceptions';
 import { FieldUpdateTrigger } from './common';
 import config from './config';
@@ -92,24 +92,6 @@ export class ChapterMetaData {
 
     get title(): string {
         return this.#title;
-    }
-}
-
-export class Fraction {
-    readonly #numerator: number;
-    readonly #denominator: number;
-
-    constructor(initialData: SerializedFraction) {
-        this.#numerator = initialData.numerator;
-        this.#denominator = initialData.denominator;
-    }
-
-    get numerator(): number {
-        return this.#numerator;
-    }
-
-    get denominator(): number {
-        return this.#denominator;
     }
 }
 

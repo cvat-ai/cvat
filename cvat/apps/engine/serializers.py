@@ -2956,19 +2956,6 @@ class FrameMetaSerializer(serializers.Serializer):
     def get_has_related_context(self, obj: dict) -> bool:
         return obj['related_files'] != 0
 
-class FractionSerializer(serializers.Serializer):
-    numerator = serializers.IntegerField()
-    denominator = serializers.IntegerField()
-
-    @classmethod
-    def from_fraction(cls, fraction):
-        return cls(
-            {
-                'numerator': fraction.numerator,
-                'denominator': fraction.denominator,
-            }
-        )
-
 class ChapterMetadataSerializer(serializers.Serializer):
     title = serializers.CharField(required=False)
 
