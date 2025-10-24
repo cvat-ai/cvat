@@ -628,19 +628,8 @@ class _AvVideoReading:
     def decode_stream(
         self, container: av.container.Container, video_stream: av.video.stream.VideoStream
     ) -> Generator[av.VideoFrame, None, None]:
-        demux_iter = container.demux(video_stream)
-        try:
-            for packet in demux_iter:
-                yield from packet.decode()
-        finally:
-            # av v9.2.0 seems to have a memory corruption or a deadlock
-            # in exception handling for demux() in the multithreaded mode.
-            # Instead of breaking the iteration, we iterate over packets till the end.
-            # Fixed in av v12.2.0.
-            if av.__version__ == "9.2.0" and video_stream.thread_type == "AUTO":
-                exhausted = object()
-                while next(demux_iter, exhausted) is not exhausted:
-                    pass
+        for packet in container.demux(video_stream):
+            yield from packet.decode()
 
 
 class VideoReader(IMediaReader):
