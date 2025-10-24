@@ -20,16 +20,9 @@ from typing import Any, Callable, Optional, Union
 import av
 from PIL import Image
 
-from fractions import Fraction
 from .errors import InvalidImageError, InvalidManifestError, InvalidPcdError, InvalidVideoError
 from .types import NamedBytesIO
 from .utils import PcdReader, SortingMethod, md5_hash, rotate_image, sort
-
-class FractionEncoder(json.JSONEncoder):
-    def default(self, o):
-        if isinstance(o, Fraction):
-            return {"numerator": o.numerator, "denominator": o.denominator}
-        return super().default(o)
 
 class VideoStreamReader:
     def __init__(self, source_path, chunk_size, force):
@@ -76,6 +69,7 @@ class VideoStreamReader:
         for chapter in chapters:
             chapter["start"] = rescale_q(chapter["start"], chapter["time_base"], stream_tb)
             chapter["end"] = rescale_q(chapter["end"], chapter["time_base"], stream_tb)
+            del chapter["time_base"]
         return chapters
 
     def __len__(self):
@@ -610,7 +604,7 @@ class VideoManifestManager(_ManifestManager):
             },
         }
         for key, value in base_info.items():
-            json_item = json.dumps({key: value}, separators=(",", ":"), cls=FractionEncoder)
+            json_item = json.dumps({key: value}, separators=(",", ":"))
             file.write(f"{json_item}\n")
 
     def _write_core_part(self, file, _tqdm):

@@ -53,7 +53,6 @@ class Chapter(TypedDict):
     metadata: dict[str, str]
     start: int
     stop: int
-    time_base: Fraction
 
 class ORIENTATION(IntEnum):
     NORMAL_HORIZONTAL = 1

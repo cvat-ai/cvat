@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.47.1
+  version: 2.47.1.dev20251024074157
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -7217,18 +7217,15 @@ components:
           type: integer
         start:
           type: integer
-        end:
+        stop:
           type: integer
-        time_base:
-          $ref: '#/components/schemas/Fraction'
         metadata:
           $ref: '#/components/schemas/ChapterMetadata'
       required:
-      - end
       - id
       - metadata
       - start
-      - time_base
+      - stop
     ChapterMetadata:
       type: object
       properties:
@@ -7971,16 +7968,6 @@ components:
       description: |-
         * `REG` - REG
         * `DIR` - DIR
-    Fraction:
-      type: object
-      properties:
-        numerator:
-          type: integer
-        denominator:
-          type: integer
-      required:
-      - denominator
-      - numerator
     FrameMeta:
       type: object
       properties:
