@@ -7,6 +7,7 @@ import io
 import json
 import os
 from abc import ABC, abstractmethod
+from bisect import insort, bisect_left
 from collections.abc import Iterable, Iterator
 from contextlib import closing
 from enum import Enum
@@ -103,7 +104,19 @@ class VideoStreamReader:
     def _find_closest_pts(pts_list, target_pts):
         if not pts_list:
             return None
-        return min(range(len(pts_list)), key=lambda i: abs(pts_list[i] - target_pts))
+
+        pos = bisect_left(pts_list, target_pts)
+
+        if pos == 0:
+            return 0
+        if pos == len(pts_list):
+            return len(pts_list) - 1
+
+        before = pts_list[pos - 1]
+        after = pts_list[pos]
+
+        return pos if abs(after - target_pts) < abs(before - target_pts) else pos - 1
+
 
     def __iter__(self) -> Iterator[Union[int, tuple[int, int, str]]]:
         """
@@ -135,7 +148,7 @@ class VideoStreamReader:
 
                     prev_pts, prev_dts = frame.pts, frame.dts
 
-                    index_pts.append((index, frame.pts))
+                    insort(index_pts, (index, frame.pts), key=lambda item: item[1])
 
                     if frame.key_frame:
                         key_frame_data = {
