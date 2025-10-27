@@ -169,8 +169,8 @@ REPLACEMENT_RULES = [
     ),
     ReplacementRule(
         "helm-chart/Chart.yaml",
-        re.compile(r'^  "version": "[\d.]+",$', re.M),
-        lambda v, m: f'  "version": "{v.major}.{v.minor}.{v.patch}",',
+        re.compile(r'^version: [\d.]+$', re.M),
+        lambda v, m: f'version: {v.major}.{v.minor}.{v.patch}',
     ),
 ]
 
