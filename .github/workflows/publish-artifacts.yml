@@ -58,6 +58,8 @@ jobs:
   helm:
     runs-on: ubuntu-latest
     needs: docker-images
+    env:
+      DOCKERHUB_WORKSPACE: ${{ secrets.DOCKERHUB_WORKSPACE }}
     steps:
       - uses: actions/checkout@v4
        # v4.3.1
@@ -75,8 +77,8 @@ jobs:
       - name: Package Helm chart
         working-directory: helm-chart
         run: |
-          helm package . --version ${{ github.event.release.tag_name }} --dependency-update --destination ../
+          helm package . --dependency-update --destination ../
 
       - name: Push Helm chart to Docker Hub
         run: |
-          helm push cvat-*.tgz oci://registry-1.docker.io/cvat
+          helm push cvat-*.tgz oci://registry-1.docker.io/${DOCKERHUB_WORKSPACE}
