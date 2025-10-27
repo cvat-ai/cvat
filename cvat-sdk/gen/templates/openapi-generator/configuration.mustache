@@ -97,6 +97,13 @@ class Configuration:
         }
     )
 
+    Alternatively, you can authenticate with an API access token in the following way:
+
+    conf = {{{packageName}}}.Configuration(
+        ...
+        access_token=<access token value>,
+    )
+
     Alternatively, you can authenticate with a token after logging in the following way:
 
     conf = {{{packageName}}}.Configuration(
@@ -180,7 +187,8 @@ class Configuration:
         api_key: typing.Optional[dict[str, str]] = None,
         api_key_prefix: typing.Optional[dict[str, str]] = None,
         username: typing.Optional[str] = None,
-        password: typing.Optional[str]=None,
+        password: typing.Optional[str] = None,
+        access_token: typing.Optional[str] = None,
         discard_unknown_keys: bool = False,
         disabled_client_side_validations: str = "",
 {{#hasHttpSignatureMethods}}
@@ -212,7 +220,7 @@ class Configuration:
         """Temp file folder for downloading files"""
 
         # Authentication Settings
-        self.access_token = None
+        self.access_token = access_token
         """Bearer API token"""
 
         self.api_key = {}

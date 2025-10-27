@@ -23,6 +23,7 @@ context('Check label attribute changes', () => {
     };
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 

@@ -144,4 +144,6 @@ class Migration(migrations.Migration):
         ("engine", "0037_task_subset"),
     ]
 
-    operations = [migrations.RunPython(code=migrate2manifest, reverse_code=migrate2meta)]
+    operations = [
+        migrations.RunPython(code=migrate2manifest, reverse_code=migrate2meta, elidable=True)
+    ]
