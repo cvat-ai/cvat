@@ -5,7 +5,11 @@
 
 /// <reference types="cypress" />
 
+import * as allure from 'allure-js-commons';
+import { AllureTag } from '../../support/const_allure';
+
 context('Try to create a task without necessary arguments.', () => {
+    allure.tags(AllureTag.HEAVY, AllureTag.SETTINGS);
     const caseId = '40';
     const labelName = `Case ${caseId}`;
     const taskName = `New annotation task for ${labelName}`;

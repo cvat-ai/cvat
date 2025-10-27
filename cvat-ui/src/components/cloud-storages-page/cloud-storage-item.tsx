@@ -75,7 +75,7 @@ export default function CloudStorageItemComponent(props: Readonly<Props>): JSX.E
             content: isBulkMode ?
                 'All selected cloud storages will be permanently removed. Continue?' :
                 `You are going to remove the cloudstorage "${displayName}". Continue?`,
-            className: 'cvat-delete-cloud-storage-modal',
+            className: 'cvat-modal-confirm-delete-cloud-storage',
             onOk: () => {
                 dispatch(makeBulkOperationAsync(
                     cloudStoragesToDelete.length ? cloudStoragesToDelete : [cloudStorage],

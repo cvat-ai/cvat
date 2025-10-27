@@ -5,6 +5,8 @@
 
 /// <reference types="cypress" />
 
+import { fullMatch } from './utils';
+
 Cypress.Commands.add('goToProjectsList', () => {
     cy.get('[value="projects"]').click();
     cy.url().should('include', '/projects');
@@ -74,8 +76,10 @@ Cypress.Commands.add('deleteProjects', (authResponse, projectsToDelete) => {
 });
 
 Cypress.Commands.add('openProject', (projectName) => {
-    cy.contains(projectName).click({ force: true });
+    cy.intercept('GET', '/api/projects/**').as('getProject');
+    cy.contains(fullMatch(projectName)).click({ force: true });
     cy.get('.cvat-project-details').should('exist');
+    cy.wait('@getProject');
 });
 
 Cypress.Commands.add('openProjectById', (projectId) => {
@@ -85,7 +89,7 @@ Cypress.Commands.add('openProjectById', (projectId) => {
 });
 
 Cypress.Commands.add('openProjectActions', (projectName) => {
-    cy.contains('.cvat-projects-project-item-title', projectName)
+    cy.contains('.cvat-projects-project-item-title', fullMatch(projectName))
         .parents('.cvat-projects-project-item-card')
         .within(() => {
             cy.get('.cvat-projects-project-item-description').within(() => {

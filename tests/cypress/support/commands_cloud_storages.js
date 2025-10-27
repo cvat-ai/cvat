@@ -41,3 +41,10 @@ Cypress.Commands.add('attachS3Bucket', (data) => {
     cy.verifyNotification();
     return createdCloudStorageId;
 });
+
+Cypress.Commands.add('headlessAttachCloudStorage', (spec) => {
+    cy.window().its('cvat').should('not.be.undefined').then(async (cvat) => {
+        const res = await cvat.server.request('/api/cloudstorages', { method: 'POST', data: spec });
+        return cy.wrap(res);
+    });
+});
