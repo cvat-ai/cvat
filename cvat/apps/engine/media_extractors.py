@@ -14,7 +14,7 @@ import tempfile
 import zipfile
 from abc import ABC, abstractmethod
 from bisect import bisect
-from collections.abc import Generator, Iterable, Iterator, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from contextlib import ExitStack, closing
 from dataclasses import dataclass
 from enum import IntEnum
@@ -625,12 +625,6 @@ class _AvVideoReading:
 
         return av.open(source)
 
-    def decode_stream(
-        self, container: av.container.Container, video_stream: av.video.stream.VideoStream
-    ) -> Generator[av.VideoFrame, None, None]:
-        for packet in container.demux(video_stream):
-            yield from packet.decode()
-
 
 class VideoReader(IMediaReader):
     def __init__(
@@ -697,8 +691,8 @@ class VideoReader(IMediaReader):
                     video_stream.thread_type = "NONE"
 
             frame_counter = itertools.count()
-            with closing(self._decode_stream(container, video_stream)) as stream_decoder:
-                for frame, frame_number in zip(stream_decoder, frame_counter):
+            for packet in container.demux(video_stream):
+                for frame, frame_number in zip(packet.decode(), frame_counter):
                     if frame_number == next_frame_filter_frame:
                         if frame.rotation:
                             pts = frame.pts
@@ -727,11 +721,6 @@ class VideoReader(IMediaReader):
 
     def _read_av_container(self) -> av.container.InputContainer:
         return _AvVideoReading().read_av_container(self._source_path[0])
-
-    def _decode_stream(
-        self, container: av.container.Container, video_stream: av.video.stream.VideoStream
-    ) -> Generator[av.VideoFrame, None, None]:
-        return _AvVideoReading().decode_stream(container, video_stream)
 
     def _get_duration(self):
         with self._read_av_container() as container:
@@ -820,11 +809,6 @@ class VideoReaderWithManifest:
     def _read_av_container(self) -> av.container.InputContainer:
         return _AvVideoReading().read_av_container(self.source_path)
 
-    def _decode_stream(
-        self, container: av.container.Container, video_stream: av.video.stream.VideoStream
-    ) -> Generator[av.VideoFrame, None, None]:
-        return _AvVideoReading().decode_stream(container, video_stream)
-
     def _get_nearest_left_key_frame(self, frame_id: int) -> tuple[int, int]:
         nearest_left_keyframe_pos = bisect(
             self.manifest, frame_id, key=lambda entry: entry.get("number")
@@ -859,8 +843,8 @@ class VideoReaderWithManifest:
             container.seek(offset=start_decode_timestamp, stream=video_stream)
 
             frame_counter = itertools.count(start_decode_frame_number)
-            with closing(self._decode_stream(container, video_stream)) as stream_decoder:
-                for frame, frame_number in zip(stream_decoder, frame_counter):
+            for packet in container.demux(video_stream):
+                for frame, frame_number in zip(packet.decode(), frame_counter):
                     if frame_number == next_frame_filter_frame:
                         if frame.rotation:
                             frame = av.VideoFrame().from_ndarray(
