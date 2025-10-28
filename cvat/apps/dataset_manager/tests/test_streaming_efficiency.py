@@ -63,12 +63,15 @@ class TestExtractors(TestCase):
         return CountingDataExtractor
 
     @staticmethod
-    def _make_mock_job_data(item_ids):
-        class MockJobData(JobData):
+    def _make_mock_job_task_data(item_ids, data_cls):
+        class MockData(data_cls):
             def __init__(self):
                 pass
 
-        instance_data = MockJobData()
+            def get_included_frames(self):
+                return {i for i in range(len(item_ids))}
+
+        instance_data = MockData()
 
         instance_data._meta = {
             instance_data.META_FIELD: dict(
@@ -85,12 +88,14 @@ class TestExtractors(TestCase):
         instance_data._db_data = Mock()
         instance_data._db_data.start_frame = 0
 
-        instance_data._db_job = Mock()
-        instance_data._db_job.segment.task.id = 0
-        instance_data._db_job.segment.start_frame = 0
-        instance_data._db_job.segment.stop_frame = len(item_ids) - 1
+        if isinstance(instance_data, JobData):
+            instance_data._db_job = Mock()
+            instance_data._db_job.segment.task.id = 0
+            instance_data._db_job.segment.start_frame = 0
+            instance_data._db_job.segment.stop_frame = len(item_ids) - 1
+        else:
+            instance_data._db_data.size = len(item_ids)
 
-        instance_data._initialized_included_frames = {i for i in range(len(item_ids))}
         instance_data._deleted_frames = {}
         instance_data._use_server_track_ids = False
         instance_data._frame_step = 1
@@ -170,8 +175,9 @@ class TestExtractors(TestCase):
             instance_data._db_tasks[task_id] = Mock(
                 data=Mock(size=len(task_item_ids)), id=task_id, subset=subset
             )
-            task_instance, task_shape_generator_was_iterated = self._make_mock_job_data(
-                task_item_ids
+            task_instance, task_shape_generator_was_iterated = self._make_mock_job_task_data(
+                task_item_ids,
+                data_cls=TaskData,
             )
             task_shape_generators.append(task_shape_generator_was_iterated)
             instance_data._tasks_data[task_id] = task_instance
@@ -211,7 +217,9 @@ class TestExtractors(TestCase):
                 extractor_cls = self._make_counting_data_extractor_cls()
 
                 if data_cls in [JobData, TaskData]:
-                    instance_data, shape_generator_was_iterated = self._make_mock_job_data(item_ids)
+                    instance_data, shape_generator_was_iterated = self._make_mock_job_task_data(
+                        item_ids, data_cls
+                    )
                 else:
                     instance_data, shape_generator_was_iterated = self._make_mock_project_data(
                         item_ids
