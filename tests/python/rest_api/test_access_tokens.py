@@ -9,7 +9,6 @@ from time import sleep
 import pytest
 from cvat_sdk.api_client import exceptions, models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
-from cvat_sdk.core.utils import filter_dict
 from deepdiff import DeepDiff
 from pytest_cases import parametrize
 
