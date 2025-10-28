@@ -37,7 +37,6 @@ context('Cloud storage.', () => {
     });
 
     after(() => {
-        cy.goToCloudStoragesPage();
         cy.deleteCloudStorage(cloudStorageDataWithoutManifest.displayName);
     });
 
@@ -200,7 +199,7 @@ context('Cloud storage.', () => {
 
         it('Check create cloud storage without manifest file.', () => {
             cy.attachS3Bucket(cloudStorageDataWithoutManifest);
-            cy.visit('/cloudstorages');
+            cy.goToCloudStoragesPage();
             cy.contains(cloudStorageDataWithoutManifest.displayName);
         });
     });

@@ -133,7 +133,7 @@ class TorchvisionDetectionFunction:
         ]
 
 # log into the CVAT server
-with make_client(host="http://localhost", credentials=("user", "password")) as client:
+with make_client("http://localhost", credentials=("user", "password")) as client:
     # create a function that uses Faster R-CNN
     func = TorchvisionDetectionFunction("fasterrcnn_resnet50_fpn_v2", "DEFAULT", box_score_thresh=0.5)
 

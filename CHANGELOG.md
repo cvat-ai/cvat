@@ -16,6 +16,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.48.0'></a>
+## \[2.48.0\] - 2025-10-27
+
+### Added
+
+- \[CLI\] `CVAT_ACCESS_TOKEN` environment variable can now be used for authentication with an API token
+  (<https://github.com/cvat-ai/cvat/pull/9563>)
+- \[SDK\] `Client.login()` and `make_client()` can now be called with an API token
+  (<https://github.com/cvat-ai/cvat/pull/9563>)
+- \[SDK\] `make_client()` can now be called with a server URL that contains a port component
+  (<https://github.com/cvat-ai/cvat/pull/9563>)
+
+- \[Server API\] Support for API access tokens
+  (<https://github.com/cvat-ai/cvat/pull/9680>)
+
+- \[Server\] A configuration option to set maximum job limit per task
+  (<https://github.com/cvat-ai/cvat/pull/9888>)
+
+### Fixed
+
+- Tracks does not leak to other jobs on task export
+  (<https://github.com/cvat-ai/cvat/pull/9905>)
+
+- Incorrect cloud storage value in tasks within a project after transferring between organizations
+  (<https://github.com/cvat-ai/cvat/pull/9912>)
+
+- Inefficient memory usage when counting number of objects in tracks
+  when updating job annotations or analytics report computing
+  (<https://github.com/cvat-ai/cvat/pull/9903>)
+
 <a id='changelog-2.47.0'></a>
 ## \[2.47.0\] - 2025-10-14
 

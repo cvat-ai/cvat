@@ -14,7 +14,7 @@ import tqdm
 import urllib3
 
 from cvat_sdk import exceptions
-from cvat_sdk.api_client.api_client import Endpoint
+from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.core.progress import BaseProgressReporter, ProgressReporter
 
 
@@ -155,3 +155,12 @@ def expect_status(codes: Union[int, Iterable[int]], response: urllib3.HTTPRespon
         raise exceptions.ApiException(
             response.status, reason="Unexpected status code received", http_resp=response
         )
+
+
+def make_request_headers(api_client: ApiClient, **kwargs) -> dict[str, str]:
+    headers = api_client.get_common_headers()
+    query_params = []
+    api_client.update_params_for_auth(headers=headers, queries=query_params, **kwargs)
+    assert not query_params  # query auth is not expected
+
+    return headers

@@ -9,11 +9,11 @@ const {
     dummyGoogleStorage,
     dummyAzureContainer,
     dummyAWSBucket,
-} = require('../../support/dummy-data');
+} = require('../../../support/dummy-data');
 
 context('Dummy cloud storages.', { browser: '!firefox' }, () => {
     const caseId = '109';
-    const imageFolder = '../e2e/actions_tasks3/assets/case_109';
+    const imageFolder = '../e2e/actions_tasks4/cloud_storage/assets/case_109';
 
     function testListDummyCloudStorages(dummyCS) {
         cy.intercept('GET', 'api/cloudstorages?**', dummyCS).as('listCS');
@@ -63,6 +63,7 @@ context('Dummy cloud storages.', { browser: '!firefox' }, () => {
             'GET',
             `api/cloudstorages/${id}/preview?**`,
             { fixture: `${imageFolder}/${image}` },
+            // i.e. relative to cypress/fixtures
         ).as('csPreview');
 
         cy.contains('.cvat-header-button', 'Models').should('be.visible').click();
