@@ -22,7 +22,7 @@ For export of images:
 - Attributes: Not supported.
 - Tracks: Not supported.
 
-The downloaded file is a .zip archive with the following structure:
+The downloaded file is a `.zip` archive with the following structure:
 
 ```bash
 taskname.zip/
@@ -43,6 +43,6 @@ label1 <class1>
 
 ## VGGFace2 import
 
-Uploaded file: a zip archive of the structure above
+- Supported annotations: Rectangles, Points (landmarks - groups of 5 points)
 
-- supported annotations: Rectangles, Points (landmarks - groups of 5 points)
+Uploaded file: a `.zip` archive of the structure above

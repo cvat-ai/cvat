@@ -17,15 +17,14 @@ For more information, see:
 
 - [Datumaro project page](https://github.com/cvat-ai/datumaro/)
 
-# Datumaro export
+## Datumaro export
 
-- Supported media: 2D, 3D
 - Supported annotations: Tags, Bounding Boxes, Polygons,
   Polylines, Points, Cuboids, Ellipses, Masks, Skeletons.
 - Attributes: Supported.
 - Tracks: Supported (via the `track_id` attribute).
 
-The downloaded file is a zip archive with the following structure:
+The downloaded file is a `.zip` archive with the following structure:
 
 ```bash
 taskname.zip/
@@ -38,15 +37,14 @@ taskname.zip/
         ├── ...
 ```
 
-# Datumaro import
+## Datumaro import
 
-- Supported media: 2D, 3D
 - Supported annotations: Tags, Bounding Boxes, Polygons,
   Polylines, Points, Cuboids, Ellipses, Masks, Skeletons.
 - Attributes: Supported.
 - Tracks: Supported.
 
-Uploaded file: a `.zip` archive of the following structure:
+Uploaded file: a `.json` file with annotations or a `.zip` archive of the following structure:
 
 ```bash
 archive.zip/
@@ -55,7 +53,7 @@ archive.zip/
     └── subset2.json
 ```
 
-JSON annotations files in the `annotations` directory should have similar structure:
+The `.json` annotations files in the `annotations` directory should have similar structure:
 
 ```json
 {

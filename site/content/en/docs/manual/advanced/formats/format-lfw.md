@@ -30,7 +30,7 @@ For export of images:
 
 - Tracks: Not supported.
 
-The downloaded file is a .zip archive with the following structure:
+The downloaded file is a `.zip` archive with the following structure:
 
 ```bash
 <archive_name>.zip/

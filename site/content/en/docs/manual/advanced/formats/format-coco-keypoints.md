@@ -18,7 +18,6 @@ For more information, see:
 
 ## COCO Keypoints export
 
-- Supported media: 2D
 - Supported annotations: Skeletons
 - Attributes: Supported (stored in the custom `attributes` field of the annotation).
 - Tracks: Supported (via the `track_id` custom attribute).
@@ -38,7 +37,6 @@ Downloaded file is a `.zip` archive with the following structure:
 
 ## COCO import
 
-- Supported media: 2D
 - Supported annotations: Skeletons
 - Attributes: Supported (via the custom `attributes` field of the annotation).
 - Tracks: Supported (via the `track_id` custom attribute).
