@@ -30,6 +30,18 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
+      initContainers:
+      {{- if .Values.cvat.backend.permissionFix.enabled }}
+      - name: user-data-permission-fix
+        image: busybox
+        command: [ "/bin/chmod", "-R", "777", "/var/lib/kvrocks/db" ]
+        volumeMounts:
+        - name: {{ .Release.Name }}-kvrocks-data
+          mountPath: /var/lib/kvrocks/db
+        {{- with .Values.cvat.kvrocks.additionalVolumeMounts }}
+        {{- toYaml . | nindent 10 }}
+        {{- end }}
+      {{- end }}
       containers:
         - name: cvat-kvrocks-app-container
           image: {{ .Values.cvat.kvrocks.image }}:{{ .Values.cvat.kvrocks.tag }}
