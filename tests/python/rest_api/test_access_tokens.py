@@ -2,6 +2,7 @@ import csv
 import json
 from contextlib import ExitStack
 from datetime import datetime, timedelta, timezone
+from http import HTTPStatus
 from io import StringIO
 from time import sleep
 
@@ -88,26 +89,29 @@ class TestGetAccessToken:
 
         assert DeepDiff(expected, actual, exclude_paths=["private_key"]) == {}
 
-    def test_cannot_see_foreign_tokens(self, users, access_tokens_by_username):
+    @parametrize("is_admin", [True, False])
+    def test_cannot_see_foreign_tokens(self, users, access_tokens_by_username, is_admin):
         token_owner, token_owner_tokens = next(iter(access_tokens_by_username.items()))
         token = token_owner_tokens[0]
 
         other_user = next(
-            u for u in users if u["username"] != token_owner and not u["is_superuser"]
+            u
+            for u in users
+            if u["username"] != token_owner
+            if u["is_superuser"] == is_admin
+            if not access_tokens_by_username.get(u["username"])
         )
 
-        with (
-            make_api_client(other_user["username"]) as api_client,
-            pytest.raises(exceptions.ForbiddenException),
-        ):
-            api_client.auth_api.retrieve_access_tokens(token["id"])
+        with make_api_client(other_user["username"]) as api_client:
+            _, response = api_client.auth_api.retrieve_access_tokens(
+                token["id"], _check_status=False
+            )
+            if is_admin:
+                assert response.status == HTTPStatus.OK
+            else:
+                assert response.status == HTTPStatus.FORBIDDEN
 
-        assert (
-            api_client.auth_api.list_access_tokens(
-                filter=json.dumps({"!": {"==": [{"var": "owner"}, other_user["id"]]}})
-            )[0].count
-            == 0
-        )
+        assert api_client.auth_api.list_access_tokens()[0].count == 0
 
     def test_can_get_self(self, access_tokens_by_username):
         _, user_tokens = next(iter(access_tokens_by_username.items()))
@@ -160,21 +164,33 @@ class TestGetAccessToken:
 
 
 class TestAccessTokenListFilters(CollectionSimpleFilterTestBase):
-    field_lookups = {"owner": ["owner", "id"]}
-
     @pytest.fixture(scope="session")
     def _cleaned_access_tokens(self, access_tokens):
         return [filter_dict(t, drop=("private_key",)) for t in access_tokens]
 
     @pytest.fixture(autouse=True)
-    def setup(self, restore_db_per_class, admin_user, _cleaned_access_tokens):
-        self.user = admin_user
-        self.samples = _cleaned_access_tokens
+    def setup(
+        self, restore_db_per_class, users_by_name, access_tokens_by_username, _cleaned_access_tokens
+    ):
+        self.user = next(
+            username
+            for username, user_tokens in access_tokens_by_username.items()
+            if users_by_name[username]["is_superuser"] and user_tokens
+        )
+        self.user_id = users_by_name[self.user]["id"]
+
+        # Truncate extra fields that are not returned by the server API
+        samples = _cleaned_access_tokens
+
+        # Only own keys are visible to everyone
+        samples = [v for v in samples if v["owner"]["id"] == self.user_id]
+
+        self.samples = samples
 
     def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
         return api_client.auth_api.list_access_tokens_endpoint
 
-    @pytest.mark.parametrize("field", ("name", "owner"))
+    @pytest.mark.parametrize("field", ("name",))
     def test_can_use_simple_filter_for_object_list(self, field):
         return super()._test_can_use_simple_filter_for_object_list(field)
 
