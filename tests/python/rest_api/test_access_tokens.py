@@ -164,28 +164,14 @@ class TestGetAccessToken:
 
 
 class TestAccessTokenListFilters(CollectionSimpleFilterTestBase):
-    @pytest.fixture(scope="session")
-    def _cleaned_access_tokens(self, access_tokens):
-        return [filter_dict(t, drop=("private_key",)) for t in access_tokens]
-
     @pytest.fixture(autouse=True)
-    def setup(
-        self, restore_db_per_class, users_by_name, access_tokens_by_username, _cleaned_access_tokens
-    ):
-        self.user = next(
-            username
-            for username, user_tokens in access_tokens_by_username.items()
+    def setup(self, restore_db_per_class, users_by_name, raw_access_tokens_by_username):
+        # Only own keys are visible to each user
+        self.user, self.samples = next(
+            (username, user_tokens)
+            for username, user_tokens in raw_access_tokens_by_username.items()
             if users_by_name[username]["is_superuser"] and user_tokens
         )
-        self.user_id = users_by_name[self.user]["id"]
-
-        # Truncate extra fields that are not returned by the server API
-        samples = _cleaned_access_tokens
-
-        # Only own keys are visible to everyone
-        samples = [v for v in samples if v["owner"]["id"] == self.user_id]
-
-        self.samples = samples
 
     def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
         return api_client.auth_api.list_access_tokens_endpoint
