@@ -55,6 +55,4 @@ q_user_is_owner(user) := [
 ]
 
 # Django Q object to filter list of entries
-filter := qobject if {
-    qobject := q_user_is_owner(input.auth.user)
-}
+filter := q_user_is_owner(input.auth.user)
