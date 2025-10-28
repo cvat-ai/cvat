@@ -16,6 +16,7 @@ can be processed with Datumaro, allowing you to perform custom dataset operation
 For more information, see:
 
 - [Datumaro project page](https://github.com/cvat-ai/datumaro/)
+- [Dataset examples](https://github.com/cvat-ai/datumaro/tree/develop/tests/assets/datumaro_dataset)
 
 ## Datumaro export
 
