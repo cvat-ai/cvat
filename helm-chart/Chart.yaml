@@ -37,7 +37,7 @@ dependencies:
     condition: nuclio.enabled
 
   - name: vector
-    version: "0.19.*"
+    version: "0.46.*"
     repository: https://helm.vector.dev
     condition: analytics.enabled
 
