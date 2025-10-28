@@ -24,15 +24,14 @@ For more information, see:
 
 # Cityscapes export
 
-- Supported media: 2D
-- Supported annotations: Masks, Polygons (as masks), Bounding Boxes (as masks).
+- Supported annotations: Masks, Polygons (as masks), Bounding Boxes (as masks), Ellipses (as masks).
 - Attributes:
   - `is_crowd` boolean, should be defined for labels as `checkbox`.
     Specifies if the annotation label can distinguish between different instances.
     If `False`, the exported annotation will include the instance id value.
 - Tracks: Not supported (exported as separate shapes).
 
-The downloaded file is a .zip archive with the following structure:
+The downloaded file is a `.zip` archive with the following structure:
 
 ```
 taskname.zip/
@@ -76,13 +75,12 @@ taskname.zip/
 
 # Cityscapes import
 
-- Supported media: 2D
 - Supported annotations: Masks, Polygons (if Convert masks to polygons is enabled).
 - Attributes:
   - `is_crowd` boolean, should be defined for labels as `checkbox`.
 - Tracks: Not supported.
 
-Uploaded file: a zip archive with the following structure:
+Uploaded file: a `.zip` archive with the following structure:
 
 ```
 archive.zip/

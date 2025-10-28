@@ -23,7 +23,8 @@ For more information, see:
 
 For export of images:
 
-- Supported annotations: Bounding Boxes (detection), Polygons (segmentation).
+- Supported annotations: Bounding Boxes (detection), Polygons (segmentation),
+  Masks (segmentation), Ellipses (segmentation, as masks).
 - Supported attributes:
   - `occluded` (Available both as a UI option and a separate attribute)
     Denotes that a major portion of the object within
@@ -36,9 +37,9 @@ For export of images:
     using `checkboxes` for labels.
     Signifies that the annotation encapsulates
     multiple instances of the same object class.
-- Tracks: Not supported.
+- Tracks: Not supported (exported as separate shapes).
 
-The downloaded file is a .zip archive with the following structure:
+The downloaded file is a `.zip` archive with the following structure:
 
 ```
 └─ annotations.zip/

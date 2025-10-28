@@ -17,8 +17,7 @@ For more information, see:
 
 ## CamVid export
 
-- Supported media: 2D
-- Supported annotations: Masks, Bounding Boxes (as masks), Polygons (as masks).
+- Supported annotations: Masks, Bounding Boxes (as masks), Polygons (as masks), Ellipses (as masks).
 - Attributes: Not supported.
 - Tracks: Not supported (exported as separate shapes).
 
@@ -65,7 +64,6 @@ to represent the background.
 
 ## CamVid import
 
-- Supported media: 2D
 - Supported annotations: Masks, Polygons (if Convert masks to polygons is enabled).
 - Attributes: Not supported.
 - Tracks: Not supported.

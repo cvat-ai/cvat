@@ -18,8 +18,7 @@ For more information, see:
 
 ## COCO export
 
-- Supported media: 2D
-- Supported annotations: Bounding Boxes, Polygons, Masks.
+- Supported annotations: Bounding Boxes, Polygons, Masks, Ellipses (as masks).
 - Attributes:
   - `is_crowd` This can either be a checkbox or an integer
     (with values of 0 or 1). It indicates whether the instance
@@ -52,13 +51,13 @@ Otherwise, a singular default subset will be created to house all the dataset in
 
 ## COCO import
 
-- Supported media: 2D
 - Supported annotations: Bounding Boxes (if the `segmentation` field is empty), Polygons, Masks.
 - Attributes: Supported, as described in the export section
 - Tracks: Supported (via the `track_id` custom attribute).
 - Supported tasks: `instances`, `person_keypoints` (only segmentations will be imported), `panoptic`.
 
-Upload format: a single unpacked `.json` or a `.zip` archive with the structure described above or
+Upload format: a `.json` file with annotations
+or a `.zip` archive with the structure described above or
 [here](https://open-edge-platform.github.io/datumaro/latest/docs/data-formats/formats/coco.html#import-coco-dataset)
 (without images).
 

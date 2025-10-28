@@ -12,8 +12,7 @@ the {{< ilink "/docs/manual/advanced/formats/format-voc" "Pascal VOC" >}} segmen
 
 ## Segmentation Mask export
 
-- Supported media: 2D
-- Supported annotations: Masks, Bounding Boxes (as masks), Polygons (as masks).
+- Supported annotations: Masks, Bounding Boxes (as masks), Polygons (as masks), Ellipses (as masks).
 - Attributes: Not supported.
 - Tracks: Not supported (exported as separate shapes).
 
@@ -51,7 +50,6 @@ By default, the color `(0, 0, 0)` is used to represent the background.
 
 ## Segmentation Mask import
 
-- Supported media: 2D
 - Supported annotations: Masks, Polygons (if Convert masks to polygons is enabled).
 - Attributes: Not supported.
 - Tracks: Not supported.
