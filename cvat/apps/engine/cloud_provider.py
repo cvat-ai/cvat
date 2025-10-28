@@ -557,7 +557,7 @@ def get_cloud_storage_instance(
             prefix=specific_attributes.get("prefix"),
         )
     elif cloud_provider == CloudProviderChoice.AZURE_BLOB_STORAGE:
-        instance = AbsCloudStorage(
+        instance = AzureBlobCloudStorage(
             resource,
             account_name=credentials.account_name,
             sas_token=credentials.session_token,
@@ -808,7 +808,7 @@ class S3CloudStorage(_CloudStorage):
         return allowed_actions
 
 
-class AbsCloudStorage(_CloudStorage):
+class AzureBlobCloudStorage(_CloudStorage):
     MAX_CONCURRENCY = 3
 
     class Effect:
