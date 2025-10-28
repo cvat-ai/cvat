@@ -70,7 +70,9 @@ class VideoStreamReader:
         for chapter in chapters:
             output_chapter = {
                 "start": rescale_q(chapter["start"], chapter["time_base"], stream_tb),
-                "end": rescale_q(chapter["end"], chapter["time_base"], stream_tb)
+                "end": rescale_q(chapter["end"], chapter["time_base"], stream_tb),
+                "metadata": chapter["metadata"],
+                "id": chapter["id"]
             }
             output_chapters.append(output_chapter)
         return output_chapters
@@ -195,10 +197,12 @@ class VideoStreamReader:
                     stop = index_pts[j][0] - 1
                     if chapter["end"] > index_pts[-1][1]:
                         stop = index_pts[j][0]
-                    chapter["start"] = start
-                    chapter["stop"] = stop
-                    del chapter["end"]
-                    self._chapters.append(chapter)
+                    self._chapters.append({
+                        "start": start,
+                        "stop": stop,
+                        "metadata": chapter["metadata"],
+                        "id": chapter["id"],
+                    })
 
 class DatasetImagesReader:
     def __init__(
