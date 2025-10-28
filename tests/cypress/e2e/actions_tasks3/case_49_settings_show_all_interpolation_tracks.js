@@ -19,6 +19,7 @@ context('Settings. "Show all interpolation tracks" option.', () => {
     };
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
         cy.createRectangle(createRectangleTrack2Points);
     });

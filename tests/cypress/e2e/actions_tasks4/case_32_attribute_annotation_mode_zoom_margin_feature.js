@@ -5,9 +5,12 @@
 
 /// <reference types="cypress" />
 
+import * as allure from 'allure-js-commons';
+import { AllureTag } from '../../support/const_allure';
 import { taskName, labelName } from '../../support/const';
 
 context('Attribute annotation mode (AAM) zoom margin feature', () => {
+    allure.tags(AllureTag.HEAVY, AllureTag.SETTINGS);
     const caseId = '32';
     const rectangleShape2Points = {
         points: 'By 2 Points',
@@ -32,6 +35,7 @@ context('Attribute annotation mode (AAM) zoom margin feature', () => {
     }
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
 
         // create object and tag

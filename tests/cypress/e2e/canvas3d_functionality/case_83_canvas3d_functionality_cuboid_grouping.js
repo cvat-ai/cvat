@@ -48,6 +48,7 @@ context('Canvas 3D functionality. Grouping.', () => {
     }
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTask(taskName);
         cy.openJob();
         cy.wait(1000); // Waiting for the point cloud to display

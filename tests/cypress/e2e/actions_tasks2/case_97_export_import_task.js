@@ -5,7 +5,11 @@
 
 /// <reference types="cypress" />
 
+import * as allure from 'allure-js-commons';
+import { AllureTag } from '../../support/const_allure';
+
 context('Export, import an annotation task.', { browser: '!firefox' }, () => {
+    allure.tags(AllureTag.HEAVY, AllureTag.SETTINGS);
     const caseId = '97';
     const labelName = 'car';
     const taskName = `Case ${caseId}`;

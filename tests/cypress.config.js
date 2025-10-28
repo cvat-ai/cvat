@@ -11,11 +11,15 @@ module.exports = defineConfig({
     e2e: {
         ...baseConfig.e2e,
         specPattern: [
+            'cypress/e2e/setup/setup.js',
+            'cypress/e2e/setup/setup_project.js',
             'cypress/e2e/auth_page.js',
             'cypress/e2e/features/*.js',
+            'cypress/e2e/features2/*.js',
             'cypress/e2e/actions_tasks/**/*.js',
             'cypress/e2e/actions_tasks2/**/*.js',
             'cypress/e2e/actions_tasks3/**/*.js',
+            'cypress/e2e/actions_tasks4/**/*.js',
             'cypress/e2e/actions_objects/**/*.js',
             'cypress/e2e/actions_objects2/**/*.js',
             'cypress/e2e/issues_prs/**/*.js',

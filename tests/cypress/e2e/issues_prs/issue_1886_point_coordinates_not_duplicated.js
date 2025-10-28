@@ -23,6 +23,7 @@ context("Point coordinates are not duplicated while polygon's interpolation.", (
     };
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 

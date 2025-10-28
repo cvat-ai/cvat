@@ -29,6 +29,7 @@ context('Changing a default value for an attribute.', () => {
     const wrapperId = [];
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTask(taskName);
     });
 

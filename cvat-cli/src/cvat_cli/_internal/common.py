@@ -10,13 +10,20 @@ import importlib.util
 import logging
 import os
 import sys
+import textwrap
 from http.client import HTTPConnection
 from pathlib import Path
 from typing import Any, Callable, Optional
 
 import attrs
 import cvat_sdk.auto_annotation as cvataa
-from cvat_sdk.core.client import Client, Config
+from cvat_sdk.core.client import (
+    AccessTokenCredentials,
+    Client,
+    Config,
+    Credentials,
+    PasswordCredentials,
+)
 
 from ..version import VERSION
 from .parsers import BuildDictAction, parse_function_parameter
@@ -27,20 +34,40 @@ class CriticalError(Exception):
     pass
 
 
-def get_auth_factory(s: str) -> Callable[[str], tuple[str, str]]:
+CVAT_ACCESS_TOKEN_ENV_VAR = "CVAT_ACCESS_TOKEN"  # nosec - a variable name declaration
+
+
+def default_auth_factory() -> Callable[[str], Credentials]:
+    """
+    Try to read the CVAT_ACCESS_TOKEN environment variable for a Personal Access Token (PAT).
+    If there is no value, try using the current user and asking for the password.
+    """
+
+    token = os.getenv(CVAT_ACCESS_TOKEN_ENV_VAR)
+    if token is not None:
+        return lambda _: AccessTokenCredentials(token)
+
+    return get_auth_factory(getpass.getuser())
+
+
+def get_auth_factory(s: str) -> Callable[[str], Credentials]:
     """
     Parse a USER[:PASS] string and return a callable that takes the server URL
-    and returns a (user, pass) tuple for that URL.
-    The callable will prompt the user for the password if none was initially supplied.
+    and returns auth credentials for that URL.
+    The callable will prompt the user for the password if none was initially supplied in the
+    input string and in the PASS env variable.
     """
+
     user, _, password = s.partition(":")
     if not password:
         password = os.environ.get("PASS")
 
     if password:
-        return lambda _: (user, password)
+        return lambda _: PasswordCredentials(user, password)
     else:
-        return lambda url: (user, getpass.getpass(f"Password for {user} at {url}: "))
+        return lambda url: PasswordCredentials(
+            user, getpass.getpass(f"Password for {user} at {url}: ")
+        )
 
 
 def configure_common_arguments(parser: argparse.ArgumentParser) -> None:
@@ -54,11 +81,18 @@ def configure_common_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--auth",
         type=get_auth_factory,
-        metavar="USER:[PASS]",
-        default=getpass.getuser(),
-        help="""defaults to the current user and supports the PASS
-                environment variable or password prompt
-                (default user: %(default)s).""",
+        metavar="USER[:PASS]",
+        default=default_auth_factory(),
+        help=textwrap.dedent(
+            """\
+            User and password to use for authentication;
+            defaults to the current user and supports the PASS
+            environment variable or password prompt.
+            A Personal Access Token (PAT) can be generated on the server
+            and specified in the {} environment variable instead.
+            (default user: {}).
+        """
+        ).format(CVAT_ACCESS_TOKEN_ENV_VAR, getpass.getuser()),
     )
     parser.add_argument(
         "--server-host", type=str, default="http://localhost", help="host (default: %(default)s)"
