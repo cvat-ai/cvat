@@ -135,8 +135,7 @@ RUN apt-get update && \
         wait-for-it \
     && ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && \
     dpkg-reconfigure -f noninteractive tzdata && \
-    rm -rf /var/lib/apt/lists/* && \
-    echo 'application/wasm wasm' >> /etc/mime.types
+    rm -rf /var/lib/apt/lists/*
 
 # Install smokescreen
 COPY --from=build-smokescreen /tmp/smokescreen /usr/local/bin/smokescreen
