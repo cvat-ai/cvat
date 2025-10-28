@@ -376,7 +376,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
     return {
         instance,
-        dumpers: state.formats.annotationFormats ? state.formats.annotationFormats.dumpers : [],
+        dumpers: state.formats.annotationFormats?.dumpers ?? [],
     };
 }
 

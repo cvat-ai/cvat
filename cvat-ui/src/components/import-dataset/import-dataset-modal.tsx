@@ -658,7 +658,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const { instanceType } = state.import;
 
     return {
-        importers: state.formats.annotationFormats ? state.formats.annotationFormats.loaders : [],
+        importers: state.formats.annotationFormats?.loaders ?? [],
         instanceT: instanceType,
         instance: !instanceType ? null : (
             state.import[`${instanceType}s` as 'projects' | 'tasks' | 'jobs']
