@@ -66,11 +66,14 @@ class VideoStreamReader:
         stream = VideoStreamReader._get_video_stream(container)
         stream_tb = stream.time_base
         rescale_q = lambda q, src, dest: int(q * src / dest + 0.5)
+        output_chapters = []
         for chapter in chapters:
-            chapter["start"] = rescale_q(chapter["start"], chapter["time_base"], stream_tb)
-            chapter["end"] = rescale_q(chapter["end"], chapter["time_base"], stream_tb)
-            del chapter["time_base"]
-        return chapters
+            output_chapter = {
+                "start": rescale_q(chapter["start"], chapter["time_base"], stream_tb),
+                "end": rescale_q(chapter["end"], chapter["time_base"], stream_tb)
+            }
+            output_chapters.append(output_chapter)
+        return output_chapters
 
     def __len__(self):
         assert (
