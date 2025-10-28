@@ -619,7 +619,6 @@ class VideoReader(IMediaReader):
         self,
         *,
         frame_filter: Union[bool, Iterable[int]] = True,
-        video_stream: Optional[av.video.stream.VideoStream] = None,
     ) -> Iterator[tuple[av.VideoFrame, str, int]]:
         """
         If provided, frame_filter must be an ordered sequence in the ascending order.
@@ -639,22 +638,13 @@ class VideoReader(IMediaReader):
         if next_frame_filter_frame is None:
             return
 
-        es = ExitStack()
+        with self._read_av_container() as container:
+            video_stream = container.streams.video[0]
 
-        needs_init = video_stream is None
-        if needs_init:
-            container = es.enter_context(self._read_av_container())
-        else:
-            container = video_stream.container
-
-        with es:
-            if needs_init:
-                video_stream = container.streams.video[0]
-
-                if self.allow_threading:
-                    video_stream.thread_type = "AUTO"
-                else:
-                    video_stream.thread_type = "NONE"
+            if self.allow_threading:
+                video_stream.thread_type = "AUTO"
+            else:
+                video_stream.thread_type = "NONE"
 
             frame_counter = itertools.count()
             with closing(self._decode_stream(container, video_stream)) as stream_decoder:
