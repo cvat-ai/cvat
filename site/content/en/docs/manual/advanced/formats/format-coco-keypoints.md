@@ -35,7 +35,7 @@ Downloaded file is a `.zip` archive with the following structure:
    └── ...
 ```
 
-## COCO import
+## COCO Keypoints import
 
 - Supported annotations: Skeletons
 - Attributes: Supported (via the custom `attributes` field of the annotation).

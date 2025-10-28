@@ -22,7 +22,7 @@ For more information, see:
 - [Cityscapes format specification](https://github.com/mcordts/cityscapesScripts#the-cityscapes-dataset)
 - [Cityscapes dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/cityscapes_dataset)
 
-# Cityscapes export
+## Cityscapes export
 
 - Supported annotations: Masks, Polygons (as masks), Bounding Boxes (as masks), Ellipses (as masks).
 - Attributes:
@@ -73,7 +73,7 @@ taskname.zip/
   the remainder is the instance ID. If a certain annotation describes multiple
   instances, then the pixels have the regular ID of that class
 
-# Cityscapes import
+## Cityscapes import
 
 - Supported annotations: Masks, Polygons (if Convert masks to polygons is enabled).
 - Attributes:
@@ -92,7 +92,7 @@ archive.zip/
         ├── ...
 ```
 
-# Creating task for Cityscapes dataset
+## Creating task for Cityscapes dataset
 
 Create a task with the labels you need
 or you can use the labels and colors of the original dataset.

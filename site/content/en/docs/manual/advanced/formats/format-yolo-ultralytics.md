@@ -140,7 +140,7 @@ It writes track ids to the end of corresponding annotations:
 2 0.7 0.2 0.3 0.1
 ```
 
-## Import
+## Ultralytics YOLO Import
 
 Uploaded file: a `.zip` archive of the same structure as above.
 

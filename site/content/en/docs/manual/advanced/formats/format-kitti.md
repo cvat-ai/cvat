@@ -19,7 +19,7 @@ For more information, see:
 - [Format specification for KITTI segmentation](https://s3.eu-central-1.amazonaws.com/avg-kitti/devkit_semantics.zip)
 - [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/kitti_dataset)
 
-## KITTI annotations export
+## KITTI export
 
 For export of images:
 
@@ -64,7 +64,7 @@ The downloaded file is a `.zip` archive with the following structure:
             └── ...
 ```
 
-## KITTI annotations import
+## KITTI import
 
 You can upload KITTI annotations in two ways:
 rectangles for the detection task and
