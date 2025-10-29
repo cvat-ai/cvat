@@ -513,6 +513,7 @@ def calc_end_frame(start_frame: int, stop_frame: int, frame_step: int) -> int:
 
 
 _T = TypeVar("_T")
+_T2 = TypeVar("_T2")
 
 
 def unique(
@@ -553,9 +554,85 @@ def invite_user_to_org(
         return invitation
 
 
-def get_cloud_storage_content(username: str, cloud_storage_id: int, manifest: Optional[str] = None):
-    with make_api_client(username) as api_client:
-        kwargs = {"manifest_path": manifest} if manifest else {}
+def get_cloud_storage_content(
+    username: str,
+    cloud_storage_id: int,
+    *,
+    manifest: Optional[str] = None,
+    prefix: Optional[str] = None,
+) -> list[str]:
+    kwargs = {}
 
+    if manifest is not None:
+        kwargs["manifest_path"] = manifest
+
+    if prefix is not None:
+        kwargs["prefix"] = prefix
+
+    prefix = (prefix or "").rstrip("/") + "/"
+
+    with make_api_client(username) as api_client:
         (data, _) = api_client.cloudstorages_api.retrieve_content_v2(cloud_storage_id, **kwargs)
-        return [f"{f['name']}{'/' if str(f['type']) == 'DIR' else ''}" for f in data["content"]]
+        return [
+            f"{prefix}{f['name']}{'/' if str(f['type']) == 'DIR' else ''}" for f in data["content"]
+        ]
+
+
+def export_events(
+    api_client: ApiClient,
+    *,
+    api_version: int,
+    max_retries: int = 100,
+    interval: float = 0.1,
+    **kwargs,
+) -> Optional[bytes]:
+    if api_version == 1:
+        endpoint = api_client.events_api.list_endpoint
+        query_id = ""
+        for _ in range(max_retries):
+            (_, response) = endpoint.call_with_http_info(
+                **kwargs, query_id=query_id, _parse_response=False
+            )
+            if response.status == HTTPStatus.CREATED:
+                break
+            assert response.status == HTTPStatus.ACCEPTED
+            if not query_id:
+                response_json = json.loads(response.data)
+                query_id = response_json["query_id"]
+            sleep(interval)
+
+        assert response.status == HTTPStatus.CREATED
+
+        (_, response) = endpoint.call_with_http_info(
+            **kwargs, query_id=query_id, action="download", _parse_response=False
+        )
+        assert response.status == HTTPStatus.OK
+
+        return response.data
+
+    assert api_version == 2
+
+    request_id, response = api_client.events_api.create_export(**kwargs, _check_status=False)
+    assert response.status == HTTPStatus.ACCEPTED
+
+    if "location" in kwargs and "cloud_storage_id" in kwargs:
+        background_request, response = wait_background_request(
+            api_client, rq_id=request_id.rq_id, max_retries=max_retries, interval=interval
+        )
+        assert background_request.result_url is None
+        return None
+
+    return wait_and_download_v2(
+        api_client, rq_id=request_id.rq_id, max_retries=max_retries, interval=interval
+    )
+
+
+def iter_exclude(
+    it: Iterable[_T], excludes: Iterable[_T2], *, key: Optional[Callable[[_T], _T2]] = None
+) -> Iterable[_T]:
+    excludes = set(excludes)
+
+    if not key:
+        key = lambda v: v
+
+    return (v for v in it if key(v) not in excludes)

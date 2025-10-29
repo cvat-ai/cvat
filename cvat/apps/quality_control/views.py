@@ -75,6 +75,7 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
         "report__task__organization",
         "report__project__organization",
     ]
+    iam_permission_class = AnnotationConflictPermission
 
     search_fields = []
     filter_fields = list(search_fields) + [
@@ -200,6 +201,7 @@ class QualityReportViewSet(
         "task__organization",
         "project__organization",
     ]
+    iam_permission_class = QualityReportPermission
 
     search_fields = []
     filter_fields = list(search_fields) + [
@@ -513,6 +515,7 @@ class QualitySettingsViewSet(
     queryset = QualitySettings.objects
 
     iam_organization_field = ["task__organization", "project__organization"]
+    iam_permission_class = QualitySettingPermission
 
     search_fields = []
     filter_fields = ["id", "task_id", "project_id", "inherit", "created_date", "updated_date"]

@@ -8,6 +8,7 @@ import multiprocessing
 import sys
 import typing
 import urllib3
+import urllib3.util
 
 from http import client as http_client
 from {{packageName}}.exceptions import ApiValueError
@@ -96,6 +97,13 @@ class Configuration:
         }
     )
 
+    Alternatively, you can authenticate with an API access token in the following way:
+
+    conf = {{{packageName}}}.Configuration(
+        ...
+        access_token=<access token value>,
+    )
+
     Alternatively, you can authenticate with a token after logging in the following way:
 
     conf = {{{packageName}}}.Configuration(
@@ -179,7 +187,8 @@ class Configuration:
         api_key: typing.Optional[dict[str, str]] = None,
         api_key_prefix: typing.Optional[dict[str, str]] = None,
         username: typing.Optional[str] = None,
-        password: typing.Optional[str]=None,
+        password: typing.Optional[str] = None,
+        access_token: typing.Optional[str] = None,
         discard_unknown_keys: bool = False,
         disabled_client_side_validations: str = "",
 {{#hasHttpSignatureMethods}}
@@ -211,7 +220,7 @@ class Configuration:
         """Temp file folder for downloading files"""
 
         # Authentication Settings
-        self.access_token = None
+        self.access_token = access_token
         """Bearer API token"""
 
         self.api_key = {}
@@ -316,7 +325,9 @@ class Configuration:
         self.safe_chars_for_path_param = ''
         """Safe chars for path_param"""
 
-        self.retries = None
+        self.retries = urllib3.util.Retry(
+            total=3, status_forcelist=(502, 503, 504), backoff_factor=0.5
+        )
         """Adding retries to override urllib3 default value 3"""
 
         # Enable client side validation

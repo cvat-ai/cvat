@@ -41,6 +41,7 @@ context('Drawing with predefined number of points.', () => {
     };
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 

@@ -729,7 +729,7 @@ class TestMerging(_PermissionTestBase):
                 == {}
             )
 
-    @pytest.mark.parametrize("job_id", [42])
+    @pytest.mark.parametrize("job_id", [42, 51])
     def test_unmodified_job_produces_same_annotations(self, admin_user, annotations, job_id: int):
         old_annotations = annotations["job"][str(job_id)]
 
@@ -740,7 +740,7 @@ class TestMerging(_PermissionTestBase):
 
             assert compare_annotations(old_annotations, new_annotations) == {}
 
-    @pytest.mark.parametrize("job_id", [42])
+    @pytest.mark.parametrize("job_id", [42, 51])
     def test_modified_job_produces_different_annotations(
         self, admin_user, annotations, jobs, consensus_settings, job_id: int
     ):
@@ -753,7 +753,8 @@ class TestMerging(_PermissionTestBase):
             api_client.consensus_api.partial_update_settings(
                 settings["id"],
                 patched_consensus_settings_request=models.PatchedConsensusSettingsRequest(
-                    quorum=0.6
+                    quorum=0.9,
+                    iou_threshold=0.8,
                 ),
             )
 

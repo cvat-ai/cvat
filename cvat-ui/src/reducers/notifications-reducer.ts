@@ -53,6 +53,11 @@ const defaultState: NotificationsState = {
             changePassword: null,
             requestPasswordReset: null,
             resetPassword: null,
+            updateUser: null,
+            getApiTokens: null,
+            createApiToken: null,
+            updateApiToken: null,
+            revokeApiToken: null,
         },
         serverAPI: {
             fetching: null,
@@ -409,6 +414,22 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.auth,
                         resetPassword: {
                             message: 'Could not set new password on the server.',
+                            reason: action.payload.error,
+                            shouldLog: shouldLog(action.payload.error),
+                        },
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.UPDATE_USER_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    auth: {
+                        ...state.errors.auth,
+                        updateUser: {
+                            message: 'Could not update user information.',
                             reason: action.payload.error,
                             shouldLog: shouldLog(action.payload.error),
                         },
@@ -1095,23 +1116,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             reason: action.payload.error,
                             shouldLog: shouldLog(action.payload.error),
                             className: 'cvat-notification-notice-save-annotations-failed',
-                        },
-                    },
-                },
-            };
-        }
-        case AnnotationActionTypes.UPDATE_CURRENT_JOB_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    annotation: {
-                        ...state.errors.annotation,
-                        saving: {
-                            message: 'Could not update annotation job',
-                            reason: action.payload.error,
-                            shouldLog: !(action.payload.error instanceof ServerError),
-                            className: 'cvat-notification-notice-update-current-job-failed',
                         },
                     },
                 },
@@ -2104,6 +2108,74 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             remainingItemsCount: action.payload.remainingItemsCount,
                             retryPayload: action.payload.retryPayload,
                             ignore: true,
+                        },
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.GET_API_TOKENS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    auth: {
+                        ...state.errors.auth,
+                        getApiTokens: {
+                            message: 'Could not get API tokens',
+                            reason: action.payload.error,
+                            shouldLog: shouldLog(action.payload.error),
+                            className: 'cvat-notification-notice-get-api-tokens-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.CREATE_API_TOKEN_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    auth: {
+                        ...state.errors.auth,
+                        createApiToken: {
+                            message: 'Could not create API token',
+                            reason: action.payload.error,
+                            shouldLog: shouldLog(action.payload.error),
+                            className: 'cvat-notification-notice-create-api-token-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.UPDATE_API_TOKEN_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    auth: {
+                        ...state.errors.auth,
+                        updateApiToken: {
+                            message: 'Could not update API token',
+                            reason: action.payload.error,
+                            shouldLog: shouldLog(action.payload.error),
+                            className: 'cvat-notification-notice-update-api-token-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.REVOKE_API_TOKEN_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    auth: {
+                        ...state.errors.auth,
+                        revokeApiToken: {
+                            message: 'Could not revoke API token',
+                            reason: action.payload.error,
+                            shouldLog: shouldLog(action.payload.error),
+                            className: 'cvat-notification-notice-revoke-api-token-failed',
                         },
                     },
                 },

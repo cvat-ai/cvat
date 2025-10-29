@@ -33,7 +33,7 @@ function SelectCSUpdatingSchemeModal(): JSX.Element | null {
 
     useEffect(() => {
         if (instances?.length) {
-            setInstanceType(instances[0].constructor.name.toLowerCase());
+            setInstanceType(instances[0] instanceof Task ? 'task' : 'project');
         }
     }, [instances]);
 

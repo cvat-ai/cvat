@@ -25,6 +25,8 @@ class TestGetResources:
                 "consensus_settings",
             ]:
                 endpoint = "/".join(endpoint.split("_"))
+            elif endpoint == "access_tokens":
+                endpoint = "auth/access_tokens"
 
             if endpoint == "annotations":
                 objects = json.load(f)

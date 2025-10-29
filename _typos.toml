@@ -1,6 +1,5 @@
 files.extend-exclude = [
     "cvat-ui/src/assets/opencv_4.8.0.js",
-    "cvat/apps/engine/migrations/0033_projects_adjastment.py", # legacy migration name, set for life
     "cvat-data/src/ts/3rdparty/*.js",
     "site/themes/docsy/",
     "*.log",

@@ -116,9 +116,39 @@ Before starting, ensure that the following prerequisites are met:
      minikube addons enable registry-aliases
      ```
      Before Docker container images can be pushed to your newly created insecure registry,
-     you need to add its address (`$(minikube ip):5000`) to the list of insecure registries to
+     you might have to add its address (`$(minikube ip):5000`) to the list of insecure registries to
      instruct Docker to accept working against it:
-     follow the instructions in the [Docker documentation](https://docs.docker.com/registry/insecure/#deploy-a-plain-http-registry)
+     1. Get minikube IP address
+     ```shell
+         MINIKUBE_IP=$(minikube ip)
+            echo "Minikube registry address: $MINIKUBE_IP:5000"
+     ```
+     2. Create a Docker daemon config file:
+     ```shell
+         vim /etc/docker/daemon.json
+     ```
+     4. Add this string to this file:
+     ```shell
+     {
+        "insecure-registries" : [ "minikube_registry_address:5000" ]
+     }
+     ```
+     4. Restart Docker:
+     ```shell
+     sudo systemctl restart docker
+     ```
+
+     Or you can run registry locally as docker container:
+
+     follow the instructions in the [Docker documentation](https://www.docker.com/blog/how-to-use-your-own-registry-2)
+
+     Please note that on MacOS default registry port of 5000 is in use by ControlCenter application.
+     In this case you can just expose registry using different port (for example 5001)
+     in that case you should run registry container with this command
+     ```shell
+     docker run -d -p 5001:5000 --name registry registry:2
+     ```
+     In that case please change registry port from :5000 to :5001 in subsequent commands (ex. --registry localhost:5001)
 
    You might also need to log into your registry account (docker login)
    on the installation machine before running the deployment command.
@@ -135,6 +165,10 @@ Before starting, ensure that the following prerequisites are met:
    - using Docker hub:
      ```shell
      nuctl deploy --project-name cvat --path serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio --registry docker.io/your_username
+     ```
+   - using local Docker registry:
+     ```shell
+     nuctl deploy --project-name cvat --path serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio --registry localhost:5000
      ```
 
 ### Analytics

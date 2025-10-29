@@ -23,7 +23,8 @@ import {
 } from './common';
 
 import User from './user';
-import { AnnotationFormats } from './annotation-formats';
+import AnnotationFormats from './annotation-formats';
+import ApiToken from './api-token';
 import { Task, Job } from './session';
 import Project from './project';
 import CloudStorage from './cloud-storage';
@@ -189,6 +190,29 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         return users;
     });
 
+    implementationMixin(cvat.apiTokens.get, async (filter) => {
+        checkFilter(filter, {
+            id: isInteger,
+            page: isInteger,
+            page_size: isInteger,
+            filter: isString,
+            sort: isString,
+            search: isString,
+            name: isString,
+            owner: isInteger,
+            read_only: isBoolean,
+            created_date: isString,
+            updated_date: isString,
+            expiry_date: isString,
+            last_used_date: isString,
+        });
+
+        const result = await serverProxy.apiTokens.get(filter);
+        const tokens = result.map((tokenData) => new ApiToken(tokenData));
+        Object.assign(tokens, { count: result.count });
+        return tokens as PaginatedResource<ApiToken>;
+    });
+
     implementationMixin(cvat.jobs.get, async (
         query: Parameters<CVATCore['jobs']['get']>[0],
         aggregate: Parameters<CVATCore['jobs']['get']>[1],
@@ -347,7 +371,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         return results as PaginatedResource<SerializedOrganization>;
     });
     implementationMixin(cvat.organizations.activate, (organization) => {
-        checkObjectType('organization', organization, null, Organization);
+        checkObjectType('organization', organization, null, { cls: Organization, name: 'Organization' });
         config.organization = {
             organizationID: organization.id,
             organizationSlug: organization.slug,

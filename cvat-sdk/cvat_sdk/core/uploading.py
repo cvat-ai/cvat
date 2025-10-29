@@ -4,141 +4,123 @@
 
 from __future__ import annotations
 
+import base64
 import json
+import logging
 import os
 from contextlib import AbstractContextManager
+from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
-import requests
 import urllib3
 
-from cvat_sdk.api_client.api_client import ApiClient, Endpoint
-from cvat_sdk.api_client.exceptions import ApiException
-from cvat_sdk.api_client.rest import RESTClientObject
-from cvat_sdk.core.helpers import StreamWithProgress, expect_status
+from cvat_sdk.api_client.api_client import ApiClient, ApiException, Endpoint
+from cvat_sdk.core.exceptions import CvatSdkException
+from cvat_sdk.core.helpers import StreamWithProgress, expect_status, make_request_headers
 from cvat_sdk.core.progress import NullProgressReporter, ProgressReporter
 
 if TYPE_CHECKING:
     from cvat_sdk.core.client import Client
 
-import tusclient.uploader as tus_uploader
-from tusclient.client import TusClient as _TusClient
-from tusclient.client import Uploader as _TusUploader
-from tusclient.request import TusRequest as _TusRequest
-from tusclient.request import TusUploadFailed as _TusUploadFailed
-
 MAX_REQUEST_SIZE = 100 * 2**20
+MAX_TUS_RETRIES = 3
+TUS_CHUNK_SIZE = 10 * 2**20
 
 
-class _RestClientAdapter:
-    # Provides requests.Session-like interface for REST client
-    # only patch is called in the tus client
+def _upload_with_tus(
+    api_client: ApiClient,
+    create_url: str,
+    metadata: dict[str, str],
+    file_stream: StreamWithProgress,
+    logger: logging.Logger,
+) -> str:
+    common_headers = {**make_request_headers(api_client), "Tus-Resumable": "1.0.0"}
 
-    def __init__(self, rest_client: RESTClientObject):
-        self.rest_client = rest_client
+    file_stream.seek(0, os.SEEK_END)
+    upload_length = file_stream.tell()
+    assert metadata
 
-    def _request(self, method, url, data=None, json=None, **kwargs):
-        raw = self.rest_client.request(
-            method=method,
-            url=url,
-            headers=kwargs.get("headers"),
-            query_params=kwargs.get("params"),
-            post_params=json,
-            body=data,
-            _parse_response=False,
-            _request_timeout=kwargs.get("timeout"),
-            _check_status=False,
-        )
+    response = api_client.rest_client.POST(
+        create_url,
+        headers={
+            **common_headers,
+            "Upload-Length": str(upload_length),
+            "Upload-Metadata": ",".join(
+                [f"{k} {base64.b64encode(v.encode()).decode()}" for k, v in metadata.items()]
+            ),
+        },
+    )
+    real_filename = response.headers.get("Upload-Filename")
 
-        result = requests.Response()
-        result._content = raw.data
-        result.raw = raw
-        result.headers.update(raw.headers)
-        result.status_code = raw.status
-        result.reason = raw.msg
-        return result
+    if not real_filename:
+        raise CvatSdkException("Server did not send Upload-Filename after upload creation")
 
-    def patch(self, *args, **kwargs):
-        return self._request("PATCH", *args, **kwargs)
+    upload_url = response.headers.get("Location")
+    if upload_url is None:
+        raise CvatSdkException("Server did not send Location after upload creation")
 
+    upload_offset = 0
+    num_errors = 0
 
-class _MyTusUploader(_TusUploader):
-    # Adjusts the library code for CVAT server
-    # Allows to reuse session
+    while True:
+        file_stream.seek(upload_offset)
+        chunk = file_stream.read(TUS_CHUNK_SIZE)
 
-    def __init__(self, *_args, api_client: ApiClient, **_kwargs):
-        self._api_client = api_client
-        super().__init__(*_args, **_kwargs)
+        new_upload_offset = None
 
-    def _do_request(self):
-        self.request = _TusRequest(self)
-        self.request.handle = _RestClientAdapter(self._api_client.rest_client)
         try:
-            self.request.perform()
-            self.verify_upload()
-        except _TusUploadFailed as error:
-            self._retry_or_cry(error)
-
-    @tus_uploader._catch_requests_error
-    def create_url(self):
-        """
-        Return upload url.
-
-        Makes request to tus server to create a new upload url for the required file upload.
-        """
-        headers = self.headers
-        headers["upload-length"] = str(self.file_size)
-        headers["upload-metadata"] = ",".join(self.encode_metadata())
-        resp = self._api_client.rest_client.POST(self.client.url, headers=headers)
-        self.real_filename = resp.headers.get("Upload-Filename")
-        url = resp.headers.get("location")
-        if url is None:
-            msg = "Attempt to retrieve create file url with status {}".format(resp.status_code)
-            raise tus_uploader.TusCommunicationError(msg, resp.status_code, resp.content)
-        return tus_uploader.urljoin(self.client.url, url)
-
-    @tus_uploader._catch_requests_error
-    def get_offset(self):
-        """
-        Return offset from tus server.
-
-        This is different from the instance attribute 'offset' because this makes an
-        http request to the tus server to retrieve the offset.
-        """
-        try:
-            resp = self._api_client.rest_client.HEAD(self.url, headers=self.headers)
-        except ApiException as ex:
-            if ex.status == 405:  # Method Not Allowed
-                # In CVAT up to version 2.2.0, HEAD requests were internally
-                # converted to GET by mod_wsgi, and subsequently rejected by the server.
-                # For compatibility with old servers, we'll handle such rejections by
-                # restarting the upload from the beginning.
-                return 0
-
-            raise tus_uploader.TusCommunicationError(
-                f"Attempt to retrieve offset failed with status {ex.status}",
-                ex.status,
-                ex.body,
-            ) from ex
-
-        offset = resp.headers.get("upload-offset")
-        if offset is None:
-            raise tus_uploader.TusCommunicationError(
-                f"Attempt to retrieve offset failed with status {resp.status}",
-                resp.status,
-                resp.data,
+            response = api_client.rest_client.PATCH(
+                upload_url,
+                headers={
+                    **common_headers,
+                    "Content-Type": "application/offset+octet-stream",
+                    "Upload-Offset": str(upload_offset),
+                },
+                body=chunk,
             )
 
-        return int(offset)
+            try:
+                new_upload_offset = int(response.headers["Upload-Offset"])
+            except KeyError:
+                raise CvatSdkException("Server did not send Upload-Offset after chunk upload")
+
+            # prevent the server from asking us to keep uploading the same chunk
+            if new_upload_offset < upload_offset + len(chunk):
+                raise CvatSdkException("Server reported unexpected Upload-Offset")
+        except ApiException as e:
+            if e.status and e.status < 500 and e.status != HTTPStatus.CONFLICT:
+                raise
+
+            if e.headers and "Upload-Offset" in e.headers:
+                new_upload_offset = int(e.headers["Upload-Offset"])
+
+            logger.error("Chunk upload failed", exc_info=e)
+            num_errors += 1
+        except urllib3.exceptions.HTTPError as e:
+            logger.error("Chunk upload failed", exc_info=e)
+            num_errors += 1
+
+        if num_errors >= MAX_TUS_RETRIES:
+            raise CvatSdkException("Too many upload errors")
+
+        if new_upload_offset is None:
+            response = api_client.rest_client.HEAD(upload_url, headers=common_headers)
+            new_upload_offset = int(response.headers["Upload-Offset"])
+
+        if new_upload_offset == upload_length:
+            return real_filename
+
+        if not 0 <= new_upload_offset <= upload_length:
+            raise CvatSdkException("Server returned invalid upload offset")
+
+        upload_offset = new_upload_offset
 
 
 class Uploader:
     """
     Implements common uploading protocols
     """
-
-    _CHUNK_SIZE = 10 * 2**20
 
     def __init__(self, client: Client):
         self._client = client
@@ -200,29 +182,15 @@ class Uploader:
             total=total_size, desc="Uploading data", unit_scale=True, unit="B", unit_divisor=1024
         )
 
-    @staticmethod
-    def _make_tus_uploader(api_client: ApiClient, url: str, **kwargs):
-        # Add headers required by CVAT server
-        headers = {}
-        headers["Origin"] = api_client.configuration.host
-        headers.update(api_client.get_common_headers())
-
-        client = _TusClient(url, headers=headers)
-
-        return _MyTusUploader(client=client, api_client=api_client, **kwargs)
-
-    def _upload_file_data_with_tus(self, url, filename, *, meta=None, pbar, logger=None) -> str:
+    def _upload_file_data_with_tus(self, url, filename, *, meta, pbar, logger=None) -> str:
         with open(filename, "rb") as input_file:
-            tus_uploader = self._make_tus_uploader(
+            return _upload_with_tus(
                 self._client.api_client,
-                url=url.rstrip("/") + "/",
+                create_url=url.rstrip("/") + "/",
                 metadata=meta,
                 file_stream=StreamWithProgress(input_file, pbar),
-                chunk_size=Uploader._CHUNK_SIZE,
-                log_func=logger,
+                logger=logger or self._client.logger,
             )
-            tus_uploader.upload()
-            return tus_uploader.real_filename
 
     def _tus_start_upload(self, url, *, query_params=None):
         response = self._client.api_client.rest_client.POST(
@@ -230,7 +198,7 @@ class Uploader:
             query_params=query_params,
             headers={
                 "Upload-Start": "",
-                **self._client.api_client.get_common_headers(),
+                **make_request_headers(self._client.api_client),
             },
         )
         expect_status(202, response)
@@ -241,7 +209,7 @@ class Uploader:
             url,
             headers={
                 "Upload-Finish": "",
-                **self._client.api_client.get_common_headers(),
+                **make_request_headers(self._client.api_client),
             },
             query_params=query_params,
             post_params=fields,
@@ -342,7 +310,7 @@ class DataUploader(Uploader):
                     headers={
                         "Content-Type": "multipart/form-data",
                         "Upload-Multiple": "",
-                        **self._client.api_client.get_common_headers(),
+                        **make_request_headers(self._client.api_client),
                     },
                 )
                 expect_status(200, response)

@@ -5,9 +5,12 @@
 
 /// <reference types="cypress" />
 
+import * as allure from 'allure-js-commons';
 import { taskName } from '../../support/const';
+import { AllureTag } from '../../support/const_allure';
 
 context('Label constructor. Color label. Label name editing', () => {
+    allure.tag(AllureTag.HEAVY);
     const caseId = '31';
     const labelColor = {
         redHex: 'ff0000',
@@ -55,6 +58,7 @@ context('Label constructor. Color label. Label name editing', () => {
     };
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTask(taskName);
     });
 

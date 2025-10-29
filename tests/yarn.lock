@@ -764,13 +764,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/k6@npm:^1.1.1":
-  version: 1.2.0
-  resolution: "@types/k6@npm:1.2.0"
-  checksum: 10c0/bab24bfcfb5e7d9645be7417b64f242c4e607658edce213a1077ba3ce5b0dc7531ea2087e2b5383f8b817eae3d1e572944d5511db20ee81c4188f9728b53cc9f
-  languageName: node
-  linkType: hard
-
 "@types/node@npm:*, @types/node@npm:16.9.1":
   version: 16.9.1
   resolution: "@types/node@npm:16.9.1"
@@ -836,6 +829,20 @@ __metadata:
     allure-playwright:
       optional: true
   checksum: 10c0/bc56d959ae8bd299566ef63f0430af5ebc7188e3d6525b805c677ff366c5dbd426f2cea37e61d26aceae07579388a3e2ba4450328b633bd99526fc4cc9818f00
+  languageName: node
+  linkType: hard
+
+"allure-js-commons@npm:^3.4.1":
+  version: 3.4.1
+  resolution: "allure-js-commons@npm:3.4.1"
+  dependencies:
+    md5: "npm:^2.3.0"
+  peerDependencies:
+    allure-playwright: 3.4.1
+  peerDependenciesMeta:
+    allure-playwright:
+      optional: true
+  checksum: 10c0/0024346a209821a037edbe8f8ffa751c0837ad9a52a64b29704f04beceff58cb672ab5afaf772cec52ee3ab8030c6b69dd42fa840c340010a7982d38f31682ef
   languageName: node
   linkType: hard
 
@@ -3302,8 +3309,8 @@ __metadata:
   resolution: "root-workspace-0b6124@workspace:."
   dependencies:
     "@cypress/code-coverage": "npm:^3.9.10"
-    "@types/k6": "npm:^1.1.1"
     allure-cypress: "npm:^3.2.2"
+    allure-js-commons: "npm:^3.4.1"
     archiver: "npm:^5.3.0"
     cy-verify-downloads: "npm:^0.0.5"
     cypress: "npm:^13.10.0"

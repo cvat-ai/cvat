@@ -3,10 +3,11 @@
 #
 # SPDX-License-Identifier: MIT
 
+import io
 import json
 import os
 from abc import ABC, abstractmethod
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from contextlib import closing
 from enum import Enum
 from inspect import isgenerator
@@ -18,9 +19,9 @@ from typing import Any, Callable, Optional, Union
 import av
 from PIL import Image
 
-from .errors import InvalidManifestError, InvalidVideoError
+from .errors import InvalidImageError, InvalidManifestError, InvalidPcdError, InvalidVideoError
 from .types import NamedBytesIO
-from .utils import SortingMethod, md5_hash, rotate_image, sort
+from .utils import PcdReader, SortingMethod, md5_hash, rotate_image, sort
 
 
 class VideoStreamReader:
@@ -35,16 +36,13 @@ class VideoStreamReader:
             for packet in container.demux(video_stream):
                 for frame in packet.decode():
                     # check type of first frame
-                    if not frame.pict_type.name == "I":
+                    if frame.pict_type != av.video.frame.PictureType.I:
                         raise InvalidVideoError("The first frame is not a key frame")
 
                     # get video resolution
-                    if video_stream.metadata.get("rotate"):
+                    if frame.rotation:
                         frame = av.VideoFrame().from_ndarray(
-                            rotate_image(
-                                frame.to_ndarray(format="bgr24"),
-                                360 - int(container.streams.video[0].metadata.get("rotate")),
-                            ),
+                            rotate_image(frame.to_ndarray(format="bgr24"), frame.rotation),
                             format="bgr24",
                         )
                     self.height, self.width = (frame.height, frame.width)
@@ -148,7 +146,7 @@ class VideoStreamReader:
 class DatasetImagesReader:
     def __init__(
         self,
-        sources: Union[list[str], Iterator[NamedBytesIO]],
+        sources: Union[list[str | NamedBytesIO], Iterable[str | NamedBytesIO]],
         *,
         start: int = 0,
         step: int = 1,
@@ -204,7 +202,6 @@ class DatasetImagesReader:
         self._step = int(value)
 
     def _get_img_properties(self, image: Union[str, NamedBytesIO]) -> dict[str, Any]:
-        img = Image.open(image, mode="r")
         if self._data_dir:
             img_name = os.path.relpath(image, self._data_dir)
         else:
@@ -216,30 +213,34 @@ class DatasetImagesReader:
             "extension": extension,
         }
 
-        width, height = img.width, img.height
-        orientation = img.getexif().get(274, 1)
-        if orientation > 4:
-            width, height = height, width
-        image_properties["width"] = width
-        image_properties["height"] = height
+        try:
+            with Image.open(image, mode="r") as img:
+                width, height = img.width, img.height
+                orientation = img.getexif().get(274, 1)
+                if orientation > 4:
+                    width, height = height, width
+                image_properties["width"] = width
+                image_properties["height"] = height
+
+                if self._use_image_hash:
+                    image_properties["checksum"] = md5_hash(img)
+        except (OSError, Image.UnidentifiedImageError) as e:
+            raise InvalidImageError(f"failed to parse image file '{img_name}'") from e
 
         if self._meta and img_name in self._meta:
             image_properties["meta"] = self._meta[img_name]
 
-        if self._use_image_hash:
-            image_properties["checksum"] = md5_hash(img)
-
         return image_properties
 
     def __iter__(self):
-        sources = (
-            self._sources
-            if self._is_generator_used
-            else islice(self._sources, self.start, self.stop + 1, self.step)
-        )
+        sources = iter(self._sources)
+        if self._is_generator_used:
+            sources = islice(sources, self.start, self.stop + 1, self.step)
+
+        included_range = self.range_
 
         for idx in range(self.stop + 1):
-            if idx in range(self.start, self.stop + 1, self.step):
+            if idx in included_range:
                 image = next(sources)
                 yield self._get_img_properties(image)
             else:
@@ -254,29 +255,44 @@ class DatasetImagesReader:
 
 
 class Dataset3DImagesReader(DatasetImagesReader):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def _get_img_properties(self, image):
+        if self._data_dir:
+            img_name = os.path.relpath(image, self._data_dir)
+        else:
+            img_name = os.path.basename(image) if isinstance(image, str) else image.filename
 
-    def __iter__(self):
-        sources = (i for i in self._sources)
-        for idx in range(self._stop + 1):
-            if idx in self.range_:
-                image = next(sources)
-                img_name = (
-                    os.path.relpath(image, self._data_dir)
-                    if self._data_dir
-                    else os.path.basename(image)
-                )
-                name, extension = os.path.splitext(img_name)
-                image_properties = {
-                    "name": name,
-                    "extension": extension,
-                }
-                if self._meta and img_name in self._meta:
-                    image_properties["meta"] = self._meta[img_name]
-                yield image_properties
+        name, extension = os.path.splitext(img_name)
+        image_properties = {
+            "name": name.replace("\\", "/"),
+            "extension": extension,
+        }
+
+        meta = (self._meta or {}).get(img_name, {})
+
+        try:
+            if extension.lower() == ".bin":
+                pcd_image = io.BytesIO()
+                PcdReader.convert_bin_to_pcd_file(image, output_file=pcd_image)
+                pcd_image.seek(0)
+
+                meta["original_name"] = img_name
+                image_properties["extension"] = ".pcd"
             else:
-                yield dict()
+                pcd_image = image
+
+            properties = PcdReader.parse_pcd_header(pcd_image, verify_version=True)
+            image_properties["width"] = int(properties["WIDTH"])
+            image_properties["height"] = int(properties["HEIGHT"])
+        except InvalidPcdError as e:
+            raise InvalidPcdError(f"failed to parse pcd file '{img_name}': {e}") from e
+
+        if meta:
+            image_properties["meta"] = meta
+
+        if self._use_image_hash:
+            image_properties["checksum"] = md5_hash(image)
+
+        return image_properties
 
 
 class _Manifest:
@@ -647,17 +663,17 @@ class ImageManifestManager(_ManifestManager):
             json_line = json.dumps({key: value}, separators=(",", ":"))
             file.write(f"{json_line}\n")
 
-    def _write_core_part(self, file, obj, _tqdm):
-        iterable_obj = (
-            obj
-            if _tqdm is None
-            else _tqdm(
-                obj,
+    def _write_core_part(self, file: io.TextIOBase, obj: Iterable[dict[str, Any]], _tqdm):
+        it = obj
+
+        if _tqdm:
+            it = _tqdm(
+                it,
                 desc="Manifest creating",
                 total=None if not hasattr(obj, "__len__") else len(obj),
             )
-        )
-        for image_properties in iterable_obj:
+
+        for image_properties in it:
             json_line = json.dumps(
                 {key: value for key, value in image_properties.items()}, separators=(",", ":")
             )
@@ -872,15 +888,10 @@ class _DatasetManifestStructureValidator(_BaseManifestValidator):
             raise InvalidManifestError("Incorrect name field")
         if not isinstance(_dict["extension"], str):
             raise InvalidManifestError("Incorrect extension field")
-        # FIXME
-        # Width and height are required for 2D data, but
-        # for 3D these parameters are not saved now.
-        # It is necessary to uncomment these restrictions when manual preparation for 3D data is implemented.
-
-        # if not isinstance(_dict['width'], int):
-        #     raise InvalidManifestError('Incorrect width field')
-        # if not isinstance(_dict['height'], int):
-        #     raise InvalidManifestError('Incorrect height field')
+        if not isinstance(_dict["width"], int):
+            raise InvalidManifestError("Incorrect width field")
+        if not isinstance(_dict["height"], int):
+            raise InvalidManifestError("Incorrect height field")
 
 
 def is_manifest(full_manifest_path):

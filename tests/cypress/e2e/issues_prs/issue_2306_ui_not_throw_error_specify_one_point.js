@@ -16,6 +16,7 @@ context('Draw a point shape, specify one point', () => {
     };
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 

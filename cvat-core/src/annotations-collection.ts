@@ -386,8 +386,7 @@ export default class Collection {
                 }
             } else {
                 throw new ArgumentError(
-                    `Trying to merge unknown object type: ${object.constructor.name}. ` +
-                        'Only shapes and tracks are expected.',
+                    'Trying to merge unknown object type. Only shapes and tracks are expected.',
                 );
             }
 
@@ -460,10 +459,10 @@ export default class Collection {
     }
 
     public merge(objectStates: ObjectState[]): void {
-        checkObjectType('shapes to merge', objectStates, null, Array);
+        checkObjectType('shapes to merge', objectStates, null, { cls: Array, name: 'Array' });
         if (!objectStates.length) return;
         const objectsForMerge = objectStates.map((state) => {
-            checkObjectType('object state', state, null, ObjectState);
+            checkObjectType('object state', state, null, { cls: ObjectState, name: 'ObjectState' });
             const object = this.objects[state.clientID];
             if (typeof object === 'undefined') {
                 throw new ArgumentError(
@@ -585,7 +584,7 @@ export default class Collection {
     }
 
     public split(objectState: ObjectState, frame: number): void {
-        checkObjectType('object state', objectState, null, ObjectState);
+        checkObjectType('object state', objectState, null, { cls: ObjectState, name: 'ObjectState' });
         checkObjectType('frame', frame, 'integer', null);
 
         const object = this.objects[objectState.clientID] as Track;
@@ -626,10 +625,10 @@ export default class Collection {
     }
 
     public group(objectStates: ObjectState[], reset: boolean): number {
-        checkObjectType('shapes to group', objectStates, null, Array);
+        checkObjectType('shapes to group', objectStates, null, { cls: Array, name: 'Array' });
 
         const objectsForGroup = objectStates.map((state) => {
-            checkObjectType('object state', state, null, ObjectState);
+            checkObjectType('object state', state, null, { cls: ObjectState, name: 'ObjectState' });
             const object = this.objects[state.clientID];
             if (typeof object === 'undefined') {
                 throw new ArgumentError('The object has not been saved yet. Call annotations.put([state]) before');
@@ -667,8 +666,8 @@ export default class Collection {
     }
 
     public join(objectStates: ObjectState[], points: number[]): void {
-        checkObjectType('shapes to join', objectStates, null, Array);
-        checkObjectType('joined rle mask', points, null, Array);
+        checkObjectType('shapes to join', objectStates, null, { cls: Array, name: 'Array' });
+        checkObjectType('joined rle mask', points, null, { cls: Array, name: 'Array' });
 
         if (objectStates.some((state, idx) => idx && state.frame !== objectStates[idx - 1].frame)) {
             throw new ArgumentError('All joined objects must be placed on the same frame');
@@ -678,7 +677,7 @@ export default class Collection {
         }
 
         const objectsToJoin = objectStates.map((state) => {
-            checkObjectType('object state', state, null, ObjectState);
+            checkObjectType('object state', state, null, { cls: ObjectState, name: 'ObjectState' });
 
             const object = this.objects[state.clientID];
             if (typeof object === 'undefined') {
@@ -686,9 +685,7 @@ export default class Collection {
             }
 
             if (!(object instanceof MaskShape)) {
-                throw new ArgumentError(
-                    `Only shape masks can be joined. Found instance of: "${object.constructor.name}"`,
-                );
+                throw new ArgumentError('Only shape masks can be joined');
             }
 
             return object;
@@ -757,9 +754,9 @@ export default class Collection {
         }
 
         const [points1, points2] = results;
-        checkObjectType('sliced object id', state, null, ObjectState);
-        checkObjectType('first slicing contour', points1, null, Array);
-        checkObjectType('second slicing contour', points2, null, Array);
+        checkObjectType('sliced object', state, null, { cls: ObjectState, name: 'ObjectState' });
+        checkObjectType('first slicing contour', points1, null, { cls: Array, name: 'Array' });
+        checkObjectType('second slicing contour', points2, null, { cls: Array, name: 'Array' });
 
         points1.forEach(
             (el: number) => checkObjectType('first slicing contour element', el, 'number'),
@@ -770,9 +767,7 @@ export default class Collection {
 
         const slicedObject = this.objects[state.clientID];
         if (!(slicedObject instanceof PolygonShape || slicedObject instanceof MaskShape)) {
-            throw new ArgumentError(
-                `Only polygon shape or mask shape can be sliced. Got "${slicedObject.constructor.name}"`,
-            );
+            throw new ArgumentError('Only polygon shape or mask shape can be sliced');
         }
 
         const { width, height } = this.injection.framesInfo[slicedObject.frame];
@@ -1029,7 +1024,7 @@ export default class Collection {
     }
 
     public put(objectStates: ObjectState[]): number[] {
-        checkObjectType('shapes for put', objectStates, null, Array);
+        checkObjectType('shapes for put', objectStates, null, { cls: Array, name: 'Array' });
         const constructed = {
             shapes: [],
             tracks: [],
@@ -1037,12 +1032,14 @@ export default class Collection {
         };
 
         for (const state of objectStates) {
-            checkObjectType('object state', state, null, ObjectState);
-            checkObjectType('state client ID', state.clientID, null, null);
-            checkObjectType('state frame', state.frame, 'integer', null);
-            checkObjectType('state rotation', state.rotation || 0, 'number', null);
-            checkObjectType('state attributes', state.attributes, null, Object);
-            checkObjectType('state label', state.label, null, Label);
+            checkObjectType('object state', state, null, { cls: ObjectState, name: 'ObjectState' });
+            if (state.clientID !== null) {
+                throw new ArgumentError('ObjectState.clientID must be null when adding new objects');
+            }
+            checkObjectType('state frame', state.frame, 'integer');
+            checkObjectType('state rotation', state.rotation ?? 0, 'number');
+            checkObjectType('state attributes', state.attributes, null, { cls: Object, name: 'Object' });
+            checkObjectType('state label', state.label, null, { cls: Label, name: 'Label' });
 
             const attributes = validateAttributesList(objectAttributesAsList(state));
             const labelAttributes = state.label.attributes.reduce((accumulator, attribute) => {
@@ -1060,14 +1057,14 @@ export default class Collection {
                     source: state.source,
                 });
             } else {
-                checkObjectType('state occluded', state.occluded, 'boolean', null);
-                checkObjectType('state points', state.points, null, Array);
-                checkObjectType('state zOrder', state.zOrder, 'integer', null);
-                checkObjectType('state descriptions', state.descriptions, null, Array);
+                checkObjectType('state occluded', state.occluded, 'boolean');
+                checkObjectType('state points', state.points, null, { cls: Array, name: 'Array' });
+                checkObjectType('state zOrder', state.zOrder, 'integer');
+                checkObjectType('state descriptions', state.descriptions, null, { cls: Array, name: 'Array' });
                 state.descriptions.forEach((desc) => checkObjectType('state description', desc, 'string'));
 
                 for (const coord of state.points) {
-                    checkObjectType('point coordinate', coord, 'number', null);
+                    checkObjectType('point coordinate', coord, 'number');
                 }
 
                 if (!Object.values(ShapeType).includes(state.shapeType)) {
@@ -1223,14 +1220,14 @@ export default class Collection {
         state: ObjectState,
         distance: number | null,
     } {
-        checkObjectType('shapes for select', objectStates, null, Array);
+        checkObjectType('shapes for select', objectStates, null, { cls: Array, name: 'Array' });
         checkObjectType('x coordinate', x, 'number', null);
         checkObjectType('y coordinate', y, 'number', null);
 
         let minimumDistance = null;
         let minimumState = null;
         for (const state of objectStates) {
-            checkObjectType('object state', state, null, ObjectState);
+            checkObjectType('object state', state, null, { cls: ObjectState, name: 'ObjectState' });
             if (state.outside || state.hidden || state.objectType === ObjectType.TAG) {
                 continue;
             }

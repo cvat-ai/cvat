@@ -144,9 +144,11 @@ jobs:
 
       - name: REST API and SDK tests
         run: |
+          echo 'Run 1: without cache'
           pytest tests/python/ --alluredir=tests/python/allure-results
           pytest tests/python/ --stop-services
 
+          echo 'Run 2: with cache'
           CVAT_ALLOW_STATIC_CACHE="true" pytest tests/python
           pytest tests/python/ --stop-services
 
@@ -166,7 +168,8 @@ jobs:
           max_tries=12
           while [[  $(curl -s -o /dev/null -w "%{http_code}" localhost:8181/health?bundles) != "200" && max_tries -gt 0 ]]; do (( max_tries-- )); sleep 5; done
 
-          docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
+          docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml \
+            run --env PYTHONDEVMODE=1 cvat_ci /bin/bash \
             -c 'python manage.py test cvat/apps -v 2'
 
           docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml down -v
@@ -177,9 +180,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        specs: ['actions_tasks', 'actions_tasks2', 'actions_tasks3',
+        specs: ['actions_tasks', 'actions_tasks2', 'actions_tasks3', 'actions_tasks4',
                 'actions_objects', 'actions_objects2', 'actions_users',
-                'actions_projects_models', 'canvas3d_functionality', 'canvas3d_functionality_2',
+                'actions_projects_models', 'canvas3d_functionality',
                 'issues_prs', 'issues_prs2', 'features']
     steps:
       - uses: actions/checkout@v4
@@ -264,14 +267,12 @@ jobs:
             npx cypress run \
               --headed \
               --browser chrome \
-              --env coverage=false \
               --config-file cypress_canvas3d.config.js \
-              --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
+              --spec 'cypress/e2e/setup/setup_canvas3d.js,cypress/e2e/canvas3d_*/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
           else
             npx cypress run \
               --browser chrome \
-              --env coverage=false \
-              --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
+              --spec 'cypress/e2e/setup/setup.js,cypress/e2e/setup/setup_project.js,cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
           fi
 
       - name: Creating a log file from "cvat" container logs

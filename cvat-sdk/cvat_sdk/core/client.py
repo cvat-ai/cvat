@@ -7,11 +7,13 @@ from __future__ import annotations
 
 import logging
 import urllib.parse
+from abc import ABCMeta
 from collections.abc import Generator, Sequence
 from contextlib import contextmanager, suppress
 from pathlib import Path
 from time import sleep
-from typing import Any, Optional, TypeVar
+from typing import Any, Optional, TypeVar, Union
+from urllib.parse import urlsplit
 
 import attrs
 import packaging.specifiers as specifiers
@@ -56,6 +58,33 @@ class Config:
 
     cache_dir: Path = attrs.field(converter=Path, default=_DEFAULT_CACHE_DIR)
     """Directory in which to store cached server data"""
+
+
+class Credentials(metaclass=ABCMeta):
+    pass
+
+
+@attrs.define
+class PasswordCredentials(Credentials):
+    """
+    Represents password authentication credentials.
+    """
+
+    user: str
+    """Username for authentication"""
+
+    password: str
+    """Password for authentication"""
+
+
+@attrs.define
+class AccessTokenCredentials(Credentials):
+    """
+    Represents API access token authentication credentials.
+    """
+
+    token: str
+    """API access token for authentication"""
 
 
 _VERSION_OBJ = pv.Version(VERSION)
@@ -200,27 +229,48 @@ class Client:
     def close(self) -> None:
         return self.__exit__(None, None, None)
 
-    def login(self, credentials: tuple[str, str]) -> None:
+    def login(self, credentials: Credentials | tuple[str, str]) -> None:
+        if self.has_credentials():
+            self.logout()
+
+        if isinstance(credentials, PasswordCredentials):
+            credentials = (credentials.user, credentials.password)
+        elif isinstance(credentials, AccessTokenCredentials):
+            self.api_client.configuration.access_token = credentials.token
+            return
+        elif not isinstance(credentials, tuple) or len(credentials) != 2:
+            raise TypeError(f"Invalid credentials format")
+
         self.api_client.auth_api.create_login(
             models.LoginSerializerExRequest(username=credentials[0], password=credentials[1])
         )
         assert "sessionid" in self.api_client.cookies
         assert "csrftoken" in self.api_client.cookies
-        self.api_client.set_default_header("Origin", self.api_client.build_origin_header())
-        self.api_client.set_default_header(
-            "X-CSRFToken", self.api_client.cookies["csrftoken"].value
-        )
+        self.api_client.configuration.api_key["csrfHeaderAuth"] = self.api_client.cookies[
+            "csrftoken"
+        ].value
 
     def has_credentials(self) -> bool:
-        return ("sessionid" in self.api_client.cookies) or ("csrftoken" in self.api_client.cookies)
+        return (
+            ("sessionid" in self.api_client.cookies)
+            or ("csrftoken" in self.api_client.cookies)
+            or self.api_client.configuration.access_token
+        )
+
+    def _clear_credentials(self):
+        self.api_client.cookies.pop("sessionid", None)
+        self.api_client.cookies.pop("csrftoken", None)
+        self.api_client.configuration.api_key.pop("csrfHeaderAuth", None)
+        self.api_client.configuration.access_token = None
 
     def logout(self) -> None:
-        if self.has_credentials():
+        if not self.has_credentials():
+            return
+
+        if "sessionid" in self.api_client.cookies or "csrftoken" in self.api_client.cookies:
             self.api_client.auth_api.create_logout()
-            self.api_client.cookies.pop("sessionid", None)
-            self.api_client.cookies.pop("csrftoken", None)
-            self.api_client.default_headers.pop("Origin", None)
-            self.api_client.default_headers.pop("X-CSRFToken", None)
+
+        self._clear_credentials()
 
     def wait_for_completion(
         self: Client,
@@ -354,13 +404,51 @@ class CVAT_API_V2:
 
 
 def make_client(
-    host: str, *, port: Optional[int] = None, credentials: Optional[tuple[str, str]] = None
+    host: str,
+    *,
+    port: Optional[int] = None,
+    credentials: Union[Credentials, tuple[str, str], None] = None,
+    access_token: Optional[str] = None,
 ) -> Client:
+    """
+    Create a Client object with the specified parameters.
+
+    Passing 'credentials' or 'access_token' allows to authenticate the client immediately.
+    These parameters cannot be used together.
+
+    Parameters:
+    :param host: allows to specify the server url. Can include scheme and port.
+    :param port: allows to specify the server port. Cannot be used together with a host
+      that contains a port component (e.g. localhost:80).
+    :param credentials: will automatically log in the client with the specified credentials.
+    :param access_token: a Personal Access Token (PAT) to be used for authentication.
+
+    Returns: a new Client object
+    """
+
+    if credentials is not None and access_token is not None:
+        raise ValueError(
+            "'credentials' and 'access_token' cannot be used together. Please use only one."
+        )
+
     url = host.rstrip("/")
+
     if port:
+        parsed_url = urlsplit(("https://" if "://" not in url else "") + host)
+        if parsed_url.port:
+            raise ValueError(
+                "The 'host' with a port and the 'port' argument cannot be used together. "
+                "Please specify only one port."
+            )
+
         url = f"{url}:{port}"
 
     client = Client(url=url)
+
+    if access_token is not None:
+        credentials = AccessTokenCredentials(access_token)
+
     if credentials is not None:
         client.login(credentials)
+
     return client

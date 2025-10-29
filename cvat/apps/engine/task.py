@@ -51,9 +51,9 @@ from cvat.apps.engine.utils import av_scan_paths, format_list, get_path_size, ta
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS, make_requests_session
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, is_manifest
 from utils.dataset_manifest.core import VideoManifestValidator, is_dataset_manifest
-from utils.dataset_manifest.utils import detect_related_images
+from utils.dataset_manifest.utils import find_related_images
 
-from .cloud_provider import db_storage_to_storage_instance
+from .cloud_provider import HeaderFirstMediaDownloader, db_storage_to_storage_instance
 
 slogger = ServerLogManager(__name__)
 
@@ -69,6 +69,7 @@ class SegmentsParams(NamedTuple):
     segments: Iterator[SegmentParams]
     segment_size: int
     overlap: int
+    segments_count: int
 
 def _copy_data_from_share_point(
     server_files: list[str],
@@ -134,6 +135,7 @@ def _generate_segment_params(
         segments = _segments()
         segment_size = 0
         overlap = 0
+        segments_count = len(job_file_mapping)
     else:
         # The segments have equal parameters
         if data_size is None:
@@ -148,6 +150,8 @@ def _generate_segment_params(
                 else 5 if db_task.mode == 'interpolation' else 0,
             segment_size // 2,
         )
+        segments_range = range(0, data_size - overlap, segment_size - overlap)
+        segments_count = len(segments_range)
 
         segments = (
             SegmentParams(
@@ -155,10 +159,11 @@ def _generate_segment_params(
                 stop_frame=min(start_frame + segment_size - 1, data_size - 1),
                 type=models.SegmentType.RANGE
             )
-            for start_frame in range(0, data_size - overlap, segment_size - overlap)
+            for start_frame in segments_range
         )
 
-    return SegmentsParams(segments, segment_size, overlap)
+    return SegmentsParams(segments, segment_size, overlap, segments_count)
+
 
 def _create_segments_and_jobs(
     db_task: models.Task,
@@ -168,11 +173,19 @@ def _create_segments_and_jobs(
 ):
     update_status_callback('Task is being saved in database')
 
-    segments, segment_size, overlap = _generate_segment_params(
+    segments, segment_size, overlap, segments_count = _generate_segment_params(
         db_task=db_task, job_file_mapping=job_file_mapping,
     )
     db_task.segment_size = segment_size
     db_task.overlap = overlap
+
+    job_count_total = segments_count * (db_task.consensus_replicas + 1)
+    if job_count_total > settings.MAX_JOBS_PER_TASK:
+        raise ValueError(
+            "Too many jobs would be created for the task. "
+            f"Current total: {job_count_total}, "
+            f"maximum allowed: {settings.MAX_JOBS_PER_TASK}."
+        )
 
     for segment_idx, segment_params in enumerate(segments):
         slogger.glob.info(
@@ -198,6 +211,7 @@ def _create_segments_and_jobs(
 
     db_task.data.save()
     db_task.save()
+
 
 def _count_files(data):
     share_root = settings.SHARE_ROOT
@@ -529,21 +543,59 @@ def _create_task_manifest_from_cloud_data(
     db_storage: models.CloudStorage,
     sorted_media: list[str],
     manifest: ImageManifestManager,
-    dimension: models.DimensionType = models.DimensionType.DIM_2D,
-    *,
-    stop_frame: Optional[int] = None,
 ) -> None:
-    if stop_frame is None:
-        stop_frame = len(sorted_media) - 1
-    cloud_storage_instance = db_storage_to_storage_instance(db_storage)
-    content_generator = cloud_storage_instance.bulk_download_to_memory(sorted_media)
+    dimension = ValidateDimension().detect_dimension_for_paths(sorted_media)
+
+    regular_images, related_images = find_related_images(
+        sorted_media,
+        scene_paths=(
+            lambda p: not re.search(r'(^|{0})related_images{0}'.format(os.sep), p)
+            # backward compatibility, deprecated in https://github.com/cvat-ai/cvat/pull/9757
+        )
+    )
+    sorted_media = [f for f in sorted_media if f in regular_images]
+
+    storage_client = db_storage_to_storage_instance(db_storage)
+    content_generator = storage_client.bulk_download_to_memory(
+        sorted_media,
+        object_downloader=HeaderFirstMediaDownloader.create(
+            dimension=dimension, client=storage_client
+        ).download,
+    )
 
     manifest.link(
         sources=content_generator,
-        DIM_3D=dimension == models.DimensionType.DIM_3D,
-        stop=stop_frame,
+        meta={
+            k: {'related_images': related_images[k] }
+            for k in related_images
+        },
+        DIM_3D=(dimension == models.DimensionType.DIM_3D),
+        stop=len(sorted_media) - 1,
     )
     manifest.create()
+
+def _find_and_filter_related_images(
+    extractor: IMediaReader,
+    *,
+    upload_dir: str
+) -> dict[str, list[str]]:
+    regular_images, related_images = find_related_images(
+        extractor.absolute_source_paths,
+        scene_paths=(
+            lambda p: not re.search(r'(^|{0})related_images{0}'.format(os.sep), p)
+            # backward compatibility
+        )
+    )
+
+    # extractor.filter() uses absolute paths, so we pass them
+    extractor.filter(lambda p: p in regular_images)
+
+    # manifest requires relative files as they would be in the task data, so update the paths
+    return {
+        os.path.relpath(k, upload_dir): [os.path.relpath(ri, upload_dir) for ri in k_ris]
+        for k, k_ris in related_images.items()
+    }
+
 
 @transaction.atomic
 def create_thread(
@@ -874,17 +926,19 @@ def create_thread(
                 all([f'{i}/' not in server_files_exclude for i in Path(x).relative_to(upload_dir).parents])
         )
 
-    validate_dimension = ValidateDimension()
     if isinstance(extractor, MEDIA_TYPES['zip']['extractor']):
         extractor.extract()
 
     validate_dimension = ValidateDimension()
     if db_data.storage == models.StorageChoice.LOCAL or (
         db_data.storage == models.StorageChoice.SHARE and
-        isinstance(extractor, MEDIA_TYPES['zip']['extractor'])
+        isinstance(extractor, (
+            MEDIA_TYPES['archive']['extractor'], MEDIA_TYPES['zip']['extractor']
+        ))
     ):
-        validate_dimension.set_path(upload_dir)
-        validate_dimension.validate()
+        validate_dimension.validate(upload_dir)
+    elif not isinstance(extractor, MEDIA_TYPES['video']['extractor']):
+        validate_dimension.detect_dimension_for_paths(extractor.absolute_source_paths)
 
     if (db_task.project is not None and
         db_task.project.tasks.count() > 1 and
@@ -895,30 +949,26 @@ def create_thread(
             f"same as other tasks in project ({db_task.project.tasks.first().dimension})"
         )
 
-    if validate_dimension.dimension == models.DimensionType.DIM_3D:
-        db_task.dimension = models.DimensionType.DIM_3D
+    db_task.dimension = validate_dimension.dimension
 
-        keys_of_related_files = validate_dimension.related_files.keys()
-        absolute_keys_of_related_files = [os.path.join(upload_dir, f) for f in keys_of_related_files]
-        # When a task is created, the sorting method can be random and in this case, reinitialization will be with correct sorting
-        # but when a task is restored from a backup, a random sorting is changed to predefined and we need to manually sort files
-        # in the correct order.
-        source_files = absolute_keys_of_related_files if not is_backup_restore else \
-            [item for item in extractor.absolute_source_paths if item in absolute_keys_of_related_files]
+    if validate_dimension.dimension == models.DimensionType.DIM_3D:
         extractor.reconcile(
-            source_files=source_files,
+            source_files=[
+                # We always work with .pcd files instead of .bin
+                (os.path.splitext(p)[0] + ".pcd") if p.endswith(".bin") else p
+                for p in extractor.absolute_source_paths
+            ],
             step=db_data.get_frame_step(),
             start=db_data.start_frame,
             stop=data['stop_frame'],
-            dimension=models.DimensionType.DIM_3D,
+            dimension=validate_dimension.dimension,
         )
 
     related_images = {}
     if isinstance(extractor, MEDIA_TYPES['image']['extractor']):
-        extractor.filter(lambda x: not re.search(r'(^|{0})related_images{0}'.format(os.sep), x))
-        related_images = detect_related_images(extractor.absolute_source_paths, upload_dir)
+        related_images = _find_and_filter_related_images(extractor, upload_dir=upload_dir)
 
-    if validate_dimension.dimension != models.DimensionType.DIM_3D and (
+    if job_file_mapping or (
         (
             not isinstance(extractor, MEDIA_TYPES['video']['extractor']) and
             is_backup_restore and
@@ -936,14 +986,13 @@ def create_thread(
                 not isinstance(extractor, MEDIA_TYPES['video']['extractor'])
             )
         )
-    ) or job_file_mapping:
-        # We should sort media_files according to the manifest content sequence
-        # and we should do this in general after validation step for 3D data
-        # and after filtering from related_images
+    ):
         if job_file_mapping:
+            # Sort media_files according to the requested file order
             sorted_media_files = itertools.chain.from_iterable(job_file_mapping)
 
         else:
+            # Sort media_files according to the manifest file order
             if manifest is None:
                 if not manifest_file or not os.path.isfile(os.path.join(manifest_root, manifest_file)):
                     raise FileNotFoundError(
@@ -1123,7 +1172,7 @@ def create_thread(
                     if not image_path.endswith(f"{image_info['name']}{image_info['extension']}"):
                         raise ValidationError('Incorrect file mapping to manifest content')
 
-                    if db_task.dimension == models.DimensionType.DIM_2D and (
+                    if (
                         image_info.get('width') is not None and
                         image_info.get('height') is not None
                     ):

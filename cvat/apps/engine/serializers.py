@@ -2515,10 +2515,8 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer, OrgTransf
     @transaction.atomic
     def create(self, validated_data):
         project_id = validated_data.get("project_id")
-        if not (validated_data.get("label_set") or project_id):
-            raise serializers.ValidationError('Label set or project_id must be present')
         if validated_data.get("label_set") and project_id:
-            raise serializers.ValidationError('Project must have only one of Label set or project_id')
+            raise serializers.ValidationError('Task must have only one of Label set or project_id')
 
         project = None
         if project_id:
@@ -2919,6 +2917,10 @@ class ProjectWriteSerializer(serializers.ModelSerializer, OrgTransferableMixin):
         owner_id: int,
         updated_date: datetime,
     ):
+        models.Data.objects.filter(
+            id__in=models.Task.objects.filter(project=instance).values('data_id'),
+        ).update(cloud_storage_id=None)
+
         instance.tasks.update(
             organization_id=organization_id,
             owner_id=owner_id,
