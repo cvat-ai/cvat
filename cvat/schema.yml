@@ -103,7 +103,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['name', 'id', 'owner', 'created_date', 'updated_date', 'expiry_date', 'last_used_date', 'read_only'].
+           Available filter_fields: ['name', 'id', 'created_date', 'updated_date', 'expiry_date', 'last_used_date', 'read_only'].
         schema:
           type: string
       - name: name
@@ -111,11 +111,6 @@ paths:
         description: A simple equality filter for the name field
         schema:
           type: string
-      - name: owner
-        in: query
-        description: A simple equality filter for the owner field
-        schema:
-          type: integer
       - name: page
         required: false
         in: query
@@ -138,7 +133,7 @@ paths:
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''name'', ''id'', ''owner'', ''created_date'', ''updated_date'', ''expiry_date'',
+          [''name'', ''id'', ''created_date'', ''updated_date'', ''expiry_date'',
           ''last_used_date'', ''read_only'']'
         schema:
           type: string
