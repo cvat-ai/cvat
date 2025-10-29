@@ -109,7 +109,7 @@ class ProjectAnnotation:
         data["stop_frame"] = None
         data["server_files"] = list(map(split_name, data["server_files"]))
 
-        create_task(db_task, data, is_dataset_import=True)
+        create_task(db_task, data)
         self.db_tasks = (
             models.Task.objects.filter(project__id=self.db_project.id)
             .exclude(data=None)
