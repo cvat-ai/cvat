@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
+/// <reference types="cypress" />
+
 export function generateString(countPointsToMove, arrow) {
     let action = '';
     for (let i = 0; i < countPointsToMove; i++) {
@@ -76,4 +78,12 @@ export function convertClasses(data, $win) {
     }
 
     return data;
+}
+
+export function toSnakeCase(obj) {
+    const result = {};
+    for (const [k, v] of Object.entries(obj)) {
+        result[Cypress._.snakeCase(k)] = v;
+    }
+    return result;
 }

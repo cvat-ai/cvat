@@ -7,7 +7,7 @@
 
 /* eslint-disable security/detect-non-literal-regexp */
 
-import { decomposeMatrix, convertClasses } from './utils';
+import { decomposeMatrix, convertClasses, toSnakeCase } from './utils';
 
 require('cypress-file-upload');
 require('../plugins/imageGenerator/imageGeneratorCommand');
@@ -106,6 +106,20 @@ Cypress.Commands.add('headlessDeleteUser', (userId) => {
         );
     });
     cy.wait('@deleteUser');
+});
+
+Cypress.Commands.add('headlessGetSelfId', () => cy.window()
+    .its('cvat').should('not.be.undefined')
+    .then(async (cvat) => {
+        const { data: { id } } = await cvat.server.request('/api/users/self', { method: 'GET' });
+        return cy.wrap(id);
+    }),
+);
+
+Cypress.Commands.add('headlessDeleteSelf', () => {
+    cy.headlessGetSelfId().then((id) => {
+        cy.headlessDeleteUser(id);
+    });
 });
 
 Cypress.Commands.add('changeUserActiveStatus', (authKey, accountsToChangeActiveStatus, isActive) => {
@@ -430,6 +444,8 @@ Cypress.Commands.add('headlessDeleteTask', (taskID) => {
 });
 
 Cypress.Commands.add('headlessCreateUser', (userSpec) => {
+    // eslint-disable-next-line no-param-reassign
+    userSpec = toSnakeCase(userSpec);
     cy.window().its('cvat', { timeout: 25000 }).should('not.be.undefined');
     cy.intercept('POST', '/api/auth/register**', (req) => {
         req.continue((response) => {
