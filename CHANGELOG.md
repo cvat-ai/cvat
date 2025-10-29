@@ -16,6 +16,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.48.1'></a>
+## \[2.48.1\] - 2025-10-29
+
+### Removed
+
+- It is no longer possible to upgrade directly from CVAT releases prior
+  to v2.0.0
+  (<https://github.com/cvat-ai/cvat/pull/9930>)
+
+### Fixed
+
+- UI crush on failed `GET /api/server/annotation/formats` request
+  (<https://github.com/cvat-ai/cvat/pull/9927>)
+
 <a id='changelog-2.48.0'></a>
 ## \[2.48.0\] - 2025-10-27
 

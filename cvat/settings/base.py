@@ -15,25 +15,20 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.0/ref/settings/
 """
 
-import mimetypes
 import os
 import sys
 import tempfile
 import urllib
 from datetime import timedelta
 from enum import Enum, IntEnum
+from pathlib import Path
 
 from attr.converters import to_bool
 from corsheaders.defaults import default_headers
+from django.core.exceptions import ImproperlyConfigured
 from logstash_async.constants import constants as logstash_async_constants
 
 from cvat import __version__
-
-mimetypes.add_type("application/wasm", ".wasm", True)
-
-from pathlib import Path
-
-from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = str(Path(__file__).parents[2])
