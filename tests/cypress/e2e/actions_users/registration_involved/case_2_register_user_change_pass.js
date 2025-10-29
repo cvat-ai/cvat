@@ -5,9 +5,10 @@
 
 /// <reference types="cypress" />
 
+import { toSnakeCase } from '../../../support/utils';
+
 context('Register user, change password, login with new password', () => {
     function changePassword(myPassword, myNewPassword) {
-        cy.openProfile();
         cy.get('.cvat-profile-page-navigation-menu')
             .should('exist')
             .and('be.visible')
@@ -31,6 +32,9 @@ context('Register user, change password, login with new password', () => {
     const username = 'SecuserCase2';
     const emailAddr = `${username}@local.local`;
     const password = 'GDrb41RguF!';
+    // TODO: check update email and username if/when feature is available
+    const firstNameNew = 'Jane';
+    const lastNameNew = 'Doe';
     const incorrectCurrentPassword = 'gDrb41RguF!';
     const newPassword = 'bYdOk8#eEd';
     const secondNewPassword = 'ndTh48@yVY';
@@ -49,17 +53,44 @@ context('Register user, change password, login with new password', () => {
         cy.headlessLogout();
     });
 
-    describe(`Testing "Case ${caseId}"`, () => {
-        it('Register user, change password', () => {
-            changePassword(password, newPassword);
-            cy.contains('New password has been saved.').should('exist');
-            cy.logout();
+    context('User page', () => {
+        describe('Profile', () => {
+            it("Open user's profile page. Profile is selected, username is greeted", () => {
+                cy.openProfile();
+                cy.get('.ant-menu-item-selected').within(() => {
+                    cy.get('.cvat-profile-page-menu-item-profile').should('have.text', 'Profile');
+                });
+                cy.get('.cvat-profile-page-welcome').invoke('text').should('include', `Welcome, ${username}`);
+            });
+            it("Change user's personal info. Update is handled correctly", () => {
+                cy.intercept('PATCH', '/api/users/**', (req) => {
+                    const expectedFields = toSnakeCase({ firstName: firstNameNew, lastName: lastNameNew });
+                    assert(Cypress._.isEqual(req.body, expectedFields));
+                    req.continue((res) => {
+                        const resFields = Cypress._.pick(res.body, ['first_name', 'last_name']);
+                        assert(Cypress._.isEqual(res.body, resFields));
+                    });
+                }).as('updateFirstLastName');
 
-            cy.login(username, newPassword);
+                cy.get('input[id="firstName"]').type(firstNameNew);
+                cy.get('input[id="lastName"]').type(lastNameNew);
 
-            changePassword(incorrectCurrentPassword, secondNewPassword);
-            cy.get('.cvat-notification-notice-change-password-failed').should('exist');
-            cy.closeNotification('.cvat-notification-notice-change-password-failed');
+                cy.contains('button', 'Save changes').click();
+                cy.wait('@updateFirstLastName');
+            });
+        });
+        describe(`Testing "Case ${caseId}"`, () => {
+            it('Register user, change password', () => {
+                changePassword(password, newPassword);
+                cy.contains('New password has been saved.').should('exist');
+                cy.logout();
+
+                cy.login(username, newPassword);
+
+                changePassword(incorrectCurrentPassword, secondNewPassword);
+                cy.get('.cvat-notification-notice-change-password-failed').should('exist');
+                cy.closeNotification('.cvat-notification-notice-change-password-failed');
+            });
         });
     });
 });
