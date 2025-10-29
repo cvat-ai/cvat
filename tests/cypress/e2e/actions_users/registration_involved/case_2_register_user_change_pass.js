@@ -6,16 +6,6 @@
 /// <reference types="cypress" />
 
 context('Register user, change password, login with new password', () => {
-    const caseId = '2';
-    const firstName = 'SecuserfmCaseTwo';
-    const lastName = 'SecuserlmCaseTwo';
-    const userName = 'SecuserCase2';
-    const emailAddr = `${userName}@local.local`;
-    const password = 'GDrb41RguF!';
-    const incorrectCurrentPassword = 'gDrb41RguF!';
-    const newPassword = 'bYdOk8#eEd';
-    const secondNewPassword = 'ndTh48@yVY';
-
     function changePassword(myPassword, myNewPassword) {
         cy.openProfile();
         cy.get('.cvat-profile-page-navigation-menu')
@@ -35,26 +25,37 @@ context('Register user, change password, login with new password', () => {
         });
     }
 
+    const caseId = '2';
+    const firstName = 'SecuserfmCaseTwo';
+    const lastName = 'SecuserlmCaseTwo';
+    const username = 'SecuserCase2';
+    const emailAddr = `${username}@local.local`;
+    const password = 'GDrb41RguF!';
+    const incorrectCurrentPassword = 'gDrb41RguF!';
+    const newPassword = 'bYdOk8#eEd';
+    const secondNewPassword = 'ndTh48@yVY';
+    const userSpec = {
+        firstName, lastName, email: emailAddr, password, username,
+    };
+
     before(() => {
-        cy.visit('auth/register');
-        cy.url().should('include', '/auth/register');
+        cy.visit('auth/login');
+        cy.headlessCreateUser(userSpec);
+        cy.headlessLogin({ ...userSpec, nextURL: '/tasks' });
     });
 
     after(() => {
-        cy.logout();
-        cy.getAuthKey().then((authKey) => {
-            cy.deleteUsers(authKey, [userName]);
-        });
+        cy.headlessDeleteSelf();
+        cy.headlessLogout();
     });
 
     describe(`Testing "Case ${caseId}"`, () => {
         it('Register user, change password', () => {
-            cy.userRegistration(firstName, lastName, userName, emailAddr, password);
             changePassword(password, newPassword);
             cy.contains('New password has been saved.').should('exist');
             cy.logout();
 
-            cy.login(userName, newPassword);
+            cy.login(username, newPassword);
 
             changePassword(incorrectCurrentPassword, secondNewPassword);
             cy.get('.cvat-notification-notice-change-password-failed').should('exist');
