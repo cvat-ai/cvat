@@ -7,6 +7,8 @@ aliases:
   - /docs/manual/basics/cloud-storages/
 ---
 
+CVAT supports **AWS S3**, **Azure Blob Storage**, **Backblaze B2** (S3-compatible) and **Google Cloud Storage** for importing and exporting annotation datasets.
+
 ![Cloud storage page example](/images/image227.jpg)
 
 The cloud storages page contains elements, each of them relating to a separate cloud storage. 
@@ -47,7 +49,7 @@ To clear all filters, select `Clear filters`.
 | Properties     | Supported values                             | Description                                 |
 | -------------- | -------------------------------------------- | ------------------------------------------- |
 | `ID`           | number or range of task ID                   |                                             |
-| `Provider type` | `Amazon S3`, `Azure Blob`, `Google Cloud`   |                                             |
+| `Provider type` | `AWS S3`, `Azure`, `Google cloud`           | Note: Backblaze B2 uses the `AWS S3` provider type (S3-compatible) |
 | `Credentials type` | `Key & secret key`, `Account name and token`,<br> `Anonymous access`, `Key file` |     |
 | `Resource name` |                                             | `Bucket name` or `container name`           |
 | `Display name` |                                              | Set when creating cloud storage             |

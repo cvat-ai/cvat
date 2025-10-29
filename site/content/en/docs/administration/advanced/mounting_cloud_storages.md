@@ -2,12 +2,18 @@
 title: 'Mounting cloud storage'
 linkTitle: 'Mounting cloud storage'
 weight: 30
-description: 'Instructions on how to mount an Amazon S3 bucket, Microsoft Azure Blob Storage container or Google Drive as a filesystem.'
+description: 'Instructions on how to mount AWS S3 bucket, Backblaze B2, Microsoft Azure container or Google Drive as a filesystem.'
 ---
 
 ## Amazon S3 bucket as filesystem
 
-### <a name="amazon_s3_ubuntu_2004">Ubuntu 20.04</a>
+{{% alert title="Note" color="primary" %}}
+**Backblaze B2** is S3-compatible and can be mounted using the same s3fs instructions
+as AWS S3. Simply configure s3fs with your B2 endpoint URL (e.g., `https://s3.us-west-004.backblazeb2.com`)
+using the `-o url=` option along with your B2 Application Keys.
+{{% /alert %}}
+
+## AWS S3 bucket as filesystem
 
 #### <a name="amazon_s3_mount">Mount</a>
 
