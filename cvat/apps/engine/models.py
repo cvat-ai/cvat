@@ -1254,22 +1254,10 @@ class Comment(TimestampedModel):
     def get_job_id(self):
         return self.issue.get_job_id()
 
-class CloudProviderChoice(str, Enum):
-    AWS_S3 = 'AWS_S3_BUCKET'
-    AZURE_CONTAINER = 'AZURE_CONTAINER'
-    GOOGLE_DRIVE = 'GOOGLE_DRIVE'
-    GOOGLE_CLOUD_STORAGE = 'GOOGLE_CLOUD_STORAGE'
-
-    @classmethod
-    def choices(cls):
-        return tuple((x.value, x.name) for x in cls)
-
-    @classmethod
-    def list(cls):
-        return [x.value for x in cls]
-
-    def __str__(self):
-        return self.value
+class CloudProviderChoice(TextChoices):
+    AMAZON_S3 = "AWS_S3_BUCKET", "Amazon S3"
+    AZURE_BLOB_STORAGE = "AZURE_CONTAINER", "Azure Blob Storage"
+    GOOGLE_CLOUD_STORAGE = "GOOGLE_CLOUD_STORAGE", "Google Cloud Storage"
 
 class CredentialsTypeChoice(str, Enum):
     # ignore bandit issues because false positives
@@ -1329,7 +1317,7 @@ class CloudStorage(TimestampedModel):
     # specific attributes:
     # location - max 23
     # project ID: 6 - 30 (https://cloud.google.com/resource-manager/docs/creating-managing-projects#before_you_begin)
-    provider_type = models.CharField(max_length=20, choices=CloudProviderChoice.choices())
+    provider_type = models.CharField(max_length=20, choices=CloudProviderChoice.choices)
     resource = models.CharField(max_length=222)
     display_name = models.CharField(max_length=63)
     owner = models.ForeignKey(User, null=True, blank=True,
