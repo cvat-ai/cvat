@@ -140,3 +140,25 @@ be restored.
 
 The token will not be available for use anymore.
 
+## How to use Personal Access Tokens
+
+Once you have a Personal Access Token, it can be used for authentication in CVAT.
+
+To authenticate a server HTTP API request with a token, the `Authorization` header
+must be specified. The value has to include the `Bearer` prefix:
+`Authorization: Bearer token_value`.
+
+Example: sending a request via the *requests* Python library
+```python
+import requests
+token = "..."
+response = requests.get(
+  "https://app.cvat.ai/api/tasks",
+  headers={"Authorization": "Bearer " + token}
+)
+print(response.json()["results"])
+```
+
+Personal Access Tokens can also be used for authentication in other CVAT components:
+- in the {{< ilink "/docs/api_sdk/sdk/lowlevel-api#authentication" "low-level" >}} and {{< ilink "/docs/api_sdk/sdk/highlevel-api#authentication" "high-level" >}} API of the CVAT SDK
+- in the {{< ilink "/docs/api_sdk/cli#authentication" "CVAT CLI" >}}
