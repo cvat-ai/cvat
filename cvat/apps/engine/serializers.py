@@ -743,23 +743,19 @@ class JobReadListSerializer(serializers.ListSerializer):
             # Optimized prefetch only for the current page
             page: list[models.Job] = data
 
-            # page_ids = set(j.id for j in page)
-            # page = list(
-            #     models.Job.objects.select_related(
-            #         'assignee',
-            #         'segment__task__data',
-            #         'segment__task__project',
-            #         'segment__task__annotation_guide',
-            #         'segment__task__project__annotation_guide',
-            #         "segment__task__source_storage",
-            #         "segment__task__target_storage"
-            #     ).filter(id__in=page_ids).all()
-            # )
-
             # Annotate page objects
             # We do it explicitly here and not in the LIST queryset to avoid
             # doing the same DB computations twice - one time for the page retrieval
             # and another one for the COUNT(*) request to get the total count
+            page = list(models.Job.objects.filter(id__in=[j.id for j in page]).select_related(
+                'assignee',
+                "segment__task",
+                'segment__task__data',
+                'segment__task__project',
+                'segment__task__annotation_guide',
+                'segment__task__project__annotation_guide',
+                "parent_job",
+            ).all())
             page_task_ids = set(j.get_task_id() for j in page)
 
             visible_tasks_perm = TaskPermission.create_scope_list(request)
@@ -775,11 +771,16 @@ class JobReadListSerializer(serializers.ListSerializer):
                 ).values_list("id", "issues__count")
             )
 
+            prefetch_related_objects(page,
+                "segment__task__source_storage",
+                "segment__task__target_storage"
+            )
+
             for job in page:
                 job.user_can_view_task = job.get_task_id() in visible_tasks
                 job.issues__count = issue_counts.get(job.id, 0)
 
-            # data = page
+            data = page
 
         return super().to_representation(data)
 

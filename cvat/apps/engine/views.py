@@ -1693,9 +1693,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             # q_expr = perm.make_filter_query()
             # queryset = filter_with_union(queryset, q_expr)
 
-            queryset = queryset.prefetch_related(
-                "segment__task__source_storage", "segment__task__target_storage"
-            )
+            queryset = queryset.only("pk").select_related(None)
         else:
             queryset = queryset.with_issue_counts() # optimized in JobReadSerializer
 
