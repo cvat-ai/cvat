@@ -1685,15 +1685,17 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         queryset = super().get_queryset()
 
         if self.action == 'list':
+            queryset = queryset.only("pk").select_related(None)
+
+            from cvat.apps.engine.model_utils import RecordingQuerySet
+            queryset = RecordingQuerySet(queryset)
+
             perm = JobPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
 
-            # queryset = queryset.only("pk").select_related(None).prefetch_related(None)
             # from cvat.apps.engine.model_utils import filter_with_union
             # q_expr = perm.make_filter_query()
             # queryset = filter_with_union(queryset, q_expr)
-
-            queryset = queryset.only("pk").select_related(None)
         else:
             queryset = queryset.with_issue_counts() # optimized in JobReadSerializer
 
@@ -1702,9 +1704,17 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     def filter_queryset(self, queryset):
         queryset = super().filter_queryset(queryset)
 
-        from cvat.apps.engine.model_utils import q_from_where
-        q = q_from_where(queryset)
-        queryset = queryset.model.objects.filter(q)
+        from cvat.apps.engine.model_utils import RecordingQuerySet, filter_with_union, q_from_where
+        if isinstance(queryset, RecordingQuerySet):
+            q = queryset.get_q()
+            inner_queryset = queryset.materialize()
+            inner_queryset.query.distinct = False
+            queryset = filter_with_union(inner_queryset, q)
+            queryset.query.order_by += inner_queryset.query.order_by
+            # queryset = queryset.order_by("pk")
+
+            # q = q_from_where(queryset)
+            # queryset = queryset.model.objects.filter(q)
 
         return queryset
 

@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 from collections.abc import Generator, Iterable
+from copy import deepcopy
 from typing import Any, Sequence, TypeVar, Union
 
 from django.conf import settings
@@ -213,10 +214,7 @@ def filter_with_union(queryset: _QuerysetT, q_expr: models.Q) -> _QuerysetT:
         # A trivial case, can use this expr directly
         queryset = queryset.filter(q_expr_dnf)
     else:
-        qs2 = queryset.filter(q_expr_dnf.children[0])
-        qs2 = qs2.union(*[queryset.filter(term) for term in q_expr_dnf.children[1:]])
-
-        queryset = qs2
+        queryset = queryset.none().union(*[queryset.filter(term) for term in q_expr_dnf.children])
 
     return queryset
 
@@ -226,8 +224,8 @@ class NonConvertibleQuery(Exception):
 
 
 def q_from_where(queryset: _QuerysetT) -> models.Q:
-    from django.utils import tree
     from django.db.models.sql import where
+    from django.utils import tree
 
     def _traverse_query_where(queryset: _QuerysetT) -> Generator[tree.Node, None, None]:
         # Returns Where expression elements in the postfix expression order:
@@ -268,21 +266,57 @@ def q_from_where(queryset: _QuerysetT) -> models.Q:
             q_args = q_stack[-q_args_count::-1]
             q_stack.append(_as_simple_q(term, q_args))
         else:
-            q_stack.append(term) # A terminal
+            q_stack.append(term)  # A terminal
 
     assert len(q_stack) == 1
     return q_stack[0]
 
 
 class RecordingQuerySet(models.QuerySet):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, queryset: models.QuerySet):
+        self.original_queryset = queryset
         self.calls = []
+
+    def __getattr__(self, key: str):
+        rv = getattr(self.original_queryset, key)
+        if isinstance(rv, models.QuerySet) and rv is not self.original_queryset:
+            rv = RecordingQuerySet(rv)
+            rv.calls = deepcopy(self.calls)
+
+        return rv
 
     def filter(self, *args, **kwargs):
         self.calls.append(("filter", args, kwargs))
-        return super().filter(*args, **kwargs)
+        return self._chain()
 
     def exclude(self, *args, **kwargs):
         self.calls.append(("exclude", args, kwargs))
-        return super().exclude(*args, **kwargs)
+        return self._chain()
+
+    def _clone(self):
+        qs = RecordingQuerySet(self.original_queryset._clone())
+        qs.calls = deepcopy(self.calls)
+        return qs
+
+    def materialize(self) -> models.QuerySet:
+        return self.original_queryset
+
+    def get_q(self) -> models.Q:
+        merged_q = models.Q()
+
+        for call_name, call_args, call_kwargs in self.calls:
+            if call_name in ("filter", "exclude"):
+                q = models.Q()
+
+                if call_args:
+                    q &= models.Q(*call_args)
+
+                if call_kwargs:
+                    q &= models.Q(**call_kwargs)
+
+                if call_name == "exclude":
+                    q.negate()
+
+                merged_q &= q
+
+        return merged_q
