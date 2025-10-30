@@ -148,7 +148,7 @@ To authenticate a server HTTP API request with a token, the `Authorization` head
 must be specified. The value has to include the `Bearer` prefix:
 `Authorization: Bearer token_value`.
 
-Example: sending a request via the *requests* Python library
+Example: sending a request via the _requests_ Python library
 ```python
 import requests
 token = "..."
@@ -160,5 +160,6 @@ print(response.json()["results"])
 ```
 
 Personal Access Tokens can also be used for authentication in other CVAT components:
-- in the {{< ilink "/docs/api_sdk/sdk/lowlevel-api#authentication" "low-level" >}} and {{< ilink "/docs/api_sdk/sdk/highlevel-api#authentication" "high-level" >}} API of the CVAT SDK
+- in the {{< ilink "/docs/api_sdk/sdk/lowlevel-api#authentication" "low-level" >}} and
+  {{< ilink "/docs/api_sdk/sdk/highlevel-api#authentication" "high-level" >}} API of the CVAT SDK
 - in the {{< ilink "/docs/api_sdk/cli#authentication" "CVAT CLI" >}}
