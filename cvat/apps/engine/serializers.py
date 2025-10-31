@@ -741,13 +741,13 @@ class JobReadListSerializer(serializers.ListSerializer):
     def to_representation(self, data):
         if (request := self.context.get("request")) and isinstance(data, list) and data:
             # Optimized prefetch only for the current page
-            page: list[models.Job] = data
+            # page: list[models.Job] = data
 
             # Annotate page objects
             # We do it explicitly here and not in the LIST queryset to avoid
             # doing the same DB computations twice - one time for the page retrieval
             # and another one for the COUNT(*) request to get the total count
-            page = list(models.Job.objects.filter(id__in=[j.id for j in page]).select_related(
+            page = list(models.Job.objects.filter(id__in=data).select_related(
                 'assignee',
                 "segment__task",
                 'segment__task__data',

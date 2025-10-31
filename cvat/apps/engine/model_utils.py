@@ -298,7 +298,7 @@ class RecordingQuerySet(models.QuerySet):
         qs.calls = deepcopy(self.calls)
         return qs
 
-    def materialize(self) -> models.QuerySet:
+    def get_wrapped(self) -> models.QuerySet:
         return self.original_queryset
 
     def get_q(self) -> models.Q:
