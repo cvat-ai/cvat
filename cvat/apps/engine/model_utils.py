@@ -200,7 +200,7 @@ def _to_dnf_q(q: models.Q) -> models.Q:
 
 def filter_with_union(queryset: _QuerysetT, q_expr: models.Q) -> _QuerysetT:
     """
-    Applies a Q-expression filter with ORs into a query with UNIONs.
+    Convert a Q-expression filter with ORs into a query with unions.
     This is needed to avoid the ORs in the queryset filter,
     because they result in bad performance in Postgres.
     """
@@ -273,20 +273,21 @@ def q_from_where(queryset: _QuerysetT) -> models.Q:
     return q_stack[0]
 
 
-class RecordingQuerySet(models.QuerySet):
+class RecordingQuerySet(_QuerysetT):
     # TODO: support slices and other query format modifiers like values() etc.
 
-    def __init__(self, queryset: models.QuerySet):
+    def __init__(self, queryset: _QuerysetT):
         self.original_queryset = queryset
         self.calls = []
 
     def __getattr__(self, key: str):
-        rv = getattr(self.original_queryset, key)
-        if isinstance(rv, models.QuerySet) and rv is not self.original_queryset:
-            rv = RecordingQuerySet(rv)
-            rv.calls = deepcopy(self.calls)
+        result = getattr(self.original_queryset, key)
 
-        return rv
+        if isinstance(result, _QuerysetT) and result is not self.original_queryset:
+            result = RecordingQuerySet(result)
+            result.calls = deepcopy(self.calls)
+
+        return result
 
     def filter(self, *args, **kwargs):
         self.calls.append(("filter", args, kwargs))
@@ -301,26 +302,26 @@ class RecordingQuerySet(models.QuerySet):
         qs.calls = deepcopy(self.calls)
         return qs
 
-    def get_wrapped(self) -> models.QuerySet:
+    def get_wrapped(self) -> _QuerysetT:
         return self.original_queryset
 
     def get_q(self) -> models.Q:
         merged_q = models.Q()
 
         for call_name, call_args, call_kwargs in self.calls:
-            if call_name in ("filter", "exclude"):
-                q = models.Q()
+            assert call_name in ("filter", "exclude")
+            q = models.Q()
 
-                if call_args:
-                    q &= models.Q(*call_args)
+            if call_args:
+                q &= models.Q(*call_args)
 
-                if call_kwargs:
-                    q &= models.Q(**call_kwargs)
+            if call_kwargs:
+                q &= models.Q(**call_kwargs)
 
-                if call_name == "exclude":
-                    q.negate()
+            if call_name == "exclude":
+                q.negate()
 
-                merged_q &= q
+            merged_q &= q
 
         return merged_q
 

@@ -16,6 +16,9 @@ from urllib.parse import urljoin
 
 import django_rq
 from django.conf import settings
+from django.core.paginator import InvalidPage, PageNotAnInteger
+from django.db.models import F, Func
+from django_cte import CTE, with_cte
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import mixins, status
@@ -26,6 +29,7 @@ from cvat.apps.dataset_manager.util import TmpDirManager
 from cvat.apps.engine.background import BackupExporter, DatasetExporter
 from cvat.apps.engine.handlers import clear_import_cache
 from cvat.apps.engine.log import ServerLogManager
+from cvat.apps.engine.model_utils import ListQueryset, RecordingQuerySet, filter_with_union
 from cvat.apps.engine.models import Location
 from cvat.apps.engine.serializers import DataSerializer
 from cvat.apps.engine.tus import (
@@ -405,56 +409,52 @@ class BackupMixin:
 
 class OptimizedModelListMixin:
     def filter_queryset_for_list_request(self, queryset):
-        from cvat.apps.engine.model_utils import ListQueryset, RecordingQuerySet, filter_with_union
+        if not isinstance(queryset, RecordingQuerySet):
+            return queryset
 
-        if isinstance(queryset, RecordingQuerySet):
-            from django.core.paginator import InvalidPage, PageNotAnInteger
-            from django.db.models import F, Func
-            from django_cte import CTE, with_cte
+        queryset = queryset.only("pk").select_related(None)
 
-            queryset = queryset.only("pk").select_related(None)
+        # TODO: maybe get from the query directly, but it can be quite difficult
+        # q = q_from_where(queryset)
+        # queryset = queryset.model.objects.filter(q)
+        q = queryset.get_q()
 
-            q = queryset.get_q()
+        inner_queryset = queryset.get_wrapped()
+        inner_queryset.query.distinct = False
 
-            inner_queryset = queryset.get_wrapped()
-            inner_queryset.query.distinct = False
+        # Convert the query to a set of UNION clauses to fix bad performance of
+        # WHERE x OR y in JOINs
+        queryset = filter_with_union(inner_queryset, q)
 
-            # Convert the query to a set of UNION clauses to fix bad performance of
-            # WHERE x OR y in JOINs
-            queryset = filter_with_union(inner_queryset, q)
+        ids_cte = CTE(queryset, name="object_ids")
 
-            ids_cte = CTE(queryset, name="object_ids")
+        # The queryset.count() method performs the request immediately,
+        # but we need to create a queryset instead.
+        count_qs = with_cte(
+            ids_cte, select=ids_cte.queryset()
+        ).values_list(Func(F("pk"), function='Count'), flat=True)
 
-            # The queryset.count() method performs the request immediately,
-            # but we need to create a queryset instead.
-            count_qs = with_cte(
+        # TODO: maybe rewrite the paginator somehow to make just 1 request
+        pagination = self.paginator
+        page_size = pagination.get_page_size(self.request)
+        paginator = pagination.django_paginator_class(range(sys.maxsize), page_size)
+        page_number = pagination.get_page_number(self.request, paginator)
+        try:
+            page_number = paginator.validate_number(page_number)
+        except PageNotAnInteger:
+            page_number = 1
+        except InvalidPage:
+            queryset = []
+
+        if isinstance(page_number, int):
+            start_index = (page_number - 1) * page_size
+            end_index = page_number * page_size
+            page_ids_qs = with_cte(
                 ids_cte, select=ids_cte.queryset()
-            ).values_list(Func(F("pk"), function='Count'), flat=True)
+            ).values_list("pk", flat=True)[start_index: end_index]
 
-            # TODO: maybe rewrite the paginator somehow to make just 1 request
-            pagination = self.paginator
-            page_size = pagination.get_page_size(self.request)
-            paginator = pagination.django_paginator_class(range(sys.maxsize), page_size)
-            page_number = pagination.get_page_number(self.request, paginator)
-            try:
-                page_number = paginator.validate_number(page_number)
-            except PageNotAnInteger:
-                page_number = 1
-            except InvalidPage:
-                queryset = []
-
-            if isinstance(page_number, int):
-                start_index = (page_number - 1) * page_size
-                end_index = page_number * page_size
-                page_ids_qs = with_cte(
-                    ids_cte, select=ids_cte.queryset()
-                ).values_list("pk", flat=True)[start_index: end_index]
-
-                combined_qs = count_qs.union(page_ids_qs, all=True)
-                total, *page_ids = list(combined_qs)
-                queryset = ListQueryset(total, page_ids, start_index=start_index)
-
-                # q = q_from_where(queryset)
-                # queryset = queryset.model.objects.filter(q)
+            combined_qs = count_qs.union(page_ids_qs, all=True)
+            total, *page_ids = list(combined_qs)
+            queryset = ListQueryset(total, page_ids, start_index=start_index)
 
         return queryset

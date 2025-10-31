@@ -74,7 +74,7 @@ from cvat.apps.engine.mixins import (
     PartialUpdateModelMixin,
     UploadMixin,
 )
-from cvat.apps.engine.model_utils import bulk_create
+from cvat.apps.engine.model_utils import RecordingQuerySet, bulk_create
 from cvat.apps.engine.models import (
     AnnotationGuide,
     Asset,
@@ -851,7 +851,6 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'annotation_guide',
     ).prefetch_related(
         # avoid loading heavy data in select related
-        # this reduces performance of the COUNT request in the list endpoint
         'data__validation_layout',
     )
 
@@ -888,7 +887,6 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         queryset = super().get_queryset()
 
         if self.action == 'list':
-            from cvat.apps.engine.model_utils import RecordingQuerySet
             queryset = RecordingQuerySet(queryset)
 
             perm = TaskPermission.create_scope_list(self.request)
@@ -1694,7 +1692,6 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         queryset = super().get_queryset()
 
         if self.action == 'list':
-            from cvat.apps.engine.model_utils import RecordingQuerySet
             queryset = RecordingQuerySet(queryset)
 
             perm = JobPermission.create_scope_list(self.request)
