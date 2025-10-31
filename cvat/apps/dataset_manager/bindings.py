@@ -14,7 +14,7 @@ from functools import partial, reduce
 from operator import add
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any, Callable, Generator, Literal, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Generator, Literal, NamedTuple, Optional, Union
 
 import attr
 import datumaro as dm
@@ -55,6 +55,9 @@ from cvat.apps.engine.rq import ImportRQMeta
 from ..engine.log import ServerLogManager
 from .annotation import AnnotationIR, AnnotationManager, TrackManager
 from .formats.transformations import MaskConverter
+
+if TYPE_CHECKING:
+    from .project import ProjectAnnotation
 
 slogger = ServerLogManager(__name__)
 
@@ -1085,7 +1088,6 @@ class ProjectData(InstanceLabelData):
         db_project: Project,
         host: str = '',
         task_annotations: Mapping[int, Any] = None,
-        project_annotation=None,
         *,
         use_server_track_ids: bool = False
     ):
@@ -1094,7 +1096,6 @@ class ProjectData(InstanceLabelData):
         self._task_annotations = task_annotations
         self._host = host
         self._soft_attribute_import = False
-        self._project_annotation = project_annotation
         self._tasks_data: dict[int, TaskData] = {}
         self._frame_info: dict[tuple[int, int], Literal["path", "width", "height", "subset"]] = dict()
         # (subset, path): (task id, frame number)
@@ -1469,18 +1470,6 @@ class ProjectData(InstanceLabelData):
             task_data = self._task_data(task_id)
             subset_dataset: dm.Dataset = dataset.subsets()[task_data.db_instance.subset].as_dataset()
             yield subset_dataset, task_data
-
-    def add_labels(self, labels: list[dict]):
-        attributes = []
-        _labels = []
-        for label in labels:
-            _attributes = label.pop('attributes')
-            _labels.append(Label(**label))
-            attributes += [(label['name'], AttributeSpec(**at)) for at in _attributes]
-        self._project_annotation.add_labels(_labels, attributes)
-
-    def add_task(self, task, files):
-        self._project_annotation.add_task(task, files, self)
 
     def __len__(self) -> int:
         return sum(db_task.data.size for db_task in self._db_tasks.values())
@@ -2477,7 +2466,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
             track['elements'] = list(track['elements'].values())
             instance_data.add_track(instance_data.Track(**track))
 
-def import_labels_to_project(project_annotation, dataset: dm.Dataset):
+def import_labels_to_project(project_annotation: ProjectAnnotation, dataset: dm.Dataset) -> None:
     labels = []
     label_colors = []
     for label in dataset.categories()[dm.AnnotationType.label].items:
@@ -2490,7 +2479,9 @@ def import_labels_to_project(project_annotation, dataset: dm.Dataset):
         label_colors.append(db_label.color)
     project_annotation.add_labels(labels)
 
-def load_dataset_data(project_annotation, dataset: dm.Dataset, project_data):
+def load_dataset_data(
+    project_annotation: ProjectAnnotation, dataset: dm.Dataset, project_data: ProjectData
+) -> None:
     if not project_annotation.db_project.label_set.count():
         import_labels_to_project(project_annotation, dataset)
     else:
