@@ -116,7 +116,7 @@ cvat-cli --auth "username" task ls
 ```
 
 The `--auth` parameter can also be omitted. In this case, the CLI will try to use the current
-user as the username. If the `PASS` environment variable is configured, it's value will be used
+OS user as the username. If the `PASS` environment variable is configured, it's value will be used
 for the password. Otherwise, the password will be requested for input.
 
 ```bash
