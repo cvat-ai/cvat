@@ -132,6 +132,10 @@ context('Register user, change password, login with new password', () => {
                         cy.get('.cvat-api-token-created-modal').should('exist').and('be.visible').within(() => {
                             cy.get('.cvat-api-token-copy-button').should('exist').and('be.visible');
                             clipboard.copy().should('equal', token);
+                            cy.contains('I have securely saved my token')
+                                .should('exist').and('be.visible')
+                                .click();
+                            cy.get('.cvat-api-token-created-modal').should('not.exist');
                         });
                         cy.wait('@getToken');
                     });
