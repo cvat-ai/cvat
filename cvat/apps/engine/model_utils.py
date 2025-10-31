@@ -8,6 +8,7 @@ from collections.abc import Generator, Iterable
 from copy import deepcopy
 from typing import Any, Sequence, TypeVar, Union
 
+import attrs
 from django.conf import settings
 from django.db import models
 
@@ -273,6 +274,8 @@ def q_from_where(queryset: _QuerysetT) -> models.Q:
 
 
 class RecordingQuerySet(models.QuerySet):
+    # TODO: support slices and other query format modifiers like values() etc.
+
     def __init__(self, queryset: models.QuerySet):
         self.original_queryset = queryset
         self.calls = []
@@ -320,3 +323,46 @@ class RecordingQuerySet(models.QuerySet):
                 merged_q &= q
 
         return merged_q
+
+
+@attrs.define
+class ListQueryset:
+    # A list with virtually shifted element indices
+    total: int
+    page_data: Sequence[int]
+    start_index: int = attrs.field(kw_only=True)
+    _end_index: int = attrs.field(init=False)
+
+    def __attrs_post_init__(self):
+        self._end_index = min(self.start_index + len(self.page_data), self.total)
+
+    def count(self):
+        return self.total
+
+    def __len__(self):
+        return self.total
+
+    def _check_index(self, i: int):
+        if i < self.start_index or i > self._end_index:
+            raise IndexError(i)
+
+    def __getitem__(self, i: int | slice):
+        if isinstance(i, slice):
+            slice_start = i.start
+            if slice_start is not None:
+                assert isinstance(slice_start, int)
+                self._check_index(slice_start)
+                slice_start -= self.start_index
+
+            slice_end = i.stop  # stop is not included
+            if slice_end is not None:
+                assert isinstance(slice_end, int)
+                self._check_index(slice_end)
+                slice_end -= self.start_index
+
+            i = slice(slice_start, slice_end, i.step)
+        else:
+            self._check_index(i)
+            i -= self.start_index
+
+        return self.page_data[i]

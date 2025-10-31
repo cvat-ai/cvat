@@ -1694,10 +1694,6 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
 
             perm = JobPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
-
-            # from cvat.apps.engine.model_utils import filter_with_union
-            # q_expr = perm.make_filter_query()
-            # queryset = filter_with_union(queryset, q_expr)
         else:
             queryset = queryset.with_issue_counts() # optimized in JobReadSerializer
 
@@ -1706,28 +1702,31 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     def filter_queryset(self, queryset):
         queryset = super().filter_queryset(queryset)
 
-        from cvat.apps.engine.model_utils import RecordingQuerySet, filter_with_union, q_from_where
+        from cvat.apps.engine.model_utils import ListQueryset, RecordingQuerySet, filter_with_union
+
         if isinstance(queryset, RecordingQuerySet):
+            from django.core.paginator import InvalidPage, PageNotAnInteger
+            from django.db.models import F, Func
+            from django_cte import CTE, with_cte
+
             q = queryset.get_q()
 
-            # TODO: support slices and other query format modifiers
             inner_queryset = queryset.get_wrapped()
             inner_queryset.query.distinct = False
 
+            # Convert the query to a set of UNION clauses to fix bad performance of
+            # WHERE x OR y in JOINs
             queryset = filter_with_union(inner_queryset, q)
-            # queryset.query.order_by += inner_queryset.query.order_by
-            # queryset = queryset.order_by("pk")
 
-            from django.db.models import F, Func
-            from django_cte import CTE, with_cte
             job_ids_cte = CTE(queryset, name="job_ids")
 
+            # The queryset.count() method performs the request immediately,
+            # but we need to create a queryset instead.
             count_qs = with_cte(
                 job_ids_cte, select=job_ids_cte.queryset()
             ).values_list(Func(F("pk"), function='Count'), flat=True)
 
-            from django.core.paginator import InvalidPage, PageNotAnInteger
-
+            # TODO: maybe rewrite the paginator somehow to make just 1 request
             pagination = self.paginator
             page_size = pagination.get_page_size(self.request)
             paginator = pagination.django_paginator_class(range(sys.maxsize), page_size)
@@ -1748,54 +1747,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
 
                 combined_qs = count_qs.union(page_ids_qs, all=True)
                 total, *page_ids = list(combined_qs)
-
-                import attrs
-
-                @attrs.define
-                class CachedOnlyQueryset:
-                    # A list with virtually shifted element indices
-                    total: int
-                    page_data: Sequence[int]
-                    start_index: int
-                    _end_index: int = attrs.field(init=False)
-
-                    def __attrs_post_init__(self):
-                        self._end_index = min(self.start_index + len(self.page_data), self.total)
-
-                    def count(self):
-                        return self.total
-
-                    def __len__(self):
-                        return self.total
-
-                    def _check_index(self, i: int):
-                        if i < self.start_index or i > self._end_index:
-                            raise IndexError(i)
-
-                    def __getitem__(self, i: int | slice):
-                        if isinstance(i, slice):
-                            slice_start = i.start
-                            if slice_start is not None:
-                                assert isinstance(slice_start, int)
-                                self._check_index(slice_start)
-                                slice_start -= self.start_index
-
-                            slice_end = i.stop # stop is not included
-                            if slice_end is not None:
-                                assert isinstance(slice_end, int)
-                                self._check_index(slice_end)
-                                slice_end -= self.start_index
-
-                            i = slice(slice_start, slice_end, i.step)
-                        else:
-                            self._check_index(i)
-                            i -= self.start_index
-
-                        return self.page_data[i]
-
-                queryset = CachedOnlyQueryset(
-                    total=total, page_data=page_ids, start_index=start_index
-                )
+                queryset = ListQueryset(total, page_ids, start_index=start_index)
 
                 # q = q_from_where(queryset)
                 # queryset = queryset.model.objects.filter(q)
