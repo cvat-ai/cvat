@@ -8,12 +8,10 @@ import os
 import os.path as osp
 import re
 import shutil
-import sys
 import textwrap
 import traceback
 import zlib
 from abc import ABCMeta, abstractmethod
-from collections.abc import Sequence
 from contextlib import suppress
 from copy import copy
 from datetime import datetime
@@ -69,7 +67,13 @@ from cvat.apps.engine.frame_provider import (
     TaskFrameProvider,
 )
 from cvat.apps.engine.media_extractors import get_mime
-from cvat.apps.engine.mixins import BackupMixin, DatasetMixin, PartialUpdateModelMixin, UploadMixin
+from cvat.apps.engine.mixins import (
+    BackupMixin,
+    DatasetMixin,
+    OptimizedModelListMixin,
+    PartialUpdateModelMixin,
+    UploadMixin,
+)
 from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.models import (
     AnnotationGuide,
@@ -836,7 +840,7 @@ class _JobDataGetter(_DataGetter):
 
 class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
-    PartialUpdateModelMixin, UploadMixin, DatasetMixin, BackupMixin
+    PartialUpdateModelMixin, UploadMixin, DatasetMixin, BackupMixin, OptimizedModelListMixin
 ):
     queryset = Task.objects.select_related(
         'data',
@@ -884,22 +888,25 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         queryset = super().get_queryset()
 
         if self.action == 'list':
+            from cvat.apps.engine.model_utils import RecordingQuerySet
+            queryset = RecordingQuerySet(queryset)
+
             perm = TaskPermission.create_scope_list(self.request)
-
             queryset = perm.filter(queryset)
-
-            # queryset = queryset.only("pk").select_related(None).prefetch_related(None)
-            # from cvat.apps.engine.model_utils import filter_with_union
-            # q_expr = perm.make_filter_query()
-            # queryset = filter_with_union(queryset, q_expr)
-
-            # with_job_summary() is optimized in the serializer
         elif self.action == 'preview':
             queryset = Task.objects.select_related('data')
         elif self.action == 'validation_layout':
             queryset = Task.objects.select_related('data', 'data__validation_layout')
         else:
             queryset = queryset.with_job_summary()
+
+        return queryset
+
+    def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
+
+        if self.action == "list":
+            queryset = self.filter_queryset_for_list_request(queryset)
 
         return queryset
 
@@ -1656,7 +1663,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 )
 class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateModelMixin,
     mixins.RetrieveModelMixin, PartialUpdateModelMixin, mixins.DestroyModelMixin,
-    UploadMixin, DatasetMixin
+    UploadMixin, DatasetMixin, OptimizedModelListMixin
 ):
     queryset = Job.objects.select_related(
         'assignee',
@@ -1687,8 +1694,6 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         queryset = super().get_queryset()
 
         if self.action == 'list':
-            queryset = queryset.only("pk").select_related(None)
-
             from cvat.apps.engine.model_utils import RecordingQuerySet
             queryset = RecordingQuerySet(queryset)
 
@@ -1702,55 +1707,8 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     def filter_queryset(self, queryset):
         queryset = super().filter_queryset(queryset)
 
-        from cvat.apps.engine.model_utils import ListQueryset, RecordingQuerySet, filter_with_union
-
-        if isinstance(queryset, RecordingQuerySet):
-            from django.core.paginator import InvalidPage, PageNotAnInteger
-            from django.db.models import F, Func
-            from django_cte import CTE, with_cte
-
-            q = queryset.get_q()
-
-            inner_queryset = queryset.get_wrapped()
-            inner_queryset.query.distinct = False
-
-            # Convert the query to a set of UNION clauses to fix bad performance of
-            # WHERE x OR y in JOINs
-            queryset = filter_with_union(inner_queryset, q)
-
-            job_ids_cte = CTE(queryset, name="job_ids")
-
-            # The queryset.count() method performs the request immediately,
-            # but we need to create a queryset instead.
-            count_qs = with_cte(
-                job_ids_cte, select=job_ids_cte.queryset()
-            ).values_list(Func(F("pk"), function='Count'), flat=True)
-
-            # TODO: maybe rewrite the paginator somehow to make just 1 request
-            pagination = self.paginator
-            page_size = pagination.get_page_size(self.request)
-            paginator = pagination.django_paginator_class(range(sys.maxsize), page_size)
-            page_number = pagination.get_page_number(self.request, paginator)
-            try:
-                page_number = paginator.validate_number(page_number)
-            except PageNotAnInteger:
-                page_number = 1
-            except InvalidPage:
-                queryset = []
-
-            if isinstance(page_number, int):
-                start_index = (page_number - 1) * page_size
-                end_index = page_number * page_size
-                page_ids_qs = with_cte(
-                    job_ids_cte, select=job_ids_cte.queryset()
-                ).values_list("id", flat=True)[start_index: end_index]
-
-                combined_qs = count_qs.union(page_ids_qs, all=True)
-                total, *page_ids = list(combined_qs)
-                queryset = ListQueryset(total, page_ids, start_index=start_index)
-
-                # q = q_from_where(queryset)
-                # queryset = queryset.model.objects.filter(q)
+        if self.action == "list":
+            queryset = self.filter_queryset_for_list_request(queryset)
 
         return queryset
 
