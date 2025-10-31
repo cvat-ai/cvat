@@ -444,13 +444,6 @@ Cypress.Commands.add('headlessDeleteTask', (taskID) => {
     });
 });
 
-Cypress.Commands.add('clipboardSpy', () => {
-    cy.window().its('navigator.clipboard')
-        .then((clipboard) => {
-            cy.spy(clipboard, 'writeText').as(CLIPBOARD_ALIAS);
-        });
-});
-
 Cypress.Commands.add('headlessCreateUser', (userSpec) => {
     // eslint-disable-next-line no-param-reassign
     userSpec = toSnakeCase(userSpec);

@@ -6,23 +6,10 @@
 /// <reference types="cypress" />
 
 import { toSnakeCase } from '../../../support/utils';
-
-Cypress.automation('remote:debugger:protocol', {
-    command: 'Browser.grantPermissions',
-    params: {
-        permissions: ['clipboardReadWrite', 'clipboardSanitizedWrite'],
-        origin: window.location.origin,
-    },
-});
+import { ClipboardCtx } from '../../../support/const';
 
 context('Register user, change password, login with new password', () => {
     function changePassword(myPassword, myNewPassword) {
-        cy.get('.cvat-profile-page-navigation-menu')
-            .should('exist')
-            .and('be.visible')
-            .find('[role="menuitem"]')
-            .filter(':contains("Security")')
-            .click();
         cy.get('.cvat-security-password-card').should('exist').and('be.visible');
         cy.get('.cvat-security-password-change-button').should('exist').and('be.visible').click();
         cy.get('.cvat-change-password-form').should('exist').and('be.visible');
@@ -114,10 +101,11 @@ context('Register user, change password, login with new password', () => {
             });
 
             describe('Token manipulation', () => {
+                const clipboard = new ClipboardCtx('.cvat-api-token-copy-button');
 
                 before(() => {
-                    cy.clipboardSpy(); // TODO: refactor to a class
-                })
+                    clipboard.init();
+                });
                 it('Token related UI is visible, no tokens are present', () => {
                     cy.get('.cvat-security-api-tokens-card').should('exist').and('be.visible');
                     cy.get('.cvat-table-wrapper').should('exist').and('be.visible').within(() => {
@@ -125,20 +113,27 @@ context('Register user, change password, login with new password', () => {
                     });
                 });
 
-                it.only('Add a token. It is saved in the database', () => {
+                it('Add a token. It is sent to backend. Modal appears, token can be copied', () => {
                     cy.intercept('POST', '/api/auth/access_tokens**').as('postToken');
                     cy.intercept('GET', '/api/auth/access_tokens**').as('getToken'); // it's the same
                     cy.get('.cvat-create-api-token-button').should('exist').and('be.visible').click();
                     cy.get('.cvat-api-token-form-name').should('exist').and('be.visible');
                     cy.get('.cvat-api-token-form-expiration-date').should('exist').and('be.visible');
                     cy.get('.cvat-api-token-form-submit').should('exist').and('be.visible').click();
-                    cy.wait('@postToken').its('response.value').then((token) => {
+                    cy.wait('@postToken').then(({
+                        response: {
+                            statusCode,
+                            statusMessage,
+                            body: { value },
+                        },
+                    }) => {
+                        const token = value;
+                        expect(statusCode).to.equal(201, statusMessage);
                         cy.get('.cvat-api-token-created-modal').should('exist').and('be.visible').within(() => {
-                            cy.get('.cvat-api-token-copy-button').click();
-                    });
-                    cy.wait('@getToken');
-                    cy.get('.cvat-api-token-created-modal').should('exist').and('be.visible').within(() => {
-
+                            cy.get('.cvat-api-token-copy-button').should('exist').and('be.visible');
+                            clipboard.copy().should('equal', token);
+                        });
+                        cy.wait('@getToken');
                     });
                 });
             });

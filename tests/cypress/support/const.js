@@ -34,3 +34,40 @@ export const multiAttrParams = {
     values: 'Attr value 2',
     type: 'Text',
 };
+
+export class ClipboardCtx {
+    constructor(selector) {
+        Cypress.automation('remote:debugger:protocol', {
+            command: 'Browser.grantPermissions',
+            params: {
+                permissions: ['clipboardReadWrite', 'clipboardSanitizedWrite'],
+                origin: window.location.origin,
+            },
+        });
+
+        this.alias = 'copyTextToClipboard';
+        this.ref = '@copyTextToClipboard';
+        this.button = selector;
+        this.value = null;
+    }
+
+    init() {
+        cy.window().its('navigator.clipboard').then((clipboard) => {
+            cy.spy(clipboard, 'writeText').as(this.alias);
+        });
+    }
+
+    get spy() {
+        return cy.get(this.ref);
+    }
+
+    copy() {
+        cy.get(this.button).click();
+        return this.spy.should('be.called').then((stub) => {
+            const last = stub.args.length - 1;
+            const actualValue = stub.args[last][0];
+            this.value = actualValue;
+            return cy.wrap(this.value);
+        });
+    }
+}
