@@ -8,6 +8,7 @@
 /* eslint-disable security/detect-non-literal-regexp */
 
 import { decomposeMatrix, convertClasses, toSnakeCase } from './utils';
+import { CLIPBOARD_ALIAS } from './const';
 
 require('cypress-file-upload');
 require('../plugins/imageGenerator/imageGeneratorCommand');
@@ -441,6 +442,13 @@ Cypress.Commands.add('headlessDeleteTask', (taskID) => {
         const [task] = await $win.cvat.tasks.get({ id: taskID });
         await task.delete();
     });
+});
+
+Cypress.Commands.add('clipboardSpy', () => {
+    cy.window().its('navigator.clipboard')
+        .then((clipboard) => {
+            cy.spy(clipboard, 'writeText').as(CLIPBOARD_ALIAS);
+        });
 });
 
 Cypress.Commands.add('headlessCreateUser', (userSpec) => {
