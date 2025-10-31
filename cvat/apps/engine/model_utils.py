@@ -273,17 +273,17 @@ def q_from_where(queryset: _QuerysetT) -> models.Q:
     return q_stack[0]
 
 
-class RecordingQuerySet(_QuerysetT):
+class RecordingQuerySet(models.QuerySet[_ModelT]):
     # TODO: support slices and other query format modifiers like values() etc.
 
-    def __init__(self, queryset: _QuerysetT):
+    def __init__(self, queryset: models.QuerySet[_ModelT]):
         self.original_queryset = queryset
         self.calls = []
 
     def __getattr__(self, key: str):
         result = getattr(self.original_queryset, key)
 
-        if isinstance(result, _QuerysetT) and result is not self.original_queryset:
+        if isinstance(result, models.QuerySet) and result is not self.original_queryset:
             result = RecordingQuerySet(result)
             result.calls = deepcopy(self.calls)
 
@@ -302,7 +302,7 @@ class RecordingQuerySet(_QuerysetT):
         qs.calls = deepcopy(self.calls)
         return qs
 
-    def get_wrapped(self) -> _QuerysetT:
+    def get_wrapped(self) -> models.QuerySet[_ModelT]:
         return self.original_queryset
 
     def get_q(self) -> models.Q:

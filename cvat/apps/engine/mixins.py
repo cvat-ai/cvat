@@ -17,7 +17,7 @@ from urllib.parse import urljoin
 import django_rq
 from django.conf import settings
 from django.core.paginator import InvalidPage, PageNotAnInteger
-from django.db.models import F, Func
+from django.db.models import F, Func, QuerySet
 from django_cte import CTE, with_cte
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
@@ -408,7 +408,7 @@ class BackupMixin:
 
 
 class OptimizedModelListMixin:
-    def filter_queryset_for_list_request(self, queryset):
+    def filter_queryset_for_list_request(self, queryset: QuerySet):
         if not isinstance(queryset, RecordingQuerySet):
             return queryset
 
