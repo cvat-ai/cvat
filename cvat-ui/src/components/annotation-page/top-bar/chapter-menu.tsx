@@ -11,7 +11,7 @@ interface Props {
     onHoveredChapter?: (id: number | null) => void;
 }
 
-function ChapterMenu(props: Props): JSX.Element {
+function ChapterMenu(props: Readonly<Props>): JSX.Element {
     const {
         chapters,
         onSelectChapter,
