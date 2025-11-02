@@ -34,6 +34,7 @@ interface Props {
     ranges: string;
     frameNumber: number;
     chapters: Chapter[] | null;
+    hoveredChapter: number | null;
     frameFilename: string;
     frameDeleted: boolean;
     deleteFrameShortcut: string;
@@ -82,6 +83,7 @@ function PlayerNavigation(props: Props): JSX.Element {
         startFrame,
         stopFrame,
         chapters,
+        hoveredChapter,
         playing,
         frameNumber,
         frameFilename,
@@ -160,24 +162,25 @@ function PlayerNavigation(props: Props): JSX.Element {
         opacity: 0.5,
     } : {};
 
-    const formatChapterMarks = (labelname: string) => {
-        if (labelname) {
-            return {
-                style:
-                        { color: '#ff4136', fontSize: 'x-small' },
-                label:
-                        <Tooltip title={`${labelname}`}>
-                            <span>
-                                |
-                            </span>
-                        </Tooltip>,
-            };
-        }
-    };
+    const formatChapterMarks = (
+        labelName: string,
+        active: boolean,
+    ): {
+        style: React.CSSProperties;
+        label: React.ReactNode;
+    } => ({
+        style: { marginTop: '-4px' },
+        label:
+                <Tooltip title={`${labelName}`}>
+                    <span className={`ant-slider-mark-chapter ${active ? 'active' : ''}`} />
+                </Tooltip>,
+
+    });
 
     const marks: Record<number, { style: React.CSSProperties; label: React.ReactNode } | undefined> = {};
     for (const chapter of chapters ?? []) {
-        marks[chapter.start] = formatChapterMarks(chapter.metadata.title);
+        const active = hoveredChapter === chapter.id;
+        marks[chapter.start] = formatChapterMarks(chapter.metadata.title, active);
     }
 
     const deleteFrameIcon = !frameDeleted ? (

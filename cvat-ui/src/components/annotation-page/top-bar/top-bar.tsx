@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Col, Row } from 'antd/lib/grid';
 
 import {
@@ -20,7 +20,7 @@ import RightGroup from './right-group';
 interface Props {
     playing: boolean;
     saving: boolean;
-    chapters: Chapter[] | null;
+    chapters: Chapter[];
     frameNumber: number;
     frameFilename: string;
     frameDeleted: boolean;
@@ -63,6 +63,7 @@ interface Props {
     onLastFrame(): void;
     onSearchAnnotations(direction: 'forward' | 'backward'): void;
     onSearchChapters(direction: 'forward' | 'backward'): void;
+    onSelectChapter(id: number): void;
     onSliderChange(value: number): void;
     onInputChange(value: number): void;
     onURLIconClick(): void;
@@ -124,6 +125,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         onLastFrame,
         onSearchAnnotations,
         onSearchChapters,
+        onSelectChapter,
         onSliderChange,
         onInputChange,
         onURLIconClick,
@@ -142,6 +144,8 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
 
     const playerItems: [JSX.Element, number][] = [];
 
+    const [hoveredChapter, setHoveredChapter] = useState<number | null>(null);
+
     playerItems.push([(
         <PlayerButtons
             key='player_buttons'
@@ -152,6 +156,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
             forwardShortcut={forwardShortcut}
             backwardShortcut={backwardShortcut}
             navigationType={navigationType}
+            chapters={chapters}
             keyMap={keyMap}
             workspace={workspace}
             onPrevFrame={onPrevFrame}
@@ -163,6 +168,8 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
             onSwitchPlay={onSwitchPlay}
             onSearchAnnotations={onSearchAnnotations}
             onSearchChapters={onSearchChapters}
+            onHoveredChapter={setHoveredChapter}
+            onSelectChapter={onSelectChapter}
             setNavigationType={setNavigationType}
         />
     ), 0]);
@@ -174,6 +181,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
             stopFrame={stopFrame}
             playing={playing}
             chapters={chapters}
+            hoveredChapter={hoveredChapter}
             ranges={ranges}
             frameNumber={frameNumber}
             frameFilename={frameFilename}

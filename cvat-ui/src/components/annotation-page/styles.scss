@@ -160,6 +160,22 @@
     > .ant-slider-mark {
         z-index: 2;
         top: -12px;
+        > .ant-slider-mark-text {
+            > .ant-slider-mark-chapter {
+                display: inline-block;
+                width: 2px;
+                height: 10px;
+                background-color: #ccc;
+                border-radius: 2px;
+                transition: all 0.1s ease;
+                transform-origin: center center;
+                transform: scaleX(1);
+            }
+            > .ant-slider-mark-chapter.active {
+                transform: scaleX(1.5);
+                background-color: #ff4136;
+            }
+        }
     }
 
     > .ant-slider-step > .ant-slider-dot {
@@ -466,6 +482,16 @@
     }
 }
 
+.cvat-player-chapter-menu-list {
+    .cvat-player-chapter-menu-list-item {
+        &:hover {
+            transform: translateX(2px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            background-color: #f5f5f5;
+        }
+    }
+}
+
 .cvat-annotations-filters-input.ant-select {
     > .ant-select-selector {
         height: 32px;
@@ -484,7 +510,7 @@
 .cvat-player-previous-empty-inlined-button,
 .cvat-player-next-empty-inlined-button,
 .cvat-player-previous-chapter-inlined-button,
-.cvat-player-next-chapter-inlined-button, {
+.cvat-player-next-chapter-inlined-button {
     color: $player-buttons-color;
 
     &:not(:first-child) {

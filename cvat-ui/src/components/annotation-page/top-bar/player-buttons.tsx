@@ -29,6 +29,8 @@ import {
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
+import { Chapter } from 'cvat-core/src/frames';
+import ChapterMenu from './chapter-menu';
 
 interface Props {
     playing: boolean;
@@ -37,6 +39,7 @@ interface Props {
     previousFrameShortcut: string;
     forwardShortcut: string;
     backwardShortcut: string;
+    chapters: Chapter[];
     keyMap: KeyMap;
     workspace: Workspace;
     navigationType: NavigationType;
@@ -49,6 +52,8 @@ interface Props {
     onLastFrame(): void;
     onSearchAnnotations(direction: 'forward' | 'backward'): void;
     onSearchChapters(direction: 'forward' | 'backward'): void;
+    onHoveredChapter(id: number | null): void;
+    onSelectChapter(id: number): void;
     setNavigationType(navigationType: NavigationType): void;
 }
 
@@ -120,6 +125,7 @@ function PlayerButtons(props: Props): JSX.Element {
         forwardShortcut,
         backwardShortcut,
         keyMap,
+        chapters,
         navigationType,
         workspace,
         onSwitchPlay,
@@ -132,6 +138,8 @@ function PlayerButtons(props: Props): JSX.Element {
         setNavigationType,
         onSearchAnnotations,
         onSearchChapters,
+        onHoveredChapter,
+        onSelectChapter,
     } = props;
 
     const handlers: Partial<Record<keyof typeof componentShortcuts, ((event?: KeyboardEvent) => void)>> = {
@@ -232,6 +240,14 @@ function PlayerButtons(props: Props): JSX.Element {
     return (
         <Col className='cvat-player-buttons'>
             <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
+            { (chapters.length > 0) && (
+                <ChapterMenu
+                    chapters={chapters}
+                    onSelectChapter={onSelectChapter}
+                    onHoveredChapter={onHoveredChapter}
+                />
+
+            )}
             <CVATTooltip title='Go to the first frame'>
                 <Icon
                     style={navIconStyle}
