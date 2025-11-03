@@ -121,25 +121,43 @@ context('User page, password change, token handling', () => { // TODO: rename th
             });
 
             describe('Token manipulation', () => {
+                // Token defaults
+                const defaultName = 'New token';
+                const todayDate = new Date();
+                const defaultExpiresDate = new Date(
+                    new Date(todayDate.getTime())
+                        .setFullYear(todayDate.getFullYear() + 1),
+                );
+                const defaultCreated = todayDate.toLocaleDateString();
+                const defaultExpires = defaultExpiresDate.toLocaleDateString();
+                const defaultPermissions = 'Read/Write';
+                const defaultLastUsed = 'Never';
+
+                // Clipboard context
                 const clipboard = new ClipboardCtx('.cvat-api-token-copy-button');
 
-                before(() => {
+                beforeEach(() => {
                     clipboard.init();
+                    // gets reset every test:
+                    // https://docs.cypress.io/app/core-concepts/variables-and-aliases
                 });
                 it('Token related UI is visible, no tokens are present', () => {
                     cy.get('.cvat-security-api-tokens-card').should('exist').and('be.visible');
-                    cy.get('.cvat-table-wrapper').should('exist').and('be.visible').within(() => {
+                    cy.get('.cvat-api-tokens-table').should('exist').and('be.visible').within(() => {
                         cy.contains('No data').should('exist').and('be.visible');
                     });
                 });
 
                 it('Add a token. It is sent to backend. Modal appears, token can be copied', () => {
                     cy.intercept('POST', '/api/auth/access_tokens**').as('postToken');
-                    cy.intercept('GET', '/api/auth/access_tokens**').as('getToken'); // it's the same
+                    cy.intercept('GET', '/api/auth/access_tokens**').as('getToken');
+
                     cy.get('.cvat-create-api-token-button').should('exist').and('be.visible').click();
                     cy.get('.cvat-api-token-form-name').should('exist').and('be.visible');
                     cy.get('.cvat-api-token-form-expiration-date').should('exist').and('be.visible');
                     cy.get('.cvat-api-token-form-submit').should('exist').and('be.visible').click();
+
+                    // Correct token is sent, the modal shows it for the user to save
                     cy.wait('@postToken').then(({
                         response: {
                             statusCode,
@@ -157,11 +175,40 @@ context('User page, password change, token handling', () => { // TODO: rename th
                                 .click();
                             cy.get('.cvat-api-token-created-modal').should('not.exist');
                         });
-                        cy.wait('@getToken');
+                    });
+
+                    // Get request is successful and updates the table view
+                    cy.wait('@getToken').then(({
+                        response: {
+                            statusCode,
+                            statusMessage,
+                        },
+                    }) => {
+                        expect(statusCode).to.equal(200, statusMessage);
+                        const Name = defaultName;
+                        const Permissions = defaultPermissions;
+                        const Created = defaultCreated;
+                        const Expires = defaultExpires;
+                        const LastUsed = defaultLastUsed;
+                        const expectedRowValues = Object.entries({
+                            Name,
+                            Permissions,
+                            Created,
+                            Expires,
+                            LastUsed,
+                        });
+
+                        // Check all table data
+                        cy.get('.cvat-api-tokens-table').find('td').not(':has(button)').each(($item, index) => {
+                            expect($item.text()).to.equal(expectedRowValues[index][1], $item.text());
+                            // FIXME: table might be subject to change
+                            // a more robust solution would include data-* attributes
+                        });
                     });
                 });
             });
         });
+    });
 
         // eslint-disable-next-line max-len
         // TODO: check tokens' state by sending http requests with headers (with cy.request)
