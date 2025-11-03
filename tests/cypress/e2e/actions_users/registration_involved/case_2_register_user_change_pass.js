@@ -41,16 +41,19 @@ context('Register user, change password, login with new password', () => {
         cy.visit('auth/login');
         cy.headlessCreateUser(userSpec);
         cy.headlessLogin({ ...userSpec, nextURL: '/tasks' });
-        cy.openProfile();
     });
 
     after(() => {
-        cy.headlessDeleteSelf();
+        cy.headlessLogin();
+        cy.headlessDeleteUserByUsername(username); // deleting self can work incorrectly, only admin should delete users
         cy.headlessLogout();
     });
 
     context('User page', () => {
-        context('Profile', () => {
+        context.only('Profile tab', () => {
+            before(() => {
+                cy.openProfile();
+            });
             it("Open user's profile page. Profile is selected, username is greeted", () => {
                 cy.url().should('include', '/profile#profile');
                 cy.get('.ant-menu-item-selected').within(() => {
@@ -65,7 +68,10 @@ context('Register user, change password, login with new password', () => {
                     assert(Cypress._.isEqual(req.body, expectedFields));
                     req.continue((res) => {
                         const resFields = Cypress._.pick(res.body, ['first_name', 'last_name']);
-                        assert(Cypress._.isEqual(res.body, resFields));
+                        assert(
+                            Cypress._.isEqual(expectedFields, resFields),
+                            `Unexpected response fields: ${resFields} !== ${expectedFields}`,
+                        );
                     });
                 }).as('updateFirstLastName');
 
@@ -77,26 +83,34 @@ context('Register user, change password, login with new password', () => {
             });
         });
 
-        context('Security', () => {
-            before(() => {
-                cy.get('.cvat-profile-page-navigation-menu')
-                    .should('exist')
-                    .and('be.visible')
-                    .find('[role="menuitem"]')
-                    .filter(':contains("Security")')
-                    .click();
-            });
-            describe(`Testing "Case ${caseId}"`, () => {
-                it('Register user, change password', () => {
+        context('Security tab', () => {
+            describe.only(`Testing "Case ${caseId}"`, () => {
+                beforeEach(() => {
+                    cy.openProfile();
+                    cy.get('.cvat-profile-page-navigation-menu')
+                        .should('exist')
+                        .and('be.visible')
+                        .find('[role="menuitem"]')
+                        .filter(':contains("Security")')
+                        .click();
+                });
+                it('Change password successful, can login with new credentials', () => {
                     changePassword(password, newPassword);
-                    cy.contains('New password has been saved.').should('exist');
+                    cy.get('.cvat-notification-notice-change-password-success')
+                        .should('exist')
+                        .and('be.visible')
+                        .invoke('text').should('include', 'New password has been saved');
+                    cy.closeNotification('.cvat-notification-notice-change-password-success');
                     cy.logout();
-
                     cy.login(username, newPassword);
+                });
 
+                it('Change password unsuccessful, error notif appears. Cancel button works', () => {
                     changePassword(incorrectCurrentPassword, secondNewPassword);
                     cy.get('.cvat-notification-notice-change-password-failed').should('exist');
                     cy.closeNotification('.cvat-notification-notice-change-password-failed');
+                    cy.contains('button', 'Cancel').should('exist').and('be.visible').click();
+                    cy.contains('button', 'Change password').should('exist').and('be.visible');
                 });
             });
 

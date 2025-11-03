@@ -8,7 +8,6 @@
 /* eslint-disable security/detect-non-literal-regexp */
 
 import { decomposeMatrix, convertClasses, toSnakeCase } from './utils';
-import { CLIPBOARD_ALIAS } from './const';
 
 require('cypress-file-upload');
 require('../plugins/imageGenerator/imageGeneratorCommand');
@@ -109,19 +108,29 @@ Cypress.Commands.add('headlessDeleteUser', (userId) => {
     cy.wait('@deleteUser');
 });
 
+Cypress.Commands.add('headlessDeleteUserByUsername', (username) => {
+    cy.headlessGetUserId(username).then((id) => {
+        cy.headlessDeleteUser(id);
+    });
+});
+
 Cypress.Commands.add('headlessGetSelfId', () => cy.window()
     .its('cvat').should('not.be.undefined')
     .then(async (cvat) => {
         const { data: { id } } = await cvat.server.request('/api/users/self', { method: 'GET' });
-        return cy.wrap(id);
+        return id;
     }),
 );
 
-Cypress.Commands.add('headlessDeleteSelf', () => {
-    cy.headlessGetSelfId().then((id) => {
-        cy.headlessDeleteUser(id);
-    });
-});
+Cypress.Commands.add('headlessGetUserId', (username) => cy.window().its('cvat')
+    .should('not.be.undefined')
+    .then(async (cvat) => {
+        const { data: { results: [{ id }] } } = await cvat.server.request(
+            `/api/users?filter={"==":[{"var":"username"}, "${username}"]}`,
+            { method: 'GET' },
+        );
+        return id;
+    }));
 
 Cypress.Commands.add('changeUserActiveStatus', (authKey, accountsToChangeActiveStatus, isActive) => {
     cy.request({
@@ -451,7 +460,7 @@ Cypress.Commands.add('headlessCreateUser', (userSpec) => {
     cy.intercept('POST', '/api/auth/register**', (req) => {
         req.continue((response) => {
             delete response.headers['set-cookie'];
-            expect(response.statusCode).to.eq(201, response.statusMessage);
+            expect(response.statusCode).to.eq(201, response.body.username); // contains msg
             expect(response.body.username).to.eq(userSpec.username);
             expect(response.body.email).to.eq(userSpec.email);
         });
