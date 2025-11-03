@@ -8,7 +8,7 @@
 import { toSnakeCase } from '../../../support/utils';
 import { ClipboardCtx } from '../../../support/const';
 
-context('Register user, change password, login with new password', () => {
+context('User page, password change, token handling', () => { // TODO: rename this context
     function changePassword(myPassword, myNewPassword) {
         cy.get('.cvat-security-password-card').should('exist').and('be.visible');
         cy.get('.cvat-security-password-change-button').should('exist').and('be.visible').click();
@@ -19,6 +19,14 @@ context('Register user, change password, login with new password', () => {
             cy.get('#newPassword2').type(myNewPassword);
             cy.get('.cvat-change-password-form-button').click();
         });
+    }
+    function openSecurityTab() {
+        cy.get('.cvat-profile-page-navigation-menu')
+            .should('exist')
+            .and('be.visible')
+            .find('[role="menuitem"]')
+            .filter(':contains("Security")')
+            .click();
     }
 
     const caseId = '2';
@@ -50,10 +58,10 @@ context('Register user, change password, login with new password', () => {
     });
 
     context('User page', () => {
-        context.only('Profile tab', () => {
-            before(() => {
-                cy.openProfile();
-            });
+        before(() => {
+            cy.openProfile();
+        });
+        context('Profile tab', () => {
             it("Open user's profile page. Profile is selected, username is greeted", () => {
                 cy.url().should('include', '/profile#profile');
                 cy.get('.ant-menu-item-selected').within(() => {
@@ -84,16 +92,12 @@ context('Register user, change password, login with new password', () => {
         });
 
         context('Security tab', () => {
-            describe.only(`Testing "Case ${caseId}"`, () => {
-                beforeEach(() => {
-                    cy.openProfile();
-                    cy.get('.cvat-profile-page-navigation-menu')
-                        .should('exist')
-                        .and('be.visible')
-                        .find('[role="menuitem"]')
-                        .filter(':contains("Security")')
-                        .click();
-                });
+            before(() => {
+                cy.intercept('GET', '/api/auth/access_tokens**').as('getToken');
+                openSecurityTab();
+                cy.get('@getToken').its('response.body.results').should('be.empty');
+            });
+            describe.skip(`Testing "Case ${caseId}"`, () => {
                 it('Change password successful, can login with new credentials', () => {
                     changePassword(password, newPassword);
                     cy.get('.cvat-notification-notice-change-password-success')
@@ -103,6 +107,8 @@ context('Register user, change password, login with new password', () => {
                     cy.closeNotification('.cvat-notification-notice-change-password-success');
                     cy.logout();
                     cy.login(username, newPassword);
+                    cy.openProfile();
+                    openSecurityTab();
                 });
 
                 it('Change password unsuccessful, error notif appears. Cancel button works', () => {
