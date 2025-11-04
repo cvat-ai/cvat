@@ -78,6 +78,10 @@ context('User page, password change, token handling', () => {
     const tokenName2 = 'test2';
 
     before(() => {
+        // Set the clocks to achieve determinism
+        const NOW = new Date(2025, 10, 4);
+        cy.clock(NOW, ['Date']);
+
         cy.visit('auth/login');
         cy.headlessCreateUser(userSpec);
         cy.headlessLogin({ ...userSpec, nextURL: '/tasks' });
@@ -87,6 +91,7 @@ context('User page, password change, token handling', () => {
         cy.headlessLogin();
         cy.headlessDeleteUserByUsername(username); // deleting self can work incorrectly, only admin should delete users
         cy.headlessLogout();
+        cy.clock().invoke('restore');
     });
 
     context('User page', () => {
@@ -195,6 +200,7 @@ context('User page, password change, token handling', () => {
                     // gets reset every test:
                     // https://docs.cypress.io/app/core-concepts/variables-and-aliases
                 });
+                // TODO: revoke each token so that test works with a single token in the table
                 it('Token related UI is visible, no tokens are present', () => {
                     cy.get('.cvat-security-api-tokens-card').should('exist').and('be.visible');
                     cy.get('.cvat-api-tokens-table').should('exist').and('be.visible').within(() => {
@@ -303,9 +309,9 @@ context('User page, password change, token handling', () => {
             });
         });
 
-        // eslint-disable-next-line max-len
-        // TODO: check tokens' state by sending http requests with headers (with cy.request)
-        // TODO: introduce linting errors to this file (there's suspicion that this folder is not covered by eslint)
-        // if it doesn't work, goto Maxim
+    // eslint-disable-next-line max-len
+    // TODO: check tokens' state by sending http requests with headers (with cy.request)
+    // TODO: introduce linting errors to this file (there's suspicion that this folder is not covered by eslint)
+    // if it doesn't work, goto Maxim
     });
 });
