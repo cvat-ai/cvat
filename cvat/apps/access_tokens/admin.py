@@ -20,6 +20,7 @@ class AccessTokenAdmin(APIKeyAdmin):
     ]
     list_filter = ("created", "updated_date", "last_used_date", "read_only")
     search_fields = ("id", "name", "prefix", "owner__username")
+    autocomplete_fields = ("owner",)
 
 
 admin.site.unregister(APIKey)
