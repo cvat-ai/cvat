@@ -131,6 +131,7 @@ function ApiTokensCard(): JSX.Element {
             key: 'name',
             width: 250,
             sorter: (a: RowData, b: RowData) => a.name.localeCompare(b.name),
+            className: 'cvat-api-token-name',
         },
         {
             title: 'Permissions',
@@ -151,6 +152,7 @@ function ApiTokensCard(): JSX.Element {
                     {readOnly ? 'Read Only' : 'Read/Write'}
                 </Tag>
             ),
+            className: 'cvat-api-token-permissions',
         },
         {
             title: 'Created',
@@ -158,6 +160,7 @@ function ApiTokensCard(): JSX.Element {
             key: 'createdDate',
             sorter: (a: RowData, b: RowData) => new Date(a.createdDate).getTime() - new Date(b.createdDate).getTime(),
             render: (date: string) => new Date(date).toLocaleDateString(),
+            className: 'cvat-api-token-created',
         },
         {
             title: 'Expires',
@@ -172,6 +175,7 @@ function ApiTokensCard(): JSX.Element {
             render: (date: string | null) => (
                 date ? new Date(date).toLocaleDateString() : <Text underline>Never</Text>
             ),
+            className: 'cvat-api-token-expires',
         },
         {
             title: 'Last Used',
@@ -184,6 +188,7 @@ function ApiTokensCard(): JSX.Element {
                 return new Date(a.lastUsedDate).getTime() - new Date(b.lastUsedDate).getTime();
             },
             render: (date: string | null) => (date ? new Date(date).toLocaleDateString() : 'Never'),
+            className: 'cvat-api-token-last-used',
         },
         {
             title: 'Actions',
@@ -207,11 +212,13 @@ function ApiTokensCard(): JSX.Element {
                             },
                         ],
                     }}
+                    className='cvat-api-token-action-menu'
                     trigger={['click']}
                 >
                     <Button type='text' icon={<MoreOutlined />} />
                 </Dropdown>
             ),
+            className: 'cvat-api-token-action',
         },
     ];
 
