@@ -17,7 +17,7 @@ from urllib.parse import urljoin
 import django_rq
 from django.conf import settings
 from django.core.paginator import InvalidPage, PageNotAnInteger
-from django.db.models import F, Func, QuerySet
+from django.db.models import Func, QuerySet, expressions, IntegerField
 from django_cte import CTE, with_cte
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
@@ -407,6 +407,16 @@ class BackupMixin:
         return downloader.download_file()
 
 
+class Star(expressions.Expression):
+    # Star is a private class in Django, so we use our own. It's a trivial class though.
+
+    def __repr__(self):
+        return "'*'"
+
+    def as_sql(self, compiler, connection):
+        return "*", []
+
+
 class OptimizedModelListMixin:
     def filter_queryset_for_list_request(self, queryset: QuerySet):
         if not isinstance(queryset, RecordingQuerySet):
@@ -420,19 +430,42 @@ class OptimizedModelListMixin:
         q = queryset.get_q()
 
         inner_queryset = queryset.get_wrapped()
-        inner_queryset.query.distinct = False
 
         # Convert the query to a set of UNION clauses to fix bad performance of
         # WHERE x OR y in JOINs
+        inner_queryset.query.distinct = False
         queryset = filter_with_union(inner_queryset, q)
 
         ids_cte = CTE(queryset, name="object_ids")
 
+        if queryset.query.extra_tables:
+            count_ids_cte = ids_cte
+        else:
+            # This optimization is only needed for complex requests with joins or ORs
+            # Force the default sorting. Non-default sorting doesn't affect the resulting number,
+            # but it worsens the query plan.
+            count_ids_cte = CTE(queryset.order_by(), name="object_ids2")
+
         # The queryset.count() method performs the request immediately,
         # but we need to create a queryset instead.
+        # aggregates.Count() automatically inserts GROUP BY, which leads to an error,
+        # so we use a custom Func instead.
+        # All this can can enable Postgres to use index only scans:
+        # https://www.postgresql.org/docs/current/indexes-index-only-scans.html
+        # It's not always possible though, because of row visibility checks and MVCC.
+        # The visibility checks are done on the index page basis. Overall, the approach
+        # requires AUTOVACUUM to be enabled and the rows to be changed not too often.
+        # This is the case for the typical hierarchy elements in CVAT -
+        # projects, tasks, jobs, orgs, users.
         count_qs = with_cte(
-            ids_cte, select=ids_cte.queryset()
-        ).values_list(Func(F("pk"), function='Count'), flat=True)
+            count_ids_cte, select=count_ids_cte.queryset()
+        ).values_list(Func(
+            # Count(column) works slower than Count(*). We use Star() here to get COUNT(*)
+            Star(),
+            # With * Django can't determine the output type automatically, so we specify it
+            output_field=IntegerField(),
+            function='Count',
+        ), flat=True)
 
         # TODO: maybe rewrite the paginator somehow to make just 1 request
         pagination = self.paginator
