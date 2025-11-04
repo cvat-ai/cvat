@@ -1,8 +1,11 @@
 ---
 title: 'Vocabulary'
 linkTitle: 'Vocabulary'
-weight: 21
+weight: 2
 description: 'List of terms pertaining to annotation in CVAT.'
+aliases:
+  - /docs/manual/basics/vocabulary/
+
 ---
 ## Label
 Label is a type of an annotated object (e.g. person, car, vehicle, etc.)
@@ -68,49 +71,49 @@ Mode for video annotation, which uses [`track`](#track) objects.
 Only objects on keyframes are manually annotation, and intermediate frames are linearly interpolated.
 
 Related sections:
-- {{< ilink "/docs/manual/basics/track-mode-basics" "Track mode" >}}
+- {{< ilink "/docs/annotation/track-mode-basics" "Track mode" >}}
 
 ### Annotation
 Mode for images annotation, which uses `shape` objects.
 
 Related sections:
-- {{< ilink "/docs/manual/basics/shape-mode-basics" "Shape mode" >}}
+- {{< ilink "/docs/annotation/shape-mode-basics" "Shape mode" >}}
 
 ---
 
 ## Dimension
 
 Depends on the task data type that is defined when the
-{{< ilink "/docs/manual/basics/create-annotation-task" "task is created" >}}.
+{{< ilink "/docs/annotation/create-annotation-task" "task is created" >}}.
 
 ### 2D
 
 The data format of 2d tasks are images and videos.
 Related sections:
-- {{< ilink "/docs/manual/basics/create-annotation-task" "Creating an annotation task" >}}
+- {{< ilink "/docs/annotation/create-annotation-task" "Creating an annotation task" >}}
 
 ### 3D
 
 The data format of 3d tasks is a cloud of points.
-{{< ilink "/docs/manual/basics/create-annotation-task#data-formats-for-a-3d-task" "Data formats for a 3D task" >}}
+{{< ilink "/docs/annotation/create-annotation-task#data-formats-for-a-3d-task" "Data formats for a 3D task" >}}
 
 Related sections:
-- {{< ilink "/docs/manual/basics/3d-task-workspace" "3D task workspace" >}}
-- {{< ilink "/docs/manual/basics/standard-3d-mode-basics" "Standard 3D mode" >}}
-- {{< ilink "/docs/manual/basics/3d-object-annotation" "3D Object annotation" >}}
+- {{< ilink "/docs/annotation/3d-task-workspace" "3D task workspace" >}}
+- {{< ilink "/docs/annotation/standard-3d-mode-basics" "Standard 3D mode" >}}
+- {{< ilink "/docs/annotation/3d-object-annotation" "3D Object annotation" >}}
 
 ---
 
 ## State
 State of the job. The state can be changed by an assigned user in
-{{< ilink "/docs/manual/basics/CVAT-annotation-Interface/navbar.md#top-panel" "the menu inside the job" >}}.
+{{< ilink "/docs/annotation/annotation-interface/navbar.md#top-panel" "the menu inside the job" >}}.
 There are several possible states: `new`, `in progress`, `rejected`, `completed`.
 
 ---
 
 ## Stage
 Stage of the job. The stage is specified with the drop-down list on the
-{{< ilink "/docs/manual/basics/tasks-page" "task page" >}}.
+{{< ilink "/docs/workspace/tasks-page" "task page" >}}.
 There are three stages: `annotation`, `validation` or `acceptance`. This value affects the task progress bar.
 
 ---
@@ -123,11 +126,11 @@ It could be `test`, `train`, `validation` or custom subset.
 
 ## Credentials
 Under `credentials` is understood `Key & secret key`, `Account name and token`, `Anonymous access`, `Key file`.
-Used to {{< ilink "/docs/manual/basics/attach-cloud-storage#attach-new-cloud-storage" "attach cloud storage" >}}.
+Used to {{< ilink "/docs/workspace/attach-cloud-storage#attach-new-cloud-storage" "attach cloud storage" >}}.
 
 ---
 
 ## Resource
 
 Under `resource` is understood `bucket name` or `container name`.
-Used to {{< ilink "/docs/manual/basics/attach-cloud-storage#attach-new-cloud-storage" "attach cloud storage" >}}.
+Used to {{< ilink "/docs/workspace/attach-cloud-storage#attach-new-cloud-storage" "attach cloud storage" >}}.

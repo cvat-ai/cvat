@@ -1,7 +1,9 @@
 ---
 title: 'Models'
 linkTitle: 'Models'
-weight: 13
+weight: 8
+aliases:
+  - /docs/manual/basics/models/
 ---
 
 To deploy the models, you will need to install the necessary components using
@@ -19,13 +21,13 @@ The list of models is presented in the form of a table. The parameters indicated
 - model `Type`:
   - `detector` - used for automatic annotation
     (available in {{< ilink "/docs/manual/advanced/ai-tools#detectors" "detectors" >}}
-    and {{< ilink "/docs/manual/advanced/automatic-annotation" "automatic annotation" >}})
+    and {{< ilink "/docs/annotation/auto-annotation/automatic-annotation" "automatic annotation" >}})
   - `interactor` - used for semi-automatic shape annotation
     (available in {{< ilink "/docs/manual/advanced/ai-tools#interactors" "interactors" >}})
   - `tracker` - used for semi-automatic track annotation
     (available in {{< ilink "/docs/manual/advanced/ai-tools#trackers" "trackers" >}})
   - `reid` - used to combine individual objects into a track
-    (available in {{< ilink "/docs/manual/advanced/automatic-annotation" "automatic annotation" >}})
+    (available in {{< ilink "/docs/annotation/auto-annotation/automatic-annotation" "automatic annotation" >}})
 - `Description` - brief description of the model
 - `Labels` - list of the supported labels (only for the models of the `detectors` type)
 

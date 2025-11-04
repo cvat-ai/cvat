@@ -1,7 +1,9 @@
 ---
-title: 'Requests page'
-linkTitle: 'Requests page'
+title: 'Requests'
+linkTitle: 'Requests'
 weight: 7
+aliases:
+  - /docs/manual/basics/requests-page/
 ---
 
 The **Requests** page allows users to track the status of data processing jobs (such as exporting annotations

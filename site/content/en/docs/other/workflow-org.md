@@ -1,7 +1,9 @@
 ---
-title: 'CVAT Complete Workflow Guide for Organizations'
-linkTitle: 'CVAT Complete Workflow Guide for Organizations'
-weight: 2
+title: 'Complete workflow guide for organizations'
+linkTitle: 'Complete workflow guide for organizations'
+weight: 3
+aliases:
+  - /docs/getting_started/workflow-org/
 ---
 
 Welcome to CVAT, this page is the place to start your team’s
@@ -29,42 +31,42 @@ The workflow diagram presents an overview of the general process at a high level
 
 To use CVAT within your organization, please follow these steps:
 
-1. {{< ilink "/docs/manual/basics/registration" "Create an account in CVAT" >}}.
-2. {{< ilink "/docs/manual/advanced/organization" "Create **Organization**" >}}.
+1. {{< ilink "/docs/account_management/registration" "Create an account in CVAT" >}}.
+2. {{< ilink "/docs/account_management/organization" "Create **Organization**" >}}.
 3. Switch to the **Organization** that you've
-   created and {{< ilink "/docs/enterprise/subscription-management#team-plan" "subscribe to the **Team plan**" >}}.
-4. {{< ilink "/docs/manual/advanced/organization#invite-members-into-organization"
+   created and {{< ilink "/docs/account_management/subscription-management#team-plan" "subscribe to the **Team plan**" >}}.
+4. {{< ilink "/docs/account_management/organization#invite-members-into-organization"
      "Invite members to **Organization**" >}} and
-   assign {{< ilink "/docs/manual/advanced/user-roles" "User roles" >}} to invited members.
-5. {{< ilink "/docs/manual/advanced/projects" "Create **Project**" >}}.
-6. (Optional) Attach {{< ilink "/docs/manual/basics/attach-cloud-storage" "**Cloud storages**" >}} to the **Project**.
-7. Create {{< ilink "/docs/manual/basics/create-annotation-task" "**Task**" >}} or
-   {{< ilink "/docs/manual/basics/create-multi-tasks" "**Multitask**" >}}.
+   assign {{< ilink "/docs/account_management/user-roles" "User roles" >}} to invited members.
+5. {{< ilink "/docs/workspace/projects" "Create **Project**" >}}.
+6. (Optional) Attach {{< ilink "/docs/workspace/attach-cloud-storage" "**Cloud storages**" >}} to the **Project**.
+7. Create {{< ilink "/docs/annotation/create-annotation-task" "**Task**" >}} or
+   {{< ilink "/docs/annotation/create-multi-tasks" "**Multitask**" >}}.
    <br>At this step the CVAT platform will automatically create
    jobs.
-8. (Optional) Create {{< ilink "/docs/manual/advanced/analytics-and-monitoring/auto-qa" "**Ground truth job**" >}}.
+8. (Optional) Create {{< ilink "/docs/qa-analytics/auto-qa" "**Ground truth job**" >}}.
    <br>This step can be skipped if you're employing a manual QA approach.
-9. (Optional) Add {{< ilink "/docs/manual/advanced/specification" "**Instructions for annotators**" >}}.
+9. (Optional) Add {{< ilink "/docs/dataset_management/specification" "**Instructions for annotators**" >}}.
 10. (Optional) Configure {{< ilink "/docs/administration/advanced/webhooks" "**Webhooks**" >}}.
 11. Assign jobs to annotators by adding the annotator name to **Assignee** and
-    changing the {{< ilink "/docs/manual/advanced/user-roles#job-stage" "**Job stage**" >}}
+    changing the {{< ilink "/docs/account_management/user-roles#job-stage" "**Job stage**" >}}
     to **Annotation**.
 12. Annotator will see assigned jobs and annotate them.
 13. (Optional) In case you've created
-    a {{< ilink "/docs/manual/advanced/analytics-and-monitoring/auto-qa" "**Ground truth job**" >}}
+    a {{< ilink "/docs/qa-analytics/auto-qa" "**Ground truth job**" >}}
     give the CVAT platform some time to accumulate the data and
     check the accuracy of the annotation.
 14. If you are using the manual validation,
     assign jobs to validators by adding the validator name to **Assignee** and
-    changing the {{< ilink "/docs/manual/advanced/user-roles#job-stage" "**Job stage**" >}}
+    changing the {{< ilink "/docs/account_management/user-roles#job-stage" "**Job stage**" >}}
     to **Validation**.
 15. Validator will see assigned jobs and report issues.
     <br>Note, that validators can correct issues,
-    see {{< ilink "/docs/manual/advanced/analytics-and-monitoring/manual-qa" "**Manual QA and Review**" >}}
+    see {{< ilink "/docs/qa-analytics/manual-qa" "**Manual QA and Review**" >}}
 16. Check issues and if there is a need for additional improvement, reassign jobs to
     either the Validator or Annotator.
-17. (Optional) Check {{< ilink "/docs/manual/advanced/analytics-and-monitoring/analytics" "**Analytics**" >}}.
-18. {{< ilink "/docs/manual/advanced/formats" "**Export Data**" >}}.
+17. (Optional) Check {{< ilink "/docs/qa-analytics/analytics" "**Analytics**" >}}.
+18. {{< ilink "/docs/dataset_management/formats" "**Export Data**" >}}.
 
 ## Complete Workflow Guide video tutorial
 

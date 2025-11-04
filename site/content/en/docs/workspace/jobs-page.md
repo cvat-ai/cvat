@@ -1,7 +1,9 @@
 ---
-title: 'Jobs page'
-linkTitle: 'Jobs page'
+title: 'Jobs'
+linkTitle: 'Jobs'
 weight: 4
+aliases:
+  - /docs/manual/basics/jobs-page/
 ---
 
 On the **Jobs** page, users (for example, with the worker role)
@@ -15,8 +17,8 @@ Each element contains:
 - job ID
 - dimension `2D` or `3D`
 - preview
-- {{< ilink "/docs/manual/basics/vocabulary#stage" "stage" >}} and
-  {{< ilink "/docs/manual/basics/vocabulary#state" "state" >}}
+- {{< ilink "/docs/getting_started/vocabulary#stage" "stage" >}} and
+  {{< ilink "/docs/getting_started/vocabulary#state" "state" >}}
 - when hovering over an element, you can see:
   - size
   - assignee
@@ -51,11 +53,11 @@ To clear all filters, select `Clear filters`.
 | -------------- | -------------------------------------------- | ------------------------------------------- |
 | `State`        | all the state names                          | The state of the job <br>(can be changed in the menu inside the job) |
 | `Stage`        | all the stage names                          | The stage of the job <br>(is specified by a drop-down list on the task page) |
-| `Dimension`    | `2D` or `3D`                                 | Depends on the data format <br>(read more in {{< ilink "/docs/manual/basics/create-annotation-task" "creating an annotation task" >}}) |
+| `Dimension`    | `2D` or `3D`                                 | Depends on the data format <br>(read more in {{< ilink "/docs/annotation/create-annotation-task" "creating an annotation task" >}}) |
 | `Assignee`     | username                                     | Assignee is the user who is working on the job. <br>(is specified on task page) |
 | `Last updated` | last modified date and time (or value range) | The date can be entered in the `dd.MM.yyyy HH:mm` format <br>or by selecting the date in the window that appears <br>when you click on the input field |
 | `ID`           | number or range of job ID                    |                                             |
 | `Task ID`      | number or range of task ID                   |                                             |
 | `Project ID`   | number or range of project ID                |                                             |
-| `Task name`    | task name                                    | Set when creating a task, <br>can be changed on the ({{< ilink "/docs/manual/basics/task-details" "task page" >}}) |
-| `Project name` | project name                                 | Specified when creating a project, <br>can be changed on the ({{< ilink "/docs/manual/advanced/projects" "project section" >}}) |
+| `Task name`    | task name                                    | Set when creating a task, <br>can be changed on the ({{< ilink "/docs/workspace/task-details" "task page" >}}) |
+| `Project name` | project name                                 | Specified when creating a project, <br>can be changed on the ({{< ilink "/docs/workspace/projects" "project section" >}}) |

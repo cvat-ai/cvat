@@ -1,8 +1,10 @@
 ---
 title: 'Social auth configuration'
 linkTitle: 'Social auth configuration'
-weight: 3
+weight: 6
 description: 'Social accounts authentication for a Self-Hosted solution'
+aliases:
+  - /docs/enterprise/social-accounts-configuration/
 ---
 
 {{% alert title="Note" color="primary" %}}

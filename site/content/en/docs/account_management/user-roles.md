@@ -1,7 +1,9 @@
 ---
-title: 'CVAT User roles'
-linkTitle: 'CVAT User roles'
-weight: 4
+title: 'User roles'
+linkTitle: 'User roles'
+weight: 2
+aliases:
+  - /docs/manual/advanced/user-roles/
 ---
 
 CVAT offers two distinct types of roles:
@@ -17,7 +19,7 @@ visibility of different resources for example, tasks or jobs.
 
 **Limits**: Limits are applicable to all users of CVAT Online
 using the [**Free plan**](https://www.cvat.ai/pricing/cvat-online) and can be lifted upon
-{{< ilink "/docs/enterprise/subscription-management" "**choosing a subscription**" >}}.
+{{< ilink "/docs/account_management/subscription-management" "**choosing a subscription**" >}}.
 
 All roles are predefined and cannot be modified through the user interface.
 However, within the _self-hosted solution_, roles can be adjusted using `.rego`
@@ -60,7 +62,7 @@ CVAT has implemented three Global roles, categorized as user Groups. These roles
 ## Organization roles in CVAT
 
 Organization Roles are available only within the
-{{< ilink "/docs/manual/advanced/organization" "**CVAT Organization**" >}}.
+{{< ilink "/docs/account_management/organization" "**CVAT Organization**" >}}.
 
 ![Organization Roles](/images/user-roles.png)
 

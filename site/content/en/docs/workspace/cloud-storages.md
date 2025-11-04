@@ -1,8 +1,10 @@
 ---
-title: 'Cloud storages page'
-linkTitle: 'Cloud storages page'
-weight: 22
+title: 'Cloud storages'
+linkTitle: 'Cloud storages'
+weight: 5
 description: 'Overview of the cloud storages page.'
+aliases:
+  - /docs/manual/basics/cloud-storages/
 ---
 
 ![Cloud storage page example](/images/image227.jpg)
@@ -53,5 +55,5 @@ To clear all filters, select `Clear filters`.
 | `Owner`        | username                                     | The user who owns the project, task, or job |
 | `Last updated` | last modified date and time (or value range) | The date can be entered in the `dd.MM.yyyy HH:mm` format <br>or by selecting the date in the window that appears <br>when you select the input field |
 
-Select the `+` button to {{< ilink "/docs/manual/basics/attach-cloud-storage" "attach a new cloud storage" >}}.
+Select the `+` button to {{< ilink "/docs/workspace/attach-cloud-storage" "attach a new cloud storage" >}}.
 

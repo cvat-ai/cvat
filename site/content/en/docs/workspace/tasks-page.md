@@ -1,8 +1,10 @@
 ---
-title: 'Tasks page'
-linkTitle: 'Tasks page'
-weight: 5
+title: 'Tasks'
+linkTitle: 'Tasks'
+weight: 2
 description: 'Overview of the Tasks page.'
+aliases:
+  - /docs/manual/basics/tasks-page/
 ---
 
 ![Task page example](/images/image006_detrac.jpg)
@@ -12,10 +14,10 @@ Each element contains: the task name, preview, progress bar, button `Open`, and 
 Each button is responsible for a menu `Actions` specific function:
 
 - `Export task dataset` — download annotations or annotations and images in a specific format.
-  More information is available in the {{< ilink "/docs/manual/advanced/import-datasets" "export/import datasets" >}}
+  More information is available in the {{< ilink "/docs/dataset_management/import-datasets" "export/import datasets" >}}
   section.
 - `Upload annotation` upload annotations in a specific format.
-  More information is available in the {{< ilink "/docs/manual/advanced/import-datasets" "export/import datasets" >}}
+  More information is available in the {{< ilink "/docs/dataset_management/import-datasets" "export/import datasets" >}}
   section.
 - `Automatic Annotation` — automatic annotation with OpenVINO toolkit.
   Presence depends on how you build the CVAT instance.
@@ -27,7 +29,7 @@ Each button is responsible for a menu `Actions` specific function:
 - `Organization` - moving a task between your personal workspace or organizations.
   Only available for individual tasks (not tasks in a project). Please, refer to the
   {{< ilink
-  "/docs/manual/advanced/organization#transfer-tasks-and-projects-between-organizations"
+  "/docs/account_management/organization#transfer-tasks-and-projects-between-organizations"
   "Transfer between organizations" >}}
   section for details.
 - `Delete` — delete task.
@@ -55,18 +57,18 @@ For clear all filters press `Clear filters`.
 
 | Properties     | Supported values                             | Description                                 |
 | -------------- | -------------------------------------------- | ------------------------------------------- |
-| `Dimension`    | `2D` or `3D`                                 | Depends on the data format <br>(read more in {{< ilink "/docs/manual/basics/create-annotation-task" "creating an annotation task" >}}) |
+| `Dimension`    | `2D` or `3D`                                 | Depends on the data format <br>(read more in {{< ilink "/docs/annotation/create-annotation-task" "creating an annotation task" >}}) |
 | `Status`       | `annotation`, `validation` or `completed`    |                                             |
-| `Data`         | `video`, `images`                            | Depends on the data format <br>(read more in {{< ilink "/docs/manual/basics/create-annotation-task" "creating an annotation task" >}}) |
-| `Subset`       | `test`, `train`, `validation` or custom subset | {{< ilink "/docs/manual/basics/vocabulary#subset" "learn more" >}} |
+| `Data`         | `video`, `images`                            | Depends on the data format <br>(read more in {{< ilink "/docs/annotation/create-annotation-task" "creating an annotation task" >}}) |
+| `Subset`       | `test`, `train`, `validation` or custom subset | {{< ilink "/docs/getting_started/vocabulary#subset" "learn more" >}} |
 | `Assignee`     | username                                     | Assignee is the user who is working on the project, task or job <br>(they are specified on task page) |
 | `Owner`        | username                                     | The user who owns the project, task, or job |
 | `Last updated` | last modified date and time (or value range) | The date can be entered in the `dd.MM.yyyy HH:mm` format <br>or by selecting the date in the window that appears <br>when you click on the input field |
 | `ID`           | number or range of job ID                    |                                             |
 | `Project ID`   | number or range of project ID                |                                             |
 | `Name`         | name                                         | On the tasks page: name of the task,<br> on the project page: name of the project |
-| `Project name` | project name                                 | Specified when creating a project, <br>can be changed on the ({{< ilink "/docs/manual/advanced/projects" "project section" >}}) |
+| `Project name` | project name                                 | Specified when creating a project, <br>can be changed on the ({{< ilink "/docs/workspace/projects" "project section" >}}) |
 
 ---
 
-Select `Open` to go to {{< ilink "/docs/manual/basics/task-details" "task details" >}}.
+Select `Open` to go to {{< ilink "/docs/workspace/task-details" "task details" >}}.

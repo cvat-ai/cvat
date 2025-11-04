@@ -1,7 +1,9 @@
 ---
 title: 'Introduction to CVAT and Datumaro'
 linkTitle: 'Introduction to CVAT and Datumaro'
-weight: 3
+weight: 2
+aliases:
+  - /docs/manual/getting_started/introduction-to-cvat-and-datumaro/
 ---
 
 We are excited to introduce the first video in our course series designed to help you

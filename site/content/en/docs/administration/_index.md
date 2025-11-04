@@ -1,6 +1,6 @@
 ---
 title: 'Administration'
 linkTitle: 'Administration'
-weight: 5
+weight: 6
 description: 'This section contains documents for system administrators.'
 ---

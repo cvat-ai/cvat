@@ -1,8 +1,10 @@
 ---
 title: 'Task details'
 linkTitle: 'Task details'
-weight: 6
+weight: 3
 description: 'Overview of the Task details page.'
+aliases:
+  - /docs/manual/basics/tasks-details/
 ---
 
 Task details is a task page that contains a preview, a progress bar,
@@ -22,7 +24,7 @@ The next actions are available on this page:
 1. **Assigned to** — is used to assign a task to a person. Start typing an assignee’s name and/or
     choose the right person out of the dropdown list.
     In the list of users, you will only see the users of the
-    {{< ilink "/docs/manual/advanced/organization" "organization" >}}
+    {{< ilink "/docs/account_management/organization" "organization" >}}
     where the task is created.
 1. **Cloud storage** — view the cloud storage attached to the task and change it to another attached storage if needed.
 
@@ -35,7 +37,7 @@ The next actions are available on this page:
   There are several possible states: `new`, `in progress`, `rejected`, `completed`.
 - Duration — is the amount of time the job is being worked.
 - Assignee is the user who is working on the job (annotator,
-  {{< ilink "/docs/manual/advanced/analytics-and-monitoring/manual-qa" "reviewer, or corrector" >}}).
+  {{< ilink "/docs/qa-analytics/manual-qa" "reviewer, or corrector" >}}).
   You can start typing an assignee’s name and/or choose the right person out of the dropdown list.
 
 You can filter or sort jobs by status, assignee, and updated date using the filters panel.

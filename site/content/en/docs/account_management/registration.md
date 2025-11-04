@@ -1,8 +1,10 @@
 ---
-title: 'Registration & Account Access'
-linkTitle: 'Registration & Account Access'
+title: 'Registration & account access'
+linkTitle: 'Registration & account access'
 weight: 1
 description: 'CVAT registration and account access.'
+aliases:
+  - /docs/manual/basics/registration/
 ---
 
 To start annotating in CVAT, you must create an account or log in to the existing one.
@@ -23,7 +25,7 @@ To create an account or log in, go to the [CVAT Online](https://app.cvat.ai/) lo
 By default, authentication and registration with
 Google and GitHub work only for [CVAT Online](https://app.cvat.ai/).
 <br>If you want to use Google and GitHub authentication on a local installation,
-consult {{< ilink "/docs/enterprise/social-accounts-configuration" "Social auth configuration" >}}.
+consult {{< ilink "/docs/account_management/social-accounts-configuration" "Social auth configuration" >}}.
 {{% /alert %}}
 
 ## User registration

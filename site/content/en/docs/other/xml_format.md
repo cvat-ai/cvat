@@ -1,7 +1,9 @@
 ---
 title: 'XML annotation format'
 linkTitle: 'XML annotation format'
-weight: 22
+weight: 1
+aliases:
+  - /docs/manual/advanced/xml_format/
 ---
 
 <!--lint disable heading-style-->

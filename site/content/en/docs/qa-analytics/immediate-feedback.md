@@ -3,6 +3,8 @@ title: 'Immediate job feedback'
 linkTitle: 'Immediate job feedback'
 weight: 5
 description: 'Quick responses about job annotation quality'
+aliases:
+  - /docs/enterprise/immediate-feedback/
 ---
 
 ## Overview
@@ -31,9 +33,9 @@ the parameters any time.
 {{% alert title="Note" color="primary" %}}
 This feature requires a configured validation set in the task. Read more
 in the
-{{< ilink "/docs/manual/basics/quality-control#how-to-enable-quality-control" "quality overview" >}}
+{{< ilink "/docs/qa-analytics/quality-control#how-to-enable-quality-control" "quality overview" >}}
 section or in the
-{{< ilink "/docs/manual/advanced/analytics-and-monitoring/auto-qa#configuring-quality-estimation" "full guide" >}}.
+{{< ilink "/docs/qa-analytics/auto-qa#configuring-quality-estimation" "full guide" >}}.
 {{% /alert %}}
 
 1. Open the task **Actions** menu > **Quality control** > **Settings**

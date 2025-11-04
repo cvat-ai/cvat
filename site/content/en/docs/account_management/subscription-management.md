@@ -1,8 +1,10 @@
 ---
 title: 'Subscription management'
 linkTitle: 'Subscription management'
-weight: 2
+weight: 4
 description: 'How to manage your subscription'
+aliases:
+  - /docs/enterprise/subscription-management/
 ---
 
 This article provides tips on how to effectively manage your
@@ -88,7 +90,7 @@ Here’s how you can do it:
 
 1. Sign up for a CVAT Online account and log in.
 2. (Optional) If you add the VAT/tax number to the organization,
-   first create an {{< ilink "/docs/manual/advanced/organization" "organization" >}} and
+   first create an {{< ilink "/docs/account_management/organization" "organization" >}} and
    switch to an **Organization** account.
 3. Navigate to the top right corner, next to the nickname,
    click on the arrow > upgrade to the plan.
@@ -224,7 +226,7 @@ In the top right corner, near the nickname, click on the arrow > manage plan > *
 {{% /alert %}}
 
 **Team plan** is for collaboration. To add members to your
-{{< ilink "/docs/manual/advanced/organization" "Organization" >}},
+{{< ilink "/docs/account_management/organization" "Organization" >}},
 go to the **Manage Team plan** > **Update quantity**.
 
 ![Add members](/images/change_members_number_team.gif)

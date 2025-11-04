@@ -1,8 +1,10 @@
 ---
 title: 'Organization'
 linkTitle: 'Organization'
-weight: 2
+weight: 3
 description: 'Using organization in CVAT.'
+aliases:
+  - /docs/manual/advanced/organization/
 ---
 
 **Organization** is a feature for teams of several users
@@ -183,7 +185,7 @@ To invite members to **Organization** do the following:
 
 5. Person must click the link and:
    1. If the invitee does not have the CVAT account, then
-      {{< ilink "/docs/manual/basics/registration#user-registration" "**set up an account**" >}}.
+      {{< ilink "/docs/account_management/registration#user-registration" "**set up an account**" >}}.
    2. If the invitee has a CVAT account, then log in to the account.
 
 ### Invitations list

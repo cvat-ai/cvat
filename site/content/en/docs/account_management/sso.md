@@ -1,8 +1,10 @@
 ---
 title: 'SSO configuration'
 linkTitle: 'SSO configuration'
-weight: 3
+weight: 5
 description: 'SSO for a Self-Hosted solution'
+aliases:
+  - /docs/enterprise/sso/
 ---
 
 {{% alert title="Note" color="primary" %}}

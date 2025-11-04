@@ -1,8 +1,10 @@
 ---
 title: 'Shortcuts'
 linkTitle: 'Shortcuts'
-weight: 23
+weight: 3
 description: 'List of available keyboard shortcuts and notes about their customization.'
+aliases:
+  - /docs/manual/advanced/shortcuts/
 ---
 
 CVAT provides a wide range of customizable shortcuts, with many UI elements
