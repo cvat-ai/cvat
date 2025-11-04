@@ -1,10 +1,7 @@
 services:
-  cvat_worker_import:
+  cvat_server: &share-config
     volumes:
       - ./tests/mounted_file_share:/home/django/share:rw
-  cvat_server:
-    volumes:
-      - ./tests/mounted_file_share:/home/django/share:rw
-  cvat_worker_chunks:
-    volumes:
-      - ./tests/mounted_file_share:/home/django/share:rw
+  cvat_worker_chunks: *share-config
+  cvat_worker_import: *share-config
+  cvat_worker_export: *share-config
