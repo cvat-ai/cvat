@@ -58,8 +58,21 @@ def migration_000_initial(client: clickhouse_connect.driver.client.Client):
     )
 
 
+def migration_001_add_access_token(client: clickhouse_connect.driver.client.Client):
+    client.query(
+        textwrap.dedent(
+            """\
+        ALTER TABLE events
+        ADD COLUMN IF NOT EXISTS
+        `access_token_id` Nullable(UInt64) DEFAULT NULL
+        """
+        )
+    )
+
+
 migrations = [
     migration_000_initial,
+    migration_001_add_access_token,
 ]
 
 

@@ -8737,6 +8737,18 @@
   }
 },
 {
+  "model": "engine.label",
+  "pk": 90,
+  "fields": {
+    "task": 31,
+    "project": null,
+    "name": "dog",
+    "color": "#406040",
+    "type": "any",
+    "parent": null
+  }
+},
+{
   "model": "engine.skeleton",
   "pk": 1,
   "fields": {
@@ -9115,6 +9127,50 @@
   }
 },
 {
+  "model": "engine.labeledimage",
+  "pk": 14,
+  "fields": {
+    "job": 52,
+    "label": 80,
+    "frame": 0,
+    "group": 0,
+    "source": "manual"
+  }
+},
+{
+  "model": "engine.labeledimage",
+  "pk": 15,
+  "fields": {
+    "job": 53,
+    "label": 80,
+    "frame": 0,
+    "group": 0,
+    "source": "manual"
+  }
+},
+{
+  "model": "engine.labeledimage",
+  "pk": 16,
+  "fields": {
+    "job": 53,
+    "label": 90,
+    "frame": 0,
+    "group": 0,
+    "source": "manual"
+  }
+},
+{
+  "model": "engine.labeledimage",
+  "pk": 22,
+  "fields": {
+    "job": 51,
+    "label": 80,
+    "frame": 0,
+    "group": 0,
+    "source": "file"
+  }
+},
+{
   "model": "engine.labeledimageattributeval",
   "pk": 1,
   "fields": {
@@ -9192,6 +9248,36 @@
     "job": 42,
     "value": "",
     "image": 13
+  }
+},
+{
+  "model": "engine.labeledimageattributeval",
+  "pk": 10,
+  "fields": {
+    "spec": 18,
+    "job": 52,
+    "value": "",
+    "image": 14
+  }
+},
+{
+  "model": "engine.labeledimageattributeval",
+  "pk": 11,
+  "fields": {
+    "spec": 18,
+    "job": 53,
+    "value": "",
+    "image": 15
+  }
+},
+{
+  "model": "engine.labeledimageattributeval",
+  "pk": 16,
+  "fields": {
+    "spec": 18,
+    "job": 51,
+    "value": "",
+    "image": 22
   }
 },
 {
@@ -12321,7 +12407,7 @@
     "occluded": false,
     "outside": false,
     "z_order": 0,
-    "points": "295.39537490125076,129.95137884321593,379.50821517094846,194.85735007494986",
+    "points": "300.6455078125,100.701171875,400.5,200.10000000000036",
     "rotation": 0.0,
     "parent": null
   }
@@ -12339,7 +12425,7 @@
     "occluded": false,
     "outside": false,
     "z_order": 0,
-    "points": "339.7698654372325,132.6006021587964,397.3904725511202,175.6504810369879",
+    "points": "300.76953125,101.1005859375,400.40000000000146,168.20000000000073",
     "rotation": 0.0,
     "parent": null
   }
@@ -12357,7 +12443,7 @@
     "occluded": false,
     "outside": false,
     "z_order": 0,
-    "points": "529.1893325012752,65.70771344037712,597.4068328774865,119.35448558089229",
+    "points": "500.689453125,101.70703125,599.7000000000007,136.70000000000073",
     "rotation": 0.0,
     "parent": null
   }
@@ -13222,6 +13308,60 @@
     "outside": false,
     "z_order": 0,
     "points": "68.74419891008984,45.20736400021633,113.71758860208683,83.33201414520954",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 266,
+  "fields": {
+    "job": 52,
+    "label": 80,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "500.57275390625,101.80351562500073,600.42724609375,201.2023437500011",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 268,
+  "fields": {
+    "job": 53,
+    "label": 80,
+    "frame": 2,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "100.49996298562837,0,201.0332959775842,103.53329630866392",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 270,
+  "fields": {
+    "job": 51,
+    "label": 80,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "300.65,100.7,400.5,200.1",
     "rotation": 0.0,
     "parent": null
   }
@@ -14798,36 +14938,6 @@
 },
 {
   "model": "engine.labeledshapeattributeval",
-  "pk": 162,
-  "fields": {
-    "spec": 18,
-    "job": 52,
-    "value": "j2 f1 (30) a1",
-    "shape": 201
-  }
-},
-{
-  "model": "engine.labeledshapeattributeval",
-  "pk": 163,
-  "fields": {
-    "spec": 18,
-    "job": 53,
-    "value": "j1 f1 (30) a1",
-    "shape": 202
-  }
-},
-{
-  "model": "engine.labeledshapeattributeval",
-  "pk": 164,
-  "fields": {
-    "spec": 18,
-    "job": 53,
-    "value": "j2 f1 (30) a2",
-    "shape": 203
-  }
-},
-{
-  "model": "engine.labeledshapeattributeval",
   "pk": 165,
   "fields": {
     "spec": 17,
@@ -15177,6 +15287,66 @@
   }
 },
 {
+  "model": "engine.labeledshapeattributeval",
+  "pk": 225,
+  "fields": {
+    "spec": 18,
+    "job": 52,
+    "value": "j2 f1 (30) a1",
+    "shape": 201
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 226,
+  "fields": {
+    "spec": 18,
+    "job": 53,
+    "value": "j1 f1 (30) a1",
+    "shape": 202
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 227,
+  "fields": {
+    "spec": 18,
+    "job": 53,
+    "value": "j2 f1 (30) a2",
+    "shape": 203
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 228,
+  "fields": {
+    "spec": 18,
+    "job": 52,
+    "value": "j2 f1 (30) a2",
+    "shape": 266
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 231,
+  "fields": {
+    "spec": 18,
+    "job": 53,
+    "value": "j1 f3 (32) a1",
+    "shape": 268
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 233,
+  "fields": {
+    "spec": 18,
+    "job": 51,
+    "value": "j2 f1 (30) a1",
+    "shape": 270
+  }
+},
+{
   "model": "engine.labeledtrack",
   "pk": 1,
   "fields": {
@@ -15357,6 +15527,42 @@
   }
 },
 {
+  "model": "engine.labeledtrack",
+  "pk": 17,
+  "fields": {
+    "job": 53,
+    "label": 80,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledtrack",
+  "pk": 18,
+  "fields": {
+    "job": 52,
+    "label": 80,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledtrack",
+  "pk": 19,
+  "fields": {
+    "job": 51,
+    "label": 80,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "parent": null
+  }
+},
+{
   "model": "engine.labeledtrackattributeval",
   "pk": 3,
   "fields": {
@@ -15374,6 +15580,36 @@
     "job": 18,
     "value": "val1",
     "track": 4
+  }
+},
+{
+  "model": "engine.labeledtrackattributeval",
+  "pk": 7,
+  "fields": {
+    "spec": 18,
+    "job": 53,
+    "value": "j1 f1 (30) a3",
+    "track": 17
+  }
+},
+{
+  "model": "engine.labeledtrackattributeval",
+  "pk": 8,
+  "fields": {
+    "spec": 18,
+    "job": 52,
+    "value": "j2 f1 (30) a3",
+    "track": 18
+  }
+},
+{
+  "model": "engine.labeledtrackattributeval",
+  "pk": 9,
+  "fields": {
+    "spec": 18,
+    "job": 51,
+    "value": "j2 f1 (30) a3",
+    "track": 19
   }
 },
 {
@@ -15654,6 +15890,90 @@
     "rotation": 0.0,
     "track": 15,
     "frame": 6
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 22,
+  "fields": {
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "99.74943891644034,0,200.99943370442088,71.99944034492",
+    "rotation": 0.0,
+    "track": 17,
+    "frame": 0
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 23,
+  "fields": {
+    "type": "rectangle",
+    "occluded": false,
+    "outside": true,
+    "z_order": 0,
+    "points": "99.74943891644034,0,200.99943370442088,71.99944034492",
+    "rotation": 0.0,
+    "track": 17,
+    "frame": 1
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 24,
+  "fields": {
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "100.49943887783229,0,200.99943370442088,98.99943895504657",
+    "rotation": 0.0,
+    "track": 18,
+    "frame": 0
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 25,
+  "fields": {
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "100.5,0.0,201.0,99.0",
+    "rotation": 0.0,
+    "track": 19,
+    "frame": 0
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 26,
+  "fields": {
+    "type": "rectangle",
+    "occluded": false,
+    "outside": true,
+    "z_order": 0,
+    "points": "100.5,0.0,201.0,99.0",
+    "rotation": 0.0,
+    "track": 19,
+    "frame": 1
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 27,
+  "fields": {
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "100.5,0.0,201.0,99.0",
+    "rotation": 0.0,
+    "track": 19,
+    "frame": 2
   }
 },
 {
@@ -22916,8 +23236,134 @@
   "pk": 2,
   "fields": {
     "task": 31,
-    "quorum": 0.5,
+    "quorum": 0.6,
     "iou_threshold": 0.4
+  }
+},
+{
+  "model": "access_tokens.accesstoken",
+  "pk": 1,
+  "fields": {
+    "prefix": "DgrZuqmc",
+    "hashed_key": "md5$4vOVrPTlVbaAdNpHgCz5n8$7eb28eada2b931b03f19a48c4653c539",
+    "created": "2025-07-17T16:16:45.241Z",
+    "name": "test revoked readonly key",
+    "revoked": true,
+    "expiry_date": null,
+    "updated_date": "2025-07-17T16:25:33.472Z",
+    "last_used_date": null,
+    "read_only": true,
+    "owner": [
+      "user1"
+    ]
+  }
+},
+{
+  "model": "access_tokens.accesstoken",
+  "pk": 2,
+  "fields": {
+    "prefix": "EQCKEFZh",
+    "hashed_key": "md5$cbyUZDVSaI6ARcISi2BAyP$c81eb4e53445c73d24357f8d158aae59",
+    "created": "2024-07-17T16:17:00.066Z",
+    "name": "test expired readwrite key",
+    "revoked": false,
+    "expiry_date": "2024-09-17T16:20:00.066Z",
+    "updated_date": "2024-08-17T16:25:40.236Z",
+    "last_used_date": null,
+    "read_only": false,
+    "owner": [
+      "user1"
+    ]
+  }
+},
+{
+  "model": "access_tokens.accesstoken",
+  "pk": 3,
+  "fields": {
+    "prefix": "XQRwNl8D",
+    "hashed_key": "md5$JylUmq04NnXDB8amN7fmW2$c0f68b4280322bc5aae4d1031efb076b",
+    "created": "2025-07-17T16:17:35.436Z",
+    "name": "test key",
+    "revoked": false,
+    "expiry_date": null,
+    "updated_date": "2025-07-17T16:17:35.436Z",
+    "last_used_date": null,
+    "read_only": false,
+    "owner": [
+      "admin2"
+    ]
+  }
+},
+{
+  "model": "access_tokens.accesstoken",
+  "pk": 4,
+  "fields": {
+    "prefix": "waUchCLi",
+    "hashed_key": "md5$gQWIRwVVJpxag4NtuhOgrZ$c381ef0af1cdc1bdce66df5bc65d7af7",
+    "created": "2025-07-17T16:19:18.229Z",
+    "name": "test readonly key",
+    "revoked": false,
+    "expiry_date": null,
+    "updated_date": "2025-07-17T16:19:18.229Z",
+    "last_used_date": null,
+    "read_only": true,
+    "owner": [
+      "user1"
+    ]
+  }
+},
+{
+  "model": "access_tokens.accesstoken",
+  "pk": 5,
+  "fields": {
+    "prefix": "2HVbBoWR",
+    "hashed_key": "md5$nwdhu6OXe4H4LjSJvYOYgL$bb375ffa6980fa98e8fa09698e14829f",
+    "created": "2025-07-17T16:19:46.576Z",
+    "name": "test readwrite key",
+    "revoked": false,
+    "expiry_date": null,
+    "updated_date": "2025-07-17T16:19:46.576Z",
+    "last_used_date": null,
+    "read_only": false,
+    "owner": [
+      "user1"
+    ]
+  }
+},
+{
+  "model": "access_tokens.accesstoken",
+  "pk": 6,
+  "fields": {
+    "prefix": "UODahKbn",
+    "hashed_key": "md5$damuD8CQt8fOi6Tnn2TWYF$48aacd12520f4ac63e1132bc2ffe79fa",
+    "created": "2000-01-01T01:00:00Z",
+    "name": "test stale token",
+    "revoked": false,
+    "expiry_date": null,
+    "updated_date": "2010-01-01T15:07:32.016Z",
+    "last_used_date": null,
+    "read_only": true,
+    "owner": [
+      "admin2"
+    ]
+  }
+},
+{
+  "model": "access_tokens.accesstoken",
+  "pk": 7,
+  "fields": {
+    "prefix": "gIUANJCa",
+    "hashed_key": "md5$gsxukSI2wEfdrmol6icK4T$c38c40fd30f6be101875be1a3df25746",
+    "created": "2025-08-12T10:30:10.206Z",
+    "name": "test readonly key",
+    "revoked": false,
+    "expiry_date": null,
+    "updated_date": "2025-08-12T10:30:10.206Z",
+    "last_used_date": null,
+    "read_only": true,
+    "owner": [
+      "admin2"
+    ]
   }
 }
 ]

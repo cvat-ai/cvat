@@ -21,7 +21,7 @@ from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.rq import ImportRQMeta
 from cvat.apps.engine.serializers import DataSerializer, TaskWriteSerializer
 from cvat.apps.engine.task import create_thread as create_task
-from cvat.apps.engine.utils import av_scan_paths
+from cvat.apps.engine.utils import av_scan_paths, transaction_with_repeatable_read
 
 from .annotation import AnnotationIR
 from .bindings import CvatDatasetNotFoundError, CvatImportError, ProjectData, load_dataset_data
@@ -30,6 +30,7 @@ from .formats.registry import make_exporter, make_importer
 dlogger = DatasetLogManager()
 
 
+@transaction_with_repeatable_read()
 def export_project(
     project_id: int,
     dst_file: str,
@@ -39,21 +40,15 @@ def export_project(
     save_images: bool = False,
     temp_dir: str | None = None,
 ):
-    # For big tasks dump function may run for a long time and
-    # we dont need to acquire lock after the task has been initialized from DB.
-    # But there is the bug with corrupted dump file in case 2 or
-    # more dump request received at the same time:
-    # https://github.com/cvat-ai/cvat/issues/217
-    with transaction.atomic():
-        project = ProjectAnnotationAndData(project_id)
-        project.init_from_db()
+    project = ProjectAnnotation(project_id)
+    project.init_from_db(streaming=True)
 
     exporter = make_exporter(format_name)
     with open(dst_file, "wb") as f:
         project.export(f, exporter, host=server_url, save_images=save_images, temp_dir=temp_dir)
 
 
-class ProjectAnnotationAndData:
+class ProjectAnnotation:
     def __init__(self, pk: int):
         self.db_project = models.Project.objects.get(id=pk)
         self.db_tasks = models.Task.objects.filter(project__id=pk).exclude(data=None).order_by("id")
@@ -87,7 +82,7 @@ class ProjectAnnotationAndData:
             for task_annotation in self.task_annotations.values():
                 task_annotation.delete()
 
-    def add_task(self, task_fields: dict, files: dict, project_data: ProjectData = None):
+    def add_task(self, task_fields: dict, files: dict, project_data: ProjectData):
         def split_name(file):
             _, name = file.split(files["data_root"])
             return name
@@ -121,9 +116,8 @@ class ProjectAnnotationAndData:
             .order_by("id")
         )
         self._init_task_from_db(db_task.id)
-        if project_data is not None:
-            project_data.new_tasks.add(db_task.id)
-            project_data.init()
+        project_data.new_tasks.add(db_task.id)
+        project_data.init()
 
     def add_labels(
         self, labels: list[models.Label], attributes: list[tuple[str, models.AttributeSpec]] = None
@@ -139,17 +133,17 @@ class ProjectAnnotationAndData:
         if attributes:
             bulk_create(models.AttributeSpec, [a[1] for a in attributes])
 
-    def _init_task_from_db(self, task_id: int) -> None:
+    def _init_task_from_db(self, task_id: int, *, streaming: bool = False) -> None:
         annotation = TaskAnnotation(pk=task_id)
-        annotation.init_from_db()
+        annotation.init_from_db(streaming=streaming)
         self.task_annotations[task_id] = annotation
         self.annotation_irs[task_id] = annotation.ir_data
 
-    def init_from_db(self):
+    def init_from_db(self, *, streaming: bool = False):
         self.reset()
 
         for task in self.db_tasks:
-            self._init_task_from_db(task.id)
+            self._init_task_from_db(task.id, streaming=streaming)
 
     def export(
         self,
@@ -181,7 +175,6 @@ class ProjectAnnotationAndData:
             annotation_irs=self.annotation_irs,
             db_project=self.db_project,
             task_annotations=self.task_annotations,
-            project_annotation=self,
         )
         project_data.soft_attribute_import = True
 
@@ -229,7 +222,7 @@ def import_dataset_as_project(src_file, project_id, format_name, conv_mask_to_po
 
     av_scan_paths(src_file)
 
-    project = ProjectAnnotationAndData(project_id)
+    project = ProjectAnnotation(project_id)
 
     importer = make_importer(format_name)
     with open(src_file, "rb") as f:

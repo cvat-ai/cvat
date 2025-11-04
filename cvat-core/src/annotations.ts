@@ -160,7 +160,7 @@ export async function clearAnnotations(
 
     if (Object.hasOwn(options ?? {}, 'reload')) {
         const { reload } = options;
-        checkObjectType('reload', reload, 'boolean', null);
+        checkObjectType('reload', reload, 'boolean');
 
         if (reload) {
             cache.collection.delete(session);

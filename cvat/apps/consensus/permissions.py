@@ -26,48 +26,47 @@ class ConsensusMergePermission(OpenPolicyAgentPermission):
         Scopes = cls.Scopes
 
         permissions = []
-        if view.basename == "consensus_merges":
-            for scope in cls.get_scopes(request, view, obj):
-                if scope == Scopes.CREATE:
-                    # FUTURE-FIXME: use serializers for validation
-                    task_id = request.data.get("task_id")
-                    job_id = request.data.get("job_id")
+        for scope in cls.get_scopes(request, view, obj):
+            if scope == Scopes.CREATE:
+                # FUTURE-FIXME: use serializers for validation
+                task_id = request.data.get("task_id")
+                job_id = request.data.get("job_id")
 
-                    if not (task_id or job_id):
-                        raise PermissionDenied("Either task_id or job_id must be specified")
+                if not (task_id or job_id):
+                    raise PermissionDenied("Either task_id or job_id must be specified")
 
-                    # merge is always at least at the task level, even for specific jobs
-                    if task_id is not None or job_id is not None:
-                        if job_id:
-                            try:
-                                job = Job.objects.select_related("segment").get(id=job_id)
-                            except Job.DoesNotExist:
-                                raise ValidationError("The specified job does not exist")
-
-                            task_id = job.get_task_id()
-
-                        # The request may have a different org or org unset
-                        # Here we need to retrieve iam_context for this user, based on the task_id
+                # merge is always at least at the task level, even for specific jobs
+                if task_id is not None or job_id is not None:
+                    if job_id:
                         try:
-                            task = Task.objects.get(id=task_id)
-                        except Task.DoesNotExist:
-                            raise ValidationError("The specified task does not exist")
+                            job = Job.objects.select_related("segment").get(id=job_id)
+                        except Job.DoesNotExist:
+                            raise ValidationError("The specified job does not exist")
 
-                        iam_context = get_iam_context(request, task)
+                        task_id = job.get_task_id()
 
-                    permissions.append(
-                        cls.create_base_perm(
-                            request,
-                            view,
-                            scope,
-                            iam_context,
-                            obj,
-                            task_id=task_id,
-                        )
+                    # The request may have a different org or org unset
+                    # Here we need to retrieve iam_context for this user, based on the task_id
+                    try:
+                        task = Task.objects.get(id=task_id)
+                    except Task.DoesNotExist:
+                        raise ValidationError("The specified task does not exist")
+
+                    iam_context = get_iam_context(request, task)
+
+                permissions.append(
+                    cls.create_base_perm(
+                        request,
+                        view,
+                        scope,
+                        iam_context,
+                        obj,
+                        task_id=task_id,
                     )
+                )
 
-                else:
-                    permissions.append(cls.create_base_perm(request, view, scope, iam_context, obj))
+            else:
+                permissions.append(cls.create_base_perm(request, view, scope, iam_context, obj))
 
         return permissions
 
@@ -139,42 +138,41 @@ class ConsensusSettingPermission(OpenPolicyAgentPermission):
         Scopes = cls.Scopes
 
         permissions = []
-        if view.basename == "consensus_settings":
-            for scope in cls.get_scopes(request, view, obj):
-                if scope in [Scopes.VIEW, Scopes.UPDATE]:
-                    obj = cast(ConsensusSettings, obj)
+        for scope in cls.get_scopes(request, view, obj):
+            if scope in [Scopes.VIEW, Scopes.UPDATE]:
+                obj = cast(ConsensusSettings, obj)
 
-                    if scope == Scopes.VIEW:
-                        task_scope = TaskPermission.Scopes.VIEW
-                    elif scope == Scopes.UPDATE:
-                        task_scope = TaskPermission.Scopes.UPDATE_DESC
-                    else:
-                        assert False
+                if scope == Scopes.VIEW:
+                    task_scope = TaskPermission.Scopes.VIEW
+                elif scope == Scopes.UPDATE:
+                    task_scope = TaskPermission.Scopes.UPDATE_DESC
+                else:
+                    assert False
 
-                    # Access rights are the same as in the owning task
-                    # This component doesn't define its own rules in this case
+                # Access rights are the same as in the owning task
+                # This component doesn't define its own rules in this case
+                permissions.append(
+                    TaskPermission.create_base_perm(
+                        request,
+                        view,
+                        iam_context=iam_context,
+                        scope=task_scope,
+                        obj=obj.task,
+                    )
+                )
+            elif scope == cls.Scopes.LIST:
+                if task_id := request.query_params.get("task_id", None):
                     permissions.append(
-                        TaskPermission.create_base_perm(
+                        TaskPermission.create_scope_view(
                             request,
-                            view,
+                            int(task_id),
                             iam_context=iam_context,
-                            scope=task_scope,
-                            obj=obj.task,
                         )
                     )
-                elif scope == cls.Scopes.LIST:
-                    if task_id := request.query_params.get("task_id", None):
-                        permissions.append(
-                            TaskPermission.create_scope_view(
-                                request,
-                                int(task_id),
-                                iam_context=iam_context,
-                            )
-                        )
 
-                    permissions.append(cls.create_scope_list(request, iam_context))
-                else:
-                    permissions.append(cls.create_base_perm(request, view, scope, iam_context, obj))
+                permissions.append(cls.create_scope_list(request, iam_context))
+            else:
+                permissions.append(cls.create_base_perm(request, view, scope, iam_context, obj))
 
         return permissions
 

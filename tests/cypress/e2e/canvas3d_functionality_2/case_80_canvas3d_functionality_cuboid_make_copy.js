@@ -18,6 +18,7 @@ context('Canvas 3D functionality. Make a copy.', () => {
     };
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTask(taskName);
         cy.addNewLabel({ name: secondLabel });
         cy.openJob();

@@ -10,8 +10,8 @@ import {
     Webhook, MLModel, Organization, Job, Task, Project, Label, User,
     QualityConflict, FramesMetaData, RQStatus, Event, Invitation, SerializedAPISchema,
     Request, JobValidationLayout, QualitySettings, TaskValidationLayout, ObjectState,
-    ConsensusSettings, AboutData, ShapeType, ObjectType,
-    Membership,
+    ConsensusSettings, AboutData, ShapeType, ObjectType, ApiToken,
+    Membership, AnnotationFormats,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
@@ -24,6 +24,11 @@ export interface AuthState {
     user: User | null;
     showChangePasswordDialog: boolean;
     hasEmailVerificationBeenSent: boolean;
+    apiTokens: {
+        fetching: boolean;
+        current: ApiToken[];
+        count: number;
+    };
 }
 
 export interface ChangePasswordData {
@@ -210,7 +215,7 @@ export interface ConsensusState {
 }
 
 export interface FormatsState {
-    annotationFormats: any;
+    annotationFormats: AnnotationFormats | null;
     fetching: boolean;
     initialized: boolean;
 }
@@ -555,6 +560,10 @@ export interface NotificationsState {
             requestPasswordReset: null | ErrorState;
             resetPassword: null | ErrorState;
             updateUser: null | ErrorState;
+            getApiTokens: null | ErrorState;
+            createApiToken: null | ErrorState;
+            updateApiToken: null | ErrorState;
+            revokeApiToken: null | ErrorState;
         };
         serverAPI: {
             fetching: null | ErrorState;

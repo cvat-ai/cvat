@@ -556,3 +556,47 @@ def job_has_annotations(annotations) -> bool:
         )
 
     return check_has_annotations
+
+
+@pytest.fixture(scope="session")
+def access_tokens(access_tokens_by_username):
+    "Private keys are available in the 'private_key' field."
+
+    return sorted(
+        (t for user_tokens in access_tokens_by_username.values() for t in user_tokens),
+        key=lambda t: t["id"],
+    )
+
+
+@pytest.fixture(scope="session")
+def raw_access_tokens_by_username():
+    with open(ASSETS_DIR / "access_tokens.json") as f:
+        return json.load(f)["user"]
+
+
+@pytest.fixture(scope="session")
+def access_tokens_by_username(raw_access_tokens_by_username):
+    "Private keys are available in the 'private_key' field."
+
+    private_keys = {
+        3: "XQRwNl8D.N5EYCzdyWdroeVVfJylkquAmBqgt9Kw2",  # nosec
+        4: "waUchCLi.wWxJTdYBt6R8auMse86bwHobMomjQvEB",  # nosec
+        5: "2HVbBoWR.ZJqJtm3TEKEkjqZwyoL7Ig71LVvKRj79",  # nosec
+        7: "gIUANJCa.W4Y101GNS8wOyFcncvxMZjTEnU7dzAUF",  # nosec
+    }
+
+    data = {}
+    for username, user_tokens in raw_access_tokens_by_username.items():
+        if not user_tokens:
+            continue
+
+        extended_user_tokens = []
+
+        for access_token in user_tokens:
+            access_token = access_token.copy()
+            access_token["private_key"] = private_keys[access_token["id"]]
+            extended_user_tokens.append(access_token)
+
+        data[username] = extended_user_tokens
+
+    return data

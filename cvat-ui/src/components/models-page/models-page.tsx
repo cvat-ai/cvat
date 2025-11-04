@@ -7,7 +7,7 @@ import './styles.scss';
 import React, { useCallback, useEffect } from 'react';
 import { useHistory } from 'react-router';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
-import moment from 'moment';
+import dayjs from 'dayjs';
 import { getModelsAsync } from 'actions/models-actions';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import Spin from 'antd/lib/spin';
@@ -24,7 +24,7 @@ import TopBar from './top-bar';
 function setUpModelsList(models: MLModel[], newPage: number, pageSize: number): MLModel[] {
     const builtInModels = models.filter((model: MLModel) => model.provider === ModelProviders.CVAT);
     const externalModels = models.filter((model: MLModel) => model.provider !== ModelProviders.CVAT);
-    externalModels.sort((a, b) => moment(a.createdDate).valueOf() - moment(b.createdDate).valueOf());
+    externalModels.sort((a, b) => dayjs(a.createdDate).valueOf() - dayjs(b.createdDate).valueOf());
     const renderModels = [...builtInModels, ...externalModels];
     return renderModels.slice((newPage - 1) * pageSize, newPage * pageSize);
 }

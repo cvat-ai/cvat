@@ -15,25 +15,20 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.0/ref/settings/
 """
 
-import mimetypes
 import os
 import sys
 import tempfile
 import urllib
 from datetime import timedelta
 from enum import Enum, IntEnum
+from pathlib import Path
 
 from attr.converters import to_bool
 from corsheaders.defaults import default_headers
+from django.core.exceptions import ImproperlyConfigured
 from logstash_async.constants import constants as logstash_async_constants
 
 from cvat import __version__
-
-mimetypes.add_type("application/wasm", ".wasm", True)
-
-from pathlib import Path
-
-from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = str(Path(__file__).parents[2])
@@ -91,7 +86,6 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django_rq",
-    "compressor",
     "django_sendfile",
     "dj_rest_auth",
     "dj_rest_auth.registration",
@@ -99,6 +93,7 @@ INSTALLED_APPS = [
     "django_filters",
     "rest_framework",
     "rest_framework.authtoken",
+    "rest_framework_api_key",
     "drf_spectacular",
     "django.contrib.sites",
     "allauth",
@@ -121,6 +116,7 @@ INSTALLED_APPS = [
     "cvat.apps.quality_control",
     "cvat.apps.redis_handler",
     "cvat.apps.consensus",
+    "cvat.apps.access_tokens",
 ]
 
 SITE_ID = 1
@@ -135,11 +131,11 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
-        "cvat.apps.iam.permissions.PolicyEnforcer",
+        "cvat.apps.access_tokens.permissions.PolicyEnforcer",
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.TokenAuthentication",
-        "cvat.apps.iam.authentication.SignatureAuthentication",
+        "cvat.apps.access_tokens.authentication.AccessTokenAuthentication",
         "rest_framework.authentication.SessionAuthentication",
         "cvat.apps.iam.authentication.BasicAuthenticationEx",
     ],
@@ -206,12 +202,6 @@ MIDDLEWARE = [
 
 UI_URL = ""
 
-STATICFILES_FINDERS = [
-    "django.contrib.staticfiles.finders.FileSystemFinder",
-    "django.contrib.staticfiles.finders.AppDirectoriesFinder",
-    "compressor.finders.CompressorFinder",
-]
-
 ROOT_URLCONF = "cvat.urls"
 
 TEMPLATES = [
@@ -243,7 +233,14 @@ IAM_OPA_DATA_URL = f"{IAM_OPA_HOST}/v1/data"
 LOGIN_URL = "rest_login"
 LOGIN_REDIRECT_URL = "/"
 
-OBJECTS_NOT_RELATED_WITH_ORG = ["user", "lambda_function", "lambda_request", "server", "request"]
+OBJECTS_NOT_RELATED_WITH_ORG = [
+    "user",
+    "lambda_function",
+    "lambda_request",
+    "server",
+    "request",
+    "access_token",
+]
 
 # ORG settings
 ORG_INVITATION_CONFIRM = "No"
@@ -386,16 +383,13 @@ PERIODIC_RQ_JOBS = [
         # Run once a day
         "cron_string": "0 18 * * *",
     },
+    {
+        "queue": CVAT_QUEUES.CLEANING.value,
+        "id": "clear_unusable_access_tokens",
+        "func": "cvat.apps.access_tokens.cron.clear_unusable_access_tokens",
+        "cron_string": "0 0 * * 0",
+    },
 ]
-
-# JavaScript and CSS compression
-# https://django-compressor.readthedocs.io
-
-COMPRESS_CSS_FILTERS = [
-    "compressor.filters.css_default.CssAbsoluteFilter",
-    "compressor.filters.cssmin.rCSSMinFilter",
-]
-COMPRESS_JS_FILTERS = []  # No compression for js files (template literals were compressed bad)
 
 # Password validation
 # https://docs.djangoproject.com/en/2.0/ref/settings/#auth-password-validators
@@ -423,8 +417,6 @@ LANGUAGE_CODE = "en-us"
 TIME_ZONE = os.getenv("TZ", "Etc/UTC")
 
 USE_I18N = True
-
-USE_L10N = True
 
 USE_TZ = True
 
@@ -793,3 +785,6 @@ if ONE_RUNNING_JOB_IN_QUEUE_PER_USER:
     )
 
 USER_LAST_ACTIVITY_UPDATE_MIN_INTERVAL = timedelta(days=1)
+
+# Health check settings
+HEALTH_CHECK = {"DISK_USAGE_MAX": int(os.getenv("CVAT_HEALTH_DISK_USAGE_MAX", 90))}

@@ -1128,7 +1128,7 @@ export class Task extends Session {
                         for (const value of clientFiles) {
                             if (!(value instanceof File)) {
                                 throw new ArgumentError(
-                                    `Array values must be a File. But ${value.constructor.name} has been got.`,
+                                    'Array values must be a File.',
                                 );
                             }
                         }
