@@ -45,16 +45,16 @@ image and video labeling:
 
 | Annotation Tool                                                                                          | Use Cases                                                                                                      |
 | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| {{< ilink "/docs/manual/advanced/3d-object-annotation-advanced" "**3D Object Annotation**" >}}           | Ideal for projects that require depth perception and volume estimation, like autonomous vehicle training.      |
-| {{< ilink "/docs/manual/advanced/attribute-annotation-mode-advanced" "**Attribute Annotation Mode**" >}} | Useful for adding detailed information to objects, like color, size, or other specific characteristics.        |
-| {{< ilink "/docs/manual/advanced/annotation-with-rectangles" "**Annotation with Rectangles**" >}}        | Best for simple object detection where objects have a box-like shape, such as detecting windows in a building. |
-| {{< ilink "/docs/manual/advanced/annotation-with-polygons" "**Annotation with Polygons**" >}}            | Suited for complex shapes in images, like outlining geographical features in maps or detailed product shapes.  |
-| {{< ilink "/docs/manual/advanced/annotation-with-polylines" "**Annotation with Polylines**" >}}          | Great for annotating linear objects like roads, pathways, or limbs in pose estimation.                         |
-| {{< ilink "/docs/manual/advanced/annotation-with-ellipses" "**Annotation with Ellipses**" >}}            | Ideal for objects like plates, balls, or eyes, where a circular or oval annotation is needed.                  |
-| {{< ilink "/docs/manual/advanced/annotation-with-cuboids" "**Annotation with Cuboids**" >}}              | Useful for 3D objects in 2D images, like boxes or furniture in room layouts.                                   |
-| {{< ilink "/docs/manual/advanced/skeletons" "**Annotation with Skeletons**" >}}                          | Ideal for human pose estimation, animation, and movement analysis in sports or medical fields.                 |
-| {{< ilink "/docs/manual/advanced/annotation-with-brush-tool" "**Annotation with Brush Tool**" >}}        | Perfect for intricate and detailed annotations where precision is key, such as in medical imaging.             |
-| {{< ilink "/docs/manual/advanced/annotation-with-tags" "**Annotation with Tags**" >}}                    | Useful for image and video classification tasks, like identifying scenes or themes in a dataset.               |
+| {{< ilink "/docs/annotation/tools/3d-object-annotation-advanced" "**3D Object Annotation**" >}}           | Ideal for projects that require depth perception and volume estimation, like autonomous vehicle training.      |
+| {{< ilink "/docs/annotation/tools/attribute-annotation-mode-advanced" "**Attribute Annotation Mode**" >}} | Useful for adding detailed information to objects, like color, size, or other specific characteristics.        |
+| {{< ilink "/docs/annotation/tools/annotation-with-rectangles" "**Annotation with Rectangles**" >}}        | Best for simple object detection where objects have a box-like shape, such as detecting windows in a building. |
+| {{< ilink "/docs/annotation/tools/annotation-with-polygons" "**Annotation with Polygons**" >}}            | Suited for complex shapes in images, like outlining geographical features in maps or detailed product shapes.  |
+| {{< ilink "/docs/annotation/tools/annotation-with-polylines" "**Annotation with Polylines**" >}}          | Great for annotating linear objects like roads, pathways, or limbs in pose estimation.                         |
+| {{< ilink "/docs/annotation/tools/annotation-with-ellipses" "**Annotation with Ellipses**" >}}            | Ideal for objects like plates, balls, or eyes, where a circular or oval annotation is needed.                  |
+| {{< ilink "/docs/annotation/tools/annotation-with-cuboids" "**Annotation with Cuboids**" >}}              | Useful for 3D objects in 2D images, like boxes or furniture in room layouts.                                   |
+| {{< ilink "/docs/annotation/tools/skeletons" "**Annotation with Skeletons**" >}}                          | Ideal for human pose estimation, animation, and movement analysis in sports or medical fields.                 |
+| {{< ilink "/docs/annotation/tools/annotation-with-brush-tool" "**Annotation with Brush Tool**" >}}        | Perfect for intricate and detailed annotations where precision is key, such as in medical imaging.             |
+| {{< ilink "/docs/annotation/tools/annotation-with-tags" "**Annotation with Tags**" >}}                    | Useful for image and video classification tasks, like identifying scenes or themes in a dataset.               |
 
 <!--lint enable maximum-line-length-->
 
@@ -69,7 +69,7 @@ potentially speeding it up by up to 10 times.
 
 {{% alert title="Note" color="primary" %}}
 For more information,
-see {{< ilink "/docs/manual/advanced/ai-tools" "**OpenCV and AI Tools**" >}}
+see {{< ilink "/docs/annotation/tools/ai-tools" "**OpenCV and AI Tools**" >}}
 {{% /alert %}}
 
 Below is a detailed table of the supported algorithms and the platforms they operate on:
@@ -106,8 +106,8 @@ Start here if you're unsure where to begin with CVAT.
 
 | Name                                                                                                    | Description                                                                                                                                                                                                                                                         |
 | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| {{< ilink "/docs/manual" "**User Manual**" >}}                                                          | This comprehensive guide covers all CVAT tools available for work. It includes descriptions of all available tools, quality control methods, and procedures for importing and exporting data. This manual is relevant for both CVAT Online and Self-Hosted versions. |
-| {{< ilink "/docs/other/workflow-org" "**CVAT Complete Workflow Guide for Organizations**" >}} | This guide provides a comprehensive overview of using CVAT for collaboration in organizations.                                                                                                                                                                      |
+| {{< ilink "/docs/annotation/tools" "**Annotation tools**" >}}                                                          | This comprehensive guide covers all CVAT tools available for work. It includes descriptions of all available tools, quality control methods, and procedures for importing and exporting data. This manual is relevant for both CVAT Online and Self-Hosted versions. |
+| {{< ilink "/docs/guides/workflow-org" "**CVAT Complete Workflow Guide for Organizations**" >}} | This guide provides a comprehensive overview of using CVAT for collaboration in organizations.                                                                                                                                                                      |
 | {{< ilink "/docs/account_management/subscription-management" "**Subscription Management**" >}}                  | Learn how to [**choose a plan**](https://www.cvat.ai/post/cvat-ai-pricing-plans-choosing-the-right-plan-for-your-needs), subscribe, and manage your subscription effectively.                                                                                       |
 | {{< ilink "/docs/other/xml_format" "**XML Annotation Format**" >}}                            | Detailed documentation on the XML format used for annotations in CVAT essential for understanding data structure and compatibility.                                                                                                                                 |
 

@@ -1,7 +1,7 @@
 ---
 title: 'Contributing to this project'
 linkTitle: 'CONTRIBUTING'
-weight: 10
+weight: 20
 description: 'This section contains documents for CVAT developers.'
 ---
 

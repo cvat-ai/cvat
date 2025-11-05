@@ -39,7 +39,7 @@ The `Add rule` button adds a rule for objects display. A rule may use the follow
 | `Label`      | all the label names that are in the task               | label name                                  |
 | `Type`       | shape, track or tag                                    | type of object                              |
 | `Shape`      | all shape types                                        | type of shape                               |
-| `Occluded`   | true or false                                          | occluded ({{< ilink "/docs/manual/advanced/shape-mode-advanced" "read more" >}}) |
+| `Occluded`   | true or false                                          | occluded ({{< ilink "/docs/annotation/tools/shape-mode-advanced" "read more" >}}) |
 | `Width`      | number of px or field                                  | shape width                                 |
 | `Height`     | number of px or field                                  | shape height                                |
 | `ServerID`   | number or field                                        | ID of the object on the server <br>(You can find out by forming a link to the object through the Action menu) |

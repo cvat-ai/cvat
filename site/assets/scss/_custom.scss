@@ -118,3 +118,35 @@ details > .code-toolbar {
 /* stylelint-disable-next-line selector-class-pattern */
 .td-breadcrumbs__single { display: none !important;
 }
+
+/* --- Improve Table of Contents hierarchy --- */
+.td-toc ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Level 1 (H2) — main headings */
+  .td-toc > ul > li > a {
+    font-weight: 800;
+    font-size: 1rem;
+    color: #000 !important;
+    margin-top: 0.3rem;
+    display: block;
+  }
+
+  /* Level 2 (H3) — subheadings */
+  .td-toc ul ul > li > a {
+    font-size: 1rem;
+    color: #222 !important;
+    margin-left: 1rem;
+    display: block;
+  }
+
+  /* Hover and active states */
+  .td-toc a:hover,
+  .td-toc a:focus {
+    color: #f97526 !important;
+    text-decoration: underline;
+  }
+

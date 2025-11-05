@@ -1,6 +1,6 @@
 ---
-title: 'Bulk Actions'
-linkTitle: 'Bulk Actions'
+title: 'Bulk actions'
+linkTitle: 'Bulk actions'
 weight: 10
 aliases:
   - /docs/manual/advanced/bulk-actions/

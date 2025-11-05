@@ -84,7 +84,7 @@ CVAT does not require them to import annotations.
    ```
 
 3. Select `val2017.zip` as data
-   (See {{< ilink "/docs/annotation/create-annotation-task" "Creating an annotation task" >}}
+   (See {{< ilink "/docs/workspace/tasks-page#create-annotation-task" "Creating an annotation task" >}}
    guide for details)
 
 4. Unpack `annotations_trainval2017.zip`

@@ -30,7 +30,7 @@ and there is a need to merge these shapes into a single one.
 
 To join masks, do the following:
 
-1. From the {{< ilink "/docs/annotation/annotation-interface/controls-sidebar#edit" "**Edit**" >}} block,
+1. From the {{< ilink "/docs/annotation/annotation-editor/controls-sidebar#edit" "**Edit**" >}} block,
    select **Join masks** ![Join masks tool icon](/images/join-masks-icon.jpg).
 2. Click on the canvas area, to select masks that you want to join.
 3. (Optional) To remove the selection click the mask one more time.
@@ -60,7 +60,7 @@ to split a shape to as many parts as you need.
 
 To slice mask or polygon, do the following:
 
-1. From the {{< ilink "/docs/annotation/annotation-interface/controls-sidebar#edit" "**Edit**" >}} block,
+1. From the {{< ilink "/docs/annotation/annotation-editor/controls-sidebar#edit" "**Edit**" >}} block,
    select **Slice mask/polygon** ![Slicing tool icon](/images/slicing-tool-icon.jpg).
 2. Click on the shape you intend to slice.
    A black contour will appear around the selected shape.

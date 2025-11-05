@@ -1,7 +1,7 @@
 ---
 title: 'Controls sidebar'
 linkTitle: 'Controls sidebar'
-weight: 2
+weight: 5
 description: 'Offers tools for navigating within the image, annotation tools, and additional options to merge, split, and group labels.'
 aliases:
   - /docs/manual/basics/CVAT-annotation-interface/
@@ -33,16 +33,16 @@ aliases:
 **Shapes block** - contains all the tools for creating shapes.
 |Icon |Description |Links to section |
 |-- |-- |-- |
-|![AI Tools icon](/images/image189.jpg)|`AI Tools`|{{< ilink "/docs/manual/advanced/ai-tools" "AI Tools" >}}|
-|![OpenCV icon](/images/image201.jpg)|`OpenCV`|{{< ilink "/docs/manual/advanced/ai-tools" "OpenCV" >}}|
-|![Rectangle icon](/images/image167.jpg)|`Rectangle`|{{< ilink "/docs/annotation/shape-mode-basics" "Shape mode" >}}; {{< ilink "/docs/annotation/track-mode-basics" "Track mode" >}};<br/> {{< ilink "/docs/manual/advanced/annotation-with-rectangles" "Drawing by 4 points" >}}|
-|![Polygon icon](/images/image168.jpg)|`Polygon`|{{< ilink "/docs/manual/advanced/annotation-with-polygons" "Annotation with polygons" >}}; {{< ilink "/docs/manual/advanced/annotation-with-polygons/track-mode-with-polygons" "Track mode with polygons" >}}|
-|![Polyline icon](/images/image169.jpg)|`Polyline`|{{< ilink "/docs/manual/advanced/annotation-with-polylines" "Annotation with polylines" >}}|
-|![Points icon](/images/image170.jpg)|`Points`|{{< ilink "/docs/manual/advanced/annotation-with-points" "Annotation with points" >}}|
-|![Ellipses icon](/images/image241.jpg)|`Ellipses`|{{< ilink "/docs/manual/advanced/annotation-with-ellipses" "Annotation with ellipses" >}}|
-|![Cuboid icon](/images/image176.jpg)|`Cuboid`|{{< ilink "/docs/manual/advanced/annotation-with-cuboids" "Annotation with cuboids" >}}|
-|![Brushing tools icon](/images/brushing_tools_icon.png)|`Brushing tools`|{{< ilink "/docs/manual/advanced/annotation-with-brush-tool" "Annotation with brushing" >}}|
-|![Tag icon](/images/image171.jpg)|`Tag`|{{< ilink "/docs/manual/advanced/annotation-with-tags" "Annotation with tags" >}}|
+|![AI Tools icon](/images/image189.jpg)|`AI Tools`|{{< ilink "/docs/annotation/tools/ai-tools" "AI Tools" >}}|
+|![OpenCV icon](/images/image201.jpg)|`OpenCV`|{{< ilink "/docs/annotation/tools/ai-tools" "OpenCV" >}}|
+|![Rectangle icon](/images/image167.jpg)|`Rectangle`|{{< ilink "/docs/annotation/tools/shape-mode-basics" "Shape mode" >}}; {{< ilink "/docs/annotation/tools/track-mode-basics" "Track mode" >}};<br/> {{< ilink "/docs/annotation/tools/annotation-with-rectangles" "Drawing by 4 points" >}}|
+|![Polygon icon](/images/image168.jpg)|`Polygon`|{{< ilink "/docs/annotation/tools/annotation-with-polygons" "Annotation with polygons" >}}; {{< ilink "/docs/annotation/tools/annotation-with-polygons/track-mode-with-polygons" "Track mode with polygons" >}}|
+|![Polyline icon](/images/image169.jpg)|`Polyline`|{{< ilink "/docs/annotation/tools/annotation-with-polylines" "Annotation with polylines" >}}|
+|![Points icon](/images/image170.jpg)|`Points`|{{< ilink "/docs/annotation/tools/annotation-with-points" "Annotation with points" >}}|
+|![Ellipses icon](/images/image241.jpg)|`Ellipses`|{{< ilink "/docs/annotation/tools/annotation-with-ellipses" "Annotation with ellipses" >}}|
+|![Cuboid icon](/images/image176.jpg)|`Cuboid`|{{< ilink "/docs/annotation/tools/annotation-with-cuboids" "Annotation with cuboids" >}}|
+|![Brushing tools icon](/images/brushing_tools_icon.png)|`Brushing tools`|{{< ilink "/docs/annotation/tools/annotation-with-brush-tool" "Annotation with brushing" >}}|
+|![Tag icon](/images/image171.jpg)|`Tag`|{{< ilink "/docs/annotation/tools/annotation-with-tags" "Annotation with tags" >}}|
 |![Open issue icon](/images/image195.jpg)|`Open an issue`|{{< ilink "/docs/qa-analytics/manual-qa" "Review" >}} (available only in review mode)|
 
 ---
@@ -52,11 +52,11 @@ aliases:
 **Edit block** - contains tools for editing tracks and shapes.
 |Icon |Description |Links to section |
 |-- |-- |-- |
-|![Merge shapes icon](/images/image172.jpg)|`Merge Shapes`(`M`) - starts/stops the merging shapes mode. |{{< ilink "/docs/annotation/track-mode-basics" "Track mode (basics)" >}}|
-|![Group shapes icon](/images/image173.jpg)|`Group Shapes` (`G`) - starts/stops the grouping shapes mode.|{{< ilink "/docs/manual/advanced/shape-grouping" "Shape grouping" >}}|
-|![Split icon](/images/image174.jpg)|`Split` - splits a track. |{{< ilink "/docs/manual/advanced/track-mode-advanced" "Track mode (advanced)" >}}|
-|![Join labels icon](/images/join-masks-icon.jpg)|Joins multiple labels into one |{{< ilink "/docs/manual/advanced/slice-and-join#joining-cvat-labels" "**Joining mask tool**" >}}|
-|![Slice label icon](/images/slicing-tool-icon.jpg)|Slices one label into several.|{{< ilink "/docs/manual/advanced/slice-and-join#slicing-cvat-labels" "**Slice mask/polygon**" >}}|
+|![Merge shapes icon](/images/image172.jpg)|`Merge Shapes`(`M`) - starts/stops the merging shapes mode. |{{< ilink "/docs/annotation/tools/track-mode-basics" "Track mode (basics)" >}}|
+|![Group shapes icon](/images/image173.jpg)|`Group Shapes` (`G`) - starts/stops the grouping shapes mode.|{{< ilink "/docs/annotation/tools/shape-grouping" "Shape grouping" >}}|
+|![Split icon](/images/image174.jpg)|`Split` - splits a track. |{{< ilink "/docs/annotation/tools/track-mode-advanced" "Track mode (advanced)" >}}|
+|![Join labels icon](/images/join-masks-icon.jpg)|Joins multiple labels into one |{{< ilink "/docs/annotation/tools/slice-and-join#joining-cvat-labels" "**Joining mask tool**" >}}|
+|![Slice label icon](/images/slicing-tool-icon.jpg)|Slices one label into several.|{{< ilink "/docs/annotation/tools/slice-and-join#slicing-cvat-labels" "**Slice mask/polygon**" >}}|
 
 ---
 

@@ -7,10 +7,10 @@ aliases:
 ---
 
 To learn more about annotation using a rectangle, see the sections:
-- {{< ilink "/docs/annotation/shape-mode-basics" "Shape mode (basics)" >}}
-- {{< ilink "/docs/annotation/track-mode-basics" "Track mode (basics)" >}}
-- {{< ilink "/docs/manual/advanced/shape-mode-advanced" "Shape mode (advanced)" >}}
-- {{< ilink "/docs/manual/advanced/track-mode-advanced" "Track mode (advanced)" >}}
+- {{< ilink "/docs/annotation/tools/shape-mode-basics" "Shape mode (basics)" >}}
+- {{< ilink "/docs/annotation/tools/track-mode-basics" "Track mode (basics)" >}}
+- {{< ilink "/docs/annotation/tools/shape-mode-advanced" "Shape mode (advanced)" >}}
+- {{< ilink "/docs/annotation/tools/track-mode-advanced" "Track mode (advanced)" >}}
 
 ## Rotation rectangle
 

@@ -87,7 +87,7 @@ A _configured_ Ground Truth job is required for all quality computations in CVAT
 {{< tabpane text=true >}}
 
 {{%tab header="In a new task" %}}
-1. Go to the {{< ilink "/docs/annotation/create-annotation-task" "task creation" >}} page
+1. Go to the {{< ilink "/docs/workspace/tasks-page#create-annotation-task" "task creation" >}} page
 2. Configure basic and advanced parameters according to your requirements, and attach a dataset to be annotated
 3. Scroll down to the **Quality Control** section below
 4. Select one of the [validation modes](#validation-modes) available

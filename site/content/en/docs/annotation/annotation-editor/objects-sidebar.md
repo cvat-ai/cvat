@@ -1,7 +1,7 @@
 ---
 title: 'Objects sidebar'
 linkTitle: 'Objects sidebar'
-weight: 11
+weight: 4
 description: ' Displays annotated objects and includes a label filter, lists of objects (current frame) and labels (objects on the frame), and appearance settings. '
 aliases:
   - /docs/manual/basics/CVAT-annotation-interface/
@@ -20,7 +20,7 @@ frame. The following figure is an example of how the list might look like:
 
 ![Filter button](/images/image059.jpg)
 
-The way how to use filters is described in the advanced guide {{< ilink "/docs/manual/advanced/filter" "here" >}}.
+The way how to use filters is described in the advanced guide {{< ilink "/docs/annotation/tools/filter" "here" >}}.
 
 **List of objects**
 
@@ -55,7 +55,7 @@ The action menu contains:
   and displays a dialog box where you can specify the number
   of copies or the frame to which you want to copy the object.
   The keyboard shortcut is **Ctr**l + **B**. On how to propagate
-  only filtered shapes, see {{< ilink "/docs/annotation/shapes-converter" "Shapes converter" >}}<br>There are two options available:
+  only filtered shapes, see {{< ilink "/docs/annotation/tools/shapes-converter" "Shapes converter" >}}<br>There are two options available:
 
   - **Propagate forward** (![Fw propagate](/images/propagate_fw.png)) creates a
     copy of the object on `N` _subsequent_ frames at the same position.
@@ -90,7 +90,7 @@ You can change the way an object is displayed on a frame (show or hide).
 
 ![Objects sidebar with highlighted button for pinning object](/images/image052.jpg)
 
-**Tracker switcher** - enable/disable {{< ilink "/docs/manual/advanced/ai-tools#trackers" "tracking" >}} for the object.
+**Tracker switcher** - enable/disable {{< ilink "/docs/annotation/tools/ai-tools#trackers" "tracking" >}} for the object.
 
 ![Objects sidebar with highlighted button for tracking](/images/tracker_switcher.png)
 

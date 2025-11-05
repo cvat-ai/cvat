@@ -97,7 +97,7 @@ There are 2 options:
    attributes for each label if you want to use them.
 
    Select interesting image files
-   (See {{< ilink "/docs/annotation/create-annotation-task" "Creating an annotation task" >}} guide for details)
+   (See {{< ilink "/docs/workspace/tasks-page#create-annotation-task" "Creating an annotation task" >}} guide for details)
 
 1. zip the corresponding annotation files
 

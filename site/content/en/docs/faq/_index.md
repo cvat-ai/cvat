@@ -9,12 +9,12 @@ description: 'Answers to frequently asked questions'
 
 ## How to migrate data from CVAT.org to CVAT Online
 
-Please follow the {{< ilink "/docs/manual/advanced/backup#backup" "export tasks and projects guide" >}} to
+Please follow the {{< ilink "/docs/annotation/tools/backup#backup" "export tasks and projects guide" >}} to
 download an archive with data which corresponds to your task or project. The backup for a
 project will have all tasks which are inside the project. Thus you don't need to export
 them separately.
 
-Please follow the {{< ilink "/docs/manual/advanced/backup#create-from-backup" "import tasks and projects guide" >}}
+Please follow the {{< ilink "/docs/annotation/tools/backup#create-from-backup" "import tasks and projects guide" >}}
 to upload your backup with a task or project to a CVAT instance.
 
 See a quick demo below. It is really a simple process. If your data is huge, it may take some time.
@@ -150,7 +150,7 @@ To do this, you will need to edit `traefik.http.<router>.cvat.rule` docker label
 ## How to create a task with multiple jobs
 
 Set the segment size when you create a new task, this option is available in the
-{{< ilink "/docs/annotation/create-annotation-task#advanced-configuration" "Advanced configuration" >}}
+{{< ilink "/docs/workspace/tasks-page#advanced-configuration" "Advanced configuration" >}}
 section.
 
 ## How to transfer CVAT to another machine
@@ -161,7 +161,7 @@ Follow the
 ## How to load your own DL model into CVAT
 
 See the information here in the
-{{< ilink "/docs/manual/advanced/serverless-tutorial#adding-your-own-dl-models" "Serverless tutorial" >}}.
+{{< ilink "/docs/guides/serverless-tutorial#adding-your-own-dl-models" "Serverless tutorial" >}}.
 
 ## My server uses a custom SSL certificate and I don't want to check it.
 

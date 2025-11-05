@@ -4,6 +4,7 @@ linkTitle: '3D task workspace'
 weight: 13
 aliases:
   - /docs/manual/basics/
+  - /docs/annotation/3d-task-workspace/
 ---
 
 ![Interface diagram with marked areas and buttons](/images/image214_carla_town3.jpg)

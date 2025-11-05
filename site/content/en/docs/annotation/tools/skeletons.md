@@ -44,9 +44,9 @@ See:
 To start annotating using skeletons, you need to set up a **Skeleton** task
 in **Configurator**:
 
-To open **Configurator**, when {{< ilink "/docs/annotation/create-annotation-task" "creating a task" >}},
+To open **Configurator**, when {{< ilink "/docs/workspace/tasks-page#create-annotation-task" "creating a task" >}},
 click on the **Setup skeleton** button if you want to set up the skeleton manually,
-or {{< ilink "/docs/manual/advanced/skeletons#adding-skeleton-labels-from-the-model" "**From model**" >}}
+or {{< ilink "/docs/annotation/tools/skeletons#adding-skeleton-labels-from-the-model" "**From model**" >}}
 if you want to add skeleton labels from a model.
 
 ![Task creation window with highlighted buttons for skeleton configuration](/images/image-setup-skeleton-1.jpg)
@@ -83,7 +83,7 @@ To do this, right-click on the skeleton point and select **Configure**:
 ![Skeleton example with opened menu and highlighted "Configure" option](/images/image-skeleton-drawn-example.jpg)
 
 In the opened menu, you can change the point setting. It is similar to
-{{< ilink "/docs/annotation/create-annotation-task#create-a-task"
+{{< ilink "/docs/workspace/tasks-page#create-a-task"
 "adding labels and attributes of the regular task" >}}:
 
 ![Example of menu for configuring skeleton point](/images/image-skeleton-point-setup.jpg)
@@ -103,7 +103,7 @@ To create the **Skeleton** task, do the following:
 1. Open **Configurator**.
 2. (Optional) Upload background image.
 3. In the Label name field, enter the name of the label.
-4. (Optional) {{< ilink "/docs/annotation/create-annotation-task#add-an-attribute" "**Add attribute**" >}}
+4. (Optional) {{< ilink "/docs/workspace/tasks-page#add-an-attribute" "**Add attribute**" >}}
    <br>**Note**: you can add attributes exclusively to each point,
    for more information, see [**Configuring Skeleton points**](#configuring-skeleton-points)
 5. Use **Add point** to add points to the **Drawing area**.
@@ -128,9 +128,9 @@ To add points from the model, and annotate do the following:
 
 5. (Optional) If you want to adjust labels, within the
    label, click the **Update** attributes icon.
-   <br>The {{< ilink "/docs/manual/advanced/skeletons#skeleton-configurator" "**Skeleton configurator**" >}}
+   <br>The {{< ilink "/docs/annotation/tools/skeletons#skeleton-configurator" "**Skeleton configurator**" >}}
    will open, where you can
-   {{< ilink "/docs/manual/advanced/skeletons#configuring-skeleton-points" "**configure the skeleton**" >}}.
+   {{< ilink "/docs/annotation/tools/skeletons#configuring-skeleton-points" "**configure the skeleton**" >}}.
    <br>**Note**: Labels cannot be adjusted after the task/project is created.
 6. Click **Done**. The labels, that you selected,
    will appear in the labels window.

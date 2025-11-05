@@ -8,7 +8,7 @@ aliases:
 ---
 
 Basic operations in the mode were described in section
-{{< ilink "/docs/annotation/attribute-annotation-mode-basics" "attribute annotation mode (basics)" >}}.
+{{< ilink "/docs/annotation/tools/attribute-annotation-mode-basics" "attribute annotation mode (basics)" >}}.
 
 It is possible to handle lots of objects on the same frame in the mode.
 

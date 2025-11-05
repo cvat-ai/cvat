@@ -4,11 +4,12 @@ linkTitle: 'Standard 3D mode'
 weight: 14
 aliases:
   - /docs/manual/basics/
+  - /docs/annotation/standard-3d-mode-basics/
 ---
 
 `Standard 3d mode` - Designed to work with 3D data.
 The mode is automatically available if you add PCD or Kitty BIN format data when you create a task
-({{< ilink "/docs/annotation/create-annotation-task" "read more" >}}).
+({{< ilink "/docs/workspace/tasks-page" "read more" >}}).
 
 You can adjust the size of the projections, to do so, simply drag the boundary between the projections.
 

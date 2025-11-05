@@ -1,9 +1,10 @@
 ---
 title: 'Serverless tutorial'
 linkTitle: 'Serverless tutorial'
-weight: 32
+weight: 2
 aliases:
   - /docs/manual/advanced/
+  - /docs/annotation/tools/serverless-tutorial/
 ---
 
 ## Introduction
@@ -30,7 +31,7 @@ found in the [serverless][cvat-builtin-serverless] directory such as
 _Mask RCNN, Faster RCNN, SiamMask, Inside Outside Guidance, Deep Extreme Cut_, etc.
 Follow {{< ilink "/docs/administration/advanced/installation_automatic_annotation" "the installation guide" >}}
 to build and deploy
-these serverless functions. See {{< ilink "/docs/manual/advanced/ai-tools" "the user guide" >}} to
+these serverless functions. See {{< ilink "/docs/annotation/tools/ai-tools" "the user guide" >}} to
 understand how to use these functions in the UI to automatically annotate data.
 
 What is a serverless function and why is it used for automatic annotation
@@ -154,7 +155,7 @@ finish the process.
 
 ![Create a video annotation task](/images/create_video_task.png)
 
-Open the task and use {{< ilink "/docs/manual/advanced/ai-tools" "AI tools" >}} to start tracking
+Open the task and use {{< ilink "/docs/annotation/tools/ai-tools" "AI tools" >}} to start tracking
 an object. Draw a bounding box around an object, and sequentially switch
 through the frame and correct the restrictive box if necessary.
 

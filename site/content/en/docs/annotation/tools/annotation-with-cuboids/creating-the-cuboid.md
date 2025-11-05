@@ -1,6 +1,6 @@
 ---
-title: "Creating the cuboid"
-linkTitle: "Creating the cuboid"
+title: 'Creating the cuboid'
+linkTitle: 'Creating the cuboid'
 weight: 1
 ---
 

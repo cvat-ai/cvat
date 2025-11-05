@@ -29,10 +29,10 @@ or manually, following [the manifest file format specification](#file-format).
 
 Manifest files can be used in the following cases:
 - A video file or a set of images is used as the data source and
-  the caching mode is enabled. {{< ilink "/docs/manual/advanced/data-on-fly" "Read more" >}}
+  the caching mode is enabled. {{< ilink "/docs/annotation/tools/data-on-fly" "Read more" >}}
 - The data is located in a cloud storage. {{< ilink "/docs/workspace/cloud-storages" "Read more" >}}
 - The `predefined` file sorting method is specified.
-  {{< ilink "/docs/annotation/create-annotation-task#sorting-method" "Read more" >}}
+  {{< ilink "/docs/workspace/tasks-page#sorting-method" "Read more" >}}
 
 ### The predefined sorting method
 

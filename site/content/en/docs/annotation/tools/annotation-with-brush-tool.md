@@ -12,7 +12,7 @@ such as a house hiding behind trees, a car behind a pedestrian, or a pillar behi
 traffic sign.
 The brush tool has several modes, for example: erase pixels, change brush shapes, and polygon-to-mask mode.
 
-Use brush tool for Semantic (Panoptic) and Instance Image Segmentation tasks. <br>For more information about segmentation masks in CVAT, see {{< ilink "/docs/manual/advanced/annotation-with-polygons/creating-mask" "Creating masks" >}}.
+Use brush tool for Semantic (Panoptic) and Instance Image Segmentation tasks. <br>For more information about segmentation masks in CVAT, see {{< ilink "/docs/annotation/tools/annotation-with-polygons/creating-mask" "Creating masks" >}}.
 
 See:
 
@@ -54,7 +54,7 @@ It has the following elements:
 
 To annotate with brush, do the following:
 
-1. From the {{< ilink "/docs/annotation/annotation-interface/controls-sidebar" "controls sidebar" >}},
+1. From the {{< ilink "/docs/annotation/annotation-editor/controls-sidebar" "controls sidebar" >}},
    select **Brush** ![Brush icon](/images/brushing_tools_icon.png).
 2. In the **Draw new mask** menu, select label for your mask, and click **Shape**. <br>The **Brush**![Brush](/images/brushing_tools_icon.png) tool will be selected by default.
 
@@ -66,11 +66,11 @@ To annotate with brush, do the following:
 
 4. After you applied the mask, on the top menu bar click **Save mask** ![Tick icon](/images/tick_icon.png) <br>to finish the process (or **N** on the keyboard).
 5. Added object will appear on the
-   {{< ilink "/docs/annotation/annotation-interface/objects-sidebar" "objects sidebar" >}}.
+   {{< ilink "/docs/annotation/annotation-editor/objects-sidebar" "objects sidebar" >}}.
 
 To add the next object, repeat steps 1 to 5.
 All added objects will be visible on the image and the
-{{< ilink "/docs/annotation/annotation-interface/objects-sidebar" "objects sidebar" >}}.
+{{< ilink "/docs/annotation/annotation-editor/objects-sidebar" "objects sidebar" >}}.
 
 To save the job with all added objects, on the top menu, click **Save** ![Save](/images/brushing_tools_save.png).
 
@@ -78,7 +78,7 @@ To save the job with all added objects, on the top menu, click **Save** ![Save](
 
 To annotate with polygon-to-mask, do the following:
 
-1. From the {{< ilink "/docs/annotation/annotation-interface/controls-sidebar" "controls sidebar" >}},
+1. From the {{< ilink "/docs/annotation/annotation-editor/controls-sidebar" "controls sidebar" >}},
    select **Brush** ![Brush icon](/images/brushing_tools_icon.png).
 2. In the **Draw new mask** menu, select label for your mask, and click **Shape**.
 
@@ -91,12 +91,12 @@ To annotate with polygon-to-mask, do the following:
    ![Brushing](/images/brushing_tools_polygon.gif)
 
 6. After you added the polygon selection, on the top menu bar click **Save mask** ![Tick icon](/images/tick_icon.png) <br>to finish the process (or **N** on the keyboard).
-7. Click **Save mask** ![Tick icon](/images/tick_icon.png) again (or **N** on the keyboard). <br>The added object will appear on the {{< ilink "/docs/annotation/annotation-interface/objects-sidebar" "objects sidebar" >}}.
+7. Click **Save mask** ![Tick icon](/images/tick_icon.png) again (or **N** on the keyboard). <br>The added object will appear on the {{< ilink "/docs/annotation/annotation-editor/objects-sidebar" "objects sidebar" >}}.
 
 To add the next object, repeat steps 1 to 5.
 
 All added objects will be visible on the image and the
-{{< ilink "/docs/annotation/annotation-interface/objects-sidebar" "objects sidebar" >}}.
+{{< ilink "/docs/annotation/annotation-editor/objects-sidebar" "objects sidebar" >}}.
 
 To save the job with all added objects, on the top menu, click **Save** ![Save](/images/brushing_tools_save.png).
 
@@ -108,8 +108,8 @@ Use **Remove underlying pixels** tool when you want to add a mask and simultaneo
 
 ## AI Tools
 
-You can convert {{< ilink "/docs/manual/advanced/ai-tools" "AI tool" >}} masks to polygons.
-To do this, use the following {{< ilink "/docs/manual/advanced/ai-tools" "AI tool" >}} menu:
+You can convert {{< ilink "/docs/annotation/tools/ai-tools" "AI tool" >}} masks to polygons.
+To do this, use the following {{< ilink "/docs/annotation/tools/ai-tools" "AI tool" >}} menu:
 
 ![Save](/images/brushing_tool_ai.jpg)
 

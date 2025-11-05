@@ -32,7 +32,7 @@ Example for 2D tasks:
    as the primary image to which it should be linked.
 3. Place the contextual image(s) within the subfolder created in step 2.
 4. Add folder to the archive.
-5. {{< ilink "/docs/annotation/create-annotation-task#create-a-task" "Create task" >}}.
+5. {{< ilink "/docs/workspace/tasks-page#create-annotation-task" "Create task" >}}.
 
 Supported file layouts for 2D and 3D tasks:
 
@@ -141,7 +141,7 @@ root_directory/
 {{< /tabpane >}}
 
 For more general information about 3D data formats,
-see {{< ilink "/docs/annotation/create-annotation-task#data-formats-for-a-3d-task" "3D data formats" >}}.
+see {{< ilink "/docs/workspace/tasks-page#data-formats-for-a-3d-task" "3D data formats" >}}.
 
 ## Contextual images
 

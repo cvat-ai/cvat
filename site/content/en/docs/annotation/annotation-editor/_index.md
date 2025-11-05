@@ -1,8 +1,8 @@
 ---
-title: 'Annotation UI'
-linkTitle: 'Annotation UI'
+title: 'Editor'
+linkTitle: 'Editor'
 weight: 1
-description: "This section describes CVAT annotation interface and it's features"
+description: "This section describes CVAT annotation editor, it's key components, tools, and settings."
 ---
 
 This section of the documentation describes the annotation interface and

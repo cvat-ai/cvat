@@ -1,8 +1,8 @@
 ---
-title: 'Annotation screen'
-linkTitle: 'Annotation screen'
-weight: 12
-description: 'The main annotation area where images and videos are displayed for annotation..'
+title: 'Workspace'
+linkTitle: 'Workspace'
+weight: 3
+description: 'The main annotation area where images, videos and 3D data are displayed for annotation.'
 aliases:
   - /docs/manual/basics/CVAT-annotation-interface/
 ---

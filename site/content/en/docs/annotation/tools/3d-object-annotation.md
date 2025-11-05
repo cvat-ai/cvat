@@ -5,6 +5,7 @@ weight: 19
 description: 'Overview of basic operations available when annotating 3D objects.'
 aliases:
   - /docs/manual/basics/
+  - /docs/annotation/3d-object-annotation/
 ---
 
 Use the 3D Annotation tool for labeling 3D objects and scenes, such as vehicles, buildings, landscapes, and others.
@@ -24,11 +25,11 @@ The 3D annotation canvas looks like the following:
 
 {{% alert title="Note" color="primary" %}}
 If you added contextual images to the dataset, the canvas will include them.
-For more information, consult {{< ilink "/docs/manual/advanced/contextual-images" "Contextual images" >}}
+For more information, consult {{< ilink "/docs/annotation/tools/contextual-images" "Contextual images" >}}
 {{% /alert %}}
 
 For information on the available tools, consult
-{{< ilink "/docs/annotation/annotation-interface/controls-sidebar" "Controls sidebar" >}}.
+{{< ilink "/docs/annotation/annotation-editor/controls-sidebar" "Controls sidebar" >}}.
 
 You can navigate, using the mouse, or navigation keys:
 
@@ -112,4 +113,4 @@ To track with cuboids:
 
 1. Repeat to the last frame with the presence of the object you are tracking.
 
-For more information about tracking, consult {{< ilink "/docs/annotation/track-mode-basics" "Track mode" >}}.
+For more information about tracking, consult {{< ilink "/docs/annotation/tools/track-mode-basics" "Track mode" >}}.

@@ -1,9 +1,10 @@
 ---
 title: 'Settings'
 linkTitle: 'Settings'
-weight: 15
+weight: 6
 aliases:
   - /docs/manual/basics/
+  - /docs/annotation/settings/
 ---
 To open the **Settings**, open the user menu in the header and select **Settings**.
 Or you can use the default `F2` shortcut.
@@ -60,10 +61,10 @@ In the **Workspace** tab, you can:
 
 - `Automatic bordering` - enable automatic bordering for polygons and polylines during drawing/editing.
   For more information To find out more, go to the section
-  {{< ilink "/docs/manual/advanced/annotation-with-polygons" "annotation with polygons" >}}.
+  {{< ilink "/docs/annotation/tools/annotation-with-polygons" "annotation with polygons" >}}.
 
 - `Intelligent polygon cropping` - activates intelligent cropping when editing the polygon (read more in the section
-  {{< ilink "/docs/manual/advanced/annotation-with-polygons/edit-polygon" "edit polygon" >}}
+  {{< ilink "/docs/annotation/tools/annotation-with-polygons/edit-polygon" "edit polygon" >}}
 
 - `Show tags on frame` - shows/hides frame tags on the current frame
 

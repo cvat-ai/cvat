@@ -8,7 +8,7 @@ aliases:
 ---
 
 Basic operations in the mode were described in section
-{{< ilink "/docs/annotation/track-mode-basics" "track mode (basics)" >}}.
+{{< ilink "/docs/annotation/tools/track-mode-basics" "track mode (basics)" >}}.
 
 Shapes that were created in the track mode, have extra navigation buttons.
 

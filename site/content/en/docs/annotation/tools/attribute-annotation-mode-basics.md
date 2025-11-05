@@ -5,6 +5,7 @@ weight: 20
 description: 'Usage examples and basic operations available in attribute annotation mode.'
 aliases:
   - /docs/manual/basics/
+  - /docs/annotation/attribute-annotation-mode-basics/
 ---
 - In this mode, you can edit attributes with fast navigation between objects and frames using a keyboard.
   Open the drop-down list in the top panel and select **Attribute annotation**.
@@ -30,4 +31,4 @@ aliases:
 
 To display all the hot keys available in the attribute annotation mode, press `F2`.
 Learn more in the section
-{{< ilink "/docs/manual/advanced/attribute-annotation-mode-advanced" "attribute annotation mode (advanced)" >}}.
+{{< ilink "/docs/annotation/tools/attribute-annotation-mode-advanced" "attribute annotation mode (advanced)" >}}.

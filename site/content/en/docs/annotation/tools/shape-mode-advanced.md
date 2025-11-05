@@ -8,7 +8,7 @@ aliases:
 ---
 
 Basic operations in the mode were described in section
-{{< ilink "/docs/annotation/shape-mode-basics" "shape mode (basics)" >}}.
+{{< ilink "/docs/annotation/tools/shape-mode-basics" "shape mode (basics)" >}}.
 
 **Occluded**
 Occlusion is an attribute used if an object is occluded by another object or

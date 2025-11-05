@@ -1,6 +1,6 @@
 ---
-title: 'OpenCV and AI Tools'
-linkTitle: 'OpenCV and AI Tools'
+title: 'AI Tools'
+linkTitle: 'AI Tools'
 weight: 14
 description: 'Overview of semi-automatic and automatic annotation tools available in CVAT.'
 aliases:
@@ -9,7 +9,7 @@ aliases:
 
 Label and annotate your data in semi-automatic and automatic mode with the help of **AI** and **OpenCV** tools.
 
-While {{< ilink "/docs/manual/advanced/annotation-with-polygons/track-mode-with-polygons" "interpolation" >}}
+While {{< ilink "/docs/annotation/tools/annotation-with-polygons/track-mode-with-polygons" "interpolation" >}}
 is good for annotation of the videos made by the security cameras,
 **AI** and **OpenCV** tools are good for both:
 videos where the camera is stable and videos, where it
@@ -134,10 +134,10 @@ During the drawing process, you can remove the last point by clicking on it with
 ### Settings
 
 - On how to adjust the polygon,
-  see {{< ilink "/docs/annotation/annotation-interface/objects-sidebar#appearance" "Objects sidebar" >}}.
+  see {{< ilink "/docs/annotation/annotation-editor/objects-sidebar" "Objects sidebar" >}}.
 
 - For more information about polygons in general, see
-  {{< ilink "/docs/manual/advanced/annotation-with-polygons" "Annotation with polygons" >}}.
+  {{< ilink "/docs/annotation/tools/annotation-with-polygons" "Annotation with polygons" >}}.
 
 ### Interactors models
 

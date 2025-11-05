@@ -5,6 +5,7 @@ weight: 100
 description: 'How to perform bulk actions on filtered shapes'
 aliases:
   - /docs/enterprise/shapes-converter/
+  - /docs/annotation/shapes-converter/
 ---
 
 The shapes converter is a feature that enables bulk actions on filtered **shapes**. It allows you to perform mutual
@@ -71,7 +72,7 @@ To convert shapes, do the following:
 
    ![Example of annotated dataset with different shapes](/images/shapes-converter-annotated-dataset.jpg)
 
-2. Set up {{< ilink "/docs/manual/advanced/filter" "filters" >}}.
+2. Set up {{< ilink "/docs/annotation/tools/filter" "filters" >}}.
 
    ![Example of a filter for shapes](/images/shapes-converter-setup-filter.png)
 

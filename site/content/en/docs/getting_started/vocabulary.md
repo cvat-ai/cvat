@@ -58,7 +58,7 @@ Can be used to reduce the annotation file and to facilitate editing polygons.
 ## Trackable
 Trackable object will be tracked automatically if the previous frame was
 a latest keyframe for the object. More details in the section
-{{< ilink "/docs/manual/advanced/ai-tools#trackers" "trackers" >}}.
+{{< ilink "/docs/annotation/tools/ai-tools#trackers" "trackers" >}}.
 
 ![Example of a trackable object in interface](/images/tracker_indication_detrac.png)
 
@@ -71,42 +71,42 @@ Mode for video annotation, which uses [`track`](#track) objects.
 Only objects on keyframes are manually annotation, and intermediate frames are linearly interpolated.
 
 Related sections:
-- {{< ilink "/docs/annotation/track-mode-basics" "Track mode" >}}
+- {{< ilink "/docs/annotation/tools/track-mode-basics" "Track mode" >}}
 
 ### Annotation
 Mode for images annotation, which uses `shape` objects.
 
 Related sections:
-- {{< ilink "/docs/annotation/shape-mode-basics" "Shape mode" >}}
+- {{< ilink "/docs/annotation/tools/shape-mode-basics" "Shape mode" >}}
 
 ---
 
 ## Dimension
 
 Depends on the task data type that is defined when the
-{{< ilink "/docs/annotation/create-annotation-task" "task is created" >}}.
+{{< ilink "/docs/workspace/tasks-page#create-annotation-task" "task is created" >}}.
 
 ### 2D
 
 The data format of 2d tasks are images and videos.
 Related sections:
-- {{< ilink "/docs/annotation/create-annotation-task" "Creating an annotation task" >}}
+- {{< ilink "/docs/workspace/tasks-page#create-annotation-task" "Creating an annotation task" >}}
 
 ### 3D
 
 The data format of 3d tasks is a cloud of points.
-{{< ilink "/docs/annotation/create-annotation-task#data-formats-for-a-3d-task" "Data formats for a 3D task" >}}
+{{< ilink "/docs/workspace/tasks-page#data-formats-for-a-3d-task" "Data formats for a 3D task" >}}
 
 Related sections:
-- {{< ilink "/docs/annotation/3d-task-workspace" "3D task workspace" >}}
-- {{< ilink "/docs/annotation/standard-3d-mode-basics" "Standard 3D mode" >}}
-- {{< ilink "/docs/annotation/3d-object-annotation" "3D Object annotation" >}}
+- {{< ilink "/docs/annotation/annotation-editor/3d-task-workspace" "3D task workspace" >}}
+- {{< ilink "/docs/annotation/tools/standard-3d-mode-basics" "Standard 3D mode" >}}
+- {{< ilink "/docs/annotation/tools/3d-object-annotation" "3D Object annotation" >}}
 
 ---
 
 ## State
 State of the job. The state can be changed by an assigned user in
-{{< ilink "/docs/annotation/annotation-interface/navbar.md#top-panel" "the menu inside the job" >}}.
+{{< ilink "/docs/annotation/annotation-editor/navbar.md#top-panel" "the menu inside the job" >}}.
 There are several possible states: `new`, `in progress`, `rejected`, `completed`.
 
 ---

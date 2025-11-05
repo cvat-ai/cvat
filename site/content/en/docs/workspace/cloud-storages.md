@@ -24,21 +24,21 @@ invalid credentials were used).
 
 In the upper left corner, there is a search bar,
 using which you can find the cloud storage by display name, provider, etc.
-In the upper right corner, there are {{< ilink "/docs/manual/advanced/filter#sort-by" "sorting" >}},
-{{< ilink "/docs/manual/advanced/filter#quick-filters" "quick filters" >}}, and filter.
+In the upper right corner, there are {{< ilink "/docs/annotation/tools/filter#sort-by" "sorting" >}},
+{{< ilink "/docs/annotation/tools/filter#quick-filters" "quick filters" >}}, and filter.
 
 ## Filter
 
 {{% alert title="Note" color="primary" %}}
-Applying the filter disables the {{< ilink "/docs/manual/advanced/filter#quick-filters" "quick filters" >}}.
+Applying the filter disables the {{< ilink "/docs/annotation/tools/filter#quick-filters" "quick filters" >}}.
 {{% /alert %}}
 
 The filter works similarly to the filters for annotation,
 you can create rules from [properties](#supported-properties-for-jobs-list),
-{{< ilink "/docs/manual/advanced/filter#supported-operators-for-properties" "operators" >}},
-and values and group rules into {{< ilink "/docs/manual/advanced/filter#groups" "groups" >}}.
-For more details, consult the {{< ilink "/docs/manual/advanced/filter#create-a-filter" "filter section" >}}.
-Learn more about {{< ilink "/docs/manual/advanced/filter#date-and-time-selection" "date and time selection" >}}.
+{{< ilink "/docs/annotation/tools/filter#supported-operators-for-properties" "operators" >}},
+and values and group rules into {{< ilink "/docs/annotation/tools/filter#groups" "groups" >}}.
+For more details, consult the {{< ilink "/docs/annotation/tools/filter#create-a-filter" "filter section" >}}.
+Learn more about {{< ilink "/docs/annotation/tools/filter#date-and-time-selection" "date and time selection" >}}.
 
 To clear all filters, select `Clear filters`.
 

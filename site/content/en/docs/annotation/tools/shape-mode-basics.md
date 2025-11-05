@@ -5,6 +5,7 @@ weight: 17
 description: 'Usage examples and basic operations available during annotation in shape mode.'
 aliases:
   - /docs/manual/basics/
+  - /docs/annotation/shape-mode-basics/
 ---
 
 Usage examples:
@@ -32,7 +33,7 @@ Usage examples:
      ![Several frames demonstrating the creation of a rectangle shape](/images/image011_detrac.jpg)
 
    - To learn more about creating a rectangle
-     {{< ilink "/docs/manual/advanced/annotation-with-rectangles" "read here" >}}.
+     {{< ilink "/docs/annotation/tools/annotation-with-rectangles" "read here" >}}.
 
    - It is possible to adjust boundaries and location of the rectangle using a mouse.
      The rectangle's size is shown in the top right corner, you can check it by selecting any point of the shape.
@@ -48,4 +49,4 @@ Usage examples:
 
    ![Example of annotated frame with several rectangles](/images/image013_detrac.jpg)
 
-   Read more in the section {{< ilink "/docs/manual/advanced/shape-mode-advanced" "shape mode (advanced)" >}}.
+   Read more in the section {{< ilink "/docs/annotation/tools/shape-mode-advanced" "shape mode (advanced)" >}}.

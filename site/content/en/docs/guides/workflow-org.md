@@ -1,9 +1,10 @@
 ---
 title: 'Complete workflow guide for organizations'
 linkTitle: 'Complete workflow guide for organizations'
-weight: 3
+weight: 1
 aliases:
   - /docs/getting_started/workflow-org/
+  - /docs/other/workflow-org/
 ---
 
 Welcome to CVAT, this page is the place to start your team’s
@@ -40,8 +41,8 @@ To use CVAT within your organization, please follow these steps:
    assign {{< ilink "/docs/account_management/user-roles" "User roles" >}} to invited members.
 5. {{< ilink "/docs/workspace/projects" "Create **Project**" >}}.
 6. (Optional) Attach {{< ilink "/docs/workspace/attach-cloud-storage" "**Cloud storages**" >}} to the **Project**.
-7. Create {{< ilink "/docs/annotation/create-annotation-task" "**Task**" >}} or
-   {{< ilink "/docs/annotation/create-multi-tasks" "**Multitask**" >}}.
+7. Create {{< ilink "/docs/workspace/tasks-page#create-annotation-task" "**Task**" >}} or
+   {{< ilink "/docs/workspace/tasks-page#create-multi-tasks" "**Multitask**" >}}.
    <br>At this step the CVAT platform will automatically create
    jobs.
 8. (Optional) Create {{< ilink "/docs/qa-analytics/auto-qa" "**Ground truth job**" >}}.

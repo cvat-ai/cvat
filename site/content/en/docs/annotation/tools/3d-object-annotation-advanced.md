@@ -9,7 +9,7 @@ aliases:
 
 As well as 2D-task objects, 3D-task objects support the ability to change appearance, attributes,
 properties and have an action menu. Read more in
-{{< ilink "/docs/annotation/annotation-interface/objects-sidebar" "objects sidebar" >}} section.
+{{< ilink "/docs/annotation/annotation-editor/objects-sidebar" "objects sidebar" >}} section.
 
 ## Moving an object
 

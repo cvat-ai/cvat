@@ -5,6 +5,7 @@ weight: 18
 description: 'Usage examples and basic operations available during annotation in track mode.'
 aliases:
   - /docs/manual/basics/
+  - /docs/annotation/track-mode-basics/
 ---
 
 Usage examples:
@@ -70,4 +71,4 @@ Usage examples:
 
      ![Example of a track with interpolated frames](/images/gif003_detrac.gif)
 
-     Read more in the section {{< ilink "/docs/manual/advanced/track-mode-advanced" "track mode (advanced)" >}}.
+     Read more in the section {{< ilink "/docs/annotation/tools/track-mode-advanced" "track mode (advanced)" >}}.
