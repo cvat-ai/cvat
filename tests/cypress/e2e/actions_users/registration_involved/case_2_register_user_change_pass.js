@@ -5,7 +5,9 @@
 
 /// <reference types="cypress" />
 
-import { toSnakeCase } from '../../../support/utils';
+import {
+    toSnakeCase, aDayFrom, aMonthFrom, aYearFrom, parseDatetime, format,
+} from '../../../support/utils';
 import { ClipboardCtx } from '../../../support/const';
 
 Cypress.automation('remote:debugger:protocol', {
@@ -27,12 +29,12 @@ context('User page, password change, token handling', () => {
             cy.get('.cvat-change-password-form-button').click();
         });
     }
-    function openSecurityTab() {
+    function profileOpenTab(tab) {
         cy.get('.cvat-profile-page-navigation-menu')
             .should('exist')
             .and('be.visible')
             .find('[role="menuitem"]')
-            .filter(':contains("Security")')
+            .filter(`:contains("${Cypress._.capitalize(tab)}")`)
             .click();
     }
     function tokenAction(action) {
@@ -104,10 +106,14 @@ context('User page, password change, token handling', () => {
     };
     const tokenName1 = 'test1';
     const tokenName2 = 'test2';
+    const tokenName3 = 'test3';
+    const tokenName4 = 'test4';
+
+    const NOW = new Date(2025, 10, 4);
+    const TOMORROW = aDayFrom(NOW);
 
     before(() => {
         // Set the clocks to achieve determinism
-        const NOW = new Date(2025, 10, 4);
         cy.clock(NOW, ['Date']);
 
         cy.visit('auth/login');
@@ -117,7 +123,7 @@ context('User page, password change, token handling', () => {
 
     after(() => {
         cy.headlessLogin();
-        cy.headlessDeleteUserByUsername(username); // deleting self can work incorrectly, only admin should delete users
+        cy.headlessDeleteUserByUsername(username); // deleting self can be flaky, only admin should delete users
         cy.headlessLogout();
         cy.clock().invoke('restore');
     });
@@ -159,7 +165,7 @@ context('User page, password change, token handling', () => {
         context('Security tab', () => {
             before(() => {
                 cy.intercept('GET', '/api/auth/access_tokens**').as('getToken');
-                openSecurityTab();
+                profileOpenTab('Security');
                 cy.get('@getToken').its('response.body.results').should('be.empty');
             });
             describe.skip(`Testing "Case ${caseId}"`, () => {
@@ -173,7 +179,7 @@ context('User page, password change, token handling', () => {
                     cy.logout();
                     cy.login(username, newPassword);
                     cy.openProfile();
-                    openSecurityTab();
+                    profileOpenTab('Security');
                 });
 
                 it('Change password unsuccessful, error notif appears. Cancel button works', () => {
@@ -186,27 +192,6 @@ context('User page, password change, token handling', () => {
             });
 
             describe('Token manipulation', () => {
-                const aYearFrom = (date) => new Date(
-                    new Date(date.getTime())
-                        .setFullYear(date.getFullYear() + 1),
-                );
-                const aMonthFrom = (date) => new Date(
-                    new Date(date.getTime())
-                        .setMonth((date.getMonth() + 1) % 12),
-                );
-                const parseDatetime = (s) => new Date(Date.parse(s));
-
-                /** @param {Date} date */
-                function format(date) {
-                    // converts Date object to DD/MM/YYYY
-                    const [yyyy, mm, dd] = [
-                        date.getFullYear(),
-                        date.getMonth() + 1,
-                        date.getDate(),
-                    ].map((n) => String(n).padStart(2, '0'));
-                    return `${dd}/${mm}/${yyyy}`;
-                }
-
                 // Token defaults
                 const todayDate = new Date();
                 const nextMonthDate = aMonthFrom(todayDate);

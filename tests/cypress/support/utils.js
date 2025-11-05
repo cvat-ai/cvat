@@ -87,3 +87,28 @@ export function toSnakeCase(obj) {
     }
     return result;
 }
+
+export const aYearFrom = (date) => new Date(
+    new Date(date.getTime())
+        .setFullYear(date.getFullYear() + 1),
+);
+export const aMonthFrom = (date) => new Date(
+    new Date(date.getTime())
+        .setMonth((date.getMonth() + 1) % 12),
+);
+export const aDayFrom = (date) => new Date(
+    new Date(date.getTime())
+        .setDate(date.getDate() + 1),
+);
+export const parseDatetime = (s) => new Date(Date.parse(s));
+
+/** @param {Date} date */
+export function format(date) {
+    // converts Date object to DD/MM/YYYY
+    const [yyyy, mm, dd] = [
+        date.getFullYear(),
+        date.getMonth() + 1,
+        date.getDate(),
+    ].map((n) => String(n).padStart(2, '0'));
+    return `${dd}/${mm}/${yyyy}`;
+}
