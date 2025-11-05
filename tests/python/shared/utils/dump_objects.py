@@ -74,15 +74,14 @@ def main():
     asset_url_paths: dict[str, str] = dict(args.asset_url_paths)
 
     annotations = {}
+    access_tokens = {"user": {}}
 
     for dump_path in assets_dir.glob("*.json"):
         asset_name = dump_path.stem
         endpoint = asset_url_paths.get(asset_name, asset_name.replace("_", "/"))
 
-        if asset_name == "annotations":
+        if asset_name in ("annotations", "access_tokens"):
             continue  # this will be handled at the end
-        if endpoint == "access/tokens":
-            endpoint = "auth/access_tokens"
 
         response = get_method("admin1", endpoint, page_size="all")
 
@@ -90,17 +89,30 @@ def main():
             json.dump(clean_list_response(response.json()), f, indent=2, sort_keys=True)
 
         if endpoint in ["jobs", "tasks"]:
-            obj = endpoint.removesuffix("s")
-            annotations[obj] = {}
-            for _obj in response.json()["results"]:
-                oid = _obj["id"]
+            obj_type = endpoint.removesuffix("s")
+            annotations[obj_type] = {}
+            for obj in response.json()["results"]:
+                oid = obj["id"]
 
                 response = get_method("admin1", f"{endpoint}/{oid}/annotations")
                 if response.status_code == HTTPStatus.OK:
-                    annotations[obj][oid] = response.json()
+                    annotations[obj_type][oid] = response.json()
 
-    with open(assets_dir / "annotations.json", "w") as f:
-        json.dump(annotations, f, indent=2, sort_keys=True)
+        if endpoint == "users":
+            obj_type = endpoint.removesuffix("s")
+            for user in response.json()["results"]:
+                response = get_method(
+                    user["username"], "auth/access_tokens", page_size=100, sort="id"
+                )
+                if response.status_code == HTTPStatus.OK:
+                    access_tokens[obj_type][user["username"]] = response.json()["results"]
+
+    for filename, data in [
+        ("annotations.json", annotations),
+        ("access_tokens.json", access_tokens),
+    ]:
+        with open(assets_dir / filename, "w") as f:
+            json.dump(data, f, indent=2, sort_keys=True)
 
 
 if __name__ == "__main__":

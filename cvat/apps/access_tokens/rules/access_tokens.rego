@@ -54,9 +54,5 @@ q_user_is_owner(user) := [
     {"owner_id": user.id},
 ]
 
-filter := [] if { # Django Q object to filter list of entries
-    utils.is_admin
-} else := qobject if {
-    user := input.auth.user
-    qobject := q_user_is_owner(user)
-}
+# Django Q object to filter list of entries
+filter := q_user_is_owner(input.auth.user)

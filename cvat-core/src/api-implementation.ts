@@ -23,8 +23,8 @@ import {
 } from './common';
 
 import User from './user';
+import AnnotationFormats from './annotation-formats';
 import ApiToken from './api-token';
-import { AnnotationFormats } from './annotation-formats';
 import { Task, Job } from './session';
 import Project from './project';
 import CloudStorage from './cloud-storage';

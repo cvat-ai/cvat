@@ -25,7 +25,7 @@ For export of images:
 - Attributes: Not supported.
 - Tracks: Not supported.
 
-The downloaded file is a .zip archive with the following structure:
+The downloaded file is a `.zip` archive with the following structure:
 
 ```bash
 archive.zip/
@@ -75,7 +75,7 @@ The file `obj.names` contains an ordered list of label names.
 
 ## YOLO import
 
-Uploaded file: a zip archive of the same structure as above
+Uploaded file: a `.zip` archive of the same structure as above
 It must be possible to match the CVAT frame (image name)
 and annotation file name. There are 2 options:
 
