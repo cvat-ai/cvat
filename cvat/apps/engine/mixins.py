@@ -17,7 +17,7 @@ from urllib.parse import urljoin
 import django_rq
 from django.conf import settings
 from django.core.paginator import InvalidPage, PageNotAnInteger
-from django.db.models import Func, QuerySet, expressions, IntegerField
+from django.db.models import Func, IntegerField, QuerySet, expressions
 from django_cte import CTE, with_cte
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
@@ -29,7 +29,12 @@ from cvat.apps.dataset_manager.util import TmpDirManager
 from cvat.apps.engine.background import BackupExporter, DatasetExporter
 from cvat.apps.engine.handlers import clear_import_cache
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.model_utils import ListQueryset, RecordingQuerySet, filter_with_union
+from cvat.apps.engine.model_utils import (
+    ListQueryset,
+    RecordingQuerySet,
+    filter_with_union,
+    queryset_has_joins,
+)
 from cvat.apps.engine.models import Location
 from cvat.apps.engine.serializers import DataSerializer
 from cvat.apps.engine.tus import (
@@ -427,7 +432,7 @@ class OptimizedModelListMixin:
         # TODO: maybe get from the query directly, but it can be quite difficult
         # q = q_from_where(queryset)
         # queryset = queryset.model.objects.filter(q)
-        q = queryset.get_q()
+        q = queryset.get_accumulated_filter()
 
         inner_queryset = queryset.get_wrapped()
 
@@ -441,16 +446,19 @@ class OptimizedModelListMixin:
         if queryset_has_joins(queryset):
             count_ids_cte = ids_cte
         else:
-            # This optimization is only needed for complex requests with joins or ORs
+            # This optimization is only efficient for complex requests with joins or ORs
             # Force the default sorting. Non-default sorting doesn't affect the resulting number,
             # but it worsens the query plan.
-            count_ids_cte = CTE(queryset.order_by(), name="object_ids2")
+            count_ids_cte = CTE(queryset.order_by(), name="objects_for_count")
 
-        # The queryset.count() method performs the request immediately,
+        # Get the total number of objects.
+        # We use a custom Func object because:
+        # Can't use the queryset.count() method - it performs the request immediately,
         # but we need to create a queryset instead.
-        # aggregates.Count() automatically inserts GROUP BY, which leads to an error,
-        # so we use a custom Func instead.
-        # All this can can enable Postgres to use index only scans:
+        # Can't use aggregates.Count() automatically - it inserts GROUP BY,
+        # which leads to a SQL compilation error.
+        #
+        # The idea is to allow Postgres to use index only scans:
         # https://www.postgresql.org/docs/current/indexes-index-only-scans.html
         # It's not always possible though, because of row visibility checks and MVCC.
         # The visibility checks are done on the index page basis. Overall, the approach
@@ -461,8 +469,9 @@ class OptimizedModelListMixin:
             count_ids_cte, select=count_ids_cte.queryset()
         ).values_list(Func(
             # Count(column) works slower than Count(*). We use Star() here to get COUNT(*)
+            # Probably, can alternatively be fixed by adding the id field into FK column indices.
             Star(),
-            # With * Django can't determine the output type automatically, so we specify it
+            # With *, Django can't determine the output type automatically, so we specify it
             output_field=IntegerField(),
             function='Count',
         ), flat=True)

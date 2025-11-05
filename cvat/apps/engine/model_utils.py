@@ -305,7 +305,7 @@ class RecordingQuerySet(models.QuerySet[_ModelT]):
     def get_wrapped(self) -> models.QuerySet[_ModelT]:
         return self.original_queryset
 
-    def get_q(self) -> models.Q:
+    def get_accumulated_filter(self) -> models.Q:
         merged_q = models.Q()
 
         for call_name, call_args, call_kwargs in self.calls:
