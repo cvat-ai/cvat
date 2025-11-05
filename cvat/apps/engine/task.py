@@ -603,7 +603,6 @@ def create_thread(
     data: dict[str, Any],
     *,
     is_backup_restore: bool = False,
-    is_dataset_import: bool = False,
 ) -> None:
     if isinstance(db_task, int):
         db_task = models.Task.objects.select_for_update().get(pk=db_task)
@@ -627,7 +626,7 @@ def create_thread(
     upload_dir = db_data.get_upload_dirname() if db_data.storage != models.StorageChoice.SHARE else settings.SHARE_ROOT
     is_data_in_cloud = db_data.storage == models.StorageChoice.CLOUD_STORAGE
 
-    if data['remote_files'] and not is_dataset_import:
+    if data['remote_files']:
         data['remote_files'] = _download_data(data['remote_files'], upload_dir, update_status_callback=update_status)
 
     # find and validate manifest file
@@ -886,7 +885,7 @@ def create_thread(
         if extractor is not None:
             raise ValidationError('Combined data types are not supported')
 
-        if (is_dataset_import or is_backup_restore) and media_type == 'image' and db_data.storage == models.StorageChoice.SHARE:
+        if is_backup_restore and media_type == 'image' and db_data.storage == models.StorageChoice.SHARE:
             manifest_index = _get_manifest_frame_indexer(db_data.start_frame, db_data.get_frame_step())
             db_data.start_frame = 0
             data['stop_frame'] = None
@@ -975,7 +974,6 @@ def create_thread(
             db_data.storage_method == models.StorageMethodChoice.CACHE and
             db_data.sorting_method in {models.SortingMethod.RANDOM, models.SortingMethod.PREDEFINED}
         ) or (
-            not is_dataset_import and
             not is_backup_restore and
             data['sorting_method'] == models.SortingMethod.PREDEFINED and (
                 # Sorting with manifest is required for zip
