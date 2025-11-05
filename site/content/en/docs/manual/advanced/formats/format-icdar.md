@@ -17,22 +17,18 @@ For more information, see:
 
 ## ICDAR13/15 export
 
-For export of images:
-
 - **ICDAR Recognition 1.0** (Text recognition):
-  - Supported annotations: Tag `icdar`
+  - Supported annotations: Tags with the `icdar` label
   - Attributes: `caption`.
 - **ICDAR Detection 1.0** (Text detection):
-  - Supported annotations: Bounding Boxes, Polygons with label `icdar`
-    added in constructor.
+  - Supported annotations: Bounding Boxes, Polygons with the `icdar` label
   - Attributes: `text`.
 - **ICDAR Segmentation 1.0** (Text segmentation):
-  - Supported annotations: Bounding Boxes, Polygons with label `icdar`
-    added in constructor.
+  - Supported annotations: Masks, Bounding Boxes, Polygons, or Ellipses with the `icdar` label
   - Attributes: `index`, `text`, `color`, `center`
 - Tracks: Not supported.
 
-The downloaded file is a .zip archive with the following structure:
+The downloaded file is a `.zip` archive with the following structure:
 
 ```bash
 # text recognition task
@@ -67,18 +63,18 @@ taskname.zip/
 
 ## ICDAR13/15 import
 
-Uploaded file: a zip archive of the structure above
-
 **Word recognition task**:
 
-- supported annotations: Label `icdar` with attribute `caption`
+- Supported annotations: Tags with the `icdar` label and `caption` attribute
 
 **Text localization task**:
 
-- supported annotations: Rectangles and Polygons with label `icdar`
-  and attribute `text`
+- Supported annotations: Rectangles and Polygons with the `icdar` label
+  and `text` attribute
 
 **Text segmentation task**:
 
-- supported annotations: Rectangles and Polygons with label `icdar`
-  and attributes `index`, `text`, `color`, `center`
+- Supported annotations: Masks or Polygons with the `icdar` label
+  and `index`, `text`, `color`, `center` attributes
+
+Uploaded file: a `.zip` archive of the structure above

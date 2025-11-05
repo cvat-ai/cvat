@@ -16,7 +16,7 @@ For more information, see:
 - [Format specification](http://vis-www.cs.umass.edu/lfw/README.txt)
 - [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/lfw_dataset)
 
-# Export LFW annotation
+## LFW export
 
 For export of images:
 
@@ -30,7 +30,7 @@ For export of images:
 
 - Tracks: Not supported.
 
-The downloaded file is a .zip archive with the following structure:
+The downloaded file is a `.zip` archive with the following structure:
 
 ```bash
 <archive_name>.zip/
@@ -49,7 +49,7 @@ The downloaded file is a .zip archive with the following structure:
     └── people.txt
 ```
 
-# Import LFW annotation
+## LFW import
 
 The uploaded annotations file should be a zip file with the following structure:
 
@@ -64,7 +64,7 @@ The uploaded annotations file should be a zip file with the following structure:
 Full information about the content of annotation files is available
 [here](http://vis-www.cs.umass.edu/lfw/README.txt)
 
-# Example: create task with images and upload LFW annotations into it
+## Example: create task with images and upload LFW annotations into it
 
 This is one of the possible ways to create a task and add LFW annotations for it.
 

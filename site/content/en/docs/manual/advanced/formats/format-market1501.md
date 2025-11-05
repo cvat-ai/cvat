@@ -22,7 +22,7 @@ For export of images:
 - Attributes: `query` (checkbox), `person_id` (number), `camera_id`(number).
 - Tracks: Not supported.
 
-Th downloaded file is a .zip archive with the following structure:
+Th downloaded file is a `.zip` archive with the following structure:
 
 ```bash
 taskname.zip/
@@ -48,6 +48,6 @@ s1 - sequence
 
 ## Market-1501 import
 
-Uploaded file: a zip archive of the structure above
+- Supported annotations: Label `market-1501` with attributes (`query`, `person_id`, `camera_id`)
 
-- supported annotations: Label `market-1501` with attributes (`query`, `person_id`, `camera_id`)
+Uploaded file: a `.zip` archive of the structure above

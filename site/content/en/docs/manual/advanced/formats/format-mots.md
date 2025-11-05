@@ -22,11 +22,11 @@ For more information, see:
 
 For export of images and videos:
 
-- Supported annotations: Bounding Boxes, Masks
+- Supported annotations: Masks, Bounding Boxes (as masks), Polygons (as masks), Ellipses (as masks).
 - Attributes: `visibility` (number), `ignored` (checkbox).
-- Tracks: Supported.
+- Tracks: Supported. Only tracks are supported, shapes are ignored.
 
-The downloaded file is a .zip archive with the following structure:
+The downloaded file is a `.zip` archive with the following structure:
 
 ```bash
 taskname.zip/
@@ -46,10 +46,9 @@ person
 ...
 ```
 
-- supported annotations: Rectangle and Polygon tracks
-
 ## MOTS PNG import
 
-Uploaded file: a zip archive of the structure above
+- Supported annotations: Masks or Polygon tracks
 
-- supported annotations: Polygon tracks
+Uploaded file: a `.zip` archive of the structure above
+
