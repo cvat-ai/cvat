@@ -367,3 +367,12 @@ class ListQueryset:
             i -= self.start_index
 
         return self.page_data[i]
+
+
+def queryset_has_joins(queryset: _QuerysetT) -> bool:
+    return any(
+        alias_name
+        for alias_name, alias in queryset.query.alias_map.items()
+        if alias.join_type
+        if queryset.query.alias_refcount.get(alias_name) > 0
+    )

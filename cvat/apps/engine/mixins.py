@@ -438,7 +438,7 @@ class OptimizedModelListMixin:
 
         ids_cte = CTE(queryset, name="object_ids")
 
-        if queryset.query.extra_tables:
+        if queryset_has_joins(queryset):
             count_ids_cte = ids_cte
         else:
             # This optimization is only needed for complex requests with joins or ORs
