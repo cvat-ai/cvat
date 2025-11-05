@@ -36,9 +36,37 @@ context('User page, password change, token handling', () => {
             .click();
     }
     function tokenAction(action) {
+        cy.get('.cvat-api-token-action-menu').should('exist').and('be.visible').click();
         cy.get('.ant-dropdown').not('.ant-dropdown-hidden').should('be.visible').within(() => {
             cy.contains('[role="menuitem"]', Cypress._.capitalize(action))
                 .should('exist').and('be.visible').click();
+        });
+    }
+    function revokeFirstToken() {
+        cy.intercept('DELETE', 'api/auth/access_tokens/**').as('deleteToken');
+        cy.intercept('GET', 'api/auth/access_tokens**').as('getToken');
+        cy.contains('No data').should('not.exist');
+        tokenAction('Revoke');
+        cy.get('.cvat-modal-confirm-revoke-token')
+            .should('exist').and('be.visible').within(() => {
+                cy.get('.cvat-api-token-revoke-button')
+                    .should('exist').and('be.visible')
+                    .click();
+            });
+        cy.wait('@deleteToken');
+        cy.wait('@getToken');
+    }
+    function createDefaultToken(name = null) {
+        cy.get('.cvat-create-api-token-button').should('exist').and('be.visible').click();
+        cy.contains('.cvat-api-token-form', 'Create API Token').should('be.visible').within(() => {
+            cy.get('.cvat-api-token-form-name').should('exist').and('be.visible');
+            if (name) {
+                cy.get('.cvat-api-token-form-name').find('.ant-input-clear-icon[role="button"]').click();
+                cy.get('.cvat-api-token-form-name').find('input').type(name);
+            }
+            cy.get('.cvat-api-token-form-expiration-date').should('exist').and('be.visible');
+            cy.get('.cvat-api-token-form-submit').should('exist').and('be.visible').click();
+            cy.get('.ant-checkbox-checked').should('not.exist'); // read-only by default
         });
     }
 
@@ -166,6 +194,7 @@ context('User page, password change, token handling', () => {
                     new Date(date.getTime())
                         .setMonth((date.getMonth() + 1) % 12),
                 );
+                const parseDatetime = (s) => new Date(Date.parse(s));
 
                 /** @param {Date} date */
                 function format(date) {
@@ -177,10 +206,8 @@ context('User page, password change, token handling', () => {
                     ].map((n) => String(n).padStart(2, '0'));
                     return `${dd}/${mm}/${yyyy}`;
                 }
-                const parseDatetime = (s) => new Date(Date.parse(s));
 
                 // Token defaults
-                // TODO: use mock clocks to avoid ironic date bugs
                 const todayDate = new Date();
                 const nextMonthDate = aMonthFrom(todayDate);
                 const nextYearDate = aYearFrom(todayDate);
@@ -200,25 +227,22 @@ context('User page, password change, token handling', () => {
                     // gets reset every test:
                     // https://docs.cypress.io/app/core-concepts/variables-and-aliases
                 });
-                // TODO: revoke each token so that test works with a single token in the table
-                it('Token related UI is visible, no tokens are present', () => {
+                afterEach(() => {
+                    revokeFirstToken();
+                    cy.contains('No data').should('exist').and('be.visible');
+                });
+                before('Token related UI is visible, no tokens are present', () => {
                     cy.get('.cvat-security-api-tokens-card').should('exist').and('be.visible');
                     cy.get('.cvat-api-tokens-table').should('exist').and('be.visible').within(() => {
                         cy.contains('No data').should('exist').and('be.visible');
                     });
                 });
 
-                it.skip('Add a token. It is sent to backend. Modal appears, token can be copied', () => {
+                it('Add a token. It is sent to backend. Modal appears, token can be copied', () => {
                     cy.intercept('POST', '/api/auth/access_tokens**').as('postToken');
                     cy.intercept('GET', '/api/auth/access_tokens**').as('getToken');
 
-                    cy.get('.cvat-create-api-token-button').should('exist').and('be.visible').click();
-                    cy.contains('.cvat-api-token-form', 'Create API Token').should('be.visible').within(() => {
-                        cy.get('.cvat-api-token-form-name').should('exist').and('be.visible');
-                        cy.get('.cvat-api-token-form-expiration-date').should('exist').and('be.visible');
-                        cy.get('.cvat-api-token-form-submit').should('exist').and('be.visible').click();
-                        cy.get('.ant-checkbox-checked').should('not.exist'); // read-only by default
-                    });
+                    createDefaultToken();
 
                     // Correct token is sent, the modal shows it for the user to save
                     cy.wait('@postToken').then(({
@@ -263,19 +287,12 @@ context('User page, password change, token handling', () => {
                         LastUsed: defaultToken.LastUsed,
                     };
 
-                    // Create new test token
-                    cy.get('.cvat-create-api-token-button').click();
-                    cy.contains('.cvat-api-token-form', 'Create API Token').within(() => {
-                        cy.get('.cvat-api-token-form-name').find('.ant-input-clear-icon[role="button"]').click();
-                        cy.get('.cvat-api-token-form-name').find('input').type(tokenName1);
-                        cy.get('.cvat-api-token-form-submit').click();
-                    });
-                    cy.get('.cvat-api-token-created-modal-confirm-saved-button').should('be.visible').click();
+                    createDefaultToken(tokenName1);
+                    cy.get('.cvat-api-token-created-modal-confirm-saved-button').click();
 
                     // Edit the token
                     cy.intercept('PATCH', '/api/auth/access_tokens/**').as('patchToken');
                     cy.intercept('GET', '/api/auth/access_tokens**').as('getToken');
-                    cy.get('.cvat-api-token-action-menu').should('exist').and('be.visible').click();
                     tokenAction('Edit');
                     cy.contains('.cvat-api-token-form', 'Edit API Token').should('be.visible').within(() => {
                         cy.get('.cvat-api-token-form-name').find('input').clear();

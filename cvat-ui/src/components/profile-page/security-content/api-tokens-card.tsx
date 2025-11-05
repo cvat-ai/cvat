@@ -89,6 +89,7 @@ function ApiTokensCard(): JSX.Element {
             okButtonProps: {
                 type: 'primary',
                 danger: true,
+                className: 'cvat-api-token-revoke-button',
             },
             cancelText: 'Cancel',
             onOk: () => {
@@ -96,6 +97,7 @@ function ApiTokensCard(): JSX.Element {
                     dispatch(getApiTokensAsync());
                 }));
             },
+            className: 'cvat-modal-confirm-revoke-token',
         });
     }, [dispatch]);
 
