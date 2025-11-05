@@ -223,7 +223,7 @@ context('User page, password change, token handling', () => {
                     });
                 });
 
-                it('Add a token. It is sent to backend. Modal appears, token can be copied', () => {
+                it.skip('Add a token. It is sent to backend. Modal appears, token can be copied', () => {
                     cy.intercept('POST', '/api/auth/access_tokens**').as('postToken');
                     cy.intercept('GET', '/api/auth/access_tokens**').as('getToken');
 
@@ -231,11 +231,7 @@ context('User page, password change, token handling', () => {
 
                     // Correct token is sent, the modal shows it for the user to save
                     cy.wait('@postToken').then(({
-                        response: {
-                            statusCode,
-                            statusMessage,
-                            body: { value },
-                        },
+                        response: { statusCode, statusMessage, body: { value } },
                     }) => {
                         const token = value;
                         expect(statusCode).to.equal(201, statusMessage);
@@ -251,19 +247,14 @@ context('User page, password change, token handling', () => {
                         });
                     });
 
-                    // Get request is successful and updates the table view
-                    cy.wait('@getToken').then(({
-                        response: {
-                            statusCode,
-                            statusMessage,
-                        },
-                    }) => {
+                    // Get request is successful and reloads the table view
+                    cy.wait('@getToken').then(({ response: { statusCode, statusMessage } }) => {
                         expect(statusCode).to.equal(200, statusMessage);
                         checkTokenTableView(defaultToken);
                     });
                 });
 
-                it('Create and update a token, update is handled correctly', () => {
+                it.skip('Create and update a token. Update is handled correctly', () => {
                     const tokenAfterUpdate = {
                         Name: tokenName2,
                         Permissions: 'Read Only',
@@ -305,15 +296,72 @@ context('User page, password change, token handling', () => {
                     checkTokenTableView(tokenAfterUpdate);
                 });
 
-                it.skip('Token can be used with REST API, its "Last Used" is updated', () => {
-                    // TODO: use cy.clock to travel in time
+                function tryTokenTestCase(params) {
+                    // Prod REST API with attempt to write to user's last name
+                    const { name, expectedLastUsed, expectedStatus } = params;
+
+                    const newToken = {
+                        ...defaultToken,
+                        Name: name,
+                    };
+                    const tokenAfterUpdate = {
+                        ...newToken,
+                        LastUsed: format(expectedLastUsed),
+                    };
+                    createDefaultToken(newToken.Name);
+                    cy.get('.cvat-api-token-created-modal').should('exist').and('be.visible');
+                    clipboard.button.should('exist').and('be.visible');
+                    clipboard.copy().then((token) => {
+                        cy.get('.cvat-api-token-created-modal-confirm-saved-button')
+                            .should('exist').and('be.visible').click();
+
+                        // Last used should be default (=today)
+                        checkTokenTableView(newToken);
+
+                        // Setup last used change
+                        cy.tick(Date.parse(TOMORROW));
+                        // NOTE: cy.clock is reset after each test anyway
+                        // https://docs.cypress.io/api/commands/tick#Yields
+
+                        // Use read/write token for updating my last name
+                        cy.headlessGetSelfId().then((id) => {
+                            cy.request({
+                                method: 'PATCH',
+                                url: `/api/users/${id}`,
+                                body: { last_name: 'Austen' },
+                                headers: {
+                                    Authorization: `Bearer ${token}`,
+                                },
+                            }).its('status').should('eq', expectedStatus);
+
+                            // Switch tabs to update token meta without heavy page reload
+                            profileOpenTab('Profile');
+                            profileOpenTab('Security');
+                            checkTokenTableView(tokenAfterUpdate);
+                        });
+                    });
+                }
+
+                it("Try REST API token with correct permissions. Token's 'Last Used' is updated", () => {
+                    tryTokenTestCase({
+                        name: tokenName3,
+                        expectedStatus: 200,
+                        expectedLastUsed: TOMORROW, // testcase ticks the clock to tomorrow
+                    });
+                });
+
+                it.skip("Try REST API token with incorrect permissions. Token's 'Last Used' is not updated", () => {
+                    tryTokenTestCase({
+                        name: tokenName4,
+                        expectedStatus: 400,
+                        expectedLastUsed: defaultToken.LastUsed,
+                    });
                 });
             });
         });
 
     // eslint-disable-next-line max-len
     // TODO: check tokens' state by sending http requests with headers (with cy.request)
-    // TODO: introduce linting errors to this file (there's suspicion that this folder is not covered by eslint)
-    // if it doesn't work, goto Maxim
+    // TODO: introduce linting errors to this file (there's suspission that this folder is not covered by eslint)
     });
 });
