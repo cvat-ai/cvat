@@ -310,7 +310,6 @@ context('User page, password change, token handling', () => {
                         name, expectedLastUsed, expectedStatus, expectedPermissions,
                         failOnStatusCode,
                     } = params;
-                    const LastUsed = expectedLastUsed === 'Never' ? 'Never' : format(expectedLastUsed);
 
                     const newToken = {
                         ...defaultToken,
@@ -319,7 +318,7 @@ context('User page, password change, token handling', () => {
                     };
                     const tokenAfterUpdate = {
                         ...newToken,
-                        LastUsed,
+                        LastUsed: format(expectedLastUsed),
                     };
                     createToken({ name: newToken.Name, readOnly: expectedPermissions === 'Read Only' });
                     cy.get('.cvat-api-token-created-modal').should('exist').and('be.visible');
@@ -360,11 +359,11 @@ context('User page, password change, token handling', () => {
                     });
                 });
 
-                it("Try REST API token with incorrect permissions. Token's 'Last Used' is not updated", () => {
+                it("Try REST API token with incorrect permissions. Token's 'Last Used' is updated", () => {
                     tryTokenTestCase({
                         name: tokenName5,
                         expectedStatus: 403,
-                        expectedLastUsed: 'Never',
+                        expectedLastUsed: NOW,
                         expectedPermissions: 'Read Only',
                         failOnStatusCode: false,
                     });
