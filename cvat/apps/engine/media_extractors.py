@@ -770,13 +770,18 @@ class VideoReaderWithManifest:
 
             container.seek(offset=start_decode_timestamp, stream=video_stream)
 
-            frame_counter = itertools.count(start_decode_frame_number)
+            frame_number = None
             for packet in container.demux(video_stream):
                 for frame in packet.decode():
                     if frame.pts < start_decode_timestamp:
                         # for some reason seek stopped earlier than expected
                         continue
-                    frame_number = next(frame_counter)
+
+                    if frame_number is None:
+                        frame_number = start_decode_frame_number
+                    else:
+                        frame_number += 1
+
                     if frame_number == next_frame_filter_frame:
                         if frame.rotation:
                             frame = av.VideoFrame().from_ndarray(
