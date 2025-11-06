@@ -72,11 +72,11 @@ context('Cloud storage.', () => {
             cy.get('.cvat-cloud-storage-manifest-field').should('not.exist');
         });
 
-        it('Check "AWS S3" provider fields.', () => {
+        it('Check "Amazon S3" provider fields.', () => {
             cy.get('#display_name').type(dummyData.display_name);
             cy.get('#display_name').should('have.attr', 'value', dummyData.display_name);
             cy.get('#provider_type').click();
-            cy.contains('.cvat-cloud-storage-select-provider', 'AWS').click();
+            cy.contains('.cvat-cloud-storage-select-provider', 'Amazon').click();
             cy.get('#resource').should('exist');
             cy.get('#resource').type(dummyData.resource);
             cy.get('#resource').should('have.attr', 'value', dummyData.resource);
@@ -110,8 +110,8 @@ context('Cloud storage.', () => {
             cy.closeNotification('.cvat-incorrect-add-region-notification');
         });
 
-        it('Check "Azure Blob Container" provider fields.', () => {
-            cy.contains('.cvat-cloud-storage-select-provider', 'AWS').click();
+        it('Check "Azure Blob Storage" provider fields.', () => {
+            cy.contains('.cvat-cloud-storage-select-provider', 'Amazon').click();
             cy.contains('.cvat-cloud-storage-select-provider', 'Azure').click();
             // Check fields with "Account name and SAS token"
             cy.get('#credentials_type').should('exist').click();

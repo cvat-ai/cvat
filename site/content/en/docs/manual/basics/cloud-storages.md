@@ -45,7 +45,7 @@ To clear all filters, select `Clear filters`.
 | Properties     | Supported values                             | Description                                 |
 | -------------- | -------------------------------------------- | ------------------------------------------- |
 | `ID`           | number or range of task ID                   |                                             |
-| `Provider type` | `AWS S3`, `Azure`, `Google cloud`           |                                             |
+| `Provider type` | `Amazon S3`, `Azure Blob`, `Google Cloud`   |                                             |
 | `Credentials type` | `Key & secret key`, `Account name and token`,<br> `Anonymous access`, `Key file` |     |
 | `Resource name` |                                             | `Bucket name` or `container name`           |
 | `Display name` |                                              | Set when creating cloud storage             |

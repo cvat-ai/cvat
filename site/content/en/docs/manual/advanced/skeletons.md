@@ -18,7 +18,7 @@ possessing unique attributes and properties like color, occlusion, and visibilit
 
 **Skeletons** can be {{< ilink "/docs/manual/advanced/formats" "**exported**" >}}
 in two formats: {{< ilink "/docs/manual/advanced/formats/format-cvat#cvat-for-videos-export" "**CVAT for image**" >}}
-and {{< ilink "/docs/manual/advanced/formats/coco-keypoints" "**COCO Keypoints**" >}}.
+and {{< ilink "/docs/manual/advanced/formats/format-coco-keypoints" "**COCO Keypoints**" >}}.
 
 {{% alert title="Note" color="primary" %}}
 Skeletons' labels cannot be imported in a label-less project by importing a dataset.
@@ -56,8 +56,6 @@ skeletons for annotation. It has the following fields:
 
 ![Skeleton configurator with numbered interface elements](/images/image-skeleton-configurator-overview.jpg)
 
-<!--lint disable maximum-line-length-->
-
 | Number | Name                        | Description                                                                                                                           |
 | ------ | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | **1**  | **Upload background image** | (Optional) Use it to upload a background image, to draw a skeleton on top of it.                                                      |
@@ -68,8 +66,6 @@ skeletons for annotation. It has the following fields:
 | **6**  | **Download skeleton**       | Use it to download created skeleton in .SVG format.                                                                                   |
 | **7**  | **Upload skeleton**         | Use it to upload skeleton in .SVG format.                                                                                             |
 | **8**  | **Drawing area**            | Use it as a canvas to draw a skeleton.                                                                                                |
-
-<!--lint enable maximum-line-length-->
 
 ### Configuring Skeleton points
 

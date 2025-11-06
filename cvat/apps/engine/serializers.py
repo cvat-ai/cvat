@@ -221,7 +221,7 @@ class IssuesSummarySerializer(serializers.Serializer):
             query_params={ 'job_id': instance.id })
 
     def get_count(self, instance):
-        return getattr(instance, 'issues__count', 0)
+        return getattr(instance, 'issue__count', 0)
 
     def to_representation(self, instance):
         request = self.context.get('request')
@@ -759,12 +759,12 @@ class JobReadListSerializer(serializers.ListSerializer):
             issue_counts = dict(
                 models.Job.objects.with_issue_counts().filter(
                     id__in=set(j.id for j in page)
-                ).values_list("id", "issues__count")
+                ).values_list("id", "issue__count")
             )
 
             for job in page:
                 job.user_can_view_task = job.get_task_id() in visible_tasks
-                job.issues__count = issue_counts.get(job.id, 0)
+                job.issue__count = issue_counts.get(job.id, 0)
 
         return super().to_representation(data)
 
@@ -2247,7 +2247,7 @@ class DataSerializer(serializers.ModelSerializer):
             'client_files', 'server_files', 'remote_files',
             'use_zip_chunks', 'server_files_exclude',
             'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method',
-            'storage', 'sorting_method', 'filename_pattern',
+            'sorting_method', 'filename_pattern',
             'job_file_mapping', 'upload_file_order', 'validation_params'
         )
         extra_kwargs = {
@@ -3469,10 +3469,10 @@ class CloudStorageReadSerializer(serializers.ModelSerializer):
 @extend_schema_serializer(
     examples=[
         OpenApiExample(
-            'Create AWS S3 cloud storage with credentials',
+            'Create Amazon S3 cloud storage with credentials',
             description='',
             value={
-                'provider_type': models.CloudProviderChoice.AWS_S3,
+                'provider_type': models.CloudProviderChoice.AMAZON_S3,
                 'resource': 'somebucket',
                 'display_name': 'Bucket',
                 'credentials_type': models.CredentialsTypeChoice.KEY_SECRET_KEY_PAIR,
@@ -3488,9 +3488,9 @@ class CloudStorageReadSerializer(serializers.ModelSerializer):
             request_only=True,
         ),
         OpenApiExample(
-            'Create AWS S3 cloud storage without credentials',
+            'Create Amazon S3 cloud storage without credentials',
             value={
-                'provider_type': models.CloudProviderChoice.AWS_S3,
+                'provider_type': models.CloudProviderChoice.AMAZON_S3,
                 'resource': 'somebucket',
                 'display_name': 'Bucket',
                 'credentials_type': models.CredentialsTypeChoice.ANONYMOUS_ACCESS,
@@ -3503,7 +3503,7 @@ class CloudStorageReadSerializer(serializers.ModelSerializer):
         OpenApiExample(
             'Create Azure cloud storage',
             value={
-                'provider_type': models.CloudProviderChoice.AZURE_CONTAINER,
+                'provider_type': models.CloudProviderChoice.AZURE_BLOB_STORAGE,
                 'resource': 'sonecontainer',
                 'display_name': 'Container',
                 'credentials_type': models.CredentialsTypeChoice.ACCOUNT_NAME_TOKEN_PAIR,
@@ -3563,12 +3563,12 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         provider_type = attrs.get('provider_type')
-        if provider_type == models.CloudProviderChoice.AZURE_CONTAINER:
+        if provider_type == models.CloudProviderChoice.AZURE_BLOB_STORAGE:
             if not attrs.get('account_name', '') and not attrs.get('connection_string', ''):
                 raise serializers.ValidationError('Account name or connection string for Azure container was not specified')
 
-        # AWS S3: https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html?icmpid=docs_amazons3_console
-        # Azure Container: https://learn.microsoft.com/en-us/rest/api/storageservices/naming-and-referencing-containers--blobs--and-metadata#container-names
+        # Amazon S3: https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html?icmpid=docs_amazons3_console
+        # ABS: https://learn.microsoft.com/en-us/rest/api/storageservices/naming-and-referencing-containers--blobs--and-metadata#container-names
         # GCS: https://cloud.google.com/storage/docs/buckets#naming
         ALLOWED_RESOURCE_NAME_SYMBOLS = (
             string.ascii_lowercase + string.digits + "-"
@@ -3576,7 +3576,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
 
         if provider_type == models.CloudProviderChoice.GOOGLE_CLOUD_STORAGE:
             ALLOWED_RESOURCE_NAME_SYMBOLS += "_."
-        elif provider_type == models.CloudProviderChoice.AWS_S3:
+        elif provider_type == models.CloudProviderChoice.AMAZON_S3:
             ALLOWED_RESOURCE_NAME_SYMBOLS += "."
 
         # We need to check only basic naming rule

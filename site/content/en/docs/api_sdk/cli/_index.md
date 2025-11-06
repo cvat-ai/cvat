@@ -72,6 +72,61 @@ for example, `cvat-cli ls` works the same way as `cvat-cli task ls`. These
 aliases are provided for backwards compatibility and are deprecated.
 Use the `task <action>` form instead.
 
+### Authentication
+
+CLI supports 2 authentication options:
+- Personal Access Token (PAT) authentication, with an access token value
+- Password authentication, with a username and a password
+
+Personal Access Token (PAT) authentication requires a token that can be configured
+in the user settings section in the UI. It is the recommended authentication option
+for most clients. {{< ilink "/docs/api_sdk/access_tokens" "Read more." >}}
+
+Password authentication requires a username and password pair. For better security it's
+recommended to use a Personal Access Token (PAT) instead, if possible.
+
+{{< tabpane text=true >}}
+
+{{%tab header="Personal Access Token (PAT) authentication" %}}
+
+A Personal Access Token can only be used via the `CVAT_ACCESS_TOKEN` environment variable.
+This variable is prioritized over other environment variables used for authentication.
+
+```bash
+export CVAT_ACCESS_TOKEN="token value"
+cvat-cli task ls
+```
+
+{{% /tab %}}
+
+{{%tab header="Password authentication" %}}
+
+Credentials can be specified via the `--auth` global CLI parameter. The password can
+be passed after the colon (`:`) separator or via the `PASS` environment variable.
+For better security, it's recommended to use the `PASS` environment variable or
+Personal Access Tokens.
+
+```bash
+cvat-cli --auth "username:password" task ls
+```
+
+```bash
+export PASS="password"
+cvat-cli --auth "username" task ls
+```
+
+The `--auth` parameter can also be omitted. In this case, the CLI will try to use the current
+OS user as the username. If the `PASS` environment variable is configured, it's value will be used
+for the password. Otherwise, the password will be requested for input.
+
+```bash
+cvat-cli task ls
+```
+
+{{% /tab %}}
+
+{{< /tabpane >}}
+
 ## Examples - tasks
 
 ### Create

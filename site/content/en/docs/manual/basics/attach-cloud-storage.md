@@ -5,21 +5,21 @@ weight: 23
 description: 'Instructions on how to attach cloud storage using UI'
 ---
 
-In CVAT, you can use **AWS S3**, **Azure Blob Storage**
+In CVAT, you can use **Amazon S3**, **Azure Blob Storage**
 and **Google Cloud Storage** storages to import and export
 image datasets for your tasks.
 
 Check out:
 
-- [AWS S3](#aws-s3)
+- [Amazon S3](#amazon-s3)
   - [Create a bucket](#create-a-bucket)
   - [Upload data](#upload-data)
   - [Access permissions](#access-permissions)
     - [Authenticated access](#authenticated-access)
     - [Anonymous access](#anonymous-access)
-  - [Attach AWS S3 storage](#attach-aws-s3-storage)
-  - [AWS S3 manifest file](#aws-s3-manifest-file)
-  - [Video tutorial: Add AWS S3 as Cloud Storage in CVAT](#video-tutorial-add-aws-s3-as-cloud-storage-in-cvat)
+  - [Attach Amazon S3 storage](#attach-amazon-s3-storage)
+  - [Amazon S3 manifest file](#amazon-s3-manifest-file)
+  - [Video tutorial: Add Amazon S3 as Cloud Storage in CVAT](#video-tutorial-add-amazon-s3-as-cloud-storage-in-cvat)
 - [Google Cloud Storage](#google-cloud-storage)
   - [Create a bucket](#create-a-bucket-1)
   - [Upload data](#upload-data-1)
@@ -38,16 +38,16 @@ Check out:
   - [Video tutorial: Add Microsoft Azure Blob Storage as Cloud Storage in CVAT](#video-tutorial-add-microsoft-azure-blob-storage-as-cloud-storage-in-cvat)
 - [Prepare the dataset](#prepare-the-dataset)
 
-## AWS S3
+## Amazon S3
 
 ### Create a bucket
 
 To create bucket, do the following:
 
 1. Create an [AWS account](https://portal.aws.amazon.com/billing/signup#/start).
-1. Go to [console AWS-S3](https://s3.console.aws.amazon.com/s3/home), and select **Create bucket**.
+1. Go to the [Amazon S3 console](https://s3.console.aws.amazon.com/s3/home), and select **Create bucket**.
 
-   ![AWS S3 interface with highlighted "Create bucket" button](/images/aws-s3_tutorial_1.jpg)
+   ![Amazon S3 interface with highlighted "Create bucket" button](/images/aws-s3_tutorial_1.jpg)
 
 1. Specify the name and region of the bucket. You can also
    copy the settings of another bucket by selecting **Choose bucket**.
@@ -69,11 +69,11 @@ You need to upload data for annotation and the `manifest.jsonl` file.
    refer on how to [prepare the dataset](#prepare-the-dataset).
 1. Open the bucket and select **Upload**.
 
-   ![AWS S3 interface with highlighted "Upload"](/images/aws-s3_tutorial_5.jpg)
+   ![Amazon S3 interface with highlighted "Upload"](/images/aws-s3_tutorial_5.jpg)
 
 1. Drag the manifest file and image folder on the page and select **Upload**:
 
-![Uploading data to AWS S3](/images/aws-s3_tutorial_1.gif)
+![Uploading data to Amazon S3](/images/aws-s3_tutorial_1.gif)
 
 ### Access permissions
 
@@ -84,7 +84,7 @@ To add access permissions, do the following:
 1. Go to [IAM](https://console.aws.amazon.com/iamv2/home#/users) and select **Add users**.
 1. Set **User name** and enable **Access key - programmatic access**.
 
-   ![AWS S3 interface with highlighted "User name" and "Access key - programmatic access" parameters](/images/aws-s3_tutorial_2.jpg)
+   ![Amazon S3 interface with highlighted "User name" and "Access key - programmatic access" parameters](/images/aws-s3_tutorial_2.jpg)
 
 1. Select **Next: Permissions**.
 1. Select **Create group**, enter the group name.
@@ -93,12 +93,12 @@ To add access permissions, do the following:
    - For read-only access: **AmazonS3ReadOnlyAccess**.
    - For full access: **AmazonS3FullAccess**.
 
-   ![AWS S3 interface with creating user group step](/images/aws-s3_tutorial_3.jpg)
+   ![Amazon S3 interface with creating user group step](/images/aws-s3_tutorial_3.jpg)
 
 1. (Optional) Add tags for the user and go to the next page.
 1. Save **Access key ID** and **Secret access key**.
 
-![AWS S3 interface with saving access credentials step](/images/aws-s3_tutorial_4.jpg)
+![Amazon S3 interface with saving access credentials step](/images/aws-s3_tutorial_4.jpg)
 
 For more information,
 consult [Creating an IAM user in your AWS account](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html)
@@ -109,7 +109,7 @@ On how to grant public access to the
 bucket, consult
 [Configuring block public access settings for your S3 buckets](https://docs.aws.amazon.com/AmazonS3/latest/userguide/configuring-block-public-access-bucket.html)
 
-### Attach AWS S3 storage
+### Attach Amazon S3 storage
 
 To attach storage, do the following:
 
@@ -119,24 +119,20 @@ To attach storage, do the following:
 
 Fill in the following fields:
 
-<!--lint disable maximum-line-length-->
-
-| CVAT                    | AWS S3 |
-| ----------------------- | ------ |
+| CVAT                    | Amazon S3 |
+| ----------------------- | --------- |
 | **Display name**        | Preferred display name for your storage. |
 | **Description**         | (Optional) Add description of storage. |
-| **Provider**            | From drop-down list select **AWS S3**. |
+| **Provider**            | From drop-down list select **Amazon S3**. |
 | **Bucket name**         | Name of the [Bucket](https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingBucket). |
 | **Authentication type** | Depends on the bucket setup: <br><li>**Key id and secret access key pair**: available on [IAM](https://console.aws.amazon.com/iamv2/home?#/users). <br><li>**Anonymous access**: for anonymous access. Public access to the bucket must be enabled. |
 | **Region**              | (Optional) Choose a region from the list or add a new one. For more information, consult [**Available locations**](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html#concepts-available-regions). |
 | **Prefix**              | (Optional) Prefix is used to filter bucket content. By setting a default prefix, you ensure that only data from a specific folder in the cloud is used in CVAT. This will affect which files you see when creating a task with cloud data. |
 | **Manifests**           | (Optional) Select **+ Add manifest** and enter the name of the manifest file with an extension. For example: `manifest.jsonl`. |
 
-<!--lint enable maximum-line-length-->
-
 After filling in all the fields, select **Submit**.
 
-### AWS S3 manifest file
+### Amazon S3 manifest file
 
 {{% alert title="Note" color="primary" %}}
 The manifest file is optional.
@@ -169,7 +165,7 @@ To prepare the manifest file, do the following:
    python <cvat repository>/utils/dataset_manifest/create.py --output-dir <yourfolder> <yourfolder>
    ```
 
-1. When the manifest file is ready, upload it to aws s3 bucket:
+1. When the manifest file is ready, upload it to the S3 bucket:
 
    - For read and write permissions when you created the user, run:
 
@@ -180,14 +176,11 @@ To prepare the manifest file, do the following:
    - For read-only permissions, use the download through the browser,
      select upload, drag the manifest file to the page and select upload.
 
-     ![AWS S3 interface with highlighted "Upload"](/images/aws-s3_tutorial_5.jpg)
+     ![Amazon S3 interface with highlighted "Upload"](/images/aws-s3_tutorial_5.jpg)
 
-### Video tutorial: Add AWS S3 as Cloud Storage in CVAT
-
-<!--lint disable maximum-line-length-->
+### Video tutorial: Add Amazon S3 as Cloud Storage in CVAT
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/y6fgZ4X87Lc?si=5EewLS4XA7birS25" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-<!--lint enable maximum-line-length-->
 
 ## Google Cloud Storage
 
@@ -289,8 +282,6 @@ To attach storage, do the following:
 
 Fill in the following fields:
 
-<!--lint disable maximum-line-length-->
-
 | CVAT                    | Google Cloud Storage |
 | ----------------------- | -------------------- |
 | **Display name**        | Preferred display name for your storage. |
@@ -303,17 +294,11 @@ Fill in the following fields:
 | **Location**            | (Optional) Choose a region from the list or add a new one. For more information, consult [**Available locations**](https://cloud.google.com/storage/docs/locations#available-locations). |
 | **Manifests**           | (Optional) Select **+ Add manifest** and enter the name of the manifest file with an extension. For example: `manifest.jsonl`. |
 
-<!--lint enable maximum-line-length-->
-
 After filling in all the fields, select **Submit**.
 
 ### Video tutorial: Add Google Cloud Storage as Cloud Storage in CVAT
 
-<!--lint disable maximum-line-length-->
-
 <iframe width="560" height="315" src="https://www.youtube.com/embed/pl2KZqJouvI?si=58sziJGbHHc-Mcom" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-
-<!--lint enable maximum-line-length-->
 
 ## Microsoft Azure Blob Storage
 
@@ -436,29 +421,21 @@ To attach storage, do the following:
 
 Fill in the following fields:
 
-<!--lint disable maximum-line-length-->
-
 | CVAT                    | Azure |
 | ----------------------- | ----- |
 | **Display name**        | Preferred display name for your storage. |
 | **Description**         | (Optional) Add description of storage. |
-| **Provider**            | From drop-down list select **Azure Blob Container**. |
+| **Provider**            | From drop-down list select **Azure Blob Storage**. |
 | **Container name`**     | Name of the cloud storage container. |
 | **Authentication type** | Depends on the container setup. <br>**[Account name and SAS token](https://docs.microsoft.com/en-us/azure/cognitive-services/translator/document-translation/create-sas-tokens?tabs=blobs)**: <ul><li>**Account name** enter storage account name. <li>**SAS token** is located in the **Shared access signature** section of your [Storage account](#sas-token).</ul>. **[Anonymous access](https://docs.microsoft.com/en-us/azure/storage/blobs/anonymous-read-access-configure?tabs=portal)**: for anonymous access **Allow enabling public access on containers** must be enabled. |
 | **Prefix**              | (Optional) Used to filter data from the bucket. By setting a default prefix, you ensure that only data from a specific folder in the cloud is used in CVAT. This will affect which files you see when creating a task with cloud data. |
 | **Manifests**           | (Optional) Select **+ Add manifest** and enter the name of the manifest file with an extension. For example: `manifest.jsonl`. |
 
-<!--lint enable maximum-line-length-->
-
 After filling in all the fields, select **Submit**.
 
 ### Video tutorial: Add Microsoft Azure Blob Storage as Cloud Storage in CVAT
 
-<!--lint disable maximum-line-length-->
-
 <iframe width="560" height="315" src="https://www.youtube.com/embed/nvrm8oFBKMY?si=v2z6Rjlc250niXPX" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-
-<!--lint enable maximum-line-length-->
 
 ## Prepare the dataset
 

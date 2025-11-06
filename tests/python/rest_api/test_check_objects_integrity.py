@@ -41,6 +41,22 @@ class TestGetResources:
                         )
                         == {}
                     )
+            elif endpoint == "auth/access_tokens":
+                objects = json.load(f)
+                assert set(objects) == {"user"}
+
+                for username, tokens in objects["user"].items():
+                    response = config.get_method(
+                        username, "auth/access_tokens", page_size=100, sort="id"
+                    ).json()["results"]
+                    assert (
+                        DeepDiff(
+                            tokens,
+                            response,
+                            ignore_order=True,
+                        )
+                        == {}
+                    )
             else:
                 response = config.get_method("admin1", endpoint, page_size="all")
                 json_objs = json.load(f)

@@ -4,8 +4,6 @@ linkTitle: 'XML annotation format'
 weight: 22
 ---
 
-<!--lint disable heading-style-->
-
 When you want to download annotations from Computer Vision Annotation Tool (CVAT)
 you can choose one of several data formats. The document describes XML annotation format.
 Each format has X.Y version (e.g. 1.0). In general the major version (X) is incremented when the data format has
