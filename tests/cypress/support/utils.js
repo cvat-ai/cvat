@@ -96,10 +96,6 @@ export const aMonthFrom = (date) => new Date(
     new Date(date.getTime())
         .setMonth((date.getMonth() + 1) % 12),
 );
-export const aDayFrom = (date) => new Date(
-    new Date(date.getTime())
-        .setDate(date.getDate() + 1),
-);
 export const parseDatetime = (s) => new Date(Date.parse(s));
 
 /** @param {Date} date */

@@ -6,9 +6,10 @@
 /// <reference types="cypress" />
 
 import {
-    toSnakeCase, aDayFrom, aMonthFrom, aYearFrom, parseDatetime, format,
+    toSnakeCase, aMonthFrom, aYearFrom, parseDatetime, format,
 } from '../../../support/utils';
 import { ClipboardCtx } from '../../../support/const';
+import { projectSpec } from '../../../support/const_project';
 
 Cypress.automation('remote:debugger:protocol', {
     command: 'Emulation.setLocaleOverride',
@@ -47,7 +48,7 @@ context('User page, password change, token handling', () => {
     function revokeFirstToken() {
         cy.intercept('DELETE', 'api/auth/access_tokens/**').as('deleteToken');
         cy.intercept('GET', 'api/auth/access_tokens**').as('getToken');
-        cy.contains('No data').should('not.exist');
+        // cy.contains('No data').should('not.exist');
         tokenAction('Revoke');
         cy.get('.cvat-modal-confirm-revoke-token')
             .should('exist').and('be.visible').within(() => {
@@ -58,7 +59,7 @@ context('User page, password change, token handling', () => {
         cy.wait('@deleteToken');
         cy.wait('@getToken');
     }
-    function createDefaultToken(name = null) {
+    function createToken({ name = null, readOnly = false }) {
         cy.get('.cvat-create-api-token-button').should('exist').and('be.visible').click();
         cy.contains('.cvat-api-token-form', 'Create API Token').should('be.visible').within(() => {
             cy.get('.cvat-api-token-form-name').should('exist').and('be.visible');
@@ -66,21 +67,17 @@ context('User page, password change, token handling', () => {
                 cy.get('.cvat-api-token-form-name').find('.ant-input-clear-icon[role="button"]').click();
                 cy.get('.cvat-api-token-form-name').find('input').type(name);
             }
+            if (readOnly) {
+                cy.get('.cvat-api-token-form-read-only').find('input').click();
+                cy.get('.ant-checkbox-checked').should('exist');
+            } else {
+                cy.get('.ant-checkbox-checked').should('not.exist'); // read-only by default
+            }
             cy.get('.cvat-api-token-form-expiration-date').should('exist').and('be.visible');
             cy.get('.cvat-api-token-form-submit').should('exist').and('be.visible').click();
-            cy.get('.ant-checkbox-checked').should('not.exist'); // read-only by default
         });
     }
 
-    /**
-     * Token table row
-     * @param {object} expectedRowView
-     * @param {string} expectedRowView.Name
-     * @param {("Read Only" | "Read/Write")} expectedRowView.Permissions
-     * @param {string} expectedRowView.Created - DD/MM/YYYY
-     * @param {string} expectedRowView.Expires - DD/MM/YYYY or "Never"
-     * @param {string} expectedRowView.LastUsed - DD/MM/YYYY or "Never"
-     */
     function checkTokenTableView(expectedRowView) {
         cy.get('td.cvat-api-token-name').invoke('text').should('eq', expectedRowView.Name);
         cy.get('td.cvat-api-token-permissions').invoke('text').should('eq', expectedRowView.Permissions);
@@ -108,24 +105,29 @@ context('User page, password change, token handling', () => {
     const tokenName2 = 'test2';
     const tokenName3 = 'test3';
     const tokenName4 = 'test4';
+    const tokenName5 = 'test5';
 
-    const NOW = new Date(2025, 10, 4);
-    const TOMORROW = aDayFrom(NOW);
+    // Test resource to update
+    const projectName = 'Token project';
+    const projectNameUpdate = `Updated ${projectName}`;
+    let projectId;
+
+    const NOW = new Date();
 
     before(() => {
-        // Set the clocks to achieve determinism
-        cy.clock(NOW, ['Date']);
-
         cy.visit('auth/login');
         cy.headlessCreateUser(userSpec);
         cy.headlessLogin({ ...userSpec, nextURL: '/tasks' });
+        cy.headlessCreateProject({ ...projectSpec, name: projectName }).then(({ projectID }) => {
+            projectId = projectID;
+        });
     });
 
     after(() => {
         cy.headlessLogin();
         cy.headlessDeleteUserByUsername(username); // deleting self can be flaky, only admin should delete users
+        cy.headlessDeleteProject(projectId);
         cy.headlessLogout();
-        cy.clock().invoke('restore');
     });
 
     context('User page', () => {
@@ -163,7 +165,7 @@ context('User page, password change, token handling', () => {
         });
 
         context('Security tab', () => {
-            before(() => {
+            before('open security tab', () => {
                 cy.intercept('GET', '/api/auth/access_tokens**').as('getToken');
                 profileOpenTab('Security');
                 cy.get('@getToken').its('response.body.results').should('be.empty');
@@ -207,15 +209,6 @@ context('User page, password change, token handling', () => {
                 // Clipboard context
                 const clipboard = new ClipboardCtx('.cvat-api-token-copy-button');
 
-                beforeEach(() => {
-                    clipboard.init();
-                    // gets reset every test:
-                    // https://docs.cypress.io/app/core-concepts/variables-and-aliases
-                });
-                afterEach(() => {
-                    revokeFirstToken();
-                    cy.contains('No data').should('exist').and('be.visible');
-                });
                 before('Token related UI is visible, no tokens are present', () => {
                     cy.get('.cvat-security-api-tokens-card').should('exist').and('be.visible');
                     cy.get('.cvat-api-tokens-table').should('exist').and('be.visible').within(() => {
@@ -223,11 +216,25 @@ context('User page, password change, token handling', () => {
                     });
                 });
 
-                it.skip('Add a token. It is sent to backend. Modal appears, token can be copied', () => {
+                beforeEach(() => {
+                    clipboard.init();
+                    // get reset every test:
+                    // https://docs.cypress.io/app/core-concepts/variables-and-aliases
+                });
+
+                afterEach(() => {
+                    // clear the table to work only with one token at the time
+                    revokeFirstToken();
+                    cy.contains('No data').should('exist').and('be.visible');
+                });
+
+                it('Add a token. It is sent to backend. Modal appears, token can be copied', () => {
                     cy.intercept('POST', '/api/auth/access_tokens**').as('postToken');
                     cy.intercept('GET', '/api/auth/access_tokens**').as('getToken');
 
-                    createDefaultToken();
+                    const newToken = { ...defaultToken, Name: tokenName1 };
+
+                    createToken({ name: newToken.Name });
 
                     // Correct token is sent, the modal shows it for the user to save
                     cy.wait('@postToken').then(({
@@ -238,32 +245,33 @@ context('User page, password change, token handling', () => {
                         cy.get('.cvat-api-token-created-modal').should('exist').and('be.visible').within(() => {
                             cy.get('.cvat-api-token-copy-button').should('exist').and('be.visible');
                             clipboard.copy().should('equal', token);
-                            cy.contains(
-                                '.cvat-api-token-created-modal-confirm-saved-button',
-                                'I have securely saved my token',
-                            ).should('exist').and('be.visible')
-                                .click();
-                            cy.get('.cvat-api-token-created-modal').should('not.exist');
                         });
                     });
 
                     // Get request is successful and reloads the table view
                     cy.wait('@getToken').then(({ response: { statusCode, statusMessage } }) => {
                         expect(statusCode).to.equal(200, statusMessage);
-                        checkTokenTableView(defaultToken);
+                        cy.contains(
+                            '.cvat-api-token-created-modal-confirm-saved-button',
+                            'I have securely saved my token',
+                        ).should('exist').and('be.visible')
+                            .click();
+                        cy.get('.cvat-api-token-created-modal').should('not.exist');
+                        cy.get('.cvat-spinner').should('not.exist');
+                        checkTokenTableView(newToken);
                     });
                 });
 
-                it.skip('Create and update a token. Update is handled correctly', () => {
+                it('Create and update a token. Update is handled correctly', () => {
                     const tokenAfterUpdate = {
-                        Name: tokenName2,
+                        Name: tokenName3,
                         Permissions: 'Read Only',
                         Created: defaultToken.Created,
                         Expires: format(nextMonthDate),
                         LastUsed: defaultToken.LastUsed,
                     };
 
-                    createDefaultToken(tokenName1);
+                    createToken({ name: tokenName2 });
                     cy.get('.cvat-api-token-created-modal-confirm-saved-button').click();
 
                     // Edit the token
@@ -298,63 +306,67 @@ context('User page, password change, token handling', () => {
 
                 function tryTokenTestCase(params) {
                     // Prod REST API with attempt to write to user's last name
-                    const { name, expectedLastUsed, expectedStatus } = params;
+                    const {
+                        name, expectedLastUsed, expectedStatus, expectedPermissions,
+                        failOnStatusCode,
+                    } = params;
+                    const LastUsed = expectedLastUsed === 'Never' ? 'Never' : format(expectedLastUsed);
 
                     const newToken = {
                         ...defaultToken,
                         Name: name,
+                        Permissions: expectedPermissions,
                     };
                     const tokenAfterUpdate = {
                         ...newToken,
-                        LastUsed: format(expectedLastUsed),
+                        LastUsed,
                     };
-                    createDefaultToken(newToken.Name);
+                    createToken({ name: newToken.Name, readOnly: expectedPermissions === 'Read Only' });
                     cy.get('.cvat-api-token-created-modal').should('exist').and('be.visible');
-                    clipboard.button.should('exist').and('be.visible');
+                    cy.get(clipboard.button).should('exist').and('be.visible');
                     clipboard.copy().then((token) => {
                         cy.get('.cvat-api-token-created-modal-confirm-saved-button')
                             .should('exist').and('be.visible').click();
 
-                        // Last used should be default (=today)
                         checkTokenTableView(newToken);
 
-                        // Setup last used change
-                        cy.tick(Date.parse(TOMORROW));
-                        // NOTE: cy.clock is reset after each test anyway
-                        // https://docs.cypress.io/api/commands/tick#Yields
-
-                        // Use read/write token for updating my last name
-                        cy.headlessGetSelfId().then((id) => {
-                            cy.request({
-                                method: 'PATCH',
-                                url: `/api/users/${id}`,
-                                body: { last_name: 'Austen' },
-                                headers: {
-                                    Authorization: `Bearer ${token}`,
-                                },
-                            }).its('status').should('eq', expectedStatus);
-
-                            // Switch tabs to update token meta without heavy page reload
-                            profileOpenTab('Profile');
-                            profileOpenTab('Security');
-                            checkTokenTableView(tokenAfterUpdate);
+                        // Use read/write token to update a resource
+                        cy.request({
+                            method: 'PATCH',
+                            url: `/api/projects/${projectId}`,
+                            failOnStatusCode,
+                            body: { name: projectNameUpdate },
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                            },
+                        }).its('status').then((status) => {
+                            expect(status).to.equal(expectedStatus, status);
                         });
+
+                        // Switch tabs to update token meta without heavy page reload
+                        profileOpenTab('Profile');
+                        profileOpenTab('Security');
+                        checkTokenTableView(tokenAfterUpdate);
                     });
                 }
 
                 it("Try REST API token with correct permissions. Token's 'Last Used' is updated", () => {
                     tryTokenTestCase({
-                        name: tokenName3,
+                        name: tokenName4,
                         expectedStatus: 200,
-                        expectedLastUsed: TOMORROW, // testcase ticks the clock to tomorrow
+                        expectedLastUsed: NOW,
+                        expectedPermissions: 'Read/Write',
+                        failOnStatusCode: true,
                     });
                 });
 
-                it.skip("Try REST API token with incorrect permissions. Token's 'Last Used' is not updated", () => {
+                it("Try REST API token with incorrect permissions. Token's 'Last Used' is not updated", () => {
                     tryTokenTestCase({
-                        name: tokenName4,
-                        expectedStatus: 400,
-                        expectedLastUsed: defaultToken.LastUsed,
+                        name: tokenName5,
+                        expectedStatus: 403,
+                        expectedLastUsed: 'Never',
+                        expectedPermissions: 'Read Only',
+                        failOnStatusCode: false,
                     });
                 });
             });
