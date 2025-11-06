@@ -4,7 +4,6 @@ linkTitle: 'Standard 3D mode'
 weight: 14
 aliases:
   - /docs/manual/basics/standard-3d-mode-basics/
-  - /docs/annotation/standard-3d-mode-basics/
 ---
 
 `Standard 3d mode` - Designed to work with 3D data.

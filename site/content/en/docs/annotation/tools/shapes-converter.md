@@ -5,7 +5,6 @@ weight: 100
 description: 'How to perform bulk actions on filtered shapes'
 aliases:
   - /docs/enterprise/shapes-converter/
-  - /docs/annotation/shapes-converter/
 ---
 
 The shapes converter is a feature that enables bulk actions on filtered **shapes**. It allows you to perform mutual

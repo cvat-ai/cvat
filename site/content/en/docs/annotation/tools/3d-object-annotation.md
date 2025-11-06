@@ -5,7 +5,6 @@ weight: 19
 description: 'Overview of basic operations available when annotating 3D objects.'
 aliases:
   - /docs/manual/basics/3d-object-annotation/
-  - /docs/annotation/3d-object-annotation/
 ---
 
 Use the 3D Annotation tool for labeling 3D objects and scenes, such as vehicles, buildings, landscapes, and others.
