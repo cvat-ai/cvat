@@ -26,7 +26,7 @@ For export of images:
   - `occluded` (both the annotation property & an attribute).
 - Tracks: Not supported.
 
-The downloaded file is a .zip archive with the following structure:
+The downloaded file is a `.zip` archive with the following structure:
 
 ```bash
 taskname.zip/
@@ -43,8 +43,8 @@ taskname.zip/
 
 ## WIDER Face import
 
-Uploaded file: a zip archive of the structure above
-
-- supported annotations: Rectangles (with attributes), Labels
+- Supported annotations: Rectangles (with attributes), Labels
 - supported attributes:
   - `blur`, `expression`, `illumination`, `occluded`, `pose`, `invalid`
+
+Uploaded file: a `.zip` archive of the structure above

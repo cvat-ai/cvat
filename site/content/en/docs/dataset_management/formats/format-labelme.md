@@ -21,11 +21,11 @@ For more information, see:
 
 For export of images:
 
-- Supported annotations: Bounding Boxes, Polygons.
+- Supported annotations: Bounding Boxes, Polygons, Masks, Ellipses (as masks).
 - Attributes: Supported for Polygons.
 - Tracks: Not supported.
 
-The downloaded file is a .zip archive with the following structure:
+The downloaded file is a `.zip` archive with the following structure:
 
 ```bash
 taskname.zip/
@@ -35,7 +35,9 @@ taskname.zip/
 
 ## LabelMe import
 
-Uploaded file: a zip archive of the following structure:
+- Supported annotations: Rectangles, Polygons, Masks
+
+Uploaded file: a `.zip` archive of the following structure:
 
 ```bash
 taskname.zip/
@@ -47,4 +49,3 @@ taskname.zip/
 └── img3.xml
 ```
 
-- supported annotations: Rectangles, Polygons, Masks (as polygons)

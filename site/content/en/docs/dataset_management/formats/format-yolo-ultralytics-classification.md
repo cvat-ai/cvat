@@ -20,7 +20,7 @@ For export of images:
 - Attributes: Not supported.
 - Tracks: Not supported.
 
-The downloaded file is a .zip archive with the following structure:
+The downloaded file is a `.zip` archive with the following structure:
 
 ```bash
 archive.zip/

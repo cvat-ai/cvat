@@ -18,9 +18,9 @@ A **Skeleton** is composed of numerous points (also referred to as elements),
 which may be connected by edges. Each point functions as an individual object,
 possessing unique attributes and properties like color, occlusion, and visibility.
 
-**Skeletons** can be {{< ilink "/docs/dataset_management/formats" "**exported**" >}}
-in two formats: {{< ilink "/docs/dataset_management/formats/format-cvat#cvat-for-videos-export" "**CVAT for image**" >}}
-and {{< ilink "/docs/dataset_management/formats/coco-keypoints" "**COCO Keypoints**" >}}.
+**Skeletons** can be {{< ilink "/docs/manual/advanced/formats" "**exported**" >}}
+in two formats: {{< ilink "/docs/manual/advanced/formats/format-cvat#cvat-for-videos-export" "**CVAT for image**" >}}
+and {{< ilink "/docs/manual/advanced/formats/format-coco-keypoints" "**COCO Keypoints**" >}}.
 
 {{% alert title="Note" color="primary" %}}
 Skeletons' labels cannot be imported in a label-less project by importing a dataset.

@@ -2551,7 +2551,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         provider_type = self.request.query_params.get('provider_type', None)
         if provider_type:
-            if provider_type in CloudProviderChoice.list():
+            if provider_type in CloudProviderChoice.values:
                 return queryset.filter(provider_type=provider_type)
             raise ValidationError('Unsupported type of cloud provider')
         return queryset

@@ -21,11 +21,12 @@ For more information, see:
 - [Format specification for KITTI segmentation](https://s3.eu-central-1.amazonaws.com/avg-kitti/devkit_semantics.zip)
 - [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/kitti_dataset)
 
-## KITTI annotations export
+## KITTI export
 
 For export of images:
 
-- Supported annotations: Bounding Boxes (detection), Polygons (segmentation).
+- Supported annotations: Bounding Boxes (detection), Polygons (segmentation),
+  Masks (segmentation), Ellipses (segmentation, as masks).
 - Supported attributes:
   - `occluded` (Available both as a UI option and a separate attribute)
     Denotes that a major portion of the object within
@@ -38,9 +39,9 @@ For export of images:
     using `checkboxes` for labels.
     Signifies that the annotation encapsulates
     multiple instances of the same object class.
-- Tracks: Not supported.
+- Tracks: Not supported (exported as separate shapes).
 
-The downloaded file is a .zip archive with the following structure:
+The downloaded file is a `.zip` archive with the following structure:
 
 ```
 └─ annotations.zip/
@@ -65,7 +66,7 @@ The downloaded file is a .zip archive with the following structure:
             └── ...
 ```
 
-## KITTI annotations import
+## KITTI import
 
 You can upload KITTI annotations in two ways:
 rectangles for the detection task and

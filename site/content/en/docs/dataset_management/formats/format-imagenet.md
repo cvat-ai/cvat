@@ -27,7 +27,7 @@ For export of images:
 - Attributes: Not supported.
 - Tracks: Not supported.
 
-The downloaded file is a .zip archive with the following structure:
+The downloaded file is a `.zip` archive with the following structure:
 
 ```bash
 # if we save images:
@@ -49,6 +49,6 @@ taskname.zip/
 
 ## ImageNet import
 
-Uploaded file: a zip archive of the structure above
+- Supported annotations: Tags.
 
-- supported annotations: Labels
+Uploaded file: a `.zip` archive of the structure above

@@ -7,55 +7,56 @@ aliases:
  - /docs/manual/advanced/format/format-datumaro/
 ---
 
-Datumaro serves as a versatile format capable of handling complex
-dataset and annotation transformations,
-format conversions, dataset statistics, and merging, among other features.
-It functions as the dataset support provider within CVAT.
-Essentially, anything you can do in CVAT, you can also achieve
-in Datumaro, but with the added benefit of specialized dataset operations.
+The Datumaro format is a universal format, capable of handling arbitrary datasets and annotations.
+It is the native format of the Datumaro dataset framework. The framework can be used
+for various dataset operations, such as dataset and annotation transformations,
+format conversions, computation of statistics, and dataset merging.
+This framework is used in CVAT as the dataset support provider.
+It effectively means that anything you import in CVAT or export from CVAT,
+can be processed with Datumaro, allowing you to perform custom dataset operations easily.
 
 For more information, see:
 
-- [Datumaro specification](https://github.com/cvat-ai/datumaro/)
+- [Datumaro project page](https://github.com/cvat-ai/datumaro/)
+- [Dataset examples](https://github.com/cvat-ai/datumaro/tree/develop/tests/assets/datumaro_dataset)
 
-# Export annotations in Datumaro format
+## Datumaro export
 
-For export of images: any 2D shapes, tags
-
-- Supported annotations: Bounding Boxes, Polygons,
-Polylines, Points, Cuboids, Tags, Ellipses, Masks, Skeletons.
+- Supported annotations: Tags, Bounding Boxes, Polygons,
+  Polylines, Points, Cuboids, Ellipses, Masks, Skeletons.
 - Attributes: Supported.
-- Tracks: Supported.
+- Tracks: Supported (via the `track_id` attribute).
 
-The downloaded file is a zip archive with the following structure:
+The downloaded file is a `.zip` archive with the following structure:
 
 ```bash
 taskname.zip/
 ├── annotations/
-│   └── default.json # fully description of classes and all dataset items
-└── images/ # if the option `save images` was selected
-    └── default
+│   └── default.json
+└── images/
+    └── default/
         ├── image1.jpg
         ├── image2.jpg
         ├── ...
 ```
 
-# Import annotations in Datumaro format
+## Datumaro import
 
-- supported annotations: Bounding Boxes, Polygons, Polylines,
-  Masks, Points, Cuboids, Labels, Skeletons
-- supported attributes: any
+- Supported annotations: Tags, Bounding Boxes, Polygons,
+  Polylines, Points, Cuboids, Ellipses, Masks, Skeletons.
+- Attributes: Supported.
+- Tracks: Supported.
 
-Uploaded file: a zip archive of the following structure:
+Uploaded file: a `.json` file with annotations or a `.zip` archive of the following structure:
 
 ```bash
-<archive_name>.zip/
+archive.zip/
 └── annotations/
-    ├── subset1.json # fully description of classes and all dataset items
-    └── subset2.json # fully description of classes and all dataset items
+    ├── subset1.json
+    └── subset2.json
 ```
 
-JSON annotations files in the `annotations` directory should have similar structure:
+The `.json` annotations files in the `annotations` directory should have similar structure:
 
 ```json
 {

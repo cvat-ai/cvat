@@ -24,14 +24,15 @@ For more information, see:
 For export of images:
 
 - Supported annotations: Bounding Boxes (detection),
-  Tags (classification), Polygons (segmentation)
+  Tags (classification), Polygons (segmentation), Masks (segmentation),
+  Ellipses (segmentation, as masks).
 - Attributes:
   - `occluded` as both UI option and a separate attribute.
   - `truncated` and `difficult` must be defined for labels as `checkbox`.
   - Arbitrary attributes in the `attributes` section of XML files.
 - Tracks: Not supported.
 
-The downloaded file is a .zip archive with the following structure:
+The downloaded file is a `.zip` archive with the following structure:
 
 ```bash
 taskname.zip/
@@ -58,9 +59,9 @@ bird:::
 
 ## Pascal VOC import
 
-Supported attributes: action attributes (import only, should be defined as `checkbox` -es)
+- Supported attributes: action attributes (import only, should be defined as `checkbox`-es)
 
-Uploaded file: a zip archive of the structure declared above or the following:
+Uploaded file: a `.zip` archive of the structure declared above or the following:
 
 ```bash
 taskname.zip/

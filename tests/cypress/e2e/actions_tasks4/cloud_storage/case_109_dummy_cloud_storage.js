@@ -143,7 +143,7 @@ context('Dummy cloud storages.', { browser: '!firefox' }, () => {
                 .should('have.attr', 'value', 'manifest.jsonl');
         });
 
-        it('Create dummy Azure Blob Container and check fields.', () => {
+        it('Create dummy Azure Blob Storage and check fields.', () => {
             testListDummyCloudStorages(dummyAzureContainer);
             testCheckAndCloseNotification();
             testCSValues({
@@ -168,7 +168,7 @@ context('Dummy cloud storages.', { browser: '!firefox' }, () => {
             cy.get('#provider_type').should('be.disabled');
             cy.get('.cvat-cloud-storage-select-provider')
                 .should('be.visible')
-                .and('have.text', 'Azure Blob Container');
+                .and('have.text', 'Azure Blob Storage');
             cy.get('#resource')
                 .should('be.disabled')
                 .should('be.visible')
@@ -184,7 +184,7 @@ context('Dummy cloud storages.', { browser: '!firefox' }, () => {
                 .should('have.attr', 'value', 'manifest.jsonl');
         });
 
-        it('Create dummy AWS S3 and check fields.', () => {
+        it('Create dummy Amazon S3 and check fields.', () => {
             testListDummyCloudStorages(dummyAWSBucket);
             testCheckAndCloseNotification();
             testCSValues({
@@ -209,7 +209,7 @@ context('Dummy cloud storages.', { browser: '!firefox' }, () => {
             cy.get('#provider_type').should('be.disabled');
             cy.get('.cvat-cloud-storage-select-provider')
                 .should('be.visible')
-                .and('have.text', 'AWS S3');
+                .and('have.text', 'Amazon S3');
             cy.get('#resource')
                 .should('be.disabled')
                 .should('be.visible')

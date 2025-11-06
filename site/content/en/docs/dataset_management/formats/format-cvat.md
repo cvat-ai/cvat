@@ -21,14 +21,12 @@ For more information, see:
  Applicable for all computer vision tasks in
  2D except for Video Tracking.
 
-For export of images:
-
-- Supported annotations: Bounding Boxes, Polygons, Polylines,
-  Points, Cuboids, Ellipses, Skeletons, Tags, Masks.
+- Supported annotations: Tags, Bounding Boxes, Polygons, Polylines,
+  Points, Cuboids, Ellipses, Skeletons, Masks.
 - Attributes: Supported.
-- Tracks: Can be exported, but track id will be lost.
+- Tracks: Supported (via the extra `track_id` attribute).
 
-The downloaded file is a zip archive with following structure:
+The downloaded file is a `.zip` archive with following structure:
 
 ```bash
 taskname.zip/
@@ -43,15 +41,13 @@ taskname.zip/
 Applicable for all computer vision tasks
 in 2D except for Classification
 
-For export of images:
-
 - Supported annotations: Bounding Boxes, Polygons, Polylines,
-  Points, Cuboids, Ellipses, Skeletons,Masks.
+  Points, Cuboids, Ellipses, Skeletons, Masks.
 - Attributes: Supported.
-- Tracks: Supported (tracks are split by frames).
+- Tracks: Supported.
 - Shapes are exported as single-frame tracks
 
-Downloaded file is a zip archive with following structure:
+Downloaded file is a `.zip` archive with following structure:
 
 ```bash
 taskname.zip/
@@ -61,7 +57,7 @@ taskname.zip/
 └── annotations.xml
 ```
 
-## CVAT loader
+## CVAT for video import
 
-Uploaded file: either an XML file or a
-.zip file containing the aforementioned structures.
+Uploaded file: either an `.xml` file or a
+`.zip` file with the contents described above.

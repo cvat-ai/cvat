@@ -32,7 +32,7 @@ For export of images:
 - Attributes: Not supported.
 - Tracks: Supported.
 
-The downloaded file is a .zip archive with the following structure:
+The downloaded file is a `.zip` archive with the following structure:
 
 ```bash
 archive.zip/
@@ -142,9 +142,9 @@ It writes track ids to the end of corresponding annotations:
 2 0.7 0.2 0.3 0.1
 ```
 
-## Import
+## Ultralytics YOLO Import
 
-Uploaded file: a zip archive of the same structure as above.
+Uploaded file: a `.zip` archive of the same structure as above.
 
 For compatibility with other tools exporting in Ultralytics YOLO format
 (e.g. [roboflow](https://roboflow.com/formats/yolov8-pytorch-txt)),

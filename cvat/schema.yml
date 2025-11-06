@@ -103,7 +103,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['name', 'id', 'owner', 'created_date', 'updated_date', 'expiry_date', 'last_used_date', 'read_only'].
+           Available filter_fields: ['name', 'id', 'created_date', 'updated_date', 'expiry_date', 'last_used_date', 'read_only'].
         schema:
           type: string
       - name: name
@@ -111,11 +111,6 @@ paths:
         description: A simple equality filter for the name field
         schema:
           type: string
-      - name: owner
-        in: query
-        description: A simple equality filter for the owner field
-        schema:
-          type: integer
       - name: page
         required: false
         in: query
@@ -138,7 +133,7 @@ paths:
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''name'', ''id'', ''owner'', ''created_date'', ''updated_date'', ''expiry_date'',
+          [''name'', ''id'', ''created_date'', ''updated_date'', ''expiry_date'',
           ''last_used_date'', ''read_only'']'
         schema:
           type: string
@@ -548,7 +543,6 @@ paths:
           enum:
           - AWS_S3_BUCKET
           - AZURE_CONTAINER
-          - GOOGLE_DRIVE
           - GOOGLE_CLOUD_STORAGE
       - name: resource
         in: query
@@ -613,7 +607,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CloudStorageWriteRequest'
             examples:
-              CreateAWSS3CloudStorageWithCredentials:
+              CreateAmazonS3CloudStorageWithCredentials:
                 value:
                   provider_type: AWS_S3_BUCKET
                   resource: somebucket
@@ -625,8 +619,8 @@ paths:
                   description: Some description
                   manifests:
                   - manifest.jsonl
-                summary: Create AWS S3 cloud storage with credentials
-              CreateAWSS3CloudStorageWithoutCredentials:
+                summary: Create Amazon S3 cloud storage with credentials
+              CreateAmazonS3CloudStorageWithoutCredentials:
                 value:
                   provider_type: AWS_S3_BUCKET
                   resource: somebucket
@@ -634,7 +628,7 @@ paths:
                   credentials_type: ANONYMOUS_ACCESS
                   manifests:
                   - manifest.jsonl
-                summary: Create AWS S3 cloud storage without credentials
+                summary: Create Amazon S3 cloud storage without credentials
               CreateAzureCloudStorage:
                 value:
                   provider_type: AZURE_CONTAINER
@@ -719,7 +713,7 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedCloudStorageWriteRequest'
             examples:
-              CreateAWSS3CloudStorageWithCredentials:
+              CreateAmazonS3CloudStorageWithCredentials:
                 value:
                   provider_type: AWS_S3_BUCKET
                   resource: somebucket
@@ -731,8 +725,8 @@ paths:
                   description: Some description
                   manifests:
                   - manifest.jsonl
-                summary: Create AWS S3 cloud storage with credentials
-              CreateAWSS3CloudStorageWithoutCredentials:
+                summary: Create Amazon S3 cloud storage with credentials
+              CreateAmazonS3CloudStorageWithoutCredentials:
                 value:
                   provider_type: AWS_S3_BUCKET
                   resource: somebucket
@@ -740,7 +734,7 @@ paths:
                   credentials_type: ANONYMOUS_ACCESS
                   manifests:
                   - manifest.jsonl
-                summary: Create AWS S3 cloud storage without credentials
+                summary: Create Amazon S3 cloud storage without credentials
               CreateAzureCloudStorage:
                 value:
                   provider_type: AZURE_CONTAINER
@@ -10172,14 +10166,12 @@ components:
       enum:
       - AWS_S3_BUCKET
       - AZURE_CONTAINER
-      - GOOGLE_DRIVE
       - GOOGLE_CLOUD_STORAGE
       type: string
       description: |-
-        * `AWS_S3_BUCKET` - AWS_S3
-        * `AZURE_CONTAINER` - AZURE_CONTAINER
-        * `GOOGLE_DRIVE` - GOOGLE_DRIVE
-        * `GOOGLE_CLOUD_STORAGE` - GOOGLE_CLOUD_STORAGE
+        * `AWS_S3_BUCKET` - Amazon S3
+        * `AZURE_CONTAINER` - Azure Blob Storage
+        * `GOOGLE_CLOUD_STORAGE` - Google Cloud Storage
     QualityPointSizeBase:
       enum:
       - image_size

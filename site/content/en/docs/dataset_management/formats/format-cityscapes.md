@@ -24,21 +24,19 @@ For more information, see:
 - [Cityscapes format specification](https://github.com/mcordts/cityscapesScripts#the-cityscapes-dataset)
 - [Cityscapes dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/cityscapes_dataset)
 
-# Cityscapes export
+## Cityscapes export
 
-For export of images:
-
-- Supported annotations: Polygons (segmentation), Bounding Boxes.
+- Supported annotations: Masks, Polygons (as masks), Bounding Boxes (as masks), Ellipses (as masks).
 - Attributes:
   - `is_crowd` boolean, should be defined for labels as `checkbox`.
     Specifies if the annotation label can distinguish between different instances.
-    If False, the annotation id field encodes the instance id.
-- Tracks: Not supported.
+    If `False`, the exported annotation will include the instance id value.
+- Tracks: Not supported (exported as separate shapes).
 
-The downloaded file is a .zip archive with the following structure:
+The downloaded file is a `.zip` archive with the following structure:
 
 ```
-.
+taskname.zip/
 ├── label_color.txt
 ├── gtFine
 │   ├── <subset_name>
@@ -77,12 +75,17 @@ The downloaded file is a .zip archive with the following structure:
   the remainder is the instance ID. If a certain annotation describes multiple
   instances, then the pixels have the regular ID of that class
 
-# Cityscapes annotations import
+## Cityscapes import
 
-Uploaded file: a zip archive with the following structure:
+- Supported annotations: Masks, Polygons (if Convert masks to polygons is enabled).
+- Attributes:
+  - `is_crowd` boolean, should be defined for labels as `checkbox`.
+- Tracks: Not supported.
+
+Uploaded file: a `.zip` archive with the following structure:
 
 ```
-.
+archive.zip/
 ├── label_color.txt # optional
 └── gtFine
     └── <city_name>
@@ -91,7 +94,7 @@ Uploaded file: a zip archive with the following structure:
         ├── ...
 ```
 
-# Creating task with Cityscapes dataset
+## Creating task for Cityscapes dataset
 
 Create a task with the labels you need
 or you can use the labels and colors of the original dataset.
