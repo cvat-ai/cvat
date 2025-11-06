@@ -7620,8 +7620,6 @@ components:
             the file share availability
         storage_method:
           $ref: '#/components/schemas/StorageMethod'
-        storage:
-          $ref: '#/components/schemas/StorageType'
         sorting_method:
           $ref: '#/components/schemas/SortingMethod'
         filename_pattern:
