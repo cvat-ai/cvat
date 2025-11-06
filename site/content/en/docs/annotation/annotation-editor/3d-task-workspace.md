@@ -3,7 +3,7 @@ title: '3D task workspace'
 linkTitle: '3D task workspace'
 weight: 13
 aliases:
-  - /docs/manual/basics/
+  - /docs/manual/basics/3d-task-workspace/
   - /docs/annotation/3d-task-workspace/
 ---
 

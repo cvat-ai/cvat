@@ -3,7 +3,7 @@ title: 'Data preparation on the fly'
 linkTitle: 'Data preparation on the fly'
 weight: 31
 aliases:
-  - /docs/manual/advanced/
+  - /docs/manual/advanced/data-on-fly/
 ---
 
 <!--lint disable heading-style-->

@@ -4,7 +4,7 @@ linkTitle: '3D Object annotation'
 weight: 19
 description: 'Overview of basic operations available when annotating 3D objects.'
 aliases:
-  - /docs/manual/basics/
+  - /docs/manual/basics/3d-object-annotation/
   - /docs/annotation/3d-object-annotation/
 ---
 

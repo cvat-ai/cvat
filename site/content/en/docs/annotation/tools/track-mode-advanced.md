@@ -4,7 +4,7 @@ linkTitle: 'Track mode'
 weight: 4
 description: 'Advanced operations available during annotation in track mode.'
 aliases:
-  - /docs/manual/advanced/
+  - /docs/manual/advanced/track-mode-advanced/
 ---
 
 Basic operations in the mode were described in section

@@ -4,7 +4,7 @@ linkTitle: 'Annotation with polylines'
 weight: 9
 description: 'Guide to annotating tasks using polylines.'
 aliases:
-  - /docs/manual/advanced/
+  - /docs/manual/advanced/annotation-with-polylines/
 ---
 It is used for road markup annotation etc.
 

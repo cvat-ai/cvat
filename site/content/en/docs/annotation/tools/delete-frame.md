@@ -4,7 +4,7 @@ linkTitle: 'Delete frame from task'
 weight: 18
 description: 'This section explains how to delete and restore a frame from a task.'
 aliases:
-  - /docs/manual/advanced/
+  - /docs/manual/advanced/delete-frame/
 ---
 
 ## Delete frame

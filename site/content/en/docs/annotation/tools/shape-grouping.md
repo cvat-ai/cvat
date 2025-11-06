@@ -4,7 +4,7 @@ linkTitle: 'Shape grouping'
 weight: 27
 description: 'Grouping multiple shapes during annotation.'
 aliases:
-  - /docs/manual/advanced/
+  - /docs/manual/advanced/shape-grouping/
 ---
 
 This feature allows us to group several shapes.

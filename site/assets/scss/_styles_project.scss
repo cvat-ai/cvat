@@ -8,12 +8,12 @@
 .td-navbar.navbar-dark {
     /* Pick your palette */
     --bs-navbar-bg: #0B1020;                 /* background */
-    --bs-navbar-color: #ffffff;              /* link text */
+    --bs-navbar-color: #fff;              /* link text */
     --bs-navbar-hover-color: #f97526;        /* hover */
-    --bs-navbar-active-color: #FFFFFF;       /* active/current */
-    --bs-navbar-brand-color: #FFFFFF;        /* brand link */
+    --bs-navbar-active-color: #fff;       /* active/current */
+    --bs-navbar-brand-color: #fff;        /* brand link */
     --bs-navbar-brand-hover-color: #f97526;  /* brand hover */
-    --bs-navbar-toggler-border-color: rgba(255,255,255,.25);
+    --bs-navbar-toggler-border-color: rgba(255,255,255,25%);
 
     /* Ensure background applies (Docsy sometimes sets one) */
     background-color: var(--bs-navbar-bg) !important;
@@ -28,15 +28,17 @@
 
   /* Optional: make the inline SVG logo white on dark bg */
   .navbar-dark .navbar-brand svg path {
-    fill: #FFFFFF;
+    fill: #fff;
   }
+
 /* === Footer recolor === */
+
 /* Your palette */
 :root {
     --cvat-footer-bg: #1a1a1a;        /* footer background */
     --cvat-footer-text: #bababa;      /* normal text/links */
     --cvat-footer-hover: #f97526;     /* hover/active links */
-    --cvat-footer-border: rgba(255,255,255,.15);
+    --cvat-footer-border: rgba(255,255,255,15%);
   }
 
   /* The Docsy footer in your markup is <footer class="bg-dark ..."> */
@@ -60,9 +62,8 @@
   }
   footer.bg-dark .col-12.col-lg-4 .list-inline-item a:hover i,
 footer.bg-dark .col-12.col-lg-4 .list-inline-item a:focus i {
-  color: #ffffff !important;
+  color: #fff !important;
 }
-
 
   /* Optional: tweak borders (e.g., nav separators, buttons if any) */
   footer.bg-dark .navbar-toggler,
@@ -70,102 +71,65 @@ footer.bg-dark .col-12.col-lg-4 .list-inline-item a:focus i {
     border-color: var(--cvat-footer-border) !important;
     color: var(--cvat-footer-text) !important;
   }
+
 /* Footer: vertical centering, compact text, large icons */
 footer.bg-dark {
-    font-size: 0.9rem;
-    line-height: 1.4;
-  }
+  font-size: 0.75rem;
+  line-height: 1.35;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
 
-  /* Make both lists align items vertically and wrap nicely */
-  footer.bg-dark .list-inline {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 1.1rem;
-    margin-bottom: 0;
-  }
-  footer.bg-dark .list-inline-item {
-    margin-right: 0 !important; /* spacing via gap */
-    display: inline-flex;
-    align-items: center;
-  }
+/* Align list items */
+footer.bg-dark .list-inline {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.1rem;
+  margin: 0;
+}
 
-  /* Neutralize the .h3 utility added on <li> so text size stays compact */
-  footer.bg-dark .list-inline-item.h3 {
-    font-size: inherit !important;
-    line-height: 1.4 !important;
-  }
+footer.bg-dark .list-inline-item {
+  margin: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  line-height: 1.35;
+}
 
-  /* Keep icons big regardless of text size */
-  footer.bg-dark .list-inline-item i {
-    font-size: 1.6rem;  /* adjust 1.5–1.8 if needed */
-    line-height: 1;
-    vertical-align: middle;
-  }
-  /* --- FORCE TRUE VERTICAL CENTER IN FOOTER --- */
+footer.bg-dark .list-inline-item.h3 {
+  font-size: inherit !important;
+  line-height: 1.35 !important;
+}
 
-/* 1) Kill the big top/bottom padding the template adds (py-5) */
-footer.bg-dark {
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-    font-size: 0.75rem;
-    line-height: 1.35;   /* slightly tighter helps centering */
-  }
+footer.bg-dark .list-inline-item i {
+  font-size: 1.6rem;
+  line-height: 1;
+  vertical-align: middle;
+}
 
-  /* 2) Give the inner container controlled padding and a fixed min-height
-        so there's a clear “area” to center within */
-  footer.bg-dark > .container-fluid {
-    padding-top: 10px;      /* adjust to taste (8–12px) */
-    padding-bottom: 10px;
-  }
-  footer.bg-dark > .container-fluid > .row.align-items-center {
-    min-height: 56px;       /* the bar height; tweak 52–60px if needed */
-  }
+/* --- FOOTER LAYOUT ADJUSTMENTS --- */
+footer.bg-dark > .container-fluid {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+footer.bg-dark > .container-fluid > .row.align-items-center {
+  min-height: 56px;
+}
+footer.bg-dark .col-12.col-lg-8,
+footer.bg-dark .col-12.col-lg-4 {
+  display: flex;
+  align-items: center;
+}
+footer.bg-dark .col-12.col-lg-8 { justify-content: flex-start; }
+footer.bg-dark .col-12.col-lg-4 { justify-content: flex-end; }
 
-  /* 3) Make both columns true flex middle */
-  footer.bg-dark .col-12.col-lg-8,
-  footer.bg-dark .col-12.col-lg-4 {
-    display: flex;
-    align-items: center;          /* vertical middle */
-  }
-  footer.bg-dark .col-12.col-lg-8 { justify-content: flex-start; }
-  footer.bg-dark .col-12.col-lg-4 { justify-content: flex-end; }
+@media (max-width: 991.98px) {
+  footer.bg-dark .col-12.col-lg-4 { justify-content: center; }
+}
 
-  /* 4) Neutralize baseline alignment on the UL/LI so text can center visually */
-  footer.bg-dark .list-inline {
-    display: flex;
-    align-items: center;          /* key: align the whole line, not baseline */
-    flex-wrap: wrap;
-    gap: 1.1rem;
-    margin: 0;
-  }
-  footer.bg-dark .list-inline-item {
-    margin: 0 !important;
-    display: inline-flex;         /* key: prevent baseline drop */
-    align-items: center;
-    line-height: 1.35;
-  }
-
-  /* Docsy gives <li> class="h3" for the icon list; keep text compact anyway */
-  footer.bg-dark .list-inline-item.h3 {
-    font-size: inherit !important;
-    line-height: 1.35 !important;
-  }
-
-  /* Right-side icons stay large; they won’t affect centering on the left */
-  footer.bg-dark .list-inline-item i {
-    font-size: 1.6rem;
-    line-height: 1;               /* avoid extra vertical space */
-    vertical-align: middle;
-  }
-
-  /* Mobile: left & right centered horizontally */
-  @media (max-width: 991.98px) {
-    footer.bg-dark .col-12.col-lg-4 { justify-content: center; }
-  }
 /* Outline “button” look for a single nav item */
 .td-navbar.navbar-dark .nav-cta {
-  border: 1px solid rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 85%);
   border-radius: 9999px;          /* pill */
   padding: 0.375rem 0.75rem;      /* similar to btn-sm */
   line-height: 1.2;
@@ -173,12 +137,9 @@ footer.bg-dark {
   display: inline-flex;
   align-items: center;
   text-decoration: none !important;
+  color: #fff !important;
 }
 
-/* Default text color (white on dark header), and your brand on hover */
-.td-navbar.navbar-dark .nav-cta {
-  color: #ffffff !important;
-}
 .td-navbar.navbar-dark .nav-cta:hover,
 .td-navbar.navbar-dark .nav-cta:focus {
   color: #f97526 !important;
@@ -197,6 +158,7 @@ footer.bg-dark {
   margin-left: 0.25rem;
   margin-right: 0.25rem;
 }
+
 /* --- Hide last (active) breadcrumb item --- */
 .breadcrumb-item.active {
   display: none !important;

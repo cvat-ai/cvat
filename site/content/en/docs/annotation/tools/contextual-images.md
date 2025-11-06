@@ -4,7 +4,7 @@ linkTitle: 'Contextual images'
 weight: 26
 description: 'Contextual images of the task'
 aliases:
-  - /docs/manual/advanced/
+  - /docs/manual/advanced/contextual-images/
 ---
 
 Contextual images (or related images) are additional images that provide

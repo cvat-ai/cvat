@@ -4,7 +4,7 @@ linkTitle: 'Attach cloud storage'
 weight: 6
 description: 'Instructions on how to attach cloud storage using UI'
 aliases:
-  - /docs/manual/basics/attach-cloud-storages/
+  - /docs/manual/basics/attach-cloud-storage/
 ---
 
 In CVAT, you can use **Amazon S3**, **Azure Blob Storage**

@@ -4,7 +4,7 @@ linkTitle: 'Quality control'
 weight: 1
 description: 'Overview of quality control features'
 aliases:
-  - /docs/manual/quality-control/
+  - /docs/manual/basics/quality-control/
 ---
 
 CVAT has the following features for automated quality control of annotations:

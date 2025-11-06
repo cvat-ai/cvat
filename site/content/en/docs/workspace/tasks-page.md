@@ -5,6 +5,7 @@ weight: 2
 description: 'Overview of the Tasks page.'
 aliases:
   - /docs/manual/basics/tasks-page/
+  - /docs/manual/basics/create-annotation-task/
 ---
 
 ## Overview

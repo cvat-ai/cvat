@@ -3,7 +3,7 @@ title: 'Models'
 linkTitle: 'Models'
 weight: 8
 aliases:
-  - /docs/manual/basics/models/
+  - /docs/manual/advanced/models/
 ---
 
 To deploy the models, you will need to install the necessary components using

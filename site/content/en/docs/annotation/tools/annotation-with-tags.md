@@ -3,7 +3,7 @@ title: 'Annotation with tags'
 linkTitle: 'Annotation with tags'
 weight: 13
 aliases:
-  - /docs/manual/advanced/
+  - /docs/manual/advanced/annotation-with-tags/
 ---
 
 It is used to annotate frames, tags are not displayed in the workspace.

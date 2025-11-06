@@ -4,7 +4,7 @@ linkTitle: 'Attribute annotation mode'
 weight: 6
 description: 'Advanced operations available in attribute annotation mode.'
 aliases:
-  - /docs/manual/advanced/
+  - /docs/manual/advanced/attribute-annotation-mode-advanced/
 ---
 
 Basic operations in the mode were described in section

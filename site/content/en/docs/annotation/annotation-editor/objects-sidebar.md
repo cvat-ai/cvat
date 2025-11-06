@@ -4,7 +4,7 @@ linkTitle: 'Objects sidebar'
 weight: 4
 description: ' Displays annotated objects and includes a label filter, lists of objects (current frame) and labels (objects on the frame), and appearance settings. '
 aliases:
-  - /docs/manual/basics/CVAT-annotation-interface/
+  - /docs/manual/basics/CVAT-annotation-interface/objects-sidebar/
 ---
 
 In the objects sidebar, you can see the list of available objects on the current

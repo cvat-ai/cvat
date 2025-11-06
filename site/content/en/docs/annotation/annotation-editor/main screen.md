@@ -4,7 +4,7 @@ linkTitle: 'Workspace'
 weight: 3
 description: 'The main annotation area where images, videos and 3D data are displayed for annotation.'
 aliases:
-  - /docs/manual/basics/CVAT-annotation-interface/
+  - /docs/manual/basics/CVAT-annotation-interface/workspace/
 ---
 
 In CVAT, the workspace serves as a work area where annotators

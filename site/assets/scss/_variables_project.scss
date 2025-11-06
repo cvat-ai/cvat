@@ -4,7 +4,7 @@
 /* Add styles or override variables from the theme here. */
 
 /* --- Link & brand colors (must come before any imports) --- */
-$primary: #000000;                 // pick your brand color (optional)
+$primary: #000;                 // pick your brand color (optional)
 $link-color: #f97526;              // link color (content, default links)
 $link-hover-color: shade-color($link-color, 0%);
 $link-decoration: none;
@@ -31,7 +31,7 @@ $info: #f1f1f1;
 /* Site-wide link colors via Bootstrap CSS variables */
 :root {
   /* normal link */
-  --bs-link-color: #000000;
+  --bs-link-color: #000;
   --bs-link-color-rgb: 0, 0, 0;
 
   /* hover link */
@@ -39,12 +39,12 @@ $info: #f1f1f1;
   --bs-link-hover-color-rgb: 249, 117, 38;
 }
 /* Ensure section index tiles use our link colors */
-.td-box--docs h4 a {
+.td-box-docs h4 a {
   color: var(--bs-link-color) !important;
   text-decoration: none;
 }
-.td-box--docs h4 a:hover,
-.td-box--docs h4 a:focus {
+.td-box-docs h4 a:hover,
+.td-box-docs h4 a:focus {
   color: var(--bs-link-hover-color) !important;
   text-decoration: underline;
 }

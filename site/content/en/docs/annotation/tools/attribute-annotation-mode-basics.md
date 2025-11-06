@@ -4,7 +4,7 @@ linkTitle: 'Attribute annotation mode'
 weight: 20
 description: 'Usage examples and basic operations available in attribute annotation mode.'
 aliases:
-  - /docs/manual/basics/
+  - /docs/manual/basics/attribute-annotation-mode-basics/
   - /docs/annotation/attribute-annotation-mode-basics/
 ---
 - In this mode, you can edit attributes with fast navigation between objects and frames using a keyboard.

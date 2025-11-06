@@ -4,7 +4,7 @@ linkTitle: 'Shape mode'
 weight: 17
 description: 'Usage examples and basic operations available during annotation in shape mode.'
 aliases:
-  - /docs/manual/basics/
+  - /docs/manual/basics/shape-mode-basics/
   - /docs/annotation/shape-mode-basics/
 ---
 

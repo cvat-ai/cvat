@@ -4,7 +4,7 @@ linkTitle: 'Annotation with brush tool'
 weight: 13
 description: 'Guide to annotating tasks using brush tools.'
 aliases:
-  - /docs/manual/advanced/
+  - /docs/manual/advanced/annotation-with-brush-tool/
 ---
 
 With a brush tool, you can create masks for disjoint objects, that have multiple parts,

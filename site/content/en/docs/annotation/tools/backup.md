@@ -3,7 +3,7 @@ title: 'Backup Task and Project'
 linkTitle: 'Backup'
 weight: 17
 aliases:
-  - /docs/manual/advanced/
+  - /docs/manual/advanced/backup/
 ---
 
 ## Overview

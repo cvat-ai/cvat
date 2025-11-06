@@ -4,7 +4,7 @@ linkTitle: 'Filter'
 weight: 24
 description: 'Guide to using the Filter feature in CVAT.'
 aliases:
-  - /docs/manual/advanced/
+  - /docs/manual/advanced/filter/
 ---
 
 There are some reasons to use the feature:

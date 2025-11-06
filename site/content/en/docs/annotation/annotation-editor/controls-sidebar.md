@@ -4,7 +4,7 @@ linkTitle: 'Controls sidebar'
 weight: 5
 description: 'Offers tools for navigating within the image, annotation tools, and additional options to merge, split, and group labels.'
 aliases:
-  - /docs/manual/basics/CVAT-annotation-interface/
+  - /docs/manual/basics/CVAT-annotation-interface/controls-sidebar/
 ---
 
 ## Navigation

@@ -3,7 +3,7 @@ title: 'Settings'
 linkTitle: 'Settings'
 weight: 6
 aliases:
-  - /docs/manual/basics/
+  - /docs/manual/basics/settings/
   - /docs/annotation/settings/
 ---
 To open the **Settings**, open the user menu in the header and select **Settings**.

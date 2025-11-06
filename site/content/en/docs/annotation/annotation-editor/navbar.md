@@ -4,7 +4,7 @@ linkTitle: 'Menu and Navbar'
 weight: 1
 description: 'Features navigation arrows to switch between frames, provides access to main functions, and Menu.'
 aliases:
-  - /docs/manual/basics/CVAT-annotation-interface/
+  - /docs/manual/basics/CVAT-annotation-interface/navbar/
 ---
 
 The navigation panel and drop-down **Menu**, allow you to switch

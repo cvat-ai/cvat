@@ -3,7 +3,7 @@ title: 'Serverless tutorial'
 linkTitle: 'Serverless tutorial'
 weight: 2
 aliases:
-  - /docs/manual/advanced/
+  - /docs/manual/advanced/serverless-tutorial/
   - /docs/annotation/tools/serverless-tutorial/
 ---
 

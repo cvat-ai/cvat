@@ -3,7 +3,7 @@ title: 'Standard 3D mode (basics)'
 linkTitle: 'Standard 3D mode'
 weight: 14
 aliases:
-  - /docs/manual/basics/
+  - /docs/manual/basics/standard-3d-mode-basics/
   - /docs/annotation/standard-3d-mode-basics/
 ---
 
