@@ -81,6 +81,7 @@ context('New organization pipeline.', () => {
                 cy.deleteTasks(authHeaders, [newTaskName]);
                 cy.deleteProjects(authHeaders, [project.name]);
                 cy.deleteOrganizations(authHeaders, [organizationParams.shortName]);
+                cy.headlessLogout();
             });
         });
     }
