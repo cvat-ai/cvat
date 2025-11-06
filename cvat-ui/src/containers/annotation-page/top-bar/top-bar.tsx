@@ -11,6 +11,7 @@ import { RouteComponentProps } from 'react-router-dom';
 import {
     changeFrameAsync,
     changeWorkspace as changeWorkspaceAction,
+    setHoveredChapter as setHoveredChapterAction,
     collectStatisticsAsync,
     deleteFrameAsync,
     redoActionAsync,
@@ -42,6 +43,7 @@ import { Chapter } from 'cvat-core/src/frames';
 
 interface StateToProps {
     chapters: Chapter[];
+    hoveredChapter: number | null;
     jobInstance: Job;
     frameIsDeleted: boolean;
     frameNumber: number;
@@ -96,6 +98,7 @@ interface DispatchToProps {
     ): void;
     setForceExitAnnotationFlag(forceExit: boolean): void;
     changeWorkspace(workspace: Workspace): void;
+    setHoveredChapter(id: number | null): void;
     onSwitchToolsBlockerState(toolsBlockerState: ToolsBlockerState): void;
     deleteFrame(frame: number): void;
     restoreFrame(frame: number): void;
@@ -117,6 +120,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                     fetching: frameFetching,
                 },
                 navigationType,
+                hoveredChapter,
             },
             annotations: {
                 saving: { uploading: saving, forceExit },
@@ -157,6 +161,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         frameFetching,
         playing,
         canvasIsReady,
+        hoveredChapter,
         saving,
         frameNumber,
         frameFilename,
@@ -227,6 +232,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         changeWorkspace(workspace: Workspace): void {
             dispatch(changeWorkspaceAction(workspace));
+        },
+        setHoveredChapter(id: number | null) {
+            dispatch(setHoveredChapterAction(id));
         },
         setForceExitAnnotationFlag(forceExit: boolean): void {
             dispatch(setForceExitAnnotationFlagAction(forceExit));
@@ -648,6 +656,11 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         }
     };
 
+    private setHoveredChapter = (id: number | null): void => {
+        const { setHoveredChapter } = this.props;
+        setHoveredChapter(id);
+    };
+
     private beforeUnloadCallback = (event: BeforeUnloadEvent): string | undefined => {
         const { jobInstance, forceExit, setForceExitAnnotationFlag } = this.props;
         const { frameNumber } = this.props;
@@ -686,6 +699,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             playing,
             saving,
             chapters,
+            hoveredChapter,
             jobInstance,
             jobInstance: { startFrame, stopFrame },
             frameNumber,
@@ -722,6 +736,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 onSearchAnnotations={this.searchAnnotations}
                 onSearchChapters={this.searchChapters}
                 onSelectChapter={this.selectChapter}
+                setHoveredChapter={this.setHoveredChapter}
                 setNavigationType={setNavigationType}
                 onSliderChange={this.onChangePlayerSliderValue}
                 onInputChange={this.onChangePlayerInputValue}
@@ -737,6 +752,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 workspace={workspace}
                 playing={playing}
                 chapters={chapters}
+                hoveredChapter={hoveredChapter}
                 saving={saving}
                 ranges={ranges}
                 startFrame={startFrame}

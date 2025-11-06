@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Col, Row } from 'antd/lib/grid';
 
 import {
@@ -21,6 +21,7 @@ interface Props {
     playing: boolean;
     saving: boolean;
     chapters: Chapter[];
+    hoveredChapter: number | null;
     frameNumber: number;
     frameFilename: string;
     frameDeleted: boolean;
@@ -64,6 +65,7 @@ interface Props {
     onSearchAnnotations(direction: 'forward' | 'backward'): void;
     onSearchChapters(direction: 'forward' | 'backward'): void;
     onSelectChapter(id: number): void;
+    setHoveredChapter(id: number | null): void;
     onSliderChange(value: number): void;
     onInputChange(value: number): void;
     onURLIconClick(): void;
@@ -86,6 +88,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         redoAction,
         playing,
         chapters,
+        hoveredChapter,
         ranges,
         frameNumber,
         frameFilename,
@@ -126,6 +129,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         onSearchAnnotations,
         onSearchChapters,
         onSelectChapter,
+        setHoveredChapter,
         onSliderChange,
         onInputChange,
         onURLIconClick,
@@ -143,8 +147,6 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
     } = props;
 
     const playerItems: [JSX.Element, number][] = [];
-
-    const [hoveredChapter, setHoveredChapter] = useState<number | null>(null);
 
     playerItems.push([(
         <PlayerButtons
