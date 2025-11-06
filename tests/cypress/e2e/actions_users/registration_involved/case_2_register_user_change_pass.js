@@ -134,7 +134,7 @@ context('User page, password change, token handling', () => {
         before(() => {
             cy.openProfile();
         });
-        context.skip('Profile tab', () => {
+        context('Profile tab', () => {
             it("Open user's profile page. Profile is selected, username is greeted", () => {
                 cy.url().should('include', '/profile#profile');
                 cy.get('.ant-menu-item-selected').within(() => {
@@ -170,7 +170,7 @@ context('User page, password change, token handling', () => {
                 profileOpenTab('Security');
                 cy.get('@getToken').its('response.body.results').should('be.empty');
             });
-            describe.skip(`Testing "Case ${caseId}"`, () => {
+            describe(`Testing "Case ${caseId}"`, () => {
                 it('Change password successful, can login with new credentials', () => {
                     changePassword(password, newPassword);
                     cy.get('.cvat-notification-notice-change-password-success')
