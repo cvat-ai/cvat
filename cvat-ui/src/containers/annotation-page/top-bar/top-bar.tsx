@@ -558,12 +558,9 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         const {
             chapters, playing, onSwitchPlay,
         } = this.props;
-        let selectedChapter: Chapter | null = null;
-        for (const chapter of chapters) {
-            if (chapter.id === id) {
-                selectedChapter = chapter;
-            }
-        }
+
+        const selectedChapter = chapters.find((chapter: Chapter) => chapter.id === id) ?? null;
+
         if (selectedChapter !== null) {
             if (playing) {
                 onSwitchPlay(false);
