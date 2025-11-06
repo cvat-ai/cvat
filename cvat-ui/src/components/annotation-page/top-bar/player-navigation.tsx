@@ -15,6 +15,7 @@ import Slider from 'antd/lib/slider';
 import InputNumber from 'antd/lib/input-number';
 import Text from 'antd/lib/typography/Text';
 import Modal from 'antd/lib/modal';
+import Tooltip from 'antd/lib/tooltip';
 
 import { Workspace } from 'reducers';
 import { RestoreIcon } from 'icons';
@@ -25,7 +26,6 @@ import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
 import { subKeyMap } from 'utils/component-subkeymap';
 import { Chapter } from 'cvat-core/src/frames';
-import Tooltip from 'antd/lib/tooltip';
 
 interface Props {
     startFrame: number;

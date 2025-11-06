@@ -4,7 +4,8 @@
 
 import React from 'react';
 import Icon from '@ant-design/icons';
-import { List, Popover } from 'antd';
+import Popover from 'antd/lib/popover';
+import List from 'antd/lib/list';
 import CvatTooltip from 'components/common/cvat-tooltip';
 import { Chapter } from 'cvat-core/src/frames';
 import { ChapterMenuIcon } from 'icons';
