@@ -10,7 +10,7 @@ aliases:
 Segmentation Mask format is a simple format for image segmentation tasks
 like semantic segmentation, instance segmentation, and panoptic segmentation.
 It is a custom format based on
-the {{< ilink "/docs/manual/advanced/formats/format-voc" "Pascal VOC" >}} segmentation format.
+the {{< ilink "/docs/dataset_management/formats/format-voc" "Pascal VOC" >}} segmentation format.
 
 ## Segmentation Mask export
 
