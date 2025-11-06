@@ -12,7 +12,7 @@ Cypress.Commands.add('attachS3Bucket', (data) => {
     cy.get('#display_name').type(data.displayName);
     cy.get('#display_name').should('have.attr', 'value', data.displayName);
     cy.get('#provider_type').click();
-    cy.contains('.cvat-cloud-storage-select-provider', 'AWS').click();
+    cy.contains('.cvat-cloud-storage-select-provider', 'Amazon').click();
     cy.get('#resource').should('exist').type(data.resource);
     cy.get('#resource').should('have.attr', 'value', data.resource);
     cy.get('#credentials_type').should('exist').click();

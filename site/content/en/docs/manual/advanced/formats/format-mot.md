@@ -20,11 +20,11 @@ For more information, see:
 
 For export of images and videos:
 
-- Supported annotations: Bounding Boxes.
+- Supported annotations: Bounding Box tracks.
 - Attributes: `visibility` (number), `ignored` (checkbox)
 - Tracks: Supported.
 
-The downloaded file is a .zip archive with the following structure:
+The downloaded file is a `.zip` archive with the following structure:
 
 ```bash
 taskname.zip/
@@ -50,7 +50,7 @@ person
 
 ## MOT import
 
-Uploaded file: a zip archive of the structure above or:
+Uploaded file: a `.zip` archive of the structure above or:
 
 ```bash
 archive.zip/
@@ -59,4 +59,3 @@ archive.zip/
     └── labels.txt # optional, mandatory for non-official labels
 ```
 
-- supported annotations: Rectangle tracks

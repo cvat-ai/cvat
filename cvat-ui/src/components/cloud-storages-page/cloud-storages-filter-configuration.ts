@@ -22,9 +22,9 @@ export const config: Partial<Config> = {
             valueSources: ['value'],
             fieldSettings: {
                 listValues: [
-                    { value: 'AWS_S3_BUCKET', title: 'AWS S3' },
-                    { value: 'AZURE_CONTAINER', title: 'Azure' },
-                    { value: 'GOOGLE_CLOUD_STORAGE', title: 'Google cloud' },
+                    { value: 'AWS_S3_BUCKET', title: 'Amazon S3' },
+                    { value: 'AZURE_CONTAINER', title: 'Azure Blob Storage' },
+                    { value: 'GOOGLE_CLOUD_STORAGE', title: 'Google Cloud Storage' },
                 ],
             },
         },
@@ -84,7 +84,7 @@ export const localStorageRecentKeyword = 'recentlyAppliedCloudStoragesFilters';
 
 export const predefinedFilterValues = {
     'Owned by me': '{"and":[{"==":[{"var":"owner"},"<username>"]}]}',
-    'AWS storages': '{"and":[{"==":[{"var":"provider_type"},"AWS_S3_BUCKET"]}]}',
-    'Azure storages': '{"and":[{"==":[{"var":"provider_type"},"AZURE_CONTAINER"]}]}',
-    'Google cloud storages': '{"and":[{"==":[{"var":"provider_type"},"GOOGLE_CLOUD_STORAGE"]}]}',
+    'Amazon S3 storages': '{"and":[{"==":[{"var":"provider_type"},"AWS_S3_BUCKET"]}]}',
+    'Azure Blob storages': '{"and":[{"==":[{"var":"provider_type"},"AZURE_CONTAINER"]}]}',
+    'Google Cloud storages': '{"and":[{"==":[{"var":"provider_type"},"GOOGLE_CLOUD_STORAGE"]}]}',
 };

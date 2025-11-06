@@ -17,13 +17,11 @@ For more information, see:
 
 ## CamVid export
 
-For export of images and videos:
-
-- Supported annotations: Bounding Boxes, Polygons.
+- Supported annotations: Masks, Bounding Boxes (as masks), Polygons (as masks), Ellipses (as masks).
 - Attributes: Not supported.
-- Tracks: Not supported.
+- Tracks: Not supported (exported as separate shapes).
 
-The downloaded file is a .zip archive with the following structure:
+The downloaded file is a `.zip` archive with the following structure:
 
 ```bash
 taskname.zip/
@@ -55,18 +53,20 @@ Bicyclist
 Bridge
 ```
 
-A mask in the CamVid dataset is typically a **.png**
+A mask in the CamVid dataset is typically a `.png`
 image with either one or three channels.
 
 In this image, each pixel is assigned a specific color
 that corresponds to a particular label.
 
-By default, the color `(0, 0, 0)`—or `black`—is used
+By default, the color `(0, 0, 0)` — or `black` — is used
 to represent the background.
 
 ## CamVid import
 
-For import of images:
+- Supported annotations: Masks, Polygons (if Convert masks to polygons is enabled).
+- Attributes: Not supported.
+- Tracks: Not supported.
 
-- Uploaded file: a _.zip_ archive of the structure above
-- supported annotations: Polygons
+Uploaded file: a `.zip` archive of the structure above
+

@@ -5,59 +5,59 @@ weight: 5
 description: 'How to export and import data in COCO format'
 ---
 
-A widely-used machine learning structure, the COCO dataset is instrumental
-for tasks involving object identification and image segmentation.
-This format is compatible with projects that employ bounding boxes or
-polygonal image annotations.
+The COCO dataset format is a popular format, designed
+for tasks involving object detection and instance segmentation.
+It's supported by many annotation tools and model training frameworks,
+making it a safe default choice for typical object detection projects.
 
 For more information, see:
 
-- [COCO Object Detection site](http://cocodataset.org/#format-data)
+- [COCO format homepage](http://cocodataset.org/#format-data)
 - [Format specification](https://open-edge-platform.github.io/datumaro/stable/docs/data-formats/formats/coco.html)
 - [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/coco_dataset)
 
 ## COCO export
 
-For export of images and videos:
-
-- Supported annotations: Bounding Boxes, Polygons.
+- Supported annotations: Bounding Boxes, Polygons, Masks, Ellipses (as masks).
 - Attributes:
   - `is_crowd` This can either be a checkbox or an integer
-    (with values of 0 or 1). It indicates that the instance
-    (or group of objects) should include an RLE-encoded mask in the `segmentation` field.
-    All shapes within the group coalesce into a single, overarching mask,
-    with the largest shape setting the properties for the entire object group.
-  - `score`: This numerical field represents the annotation `score`.
-  - Arbitrary attributes: These will be stored within the `attributes`
+    (with values of 0 or 1). It indicates whether the instance
+    (a group of objects) should be represented as an RLE-encoded mask or a set of polygons
+    in the `segmentation` field of the annotation file.
+    The largest (by area) shape in the group sets the properties for the entire object group.
+    If the attribute is not specified, the input shape type is used (polygon or mask).
+    If `True` or 1, all shapes within the group will be converted into a single mask.
+    If `False` or 0, all shapes within the group will be converted into polygons.
+  - Arbitrary attributes: These will be stored within the custom `attributes`
     section of the annotation.
-- Tracks: Not supported.
+- Tracks: Supported (via the `track_id` custom attribute).
 
-The downloaded file is a .zip archive with the following structure:
+The downloaded file is a `.zip` archive with the following structure:
 
 ```
-archive.zip/
+taskname.zip/
 ├── images/
-│   ├── train/
-│   │   ├── <image_name1.ext>
-│   │   ├── <image_name2.ext>
-│   │   └── ...
-│   └── val/
+│   └── <subset_name>/
 │       ├── <image_name1.ext>
 │       ├── <image_name2.ext>
 │       └── ...
 └── annotations/
-   ├── <task>_<subset_name>.json
+   ├── instances_<subset_name>.json
    └── ...
 ```
 
 When exporting a dataset from a Project, subset names will mirror those used within the project itself.
 Otherwise, a singular default subset will be created to house all the dataset information.
-The <task> section aligns with one of the specific COCO tasks,
-such as `instances`, `panoptic`, `image_info`, `labels`, `captions`, or `stuff`.
 
 ## COCO import
 
-Upload format: a single unpacked `*.json` or a zip archive with the structure described above or
+- Supported annotations: Bounding Boxes (if the `segmentation` field is empty), Polygons, Masks.
+- Attributes: Supported, as described in the export section
+- Tracks: Supported (via the `track_id` custom attribute).
+- Supported tasks: `instances`, `person_keypoints` (only segmentations will be imported), `panoptic`.
+
+Upload format: a `.json` file with annotations
+or a `.zip` archive with the structure described above or
 [here](https://open-edge-platform.github.io/datumaro/latest/docs/data-formats/formats/coco.html#import-coco-dataset)
 (without images).
 
@@ -66,8 +66,6 @@ Even though `licenses` and `info` fields are required according to format specif
 CVAT does not require them to import annotations.
 {{% /alert %}}
 
-- Supported annotations: Polygons, Rectangles (if the `segmentation` field is empty)
-- Supported tasks: `instances`, `person_keypoints` (only segmentations will be imported), `panoptic`
 
 ## How to create a task from MS COCO dataset
 
