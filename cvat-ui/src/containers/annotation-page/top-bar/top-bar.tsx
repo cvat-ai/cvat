@@ -656,7 +656,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         }
     };
 
-    private setHoveredChapter = (id: number | null): void => {
+    private readonly setHoveredChapter = (id: number | null): void => {
         const { setHoveredChapter } = this.props;
         setHoveredChapter(id);
     };
