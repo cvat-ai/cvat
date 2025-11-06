@@ -1,5 +1,3 @@
-<!--lint disable maximum-heading-length-->
-
 ---
 
 title: 'Installation Guide'
@@ -8,8 +6,6 @@ weight: 1
 description: 'A CVAT installation guide for different operating systems.'
 
 ---
-
-<!--lint disable heading-style-->
 
 # Quick installation guide
 

@@ -34,16 +34,12 @@ You can navigate, using the mouse, or navigation keys:
 
 You can also use keyboard shortcuts to navigate:
 
-<!--lint disable maximum-line-length-->
-
 | Action          | Keys                                          |
 | --------------- | --------------------------------------------- |
 | Camera rotation | **Shift** + **Arrow** (Up, Down, Left, Right) |
 | Left/Right      | **Alt**+**J**/ **Alt**+**L**                  |
 | Up/down         | **Al**t+**U**/ **Alt**+**O**                  |
 | Zoom in/ou      | **Alt**+**K**/ **Alt**+**I**                  |
-
-<!--lint enable maximum-line-length-->
 
 ## Annotation with cuboids
 

@@ -1,5 +1,3 @@
-<!--lint disable maximum-heading-length-->
-
 ---
 
 title: 'Dataset Manifest'
@@ -8,8 +6,6 @@ weight: 30
 description:
 
 ---
-
-<!--lint disable heading-style-->
 
 ## Overview
 

@@ -1,5 +1,3 @@
-<!--lint disable maximum-heading-length-->
-
 ---
 
 title: 'LDAP Backed Authentication'
@@ -8,8 +6,6 @@ weight: 40
 description: 'Allow users to login with credentials from a central source'
 
 ---
-
-<!--lint disable maximum-line-length-->
 
 ### The creation of `settings.py`
 When integrating LDAP login, we need to create an overlay to the default CVAT
